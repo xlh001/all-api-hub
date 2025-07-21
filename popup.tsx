@@ -96,7 +96,7 @@ function IndexPopup() {
             {/* 主要消耗金额 */}
             <div className="flex items-center space-x-1">
               <span className="text-3xl font-bold text-gray-900 tracking-tight">
-                {currencyType === 'USD' ? '$' : '¥'}{mockData.totalConsumption[currencyType]}
+                {mockData.totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}{mockData.totalConsumption[currencyType]}
               </span>
               <button 
                 onClick={() => setCurrencyType(currencyType === 'USD' ? 'CNY' : 'USD')}
