@@ -1,5 +1,8 @@
 import "./style.css"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import dayjs from "dayjs"
+import relativeTime from "dayjs/plugin/relativeTime"
+import "dayjs/locale/zh-cn"
 import { 
   Cog6ToothIcon, 
   ArrowsPointingOutIcon,
@@ -9,9 +12,9 @@ import {
   ChartBarIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  ArrowsRightLeftIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/outline"
 import Tooltip from "./components/Tooltip"
 
@@ -22,6 +25,25 @@ function IndexPopup() {
   const [currencyType, setCurrencyType] = useState<'USD' | 'CNY'>('USD')
   const [sortField, setSortField] = useState<SortField>('balance')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  // 暂时设定为固定时间
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(
+    new Date('2025-07-12 12:12:12')
+  )
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
+  const [, forceUpdate] = useState({}) // 用于强制更新相对时间显示
+  
+  // 初始化dayjs插件
+  dayjs.extend(relativeTime)
+  dayjs.locale('zh-cn')
+
+  // 定时更新相对时间显示
+  useEffect(() => {
+    const updateInterval = setInterval(() => {
+      forceUpdate({}) // 触发重新渲染来更新相对时间
+    }, 30000) // 每30秒更新一次，类似微信的更新频率
+
+    return () => clearInterval(updateInterval)
+  }, [])
   
   // 格式化 Token 数量
   const formatTokenCount = (count: number): string => {
@@ -31,6 +53,32 @@ function IndexPopup() {
       return (count / 1000).toFixed(1) + 'K'
     }
     return count.toString()
+  }
+
+  // 格式化相对时间
+  const formatRelativeTime = (date: Date): string => {
+    const now = dayjs()
+    const targetTime = dayjs(date)
+    const diffInSeconds = now.diff(targetTime, 'second')
+    
+    if (diffInSeconds < 5) {
+      return '刚刚'
+    }
+    return targetTime.fromNow()
+  }
+
+  // 格式化具体时间
+  const formatFullTime = (date: Date): string => {
+    return dayjs(date).format('YYYY/MM/DD HH:mm:ss')
+  }
+
+  // 刷新数据
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    // TODO: 调用实际的数据刷新API
+    await new Promise(resolve => setTimeout(resolve, 1000)) // 模拟API调用
+    setLastUpdateTime(new Date())
+    setIsRefreshing(false)
   }
   
   // 模拟数据
@@ -142,6 +190,16 @@ function IndexPopup() {
         </div>
         
         <div className="flex items-center space-x-2">
+          <Tooltip content="刷新数据">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-all duration-200 ${isRefreshing ? 'animate-spin' : ''}`}
+              title="刷新数据"
+            >
+              <ArrowPathIcon className="w-4 h-4" />
+            </button>
+          </Tooltip>
           <button
             onClick={handleOpenTab}
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-all duration-200"
@@ -169,15 +227,12 @@ function IndexPopup() {
               
               {/* 主要消耗金额 */}
               <div className="flex items-center space-x-1">
-                <span className="text-3xl font-bold text-gray-900 tracking-tight">
-                  {mockData.totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}{mockData.totalConsumption[currencyType]}
-                </span>
-                <button 
+                <button
                   onClick={() => setCurrencyType(currencyType === 'USD' ? 'CNY' : 'USD')}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg transition-all duration-200"
-                  title={`切换到 ${currencyType === 'USD' ? 'CNY' : 'USD'}`}
+                  className="text-3xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
+                  title={`点击切换到 ${currencyType === 'USD' ? '人民币' : '美元'}`}
                 >
-                  <ArrowsRightLeftIcon className="w-4 h-4" />
+                  {mockData.totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}{mockData.totalConsumption[currencyType]}
                 </button>
               </div>
             </div>
@@ -202,6 +257,17 @@ function IndexPopup() {
                     <span className="font-medium text-gray-500">{formatTokenCount(mockData.todayTokens.download)}</span>
                   </div>
                 </div>
+              </Tooltip>
+            </div>
+          </div>
+          
+          {/* 最后更新时间 */}
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <div className="ml-2">
+              <Tooltip content={formatFullTime(lastUpdateTime)}>
+                <p className="text-xs text-gray-400 cursor-help">
+                  更新于 {formatRelativeTime(lastUpdateTime)}
+                </p>
               </Tooltip>
             </div>
           </div>
