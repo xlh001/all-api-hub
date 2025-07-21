@@ -11,10 +11,10 @@ import {
   ArrowDownIcon,
   ArrowsRightLeftIcon
 } from "@heroicons/react/24/outline"
+import Tooltip from "./components/Tooltip"
 
 function IndexPopup() {
   const [currencyType, setCurrencyType] = useState<'USD' | 'CNY'>('USD')
-  const [showTooltip, setShowTooltip] = useState(false)
   
   // 格式化 Token 数量
   const formatTokenCount = (count: number): string => {
@@ -109,13 +109,16 @@ function IndexPopup() {
           </div>
           
           {/* Token 统计信息 */}
-          <div className="relative">
-            <div className="flex items-center">
-              <div 
-                className="flex items-center space-x-3 cursor-help"
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-              >
+          <div>
+            <Tooltip
+              content={
+                <div>
+                  <div>提示: {mockData.todayTokens.upload.toLocaleString()} tokens</div>
+                  <div>补全: {mockData.todayTokens.download.toLocaleString()} tokens</div>
+                </div>
+              }
+            >
+              <div className="flex items-center space-x-3 cursor-help">
                 <div className="flex items-center space-x-1">
                   <ArrowUpIcon className="w-4 h-4 text-green-500" />
                   <span className="font-medium text-gray-500">{formatTokenCount(mockData.todayTokens.upload)}</span>
@@ -125,14 +128,7 @@ function IndexPopup() {
                   <span className="font-medium text-gray-500">{formatTokenCount(mockData.todayTokens.download)}</span>
                 </div>
               </div>
-            </div>
-            
-            {/* 自定义 Tooltip */}
-            <div className={`absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 whitespace-nowrap transition-all duration-200 ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'}`}>
-              <div>提示: {mockData.todayTokens.upload.toLocaleString()} tokens</div>
-              <div>补全: {mockData.todayTokens.download.toLocaleString()} tokens</div>
-              <div className="absolute top-full left-4 w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-gray-900"></div>
-            </div>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -144,12 +140,16 @@ function IndexPopup() {
             <PlusIcon className="w-4 h-4" />
             <span>新增站点</span>
           </button>
-          <button className="flex items-center justify-center py-2.5 px-3 bg-white text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium border border-gray-200">
-            <KeyIcon className="w-4 h-4" />
-          </button>
-          <button className="flex items-center justify-center py-2.5 px-3 bg-white text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium border border-gray-200">
-            <DocumentChartBarIcon className="w-4 h-4" />
-          </button>
+          <Tooltip content="Key 管理">
+            <button className="flex items-center justify-center py-2.5 px-3 bg-white text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium border border-gray-200">
+              <KeyIcon className="w-4 h-4" />
+            </button>
+          </Tooltip>
+          <Tooltip content="用量统计">
+            <button className="flex items-center justify-center py-2.5 px-3 bg-white text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium border border-gray-200">
+              <DocumentChartBarIcon className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
