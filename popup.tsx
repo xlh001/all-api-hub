@@ -94,7 +94,7 @@ function IndexPopup() {
             <p className="text-sm text-gray-500 mb-2">今日消耗</p>
             
             {/* 主要消耗金额 */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               <span className="text-3xl font-bold text-gray-900 tracking-tight">
                 {currencyType === 'USD' ? '$' : '¥'}{mockData.totalConsumption[currencyType]}
               </span>
@@ -129,7 +129,8 @@ function IndexPopup() {
             
             {/* 自定义 Tooltip */}
             <div className={`absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 whitespace-nowrap transition-all duration-200 ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'}`}>
-              上传: {mockData.todayTokens.upload.toLocaleString()} tokens，下载: {mockData.todayTokens.download.toLocaleString()} tokens
+              <div>提示: {mockData.todayTokens.upload.toLocaleString()} tokens</div>
+              <div>补全: {mockData.todayTokens.download.toLocaleString()} tokens</div>
               <div className="absolute top-full left-4 w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-gray-900"></div>
             </div>
           </div>
