@@ -9,12 +9,19 @@ import {
   ChartBarIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  ArrowsRightLeftIcon
+  ArrowsRightLeftIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from "@heroicons/react/24/outline"
 import Tooltip from "./components/Tooltip"
 
+type SortField = 'name' | 'balance' | 'consumption'
+type SortOrder = 'asc' | 'desc'
+
 function IndexPopup() {
   const [currencyType, setCurrencyType] = useState<'USD' | 'CNY'>('USD')
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
   
   // 格式化 Token 数量
   const formatTokenCount = (count: number): string => {
@@ -52,6 +59,44 @@ function IndexPopup() {
       }
     ]
   }
+
+  // 处理排序
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
+  // 排序站点数据
+  const sortedSites = [...mockData.sites].sort((a, b) => {
+    let aValue, bValue
+    
+    switch (sortField) {
+      case 'name':
+        aValue = a.name
+        bValue = b.name
+        break
+      case 'balance':
+        aValue = a.balance[currencyType]
+        bValue = b.balance[currencyType]
+        break
+      case 'consumption':
+        aValue = a.todayConsumption[currencyType]
+        bValue = b.todayConsumption[currencyType]
+        break
+      default:
+        return 0
+    }
+    
+    if (sortOrder === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+    }
+  })
 
   const handleOpenTab = () => {
     // TODO: 打开标签页
@@ -155,7 +200,53 @@ function IndexPopup() {
 
       {/* 站点账号列表 */}
       <div className="max-h-72 overflow-y-auto">
-        {mockData.sites.map((site) => (
+        {/* 表头 */}
+        <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+          <div className="flex items-center space-x-4">
+            <div className="flex-1">
+              <button
+                onClick={() => handleSort('name')}
+                className="flex items-center space-x-1 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <span>账号</span>
+                {sortField === 'name' && (
+                  sortOrder === 'asc' ? 
+                    <ChevronUpIcon className="w-3 h-3" /> : 
+                    <ChevronDownIcon className="w-3 h-3" />
+                )}
+              </button>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={() => handleSort('balance')}
+                  className="flex items-center space-x-1 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <span>余额</span>
+                  {sortField === 'balance' && (
+                    sortOrder === 'asc' ? 
+                      <ChevronUpIcon className="w-3 h-3" /> : 
+                      <ChevronDownIcon className="w-3 h-3" />
+                  )}
+                </button>
+                <span className="text-xs text-gray-400">/</span>
+                <button
+                  onClick={() => handleSort('consumption')}
+                  className="flex items-center space-x-1 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <span>今日消耗</span>
+                  {sortField === 'consumption' && (
+                    sortOrder === 'asc' ? 
+                      <ChevronUpIcon className="w-3 h-3" /> : 
+                      <ChevronDownIcon className="w-3 h-3" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {sortedSites.map((site) => (
           <div key={site.id} className="px-5 py-4 border-b border-gray-50 hover:bg-gray-25 transition-colors">
             <div className="flex items-center space-x-4">
               {/* 站点信息 */}
