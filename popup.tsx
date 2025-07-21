@@ -128,12 +128,10 @@ function IndexPopup() {
             </div>
             
             {/* 自定义 Tooltip */}
-            {showTooltip && (
-              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 whitespace-nowrap">
-                上传: {mockData.todayTokens.upload.toLocaleString()} tokens，下载: {mockData.todayTokens.download.toLocaleString()} tokens
-                <div className="absolute top-full left-4 w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-gray-900"></div>
-              </div>
-            )}
+            <div className={`absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 whitespace-nowrap transition-all duration-200 ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'}`}>
+              上传: {mockData.todayTokens.upload.toLocaleString()} tokens，下载: {mockData.todayTokens.download.toLocaleString()} tokens
+              <div className="absolute top-full left-4 w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-gray-900"></div>
+            </div>
           </div>
         </div>
       </div>
