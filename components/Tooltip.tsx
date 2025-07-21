@@ -60,7 +60,7 @@ export default function Tooltip({
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-fit">
       <div
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
