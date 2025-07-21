@@ -20,8 +20,8 @@ type SortOrder = 'asc' | 'desc'
 
 function IndexPopup() {
   const [currencyType, setCurrencyType] = useState<'USD' | 'CNY'>('USD')
-  const [sortField, setSortField] = useState<SortField>('name')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
+  const [sortField, setSortField] = useState<SortField>('balance')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   
   // 格式化 Token 数量
   const formatTokenCount = (count: number): string => {
