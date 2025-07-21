@@ -47,7 +47,7 @@ function IndexPopup() {
         name: "Claude API",
         username: "myaccount",
         balance: { USD: 45.67, CNY: 326.12 },
-        todayConsumption: { USD: 12.34, CNY: 88.15 },
+        todayConsumption: { USD: 0, CNY: 0 },
         todayTokens: { upload: 56300, download: 41200 }
       }
     ]
@@ -169,21 +169,11 @@ function IndexPopup() {
               
               {/* 余额和统计 */}
               <div className="text-right flex-shrink-0">
-                <div className="font-semibold text-gray-900 text-base mb-0.5">
+                <div className="font-semibold text-gray-900 text-lg mb-0.5">
                   {currencyType === 'USD' ? '$' : '¥'}{site.balance[currencyType]}
                 </div>
-                <div className="text-xs text-gray-500 mb-1">
-                  今日 -{currencyType === 'USD' ? '$' : '¥'}{site.todayConsumption[currencyType]}
-                </div>
-                <div className="flex items-center justify-end space-x-2 text-xs text-gray-400">
-                  <div className="flex items-center space-x-1">
-                    <ArrowUpIcon className="w-3 h-3 text-green-500" />
-                    <span>{formatTokenCount(site.todayTokens.upload)}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <ArrowDownIcon className="w-3 h-3 text-blue-500" />
-                    <span>{formatTokenCount(site.todayTokens.download)}</span>
-                  </div>
+                <div className={`text-xs ${site.todayConsumption[currencyType] > 0 ? 'text-green-500' : 'text-gray-400'}`}>
+                  -{currencyType === 'USD' ? '$' : '¥'}{site.todayConsumption[currencyType]}
                 </div>
               </div>
             </div>
