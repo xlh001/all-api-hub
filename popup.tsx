@@ -4,7 +4,7 @@ import {
   Cog6ToothIcon, 
   ArrowsPointingOutIcon,
   PlusIcon,
-  KeyIcon,
+  UserIcon,
   DocumentChartBarIcon,
   ChartBarIcon,
   ArrowUpIcon,
@@ -138,11 +138,11 @@ function IndexPopup() {
         <div className="flex space-x-2">
           <button className="flex-1 flex items-center justify-center space-x-2 py-2.5 px-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium shadow-sm">
             <PlusIcon className="w-4 h-4" />
-            <span>新增站点</span>
+            <span>新增账号</span>
           </button>
-          <Tooltip content="Key 管理">
+          <Tooltip content="账号管理">
             <button className="flex items-center justify-center py-2.5 px-3 bg-white text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium border border-gray-200">
-              <KeyIcon className="w-4 h-4" />
+              <UserIcon className="w-4 h-4" />
             </button>
           </Tooltip>
           <Tooltip content="用量统计">
