@@ -206,7 +206,7 @@ function IndexPopup() {
             <div className="flex-1">
               <button
                 onClick={() => handleSort('name')}
-                className="flex items-center space-x-1 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center space-x-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <span>账号</span>
                 {sortField === 'name' && (
@@ -220,7 +220,7 @@ function IndexPopup() {
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => handleSort('balance')}
-                  className="flex items-center space-x-1 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                  className="flex items-center space-x-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   <span>余额</span>
                   {sortField === 'balance' && (
@@ -232,7 +232,7 @@ function IndexPopup() {
                 <span className="text-xs text-gray-400">/</span>
                 <button
                   onClick={() => handleSort('consumption')}
-                  className="flex items-center space-x-1 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                  className="flex items-center space-x-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   <span>今日消耗</span>
                   {sortField === 'consumption' && (
