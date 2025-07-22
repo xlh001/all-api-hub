@@ -142,10 +142,41 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
         throw new Error('API 返回数据格式错误')
       }
 
-      const { id, username: detectedUsername, access_token } = data.data
+      let { id, username: detectedUsername, access_token } = data.data
       
-      if (!detectedUsername || !access_token || !id) {
-        throw new Error('未能获取到用户名、访问令牌或用户 ID')
+      if (!detectedUsername || !id) {
+        throw new Error('未能获取到用户名或用户 ID')
+      }
+
+      // 如果access_token为空，尝试自动创建一个
+      if (!access_token) {
+        console.log('访问令牌为空，尝试自动创建...')
+        try {
+          const tokenResponse = await fetch(`${url}/api/user/token`, {
+            method: 'GET',
+            headers: {
+              'new-api-user': userId.toString(),
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          })
+
+          if (!tokenResponse.ok) {
+            throw new Error(`创建令牌失败: ${tokenResponse.status}`)
+          }
+
+          const tokenData = await tokenResponse.json()
+          
+          if (!tokenData.success || !tokenData.data) {
+            throw new Error('创建令牌返回数据格式错误')
+          }
+
+          access_token = tokenData.data
+          console.log('自动创建访问令牌成功')
+        } catch (tokenError) {
+          console.error('自动创建访问令牌失败:', tokenError)
+          throw new Error('未能获取或创建访问令牌，请手动创建后重试')
+        }
       }
 
       // 更新表单数据
