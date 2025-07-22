@@ -2,16 +2,97 @@
  * API 服务 - 用于与 One API/New API 站点进行交互
  */
 
+// 通用请求配置
+const createRequestHeaders = (userId: number, accessToken?: string) => {
+  const headers: Record<string, string> = {
+    'new-api-user': userId.toString(),
+    'Content-Type': 'application/json',
+    'Pragma': 'no-cache'
+  }
+  
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`
+  }
+  
+  return headers
+}
+
+// 获取用户基本信息（用于账号检测）
+export const fetchUserInfo = async (baseUrl: string, userId: number): Promise<{
+  id: number
+  username: string
+  access_token: string | null
+}> => {
+  const response = await fetch(`${baseUrl}/api/user/self`, {
+    method: 'GET',
+    headers: createRequestHeaders(userId),
+    credentials: 'include'
+  })
+
+  if (!response.ok) {
+    throw new ApiError(`获取用户信息失败: ${response.status}`, response.status, '/api/user/self')
+  }
+
+  const data = await response.json()
+  if (!data.success || !data.data) {
+    throw new ApiError('获取用户信息数据格式错误', undefined, '/api/user/self')
+  }
+
+  return {
+    id: data.data.id,
+    username: data.data.username,
+    access_token: data.data.access_token || null
+  }
+}
+
+// 创建访问令牌
+export const createAccessToken = async (baseUrl: string, userId: number): Promise<string> => {
+  const response = await fetch(`${baseUrl}/api/user/token`, {
+    method: 'GET',
+    headers: createRequestHeaders(userId),
+    credentials: 'include'
+  })
+
+  if (!response.ok) {
+    throw new ApiError(`创建访问令牌失败: ${response.status}`, response.status, '/api/user/token')
+  }
+
+  const data = await response.json()
+  if (!data.success || !data.data) {
+    throw new ApiError('创建访问令牌返回数据格式错误', undefined, '/api/user/token')
+  }
+
+  return data.data
+}
+
+// 自动获取或创建访问令牌
+export const getOrCreateAccessToken = async (baseUrl: string, userId: number): Promise<{
+  username: string
+  access_token: string
+}> => {
+  // 首先获取用户信息
+  const userInfo = await fetchUserInfo(baseUrl, userId)
+  
+  let accessToken = userInfo.access_token
+  
+  // 如果没有访问令牌，则创建一个
+  if (!accessToken) {
+    console.log('访问令牌为空，尝试自动创建...')
+    accessToken = await createAccessToken(baseUrl, userId)
+    console.log('自动创建访问令牌成功')
+  }
+  
+  return {
+    username: userInfo.username,
+    access_token: accessToken
+  }
+}
+
 // 获取账号余额信息
 export const fetchAccountQuota = async (baseUrl: string, userId: number, accessToken: string): Promise<number> => {
   const response = await fetch(`${baseUrl}/api/user/self`, {
     method: 'GET',
-    headers: {
-      'New-API-User': userId.toString(),
-      'Authorization': `Bearer ${accessToken}`,
-      'Pragma': 'no-cache',
-      'Content-Type': 'application/json'
-    },
+    headers: createRequestHeaders(userId, accessToken),
     credentials: 'include'
   })
 
@@ -70,12 +151,7 @@ export const fetchTodayUsage = async (baseUrl: string, userId: number, accessTok
 
     const response = await fetch(`${baseUrl}/api/log/self?${params.toString()}`, {
       method: 'GET',
-      headers: {
-        'New-API-User': userId.toString(),
-        'Authorization': `Bearer ${accessToken}`,
-        'Pragma': 'no-cache',
-        'Content-Type': 'application/json'
-      },
+      headers: createRequestHeaders(userId, accessToken),
       credentials: 'include'
     })
 

@@ -2,7 +2,7 @@ import { useState, useEffect, Fragment } from "react"
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
 import { GlobeAltIcon, XMarkIcon, SparklesIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline"
 import { accountStorage } from "../services/accountStorage"
-import { fetchAccountData } from "../services/apiService"
+import { fetchAccountData, getOrCreateAccessToken } from "../services/apiService"
 import type { SiteAccount } from "../types"
 
 interface AddAccountDialogProps {
@@ -124,65 +124,16 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       }
 
       // 发起API请求获取用户信息
-      const apiResponse = await fetch(`${url}/api/user/self`, {
-        method: 'GET',
-        headers: {
-          'new-api-user': userId.toString(),
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      })
-      if (!apiResponse.ok) {
-        throw new Error(`API 请求失败: ${apiResponse.status}`)
-      }
-
-      const data = await apiResponse.json()
+      const { username: detectedUsername, access_token } = await getOrCreateAccessToken(url, userId)
       
-      if (!data.success || !data.data) {
-        throw new Error('API 返回数据格式错误')
-      }
-
-      let { id, username: detectedUsername, access_token } = data.data
-      
-      if (!detectedUsername || !id) {
-        throw new Error('未能获取到用户名或用户 ID')
-      }
-
-      // 如果access_token为空，尝试自动创建一个
-      if (!access_token) {
-        console.log('访问令牌为空，尝试自动创建...')
-        try {
-          const tokenResponse = await fetch(`${url}/api/user/token`, {
-            method: 'GET',
-            headers: {
-              'new-api-user': userId.toString(),
-              'Content-Type': 'application/json'
-            },
-            credentials: 'include'
-          })
-
-          if (!tokenResponse.ok) {
-            throw new Error(`创建令牌失败: ${tokenResponse.status}`)
-          }
-
-          const tokenData = await tokenResponse.json()
-          
-          if (!tokenData.success || !tokenData.data) {
-            throw new Error('创建令牌返回数据格式错误')
-          }
-
-          access_token = tokenData.data
-          console.log('自动创建访问令牌成功')
-        } catch (tokenError) {
-          console.error('自动创建访问令牌失败:', tokenError)
-          throw new Error('未能获取或创建访问令牌，请手动创建后重试')
-        }
+      if (!detectedUsername || !access_token) {
+        throw new Error('未能获取到用户名或访问令牌')
       }
 
       // 更新表单数据
       setUsername(detectedUsername)
       setAccessToken(access_token)
-      setUserId(id.toString())
+      setUserId(userId.toString())
       setIsDetected(true)
       
       console.log('自动识别成功:', { username: detectedUsername, siteName })
