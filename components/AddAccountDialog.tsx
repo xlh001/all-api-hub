@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from "react"
-import { Dialog, DialogPanel, DialogTitle, Transition } from "@headlessui/react"
+import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
 import { GlobeAltIcon, XMarkIcon, SparklesIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline"
 import { accountStorage } from "../services/accountStorage"
 import type { SiteAccount } from "../types"
@@ -9,17 +9,13 @@ interface AddAccountDialogProps {
   onClose: () => void
 }
 
-interface DetectedAccountInfo {
-  username: string
-  access_token: string
-}
-
 export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogProps) {
   const [url, setUrl] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
   const [siteName, setSiteName] = useState("")
   const [username, setUsername] = useState("")
   const [accessToken, setAccessToken] = useState("")
+  const [userId, setUserId] = useState("")
   const [isDetected, setIsDetected] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showAccessToken, setShowAccessToken] = useState(false)
@@ -40,6 +36,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       setSiteName("")
       setUsername("")
       setAccessToken("")
+      setUserId("")
       setShowAccessToken(false)
       setDetectionError(null)
       setShowManualForm(false)
@@ -113,15 +110,16 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
         throw new Error('API 返回数据格式错误')
       }
 
-      const { username: detectedUsername, access_token } = data.data
+      const { id, username: detectedUsername, access_token } = data.data
       
-      if (!detectedUsername || !access_token) {
-        throw new Error('未能获取到用户名或访问令牌')
+      if (!detectedUsername || !access_token || !id) {
+        throw new Error('未能获取到用户名、访问令牌或用户 ID')
       }
 
       // 更新表单数据
       setUsername(detectedUsername)
       setAccessToken(access_token)
+      setUserId(id.toString())
       setIsDetected(true)
       
       console.log('自动识别成功:', { username: detectedUsername, siteName })
@@ -137,8 +135,14 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
   }
 
   const handleSaveAccount = async () => {
-    if (!siteName.trim() || !username.trim() || !accessToken.trim()) {
+    if (!siteName.trim() || !username.trim() || !accessToken.trim() || !userId.trim()) {
       alert('请填写完整的账号信息')
+      return
+    }
+
+    const parsedUserId = parseInt(userId.trim())
+    if (isNaN(parsedUserId)) {
+      alert('用户 ID 必须是数字')
       return
     }
 
@@ -152,6 +156,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
         health_status: 'unknown', // 初始状态为未知
         exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
         account_info: {
+          id: parsedUserId,
           access_token: accessToken.trim(),
           username: username.trim(),
           quota: 0, // 初始值，后续会通过 API 更新
@@ -192,7 +197,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
         className="relative z-50"
       >
         {/* 背景遮罩动画 */}
-        <Transition.Child
+        <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
           enterFrom="opacity-0"
@@ -202,12 +207,12 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
           leaveTo="opacity-0"
         >
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
-        </Transition.Child>
+        </TransitionChild>
         
         {/* 居中容器 - 针对插件优化 */}
         <div className="fixed inset-0 flex items-center justify-center p-2">
           {/* 弹窗面板动画 */}
-          <Transition.Child
+          <TransitionChild
             as={Fragment}
             enter="ease-out duration-300"
             enterFrom="opacity-0 scale-95 translate-y-4"
@@ -330,6 +335,26 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                         </div>
                       </div>
 
+                      {/* 用户 ID */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          用户 ID
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-400 font-mono text-sm">#</span>
+                          </div>
+                          <input
+                            type="number"
+                            value={userId}
+                            onChange={(e) => setUserId(e.target.value)}
+                            placeholder="用户 ID (数字)"
+                            className="block w-full pl-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            required
+                          />
+                        </div>
+                      </div>
+
                       {/* 访问令牌 */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -413,7 +438,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                     {isDetected ? (
                       <button
                         type="submit"
-                        disabled={!siteName.trim() || !username.trim() || !accessToken.trim() || !isValidExchangeRate(exchangeRate) || isSaving}
+                        disabled={!siteName.trim() || !username.trim() || !accessToken.trim() || !userId.trim() || !isValidExchangeRate(exchangeRate) || isSaving}
                         className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                       >
                         {isSaving ? (
@@ -431,7 +456,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                     ) : showManualForm ? (
                       <button
                         type="submit"
-                        disabled={!siteName.trim() || !username.trim() || !accessToken.trim() || !isValidExchangeRate(exchangeRate) || isSaving}
+                        disabled={!siteName.trim() || !username.trim() || !accessToken.trim() || !userId.trim() || !isValidExchangeRate(exchangeRate) || isSaving}
                         className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                       >
                         {isSaving ? (
@@ -509,7 +534,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                 </div>
               </div>
             </DialogPanel>
-          </Transition.Child>
+          </TransitionChild>
         </div>
       </Dialog>
     </Transition>

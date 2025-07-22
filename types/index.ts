@@ -5,6 +5,7 @@ export type SiteHealthStatus = 'healthy' | 'warning' | 'error' | 'unknown';
 
 // 账号基础信息
 export interface AccountInfo {
+  id: number; // 账号 ID（整数）
   access_token: string;
   username: string;
   quota: number; // 总余额点数
