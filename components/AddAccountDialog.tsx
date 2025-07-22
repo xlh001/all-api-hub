@@ -134,6 +134,93 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
     }
   }
 
+  // 获取账号余额信息
+  const fetchAccountQuota = async (baseUrl: string, userId: number, accessToken: string) => {
+    const response = await fetch(`${baseUrl}/api/user/self`, {
+      method: 'GET',
+      headers: {
+        'New-API-User': userId.toString(),
+        'Authorization': `Bearer ${accessToken}`,
+        'Pragma': 'no-cache',
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      throw new Error(`获取账号余额失败: ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (!data.success || !data.data) {
+      throw new Error('获取账号余额数据格式错误')
+    }
+
+    return data.data.quota || 0
+  }
+
+  // 获取今日使用情况
+  const fetchTodayUsage = async (baseUrl: string, userId: number, accessToken: string) => {
+    // 计算今日开始和结束时间戳
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const startTimestamp = Math.floor(today.getTime() / 1000)
+    
+    today.setHours(23, 59, 59, 999)
+    const endTimestamp = Math.floor(today.getTime() / 1000)
+
+    const params = new URLSearchParams({
+      p: '1',
+      page_size: '100',
+      type: '0',
+      token_name: '',
+      model_name: '',
+      start_timestamp: startTimestamp.toString(),
+      end_timestamp: endTimestamp.toString(),
+      group: ''
+    })
+
+    const response = await fetch(`${baseUrl}/api/log/self?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'New-API-User': userId.toString(),
+        'Authorization': `Bearer ${accessToken}`,
+        'Pragma': 'no-cache',
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      throw new Error(`获取今日使用情况失败: ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (!data.success || !data.data) {
+      throw new Error('获取今日使用情况数据格式错误')
+    }
+
+    // 计算今日消耗数据
+    const items = data.data.items || []
+    let todayQuotaConsumption = 0
+    let todayPromptTokens = 0
+    let todayCompletionTokens = 0
+    let todayRequestsCount = items.length
+
+    items.forEach((item: any) => {
+      todayQuotaConsumption += item.quota || 0
+      todayPromptTokens += item.prompt_tokens || 0
+      todayCompletionTokens += item.completion_tokens || 0
+    })
+
+    return {
+      today_quota_consumption: todayQuotaConsumption,
+      today_prompt_tokens: todayPromptTokens,
+      today_completion_tokens: todayCompletionTokens,
+      today_requests_count: todayRequestsCount
+    }
+  }
+
   const handleSaveAccount = async () => {
     if (!siteName.trim() || !username.trim() || !accessToken.trim() || !userId.trim()) {
       alert('请填写完整的账号信息')
@@ -149,27 +236,39 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
     setIsSaving(true)
     
     try {
+      // 获取账号余额和今日使用情况
+      console.log('正在获取账号数据...')
+      const [quota, todayUsage] = await Promise.all([
+        fetchAccountQuota(url.trim(), parsedUserId, accessToken.trim()),
+        fetchTodayUsage(url.trim(), parsedUserId, accessToken.trim())
+      ])
+
       const accountData: Omit<SiteAccount, 'id' | 'created_at' | 'updated_at'> = {
         emoji: "", // 不再使用 emoji
         site_name: siteName.trim(),
         site_url: url.trim(),
-        health_status: 'unknown', // 初始状态为未知
+        health_status: 'healthy', // 成功获取数据说明状态正常
         exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
         account_info: {
           id: parsedUserId,
           access_token: accessToken.trim(),
           username: username.trim(),
-          quota: 0, // 初始值，后续会通过 API 更新
-          today_prompt_tokens: 0,
-          today_completion_tokens: 0,
-          today_quota_consumption: 0,
-          today_requests_count: 0
+          quota: quota,
+          today_prompt_tokens: todayUsage.today_prompt_tokens,
+          today_completion_tokens: todayUsage.today_completion_tokens,
+          today_quota_consumption: todayUsage.today_quota_consumption,
+          today_requests_count: todayUsage.today_requests_count
         },
-        last_sync_time: 0
+        last_sync_time: Date.now()
       }
       
       const accountId = await accountStorage.addAccount(accountData)
-      console.log('账号添加成功:', { id: accountId, siteName })
+      console.log('账号添加成功:', { 
+        id: accountId, 
+        siteName, 
+        quota,
+        todayUsage 
+      })
       
       alert('账号添加成功！')
       onClose()
