@@ -1,5 +1,6 @@
 import "./style.css"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import CountUp from "react-countup"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import "dayjs/locale/zh-cn"
@@ -43,6 +44,12 @@ function IndexPopup() {
     today_total_prompt_tokens: 0,
     today_total_completion_tokens: 0
   })
+
+  // 用于数字滚动动画的 ref 和状态
+  const [prevTotalConsumption, setPrevTotalConsumption] = useState({ USD: 0, CNY: 0 })
+  const [prevTokens, setPrevTokens] = useState({ upload: 0, download: 0 })
+  const [prevBalances, setPrevBalances] = useState<{ [id: string]: { USD: number, CNY: number } }>({})
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   
   // 初始化dayjs插件
   dayjs.extend(relativeTime)
@@ -55,6 +62,34 @@ function IndexPopup() {
       const accountStats = await accountStorage.getAccountStats()
       const displaySiteData = accountStorage.convertToDisplayData(allAccounts)
       
+      // 计算新的消耗数据
+      const newTotalConsumption = {
+        USD: parseFloat((accountStats.today_total_consumption / 500000).toFixed(2)),
+        CNY: parseFloat(allAccounts.reduce((sum, acc) => sum + ((acc.account_info.today_quota_consumption / 500000) * acc.exchange_rate), 0).toFixed(2))
+      }
+
+      const newTokens = {
+        upload: accountStats.today_total_prompt_tokens,
+        download: accountStats.today_total_completion_tokens
+      }
+
+      // 计算新的余额数据
+      const newBalances: { [id: string]: { USD: number, CNY: number } } = {}
+      displaySiteData.forEach(site => {
+        newBalances[site.id] = {
+          USD: site.balance.USD,
+          CNY: site.balance.CNY
+        }
+      })
+
+      // 如果不是初始加载，保存之前的数值供动画使用
+      if (!isInitialLoad) {
+        setPrevTotalConsumption(prevTotalConsumption)
+        setPrevTokens(prevTokens)
+        setPrevBalances(prevBalances)
+      }
+
+      // 更新状态
       setAccounts(allAccounts)
       setStats(accountStats)
       setDisplayData(displaySiteData)
@@ -65,6 +100,11 @@ function IndexPopup() {
         if (latestSyncTime > 0) {
           setLastUpdateTime(new Date(latestSyncTime))
         }
+      }
+
+      // 标记为非初始加载
+      if (isInitialLoad) {
+        setIsInitialLoad(false)
       }
       
       console.log('账号数据加载完成:', { 
@@ -186,7 +226,7 @@ function IndexPopup() {
     }
   })
 
-  // 计算总消耗和token数据
+  // 计算总消耗和token数据（从 stats 计算）
   const totalConsumption = {
     USD: parseFloat((stats.today_total_consumption / 500000).toFixed(2)),
     CNY: parseFloat(accounts.reduce((sum, acc) => sum + ((acc.account_info.today_quota_consumption / 500000) * acc.exchange_rate), 0).toFixed(2))
@@ -256,7 +296,14 @@ function IndexPopup() {
                   className="text-3xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
                   title={`点击切换到 ${currencyType === 'USD' ? '人民币' : '美元'}`}
                 >
-                  {totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}{totalConsumption[currencyType].toFixed(2)}
+                  {totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}
+                  <CountUp
+                    start={isInitialLoad ? 0 : prevTotalConsumption[currencyType]}
+                    end={totalConsumption[currencyType]}
+                    duration={isInitialLoad ? 1.5 : 0.8}
+                    decimals={2}
+                    preserveValue
+                  />
                 </button>
               </div>
             </div>
@@ -274,11 +321,27 @@ function IndexPopup() {
                 <div className="flex items-center space-x-3 cursor-help">
                   <div className="flex items-center space-x-1">
                     <ArrowUpIcon className="w-4 h-4 text-green-500" />
-                    <span className="font-medium text-gray-500">{formatTokenCount(todayTokens.upload)}</span>
+                    <span className="font-medium text-gray-500">
+                      <CountUp
+                        start={isInitialLoad ? 0 : prevTokens.upload}
+                        end={todayTokens.upload}
+                        duration={isInitialLoad ? 1.2 : 0.6}
+                        preserveValue
+                        formattingFn={formatTokenCount}
+                      />
+                    </span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <ArrowDownIcon className="w-4 h-4 text-blue-500" />
-                    <span className="font-medium text-gray-500">{formatTokenCount(todayTokens.download)}</span>
+                    <span className="font-medium text-gray-500">
+                      <CountUp
+                        start={isInitialLoad ? 0 : prevTokens.download}
+                        end={todayTokens.download}
+                        duration={isInitialLoad ? 1.2 : 0.6}
+                        preserveValue
+                        formattingFn={formatTokenCount}
+                      />
+                    </span>
                   </div>
                 </div>
               </Tooltip>
@@ -391,10 +454,24 @@ function IndexPopup() {
                 {/* 余额和统计 */}
                 <div className="text-right flex-shrink-0">
                   <div className="font-semibold text-gray-900 text-lg mb-0.5">
-                    {currencyType === 'USD' ? '$' : '¥'}{site.balance[currencyType].toFixed(2)}
+                    {currencyType === 'USD' ? '$' : '¥'}
+                    <CountUp
+                      start={isInitialLoad ? 0 : (prevBalances[site.id]?.[currencyType] || 0)}
+                      end={site.balance[currencyType]}
+                      duration={isInitialLoad ? 1.0 : 0.6}
+                      decimals={2}
+                      preserveValue
+                    />
                   </div>
                   <div className={`text-xs ${site.todayConsumption[currencyType] > 0 ? 'text-green-500' : 'text-gray-400'}`}>
-                    -{currencyType === 'USD' ? '$' : '¥'}{site.todayConsumption[currencyType].toFixed(2)}
+                    -{currencyType === 'USD' ? '$' : '¥'}
+                    <CountUp
+                      start={isInitialLoad ? 0 : 0} // 消耗金额总是从0开始动画
+                      end={site.todayConsumption[currencyType]}
+                      duration={isInitialLoad ? 1.0 : 0.6}
+                      decimals={2}
+                      preserveValue
+                    />
                   </div>
                 </div>
               </div>
