@@ -45,49 +45,73 @@ export const fetchTodayUsage = async (baseUrl: string, userId: number, accessTok
   today.setHours(23, 59, 59, 999)
   const endTimestamp = Math.floor(today.getTime() / 1000)
 
-  const params = new URLSearchParams({
-    p: '1',
-    page_size: '100',
-    type: '0',
-    token_name: '',
-    model_name: '',
-    start_timestamp: startTimestamp.toString(),
-    end_timestamp: endTimestamp.toString(),
-    group: ''
-  })
-
-  const response = await fetch(`${baseUrl}/api/log/self?${params.toString()}`, {
-    method: 'GET',
-    headers: {
-      'New-API-User': userId.toString(),
-      'Authorization': `Bearer ${accessToken}`,
-      'Pragma': 'no-cache',
-      'Content-Type': 'application/json'
-    },
-    credentials: 'include'
-  })
-
-  if (!response.ok) {
-    throw new ApiError(`获取今日使用情况失败: ${response.status}`, response.status, '/api/log/self')
-  }
-
-  const data = await response.json()
-  if (!data.success || !data.data) {
-    throw new ApiError('获取今日使用情况数据格式错误', undefined, '/api/log/self')
-  }
-
-  // 计算今日消耗数据
-  const items = data.data.items || []
+  // 初始化统计数据
   let todayQuotaConsumption = 0
   let todayPromptTokens = 0
   let todayCompletionTokens = 0
-  let todayRequestsCount = items.length
+  let todayRequestsCount = 0
 
-  items.forEach((item: any) => {
-    todayQuotaConsumption += item.quota || 0
-    todayPromptTokens += item.prompt_tokens || 0
-    todayCompletionTokens += item.completion_tokens || 0
-  })
+  let currentPage = 1
+  const pageSize = 100
+  let hasMoreData = true
+
+  // 循环获取所有分页数据
+  while (hasMoreData) {
+    const params = new URLSearchParams({
+      p: currentPage.toString(),
+      page_size: pageSize.toString(),
+      type: '0',
+      token_name: '',
+      model_name: '',
+      start_timestamp: startTimestamp.toString(),
+      end_timestamp: endTimestamp.toString(),
+      group: ''
+    })
+
+    const response = await fetch(`${baseUrl}/api/log/self?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'New-API-User': userId.toString(),
+        'Authorization': `Bearer ${accessToken}`,
+        'Pragma': 'no-cache',
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      throw new ApiError(`获取今日使用情况失败: ${response.status}`, response.status, '/api/log/self')
+    }
+
+    const data = await response.json()
+    if (!data.success || !data.data) {
+      throw new ApiError('获取今日使用情况数据格式错误', undefined, '/api/log/self')
+    }
+
+    const items = data.data.items || []
+    const currentPageItemCount = items.length
+
+    // 累加当前页数据
+    items.forEach((item: any) => {
+      todayQuotaConsumption += item.quota || 0
+      todayPromptTokens += item.prompt_tokens || 0
+      todayCompletionTokens += item.completion_tokens || 0
+    })
+
+    todayRequestsCount += currentPageItemCount
+
+    // 检查是否还有更多数据
+    const totalPages = Math.ceil((data.data.total || 0) / pageSize)
+    hasMoreData = currentPage < totalPages
+
+    currentPage++
+
+    // 防止无限循环的安全机制
+    if (currentPage > 100) {
+      console.warn('达到最大分页限制(100页)，停止获取数据')
+      break
+    }
+  }
 
   return {
     today_quota_consumption: todayQuotaConsumption,
