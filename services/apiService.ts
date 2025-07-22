@@ -210,23 +210,41 @@ export const fetchAccountData = async (baseUrl: string, userId: number, accessTo
   }
 }
 
+// 刷新账号数据结果
+export interface RefreshAccountResult {
+  success: boolean
+  data?: {
+    quota: number
+    today_quota_consumption: number
+    today_prompt_tokens: number
+    today_completion_tokens: number
+    today_requests_count: number
+  }
+  healthStatus: HealthCheckResult
+}
+
 // 刷新单个账号数据
 export const refreshAccountData = async (
   baseUrl: string, 
   userId: number, 
   accessToken: string
-): Promise<{
-  quota: number
-  today_quota_consumption: number
-  today_prompt_tokens: number
-  today_completion_tokens: number
-  today_requests_count: number
-}> => {
+): Promise<RefreshAccountResult> => {
   try {
-    return await fetchAccountData(baseUrl, userId, accessToken)
+    const data = await fetchAccountData(baseUrl, userId, accessToken)
+    return {
+      success: true,
+      data,
+      healthStatus: {
+        status: 'healthy',
+        message: '账号状态正常'
+      }
+    }
   } catch (error) {
     console.error('刷新账号数据失败:', error)
-    throw error
+    return {
+      success: false,
+      healthStatus: determineHealthStatus(error)
+    }
   }
 }
 
@@ -254,5 +272,43 @@ export class ApiError extends Error {
   ) {
     super(message)
     this.name = 'ApiError'
+  }
+}
+
+// 健康状态判断结果
+export interface HealthCheckResult {
+  status: 'healthy' | 'warning' | 'error' | 'unknown'
+  message: string
+}
+
+// 根据错误判断健康状态
+export const determineHealthStatus = (error: any): HealthCheckResult => {
+  if (error instanceof ApiError) {
+    // HTTP响应码不为200的情况
+    if (error.statusCode) {
+      return {
+        status: 'warning',
+        message: `HTTP ${error.statusCode}: ${error.message}`
+      }
+    }
+    // 其他API错误（数据格式错误等）
+    return {
+      status: 'unknown',
+      message: error.message
+    }
+  }
+  
+  // 网络连接失败、超时等HTTP请求失败的情况
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    return {
+      status: 'error',
+      message: '网络连接失败'
+    }
+  }
+  
+  // 其他未知错误
+  return {
+    status: 'unknown',
+    message: error?.message || '未知错误'
   }
 }

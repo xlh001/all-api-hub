@@ -153,27 +153,52 @@ class AccountStorageService {
       // 导入 API 服务
       const { refreshAccountData } = await import('../services/apiService');
       
-      // 获取最新数据
-      const freshData = await refreshAccountData(
+      // 获取最新数据和健康状态
+      const result = await refreshAccountData(
         account.site_url,
         account.account_info.id,
         account.account_info.access_token
       );
 
-      // 更新账号信息
-      return this.updateAccount(id, {
-        account_info: {
-          ...account.account_info,
-          quota: freshData.quota,
-          today_prompt_tokens: freshData.today_prompt_tokens,
-          today_completion_tokens: freshData.today_completion_tokens,
-          today_quota_consumption: freshData.today_quota_consumption,
-          today_requests_count: freshData.today_requests_count
-        },
+      // 构建更新数据
+      const updateData: Partial<Omit<SiteAccount, 'id' | 'created_at'>> = {
+        health_status: result.healthStatus.status,
         last_sync_time: Date.now()
-      });
+      };
+
+      // 如果成功获取数据，更新账号信息
+      if (result.success && result.data) {
+        updateData.account_info = {
+          ...account.account_info,
+          quota: result.data.quota,
+          today_prompt_tokens: result.data.today_prompt_tokens,
+          today_completion_tokens: result.data.today_completion_tokens,
+          today_quota_consumption: result.data.today_quota_consumption,
+          today_requests_count: result.data.today_requests_count
+        };
+      }
+
+      // 更新账号信息
+      const updateSuccess = await this.updateAccount(id, updateData);
+      
+      // 记录健康状态变化
+      if (account.health_status !== result.healthStatus.status) {
+        console.log(`账号 ${account.site_name} 健康状态变化: ${account.health_status} -> ${result.healthStatus.status}`);
+        console.log(`状态详情: ${result.healthStatus.message}`);
+      }
+
+      return updateSuccess;
     } catch (error) {
       console.error('刷新账号数据失败:', error);
+      // 在出现异常时也尝试更新健康状态为unknown
+      try {
+        await this.updateAccount(id, {
+          health_status: 'unknown',
+          last_sync_time: Date.now()
+        });
+      } catch (updateError) {
+        console.error('更新健康状态失败:', updateError);
+      }
       return false;
     }
   }
