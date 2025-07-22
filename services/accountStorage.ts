@@ -223,7 +223,7 @@ class AccountStorageService {
    */
   async importData(data: StorageConfig): Promise<boolean> {
     try {
-      await this.storage.set(STORAGE_KEYS.CONFIG, {
+      await this.storage.set(STORAGE_KEYS.ACCOUNTS, {
         ...data,
         last_updated: Date.now()
       });
@@ -241,7 +241,7 @@ class AccountStorageService {
    */
   private async getStorageConfig(): Promise<StorageConfig> {
     try {
-      const config = await this.storage.get(STORAGE_KEYS.CONFIG) as StorageConfig;
+      const config = await this.storage.get(STORAGE_KEYS.ACCOUNTS) as StorageConfig;
       return config || DEFAULT_CONFIG;
     } catch (error) {
       console.error('获取存储配置失败:', error);
@@ -262,10 +262,10 @@ class AccountStorageService {
     console.log('[AccountStorage] 保存的配置数据:', { 
       accountCount: config.accounts.length,
       last_updated: config.last_updated,
-      storageKey: STORAGE_KEYS.CONFIG
+      storageKey: STORAGE_KEYS.ACCOUNTS
     });
     
-    await this.storage.set(STORAGE_KEYS.CONFIG, config);
+    await this.storage.set(STORAGE_KEYS.ACCOUNTS, config);
     console.log('[AccountStorage] 账号数据保存完成');
   }
 
