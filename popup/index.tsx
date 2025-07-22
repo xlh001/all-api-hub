@@ -17,6 +17,7 @@ import {
   ArrowPathIcon
 } from "@heroicons/react/24/outline"
 import Tooltip from "components/Tooltip"
+import { mockSiteAccounts, convertToLegacyFormat } from "data/mockData"
 
 type SortField = 'name' | 'balance' | 'consumption'
 type SortOrder = 'asc' | 'desc'
@@ -81,59 +82,8 @@ function IndexPopup() {
     setIsRefreshing(false)
   }
   
-  // 模拟数据
-  const mockData = {
-    totalConsumption: { USD: 23.45, CNY: 167.23 },
-    todayTokens: { upload: 125640, download: 89420 },
-    todayRequests: 342,
-    sites: [
-      {
-        id: 1,
-        icon: "🤖",
-        name: "OpenAI API",
-        username: "user@email.com", 
-        balance: { USD: 12.34, CNY: 88.15 },
-        todayConsumption: { USD: 5.67, CNY: 40.45 },
-        todayTokens: { upload: 45200, download: 32100 }
-      },
-      {
-        id: 2,
-        icon: "🌟",
-        name: "Claude API",
-        username: "myaccount",
-        balance: { USD: 45.67, CNY: 326.12 },
-        todayConsumption: { USD: 0, CNY: 0 },
-        todayTokens: { upload: 56300, download: 41200 }
-      },
-      {
-        id: 3,
-        icon: "🔥",
-        name: "Anthropic API",
-        username: "anthropic_user",
-        balance: { USD: 0, CNY: 0 },
-        todayConsumption: { USD: 12.34, CNY: 88.15 },
-        todayTokens: { upload: 12300, download: 89400 }
-      },
-      {
-        id: 4,
-        icon: "🚀",
-        name: "Cohere API",
-        username: "cohere_user",
-        balance: { USD: 0, CNY: 0 },
-        todayConsumption: { USD: 0, CNY: 0 },
-        todayTokens: { upload: 0, download: 0 }
-      },
-      {
-        id: 5,
-        icon: "🦙",
-        name: "Replicate API",
-        username: "replicate_user",
-        balance: { USD: 0, CNY: 0 },
-        todayConsumption: { USD: 0, CNY: 0 },
-        todayTokens: { upload: 0, download: 0 }
-      }
-    ]
-  }
+  // 使用新的模拟数据
+  const mockData = convertToLegacyFormat(mockSiteAccounts)
 
   // 处理排序
   const handleSort = (field: SortField) => {
@@ -232,7 +182,7 @@ function IndexPopup() {
                   className="text-3xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
                   title={`点击切换到 ${currencyType === 'USD' ? '人民币' : '美元'}`}
                 >
-                  {mockData.totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}{mockData.totalConsumption[currencyType]}
+                  {mockData.totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}{mockData.totalConsumption[currencyType].toFixed(2)}
                 </button>
               </div>
             </div>
@@ -356,10 +306,10 @@ function IndexPopup() {
                 {/* 余额和统计 */}
                 <div className="text-right flex-shrink-0">
                   <div className="font-semibold text-gray-900 text-lg mb-0.5">
-                    {currencyType === 'USD' ? '$' : '¥'}{site.balance[currencyType]}
+                    {currencyType === 'USD' ? '$' : '¥'}{site.balance[currencyType].toFixed(2)}
                   </div>
                   <div className={`text-xs ${site.todayConsumption[currencyType] > 0 ? 'text-green-500' : 'text-gray-400'}`}>
-                    -{currencyType === 'USD' ? '$' : '¥'}{site.todayConsumption[currencyType]}
+                    -{currencyType === 'USD' ? '$' : '¥'}{site.todayConsumption[currencyType].toFixed(2)}
                   </div>
                 </div>
               </div>
