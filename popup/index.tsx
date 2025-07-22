@@ -17,6 +17,7 @@ import {
   ArrowPathIcon
 } from "@heroicons/react/24/outline"
 import Tooltip from "components/Tooltip"
+import AddAccountDialog from "components/AddAccountDialog"
 import { mockSiteAccounts, convertToLegacyFormat } from "data/mockData"
 
 type SortField = 'name' | 'balance' | 'consumption'
@@ -26,6 +27,7 @@ function IndexPopup() {
   const [currencyType, setCurrencyType] = useState<'USD' | 'CNY'>('USD')
   const [sortField, setSortField] = useState<SortField>('balance')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
   // 暂时设定为固定时间
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(
     new Date('2025-07-12 12:12:12')
@@ -226,7 +228,10 @@ function IndexPopup() {
         {/* 操作按钮组 */}
         <div className="px-5 py-4 bg-gray-50/50">
           <div className="flex space-x-2">
-            <button className="flex-1 flex items-center justify-center space-x-2 py-2.5 px-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium shadow-sm">
+            <button 
+              onClick={() => setIsAddAccountOpen(true)}
+              className="flex-1 flex items-center justify-center space-x-2 py-2.5 px-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium shadow-sm"
+            >
               <PlusIcon className="w-4 h-4" />
               <span>新增账号</span>
             </button>
@@ -336,6 +341,12 @@ function IndexPopup() {
           </div>
         )}
       </div>
+
+      {/* 新增账号弹窗 */}
+      <AddAccountDialog 
+        isOpen={isAddAccountOpen}
+        onClose={() => setIsAddAccountOpen(false)}
+      />
     </div>
   )
 }
