@@ -16,7 +16,7 @@ import {
   ChevronDownIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline"
-import Tooltip from "./components/Tooltip"
+import Tooltip from "components/Tooltip"
 
 type SortField = 'name' | 'balance' | 'consumption'
 type SortOrder = 'asc' | 'desc'
