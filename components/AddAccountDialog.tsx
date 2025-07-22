@@ -77,6 +77,10 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
           try {
             const urlObj = new URL(tabs[0].url)
             const baseUrl = `${urlObj.protocol}//${urlObj.host}`
+            // 如果站点不是以http开头，则不处理（可能为空白页）
+            if (!baseUrl.startsWith('http')) {
+              return
+            }
             setUrl(baseUrl)
             // 设置站点名称为域名前缀
             const domainPrefix = extractDomainPrefix(urlObj.hostname)
@@ -567,7 +571,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                     </div>
                     <div className="ml-3">
                       <h3 className="text-xs font-medium text-blue-800">
-                        {isDetected ? '账号信息确认' : showManualForm ? '手动添加账号' : '自动识别功能'}
+                        {isDetected ? '账号信息确认' : showManualForm ? '手动添加' : '自动识别'}
                       </h3>
                       <div className="mt-1 text-xs text-blue-700">
                         <p>
@@ -575,7 +579,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                             ? '请确认账号信息无误后点击"确认添加"按钮。'
                             : showManualForm
                             ? '请手动填写账号信息。账号将被安全地保存在本地存储中。'
-                            : '插件将自动检测站点类型并获取访问令牌。'
+                            : '插件将自动检测站点类型，如果浏览器在此站点保持了登录状态，则自动获取访问令牌。'
                           }
                         </p>
                       </div>
