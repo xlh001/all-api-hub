@@ -22,7 +22,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
   const [showAccessToken, setShowAccessToken] = useState(false)
   const [detectionError, setDetectionError] = useState<string | null>(null)
   const [showManualForm, setShowManualForm] = useState(false)
-  const [exchangeRate, setExchangeRate] = useState("7.2")
+  const [exchangeRate, setExchangeRate] = useState("")
 
   // 验证充值比例是否有效
   const isValidExchangeRate = (rate: string): boolean => {
@@ -69,7 +69,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       setShowAccessToken(false)
       setDetectionError(null)
       setShowManualForm(false)
-      setExchangeRate("7.2")
+      setExchangeRate("")
       
       // 获取当前标签页的 URL 作为初始参考
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
