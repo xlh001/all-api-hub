@@ -83,7 +83,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       const response = await fetch(`${url}/api/user/self`, {
         method: 'GET',
         headers: {
-          'neo-api-user': userId.toString(),
+          'new-api-user': userId.toString(),
           'Content-Type': 'application/json'
         },
         credentials: 'include'
