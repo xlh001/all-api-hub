@@ -1,6 +1,6 @@
 import { useState, useEffect, Fragment } from "react"
 import { Dialog, DialogPanel, DialogTitle, Transition } from "@headlessui/react"
-import { GlobeAltIcon, XMarkIcon, SparklesIcon, UserIcon, KeyIcon } from "@heroicons/react/24/outline"
+import { GlobeAltIcon, XMarkIcon, SparklesIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { accountStorage } from "../services/accountStorage"
 import type { SiteAccount } from "../types"
 
@@ -22,6 +22,9 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
   const [accessToken, setAccessToken] = useState("")
   const [isDetected, setIsDetected] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showAccessToken, setShowAccessToken] = useState(false)
+  const [detectionError, setDetectionError] = useState<string | null>(null)
+  const [showManualForm, setShowManualForm] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -30,6 +33,9 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       setSiteName("")
       setUsername("")
       setAccessToken("")
+      setShowAccessToken(false)
+      setDetectionError(null)
+      setShowManualForm(false)
       
       // 获取当前标签页的 URL
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -114,7 +120,9 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       
     } catch (error) {
       console.error('自动识别失败:', error)
-      alert(`自动识别失败: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : '未知错误'
+      setDetectionError(`自动识别失败: ${errorMessage}`)
+      setShowManualForm(true) // 识别失败后显示手动表单
     } finally {
       setIsDetecting(false)
     }
@@ -162,7 +170,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (isDetected) {
+    if (isDetected || showManualForm) {
       handleSaveAccount()
     } else {
       handleAutoDetect()
@@ -188,8 +196,8 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
         </Transition.Child>
         
-        {/* 居中容器 */}
-        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+        {/* 居中容器 - 针对插件优化 */}
+        <div className="fixed inset-0 flex items-center justify-center p-2">
           {/* 弹窗面板动画 */}
           <Transition.Child
             as={Fragment}
@@ -200,9 +208,9 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4"
           >
-            <DialogPanel className="mx-auto max-w-md w-full bg-white rounded-xl shadow-xl transform transition-all">
+            <DialogPanel className="w-full max-w-sm bg-white rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto">
               {/* 头部 */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                     <SparklesIcon className="w-4 h-4 text-white" />
@@ -220,8 +228,22 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
               </div>
 
               {/* 内容区域 */}
-              <div className="p-6">
+              <div className="p-4">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* 识别错误提示 */}
+                  {detectionError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <XMarkIcon className="h-4 w-4 text-red-400" />
+                        </div>
+                        <div className="ml-2">
+                          <p className="text-xs text-red-700">{detectionError}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* URL 输入框 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -257,8 +279,8 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                   </div>
 
 
-                  {/* 识别成功后的表单 */}
-                  {isDetected && (
+                  {/* 识别成功后的表单或手动添加表单 */}
+                  {(isDetected || showManualForm) && (
                     <>
                       {/* 网站名称 */}
                       <div>
@@ -310,13 +332,24 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                             <KeyIcon className="h-5 w-5 text-gray-400" />
                           </div>
                           <input
-                            type="password"
+                            type={showAccessToken ? "text" : "password"}
                             value={accessToken}
                             onChange={(e) => setAccessToken(e.target.value)}
                             placeholder="访问令牌"
-                            className="block w-full pl-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                             required
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowAccessToken(!showAccessToken)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            {showAccessToken ? (
+                              <EyeSlashIcon className="h-4 w-4" />
+                            ) : (
+                              <EyeIcon className="h-4 w-4" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     </>
@@ -349,6 +382,24 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                           </>
                         )}
                       </button>
+                    ) : showManualForm ? (
+                      <button
+                        type="submit"
+                        disabled={!siteName.trim() || !username.trim() || !accessToken.trim() || isSaving}
+                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>保存中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <SparklesIcon className="w-4 h-4" />
+                            <span>手动添加</span>
+                          </>
+                        )}
+                      </button>
                     ) : (
                       <button
                         type="submit"
@@ -369,25 +420,41 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                       </button>
                     )}
                   </div>
+                  
+                  {/* 手动添加按钮 - 在自动识别失败后显示 */}
+                  {!isDetected && !showManualForm && detectionError && (
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowManualForm(true)}
+                        className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      >
+                        <UserIcon className="w-4 h-4" />
+                        <span>手动添加账号信息</span>
+                      </button>
+                    </div>
+                  )}
                 </form>
               </div>
 
               {/* 提示信息 */}
-              <div className="px-6 pb-6">
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+              <div className="px-4 pb-4">
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <SparklesIcon className="h-5 w-5 text-blue-400" />
                     </div>
                     <div className="ml-3">
-                      <h3 className="text-sm font-medium text-blue-800">
-                        {isDetected ? '账号信息确认' : '自动识别功能'}
+                      <h3 className="text-xs font-medium text-blue-800">
+                        {isDetected ? '账号信息确认' : showManualForm ? '手动添加账号' : '自动识别功能'}
                       </h3>
-                      <div className="mt-2 text-sm text-blue-700">
+                      <div className="mt-1 text-xs text-blue-700">
                         <p>
                           {isDetected 
-                            ? '请确认账号信息无误后点击"确认添加"按钮。账号将被安全地保存在本地存储中。'
-                            : '插件将自动检测站点类型，从浏览器中读取登录信息，并获取访问令牌。支持 One API 和 New API 等兼容站点。'
+                            ? '请确认账号信息无误后点击"确认添加"按钮。'
+                            : showManualForm
+                            ? '请手动填写账号信息。账号将被安全地保存在本地存储中。'
+                            : '插件将自动检测站点类型并获取访问令牌。'
                           }
                         </p>
                       </div>
