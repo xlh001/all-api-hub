@@ -18,7 +18,8 @@ import {
 } from "@heroicons/react/24/outline"
 import Tooltip from "components/Tooltip"
 import AddAccountDialog from "components/AddAccountDialog"
-import { mockSiteAccounts, convertToLegacyFormat } from "data/mockData"
+import { accountStorage } from "services/accountStorage"
+import type { SiteAccount, AccountStats, DisplaySiteData } from "types"
 
 type SortField = 'name' | 'balance' | 'consumption'
 type SortOrder = 'asc' | 'desc'
@@ -28,16 +29,64 @@ function IndexPopup() {
   const [sortField, setSortField] = useState<SortField>('balance')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
-  // 暂时设定为固定时间
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(
-    new Date('2025-07-12 12:12:12')
-  )
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date())
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
   const [, forceUpdate] = useState({}) // 用于强制更新相对时间显示
+  
+  // 真实数据状态
+  const [accounts, setAccounts] = useState<SiteAccount[]>([])
+  const [displayData, setDisplayData] = useState<DisplaySiteData[]>([])
+  const [stats, setStats] = useState<AccountStats>({
+    total_quota: 0,
+    today_total_consumption: 0,
+    today_total_requests: 0,
+    today_total_prompt_tokens: 0,
+    today_total_completion_tokens: 0
+  })
   
   // 初始化dayjs插件
   dayjs.extend(relativeTime)
   dayjs.locale('zh-cn')
+
+  // 加载账号数据
+  const loadAccountData = async () => {
+    try {
+      const allAccounts = await accountStorage.getAllAccounts()
+      const accountStats = await accountStorage.getAccountStats()
+      const displaySiteData = accountStorage.convertToDisplayData(allAccounts)
+      
+      setAccounts(allAccounts)
+      setStats(accountStats)
+      setDisplayData(displaySiteData)
+      
+      // 更新最后同步时间为最近的一次同步时间
+      if (allAccounts.length > 0) {
+        const latestSyncTime = Math.max(...allAccounts.map(acc => acc.last_sync_time))
+        if (latestSyncTime > 0) {
+          setLastUpdateTime(new Date(latestSyncTime))
+        }
+      }
+      
+      console.log('账号数据加载完成:', { 
+        accountCount: allAccounts.length, 
+        stats: accountStats 
+      })
+    } catch (error) {
+      console.error('加载账号数据失败:', error)
+    }
+  }
+
+  // 组件初始化时加载数据
+  useEffect(() => {
+    loadAccountData()
+  }, [])
+
+  // 监听新账号添加，重新加载数据
+  useEffect(() => {
+    if (!isAddAccountOpen) {
+      loadAccountData() // 当添加账号对话框关闭时重新加载数据
+    }
+  }, [isAddAccountOpen])
 
   // 定时更新相对时间显示
   useEffect(() => {
@@ -78,14 +127,14 @@ function IndexPopup() {
   // 刷新数据
   const handleRefresh = async () => {
     setIsRefreshing(true)
-    // TODO: 调用实际的数据刷新API
-    await new Promise(resolve => setTimeout(resolve, 1000)) // 模拟API调用
-    setLastUpdateTime(new Date())
+    try {
+      await loadAccountData() // 重新加载数据
+      setLastUpdateTime(new Date())
+    } catch (error) {
+      console.error('刷新数据失败:', error)
+    }
     setIsRefreshing(false)
   }
-  
-  // 使用新的模拟数据
-  const mockData = convertToLegacyFormat(mockSiteAccounts)
 
   // 处理排序
   const handleSort = (field: SortField) => {
@@ -98,7 +147,7 @@ function IndexPopup() {
   }
 
   // 排序站点数据
-  const sortedSites = [...mockData.sites].sort((a, b) => {
+  const sortedSites = [...displayData].sort((a, b) => {
     let aValue: string | number, bValue: string | number
     
     switch (sortField) {
@@ -124,6 +173,17 @@ function IndexPopup() {
       return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
     }
   })
+
+  // 计算总消耗和token数据
+  const totalConsumption = {
+    USD: parseFloat((stats.today_total_consumption / 500000).toFixed(2)),
+    CNY: parseFloat(accounts.reduce((sum, acc) => sum + ((acc.account_info.today_quota_consumption / 500000) * acc.exchange_rate), 0).toFixed(2))
+  }
+
+  const todayTokens = {
+    upload: stats.today_total_prompt_tokens,
+    download: stats.today_total_completion_tokens
+  }
 
   const handleOpenTab = () => {
     // TODO: 打开标签页
@@ -184,7 +244,7 @@ function IndexPopup() {
                   className="text-3xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
                   title={`点击切换到 ${currencyType === 'USD' ? '人民币' : '美元'}`}
                 >
-                  {mockData.totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}{mockData.totalConsumption[currencyType].toFixed(2)}
+                  {totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}{totalConsumption[currencyType].toFixed(2)}
                 </button>
               </div>
             </div>
@@ -194,19 +254,19 @@ function IndexPopup() {
               <Tooltip
                 content={
                   <div>
-                    <div>提示: {mockData.todayTokens.upload.toLocaleString()} tokens</div>
-                    <div>补全: {mockData.todayTokens.download.toLocaleString()} tokens</div>
+                    <div>提示: {todayTokens.upload.toLocaleString()} tokens</div>
+                    <div>补全: {todayTokens.download.toLocaleString()} tokens</div>
                   </div>
                 }
               >
                 <div className="flex items-center space-x-3 cursor-help">
                   <div className="flex items-center space-x-1">
                     <ArrowUpIcon className="w-4 h-4 text-green-500" />
-                    <span className="font-medium text-gray-500">{formatTokenCount(mockData.todayTokens.upload)}</span>
+                    <span className="font-medium text-gray-500">{formatTokenCount(todayTokens.upload)}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <ArrowDownIcon className="w-4 h-4 text-blue-500" />
-                    <span className="font-medium text-gray-500">{formatTokenCount(mockData.todayTokens.download)}</span>
+                    <span className="font-medium text-gray-500">{formatTokenCount(todayTokens.download)}</span>
                   </div>
                 </div>
               </Tooltip>
@@ -331,11 +391,14 @@ function IndexPopup() {
         </div>
 
         {/* 空状态 */}
-        {mockData.sites.length === 0 && (
+        {accounts.length === 0 && (
           <div className="px-6 py-12 text-center">
             <ChartBarIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
             <p className="text-gray-500 text-sm mb-4">暂无站点数据</p>
-            <button className="px-6 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm">
+            <button 
+              onClick={() => setIsAddAccountOpen(true)}
+              className="px-6 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm"
+            >
               添加第一个站点
             </button>
           </div>

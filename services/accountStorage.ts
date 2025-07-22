@@ -182,12 +182,12 @@ class AccountStorageService {
       name: account.site_name,
       username: account.account_info.username,
       balance: {
-        USD: parseFloat(account.account_info.quota.toFixed(2)),
-        CNY: parseFloat((account.account_info.quota * account.exchange_rate).toFixed(2))
+        USD: parseFloat((account.account_info.quota / 500000).toFixed(2)),
+        CNY: parseFloat(((account.account_info.quota / 500000) * account.exchange_rate).toFixed(2))
       },
       todayConsumption: {
-        USD: parseFloat(account.account_info.today_quota_consumption.toFixed(2)),
-        CNY: parseFloat((account.account_info.today_quota_consumption * account.exchange_rate).toFixed(2))
+        USD: parseFloat((account.account_info.today_quota_consumption / 500000).toFixed(2)),
+        CNY: parseFloat(((account.account_info.today_quota_consumption / 500000) * account.exchange_rate).toFixed(2))
       },
       todayTokens: {
         upload: account.account_info.today_prompt_tokens,
