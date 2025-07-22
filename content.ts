@@ -5,7 +5,7 @@ export const config: PlasmoCSConfig = {
   all_frames: false
 }
 
-// 监听来自 popup 的消息
+// 监听来自 popup 和 background 的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getLocalStorage") {
     try {
@@ -60,4 +60,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true
   }
+
+  if (request.action === "waitAndGetUserInfo") {
+    // 新增：等待页面完全加载后获取用户信息
+    waitForUserInfo()
+      .then(userInfo => {
+        sendResponse({ success: true, data: userInfo })
+      })
+      .catch(error => {
+        sendResponse({ success: false, error: error.message })
+      })
+    return true
+  }
 })
+
+// 等待用户信息可用
+async function waitForUserInfo(maxWaitTime = 5000): Promise<{ userId: string, user: any }> {
+  const startTime = Date.now()
+  
+  while (Date.now() - startTime < maxWaitTime) {
+    try {
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        if (user.id) {
+          return { userId: user.id, user }
+        }
+      }
+    } catch (error) {
+      // 继续等待
+    }
+    
+    // 等待 100ms 后重试
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+  
+  throw new Error('等待用户信息超时，请确保已登录')
+}

@@ -67,32 +67,34 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
     }
 
     setIsDetecting(true)
+    setDetectionError(null)
     
     try {
-      // 获取当前标签页
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-      const currentTab = tabs[0]
+      // 生成唯一的请求ID
+      const requestId = `auto-detect-${Date.now()}`
       
-      if (!currentTab?.id) {
-        throw new Error('无法获取当前标签页')
-      }
-
-      // 通过内容脚本获取用户信息
-      const userResponse = await chrome.tabs.sendMessage(currentTab.id, {
-        action: "getUserFromLocalStorage"
+      // 尝试通过 background script 自动打开窗口并获取信息
+      const response = await chrome.runtime.sendMessage({
+        action: "autoDetectSite",
+        url: url.trim(),
+        requestId: requestId
       })
 
-      if (!userResponse.success) {
-        throw new Error(userResponse.error)
+      if (!response.success) {
+        // 如果自动检测失败，回退到手动方式
+        console.log('自动检测失败，尝试当前标签页方式:', response.error)
+        setDetectionError('自动检测失败，请手动输入信息或确保已在目标站点登录')
+        setShowManualForm(true)
+        return
       }
 
-      const userId = userResponse.data.userId
+      const userId = response.data.userId
       if (!userId) {
         throw new Error('无法获取用户 ID')
       }
 
       // 发起API请求获取用户信息
-      const response = await fetch(`${url}/api/user/self`, {
+      const apiResponse = await fetch(`${url}/api/user/self`, {
         method: 'GET',
         headers: {
           'new-api-user': userId.toString(),
@@ -100,12 +102,11 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
         },
         credentials: 'include'
       })
-
-      if (!response.ok) {
-        throw new Error(`API 请求失败: ${response.status}`)
+      if (!apiResponse.ok) {
+        throw new Error(`API 请求失败: ${apiResponse.status}`)
       }
 
-      const data = await response.json()
+      const data = await apiResponse.json()
       
       if (!data.success || !data.data) {
         throw new Error('API 返回数据格式错误')
