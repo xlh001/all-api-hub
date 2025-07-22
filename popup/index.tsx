@@ -281,7 +281,7 @@ function IndexPopup() {
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => setCurrencyType(currencyType === 'USD' ? 'CNY' : 'USD')}
-                  className="text-3xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
+                  className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
                   title={`点击切换到 ${currencyType === 'USD' ? '人民币' : '美元'}`}
                 >
                   {totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}
