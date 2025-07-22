@@ -152,7 +152,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
           today_quota_consumption: 0,
           today_requests_count: 0
         },
-        last_sync_time: Date.now()
+        last_sync_time: 0
       }
       
       const accountId = await accountStorage.addAccount(accountData)
