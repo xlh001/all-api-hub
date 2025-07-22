@@ -47,7 +47,6 @@ function IndexPopup() {
 
   // 用于数字滚动动画的 ref 和状态
   const [prevTotalConsumption, setPrevTotalConsumption] = useState({ USD: 0, CNY: 0 })
-  const [prevTokens, setPrevTokens] = useState({ upload: 0, download: 0 })
   const [prevBalances, setPrevBalances] = useState<{ [id: string]: { USD: number, CNY: number } }>({})
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   
@@ -62,16 +61,6 @@ function IndexPopup() {
       const accountStats = await accountStorage.getAccountStats()
       const displaySiteData = accountStorage.convertToDisplayData(allAccounts)
       
-      // 计算新的消耗数据
-      const newTotalConsumption = {
-        USD: parseFloat((accountStats.today_total_consumption / 500000).toFixed(2)),
-        CNY: parseFloat(allAccounts.reduce((sum, acc) => sum + ((acc.account_info.today_quota_consumption / 500000) * acc.exchange_rate), 0).toFixed(2))
-      }
-
-      const newTokens = {
-        upload: accountStats.today_total_prompt_tokens,
-        download: accountStats.today_total_completion_tokens
-      }
 
       // 计算新的余额数据
       const newBalances: { [id: string]: { USD: number, CNY: number } } = {}
@@ -85,7 +74,6 @@ function IndexPopup() {
       // 如果不是初始加载，保存之前的数值供动画使用
       if (!isInitialLoad) {
         setPrevTotalConsumption(prevTotalConsumption)
-        setPrevTokens(prevTokens)
         setPrevBalances(prevBalances)
       }
 
@@ -322,25 +310,13 @@ function IndexPopup() {
                   <div className="flex items-center space-x-1">
                     <ArrowUpIcon className="w-4 h-4 text-green-500" />
                     <span className="font-medium text-gray-500">
-                      <CountUp
-                        start={isInitialLoad ? 0 : prevTokens.upload}
-                        end={todayTokens.upload}
-                        duration={isInitialLoad ? 1.2 : 0.6}
-                        preserveValue
-                        formattingFn={formatTokenCount}
-                      />
+                      {formatTokenCount(todayTokens.upload)}
                     </span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <ArrowDownIcon className="w-4 h-4 text-blue-500" />
                     <span className="font-medium text-gray-500">
-                      <CountUp
-                        start={isInitialLoad ? 0 : prevTokens.download}
-                        end={todayTokens.download}
-                        duration={isInitialLoad ? 1.2 : 0.6}
-                        preserveValue
-                        formattingFn={formatTokenCount}
-                      />
+                      {formatTokenCount(todayTokens.download)}
                     </span>
                   </div>
                 </div>
