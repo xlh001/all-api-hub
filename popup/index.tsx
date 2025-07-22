@@ -298,8 +298,17 @@ function IndexPopup() {
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   <div className="text-xl flex-shrink-0">{site.icon}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 text-sm truncate mb-0.5">{site.name}</div>
-                    <div className="text-xs text-gray-500 truncate">{site.username}</div>
+                    <div className="flex items-center space-x-2 mb-0.5">
+                      {/* 站点状态指示器 */}
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        site.healthStatus === 'healthy' ? 'bg-green-500' :
+                        site.healthStatus === 'error' ? 'bg-red-500' :
+                        site.healthStatus === 'warning' ? 'bg-yellow-500' :
+                        'bg-gray-400'
+                      }`}></div>
+                      <div className="font-medium text-gray-900 text-sm truncate">{site.name}</div>
+                    </div>
+                    <div className="text-xs text-gray-500 truncate ml-4">{site.username}</div>
                   </div>
                 </div>
                 
