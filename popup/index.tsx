@@ -128,10 +128,22 @@ function IndexPopup() {
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
-      await loadAccountData() // 重新加载数据
+      // 刷新所有账号数据
+      const refreshResult = await accountStorage.refreshAllAccounts()
+      console.log('刷新结果:', refreshResult)
+      
+      // 重新加载显示数据
+      await loadAccountData()
       setLastUpdateTime(new Date())
+      
+      // 如果有失败的账号，显示提示
+      if (refreshResult.failed > 0) {
+        console.warn(`${refreshResult.failed} 个账号刷新失败`)
+      }
     } catch (error) {
       console.error('刷新数据失败:', error)
+      // 即使刷新失败也尝试加载本地数据
+      await loadAccountData()
     }
     setIsRefreshing(false)
   }

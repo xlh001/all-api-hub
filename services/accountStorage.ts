@@ -141,6 +141,70 @@ class AccountStorageService {
   }
 
   /**
+   * 刷新单个账号数据
+   */
+  async refreshAccount(id: string): Promise<boolean> {
+    try {
+      const account = await this.getAccountById(id);
+      if (!account) {
+        throw new Error(`账号 ${id} 不存在`);
+      }
+
+      // 导入 API 服务
+      const { refreshAccountData } = await import('../services/apiService');
+      
+      // 获取最新数据
+      const freshData = await refreshAccountData(
+        account.site_url,
+        account.account_info.id,
+        account.account_info.access_token
+      );
+
+      // 更新账号信息
+      return this.updateAccount(id, {
+        account_info: {
+          ...account.account_info,
+          quota: freshData.quota,
+          today_prompt_tokens: freshData.today_prompt_tokens,
+          today_completion_tokens: freshData.today_completion_tokens,
+          today_quota_consumption: freshData.today_quota_consumption,
+          today_requests_count: freshData.today_requests_count
+        },
+        last_sync_time: Date.now()
+      });
+    } catch (error) {
+      console.error('刷新账号数据失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 刷新所有账号数据
+   */
+  async refreshAllAccounts(): Promise<{ success: number; failed: number }> {
+    const accounts = await this.getAllAccounts();
+    let success = 0;
+    let failed = 0;
+
+    // 使用 Promise.allSettled 来并发刷新，避免单个失败影响其他账号
+    const results = await Promise.allSettled(
+      accounts.map(account => this.refreshAccount(account.id))
+    );
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value) {
+        success++;
+      } else {
+        failed++;
+        console.error(`刷新账号 ${accounts[index].site_name} 失败:`, 
+          result.status === 'rejected' ? result.reason : '未知错误');
+      }
+    });
+
+    return { success, failed };
+  }
+
+  /**
    * 计算账号统计信息
    */
   async getAccountStats(): Promise<AccountStats> {
@@ -357,5 +421,56 @@ export const AccountStorageUtils = {
       default:
         return { text: '未知', color: 'text-gray-500', bgColor: 'bg-gray-50' };
     }
+  },
+
+  /**
+   * 检查账号是否需要刷新（基于最后同步时间）
+   */
+  isAccountStale(account: SiteAccount, maxAgeMinutes: number = 30): boolean {
+    const now = Date.now();
+    const ageMinutes = (now - account.last_sync_time) / (1000 * 60);
+    return ageMinutes > maxAgeMinutes;
+  },
+
+  /**
+   * 获取过期的账号列表
+   */
+  getStaleAccounts(accounts: SiteAccount[], maxAgeMinutes: number = 30): SiteAccount[] {
+    return accounts.filter(account => this.isAccountStale(account, maxAgeMinutes));
+  },
+
+  /**
+   * 批量验证账号信息
+   */
+  async validateAccounts(accounts: SiteAccount[]): Promise<{ valid: SiteAccount[]; invalid: SiteAccount[] }> {
+    const { validateAccountConnection } = await import('./apiService');
+    const valid: SiteAccount[] = [];
+    const invalid: SiteAccount[] = [];
+
+    const validationPromises = accounts.map(async (account) => {
+      try {
+        const isValid = await validateAccountConnection(
+          account.site_url,
+          account.account_info.id,
+          account.account_info.access_token
+        );
+        return { account, isValid };
+      } catch {
+        return { account, isValid: false };
+      }
+    });
+
+    const results = await Promise.allSettled(validationPromises);
+    
+    results.forEach((result, index) => {
+      const account = accounts[index];
+      if (result.status === 'fulfilled' && result.value.isValid) {
+        valid.push(account);
+      } else {
+        invalid.push(account);
+      }
+    });
+
+    return { valid, invalid };
   }
 };
