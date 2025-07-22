@@ -30,6 +30,34 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
     return !isNaN(num) && num > 0 && num <= 100
   }
 
+  // 提取域名的主要部分（一级域名前缀）
+  const extractDomainPrefix = (hostname: string): string => {
+    if (!hostname) return ""
+    
+    // 移除 www. 前缀
+    const withoutWww = hostname.replace(/^www\./, "")
+    
+    // 处理子域名情况，例如：xxx.xx.google.com -> google
+    const parts = withoutWww.split(".")
+    if (parts.length >= 2) {
+      // 如果是常见的二级域名（如 .com.cn, .co.uk 等），取倒数第三个部分
+      const lastPart = parts[parts.length - 1]
+      const secondLastPart = parts[parts.length - 2]
+      
+      // 检查是否为双重后缀
+      const doubleSuffixes = ['com', 'net', 'org', 'gov', 'edu', 'co']
+      if (parts.length >= 3 && doubleSuffixes.includes(secondLastPart) && lastPart.length === 2) {
+        // 首字母大写
+        return parts[parts.length - 3].charAt(0).toUpperCase() + parts[parts.length - 3].slice(1)
+      }
+      
+      // 否则返回倒数第二个部分
+      return secondLastPart.charAt(0).toUpperCase() + secondLastPart.slice(1)
+    }
+    
+    return withoutWww.charAt(0).toUpperCase() + withoutWww.slice(1)
+  }
+
   useEffect(() => {
     if (isOpen) {
       // 重置状态
@@ -43,14 +71,16 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       setShowManualForm(false)
       setExchangeRate("7.2")
       
-      // 获取当前标签页的 URL
+      // 获取当前标签页的 URL 作为初始参考
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]?.url) {
           try {
             const urlObj = new URL(tabs[0].url)
             const baseUrl = `${urlObj.protocol}//${urlObj.host}`
             setUrl(baseUrl)
-            setSiteName(urlObj.host)
+            // 设置站点名称为域名前缀
+            const domainPrefix = extractDomainPrefix(urlObj.hostname)
+            setSiteName(domainPrefix)
           } catch (error) {
             console.log('无法解析 URL:', error)
             setUrl("")
@@ -280,7 +310,28 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                       <input
                         type="url"
                         value={url}
-                        onChange={(e) => setUrl(e.target.value)}
+                        onChange={(e) => {
+                          const newUrl = e.target.value
+                          setUrl(newUrl)
+                          
+                          // 当用户输入 URL 时，自动更新站点名称
+                          if (newUrl.trim()) {
+                            try {
+                              const urlObj = new URL(newUrl)
+                              const domainPrefix = extractDomainPrefix(urlObj.hostname)
+                              setSiteName(domainPrefix)
+                            } catch (error) {
+                              // 如果 URL 格式不正确，尝试从字符串中提取域名
+                              const match = newUrl.match(/\/\/([^\/]+)/)
+                              if (match) {
+                                const domainPrefix = extractDomainPrefix(match[1])
+                                setSiteName(domainPrefix)
+                              }
+                            }
+                          } else {
+                            setSiteName("")
+                          }
+                        }}
                         placeholder="https://example.com"
                         className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         required
