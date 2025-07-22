@@ -324,11 +324,10 @@ export const AccountStorageUtils = {
   },
 
   /**
-   * 生成默认 emoji
+   * 生成默认 emoji（已禁用）
    */
   getRandomEmoji(): string {
-    const emojis = ['🤖', '🌟', '🔥', '🚀', '⚡', '💡', '🎯', '🌈', '🦙', '🎨'];
-    return emojis[Math.floor(Math.random() * emojis.length)];
+    return ""; // 不再使用 emoji
   },
 
   /**

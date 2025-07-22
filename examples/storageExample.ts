@@ -10,7 +10,7 @@ export class AccountStorageExample {
   static async addNewAccount() {
     try {
       const newAccountData = {
-        emoji: AccountStorageUtils.getRandomEmoji(),
+        emoji: "",
         site_name: "测试 API 站点",
         site_url: "https://api.test.com",
         health_status: "healthy" as const,
@@ -72,7 +72,7 @@ export class AccountStorageExample {
       console.log(`当前共有 ${accounts.length} 个账号:`);
       
       accounts.forEach((account, index) => {
-        console.log(`\n${index + 1}. ${account.emoji} ${account.site_name}`);
+        console.log(`\n${index + 1}. ${account.site_name}`);
         console.log(`   用户名: ${account.account_info.username}`);
         console.log(`   余额: ${AccountStorageUtils.formatBalance(account.account_info.quota, 'USD')}`);
         console.log(`   今日消耗: ${AccountStorageUtils.formatBalance(account.account_info.today_quota_consumption, 'USD')}`);
@@ -151,7 +151,7 @@ export class AccountStorageExample {
    */
   static validateAccountData() {
     const validAccount = {
-      emoji: "🤖",
+      emoji: "",
       site_name: "有效站点",
       site_url: "https://api.valid.com",
       health_status: "healthy" as const,
@@ -168,7 +168,7 @@ export class AccountStorageExample {
     };
 
     const invalidAccount = {
-      emoji: "🤖",
+      emoji: "",
       site_name: "", // 空的站点名称
       site_url: "invalid-url", // 不是有效URL
       health_status: undefined as any, // 缺少健康状态

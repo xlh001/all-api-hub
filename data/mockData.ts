@@ -4,7 +4,7 @@ import type { SiteAccount } from "../types";
 export const mockSiteAccounts: SiteAccount[] = [
   {
     id: "account_1720796732000_abc123def",
-    emoji: "🤖",
+    emoji: "",
     site_name: "OpenAI API",
     site_url: "https://api.openai.com",
     health_status: "healthy",
@@ -24,7 +24,7 @@ export const mockSiteAccounts: SiteAccount[] = [
   },
   {
     id: "account_1720796732001_def456ghi",
-    emoji: "🌟",
+    emoji: "",
     site_name: "Claude API",
     site_url: "https://api.anthropic.com",
     health_status: "healthy",
@@ -44,7 +44,7 @@ export const mockSiteAccounts: SiteAccount[] = [
   },
   {
     id: "account_1720796732002_ghi789jkl",
-    emoji: "🔥",
+    emoji: "",
     site_name: "好用 API",
     site_url: "https://api.anthropic.com",
     health_status: "warning",
@@ -64,7 +64,7 @@ export const mockSiteAccounts: SiteAccount[] = [
   },
   {
     id: "account_1720796732003_jkl012mno",
-    emoji: "🚀",
+    emoji: "",
     site_name: "Cohere API",
     site_url: "https://api.cohere.ai",
     health_status: "error",
@@ -84,7 +84,7 @@ export const mockSiteAccounts: SiteAccount[] = [
   },
   {
     id: "account_1720796732004_mno345pqr",
-    emoji: "🦙",
+    emoji: "",
     site_name: "Replicate API",
     site_url: "https://api.replicate.com",
     health_status: "unknown",

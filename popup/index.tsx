@@ -296,7 +296,6 @@ function IndexPopup() {
               <div className="flex items-center space-x-4">
                 {/* 站点信息 */}
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className="text-xl flex-shrink-0">{site.icon}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-0.5">
                       {/* 站点状态指示器 */}
