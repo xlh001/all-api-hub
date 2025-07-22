@@ -311,24 +311,30 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                         type="url"
                         value={url}
                         onChange={(e) => {
-                          const newUrl = e.target.value
-                          setUrl(newUrl)
+                          const inputUrl = e.target.value
                           
-                          // 当用户输入 URL 时，自动更新站点名称
-                          if (newUrl.trim()) {
+                          // 当用户输入 URL 时，提取协议和主机部分
+                          if (inputUrl.trim()) {
                             try {
-                              const urlObj = new URL(newUrl)
+                              const urlObj = new URL(inputUrl)
+                              // 只保留协议和主机部分，不带路径
+                              const baseUrl = `${urlObj.protocol}//${urlObj.host}`
+                              setUrl(baseUrl)
+                              
+                              // 自动更新站点名称
                               const domainPrefix = extractDomainPrefix(urlObj.hostname)
                               setSiteName(domainPrefix)
                             } catch (error) {
-                              // 如果 URL 格式不正确，尝试从字符串中提取域名
-                              const match = newUrl.match(/\/\/([^\/]+)/)
+                              // 如果 URL 格式不完整，先保存用户输入，但尝试提取域名
+                              setUrl(inputUrl)
+                              const match = inputUrl.match(/\/\/([^\/]+)/)
                               if (match) {
                                 const domainPrefix = extractDomainPrefix(match[1])
                                 setSiteName(domainPrefix)
                               }
                             }
                           } else {
+                            setUrl("")
                             setSiteName("")
                           }
                         }}
