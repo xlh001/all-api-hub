@@ -60,9 +60,11 @@ class AccountStorageService {
    */
   async addAccount(accountData: Omit<SiteAccount, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
     try {
+      console.log('[AccountStorage] 开始添加新账号:', accountData.site_name);
       const accounts = await this.getAllAccounts();
-      const now = Date.now();
+      console.log('[AccountStorage] 当前账号数量:', accounts.length);
       
+      const now = Date.now();
       const newAccount: SiteAccount = {
         ...accountData,
         id: this.generateId(),
@@ -71,11 +73,13 @@ class AccountStorageService {
       };
 
       accounts.push(newAccount);
+      console.log('[AccountStorage] 准备保存账号，总数量:', accounts.length);
       await this.saveAccounts(accounts);
+      console.log('[AccountStorage] 账号保存成功，ID:', newAccount.id);
       
       return newAccount.id;
     } catch (error) {
-      console.error('添加账号失败:', error);
+      console.error('[AccountStorage] 添加账号失败:', error);
       throw error;
     }
   }
@@ -249,12 +253,20 @@ class AccountStorageService {
    * 保存账号数据
    */
   private async saveAccounts(accounts: SiteAccount[]): Promise<void> {
+    console.log('[AccountStorage] 开始保存账号数据，数量:', accounts.length);
     const config: StorageConfig = {
       accounts,
       last_updated: Date.now()
     };
     
+    console.log('[AccountStorage] 保存的配置数据:', { 
+      accountCount: config.accounts.length,
+      last_updated: config.last_updated,
+      storageKey: STORAGE_KEYS.CONFIG
+    });
+    
     await this.storage.set(STORAGE_KEYS.CONFIG, config);
+    console.log('[AccountStorage] 账号数据保存完成');
   }
 
   /**
