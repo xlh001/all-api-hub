@@ -17,10 +17,10 @@ import {
   ChevronDownIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline"
-import Tooltip from "components/Tooltip"
-import AddAccountDialog from "components/AddAccountDialog"
-import { accountStorage } from "services/accountStorage"
-import type { SiteAccount, AccountStats, DisplaySiteData } from "types"
+import Tooltip from "../components/Tooltip"
+import AddAccountDialog from "../components/AddAccountDialog"
+import { accountStorage } from "../services/accountStorage"
+import type { SiteAccount, AccountStats, DisplaySiteData } from "../types"
 
 type SortField = 'name' | 'balance' | 'consumption'
 type SortOrder = 'asc' | 'desc'
