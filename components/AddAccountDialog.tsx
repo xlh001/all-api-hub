@@ -1,9 +1,7 @@
 import { useState, useEffect, Fragment } from "react"
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
 import { GlobeAltIcon, XMarkIcon, SparklesIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline"
-import { accountStorage } from "../services/accountStorage"
-import { fetchAccountData, getOrCreateAccessToken, fetchSiteStatus, extractDefaultExchangeRate } from "../services/apiService"
-import type { SiteAccount } from "../types"
+import { autoDetectAccount, validateAndSaveAccount, extractDomainPrefix, isValidExchangeRate } from "../services/accountOperations"
 
 interface AddAccountDialogProps {
   isOpen: boolean
@@ -25,39 +23,6 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
   const [exchangeRate, setExchangeRate] = useState("")
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
 
-  // 验证充值比例是否有效
-  const isValidExchangeRate = (rate: string): boolean => {
-    const num = parseFloat(rate)
-    return !isNaN(num) && num > 0 && num <= 100
-  }
-
-  // 提取域名的主要部分（一级域名前缀）
-  const extractDomainPrefix = (hostname: string): string => {
-    if (!hostname) return ""
-    
-    // 移除 www. 前缀
-    const withoutWww = hostname.replace(/^www\./, "")
-    
-    // 处理子域名情况，例如：xxx.xx.google.com -> google
-    const parts = withoutWww.split(".")
-    if (parts.length >= 2) {
-      // 如果是常见的二级域名（如 .com.cn, .co.uk 等），取倒数第三个部分
-      const lastPart = parts[parts.length - 1]
-      const secondLastPart = parts[parts.length - 2]
-      
-      // 检查是否为双重后缀
-      const doubleSuffixes = ['com', 'net', 'org', 'gov', 'edu', 'co']
-      if (parts.length >= 3 && doubleSuffixes.includes(secondLastPart) && lastPart.length === 2) {
-        // 首字母大写
-        return parts[parts.length - 3].charAt(0).toUpperCase() + parts[parts.length - 3].slice(1)
-      }
-      
-      // 否则返回倒数第二个部分
-      return secondLastPart.charAt(0).toUpperCase() + secondLastPart.slice(1)
-    }
-    
-    return withoutWww.charAt(0).toUpperCase() + withoutWww.slice(1)
-  }
 
   useEffect(() => {
     if (isOpen) {
@@ -114,66 +79,37 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
     setDetectionError(null)
     
     try {
-      // 生成唯一的请求ID
-      const requestId = `auto-detect-${Date.now()}`
+      const result = await autoDetectAccount(url.trim())
       
-      // 尝试通过 background script 自动打开窗口并获取信息
-      const response = await chrome.runtime.sendMessage({
-        action: "autoDetectSite",
-        url: url.trim(),
-        requestId: requestId
-      })
-
-      if (!response.success) {
-        // 如果自动检测失败，回退到手动方式
-        console.log('自动检测失败，尝试当前标签页方式:', response.error)
-        setDetectionError('自动检测失败，请手动输入信息或确保已在目标站点登录')
+      if (!result.success) {
+        setDetectionError(result.error || '自动检测失败，请手动输入信息或确保已在目标站点登录')
         setShowManualForm(true)
         return
       }
 
-      const userId = response.data.userId
-      if (!userId) {
-        throw new Error('无法获取用户 ID')
+      if (result.data) {
+        // 更新表单数据
+        setUsername(result.data.username)
+        setAccessToken(result.data.accessToken)
+        setUserId(result.data.userId)
+        
+        // 设置充值比例默认值
+        if (result.data.exchangeRate) {
+          setExchangeRate(result.data.exchangeRate.toString())
+          console.log('获取到默认充值比例:', result.data.exchangeRate)
+        } else {
+          setExchangeRate("") // 如果没有获取到，设置为空
+          console.log('未获取到默认充值比例，设置为空')
+        }
+        
+        setIsDetected(true)
+        
+        console.log('自动识别成功:', { 
+          username: result.data.username, 
+          siteName, 
+          exchangeRate: result.data.exchangeRate 
+        })
       }
-
-      // 并行执行：获取用户信息和站点状态
-      const [tokenInfo, siteStatus] = await Promise.all([
-        getOrCreateAccessToken(url, userId),
-        fetchSiteStatus(url.trim())
-      ])
-      
-      const { username: detectedUsername, access_token } = tokenInfo
-      
-      if (!detectedUsername || !access_token) {
-        throw new Error('未能获取到用户名或访问令牌')
-      }
-
-      // 获取默认充值比例
-      const defaultExchangeRate = extractDefaultExchangeRate(siteStatus)
-      
-      // 更新表单数据
-      setUsername(detectedUsername)
-      setAccessToken(access_token)
-      setUserId(userId.toString())
-      
-      // 设置充值比例默认值
-      if (defaultExchangeRate) {
-        setExchangeRate(defaultExchangeRate.toString())
-        console.log('获取到默认充值比例:', defaultExchangeRate)
-      } else {
-        setExchangeRate("") // 如果没有获取到，设置为空
-        console.log('未获取到默认充值比例，设置为空')
-      }
-      
-      setIsDetected(true)
-      
-      console.log('自动识别成功:', { 
-        username: detectedUsername, 
-        siteName, 
-        exchangeRate: defaultExchangeRate 
-      })
-      
     } catch (error) {
       console.error('自动识别失败:', error)
       const errorMessage = error instanceof Error ? error.message : '未知错误'
@@ -186,52 +122,24 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
 
 
   const handleSaveAccount = async () => {
-    if (!siteName.trim() || !username.trim() || !accessToken.trim() || !userId.trim()) {
-      alert('请填写完整的账号信息')
-      return
-    }
-
-    const parsedUserId = parseInt(userId.trim())
-    if (isNaN(parsedUserId)) {
-      alert('用户 ID 必须是数字')
-      return
-    }
-
     setIsSaving(true)
     
     try {
-      // 获取账号余额和今日使用情况
-      console.log('正在获取账号数据...')
-      const freshAccountData = await fetchAccountData(url.trim(), parsedUserId, accessToken.trim())
-
-      const accountData: Omit<SiteAccount, 'id' | 'created_at' | 'updated_at'> = {
-        emoji: "", // 不再使用 emoji
-        site_name: siteName.trim(),
-        site_url: url.trim(),
-        health_status: 'healthy', // 成功获取数据说明状态正常
-        exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
-        account_info: {
-          id: parsedUserId,
-          access_token: accessToken.trim(),
-          username: username.trim(),
-          quota: freshAccountData.quota,
-          today_prompt_tokens: freshAccountData.today_prompt_tokens,
-          today_completion_tokens: freshAccountData.today_completion_tokens,
-          today_quota_consumption: freshAccountData.today_quota_consumption,
-          today_requests_count: freshAccountData.today_requests_count
-        },
-        last_sync_time: Date.now()
+      const result = await validateAndSaveAccount(
+        url.trim(),
+        siteName.trim(),
+        username.trim(),
+        accessToken.trim(),
+        userId.trim(),
+        exchangeRate
+      )
+      
+      if (result.success) {
+        alert('账号添加成功！')
+        onClose()
+      } else {
+        alert(result.error || '保存失败')
       }
-      
-      const accountId = await accountStorage.addAccount(accountData)
-      console.log('账号添加成功:', { 
-        id: accountId, 
-        siteName, 
-        freshAccountData 
-      })
-      
-      alert('账号添加成功！')
-      onClose()
     } catch (error) {
       console.error('保存账号失败:', error)
       alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`)
