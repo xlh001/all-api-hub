@@ -104,13 +104,13 @@ export default function DelAccountDialog({ isOpen, onClose, account, onDeleted }
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-medium text-gray-900 mb-2">
-                      确认删除账号
+                      删除确认
                     </h3>
                     <p className="text-sm text-gray-500 mb-3">
                       您即将删除账号 <span className="font-medium text-gray-900">{account?.name}</span>。
                     </p>
                     <p className="text-sm text-gray-500">
-                      删除后将无法恢复该账号的配置信息，请确认是否继续。
+                      请核对后确认是否删除此账号
                     </p>
                   </div>
                 </div>
