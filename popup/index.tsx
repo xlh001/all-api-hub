@@ -1,5 +1,6 @@
 import "./style.css"
 import { useState, useCallback, useMemo } from "react"
+import toast, { Toaster } from 'react-hot-toast'
 import { UI_CONSTANTS } from "../constants/ui"
 import { calculateTotalConsumption, calculateTotalBalance, getOppositeCurrency } from "../utils/formatters"
 import { useAccountData } from "../hooks/useAccountData"
@@ -100,7 +101,8 @@ function IndexPopup() {
     if (refreshingAccountId) return // 防止重复刷新
     
     setRefreshingAccountId(account.id)
-    try {
+    
+    const refreshPromise = async () => {
       console.log('开始刷新账号:', account.name)
       const success = await accountStorage.refreshAccount(account.id)
       
@@ -108,9 +110,22 @@ function IndexPopup() {
         console.log('账号刷新成功:', account.name)
         // 刷新成功后重新加载数据，这将触发动画
         await loadAccountData()
+        return success
       } else {
         console.warn('账号刷新失败:', account.name)
+        throw new Error('刷新失败')
       }
+    }
+    
+    try {
+      await toast.promise(
+        refreshPromise(),
+        {
+          loading: `正在刷新 ${account.name}...`,
+          success: `${account.name} 刷新成功!`,
+          error: `${account.name} 刷新失败`,
+        }
+      )
     } catch (error) {
       console.error('刷新账号时出错:', error)
     } finally {
@@ -174,6 +189,12 @@ function IndexPopup() {
         isOpen={isEditAccountOpen}
         onClose={handleCloseEditAccount}
         account={editingAccount}
+      />
+      
+      {/* Toast通知组件 */}
+      <Toaster
+        position="bottom-center"
+        reverseOrder={true}
       />
     </div>
   )

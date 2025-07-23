@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
+import toast from 'react-hot-toast'
 import { accountStorage } from "../services/accountStorage"
 import type { SiteAccount, AccountStats, DisplaySiteData } from "../types"
 
@@ -95,25 +96,44 @@ export const useAccountData = (): UseAccountDataResult => {
   // 刷新数据
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
-    try {
-      // 刷新所有账号数据
-      const refreshResult = await accountStorage.refreshAllAccounts()
-      console.log('刷新结果:', refreshResult)
-      
-      // 重新加载显示数据
-      await loadAccountData()
-      setLastUpdateTime(new Date())
-      
-      // 如果有失败的账号，显示提示
-      if (refreshResult.failed > 0) {
-        console.warn(`${refreshResult.failed} 个账号刷新失败`)
+    
+    const refreshPromise = async () => {
+      try {
+        // 刷新所有账号数据
+        const refreshResult = await accountStorage.refreshAllAccounts()
+        console.log('刷新结果:', refreshResult)
+        
+        // 重新加载显示数据
+        await loadAccountData()
+        setLastUpdateTime(new Date())
+        
+        // 如果有失败的账号，显示提示
+        if (refreshResult.failed > 0) {
+          console.warn(`${refreshResult.failed} 个账号刷新失败`)
+          throw new Error(`${refreshResult.failed} 个账号刷新失败`)
+        }
+        
+        return refreshResult
+      } catch (error) {
+        console.error('刷新数据失败:', error)
+        // 即使刷新失败也尝试加载本地数据
+        await loadAccountData()
+        throw error
       }
-    } catch (error) {
-      console.error('刷新数据失败:', error)
-      // 即使刷新失败也尝试加载本地数据
-      await loadAccountData()
     }
-    setIsRefreshing(false)
+    
+    try {
+      await toast.promise(
+        refreshPromise(),
+        {
+          loading: '正在刷新所有账号...',
+          success: '所有账号刷新成功!',
+          error: '部分账号刷新失败',
+        }
+      )
+    } finally {
+      setIsRefreshing(false)
+    }
   }, [loadAccountData])
 
   // 组件初始化时加载数据
