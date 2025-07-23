@@ -5,19 +5,20 @@
 // 通用请求配置
 const createRequestHeaders = (userId: number, accessToken?: string) => {
   const headers: Record<string, string> = {
-    'new-api-user': userId.toString(),
+    'New-API-User': userId.toString(),
     'Content-Type': 'application/json',
     'Pragma': 'no-cache'
   }
   
   if (accessToken) {
+    headers['Cookie'] = '' // 使用 Bearer token 时清空 Cookie 头
     headers['Authorization'] = `Bearer ${accessToken}`
   }
   
   return headers
 }
 
-// 获取用户基本信息（用于账号检测）
+// 获取用户基本信息（用于账号检测） - 使用浏览器 cookie 认证
 export const fetchUserInfo = async (baseUrl: string, userId: number): Promise<{
   id: number
   username: string
@@ -26,7 +27,7 @@ export const fetchUserInfo = async (baseUrl: string, userId: number): Promise<{
   const response = await fetch(`${baseUrl}/api/user/self`, {
     method: 'GET',
     headers: createRequestHeaders(userId),
-    credentials: 'include'
+    credentials: 'include' // 检测阶段需要使用浏览器 cookie
   })
 
   if (!response.ok) {
@@ -45,12 +46,12 @@ export const fetchUserInfo = async (baseUrl: string, userId: number): Promise<{
   }
 }
 
-// 创建访问令牌
+// 创建访问令牌 - 只有这个接口需要使用浏览器 cookie
 export const createAccessToken = async (baseUrl: string, userId: number): Promise<string> => {
   const response = await fetch(`${baseUrl}/api/user/token`, {
     method: 'GET',
     headers: createRequestHeaders(userId),
-    credentials: 'include'
+    credentials: 'include' // 只有这个接口需要使用浏览器 cookie 进行认证
   })
 
   if (!response.ok) {
@@ -92,8 +93,8 @@ export const getOrCreateAccessToken = async (baseUrl: string, userId: number): P
 export const fetchAccountQuota = async (baseUrl: string, userId: number, accessToken: string): Promise<number> => {
   const response = await fetch(`${baseUrl}/api/user/self`, {
     method: 'GET',
-    headers: createRequestHeaders(userId, accessToken),
-    credentials: 'include'
+    headers: createRequestHeaders(userId, accessToken)
+    // 使用 Bearer token 认证，不再依赖浏览器 cookie
   })
 
   if (!response.ok) {
@@ -151,8 +152,8 @@ export const fetchTodayUsage = async (baseUrl: string, userId: number, accessTok
 
     const response = await fetch(`${baseUrl}/api/log/self?${params.toString()}`, {
       method: 'GET',
-      headers: createRequestHeaders(userId, accessToken),
-      credentials: 'include'
+      headers: createRequestHeaders(userId, accessToken)
+      // 使用 Bearer token 认证，不再依赖浏览器 cookie
     })
 
     if (!response.ok) {
