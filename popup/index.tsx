@@ -17,6 +17,7 @@ import {
   ChevronDownIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline"
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react"
 import Tooltip from "../components/Tooltip"
 import AddAccountDialog from "../components/AddAccountDialog"
 import { accountStorage } from "../services/accountStorage"
@@ -27,6 +28,7 @@ type SortOrder = 'asc' | 'desc'
 
 function IndexPopup() {
   const [currencyType, setCurrencyType] = useState<'USD' | 'CNY'>('USD')
+  const [activeTab, setActiveTab] = useState<'consumption' | 'balance'>('consumption') // 新增状态
   const [sortField, setSortField] = useState<SortField>('balance')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
@@ -176,6 +178,15 @@ function IndexPopup() {
     setIsRefreshing(false)
   }
 
+  // 处理标签页切换
+  const handleTabChange = (index: number) => {
+    const newTab = index === 0 ? 'consumption' : 'balance'
+    setActiveTab(newTab)
+    
+    // 可以在这里添加特定的逻辑，比如重新计算或刷新数据
+    console.log(`切换到${newTab === 'consumption' ? '今日消耗' : '总余额'}标签页`)
+  }
+
   // 处理排序
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -218,6 +229,12 @@ function IndexPopup() {
   const totalConsumption = {
     USD: parseFloat((stats.today_total_consumption / 500000).toFixed(2)),
     CNY: parseFloat(accounts.reduce((sum, acc) => sum + ((acc.account_info.today_quota_consumption / 500000) * acc.exchange_rate), 0).toFixed(2))
+  }
+
+  // 计算总余额
+  const totalBalance = {
+    USD: parseFloat(displayData.reduce((sum, site) => sum + site.balance.USD, 0).toFixed(2)),
+    CNY: parseFloat(displayData.reduce((sum, site) => sum + site.balance.CNY, 0).toFixed(2))
   }
 
   const todayTokens = {
@@ -273,27 +290,74 @@ function IndexPopup() {
         {/* 基本信息展示 */}
         <div className="px-6 py-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
           <div className="space-y-3">
-            {/* 今日消耗标题 */}
+            {/* 金额标签页 */}
             <div>
-              <p className="text-sm text-gray-500 mb-2">今日消耗</p>
-              
-              {/* 主要消耗金额 */}
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={() => setCurrencyType(currencyType === 'USD' ? 'CNY' : 'USD')}
-                  className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
-                  title={`点击切换到 ${currencyType === 'USD' ? '人民币' : '美元'}`}
-                >
-                  {totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}
-                  <CountUp
-                    start={isInitialLoad ? 0 : prevTotalConsumption[currencyType]}
-                    end={totalConsumption[currencyType]}
-                    duration={isInitialLoad ? 1.5 : 0.8}
-                    decimals={2}
-                    preserveValue
-                  />
-                </button>
-              </div>
+              <TabGroup selectedIndex={activeTab === 'consumption' ? 0 : 1} onChange={handleTabChange}>
+                <div className="flex justify-start mb-3">
+                  <TabList className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+                    <Tab className={({ selected }) => 
+                      `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                        selected 
+                          ? 'bg-white text-gray-900 shadow-sm' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`
+                    }>
+                      今日消耗
+                    </Tab>
+                    <Tab className={({ selected }) => 
+                      `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                        selected 
+                          ? 'bg-white text-gray-900 shadow-sm' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`
+                    }>
+                      总余额
+                    </Tab>
+                  </TabList>
+                </div>
+                
+                <TabPanels>
+                  <TabPanel>
+                    {/* 今日消耗面板 */}
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setCurrencyType(currencyType === 'USD' ? 'CNY' : 'USD')}
+                        className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
+                        title={`点击切换到 ${currencyType === 'USD' ? '人民币' : '美元'}`}
+                      >
+                        {totalConsumption[currencyType] > 0 ? '-' : ''}{currencyType === 'USD' ? '$' : '¥'}
+                        <CountUp
+                          start={isInitialLoad ? 0 : prevTotalConsumption[currencyType]}
+                          end={totalConsumption[currencyType]}
+                          duration={isInitialLoad ? 1.5 : 0.8}
+                          decimals={2}
+                          preserveValue
+                        />
+                      </button>
+                    </div>
+                  </TabPanel>
+                  
+                  <TabPanel>
+                    {/* 总余额面板 */}
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setCurrencyType(currencyType === 'USD' ? 'CNY' : 'USD')}
+                        className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
+                        title={`点击切换到 ${currencyType === 'USD' ? '人民币' : '美元'}`}
+                      >
+                        {currencyType === 'USD' ? '$' : '¥'}
+                        <CountUp
+                          start={isInitialLoad ? 0 : 0}
+                          end={totalBalance[currencyType]}
+                          duration={isInitialLoad ? 1.5 : 0.8}
+                          decimals={2}
+                          preserveValue
+                        />
+                      </button>
+                    </div>
+                  </TabPanel>
+                </TabPanels>
+              </TabGroup>
             </div>
             
             {/* Token 统计信息 */}
