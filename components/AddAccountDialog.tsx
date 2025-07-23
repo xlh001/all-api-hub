@@ -284,18 +284,30 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                       请输入 One API 或 New API 站点的完整地址
                     </p>
                     {/* 当前标签页 URL 提示 */}
-                    {currentTabUrl && !url && (
-                      <div className="mt-2">
+                    <Transition
+                      show={!!(currentTabUrl && !url)}
+                      as={Fragment}
+                    >
+                      <TransitionChild
+                        as="div"
+                        enter="ease-out duration-500 delay-500"
+                        enterFrom="opacity-0 translate-y-3 scale-90"
+                        enterTo="opacity-100 translate-y-0 scale-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100 translate-y-0 scale-100"
+                        leaveTo="opacity-0 translate-y-2 scale-95"
+                        className="mt-2"
+                      >
                         <button
                           type="button"
                           onClick={handleUseCurrentTabUrl}
-                          className="inline-flex items-center px-2 py-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                          className="inline-flex items-center px-3 py-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                         >
-                          <GlobeAltIcon className="w-3 h-3 mr-1" />
-                          {new URL(currentTabUrl).host}
+                          <GlobeAltIcon className="w-3 h-3 mr-1.5 animate-pulse" />
+                          <span>使用当前: {currentTabUrl && new URL(currentTabUrl).host}</span>
                         </button>
-                      </div>
-                    )}
+                      </TransitionChild>
+                    </Transition>
                   </div>
 
 
