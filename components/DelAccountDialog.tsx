@@ -1,4 +1,5 @@
 import { Fragment } from "react"
+import toast from 'react-hot-toast'
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
 import { ExclamationTriangleIcon, XMarkIcon, TrashIcon } from "@heroicons/react/24/outline"
 import { accountStorage } from "../services/accountStorage"
@@ -19,14 +20,28 @@ export default function DelAccountDialog({ isOpen, onClose, account, onDeleted }
 
     try {
       console.log('准备删除账号:', { id: account.id, name: account.name })
-      const success = await accountStorage.deleteAccount(account.id)
-      if (success) {
-        onDeleted()
-        onClose()
-      }
+      
+      await toast.promise(
+        accountStorage.deleteAccount(account.id),
+        {
+          loading: `正在删除账号 ${account.name}...`,
+          success: (success) => {
+            if (success) {
+              onDeleted()
+              onClose()
+              return `账号 ${account.name} 删除成功!`
+            } else {
+              throw new Error('删除失败')
+            }
+          },
+          error: (err) => {
+            const errorMsg = err instanceof Error ? err.message : '未知错误'
+            return `删除失败: ${errorMsg}`
+          },
+        }
+      )
     } catch (error) {
       console.error('删除账号失败:', error)
-      alert(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`)
     }
   }
 
