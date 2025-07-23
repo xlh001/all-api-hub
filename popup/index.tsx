@@ -10,6 +10,7 @@ import ActionButtons from "../components/ActionButtons"
 import AccountList from "../components/AccountList"
 import AddAccountDialog from "../components/AddAccountDialog"
 import EditAccountDialog from "../components/EditAccountDialog"
+import { accountStorage } from "../services/accountStorage"
 import type { DisplaySiteData } from "../types"
 
 function IndexPopup() {
@@ -19,6 +20,7 @@ function IndexPopup() {
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<DisplaySiteData | null>(null)
+  const [refreshingAccountId, setRefreshingAccountId] = useState<string | null>(null)
 
   // 数据管理
   const {
@@ -94,6 +96,28 @@ function IndexPopup() {
     loadAccountData() // 重新加载数据
   }, [loadAccountData])
 
+  const handleRefreshAccount = useCallback(async (account: DisplaySiteData) => {
+    if (refreshingAccountId) return // 防止重复刷新
+    
+    setRefreshingAccountId(account.id)
+    try {
+      console.log('开始刷新账号:', account.name)
+      const success = await accountStorage.refreshAccount(account.id)
+      
+      if (success) {
+        console.log('账号刷新成功:', account.name)
+        // 刷新成功后重新加载数据，这将触发动画
+        await loadAccountData()
+      } else {
+        console.warn('账号刷新失败:', account.name)
+      }
+    } catch (error) {
+      console.error('刷新账号时出错:', error)
+    } finally {
+      setRefreshingAccountId(null)
+    }
+  }, [refreshingAccountId, loadAccountData])
+
   return (
     <div className={`${UI_CONSTANTS.POPUP.WIDTH} bg-white flex flex-col ${UI_CONSTANTS.POPUP.HEIGHT}`}>
       {/* 顶部导航栏 */}
@@ -130,8 +154,10 @@ function IndexPopup() {
           sortOrder={sortOrder}
           isInitialLoad={isInitialLoad}
           prevBalances={prevBalances}
+          refreshingAccountId={refreshingAccountId}
           onSort={handleSort}
           onAddAccount={handleAddAccount}
+          onRefreshAccount={handleRefreshAccount}
           onEditAccount={handleEditAccount}
           onDeleteAccount={handleDeleteAccount}
         />

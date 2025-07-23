@@ -1,4 +1,4 @@
-import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, PlusIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline"
+import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, PlusIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import CountUp from "react-countup"
 import { UI_CONSTANTS, HEALTH_STATUS_MAP } from "../constants/ui"
@@ -24,9 +24,13 @@ interface AccountListProps {
   isInitialLoad: boolean
   prevBalances: { [id: string]: { USD: number, CNY: number } }
   
+  // 刷新状态
+  refreshingAccountId?: string | null
+  
   // 事件处理
   onSort: (field: SortField) => void
   onAddAccount: () => void
+  onRefreshAccount?: (site: DisplaySiteData) => Promise<void>
   onCopyUrl?: (site: DisplaySiteData) => void
   onCopyKey?: (site: DisplaySiteData) => void
   onViewUsage?: (site: DisplaySiteData) => void
@@ -41,8 +45,10 @@ export default function AccountList({
   sortOrder,
   isInitialLoad,
   prevBalances,
+  refreshingAccountId,
   onSort,
   onAddAccount,
+  onRefreshAccount,
   onCopyUrl,
   onCopyKey,
   onViewUsage,
@@ -97,6 +103,16 @@ export default function AccountList({
   const handleCopyKey = (site: DisplaySiteData) => {
     copyToClipboard(site.token)
     onCopyKey?.(site)
+  }
+
+  const handleRefreshAccount = async (site: DisplaySiteData) => {
+    if (onRefreshAccount) {
+      try {
+        await onRefreshAccount(site)
+      } catch (error) {
+        console.error('刷新账号失败:', error)
+      }
+    }
   }
   if (sites.length === 0) {
     return (
@@ -171,6 +187,21 @@ export default function AccountList({
             {/* 按钮组 - 只在 hover 时显示 */}
             {hoveredSiteId === site.id && (
               <div className="flex items-center space-x-2 flex-shrink-0">
+                {/* 刷新按钮 */}
+                <Tooltip content="刷新账号" position="top">
+                  <button
+                    onClick={() => handleRefreshAccount(site)}
+                    className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
+                    disabled={refreshingAccountId === site.id}
+                  >
+                    <ArrowPathIcon 
+                      className={`w-4 h-4 text-gray-500 ${
+                        refreshingAccountId === site.id ? 'animate-spin' : ''
+                      }`} 
+                    />
+                  </button>
+                </Tooltip>
+
                 {/* 复制下拉菜单 */}
                 <Menu as="div" className="relative">
                   <Tooltip content="复制" position="top">
@@ -203,16 +234,6 @@ export default function AccountList({
                   </MenuItems>
                 </Menu>
 
-                {/* 用量按钮 */}
-                <Tooltip content="查看用量" position="top">
-                  <button
-                    onClick={() => onViewUsage?.(site)}
-                    className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
-                  >
-                    <ChartPieIcon className="w-4 h-4 text-gray-500" />
-                  </button>
-                </Tooltip>
-
                 {/* 更多下拉菜单 */}
                 <Menu as="div" className="relative">
                   <Tooltip content="更多操作" position="top">
@@ -224,6 +245,15 @@ export default function AccountList({
                     anchor="bottom end"
                     className="z-50 w-24 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]"
                   >
+                    <MenuItem>
+                      <button
+                        onClick={() => onViewUsage?.(site)}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2"
+                      >
+                        <ChartPieIcon className="w-4 h-4" />
+                        <span>用量</span>
+                      </button>
+                    </MenuItem>
                     <MenuItem>
                       <button
                         onClick={() => onEditAccount?.(site)}
