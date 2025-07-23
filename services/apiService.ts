@@ -2,12 +2,91 @@
  * API 服务 - 用于与 One API/New API 站点进行交互
  */
 
-// 通用请求配置
-const createRequestHeaders = (userId: number, accessToken?: string) => {
+// ============= 类型定义 =============
+export interface UserInfo {
+  id: number
+  username: string
+  access_token: string | null
+}
+
+export interface AccessTokenInfo {
+  username: string
+  access_token: string
+}
+
+export interface TodayUsageData {
+  today_quota_consumption: number
+  today_prompt_tokens: number
+  today_completion_tokens: number
+  today_requests_count: number
+}
+
+export interface AccountData extends TodayUsageData {
+  quota: number
+}
+
+export interface RefreshAccountResult {
+  success: boolean
+  data?: AccountData
+  healthStatus: HealthCheckResult
+}
+
+export interface HealthCheckResult {
+  status: 'healthy' | 'warning' | 'error' | 'unknown'
+  message: string
+}
+
+// API 响应的通用格式
+interface ApiResponse<T = any> {
+  success: boolean
+  data: T
+  message?: string
+}
+
+// 日志条目类型
+interface LogItem {
+  quota?: number
+  prompt_tokens?: number
+  completion_tokens?: number
+}
+
+// 日志响应数据
+interface LogResponseData {
+  items: LogItem[]
+  total: number
+}
+
+// ============= 常量定义 =============
+const REQUEST_CONFIG = {
+  DEFAULT_PAGE_SIZE: 100,
+  MAX_PAGES: 100,
+  HEADERS: {
+    CONTENT_TYPE: 'application/json',
+    PRAGMA: 'no-cache'
+  }
+} as const
+
+// ============= 错误处理 =============
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public endpoint?: string
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+// ============= 工具函数 =============
+/**
+ * 创建请求头
+ */
+const createRequestHeaders = (userId: number, accessToken?: string): Record<string, string> => {
   const headers: Record<string, string> = {
     'New-API-User': userId.toString(),
-    'Content-Type': 'application/json',
-    'Pragma': 'no-cache'
+    'Content-Type': REQUEST_CONFIG.HEADERS.CONTENT_TYPE,
+    'Pragma': REQUEST_CONFIG.HEADERS.PRAGMA
   }
   
   if (accessToken) {
@@ -18,59 +97,112 @@ const createRequestHeaders = (userId: number, accessToken?: string) => {
   return headers
 }
 
-// 获取用户基本信息（用于账号检测） - 使用浏览器 cookie 认证
-export const fetchUserInfo = async (baseUrl: string, userId: number): Promise<{
-  id: number
-  username: string
-  access_token: string | null
-}> => {
-  const response = await fetch(`${baseUrl}/api/user/self`, {
-    method: 'GET',
-    headers: createRequestHeaders(userId),
-    credentials: 'include' // 检测阶段需要使用浏览器 cookie
-  })
+/**
+ * 通用 API 请求处理器
+ */
+const apiRequest = async <T>(
+  url: string,
+  options: RequestInit,
+  endpoint: string
+): Promise<T> => {
+  const response = await fetch(url, options)
 
   if (!response.ok) {
-    throw new ApiError(`获取用户信息失败: ${response.status}`, response.status, '/api/user/self')
+    throw new ApiError(`请求失败: ${response.status}`, response.status, endpoint)
   }
 
-  const data = await response.json()
-  if (!data.success || !data.data) {
-    throw new ApiError('获取用户信息数据格式错误', undefined, '/api/user/self')
-  }
-
-  return {
-    id: data.data.id,
-    username: data.data.username,
-    access_token: data.data.access_token || null
-  }
-}
-
-// 创建访问令牌 - 只有这个接口需要使用浏览器 cookie
-export const createAccessToken = async (baseUrl: string, userId: number): Promise<string> => {
-  const response = await fetch(`${baseUrl}/api/user/token`, {
-    method: 'GET',
-    headers: createRequestHeaders(userId),
-    credentials: 'include' // 只有这个接口需要使用浏览器 cookie 进行认证
-  })
-
-  if (!response.ok) {
-    throw new ApiError(`创建访问令牌失败: ${response.status}`, response.status, '/api/user/token')
-  }
-
-  const data = await response.json()
-  if (!data.success || !data.data) {
-    throw new ApiError('创建访问令牌返回数据格式错误', undefined, '/api/user/token')
+  const data: ApiResponse<T> = await response.json()
+  if (!data.success || data.data === undefined) {
+    throw new ApiError('响应数据格式错误', undefined, endpoint)
   }
 
   return data.data
 }
 
-// 自动获取或创建访问令牌
-export const getOrCreateAccessToken = async (baseUrl: string, userId: number): Promise<{
-  username: string
-  access_token: string
-}> => {
+/**
+ * 创建带 cookie 认证的请求
+ */
+const createCookieAuthRequest = (userId: number): RequestInit => ({
+  method: 'GET',
+  headers: createRequestHeaders(userId),
+  credentials: 'include'
+})
+
+/**
+ * 创建带 Bearer token 认证的请求
+ */
+const createTokenAuthRequest = (userId: number, accessToken: string): RequestInit => ({
+  method: 'GET',
+  headers: createRequestHeaders(userId, accessToken)
+})
+
+/**
+ * 计算今日时间戳范围
+ */
+const getTodayTimestampRange = (): { start: number; end: number } => {
+  const today = new Date()
+  
+  // 今日开始时间戳
+  today.setHours(0, 0, 0, 0)
+  const start = Math.floor(today.getTime() / 1000)
+  
+  // 今日结束时间戳
+  today.setHours(23, 59, 59, 999)
+  const end = Math.floor(today.getTime() / 1000)
+  
+  return { start, end }
+}
+
+/**
+ * 聚合使用量数据
+ */
+const aggregateUsageData = (items: LogItem[]): Omit<TodayUsageData, 'today_requests_count'> => {
+  return items.reduce(
+    (acc, item) => ({
+      today_quota_consumption: acc.today_quota_consumption + (item.quota || 0),
+      today_prompt_tokens: acc.today_prompt_tokens + (item.prompt_tokens || 0),
+      today_completion_tokens: acc.today_completion_tokens + (item.completion_tokens || 0)
+    }),
+    {
+      today_quota_consumption: 0,
+      today_prompt_tokens: 0,
+      today_completion_tokens: 0
+    }
+  )
+}
+
+// ============= 核心 API 函数 =============
+
+/**
+ * 获取用户基本信息（用于账号检测） - 使用浏览器 cookie 认证
+ */
+export const fetchUserInfo = async (baseUrl: string, userId: number): Promise<UserInfo> => {
+  const url = `${baseUrl}/api/user/self`
+  const options = createCookieAuthRequest(userId)
+  
+  const userData = await apiRequest<UserInfo>(url, options, '/api/user/self')
+  
+  return {
+    id: userData.id,
+    username: userData.username,
+    access_token: userData.access_token || null
+  }
+}
+
+/**
+ * 创建访问令牌 - 使用浏览器 cookie 认证
+ */
+export const createAccessToken = async (baseUrl: string, userId: number): Promise<string> => {
+  const url = `${baseUrl}/api/user/token`
+  const options = createCookieAuthRequest(userId)
+  
+  return await apiRequest<string>(url, options, '/api/user/token')
+}
+
+/**
+ * 自动获取或创建访问令牌
+ */
+export const getOrCreateAccessToken = async (baseUrl: string, userId: number): Promise<AccessTokenInfo> => {
   // 首先获取用户信息
   const userInfo = await fetchUserInfo(baseUrl, userId)
   
@@ -89,59 +221,37 @@ export const getOrCreateAccessToken = async (baseUrl: string, userId: number): P
   }
 }
 
-// 获取账号余额信息
+/**
+ * 获取账号余额信息
+ */
 export const fetchAccountQuota = async (baseUrl: string, userId: number, accessToken: string): Promise<number> => {
-  const response = await fetch(`${baseUrl}/api/user/self`, {
-    method: 'GET',
-    headers: createRequestHeaders(userId, accessToken)
-    // 使用 Bearer token 认证，不再依赖浏览器 cookie
-  })
-
-  if (!response.ok) {
-    throw new ApiError(`获取账号余额失败: ${response.status}`, response.status, '/api/user/self')
-  }
-
-  const data = await response.json()
-  if (!data.success || !data.data) {
-    throw new ApiError('获取账号余额数据格式错误', undefined, '/api/user/self')
-  }
-
-  return data.data.quota || 0
-}
-
-// 今日使用情况数据类型
-export interface TodayUsageData {
-  today_quota_consumption: number
-  today_prompt_tokens: number
-  today_completion_tokens: number
-  today_requests_count: number
-}
-
-// 获取今日使用情况
-export const fetchTodayUsage = async (baseUrl: string, userId: number, accessToken: string): Promise<TodayUsageData> => {
-  // 计算今日开始和结束时间戳
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const startTimestamp = Math.floor(today.getTime() / 1000)
+  const url = `${baseUrl}/api/user/self`
+  const options = createTokenAuthRequest(userId, accessToken)
   
-  today.setHours(23, 59, 59, 999)
-  const endTimestamp = Math.floor(today.getTime() / 1000)
+  const userData = await apiRequest<{ quota?: number }>(url, options, '/api/user/self')
+  
+  return userData.quota || 0
+}
 
-  // 初始化统计数据
-  let todayQuotaConsumption = 0
-  let todayPromptTokens = 0
-  let todayCompletionTokens = 0
-  let todayRequestsCount = 0
-
+/**
+ * 获取今日使用情况
+ */
+export const fetchTodayUsage = async (baseUrl: string, userId: number, accessToken: string): Promise<TodayUsageData> => {
+  const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
+  
   let currentPage = 1
-  const pageSize = 100
-  let hasMoreData = true
+  let totalRequestsCount = 0
+  let aggregatedData = {
+    today_quota_consumption: 0,
+    today_prompt_tokens: 0,
+    today_completion_tokens: 0
+  }
 
   // 循环获取所有分页数据
-  while (hasMoreData) {
+  while (currentPage <= REQUEST_CONFIG.MAX_PAGES) {
     const params = new URLSearchParams({
       p: currentPage.toString(),
-      page_size: pageSize.toString(),
+      page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
       type: '0',
       token_name: '',
       model_name: '',
@@ -150,56 +260,45 @@ export const fetchTodayUsage = async (baseUrl: string, userId: number, accessTok
       group: ''
     })
 
-    const response = await fetch(`${baseUrl}/api/log/self?${params.toString()}`, {
-      method: 'GET',
-      headers: createRequestHeaders(userId, accessToken)
-      // 使用 Bearer token 认证，不再依赖浏览器 cookie
-    })
-
-    if (!response.ok) {
-      throw new ApiError(`获取今日使用情况失败: ${response.status}`, response.status, '/api/log/self')
-    }
-
-    const data = await response.json()
-    if (!data.success || !data.data) {
-      throw new ApiError('获取今日使用情况数据格式错误', undefined, '/api/log/self')
-    }
-
-    const items = data.data.items || []
+    const url = `${baseUrl}/api/log/self?${params.toString()}`
+    const options = createTokenAuthRequest(userId, accessToken)
+    
+    const logData = await apiRequest<LogResponseData>(url, options, '/api/log/self')
+    
+    const items = logData.items || []
     const currentPageItemCount = items.length
 
-    // 累加当前页数据
-    items.forEach((item: any) => {
-      todayQuotaConsumption += item.quota || 0
-      todayPromptTokens += item.prompt_tokens || 0
-      todayCompletionTokens += item.completion_tokens || 0
-    })
-
-    todayRequestsCount += currentPageItemCount
+    // 聚合当前页数据
+    const pageData = aggregateUsageData(items)
+    aggregatedData.today_quota_consumption += pageData.today_quota_consumption
+    aggregatedData.today_prompt_tokens += pageData.today_prompt_tokens
+    aggregatedData.today_completion_tokens += pageData.today_completion_tokens
+    
+    totalRequestsCount += currentPageItemCount
 
     // 检查是否还有更多数据
-    const totalPages = Math.ceil((data.data.total || 0) / pageSize)
-    hasMoreData = currentPage < totalPages
-
-    currentPage++
-
-    // 防止无限循环的安全机制
-    if (currentPage > 100) {
-      console.warn('达到最大分页限制(100页)，停止获取数据')
+    const totalPages = Math.ceil((logData.total || 0) / REQUEST_CONFIG.DEFAULT_PAGE_SIZE)
+    if (currentPage >= totalPages) {
       break
     }
+
+    currentPage++
+  }
+
+  if (currentPage > REQUEST_CONFIG.MAX_PAGES) {
+    console.warn(`达到最大分页限制(${REQUEST_CONFIG.MAX_PAGES}页)，停止获取数据`)
   }
 
   return {
-    today_quota_consumption: todayQuotaConsumption,
-    today_prompt_tokens: todayPromptTokens,
-    today_completion_tokens: todayCompletionTokens,
-    today_requests_count: todayRequestsCount
+    ...aggregatedData,
+    today_requests_count: totalRequestsCount
   }
 }
 
-// 获取完整的账号数据
-export const fetchAccountData = async (baseUrl: string, userId: number, accessToken: string) => {
+/**
+ * 获取完整的账号数据
+ */
+export const fetchAccountData = async (baseUrl: string, userId: number, accessToken: string): Promise<AccountData> => {
   const [quota, todayUsage] = await Promise.all([
     fetchAccountQuota(baseUrl, userId, accessToken),
     fetchTodayUsage(baseUrl, userId, accessToken)
@@ -211,20 +310,9 @@ export const fetchAccountData = async (baseUrl: string, userId: number, accessTo
   }
 }
 
-// 刷新账号数据结果
-export interface RefreshAccountResult {
-  success: boolean
-  data?: {
-    quota: number
-    today_quota_consumption: number
-    today_prompt_tokens: number
-    today_completion_tokens: number
-    today_requests_count: number
-  }
-  healthStatus: HealthCheckResult
-}
-
-// 刷新单个账号数据
+/**
+ * 刷新单个账号数据
+ */
 export const refreshAccountData = async (
   baseUrl: string, 
   userId: number, 
@@ -249,7 +337,9 @@ export const refreshAccountData = async (
   }
 }
 
-// 验证账号连接性
+/**
+ * 验证账号连接性
+ */
 export const validateAccountConnection = async (
   baseUrl: string, 
   userId: number, 
@@ -264,25 +354,11 @@ export const validateAccountConnection = async (
   }
 }
 
-// API 错误类型
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public statusCode?: number,
-    public endpoint?: string
-  ) {
-    super(message)
-    this.name = 'ApiError'
-  }
-}
+// ============= 健康状态判断 =============
 
-// 健康状态判断结果
-export interface HealthCheckResult {
-  status: 'healthy' | 'warning' | 'error' | 'unknown'
-  message: string
-}
-
-// 根据错误判断健康状态
+/**
+ * 根据错误判断健康状态
+ */
 export const determineHealthStatus = (error: any): HealthCheckResult => {
   if (error instanceof ApiError) {
     // HTTP响应码不为200的情况
