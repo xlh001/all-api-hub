@@ -1,4 +1,5 @@
 import { useState, useEffect, Fragment } from "react"
+import toast from 'react-hot-toast'
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
 import { GlobeAltIcon, XMarkIcon, SparklesIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline"
 import { autoDetectAccount, validateAndSaveAccount, extractDomainPrefix, isValidExchangeRate } from "../services/accountOperations"
@@ -125,24 +126,33 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
     setIsSaving(true)
     
     try {
-      const result = await validateAndSaveAccount(
-        url.trim(),
-        siteName.trim(),
-        username.trim(),
-        accessToken.trim(),
-        userId.trim(),
-        exchangeRate
+      await toast.promise(
+        validateAndSaveAccount(
+          url.trim(),
+          siteName.trim(),
+          username.trim(),
+          accessToken.trim(),
+          userId.trim(),
+          exchangeRate
+        ),
+        {
+          loading: '正在添加账号...',
+          success: (result) => {
+            if (result.success) {
+              onClose()
+              return `账号 ${siteName} 添加成功!`
+            } else {
+              throw new Error(result.error || '保存失败')
+            }
+          },
+          error: (err) => {
+            const errorMsg = err.message || '添加失败'
+            return `添加失败: ${errorMsg}`
+          },
+        }
       )
-      
-      if (result.success) {
-        alert('账号添加成功！')
-        onClose()
-      } else {
-        alert(result.error || '保存失败')
-      }
     } catch (error) {
       console.error('保存账号失败:', error)
-      alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setIsSaving(false)
     }

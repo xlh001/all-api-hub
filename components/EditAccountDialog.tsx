@@ -1,4 +1,5 @@
 import { useState, useEffect, Fragment } from "react"
+import toast from 'react-hot-toast'
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
 import { GlobeAltIcon, XMarkIcon, PencilIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon, SparklesIcon, CheckIcon, UsersIcon } from "@heroicons/react/24/outline"
 import { accountStorage } from "../services/accountStorage"
@@ -114,32 +115,41 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
 
   const handleSaveAccount = async () => {
     if (!account) {
-      alert('账号信息错误')
+      toast.error('账号信息错误')
       return
     }
 
     setIsSaving(true)
     
     try {
-      const result = await validateAndUpdateAccount(
-        account.id,
-        url.trim(),
-        siteName.trim(),
-        username.trim(),
-        accessToken.trim(),
-        userId.trim(),
-        exchangeRate
+      await toast.promise(
+        validateAndUpdateAccount(
+          account.id,
+          url.trim(),
+          siteName.trim(),
+          username.trim(),
+          accessToken.trim(),
+          userId.trim(),
+          exchangeRate
+        ),
+        {
+          loading: '正在保存更改...',
+          success: (result) => {
+            if (result.success) {
+              onClose()
+              return `账号 ${siteName} 更新成功!`
+            } else {
+              throw new Error(result.error || '更新失败')
+            }
+          },
+          error: (err) => {
+            const errorMsg = err.message || '更新失败'
+            return `更新失败: ${errorMsg}`
+          },
+        }
       )
-      
-      if (result.success) {
-        alert('账号更新成功！')
-        onClose()
-      } else {
-        alert(result.error || '更新失败')
-      }
     } catch (error) {
       console.error('更新账号失败:', error)
-      alert(`更新失败: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setIsSaving(false)
     }
