@@ -115,7 +115,7 @@ export default function Tooltip({
       
       <div 
         ref={tooltipRef}
-        className={`absolute ${getPositionClasses()} px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-50 whitespace-nowrap transition-all duration-200 ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'} ${className}`}
+        className={`absolute ${getPositionClasses()} px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-[9999] whitespace-nowrap transition-all duration-200 ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'} ${className}`}
       >
         {content}
         <div className={getArrowClasses()}></div>

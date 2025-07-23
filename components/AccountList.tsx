@@ -5,6 +5,7 @@ import { UI_CONSTANTS, HEALTH_STATUS_MAP } from "../constants/ui"
 import { getCurrencySymbol } from "../utils/formatters"
 import type { DisplaySiteData } from "../types"
 import { useState, useCallback, useRef, useEffect } from 'react'
+import Tooltip from './Tooltip'
 
 type SortField = 'name' | 'balance' | 'consumption'
 type SortOrder = 'asc' | 'desc'
@@ -170,9 +171,11 @@ export default function AccountList({
               <div className="flex items-center space-x-2 flex-shrink-0">
                 {/* 复制下拉菜单 */}
                 <Menu as="div" className="relative">
-                  <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
-                    <DocumentDuplicateIcon className="w-4 h-4 text-gray-500" />
-                  </MenuButton>
+                  <Tooltip content="复制" position="top">
+                    <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
+                      <DocumentDuplicateIcon className="w-4 h-4 text-gray-500" />
+                    </MenuButton>
+                  </Tooltip>
                   <MenuItems 
                     anchor="bottom end"
                     className="z-50 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]"
@@ -199,19 +202,22 @@ export default function AccountList({
                 </Menu>
 
                 {/* 用量按钮 */}
-                <button
-                  onClick={() => onViewUsage?.(site)}
-                  className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
-                  title="查看用量"
-                >
-                  <ChartPieIcon className="w-4 h-4 text-gray-500" />
-                </button>
+                <Tooltip content="查看用量" position="top">
+                  <button
+                    onClick={() => onViewUsage?.(site)}
+                    className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <ChartPieIcon className="w-4 h-4 text-gray-500" />
+                  </button>
+                </Tooltip>
 
                 {/* 更多下拉菜单 */}
                 <Menu as="div" className="relative">
-                  <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
-                    <EllipsisHorizontalIcon className="w-4 h-4 text-gray-500" />
-                  </MenuButton>
+                  <Tooltip content="更多操作" position="top">
+                    <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
+                      <EllipsisHorizontalIcon className="w-4 h-4 text-gray-500" />
+                    </MenuButton>
+                  </Tooltip>
                   <MenuItems 
                     anchor="bottom end"
                     className="z-50 w-24 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]"
