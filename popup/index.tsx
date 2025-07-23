@@ -97,6 +97,26 @@ function IndexPopup() {
     loadAccountData() // 重新加载数据
   }, [loadAccountData])
 
+  const handleGlobalRefresh = useCallback(async () => {
+    try {
+      await toast.promise(
+        handleRefresh(),
+        {
+          loading: '正在刷新所有账号...',
+          success: (result) => {
+            if (result.failed > 0) {
+              return `刷新完成：${result.success} 个成功，${result.failed} 个失败`
+            }
+            return '所有账号刷新成功!'
+          },
+          error: '刷新失败，请稍后重试',
+        }
+      )
+    } catch (error) {
+      console.error('刷新时出错:', error)
+    }
+  }, [handleRefresh])
+
   const handleRefreshAccount = useCallback(async (account: DisplaySiteData) => {
     if (refreshingAccountId) return // 防止重复刷新
     
@@ -138,7 +158,7 @@ function IndexPopup() {
       {/* 顶部导航栏 */}
       <HeaderSection
         isRefreshing={isRefreshing}
-        onRefresh={handleRefresh}
+        onRefresh={handleGlobalRefresh}
         onOpenTab={handleOpenTab}
       />
 
