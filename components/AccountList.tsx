@@ -1,8 +1,10 @@
-import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, PlusIcon } from "@heroicons/react/24/outline"
+import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, PlusIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline"
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import CountUp from "react-countup"
 import { UI_CONSTANTS, HEALTH_STATUS_MAP } from "../constants/ui"
 import { getCurrencySymbol } from "../utils/formatters"
 import type { DisplaySiteData } from "../types"
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 type SortField = 'name' | 'balance' | 'consumption'
 type SortOrder = 'asc' | 'desc'
@@ -23,6 +25,11 @@ interface AccountListProps {
   // 事件处理
   onSort: (field: SortField) => void
   onAddAccount: () => void
+  onCopyUrl?: (site: DisplaySiteData) => void
+  onCopyKey?: (site: DisplaySiteData) => void
+  onViewUsage?: (site: DisplaySiteData) => void
+  onEditAccount?: (site: DisplaySiteData) => void
+  onDeleteAccount?: (site: DisplaySiteData) => void
 }
 
 export default function AccountList({
@@ -33,8 +40,61 @@ export default function AccountList({
   isInitialLoad,
   prevBalances,
   onSort,
-  onAddAccount
+  onAddAccount,
+  onCopyUrl,
+  onCopyKey,
+  onViewUsage,
+  onEditAccount,
+  onDeleteAccount
 }: AccountListProps) {
+  const [hoveredSiteId, setHoveredSiteId] = useState<string | null>(null)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 防抖的 hover 处理
+  const handleMouseEnter = useCallback((siteId: string) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredSiteId(siteId)
+    }, 50) // 100ms 防抖延迟
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredSiteId(null)
+    }, 0) // 不需要离开时的延迟
+  }, [])
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
+  const handleCopyUrl = (site: DisplaySiteData) => {
+    copyToClipboard(site.baseUrl)
+    onCopyUrl?.(site)
+  }
+
+  const handleCopyKey = (site: DisplaySiteData) => {
+    copyToClipboard(site.token)
+    onCopyKey?.(site)
+  }
   if (sites.length === 0) {
     return (
       <div className="px-6 py-12 text-center">
@@ -84,7 +144,12 @@ export default function AccountList({
       
       {/* 账号列表 */}
       {sites.map((site) => (
-        <div key={site.id} className="px-5 py-4 border-b border-gray-50 hover:bg-gray-25 transition-colors">
+        <div 
+          key={site.id} 
+          className="px-5 py-4 border-b border-gray-50 hover:bg-gray-25 transition-colors relative group"
+          onMouseEnter={() => handleMouseEnter(site.id)}
+          onMouseLeave={handleMouseLeave}
+        >
           <div className="flex items-center space-x-4">
             {/* 站点信息 */}
             <div className="flex items-center space-x-3 flex-1 min-w-0">
@@ -99,6 +164,80 @@ export default function AccountList({
                 <div className="text-xs text-gray-500 truncate ml-4">{site.username}</div>
               </div>
             </div>
+            
+            {/* 按钮组 - 只在 hover 时显示 */}
+            {hoveredSiteId === site.id && (
+              <div className="flex items-center space-x-2 flex-shrink-0">
+                {/* 复制下拉菜单 */}
+                <Menu as="div" className="relative">
+                  <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
+                    <DocumentDuplicateIcon className="w-4 h-4 text-gray-500" />
+                  </MenuButton>
+                  <MenuItems 
+                    anchor="bottom end"
+                    className="z-50 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]"
+                  >
+                    <MenuItem>
+                      <button
+                        onClick={() => handleCopyUrl(site)}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2"
+                      >
+                        <DocumentDuplicateIcon className="w-4 h-4" />
+                        <span>复制 URL</span>
+                      </button>
+                    </MenuItem>
+                    <MenuItem>
+                      <button
+                        onClick={() => handleCopyKey(site)}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2"
+                      >
+                        <DocumentDuplicateIcon className="w-4 h-4" />
+                        <span>复制密钥</span>
+                      </button>
+                    </MenuItem>
+                  </MenuItems>
+                </Menu>
+
+                {/* 用量按钮 */}
+                <button
+                  onClick={() => onViewUsage?.(site)}
+                  className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
+                  title="查看用量"
+                >
+                  <ChartPieIcon className="w-4 h-4 text-gray-500" />
+                </button>
+
+                {/* 更多下拉菜单 */}
+                <Menu as="div" className="relative">
+                  <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
+                    <EllipsisHorizontalIcon className="w-4 h-4 text-gray-500" />
+                  </MenuButton>
+                  <MenuItems 
+                    anchor="bottom end"
+                    className="z-50 w-24 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]"
+                  >
+                    <MenuItem>
+                      <button
+                        onClick={() => onEditAccount?.(site)}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                        <span>编辑</span>
+                      </button>
+                    </MenuItem>
+                    <MenuItem>
+                      <button
+                        onClick={() => onDeleteAccount?.(site)}
+                        className="w-full px-3 py-2 text-left text-sm text-red-600 hover:text-red-700 data-focus:bg-red-50 flex items-center space-x-2"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                        <span>删除</span>
+                      </button>
+                    </MenuItem>
+                  </MenuItems>
+                </Menu>
+              </div>
+            )}
             
             {/* 余额和统计 */}
             <div className="text-right flex-shrink-0">

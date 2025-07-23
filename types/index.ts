@@ -68,4 +68,6 @@ export interface DisplaySiteData {
   todayConsumption: { USD: number; CNY: number };
   todayTokens: { upload: number; download: number };
   healthStatus?: SiteHealthStatus; // 可选的健康状态
+  baseUrl: string; // 站点 URL，用于复制功能
+  token: string; // 访问令牌，用于复制功能
 }
