@@ -36,6 +36,11 @@ export interface HealthCheckResult {
   message: string
 }
 
+export interface SiteStatusInfo {
+  price?: number
+  stripe_unit_price?: number
+}
+
 // API 响应的通用格式
 interface ApiResponse<T = any> {
   success: boolean
@@ -197,6 +202,60 @@ export const createAccessToken = async (baseUrl: string, userId: number): Promis
   const options = createCookieAuthRequest(userId)
   
   return await apiRequest<string>(url, options, '/api/user/token')
+}
+
+/**
+ * 获取站点状态信息（包含充值比例）
+ */
+export const fetchSiteStatus = async (baseUrl: string): Promise<SiteStatusInfo | null> => {
+  try {
+    const url = `${baseUrl}/api/status`
+    const options = {
+      method: 'GET',
+      headers: {
+        'Content-Type': REQUEST_CONFIG.HEADERS.CONTENT_TYPE,
+        'Pragma': REQUEST_CONFIG.HEADERS.PRAGMA
+      }
+    }
+    
+    const response = await fetch(url, options)
+    if (!response.ok) {
+      console.warn(`获取站点状态失败: ${response.status}`)
+      return null
+    }
+    
+    const data: ApiResponse<SiteStatusInfo> = await response.json()
+    if (!data.success || !data.data) {
+      console.warn('站点状态响应数据格式错误')
+      return null
+    }
+    
+    return data.data
+  } catch (error) {
+    console.warn('获取站点状态信息失败:', error)
+    return null
+  }
+}
+
+/**
+ * 从站点状态信息中提取默认充值比例
+ */
+export const extractDefaultExchangeRate = (statusInfo: SiteStatusInfo | null): number | null => {
+  if (!statusInfo) {
+    return null
+  }
+  
+  // 优先使用 price
+  if (statusInfo.price && statusInfo.price > 0) {
+    return statusInfo.price
+  }
+  
+  // 次选 stripe_unit_price
+  if (statusInfo.stripe_unit_price && statusInfo.stripe_unit_price > 0) {
+    return statusInfo.stripe_unit_price
+  }
+  
+  return null
 }
 
 /**

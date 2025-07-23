@@ -2,7 +2,7 @@ import { useState, useEffect, Fragment } from "react"
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
 import { GlobeAltIcon, XMarkIcon, SparklesIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline"
 import { accountStorage } from "../services/accountStorage"
-import { fetchAccountData, getOrCreateAccessToken } from "../services/apiService"
+import { fetchAccountData, getOrCreateAccessToken, fetchSiteStatus, extractDefaultExchangeRate } from "../services/apiService"
 import type { SiteAccount } from "../types"
 
 interface AddAccountDialogProps {
@@ -127,20 +127,42 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
         throw new Error('无法获取用户 ID')
       }
 
-      // 发起API请求获取用户信息
-      const { username: detectedUsername, access_token } = await getOrCreateAccessToken(url, userId)
+      // 并行执行：获取用户信息和站点状态
+      const [tokenInfo, siteStatus] = await Promise.all([
+        getOrCreateAccessToken(url, userId),
+        fetchSiteStatus(url.trim())
+      ])
+      
+      const { username: detectedUsername, access_token } = tokenInfo
       
       if (!detectedUsername || !access_token) {
         throw new Error('未能获取到用户名或访问令牌')
       }
 
+      // 获取默认充值比例
+      const defaultExchangeRate = extractDefaultExchangeRate(siteStatus)
+      
       // 更新表单数据
       setUsername(detectedUsername)
       setAccessToken(access_token)
       setUserId(userId.toString())
+      
+      // 设置充值比例默认值
+      if (defaultExchangeRate) {
+        setExchangeRate(defaultExchangeRate.toString())
+        console.log('获取到默认充值比例:', defaultExchangeRate)
+      } else {
+        setExchangeRate("") // 如果没有获取到，设置为空
+        console.log('未获取到默认充值比例，设置为空')
+      }
+      
       setIsDetected(true)
       
-      console.log('自动识别成功:', { username: detectedUsername, siteName })
+      console.log('自动识别成功:', { 
+        username: detectedUsername, 
+        siteName, 
+        exchangeRate: defaultExchangeRate 
+      })
       
     } catch (error) {
       console.error('自动识别失败:', error)
@@ -456,7 +478,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                             max="100"
                             value={exchangeRate}
                             onChange={(e) => setExchangeRate(e.target.value)}
-                            placeholder="7.2"
+                            placeholder="请输入充值比例"
                             className={`block w-full pl-10 py-3 border rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
                               isValidExchangeRate(exchangeRate) 
                                 ? 'border-gray-200 focus:ring-blue-500 focus:border-transparent' 
@@ -469,7 +491,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                           </div>
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
-                          表示充值 1 美元需要多少人民币，例如 7.2 表示 7.2 元人民币 = 1 美元
+                          表示充值 1 美元需要多少人民币。系统会尝试自动获取，如未获取到请手动填写
                         </p>
                         {!isValidExchangeRate(exchangeRate) && exchangeRate && (
                           <p className="mt-1 text-xs text-red-600">
