@@ -23,6 +23,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
   const [detectionError, setDetectionError] = useState<string | null>(null)
   const [showManualForm, setShowManualForm] = useState(false)
   const [exchangeRate, setExchangeRate] = useState("")
+  const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
 
   // 验证充值比例是否有效
   const isValidExchangeRate = (rate: string): boolean => {
@@ -70,6 +71,8 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       setDetectionError(null)
       setShowManualForm(false)
       setExchangeRate("")
+      setCurrentTabUrl(null)
+      setUrl("")
       
       // 获取当前标签页的 URL 作为初始参考
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -81,19 +84,26 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
             if (!baseUrl.startsWith('http')) {
               return
             }
-            setUrl(baseUrl)
-            // 设置站点名称为域名前缀
+            setCurrentTabUrl(baseUrl)
+            // 设置站点名称为域名前缀，但不自动填入URL
             const domainPrefix = extractDomainPrefix(urlObj.hostname)
             setSiteName(domainPrefix)
           } catch (error) {
             console.log('无法解析 URL:', error)
-            setUrl("")
+            setCurrentTabUrl(null)
             setSiteName("")
           }
         }
       })
     }
   }, [isOpen])
+
+  // 处理点击当前标签页 URL
+  const handleUseCurrentTabUrl = () => {
+    if (currentTabUrl) {
+      setUrl(currentTabUrl)
+    }
+  }
 
   const handleAutoDetect = async () => {
     if (!url.trim()) {
@@ -365,6 +375,19 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                     <p className="mt-2 text-xs text-gray-500">
                       请输入 One API 或 New API 站点的完整地址
                     </p>
+                    {/* 当前标签页 URL 提示 */}
+                    {currentTabUrl && !url && (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={handleUseCurrentTabUrl}
+                          className="inline-flex items-center px-2 py-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                        >
+                          <GlobeAltIcon className="w-3 h-3 mr-1" />
+                          {new URL(currentTabUrl).host}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
 
