@@ -94,6 +94,7 @@ const createRequestHeaders = (userId: number, accessToken?: string): Record<stri
     'Pragma': REQUEST_CONFIG.HEADERS.PRAGMA
   }
   
+  // TODO：bug，还是带上了 cookie，导致网站没有使用 access_token进行验证
   if (accessToken) {
     headers['Cookie'] = '' // 使用 Bearer token 时清空 Cookie 头
     headers['Authorization'] = `Bearer ${accessToken}`
@@ -138,7 +139,8 @@ const createCookieAuthRequest = (userId: number): RequestInit => ({
  */
 const createTokenAuthRequest = (userId: number, accessToken: string): RequestInit => ({
   method: 'GET',
-  headers: createRequestHeaders(userId, accessToken)
+  headers: createRequestHeaders(userId, accessToken),
+  credentials: 'omit' // 明确不携带 cookies
 })
 
 /**
@@ -215,7 +217,8 @@ export const fetchSiteStatus = async (baseUrl: string): Promise<SiteStatusInfo |
       headers: {
         'Content-Type': REQUEST_CONFIG.HEADERS.CONTENT_TYPE,
         'Pragma': REQUEST_CONFIG.HEADERS.PRAGMA
-      }
+      },
+      credentials: 'omit' as RequestCredentials // 明确不携带 cookies
     }
     
     const response = await fetch(url, options)
