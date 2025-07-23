@@ -6,6 +6,7 @@ import { getCurrencySymbol } from "../utils/formatters"
 import type { DisplaySiteData } from "../types"
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Tooltip from './Tooltip'
+import DelAccountDialog from './DelAccountDialog'
 
 type SortField = 'name' | 'balance' | 'consumption'
 type SortOrder = 'asc' | 'desc'
@@ -50,6 +51,7 @@ export default function AccountList({
 }: AccountListProps) {
   const [hoveredSiteId, setHoveredSiteId] = useState<string | null>(null)
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [deleteDialogAccount, setDeleteDialogAccount] = useState<DisplaySiteData | null>(null)
 
   // 防抖的 hover 处理
   const handleMouseEnter = useCallback((siteId: string) => {
@@ -233,7 +235,7 @@ export default function AccountList({
                     </MenuItem>
                     <MenuItem>
                       <button
-                        onClick={() => onDeleteAccount?.(site)}
+                        onClick={() => setDeleteDialogAccount(site)}
                         className="w-full px-3 py-2 text-left text-sm text-red-600 hover:text-red-700 data-focus:bg-red-50 flex items-center space-x-2"
                       >
                         <TrashIcon className="w-4 h-4" />
@@ -271,6 +273,14 @@ export default function AccountList({
           </div>
         </div>
       ))}
+      
+      {/* 删除账号确认对话框 */}
+      <DelAccountDialog
+        isOpen={deleteDialogAccount !== null}
+        onClose={() => setDeleteDialogAccount(null)}
+        account={deleteDialogAccount}
+        onDeleted={() => onDeleteAccount?.(deleteDialogAccount!)}
+      />
     </div>
   )
 }

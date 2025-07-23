@@ -119,6 +119,7 @@ class AccountStorageService {
       const filteredAccounts = accounts.filter(account => account.id !== id);
       
       if (filteredAccounts.length === accounts.length) {
+        console.error(`账号 ${id} 不存在，当前账号列表:`, accounts.map(acc => ({ id: acc.id, name: acc.site_name })));
         throw new Error(`账号 ${id} 不存在`);
       }
 
@@ -126,7 +127,7 @@ class AccountStorageService {
       return true;
     } catch (error) {
       console.error('删除账号失败:', error);
-      return false;
+      throw error; // 重新抛出错误，让调用者处理
     }
   }
 
@@ -282,7 +283,9 @@ class AccountStorageService {
         upload: account.account_info.today_prompt_tokens,
         download: account.account_info.today_completion_tokens
       },
-      healthStatus: account.health_status
+      healthStatus: account.health_status,
+      baseUrl: account.site_url,
+      token: account.account_info.access_token
     }));
   }
 

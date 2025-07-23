@@ -89,6 +89,11 @@ function IndexPopup() {
     loadAccountData() // 重新加载数据
   }, [loadAccountData])
 
+  const handleDeleteAccount = useCallback((account: DisplaySiteData) => {
+    console.log('删除账号:', account.name)
+    loadAccountData() // 重新加载数据
+  }, [loadAccountData])
+
   return (
     <div className={`${UI_CONSTANTS.POPUP.WIDTH} bg-white flex flex-col ${UI_CONSTANTS.POPUP.HEIGHT}`}>
       {/* 顶部导航栏 */}
@@ -128,6 +133,7 @@ function IndexPopup() {
           onSort={handleSort}
           onAddAccount={handleAddAccount}
           onEditAccount={handleEditAccount}
+          onDeleteAccount={handleDeleteAccount}
         />
       </div>
 
