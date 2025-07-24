@@ -153,6 +153,10 @@ function IndexPopup() {
     }
   }, [refreshingAccountId, loadAccountData])
 
+  const handleCopyUrl = useCallback((account: DisplaySiteData) => {
+    toast.success(`已复制 ${account.name} 的URL到剪贴板`)
+  }, [])
+
   return (
     <div className={`${UI_CONSTANTS.POPUP.WIDTH} bg-white flex flex-col ${UI_CONSTANTS.POPUP.HEIGHT}`}>
       {/* 顶部导航栏 */}
@@ -193,6 +197,7 @@ function IndexPopup() {
           onSort={handleSort}
           onAddAccount={handleAddAccount}
           onRefreshAccount={handleRefreshAccount}
+          onCopyUrl={handleCopyUrl}
           onEditAccount={handleEditAccount}
           onDeleteAccount={handleDeleteAccount}
         />
