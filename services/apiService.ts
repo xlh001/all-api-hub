@@ -41,6 +41,44 @@ export interface SiteStatusInfo {
   stripe_unit_price?: number
 }
 
+// 模型列表响应类型
+export interface ModelsResponse {
+  data: string[]
+  message: string
+  success: boolean
+}
+
+// 分组信息类型
+export interface GroupInfo {
+  desc: string
+  ratio: number
+}
+
+// 分组响应类型
+export interface GroupsResponse {
+  data: Record<string, GroupInfo>
+  message: string
+  success: boolean
+}
+
+// 创建令牌请求类型
+export interface CreateTokenRequest {
+  name: string
+  remain_quota: number
+  expired_time: number
+  unlimited_quota: boolean
+  model_limits_enabled: boolean
+  model_limits: string
+  allow_ips: string
+  group: string
+}
+
+// 创建令牌响应类型
+export interface CreateTokenResponse {
+  message: string
+  success: boolean
+}
+
 // API令牌类型定义
 export interface ApiToken {
   id: number
@@ -482,6 +520,84 @@ export const fetchAccountTokens = async (
     }
   } catch (error) {
     console.error('获取令牌列表失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 获取可用模型列表
+ */
+export const fetchAvailableModels = async (
+  baseUrl: string, 
+  userId: number, 
+  accessToken: string
+): Promise<string[]> => {
+  const url = `${baseUrl}/api/user/models`
+  const options = createTokenAuthRequest(userId, accessToken)
+  
+  try {
+    const response = await apiRequest<string[]>(url, options, '/api/user/models')
+    return response
+  } catch (error) {
+    console.error('获取模型列表失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 获取用户分组信息
+ */
+export const fetchUserGroups = async (
+  baseUrl: string, 
+  userId: number, 
+  accessToken: string
+): Promise<Record<string, GroupInfo>> => {
+  const url = `${baseUrl}/api/user/self/groups`
+  const options = createTokenAuthRequest(userId, accessToken)
+  
+  try {
+    const response = await apiRequest<Record<string, GroupInfo>>(url, options, '/api/user/self/groups')
+    return response
+  } catch (error) {
+    console.error('获取分组信息失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 创建新的API令牌
+ */
+export const createApiToken = async (
+  baseUrl: string, 
+  userId: number, 
+  accessToken: string,
+  tokenData: CreateTokenRequest
+): Promise<boolean> => {
+  const url = `${baseUrl}/api/token/`
+  const options = {
+    method: 'POST',
+    headers: createRequestHeaders(userId, accessToken),
+    credentials: 'omit' as RequestCredentials,
+    body: JSON.stringify(tokenData)
+  }
+  
+  try {
+    const response = await fetch(url, options)
+
+    if (!response.ok) {
+      throw new ApiError(`请求失败: ${response.status}`, response.status, '/api/token')
+    }
+
+    const data: ApiResponse<any> = await response.json()
+    
+    // 对于创建令牌的响应，只检查success字段，不要求data字段存在
+    if (!data.success) {
+      throw new ApiError(data.message || '创建令牌失败', undefined, '/api/token')
+    }
+
+    return true
+  } catch (error) {
+    console.error('创建令牌失败:', error)
     throw error
   }
 }

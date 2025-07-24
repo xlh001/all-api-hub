@@ -12,6 +12,7 @@ import {
 import { useAccountData } from "../../hooks/useAccountData"
 import { fetchAccountTokens, type ApiToken } from "../../services/apiService"
 import type { DisplaySiteData } from "../../types"
+import AddTokenDialog from "../../components/AddTokenDialog"
 import toast from 'react-hot-toast'
 
 export default function KeyManagement({ routeParams }: { routeParams?: Record<string, string> }) {
@@ -21,6 +22,7 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   const [tokens, setTokens] = useState<(ApiToken & { accountName: string })[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [visibleKeys, setVisibleKeys] = useState<Set<number>>(new Set())
+  const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
 
   // 加载所有账号的密钥
   const loadTokens = async () => {
@@ -102,6 +104,18 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
     })
   }
 
+  // 处理添加密钥
+  const handleAddToken = () => {
+    setIsAddTokenOpen(true)
+  }
+
+  // 关闭添加密钥对话框
+  const handleCloseAddToken = () => {
+    setIsAddTokenOpen(false)
+    // 重新加载密钥列表
+    loadTokens()
+  }
+
   // 格式化密钥显示
   const formatKey = (key: string, tokenId: number) => {
     if (visibleKeys.has(tokenId)) {
@@ -131,13 +145,23 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
             <KeyIcon className="w-6 h-6 text-blue-600" />
             <h1 className="text-2xl font-semibold text-gray-900">密钥管理</h1>
           </div>
-          <button
-            onClick={loadTokens}
-            disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-          >
-            {isLoading ? '刷新中...' : '刷新列表'}
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={handleAddToken}
+              disabled={displayData.length === 0}
+              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span>添加密钥</span>
+            </button>
+            <button
+              onClick={loadTokens}
+              disabled={isLoading}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+            >
+              {isLoading ? '刷新中...' : '刷新列表'}
+            </button>
+          </div>
         </div>
         <p className="text-gray-500">查看和管理所有账号的API密钥</p>
       </div>
@@ -195,9 +219,17 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
           <p className="text-gray-500 mb-4">
             {tokens.length === 0 ? '暂无密钥数据' : '没有找到匹配的密钥'}
           </p>
-          {displayData.length === 0 && (
+          {displayData.length === 0 ? (
             <p className="text-sm text-gray-400">请先添加账号</p>
-          )}
+          ) : tokens.length === 0 ? (
+            <button
+              onClick={handleAddToken}
+              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors flex items-center space-x-2 mx-auto"
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span>创建第一个密钥</span>
+            </button>
+          ) : null}
         </div>
       ) : (
         <div className="space-y-3">
@@ -306,12 +338,26 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
             <p className="text-yellow-800 font-medium mb-1">密钥管理说明</p>
             <p className="text-yellow-700">
               此页面显示所有账号的API密钥信息，包括使用情况和过期时间。
-              密钥的创建、编辑和删除需要在对应的API站点管理页面进行操作。
+              可以通过右上角的"添加密钥"按钮或点击各密钥项目旁的"+"按钮为指定账号创建新密钥。
               请妥善保管您的API密钥，避免泄露给他人。
             </p>
           </div>
         </div>
       </div>
+
+      {/* 添加密钥对话框 */}
+      <AddTokenDialog
+        isOpen={isAddTokenOpen}
+        onClose={handleCloseAddToken}
+        availableAccounts={displayData.map(account => ({
+          id: account.id,
+          name: account.name,
+          baseUrl: account.baseUrl,
+          userId: account.userId,
+          token: account.token
+        }))}
+        preSelectedAccountId={selectedAccount === "all" ? null : selectedAccount}
+      />
     </div>
   )
 }
