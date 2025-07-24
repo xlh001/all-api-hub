@@ -1,4 +1,4 @@
-import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, CpuChipIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
+import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, CpuChipIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon, ArrowPathIcon, InboxIcon } from "@heroicons/react/24/outline"
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import CountUp from "react-countup"
 import { UI_CONSTANTS, HEALTH_STATUS_MAP } from "../constants/ui"
@@ -116,13 +116,13 @@ export default function AccountList({
   if (sites.length === 0) {
     return (
       <div className="px-6 py-12 text-center">
-        <ChartBarIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-        <p className="text-gray-500 text-sm mb-4">暂无站点数据</p>
+        <InboxIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+        <p className="text-gray-500 text-sm mb-4">暂无站点账号</p>
         <button 
           onClick={onAddAccount}
           className="px-6 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm"
         >
-          添加第一个站点
+          添加第一个站点账号
         </button>
       </div>
     )
