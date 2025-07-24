@@ -6,7 +6,9 @@ import {
   KeyIcon, 
   DocumentDuplicateIcon, 
   ExclamationTriangleIcon,
-  CheckIcon
+  CheckIcon,
+  ClockIcon,
+  UserGroupIcon
 } from "@heroicons/react/24/outline"
 import { UI_CONSTANTS } from "../constants/ui"
 import { fetchAccountTokens, type ApiToken } from "../services/apiService"
@@ -33,8 +35,15 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
     
     try {
       // 使用 DisplaySiteData 中的 userId 字段
-      const tokens = await fetchAccountTokens(account.baseUrl, account.userId, account.token)
-      setTokens(tokens)
+      const tokensResponse = await fetchAccountTokens(account.baseUrl, account.userId, account.token)
+      
+      // 确保返回的是数组
+      if (Array.isArray(tokensResponse)) {
+        setTokens(tokensResponse)
+      } else {
+        console.warn('Token response is not an array:', tokensResponse)
+        setTokens([])
+      }
     } catch (error) {
       console.error('获取令牌列表失败:', error)
       const errorMessage = error instanceof Error ? error.message : '未知错误'
@@ -96,6 +105,38 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
     return new Date(timestamp * 1000).toLocaleDateString('zh-CN')
   }
 
+  // 获取组别徽章样式
+  const getGroupBadgeStyle = (group: string) => {
+    // 处理可能为空或未定义的 group
+    const groupName = group || 'default'
+    
+    // 根据组别名称生成不同的颜色主题
+    const hash = groupName.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0)
+      return a & a
+    }, 0)
+    
+    const colors = [
+      'bg-blue-100 text-blue-800 border-blue-200',
+      'bg-green-100 text-green-800 border-green-200', 
+      'bg-purple-100 text-purple-800 border-purple-200',
+      'bg-orange-100 text-orange-800 border-orange-200',
+      'bg-pink-100 text-pink-800 border-pink-200',
+      'bg-indigo-100 text-indigo-800 border-indigo-200',
+      'bg-teal-100 text-teal-800 border-teal-200',
+      'bg-yellow-100 text-yellow-800 border-yellow-200'
+    ]
+    
+    return colors[Math.abs(hash) % colors.length]
+  }
+
+  // 获取状态徽章样式
+  const getStatusBadgeStyle = (status: number) => {
+    return status === 1 
+      ? 'bg-green-100 text-green-800 border-green-200'
+      : 'bg-red-100 text-red-800 border-red-200'
+  }
+
   return (
     <Transition show={isOpen} as={Fragment}>
       <Dialog
@@ -127,22 +168,27 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4"
           >
-            <DialogPanel className="w-full max-w-lg bg-white rounded-lg shadow-xl transform transition-all max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogPanel className="w-full max-w-md bg-white rounded-lg shadow-xl transform transition-all max-h-[85vh] overflow-hidden flex flex-col">
               {/* 头部 */}
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
                     <KeyIcon className="w-4 h-4 text-white" />
                   </div>
-                  <DialogTitle className="text-lg font-semibold text-gray-900">
-                    {account?.name} - 令牌列表
-                  </DialogTitle>
+                  <div>
+                    <DialogTitle className="text-lg font-semibold text-gray-900">
+                      令牌管理
+                    </DialogTitle>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {account?.name}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={onClose}
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <XMarkIcon className="w-5 h-5" />
+                  <XMarkIcon className="w-4 h-4" />
                 </button>
               </div>
 
@@ -169,30 +215,36 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
                       </div>
                     </div>
                   </div>
-                ) : tokens.length === 0 ? (
+                ) : !Array.isArray(tokens) || tokens.length === 0 ? (
                   <div className="text-center py-8">
                     <KeyIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500 text-sm">暂无令牌数据</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {tokens.map((token) => (
+                    {Array.isArray(tokens) && tokens.map((token) => (
                       <div
                         key={token.id}
-                        className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                        className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-all duration-200"
                       >
+                        {/* 头部：名称、组别徽章和复制按钮 */}
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 space-y-1.5">
                             <h4 className="font-medium text-gray-900 text-sm truncate">
                               {token.name}
                             </h4>
-                            <p className="text-xs text-gray-500 mt-1">
-                              组别: {token.group}
-                            </p>
+                            <div className="flex items-center space-x-1.5">
+                              <UserGroupIcon className="w-3 h-3 text-gray-400" />
+                              <span 
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getGroupBadgeStyle(token.group || '')}`}
+                              >
+                                {token.group || '默认组'}
+                              </span>
+                            </div>
                           </div>
                           <button
                             onClick={() => copyKey(token.key)}
-                            className="flex items-center space-x-1 px-3 py-1.5 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors"
+                            className="flex items-center space-x-1 px-2.5 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-medium rounded-md hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 ml-3"
                           >
                             {copiedKey === token.key ? (
                               <>
@@ -208,40 +260,54 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
                           </button>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4 text-xs">
-                          <div>
-                            <span className="text-gray-500">已用额度:</span>
-                            <span className="ml-2 font-medium text-gray-900">
-                              {formatUsedQuota(token)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">剩余额度:</span>
-                            <span className="ml-2 font-medium text-gray-900">
-                              {formatQuota(token)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">状态:</span>
-                            <span className={`ml-2 font-medium ${
-                              token.status === 1 ? 'text-green-600' : 'text-red-600'
-                            }`}>
+                        {/* 状态和过期时间行 */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">状态:</span>
+                            <span 
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${getStatusBadgeStyle(token.status)}`}
+                            >
                               {token.status === 1 ? '启用' : '禁用'}
                             </span>
                           </div>
-                          <div>
-                            <span className="text-gray-500">过期时间:</span>
-                            <span className="ml-2 font-medium text-gray-900">
-                              {formatTime(token.expired_time)}
-                            </span>
+                          <div className="flex items-center space-x-1 text-xs text-gray-500">
+                            <ClockIcon className="w-3 h-3" />
+                            <span>{formatTime(token.expired_time)}</span>
                           </div>
                         </div>
 
-                        {/* 密钥预览（部分显示） */}
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <span className="text-gray-500 text-xs">密钥:</span>
-                          <div className="mt-1 font-mono text-xs text-gray-700 bg-white p-2 rounded border break-all">
-                            {token.key.substring(0, 20)}...{token.key.substring(token.key.length - 8)}
+                        {/* 额度信息网格 */}
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="bg-gray-50 rounded p-2">
+                            <div className="text-xs text-gray-500 mb-0.5">已用额度</div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              {formatUsedQuota(token)}
+                            </div>
+                          </div>
+                          <div className="bg-gray-50 rounded p-2">
+                            <div className="text-xs text-gray-500 mb-0.5">剩余额度</div>
+                            <div className={`text-sm font-semibold ${
+                              token.unlimited_quota || token.remain_quota < 0 
+                                ? 'text-green-600' 
+                                : token.remain_quota < 1000000 
+                                  ? 'text-orange-600' 
+                                  : 'text-gray-900'
+                            }`}>
+                              {formatQuota(token)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 密钥预览 */}
+                        <div className="bg-gray-50 rounded p-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">API 密钥</span>
+                            <KeyIcon className="w-3 h-3 text-gray-400" />
+                          </div>
+                          <div className="font-mono text-xs text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 break-all">
+                            <span className="text-gray-900">{token.key.substring(0, 16)}</span>
+                            <span className="text-gray-400">{'•'.repeat(6)}</span>
+                            <span className="text-gray-900">{token.key.substring(token.key.length - 6)}</span>
                           </div>
                         </div>
                       </div>
@@ -251,14 +317,19 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
               </div>
 
               {/* 底部操作区 */}
-              <div className="p-4 border-t border-gray-100 bg-gray-50">
+              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-500">
-                    {tokens.length > 0 && `共 ${tokens.length} 个令牌`}
-                  </p>
+                  <div className="flex items-center space-x-2">
+                    {tokens.length > 0 && (
+                      <div className="flex items-center space-x-1.5 text-xs text-gray-500">
+                        <KeyIcon className="w-3 h-3" />
+                        <span>共 {tokens.length} 个令牌</span>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={onClose}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-colors"
                   >
                     关闭
                   </button>

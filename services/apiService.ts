@@ -53,12 +53,22 @@ export interface ApiToken {
   expired_time: number
   remain_quota: number
   unlimited_quota: boolean
-  model_limits_enabled: boolean
-  model_limits: string
-  allow_ips: string
+  model_limits_enabled?: boolean
+  model_limits?: string
+  allow_ips?: string
   used_quota: number
-  group: string
-  DeletedAt: null
+  group?: string // 可选字段，某些站点可能没有
+  DeletedAt?: null
+  models?: string // 某些站点使用 models 而不是 model_limits
+  subnet?: string // 某些站点使用 subnet 而不是 allow_ips
+}
+
+// 分页令牌响应类型
+interface PaginatedTokenResponse {
+  page: number
+  page_size: number
+  total: number
+  items: ApiToken[]
 }
 
 // API 响应的通用格式
@@ -454,9 +464,26 @@ export const fetchAccountTokens = async (
   const url = `${baseUrl}/api/token/?${params.toString()}`
   const options = createTokenAuthRequest(userId, accessToken)
   
-  const tokensData = await apiRequest<ApiToken[]>(url, options, '/api/token')
-  
-  return tokensData || []
+  try {
+    // 尝试获取响应数据，可能是直接的数组或者分页对象
+    const tokensData = await apiRequest<ApiToken[] | PaginatedTokenResponse>(url, options, '/api/token')
+    
+    // 处理不同的响应格式
+    if (Array.isArray(tokensData)) {
+      // 直接返回数组格式
+      return tokensData
+    } else if (tokensData && typeof tokensData === 'object' && 'items' in tokensData) {
+      // 分页格式，返回 items 数组
+      return tokensData.items || []
+    } else {
+      // 其他情况，返回空数组
+      console.warn('Unexpected token response format:', tokensData)
+      return []
+    }
+  } catch (error) {
+    console.error('获取令牌列表失败:', error)
+    throw error
+  }
 }
 
 // ============= 健康状态判断 =============
