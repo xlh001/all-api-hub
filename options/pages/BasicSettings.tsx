@@ -22,8 +22,16 @@ export default function BasicSettings() {
   // 从偏好设置中获取值，或使用默认值
   const autoRefresh = preferences?.autoRefresh ?? true
   const showHealthStatus = preferences?.showHealthStatus ?? true
-  const refreshInterval = preferences?.refreshInterval ?? 30
+  const refreshInterval = preferences?.refreshInterval ?? 360
   const refreshOnOpen = preferences?.refreshOnOpen ?? true
+
+  // 本地状态用于输入框编辑
+  const [intervalInput, setIntervalInput] = useState<string>(refreshInterval.toString())
+
+  // 同步刷新间隔值到输入框
+  useEffect(() => {
+    setIntervalInput(refreshInterval.toString())
+  }, [refreshInterval])
 
   const handleCurrencyChange = async (currency: 'USD' | 'CNY') => {
     const success = await updateCurrencyType(currency)
@@ -57,11 +65,22 @@ export default function BasicSettings() {
     }
   }
 
-  const handleRefreshIntervalChange = async (interval: number) => {
-    if (interval < 10 || interval > 300) {
-      toast.error('刷新间隔必须在10-300秒之间')
+  const handleRefreshIntervalChange = async (value: string) => {
+    // 直接更新输入框状态，允许用户清空和编辑
+    setIntervalInput(value)
+  }
+
+  const handleRefreshIntervalBlur = async () => {
+    const interval = Number(intervalInput)
+    
+    // 验证输入值
+    if (!intervalInput || isNaN(interval) || interval < 10) {
+      toast.error('刷新间隔必须大于等于10秒')
+      setIntervalInput(refreshInterval.toString()) // 恢复原值
       return
     }
+
+    // 保存设置
     const success = await updateRefreshInterval(interval)
     if (success) {
       // 通知后台更新设置
@@ -72,6 +91,7 @@ export default function BasicSettings() {
       toast.success(`刷新间隔已设置为 ${interval} 秒`)
     } else {
       toast.error('设置保存失败')
+      setIntervalInput(refreshInterval.toString()) // 恢复原值
     }
   }
 
@@ -254,16 +274,21 @@ export default function BasicSettings() {
               <div className="flex items-center justify-between py-4 border-b border-gray-100">
                 <div>
                   <h3 className="text-sm font-medium text-gray-900">刷新间隔</h3>
-                  <p className="text-sm text-gray-500">设置自动刷新的时间间隔</p>
+                  <p className="text-sm text-gray-500">设置自动刷新的时间间隔（默认360秒，建议不要设置过小以避免频繁请求）</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <input
                     type="number"
                     min="10"
-                    max="300"
-                    value={refreshInterval}
-                    onChange={(e) => handleRefreshIntervalChange(Number(e.target.value))}
-                    onBlur={(e) => handleRefreshIntervalChange(Number(e.target.value))}
+                    value={intervalInput}
+                    onChange={(e) => handleRefreshIntervalChange(e.target.value)}
+                    onBlur={handleRefreshIntervalBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur() // 触发onBlur事件
+                      }
+                    }}
+                    placeholder="360"
                     className="w-20 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <span className="text-sm text-gray-500">秒</span>

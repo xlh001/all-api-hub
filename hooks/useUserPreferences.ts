@@ -173,7 +173,7 @@ export function useUserPreferences() {
     sortField: preferences?.sortField || 'name',
     sortOrder: preferences?.sortOrder || 'asc',
     autoRefresh: preferences?.autoRefresh ?? true,
-    refreshInterval: preferences?.refreshInterval ?? 30,
+    refreshInterval: preferences?.refreshInterval ?? 360,
     refreshOnOpen: preferences?.refreshOnOpen ?? true,
     showHealthStatus: preferences?.showHealthStatus ?? true,
 

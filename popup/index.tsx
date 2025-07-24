@@ -199,14 +199,17 @@ function IndexPopup() {
 
   // 处理打开插件时自动刷新
   useEffect(() => {
+    let hasTriggered = false; // 防止重复触发
+    
     const handleRefreshOnOpen = async () => {
       // 等待偏好设置加载完成
-      if (preferencesLoading || !preferences) {
+      if (preferencesLoading || !preferences || hasTriggered) {
         return;
       }
 
       // 检查是否启用了打开插件时自动刷新
       if (preferences.refreshOnOpen) {
+        hasTriggered = true;
         console.log('[Popup] 打开插件时自动刷新已启用，开始刷新');
         try {
           await handleRefresh();
@@ -218,7 +221,7 @@ function IndexPopup() {
     };
 
     handleRefreshOnOpen();
-  }, [preferencesLoading, preferences, handleRefresh]);
+  }, [preferencesLoading, preferences?.refreshOnOpen]); // 只依赖必要的属性
 
   // 监听后台自动刷新的更新通知
   useEffect(() => {

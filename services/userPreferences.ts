@@ -32,7 +32,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   sortField: 'balance',  // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
   sortOrder: 'desc',     // 与 UI_CONSTANTS.SORT.DEFAULT_ORDER 保持一致
   autoRefresh: true,     // 默认启用自动刷新
-  refreshInterval: 30,   // 默认30秒刷新间隔
+  refreshInterval: 360,  // 默认360秒刷新间隔
   refreshOnOpen: true,   // 默认打开插件时自动刷新
   showHealthStatus: true,// 默认显示健康状态
   lastUpdated: Date.now()
@@ -227,8 +227,8 @@ export const UserPreferencesUtils = {
     }
 
     if (preferences.refreshInterval !== undefined) {
-      if (typeof preferences.refreshInterval !== 'number' || preferences.refreshInterval < 10 || preferences.refreshInterval > 300) {
-        errors.push('refreshInterval 必须是10-300之间的数字');
+      if (typeof preferences.refreshInterval !== 'number' || preferences.refreshInterval < 10) {
+        errors.push('refreshInterval 必须大于等于10秒');
       }
     }
 
