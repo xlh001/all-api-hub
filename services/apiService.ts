@@ -602,6 +602,101 @@ export const createApiToken = async (
   }
 }
 
+/**
+ * 获取单个API令牌详情
+ */
+export const fetchTokenById = async (
+  baseUrl: string, 
+  userId: number, 
+  accessToken: string,
+  tokenId: number
+): Promise<ApiToken> => {
+  const url = `${baseUrl}/api/token/${tokenId}`
+  const options = createTokenAuthRequest(userId, accessToken)
+  
+  try {
+    const response = await apiRequest<ApiToken>(url, options, `/api/token/${tokenId}`)
+    return response
+  } catch (error) {
+    console.error('获取令牌详情失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 更新API令牌
+ */
+export const updateApiToken = async (
+  baseUrl: string, 
+  userId: number, 
+  accessToken: string,
+  tokenId: number,
+  tokenData: CreateTokenRequest
+): Promise<boolean> => {
+  const url = `${baseUrl}/api/token/`
+  const options = {
+    method: 'PUT',
+    headers: createRequestHeaders(userId, accessToken),
+    credentials: 'omit' as RequestCredentials,
+    body: JSON.stringify({ ...tokenData, id: tokenId })
+  }
+  
+  try {
+    const response = await fetch(url, options)
+
+    if (!response.ok) {
+      throw new ApiError(`请求失败: ${response.status}`, response.status, '/api/token')
+    }
+
+    const data: ApiResponse<any> = await response.json()
+    
+    if (!data.success) {
+      throw new ApiError(data.message || '更新令牌失败', undefined, '/api/token')
+    }
+
+    return true
+  } catch (error) {
+    console.error('更新令牌失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 删除API令牌
+ */
+export const deleteApiToken = async (
+  baseUrl: string, 
+  userId: number, 
+  accessToken: string,
+  tokenId: number
+): Promise<boolean> => {
+  const url = `${baseUrl}/api/token/${tokenId}`
+  const options = {
+    method: 'DELETE',
+    headers: createRequestHeaders(userId, accessToken),
+    credentials: 'omit' as RequestCredentials
+  }
+  
+  try {
+    const response = await fetch(url, options)
+
+    if (!response.ok) {
+      throw new ApiError(`请求失败: ${response.status}`, response.status, `/api/token/${tokenId}`)
+    }
+
+    const data: ApiResponse<any> = await response.json()
+    
+    if (!data.success) {
+      throw new ApiError(data.message || '删除令牌失败', undefined, `/api/token/${tokenId}`)
+    }
+
+    return true
+  } catch (error) {
+    console.error('删除令牌失败:', error)
+    throw error
+  }
+}
+
 // ============= 健康状态判断 =============
 
 /**

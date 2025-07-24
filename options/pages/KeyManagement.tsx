@@ -10,7 +10,7 @@ import {
   EyeSlashIcon
 } from "@heroicons/react/24/outline"
 import { useAccountData } from "../../hooks/useAccountData"
-import { fetchAccountTokens, type ApiToken } from "../../services/apiService"
+import { fetchAccountTokens, deleteApiToken, type ApiToken } from "../../services/apiService"
 import type { DisplaySiteData } from "../../types"
 import AddTokenDialog from "../../components/AddTokenDialog"
 import toast from 'react-hot-toast'
@@ -23,6 +23,7 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   const [isLoading, setIsLoading] = useState(false)
   const [visibleKeys, setVisibleKeys] = useState<Set<number>>(new Set())
   const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
+  const [editingToken, setEditingToken] = useState<(ApiToken & { accountName: string }) | null>(null)
 
   // 加载所有账号的密钥
   const loadTokens = async () => {
@@ -112,8 +113,40 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   // 关闭添加密钥对话框
   const handleCloseAddToken = () => {
     setIsAddTokenOpen(false)
+    setEditingToken(null) // 清除编辑状态
     // 重新加载密钥列表
     loadTokens()
+  }
+
+  // 处理编辑密钥
+  const handleEditToken = (token: ApiToken & { accountName: string }) => {
+    setEditingToken(token)
+    setIsAddTokenOpen(true)
+  }
+
+  // 处理删除密钥
+  const handleDeleteToken = async (token: ApiToken & { accountName: string }) => {
+    if (!window.confirm(`确定要删除密钥 "${token.name}" 吗？此操作不可撤销。`)) {
+      return
+    }
+
+    try {
+      // 找到对应的账号信息
+      const account = displayData.find(acc => acc.name === token.accountName)
+      if (!account) {
+        toast.error('找不到对应账号信息')
+        return
+      }
+
+      await deleteApiToken(account.baseUrl, account.userId, account.token, token.id)
+      toast.success(`密钥 "${token.name}" 删除成功`)
+      
+      // 重新加载密钥列表
+      loadTokens()
+    } catch (error) {
+      console.error('删除密钥失败:', error)
+      toast.error('删除密钥失败，请稍后重试')
+    }
   }
 
   // 格式化密钥显示
@@ -323,6 +356,20 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
                   >
                     <DocumentDuplicateIcon className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={() => handleEditToken(token)}
+                    className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="编辑密钥"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteToken(token)}
+                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="删除密钥"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -357,6 +404,7 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
           token: account.token
         }))}
         preSelectedAccountId={selectedAccount === "all" ? null : selectedAccount}
+        editingToken={editingToken}
       />
     </div>
   )

@@ -9,8 +9,11 @@ import {
   fetchAvailableModels, 
   fetchUserGroups, 
   createApiToken,
+  fetchTokenById,
+  updateApiToken,
   type GroupInfo,
-  type CreateTokenRequest
+  type CreateTokenRequest,
+  type ApiToken
 } from '../services/apiService'
 import { UI_CONSTANTS } from '../constants/ui'
 import toast from 'react-hot-toast'
@@ -26,6 +29,7 @@ interface AddTokenDialogProps {
     token: string
   }>
   preSelectedAccountId?: string | null
+  editingToken?: ApiToken & { accountName: string } | null
 }
 
 interface FormData {
@@ -40,7 +44,7 @@ interface FormData {
   group: string
 }
 
-export default function AddTokenDialog({ isOpen, onClose, availableAccounts, preSelectedAccountId }: AddTokenDialogProps) {
+export default function AddTokenDialog({ isOpen, onClose, availableAccounts, preSelectedAccountId, editingToken }: AddTokenDialogProps) {
   const [formData, setFormData] = useState<FormData>({
     accountId: '',
     name: '',
@@ -61,17 +65,46 @@ export default function AddTokenDialog({ isOpen, onClose, availableAccounts, pre
 
   // 获取当前选中的账号
   const currentAccount = availableAccounts.find(acc => acc.id === formData.accountId)
+  
+  // 判断是否为编辑模式
+  const isEditMode = !!editingToken
 
   // 初始化表单数据
   useEffect(() => {
     if (isOpen) {
-      const defaultAccountId = preSelectedAccountId || (availableAccounts.length > 0 ? availableAccounts[0].id : '')
-      setFormData(prev => ({
-        ...prev,
-        accountId: defaultAccountId
-      }))
+      if (isEditMode && editingToken) {
+        // 编辑模式：从 editingToken 填充表单数据
+        const matchingAccount = availableAccounts.find(acc => acc.name === editingToken.accountName)
+        const accountId = matchingAccount?.id || (availableAccounts.length > 0 ? availableAccounts[0].id : '')
+        
+        setFormData({
+          accountId,
+          name: editingToken.name,
+          quota: editingToken.unlimited_quota ? '' : (editingToken.remain_quota / UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR).toString(),
+          expiredTime: editingToken.expired_time === -1 ? '' : new Date(editingToken.expired_time * 1000).toISOString().slice(0, 16),
+          unlimitedQuota: editingToken.unlimited_quota,
+          modelLimitsEnabled: editingToken.model_limits_enabled || false,
+          modelLimits: editingToken.model_limits ? editingToken.model_limits.split(',') : [],
+          allowIps: editingToken.allow_ips || '',
+          group: editingToken.group || 'default'
+        })
+      } else {
+        // 创建模式：使用默认值
+        const defaultAccountId = preSelectedAccountId || (availableAccounts.length > 0 ? availableAccounts[0].id : '')
+        setFormData({
+          accountId: defaultAccountId,
+          name: '',
+          quota: '',
+          expiredTime: '',
+          unlimitedQuota: true,
+          modelLimitsEnabled: false,
+          modelLimits: [],
+          allowIps: '',
+          group: 'default'
+        })
+      }
     }
-  }, [isOpen, preSelectedAccountId, availableAccounts])
+  }, [isOpen, preSelectedAccountId, availableAccounts, isEditMode, editingToken])
 
   // 加载数据
   useEffect(() => {
@@ -177,13 +210,20 @@ export default function AddTokenDialog({ isOpen, onClose, availableAccounts, pre
         group: formData.group
       }
 
-      await createApiToken(currentAccount.baseUrl, currentAccount.userId, currentAccount.token, tokenData)
+      if (isEditMode && editingToken) {
+        // 编辑模式
+        await updateApiToken(currentAccount.baseUrl, currentAccount.userId, currentAccount.token, editingToken.id, tokenData)
+        toast.success('密钥更新成功')
+      } else {
+        // 创建模式
+        await createApiToken(currentAccount.baseUrl, currentAccount.userId, currentAccount.token, tokenData)
+        toast.success('密钥创建成功')
+      }
       
-      toast.success('密钥创建成功')
       handleClose()
     } catch (error) {
-      console.error('创建密钥失败:', error)
-      toast.error('创建密钥失败，请稍后重试')
+      console.error(`${isEditMode ? '更新' : '创建'}密钥失败:`, error)
+      toast.error(`${isEditMode ? '更新' : '创建'}密钥失败，请稍后重试`)
     } finally {
       setIsSubmitting(false)
     }
@@ -240,7 +280,7 @@ export default function AddTokenDialog({ isOpen, onClose, availableAccounts, pre
                   <div className="flex items-center space-x-2">
                     <KeyIcon className="w-6 h-6 text-blue-600" />
                     <Dialog.Title className="text-lg font-semibold text-gray-900">
-                      添加API密钥
+                      {isEditMode ? '编辑API密钥' : '添加API密钥'}
                     </Dialog.Title>
                   </div>
                   <button
@@ -276,9 +316,10 @@ export default function AddTokenDialog({ isOpen, onClose, availableAccounts, pre
                         <select
                           value={formData.accountId}
                           onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
+                          disabled={isEditMode} // 编辑模式下禁用账号选择
                           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             errors.accountId ? 'border-red-300' : 'border-gray-300'
-                          }`}
+                          } ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         >
                           <option value="">请选择账号</option>
                           {availableAccounts.map(account => (
@@ -289,6 +330,9 @@ export default function AddTokenDialog({ isOpen, onClose, availableAccounts, pre
                         </select>
                         {errors.accountId && (
                           <p className="mt-1 text-xs text-red-600">{errors.accountId}</p>
+                        )}
+                        {isEditMode && (
+                          <p className="mt-1 text-xs text-gray-500">编辑模式下无法更改账号</p>
                         )}
                       </div>
                       
@@ -500,7 +544,7 @@ export default function AddTokenDialog({ isOpen, onClose, availableAccounts, pre
                         {isSubmitting && (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         )}
-                        <span>{isSubmitting ? '创建中...' : '创建密钥'}</span>
+                        <span>{isSubmitting ? (isEditMode ? '更新中...' : '创建中...') : (isEditMode ? '更新密钥' : '创建密钥')}</span>
                       </button>
                     </div>
                   </div>
