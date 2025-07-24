@@ -29,7 +29,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [expandedTokens, setExpandedTokens] = useState<Set<number>>(new Set())
 
-  // 获取令牌列表
+  // 获取密钥列表
   const fetchTokens = async () => {
     if (!account) return
 
@@ -48,15 +48,15 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
         setTokens([])
       }
     } catch (error) {
-      console.error('获取令牌列表失败:', error)
+      console.error('获取密钥列表失败:', error)
       const errorMessage = error instanceof Error ? error.message : '未知错误'
-      setError(`获取令牌列表失败: ${errorMessage}`)
+      setError(`获取密钥列表失败: ${errorMessage}`)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // 当对话框打开时获取令牌列表
+  // 当对话框打开时获取密钥列表
   useEffect(() => {
     if (isOpen && account) {
       fetchTokens()
@@ -86,7 +86,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
     }
   }
 
-  // 切换令牌展开/折叠状态
+  // 切换密钥展开/折叠状态
   const toggleTokenExpansion = (tokenId: number) => {
     setExpandedTokens(prev => {
       const newSet = new Set(prev)
@@ -194,7 +194,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
                   </div>
                   <div>
                     <DialogTitle className="text-lg font-semibold text-gray-900">
-                      令牌列表
+                      密钥列表
                     </DialogTitle>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {account?.name}
@@ -214,7 +214,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-8">
                     <div className="w-8 h-8 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin mb-4" />
-                    <p className="text-sm text-gray-500">正在获取令牌列表...</p>
+                    <p className="text-sm text-gray-500">正在获密钥列表...</p>
                   </div>
                 ) : error ? (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -235,7 +235,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
                 ) : !Array.isArray(tokens) || tokens.length === 0 ? (
                   <div className="text-center py-8">
                     <KeyIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-sm">暂无令牌数据</p>
+                    <p className="text-gray-500 text-sm">暂无密钥数据</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -360,7 +360,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
                     {tokens.length > 0 && (
                       <div className="flex items-center space-x-1.5 text-xs text-gray-500">
                         <KeyIcon className="w-3 h-3" />
-                        <span>共 {tokens.length} 个令牌</span>
+                        <span>共 {tokens.length} 个密钥</span>
                       </div>
                     )}
                   </div>
