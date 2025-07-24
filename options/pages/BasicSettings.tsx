@@ -15,13 +15,11 @@ export default function BasicSettings() {
     updateAutoRefresh,
     updateRefreshInterval,
     updateRefreshOnOpen,
-    updateShowHealthStatus,
     resetToDefaults
   } = useUserPreferences()
 
   // 从偏好设置中获取值，或使用默认值
   const autoRefresh = preferences?.autoRefresh ?? true
-  const showHealthStatus = preferences?.showHealthStatus ?? true
   const refreshInterval = preferences?.refreshInterval ?? 360
   const refreshOnOpen = preferences?.refreshOnOpen ?? true
 
@@ -104,14 +102,6 @@ export default function BasicSettings() {
     }
   }
 
-  const handleShowHealthStatusChange = async (enabled: boolean) => {
-    const success = await updateShowHealthStatus(enabled)
-    if (success) {
-      toast.success(`健康状态显示已${enabled ? '启用' : '关闭'}`)
-    } else {
-      toast.error('设置保存失败')
-    }
-  }
 
   const handleResetToDefaults = async () => {
     if (window.confirm('确定要重置所有设置到默认值吗？此操作不可撤销。')) {
@@ -221,26 +211,6 @@ export default function BasicSettings() {
               </div>
             </div>
 
-            {/* 显示健康状态 */}
-            <div className="flex items-center justify-between py-4 border-b border-gray-100">
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">显示健康状态指示器</h3>
-                <p className="text-sm text-gray-500">在账号列表中显示站点健康状态</p>
-              </div>
-              <Switch
-                checked={showHealthStatus}
-                onChange={handleShowHealthStatusChange}
-                className={`${
-                  showHealthStatus ? 'bg-blue-600' : 'bg-gray-200'
-                } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-              >
-                <span
-                  className={`${
-                    showHealthStatus ? 'translate-x-6' : 'translate-x-1'
-                  } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                />
-              </Switch>
-            </div>
           </div>
         </section>
 
