@@ -1,4 +1,4 @@
-import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, PlusIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
+import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, CpuChipIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import CountUp from "react-countup"
 import { UI_CONSTANTS, HEALTH_STATUS_MAP } from "../constants/ui"
@@ -235,11 +235,9 @@ export default function AccountList({
 
                 {/* 更多下拉菜单 */}
                 <Menu as="div" className="relative">
-                  <Tooltip content="更多操作" position="top">
                     <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
                       <EllipsisHorizontalIcon className="w-4 h-4 text-gray-500" />
                     </MenuButton>
-                  </Tooltip>
                   <MenuItems 
                     anchor="bottom end"
                     className="z-50 w-24 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]"
@@ -249,10 +247,20 @@ export default function AccountList({
                         onClick={() => onViewUsage?.(site)}
                         className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2"
                       >
+                        <CpuChipIcon className="w-4 h-4" />
+                        <span>模型</span>
+                      </button>
+                    </MenuItem>
+                    <MenuItem>
+                      <button
+                        onClick={() => onViewUsage?.(site)}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2"
+                      >
                         <ChartPieIcon className="w-4 h-4" />
                         <span>用量</span>
                       </button>
                     </MenuItem>
+                    <hr />
                     <MenuItem>
                       <button
                         onClick={() => onEditAccount?.(site)}

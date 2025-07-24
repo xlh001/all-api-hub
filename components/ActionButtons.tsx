@@ -1,4 +1,4 @@
-import { PlusIcon, UserIcon, DocumentChartBarIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, KeyIcon, CpuChipIcon } from "@heroicons/react/24/outline"
 import { UI_CONSTANTS } from "../constants/ui"
 import Tooltip from "./Tooltip"
 
@@ -17,14 +17,14 @@ export default function ActionButtons({ onAddAccount }: ActionButtonsProps) {
           <PlusIcon className="w-4 h-4" />
           <span>新增账号</span>
         </button>
-        <Tooltip content="账号管理">
+        <Tooltip content="密钥管理">
           <button className={UI_CONSTANTS.STYLES.BUTTON.SECONDARY}>
-            <UserIcon className="w-4 h-4" />
+            <KeyIcon className="w-4 h-4" />
           </button>
         </Tooltip>
-        <Tooltip content="用量统计">
+        <Tooltip content="模型列表">
           <button className={UI_CONSTANTS.STYLES.BUTTON.SECONDARY}>
-            <DocumentChartBarIcon className="w-4 h-4" />
+            <CpuChipIcon className="w-4 h-4" />
           </button>
         </Tooltip>
       </div>

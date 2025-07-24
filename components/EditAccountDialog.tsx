@@ -491,7 +491,10 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                       </h3>
                       <div className="mt-1 text-xs text-green-700">
                         <p>
-                          修改账号信息后，系统会重新验证并获取最新的余额数据。如果站点信息有变化，建议点击"重新识别"按钮。
+                          修改账号信息后，系统会重新验证并获取最新的余额数据。
+                        </p>
+                        <p>
+                          如果站点信息有变化，建议点击"重新识别"按钮（需要在目标站点先自行登录）
                         </p>
                       </div>
                     </div>

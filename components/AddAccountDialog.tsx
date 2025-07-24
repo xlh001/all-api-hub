@@ -554,7 +554,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                             ? '请确认账号信息无误后点击"确认添加"按钮。'
                             : showManualForm
                             ? '请手动填写账号信息。账号将被安全地保存在本地存储中。'
-                            : '插件将自动检测站点类型，如果浏览器在此站点保持了登录状态，则自动获取访问令牌。'
+                            : '请先在目标站点进行登录，插件将自动检测站点类型，并自动获取访问令牌。'
                           }
                         </p>
                       </div>
