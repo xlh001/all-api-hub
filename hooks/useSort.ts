@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { UI_CONSTANTS } from "../constants/ui"
 import { createSortComparator } from "../utils/formatters"
 import type { DisplaySiteData } from "../types"
@@ -15,20 +15,47 @@ interface UseSortResult {
 
 export const useSort = (
   data: DisplaySiteData[],
-  currencyType: 'USD' | 'CNY'
+  currencyType: 'USD' | 'CNY',
+  initialSortField?: SortField,
+  initialSortOrder?: SortOrder,
+  onSortChange?: (field: SortField, order: SortOrder) => void
 ): UseSortResult => {
-  const [sortField, setSortField] = useState<SortField>(UI_CONSTANTS.SORT.DEFAULT_FIELD)
-  const [sortOrder, setSortOrder] = useState<SortOrder>(UI_CONSTANTS.SORT.DEFAULT_ORDER)
+  const [sortField, setSortField] = useState<SortField>(
+    initialSortField || UI_CONSTANTS.SORT.DEFAULT_FIELD
+  )
+  const [sortOrder, setSortOrder] = useState<SortOrder>(
+    initialSortOrder || UI_CONSTANTS.SORT.DEFAULT_ORDER
+  )
+
+  // 当初始值变化时更新状态
+  useEffect(() => {
+    if (initialSortField !== undefined) {
+      setSortField(initialSortField)
+    }
+  }, [initialSortField])
+
+  useEffect(() => {
+    if (initialSortOrder !== undefined) {
+      setSortOrder(initialSortOrder)
+    }
+  }, [initialSortOrder])
 
   // 处理排序
   const handleSort = useCallback((field: SortField) => {
+    let newOrder: SortOrder
+    
     if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+      newOrder = sortOrder === 'asc' ? 'desc' : 'asc'
+      setSortOrder(newOrder)
     } else {
-      setSortField(field)
-      setSortOrder('asc')
+      newOrder = 'asc'
+      setSortField(field)  
+      setSortOrder(newOrder)
     }
-  }, [sortField, sortOrder])
+    
+    // 通知父组件排序变化
+    onSortChange?.(field === sortField ? sortField : field, newOrder)
+  }, [sortField, sortOrder, onSortChange])
 
   // 排序数据
   const sortedData = useMemo(() => {

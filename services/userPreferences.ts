@@ -1,0 +1,210 @@
+import { Storage } from "@plasmohq/storage";
+
+// 用户偏好设置类型定义
+export interface UserPreferences {
+  // BalanceSection 相关配置
+  activeTab: 'consumption' | 'balance';  // 金额标签页状态
+  currencyType: 'USD' | 'CNY';           // 金额单位
+
+  // AccountList 相关配置
+  sortField: 'name' | 'balance' | 'consumption';  // 排序字段
+  sortOrder: 'asc' | 'desc';                      // 排序顺序
+
+  // 其他配置可在此扩展
+  lastUpdated: number;  // 最后更新时间
+}
+
+// 存储键名常量
+const STORAGE_KEYS = {
+  USER_PREFERENCES: 'user_preferences'
+} as const;
+
+// 默认配置
+const DEFAULT_PREFERENCES: UserPreferences = {
+  activeTab: 'consumption',
+  currencyType: 'USD',
+  sortField: 'balance',  // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
+  sortOrder: 'desc',     // 与 UI_CONSTANTS.SORT.DEFAULT_ORDER 保持一致
+  lastUpdated: Date.now()
+};
+
+class UserPreferencesService {
+  private storage: Storage;
+
+  constructor() {
+    this.storage = new Storage({
+      area: "local"
+    });
+  }
+
+  /**
+   * 获取用户偏好设置
+   */
+  async getPreferences(): Promise<UserPreferences> {
+    try {
+      const preferences = await this.storage.get(STORAGE_KEYS.USER_PREFERENCES) as UserPreferences;
+      return preferences || DEFAULT_PREFERENCES;
+    } catch (error) {
+      console.error('获取用户偏好设置失败:', error);
+      return DEFAULT_PREFERENCES;
+    }
+  }
+
+  /**
+   * 保存用户偏好设置
+   */
+  async savePreferences(preferences: Partial<UserPreferences>): Promise<boolean> {
+    try {
+      const currentPreferences = await this.getPreferences();
+      const updatedPreferences: UserPreferences = {
+        ...currentPreferences,
+        ...preferences,
+        lastUpdated: Date.now()
+      };
+
+      await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, updatedPreferences);
+      console.log('[UserPreferences] 偏好设置保存成功:', updatedPreferences);
+      return true;
+    } catch (error) {
+      console.error('[UserPreferences] 保存偏好设置失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 更新活动标签页
+   */
+  async updateActiveTab(activeTab: 'consumption' | 'balance'): Promise<boolean> {
+    return this.savePreferences({ activeTab });
+  }
+
+  /**
+   * 更新货币类型
+   */
+  async updateCurrencyType(currencyType: 'USD' | 'CNY'): Promise<boolean> {
+    return this.savePreferences({ currencyType });
+  }
+
+  /**
+   * 更新排序配置
+   */
+  async updateSortConfig(sortField: 'name' | 'balance' | 'consumption', sortOrder: 'asc' | 'desc'): Promise<boolean> {
+    return this.savePreferences({ sortField, sortOrder });
+  }
+
+  /**
+   * 重置为默认设置
+   */
+  async resetToDefaults(): Promise<boolean> {
+    try {
+      await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, DEFAULT_PREFERENCES);
+      console.log('[UserPreferences] 已重置为默认设置');
+      return true;
+    } catch (error) {
+      console.error('[UserPreferences] 重置设置失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 清空偏好设置
+   */
+  async clearPreferences(): Promise<boolean> {
+    try {
+      await this.storage.remove(STORAGE_KEYS.USER_PREFERENCES);
+      console.log('[UserPreferences] 偏好设置已清空');
+      return true;
+    } catch (error) {
+      console.error('[UserPreferences] 清空偏好设置失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 导出偏好设置
+   */
+  async exportPreferences(): Promise<UserPreferences> {
+    return this.getPreferences();
+  }
+
+  /**
+   * 导入偏好设置
+   */
+  async importPreferences(preferences: UserPreferences): Promise<boolean> {
+    try {
+      await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, {
+        ...preferences,
+        lastUpdated: Date.now()
+      });
+      console.log('[UserPreferences] 偏好设置导入成功');
+      return true;
+    } catch (error) {
+      console.error('[UserPreferences] 导入偏好设置失败:', error);
+      return false;
+    }
+  }
+}
+
+// 创建单例实例
+export const userPreferences = new UserPreferencesService();
+
+// 工具函数
+export const UserPreferencesUtils = {
+  /**
+   * 验证偏好设置数据
+   */
+  validatePreferences(preferences: Partial<UserPreferences>): string[] {
+    const errors: string[] = [];
+
+    if (preferences.activeTab && !['consumption', 'balance'].includes(preferences.activeTab)) {
+      errors.push('activeTab 必须是 "consumption" 或 "balance"');
+    }
+
+    if (preferences.currencyType && !['USD', 'CNY'].includes(preferences.currencyType)) {
+      errors.push('currencyType 必须是 "USD" 或 "CNY"');
+    }
+
+    if (preferences.sortField && !['name', 'balance', 'consumption'].includes(preferences.sortField)) {
+      errors.push('sortField 必须是 "name", "balance" 或 "consumption"');
+    }
+
+    if (preferences.sortOrder && !['asc', 'desc'].includes(preferences.sortOrder)) {
+      errors.push('sortOrder 必须是 "asc" 或 "desc"');
+    }
+
+    return errors;
+  },
+
+  /**
+   * 获取标签页的显示名称
+   */
+  getTabDisplayName(tab: 'consumption' | 'balance'): string {
+    return tab === 'consumption' ? '今日消耗' : '总余额';
+  },
+
+  /**
+   * 获取货币类型的显示符号
+   */
+  getCurrencySymbol(currency: 'USD' | 'CNY'): string {
+    return currency === 'USD' ? '$' : '¥';
+  },
+
+  /**
+   * 获取排序字段的显示名称
+   */
+  getSortFieldDisplayName(field: 'name' | 'balance' | 'consumption'): string {
+    switch (field) {
+      case 'name': return '账号名称';
+      case 'balance': return '余额';
+      case 'consumption': return '今日消耗';
+      default: return '未知';
+    }
+  },
+
+  /**
+   * 获取排序顺序的显示名称
+   */
+  getSortOrderDisplayName(order: 'asc' | 'desc'): string {
+    return order === 'asc' ? '升序' : '降序';
+  }
+};

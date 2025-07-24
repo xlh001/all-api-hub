@@ -1,10 +1,11 @@
 import "./style.css"
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import toast, { Toaster } from 'react-hot-toast'
 import { UI_CONSTANTS } from "../constants/ui"
 import { calculateTotalConsumption, calculateTotalBalance, getOppositeCurrency } from "../utils/formatters"
 import { useAccountData } from "../hooks/useAccountData"
 import { useSort } from "../hooks/useSort"
+import { useUserPreferences } from "../hooks/useUserPreferences"
 import HeaderSection from "../components/HeaderSection"
 import BalanceSection from "../components/BalanceSection"
 import ActionButtons from "../components/ActionButtons"
@@ -15,9 +16,20 @@ import { accountStorage } from "../services/accountStorage"
 import type { DisplaySiteData } from "../types"
 
 function IndexPopup() {
+  // 用户偏好设置管理
+  const {
+    preferences,
+    isLoading: preferencesLoading,
+    activeTab,
+    currencyType,
+    sortField,
+    sortOrder,
+    updateActiveTab,
+    updateCurrencyType,
+    updateSortConfig
+  } = useUserPreferences()
+
   // 状态管理
-  const [currencyType, setCurrencyType] = useState<'USD' | 'CNY'>('USD')
-  const [activeTab, setActiveTab] = useState<'consumption' | 'balance'>('consumption')
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<DisplaySiteData | null>(null)
@@ -37,8 +49,14 @@ function IndexPopup() {
     handleRefresh
   } = useAccountData()
 
-  // 排序管理
-  const { sortField, sortOrder, sortedData, handleSort } = useSort(displayData, currencyType)
+  // 排序管理 - 使用持久化的排序配置
+  const { sortField: currentSortField, sortOrder: currentSortOrder, sortedData, handleSort } = useSort(
+    displayData, 
+    currencyType, 
+    sortField, 
+    sortOrder, 
+    updateSortConfig
+  )
 
   // 计算数据 - 使用 useMemo 缓存
   const totalConsumption = useMemo(() => 
@@ -57,15 +75,16 @@ function IndexPopup() {
   }), [stats.today_total_prompt_tokens, stats.today_total_completion_tokens])
 
   // 事件处理 - 使用 useCallback 优化
-  const handleCurrencyToggle = useCallback(() => {
-    setCurrencyType(getOppositeCurrency(currencyType))
-  }, [currencyType])
+  const handleCurrencyToggle = useCallback(async () => {
+    const newCurrency = getOppositeCurrency(currencyType)
+    await updateCurrencyType(newCurrency)
+  }, [currencyType, updateCurrencyType])
 
-  const handleTabChange = useCallback((index: number) => {
+  const handleTabChange = useCallback(async (index: number) => {
     const newTab = index === 0 ? 'consumption' : 'balance'
-    setActiveTab(newTab)
+    await updateActiveTab(newTab)
     console.log(`切换到${newTab === 'consumption' ? '今日消耗' : '总余额'}标签页`)
-  }, [])
+  }, [updateActiveTab])
 
   const handleOpenTab = useCallback(() => {
     console.log('打开完整管理页面')
@@ -169,18 +188,20 @@ function IndexPopup() {
       {/* 滚动内容区域 */}
       <div className="flex-1 overflow-y-auto">
         {/* 基本信息展示 */}
-        <BalanceSection
-          totalConsumption={totalConsumption}
-          totalBalance={totalBalance}
-          todayTokens={todayTokens}
-          currencyType={currencyType}
-          activeTab={activeTab}
-          isInitialLoad={isInitialLoad}
-          lastUpdateTime={lastUpdateTime}
-          prevTotalConsumption={prevTotalConsumption}
-          onCurrencyToggle={handleCurrencyToggle}
-          onTabChange={handleTabChange}
-        />
+        {!preferencesLoading && (
+          <BalanceSection
+            totalConsumption={totalConsumption}
+            totalBalance={totalBalance}
+            todayTokens={todayTokens}
+            currencyType={currencyType}
+            activeTab={activeTab}
+            isInitialLoad={isInitialLoad}
+            lastUpdateTime={lastUpdateTime}
+            prevTotalConsumption={prevTotalConsumption}
+            onCurrencyToggle={handleCurrencyToggle}
+            onTabChange={handleTabChange}
+          />
+        )}
 
         {/* 操作按钮组 */}
         <ActionButtons onAddAccount={handleAddAccount} />
@@ -189,8 +210,8 @@ function IndexPopup() {
         <AccountList
           sites={sortedData}
           currencyType={currencyType}
-          sortField={sortField}
-          sortOrder={sortOrder}
+          sortField={currentSortField}
+          sortOrder={currentSortOrder}
           isInitialLoad={isInitialLoad}
           prevBalances={prevBalances}
           refreshingAccountId={refreshingAccountId}
