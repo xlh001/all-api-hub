@@ -197,6 +197,51 @@ function IndexPopup() {
     chrome.tabs.create({ url: chrome.runtime.getURL('options.html#models') })
   }, [])
 
+  // 处理打开插件时自动刷新
+  useEffect(() => {
+    const handleRefreshOnOpen = async () => {
+      // 等待偏好设置加载完成
+      if (preferencesLoading || !preferences) {
+        return;
+      }
+
+      // 检查是否启用了打开插件时自动刷新
+      if (preferences.refreshOnOpen) {
+        console.log('[Popup] 打开插件时自动刷新已启用，开始刷新');
+        try {
+          await handleRefresh();
+          console.log('[Popup] 打开插件时自动刷新完成');
+        } catch (error) {
+          console.error('[Popup] 打开插件时自动刷新失败:', error);
+        }
+      }
+    };
+
+    handleRefreshOnOpen();
+  }, [preferencesLoading, preferences, handleRefresh]);
+
+  // 监听后台自动刷新的更新通知
+  useEffect(() => {
+    const handleBackgroundRefreshUpdate = (message: any) => {
+      if (message.type === 'AUTO_REFRESH_UPDATE') {
+        const { type, data } = message.payload;
+        
+        if (type === 'refresh_completed') {
+          console.log('[Popup] 后台刷新完成，重新加载数据');
+          loadAccountData(); // 重新加载数据以更新UI
+        } else if (type === 'refresh_error') {
+          console.error('[Popup] 后台刷新失败:', data.error);
+        }
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(handleBackgroundRefreshUpdate);
+    
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleBackgroundRefreshUpdate);
+    };
+  }, [loadAccountData]);
+
   return (
     <div className={`${UI_CONSTANTS.POPUP.WIDTH} bg-white flex flex-col ${UI_CONSTANTS.POPUP.HEIGHT}`}>
       {/* 顶部导航栏 */}

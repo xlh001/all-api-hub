@@ -72,6 +72,66 @@ export function useUserPreferences() {
     }
   }, [preferences]);
 
+  // 更新自动刷新设置
+  const updateAutoRefresh = useCallback(async (autoRefresh: boolean) => {
+    try {
+      const success = await userPreferences.updateAutoRefresh(autoRefresh);
+      if (success && preferences) {
+        setPreferences(prev => prev ? { ...prev, autoRefresh } : null);
+        console.log('[useUserPreferences] 自动刷新设置更新成功:', autoRefresh);
+      }
+      return success;
+    } catch (error) {
+      console.error('[useUserPreferences] 更新自动刷新设置失败:', error);
+      return false;
+    }
+  }, [preferences]);
+
+  // 更新刷新间隔
+  const updateRefreshInterval = useCallback(async (refreshInterval: number) => {
+    try {
+      const success = await userPreferences.updateRefreshInterval(refreshInterval);
+      if (success && preferences) {
+        setPreferences(prev => prev ? { ...prev, refreshInterval } : null);
+        console.log('[useUserPreferences] 刷新间隔更新成功:', refreshInterval);
+      }
+      return success;
+    } catch (error) {
+      console.error('[useUserPreferences] 更新刷新间隔失败:', error);
+      return false;
+    }
+  }, [preferences]);
+
+  // 更新打开插件时自动刷新设置
+  const updateRefreshOnOpen = useCallback(async (refreshOnOpen: boolean) => {
+    try {
+      const success = await userPreferences.updateRefreshOnOpen(refreshOnOpen);
+      if (success && preferences) {
+        setPreferences(prev => prev ? { ...prev, refreshOnOpen } : null);
+        console.log('[useUserPreferences] 打开插件时自动刷新设置更新成功:', refreshOnOpen);
+      }
+      return success;
+    } catch (error) {
+      console.error('[useUserPreferences] 更新打开插件时自动刷新设置失败:', error);
+      return false;
+    }
+  }, [preferences]);
+
+  // 更新健康状态显示设置
+  const updateShowHealthStatus = useCallback(async (showHealthStatus: boolean) => {
+    try {
+      const success = await userPreferences.updateShowHealthStatus(showHealthStatus);
+      if (success && preferences) {
+        setPreferences(prev => prev ? { ...prev, showHealthStatus } : null);
+        console.log('[useUserPreferences] 健康状态显示设置更新成功:', showHealthStatus);
+      }
+      return success;
+    } catch (error) {
+      console.error('[useUserPreferences] 更新健康状态显示设置失败:', error);
+      return false;
+    }
+  }, [preferences]);
+
   // 批量更新偏好设置
   const updatePreferences = useCallback(async (updates: Partial<UserPreferences>) => {
     try {
@@ -112,11 +172,19 @@ export function useUserPreferences() {
     currencyType: preferences?.currencyType || 'USD',
     sortField: preferences?.sortField || 'name',
     sortOrder: preferences?.sortOrder || 'asc',
+    autoRefresh: preferences?.autoRefresh ?? true,
+    refreshInterval: preferences?.refreshInterval ?? 30,
+    refreshOnOpen: preferences?.refreshOnOpen ?? true,
+    showHealthStatus: preferences?.showHealthStatus ?? true,
 
     // 操作方法
     updateActiveTab,
     updateCurrencyType,
     updateSortConfig,
+    updateAutoRefresh,
+    updateRefreshInterval,
+    updateRefreshOnOpen,
+    updateShowHealthStatus,
     updatePreferences,
     resetToDefaults,
     loadPreferences
