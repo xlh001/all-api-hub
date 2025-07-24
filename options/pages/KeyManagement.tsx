@@ -14,7 +14,7 @@ import { fetchAccountTokens, type ApiToken } from "../../services/apiService"
 import type { DisplaySiteData } from "../../types"
 import toast from 'react-hot-toast'
 
-export default function KeyManagement() {
+export default function KeyManagement({ routeParams }: { routeParams?: Record<string, string> }) {
   const { displayData } = useAccountData()
   const [selectedAccount, setSelectedAccount] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState("")
@@ -61,6 +61,13 @@ export default function KeyManagement() {
   useEffect(() => {
     loadTokens()
   }, [displayData])
+
+  // 处理路由参数中的账号ID
+  useEffect(() => {
+    if (routeParams?.accountId) {
+      setSelectedAccount(routeParams.accountId)
+    }
+  }, [routeParams])
 
   // 过滤密钥
   const filteredTokens = tokens.filter(token => {

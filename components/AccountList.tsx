@@ -1,4 +1,4 @@
-import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, CpuChipIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon, ArrowPathIcon, InboxIcon } from "@heroicons/react/24/outline"
+import { ChevronUpIcon, ChevronDownIcon, ChartBarIcon, CpuChipIcon, EllipsisHorizontalIcon, DocumentDuplicateIcon, ChartPieIcon, PencilIcon, TrashIcon, ArrowPathIcon, InboxIcon, KeyIcon } from "@heroicons/react/24/outline"
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import CountUp from "react-countup"
 import { UI_CONSTANTS, HEALTH_STATUS_MAP } from "../constants/ui"
@@ -34,8 +34,10 @@ interface AccountListProps {
   onRefreshAccount?: (site: DisplaySiteData) => Promise<void>
   onCopyUrl?: (site: DisplaySiteData) => void
   onViewUsage?: (site: DisplaySiteData) => void
+  onViewModels?: (site: DisplaySiteData) => void
   onEditAccount?: (site: DisplaySiteData) => void
   onDeleteAccount?: (site: DisplaySiteData) => void
+  onViewKeys?: (site: DisplaySiteData) => void
 }
 
 export default function AccountList({
@@ -51,8 +53,10 @@ export default function AccountList({
   onRefreshAccount,
   onCopyUrl,
   onViewUsage,
+  onViewModels,
   onEditAccount,
-  onDeleteAccount
+  onDeleteAccount,
+  onViewKeys
 }: AccountListProps) {
   const [hoveredSiteId, setHoveredSiteId] = useState<string | null>(null)
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -230,6 +234,16 @@ export default function AccountList({
                         <span>复制密钥</span>
                       </button>
                     </MenuItem>
+                    <hr />
+                    <MenuItem>
+                      <button
+                        onClick={() => onViewKeys?.(site)}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2"
+                      >
+                        <KeyIcon className="w-4 h-4" />
+                        <span>管理密钥</span>
+                      </button>
+                    </MenuItem>
                   </MenuItems>
                 </Menu>
 
@@ -244,7 +258,7 @@ export default function AccountList({
                   >
                     <MenuItem>
                       <button
-                        onClick={() => onViewUsage?.(site)}
+                        onClick={() => onViewModels?.(site)}
                         className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2"
                       >
                         <CpuChipIcon className="w-4 h-4" />

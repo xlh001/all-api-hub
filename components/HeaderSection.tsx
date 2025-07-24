@@ -6,12 +6,14 @@ interface HeaderSectionProps {
   isRefreshing: boolean
   onRefresh: () => void
   onOpenTab: () => void
+  onOpenSettings: () => void
 }
 
 export default function HeaderSection({ 
   isRefreshing, 
   onRefresh, 
-  onOpenTab 
+  onOpenTab,
+  onOpenSettings
 }: HeaderSectionProps) {
   return (
     <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 flex-shrink-0">
@@ -41,6 +43,7 @@ export default function HeaderSection({
           <ArrowsPointingOutIcon className="w-4 h-4" />
         </button>
         <button
+          onClick={onOpenSettings}
           className={UI_CONSTANTS.STYLES.BUTTON.ICON}
           title="设置"
         >

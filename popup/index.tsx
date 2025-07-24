@@ -87,7 +87,11 @@ function IndexPopup() {
   }, [updateActiveTab])
 
   const handleOpenTab = useCallback(() => {
-    console.log('打开完整管理页面')
+    chrome.tabs.create({ url: chrome.runtime.getURL('options.html') })
+  }, [])
+
+  const handleOpenSettings = useCallback(() => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('options.html#basic') })
   }, [])
 
   const handleAddAccount = useCallback(() => {
@@ -176,6 +180,23 @@ function IndexPopup() {
     toast.success(`已复制 ${account.name} 的URL到剪贴板`)
   }, [])
 
+  const handleViewKeys = useCallback((account: DisplaySiteData) => {
+    const url = chrome.runtime.getURL(`options.html#keys?accountId=${account.id}`)
+    chrome.tabs.create({ url })
+  }, [])
+
+  const handleViewKeysGlobal = useCallback(() => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('options.html#keys') })
+  }, [])
+
+  const handleViewModels = useCallback((account: DisplaySiteData) => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('options.html#models') })
+  }, [])
+
+  const handleViewModelsGlobal = useCallback(() => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('options.html#models') })
+  }, [])
+
   return (
     <div className={`${UI_CONSTANTS.POPUP.WIDTH} bg-white flex flex-col ${UI_CONSTANTS.POPUP.HEIGHT}`}>
       {/* 顶部导航栏 */}
@@ -183,6 +204,7 @@ function IndexPopup() {
         isRefreshing={isRefreshing}
         onRefresh={handleGlobalRefresh}
         onOpenTab={handleOpenTab}
+        onOpenSettings={handleOpenSettings}
       />
 
       {/* 滚动内容区域 */}
@@ -204,7 +226,11 @@ function IndexPopup() {
         )}
 
         {/* 操作按钮组 */}
-        <ActionButtons onAddAccount={handleAddAccount} />
+        <ActionButtons 
+          onAddAccount={handleAddAccount}
+          onViewKeys={handleViewKeysGlobal}
+          onViewModels={handleViewModelsGlobal}
+        />
 
         {/* 站点账号列表 */}
         <AccountList
@@ -219,6 +245,8 @@ function IndexPopup() {
           onAddAccount={handleAddAccount}
           onRefreshAccount={handleRefreshAccount}
           onCopyUrl={handleCopyUrl}
+          onViewKeys={handleViewKeys}
+          onViewModels={handleViewModels}
           onEditAccount={handleEditAccount}
           onDeleteAccount={handleDeleteAccount}
         />
