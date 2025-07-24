@@ -7,6 +7,7 @@ import type { DisplaySiteData } from "../types"
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Tooltip from './Tooltip'
 import DelAccountDialog from './DelAccountDialog'
+import CopyKeyDialog from './CopyKeyDialog'
 
 type SortField = 'name' | 'balance' | 'consumption'
 type SortOrder = 'asc' | 'desc'
@@ -32,7 +33,6 @@ interface AccountListProps {
   onAddAccount: () => void
   onRefreshAccount?: (site: DisplaySiteData) => Promise<void>
   onCopyUrl?: (site: DisplaySiteData) => void
-  onCopyKey?: (site: DisplaySiteData) => void
   onViewUsage?: (site: DisplaySiteData) => void
   onEditAccount?: (site: DisplaySiteData) => void
   onDeleteAccount?: (site: DisplaySiteData) => void
@@ -50,7 +50,6 @@ export default function AccountList({
   onAddAccount,
   onRefreshAccount,
   onCopyUrl,
-  onCopyKey,
   onViewUsage,
   onEditAccount,
   onDeleteAccount
@@ -58,6 +57,7 @@ export default function AccountList({
   const [hoveredSiteId, setHoveredSiteId] = useState<string | null>(null)
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [deleteDialogAccount, setDeleteDialogAccount] = useState<DisplaySiteData | null>(null)
+  const [copyKeyDialogAccount, setCopyKeyDialogAccount] = useState<DisplaySiteData | null>(null)
 
   // 防抖的 hover 处理
   const handleMouseEnter = useCallback((siteId: string) => {
@@ -101,8 +101,7 @@ export default function AccountList({
   }
 
   const handleCopyKey = (site: DisplaySiteData) => {
-    copyToClipboard(site.token)
-    onCopyKey?.(site)
+    setCopyKeyDialogAccount(site)
   }
 
   const handleRefreshAccount = async (site: DisplaySiteData) => {
@@ -310,6 +309,13 @@ export default function AccountList({
         onClose={() => setDeleteDialogAccount(null)}
         account={deleteDialogAccount}
         onDeleted={() => onDeleteAccount?.(deleteDialogAccount!)}
+      />
+
+      {/* 复制密钥对话框 */}
+      <CopyKeyDialog
+        isOpen={copyKeyDialogAccount !== null}
+        onClose={() => setCopyKeyDialogAccount(null)}
+        account={copyKeyDialogAccount}
       />
     </div>
   )

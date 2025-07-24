@@ -285,7 +285,8 @@ class AccountStorageService {
       },
       healthStatus: account.health_status,
       baseUrl: account.site_url,
-      token: account.account_info.access_token
+      token: account.account_info.access_token,
+      userId: account.account_info.id // 添加真实的用户 ID
     }));
   }
 

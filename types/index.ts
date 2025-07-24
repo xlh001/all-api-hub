@@ -70,4 +70,5 @@ export interface DisplaySiteData {
   healthStatus?: SiteHealthStatus; // 可选的健康状态
   baseUrl: string; // 站点 URL，用于复制功能
   token: string; // 访问令牌，用于复制功能
+  userId: number; // 真实的用户 ID，用于 API 调用
 }

@@ -41,6 +41,26 @@ export interface SiteStatusInfo {
   stripe_unit_price?: number
 }
 
+// API令牌类型定义
+export interface ApiToken {
+  id: number
+  user_id: number
+  key: string
+  status: number
+  name: string
+  created_time: number
+  accessed_time: number
+  expired_time: number
+  remain_quota: number
+  unlimited_quota: boolean
+  model_limits_enabled: boolean
+  model_limits: string
+  allow_ips: string
+  used_quota: number
+  group: string
+  DeletedAt: null
+}
+
 // API 响应的通用格式
 interface ApiResponse<T = any> {
   success: boolean
@@ -414,6 +434,29 @@ export const validateAccountConnection = async (
     console.error('账号连接验证失败:', error)
     return false
   }
+}
+
+/**
+ * 获取账号令牌列表
+ */
+export const fetchAccountTokens = async (
+  baseUrl: string, 
+  userId: number, 
+  accessToken: string,
+  page: number = 0,
+  size: number = 100
+): Promise<ApiToken[]> => {
+  const params = new URLSearchParams({
+    p: page.toString(),
+    size: size.toString()
+  })
+
+  const url = `${baseUrl}/api/token/?${params.toString()}`
+  const options = createTokenAuthRequest(userId, accessToken)
+  
+  const tokensData = await apiRequest<ApiToken[]>(url, options, '/api/token')
+  
+  return tokensData || []
 }
 
 // ============= 健康状态判断 =============
