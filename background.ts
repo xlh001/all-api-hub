@@ -1,5 +1,19 @@
+import { autoRefreshService, handleAutoRefreshMessage } from './services/autoRefreshService';
+
 // 管理临时窗口的 Map
 const tempWindows = new Map<string, number>()
+
+// 插件启动时初始化自动刷新服务
+chrome.runtime.onStartup.addListener(async () => {
+  console.log('[Background] 插件启动，初始化自动刷新服务');
+  await autoRefreshService.initialize();
+});
+
+// 插件安装时初始化自动刷新服务
+chrome.runtime.onInstalled.addListener(async () => {
+  console.log('[Background] 插件安装/更新，初始化自动刷新服务');
+  await autoRefreshService.initialize();
+});
 
 // 处理来自 popup 的消息
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
@@ -16,6 +30,13 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "autoDetectSite") {
     handleAutoDetectSite(request, sendResponse)
     return true
+  }
+
+  // 处理自动刷新相关消息
+  if (request.action && request.action.startsWith('autoRefresh') || 
+      ['setupAutoRefresh', 'refreshNow', 'stopAutoRefresh', 'updateAutoRefreshSettings', 'getAutoRefreshStatus'].includes(request.action)) {
+    handleAutoRefreshMessage(request, sendResponse);
+    return true;
   }
 })
 
