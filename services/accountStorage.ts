@@ -1,4 +1,5 @@
 import { Storage } from "@plasmohq/storage";
+import { refreshAccountData } from './apiService';
 import type { 
   SiteAccount, 
   StorageConfig, 
@@ -151,10 +152,7 @@ class AccountStorageService {
         throw new Error(`账号 ${id} 不存在`);
       }
 
-      // 导入 API 服务
-      const { refreshAccountData } = await import('../services/apiService');
-      
-      // 获取最新数据和健康状态
+      // 使用同步导入的API服务
       const result = await refreshAccountData(
         account.site_url,
         account.account_info.id,

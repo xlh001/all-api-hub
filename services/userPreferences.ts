@@ -10,6 +10,12 @@ export interface UserPreferences {
   sortField: 'name' | 'balance' | 'consumption';  // 排序字段
   sortOrder: 'asc' | 'desc';                      // 排序顺序
 
+  // 自动刷新相关配置
+  autoRefresh: boolean;                  // 是否启用定时自动刷新
+  refreshInterval: number;               // 刷新间隔（秒）
+  refreshOnOpen: boolean;                // 打开插件时自动刷新
+  showHealthStatus: boolean;             // 是否显示健康状态
+
   // 其他配置可在此扩展
   lastUpdated: number;  // 最后更新时间
 }
@@ -25,6 +31,10 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   currencyType: 'USD',
   sortField: 'balance',  // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
   sortOrder: 'desc',     // 与 UI_CONSTANTS.SORT.DEFAULT_ORDER 保持一致
+  autoRefresh: true,     // 默认启用自动刷新
+  refreshInterval: 30,   // 默认30秒刷新间隔
+  refreshOnOpen: true,   // 默认打开插件时自动刷新
+  showHealthStatus: true,// 默认显示健康状态
   lastUpdated: Date.now()
 };
 
@@ -90,6 +100,46 @@ class UserPreferencesService {
    */
   async updateSortConfig(sortField: 'name' | 'balance' | 'consumption', sortOrder: 'asc' | 'desc'): Promise<boolean> {
     return this.savePreferences({ sortField, sortOrder });
+  }
+
+  /**
+   * 更新自动刷新设置
+   */
+  async updateAutoRefreshSettings(settings: {
+    autoRefresh?: boolean;
+    refreshInterval?: number;
+    refreshOnOpen?: boolean;
+    showHealthStatus?: boolean;
+  }): Promise<boolean> {
+    return this.savePreferences(settings);
+  }
+
+  /**
+   * 更新自动刷新开关
+   */
+  async updateAutoRefresh(autoRefresh: boolean): Promise<boolean> {
+    return this.savePreferences({ autoRefresh });
+  }
+
+  /**
+   * 更新刷新间隔
+   */
+  async updateRefreshInterval(refreshInterval: number): Promise<boolean> {
+    return this.savePreferences({ refreshInterval });
+  }
+
+  /**
+   * 更新打开插件时自动刷新设置
+   */
+  async updateRefreshOnOpen(refreshOnOpen: boolean): Promise<boolean> {
+    return this.savePreferences({ refreshOnOpen });
+  }
+
+  /**
+   * 更新健康状态显示设置
+   */
+  async updateShowHealthStatus(showHealthStatus: boolean): Promise<boolean> {
+    return this.savePreferences({ showHealthStatus });
   }
 
   /**
@@ -170,6 +220,24 @@ export const UserPreferencesUtils = {
 
     if (preferences.sortOrder && !['asc', 'desc'].includes(preferences.sortOrder)) {
       errors.push('sortOrder 必须是 "asc" 或 "desc"');
+    }
+
+    if (preferences.autoRefresh !== undefined && typeof preferences.autoRefresh !== 'boolean') {
+      errors.push('autoRefresh 必须是布尔值');
+    }
+
+    if (preferences.refreshInterval !== undefined) {
+      if (typeof preferences.refreshInterval !== 'number' || preferences.refreshInterval < 10 || preferences.refreshInterval > 300) {
+        errors.push('refreshInterval 必须是10-300之间的数字');
+      }
+    }
+
+    if (preferences.refreshOnOpen !== undefined && typeof preferences.refreshOnOpen !== 'boolean') {
+      errors.push('refreshOnOpen 必须是布尔值');
+    }
+
+    if (preferences.showHealthStatus !== undefined && typeof preferences.showHealthStatus !== 'boolean') {
+      errors.push('showHealthStatus 必须是布尔值');
     }
 
     return errors;
