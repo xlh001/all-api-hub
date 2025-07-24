@@ -8,7 +8,9 @@ import {
   ExclamationTriangleIcon,
   CheckIcon,
   ClockIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  ChevronDownIcon,
+  ChevronRightIcon
 } from "@heroicons/react/24/outline"
 import { UI_CONSTANTS } from "../constants/ui"
 import { fetchAccountTokens, type ApiToken } from "../services/apiService"
@@ -25,6 +27,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const [expandedTokens, setExpandedTokens] = useState<Set<number>>(new Set())
 
   // 获取令牌列表
   const fetchTokens = async () => {
@@ -62,6 +65,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
       setTokens([])
       setError(null)
       setCopiedKey(null)
+      setExpandedTokens(new Set())
     }
   }, [isOpen, account])
 
@@ -80,6 +84,19 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
       console.error('复制失败:', error)
       toast.error('复制失败，请手动复制')
     }
+  }
+
+  // 切换令牌展开/折叠状态
+  const toggleTokenExpansion = (tokenId: number) => {
+    setExpandedTokens(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(tokenId)) {
+        newSet.delete(tokenId)
+      } else {
+        newSet.add(tokenId)
+      }
+      return newSet
+    })
   }
 
   // 格式化额度显示
@@ -177,7 +194,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
                   </div>
                   <div>
                     <DialogTitle className="text-lg font-semibold text-gray-900">
-                      令牌管理
+                      令牌列表
                     </DialogTitle>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {account?.name}
@@ -222,96 +239,116 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {Array.isArray(tokens) && tokens.map((token) => (
-                      <div
-                        key={token.id}
-                        className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-all duration-200"
-                      >
-                        {/* 头部：名称、组别徽章和复制按钮 */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1 min-w-0 space-y-1.5">
-                            <h4 className="font-medium text-gray-900 text-sm truncate">
-                              {token.name}
-                            </h4>
-                            <div className="flex items-center space-x-1.5">
-                              <UserGroupIcon className="w-3 h-3 text-gray-400" />
-                              <span 
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getGroupBadgeStyle(token.group || '')}`}
-                              >
-                                {token.group || '默认组'}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => copyKey(token.key)}
-                            className="flex items-center space-x-1 px-2.5 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-medium rounded-md hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 ml-3"
+                    {Array.isArray(tokens) && tokens.map((token) => {
+                      const isExpanded = expandedTokens.has(token.id)
+                      
+                      return (
+                        <div
+                          key={token.id}
+                          className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-sm transition-all duration-200"
+                        >
+                          {/* 头部：名称、组别徽章和展开/折叠按钮 */}
+                          <div 
+                            className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => toggleTokenExpansion(token.id)}
                           >
-                            {copiedKey === token.key ? (
-                              <>
-                                <CheckIcon className="w-3 h-3" />
-                                <span>已复制</span>
-                              </>
-                            ) : (
-                              <>
-                                <DocumentDuplicateIcon className="w-3 h-3" />
-                                <span>复制</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        
-                        {/* 状态和过期时间行 */}
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs text-gray-500">状态:</span>
-                            <span 
-                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${getStatusBadgeStyle(token.status)}`}
-                            >
-                              {token.status === 1 ? '启用' : '禁用'}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1 text-xs text-gray-500">
-                            <ClockIcon className="w-3 h-3" />
-                            <span>{formatTime(token.expired_time)}</span>
-                          </div>
-                        </div>
-
-                        {/* 额度信息网格 */}
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div className="bg-gray-50 rounded p-2">
-                            <div className="text-xs text-gray-500 mb-0.5">已用额度</div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {formatUsedQuota(token)}
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                              <h4 className="font-medium text-gray-900 text-sm truncate">
+                                {token.name}
+                              </h4>
+                              <div className="flex items-center space-x-1.5">
+                                <UserGroupIcon className="w-3 h-3 text-gray-400" />
+                                <span 
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getGroupBadgeStyle(token.group || '')}`}
+                                >
+                                  {token.group || '默认组'}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2 ml-3">
+                              {/* 状态徽章 */}
+                              <span 
+                                className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${getStatusBadgeStyle(token.status)}`}
+                              >
+                                {token.status === 1 ? '启用' : '禁用'}
+                              </span>
+                              
+                              {/* 展开/折叠图标 */}
+                              {isExpanded ? (
+                                <ChevronDownIcon className="w-4 h-4 text-gray-400" />
+                              ) : (
+                                <ChevronRightIcon className="w-4 h-4 text-gray-400" />
+                              )}
                             </div>
                           </div>
-                          <div className="bg-gray-50 rounded p-2">
-                            <div className="text-xs text-gray-500 mb-0.5">剩余额度</div>
-                            <div className={`text-sm font-semibold ${
-                              token.unlimited_quota || token.remain_quota < 0 
-                                ? 'text-green-600' 
-                                : token.remain_quota < 1000000 
-                                  ? 'text-orange-600' 
-                                  : 'text-gray-900'
-                            }`}>
-                              {formatQuota(token)}
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* 密钥预览 */}
-                        <div className="bg-gray-50 rounded p-2">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">API 密钥</span>
-                            <KeyIcon className="w-3 h-3 text-gray-400" />
-                          </div>
-                          <div className="font-mono text-xs text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 break-all">
-                            <span className="text-gray-900">{token.key.substring(0, 16)}</span>
-                            <span className="text-gray-400">{'•'.repeat(6)}</span>
-                            <span className="text-gray-900">{token.key.substring(token.key.length - 6)}</span>
-                          </div>
+                          {/* 可展开的详细信息区域 */}
+                          {isExpanded && (
+                            <div className="px-3 pb-3 border-t border-gray-100 bg-gray-50/30">
+                              {/* 过期时间 */}
+                              <div className="flex items-center space-x-1 text-xs text-gray-500 mb-3 pt-3">
+                                <ClockIcon className="w-3 h-3" />
+                                <span>过期时间: {formatTime(token.expired_time)}</span>
+                              </div>
+
+                              {/* 额度信息网格 */}
+                              <div className="grid grid-cols-2 gap-2 mb-3">
+                                <div className="bg-white rounded p-2 border border-gray-100">
+                                  <div className="text-xs text-gray-500 mb-0.5">已用额度</div>
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    {formatUsedQuota(token)}
+                                  </div>
+                                </div>
+                                <div className="bg-white rounded p-2 border border-gray-100">
+                                  <div className="text-xs text-gray-500 mb-0.5">剩余额度</div>
+                                  <div className={`text-sm font-semibold ${
+                                    token.unlimited_quota || token.remain_quota < 0 
+                                      ? 'text-green-600' 
+                                      : token.remain_quota < 1000000 
+                                        ? 'text-orange-600' 
+                                        : 'text-gray-900'
+                                  }`}>
+                                    {formatQuota(token)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* 密钥预览 */}
+                              <div className="bg-white rounded p-2 border border-gray-100">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">API 密钥</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      copyKey(token.key)
+                                    }}
+                                    className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-medium rounded hover:from-purple-600 hover:to-indigo-700 transition-all duration-200"
+                                  >
+                                    {copiedKey === token.key ? (
+                                      <>
+                                        <CheckIcon className="w-3 h-3" />
+                                        <span>已复制</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <DocumentDuplicateIcon className="w-3 h-3" />
+                                        <span>复制</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                                <div className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 break-all">
+                                  <span className="text-gray-900">{token.key.substring(0, 16)}</span>
+                                  <span className="text-gray-400">{'•'.repeat(6)}</span>
+                                  <span className="text-gray-900">{token.key.substring(token.key.length - 6)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
