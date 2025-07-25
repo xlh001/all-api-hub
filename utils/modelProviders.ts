@@ -2,10 +2,10 @@
  * 模型厂商识别和图标映射工具
  */
 
-import { OpenAI, Claude, Gemini } from '@lobehub/icons'
+import { OpenAI, Claude, Gemini, Grok, Qwen, DeepSeek } from '@lobehub/icons'
 
 // 厂商类型
-export type ProviderType = 'OpenAI' | 'Claude' | 'Gemini' | 'Unknown'
+export type ProviderType = 'OpenAI' | 'Claude' | 'Gemini' | 'Grok' | 'Qwen' | 'DeepSeek' | 'Unknown'
 
 // 厂商配置接口
 export interface ProviderConfig {
@@ -50,6 +50,33 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
     ],
     color: 'text-blue-600',
     bgColor: 'bg-blue-50'
+  },
+  Grok: {
+    name: 'Grok',
+    icon: Grok,
+    patterns: [
+      /grok/i
+    ],
+    color: 'text-gray-900',
+    bgColor: 'bg-gray-50'
+  },
+  Qwen: {
+    name: '阿里',
+    icon: Qwen,
+    patterns: [
+      /qwen/i
+    ],
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50'
+  },
+  DeepSeek: {
+    name: 'DeepSeek',
+    icon: DeepSeek,
+    patterns: [
+      /deepseek/i
+    ],
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-50'
   },
   Unknown: {
     name: 'Unknown',
