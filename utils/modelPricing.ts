@@ -75,6 +75,26 @@ export const formatPrice = (
 }
 
 /**
+ * 格式化价格显示 - 简洁格式
+ */
+export const formatPriceCompact = (
+  price: number, 
+  currency: 'USD' | 'CNY' = 'USD'
+): string => {
+  const symbol = currency === 'USD' ? '$' : '¥'
+  
+  if (price === 0) return `${symbol}0`
+  
+  if (price < 0.01) {
+    return `${symbol}${price.toFixed(6)}`
+  } else if (price < 1) {
+    return `${symbol}${price.toFixed(4)}`
+  } else {
+    return `${symbol}${price.toFixed(2)}`
+  }
+}
+
+/**
  * 格式化价格区间显示（输入-输出）
  */
 export const formatPriceRange = (
