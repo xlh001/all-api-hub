@@ -98,7 +98,27 @@ export interface ApiToken {
   group?: string // 可选字段，某些站点可能没有
   DeletedAt?: null
   models?: string // 某些站点使用 models 而不是 model_limits
-  subnet?: string // 某些站点使用 subnet 而不是 allow_ips
+}
+
+// 模型定价信息类型
+export interface ModelPricing {
+  model_name: string
+  model_description?: string
+  quota_type: number // 0 = 按量计费，1 = 按次计费
+  model_ratio: number
+  model_price: number
+  owner_by?: string
+  completion_ratio: number
+  enable_groups: string[]
+  supported_endpoint_types: string[]
+}
+
+// 模型定价响应类型
+export interface PricingResponse {
+  data: ModelPricing[]
+  group_ratio: Record<string, number>
+  success: boolean
+  usable_group: Record<string, string>
 }
 
 // 分页令牌响应类型
@@ -693,6 +713,38 @@ export const deleteApiToken = async (
     return true
   } catch (error) {
     console.error('删除令牌失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 获取模型定价信息
+ */
+export const fetchModelPricing = async (
+  baseUrl: string, 
+  userId: number, 
+  accessToken: string
+): Promise<PricingResponse> => {
+  const url = `${baseUrl}/api/pricing`
+  const options = createTokenAuthRequest(userId, accessToken)
+  
+  try {
+    // /api/pricing 接口直接返回 PricingResponse 格式，不需要通过 apiRequest 包装
+    const response = await fetch(url, options)
+
+    if (!response.ok) {
+      throw new ApiError(`请求失败: ${response.status}`, response.status, '/api/pricing')
+    }
+
+    const data: PricingResponse = await response.json()
+    
+    if (!data.success) {
+      throw new ApiError('获取定价信息失败', undefined, '/api/pricing')
+    }
+
+    return data
+  } catch (error) {
+    console.error('获取模型定价失败:', error)
     throw error
   }
 }
