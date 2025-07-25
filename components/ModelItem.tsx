@@ -20,6 +20,7 @@ import {
 } from '../utils/modelProviders'
 import { 
   formatPrice, 
+  formatPriceCompact, 
   getBillingModeText, 
   getBillingModeStyle,
   getEndpointTypesText 
@@ -77,7 +78,7 @@ export default function ModelItem({
         <div className="flex items-start justify-between">
           {/* 左侧：模型名称和基本信息 */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-3 mb-3">
+            <div className="flex items-center space-x-3 mb-2">
               {/* 厂商图标 */}
               <div className={`p-1.5 rounded-lg ${providerConfig.bgColor}`}>
                 <IconComponent className={`w-4 h-4 ${providerConfig.color}`} />
@@ -118,61 +119,60 @@ export default function ModelItem({
             
             {/* 模型描述 */}
             {model.model_description && (
-              <div className="mb-3">
+              <div className="mb-2">
                 <p className={`text-sm leading-relaxed ${
                   isAvailableForUser ? 'text-gray-600' : 'text-gray-400'
-                }`}>
+                } overflow-hidden`} 
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical'
+                }}
+                title={model.model_description}>
                   {model.model_description}
                 </p>
               </div>
             )}
             
             {/* 价格信息 */}
-            <div className="mt-3 space-y-2">
+            <div className="mt-2">
               {model.quota_type === 0 ? (
-                // 按量计费 - 分别显示输入和输出价格
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                // 按量计费 - 横向并排显示价格
+                <div className="flex items-center gap-6">
                   {/* 输入价格 */}
                   <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                      <span className="text-sm font-medium text-gray-700">输入 (1M tokens)</span>
-                    </div>
-                    <span className={`text-sm font-semibold ${
-                      isAvailableForUser ? 'text-gray-900' : 'text-gray-500'
+                    <span className="text-sm text-gray-600">输入:</span>
+                    <span className={`text-sm ${
+                      isAvailableForUser ? 'text-blue-600' : 'text-gray-500'
                     }`}>
                       {showRealPrice 
-                        ? formatPrice(calculatedPrice.inputCNY, 'CNY')
-                        : formatPrice(calculatedPrice.inputUSD, 'USD')
+                        ? `${formatPriceCompact(calculatedPrice.inputCNY, 'CNY')}/M`
+                        : `${formatPriceCompact(calculatedPrice.inputUSD, 'USD')}/M`
                       }
                     </span>
                   </div>
                   
                   {/* 输出价格 */}
                   <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-sm font-medium text-gray-700">输出 (1M tokens)</span>
-                    </div>
-                    <span className={`text-sm font-semibold ${
-                      isAvailableForUser ? 'text-gray-900' : 'text-gray-500'
+                    <span className="text-sm text-gray-600">输出:</span>
+                    <span className={`text-sm ${
+                      isAvailableForUser ? 'text-green-600' : 'text-gray-500'
                     }`}>
                       {showRealPrice 
-                        ? formatPrice(calculatedPrice.outputCNY, 'CNY')
-                        : formatPrice(calculatedPrice.outputUSD, 'USD')
+                        ? `${formatPriceCompact(calculatedPrice.outputCNY, 'CNY')}/M`
+                        : `${formatPriceCompact(calculatedPrice.outputUSD, 'USD')}/M`
                       }
                     </span>
                   </div>
                   
                   {/* 倍率显示 */}
                   {showRatioColumn && (
-                    <div className="sm:col-span-2 flex items-center space-x-2">
-                      <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-500">模型倍率:</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-500">倍率:</span>
                       <span className={`text-sm font-medium ${
                         isAvailableForUser ? 'text-gray-900' : 'text-gray-500'
                       }`}>
-                        {model.model_ratio}
+                        {model.model_ratio}x
                       </span>
                     </div>
                   )}
@@ -180,14 +180,13 @@ export default function ModelItem({
               ) : (
                 // 按次计费
                 <div className="flex items-center space-x-2">
-                  <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700">每次调用:</span>
-                  <span className={`text-sm font-semibold ${
-                    isAvailableForUser ? 'text-gray-900' : 'text-gray-500'
+                  <span className="text-sm text-gray-600">每次调用:</span>
+                  <span className={`text-sm ${
+                    isAvailableForUser ? 'text-purple-600' : 'text-gray-500'
                   }`}>
                     {showRealPrice 
-                      ? formatPrice((calculatedPrice.perCallPrice || 0) * exchangeRate, 'CNY')
-                      : formatPrice(calculatedPrice.perCallPrice || 0, 'USD')
+                      ? formatPriceCompact((calculatedPrice.perCallPrice || 0) * exchangeRate, 'CNY')
+                      : formatPriceCompact(calculatedPrice.perCallPrice || 0, 'USD')
                     }
                   </span>
                 </div>
