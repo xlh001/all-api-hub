@@ -190,7 +190,8 @@ function IndexPopup() {
   }, [])
 
   const handleViewModels = useCallback((account: DisplaySiteData) => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('options.html#models') })
+    const url = chrome.runtime.getURL(`options.html#models?accountId=${account.id}`)
+    chrome.tabs.create({ url })
   }, [])
 
   const handleViewModelsGlobal = useCallback(() => {

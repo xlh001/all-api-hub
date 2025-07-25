@@ -27,7 +27,7 @@ import {
 } from "../../utils/modelPricing"
 import ModelItem from "../../components/ModelItem"
 
-export default function ModelList() {
+export default function ModelList({ routeParams }: { routeParams?: Record<string, string> }) {
   const { displayData } = useAccountData()
   
   // 状态管理
@@ -122,6 +122,17 @@ export default function ModelList() {
       setPricingData(null)
     }
   }, [selectedAccount, safeDisplayData])
+  
+  // 处理路由参数中的账号ID
+  useEffect(() => {
+    if (routeParams?.accountId && safeDisplayData.length > 0) {
+      // 验证账号ID是否存在
+      const accountExists = safeDisplayData.some(acc => acc.id === routeParams.accountId)
+      if (accountExists) {
+        setSelectedAccount(routeParams.accountId)
+      }
+    }
+  }, [routeParams?.accountId, safeDisplayData])
   
   // 计算模型价格
   const modelsWithPricing = useMemo(() => {
