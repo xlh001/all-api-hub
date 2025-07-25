@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { 
   CpuChipIcon, 
   MagnifyingGlassIcon, 
@@ -42,7 +42,7 @@ export default function ModelList() {
   
   // 显示选项
   const [showRealPrice, setShowRealPrice] = useState(false)
-  const [showRatioColumn, setShowRatioColumn] = useState(true)
+  const [showRatioColumn, setShowRatioColumn] = useState(false)
   const [showEndpointTypes, setShowEndpointTypes] = useState(false)
   
   // 安全获取账号数据
@@ -53,6 +53,43 @@ export default function ModelList() {
   
   // 获取厂商列表
   const providers = getAllProviders()
+  
+  // Tab滚动相关
+  const tabListRef = useRef<HTMLDivElement>(null)
+  
+  // 自动滚动到选中的Tab
+  const scrollToSelectedTab = (selectedIndex: number) => {
+    if (!tabListRef.current) return
+    
+    const tabList = tabListRef.current
+    const tabs = tabList.children
+    
+    if (selectedIndex >= 0 && selectedIndex < tabs.length) {
+      const selectedTab = tabs[selectedIndex] as HTMLElement
+      const tabListRect = tabList.getBoundingClientRect()
+      const selectedTabRect = selectedTab.getBoundingClientRect()
+      
+      // 计算当前tab相对于容器的位置
+      const tabLeft = selectedTabRect.left - tabListRect.left + tabList.scrollLeft
+      const tabRight = tabLeft + selectedTabRect.width
+      
+      // 计算理想的滚动位置（让选中的tab居中显示）
+      const containerWidth = tabList.clientWidth
+      const idealScrollLeft = tabLeft - (containerWidth / 2) + (selectedTabRect.width / 2)
+      
+      // 平滑滚动到目标位置
+      tabList.scrollTo({
+        left: Math.max(0, idealScrollLeft),
+        behavior: 'smooth'
+      })
+    }
+  }
+  
+  // 当选中的厂商改变时，自动滚动到对应位置
+  useEffect(() => {
+    const selectedIndex = selectedProvider === 'all' ? 0 : Math.max(0, providers.indexOf(selectedProvider as ProviderType) + 1)
+    setTimeout(() => scrollToSelectedTab(selectedIndex), 100)
+  }, [selectedProvider, providers])
   
   // 加载模型定价数据
   const loadPricingData = async (accountId: string) => {
@@ -324,12 +361,17 @@ export default function ModelList() {
                   setSelectedProvider(provider)
                 }
               }
+              // 滚动到选中的tab
+              setTimeout(() => scrollToSelectedTab(index), 50)
             }}
           >
-            <Tab.List className="flex space-x-1 rounded-xl bg-gray-100 p-1 mb-6">
+            <Tab.List 
+              ref={tabListRef}
+              className="flex space-x-1 rounded-xl bg-gray-100 p-1 mb-6 overflow-x-auto overflow-y-hidden scrollbar-hide touch-pan-x"
+            >
               <Tab
                 className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all ${
+                  `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${
                     selected
                       ? 'bg-white text-blue-700 shadow'
                       : 'text-gray-700 hover:bg-white/60 hover:text-gray-900'
@@ -342,17 +384,22 @@ export default function ModelList() {
                 </div>
               </Tab>
               {providers.map((provider) => {
-                // 根据厂商名称直接获取配置
-                const providerConfig = provider === 'OpenAI' ? getProviderConfig('gpt-4') :
-                                     provider === 'Claude' ? getProviderConfig('claude-3') :
-                                     provider === 'Gemini' ? getProviderConfig('gemini-pro') :
-                                     { icon: CpuChipIcon } // 默认图标
-                const IconComponent = providerConfig?.icon || CpuChipIcon
+                // 直接使用 PROVIDER_CONFIGS 获取配置
+                const providerConfig = getProviderConfig(
+                  provider === 'OpenAI' ? 'gpt-4' :
+                  provider === 'Claude' ? 'claude-3' :
+                  provider === 'Gemini' ? 'gemini-pro' :
+                  provider === 'Grok' ? 'grok' :
+                  provider === 'Qwen' ? 'qwen' :
+                  provider === 'DeepSeek' ? 'deepseek' :
+                  'unknown'
+                )
+                const IconComponent = providerConfig.icon
                 return (
                   <Tab
                     key={provider}
                     className={({ selected }) =>
-                      `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all ${
+                      `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${
                         selected
                           ? 'bg-white text-blue-700 shadow'
                           : 'text-gray-700 hover:bg-white/60 hover:text-gray-900'
