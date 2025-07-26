@@ -5,7 +5,8 @@ import {
   AdjustmentsHorizontalIcon,
   EyeIcon,
   EyeSlashIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  ExclamationTriangleIcon
 } from "@heroicons/react/24/outline"
 import { Tab } from '@headlessui/react'
 import toast from 'react-hot-toast'
@@ -39,6 +40,7 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
   
   // 数据状态
   const [pricingData, setPricingData] = useState<PricingResponse | null>(null)
+  const [dataFormatError, setDataFormatError] = useState<boolean>(false)
   
   // 显示选项
   const [showRealPrice, setShowRealPrice] = useState(false)
@@ -97,18 +99,30 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
     if (!account) return
     
     setIsLoading(true)
+    setDataFormatError(false)
     try {
       const data = await fetchModelPricing(account.baseUrl, account.userId, account.token)
       console.log('API 响应数据:', data)
       console.log('模型数据:', data.data)
       console.log('分组比率:', data.group_ratio)
       console.log('可用分组:', data.usable_group)
+      
+      // 检查数据格式是否正确
+      if (!Array.isArray(data.data)) {
+        console.error('模型数据格式错误，data 字段不是数组:', data.data)
+        setDataFormatError(true)
+        setPricingData(null)
+        toast.error('当前站点的模型数据格式不符合标准，请手动查看站点定价页面')
+        return
+      }
+      
       setPricingData(data)
       toast.success('模型数据加载成功')
     } catch (error) {
       console.error('加载模型数据失败:', error)
       toast.error('加载模型数据失败，请稍后重试')
       setPricingData(null)
+      setDataFormatError(false)
     } finally {
       setIsLoading(false)
     }
@@ -139,8 +153,14 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
     console.log('计算模型价格 - pricingData:', pricingData)
     console.log('计算模型价格 - currentAccount:', currentAccount)
     
-    if (!pricingData || !pricingData.data || !currentAccount) {
+    if (!pricingData || !currentAccount) {
       console.log('缺少必要数据，返回空数组')
+      return []
+    }
+    
+    // 额外的数据安全检查
+    if (!Array.isArray(pricingData.data)) {
+      console.error('模型数据不是数组格式，无法处理:', pricingData.data)
       return []
     }
     
@@ -261,6 +281,42 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
         <div className="text-center py-12">
           <ArrowPathIcon className="w-8 h-8 text-blue-600 mx-auto mb-4 animate-spin" />
           <p className="text-gray-500">正在加载模型数据...</p>
+        </div>
+      )}
+
+      {/* 数据格式错误提示 */}
+      {selectedAccount && !isLoading && dataFormatError && currentAccount && (
+        <div className="mb-6 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-start space-x-4">
+            <ExclamationTriangleIcon className="w-6 h-6 text-yellow-600 mt-1 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-yellow-800 mb-2">数据格式不兼容</h3>
+              <p className="text-yellow-700 mb-4">
+                当前站点的模型数据接口返回格式不符合标准规范，可能是经过二次开发的站点。
+                插件暂时无法解析该站点的模型定价信息。
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href={`${currentAccount.baseUrl}/pricing`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  <span>前往站点查看定价信息</span>
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-2M17 3l4 4m-5 0l5-5" />
+                  </svg>
+                </a>
+                <button
+                  onClick={() => loadPricingData(selectedAccount)}
+                  className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  <ArrowPathIcon className="w-4 h-4 mr-2" />
+                  <span>重新尝试加载</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
