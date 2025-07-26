@@ -7,6 +7,7 @@ import {
   ArrowPathIcon,
   InformationCircleIcon
 } from "@heroicons/react/24/outline"
+import iconImage from "../assets/icon.png"
 
 // 页面组件导入
 import BasicSettings from "./pages/BasicSettings"
@@ -127,11 +128,13 @@ function OptionsPage() {
           <div className="flex items-center h-16">
             {/* 插件图标和名称 */}
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <CpuChipIcon className="w-5 h-5 text-white" />
-              </div>
+              <img 
+                src={iconImage} 
+                alt="One API Hub" 
+                className="w-8 h-8 rounded-lg shadow-sm"
+              />
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">One API Manager</h1>
+                <h1 className="text-xl font-semibold text-gray-900">One API Hub</h1>
                 <p className="text-sm text-gray-500">AI 中转站账号管理插件</p>
               </div>
             </div>

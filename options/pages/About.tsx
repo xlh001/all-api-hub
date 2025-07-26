@@ -1,4 +1,5 @@
-import { InformationCircleIcon, HeartIcon, CodeBracketIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
+import { InformationCircleIcon, HeartIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
+import iconImage from "../../assets/icon.png"
 
 export default function About() {
   const version = "1.0.0"
@@ -44,11 +45,13 @@ export default function About() {
         <section>
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
             <div className="flex items-start space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <CodeBracketIcon className="w-8 h-8 text-white" />
-              </div>
+              <img 
+                src={iconImage} 
+                alt="One API Hub" 
+                className="w-16 h-16 rounded-lg shadow-sm flex-shrink-0"
+              />
               <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">One API Manager</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">One API Hub</h2>
                 <p className="text-gray-600 mb-4">
                   AI 中转站账号管理插件，帮助用户便捷地管理多个AI API中转站点的账号信息。
                 </p>

@@ -41,7 +41,7 @@ export default function ImportExport() {
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `one-api-manager-backup-${new Date().toISOString().split('T')[0]}.json`
+      link.download = `one-api-Hub-backup-${new Date().toISOString().split('T')[0]}.json`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)

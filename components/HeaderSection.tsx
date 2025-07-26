@@ -1,6 +1,7 @@
 import { ArrowsPointingOutIcon, Cog6ToothIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
 import { UI_CONSTANTS } from "../constants/ui"
 import Tooltip from "./Tooltip"
+import iconImage from "../assets/icon.png"
 
 interface HeaderSectionProps {
   isRefreshing: boolean
@@ -18,10 +19,12 @@ export default function HeaderSection({
   return (
     <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 flex-shrink-0">
       <div className="flex items-center space-x-3">
-        <div className="w-7 h-7 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm">
-          API
-        </div>
-        <span className="font-semibold text-gray-900">One API Manager</span>
+        <img 
+          src={iconImage} 
+          alt="One API Hub" 
+          className="w-7 h-7 rounded-lg shadow-sm"
+        />
+        <span className="font-semibold text-gray-900">One API Hub</span>
       </div>
       
       <div className="flex items-center space-x-2">
