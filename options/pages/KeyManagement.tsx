@@ -17,7 +17,7 @@ import toast from 'react-hot-toast'
 
 export default function KeyManagement({ routeParams }: { routeParams?: Record<string, string> }) {
   const { displayData } = useAccountData()
-  const [selectedAccount, setSelectedAccount] = useState<string>("all")
+  const [selectedAccount, setSelectedAccount] = useState<string>("") // 改为空字符串，不默认选择
   const [searchTerm, setSearchTerm] = useState("")
   const [tokens, setTokens] = useState<(ApiToken & { accountName: string })[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -25,61 +25,65 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
   const [editingToken, setEditingToken] = useState<(ApiToken & { accountName: string }) | null>(null)
 
-  // 加载所有账号的密钥
-  const loadTokens = async () => {
-    if (displayData.length === 0) return
+  // 加载选中账号的密钥
+  const loadTokens = async (accountId?: string) => {
+    const targetAccountId = accountId || selectedAccount
+    if (!targetAccountId || displayData.length === 0) return
     
     setIsLoading(true)
     try {
-      const allTokens: (ApiToken & { accountName: string })[] = []
-      
-      for (const account of displayData) {
-        try {
-          const accountTokens = await fetchAccountTokens(
-            account.baseUrl,
-            account.userId,
-            account.token
-          )
-          
-          const tokensWithAccount = accountTokens.map(token => ({
-            ...token,
-            accountName: account.name
-          }))
-          
-          allTokens.push(...tokensWithAccount)
-        } catch (error) {
-          console.error(`获取账号 ${account.name} 的密钥失败:`, error)
-        }
+      // 只加载选中账号的密钥
+      const account = displayData.find(acc => acc.id === targetAccountId)
+      if (!account) {
+        setTokens([])
+        return
       }
+
+      const accountTokens = await fetchAccountTokens(
+        account.baseUrl,
+        account.userId,
+        account.token
+      )
       
-      setTokens(allTokens)
+      const tokensWithAccount = accountTokens.map(token => ({
+        ...token,
+        accountName: account.name
+      }))
+      
+      setTokens(tokensWithAccount)
     } catch (error) {
-      console.error('加载密钥列表失败:', error)
+      console.error(`获取账号密钥失败:`, error)
       toast.error('加载密钥列表失败')
+      setTokens([])
     } finally {
       setIsLoading(false)
     }
   }
 
+  // 账号选择变化时加载密钥
   useEffect(() => {
-    loadTokens()
-  }, [displayData])
+    if (selectedAccount) {
+      loadTokens()
+    } else {
+      setTokens([]) // 清空密钥列表
+    }
+  }, [selectedAccount, displayData])
 
   // 处理路由参数中的账号ID
   useEffect(() => {
-    if (routeParams?.accountId) {
-      setSelectedAccount(routeParams.accountId)
+    if (routeParams?.accountId && displayData.length > 0) {
+      // 验证账号ID是否存在
+      const accountExists = displayData.some(acc => acc.id === routeParams.accountId)
+      if (accountExists) {
+        setSelectedAccount(routeParams.accountId)
+      }
     }
-  }, [routeParams])
+  }, [routeParams?.accountId, displayData])
 
-  // 过滤密钥
+  // 过滤密钥 (现在只需要搜索过滤，因为已经只加载选中账号的密钥)
   const filteredTokens = tokens.filter(token => {
-    const matchesSearch = token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         token.key.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesAccount = selectedAccount === "all" || 
-                          displayData.find(acc => acc.name === token.accountName)?.id === selectedAccount
-    
-    return matchesSearch && matchesAccount
+    return token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           token.key.toLowerCase().includes(searchTerm.toLowerCase())
   })
 
   // 复制密钥
@@ -114,8 +118,10 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   const handleCloseAddToken = () => {
     setIsAddTokenOpen(false)
     setEditingToken(null) // 清除编辑状态
-    // 重新加载密钥列表
-    loadTokens()
+    // 重新加载当前选中账号的密钥列表
+    if (selectedAccount) {
+      loadTokens()
+    }
   }
 
   // 处理编辑密钥
@@ -141,8 +147,10 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
       await deleteApiToken(account.baseUrl, account.userId, account.token, token.id)
       toast.success(`密钥 "${token.name}" 删除成功`)
       
-      // 重新加载密钥列表
-      loadTokens()
+      // 重新加载当前选中账号的密钥列表
+      if (selectedAccount) {
+        loadTokens()
+      }
     } catch (error) {
       console.error('删除密钥失败:', error)
       toast.error('删除密钥失败，请稍后重试')
@@ -181,28 +189,45 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
           <div className="flex items-center space-x-3">
             <button
               onClick={handleAddToken}
-              disabled={displayData.length === 0}
+              disabled={!selectedAccount || displayData.length === 0}
               className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               <PlusIcon className="w-4 h-4" />
               <span>添加密钥</span>
             </button>
             <button
-              onClick={loadTokens}
-              disabled={isLoading}
+              onClick={() => selectedAccount && loadTokens()}
+              disabled={isLoading || !selectedAccount}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
             >
               {isLoading ? '刷新中...' : '刷新列表'}
             </button>
           </div>
         </div>
-        <p className="text-gray-500">查看和管理所有账号的API密钥</p>
+        <p className="text-gray-500">选择账号后查看和管理该账号的API密钥</p>
       </div>
 
-      {/* 过滤器和搜索 */}
+      {/* 账号选择和搜索 */}
       <div className="mb-6 space-y-4">
+        {/* 账号选择 */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            选择账号
+          </label>
+          <select
+            value={selectedAccount}
+            onChange={(e) => setSelectedAccount(e.target.value)}
+            className="w-full sm:w-80 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">请选择账号</option>
+            {displayData.map(account => (
+              <option key={account.id} value={account.id}>{account.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* 搜索框 */}
         <div className="flex flex-col sm:flex-row gap-4">
-          {/* 搜索框 */}
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -210,33 +235,29 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
               placeholder="搜索密钥名称..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={!selectedAccount}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
-
-          {/* 账号筛选 */}
-          <select
-            value={selectedAccount}
-            onChange={(e) => setSelectedAccount(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">所有账号</option>
-            {displayData.map(account => (
-              <option key={account.id} value={account.id}>{account.name}</option>
-            ))}
-          </select>
         </div>
 
         {/* 统计信息 */}
-        <div className="flex items-center space-x-6 text-sm text-gray-500">
-          <span>总计 {tokens.length} 个密钥</span>
-          <span>启用 {tokens.filter(t => t.status === 1).length} 个</span>
-          <span>显示 {filteredTokens.length} 个</span>
-        </div>
+        {selectedAccount && (
+          <div className="flex items-center space-x-6 text-sm text-gray-500">
+            <span>总计 {tokens.length} 个密钥</span>
+            <span>启用 {tokens.filter(t => t.status === 1).length} 个</span>
+            <span>显示 {filteredTokens.length} 个</span>
+          </div>
+        )}
       </div>
 
       {/* 密钥列表 */}
-      {isLoading ? (
+      {!selectedAccount ? (
+        <div className="text-center py-12">
+          <KeyIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500">请先选择一个账号查看密钥列表</p>
+        </div>
+      ) : isLoading ? (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="border border-gray-200 rounded-lg p-4 animate-pulse">
@@ -403,7 +424,7 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
           userId: account.userId,
           token: account.token
         }))}
-        preSelectedAccountId={selectedAccount === "all" ? null : selectedAccount}
+        preSelectedAccountId={selectedAccount || null}
         editingToken={editingToken}
       />
     </div>
