@@ -519,9 +519,7 @@ export default function AddTokenDialog({ isOpen, onClose, availableAccounts, pre
                         <div className="text-sm text-yellow-800">
                           <p className="font-medium mb-1">注意事项</p>
                           <ul className="text-xs space-y-1">
-                            <li>• 创建后的密钥无法修改，请仔细确认配置</li>
                             <li>• 请妥善保管API密钥，避免泄露</li>
-                            <li>• 设置合理的额度和过期时间以确保安全</li>
                           </ul>
                         </div>
                       </div>

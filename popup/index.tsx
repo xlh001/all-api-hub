@@ -198,6 +198,11 @@ function IndexPopup() {
     chrome.tabs.create({ url: chrome.runtime.getURL('options.html#models') })
   }, [])
 
+  const handleViewUsage = useCallback((account: DisplaySiteData) => {
+    const logUrl = `${account.baseUrl}/log`
+    chrome.tabs.create({ url: logUrl })
+  }, [])
+
   // 处理打开插件时自动刷新
   useEffect(() => {
     let hasTriggered = false; // 防止重复触发
@@ -296,6 +301,7 @@ function IndexPopup() {
           onCopyUrl={handleCopyUrl}
           onViewKeys={handleViewKeys}
           onViewModels={handleViewModels}
+          onViewUsage={handleViewUsage}
           onEditAccount={handleEditAccount}
           onDeleteAccount={handleDeleteAccount}
         />

@@ -72,19 +72,22 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
   // 复制密钥到剪贴板
   const copyKey = async (key: string) => {
     try {
-      await navigator.clipboard.writeText(key)
-      setCopiedKey(key)
-      toast.success('密钥已复制到剪贴板')
+      // 检查key是否以"sk-"开头，如果不是则添加前缀
+      const textToCopy = key.startsWith('sk-') ? key : 'sk-' + key;
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedKey(key);
+      toast.success('密钥已复制到剪贴板');
       
       // 2秒后清除复制状态
       setTimeout(() => {
-        setCopiedKey(null)
-      }, 2000)
+        setCopiedKey(null);
+      }, 2000);
     } catch (error) {
-      console.error('复制失败:', error)
-      toast.error('复制失败，请手动复制')
+      console.error('复制失败:', error);
+      toast.error('复制失败，请手动复制');
     }
-  }
+};
+
 
   // 切换密钥展开/折叠状态
   const toggleTokenExpansion = (tokenId: number) => {
