@@ -24,7 +24,10 @@ export default function HeaderSection({
           alt="One API Hub" 
           className="w-7 h-7 rounded-lg shadow-sm"
         />
-        <span className="font-semibold text-gray-900">One API Hub</span>
+        <div className="flex flex-col">
+          <span className="font-semibold text-gray-900">One API Hub</span>
+          <span className="text-xs text-gray-500">一键管理所有AI中转站</span>
+        </div>
       </div>
       
       <div className="flex items-center space-x-2">
