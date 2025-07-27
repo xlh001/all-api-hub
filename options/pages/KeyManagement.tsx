@@ -89,7 +89,8 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   // 复制密钥
   const copyKey = async (key: string, name: string) => {
     try {
-      await navigator.clipboard.writeText(key)
+      const textToCopy = key.startsWith('sk-') ? key : 'sk-' + key;
+      await navigator.clipboard.writeText(textToCopy)
       toast.success(`密钥 ${name} 已复制到剪贴板`)
     } catch (error) {
       toast.error('复制失败')
