@@ -144,12 +144,12 @@ class AutoRefreshService {
         if (error.message.includes('receiving end does not exist')) {
           console.log('[AutoRefresh] 前端未打开，跳过通知');
         } else {
-          console.error('[AutoRefresh] 通知前端失败:', error);
+          console.warn('[AutoRefresh] 通知前端失败:', error);
         }
       });
     } catch (error) {
       // 静默处理错误，避免影响后台刷新
-      console.log('[AutoRefresh] 发送消息异常，可能前端未打开');
+      console.warn('[AutoRefresh] 发送消息异常，可能前端未打开');
     }
   }
 
