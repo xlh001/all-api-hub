@@ -7,6 +7,7 @@ import {
   ArrowPathIcon,
   InformationCircleIcon
 } from "@heroicons/react/24/outline"
+import { Toaster } from 'react-hot-toast'
 import iconImage from "../assets/icon.png"
 
 // 页面组件导入
@@ -185,6 +186,27 @@ function OptionsPage() {
           </main>
         </div>
       </div>
+      <Toaster
+        position="bottom-center"
+        reverseOrder={false}
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          className: '',
+          duration: 4000,
+          style: {
+            background: '#fff',
+            color: '#363636',
+          },
+          success: {
+            duration: 3000,
+          },
+          error: {
+            duration: 5000,
+          },
+        }}
+      />
     </div>
   )
 }
