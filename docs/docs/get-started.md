@@ -8,7 +8,15 @@
 
 ## 支持的站点
 
-待完善
+支持基于以下项目部署的中转站：
+ - [One-API] 
+ - [New-API] 
+
+::: warning
+如果站点进行了二次开发导致一些关键接口（例如/user）发生了改变，则插件可能无法正常添加此站点。
+:::
+
+
 
 ## 添加站点
 
@@ -25,3 +33,6 @@
 #### 访问令牌（ACCESS_TOKEN）
 
 待完善
+
+[One-API]: https://github.com/songquanpeng/one-api
+[New-API]: https://github.com/QuantumNous/new-api
