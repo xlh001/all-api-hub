@@ -1,5 +1,33 @@
+/**
+ * 账号操作服务模块
+ * 
+ * 作用：
+ * 1. 提供账号自动识别功能，通过 Chrome 扩展 API 获取站点用户信息
+ * 2. 处理账号的验证、保存和更新操作
+ * 3. 封装账号数据的存储逻辑，包括余额获取和数据同步
+ * 
+ * 主要功能：
+ * - autoDetectAccount: 自动识别站点账号信息（用户名、令牌、用户ID等）
+ * - validateAndSaveAccount: 验证并保存新账号到本地存储
+ * - validateAndUpdateAccount: 验证并更新现有账号信息
+ * - extractDomainPrefix: 从域名提取站点名称
+ * - isValidExchangeRate: 验证汇率输入的有效性
+ * 
+ * 工作流程：
+ * 1. 通过 background script 创建临时窗口访问目标站点
+ * 2. 使用 content script 从站点获取用户信息
+ * 3. 调用 API 获取访问令牌和账号数据
+ * 4. 保存或更新账号信息到本地存储
+ * 
+ * 依赖：
+ * - accountStorage: 账号本地存储服务
+ * - apiService: API 调用服务（获取令牌、余额等）
+ * - autoDetectUtils: 错误处理工具
+ */
+
 import { accountStorage } from "./accountStorage"
 import { fetchAccountData, getOrCreateAccessToken, fetchSiteStatus, extractDefaultExchangeRate } from "./apiService"
+import { analyzeAutoDetectError, type AutoDetectError } from "../utils/autoDetectUtils"
 import type { SiteAccount } from "../types"
 
 // 账号验证结果
@@ -12,6 +40,7 @@ export interface AccountValidationResult {
     exchangeRate?: number
   }
   error?: string
+  detailedError?: AutoDetectError
 }
 
 // 账号保存结果
@@ -39,15 +68,22 @@ export async function autoDetectAccount(url: string): Promise<AccountValidationR
     })
 
     if (!response.success) {
+      const detailedError = analyzeAutoDetectError(response.error || '自动检测失败')
       return { 
         success: false, 
-        error: '自动检测失败，请手动输入信息或确保已在目标站点登录' 
+        error: response.error || '自动检测失败，请手动输入信息或确保已在目标站点登录',
+        detailedError
       }
     }
 
     const userId = response.data.userId
     if (!userId) {
-      return { success: false, error: '无法获取用户 ID' }
+      const detailedError = analyzeAutoDetectError('无法获取用户 ID')
+      return { 
+        success: false, 
+        error: '无法获取用户 ID',
+        detailedError
+      }
     }
 
     // 并行执行：获取用户信息和站点状态
@@ -59,7 +95,12 @@ export async function autoDetectAccount(url: string): Promise<AccountValidationR
     const { username: detectedUsername, access_token } = tokenInfo
     
     if (!detectedUsername || !access_token) {
-      return { success: false, error: '未能获取到用户名或访问令牌' }
+      const detailedError = analyzeAutoDetectError('未能获取到用户名或访问令牌')
+      return { 
+        success: false, 
+        error: '未能获取到用户名或访问令牌',
+        detailedError
+      }
     }
 
     // 获取默认充值比例
@@ -76,8 +117,13 @@ export async function autoDetectAccount(url: string): Promise<AccountValidationR
     }
   } catch (error) {
     console.error('自动识别失败:', error)
+    const detailedError = analyzeAutoDetectError(error)
     const errorMessage = error instanceof Error ? error.message : '未知错误'
-    return { success: false, error: `自动识别失败: ${errorMessage}` }
+    return { 
+      success: false, 
+      error: `自动识别失败: ${errorMessage}`,
+      detailedError
+    }
   }
 }
 

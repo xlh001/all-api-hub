@@ -3,6 +3,8 @@ import toast from 'react-hot-toast'
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
 import { GlobeAltIcon, XMarkIcon, SparklesIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline"
 import { autoDetectAccount, validateAndSaveAccount, extractDomainPrefix, isValidExchangeRate } from "../services/accountOperations"
+import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
+import type { AutoDetectError } from "../utils/autoDetectUtils"
 
 interface AddAccountDialogProps {
   isOpen: boolean
@@ -19,7 +21,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
   const [isDetected, setIsDetected] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showAccessToken, setShowAccessToken] = useState(false)
-  const [detectionError, setDetectionError] = useState<string | null>(null)
+  const [detectionError, setDetectionError] = useState<AutoDetectError | null>(null)
   const [showManualForm, setShowManualForm] = useState(false)
   const [exchangeRate, setExchangeRate] = useState("")
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
@@ -83,7 +85,7 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
       const result = await autoDetectAccount(url.trim())
       
       if (!result.success) {
-        setDetectionError(result.error || '自动检测失败，请手动输入信息或确保已在目标站点登录')
+        setDetectionError(result.detailedError || null)
         setShowManualForm(true)
         return
       }
@@ -114,7 +116,12 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
     } catch (error) {
       console.error('自动识别失败:', error)
       const errorMessage = error instanceof Error ? error.message : '未知错误'
-      setDetectionError(`自动识别失败: ${errorMessage}`)
+      // 使用通用错误处理
+      setDetectionError({
+        type: 'unknown' as any,
+        message: `自动识别失败: ${errorMessage}`,
+        helpDocUrl: '#'
+      })
       setShowManualForm(true) // 识别失败后显示手动表单
     } finally {
       setIsDetecting(false)
@@ -222,16 +229,10 @@ export default function AddAccountDialog({ isOpen, onClose }: AddAccountDialogPr
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* 识别错误提示 */}
                   {detectionError && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <XMarkIcon className="h-4 w-4 text-red-400" />
-                        </div>
-                        <div className="ml-2">
-                          <p className="text-xs text-red-700">{detectionError}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <AutoDetectErrorAlert 
+                      error={detectionError}
+                      siteUrl={url}
+                    />
                   )}
 
                   {/* URL 输入框 */}

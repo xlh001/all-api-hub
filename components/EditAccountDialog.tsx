@@ -4,6 +4,8 @@ import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@
 import { GlobeAltIcon, XMarkIcon, PencilIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon, SparklesIcon, CheckIcon, UsersIcon } from "@heroicons/react/24/outline"
 import { accountStorage } from "../services/accountStorage"
 import { autoDetectAccount, validateAndUpdateAccount, extractDomainPrefix, isValidExchangeRate } from "../services/accountOperations"
+import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
+import type { AutoDetectError } from "../utils/autoDetectUtils"
 import type { DisplaySiteData } from "../types"
 
 interface EditAccountDialogProps {
@@ -22,7 +24,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
   const [isDetected, setIsDetected] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showAccessToken, setShowAccessToken] = useState(false)
-  const [detectionError, setDetectionError] = useState<string | null>(null)
+  const [detectionError, setDetectionError] = useState<AutoDetectError | null>(null)
   const [showManualForm, setShowManualForm] = useState(true) // 编辑模式默认显示表单
   const [exchangeRate, setExchangeRate] = useState("")
   
@@ -78,7 +80,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
       const result = await autoDetectAccount(url.trim())
       
       if (!result.success) {
-        setDetectionError(result.error || '自动识别失败')
+        setDetectionError(result.detailedError || null)
         return
       }
 
@@ -107,7 +109,12 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
     } catch (error) {
       console.error('自动识别失败:', error)
       const errorMessage = error instanceof Error ? error.message : '未知错误'
-      setDetectionError(`自动识别失败: ${errorMessage}`)
+      // 使用通用错误处理
+      setDetectionError({
+        type: 'unknown' as any,
+        message: `自动识别失败: ${errorMessage}`,
+        helpDocUrl: '#'
+      })
     } finally {
       setIsDetecting(false)
     }
@@ -219,16 +226,10 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* 识别错误提示 */}
                   {detectionError && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <XMarkIcon className="h-4 w-4 text-red-400" />
-                        </div>
-                        <div className="ml-2">
-                          <p className="text-xs text-red-700">{detectionError}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <AutoDetectErrorAlert 
+                      error={detectionError}
+                      siteUrl={url}
+                    />
                   )}
 
                   {/* URL 输入框 */}
