@@ -11,6 +11,8 @@
   [![React](https://img.shields.io/badge/react-18.2.0-61dafb.svg)](https://reactjs.org)
   [![TypeScript](https://img.shields.io/badge/typescript-5.3.3-blue.svg)](https://typescriptlang.org)
   [![Tailwind CSS](https://img.shields.io/badge/tailwindcss-3.4.17-38bdf8.svg)](https://tailwindcss.com)
+
+   **[📖 访问官方文档](https://fxaxg.github.io/one-api-hub/)**
   
 </div>
 
