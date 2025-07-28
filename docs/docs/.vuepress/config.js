@@ -3,7 +3,8 @@ import { defineUserConfig } from 'vuepress'
 import { viteBundler } from '@vuepress/bundler-vite'
 
 export default defineUserConfig({
-  lang: 'en-US',
+  lang: 'zh-CN',
+  base: '/one-api-hub/',
 
   title: 'VuePress',
   description: 'My first VuePress Site',
