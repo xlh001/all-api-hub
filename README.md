@@ -1,33 +1,114 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+<div align="center">
+  <img src="assets/icon.png" alt="One API Manager Logo" width="128" height="128">
+  
+  # 中转站管理器 - One API Hub
+  
+  **一个开源的浏览器插件，聚合管理所有中转站账号的余额、模型和密钥，告别繁琐登录。**
+  
+  [![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://github.com/username/one-api-manager)
+  [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+  [![Plasmo](https://img.shields.io/badge/plasmo-v0.90.5-purple.svg)](https://plasmo.com)
+  [![React](https://img.shields.io/badge/react-18.2.0-61dafb.svg)](https://reactjs.org)
+  [![TypeScript](https://img.shields.io/badge/typescript-5.3.3-blue.svg)](https://typescriptlang.org)
+  [![Tailwind CSS](https://img.shields.io/badge/tailwindcss-3.4.17-38bdf8.svg)](https://tailwindcss.com)
+  
+</div>
 
-## Getting Started
+---
 
-First, run the development server:
+## 📖 介绍
+
+目前市面上有太多 AI-API 中转站点，每次查看余额和支持模型列表等信息都非常麻烦，需要逐个登录查看。
+
+本插件可以便捷的对基于 [one-api](https://github.com/songquanpeng/one-api) 和 [new-api](https://github.com/QuantumNous/new-api) 等部署的 AI 中转站账号进行整合管理。
+
+## ✨ 功能特性
+
+- 🔍 **自动识别中转站点** - 自动创建系统访问 token 并添加到插件的站点列表中
+- 💰 **自动识别中转站充值比例** - 智能解析站点配置信息
+- 👥 **多账号管理** - 每个站点可添加多个账号
+- 📊 **余额与日志查看** - 账号的余额、使用日志一目了然
+- 🔑 **令牌(key)管理** - 便捷的密钥查看与管理
+- 🤖 **模型信息查看** - 站点支持模型信息和渠道查看
+- 🔒 **完全离线** - 插件无需联网，保护隐私安全
+
+## 🖥️ 截图展示
+
+> 📷 *截图即将添加...*
+
+## 🚀 安装使用
+
+### Chrome 网上应用店（推荐）
+> 🔄 *即将上架...*
+
+### 手动安装
+1. 下载最新版本的扩展包
+2. 打开 Chrome 浏览器，进入 `chrome://extensions/`
+3. 开启 "开发者模式"
+4. 点击 "加载已解压的扩展程序"
+5. 选择解压后的扩展文件夹
+
+## 🛠️ 开发指南
+
+### 环境要求
+- Node.js 18+
+- npm 或 pnpm
+
+### 本地开发
 
 ```bash
+# 克隆项目
+git clone https://github.com/username/one-api-manager.git
+cd one-api-manager
+
+# 安装依赖
+pnpm install
+# 或者
+npm install
+
+# 启动开发服务器
 pnpm dev
-# or
+# 或者
 npm run dev
 ```
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
+然后在浏览器中加载 `build/chrome-mv3-dev` 目录作为扩展程序。
 
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
-
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
-
-## Making production build
-
-Run the following:
+### 构建生产版本
 
 ```bash
 pnpm build
-# or
+# 或者 
 npm run build
 ```
 
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
+这将在 `build` 目录中创建生产版本的扩展包。
 
-## Submit to the webstores
+## 🔮 未来支持
 
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!
+- 🧪 **模型降智测试** - 自动化模型性能测试
+- ☁️ **WebDAV 数据备份** - 云端数据同步与备份
+
+## 🏗️ 技术栈
+
+- **框架**: [Plasmo](https://plasmo.com) v0.90.5
+- **UI 库**: [React](https://reactjs.org) 18.2.0
+- **样式**: [Tailwind CSS](https://tailwindcss.com) v3.4.17
+- **组件**: [Headless UI](https://headlessui.com)
+- **图标**: [Heroicons](https://heroicons.com)
+- **状态管理**: [Zustand](https://zustand-demo.pmnd.rs)
+- **类型检查**: [TypeScript](https://typescriptlang.org) 5.3.3
+
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🙏 致谢
+- [Plasmo](https://plasmo.com) - 现代化的浏览器扩展开发框架
+
+---
+
+<div align="center">
+  <strong>⭐ 如果这个项目对你有帮助，请考虑给它一个星标！</strong>
+</div>
