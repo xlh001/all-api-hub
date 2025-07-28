@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="assets/icon.png" alt="One API Manager Logo" width="128" height="128">
+  <img src="assets/icon.png" alt="One API Hub Logo" width="128" height="128">
   
   # 中转站管理器 - One API Hub
   
   **一个开源的浏览器插件，聚合管理所有中转站账号的余额、模型和密钥，告别繁琐登录。**
   
-  [![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://github.com/username/one-api-manager)
+  [![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://github.com/fxaxg/one-api-hub)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
   [![Plasmo](https://img.shields.io/badge/plasmo-v0.90.5-purple.svg)](https://plasmo.com)
   [![React](https://img.shields.io/badge/react-18.2.0-61dafb.svg)](https://reactjs.org)
@@ -58,8 +58,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/username/one-api-manager.git
-cd one-api-manager
+git clone https://github.com/username/one-api-hub.git
+cd one-api-hub
 
 # 安装依赖
 pnpm install
