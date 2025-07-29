@@ -35,7 +35,7 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProvider, setSelectedProvider] = useState<ProviderType | 'all'>('all')
-  const [selectedGroup, setSelectedGroup] = useState<string>('all')
+  const [selectedGroup, setSelectedGroup] = useState<string>('default')
   const [isLoading, setIsLoading] = useState(false)
   
   // 数据状态
@@ -148,6 +148,34 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
     }
   }, [routeParams?.accountId, safeDisplayData])
   
+  // 当定价数据加载完成时，自动选择合适的分组
+  useEffect(() => {
+    if (pricingData && pricingData.group_ratio) {
+      const availableGroupsList = Object.keys(pricingData.group_ratio).filter(key => key !== '')
+      console.log('分组选择逻辑 - 当前选中分组:', selectedGroup)
+      console.log('分组选择逻辑 - 可用分组列表:', availableGroupsList)
+      
+      // 检查当前选中的分组是否在可用列表中
+      if (selectedGroup !== 'all' && !availableGroupsList.includes(selectedGroup)) {
+        console.log('分组选择逻辑 - 当前分组不存在，需要重新选择')
+        
+        if (availableGroupsList.includes('default')) {
+          // 如果有default分组，选择default
+          console.log('分组选择逻辑 - 选择default分组')
+          setSelectedGroup('default')
+        } else if (availableGroupsList.length > 0) {
+          // 如果没有default但有其他分组，选择第一个
+          console.log('分组选择逻辑 - 选择第一个可用分组:', availableGroupsList[0])
+          setSelectedGroup(availableGroupsList[0])
+        } else {
+          // 如果没有任何分组，选择"所有分组"
+          console.log('分组选择逻辑 - 没有可用分组，选择所有分组')
+          setSelectedGroup('all')
+        }
+      }
+    }
+  }, [pricingData, selectedGroup])
+  
   // 计算模型价格
   const modelsWithPricing = useMemo(() => {
     console.log('计算模型价格 - pricingData:', pricingData)
@@ -176,7 +204,7 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
         model,
         pricingData.group_ratio || {},
         exchangeRate,
-        'default' // 用户分组，这里暂时用默认值
+        selectedGroup === 'all' ? 'default' : selectedGroup // 根据选中分组计算价格
       )
       
       return {
@@ -184,12 +212,52 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
         calculatedPrice
       }
     })
-  }, [pricingData, currentAccount])
+  }, [pricingData, currentAccount, selectedGroup])
   
-  // 过滤和搜索模型
-  const filteredModels = useMemo(() => {
-    console.log('过滤模型 - modelsWithPricing:', modelsWithPricing)
+  // 基础过滤模型（不包含厂商过滤，用于Tab数量计算）
+  const baseFilteredModels = useMemo(() => {
+    console.log('基础过滤模型 - modelsWithPricing:', modelsWithPricing)
     let filtered = modelsWithPricing
+    
+    // 按分组过滤
+    if (selectedGroup !== 'all') {
+      console.log('基础过滤-按分组过滤:', selectedGroup)
+      
+      // 额外的安全检查：确保选中的分组确实存在
+      const availableGroupsList = pricingData?.group_ratio ? Object.keys(pricingData.group_ratio).filter(key => key !== '') : []
+      if (!availableGroupsList.includes(selectedGroup)) {
+        console.warn('基础过滤-警告：选中的分组不存在于可用分组列表中', {
+          selectedGroup,
+          availableGroups: availableGroupsList
+        })
+        // 如果选中的分组不存在，不进行分组过滤，显示所有模型
+      } else {
+        filtered = filtered.filter(item => 
+          item.model.enable_groups.includes(selectedGroup)
+        )
+      }
+      console.log('基础过滤-分组过滤后:', filtered.length)
+    }
+    
+    // 搜索过滤
+    if (searchTerm) {
+      console.log('基础过滤-搜索过滤:', searchTerm)
+      const searchLower = searchTerm.toLowerCase()
+      filtered = filtered.filter(item => 
+        item.model.model_name.toLowerCase().includes(searchLower) ||
+        (item.model.model_description?.toLowerCase().includes(searchLower) || false)
+      )
+      console.log('基础过滤-搜索过滤后:', filtered.length)
+    }
+    
+    console.log('基础过滤结果:', filtered)
+    return filtered
+  }, [modelsWithPricing, selectedGroup, searchTerm, pricingData])
+
+  // 过滤和搜索模型（包含厂商过滤，用于实际显示）
+  const filteredModels = useMemo(() => {
+    console.log('过滤模型 - baseFilteredModels:', baseFilteredModels)
+    let filtered = baseFilteredModels
     
     // 按厂商过滤
     if (selectedProvider !== 'all') {
@@ -200,42 +268,34 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
       console.log('厂商过滤后:', filtered.length)
     }
     
-    // 按分组过滤
-    if (selectedGroup !== 'all') {
-      console.log('按分组过滤:', selectedGroup)
-      filtered = filtered.filter(item => 
-        item.model.enable_groups.includes(selectedGroup)
-      )
-      console.log('分组过滤后:', filtered.length)
-    }
-    
-    // 搜索过滤
-    if (searchTerm) {
-      console.log('搜索过滤:', searchTerm)
-      const searchLower = searchTerm.toLowerCase()
-      filtered = filtered.filter(item => 
-        item.model.model_name.toLowerCase().includes(searchLower) ||
-        (item.model.model_description?.toLowerCase().includes(searchLower) || false)
-      )
-      console.log('搜索过滤后:', filtered.length)
-    }
-    
     console.log('最终过滤结果:', filtered)
     return filtered
-  }, [modelsWithPricing, selectedProvider, selectedGroup, searchTerm])
+  }, [baseFilteredModels, selectedProvider])
+  
+  // 处理模型item中的分组点击
+  const handleGroupClick = (group: string) => {
+    setSelectedGroup(group)
+  }
+  
+  // 计算指定厂商在当前过滤条件下的模型数量
+  const getProviderFilteredCount = (provider: ProviderType) => {
+    return baseFilteredModels.filter(item => 
+      filterModelsByProvider([item.model], provider).length > 0
+    ).length
+  }
   
   // 获取可用分组列表
   const availableGroups = useMemo(() => {
     console.log('处理可用分组 - pricingData:', pricingData)
-    if (!pricingData || !pricingData.usable_group) {
+    if (!pricingData || !pricingData.group_ratio) {
       console.log('没有分组数据，返回空数组')
       return []
     }
-    // 过滤掉空键和"用户分组"这样的描述性键
-    const groups = Object.keys(pricingData.usable_group).filter(key => 
-      key !== '' && key !== '用户分组'
+    // 从group_ratio中获取分组，并过滤掉空键
+    const groups = Object.keys(pricingData.group_ratio).filter(key => 
+      key !== ''
     )
-    console.log('原始分组数据:', pricingData.usable_group)
+    console.log('原始分组数据:', pricingData.group_ratio)  
     console.log('处理后的分组列表:', groups)
     return groups
   }, [pricingData])
@@ -324,88 +384,112 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
       {selectedAccount && !isLoading && pricingData && (
         <>
           {/* 控制面板 */}
-          <div className="mb-6 space-y-4">
-            {/* 搜索和过滤 */}
-            <div className="flex flex-col lg:flex-row gap-4">
+          <div className="mb-6 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            {/* 第一行：主要过滤控件 */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
               {/* 搜索框 */}
-              <div className="flex-1 relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="搜索模型名称或描述..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  搜索模型
+                </label>
+                <div className="relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="输入模型名称或描述..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
 
               {/* 分组筛选 */}
-              <select
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">所有分组</option>
-                {availableGroups.map(group => (
-                  <option key={group} value={group}>
-                    {pricingData?.usable_group?.[group] || group}
-                  </option>
-                ))}
-              </select>
+              <div className="w-full lg:w-64">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  用户分组
+                </label>
+                <select
+                  value={selectedGroup}
+                  onChange={(e) => setSelectedGroup(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">所有分组</option>
+                  {availableGroups.map(group => (
+                    <option key={group} value={group}>
+                      {group} ({pricingData?.group_ratio?.[group] || 1}x)
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               {/* 刷新按钮 */}
-              <button
-                onClick={() => loadPricingData(selectedAccount)}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
-              >
-                <ArrowPathIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                <span>刷新</span>
-              </button>
-            </div>
-
-            {/* 显示选项 */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <div className="flex items-center space-x-2">
-                <AdjustmentsHorizontalIcon className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-700 font-medium">显示选项:</span>
+              <div className="w-full lg:w-auto">
+                <label className="block text-sm font-medium text-gray-700 mb-2 lg:invisible">
+                  操作
+                </label>
+                <button
+                  onClick={() => loadPricingData(selectedAccount)}
+                  disabled={isLoading}
+                  className="w-full lg:w-auto px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <ArrowPathIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span>刷新数据</span>
+                </button>
               </div>
-              
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={showRealPrice}
-                  onChange={(e) => setShowRealPrice(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span>以真实充值金额显示</span>
-              </label>
-              
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={showRatioColumn}
-                  onChange={(e) => setShowRatioColumn(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span>显示倍率列</span>
-              </label>
-              
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={showEndpointTypes}
-                  onChange={(e) => setShowEndpointTypes(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span>显示端点类型</span>
-              </label>
             </div>
 
-            {/* 统计信息 */}
-            <div className="flex items-center space-x-6 text-sm text-gray-500">
-              <span>总计 {pricingData?.data?.length || 0} 个模型</span>
-              <span>显示 {filteredModels.length} 个</span>
+            {/* 第二行：显示选项和统计信息 */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pt-4 border-t border-gray-100">
+              {/* 显示选项 */}
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <AdjustmentsHorizontalIcon className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-700 font-medium">显示选项:</span>
+                </div>
+                
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showRealPrice}
+                    onChange={(e) => setShowRealPrice(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>真实充值金额</span>
+                </label>
+                
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showRatioColumn}
+                    onChange={(e) => setShowRatioColumn(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>显示倍率</span>
+                </label>
+                
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showEndpointTypes}
+                    onChange={(e) => setShowEndpointTypes(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>端点类型</span>
+                </label>
+              </div>
+
+              {/* 统计信息 */}
+              <div className="flex items-center space-x-4 text-sm">
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <CpuChipIcon className="w-4 h-4" />
+                  <span>总计 <span className="font-medium text-gray-900">{pricingData?.data?.length || 0}</span> 个模型</span>
+                </div>
+                <div className="h-4 w-px bg-gray-300"></div>
+                <div className="text-blue-600">
+                  <span>显示 <span className="font-medium">{filteredModels.length}</span> 个</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -447,7 +531,7 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
               >
                 <div className="flex items-center justify-center space-x-2">
                   <CpuChipIcon className="w-4 h-4" />
-                  <span>所有厂商 ({modelsWithPricing.length})</span>
+                  <span>所有厂商 ({baseFilteredModels.length})</span>
                 </div>
               </Tab>
               {providers.map((provider) => {
@@ -475,7 +559,7 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
                   >
                     <div className="flex items-center justify-center space-x-2">
                       <IconComponent className="w-4 h-4" />
-                      <span>{provider} ({pricingData?.data ? filterModelsByProvider(pricingData.data, provider).length : 0})</span>
+                      <span>{provider} ({getProviderFilteredCount(provider)})</span>
                     </div>
                   </Tab>
                 )
@@ -501,7 +585,8 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
                         showRealPrice={showRealPrice}
                         showRatioColumn={showRatioColumn}
                         showEndpointTypes={showEndpointTypes}
-                        userGroup="default"
+                        userGroup={selectedGroup === 'all' ? 'default' : selectedGroup}
+                        onGroupClick={handleGroupClick}
                       />
                     ))
                   )}
@@ -527,7 +612,8 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
                           showRealPrice={showRealPrice}
                           showRatioColumn={showRatioColumn}
                           showEndpointTypes={showEndpointTypes}
-                          userGroup="default"
+                          userGroup={selectedGroup === 'all' ? 'default' : selectedGroup}
+                          onGroupClick={handleGroupClick}
                         />
                       ))
                     )}

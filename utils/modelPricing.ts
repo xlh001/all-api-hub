@@ -139,6 +139,9 @@ export const isModelAvailableForGroup = (model: ModelPricing, userGroup: string)
 /**
  * 获取模型的可用端点类型显示文本
  */
-export const getEndpointTypesText = (endpointTypes: string[]): string => {
+export const getEndpointTypesText = (endpointTypes: string[] | undefined): string => {
+  if (!endpointTypes || !Array.isArray(endpointTypes)) {
+    return '未提供'
+  }
   return endpointTypes.join(', ')
 }

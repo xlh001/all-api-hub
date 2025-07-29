@@ -12,7 +12,7 @@
   [![TypeScript](https://img.shields.io/badge/typescript-5.3.3-blue.svg)](https://typescriptlang.org)
   [![Tailwind CSS](https://img.shields.io/badge/tailwindcss-3.4.17-38bdf8.svg)](https://tailwindcss.com)
 
-   **[📖 访问官方文档](https://fxaxg.github.io/one-api-hub/)**
+   **[文档教程](https://fxaxg.github.io/one-api-hub/) | [常见问题](https://fxaxg.github.io/one-api-hub/faq.html)**
   
 </div>
 

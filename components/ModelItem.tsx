@@ -34,6 +34,7 @@ interface ModelItemProps {
   showRatioColumn: boolean // 是否显示倍率列
   showEndpointTypes: boolean // 是否显示可用端点类型
   userGroup: string
+  onGroupClick?: (group: string) => void // 新增：点击分组时的回调函数
 }
 
 export default function ModelItem({
@@ -43,7 +44,8 @@ export default function ModelItem({
   showRealPrice,
   showRatioColumn,
   showEndpointTypes,
-  userGroup
+  userGroup,
+  onGroupClick
 }: ModelItemProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   
@@ -220,18 +222,28 @@ export default function ModelItem({
                 <span className="font-medium text-gray-700">可用分组</span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {model.enable_groups.map((group, index) => (
-                  <span 
-                    key={index}
-                    className={`inline-flex items-center px-2 py-1 rounded text-xs ${
-                      group === userGroup 
-                        ? 'bg-blue-100 text-blue-800 font-medium' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {group}
-                  </span>
-                ))}
+                {model.enable_groups.map((group, index) => {
+                  const isCurrentGroup = group === userGroup
+                  const isClickable = onGroupClick && !isCurrentGroup
+                  
+                  return (
+                    <span 
+                      key={index}
+                      onClick={isClickable ? () => onGroupClick(group) : undefined}
+                      className={`inline-flex items-center px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                        isCurrentGroup
+                          ? 'bg-blue-100 text-blue-800 font-medium' 
+                          : isClickable
+                          ? 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                      title={isClickable ? `点击切换到 ${group} 分组` : undefined}
+                    >
+                      {isCurrentGroup && <TagIcon className="w-3 h-3 mr-1" />}
+                      {group}
+                    </span>
+                  )
+                })}
               </div>
             </div>
             

@@ -1,15 +1,15 @@
-import { InformationCircleIcon, HeartIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
+import { InformationCircleIcon, HeartIcon, GlobeAltIcon, CodeBracketIcon } from "@heroicons/react/24/outline"
 import iconImage from "../../assets/icon.png"
+import packageJson from "../../package.json"
 
 export default function About() {
-  const version = "1.0.0"
-  const buildDate = new Date().toLocaleDateString('zh-CN')
+  const version = packageJson.version
 
   const features = [
     "自动识别中转站点，自动创建系统访问 token",
     "每个站点可添加多个账号",
     "账号的余额、使用日志进行查看",
-    "令牌(key)查看与管理",
+    "密钥(key)查看与管理",
     "站点支持模型信息和渠道查看",
     "插件无需联网，保护隐私安全"
   ]
@@ -53,16 +53,12 @@ export default function About() {
               <div className="flex-1">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">One API Hub</h2>
                 <p className="text-gray-600 mb-4">
-                  AI 中转站账号管理插件，帮助用户便捷地管理多个AI API中转站点的账号信息。
+                  AI 中转站账号管理插件，帮助用户便捷地管理多个AI API中转站点的账号。
                 </p>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="text-sm">
                   <div>
                     <span className="text-gray-500">版本号:</span>
                     <span className="ml-2 font-medium text-gray-900">v{version}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">构建日期:</span>
-                    <span className="ml-2 font-medium text-gray-900">{buildDate}</span>
                   </div>
                 </div>
               </div>
@@ -70,29 +66,90 @@ export default function About() {
           </div>
         </section>
 
-        {/* 主要功能 */}
+        {/* 项目链接 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">主要功能</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                <span className="text-sm text-green-800">{feature}</span>
+          <h2 className="text-lg font-medium text-gray-900 mb-4">项目链接</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-start space-x-4">
+                <CodeBracketIcon className="w-6 h-6 text-gray-900 mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-2">GitHub 仓库</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    查看源代码、提交问题或参与项目开发
+                  </p>
+                  <a 
+                    href="https://github.com/fxaxg/one-api-hub" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+                  >
+                    去点个Star
+                  </a>
+                </div>
               </div>
-            ))}
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-start space-x-4">
+                <GlobeAltIcon className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-2">项目官网</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    查看详细文档、使用指南和更多信息
+                  </p>
+                  <a 
+                    href="https://fxaxg.github.io/one-api-hub/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  >
+                    访问官网
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* 未来功能 */}
+        {/* 功能特性 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">未来支持</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {futureFeatures.map((feature, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                <span className="text-sm text-blue-800">{feature}</span>
+          <h2 className="text-lg font-medium text-gray-900 mb-4">功能特性</h2>
+          <div className="space-y-6">
+            {/* 主要功能 */}
+            <div>
+              <h3 className="text-base font-medium text-gray-800 mb-3 flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                已实现功能
+              </h3>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <ul className="space-y-2">
+                  {features.map((feature, index) => (
+                    <li key={index} className="flex items-start space-x-2 text-sm text-green-800">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ))}
+            </div>
+            
+            {/* 未来功能 */}
+            <div>
+              <h3 className="text-base font-medium text-gray-800 mb-3 flex items-center">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                即将支持
+              </h3>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <ul className="space-y-2">
+                  {futureFeatures.map((feature, index) => (
+                    <li key={index} className="flex items-start space-x-2 text-sm text-blue-800">
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -114,55 +171,6 @@ export default function About() {
           </div>
         </section>
 
-        {/* 开源信息 */}
-        <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">开源相关</h2>
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-start space-x-4">
-              <GlobeAltIcon className="w-6 h-6 text-gray-400 mt-1 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900 mb-2">基于开源项目</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  本插件支持基于以下开源项目部署的AI中转站点：
-                </p>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <div>
-                      <a 
-                        href="https://github.com/songquanpeng/one-api" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-purple-600 hover:text-purple-700 font-medium"
-                      >
-                        One API
-                      </a>
-                      <span className="text-gray-500 text-sm ml-2">
-                        - OpenAI 接口管理 & 分发系统
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <div>
-                      <a 
-                        href="https://github.com/QuantumNous/new-api" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-purple-600 hover:text-purple-700 font-medium"
-                      >
-                        New API
-                      </a>
-                      <span className="text-gray-500 text-sm ml-2">
-                        - One API 的分支版本
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* 版权和致谢 */}
         <section>
@@ -173,8 +181,7 @@ export default function About() {
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 mb-2">开发与维护</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  感谢所有为开源社区做出贡献的开发者们，特别是One API和New API项目的维护者。
-                  本插件的开发得益于这些优秀的开源项目和工具。
+                  感谢所有为开源社区做出贡献的开发者们，本插件的开发得益于这些优秀的开源项目和工具。
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">

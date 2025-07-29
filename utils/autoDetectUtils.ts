@@ -43,7 +43,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
     return {
       type: AutoDetectErrorType.TIMEOUT,
       message: '自动识别超时，请尝试手动添加',
-      helpDocUrl: '#' // TODO: 添加帮助文档链接
+      helpDocUrl: 'https://fxaxg.github.io/one-api-hub/faq.html' 
     }
   }
   
@@ -53,7 +53,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
       type: AutoDetectErrorType.UNAUTHORIZED,
       message: '您未在当前站点登录，或者登录信息已过期，无法自动添加，可查看帮助文档或点击先进行登录',
       actionText: '登录此站点',
-      helpDocUrl: '#' // TODO: 添加帮助文档链接
+      helpDocUrl: 'https://fxaxg.github.io/one-api-hub/faq.html' 
     }
   }
   
@@ -63,7 +63,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
     return {
       type: AutoDetectErrorType.INVALID_RESPONSE,
       message: '自动识别未成功，站点返回数据不符合预期，请手动输入信息或确保已在目标站点登录',
-      helpDocUrl: '#' // TODO: 添加帮助文档链接
+      helpDocUrl: 'https://fxaxg.github.io/one-api-hub/faq.html' 
     }
   }
   
@@ -72,7 +72,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
     return {
       type: AutoDetectErrorType.NETWORK_ERROR,
       message: '网络连接失败，请检查网络连接后重试',
-      helpDocUrl: '#' // TODO: 添加帮助文档链接
+      helpDocUrl: 'https://fxaxg.github.io/one-api-hub/faq.html' 
     }
   }
   
@@ -80,7 +80,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
   return {
     type: AutoDetectErrorType.UNKNOWN,
     message: '自动识别失败：' + errorMessage,
-    helpDocUrl: '#' // TODO: 添加帮助文档链接
+    helpDocUrl: 'https://fxaxg.github.io/one-api-hub/faq.html' 
   }
 }
 
