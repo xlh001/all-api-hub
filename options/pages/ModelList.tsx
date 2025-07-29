@@ -148,6 +148,34 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
     }
   }, [routeParams?.accountId, safeDisplayData])
   
+  // 当定价数据加载完成时，自动选择合适的分组
+  useEffect(() => {
+    if (pricingData && pricingData.group_ratio) {
+      const availableGroupsList = Object.keys(pricingData.group_ratio).filter(key => key !== '')
+      console.log('分组选择逻辑 - 当前选中分组:', selectedGroup)
+      console.log('分组选择逻辑 - 可用分组列表:', availableGroupsList)
+      
+      // 检查当前选中的分组是否在可用列表中
+      if (selectedGroup !== 'all' && !availableGroupsList.includes(selectedGroup)) {
+        console.log('分组选择逻辑 - 当前分组不存在，需要重新选择')
+        
+        if (availableGroupsList.includes('default')) {
+          // 如果有default分组，选择default
+          console.log('分组选择逻辑 - 选择default分组')
+          setSelectedGroup('default')
+        } else if (availableGroupsList.length > 0) {
+          // 如果没有default但有其他分组，选择第一个
+          console.log('分组选择逻辑 - 选择第一个可用分组:', availableGroupsList[0])
+          setSelectedGroup(availableGroupsList[0])
+        } else {
+          // 如果没有任何分组，选择"所有分组"
+          console.log('分组选择逻辑 - 没有可用分组，选择所有分组')
+          setSelectedGroup('all')
+        }
+      }
+    }
+  }, [pricingData, selectedGroup])
+  
   // 计算模型价格
   const modelsWithPricing = useMemo(() => {
     console.log('计算模型价格 - pricingData:', pricingData)
@@ -194,9 +222,20 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
     // 按分组过滤
     if (selectedGroup !== 'all') {
       console.log('基础过滤-按分组过滤:', selectedGroup)
-      filtered = filtered.filter(item => 
-        item.model.enable_groups.includes(selectedGroup)
-      )
+      
+      // 额外的安全检查：确保选中的分组确实存在
+      const availableGroupsList = pricingData?.group_ratio ? Object.keys(pricingData.group_ratio).filter(key => key !== '') : []
+      if (!availableGroupsList.includes(selectedGroup)) {
+        console.warn('基础过滤-警告：选中的分组不存在于可用分组列表中', {
+          selectedGroup,
+          availableGroups: availableGroupsList
+        })
+        // 如果选中的分组不存在，不进行分组过滤，显示所有模型
+      } else {
+        filtered = filtered.filter(item => 
+          item.model.enable_groups.includes(selectedGroup)
+        )
+      }
       console.log('基础过滤-分组过滤后:', filtered.length)
     }
     
@@ -213,7 +252,7 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
     
     console.log('基础过滤结果:', filtered)
     return filtered
-  }, [modelsWithPricing, selectedGroup, searchTerm])
+  }, [modelsWithPricing, selectedGroup, searchTerm, pricingData])
 
   // 过滤和搜索模型（包含厂商过滤，用于实际显示）
   const filteredModels = useMemo(() => {
