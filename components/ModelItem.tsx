@@ -35,6 +35,8 @@ interface ModelItemProps {
   showEndpointTypes: boolean // 是否显示可用端点类型
   userGroup: string
   onGroupClick?: (group: string) => void // 新增：点击分组时的回调函数
+  availableGroups?: string[] // 新增：用户的所有可用分组列表
+  isAllGroupsMode?: boolean // 新增：是否为"所有分组"模式
 }
 
 export default function ModelItem({
@@ -45,7 +47,9 @@ export default function ModelItem({
   showRatioColumn,
   showEndpointTypes,
   userGroup,
-  onGroupClick
+  onGroupClick,
+  availableGroups = [],
+  isAllGroupsMode = false
 }: ModelItemProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   
@@ -57,7 +61,9 @@ export default function ModelItem({
   const billingStyle = getBillingModeStyle(model.quota_type)
   
   // 检查模型是否对当前用户分组可用
-  const isAvailableForUser = model.enable_groups.includes(userGroup)
+  const isAvailableForUser = isAllGroupsMode 
+    ? availableGroups.some(group => model.enable_groups.includes(group)) // 所有分组模式：任何一个用户分组可用即可
+    : model.enable_groups.includes(userGroup) // 特定分组模式：必须该分组可用
   
   // 复制模型名称
   const handleCopyModelName = async () => {

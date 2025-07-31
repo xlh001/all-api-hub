@@ -15,7 +15,7 @@ actions:
 
   # ✨ 新增 Google Play 下载按钮
   - text: Chrome 应用商店
-    link: https://play.google.com/store/apps/details?id=YOUR_APP_ID # !!!请将 YOUR_APP_ID 替换为您的实际应用ID!!!
+    link: https://chromewebstore.google.com/detail/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-one-api-hub/eobdoeafpplhhhjfkinnlkljbkijpobd 
     type: secondary
 
 features:

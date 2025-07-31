@@ -587,6 +587,8 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
                         showEndpointTypes={showEndpointTypes}
                         userGroup={selectedGroup === 'all' ? 'default' : selectedGroup}
                         onGroupClick={handleGroupClick}
+                        availableGroups={availableGroups}
+                        isAllGroupsMode={selectedGroup === 'all'}
                       />
                     ))
                   )}
@@ -614,6 +616,8 @@ export default function ModelList({ routeParams }: { routeParams?: Record<string
                           showEndpointTypes={showEndpointTypes}
                           userGroup={selectedGroup === 'all' ? 'default' : selectedGroup}
                           onGroupClick={handleGroupClick}
+                          availableGroups={availableGroups}
+                          isAllGroupsMode={selectedGroup === 'all'}
                         />
                       ))
                     )}
