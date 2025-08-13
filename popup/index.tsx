@@ -116,6 +116,7 @@ function IndexPopup({ inSidePanel = false }) {
 
   const handleOpenSidePanel = useCallback(() => {
     browser.sidebarAction.open()
+    window.close()
   }, [])
 
   const handleAddAccount = useCallback(() => {
