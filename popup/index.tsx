@@ -8,6 +8,7 @@ import ActionButtons from "../components/ActionButtons"
 import AddAccountDialog from "../components/AddAccountDialog"
 import BalanceSection from "../components/BalanceSection"
 import EditAccountDialog from "../components/EditAccountDialog"
+import FirefoxAddAccountWarningDialog from "../components/FirefoxAddAccountWarningDialog"
 import HeaderSection from "../components/HeaderSection"
 import { UI_CONSTANTS } from "../constants/ui"
 import { useAccountData } from "../hooks/useAccountData"
@@ -15,6 +16,7 @@ import { useSort } from "../hooks/useSort"
 import { useUserPreferences } from "../hooks/useUserPreferences"
 import { accountStorage } from "../services/accountStorage"
 import type { DisplaySiteData } from "../types"
+import { isFirefox } from "../utils/browser"
 import {
   calculateTotalBalance,
   calculateTotalConsumption,
@@ -38,6 +40,7 @@ function IndexPopup({ inSidePanel = false }) {
   // 状态管理
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false)
+  const [isFirefoxWarningOpen, setIsFirefoxWarningOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<DisplaySiteData | null>(
     null
   )
@@ -111,9 +114,17 @@ function IndexPopup({ inSidePanel = false }) {
     chrome.tabs.create({ url: chrome.runtime.getURL("options.html#basic") })
   }, [])
 
-  const handleAddAccount = useCallback(() => {
-    setIsAddAccountOpen(true)
+  const handleOpenSidePanel = useCallback(() => {
+    browser.sidebarAction.open()
   }, [])
+
+  const handleAddAccount = useCallback(() => {
+    if (isFirefox() && !inSidePanel) {
+      setIsFirefoxWarningOpen(true)
+    } else {
+      setIsAddAccountOpen(true)
+    }
+  }, [inSidePanel])
 
   const handleCloseAddAccount = useCallback(() => {
     setIsAddAccountOpen(false)
@@ -340,6 +351,13 @@ function IndexPopup({ inSidePanel = false }) {
         isOpen={isEditAccountOpen}
         onClose={handleCloseEditAccount}
         account={editingAccount}
+      />
+
+      {/* Firefox 警告弹窗 */}
+      <FirefoxAddAccountWarningDialog
+        isOpen={isFirefoxWarningOpen}
+        onClose={() => setIsFirefoxWarningOpen(false)}
+        onConfirm={handleOpenSidePanel}
       />
 
       {/* Toast通知组件 */}
