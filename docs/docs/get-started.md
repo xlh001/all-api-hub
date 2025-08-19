@@ -13,6 +13,7 @@
 支持基于以下项目部署的中转站：
  - [One-API] 
  - [New-API] 
+ - [Veloera](https://github.com/Veloera/Veloera)
 
 ::: warning
 如果站点进行了二次开发导致一些关键接口（例如`/api/user`）发生了改变，则插件可能无法正常添加此站点。
