@@ -96,6 +96,15 @@ npm run build
 - 🧪 **模型降智测试** - 自动化模型性能测试
 - ☁️ **WebDAV 数据备份** - 云端数据同步与备份
 
+
+## 👥 贡献者（不分先后）
+
+感谢以下贡献者对项目的支持：
+
+- [@qixing-jk](https://github.com/qixing-jk)
+- [@JianKang-Li](https://github.com/JianKang-Li)
+
+
 ## 🏗️ 技术栈
 
 - **框架**: [Plasmo](https://plasmo.com) v0.90.5
@@ -110,6 +119,7 @@ npm run build
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
 
 ## 🙏 致谢
 - [Plasmo](https://plasmo.com) - 现代化的浏览器扩展开发框架
