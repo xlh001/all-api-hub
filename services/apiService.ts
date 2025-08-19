@@ -178,6 +178,7 @@ export class ApiError extends Error {
 const createRequestHeaders = (userId: number, accessToken?: string): Record<string, string> => {
   const headers: Record<string, string> = {
     'New-API-User': userId.toString(),
+    'Veloera-User': userId.toString(),
     'Content-Type': REQUEST_CONFIG.HEADERS.CONTENT_TYPE,
     'Pragma': REQUEST_CONFIG.HEADERS.PRAGMA
   }
