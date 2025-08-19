@@ -5,7 +5,7 @@
   
   **一个开源的浏览器插件，聚合管理所有中转站账号的余额、模型和密钥，告别繁琐登录。**
   
-  [![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://github.com/fxaxg/one-api-hub)
+  [![Version](https://img.shields.io/badge/version-0.0.3-blue.svg)](https://github.com/fxaxg/one-api-hub)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
   [![Plasmo](https://img.shields.io/badge/plasmo-v0.90.5-purple.svg)](https://plasmo.com)
   [![React](https://img.shields.io/badge/react-18.2.0-61dafb.svg)](https://reactjs.org)
@@ -22,7 +22,12 @@
 
 目前市面上有太多 AI-API 中转站点，每次查看余额和支持模型列表等信息都非常麻烦，需要逐个登录查看。
 
-本插件可以便捷的对基于 [one-api](https://github.com/songquanpeng/one-api) 和 [new-api](https://github.com/QuantumNous/new-api) 等部署的 AI 中转站账号进行整合管理。
+本插件可以便捷的对基于以下项目的AI 中转站账号进行整合管理：
+- [one-api](https://github.com/songquanpeng/one-api)
+- [new-api](https://github.com/QuantumNous/new-api) 
+- [Veloera](https://github.com/Veloera/Veloera)
+
+
 
 ## ✨ 功能特性
 
@@ -91,6 +96,15 @@ npm run build
 - 🧪 **模型降智测试** - 自动化模型性能测试
 - ☁️ **WebDAV 数据备份** - 云端数据同步与备份
 
+
+## 👥 贡献者（不分先后）
+
+感谢以下贡献者对项目的支持：
+
+- [@qixing-jk](https://github.com/qixing-jk)
+- [@JianKang-Li](https://github.com/JianKang-Li)
+
+
 ## 🏗️ 技术栈
 
 - **框架**: [Plasmo](https://plasmo.com) v0.90.5
@@ -105,6 +119,7 @@ npm run build
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
 
 ## 🙏 致谢
 - [Plasmo](https://plasmo.com) - 现代化的浏览器扩展开发框架

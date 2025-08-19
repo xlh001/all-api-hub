@@ -20,7 +20,7 @@ actions:
 
 features:
   - title: 站点自动识别
-    details: 自动识别各类 AI 中转站点（如 One API, New API），并自动创建系统访问 Token，添加到插件的站点列表中。
+    details: 自动识别各类 AI 中转站点（如 One API, New API, Veloera），并自动创建系统访问 Token，添加到插件的站点列表中。
   - title: 充值比例识别
     details: 自动识别中转站的充值比例，让您清楚了解资金利用率。
   - title: 多账号支持
@@ -41,7 +41,11 @@ footer: MIT Licensed | Copyright © 2023-present Ai API Hub
 
 目前市面上有太多 AI-API 中转站点，每次查看余额和支持模型列表等信息都非常麻烦，需要逐个登录查看。
 
-本插件致力于解决这一痛点，可以便捷地对基于 [One-API] 和 [New-API] 等部署的 Ai 中转站账号进行整合管理，大大提升您的效率。
+本插件致力于解决这一痛点，可以便捷地对基于 
+- [One-API]
+- [New-API] 
+- [Veloera](https://github.com/Veloera/Veloera)
+等部署的 Ai 中转站账号进行整合管理，大大提升您的效率。
 
 ---
 
