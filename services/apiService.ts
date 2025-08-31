@@ -39,6 +39,7 @@ export interface HealthCheckResult {
 export interface SiteStatusInfo {
   price?: number
   stripe_unit_price?: number
+  PaymentUSDRate?: number
 }
 
 // 模型列表响应类型
@@ -378,6 +379,10 @@ export const extractDefaultExchangeRate = (
     return statusInfo.stripe_unit_price
   }
 
+  // 兼容 done-hub 和 one-hub
+  if (statusInfo.PaymentUSDRate && statusInfo.PaymentUSDRate > 0) {
+    return statusInfo.PaymentUSDRate
+  }
   return null
 }
 
