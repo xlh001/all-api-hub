@@ -26,6 +26,8 @@
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api) 
 - [Veloera](https://github.com/Veloera/Veloera)
+- [one-hub](https://github.com/MartialBE/one-hub)
+- [done-hub](https://github.com/deanxv/done-hub)
 
 
 
