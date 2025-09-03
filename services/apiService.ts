@@ -189,12 +189,12 @@ const createRequestHeaders = (
     userId != null
       ? {
           "New-API-User": userId.toString(),
-          "Veloera-User": userId.toString()
+          "Veloera-User": userId.toString(),
+          "voapi-user": userId.toString()
         }
       : {}
 
   const headers: Record<string, string> = { ...baseHeaders, ...userHeaders }
-
   // TODO：bug，还是带上了 cookie，导致网站没有使用 access_token进行验证
   if (accessToken) {
     headers["Cookie"] = "" // 使用 Bearer token 时清空 Cookie 头
