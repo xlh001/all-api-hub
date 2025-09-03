@@ -12,6 +12,7 @@ import {
   GlobeAltIcon,
   InformationCircleIcon,
   KeyIcon,
+  PencilIcon,
   SparklesIcon,
   UserIcon,
   XMarkIcon
@@ -25,6 +26,7 @@ import {
   isValidExchangeRate,
   validateAndSaveAccount
 } from "../services/accountOperations"
+import type { DisplaySiteData } from "../types"
 import type { AutoDetectError } from "../utils/autoDetectUtils"
 import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
 
@@ -32,12 +34,16 @@ interface AddAccountDialogProps {
   isOpen: boolean
   onClose: () => void
   isCurrentSiteAdded?: boolean
+  onEditAccount?: (account: DisplaySiteData) => void
+  detectedAccount?: DisplaySiteData | null
 }
 
 export default function AddAccountDialog({
   isOpen,
   onClose,
-  isCurrentSiteAdded
+  isCurrentSiteAdded,
+  onEditAccount,
+  detectedAccount
 }: AddAccountDialogProps) {
   const [url, setUrl] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
@@ -332,9 +338,20 @@ export default function AddAccountDialog({
                         enterFrom="opacity-0 translate-y-2"
                         enterTo="opacity-100 translate-y-0"
                         className="mt-2">
-                        <div className="flex items-center text-xs text-yellow-700 bg-yellow-50 p-2 rounded-md">
-                          <InformationCircleIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
-                          <span>当前站点已添加，推荐直接编辑原有数据</span>
+                        <div className="flex items-center justify-between text-xs text-yellow-700 bg-yellow-50 p-2 rounded-md">
+                          <div className="flex items-center">
+                            <InformationCircleIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                            <span>当前站点已添加</span>
+                          </div>
+                          {onEditAccount && detectedAccount && (
+                            <button
+                              type="button"
+                              onClick={() => onEditAccount(detectedAccount)}
+                              className="flex items-center font-medium text-yellow-800 hover:text-yellow-900">
+                              <PencilIcon className="w-3 h-3 mr-1" />
+                              <span>立即编辑</span>
+                            </button>
+                          )}
                         </div>
                       </TransitionChild>
                     </Transition>

@@ -1,19 +1,29 @@
+
+
+
 import "./style.css"
-import { useState, useCallback, useMemo, useEffect } from "react"
-import toast, { Toaster } from 'react-hot-toast'
+
+import { useCallback, useEffect, useMemo, useState } from "react"
+import toast, { Toaster } from "react-hot-toast"
+
+import AccountList from "../components/AccountList"
+import ActionButtons from "../components/ActionButtons"
+import AddAccountDialog from "../components/AddAccountDialog"
+import BalanceSection from "../components/BalanceSection"
+import EditAccountDialog from "../components/EditAccountDialog"
+import HeaderSection from "../components/HeaderSection"
 import { UI_CONSTANTS } from "../constants/ui"
-import { calculateTotalConsumption, calculateTotalBalance, getOppositeCurrency } from "../utils/formatters"
 import { useAccountData } from "../hooks/useAccountData"
 import { useSort } from "../hooks/useSort"
 import { useUserPreferences } from "../hooks/useUserPreferences"
-import HeaderSection from "../components/HeaderSection"
-import BalanceSection from "../components/BalanceSection"
-import ActionButtons from "../components/ActionButtons"
-import AccountList from "../components/AccountList"
-import AddAccountDialog from "../components/AddAccountDialog"
-import EditAccountDialog from "../components/EditAccountDialog"
 import { accountStorage } from "../services/accountStorage"
 import type { DisplaySiteData, SiteAccount } from "../types"
+import {
+  calculateTotalBalance,
+  calculateTotalConsumption,
+  getOppositeCurrency
+} from "../utils/formatters"
+
 
 function IndexPopup() {
   // 用户偏好设置管理
@@ -333,6 +343,8 @@ function IndexPopup() {
         isOpen={isAddAccountOpen}
         onClose={handleCloseAddAccount}
         isCurrentSiteAdded={!!detectedAccount}
+        onEditAccount={handleEditAccount}
+        detectedAccount={displayData.find(acc => acc.id === detectedAccount?.id) ?? null}
       />
       
       {/* 编辑账号弹窗 */}
