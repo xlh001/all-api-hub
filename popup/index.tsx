@@ -13,7 +13,7 @@ import AccountList from "../components/AccountList"
 import AddAccountDialog from "../components/AddAccountDialog"
 import EditAccountDialog from "../components/EditAccountDialog"
 import { accountStorage } from "../services/accountStorage"
-import type { DisplaySiteData } from "../types"
+import type { DisplaySiteData, SiteAccount } from "../types"
 
 function IndexPopup() {
   // 用户偏好设置管理
@@ -34,6 +34,7 @@ function IndexPopup() {
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<DisplaySiteData | null>(null)
   const [refreshingAccountId, setRefreshingAccountId] = useState<string | null>(null)
+  const [detectedAccount, setDetectedAccount] = useState<SiteAccount | null>(null)
 
   // 数据管理
   const {
@@ -54,8 +55,9 @@ function IndexPopup() {
     displayData, 
     currencyType, 
     sortField, 
-    sortOrder, 
-    updateSortConfig
+    sortOrder,
+    updateSortConfig,
+    detectedAccount?.id
   )
 
   // 计算数据 - 使用 useMemo 缓存
@@ -251,6 +253,23 @@ function IndexPopup() {
     };
   }, [loadAccountData]);
 
+  // 当 popup 打开时，自动检测当前 URL 是否已添加
+  useEffect(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      if (tabs[0]?.url) {
+        try {
+          const existingAccount = await accountStorage.checkUrlExists(tabs[0].url);
+          if (existingAccount) {
+            setDetectedAccount(existingAccount);
+            console.log('检测到已存在的账号:', existingAccount.site_name);
+          }
+        } catch (error) {
+          console.error('检测已存在账号时出错:', error);
+        }
+      }
+    });
+  }, []);
+
   return (
     <div className={`${UI_CONSTANTS.POPUP.WIDTH} bg-white flex flex-col ${UI_CONSTANTS.POPUP.HEIGHT}`}>
       {/* 顶部导航栏 */}
@@ -274,6 +293,7 @@ function IndexPopup() {
             isInitialLoad={isInitialLoad}
             lastUpdateTime={lastUpdateTime}
             prevTotalConsumption={prevTotalConsumption}
+            detectedAccountName={detectedAccount?.site_name}
             onCurrencyToggle={handleCurrencyToggle}
             onTabChange={handleTabChange}
           />
@@ -295,6 +315,7 @@ function IndexPopup() {
           isInitialLoad={isInitialLoad}
           prevBalances={prevBalances}
           refreshingAccountId={refreshingAccountId}
+          detectedAccountId={detectedAccount?.id}
           onSort={handleSort}
           onAddAccount={handleAddAccount}
           onRefreshAccount={handleRefreshAccount}
@@ -308,9 +329,10 @@ function IndexPopup() {
       </div>
 
       {/* 新增账号弹窗 */}
-      <AddAccountDialog 
+      <AddAccountDialog
         isOpen={isAddAccountOpen}
         onClose={handleCloseAddAccount}
+        isCurrentSiteAdded={!!detectedAccount}
       />
       
       {/* 编辑账号弹窗 */}
