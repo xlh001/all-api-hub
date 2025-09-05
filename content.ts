@@ -1,5 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 
+import { fetchUserInfo } from "~services/apiService"
+
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"],
   all_frames: false
@@ -10,7 +12,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getLocalStorage") {
     try {
       const { key } = request
-      
+
       if (key) {
         // 读取特定键
         const value = localStorage.getItem(key)
@@ -19,14 +21,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // 读取所有 localStorage 数据
         const localStorage = window.localStorage
         const data = {}
-        
+
         for (let i = 0; i < localStorage.length; i++) {
           const storageKey = localStorage.key(i)
           if (storageKey) {
             data[storageKey] = localStorage.getItem(storageKey)
           }
         }
-        
+
         sendResponse({ success: true, data })
       }
     } catch (error) {
@@ -34,40 +36,39 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true // 保持消息通道开放
   }
-  
+
   if (request.action === "getUserFromLocalStorage") {
-    try {
-      // 专门获取 user 数据并解析
-      const userStr = localStorage.getItem('user')
-      if (!userStr) {
-        sendResponse({ success: false, error: '未找到用户信息，请确保已登录' })
-        return true
-      }
-      
+    ;(async () => {
       try {
-        const user = JSON.parse(userStr)
-        if (!user.id) {
-          sendResponse({ success: false, error: '用户信息中缺少 ID 字段' })
-          return true
+        // 所有异步逻辑
+        const userStr = localStorage.getItem("user")
+        let user = userStr
+          ? JSON.parse(userStr)
+          : await fetchUserInfo(request.url)
+
+        if (!user || !user.id) {
+          sendResponse({
+            success: false,
+            error: "未找到用户信息，请确保已登录"
+          })
+          return
         }
-        
+
         sendResponse({ success: true, data: { userId: user.id, user } })
-      } catch (parseError) {
-        sendResponse({ success: false, error: '用户信息格式错误' })
+      } catch (e) {
+        sendResponse({ success: false, error: e.message })
       }
-    } catch (error) {
-      sendResponse({ success: false, error: error.message })
-    }
+    })()
     return true
   }
 
   if (request.action === "waitAndGetUserInfo") {
     // 新增：等待页面完全加载后获取用户信息
     waitForUserInfo()
-      .then(userInfo => {
+      .then((userInfo) => {
         sendResponse({ success: true, data: userInfo })
       })
-      .catch(error => {
+      .catch((error) => {
         sendResponse({ success: false, error: error.message })
       })
     return true
@@ -75,12 +76,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 })
 
 // 等待用户信息可用
-async function waitForUserInfo(maxWaitTime = 5000): Promise<{ userId: string, user: any }> {
+async function waitForUserInfo(
+  maxWaitTime = 5000
+): Promise<{ userId: string; user: any }> {
   const startTime = Date.now()
-  
+
   while (Date.now() - startTime < maxWaitTime) {
     try {
-      const userStr = localStorage.getItem('user')
+      const userStr = localStorage.getItem("user")
       if (userStr) {
         const user = JSON.parse(userStr)
         if (user.id) {
@@ -90,10 +93,10 @@ async function waitForUserInfo(maxWaitTime = 5000): Promise<{ userId: string, us
     } catch (error) {
       // 继续等待
     }
-    
+
     // 等待 100ms 后重试
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
   }
-  
-  throw new Error('等待用户信息超时，请确保已登录')
+
+  throw new Error("等待用户信息超时，请确保已登录")
 }
