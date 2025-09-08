@@ -190,7 +190,8 @@ const createRequestHeaders = (
       ? {
           "New-API-User": userId.toString(),
           "Veloera-User": userId.toString(),
-          "voapi-user": userId.toString()
+          "voapi-user": userId.toString(),
+          "User-id": userId.toString()
         }
       : {}
 

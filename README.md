@@ -29,6 +29,7 @@
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
 - [VoAPI](https://github.com/VoAPI/VoAPI)
+- [Super-API](https://github.com/SuperAI-Api/Super-API)
 
 
 
