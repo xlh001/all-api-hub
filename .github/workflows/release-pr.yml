@@ -1,0 +1,75 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout 当前仓库代码
+      - uses: actions/checkout@v4
+
+      # 使用 release-please 管理版本号和 release PR
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # 默认 GITHUB_TOKEN 即可
+          release-type: node # 适配 Node.js 项目
+
+      # 设置 Node.js 环境，并启用 pnpm 缓存
+      - uses: actions/setup-node@v4
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # 安装并启用 pnpm，固定版本更可控
+      - uses: pnpm/action-setup@v4
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          version: 10 # 建议固定 pnpm 主版本
+          run_install: true # 自动运行 pnpm install
+
+      # 构建项目（生成 build 文件夹）
+      - name: Build dist
+        if: ${{ steps.release.outputs.release_created }}
+        run: pnpm run build
+
+      # 打包扩展（例如生成 build/chrome-mv3-prod.zip）
+      - name: Package the extension
+        if: ${{ steps.release.outputs.release_created }}
+        run: pnpm package
+
+      # 将打包产物提交到 release PR（简化 commit/push）
+      - name: Commit dist to release PR
+        if: ${{ steps.release.outputs.release_created }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: build dist for release ${{ steps.release.outputs.tag_name }}"
+          branch: ${{ steps.release.outputs.pr-branch }}
+
+      # 上传打包文件到 GitHub Release
+      - name: Upload Release Artifact
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: build/chrome-mv3-prod.zip
+          asset_name: chrome-mv3-prod.zip
+          asset_content_type: application/zip
+
+      # （可选）自动提交到浏览器商店
+      # - name: Browser Platform Publish
+      #   if: ${{ steps.release.outputs.release_created }}
+      #   uses: PlasmoHQ/bpp@v3
+      #   with:
+      #     keys: ${{ secrets.SUBMIT_KEYS }}
+      #     artifact: build/chrome-mv3-prod.zip
