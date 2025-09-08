@@ -1,8 +1,8 @@
 ---
 home: true
 title: 首页
-heroImage: https://github.com/fxaxg/one-api-hub/blob/main/assets/icon.png?raw=true
-heroText: One API Hub - 中转站管理器
+heroImage: https://github.com/qixing-jk/all-api-hub/blob/main/assets/icon.png?raw=true
+heroText: All API Hub - 中转站管理器
 tagline: 一个开源的 AI 中转站账号管理插件
 actions:
   - text: 开始使用
@@ -10,12 +10,12 @@ actions:
     type: primary
 
   - text: 查看源码
-    link: https://github.com/fxaxg/one-api-hub # 假设这是您的项目仓库地址
+    link: https://github.com/qixing-jk/all-api-hub # 假设这是您的项目仓库地址
     type: secondary
 
   # ✨ 新增 Google Play 下载按钮
   - text: Chrome 应用商店
-    link: https://chromewebstore.google.com/detail/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-one-api-hub/eobdoeafpplhhhjfkinnlkljbkijpobd 
+    link: https://chromewebstore.google.com/detail/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub/eobdoeafpplhhhjfkinnlkljbkijpobd 
     type: secondary
 
 features:

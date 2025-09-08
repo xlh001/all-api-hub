@@ -1,4 +1,10 @@
-import { InformationCircleIcon, HeartIcon, GlobeAltIcon, CodeBracketIcon } from "@heroicons/react/24/outline"
+import {
+  CodeBracketIcon,
+  GlobeAltIcon,
+  HeartIcon,
+  InformationCircleIcon
+} from "@heroicons/react/24/outline"
+
 import iconImage from "../../assets/icon.png"
 import packageJson from "../../package.json"
 
@@ -24,7 +30,11 @@ export default function About() {
   const techStack = [
     { name: "Plasmo", version: "0.90.5", description: "浏览器扩展开发框架" },
     { name: "React", version: "18.2.0", description: "用户界面库" },
-    { name: "TypeScript", version: "5.3.3", description: "类型安全的JavaScript" },
+    {
+      name: "TypeScript",
+      version: "5.3.3",
+      description: "类型安全的JavaScript"
+    },
     { name: "Tailwind CSS", version: "3.4.17", description: "原子化CSS框架" },
     { name: "Headless UI", version: "2.2.4", description: "无样式UI组件" }
   ]
@@ -45,20 +55,25 @@ export default function About() {
         <section>
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
             <div className="flex items-start space-x-4">
-              <img 
-                src={iconImage} 
-                alt="One API Hub" 
+              <img
+                src={iconImage}
+                alt="All API Hub"
                 className="w-16 h-16 rounded-lg shadow-sm flex-shrink-0"
               />
               <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">One API Hub</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  All API Hub
+                </h2>
                 <p className="text-gray-600 mb-4">
-                  AI 中转站账号管理插件，帮助用户便捷地管理多个AI API中转站点的账号。
+                  AI 中转站账号管理插件，帮助用户便捷地管理多个AI
+                  API中转站点的账号。
                 </p>
                 <div className="text-sm">
                   <div>
                     <span className="text-gray-500">版本号:</span>
-                    <span className="ml-2 font-medium text-gray-900">v{version}</span>
+                    <span className="ml-2 font-medium text-gray-900">
+                      v{version}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -74,16 +89,17 @@ export default function About() {
               <div className="flex items-start space-x-4">
                 <CodeBracketIcon className="w-6 h-6 text-gray-900 mt-1 flex-shrink-0" />
                 <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-2">GitHub 仓库</h3>
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    GitHub 仓库
+                  </h3>
                   <p className="text-sm text-gray-600 mb-3">
                     查看源代码、提交问题或参与项目开发
                   </p>
-                  <a 
-                    href="https://github.com/fxaxg/one-api-hub" 
-                    target="_blank" 
+                  <a
+                    href="https://github.com/qixing-jk/all-api-hub"
+                    target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-                  >
+                    className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors">
                     去点个Star
                   </a>
                 </div>
@@ -97,12 +113,11 @@ export default function About() {
                   <p className="text-sm text-gray-600 mb-3">
                     查看详细文档、使用指南和更多信息
                   </p>
-                  <a 
-                    href="https://fxaxg.github.io/one-api-hub/" 
-                    target="_blank" 
+                  <a
+                    href="https://qixing-jk.github.io/all-api-hub/"
+                    target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                  >
+                    className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                     访问官网
                   </a>
                 </div>
@@ -124,7 +139,9 @@ export default function About() {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <ul className="space-y-2">
                   {features.map((feature, index) => (
-                    <li key={index} className="flex items-start space-x-2 text-sm text-green-800">
+                    <li
+                      key={index}
+                      className="flex items-start space-x-2 text-sm text-green-800">
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                       <span>{feature}</span>
                     </li>
@@ -132,7 +149,7 @@ export default function About() {
                 </ul>
               </div>
             </div>
-            
+
             {/* 未来功能 */}
             <div>
               <h3 className="text-base font-medium text-gray-800 mb-3 flex items-center">
@@ -142,7 +159,9 @@ export default function About() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <ul className="space-y-2">
                   {futureFeatures.map((feature, index) => (
-                    <li key={index} className="flex items-start space-x-2 text-sm text-blue-800">
+                    <li
+                      key={index}
+                      className="flex items-start space-x-2 text-sm text-blue-800">
                       <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                       <span>{feature}</span>
                     </li>
@@ -158,7 +177,9 @@ export default function About() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">技术栈</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {techStack.map((tech, index) => (
-              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div
+                key={index}
+                className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium text-gray-900">{tech.name}</h3>
                   <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
@@ -170,7 +191,6 @@ export default function About() {
             ))}
           </div>
         </section>
-
 
         {/* 版权和致谢 */}
         <section>

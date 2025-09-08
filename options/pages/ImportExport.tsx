@@ -1,15 +1,16 @@
-import { useState } from "react"
-import { 
+import {
+  ArrowDownTrayIcon,
   ArrowPathIcon,
   ArrowUpTrayIcon,
-  ArrowDownTrayIcon,
+  CheckCircleIcon,
   DocumentIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon
+  ExclamationTriangleIcon
 } from "@heroicons/react/24/outline"
+import { useState } from "react"
+import toast from "react-hot-toast"
+
 import { accountStorage } from "../../services/accountStorage"
 import { userPreferences } from "../../services/userPreferences"
-import toast from 'react-hot-toast'
 
 export default function ImportExport() {
   const [isExporting, setIsExporting] = useState(false)
@@ -20,7 +21,7 @@ export default function ImportExport() {
   const handleExportAll = async () => {
     try {
       setIsExporting(true)
-      
+
       // 获取账号数据和用户偏好设置
       const [accountData, preferencesData] = await Promise.all([
         accountStorage.exportData(),
@@ -36,21 +37,21 @@ export default function ImportExport() {
 
       // 创建下载链接
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: 'application/json'
+        type: "application/json"
       })
       const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
+      const link = document.createElement("a")
       link.href = url
-      link.download = `one-api-Hub-backup-${new Date().toISOString().split('T')[0]}.json`
+      link.download = `all-api-hub-backup-${new Date().toISOString().split("T")[0]}.json`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
-      toast.success('数据导出成功')
+      toast.success("数据导出成功")
     } catch (error) {
-      console.error('导出失败:', error)
-      toast.error('导出失败，请重试')
+      console.error("导出失败:", error)
+      toast.error("导出失败，请重试")
     } finally {
       setIsExporting(false)
     }
@@ -60,7 +61,7 @@ export default function ImportExport() {
   const handleExportAccounts = async () => {
     try {
       setIsExporting(true)
-      
+
       const accountData = await accountStorage.exportData()
       const exportData = {
         version: "1.0",
@@ -70,21 +71,21 @@ export default function ImportExport() {
       }
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: 'application/json'
+        type: "application/json"
       })
       const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
+      const link = document.createElement("a")
       link.href = url
-      link.download = `accounts-backup-${new Date().toISOString().split('T')[0]}.json`
+      link.download = `accounts-backup-${new Date().toISOString().split("T")[0]}.json`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
-      toast.success('账号数据导出成功')
+      toast.success("账号数据导出成功")
     } catch (error) {
-      console.error('导出账号数据失败:', error)
-      toast.error('导出失败，请重试')
+      console.error("导出账号数据失败:", error)
+      toast.error("导出失败，请重试")
     } finally {
       setIsExporting(false)
     }
@@ -94,7 +95,7 @@ export default function ImportExport() {
   const handleExportPreferences = async () => {
     try {
       setIsExporting(true)
-      
+
       const preferencesData = await userPreferences.exportPreferences()
       const exportData = {
         version: "1.0",
@@ -104,21 +105,21 @@ export default function ImportExport() {
       }
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: 'application/json'
+        type: "application/json"
       })
       const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
+      const link = document.createElement("a")
       link.href = url
-      link.download = `preferences-backup-${new Date().toISOString().split('T')[0]}.json`
+      link.download = `preferences-backup-${new Date().toISOString().split("T")[0]}.json`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
-      toast.success('用户设置导出成功')
+      toast.success("用户设置导出成功")
     } catch (error) {
-      console.error('导出用户设置失败:', error)
-      toast.error('导出失败，请重试')
+      console.error("导出用户设置失败:", error)
+      toast.error("导出失败，请重试")
     } finally {
       setIsExporting(false)
     }
@@ -140,18 +141,18 @@ export default function ImportExport() {
   // 导入数据
   const handleImport = async () => {
     if (!importData.trim()) {
-      toast.error('请选择要导入的文件或输入数据')
+      toast.error("请选择要导入的文件或输入数据")
       return
     }
 
     try {
       setIsImporting(true)
-      
+
       const data = JSON.parse(importData)
-      
+
       // 验证数据格式
       if (!data.version || !data.timestamp) {
-        throw new Error('数据格式不正确')
+        throw new Error("数据格式不正确")
       }
 
       let importSuccess = false
@@ -164,7 +165,7 @@ export default function ImportExport() {
           const success = await accountStorage.importData(accountsData)
           if (success) {
             importSuccess = true
-            toast.success('账号数据导入成功')
+            toast.success("账号数据导入成功")
           }
         }
       }
@@ -173,25 +174,25 @@ export default function ImportExport() {
         // 导入用户设置
         const preferencesData = data.preferences || data.data
         if (preferencesData) {
-          const success = await userPreferences.importPreferences(preferencesData)
+          const success =
+            await userPreferences.importPreferences(preferencesData)
           if (success) {
             importSuccess = true
-            toast.success('用户设置导入成功')
+            toast.success("用户设置导入成功")
           }
         }
       }
 
       if (!importSuccess) {
-        throw new Error('没有找到可导入的数据')
+        throw new Error("没有找到可导入的数据")
       }
 
       // 清空输入框
       setImportData("")
-      
     } catch (error) {
-      console.error('导入失败:', error)
+      console.error("导入失败:", error)
       if (error instanceof SyntaxError) {
-        toast.error('数据格式错误，请检查JSON格式')
+        toast.error("数据格式错误，请检查JSON格式")
       } else {
         toast.error(`导入失败: ${error.message}`)
       }
@@ -203,14 +204,19 @@ export default function ImportExport() {
   // 验证导入数据
   const validateImportData = () => {
     if (!importData.trim()) return null
-    
+
     try {
       const data = JSON.parse(importData)
       return {
         valid: true,
-        hasAccounts: !!(data.accounts || (data.type !== "preferences" && data.data)),
+        hasAccounts: !!(
+          data.accounts ||
+          (data.type !== "preferences" && data.data)
+        ),
         hasPreferences: !!(data.preferences || data.type === "preferences"),
-        timestamp: data.timestamp ? new Date(data.timestamp).toLocaleString('zh-CN') : '未知'
+        timestamp: data.timestamp
+          ? new Date(data.timestamp).toLocaleString("zh-CN")
+          : "未知"
       }
     } catch {
       return { valid: false }
@@ -239,9 +245,11 @@ export default function ImportExport() {
                 <ArrowUpTrayIcon className="w-5 h-5 text-green-600" />
                 <h2 className="text-lg font-medium text-gray-900">导出数据</h2>
               </div>
-              <p className="text-sm text-gray-500 mt-1">将数据导出为JSON文件进行备份</p>
+              <p className="text-sm text-gray-500 mt-1">
+                将数据导出为JSON文件进行备份
+              </p>
             </div>
-            
+
             <div className="p-6 space-y-4">
               {/* 导出所有数据 */}
               <div className="border border-gray-200 rounded-lg p-4">
@@ -255,9 +263,8 @@ export default function ImportExport() {
                   <button
                     onClick={handleExportAll}
                     disabled={isExporting}
-                    className="ml-4 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-                  >
-                    {isExporting ? '导出中...' : '导出'}
+                    className="ml-4 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
+                    {isExporting ? "导出中..." : "导出"}
                   </button>
                 </div>
               </div>
@@ -274,9 +281,8 @@ export default function ImportExport() {
                   <button
                     onClick={handleExportAccounts}
                     disabled={isExporting}
-                    className="ml-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-                  >
-                    {isExporting ? '导出中...' : '导出'}
+                    className="ml-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
+                    {isExporting ? "导出中..." : "导出"}
                   </button>
                 </div>
               </div>
@@ -293,9 +299,8 @@ export default function ImportExport() {
                   <button
                     onClick={handleExportPreferences}
                     disabled={isExporting}
-                    className="ml-4 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-                  >
-                    {isExporting ? '导出中...' : '导出'}
+                    className="ml-4 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
+                    {isExporting ? "导出中..." : "导出"}
                   </button>
                 </div>
               </div>
@@ -313,7 +318,7 @@ export default function ImportExport() {
               </div>
               <p className="text-sm text-gray-500 mt-1">从备份文件恢复数据</p>
             </div>
-            
+
             <div className="p-6 space-y-4">
               {/* 文件选择 */}
               <div>
@@ -346,11 +351,12 @@ export default function ImportExport() {
 
               {/* 数据验证结果 */}
               {validation && (
-                <div className={`p-3 rounded-lg ${
-                  validation.valid 
-                    ? 'bg-green-50 border border-green-200' 
-                    : 'bg-red-50 border border-red-200'
-                }`}>
+                <div
+                  className={`p-3 rounded-lg ${
+                    validation.valid
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-red-50 border border-red-200"
+                  }`}>
                   <div className="flex items-start space-x-2">
                     {validation.valid ? (
                       <CheckCircleIcon className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
@@ -360,7 +366,9 @@ export default function ImportExport() {
                     <div className="text-sm">
                       {validation.valid ? (
                         <div>
-                          <p className="text-green-800 font-medium">数据格式正确</p>
+                          <p className="text-green-800 font-medium">
+                            数据格式正确
+                          </p>
                           <div className="mt-1 text-green-700">
                             {validation.hasAccounts && <p>• 包含账号数据</p>}
                             {validation.hasPreferences && <p>• 包含用户设置</p>}
@@ -368,7 +376,9 @@ export default function ImportExport() {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-red-800">数据格式错误，请检查JSON格式</p>
+                        <p className="text-red-800">
+                          数据格式错误，请检查JSON格式
+                        </p>
                       )}
                     </div>
                   </div>
@@ -379,9 +389,8 @@ export default function ImportExport() {
               <button
                 onClick={handleImport}
                 disabled={isImporting || !validation?.valid}
-                className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isImporting ? '导入中...' : '导入数据'}
+                className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {isImporting ? "导入中..." : "导入数据"}
               </button>
             </div>
           </div>

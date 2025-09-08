@@ -1,18 +1,18 @@
 <div align="center">
-  <img src="assets/icon.png" alt="One API Hub Logo" width="128" height="128">
+  <img src="assets/icon.png" alt="All API Hub Logo" width="128" height="128">
   
-  # 中转站管理器 - One API Hub
+  # 中转站管理器 - All API Hub
   
   **一个开源的浏览器插件，聚合管理所有中转站账号的余额、模型和密钥，告别繁琐登录。**
   
-  [![Version](https://img.shields.io/badge/version-0.0.3-blue.svg)](https://github.com/fxaxg/one-api-hub)
+  [![Version](https://img.shields.io/badge/version-0.0.3-blue.svg)](https://github.com/qixing-jk/all-api-hub)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
   [![Plasmo](https://img.shields.io/badge/plasmo-v0.90.5-purple.svg)](https://plasmo.com)
   [![React](https://img.shields.io/badge/react-18.2.0-61dafb.svg)](https://reactjs.org)
   [![TypeScript](https://img.shields.io/badge/typescript-5.3.3-blue.svg)](https://typescriptlang.org)
   [![Tailwind CSS](https://img.shields.io/badge/tailwindcss-3.4.17-38bdf8.svg)](https://tailwindcss.com)
 
-   **[文档教程](https://fxaxg.github.io/one-api-hub/) | [常见问题](https://fxaxg.github.io/one-api-hub/faq.html)**
+   **[文档教程](https://qixing-jk.github.io/all-api-hub/) | [常见问题](https://qixing-jk.github.io/all-api-hub/faq.html)**
   
 </div>
 
@@ -50,7 +50,7 @@
 ## 🚀 安装使用
 
 ### Chrome 应用商店（推荐）
-[⬇️ 前往下载](https://chromewebstore.google.com/detail/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-one-api-hub/eobdoeafpplhhhjfkinnlkljbkijpobd)
+[⬇️ 前往下载](https://chromewebstore.google.com/detail/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub/eobdoeafpplhhhjfkinnlkljbkijpobd)
 
 <!-- ### 手动安装
 1. 下载最新版本的扩展包
@@ -69,8 +69,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/username/one-api-hub.git
-cd one-api-hub
+git clone https://github.com/username/all-api-hub.git
+cd all-api-hub
 
 # 安装依赖
 pnpm install
