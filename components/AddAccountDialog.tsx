@@ -200,11 +200,7 @@ export default function AddAccountDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (isDetected || showManualForm) {
-      handleSaveAccount()
-    } else {
-      handleAutoDetect()
-    }
+    handleSaveAccount()
   }
 
   return (
@@ -368,6 +364,36 @@ export default function AddAccountDialog({
                     </Transition>
                   </div>
 
+                  {/* 操作按钮 */}
+                  {!isDetected && !showManualForm && (
+                    <div className="flex space-x-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={handleAutoDetect}
+                        disabled={!url.trim() || isDetecting}
+                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        {isDetecting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>识别中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <SparklesIcon className="w-4 h-4" />
+                            <span>自动识别</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowManualForm(true)}
+                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+                        <PencilIcon className="w-4 h-4" />
+                        <span>手动添加</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* 识别成功后的表单或手动添加表单 */}
                   {(isDetected || showManualForm) && (
                     <>
@@ -505,90 +531,38 @@ export default function AddAccountDialog({
                   )}
 
                   {/* 按钮组 */}
-                  <div className="flex space-x-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
-                      取消
-                    </button>
-                    {isDetected ? (
-                      <button
-                        type="submit"
-                        disabled={
-                          !siteName.trim() ||
-                          !username.trim() ||
-                          !accessToken.trim() ||
-                          !userId.trim() ||
-                          !isValidExchangeRate(exchangeRate) ||
-                          isSaving
-                        }
-                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
-                        {isSaving ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>保存中...</span>
-                          </>
-                        ) : (
-                          <>
-                            <SparklesIcon className="w-4 h-4" />
-                            <span>确认添加</span>
-                          </>
-                        )}
-                      </button>
-                    ) : showManualForm ? (
-                      <button
-                        type="submit"
-                        disabled={
-                          !siteName.trim() ||
-                          !username.trim() ||
-                          !accessToken.trim() ||
-                          !userId.trim() ||
-                          !isValidExchangeRate(exchangeRate) ||
-                          isSaving
-                        }
-                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
-                        {isSaving ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>保存中...</span>
-                          </>
-                        ) : (
-                          <>
-                            <SparklesIcon className="w-4 h-4" />
-                            <span>手动添加</span>
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        disabled={!url.trim() || isDetecting}
-                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
-                        {isDetecting ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>识别中...</span>
-                          </>
-                        ) : (
-                          <>
-                            <SparklesIcon className="w-4 h-4" />
-                            <span>自动识别</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* 手动添加按钮 - 在自动识别失败后显示 */}
-                  {!isDetected && !showManualForm && detectionError && (
-                    <div className="pt-2">
+                  {(isDetected || showManualForm) && (
+                    <div className="flex space-x-3 pt-2">
                       <button
                         type="button"
-                        onClick={() => setShowManualForm(true)}
-                        className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
-                        <UserIcon className="w-4 h-4" />
-                        <span>手动添加账号信息</span>
+                        onClick={onClose}
+                        className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        取消
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={
+                          !siteName.trim() ||
+                          !username.trim() ||
+                          !accessToken.trim() ||
+                          !userId.trim() ||
+                          !isValidExchangeRate(exchangeRate) ||
+                          isSaving
+                        }
+                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        {isSaving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>保存中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <SparklesIcon className="w-4 h-4" />
+                            <span>
+                              {isDetected ? "确认添加" : "保存账号"}
+                            </span>
+                          </>
+                        )}
                       </button>
                     </div>
                   )}
