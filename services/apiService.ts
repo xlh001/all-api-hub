@@ -40,6 +40,7 @@ export interface SiteStatusInfo {
   price?: number
   stripe_unit_price?: number
   PaymentUSDRate?: number
+  system_name?: string
 }
 
 // 模型列表响应类型

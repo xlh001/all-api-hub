@@ -1,12 +1,35 @@
-import { useState, useEffect, Fragment } from "react"
-import toast from 'react-hot-toast'
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react"
-import { GlobeAltIcon, XMarkIcon, PencilIcon, UserIcon, KeyIcon, EyeIcon, EyeSlashIcon, CurrencyDollarIcon, SparklesIcon, CheckIcon, UsersIcon } from "@heroicons/react/24/outline"
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild
+} from "@headlessui/react"
+import {
+  CheckIcon,
+  CurrencyDollarIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  GlobeAltIcon,
+  KeyIcon,
+  PencilIcon,
+  SparklesIcon,
+  UserIcon,
+  UsersIcon,
+  XMarkIcon
+} from "@heroicons/react/24/outline"
+import { Fragment, useEffect, useState } from "react"
+import toast from "react-hot-toast"
+
+import {
+  autoDetectAccount,
+  isValidExchangeRate,
+  validateAndUpdateAccount
+} from "../services/accountOperations"
 import { accountStorage } from "../services/accountStorage"
-import { autoDetectAccount, validateAndUpdateAccount, extractDomainPrefix, isValidExchangeRate } from "../services/accountOperations"
-import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
-import type { AutoDetectError } from "../utils/autoDetectUtils"
 import type { DisplaySiteData } from "../types"
+import type { AutoDetectError } from "../utils/autoDetectUtils"
+import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
 
 interface EditAccountDialogProps {
   isOpen: boolean
@@ -14,7 +37,11 @@ interface EditAccountDialogProps {
   account: DisplaySiteData | null
 }
 
-export default function EditAccountDialog({ isOpen, onClose, account }: EditAccountDialogProps) {
+export default function EditAccountDialog({
+  isOpen,
+  onClose,
+  account
+}: EditAccountDialogProps) {
   const [url, setUrl] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
   const [siteName, setSiteName] = useState("")
@@ -24,10 +51,12 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
   const [isDetected, setIsDetected] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showAccessToken, setShowAccessToken] = useState(false)
-  const [detectionError, setDetectionError] = useState<AutoDetectError | null>(null)
+  const [detectionError, setDetectionError] = useState<AutoDetectError | null>(
+    null
+  )
   const [showManualForm, setShowManualForm] = useState(true) // 编辑模式默认显示表单
   const [exchangeRate, setExchangeRate] = useState("")
-  
+
   // 重置表单数据
   const resetForm = () => {
     setUrl("")
@@ -55,7 +84,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
         setExchangeRate(siteAccount.exchange_rate.toString())
       }
     } catch (error) {
-      console.error('加载账号数据失败:', error)
+      console.error("加载账号数据失败:", error)
     }
   }
 
@@ -75,10 +104,10 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
 
     setIsDetecting(true)
     setDetectionError(null)
-    
+
     try {
       const result = await autoDetectAccount(url.trim())
-      
+
       if (!result.success) {
         setDetectionError(result.detailedError || null)
         return
@@ -89,31 +118,31 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
         setUsername(result.data.username)
         setAccessToken(result.data.accessToken)
         setUserId(result.data.userId)
-        
+
         // 设置充值比例默认值
         if (result.data.exchangeRate) {
           setExchangeRate(result.data.exchangeRate.toString())
-          console.log('获取到默认充值比例:', result.data.exchangeRate)
+          console.log("获取到默认充值比例:", result.data.exchangeRate)
         } else {
-          console.log('未获取到默认充值比例，保持当前值')
+          console.log("未获取到默认充值比例，保持当前值")
         }
-        
+
         setIsDetected(true)
-        
-        console.log('自动识别成功:', { 
-          username: result.data.username, 
-          siteName, 
-          exchangeRate: result.data.exchangeRate 
+
+        console.log("自动识别成功:", {
+          username: result.data.username,
+          siteName,
+          exchangeRate: result.data.exchangeRate
         })
       }
     } catch (error) {
-      console.error('自动识别失败:', error)
-      const errorMessage = error instanceof Error ? error.message : '未知错误'
+      console.error("自动识别失败:", error)
+      const errorMessage = error instanceof Error ? error.message : "未知错误"
       // 使用通用错误处理
       setDetectionError({
-        type: 'unknown' as any,
+        type: "unknown" as any,
         message: `自动识别失败: ${errorMessage}`,
-        helpDocUrl: '#'
+        helpDocUrl: "#"
       })
     } finally {
       setIsDetecting(false)
@@ -122,12 +151,12 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
 
   const handleSaveAccount = async () => {
     if (!account) {
-      toast.error('账号信息错误')
+      toast.error("账号信息错误")
       return
     }
 
     setIsSaving(true)
-    
+
     try {
       await toast.promise(
         validateAndUpdateAccount(
@@ -140,23 +169,23 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
           exchangeRate
         ),
         {
-          loading: '正在保存更改...',
+          loading: "正在保存更改...",
           success: (result) => {
             if (result.success) {
               onClose()
               return `账号 ${siteName} 更新成功!`
             } else {
-              throw new Error(result.error || '更新失败')
+              throw new Error(result.error || "更新失败")
             }
           },
           error: (err) => {
-            const errorMsg = err.message || '更新失败'
+            const errorMsg = err.message || "更新失败"
             return `更新失败: ${errorMsg}`
-          },
+          }
         }
       )
     } catch (error) {
-      console.error('更新账号失败:', error)
+      console.error("更新账号失败:", error)
     } finally {
       setIsSaving(false)
     }
@@ -173,10 +202,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog
-        onClose={onClose}
-        className="relative z-50"
-      >
+      <Dialog onClose={onClose} className="relative z-50">
         {/* 背景遮罩动画 */}
         <TransitionChild
           as={Fragment}
@@ -185,11 +211,13 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
           enterTo="opacity-100"
           leave="ease-in duration-200"
           leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+          leaveTo="opacity-0">
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+            aria-hidden="true"
+          />
         </TransitionChild>
-        
+
         {/* 居中容器 - 针对插件优化 */}
         <div className="fixed inset-0 flex items-center justify-center p-2">
           {/* 弹窗面板动画 */}
@@ -200,8 +228,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
             enterTo="opacity-100 scale-100 translate-y-0"
             leave="ease-in duration-200"
             leaveFrom="opacity-100 scale-100 translate-y-0"
-            leaveTo="opacity-0 scale-95 translate-y-4"
-          >
+            leaveTo="opacity-0 scale-95 translate-y-4">
             <DialogPanel className="w-full max-w-sm bg-white rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto">
               {/* 头部 */}
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -215,8 +242,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
@@ -226,7 +252,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* 识别错误提示 */}
                   {detectionError && (
-                    <AutoDetectErrorAlert 
+                    <AutoDetectErrorAlert
                       error={detectionError}
                       siteUrl={url}
                     />
@@ -246,7 +272,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                         value={url}
                         onChange={(e) => {
                           const inputUrl = e.target.value
-                          
+
                           // 当用户输入 URL 时，提取协议和主机部分
                           if (inputUrl.trim()) {
                             try {
@@ -254,18 +280,9 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                               // 只保留协议和主机部分，不带路径
                               const baseUrl = `${urlObj.protocol}//${urlObj.host}`
                               setUrl(baseUrl)
-                              
-                              // 自动更新站点名称
-                              const domainPrefix = extractDomainPrefix(urlObj.hostname)
-                              setSiteName(domainPrefix)
                             } catch (error) {
                               // 如果 URL 格式不完整，先保存用户输入，但尝试提取域名
                               setUrl(inputUrl)
-                              const match = inputUrl.match(/\/\/([^\/]+)/)
-                              if (match) {
-                                const domainPrefix = extractDomainPrefix(match[1])
-                                setSiteName(domainPrefix)
-                              }
                             }
                           } else {
                             setUrl("")
@@ -280,10 +297,9 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                       {url && (
                         <button
                           type="button"
-                          onClick={() => setUrl('')}
+                          onClick={() => setUrl("")}
                           className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                          disabled={isDetected}
-                        >
+                          disabled={isDetected}>
                           <XMarkIcon className="h-4 w-4" />
                         </button>
                       )}
@@ -342,7 +358,9 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <span className="text-gray-400 font-mono text-sm">#</span>
+                          <span className="text-gray-400 font-mono text-sm">
+                            #
+                          </span>
                         </div>
                         <input
                           type="number"
@@ -375,8 +393,7 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                         <button
                           type="button"
                           onClick={() => setShowAccessToken(!showAccessToken)}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                        >
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
                           {showAccessToken ? (
                             <EyeSlashIcon className="h-4 w-4" />
                           ) : (
@@ -404,9 +421,9 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                           onChange={(e) => setExchangeRate(e.target.value)}
                           placeholder="请输入充值比例"
                           className={`block w-full pl-10 py-3 border rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
-                            isValidExchangeRate(exchangeRate) 
-                              ? 'border-gray-200 focus:ring-green-500 focus:border-transparent' 
-                              : 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                            isValidExchangeRate(exchangeRate)
+                              ? "border-gray-200 focus:ring-green-500 focus:border-transparent"
+                              : "border-red-300 focus:ring-red-500 focus:border-red-500"
                           }`}
                           required
                         />
@@ -430,19 +447,17 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                     <button
                       type="button"
                       onClick={onClose}
-                      className="px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
-                    >
+                      className="px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
                       取消
                     </button>
-                    
+
                     {/* 重新识别按钮 */}
                     {!isDetected && (
                       <button
                         type="button"
                         onClick={handleAutoDetect}
                         disabled={!url.trim() || isDetecting}
-                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                      >
+                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                         {isDetecting ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -456,13 +471,19 @@ export default function EditAccountDialog({ isOpen, onClose, account }: EditAcco
                         )}
                       </button>
                     )}
-                    
+
                     {/* 保存按钮 */}
                     <button
                       type="submit"
-                      disabled={!siteName.trim() || !username.trim() || !accessToken.trim() || !userId.trim() || !isValidExchangeRate(exchangeRate) || isSaving}
-                      className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                    >
+                      disabled={
+                        !siteName.trim() ||
+                        !username.trim() ||
+                        !accessToken.trim() ||
+                        !userId.trim() ||
+                        !isValidExchangeRate(exchangeRate) ||
+                        isSaving
+                      }
+                      className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                       {isSaving ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

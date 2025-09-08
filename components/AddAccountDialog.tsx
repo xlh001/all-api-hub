@@ -22,7 +22,7 @@ import toast from "react-hot-toast"
 
 import {
   autoDetectAccount,
-  extractDomainPrefix,
+  getSiteName,
   isValidExchangeRate,
   validateAndSaveAccount
 } from "../services/accountOperations"
@@ -77,19 +77,19 @@ export default function AddAccountDialog({
       setUrl("")
 
       // 获取当前标签页的 URL 作为初始参考
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]?.url) {
+      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+        const tab = tabs[0]
+        if (tab.url) {
           try {
-            const urlObj = new URL(tabs[0].url)
+            const urlObj = new URL(tab.url)
             const baseUrl = `${urlObj.protocol}//${urlObj.host}`
             // 如果站点不是以http开头，则不处理（可能为空白页）
             if (!baseUrl.startsWith("http")) {
               return
             }
             setCurrentTabUrl(baseUrl)
-            // 设置站点名称为域名前缀，但不自动填入URL
-            const domainPrefix = extractDomainPrefix(urlObj.hostname)
-            setSiteName(domainPrefix)
+            // 设置站点名称为站点名称
+            setSiteName(await getSiteName(tab))
           } catch (error) {
             console.log("无法解析 URL:", error)
             setCurrentTabUrl(null)
@@ -287,22 +287,9 @@ export default function AddAccountDialog({
                               // 只保留协议和主机部分，不带路径
                               const baseUrl = `${urlObj.protocol}//${urlObj.host}`
                               setUrl(baseUrl)
-
-                              // 自动更新站点名称
-                              const domainPrefix = extractDomainPrefix(
-                                urlObj.hostname
-                              )
-                              setSiteName(domainPrefix)
                             } catch (error) {
                               // 如果 URL 格式不完整，先保存用户输入，但尝试提取域名
                               setUrl(inputUrl)
-                              const match = inputUrl.match(/\/\/([^\/]+)/)
-                              if (match) {
-                                const domainPrefix = extractDomainPrefix(
-                                  match[1]
-                                )
-                                setSiteName(domainPrefix)
-                              }
                             }
                           } else {
                             setUrl("")
