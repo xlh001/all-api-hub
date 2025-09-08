@@ -1,3 +1,5 @@
+import { joinUrl } from "~utils/url"
+
 /**
  * API 服务 - 用于与 One API/New API 站点进行交互
  */
@@ -300,7 +302,7 @@ export const fetchUserInfo = async (
   baseUrl: string,
   userId?: number
 ): Promise<UserInfo> => {
-  const url = `${baseUrl}/api/user/self`
+  const url = joinUrl(baseUrl, "/api/user/self")
   const options = createCookieAuthRequest(userId)
 
   const userData = await apiRequest<UserInfo>(url, options, "/api/user/self")
@@ -319,7 +321,7 @@ export const createAccessToken = async (
   baseUrl: string,
   userId: number
 ): Promise<string> => {
-  const url = `${baseUrl}/api/user/token`
+  const url = joinUrl(baseUrl, "/api/user/token")
   const options = createCookieAuthRequest(userId)
 
   return await apiRequest<string>(url, options, "/api/user/token")
@@ -332,7 +334,7 @@ export const fetchSiteStatus = async (
   baseUrl: string
 ): Promise<SiteStatusInfo | null> => {
   try {
-    const url = `${baseUrl}/api/status`
+    const url = joinUrl(baseUrl, "/api/status")
     const options = {
       method: "GET",
       headers: {
@@ -421,7 +423,7 @@ export const fetchAccountQuota = async (
   userId: number,
   accessToken: string
 ): Promise<number> => {
-  const url = `${baseUrl}/api/user/self`
+  const url = joinUrl(baseUrl, "/api/user/self")
   const options = createTokenAuthRequest(userId, accessToken)
 
   const userData = await apiRequest<{ quota?: number }>(
@@ -464,7 +466,7 @@ export const fetchTodayUsage = async (
       group: ""
     })
 
-    const url = `${baseUrl}/api/log/self?${params.toString()}`
+    const url = joinUrl(baseUrl, `/api/log/self?${params.toString()}`)
     const options = createTokenAuthRequest(userId, accessToken)
 
     const logData = await apiRequest<LogResponseData>(
@@ -585,7 +587,7 @@ export const fetchAccountTokens = async (
     size: size.toString()
   })
 
-  const url = `${baseUrl}/api/token/?${params.toString()}`
+  const url = joinUrl(baseUrl, `/api/token/?${params.toString()}`)
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
@@ -626,7 +628,7 @@ export const fetchAvailableModels = async (
   userId: number,
   accessToken: string
 ): Promise<string[]> => {
-  const url = `${baseUrl}/api/user/models`
+  const url = joinUrl(baseUrl, "/api/user/models")
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
@@ -650,7 +652,7 @@ export const fetchUserGroups = async (
   userId: number,
   accessToken: string
 ): Promise<Record<string, GroupInfo>> => {
-  const url = `${baseUrl}/api/user/self/groups`
+  const url = joinUrl(baseUrl, "/api/user/self/groups")
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
@@ -675,7 +677,7 @@ export const createApiToken = async (
   accessToken: string,
   tokenData: CreateTokenRequest
 ): Promise<boolean> => {
-  const url = `${baseUrl}/api/token/`
+  const url = joinUrl(baseUrl, "/api/token/")
   const options = {
     method: "POST",
     headers: createRequestHeaders(userId, accessToken),
@@ -721,7 +723,7 @@ export const fetchTokenById = async (
   accessToken: string,
   tokenId: number
 ): Promise<ApiToken> => {
-  const url = `${baseUrl}/api/token/${tokenId}`
+  const url = joinUrl(baseUrl, `/api/token/${tokenId}`)
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
@@ -747,7 +749,7 @@ export const updateApiToken = async (
   tokenId: number,
   tokenData: CreateTokenRequest
 ): Promise<boolean> => {
-  const url = `${baseUrl}/api/token/`
+  const url = joinUrl(baseUrl, "/api/token/")
   const options = {
     method: "PUT",
     headers: createRequestHeaders(userId, accessToken),
@@ -792,7 +794,7 @@ export const deleteApiToken = async (
   accessToken: string,
   tokenId: number
 ): Promise<boolean> => {
-  const url = `${baseUrl}/api/token/${tokenId}`
+  const url = joinUrl(baseUrl, `/api/token/${tokenId}`)
   const options = {
     method: "DELETE",
     headers: createRequestHeaders(userId, accessToken),
@@ -835,7 +837,7 @@ export const fetchModelPricing = async (
   userId: number,
   accessToken: string
 ): Promise<PricingResponse> => {
-  const url = `${baseUrl}/api/pricing`
+  const url = joinUrl(baseUrl, "/api/pricing")
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
