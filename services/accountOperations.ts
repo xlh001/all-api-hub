@@ -337,11 +337,14 @@ export async function getSiteName(tab: chrome.tabs.Tab) {
   if (IsNotDefaultSiteName(tabTitle)) {
     siteName = tabTitle
   }
-  const systemName = (await fetchSiteStatus(tab.url)).system_name
+  const urlObj = new URL(tab.url!)
+  // 包含端口
+  const hostWithProtocol = `${urlObj.protocol}//${urlObj.host}`
+  const systemName = (await fetchSiteStatus(hostWithProtocol)).system_name
   if (IsNotDefaultSiteName(tabTitle)) {
     siteName = systemName
   } else {
-    siteName = extractDomainPrefix(new URL(tab.url!).hostname)
+    siteName = extractDomainPrefix(urlObj.hostname)
   }
   return siteName
 }
