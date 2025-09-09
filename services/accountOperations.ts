@@ -333,17 +333,22 @@ function IsNotDefaultSiteName(siteName: string) {
 
 export async function getSiteName(tab: chrome.tabs.Tab) {
   let siteName = ""
+  // 优先从标题获取
   const tabTitle = tab.title
   if (IsNotDefaultSiteName(tabTitle)) {
     siteName = tabTitle
+    return siteName
   }
   const urlObj = new URL(tab.url!)
   // 包含端口
   const hostWithProtocol = `${urlObj.protocol}//${urlObj.host}`
-  const systemName = (await fetchSiteStatus(hostWithProtocol))?.system_name
+  // 其次从站点状态获取
+  const siteStatusInfo = await fetchSiteStatus(hostWithProtocol)
+  const systemName = siteStatusInfo?.system_name
   if (IsNotDefaultSiteName(systemName)) {
     siteName = systemName
   } else {
+    // 最后从域名获取
     siteName = extractDomainPrefix(urlObj.hostname)
   }
   return siteName
