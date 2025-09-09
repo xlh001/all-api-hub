@@ -340,8 +340,8 @@ export async function getSiteName(tab: chrome.tabs.Tab) {
   const urlObj = new URL(tab.url!)
   // 包含端口
   const hostWithProtocol = `${urlObj.protocol}//${urlObj.host}`
-  const systemName = (await fetchSiteStatus(hostWithProtocol)).system_name
-  if (IsNotDefaultSiteName(tabTitle)) {
+  const systemName = (await fetchSiteStatus(hostWithProtocol))?.system_name
+  if (IsNotDefaultSiteName(systemName)) {
     siteName = systemName
   } else {
     siteName = extractDomainPrefix(urlObj.hostname)
