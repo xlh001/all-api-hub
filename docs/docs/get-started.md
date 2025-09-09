@@ -1,19 +1,23 @@
 # 开始使用
 
-一个开源的浏览器插件，聚合管理AI中转站账号的余额、模型和密钥，告别繁琐登录。
+一个开源的浏览器插件，旨在优化管理New API等AI中转站账号的体验。用户可以轻松集中管理和查看账户余额、模型及密钥，并自动添加新站点。
 
 ## 1. 下载
 
 ::: info 推荐
-[前往 Chrome 应用商店]
+[前往 Release 下载](https://github.com/qixing-jk/all-api-hub/releases)
 :::
 
 ## 2. 支持的站点
 
 支持基于以下项目部署的中转站：
- - [One-API] 
- - [New-API] 
- - [Veloera](https://github.com/Veloera/Veloera)
+- [one-api](https://github.com/songquanpeng/one-api)
+- [new-api](https://github.com/QuantumNous/new-api)
+- [Veloera](https://github.com/Veloera/Veloera)
+- [one-hub](https://github.com/MartialBE/one-hub)
+- [done-hub](https://github.com/deanxv/done-hub)
+- [VoAPI](https://github.com/VoAPI/VoAPI)
+- [Super-API](https://github.com/SuperAI-Api/Super-API)
 
 ::: warning
 如果站点进行了二次开发导致一些关键接口（例如`/api/user`）发生了改变，则插件可能无法正常添加此站点。
@@ -54,7 +58,3 @@
 当自动识别未成功后，可进行手动输入添加站点账号，需要先获取以下信息。（每个站点可能UI有所差异，请自行寻找）
 :::
 ![用户信息](./static/image/site-user-info.png)
-
-[One-API]: https://github.com/songquanpeng/one-api
-[New-API]: https://github.com/QuantumNous/new-api
-[前往 Chrome 应用商店]: https://chromewebstore.google.com/detail/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub/eobdoeafpplhhhjfkinnlkljbkijpobd

@@ -82,10 +82,6 @@
 
 ## 🚀 安装使用
 
-### ~~Chrome 应用商店（推荐）~~
-
-~~[⬇️ 前往下载](https://chromewebstore.google.com/detail/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub/eobdoeafpplhhhjfkinnlkljbkijpobd)~~
-
 ### 手动安装
 
 1. 下载最新版本的扩展包
