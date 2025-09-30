@@ -2,7 +2,7 @@ import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import "dayjs/locale/zh-cn"
 import { UI_CONSTANTS, CURRENCY_SYMBOLS } from "../constants/ui"
-import type { DisplaySiteData, AccountStats } from "../types"
+import type { DisplaySiteData, AccountStats, ApiToken } from "../types"
 
 // 初始化 dayjs
 dayjs.extend(relativeTime)
@@ -151,4 +151,69 @@ export const throttle = <T extends (...args: any[]) => any>(
       setTimeout(() => (inThrottle = false), limit)
     }
   }
+}
+
+/**
+ * 格式化额度显示
+ */
+export const formatQuota = (token: ApiToken) => {
+  if (token.unlimited_quota || token.remain_quota < 0) {
+    return '无限额度'
+  }
+
+  // 使用CONVERSION_FACTOR转换真实额度
+  const realQuota = token.remain_quota / UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+  return `$${realQuota.toFixed(2)}`
+}
+
+/**
+ * 格式化已用额度
+ */
+export const formatUsedQuota = (token: ApiToken) => {
+  const realUsedQuota = token.used_quota / UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+  return `$${realUsedQuota.toFixed(2)}`
+}
+
+/**
+ * 格式化时间戳
+ */
+export const formatTimestamp = (timestamp: number) => {
+  if (timestamp <= 0) return '永不过期'
+  return new Date(timestamp * 1000).toLocaleDateString('zh-CN')
+}
+
+/**
+ * 获取组别徽章样式
+ */
+export const getGroupBadgeStyle = (group: string) => {
+  // 处理可能为空或未定义的 group
+  const groupName = group || 'default'
+
+  // 根据组别名称生成不同的颜色主题
+  const hash = groupName.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0)
+    return a & a
+  }, 0)
+
+  const colors = [
+    'bg-blue-100 text-blue-800 border-blue-200',
+    'bg-green-100 text-green-800 border-green-200',
+    'bg-purple-100 text-purple-800 border-purple-200',
+    'bg-orange-100 text-orange-800 border-orange-200',
+    'bg-pink-100 text-pink-800 border-pink-200',
+    'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'bg-teal-100 text-teal-800 border-teal-200',
+    'bg-yellow-100 text-yellow-800 border-yellow-200'
+  ]
+
+  return colors[Math.abs(hash) % colors.length]
+}
+
+/**
+ * 获取状态徽章样式
+ */
+export const getStatusBadgeStyle = (status: number) => {
+  return status === 1
+    ? 'bg-green-100 text-green-800 border-green-200'
+    : 'bg-red-100 text-red-800 border-red-200'
 }

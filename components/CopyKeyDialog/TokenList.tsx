@@ -1,0 +1,58 @@
+import { KeyIcon } from "@heroicons/react/24/outline";
+import type { ApiToken } from "../../types";
+import { TokenItem } from "./TokenItem";
+
+interface TokenListProps {
+  tokens: ApiToken[];
+  expandedTokens: Set<number>;
+  copiedKey: string | null;
+  onToggleToken: (id: number) => void;
+  onCopyKey: (key: string) => void;
+  formatTime: (timestamp: number) => string;
+  formatUsedQuota: (token: ApiToken) => string;
+  formatQuota: (token: ApiToken) => string;
+  getGroupBadgeStyle: (group: string) => string;
+  getStatusBadgeStyle: (status: number) => string;
+}
+
+export function TokenList({
+  tokens,
+  expandedTokens,
+  copiedKey,
+  onToggleToken,
+  onCopyKey,
+  formatTime,
+  formatUsedQuota,
+  formatQuota,
+  getGroupBadgeStyle,
+  getStatusBadgeStyle,
+}: TokenListProps) {
+  if (!Array.isArray(tokens) || tokens.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <KeyIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <p className="text-gray-500 text-sm">暂无密钥数据</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {tokens.map((token) => (
+        <TokenItem
+          key={token.id}
+          token={token}
+          isExpanded={expandedTokens.has(token.id)}
+          copiedKey={copiedKey}
+          onToggle={() => onToggleToken(token.id)}
+          onCopyKey={onCopyKey}
+          formatTime={formatTime}
+          formatUsedQuota={formatUsedQuota}
+          formatQuota={formatQuota}
+          getGroupBadgeStyle={getGroupBadgeStyle}
+          getStatusBadgeStyle={getStatusBadgeStyle}
+        />
+      ))}
+    </div>
+  );
+}
