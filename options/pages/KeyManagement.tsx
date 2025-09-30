@@ -1,39 +1,48 @@
-import { useState, useEffect } from "react"
-import { 
-  KeyIcon, 
-  MagnifyingGlassIcon, 
-  PlusIcon,
+import {
   DocumentDuplicateIcon,
-  PencilIcon,
-  TrashIcon,
   EyeIcon,
-  EyeSlashIcon
+  EyeSlashIcon,
+  KeyIcon,
+  MagnifyingGlassIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline"
-import { useAccountData } from "../../hooks/useAccountData"
-import { fetchAccountTokens, deleteApiToken, type ApiToken } from "../../services/apiService"
-import type { DisplaySiteData } from "../../types"
-import AddTokenDialog from "../../components/AddTokenDialog"
-import toast from 'react-hot-toast'
+import { useEffect, useState } from "react"
+import toast from "react-hot-toast"
 
-export default function KeyManagement({ routeParams }: { routeParams?: Record<string, string> }) {
+import AddTokenDialog from "../../components/AddTokenDialog"
+import { useAccountData } from "../../hooks/useAccountData"
+import { deleteApiToken, fetchAccountTokens } from "../../services/apiService"
+import type { ApiToken } from "../../types"
+
+export default function KeyManagement({
+  routeParams
+}: {
+  routeParams?: Record<string, string>
+}) {
   const { displayData } = useAccountData()
   const [selectedAccount, setSelectedAccount] = useState<string>("") // 改为空字符串，不默认选择
   const [searchTerm, setSearchTerm] = useState("")
-  const [tokens, setTokens] = useState<(ApiToken & { accountName: string })[]>([])
+  const [tokens, setTokens] = useState<(ApiToken & { accountName: string })[]>(
+    []
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [visibleKeys, setVisibleKeys] = useState<Set<number>>(new Set())
   const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
-  const [editingToken, setEditingToken] = useState<(ApiToken & { accountName: string }) | null>(null)
+  const [editingToken, setEditingToken] = useState<
+    (ApiToken & { accountName: string }) | null
+  >(null)
 
   // 加载选中账号的密钥
   const loadTokens = async (accountId?: string) => {
     const targetAccountId = accountId || selectedAccount
     if (!targetAccountId || displayData.length === 0) return
-    
+
     setIsLoading(true)
     try {
       // 只加载选中账号的密钥
-      const account = displayData.find(acc => acc.id === targetAccountId)
+      const account = displayData.find((acc) => acc.id === targetAccountId)
       if (!account) {
         setTokens([])
         return
@@ -44,16 +53,16 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
         account.userId,
         account.token
       )
-      
-      const tokensWithAccount = accountTokens.map(token => ({
+
+      const tokensWithAccount = accountTokens.map((token) => ({
         ...token,
         accountName: account.name
       }))
-      
+
       setTokens(tokensWithAccount)
     } catch (error) {
       console.error(`获取账号密钥失败:`, error)
-      toast.error('加载密钥列表失败')
+      toast.error("加载密钥列表失败")
       setTokens([])
     } finally {
       setIsLoading(false)
@@ -73,7 +82,9 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   useEffect(() => {
     if (routeParams?.accountId && displayData.length > 0) {
       // 验证账号ID是否存在
-      const accountExists = displayData.some(acc => acc.id === routeParams.accountId)
+      const accountExists = displayData.some(
+        (acc) => acc.id === routeParams.accountId
+      )
       if (accountExists) {
         setSelectedAccount(routeParams.accountId)
       }
@@ -81,25 +92,27 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   }, [routeParams?.accountId, displayData])
 
   // 过滤密钥 (现在只需要搜索过滤，因为已经只加载选中账号的密钥)
-  const filteredTokens = tokens.filter(token => {
-    return token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           token.key.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTokens = tokens.filter((token) => {
+    return (
+      token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      token.key.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   })
 
   // 复制密钥
   const copyKey = async (key: string, name: string) => {
     try {
-      const textToCopy = key.startsWith('sk-') ? key : 'sk-' + key;
+      const textToCopy = key.startsWith("sk-") ? key : "sk-" + key
       await navigator.clipboard.writeText(textToCopy)
       toast.success(`密钥 ${name} 已复制到剪贴板`)
     } catch (error) {
-      toast.error('复制失败')
+      toast.error("复制失败")
     }
   }
 
   // 切换密钥可见性
   const toggleKeyVisibility = (tokenId: number) => {
-    setVisibleKeys(prev => {
+    setVisibleKeys((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(tokenId)) {
         newSet.delete(tokenId)
@@ -132,29 +145,38 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
   }
 
   // 处理删除密钥
-  const handleDeleteToken = async (token: ApiToken & { accountName: string }) => {
-    if (!window.confirm(`确定要删除密钥 "${token.name}" 吗？此操作不可撤销。`)) {
+  const handleDeleteToken = async (
+    token: ApiToken & { accountName: string }
+  ) => {
+    if (
+      !window.confirm(`确定要删除密钥 "${token.name}" 吗？此操作不可撤销。`)
+    ) {
       return
     }
 
     try {
       // 找到对应的账号信息
-      const account = displayData.find(acc => acc.name === token.accountName)
+      const account = displayData.find((acc) => acc.name === token.accountName)
       if (!account) {
-        toast.error('找不到对应账号信息')
+        toast.error("找不到对应账号信息")
         return
       }
 
-      await deleteApiToken(account.baseUrl, account.userId, account.token, token.id)
+      await deleteApiToken(
+        account.baseUrl,
+        account.userId,
+        account.token,
+        token.id
+      )
       toast.success(`密钥 "${token.name}" 删除成功`)
-      
+
       // 重新加载当前选中账号的密钥列表
       if (selectedAccount) {
         loadTokens()
       }
     } catch (error) {
-      console.error('删除密钥失败:', error)
-      toast.error('删除密钥失败，请稍后重试')
+      console.error("删除密钥失败:", error)
+      toast.error("删除密钥失败，请稍后重试")
     }
   }
 
@@ -163,18 +185,18 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
     if (visibleKeys.has(tokenId)) {
       return key
     }
-    return `${key.substring(0, 8)}${'*'.repeat(16)}${key.substring(key.length - 4)}`
+    return `${key.substring(0, 8)}${"*".repeat(16)}${key.substring(key.length - 4)}`
   }
 
   // 格式化时间
   const formatTime = (timestamp: number) => {
-    if (timestamp <= 0) return '永不过期'
-    return new Date(timestamp * 1000).toLocaleDateString('zh-CN')
+    if (timestamp <= 0) return "永不过期"
+    return new Date(timestamp * 1000).toLocaleDateString("zh-CN")
   }
 
   // 格式化额度
   const formatQuota = (quota: number, unlimited: boolean) => {
-    if (unlimited || quota < 0) return '无限额度'
+    if (unlimited || quota < 0) return "无限额度"
     return `$${(quota / 500000).toFixed(2)}`
   }
 
@@ -191,17 +213,15 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
             <button
               onClick={handleAddToken}
               disabled={!selectedAccount || displayData.length === 0}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
+              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
               <PlusIcon className="w-4 h-4" />
               <span>添加密钥</span>
             </button>
             <button
               onClick={() => selectedAccount && loadTokens()}
               disabled={isLoading || !selectedAccount}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-            >
-              {isLoading ? '刷新中...' : '刷新列表'}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
+              {isLoading ? "刷新中..." : "刷新列表"}
             </button>
           </div>
         </div>
@@ -218,11 +238,12 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
           <select
             value={selectedAccount}
             onChange={(e) => setSelectedAccount(e.target.value)}
-            className="w-full sm:w-80 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
+            className="w-full sm:w-80 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value="">请选择账号</option>
-            {displayData.map(account => (
-              <option key={account.id} value={account.id}>{account.name}</option>
+            {displayData.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
             ))}
           </select>
         </div>
@@ -246,7 +267,7 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
         {selectedAccount && (
           <div className="flex items-center space-x-6 text-sm text-gray-500">
             <span>总计 {tokens.length} 个密钥</span>
-            <span>启用 {tokens.filter(t => t.status === 1).length} 个</span>
+            <span>启用 {tokens.filter((t) => t.status === 1).length} 个</span>
             <span>显示 {filteredTokens.length} 个</span>
           </div>
         )}
@@ -261,7 +282,9 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
       ) : isLoading ? (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="border border-gray-200 rounded-lg p-4 animate-pulse">
+            <div
+              key={i}
+              className="border border-gray-200 rounded-lg p-4 animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
               <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
               <div className="h-3 bg-gray-200 rounded w-3/4"></div>
@@ -272,15 +295,14 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
         <div className="text-center py-12">
           <KeyIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 mb-4">
-            {tokens.length === 0 ? '暂无密钥数据' : '没有找到匹配的密钥'}
+            {tokens.length === 0 ? "暂无密钥数据" : "没有找到匹配的密钥"}
           </p>
           {displayData.length === 0 ? (
             <p className="text-sm text-gray-400">请先添加账号</p>
           ) : tokens.length === 0 ? (
             <button
               onClick={handleAddToken}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors flex items-center space-x-2 mx-auto"
-            >
+              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors flex items-center space-x-2 mx-auto">
               <PlusIcon className="w-4 h-4" />
               <span>创建第一个密钥</span>
             </button>
@@ -291,8 +313,7 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
           {filteredTokens.map((token) => (
             <div
               key={`${token.accountName}-${token.id}`}
-              className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
-            >
+              className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   {/* 密钥名称和状态 */}
@@ -300,12 +321,13 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
                     <h3 className="text-lg font-medium text-gray-900 truncate">
                       {token.name}
                     </h3>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      token.status === 1 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {token.status === 1 ? '启用' : '禁用'}
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        token.status === 1
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}>
+                      {token.status === 1 ? "启用" : "禁用"}
                     </span>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       {token.accountName}
@@ -322,8 +344,7 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
                         </code>
                         <button
                           onClick={() => toggleKeyVisibility(token.id)}
-                          className="p-1 text-gray-400 hover:text-gray-600"
-                        >
+                          className="p-1 text-gray-400 hover:text-gray-600">
                           {visibleKeys.has(token.id) ? (
                             <EyeSlashIcon className="w-4 h-4" />
                           ) : (
@@ -337,7 +358,10 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
                       <div>
                         <span className="text-gray-500">剩余额度:</span>
                         <span className="ml-2 font-medium">
-                          {formatQuota(token.remain_quota, token.unlimited_quota)}
+                          {formatQuota(
+                            token.remain_quota,
+                            token.unlimited_quota
+                          )}
                         </span>
                       </div>
                       <div>
@@ -374,22 +398,19 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
                   <button
                     onClick={() => copyKey(token.key, token.name)}
                     className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="复制密钥"
-                  >
+                    title="复制密钥">
                     <DocumentDuplicateIcon className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleEditToken(token)}
                     className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="编辑密钥"
-                  >
+                    title="编辑密钥">
                     <PencilIcon className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteToken(token)}
                     className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="删除密钥"
-                  >
+                    title="删除密钥">
                     <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
@@ -418,7 +439,7 @@ export default function KeyManagement({ routeParams }: { routeParams?: Record<st
       <AddTokenDialog
         isOpen={isAddTokenOpen}
         onClose={handleCloseAddToken}
-        availableAccounts={displayData.map(account => ({
+        availableAccounts={displayData.map((account) => ({
           id: account.id,
           name: account.name,
           baseUrl: account.baseUrl,

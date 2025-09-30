@@ -78,7 +78,7 @@ export interface DisplaySiteData {
 }
 
 // 站点的token 密钥信息(API 密钥)
-export type ApiToken = {
+export interface ApiToken {
   id: number
   user_id: number
   key: string
@@ -89,10 +89,11 @@ export type ApiToken = {
   expired_time: number
   remain_quota: number
   unlimited_quota: boolean
-  model_limits_enabled: boolean
-  model_limits: string
-  allow_ips: string
+  model_limits_enabled?: boolean
+  model_limits?: string
+  allow_ips?: string
   used_quota: number
-  group: string
-  DeletedAt: null | string
+  group?: string // 可选字段，某些站点可能没有
+  DeletedAt?: null
+  models?: string // 某些站点使用 models 而不是 model_limits
 }

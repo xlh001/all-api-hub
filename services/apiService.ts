@@ -1,3 +1,4 @@
+import type { ApiToken } from "~types"
 import { joinUrl } from "~utils/url"
 
 /**
@@ -81,27 +82,6 @@ export interface CreateTokenRequest {
 export interface CreateTokenResponse {
   message: string
   success: boolean
-}
-
-// API令牌类型定义
-export interface ApiToken {
-  id: number
-  user_id: number
-  key: string
-  status: number
-  name: string
-  created_time: number
-  accessed_time: number
-  expired_time: number
-  remain_quota: number
-  unlimited_quota: boolean
-  model_limits_enabled?: boolean
-  model_limits?: string
-  allow_ips?: string
-  used_quota: number
-  group?: string // 可选字段，某些站点可能没有
-  DeletedAt?: null
-  models?: string // 某些站点使用 models 而不是 model_limits
 }
 
 // 模型定价信息类型

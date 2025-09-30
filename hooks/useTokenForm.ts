@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
-import { UI_CONSTANTS } from '../constants/ui'
-import type { ApiToken } from '../services/apiService'
+import { useEffect, useState } from "react"
+
+import type { ApiToken } from "~types"
+
+import { UI_CONSTANTS } from "../constants/ui"
 
 // We duplicate some types here to avoid circular dependencies
 // if we were to import them directly from the AddTokenDialog component.
@@ -17,7 +19,7 @@ interface AddTokenDialogProps {
   isOpen: boolean
   availableAccounts: Account[]
   preSelectedAccountId?: string | null
-  editingToken?: ApiToken & { accountName: string } | null
+  editingToken?: (ApiToken & { accountName: string }) | null
 }
 
 export interface FormData {
@@ -33,33 +35,41 @@ export interface FormData {
 }
 
 export const initialFormData: FormData = {
-  accountId: '',
-  name: '',
-  quota: '',
-  expiredTime: '',
+  accountId: "",
+  name: "",
+  quota: "",
+  expiredTime: "",
   unlimitedQuota: true,
   modelLimitsEnabled: false,
   modelLimits: [],
-  allowIps: '',
-  group: 'default'
+  allowIps: "",
+  group: "default"
 }
 
 const isValidIpList = (ips: string): boolean => {
   if (!ips) return true // Empty is considered valid
-  const ipList = ips.split(',').map(ip => ip.trim())
+  const ipList = ips.split(",").map((ip) => ip.trim())
   const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/
-  
-  return ipList.every(ip => {
+
+  return ipList.every((ip) => {
     if (!ip) return false
-    if (ip === '*') return true // Wildcard is allowed
-    return ipRegex.test(ip) && ip.split('.').every(part => {
-      const num = parseInt(part)
-      return num >= 0 && num <= 255
-    })
+    if (ip === "*") return true // Wildcard is allowed
+    return (
+      ipRegex.test(ip) &&
+      ip.split(".").every((part) => {
+        const num = parseInt(part)
+        return num >= 0 && num <= 255
+      })
+    )
   })
 }
 
-export function useTokenForm({ isOpen, preSelectedAccountId, availableAccounts, editingToken }: AddTokenDialogProps) {
+export function useTokenForm({
+  isOpen,
+  preSelectedAccountId,
+  availableAccounts,
+  editingToken
+}: AddTokenDialogProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const isEditMode = !!editingToken
@@ -67,52 +77,76 @@ export function useTokenForm({ isOpen, preSelectedAccountId, availableAccounts, 
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && editingToken) {
-        const matchingAccount = availableAccounts.find(acc => acc.name === editingToken.accountName)
-        const accountId = matchingAccount?.id || (availableAccounts.length > 0 ? availableAccounts[0].id : '')
-        
+        const matchingAccount = availableAccounts.find(
+          (acc) => acc.name === editingToken.accountName
+        )
+        const accountId =
+          matchingAccount?.id ||
+          (availableAccounts.length > 0 ? availableAccounts[0].id : "")
+
         setFormData({
           accountId,
           name: editingToken.name,
-          quota: editingToken.unlimited_quota ? '' : (editingToken.remain_quota / UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR).toString(),
-          expiredTime: editingToken.expired_time === -1 ? '' : new Date(editingToken.expired_time * 1000).toISOString().slice(0, 16),
+          quota: editingToken.unlimited_quota
+            ? ""
+            : (
+                editingToken.remain_quota /
+                UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+              ).toString(),
+          expiredTime:
+            editingToken.expired_time === -1
+              ? ""
+              : new Date(editingToken.expired_time * 1000)
+                  .toISOString()
+                  .slice(0, 16),
           unlimitedQuota: editingToken.unlimited_quota,
           modelLimitsEnabled: editingToken.model_limits_enabled || false,
-          modelLimits: editingToken.model_limits ? editingToken.model_limits.split(',') : [],
-          allowIps: editingToken.allow_ips || '',
-          group: editingToken.group || 'default'
+          modelLimits: editingToken.model_limits
+            ? editingToken.model_limits.split(",")
+            : [],
+          allowIps: editingToken.allow_ips || "",
+          group: editingToken.group || "default"
         })
       } else {
-        const defaultAccountId = preSelectedAccountId || (availableAccounts.length > 0 ? availableAccounts[0].id : '')
+        const defaultAccountId =
+          preSelectedAccountId ||
+          (availableAccounts.length > 0 ? availableAccounts[0].id : "")
         setFormData({
           ...initialFormData,
-          accountId: defaultAccountId,
+          accountId: defaultAccountId
         })
       }
     }
-  }, [isOpen, preSelectedAccountId, availableAccounts, isEditMode, editingToken])
+  }, [
+    isOpen,
+    preSelectedAccountId,
+    availableAccounts,
+    isEditMode,
+    editingToken
+  ])
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
     if (!formData.accountId) {
-      newErrors.accountId = '请选择账号'
+      newErrors.accountId = "请选择账号"
     }
     if (!formData.name.trim()) {
-      newErrors.name = '密钥名称不能为空'
+      newErrors.name = "密钥名称不能为空"
     }
     if (!formData.unlimitedQuota) {
       const quota = parseFloat(formData.quota)
       if (isNaN(quota) || quota <= 0) {
-        newErrors.quota = '请输入有效的额度金额'
+        newErrors.quota = "请输入有效的额度金额"
       }
     }
     if (formData.expiredTime) {
       const expiredDate = new Date(formData.expiredTime)
       if (expiredDate <= new Date()) {
-        newErrors.expiredTime = '过期时间必须大于当前时间'
+        newErrors.expiredTime = "过期时间必须大于当前时间"
       }
     }
     if (formData.allowIps && !isValidIpList(formData.allowIps)) {
-      newErrors.allowIps = '请输入有效的IP地址，多个IP用逗号分隔'
+      newErrors.allowIps = "请输入有效的IP地址，多个IP用逗号分隔"
     }
 
     setErrors(newErrors)
