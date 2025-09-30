@@ -9,12 +9,11 @@ import {
   PencilIcon,
   TrashIcon
 } from "@heroicons/react/24/outline"
-import CountUp from "react-countup"
 
-import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "../constants/ui"
 import { useAccountListItem } from "../hooks/useAccountListItem"
 import type { DisplaySiteData } from "../types"
-import { getCurrencySymbol } from "../utils/formatters"
+import BalanceDisplay from "./BalanceDisplay"
+import SiteInfo from "./SiteInfo"
 import Tooltip from "./Tooltip"
 
 interface AccountListItemProps {
@@ -50,7 +49,8 @@ export default function AccountListItem({
   onViewKeys,
   onCopyKey
 }: AccountListItemProps) {
-  const { hoveredSiteId, handleMouseEnter, handleMouseLeave } = useAccountListItem()
+  const { hoveredSiteId, handleMouseEnter, handleMouseLeave } =
+    useAccountListItem()
 
   const handleCopyUrlLocal = () => {
     navigator.clipboard.writeText(site.baseUrl)
@@ -65,35 +65,7 @@ export default function AccountListItem({
       onMouseEnter={() => handleMouseEnter(site.id)}
       onMouseLeave={handleMouseLeave}>
       <div className="flex items-center space-x-4">
-        {/* 站点信息 */}
-        <div className="flex items-center space-x-3 flex-1 min-w-0">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2 mb-0.5">
-              {/* 站点状态指示器 */}
-              <div
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  HEALTH_STATUS_MAP[site.healthStatus]?.color ||
-                  UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
-                }`}></div>
-              {site.id === detectedAccountId && (
-                <Tooltip content="当前tab站点已经存在" position="top">
-                  <span className={`text-yellow-700`}>当前站点</span>
-                </Tooltip>
-              )}
-              <div className="font-medium text-gray-900 text-sm truncate">
-                <a
-                  href={site.baseUrl}
-                  target="_blank"
-                  rel="noopener noreferrer">
-                  {site.name}
-                </a>
-              </div>
-            </div>
-            <div className="text-xs text-gray-500 truncate ml-4">
-              {site.username}
-            </div>
-          </div>
-        </div>
+        <SiteInfo site={site} detectedAccountId={detectedAccountId} />
 
         {/* 按钮组 - 只在 hover 时显示 */}
         {hoveredSiteId === site.id && (
@@ -196,42 +168,12 @@ export default function AccountListItem({
           </div>
         )}
 
-        {/* 余额和统计 */}
-        <div className="text-right flex-shrink-0">
-          <div className="font-semibold text-gray-900 text-lg mb-0.5">
-            {getCurrencySymbol(currencyType)}
-            <CountUp
-              start={
-                isInitialLoad
-                  ? 0
-                  : prevBalances[site.id]?.[currencyType] || 0
-              }
-              end={site.balance[currencyType]}
-              duration={
-                isInitialLoad
-                  ? UI_CONSTANTS.ANIMATION.SLOW_DURATION
-                  : UI_CONSTANTS.ANIMATION.FAST_DURATION
-              }
-              decimals={2}
-              preserveValue
-            />
-          </div>
-          <div
-            className={`text-xs ${site.todayConsumption[currencyType] > 0 ? "text-green-500" : "text-gray-400"}`}>
-            -{getCurrencySymbol(currencyType)}
-            <CountUp
-              start={isInitialLoad ? 0 : 0}
-              end={site.todayConsumption[currencyType]}
-              duration={
-                isInitialLoad
-                  ? UI_CONSTANTS.ANIMATION.SLOW_DURATION
-                  : UI_CONSTANTS.ANIMATION.FAST_DURATION
-              }
-              decimals={2}
-              preserveValue
-            />
-          </div>
-        </div>
+        <BalanceDisplay
+          site={site}
+          currencyType={currencyType}
+          isInitialLoad={isInitialLoad}
+          prevBalances={prevBalances}
+        />
       </div>
     </div>
   )
