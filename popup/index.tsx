@@ -3,7 +3,7 @@ import "./style.css"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import toast, { Toaster } from "react-hot-toast"
 
-import AccountList from "../components/AccountList"
+import AccountList from "../components/AccountList/AccountList"
 import ActionButtons from "../components/ActionButtons"
 import AddAccountDialog from "../components/AddAccountDialog"
 import BalanceSection from "../components/BalanceSection"
@@ -11,17 +11,9 @@ import EditAccountDialog from "../components/EditAccountDialog"
 import FirefoxAddAccountWarningDialog from "../components/FirefoxAddAccountWarningDialog"
 import HeaderSection from "../components/HeaderSection"
 import { UI_CONSTANTS } from "../constants/ui"
-import { useAccountData } from "../hooks/useAccountData"
 import { useAccountActions } from "../hooks/useAccountActions"
+import { useAccountData } from "../hooks/useAccountData"
 import { usePopupManager } from "../hooks/usePopupManager"
-import {
-  openFullManagerPage,
-  openKeysPage,
-  openModelsPage,
-  openSettingsPage,
-  openSidePanel,
-  openUsagePage
-} from "../utils/navigation"
 import { useSort } from "../hooks/useSort"
 import { useUserPreferences } from "../hooks/useUserPreferences"
 import { accountStorage } from "../services/accountStorage"
@@ -32,7 +24,14 @@ import {
   calculateTotalConsumption,
   getOppositeCurrency
 } from "../utils/formatters"
-
+import {
+  openFullManagerPage,
+  openKeysPage,
+  openModelsPage,
+  openSettingsPage,
+  openSidePanel,
+  openUsagePage
+} from "../utils/navigation"
 
 function IndexPopup({ inSidePanel = false }) {
   // 用户偏好设置管理
@@ -48,7 +47,9 @@ function IndexPopup({ inSidePanel = false }) {
     updateSortConfig
   } = useUserPreferences()
 
-  const [detectedAccount, setDetectedAccount] = useState<SiteAccount | null>(null)
+  const [detectedAccount, setDetectedAccount] = useState<SiteAccount | null>(
+    null
+  )
 
   // 核心数据管理
   const {
@@ -85,7 +86,6 @@ function IndexPopup({ inSidePanel = false }) {
     handleDeleteAccount,
     handleCopyUrl
   } = useAccountActions(loadAccountData)
-
 
   // 排序管理
   const {
@@ -213,17 +213,19 @@ function IndexPopup({ inSidePanel = false }) {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (tabs[0]?.url) {
         try {
-          const existingAccount = await accountStorage.checkUrlExists(tabs[0].url);
+          const existingAccount = await accountStorage.checkUrlExists(
+            tabs[0].url
+          )
           if (existingAccount) {
-            setDetectedAccount(existingAccount);
-            console.log('检测到已存在的账号:', existingAccount.site_name);
+            setDetectedAccount(existingAccount)
+            console.log("检测到已存在的账号:", existingAccount.site_name)
           }
         } catch (error) {
-          console.error('检测已存在账号时出错:', error);
+          console.error("检测已存在账号时出错:", error)
         }
       }
-    });
-  }, []);
+    })
+  }, [])
 
   return (
     <div
@@ -290,7 +292,9 @@ function IndexPopup({ inSidePanel = false }) {
         onClose={closeAddAccount}
         isCurrentSiteAdded={!!detectedAccount}
         onEditAccount={openEditAccount}
-        detectedAccount={displayData.find(acc => acc.id === detectedAccount?.id) ?? null}
+        detectedAccount={
+          displayData.find((acc) => acc.id === detectedAccount?.id) ?? null
+        }
       />
 
       {/* 编辑账号弹窗 */}

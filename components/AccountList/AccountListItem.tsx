@@ -1,7 +1,7 @@
 import AccountActionButtons from "~components/AccountActionButtons"
 
-import { useAccountListItem } from "../hooks/useAccountListItem"
-import type { DisplaySiteData } from "../types"
+import { useAccountListItem } from "../../hooks/useAccountListItem"
+import type { DisplaySiteData } from "../../types"
 import BalanceDisplay from "./BalanceDisplay"
 import SiteInfo from "./SiteInfo"
 

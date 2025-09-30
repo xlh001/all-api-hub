@@ -1,6 +1,6 @@
-import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "../constants/ui"
-import type { DisplaySiteData } from "../types"
-import Tooltip from "./Tooltip"
+import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "../../constants/ui"
+import type { DisplaySiteData } from "../../types"
+import Tooltip from "../Tooltip"
 
 interface SiteInfoProps {
   site: DisplaySiteData

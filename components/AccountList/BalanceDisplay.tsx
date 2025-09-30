@@ -1,8 +1,8 @@
 import CountUp from "react-countup"
 
-import { UI_CONSTANTS } from "../constants/ui"
-import type { DisplaySiteData } from "../types"
-import { getCurrencySymbol } from "../utils/formatters"
+import { UI_CONSTANTS } from "../../constants/ui"
+import type { DisplaySiteData } from "../../types"
+import { getCurrencySymbol } from "../../utils/formatters"
 
 interface BalanceDisplayProps {
   site: DisplaySiteData
@@ -22,9 +22,7 @@ export default function BalanceDisplay({
       <div className="font-semibold text-gray-900 text-lg mb-0.5">
         {getCurrencySymbol(currencyType)}
         <CountUp
-          start={
-            isInitialLoad ? 0 : prevBalances[site.id]?.[currencyType] || 0
-          }
+          start={isInitialLoad ? 0 : prevBalances[site.id]?.[currencyType] || 0}
           end={site.balance[currencyType]}
           duration={
             isInitialLoad
