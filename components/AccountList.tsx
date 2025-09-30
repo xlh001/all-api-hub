@@ -1,26 +1,14 @@
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react"
 import {
-  ArrowPathIcon,
-  ChartPieIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  CpuChipIcon,
-  DocumentDuplicateIcon,
-  EllipsisHorizontalIcon,
-  InboxIcon,
-  KeyIcon,
-  PencilIcon,
-  TrashIcon
+  InboxIcon
 } from "@heroicons/react/24/outline"
-import { useCallback, useEffect, useRef, useState } from "react"
-import CountUp from "react-countup"
+import { useState } from "react"
 
-import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "../constants/ui"
 import type { DisplaySiteData } from "../types"
-import { getCurrencySymbol } from "../utils/formatters"
+import AccountListItem from "./AccountListItem"
 import CopyKeyDialog from "./CopyKeyDialog"
 import DelAccountDialog from "./DelAccountDialog"
-import Tooltip from "./Tooltip"
 
 type SortField = "name" | "balance" | "consumption"
 type SortOrder = "asc" | "desc"
@@ -48,10 +36,10 @@ interface AccountListProps {
   onRefreshAccount?: (site: DisplaySiteData) => Promise<void>
   onCopyUrl?: (site: DisplaySiteData) => void
   onViewUsage?: (site: DisplaySiteData) => void
-  onViewModels?: (site: DisplaySiteData) => void
+  onViewModels?: () => void
   onEditAccount?: (site: DisplaySiteData) => void
   onDeleteAccount?: (site: DisplaySiteData) => void
-  onViewKeys?: (site: DisplaySiteData) => void
+  onViewKeys?: () => void
 }
 
 export default function AccountList({
@@ -73,66 +61,17 @@ export default function AccountList({
   onDeleteAccount,
   onViewKeys
 }: AccountListProps) {
-  const [hoveredSiteId, setHoveredSiteId] = useState<string | null>(null)
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [deleteDialogAccount, setDeleteDialogAccount] =
     useState<DisplaySiteData | null>(null)
   const [copyKeyDialogAccount, setCopyKeyDialogAccount] =
     useState<DisplaySiteData | null>(null)
 
-  // 防抖的 hover 处理
-  const handleMouseEnter = useCallback((siteId: string) => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-    hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredSiteId(siteId)
-    }, 50) // 100ms 防抖延迟
-  }, [])
-
-  const handleMouseLeave = useCallback(() => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-    hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredSiteId(null)
-    }, 0) // 不需要离开时的延迟
-  }, [])
-
-  // 清理定时器
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch (err) {
-      console.error("Failed to copy:", err)
-    }
+  const handleDeleteWithDialog = (site: DisplaySiteData) => {
+    setDeleteDialogAccount(site)
   }
 
-  const handleCopyUrl = (site: DisplaySiteData) => {
-    copyToClipboard(site.baseUrl)
-    onCopyUrl?.(site)
-  }
-
-  const handleCopyKey = (site: DisplaySiteData) => {
+  const handleCopyKeyWithDialog = (site: DisplaySiteData) => {
     setCopyKeyDialogAccount(site)
-  }
-
-  const handleRefreshAccount = async (site: DisplaySiteData) => {
-    if (onRefreshAccount) {
-      try {
-        await onRefreshAccount(site)
-      } catch (error) {
-        console.error("刷新账号失败:", error)
-      }
-    }
   }
   if (sites.length === 0) {
     return (
@@ -180,183 +119,23 @@ export default function AccountList({
 
       {/* 账号列表 */}
       {sites.map((site) => (
-        <div
+        <AccountListItem
           key={site.id}
-          className={`px-5 py-4 border-b border-gray-50 transition-colors relative group ${
-            site.id === detectedAccountId ? "bg-blue-50" : "hover:bg-gray-25"
-          }`}
-          onMouseEnter={() => handleMouseEnter(site.id)}
-          onMouseLeave={handleMouseLeave}>
-          <div className="flex items-center space-x-4">
-            {/* 站点信息 */}
-            <div className="flex items-center space-x-3 flex-1 min-w-0">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-0.5">
-                  {/* 站点状态指示器 */}
-                  <div
-                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      HEALTH_STATUS_MAP[site.healthStatus]?.color ||
-                      UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
-                    }`}></div>
-                  {site.id === detectedAccountId && (
-                    <Tooltip content="当前tab站点已经存在" position="top">
-                      <span className={`text-yellow-700`}>当前站点</span>
-                    </Tooltip>
-                  )}
-                  <div className="font-medium text-gray-900 text-sm truncate">
-                    <a
-                      href={site.baseUrl}
-                      target="_blank"
-                      rel="noopener noreferrer">
-                      {site.name}
-                    </a>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 truncate ml-4">
-                  {site.username}
-                </div>
-              </div>
-            </div>
-
-            {/* 按钮组 - 只在 hover 时显示 */}
-            {hoveredSiteId === site.id && (
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                {/* 刷新按钮 */}
-                <Tooltip content="刷新账号" position="top">
-                  <button
-                    onClick={() => handleRefreshAccount(site)}
-                    className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
-                    disabled={refreshingAccountId === site.id}>
-                    <ArrowPathIcon
-                      className={`w-4 h-4 text-gray-500 ${
-                        refreshingAccountId === site.id ? "animate-spin" : ""
-                      }`}
-                    />
-                  </button>
-                </Tooltip>
-
-                {/* 复制下拉菜单 */}
-                <Menu as="div" className="relative">
-                  <Tooltip content="复制" position="top">
-                    <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
-                      <DocumentDuplicateIcon className="w-4 h-4 text-gray-500" />
-                    </MenuButton>
-                  </Tooltip>
-                  <MenuItems
-                    anchor="bottom end"
-                    className="z-50 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
-                    <MenuItem>
-                      <button
-                        onClick={() => handleCopyUrl(site)}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2">
-                        <DocumentDuplicateIcon className="w-4 h-4" />
-                        <span>复制 URL</span>
-                      </button>
-                    </MenuItem>
-                    <MenuItem>
-                      <button
-                        onClick={() => handleCopyKey(site)}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2">
-                        <DocumentDuplicateIcon className="w-4 h-4" />
-                        <span>复制密钥</span>
-                      </button>
-                    </MenuItem>
-                    <hr />
-                    <MenuItem>
-                      <button
-                        onClick={() => onViewKeys?.(site)}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2">
-                        <KeyIcon className="w-4 h-4" />
-                        <span>管理密钥</span>
-                      </button>
-                    </MenuItem>
-                  </MenuItems>
-                </Menu>
-
-                {/* 更多下拉菜单 */}
-                <Menu as="div" className="relative">
-                  <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
-                    <EllipsisHorizontalIcon className="w-4 h-4 text-gray-500" />
-                  </MenuButton>
-                  <MenuItems
-                    anchor="bottom end"
-                    className="z-50 w-24 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
-                    <MenuItem>
-                      <button
-                        onClick={() => onViewModels?.(site)}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2">
-                        <CpuChipIcon className="w-4 h-4" />
-                        <span>模型</span>
-                      </button>
-                    </MenuItem>
-                    <MenuItem>
-                      <button
-                        onClick={() => onViewUsage?.(site)}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2">
-                        <ChartPieIcon className="w-4 h-4" />
-                        <span>用量</span>
-                      </button>
-                    </MenuItem>
-                    <hr />
-                    <MenuItem>
-                      <button
-                        onClick={() => onEditAccount?.(site)}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:text-gray-900 data-focus:bg-gray-50 flex items-center space-x-2">
-                        <PencilIcon className="w-4 h-4" />
-                        <span>编辑</span>
-                      </button>
-                    </MenuItem>
-                    <MenuItem>
-                      <button
-                        onClick={() => setDeleteDialogAccount(site)}
-                        className="w-full px-3 py-2 text-left text-sm text-red-600 hover:text-red-700 data-focus:bg-red-50 flex items-center space-x-2">
-                        <TrashIcon className="w-4 h-4" />
-                        <span>删除</span>
-                      </button>
-                    </MenuItem>
-                  </MenuItems>
-                </Menu>
-              </div>
-            )}
-
-            {/* 余额和统计 */}
-            <div className="text-right flex-shrink-0">
-              <div className="font-semibold text-gray-900 text-lg mb-0.5">
-                {getCurrencySymbol(currencyType)}
-                <CountUp
-                  start={
-                    isInitialLoad
-                      ? 0
-                      : prevBalances[site.id]?.[currencyType] || 0
-                  }
-                  end={site.balance[currencyType]}
-                  duration={
-                    isInitialLoad
-                      ? UI_CONSTANTS.ANIMATION.SLOW_DURATION
-                      : UI_CONSTANTS.ANIMATION.FAST_DURATION
-                  }
-                  decimals={2}
-                  preserveValue
-                />
-              </div>
-              <div
-                className={`text-xs ${site.todayConsumption[currencyType] > 0 ? "text-green-500" : "text-gray-400"}`}>
-                -{getCurrencySymbol(currencyType)}
-                <CountUp
-                  start={isInitialLoad ? 0 : 0}
-                  end={site.todayConsumption[currencyType]}
-                  duration={
-                    isInitialLoad
-                      ? UI_CONSTANTS.ANIMATION.SLOW_DURATION
-                      : UI_CONSTANTS.ANIMATION.FAST_DURATION
-                  }
-                  decimals={2}
-                  preserveValue
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+          site={site}
+          currencyType={currencyType}
+          isInitialLoad={isInitialLoad}
+          prevBalances={prevBalances}
+          refreshingAccountId={refreshingAccountId}
+          detectedAccountId={detectedAccountId}
+          onRefreshAccount={onRefreshAccount}
+          onCopyUrl={onCopyUrl}
+          onViewKeys={onViewKeys}
+          onViewModels={onViewModels}
+          onViewUsage={onViewUsage}
+          onEditAccount={onEditAccount}
+          onDeleteAccount={() => handleDeleteWithDialog(site)}
+          onCopyKey={() => handleCopyKeyWithDialog(site)}
+        />
       ))}
 
       {/* 删除账号确认对话框 */}
@@ -364,7 +143,10 @@ export default function AccountList({
         isOpen={deleteDialogAccount !== null}
         onClose={() => setDeleteDialogAccount(null)}
         account={deleteDialogAccount}
-        onDeleted={() => onDeleteAccount?.(deleteDialogAccount!)}
+        onDeleted={() => {
+          onDeleteAccount?.(deleteDialogAccount!)
+          setDeleteDialogAccount(null)
+        }}
       />
 
       {/* 复制密钥对话框 */}
