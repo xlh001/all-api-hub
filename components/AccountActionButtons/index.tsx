@@ -12,7 +12,7 @@ export interface ActionButtonsProps {
   onRefreshAccount: (site: DisplaySiteData) => Promise<void>
   onCopyUrl: (site: DisplaySiteData) => void
   onViewUsage: (site: DisplaySiteData) => void
-  onViewModels: (site: DisplaySiteData) => void
+  onViewModels: (siteId: string) => void
   onEditAccount: (site: DisplaySiteData) => void
   onDeleteAccount: (site: DisplaySiteData) => void
   onViewKeys: (site: DisplaySiteData) => void

@@ -15,7 +15,7 @@ import { AccountActionMenuItem } from "./AccountActionMenuItem"
 interface MoreActionsDropdownProps {
   site: DisplaySiteData
   onViewUsage: (site: DisplaySiteData) => void
-  onViewModels: (site: DisplaySiteData) => void
+  onViewModels: (siteId: string) => void
   onEditAccount: (site: DisplaySiteData) => void
   onDeleteAccount: (site: DisplaySiteData) => void
 }
@@ -36,7 +36,7 @@ export const MoreActionsDropdown: React.FC<MoreActionsDropdownProps> = ({
         anchor="bottom end"
         className="z-50 w-24 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
         <AccountActionMenuItem
-          onClick={() => onViewModels(site)}
+          onClick={() => onViewModels(site.id)}
           icon={CpuChipIcon}
           label="模型"
         />
