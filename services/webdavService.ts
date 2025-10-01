@@ -13,6 +13,7 @@ function buildAuthHeader(username: string, password: string) {
 
 const CONFIG_VERSION = "1-0"
 const PROGRAM_NAME = "all-api-hub"
+const BACKUP_FOLDER_NAME = `${PROGRAM_NAME}-backup`
 
 function ensureFilename(url: string, version: string = CONFIG_VERSION) {
   try {
@@ -21,7 +22,7 @@ function ensureFilename(url: string, version: string = CONFIG_VERSION) {
     const endsWithSlash = /\/$/.test(url)
     if (hasJson) return url
     const sep = endsWithSlash ? "" : "/"
-    return `${url}${sep}${PROGRAM_NAME}-backup/${PROGRAM_NAME}-${version}.json`
+    return `${url}${sep}${BACKUP_FOLDER_NAME}/${PROGRAM_NAME}-${version}.json`
   } catch {
     return url
   }
@@ -32,6 +33,59 @@ export function resolveTargetUrl(
   version: string = CONFIG_VERSION
 ) {
   return ensureFilename(url, version)
+}
+
+function getBackupDirUrl(targetUrl: string) {
+  // derive the .../all-api-hub-backup/ directory from final target URL
+  const marker = `${BACKUP_FOLDER_NAME}/`
+  const idx = targetUrl.indexOf(marker)
+  if (idx === -1) {
+    // fallback: use dirname of target
+    const cut = targetUrl.lastIndexOf("/")
+    return cut > 0 ? targetUrl.slice(0, cut) : targetUrl
+  }
+  return targetUrl.slice(0, idx + marker.length - 1) // include trailing slash
+}
+
+async function ensureBackupDirectory(
+  targetUrl: string,
+  username: string,
+  password: string
+) {
+  const dirUrl = getBackupDirUrl(targetUrl)
+  // Some servers require MKCOL on the exact collection URL
+  // Try MKCOL; 201 Created -> ok, 405/301/302 -> already exists/redirect, 409 -> parent not found
+  const res = await fetch(dirUrl, {
+    method: "MKCOL",
+    headers: {
+      Authorization: buildAuthHeader(username, password)
+    }
+  })
+  if (
+    res.status === 201 ||
+    res.status === 405 ||
+    (res.status >= 200 && res.status < 300)
+  ) {
+    return true
+  }
+  // Some servers respond 409 if parent exists but trailing slash missing; try again with slash
+  if (!/\/$/.test(dirUrl)) {
+    const res2 = await fetch(dirUrl + "/", {
+      method: "MKCOL",
+      headers: {
+        Authorization: buildAuthHeader(username, password)
+      }
+    })
+    if (
+      res2.status === 201 ||
+      res2.status === 405 ||
+      (res2.status >= 200 && res2.status < 300)
+    ) {
+      return true
+    }
+  }
+  // If still failing but directory may already exist, a HEAD could verify; we keep permissive to avoid blocking
+  return true
 }
 
 async function getConfig(): Promise<WebdavConfig> {
@@ -93,6 +147,9 @@ export async function uploadBackup(
     throw new Error("请先完整填写 WebDAV URL、用户名和密码")
   }
   const targetUrl = ensureFilename(cfg.webdavUrl)
+
+  // Ensure backup directory exists when using folder-style input
+  await ensureBackupDirectory(targetUrl, cfg.webdavUsername, cfg.webdavPassword)
 
   const res = await fetch(targetUrl, {
     method: "PUT",
