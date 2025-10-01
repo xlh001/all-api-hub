@@ -5,11 +5,19 @@ import {
   InformationCircleIcon
 } from "@heroicons/react/24/outline"
 
+import { getHomepage, getPkgVersion, getRepository } from "~/utils/packageMeta"
+
 import iconImage from "../../assets/icon.png"
+import FeatureList from "../../components/Common/FeatureList"
+import LinkCard from "../../components/Common/LinkCard"
 import packageJson from "../../package.json"
 
 export default function About() {
   const version = packageJson.version
+
+  // 从工具函数获取元数据
+  const homepage = getHomepage()
+  const repository = getRepository()
 
   const features = [
     "自动识别中转站点，自动创建系统访问 token",
@@ -17,26 +25,39 @@ export default function About() {
     "账号的余额、使用日志进行查看",
     "密钥(key)查看与管理",
     "站点支持模型信息和渠道查看",
+    "WebDAV 数据备份",
     "插件无需联网，保护隐私安全"
   ]
 
-  const futureFeatures = [
-    "模型降智测试",
-    "WebDAV 数据备份",
-    "更多API站点支持",
-    "高级统计分析功能"
-  ]
+  const futureFeatures = []
 
+  // 技术栈版本动态化
   const techStack = [
-    { name: "Plasmo", version: "0.90.5", description: "浏览器扩展开发框架" },
-    { name: "React", version: "18.2.0", description: "用户界面库" },
+    {
+      name: "Plasmo",
+      version: getPkgVersion("plasmo"),
+      description: "浏览器扩展开发框架"
+    },
+    {
+      name: "React",
+      version: getPkgVersion("react"),
+      description: "用户界面库"
+    },
     {
       name: "TypeScript",
-      version: "5.3.3",
+      version: getPkgVersion("typescript"),
       description: "类型安全的JavaScript"
     },
-    { name: "Tailwind CSS", version: "3.4.17", description: "原子化CSS框架" },
-    { name: "Headless UI", version: "2.2.4", description: "无样式UI组件" }
+    {
+      name: "Tailwind CSS",
+      version: getPkgVersion("tailwindcss"),
+      description: "原子化CSS框架"
+    },
+    {
+      name: "Headless UI",
+      version: getPkgVersion("@headlessui/react"),
+      description: "无样式UI组件"
+    }
   ]
 
   return (
@@ -85,44 +106,24 @@ export default function About() {
         <section>
           <h2 className="text-lg font-medium text-gray-900 mb-4">项目链接</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <div className="flex items-start space-x-4">
-                <CodeBracketIcon className="w-6 h-6 text-gray-900 mt-1 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    GitHub 仓库
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    查看源代码、提交问题或参与项目开发
-                  </p>
-                  <a
-                    href="https://github.com/qixing-jk/all-api-hub"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors">
-                    去点个Star
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <div className="flex items-start space-x-4">
-                <GlobeAltIcon className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-2">项目官网</h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    查看详细文档、使用指南和更多信息
-                  </p>
-                  <a
-                    href="https://qixing-jk.github.io/all-api-hub/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-                    访问官网
-                  </a>
-                </div>
-              </div>
-            </div>
+            <LinkCard
+              Icon={CodeBracketIcon}
+              title="GitHub 仓库"
+              description="查看源代码、提交问题或参与项目开发"
+              href={repository}
+              buttonText="去点个Star"
+              buttonClass="bg-gray-900 text-white hover:bg-gray-800"
+              iconClass="text-gray-900"
+            />
+            <LinkCard
+              Icon={GlobeAltIcon}
+              title="项目官网"
+              description="查看详细文档、使用指南和更多信息"
+              href={homepage}
+              buttonText="访问官网"
+              buttonClass="bg-blue-600 text-white hover:bg-blue-700"
+              iconClass="text-blue-600"
+            />
           </div>
         </section>
 
@@ -131,44 +132,10 @@ export default function About() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">功能特性</h2>
           <div className="space-y-6">
             {/* 主要功能 */}
-            <div>
-              <h3 className="text-base font-medium text-gray-800 mb-3 flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                已实现功能
-              </h3>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <ul className="space-y-2">
-                  {features.map((feature, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start space-x-2 text-sm text-green-800">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+            <FeatureList title="已实现功能" items={features} color="green" />
 
             {/* 未来功能 */}
-            <div>
-              <h3 className="text-base font-medium text-gray-800 mb-3 flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                即将支持
-              </h3>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <ul className="space-y-2">
-                  {futureFeatures.map((feature, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start space-x-2 text-sm text-blue-800">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+            <FeatureList title="即将支持" items={futureFeatures} color="blue" />
           </div>
         </section>
 
