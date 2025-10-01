@@ -5,6 +5,10 @@ export interface FeatureListProps {
 }
 
 const FeatureList = ({ title, items, color }: FeatureListProps) => {
+  if (items.length === 0) {
+    return null
+  }
+
   const palette =
     color === "green"
       ? {
@@ -29,8 +33,11 @@ const FeatureList = ({ title, items, color }: FeatureListProps) => {
       <div className={`rounded-lg p-4 border ${palette.box}`}>
         <ul className="space-y-2">
           {items.map((feature, index) => (
-            <li key={index} className={`flex items-start space-x-2 text-sm ${palette.text}`}>
-              <div className={`w-1.5 h-1.5 ${palette.bullet} rounded-full mt-2 flex-shrink-0`}></div>
+            <li
+              key={index}
+              className={`flex items-start space-x-2 text-sm ${palette.text}`}>
+              <div
+                className={`w-1.5 h-1.5 ${palette.bullet} rounded-full mt-2 flex-shrink-0`}></div>
               <span>{feature}</span>
             </li>
           ))}
