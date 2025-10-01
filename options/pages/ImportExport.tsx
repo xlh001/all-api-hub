@@ -9,6 +9,7 @@ import {
 import { useState } from "react"
 import toast from "react-hot-toast"
 
+import WebDAVSettings from "~/components/WebDAVSettings"
 import { accountStorage } from "~/services/accountStorage"
 import { userPreferences } from "~/services/userPreferences"
 
@@ -395,6 +396,11 @@ export default function ImportExport() {
             </div>
           </div>
         </section>
+      </div>
+
+      {/* WebDAV 备份/同步 */}
+      <div className="mt-8">
+        <WebDAVSettings />
       </div>
 
       {/* 重要提示 */}

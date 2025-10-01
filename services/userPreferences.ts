@@ -19,6 +19,11 @@ export interface UserPreferences {
   refreshOnOpen: boolean // 打开插件时自动刷新
   showHealthStatus: boolean // 是否显示健康状态
 
+  // WebDAV 备份/同步配置
+  webdavUrl: string // 远程备份文件完整URL（例如：https://dav.example.com/backups/all-api-hub.json）
+  webdavUsername: string // 用户名
+  webdavPassword: string // 密码
+
   // 其他配置可在此扩展
   lastUpdated: number // 最后更新时间
 }
@@ -38,6 +43,9 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   refreshInterval: 360, // 默认360秒刷新间隔
   refreshOnOpen: true, // 默认打开插件时自动刷新
   showHealthStatus: true, // 默认显示健康状态
+  webdavUrl: "",
+  webdavUsername: "",
+  webdavPassword: "",
   lastUpdated: Date.now()
 }
 
@@ -150,6 +158,17 @@ class UserPreferencesService {
    */
   async updateShowHealthStatus(showHealthStatus: boolean): Promise<boolean> {
     return this.savePreferences({ showHealthStatus })
+  }
+
+  /**
+   * 更新 WebDAV 设置
+   */
+  async updateWebdavSettings(settings: {
+    webdavUrl?: string
+    webdavUsername?: string
+    webdavPassword?: string
+  }): Promise<boolean> {
+    return this.savePreferences(settings)
   }
 
   /**
