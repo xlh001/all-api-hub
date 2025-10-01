@@ -79,6 +79,10 @@
     <img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="height:auto;">
     <figcaption style="text-align:center;">密钥列表</figcaption>
   </figure>
+  <figure>
+    <img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="height:auto;">
+    <figcaption style="text-align:center;">账户管理</figcaption>
+  </figure>
 
 ## 🚀 安装使用
 
