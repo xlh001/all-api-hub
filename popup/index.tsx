@@ -3,7 +3,11 @@ import "./style.css"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import toast, { Toaster } from "react-hot-toast"
 
-import { UI_CONSTANTS } from "~/constants/ui"
+import {
+  DATA_TYPE_BALANCE,
+  DATA_TYPE_CONSUMPTION,
+  UI_CONSTANTS
+} from "~/constants/ui"
 import { useAccountActions } from "~/hooks/useAccountActions"
 import { useAccountData } from "~/hooks/useAccountData"
 import { usePopupManager } from "~/hooks/usePopupManager"
@@ -130,7 +134,7 @@ function IndexPopup({ inSidePanel = false }) {
 
   const handleTabChange = useCallback(
     async (index: number) => {
-      const newTab = index === 0 ? "consumption" : "balance"
+      const newTab = index === 0 ? DATA_TYPE_CONSUMPTION : DATA_TYPE_BALANCE
       await updateActiveTab(newTab)
     },
     [updateActiveTab]
