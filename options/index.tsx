@@ -5,10 +5,13 @@ import {
   CogIcon,
   CpuChipIcon,
   InformationCircleIcon,
-  KeyIcon
+  KeyIcon,
+  UserIcon
 } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
 import { Toaster } from "react-hot-toast"
+
+import AccountManagement from "~/options/pages/AccountManagement"
 
 import iconImage from "../assets/icon.png"
 import About from "./pages/About"
@@ -33,6 +36,12 @@ const menuItems: MenuItem[] = [
     name: "基本设置",
     icon: CogIcon,
     component: BasicSettings
+  },
+  {
+    id: "account",
+    name: "账户管理",
+    icon: UserIcon,
+    component: AccountManagement
   },
   {
     id: "models",
