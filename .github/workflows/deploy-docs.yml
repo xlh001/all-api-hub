@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   push:
     paths: # <<<<<< 新增：路径过滤
-      - 'docs/docs/**'          # 匹配 /docs/docs/ 目录下所有文档内容和配置 (包括 .vuepress/、config.js 等)
-      - 'docs/package.json'     # 匹配 /docs/package.json 文件 (因为依赖定义在这里)
-      - 'docs/pnpm-lock.json'   # 匹配 /docs/pnpm-lock.json 文件 (因为依赖版本锁定在这里)
+      - "docs/docs/**" # 匹配 /docs/docs/ 目录下所有文档内容和配置 (包括 .vuepress/、config.js 等)
+      - "docs/package.json" # 匹配 /docs/package.json 文件 (因为依赖定义在这里)
+      - "docs/pnpm-lock.json" # 匹配 /docs/pnpm-lock.json 文件 (因为依赖版本锁定在这里)
 
 permissions:
   contents: write

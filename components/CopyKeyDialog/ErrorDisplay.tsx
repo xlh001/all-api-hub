@@ -1,8 +1,8 @@
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 
 interface ErrorDisplayProps {
-  error: string;
-  onRetry: () => void;
+  error: string
+  onRetry: () => void
 }
 
 export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
@@ -15,12 +15,11 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
           <p className="text-sm text-red-700 mt-1">{error}</p>
           <button
             onClick={onRetry}
-            className="mt-3 px-3 py-1.5 bg-red-100 text-red-800 text-xs rounded-lg hover:bg-red-200 transition-colors"
-          >
+            className="mt-3 px-3 py-1.5 bg-red-100 text-red-800 text-xs rounded-lg hover:bg-red-200 transition-colors">
             重试
           </button>
         </div>
       </div>
     </div>
-  );
+  )
 }

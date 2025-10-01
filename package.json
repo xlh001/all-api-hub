@@ -12,7 +12,8 @@
     "build:all": "pnpm run build && pnpm run build:firefox",
     "package": "plasmo package",
     "package:firefox": "plasmo package --target=firefox-mv3",
-    "package:all": "pnpm run package && pnpm run package:firefox"
+    "package:all": "pnpm run package && pnpm run package:firefox",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
