@@ -21,7 +21,7 @@
     "@lobehub/icons": "^2.17.0",
     "@plasmohq/storage": "^1.15.0",
     "autoprefixer": "^10.4.21",
-    "axios": "^1.10.0",
+    "axios": "^1.12.0",
     "dayjs": "^1.11.13",
     "lodash-es": "^4.17.21",
     "plasmo": "0.90.5",

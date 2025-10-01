@@ -24,8 +24,8 @@ importers:
         specifier: ^10.4.21
         version: 10.4.21(postcss@8.5.6)
       axios:
-        specifier: ^1.10.0
-        version: 1.10.0
+        specifier: ^1.12.0
+        version: 1.12.2
       dayjs:
         specifier: ^1.11.13
         version: 1.11.13
@@ -2423,8 +2423,8 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
-  axios@1.10.0:
-    resolution: {integrity: sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==}
+  axios@1.12.2:
+    resolution: {integrity: sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw==}
 
   axobject-query@3.2.4:
     resolution: {integrity: sha512-aPTElBrbifBU1krmZxGZOlBkslORe7Ll7+BDnI50Wy4LgOt69luMgevkDfTq1O/ZgprooPCtWpjCwKSZw/iZ4A==}
@@ -8415,7 +8415,7 @@ snapshots:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
 
-  axios@1.10.0:
+  axios@1.12.2:
     dependencies:
       follow-redirects: 1.15.9
       form-data: 4.0.4
