@@ -1,10 +1,12 @@
 import { Storage } from "@plasmohq/storage"
 
+import type { CurrencyType } from "~/types"
+
 // 用户偏好设置类型定义
 export interface UserPreferences {
   // BalanceSection 相关配置
   activeTab: "consumption" | "balance" // 金额标签页状态
-  currencyType: "USD" | "CNY" // 金额单位
+  currencyType: CurrencyType // 金额单位
 
   // AccountList 相关配置
   sortField: "name" | "balance" | "consumption" // 排序字段
@@ -97,7 +99,7 @@ class UserPreferencesService {
   /**
    * 更新货币类型
    */
-  async updateCurrencyType(currencyType: "USD" | "CNY"): Promise<boolean> {
+  async updateCurrencyType(currencyType: CurrencyType): Promise<boolean> {
     return this.savePreferences({ currencyType })
   }
 
@@ -286,7 +288,7 @@ export const UserPreferencesUtils = {
   /**
    * 获取货币类型的显示符号
    */
-  getCurrencySymbol(currency: "USD" | "CNY"): string {
+  getCurrencySymbol(currency: CurrencyType): string {
     return currency === "USD" ? "$" : "¥"
   },
 

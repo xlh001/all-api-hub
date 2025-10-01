@@ -52,15 +52,17 @@ export interface ApiResponse<T = any> {
 }
 
 // 用于排序的字段类型
-export type SortField =
-  | "site_name"
-  | "quota"
-  | "today_quota_consumption"
-  | "last_sync_time"
+export type SortField = "name" | "balance" | "consumption"
 export type SortOrder = "asc" | "desc"
 
 // 货币类型
 export type CurrencyType = "USD" | "CNY"
+
+export type CurrencyAmount = { USD: number; CNY: number }
+
+export type CurrencyAmountMap = { [id: string]: CurrencyAmount }
+
+export type TokenUsage = { upload: number; download: number }
 
 // 展示用的站点数据 (兼容当前 UI)
 export interface DisplaySiteData {
@@ -68,9 +70,9 @@ export interface DisplaySiteData {
   icon: string
   name: string
   username: string
-  balance: { USD: number; CNY: number }
-  todayConsumption: { USD: number; CNY: number }
-  todayTokens: { upload: number; download: number }
+  balance: CurrencyAmount
+  todayConsumption: CurrencyAmount
+  todayTokens: TokenUsage
   healthStatus?: SiteHealthStatus // 可选的健康状态
   baseUrl: string // 站点 URL，用于复制功能
   token: string // 访问令牌，用于复制功能

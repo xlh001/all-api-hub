@@ -1,14 +1,14 @@
 import CountUp from "react-countup"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import type { DisplaySiteData } from "~/types"
+import type { CurrencyAmountMap, CurrencyType, DisplaySiteData } from "~/types"
 import { getCurrencySymbol } from "~/utils/formatters"
 
 interface BalanceDisplayProps {
   site: DisplaySiteData
-  currencyType: "USD" | "CNY"
+  currencyType: CurrencyType
   isInitialLoad: boolean
-  prevBalances: { [id: string]: { USD: number; CNY: number } }
+  prevBalances: CurrencyAmountMap
 }
 
 export default function BalanceDisplay({

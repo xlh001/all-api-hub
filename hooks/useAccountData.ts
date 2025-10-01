@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from "react"
 
 import { accountStorage } from "~/services/accountStorage"
-import type { AccountStats, DisplaySiteData, SiteAccount } from "~/types"
+import type {
+  AccountStats,
+  CurrencyAmount,
+  CurrencyAmountMap,
+  DisplaySiteData,
+  SiteAccount
+} from "~/types"
 
 interface UseAccountDataResult {
   // 数据状态
@@ -15,8 +21,8 @@ interface UseAccountDataResult {
   isRefreshing: boolean
 
   // 动画相关状态
-  prevTotalConsumption: { USD: number; CNY: number }
-  prevBalances: { [id: string]: { USD: number; CNY: number } }
+  prevTotalConsumption: CurrencyAmount
+  prevBalances: CurrencyAmountMap
 
   // 操作函数
   loadAccountData: () => Promise<void>
@@ -46,7 +52,7 @@ export const useAccountData = (): UseAccountDataResult => {
     CNY: 0
   })
   const [prevBalances, setPrevBalances] = useState<{
-    [id: string]: { USD: number; CNY: number }
+    [id: string]: CurrencyAmount
   }>({})
 
   // 加载账号数据
@@ -57,7 +63,7 @@ export const useAccountData = (): UseAccountDataResult => {
       const displaySiteData = accountStorage.convertToDisplayData(allAccounts)
 
       // 计算新的余额数据
-      const newBalances: { [id: string]: { USD: number; CNY: number } } = {}
+      const newBalances: CurrencyAmountMap = {}
       displaySiteData.forEach((site) => {
         newBalances[site.id] = {
           USD: site.balance.USD,

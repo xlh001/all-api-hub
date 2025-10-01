@@ -3,17 +3,18 @@ import React from "react"
 import CountUp from "react-countup"
 
 import { UI_CONSTANTS } from "~/constants/ui"
+import type { CurrencyAmount, CurrencyType } from "~/types"
 import { getCurrencySymbol } from "~/utils/formatters"
 
 interface BalanceTabsProps {
   activeTab: "consumption" | "balance"
   onTabChange: (index: number) => void
-  currencyType: "USD" | "CNY"
+  currencyType: CurrencyType
   onCurrencyToggle: () => void
-  totalConsumption: { USD: number; CNY: number }
-  totalBalance: { USD: number; CNY: number }
+  totalConsumption: CurrencyAmount
+  totalBalance: CurrencyAmount
   isInitialLoad: boolean
-  prevTotalConsumption: { USD: number; CNY: number }
+  prevTotalConsumption: CurrencyAmount
 }
 
 export const BalanceTabs: React.FC<BalanceTabsProps> = ({

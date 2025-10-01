@@ -5,19 +5,22 @@ import {
 } from "@heroicons/react/24/outline"
 import { useState } from "react"
 
-import type { DisplaySiteData } from "~/types"
+import type {
+  CurrencyAmountMap,
+  CurrencyType,
+  DisplaySiteData,
+  SortField,
+  SortOrder
+} from "~/types"
 
 import CopyKeyDialog from "../CopyKeyDialog"
 import DelAccountDialog from "../DelAccountDialog"
 import AccountListItem from "./AccountListItem"
 
-type SortField = "name" | "balance" | "consumption"
-type SortOrder = "asc" | "desc"
-
 interface AccountListProps {
   // 数据
   sites: DisplaySiteData[]
-  currencyType: "USD" | "CNY"
+  currencyType: CurrencyType
 
   // 排序状态
   sortField: SortField
@@ -25,7 +28,7 @@ interface AccountListProps {
 
   // 动画相关
   isInitialLoad: boolean
-  prevBalances: { [id: string]: { USD: number; CNY: number } }
+  prevBalances: CurrencyAmountMap
 
   // 刷新状态
   refreshingAccountId?: string | null

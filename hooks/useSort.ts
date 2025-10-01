@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import type { DisplaySiteData } from "~/types"
-import { createSortComparator } from "~/utils/formatters"
+import type { CurrencyType, DisplaySiteData } from "~/types"
 
 type SortField = "name" | "balance" | "consumption"
 type SortOrder = "asc" | "desc"
@@ -16,7 +15,7 @@ interface UseSortResult {
 
 export const useSort = (
   data: DisplaySiteData[],
-  currencyType: "USD" | "CNY",
+  currencyType: CurrencyType,
   initialSortField?: SortField,
   initialSortOrder?: SortOrder,
   onSortChange?: (field: SortField, order: SortOrder) => void,

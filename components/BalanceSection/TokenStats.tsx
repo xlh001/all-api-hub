@@ -1,12 +1,13 @@
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline"
 import React from "react"
 
+import type { TokenUsage } from "~/types"
 import { formatTokenCount } from "~/utils/formatters"
 
 import Tooltip from "../Tooltip"
 
 interface TokenStatsProps {
-  todayTokens: { upload: number; download: number }
+  todayTokens: TokenUsage
 }
 
 export const TokenStats: React.FC<TokenStatsProps> = ({ todayTokens }) => {

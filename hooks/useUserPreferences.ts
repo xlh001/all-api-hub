@@ -4,6 +4,7 @@ import {
   userPreferences,
   type UserPreferences
 } from "~/services/userPreferences"
+import type { CurrencyType } from "~/types"
 
 /**
  * 用户偏好设置管理Hook
@@ -51,7 +52,7 @@ export function useUserPreferences() {
 
   // 更新货币类型
   const updateCurrencyType = useCallback(
-    async (currencyType: "USD" | "CNY") => {
+    async (currencyType: CurrencyType) => {
       try {
         const success = await userPreferences.updateCurrencyType(currencyType)
         if (success && preferences) {

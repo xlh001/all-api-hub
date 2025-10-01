@@ -1,14 +1,10 @@
 import { Switch } from "@headlessui/react"
-import {
-  ArrowPathIcon,
-  CogIcon,
-  EyeIcon,
-  GlobeAltIcon
-} from "@heroicons/react/24/outline"
+import { CogIcon, EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
 import { useUserPreferences } from "~/hooks/useUserPreferences"
+import type { CurrencyType } from "~/types"
 
 export default function BasicSettings() {
   const {
@@ -39,7 +35,7 @@ export default function BasicSettings() {
     setIntervalInput(refreshInterval.toString())
   }, [refreshInterval])
 
-  const handleCurrencyChange = async (currency: "USD" | "CNY") => {
+  const handleCurrencyChange = async (currency: CurrencyType) => {
     const success = await updateCurrencyType(currency)
     if (success) {
       toast.success(

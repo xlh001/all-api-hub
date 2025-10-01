@@ -1,15 +1,15 @@
 import AccountActionButtons from "~/components/AccountActionButtons"
 import { useAccountListItem } from "~/hooks/useAccountListItem"
-import type { DisplaySiteData } from "~/types"
+import type { CurrencyAmountMap, CurrencyType, DisplaySiteData } from "~/types"
 
 import BalanceDisplay from "./BalanceDisplay"
 import SiteInfo from "./SiteInfo"
 
 interface AccountListItemProps {
   site: DisplaySiteData
-  currencyType: "USD" | "CNY"
+  currencyType: CurrencyType
   isInitialLoad: boolean
-  prevBalances: { [id: string]: { USD: number; CNY: number } }
+  prevBalances: CurrencyAmountMap
   refreshingAccountId?: string | null
   detectedAccountId?: string | null
   onRefreshAccount?: (site: DisplaySiteData) => Promise<void>

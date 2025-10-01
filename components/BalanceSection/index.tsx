@@ -1,23 +1,25 @@
 import React from "react"
 
+import type { CurrencyAmount, CurrencyType, TokenUsage } from "~/types"
+
 import { BalanceTabs } from "./BalanceTabs"
 import { TokenStats } from "./TokenStats"
 import { UpdateTimeAndWarning } from "./UpdateTimeAndWarning"
 
 interface BalanceSectionProps {
   // 金额数据
-  totalConsumption: { USD: number; CNY: number }
-  totalBalance: { USD: number; CNY: number }
-  todayTokens: { upload: number; download: number }
+  totalConsumption: CurrencyAmount
+  totalBalance: CurrencyAmount
+  todayTokens: TokenUsage
 
   // 状态
-  currencyType: "USD" | "CNY"
+  currencyType: CurrencyType
   activeTab: "consumption" | "balance"
   isInitialLoad: boolean
   lastUpdateTime: Date
 
   // 动画相关
-  prevTotalConsumption: { USD: number; CNY: number }
+  prevTotalConsumption: CurrencyAmount
 
   // 显示当前站点是否已添加
   detectedAccountName?: string

@@ -3,6 +3,7 @@
  */
 
 import type { ModelPricing } from "~/services/apiService"
+import type { CurrencyType } from "~/types"
 
 export interface CalculatedPrice {
   inputUSD: number // 每1M token输入价格（美元）
@@ -61,7 +62,7 @@ export const calculateModelPrice = (
  */
 export const formatPrice = (
   price: number,
-  currency: "USD" | "CNY" = "USD",
+  currency: CurrencyType = "USD",
   precision: number = 4
 ): string => {
   const symbol = currency === "USD" ? "$" : "¥"
@@ -80,7 +81,7 @@ export const formatPrice = (
  */
 export const formatPriceCompact = (
   price: number,
-  currency: "USD" | "CNY" = "USD"
+  currency: CurrencyType = "USD"
 ): string => {
   const symbol = currency === "USD" ? "$" : "¥"
 
@@ -101,7 +102,7 @@ export const formatPriceCompact = (
 export const formatPriceRange = (
   inputPrice: number,
   outputPrice: number,
-  currency: "USD" | "CNY" = "USD",
+  currency: CurrencyType = "USD",
   precision: number = 4
 ): string => {
   const formattedInput = formatPrice(inputPrice, currency, precision)

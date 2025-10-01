@@ -4,7 +4,12 @@ import relativeTime from "dayjs/plugin/relativeTime"
 import "dayjs/locale/zh-cn"
 
 import { CURRENCY_SYMBOLS, UI_CONSTANTS } from "~/constants/ui"
-import type { AccountStats, ApiToken, DisplaySiteData } from "~/types"
+import type {
+  AccountStats,
+  ApiToken,
+  CurrencyType,
+  DisplaySiteData
+} from "~/types"
 
 // 初始化 dayjs
 dayjs.extend(relativeTime)
@@ -92,14 +97,14 @@ export const calculateTotalBalance = (displayData: DisplaySiteData[]) => {
 /**
  * 获取货币符号
  */
-export const getCurrencySymbol = (currencyType: "USD" | "CNY"): string => {
+export const getCurrencySymbol = (currencyType: CurrencyType): string => {
   return CURRENCY_SYMBOLS[currencyType]
 }
 
 /**
  * 获取货币显示名称
  */
-export const getCurrencyDisplayName = (currencyType: "USD" | "CNY"): string => {
+export const getCurrencyDisplayName = (currencyType: CurrencyType): string => {
   return currencyType === "USD" ? "美元" : "人民币"
 }
 
@@ -107,8 +112,8 @@ export const getCurrencyDisplayName = (currencyType: "USD" | "CNY"): string => {
  * 获取切换后的货币类型
  */
 export const getOppositeCurrency = (
-  currencyType: "USD" | "CNY"
-): "USD" | "CNY" => {
+  currencyType: CurrencyType
+): CurrencyType => {
   return currencyType === "USD" ? "CNY" : "USD"
 }
 
