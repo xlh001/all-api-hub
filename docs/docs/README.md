@@ -36,6 +36,8 @@ features:
     details: 在添加站点时自动进行重复检测，避免列表中出现重复的站点，保持数据整洁。
   - title: 智能获取站点名称
     details: 能够智能识别并获取站点的真实名称，而非简单显示域名，提升了可读性。
+  - title: WebDav 数据备份与恢复
+    details: 支持通过 WebDav 备份和恢复所有账号与设置，保障数据安全并实现跨设备同步。
   - title: Firefox 支持
     details: 插件现已完全兼容 Firefox 浏览器，为火狐用户提供无缝的使用体验。
   - title: 插件无需联网
