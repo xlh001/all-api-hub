@@ -1,4 +1,4 @@
-import IndexPopup from "~popup"
+import IndexPopup from "~/popup"
 
 function IndexSidePanel() {
   return <IndexPopup inSidePanel={true} />

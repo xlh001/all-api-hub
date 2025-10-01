@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import type { ApiToken } from "~types"
+import type { ApiToken } from "~/types"
 
 import { UI_CONSTANTS } from "../constants/ui"
 

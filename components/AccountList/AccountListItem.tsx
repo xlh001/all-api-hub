@@ -1,4 +1,4 @@
-import AccountActionButtons from "~components/AccountActionButtons"
+import AccountActionButtons from "~/components/AccountActionButtons"
 
 import { useAccountListItem } from "../../hooks/useAccountListItem"
 import type { DisplaySiteData } from "../../types"

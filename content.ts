@@ -1,6 +1,6 @@
 import type { PlasmoCSConfig } from "plasmo"
 
-import { fetchUserInfo } from "~services/apiService"
+import { fetchUserInfo } from "~/services/apiService"
 
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"],

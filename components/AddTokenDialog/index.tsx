@@ -2,7 +2,7 @@ import { Dialog, Transition } from "@headlessui/react"
 import { Fragment, useState } from "react"
 import toast from "react-hot-toast"
 
-import type { ApiToken } from "~types"
+import type { ApiToken } from "~/types"
 
 import { UI_CONSTANTS } from "../../constants/ui"
 import { useTokenData } from "../../hooks/useTokenData"

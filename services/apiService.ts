@@ -1,5 +1,5 @@
-import type { ApiToken } from "~types"
-import { joinUrl } from "~utils/url"
+import type { ApiToken } from "~/types"
+import { joinUrl } from "~/utils/url"
 
 /**
  * API 服务 - 用于与 One API/New API 站点进行交互
