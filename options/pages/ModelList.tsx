@@ -9,7 +9,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react"
 import toast from "react-hot-toast"
 
-import ModelItem from "../../components/ModelItem/ModelItem"
+import ModelItem from "../../components/ModelItem"
 import { useAccountData } from "../../hooks/useAccountData"
 import {
   fetchModelPricing,

@@ -1,14 +1,20 @@
-import { Dialog, DialogPanel, Transition, TransitionChild } from "@headlessui/react"
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild
+} from "@headlessui/react"
 import { Fragment } from "react"
-import type { DisplaySiteData } from "../types"
-import { useAddAccountDialog } from "../hooks/useAddAccountDialog"
-import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
-import DialogHeader from "./AddAccountDialog/DialogHeader"
-import UrlInput from "./AddAccountDialog/UrlInput"
-import ActionButtons from "./AddAccountDialog/ActionButtons"
-import AccountForm from "./AddAccountDialog/AccountForm"
-import FormActions from "./AddAccountDialog/FormActions"
-import InfoPanel from "./AddAccountDialog/InfoPanel"
+
+import { useAddAccountDialog } from "../../hooks/useAddAccountDialog"
+import type { DisplaySiteData } from "../../types"
+import AutoDetectErrorAlert from "../AutoDetectErrorAlert"
+import AccountForm from "./AccountForm"
+import ActionButtons from "./ActionButtons"
+import DialogHeader from "./DialogHeader"
+import FormActions from "./FormActions"
+import InfoPanel from "./InfoPanel"
+import UrlInput from "./UrlInput"
 
 interface AddAccountDialogProps {
   isOpen: boolean

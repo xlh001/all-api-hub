@@ -4,19 +4,19 @@ import toast from "react-hot-toast"
 
 import type { ApiToken } from "~types"
 
-import { UI_CONSTANTS } from "../constants/ui"
-import { useTokenData } from "../hooks/useTokenData"
-import { useTokenForm } from "../hooks/useTokenForm"
+import { UI_CONSTANTS } from "../../constants/ui"
+import { useTokenData } from "../../hooks/useTokenData"
+import { useTokenForm } from "../../hooks/useTokenForm"
 import {
   createApiToken,
   updateApiToken,
   type CreateTokenRequest
-} from "../services/apiService"
-import { DialogHeader } from "./AddTokenDialog/DialogHeader"
-import { FormActions } from "./AddTokenDialog/FormActions"
-import { LoadingIndicator } from "./AddTokenDialog/LoadingIndicator"
-import { TokenForm } from "./AddTokenDialog/TokenForm"
-import { WarningNote } from "./AddTokenDialog/WarningNote"
+} from "../../services/apiService"
+import { DialogHeader } from "./DialogHeader"
+import { FormActions } from "./FormActions"
+import { LoadingIndicator } from "./LoadingIndicator"
+import { TokenForm } from "./TokenForm"
+import { WarningNote } from "./WarningNote"
 
 interface AddTokenDialogProps {
   isOpen: boolean

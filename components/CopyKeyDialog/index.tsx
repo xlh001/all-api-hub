@@ -1,27 +1,37 @@
-import { Fragment } from "react";
-import { Dialog, DialogPanel, Transition, TransitionChild } from "@headlessui/react";
-import type { DisplaySiteData } from "../types";
-import { useCopyKeyDialog } from "../hooks/useCopyKeyDialog";
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild
+} from "@headlessui/react"
+import { Fragment } from "react"
+
+import { useCopyKeyDialog } from "../../hooks/useCopyKeyDialog"
+import type { DisplaySiteData } from "../../types"
 import {
   formatQuota,
-  formatUsedQuota,
   formatTimestamp,
+  formatUsedQuota,
   getGroupBadgeStyle,
   getStatusBadgeStyle
-} from "../utils/formatters";
-import { DialogHeader } from "./CopyKeyDialog/DialogHeader";
-import { LoadingIndicator } from "./CopyKeyDialog/LoadingIndicator";
-import { ErrorDisplay } from "./CopyKeyDialog/ErrorDisplay";
-import { TokenList } from "./CopyKeyDialog/TokenList";
-import { DialogFooter } from "./CopyKeyDialog/DialogFooter";
+} from "../../utils/formatters"
+import { DialogFooter } from "./DialogFooter"
+import { DialogHeader } from "./DialogHeader"
+import { ErrorDisplay } from "./ErrorDisplay"
+import { LoadingIndicator } from "./LoadingIndicator"
+import { TokenList } from "./TokenList"
 
 interface CopyKeyDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  account: DisplaySiteData | null;
+  isOpen: boolean
+  onClose: () => void
+  account: DisplaySiteData | null
 }
 
-export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialogProps) {
+export default function CopyKeyDialog({
+  isOpen,
+  onClose,
+  account
+}: CopyKeyDialogProps) {
   const {
     tokens,
     isLoading,
@@ -30,15 +40,15 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
     expandedTokens,
     fetchTokens,
     copyKey,
-    toggleTokenExpansion,
-  } = useCopyKeyDialog(isOpen, account);
+    toggleTokenExpansion
+  } = useCopyKeyDialog(isOpen, account)
 
   const renderContent = () => {
     if (isLoading) {
-      return <LoadingIndicator />;
+      return <LoadingIndicator />
     }
     if (error) {
-      return <ErrorDisplay error={error} onRetry={fetchTokens} />;
+      return <ErrorDisplay error={error} onRetry={fetchTokens} />
     }
     return (
       <TokenList
@@ -53,8 +63,8 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
         getGroupBadgeStyle={getGroupBadgeStyle}
         getStatusBadgeStyle={getStatusBadgeStyle}
       />
-    );
-  };
+    )
+  }
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -66,9 +76,11 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
           enterTo="opacity-100"
           leave="ease-in duration-200"
           leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+          leaveTo="opacity-0">
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+            aria-hidden="true"
+          />
         </TransitionChild>
 
         <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -79,8 +91,7 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
             enterTo="opacity-100 scale-100 translate-y-0"
             leave="ease-in duration-200"
             leaveFrom="opacity-100 scale-100 translate-y-0"
-            leaveTo="opacity-0 scale-95 translate-y-4"
-          >
+            leaveTo="opacity-0 scale-95 translate-y-4">
             <DialogPanel className="w-full max-w-md bg-white rounded-lg shadow-xl transform transition-all max-h-[85vh] overflow-hidden flex flex-col">
               <DialogHeader account={account} onClose={onClose} />
               <div className="flex-1 overflow-y-auto p-4">
@@ -92,5 +103,5 @@ export default function CopyKeyDialog({ isOpen, onClose, account }: CopyKeyDialo
         </div>
       </Dialog>
     </Transition>
-  );
+  )
 }

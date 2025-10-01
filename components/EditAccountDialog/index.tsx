@@ -6,14 +6,14 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 
-import { useEditAccountDialog } from "../hooks/useEditAccountDialog"
-import type { DisplaySiteData } from "../types"
-import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
-import AccountForm from "./EditAccountDialog/AccountForm"
-import ActionButtons from "./EditAccountDialog/ActionButtons"
-import DialogHeader from "./EditAccountDialog/DialogHeader"
-import InfoPanel from "./EditAccountDialog/InfoPanel"
-import UrlInput from "./EditAccountDialog/UrlInput"
+import { useEditAccountDialog } from "../../hooks/useEditAccountDialog"
+import type { DisplaySiteData } from "../../types"
+import AutoDetectErrorAlert from "../AutoDetectErrorAlert"
+import AccountForm from "./AccountForm"
+import ActionButtons from "./ActionButtons"
+import DialogHeader from "./DialogHeader"
+import InfoPanel from "./InfoPanel"
+import UrlInput from "./UrlInput"
 
 interface EditAccountDialogProps {
   isOpen: boolean
