@@ -5,10 +5,10 @@ import {
   autoDetectAccount,
   isValidExchangeRate,
   validateAndUpdateAccount
-} from "../services/accountOperations"
-import { accountStorage } from "../services/accountStorage"
-import type { DisplaySiteData } from "../types"
-import type { AutoDetectError } from "../utils/autoDetectUtils"
+} from "~/services/accountOperations"
+import { accountStorage } from "~/services/accountStorage"
+import type { DisplaySiteData } from "~/types"
+import type { AutoDetectError } from "~/utils/autoDetectUtils"
 
 interface UseEditAccountDialogProps {
   account: DisplaySiteData | null

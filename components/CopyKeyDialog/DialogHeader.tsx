@@ -1,10 +1,11 @@
-import { DialogTitle } from "@headlessui/react";
-import { KeyIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import type { DisplaySiteData } from "../../types";
+import { DialogTitle } from "@headlessui/react"
+import { KeyIcon, XMarkIcon } from "@heroicons/react/24/outline"
+
+import type { DisplaySiteData } from "~/types"
 
 interface DialogHeaderProps {
-  account: DisplaySiteData | null;
-  onClose: () => void;
+  account: DisplaySiteData | null
+  onClose: () => void
 }
 
 export function DialogHeader({ account, onClose }: DialogHeaderProps) {
@@ -18,17 +19,14 @@ export function DialogHeader({ account, onClose }: DialogHeaderProps) {
           <DialogTitle className="text-lg font-semibold text-gray-900">
             密钥列表
           </DialogTitle>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {account?.name}
-          </p>
+          <p className="text-xs text-gray-500 mt-0.5">{account?.name}</p>
         </div>
       </div>
       <button
         onClick={onClose}
-        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-      >
+        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
         <XMarkIcon className="w-4 h-4" />
       </button>
     </div>
-  );
+  )
 }

@@ -9,8 +9,8 @@ import {
 import { useState } from "react"
 import toast from "react-hot-toast"
 
-import { accountStorage } from "../../services/accountStorage"
-import { userPreferences } from "../../services/userPreferences"
+import { accountStorage } from "~/services/accountStorage"
+import { userPreferences } from "~/services/userPreferences"
 
 export default function ImportExport() {
   const [isExporting, setIsExporting] = useState(false)

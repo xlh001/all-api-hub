@@ -6,8 +6,9 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 
-import { useEditAccountDialog } from "../../hooks/useEditAccountDialog"
-import type { DisplaySiteData } from "../../types"
+import { useEditAccountDialog } from "~/hooks/useEditAccountDialog"
+import type { DisplaySiteData } from "~/types"
+
 import AutoDetectErrorAlert from "../AutoDetectErrorAlert"
 import AccountForm from "./AccountForm"
 import ActionButtons from "./ActionButtons"

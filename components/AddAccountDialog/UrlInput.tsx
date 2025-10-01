@@ -1,4 +1,3 @@
-import { Fragment } from "react"
 import { Transition, TransitionChild } from "@headlessui/react"
 import {
   GlobeAltIcon,
@@ -6,7 +5,9 @@ import {
   PencilIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline"
-import type { DisplaySiteData } from "../../types"
+import { Fragment } from "react"
+
+import type { DisplaySiteData } from "~/types"
 
 interface UrlInputProps {
   url: string

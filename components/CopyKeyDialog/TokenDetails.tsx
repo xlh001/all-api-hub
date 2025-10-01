@@ -4,7 +4,7 @@ import {
   DocumentDuplicateIcon
 } from "@heroicons/react/24/outline"
 
-import type { ApiToken } from "../../types"
+import type { ApiToken } from "~/types"
 
 interface TokenDetailsProps {
   token: ApiToken

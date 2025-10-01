@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react"
-import type { DisplaySiteData } from "../types"
+import { useCallback, useState } from "react"
+
+import type { DisplaySiteData } from "~/types"
 
 /**
  * @description 管理应用中所有弹窗状态和相关逻辑的自定义 Hook。
@@ -21,7 +22,9 @@ export const usePopupManager = (onCloseCallback?: () => void) => {
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false)
   const [isFirefoxWarningOpen, setIsFirefoxWarningOpen] = useState(false)
-  const [editingAccount, setEditingAccount] = useState<DisplaySiteData | null>(null)
+  const [editingAccount, setEditingAccount] = useState<DisplaySiteData | null>(
+    null
+  )
 
   const openAddAccount = useCallback(() => setIsAddAccountOpen(true), [])
   const closeAddAccount = useCallback(() => {
@@ -40,8 +43,14 @@ export const usePopupManager = (onCloseCallback?: () => void) => {
     onCloseCallback?.()
   }, [onCloseCallback])
 
-  const openFirefoxWarning = useCallback(() => setIsFirefoxWarningOpen(true), [])
-  const closeFirefoxWarning = useCallback(() => setIsFirefoxWarningOpen(false), [])
+  const openFirefoxWarning = useCallback(
+    () => setIsFirefoxWarningOpen(true),
+    []
+  )
+  const closeFirefoxWarning = useCallback(
+    () => setIsFirefoxWarningOpen(false),
+    []
+  )
 
   return {
     isAddAccountOpen,

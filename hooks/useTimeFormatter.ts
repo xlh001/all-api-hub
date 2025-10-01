@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react"
-import { UI_CONSTANTS } from "../constants/ui"
-import { formatRelativeTime, formatFullTime } from "../utils/formatters"
+import { useEffect, useState } from "react"
+
+import { UI_CONSTANTS } from "~/constants/ui"
+import { formatFullTime, formatRelativeTime } from "~/utils/formatters"
 
 interface UseTimeFormatterResult {
   formatRelativeTime: (date: Date) => string

@@ -1,7 +1,8 @@
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline"
 import React from "react"
 
-import { formatTokenCount } from "../../utils/formatters"
+import { formatTokenCount } from "~/utils/formatters"
+
 import Tooltip from "../Tooltip"
 
 interface TokenStatsProps {

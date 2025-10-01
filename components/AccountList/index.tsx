@@ -5,7 +5,8 @@ import {
 } from "@heroicons/react/24/outline"
 import { useState } from "react"
 
-import type { DisplaySiteData } from "../../types"
+import type { DisplaySiteData } from "~/types"
+
 import CopyKeyDialog from "../CopyKeyDialog"
 import DelAccountDialog from "../DelAccountDialog"
 import AccountListItem from "./AccountListItem"

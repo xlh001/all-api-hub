@@ -1,7 +1,8 @@
 import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import React from "react"
 
-import type { DisplaySiteData } from "../../types"
+import type { DisplaySiteData } from "~/types"
+
 import Tooltip from "../Tooltip"
 
 interface RefreshButtonProps {

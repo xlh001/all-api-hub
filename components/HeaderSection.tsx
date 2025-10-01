@@ -4,8 +4,9 @@ import {
   Cog6ToothIcon
 } from "@heroicons/react/24/outline"
 
+import { UI_CONSTANTS } from "~/constants/ui"
+
 import iconImage from "../assets/icon.png"
-import { UI_CONSTANTS } from "../constants/ui"
 import Tooltip from "./Tooltip"
 
 interface HeaderSectionProps {

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
-import { fetchAccountTokens } from "../services/apiService"
-import type { ApiToken, DisplaySiteData } from "../types"
+import { fetchAccountTokens } from "~/services/apiService"
+import type { ApiToken, DisplaySiteData } from "~/types"
 
 export function useCopyKeyDialog(
   isOpen: boolean,

@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react"
 import toast from "react-hot-toast"
 
-import { accountStorage } from "../services/accountStorage"
-import type { DisplaySiteData } from "../types"
+import { accountStorage } from "~/services/accountStorage"
+import type { DisplaySiteData } from "~/types"
 
 /**
  * @description 管理与单个账号相关的操作，如刷新、删除等。

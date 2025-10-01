@@ -1,8 +1,8 @@
 import CountUp from "react-countup"
 
-import { UI_CONSTANTS } from "../../constants/ui"
-import type { DisplaySiteData } from "../../types"
-import { getCurrencySymbol } from "../../utils/formatters"
+import { UI_CONSTANTS } from "~/constants/ui"
+import type { DisplaySiteData } from "~/types"
+import { getCurrencySymbol } from "~/utils/formatters"
 
 interface BalanceDisplayProps {
   site: DisplaySiteData

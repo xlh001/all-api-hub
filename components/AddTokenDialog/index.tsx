@@ -2,16 +2,16 @@ import { Dialog, Transition } from "@headlessui/react"
 import { Fragment, useState } from "react"
 import toast from "react-hot-toast"
 
-import type { ApiToken } from "~/types"
-
-import { UI_CONSTANTS } from "../../constants/ui"
-import { useTokenData } from "../../hooks/useTokenData"
-import { useTokenForm } from "../../hooks/useTokenForm"
+import { UI_CONSTANTS } from "~/constants/ui"
+import { useTokenData } from "~/hooks/useTokenData"
+import { useTokenForm } from "~/hooks/useTokenForm"
 import {
   createApiToken,
   updateApiToken,
   type CreateTokenRequest
-} from "../../services/apiService"
+} from "~/services/apiService"
+import type { ApiToken } from "~/types"
+
 import { DialogHeader } from "./DialogHeader"
 import { FormActions } from "./FormActions"
 import { LoadingIndicator } from "./LoadingIndicator"

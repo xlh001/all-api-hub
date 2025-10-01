@@ -2,8 +2,8 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react"
 import React from "react"
 import CountUp from "react-countup"
 
-import { UI_CONSTANTS } from "../../constants/ui"
-import { getCurrencySymbol } from "../../utils/formatters"
+import { UI_CONSTANTS } from "~/constants/ui"
+import { getCurrencySymbol } from "~/utils/formatters"
 
 interface BalanceTabsProps {
   activeTab: "consumption" | "balance"

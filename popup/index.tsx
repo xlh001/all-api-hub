@@ -3,27 +3,20 @@ import "./style.css"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import toast, { Toaster } from "react-hot-toast"
 
-import AccountList from "../components/AccountList"
-import ActionButtons from "../components/ActionButtons"
-import AddAccountDialog from "../components/AddAccountDialog"
-import BalanceSection from "../components/BalanceSection"
-import EditAccountDialog from "../components/EditAccountDialog"
-import FirefoxAddAccountWarningDialog from "../components/FirefoxAddAccountWarningDialog"
-import HeaderSection from "../components/HeaderSection"
-import { UI_CONSTANTS } from "../constants/ui"
-import { useAccountActions } from "../hooks/useAccountActions"
-import { useAccountData } from "../hooks/useAccountData"
-import { usePopupManager } from "../hooks/usePopupManager"
-import { useSort } from "../hooks/useSort"
-import { useUserPreferences } from "../hooks/useUserPreferences"
-import { accountStorage } from "../services/accountStorage"
-import type { SiteAccount } from "../types"
-import { isFirefox } from "../utils/browser"
+import { UI_CONSTANTS } from "~/constants/ui"
+import { useAccountActions } from "~/hooks/useAccountActions"
+import { useAccountData } from "~/hooks/useAccountData"
+import { usePopupManager } from "~/hooks/usePopupManager"
+import { useSort } from "~/hooks/useSort"
+import { useUserPreferences } from "~/hooks/useUserPreferences"
+import { accountStorage } from "~/services/accountStorage"
+import type { SiteAccount } from "~/types"
+import { isFirefox } from "~/utils/browser"
 import {
   calculateTotalBalance,
   calculateTotalConsumption,
   getOppositeCurrency
-} from "../utils/formatters"
+} from "~/utils/formatters"
 import {
   openFullManagerPage,
   openKeysPage,
@@ -31,7 +24,15 @@ import {
   openSettingsPage,
   openSidePanel,
   openUsagePage
-} from "../utils/navigation"
+} from "~/utils/navigation"
+
+import AccountList from "../components/AccountList"
+import ActionButtons from "../components/ActionButtons"
+import AddAccountDialog from "../components/AddAccountDialog"
+import BalanceSection from "../components/BalanceSection"
+import EditAccountDialog from "../components/EditAccountDialog"
+import FirefoxAddAccountWarningDialog from "../components/FirefoxAddAccountWarningDialog"
+import HeaderSection from "../components/HeaderSection"
 
 function IndexPopup({ inSidePanel = false }) {
   // 用户偏好设置管理

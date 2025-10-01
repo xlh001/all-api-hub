@@ -1,4 +1,4 @@
-import type { DisplaySiteData } from "../types"
+import type { DisplaySiteData } from "~/types"
 
 const getURL = (path: string) => chrome.runtime.getURL(path)
 

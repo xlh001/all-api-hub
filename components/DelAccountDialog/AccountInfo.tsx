@@ -1,6 +1,6 @@
 import type { FC } from "react"
 
-import type { DisplaySiteData } from "../../types"
+import type { DisplaySiteData } from "~/types"
 
 const AccountInfoDetail: FC<{
   label: string

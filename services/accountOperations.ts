@@ -25,11 +25,12 @@
  * - autoDetectUtils: 错误处理工具
  */
 
-import type { SiteAccount } from "../types"
+import type { SiteAccount } from "~/types"
 import {
   analyzeAutoDetectError,
   type AutoDetectError
-} from "../utils/autoDetectUtils"
+} from "~/utils/autoDetectUtils"
+
 import { accountStorage } from "./accountStorage"
 import {
   extractDefaultExchangeRate,

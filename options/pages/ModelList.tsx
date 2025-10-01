@@ -9,19 +9,17 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react"
 import toast from "react-hot-toast"
 
-import ModelItem from "../../components/ModelItem"
-import { useAccountData } from "../../hooks/useAccountData"
-import {
-  fetchModelPricing,
-  type PricingResponse
-} from "../../services/apiService"
-import { calculateModelPrice } from "../../utils/modelPricing"
+import { useAccountData } from "~/hooks/useAccountData"
+import { fetchModelPricing, type PricingResponse } from "~/services/apiService"
+import { calculateModelPrice } from "~/utils/modelPricing"
 import {
   filterModelsByProvider,
   getAllProviders,
   getProviderConfig,
   type ProviderType
-} from "../../utils/modelProviders"
+} from "~/utils/modelProviders"
+
+import ModelItem from "../../components/ModelItem"
 
 export default function ModelList({
   routeParams

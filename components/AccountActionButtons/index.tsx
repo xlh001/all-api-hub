@@ -1,6 +1,7 @@
 import React from "react"
 
-import type { DisplaySiteData } from "../../types"
+import type { DisplaySiteData } from "~/types"
+
 import { CopyDropdown } from "./CopyDropdown"
 import { MoreActionsDropdown } from "./MoreActionsDropdown"
 import { RefreshButton } from "./RefreshButton"

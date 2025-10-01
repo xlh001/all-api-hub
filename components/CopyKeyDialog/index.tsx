@@ -6,15 +6,16 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 
-import { useCopyKeyDialog } from "../../hooks/useCopyKeyDialog"
-import type { DisplaySiteData } from "../../types"
+import { useCopyKeyDialog } from "~/hooks/useCopyKeyDialog"
+import type { DisplaySiteData } from "~/types"
 import {
   formatQuota,
   formatTimestamp,
   formatUsedQuota,
   getGroupBadgeStyle,
   getStatusBadgeStyle
-} from "../../utils/formatters"
+} from "~/utils/formatters"
+
 import { DialogFooter } from "./DialogFooter"
 import { DialogHeader } from "./DialogHeader"
 import { ErrorDisplay } from "./ErrorDisplay"

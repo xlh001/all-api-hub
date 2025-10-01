@@ -7,7 +7,7 @@ import {
   UserIcon
 } from "@heroicons/react/24/outline"
 
-import { isValidExchangeRate } from "../../services/accountOperations"
+import { isValidExchangeRate } from "~/services/accountOperations"
 
 interface AccountFormProps {
   siteName: string

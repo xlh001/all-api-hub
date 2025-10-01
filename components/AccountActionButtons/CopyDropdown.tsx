@@ -2,7 +2,8 @@ import { Menu, MenuButton, MenuItems } from "@headlessui/react"
 import { DocumentDuplicateIcon, KeyIcon } from "@heroicons/react/24/outline"
 import React from "react"
 
-import type { DisplaySiteData } from "../../types"
+import type { DisplaySiteData } from "~/types"
+
 import Tooltip from "../Tooltip"
 import { AccountActionMenuItem } from "./AccountActionMenuItem"
 

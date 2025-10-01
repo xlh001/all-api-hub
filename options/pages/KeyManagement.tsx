@@ -11,10 +11,11 @@ import {
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
+import { useAccountData } from "~/hooks/useAccountData"
+import { deleteApiToken, fetchAccountTokens } from "~/services/apiService"
+import type { ApiToken } from "~/types"
+
 import AddTokenDialog from "../../components/AddTokenDialog"
-import { useAccountData } from "../../hooks/useAccountData"
-import { deleteApiToken, fetchAccountTokens } from "../../services/apiService"
-import type { ApiToken } from "../../types"
 
 export default function KeyManagement({
   routeParams

@@ -6,7 +6,8 @@ import {
   KeyIcon,
   UserIcon
 } from "@heroicons/react/24/outline"
-import { isValidExchangeRate } from "../../services/accountOperations"
+
+import { isValidExchangeRate } from "~/services/accountOperations"
 
 interface AccountFormProps {
   siteName: string
@@ -161,7 +162,8 @@ export default function AccountForm({
           </div>
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          表示充值 1 美元需要多少人民币。系统会尝试自动获取，如未获取到请手动填写
+          表示充值 1
+          美元需要多少人民币。系统会尝试自动获取，如未获取到请手动填写
         </p>
         {!isValidExchangeRate(exchangeRate) && exchangeRate && (
           <p className="mt-1 text-xs text-red-600">

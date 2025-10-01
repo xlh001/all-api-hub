@@ -1,6 +1,6 @@
 import toast from "react-hot-toast"
 
-import type { ModelPricing } from "../services/apiService"
+import type { ModelPricing } from "~/services/apiService"
 
 export const useModelItemActions = (model: ModelPricing) => {
   const handleCopyModelName = async () => {

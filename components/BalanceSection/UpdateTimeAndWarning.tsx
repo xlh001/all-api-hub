@@ -1,6 +1,7 @@
 import React from "react"
 
-import { useTimeFormatter } from "../../hooks/useTimeFormatter"
+import { useTimeFormatter } from "~/hooks/useTimeFormatter"
+
 import Tooltip from "../Tooltip"
 
 interface UpdateTimeAndWarningProps {

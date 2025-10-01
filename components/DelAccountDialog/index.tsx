@@ -7,8 +7,9 @@ import {
 import { Fragment } from "react"
 import toast from "react-hot-toast"
 
-import { accountStorage } from "../../services/accountStorage"
-import type { DisplaySiteData } from "../../types"
+import { accountStorage } from "~/services/accountStorage"
+import type { DisplaySiteData } from "~/types"
+
 import { AccountInfo } from "./AccountInfo"
 import { ActionButtons } from "./ActionButtons"
 import { DialogHeader } from "./DialogHeader"

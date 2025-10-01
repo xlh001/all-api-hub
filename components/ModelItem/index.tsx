@@ -4,9 +4,10 @@
 
 import React, { useState } from "react"
 
-import { useModelItemActions } from "../../hooks/useModelItemActions"
-import type { ModelPricing } from "../../services/apiService"
-import type { CalculatedPrice } from "../../utils/modelPricing"
+import { useModelItemActions } from "~/hooks/useModelItemActions"
+import type { ModelPricing } from "~/services/apiService"
+import type { CalculatedPrice } from "~/utils/modelPricing"
+
 import { ModelItemDescription } from "./ModelItemDescription"
 import { ModelItemDetails } from "./ModelItemDetails"
 import { ModelItemExpandButton } from "./ModelItemExpandButton"

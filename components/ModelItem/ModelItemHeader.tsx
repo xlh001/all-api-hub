@@ -1,12 +1,9 @@
 import { DocumentDuplicateIcon } from "@heroicons/react/24/outline"
 import React from "react"
 
-import type { ModelPricing } from "../../services/apiService"
-import {
-  getBillingModeStyle,
-  getBillingModeText
-} from "../../utils/modelPricing"
-import { getProviderConfig } from "../../utils/modelProviders"
+import type { ModelPricing } from "~/services/apiService"
+import { getBillingModeStyle, getBillingModeText } from "~/utils/modelPricing"
+import { getProviderConfig } from "~/utils/modelProviders"
 
 interface ModelItemHeaderProps {
   model: ModelPricing

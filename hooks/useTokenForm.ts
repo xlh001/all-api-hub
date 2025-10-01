@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react"
 
+import { UI_CONSTANTS } from "~/constants/ui"
 import type { ApiToken } from "~/types"
-
-import { UI_CONSTANTS } from "../constants/ui"
 
 // We duplicate some types here to avoid circular dependencies
 // if we were to import them directly from the AddTokenDialog component.

@@ -1,8 +1,8 @@
 import React from "react"
 
-import type { ModelPricing } from "../../services/apiService"
-import type { CalculatedPrice } from "../../utils/modelPricing"
-import { formatPriceCompact } from "../../utils/modelPricing"
+import type { ModelPricing } from "~/services/apiService"
+import type { CalculatedPrice } from "~/utils/modelPricing"
+import { formatPriceCompact } from "~/utils/modelPricing"
 
 interface ModelItemPricingProps {
   model: ModelPricing

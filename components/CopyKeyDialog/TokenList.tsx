@@ -1,18 +1,20 @@
-import { KeyIcon } from "@heroicons/react/24/outline";
-import type { ApiToken } from "../../types";
-import { TokenItem } from "./TokenItem";
+import { KeyIcon } from "@heroicons/react/24/outline"
+
+import type { ApiToken } from "~/types"
+
+import { TokenItem } from "./TokenItem"
 
 interface TokenListProps {
-  tokens: ApiToken[];
-  expandedTokens: Set<number>;
-  copiedKey: string | null;
-  onToggleToken: (id: number) => void;
-  onCopyKey: (key: string) => void;
-  formatTime: (timestamp: number) => string;
-  formatUsedQuota: (token: ApiToken) => string;
-  formatQuota: (token: ApiToken) => string;
-  getGroupBadgeStyle: (group: string) => string;
-  getStatusBadgeStyle: (status: number) => string;
+  tokens: ApiToken[]
+  expandedTokens: Set<number>
+  copiedKey: string | null
+  onToggleToken: (id: number) => void
+  onCopyKey: (key: string) => void
+  formatTime: (timestamp: number) => string
+  formatUsedQuota: (token: ApiToken) => string
+  formatQuota: (token: ApiToken) => string
+  getGroupBadgeStyle: (group: string) => string
+  getStatusBadgeStyle: (status: number) => string
 }
 
 export function TokenList({
@@ -25,7 +27,7 @@ export function TokenList({
   formatUsedQuota,
   formatQuota,
   getGroupBadgeStyle,
-  getStatusBadgeStyle,
+  getStatusBadgeStyle
 }: TokenListProps) {
   if (!Array.isArray(tokens) || tokens.length === 0) {
     return (
@@ -33,7 +35,7 @@ export function TokenList({
         <KeyIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-500 text-sm">暂无密钥数据</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -54,5 +56,5 @@ export function TokenList({
         />
       ))}
     </div>
-  );
+  )
 }
