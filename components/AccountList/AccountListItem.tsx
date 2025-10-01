@@ -18,7 +18,7 @@ interface AccountListItemProps {
   onViewModels?: (siteId: string) => void
   onEditAccount?: (site: DisplaySiteData) => void
   onDeleteAccount?: (site: DisplaySiteData) => void
-  onViewKeys?: (site: DisplaySiteData) => void
+  onViewKeys?: (siteId: string) => void
   onCopyKey: (site: DisplaySiteData) => void
 }
 

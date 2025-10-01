@@ -10,7 +10,7 @@ import { AccountActionMenuItem } from "./AccountActionMenuItem"
 interface CopyDropdownProps {
   site: DisplaySiteData
   onCopyUrl: (site: DisplaySiteData) => void
-  onViewKeys: (site: DisplaySiteData) => void
+  onViewKeys: (siteId: string) => void
   onCopyKey: (site: DisplaySiteData) => void
 }
 
@@ -47,7 +47,7 @@ export const CopyDropdown: React.FC<CopyDropdownProps> = ({
         />
         <hr />
         <AccountActionMenuItem
-          onClick={() => onViewKeys(site)}
+          onClick={() => onViewKeys(site.id)}
           icon={KeyIcon}
           label="管理密钥"
         />
