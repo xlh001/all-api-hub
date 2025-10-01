@@ -14,8 +14,6 @@ import type { DisplaySiteData } from "~/types"
  *   closeAddAccount: () => void,
  *   openEditAccount: (account: DisplaySiteData) => void,
  *   closeEditAccount: () => void,
- *   openFirefoxWarning: () => void,
- *   closeFirefoxWarning: () => void
  * }}
  */
 export const usePopupManager = (onCloseCallback?: () => void) => {
@@ -43,15 +41,6 @@ export const usePopupManager = (onCloseCallback?: () => void) => {
     onCloseCallback?.()
   }, [onCloseCallback])
 
-  const openFirefoxWarning = useCallback(
-    () => setIsFirefoxWarningOpen(true),
-    []
-  )
-  const closeFirefoxWarning = useCallback(
-    () => setIsFirefoxWarningOpen(false),
-    []
-  )
-
   return {
     isAddAccountOpen,
     isEditAccountOpen,
@@ -60,8 +49,6 @@ export const usePopupManager = (onCloseCallback?: () => void) => {
     openAddAccount,
     closeAddAccount,
     openEditAccount,
-    closeEditAccount,
-    openFirefoxWarning,
-    closeFirefoxWarning
+    closeEditAccount
   }
 }

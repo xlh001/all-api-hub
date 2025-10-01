@@ -3,6 +3,7 @@ import "./style.css"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import toast, { Toaster } from "react-hot-toast"
 
+import { showFirefoxWarningDialog } from "~/components/FirefoxAddAccountWarningDialog/showFirefoxWarningDialog"
 import {
   DATA_TYPE_BALANCE,
   DATA_TYPE_CONSUMPTION,
@@ -26,7 +27,6 @@ import {
   openKeysPage,
   openModelsPage,
   openSettingsPage,
-  openSidePanel,
   openUsagePage
 } from "~/utils/navigation"
 
@@ -35,7 +35,6 @@ import ActionButtons from "../components/ActionButtons"
 import AddAccountDialog from "../components/AddAccountDialog"
 import BalanceSection from "../components/BalanceSection"
 import EditAccountDialog from "../components/EditAccountDialog"
-import FirefoxAddAccountWarningDialog from "../components/FirefoxAddAccountWarningDialog"
 import HeaderSection from "../components/HeaderSection"
 
 function IndexPopup({ inSidePanel = false }) {
@@ -74,14 +73,11 @@ function IndexPopup({ inSidePanel = false }) {
   const {
     isAddAccountOpen,
     isEditAccountOpen,
-    isFirefoxWarningOpen,
     editingAccount,
     openAddAccount,
     closeAddAccount,
     openEditAccount,
-    closeEditAccount,
-    openFirefoxWarning,
-    closeFirefoxWarning
+    closeEditAccount
   } = usePopupManager(loadAccountData)
 
   // 账号操作逻辑
@@ -142,11 +138,11 @@ function IndexPopup({ inSidePanel = false }) {
 
   const handleAddAccount = useCallback(() => {
     if (isFirefox() && !inSidePanel) {
-      openFirefoxWarning()
+      showFirefoxWarningDialog()
     } else {
       openAddAccount()
     }
-  }, [inSidePanel, openFirefoxWarning, openAddAccount])
+  }, [inSidePanel, openAddAccount])
 
   const handleGlobalRefresh = useCallback(async () => {
     try {
@@ -307,13 +303,6 @@ function IndexPopup({ inSidePanel = false }) {
         isOpen={isEditAccountOpen}
         onClose={closeEditAccount}
         account={editingAccount}
-      />
-
-      {/* Firefox 警告弹窗 */}
-      <FirefoxAddAccountWarningDialog
-        isOpen={isFirefoxWarningOpen}
-        onClose={closeFirefoxWarning}
-        onConfirm={openSidePanel}
       />
 
       {/* Toast通知组件 */}
