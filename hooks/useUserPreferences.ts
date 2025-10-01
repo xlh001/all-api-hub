@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react"
 
+import { DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import {
   userPreferences,
   type UserPreferences
 } from "~/services/userPreferences"
-import type { CurrencyType } from "~/types"
+import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 
 /**
  * 用户偏好设置管理Hook
@@ -34,7 +35,7 @@ export function useUserPreferences() {
 
   // 更新活动标签页
   const updateActiveTab = useCallback(
-    async (activeTab: "consumption" | "balance") => {
+    async (activeTab: BalanceType) => {
       try {
         const success = await userPreferences.updateActiveTab(activeTab)
         if (success && preferences) {
@@ -70,10 +71,7 @@ export function useUserPreferences() {
 
   // 更新排序配置
   const updateSortConfig = useCallback(
-    async (
-      sortField: "name" | "balance" | "consumption",
-      sortOrder: "asc" | "desc"
-    ) => {
+    async (sortField: SortField, sortOrder: SortOrder) => {
       try {
         const success = await userPreferences.updateSortConfig(
           sortField,
@@ -221,7 +219,7 @@ export function useUserPreferences() {
     isLoading,
 
     // 便捷访问属性
-    activeTab: preferences?.activeTab || "consumption",
+    activeTab: preferences?.activeTab || DATA_TYPE_CONSUMPTION,
     currencyType: preferences?.currencyType || "USD",
     sortField: preferences?.sortField || "name",
     sortOrder: preferences?.sortOrder || "asc",

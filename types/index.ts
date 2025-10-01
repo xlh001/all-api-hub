@@ -1,6 +1,8 @@
 // 账号信息数据类型定义
 
 // 站点健康状态
+import { DATA_TYPE_BALANCE, type DATA_TYPE_CONSUMPTION } from "~/constants/ui"
+
 export type SiteHealthStatus = "healthy" | "warning" | "error" | "unknown"
 
 // 账号基础信息
@@ -52,7 +54,7 @@ export interface ApiResponse<T = any> {
 }
 
 // 用于排序的字段类型
-export type SortField = "name" | "balance" | "consumption"
+export type SortField = "name" | BalanceType
 export type SortOrder = "asc" | "desc"
 
 // 货币类型
@@ -99,3 +101,7 @@ export interface ApiToken {
   DeletedAt?: null
   models?: string // 某些站点使用 models 而不是 model_limits
 }
+
+export type BalanceType =
+  | typeof DATA_TYPE_CONSUMPTION
+  | typeof DATA_TYPE_BALANCE

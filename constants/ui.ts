@@ -1,6 +1,8 @@
 /**
  * UI 相关常量定义
  */
+export const DATA_TYPE_CONSUMPTION = "consumption"
+export const DATA_TYPE_BALANCE = "balance"
 
 export const UI_CONSTANTS = {
   // 弹窗尺寸
@@ -23,7 +25,7 @@ export const UI_CONSTANTS = {
 
   // 排序相关
   SORT: {
-    DEFAULT_FIELD: "balance" as const,
+    DEFAULT_FIELD: DATA_TYPE_BALANCE,
     DEFAULT_ORDER: "desc" as const
   },
 

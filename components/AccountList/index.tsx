@@ -5,6 +5,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useState } from "react"
 
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import type {
   CurrencyAmountMap,
   CurrencyType,
@@ -113,9 +114,9 @@ export default function AccountList({
           <div className="flex-1">{renderSortButton("name", "账号")}</div>
           <div className="text-right flex-shrink-0">
             <div className="flex items-center space-x-1">
-              {renderSortButton("balance", "余额")}
+              {renderSortButton(DATA_TYPE_BALANCE, "余额")}
               <span className="text-xs text-gray-400">/</span>
-              {renderSortButton("consumption", "今日消耗")}
+              {renderSortButton(DATA_TYPE_CONSUMPTION, "今日消耗")}
             </div>
           </div>
         </div>

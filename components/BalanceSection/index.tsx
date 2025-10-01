@@ -1,6 +1,11 @@
 import React from "react"
 
-import type { CurrencyAmount, CurrencyType, TokenUsage } from "~/types"
+import type {
+  BalanceType,
+  CurrencyAmount,
+  CurrencyType,
+  TokenUsage
+} from "~/types"
 
 import { BalanceTabs } from "./BalanceTabs"
 import { TokenStats } from "./TokenStats"
@@ -14,7 +19,7 @@ interface BalanceSectionProps {
 
   // 状态
   currencyType: CurrencyType
-  activeTab: "consumption" | "balance"
+  activeTab: BalanceType
   isInitialLoad: boolean
   lastUpdateTime: Date
 

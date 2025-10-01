@@ -8,7 +8,8 @@ import type {
   AccountStats,
   ApiToken,
   CurrencyType,
-  DisplaySiteData
+  DisplaySiteData,
+  SortOrder
 } from "~/types"
 
 // 初始化 dayjs
@@ -120,10 +121,7 @@ export const getOppositeCurrency = (
 /**
  * 生成排序比较函数
  */
-export const createSortComparator = <T>(
-  field: keyof T,
-  order: "asc" | "desc"
-) => {
+export const createSortComparator = <T>(field: keyof T, order: SortOrder) => {
   return (a: T, b: T): number => {
     const aValue = a[field]
     const bValue = b[field]

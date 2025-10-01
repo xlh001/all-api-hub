@@ -3,8 +3,9 @@ import { CogIcon, EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import { useUserPreferences } from "~/hooks/useUserPreferences"
-import type { CurrencyType } from "~/types"
+import type { BalanceType, CurrencyType } from "~/types"
 
 export default function BasicSettings() {
   const {
@@ -46,11 +47,11 @@ export default function BasicSettings() {
     }
   }
 
-  const handleDefaultTabChange = async (tab: "consumption" | "balance") => {
+  const handleDefaultTabChange = async (tab: BalanceType) => {
     const success = await updateActiveTab(tab)
     if (success) {
       toast.success(
-        `默认标签页已设置为 ${tab === "consumption" ? "今日消耗" : "总余额"}`
+        `默认标签页已设置为 ${tab === DATA_TYPE_CONSUMPTION ? "今日消耗" : "总余额"}`
       )
     } else {
       toast.error("设置保存失败")
@@ -202,18 +203,18 @@ export default function BasicSettings() {
               </div>
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
-                  onClick={() => handleDefaultTabChange("consumption")}
+                  onClick={() => handleDefaultTabChange(DATA_TYPE_CONSUMPTION)}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === "consumption"
+                    activeTab === DATA_TYPE_CONSUMPTION
                       ? "bg-white text-gray-900 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
                   }`}>
                   今日消耗
                 </button>
                 <button
-                  onClick={() => handleDefaultTabChange("balance")}
+                  onClick={() => handleDefaultTabChange(DATA_TYPE_BALANCE)}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === "balance"
+                    activeTab === DATA_TYPE_BALANCE
                       ? "bg-white text-gray-900 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
                   }`}>

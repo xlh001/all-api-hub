@@ -1,16 +1,17 @@
 import { Storage } from "@plasmohq/storage"
 
-import type { CurrencyType } from "~/types"
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
+import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 
 // 用户偏好设置类型定义
 export interface UserPreferences {
   // BalanceSection 相关配置
-  activeTab: "consumption" | "balance" // 金额标签页状态
+  activeTab: BalanceType // 金额标签页状态
   currencyType: CurrencyType // 金额单位
 
   // AccountList 相关配置
-  sortField: "name" | "balance" | "consumption" // 排序字段
-  sortOrder: "asc" | "desc" // 排序顺序
+  sortField: SortField // 排序字段
+  sortOrder: SortOrder // 排序顺序
 
   // 自动刷新相关配置
   autoRefresh: boolean // 是否启用定时自动刷新
@@ -29,9 +30,9 @@ const STORAGE_KEYS = {
 
 // 默认配置
 const DEFAULT_PREFERENCES: UserPreferences = {
-  activeTab: "consumption",
+  activeTab: DATA_TYPE_CONSUMPTION,
   currencyType: "USD",
-  sortField: "balance", // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
+  sortField: DATA_TYPE_BALANCE, // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
   sortOrder: "desc", // 与 UI_CONSTANTS.SORT.DEFAULT_ORDER 保持一致
   autoRefresh: true, // 默认启用自动刷新
   refreshInterval: 360, // 默认360秒刷新间隔
@@ -90,9 +91,7 @@ class UserPreferencesService {
   /**
    * 更新活动标签页
    */
-  async updateActiveTab(
-    activeTab: "consumption" | "balance"
-  ): Promise<boolean> {
+  async updateActiveTab(activeTab: BalanceType): Promise<boolean> {
     return this.savePreferences({ activeTab })
   }
 
@@ -107,8 +106,8 @@ class UserPreferencesService {
    * 更新排序配置
    */
   async updateSortConfig(
-    sortField: "name" | "balance" | "consumption",
-    sortOrder: "asc" | "desc"
+    sortField: SortField,
+    sortOrder: SortOrder
   ): Promise<boolean> {
     return this.savePreferences({ sortField, sortOrder })
   }
@@ -219,9 +218,13 @@ export const UserPreferencesUtils = {
 
     if (
       preferences.activeTab &&
-      !["consumption", "balance"].includes(preferences.activeTab)
+      ![DATA_TYPE_CONSUMPTION, DATA_TYPE_BALANCE].includes(
+        preferences.activeTab
+      )
     ) {
-      errors.push('activeTab 必须是 "consumption" 或 "balance"')
+      errors.push(
+        `activeTab 必须是 ${DATA_TYPE_CONSUMPTION} 或 ${DATA_TYPE_BALANCE}`
+      )
     }
 
     if (
@@ -233,9 +236,13 @@ export const UserPreferencesUtils = {
 
     if (
       preferences.sortField &&
-      !["name", "balance", "consumption"].includes(preferences.sortField)
+      !["name", DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION].includes(
+        preferences.sortField
+      )
     ) {
-      errors.push('sortField 必须是 "name", "balance" 或 "consumption"')
+      errors.push(
+        `sortField 必须是 "name", ${DATA_TYPE_BALANCE} 或 ${DATA_TYPE_CONSUMPTION}`
+      )
     }
 
     if (
@@ -281,8 +288,8 @@ export const UserPreferencesUtils = {
   /**
    * 获取标签页的显示名称
    */
-  getTabDisplayName(tab: "consumption" | "balance"): string {
-    return tab === "consumption" ? "今日消耗" : "总余额"
+  getTabDisplayName(tab: BalanceType): string {
+    return tab === DATA_TYPE_CONSUMPTION ? "今日消耗" : "总余额"
   },
 
   /**
@@ -295,13 +302,13 @@ export const UserPreferencesUtils = {
   /**
    * 获取排序字段的显示名称
    */
-  getSortFieldDisplayName(field: "name" | "balance" | "consumption"): string {
+  getSortFieldDisplayName(field: SortField): string {
     switch (field) {
       case "name":
         return "账号名称"
-      case "balance":
+      case DATA_TYPE_BALANCE:
         return "余额"
-      case "consumption":
+      case DATA_TYPE_CONSUMPTION:
         return "今日消耗"
       default:
         return "未知"
@@ -311,7 +318,7 @@ export const UserPreferencesUtils = {
   /**
    * 获取排序顺序的显示名称
    */
-  getSortOrderDisplayName(order: "asc" | "desc"): string {
+  getSortOrderDisplayName(order: SortOrder): string {
     return order === "asc" ? "升序" : "降序"
   }
 }

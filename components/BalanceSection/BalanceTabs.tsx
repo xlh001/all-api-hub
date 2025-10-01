@@ -2,12 +2,12 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react"
 import React from "react"
 import CountUp from "react-countup"
 
-import { UI_CONSTANTS } from "~/constants/ui"
-import type { CurrencyAmount, CurrencyType } from "~/types"
+import { DATA_TYPE_CONSUMPTION, UI_CONSTANTS } from "~/constants/ui"
+import type { BalanceType, CurrencyAmount, CurrencyType } from "~/types"
 import { getCurrencySymbol } from "~/utils/formatters"
 
 interface BalanceTabsProps {
-  activeTab: "consumption" | "balance"
+  activeTab: BalanceType
   onTabChange: (index: number) => void
   currencyType: CurrencyType
   onCurrencyToggle: () => void
@@ -30,7 +30,7 @@ export const BalanceTabs: React.FC<BalanceTabsProps> = ({
   return (
     <div>
       <TabGroup
-        selectedIndex={activeTab === "consumption" ? 0 : 1}
+        selectedIndex={activeTab === DATA_TYPE_CONSUMPTION ? 0 : 1}
         onChange={onTabChange}>
         <div className="flex justify-start mb-3">
           <TabList className="flex space-x-1 bg-gray-100 rounded-lg p-1">

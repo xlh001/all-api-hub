@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import { UI_CONSTANTS } from "~/constants/ui"
-import type { CurrencyType, DisplaySiteData } from "~/types"
-
-type SortField = "name" | "balance" | "consumption"
-type SortOrder = "asc" | "desc"
+import {
+  DATA_TYPE_BALANCE,
+  DATA_TYPE_CONSUMPTION,
+  UI_CONSTANTS
+} from "~/constants/ui"
+import type {
+  CurrencyType,
+  DisplaySiteData,
+  SortField,
+  SortOrder
+} from "~/types"
 
 interface UseSortResult {
   sortField: SortField
@@ -77,11 +83,11 @@ export const useSort = (
           aValue = a.name
           bValue = b.name
           break
-        case "balance":
+        case DATA_TYPE_BALANCE:
           aValue = a.balance[currencyType]
           bValue = b.balance[currencyType]
           break
-        case "consumption":
+        case DATA_TYPE_CONSUMPTION:
           aValue = a.todayConsumption[currencyType]
           bValue = b.todayConsumption[currencyType]
           break
