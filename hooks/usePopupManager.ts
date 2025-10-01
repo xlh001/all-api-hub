@@ -8,7 +8,6 @@ import type { DisplaySiteData } from "~/types"
  * @returns {{
  *   isAddAccountOpen: boolean,
  *   isEditAccountOpen: boolean,
- *   isFirefoxWarningOpen: boolean,
  *   editingAccount: DisplaySiteData | null,
  *   openAddAccount: () => void,
  *   closeAddAccount: () => void,
@@ -19,7 +18,6 @@ import type { DisplaySiteData } from "~/types"
 export const usePopupManager = (onCloseCallback?: () => void) => {
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false)
-  const [isFirefoxWarningOpen, setIsFirefoxWarningOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<DisplaySiteData | null>(
     null
   )
@@ -44,7 +42,6 @@ export const usePopupManager = (onCloseCallback?: () => void) => {
   return {
     isAddAccountOpen,
     isEditAccountOpen,
-    isFirefoxWarningOpen,
     editingAccount,
     openAddAccount,
     closeAddAccount,
