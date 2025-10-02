@@ -92,14 +92,11 @@ export function ControlPanel({
           </select>
         </div>
 
-        <div className="w-full lg:w-auto">
-          <label className="block text-sm font-medium text-gray-700 mb-2 lg:invisible">
-            操作
-          </label>
+        <div className="w-full lg:w-auto lg:flex lg:items-end">
           <button
             onClick={loadPricingData}
             disabled={isLoading}
-            className="w-full lg:w-auto px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center space-x-2">
+            className="w-full lg:w-auto leading-6 px-3 py-2.5 border border-transparent bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center space-x-2">
             <ArrowPathIcon
               className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
             />
