@@ -57,8 +57,8 @@ export function ControlPanel({
   }
 
   return (
-    <div className="mb-6 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+    <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-4 mb-4">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             搜索模型
@@ -165,7 +165,8 @@ export function ControlPanel({
           <div className="h-4 w-px bg-gray-300"></div>
           <div className="text-blue-600">
             <span>
-              显示 <span className="font-medium">{filteredModels.length}</span> 个
+              显示 <span className="font-medium">{filteredModels.length}</span>{" "}
+              个
             </span>
           </div>
         </div>
