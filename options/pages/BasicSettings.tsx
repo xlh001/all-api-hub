@@ -2,12 +2,12 @@ import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
 import { useUserPreferences } from "~/hooks/useUserPreferences"
+import DangerousZone from "~/options/pages/BasicSettings/DangerousZone"
+import DisplaySettings from "~/options/pages/BasicSettings/DisplaySettings"
+import LoadingSkeleton from "~/options/pages/BasicSettings/LoadingSkeleton"
+import RefreshSettings from "~/options/pages/BasicSettings/RefreshSettings"
+import SettingsHeader from "~/options/pages/BasicSettings/SettingsHeader"
 import type { BalanceType, CurrencyType } from "~/types"
-import DangerousZone from "../components/BasicSettings/DangerousZone"
-import DisplaySettings from "../components/BasicSettings/DisplaySettings"
-import LoadingSkeleton from "../components/BasicSettings/LoadingSkeleton"
-import RefreshSettings from "../components/BasicSettings/RefreshSettings"
-import SettingsHeader from "../components/BasicSettings/SettingsHeader"
 
 export default function BasicSettings() {
   const {
@@ -53,9 +53,7 @@ export default function BasicSettings() {
     const success = await updateActiveTab(tab)
     if (success) {
       toast.success(
-        `默认标签页已设置为 ${
-          tab === "consumption" ? "今日消耗" : "总余额"
-        }`
+        `默认标签页已设置为 ${tab === "consumption" ? "今日消耗" : "总余额"}`
       )
     } else {
       toast.error("设置保存失败")

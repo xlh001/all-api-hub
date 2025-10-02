@@ -4,7 +4,7 @@ import {
   handleExportAccounts,
   handleExportAll,
   handleExportPreferences
-} from "~/options/components/ImportExport/utils"
+} from "~/options/pages/ImportExport/utils"
 
 interface ExportSectionProps {
   isExporting: boolean
