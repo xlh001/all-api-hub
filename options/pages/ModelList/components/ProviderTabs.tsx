@@ -1,6 +1,7 @@
 import { Tab } from "@headlessui/react"
 import { CpuChipIcon } from "@heroicons/react/24/outline"
-import { useRef, useEffect } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
+
 import { getProviderConfig, type ProviderType } from "~/utils/modelProviders"
 
 interface ProviderTabsProps {
@@ -9,6 +10,7 @@ interface ProviderTabsProps {
   setSelectedProvider: (provider: ProviderType | "all") => void
   baseFilteredModelsCount: number
   getProviderFilteredCount: (provider: ProviderType) => number
+  children: ReactNode
 }
 
 export function ProviderTabs({
@@ -16,7 +18,8 @@ export function ProviderTabs({
   selectedProvider,
   setSelectedProvider,
   baseFilteredModelsCount,
-  getProviderFilteredCount
+  getProviderFilteredCount,
+  children
 }: ProviderTabsProps) {
   const tabListRef = useRef<HTMLDivElement>(null)
 
@@ -117,6 +120,7 @@ export function ProviderTabs({
           )
         })}
       </Tab.List>
+      {children}
     </Tab.Group>
   )
 }

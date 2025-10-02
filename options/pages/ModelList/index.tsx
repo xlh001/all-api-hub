@@ -132,24 +132,9 @@ export default function ModelList({
             selectedProvider={selectedProvider}
             setSelectedProvider={setSelectedProvider}
             baseFilteredModelsCount={baseFilteredModels.length}
-            getProviderFilteredCount={getProviderFilteredCount}
-          />
-
-          <Tab.Panels>
-            <Tab.Panel>
-              <ModelDisplay
-                models={filteredModels}
-                currentAccount={currentAccount}
-                showRealPrice={showRealPrice}
-                showRatioColumn={showRatioColumn}
-                showEndpointTypes={showEndpointTypes}
-                selectedGroup={selectedGroup}
-                handleGroupClick={handleGroupClick}
-                availableGroups={availableGroups}
-              />
-            </Tab.Panel>
-            {providers.map((provider) => (
-              <Tab.Panel key={provider}>
+            getProviderFilteredCount={getProviderFilteredCount}>
+            <Tab.Panels>
+              <Tab.Panel>
                 <ModelDisplay
                   models={filteredModels}
                   currentAccount={currentAccount}
@@ -161,8 +146,22 @@ export default function ModelList({
                   availableGroups={availableGroups}
                 />
               </Tab.Panel>
-            ))}
-          </Tab.Panels>
+              {providers.map((provider) => (
+                <Tab.Panel key={provider}>
+                  <ModelDisplay
+                    models={filteredModels}
+                    currentAccount={currentAccount}
+                    showRealPrice={showRealPrice}
+                    showRatioColumn={showRatioColumn}
+                    showEndpointTypes={showEndpointTypes}
+                    selectedGroup={selectedGroup}
+                    handleGroupClick={handleGroupClick}
+                    availableGroups={availableGroups}
+                  />
+                </Tab.Panel>
+              ))}
+            </Tab.Panels>
+          </ProviderTabs>
 
           <Footer />
         </>
