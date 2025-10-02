@@ -4,13 +4,13 @@ import {
   InformationCircleIcon
 } from "@heroicons/react/24/outline"
 
-import CreditsCard from "~/components/About/CreditsCard"
-import PluginIntroCard from "~/components/About/PluginIntroCard"
-import PrivacyNotice from "~/components/About/PrivacyNotice"
-import TechStackGrid from "~/components/About/TechStackGrid"
 import FeatureList from "~/components/Common/FeatureList"
 import LinkCard from "~/components/Common/LinkCard"
 import { FEATURES, FUTURE_FEATURES } from "~/constants/about"
+import CreditsCard from "~/options/pages/About/CreditsCard"
+import PluginIntroCard from "~/options/pages/About/PluginIntroCard"
+import PrivacyNotice from "~/options/pages/About/PrivacyNotice"
+import TechStackGrid from "~/options/pages/About/TechStackGrid"
 import packageJson from "~/package.json"
 import { getHomepage, getPkgVersion, getRepository } from "~/utils/packageMeta"
 
