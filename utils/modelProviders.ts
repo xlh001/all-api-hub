@@ -5,6 +5,7 @@
 import {
   Azure,
   Baichuan,
+  Baidu,
   Claude,
   Cohere,
   DeepMind,
@@ -17,6 +18,7 @@ import {
   OpenAI,
   Qwen,
   Tencent,
+  Yi,
   Zhipu
 } from "@lobehub/icons"
 
@@ -83,7 +85,9 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   Mistral: {
     name: "Mistral",
     icon: Mistral,
-    patterns: [/mistral|magistral|mixtral|codestral|pixtral|devstral/i],
+    patterns: [
+      /mistral|magistral|mixtral|codestral|pixtral|devstral|Voxtral|ministral/i
+    ],
     color: "text-orange-500",
     bgColor: "bg-orange-50"
   },
@@ -128,6 +132,20 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     patterns: [/Tencent|hunyuan/i],
     color: "text-blue-700",
     bgColor: "bg-blue-50"
+  },
+  Baidu: {
+    name: "百度",
+    icon: Baidu,
+    patterns: [/Baidu|ERNIE/i],
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50"
+  },
+  yi: {
+    name: "零一万物",
+    icon: Yi,
+    patterns: [/01-ai|yi/i],
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50"
   },
   Baichuan: {
     name: "百川",
