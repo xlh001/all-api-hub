@@ -2,7 +2,22 @@
  * 模型厂商识别和图标映射工具
  */
 
-import { Claude, DeepSeek, Gemini, Grok, OpenAI, Qwen } from "@lobehub/icons"
+import {
+  Azure,
+  Baichuan,
+  Claude,
+  Cohere,
+  DeepSeek,
+  Gemini,
+  Grok,
+  Mistral,
+  Moonshot,
+  Ollama,
+  OpenAI,
+  Qwen,
+  Tencent,
+  Zhipu
+} from "@lobehub/icons"
 
 // 厂商类型
 export type ProviderType =
@@ -12,6 +27,14 @@ export type ProviderType =
   | "Grok"
   | "Qwen"
   | "DeepSeek"
+  | "Mistral"
+  | "Moonshot"
+  | "Azure"
+  | "ZhipuAI"
+  | "Ollama"
+  | "Tencent"
+  | "Baichuan"
+  | "Cohere"
   | "Unknown"
 
 // 厂商配置接口
@@ -70,6 +93,62 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
     patterns: [/deepseek/i],
     color: "text-cyan-600",
     bgColor: "bg-cyan-50"
+  },
+  Mistral: {
+    name: "Mistral",
+    icon: Mistral,
+    patterns: [/mistral|magistral|mixtral|codestral|pixtral|devstral/i],
+    color: "text-orange-500",
+    bgColor: "bg-orange-50"
+  },
+  Moonshot: {
+    name: "Moonshot",
+    icon: Moonshot,
+    patterns: [/moonshot|kimi/i],
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50"
+  },
+  Azure: {
+    name: "Azure",
+    icon: Azure,
+    patterns: [/azure/i],
+    color: "text-blue-500",
+    bgColor: "bg-blue-50"
+  },
+  ZhipuAI: {
+    name: "智谱",
+    icon: Zhipu,
+    patterns: [/glm/i],
+    color: "text-blue-700",
+    bgColor: "bg-blue-50"
+  },
+  Ollama: {
+    name: "Ollama",
+    icon: Ollama,
+    patterns: [/llama/i],
+    color: "text-blue-700",
+    bgColor: "bg-blue-50"
+  },
+  Tencent: {
+    name: "腾讯",
+    icon: Tencent,
+    patterns: [/Tencent|hunyuan/i],
+    color: "text-blue-700",
+    bgColor: "bg-blue-50"
+  },
+  Baichuan: {
+    name: "百川",
+    icon: Baichuan,
+    patterns: [/baichuan/i],
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50"
+  },
+  Cohere: {
+    name: "Cohere",
+    icon: Cohere,
+    patterns: [/command|c4ai/i],
+    color: "text-purple-500",
+    bgColor: "bg-purple-50"
   },
   Unknown: {
     name: "Unknown",

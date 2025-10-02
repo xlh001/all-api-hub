@@ -85,19 +85,7 @@ export function ProviderTabs({
         </Tab>
         {providers.map((provider) => {
           const providerConfig = getProviderConfig(
-            provider === "OpenAI"
-              ? "gpt-4"
-              : provider === "Claude"
-                ? "claude-3"
-                : provider === "Gemini"
-                  ? "gemini-pro"
-                  : provider === "Grok"
-                    ? "grok"
-                    : provider === "Qwen"
-                      ? "qwen"
-                      : provider === "DeepSeek"
-                        ? "deepseek"
-                        : "unknown"
+            provider.toLowerCase().replace(/\s/g, "-")
           )
           const IconComponent = providerConfig.icon
           return (
