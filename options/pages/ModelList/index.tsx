@@ -124,7 +124,6 @@ export default function ModelList({
             showEndpointTypes={showEndpointTypes}
             setShowEndpointTypes={setShowEndpointTypes}
             totalModels={pricingData?.data?.length || 0}
-            filteredModelsCount={filteredModels.length}
             filteredModels={filteredModels}
           />
 

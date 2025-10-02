@@ -23,7 +23,6 @@ interface ControlPanelProps {
   showEndpointTypes: boolean
   setShowEndpointTypes: (show: boolean) => void
   totalModels: number
-  filteredModelsCount: number
   filteredModels: any[]
 }
 
@@ -43,7 +42,6 @@ export function ControlPanel({
   showEndpointTypes,
   setShowEndpointTypes,
   totalModels,
-  filteredModelsCount,
   filteredModels
 }: ControlPanelProps) {
   const handleCopyModelNames = () => {
@@ -167,7 +165,7 @@ export function ControlPanel({
           <div className="h-4 w-px bg-gray-300"></div>
           <div className="text-blue-600">
             <span>
-              显示 <span className="font-medium">{filteredModelsCount}</span> 个
+              显示 <span className="font-medium">{filteredModels.length}</span> 个
             </span>
           </div>
         </div>
