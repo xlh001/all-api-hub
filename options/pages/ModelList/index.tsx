@@ -1,17 +1,19 @@
+import { Tab } from "@headlessui/react"
 import { useEffect } from "react"
+
 import { useAccountData } from "~/hooks/useAccountData"
 import { getAllProviders } from "~/utils/modelProviders"
-import { useModelListState } from "./ModelList/hooks/useModelListState"
-import { useModelData } from "./ModelList/hooks/useModelData"
-import { useFilteredModels } from "./ModelList/hooks/useFilteredModels"
-import { Header } from "./ModelList/components/Header"
-import { AccountSelector } from "./ModelList/components/AccountSelector"
-import { StatusIndicator } from "./ModelList/components/StatusIndicator"
-import { ControlPanel } from "./ModelList/components/ControlPanel"
-import { ProviderTabs } from "./ModelList/components/ProviderTabs"
-import { ModelDisplay } from "./ModelList/components/ModelDisplay"
-import { Footer } from "./ModelList/components/Footer"
-import { Tab } from "@headlessui/react"
+
+import { AccountSelector } from "./components/AccountSelector"
+import { ControlPanel } from "./components/ControlPanel"
+import { Footer } from "./components/Footer"
+import { Header } from "./components/Header"
+import { ModelDisplay } from "./components/ModelDisplay"
+import { ProviderTabs } from "./components/ProviderTabs"
+import { StatusIndicator } from "./components/StatusIndicator"
+import { useFilteredModels } from "./hooks/useFilteredModels"
+import { useModelData } from "./hooks/useModelData"
+import { useModelListState } from "./hooks/useModelListState"
 
 export default function ModelList({
   routeParams
@@ -54,7 +56,9 @@ export default function ModelList({
     selectedGroup
   })
 
-  const currentAccount = safeDisplayData.find((acc) => acc.id === selectedAccount)
+  const currentAccount = safeDisplayData.find(
+    (acc) => acc.id === selectedAccount
+  )
   const providers = getAllProviders()
 
   const {

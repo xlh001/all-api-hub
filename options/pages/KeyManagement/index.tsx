@@ -1,10 +1,10 @@
 import AddTokenDialog from "~/components/AddTokenDialog"
 
-import { Controls } from "./KeyManagement/Controls"
-import { Footer } from "./KeyManagement/Footer"
-import { Header } from "./KeyManagement/Header"
-import { useKeyManagement } from "./KeyManagement/hooks/useKeyManagement"
-import { TokenList } from "./KeyManagement/TokenList"
+import { Controls } from "./Controls"
+import { Footer } from "./Footer"
+import { Header } from "./Header"
+import { useKeyManagement } from "./hooks/useKeyManagement"
+import { TokenList } from "./TokenList"
 
 export default function KeyManagement({
   routeParams
