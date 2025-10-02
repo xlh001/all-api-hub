@@ -1,3 +1,7 @@
+export const REPO_URL = "https://github.com/qixing-jk/all-api-hub"
+export const HOMEPAGE_URL = "https://qixing-jk.github.io/all-api-hub/"
+export const FAQ_URL = HOMEPAGE_URL + "faq.html"
+
 export const FEATURES: string[] = [
   "自动识别并添加中转站点，自动创建系统访问 token",
   "每个站点可管理多个账号，支持账号分组与切换",

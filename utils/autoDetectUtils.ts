@@ -15,6 +15,7 @@
  * - AddAccountDialog 和 EditAccountDialog 中的自动识别错误处理
  * - AutoDetectErrorAlert 组件中的错误展示和操作
  */
+import { FAQ_URL } from "~/constants/about"
 
 // 自动识别错误类型
 export enum AutoDetectErrorType {
@@ -43,7 +44,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
     return {
       type: AutoDetectErrorType.TIMEOUT,
       message: "自动识别超时，请尝试手动添加",
-      helpDocUrl: "https://qixing-jk.github.io/all-api-hub/faq.html"
+      helpDocUrl: FAQ_URL
     }
   }
 
@@ -58,7 +59,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
       message:
         "您未在当前站点登录，或者登录信息已过期，无法自动添加，可查看帮助文档或点击先进行登录",
       actionText: "登录此站点",
-      helpDocUrl: "https://qixing-jk.github.io/all-api-hub/faq.html"
+      helpDocUrl: FAQ_URL
     }
   }
 
@@ -74,7 +75,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
       type: AutoDetectErrorType.INVALID_RESPONSE,
       message:
         "自动识别未成功，站点返回数据不符合预期，请手动输入信息或确保已在目标站点登录",
-      helpDocUrl: "https://qixing-jk.github.io/all-api-hub/faq.html"
+      helpDocUrl: FAQ_URL
     }
   }
 
@@ -87,7 +88,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
     return {
       type: AutoDetectErrorType.NETWORK_ERROR,
       message: "网络连接失败，请检查网络连接后重试",
-      helpDocUrl: "https://qixing-jk.github.io/all-api-hub/faq.html"
+      helpDocUrl: FAQ_URL
     }
   }
 
@@ -95,7 +96,7 @@ export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
   return {
     type: AutoDetectErrorType.UNKNOWN,
     message: "自动识别失败：" + errorMessage,
-    helpDocUrl: "https://qixing-jk.github.io/all-api-hub/faq.html"
+    helpDocUrl: FAQ_URL
   }
 }
 
