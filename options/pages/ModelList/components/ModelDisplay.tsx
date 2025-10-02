@@ -1,10 +1,11 @@
 import { CpuChipIcon } from "@heroicons/react/24/outline"
+
 import ModelItem from "~/components/ModelItem"
-import type { Account } from "~/types"
+import type { DisplaySiteData } from "~/types"
 
 interface ModelDisplayProps {
   models: any[]
-  currentAccount: Account | undefined
+  currentAccount: DisplaySiteData | undefined
   showRealPrice: boolean
   showRatioColumn: boolean
   showEndpointTypes: boolean
