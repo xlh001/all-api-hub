@@ -21,22 +21,7 @@ import {
 } from "@lobehub/icons"
 
 // 厂商类型
-export type ProviderType =
-  | "OpenAI"
-  | "Claude"
-  | "Gemini"
-  | "Grok"
-  | "Qwen"
-  | "DeepSeek"
-  | "Mistral"
-  | "Moonshot"
-  | "Azure"
-  | "ZhipuAI"
-  | "Ollama"
-  | "Tencent"
-  | "Baichuan"
-  | "Cohere"
-  | "Unknown"
+export type ProviderType = keyof typeof PROVIDER_CONFIGS
 
 // 厂商配置接口
 export interface ProviderConfig {
@@ -48,7 +33,7 @@ export interface ProviderConfig {
 }
 
 // 厂商配置映射
-export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
+export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   OpenAI: {
     name: "OpenAI",
     icon: OpenAI,
