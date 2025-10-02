@@ -125,6 +125,7 @@ export default function ModelList({
             setShowEndpointTypes={setShowEndpointTypes}
             totalModels={pricingData?.data?.length || 0}
             filteredModelsCount={filteredModels.length}
+            filteredModels={filteredModels}
           />
 
           <ProviderTabs

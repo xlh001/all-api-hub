@@ -1,9 +1,11 @@
 import {
   AdjustmentsHorizontalIcon,
   ArrowPathIcon,
+  ClipboardDocumentListIcon,
   CpuChipIcon,
   MagnifyingGlassIcon
 } from "@heroicons/react/24/outline"
+import toast from "react-hot-toast"
 
 interface ControlPanelProps {
   searchTerm: string
@@ -22,6 +24,7 @@ interface ControlPanelProps {
   setShowEndpointTypes: (show: boolean) => void
   totalModels: number
   filteredModelsCount: number
+  filteredModels: any[]
 }
 
 export function ControlPanel({
@@ -40,8 +43,21 @@ export function ControlPanel({
   showEndpointTypes,
   setShowEndpointTypes,
   totalModels,
-  filteredModelsCount
+  filteredModelsCount,
+  filteredModels
 }: ControlPanelProps) {
+  const handleCopyModelNames = () => {
+    if (filteredModels.length === 0) {
+      toast.error("没有可复制的模型")
+      return
+    }
+    const modelNames = filteredModels
+      .map((item) => item.model.model_name)
+      .join(",")
+    navigator.clipboard.writeText(modelNames)
+    toast.success("模型名称已复制到剪贴板")
+  }
+
   return (
     <div className="mb-6 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
@@ -130,6 +146,13 @@ export function ControlPanel({
             />
             <span>端点类型</span>
           </label>
+
+          <button
+            onClick={handleCopyModelNames}
+            className="inline-flex items-center space-x-2 cursor-pointer rounded-md bg-gray-100 px-3 py-1.5 text-gray-700 hover:bg-gray-200">
+            <ClipboardDocumentListIcon className="w-4 h-4" />
+            <span>复制所有模型名称</span>
+          </button>
         </div>
 
         <div className="flex items-center space-x-4 text-sm">
@@ -144,8 +167,7 @@ export function ControlPanel({
           <div className="h-4 w-px bg-gray-300"></div>
           <div className="text-blue-600">
             <span>
-              显示{" "}
-              <span className="font-medium">{filteredModelsCount}</span> 个
+              显示 <span className="font-medium">{filteredModelsCount}</span> 个
             </span>
           </div>
         </div>
