@@ -1,4 +1,5 @@
 import { CpuChipIcon } from "@heroicons/react/24/outline"
+import { Virtuoso } from "react-virtuoso"
 
 import ModelItem from "~/components/ModelItem"
 import type { DisplaySiteData } from "~/types"
@@ -34,26 +35,38 @@ export function ModelDisplay({
   }
 
   return (
-    <div className="space-y-3">
-      {models.map((item, index) => (
-        <ModelItem
-          key={`${item.model.model_name}-${index}`}
-          model={item.model}
-          calculatedPrice={item.calculatedPrice}
-          exchangeRate={
-            currentAccount?.balance?.USD > 0
-              ? currentAccount.balance.CNY / currentAccount.balance.USD
-              : 7
-          }
-          showRealPrice={showRealPrice}
-          showRatioColumn={showRatioColumn}
-          showEndpointTypes={showEndpointTypes}
-          userGroup={selectedGroup === "all" ? "default" : selectedGroup}
-          onGroupClick={handleGroupClick}
-          availableGroups={availableGroups}
-          isAllGroupsMode={selectedGroup === "all"}
-        />
-      ))}
+    <div className="h-[70vh]">
+      <Virtuoso
+        data={models}
+        components={{
+          Item: ({ children, ...props }) => (
+            <div className="mb-3 last:mb-0" {...props}>
+              {children}
+            </div>
+          )
+        }}
+        itemContent={(index, item) => (
+          <div className="mb-3 last:mb-0">
+            <ModelItem
+              key={`${item.model.model_name}-${index}`}
+              model={item.model}
+              calculatedPrice={item.calculatedPrice}
+              exchangeRate={
+                currentAccount?.balance?.USD > 0
+                  ? currentAccount.balance.CNY / currentAccount.balance.USD
+                  : 7
+              }
+              showRealPrice={showRealPrice}
+              showRatioColumn={showRatioColumn}
+              showEndpointTypes={showEndpointTypes}
+              userGroup={selectedGroup === "all" ? "default" : selectedGroup}
+              onGroupClick={handleGroupClick}
+              availableGroups={availableGroups}
+              isAllGroupsMode={selectedGroup === "all"}
+            />
+          </div>
+        )}
+      />
     </div>
   )
 }
