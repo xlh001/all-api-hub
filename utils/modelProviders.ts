@@ -7,6 +7,7 @@ import {
   Baichuan,
   Claude,
   Cohere,
+  DeepMind,
   DeepSeek,
   Gemini,
   Grok,
@@ -52,7 +53,7 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
     name: "OpenAI",
     icon: OpenAI,
     patterns: [
-      /gpt/i,
+      /gpt|whisper/i,
       /o\d+/i, // o1, o3 等
       /text-embedding/i
     ],
@@ -119,6 +120,13 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
     name: "智谱",
     icon: Zhipu,
     patterns: [/glm/i],
+    color: "text-blue-700",
+    bgColor: "bg-blue-50"
+  },
+  DeepMind: {
+    name: "DeepMind",
+    icon: DeepMind,
+    patterns: [/gemma|imagen/i],
     color: "text-blue-700",
     bgColor: "bg-blue-50"
   },
