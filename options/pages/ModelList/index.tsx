@@ -1,5 +1,5 @@
 import { Tab } from "@headlessui/react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 import { useAccountData } from "~/hooks/useAccountData"
 import { getAllProviders } from "~/utils/modelProviders"
@@ -74,6 +74,14 @@ export default function ModelList({
     selectedProvider
   })
 
+  const sortedProviders = useMemo(
+    () =>
+      [...providers].sort(
+        (a, b) => getProviderFilteredCount(b) - getProviderFilteredCount(a)
+      ),
+    [providers, getProviderFilteredCount]
+  )
+
   useEffect(() => {
     if (routeParams?.accountId && safeDisplayData.length > 0) {
       const accountExists = safeDisplayData.some(
@@ -128,7 +136,7 @@ export default function ModelList({
           />
 
           <ProviderTabs
-            providers={providers}
+            providers={sortedProviders}
             selectedProvider={selectedProvider}
             setSelectedProvider={setSelectedProvider}
             baseFilteredModelsCount={baseFilteredModels.length}
