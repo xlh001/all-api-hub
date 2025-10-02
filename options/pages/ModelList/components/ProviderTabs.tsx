@@ -23,6 +23,23 @@ export function ProviderTabs({
 }: ProviderTabsProps) {
   const tabListRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    const tabList = tabListRef.current
+    if (!tabList) return
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return
+      e.preventDefault()
+      tabList.scrollTo({
+        left: tabList.scrollLeft + e.deltaY,
+        behavior: "auto"
+      })
+    }
+
+    tabList.addEventListener("wheel", onWheel)
+    return () => tabList.removeEventListener("wheel", onWheel)
+  }, [])
+
   const scrollToSelectedTab = (selectedIndex: number) => {
     if (!tabListRef.current) return
 
@@ -69,7 +86,7 @@ export function ProviderTabs({
       }}>
       <Tab.List
         ref={tabListRef}
-        className="flex space-x-1 rounded-xl bg-gray-100 p-1 mb-6 overflow-x-auto overflow-y-hidden scrollbar-hide touch-pan-x">
+        className="flex space-x-1 rounded-xl bg-gray-100 p-1 mb-6 overflow-x-auto touch-pan-x">
         <Tab
           className={({ selected }) =>
             `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${
