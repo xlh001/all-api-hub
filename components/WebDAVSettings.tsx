@@ -6,6 +6,7 @@ import { accountStorage } from "~/services/accountStorage"
 import { userPreferences } from "~/services/userPreferences"
 import {
   downloadBackup,
+  PROGRAM_NAME,
   testWebdavConnection,
   uploadBackup
 } from "~/services/webdavService"
@@ -60,7 +61,7 @@ export default function WebDAVSettings() {
             </label>
             <input
               type="url"
-              placeholder="例如：https://dav.example.com/backups/ 或 完整文件 URL"
+              placeholder={`例如：https://dav.example.com/${PROGRAM_NAME}.json 完整文件 URL或Webdav 根目录 URL`}
               value={webdavUrl}
               onChange={(e) => setWebdavUrl(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"

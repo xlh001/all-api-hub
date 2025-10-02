@@ -12,7 +12,7 @@ function buildAuthHeader(username: string, password: string) {
 }
 
 const CONFIG_VERSION = "1-0"
-const PROGRAM_NAME = "all-api-hub"
+export const PROGRAM_NAME = "all-api-hub"
 const BACKUP_FOLDER_NAME = `${PROGRAM_NAME}-backup`
 
 function ensureFilename(url: string, version: string = CONFIG_VERSION) {
