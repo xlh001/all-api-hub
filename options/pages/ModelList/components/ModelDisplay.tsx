@@ -40,31 +40,29 @@ export function ModelDisplay({
         data={models}
         components={{
           Item: ({ children, ...props }) => (
-            <div className="mb-3 last:mb-0" {...props}>
+            <div className="my-3 first:mt-0" {...props}>
               {children}
             </div>
           )
         }}
         itemContent={(index, item) => (
-          <div className="mb-3 last:mb-0">
-            <ModelItem
-              key={`${item.model.model_name}-${index}`}
-              model={item.model}
-              calculatedPrice={item.calculatedPrice}
-              exchangeRate={
-                currentAccount?.balance?.USD > 0
-                  ? currentAccount.balance.CNY / currentAccount.balance.USD
-                  : 7
-              }
-              showRealPrice={showRealPrice}
-              showRatioColumn={showRatioColumn}
-              showEndpointTypes={showEndpointTypes}
-              userGroup={selectedGroup === "all" ? "default" : selectedGroup}
-              onGroupClick={handleGroupClick}
-              availableGroups={availableGroups}
-              isAllGroupsMode={selectedGroup === "all"}
-            />
-          </div>
+          <ModelItem
+            key={`${item.model.model_name}-${index}`}
+            model={item.model}
+            calculatedPrice={item.calculatedPrice}
+            exchangeRate={
+              currentAccount?.balance?.USD > 0
+                ? currentAccount.balance.CNY / currentAccount.balance.USD
+                : 7
+            }
+            showRealPrice={showRealPrice}
+            showRatioColumn={showRatioColumn}
+            showEndpointTypes={showEndpointTypes}
+            userGroup={selectedGroup === "all" ? "default" : selectedGroup}
+            onGroupClick={handleGroupClick}
+            availableGroups={availableGroups}
+            isAllGroupsMode={selectedGroup === "all"}
+          />
         )}
       />
     </div>
