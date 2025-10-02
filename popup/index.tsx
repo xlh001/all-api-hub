@@ -220,13 +220,16 @@ function IndexPopup({ inSidePanel = false }) {
           if (existingAccount) {
             setDetectedAccount(existingAccount)
             console.log("检测到已存在的账号:", existingAccount.site_name)
+          } else {
+            setDetectedAccount(null)
+            console.log("当前站点未添加账号")
           }
         } catch (error) {
           console.error("检测已存在账号时出错:", error)
         }
       }
     })
-  }, [])
+  }, [sortedData])
 
   return (
     <div
