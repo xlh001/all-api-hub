@@ -29,7 +29,7 @@ const ImportSection = ({
 }: ImportSectionProps) => {
   return (
     <section>
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="h-full bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
             <ArrowDownTrayIcon className="w-5 h-5 text-blue-600" />
@@ -85,9 +85,7 @@ const ImportSection = ({
                 <div className="text-sm">
                   {validation.valid ? (
                     <div>
-                      <p className="text-green-800 font-medium">
-                        数据格式正确
-                      </p>
+                      <p className="text-green-800 font-medium">数据格式正确</p>
                       <div className="mt-1 text-green-700">
                         {validation.hasAccounts && <p>• 包含账号数据</p>}
                         {validation.hasPreferences && <p>• 包含用户设置</p>}
@@ -95,9 +93,7 @@ const ImportSection = ({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-red-800">
-                      数据格式错误，请检查JSON格式
-                    </p>
+                    <p className="text-red-800">数据格式错误，请检查JSON格式</p>
                   )}
                 </div>
               </div>
