@@ -86,7 +86,7 @@ export function ProviderTabs({
       }}>
       <Tab.List
         ref={tabListRef}
-        className="flex space-x-1 rounded-xl bg-gray-100 p-1 mb-6 overflow-x-auto touch-pan-x">
+        className="flex space-x-1 rounded-xl bg-gray-100 p-1 mb-6 overflow-x-auto touch-pan-x scrollbar-hide">
         <Tab
           className={({ selected }) =>
             `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${
