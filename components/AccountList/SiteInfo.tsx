@@ -1,4 +1,9 @@
-import { PencilSquareIcon, UserIcon } from "@heroicons/react/24/outline"
+import {
+  CheckCircleIcon,
+  PencilSquareIcon,
+  UserIcon,
+  XCircleIcon
+} from "@heroicons/react/24/outline"
 
 import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
 import type { DisplaySiteData } from "~/types"
@@ -34,6 +39,16 @@ export default function SiteInfo({ site, detectedAccountId }: SiteInfoProps) {
               {site.name}
             </a>
           </div>
+          {/* 签到状态显示 */}
+          {site.can_check_in ? (
+            <Tooltip content="今日已签到" position="top">
+              <CheckCircleIcon className="h-4 w-4 text-green-500" />
+            </Tooltip>
+          ) : (
+            <Tooltip content="今日未签到" position="top">
+              <XCircleIcon className="h-4 w-4 text-red-500" />
+            </Tooltip>
+          )}
         </div>
         <div className="text-xs text-gray-500 truncate ml-4 flex items-start space-x-1">
           <UserIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />

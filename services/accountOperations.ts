@@ -183,6 +183,7 @@ export async function validateAndSaveAccount(
       health_status: "healthy", // 成功获取数据说明状态正常
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes || "",
+      can_check_in: freshAccountData.can_check_in,
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),
@@ -252,6 +253,7 @@ export async function validateAndUpdateAccount(
       health_status: "healthy", // 成功获取数据说明状态正常
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes,
+      can_check_in: freshAccountData.can_check_in,
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),

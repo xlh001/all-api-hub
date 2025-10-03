@@ -30,6 +30,7 @@ export interface SiteAccount {
   updated_at: number // 更改时间 (timestamp)
   created_at: number // 创建时间 (timestamp)
   notes?: string // 备注
+  can_check_in?: boolean // 是否可以签到
 }
 
 // 存储配置
@@ -81,6 +82,7 @@ export interface DisplaySiteData {
   token: string // 访问令牌，用于复制功能
   userId: number // 真实的用户 ID，用于 API 调用
   notes?: string
+  can_check_in?: boolean // 是否可以签到
 }
 
 // 站点的token 密钥信息(API 密钥)

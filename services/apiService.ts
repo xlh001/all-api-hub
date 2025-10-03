@@ -26,6 +26,7 @@ export interface TodayUsageData {
 
 export interface AccountData extends TodayUsageData {
   quota: number
+  can_check_in?: boolean
 }
 
 export interface RefreshAccountResult {
@@ -44,6 +45,10 @@ export interface SiteStatusInfo {
   stripe_unit_price?: number
   PaymentUSDRate?: number
   system_name?: string
+}
+
+export interface CheckInStatus {
+  can_check_in: boolean
 }
 
 // 模型列表响应类型
@@ -416,6 +421,38 @@ export const fetchAccountQuota = async (
 }
 
 /**
+ * 获取签到状态
+ */
+export const fetchCheckInStatus = async (
+  baseUrl: string,
+  userId: number,
+  accessToken: string
+): Promise<boolean | undefined> => {
+  const url = joinUrl(baseUrl, "/api/user/check_in_status")
+  const options = createTokenAuthRequest(userId, accessToken)
+
+  try {
+    const checkInData = await apiRequest<{ can_check_in?: boolean }>(
+      url,
+      options,
+      "/api/user/check_in_status"
+    )
+    // 仅当 can_check_in 明确为 true 或 false 时才返回，否则返回 undefined
+    if (typeof checkInData.can_check_in === "boolean") {
+      return checkInData.can_check_in
+    }
+    return undefined
+  } catch (error) {
+    // 如果接口不存在或返回错误（如 404 Not Found），则认为不支持签到功能
+    if (error instanceof ApiError && (error.statusCode === 404 || error.statusCode === 500)) {
+      return undefined
+    }
+    console.warn("获取签到状态失败:", error)
+    return undefined // 其他错误也视为不支持
+  }
+}
+
+/**
  * 获取今日使用情况
  */
 export const fetchTodayUsage = async (
@@ -497,14 +534,16 @@ export const fetchAccountData = async (
   userId: number,
   accessToken: string
 ): Promise<AccountData> => {
-  const [quota, todayUsage] = await Promise.all([
+  const [quota, todayUsage, canCheckIn] = await Promise.all([
     fetchAccountQuota(baseUrl, userId, accessToken),
-    fetchTodayUsage(baseUrl, userId, accessToken)
+    fetchTodayUsage(baseUrl, userId, accessToken),
+    fetchCheckInStatus(baseUrl, userId, accessToken)
   ])
 
   return {
     quota,
-    ...todayUsage
+    ...todayUsage,
+    can_check_in: canCheckIn
   }
 }
 

@@ -202,6 +202,7 @@ class AccountStorageService {
 
       // 如果成功获取数据，更新账号信息
       if (result.success && result.data) {
+        updateData.can_check_in = result.data.can_check_in
         updateData.account_info = {
           ...account.account_info,
           quota: result.data.quota,
@@ -347,7 +348,8 @@ class AccountStorageService {
       baseUrl: account.site_url,
       token: account.account_info.access_token,
       userId: account.account_info.id, // 添加真实的用户 ID
-      notes: account.notes
+      notes: account.notes,
+      can_check_in: account.can_check_in
     }))
   }
 
