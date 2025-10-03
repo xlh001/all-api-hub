@@ -187,7 +187,7 @@ export default function AccountForm({
         <label
           htmlFor="supports-check-in"
           className="text-sm font-medium text-gray-700">
-          启用签到功能
+          签到状态检测（需站点已开启签到）
         </label>
         <Switch
           checked={supportsCheckIn}
