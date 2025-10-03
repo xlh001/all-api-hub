@@ -1,3 +1,5 @@
+import { getSiteType } from "~/services/detectSiteType"
+
 import {
   autoRefreshService,
   handleAutoRefreshMessage
@@ -99,6 +101,31 @@ async function handleAutoDetectSite(request: any, sendResponse: Function) {
   const { url, requestId } = request
 
   try {
+    const [userDate, siteType] = await Promise.all([
+      getSiteDataFromTab(url, requestId),
+      getSiteType(url)
+    ])
+
+    // 5. 返回结果
+    sendResponse({
+      success: true,
+      data: {
+        siteType,
+        ...userDate
+      }
+    })
+  } catch (error) {
+    sendResponse({ success: false, error: error.message })
+  }
+}
+
+/**
+ * 通过打开临时标签页获取站点用户信息
+ * @param url
+ * @param requestId
+ */
+async function getSiteDataFromTab(url, requestId) {
+  try {
     // 1. 打开临时窗口
     const window = await chrome.windows.create({
       url: url,
@@ -126,10 +153,9 @@ async function handleAutoDetectSite(request: any, sendResponse: Function) {
       action: "getUserFromLocalStorage",
       url: url
     })
-    console.log(userResponse.error)
 
     if (!userResponse.success) {
-      throw new Error(userResponse.error)
+      console.log(userResponse.error)
     }
 
     // 4. 关闭临时窗口
@@ -137,13 +163,10 @@ async function handleAutoDetectSite(request: any, sendResponse: Function) {
     tempWindows.delete(requestId)
 
     // 5. 返回结果
-    sendResponse({
-      success: true,
-      data: {
-        userId: userResponse.data.userId,
-        user: userResponse.data.user
-      }
-    })
+    return {
+      userId: userResponse.data.userId,
+      user: userResponse.data.user
+    }
   } catch (error) {
     // 清理窗口
     const windowId = tempWindows.get(requestId)
@@ -155,8 +178,7 @@ async function handleAutoDetectSite(request: any, sendResponse: Function) {
         console.log("清理窗口失败:", cleanupError)
       }
     }
-
-    sendResponse({ success: false, error: error.message })
+    return null
   }
 }
 
