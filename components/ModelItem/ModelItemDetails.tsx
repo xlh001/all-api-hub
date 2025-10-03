@@ -6,8 +6,12 @@ import {
 import React from "react"
 
 import type { ModelPricing } from "~/services/apiService/common/type"
-import type { CalculatedPrice } from "~/utils/modelPricing"
-import { formatPrice, getEndpointTypesText } from "~/utils/modelPricing"
+import {
+  formatPrice,
+  getEndpointTypesText,
+  isTokenBillingType,
+  type CalculatedPrice
+} from "~/utils/modelPricing"
 
 interface ModelItemDetailsProps {
   model: ModelPricing
@@ -72,7 +76,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
         )}
 
         {/* 详细定价信息（仅按量计费模型） */}
-        {model.quota_type === 0 && (
+        {isTokenBillingType(model.quota_type) && (
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-2">
               <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />

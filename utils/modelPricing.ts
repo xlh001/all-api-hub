@@ -10,8 +10,10 @@ export interface CalculatedPrice {
   outputUSD: number // 每1M token输出价格（美元）
   inputCNY: number // 每1M token输入价格（人民币）
   outputCNY: number // 每1M token输出价格（人民币）
-  perCallPrice?: number // 按次计费时每次调用的价格
+  perCallPrice?: PerCallPrice // 按次计费时每次调用的价格
 }
+
+type PerCallPrice = number | { input: number; output: number }
 
 /**
  * 计算模型价格
@@ -19,6 +21,7 @@ export interface CalculatedPrice {
  * @param groupRatio 分组倍率
  * @param exchangeRate 汇率（CNY per USD）
  * @param userGroup 用户分组
+ * 原理 https://github.com/QuantumNous/new-api/blob/7437b671efb6b994eae3d8d721e3cbe215e5abc9/web/src/helpers/utils.jsx#L595
  */
 export const calculateModelPrice = (
   model: ModelPricing,
@@ -29,7 +32,7 @@ export const calculateModelPrice = (
   // 获取用户分组的倍率，默认为1
   const groupMultiplier = groupRatio[userGroup] || 1
 
-  if (model.quota_type === 0) {
+  if (isTokenBillingType(model.quota_type)) {
     // 按量计费
     // inputUSD（每 1M token） = model_ratio × 2 × groupRatio
     // complUSD（每 1M token） = model_ratio × completion_ratio × 2 × groupRatio
@@ -45,7 +48,10 @@ export const calculateModelPrice = (
     }
   } else {
     // 按次计费
-    const perCallPrice = model.model_price * groupMultiplier
+    const perCallPrice = calculateModelPerCallPrice(
+      model.model_price,
+      groupMultiplier
+    )
 
     return {
       inputUSD: 0,
@@ -54,6 +60,27 @@ export const calculateModelPrice = (
       outputCNY: 0,
       perCallPrice
     }
+  }
+}
+// todo: 考虑其他站点的计算方式
+// https://github.com/deanxv/done-hub/blob/6f332c162175de3333477c03faaa65d0d902f8ab/web/src/views/Pricing/component/util.js#L13
+const DONE_HUB_TOKEN_TO_CALL_RATIO = 0.002
+
+/**
+ * 计算按次计费模型在不同调用次数下的价格
+ * @param cost
+ * @param factor
+ */
+const calculateModelPerCallPrice = (
+  cost: PerCallPrice,
+  factor: number
+): PerCallPrice => {
+  if (typeof cost === "number") {
+    return cost * factor
+  }
+  return {
+    input: cost.input * factor * DONE_HUB_TOKEN_TO_CALL_RATIO,
+    output: cost.output * factor * DONE_HUB_TOKEN_TO_CALL_RATIO
   }
 }
 
@@ -119,7 +146,7 @@ export const formatPriceRange = (
  * 获取计费模式的显示文本
  */
 export const getBillingModeText = (quotaType: number): string => {
-  return quotaType === 0 ? "按量计费" : "按次计费"
+  return isTokenBillingType(quotaType) ? "按量计费" : "按次计费"
 }
 
 /**
@@ -128,7 +155,7 @@ export const getBillingModeText = (quotaType: number): string => {
 export const getBillingModeStyle = (
   quotaType: number
 ): { color: string; bgColor: string } => {
-  return quotaType === 0
+  return isTokenBillingType(quotaType)
     ? { color: "text-blue-600", bgColor: "bg-blue-50" }
     : { color: "text-purple-600", bgColor: "bg-purple-50" }
 }
@@ -153,4 +180,12 @@ export const getEndpointTypesText = (
     return "未提供"
   }
   return endpointTypes.join(", ")
+}
+
+/**
+ * 判断是否为按量计费
+ * @param quotaType
+ */
+export const isTokenBillingType = (quotaType: number) => {
+  return quotaType === 0
 }
