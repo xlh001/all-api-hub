@@ -42,8 +42,8 @@ export const createRequestHeaders = (
  */
 export const apiRequest = async <T>(
   url: string,
-  options: RequestInit,
-  endpoint: string
+  options?: RequestInit,
+  endpoint?: string
 ): Promise<T> => {
   const response = await fetch(url, options)
 

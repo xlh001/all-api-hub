@@ -640,11 +640,11 @@ export const deleteApiToken = async (
 /**
  * 获取模型定价信息
  */
-export const fetchModelPricing = async (
-  baseUrl: string,
-  userId: number,
-  accessToken: string
-): Promise<PricingResponse> => {
+export const fetchModelPricing = async ({
+  baseUrl,
+  userId,
+  token: accessToken
+}): Promise<PricingResponse> => {
   const url = joinUrl(baseUrl, "/api/pricing")
   const options = createTokenAuthRequest(userId, accessToken)
 
