@@ -54,6 +54,7 @@ This extension allows for convenient integrated management of AI relay station a
 - 🌐 **Broader Site Support** - Added support for sites like VoAPI, Super-API, etc.
 - 📝 **Manual Add** - Supports manually adding any relay site, preventing failures when automatic detection doesn't work.
 - 🔄 **Duplicate Site Detection** - Prevents adding the same site multiple times.
+- ✅ **Site Check-in Status Detection** - Supports detecting whether a site supports check-in and its check-in status.
 - ️🏷️ **Smart Site Name Fetching** - Gets the real site name, not just the domain.
 - ☁️ **WebDav Data Backup** - Supports backing up and restoring all accounts and settings via WebDav, ensuring data security and enabling cross-device synchronization.
 - ⚙️ **Firefox Support** - The extension is now available for Firefox browsers.

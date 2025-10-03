@@ -31,6 +31,8 @@ features:
     details: Supports manually adding any relay site, which solves the problem of not being able to add a site when automatic recognition fails, enhancing flexibility.
   - title: Duplicate Site Detection
     details: Automatically performs duplicate detection when adding a site to avoid duplicate sites in the list and keep the data clean.
+  - title: Site Check-in Status Detection
+    details: Supports detecting whether a site supports check-in and its check-in status.
   - title: Smartly Get Site Names
     details: Can intelligently identify and obtain the real name of the site, rather than simply displaying the domain name, improving readability.
   - title: WebDav Data Backup & Restore

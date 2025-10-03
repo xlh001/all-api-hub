@@ -14,7 +14,7 @@ actions:
     type: secondary
 
   - text: Release 下载
-    link: https://github.com/qixing-jk/all-api-hub/releases 
+    link: https://github.com/qixing-jk/all-api-hub/releases
     type: secondary
 
 features:
@@ -34,6 +34,8 @@ features:
     details: 支持手动添加任意中转站点，解决了自动识别失败时无法添加的问题，增强了灵活性。
   - title: 站点重复检测
     details: 在添加站点时自动进行重复检测，避免列表中出现重复的站点，保持数据整洁。
+  - title: 站点签到状态检测
+    details: 支持检测站点是否支持签到和签到状态。
   - title: 智能获取站点名称
     details: 能够智能识别并获取站点的真实名称，而非简单显示域名，提升了可读性。
   - title: WebDav 数据备份与恢复
