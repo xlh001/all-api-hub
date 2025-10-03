@@ -106,13 +106,16 @@ async function handleAutoDetectSite(request: any, sendResponse: Function) {
       getSiteType(url)
     ])
 
+    const result = {
+      siteType,
+      ...userDate
+    }
+    console.log("自动检测结果:", result)
+
     // 5. 返回结果
     sendResponse({
       success: true,
-      data: {
-        siteType,
-        ...userDate
-      }
+      data: result
     })
   } catch (error) {
     sendResponse({ success: false, error: error.message })
