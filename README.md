@@ -5,12 +5,20 @@
 
 **一个开源的浏览器插件，聚合管理所有中转站账号的余额、模型和密钥，告别繁琐登录。**
 
-[![Version](https://img.shields.io/badge/version-0.0.3-blue.svg)](https://github.com/qixing-jk/all-api-hub)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Plasmo](https://img.shields.io/badge/plasmo-v0.90.5-purple.svg)](https://plasmo.com)
-[![React](https://img.shields.io/badge/react-18.2.0-61dafb.svg)](https://reactjs.org)
-[![TypeScript](https://img.shields.io/badge/typescript-5.3.3-blue.svg)](https://typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/tailwindcss-3.4.17-38bdf8.svg)](https://tailwindcss.com)
+<p align="center">
+<a href="https://github.com/qixing-jk/all-api-hub/releases">
+  <img alt="Latest Release" src="https://img.shields.io/github/v/release/qixing-jk/all-api-hub?style=flat">
+</a>
+<a href="https://github.com/qixing-jk/all-api-hub/stargazers">
+  <img alt="Stars" src="https://img.shields.io/github/stars/qixing-jk/all-api-hub?style=flat">
+</a>
+<a href="https://github.com/qixing-jk/all-api-hub/issues">
+  <img alt="Issues" src="https://img.shields.io/github/issues/qixing-jk/all-api-hub?style=flat">
+</a>
+<a href="https://github.com/qixing-jk/all-api-hub/blob/main/LICENSE">
+  <img alt="License" src="https://img.shields.io/github/license/qixing-jk/all-api-hub?style=flat">
+</a>
+</p>
 
 **[文档教程](https://qixing-jk.github.io/all-api-hub/) | [常见问题](https://qixing-jk.github.io/all-api-hub/faq.html)**
 
@@ -135,13 +143,13 @@ npm run build
 
 ## 🏗️ 技术栈
 
-- **框架**: [Plasmo](https://plasmo.com) v0.90.5
-- **UI 库**: [React](https://reactjs.org) 18.2.0
-- **样式**: [Tailwind CSS](https://tailwindcss.com) v3.4.17
+- **框架**: [Plasmo](https://plasmo.com)
+- **UI 库**: [React](https://reactjs.org)
+- **样式**: [Tailwind CSS](https://tailwindcss.com)
 - **组件**: [Headless UI](https://headlessui.com)
 - **图标**: [Heroicons](https://heroicons.com)
 - **状态管理**: [Zustand](https://zustand-demo.pmnd.rs)
-- **类型检查**: [TypeScript](https://typescriptlang.org) 5.3.3
+- **类型检查**: [TypeScript](https://typescriptlang.org)
 
 ## 📄 许可证
 
