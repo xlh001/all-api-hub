@@ -32,11 +32,11 @@ You must first log in to the target relay station in your browser so that the pl
 
 1. Open the main page of the plugin and click `Add Account`.
 
-![Add Account](./static/image/add-account-btn.png)
+![Add Account](../static/image/add-account-btn.png)
 
 2. Enter the relay station address and click `Auto-detect`.
 
-![Auto-detect](./static/image/add-account-dialog-btn.png)
+![Auto-detect](../static/image/add-account-dialog-btn.png)
 
 3. After confirming that the automatic detection is correct, click `Confirm Add`.
 
@@ -48,11 +48,11 @@ The plugin will automatically identify your account's:
 - Top-up ratio
 :::
 
-![Confirm Add](./static/image/add-account-dialog-ok-btn.png)
+![Confirm Add](../static/image/add-account-dialog-ok-btn.png)
 
 ### 3.2 Manual Add
 
 :::info Tip
 When automatic detection fails, you can manually enter the site account. You will need to obtain the following information first. (Each site may have a different UI, please find it yourself.)
 :::
-![User Info](./static/image/site-user-info.png)
+![User Info](../static/image/site-user-info.png)
