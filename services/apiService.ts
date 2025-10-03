@@ -45,6 +45,7 @@ export interface SiteStatusInfo {
   stripe_unit_price?: number
   PaymentUSDRate?: number
   system_name?: string
+  check_in_enabled?: boolean
 }
 
 export interface CheckInStatus {
@@ -458,16 +459,12 @@ export const fetchCheckInStatus = async (
 /**
  * 检查是否支持签到功能
  * @param baseUrl
- * @param userId
- * @param accessToken
  */
 export const fetchSupportCheckIn = async (
-  baseUrl: string,
-  userId: number,
-  accessToken: string
+  baseUrl: string
 ): Promise<boolean> => {
-  const checkInStatus = await fetchCheckInStatus(baseUrl, userId, accessToken)
-  return checkInStatus !== undefined
+  const siteStatus = await fetchSiteStatus(baseUrl)
+  return siteStatus?.check_in_enabled
 }
 
 /**

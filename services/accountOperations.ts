@@ -123,7 +123,7 @@ export async function autoDetectAccount(
     // 获取默认充值比例
     const defaultExchangeRate = extractDefaultExchangeRate(siteStatus)
 
-    const checkSupport = await fetchSupportCheckIn(url, userId, access_token)
+    const checkSupport = await fetchSupportCheckIn(url)
 
     return {
       success: true,
