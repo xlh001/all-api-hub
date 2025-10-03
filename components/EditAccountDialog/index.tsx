@@ -48,7 +48,9 @@ export default function EditAccountDialog({
     setExchangeRate,
     handleAutoDetect,
     handleSubmit,
-    isFormValid
+    isFormValid,
+    notes,
+    setNotes
   } = useEditAccountDialog({ account, onClose })
 
   return (
@@ -104,6 +106,8 @@ export default function EditAccountDialog({
                     setShowAccessToken={setShowAccessToken}
                     exchangeRate={exchangeRate}
                     setExchangeRate={setExchangeRate}
+                    notes={notes}
+                    setNotes={setNotes}
                   />
 
                   <ActionButtons

@@ -32,6 +32,7 @@ export function useAddAccountDialog({
   const [showManualForm, setShowManualForm] = useState(false)
   const [exchangeRate, setExchangeRate] = useState("")
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
+  const [notes, setNotes] = useState("")
 
   useEffect(() => {
     if (isOpen) {
@@ -47,6 +48,7 @@ export function useAddAccountDialog({
       setExchangeRate("")
       setCurrentTabUrl(null)
       setUrl("")
+      setNotes("")
 
       // 获取当前标签页的 URL 作为初始参考
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -139,7 +141,8 @@ export function useAddAccountDialog({
           username.trim(),
           accessToken.trim(),
           userId.trim(),
-          exchangeRate
+          exchangeRate,
+          notes.trim()
         ),
         {
           loading: "正在添加账号...",
@@ -193,7 +196,8 @@ export function useAddAccountDialog({
       detectionError,
       showManualForm,
       exchangeRate,
-      currentTabUrl
+      currentTabUrl,
+      notes
     },
     setters: {
       setUrl,
@@ -203,7 +207,8 @@ export function useAddAccountDialog({
       setUserId,
       setShowAccessToken,
       setShowManualForm,
-      setExchangeRate
+      setExchangeRate,
+      setNotes
     },
     handlers: {
       handleUseCurrentTabUrl,

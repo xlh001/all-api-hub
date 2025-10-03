@@ -29,6 +29,7 @@ export interface SiteAccount {
   last_sync_time: number // 最后同步时间 (timestamp)
   updated_at: number // 更改时间 (timestamp)
   created_at: number // 创建时间 (timestamp)
+  notes?: string // 备注
 }
 
 // 存储配置
@@ -79,6 +80,7 @@ export interface DisplaySiteData {
   baseUrl: string // 站点 URL，用于复制功能
   token: string // 访问令牌，用于复制功能
   userId: number // 真实的用户 ID，用于 API 调用
+  notes?: string
 }
 
 // 站点的token 密钥信息(API 密钥)

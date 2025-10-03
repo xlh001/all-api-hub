@@ -46,6 +46,14 @@ export const useImportExport = () => {
         // 导入账号数据
         const accountsData = data.accounts || data.data
         if (accountsData) {
+          // 向后兼容，如果导入的数据没有 notes 字段，则补充为空字符串
+          if (accountsData.accounts && Array.isArray(accountsData.accounts)) {
+            accountsData.accounts.forEach((acc) => {
+              if (typeof acc.notes === "undefined") {
+                acc.notes = ""
+              }
+            })
+          }
           const success = await accountStorage.importData(accountsData)
           if (success) {
             importSuccess = true

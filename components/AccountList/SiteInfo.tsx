@@ -1,3 +1,5 @@
+import { PencilSquareIcon } from "@heroicons/react/24/outline"
+
 import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
 import type { DisplaySiteData } from "~/types"
 
@@ -36,6 +38,14 @@ export default function SiteInfo({ site, detectedAccountId }: SiteInfoProps) {
         <div className="text-xs text-gray-500 truncate ml-4">
           {site.username}
         </div>
+        {site.notes && (
+          <div className="text-xs text-gray-500 truncate ml-4 mt-1 flex items-start space-x-1">
+            <PencilSquareIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
+            <span className="truncate" title={site.notes}>
+              {site.notes}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import {
   EyeSlashIcon,
   GlobeAltIcon,
   KeyIcon,
+  PencilSquareIcon,
   UserIcon
 } from "@heroicons/react/24/outline"
 
@@ -22,6 +23,8 @@ interface AccountFormProps {
   setShowAccessToken: (show: boolean) => void
   exchangeRate: string
   setExchangeRate: (rate: string) => void
+  notes: string
+  setNotes: (notes: string) => void
 }
 
 export default function AccountForm({
@@ -36,7 +39,9 @@ export default function AccountForm({
   showAccessToken,
   setShowAccessToken,
   exchangeRate,
-  setExchangeRate
+  setExchangeRate,
+  notes,
+  setNotes
 }: AccountFormProps) {
   return (
     <div className="space-y-6">
@@ -166,6 +171,25 @@ export default function AccountForm({
             请输入有效的汇率 (0.1 - 100)
           </p>
         )}
+      </div>
+
+      {/* 备注 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          备注
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <PencilSquareIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="选填，输入备注信息"
+            className="block w-full pl-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-none"
+            rows={2}
+          />
+        </div>
       </div>
     </div>
   )

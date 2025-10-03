@@ -33,6 +33,7 @@ export function useEditAccountDialog({
   )
   const [showManualForm, setShowManualForm] = useState(true) // 编辑模式默认显示
   const [exchangeRate, setExchangeRate] = useState("")
+  const [notes, setNotes] = useState("")
 
   const resetForm = useCallback(() => {
     setUrl("")
@@ -45,6 +46,7 @@ export function useEditAccountDialog({
     setDetectionError(null)
     setShowManualForm(true)
     setExchangeRate("")
+    setNotes("")
   }, [])
 
   const loadAccountData = useCallback(async (accountId: string) => {
@@ -57,6 +59,7 @@ export function useEditAccountDialog({
         setAccessToken(siteAccount.account_info.access_token)
         setUserId(siteAccount.account_info.id.toString())
         setExchangeRate(siteAccount.exchange_rate.toString())
+        setNotes(siteAccount.notes || "")
       }
     } catch (error) {
       console.error("加载账号数据失败:", error)
@@ -118,7 +121,8 @@ export function useEditAccountDialog({
           username.trim(),
           accessToken.trim(),
           userId.trim(),
-          exchangeRate
+          exchangeRate,
+          notes.trim()
         ),
         {
           loading: "正在保存更改...",
@@ -175,6 +179,8 @@ export function useEditAccountDialog({
     showManualForm,
     exchangeRate,
     setExchangeRate,
+    notes,
+    setNotes,
     handleAutoDetect,
     handleSubmit,
     isFormValid

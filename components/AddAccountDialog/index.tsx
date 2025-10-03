@@ -115,6 +115,8 @@ export default function AddAccountDialog({
                         onToggleShowAccessToken={() =>
                           setters.setShowAccessToken(!state.showAccessToken)
                         }
+                        notes={state.notes}
+                        onNotesChange={setters.setNotes}
                       />
                       <FormActions
                         isDetected={state.isDetected}

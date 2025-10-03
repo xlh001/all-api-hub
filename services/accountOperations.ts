@@ -149,7 +149,8 @@ export async function validateAndSaveAccount(
   username: string,
   accessToken: string,
   userId: string,
-  exchangeRate: string
+  exchangeRate: string,
+  notes: string
 ): Promise<AccountSaveResult> {
   // 表单验证
   if (
@@ -181,6 +182,7 @@ export async function validateAndSaveAccount(
       site_url: url.trim(),
       health_status: "healthy", // 成功获取数据说明状态正常
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
+      notes: notes || "",
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),
@@ -217,7 +219,8 @@ export async function validateAndUpdateAccount(
   username: string,
   accessToken: string,
   userId: string,
-  exchangeRate: string
+  exchangeRate: string,
+  notes: string
 ): Promise<AccountSaveResult> {
   // 表单验证
   if (
@@ -248,6 +251,7 @@ export async function validateAndUpdateAccount(
       site_url: url.trim(),
       health_status: "healthy", // 成功获取数据说明状态正常
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
+      notes: notes,
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),
