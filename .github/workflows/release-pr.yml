@@ -62,10 +62,9 @@ jobs:
         run: |
           gh release upload ${{ steps.release.outputs.tag_name }} build/*.zip
 
-      # （可选）自动提交到浏览器商店
-      # - name: Browser Platform Publish
-      #   if: ${{ steps.release.outputs.release_created }}
-      #   uses: PlasmoHQ/bpp@v3
-      #   with:
-      #     keys: ${{ secrets.SUBMIT_KEYS }}
-      #     artifact: build/chrome-mv3-prod.zip
+      #     （可选）自动提交到浏览器商店
+      - name: Browser Platform Publish
+        if: ${{ steps.release.outputs.release_created }}
+        uses: PlasmoHQ/bpp@v3
+        with:
+          keys: ${{ secrets.SUBMIT_KEYS }}
