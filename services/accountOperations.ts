@@ -36,6 +36,7 @@ import {
   extractDefaultExchangeRate,
   fetchAccountData,
   fetchSiteStatus,
+  fetchSupportCheckIn,
   getOrCreateAccessToken
 } from "./apiService"
 
@@ -47,6 +48,7 @@ export interface AccountValidationResult {
     accessToken: string
     userId: string
     exchangeRate?: number
+    checkSupport: boolean | undefined
   }
   error?: string
   detailedError?: AutoDetectError
@@ -121,13 +123,16 @@ export async function autoDetectAccount(
     // 获取默认充值比例
     const defaultExchangeRate = extractDefaultExchangeRate(siteStatus)
 
+    const checkSupport = await fetchSupportCheckIn(url, userId, access_token)
+
     return {
       success: true,
       data: {
         username: detectedUsername,
         accessToken: access_token,
         userId: userId.toString(),
-        exchangeRate: defaultExchangeRate
+        exchangeRate: defaultExchangeRate,
+        checkSupport: checkSupport
       }
     }
   } catch (error) {
@@ -150,7 +155,8 @@ export async function validateAndSaveAccount(
   accessToken: string,
   userId: string,
   exchangeRate: string,
-  notes: string
+  notes: string,
+  supportsCheckIn: boolean
 ): Promise<AccountSaveResult> {
   // 表单验证
   if (
@@ -173,7 +179,8 @@ export async function validateAndSaveAccount(
     const freshAccountData = await fetchAccountData(
       url.trim(),
       parsedUserId,
-      accessToken.trim()
+      accessToken.trim(),
+      supportsCheckIn
     )
 
     const accountData: Omit<SiteAccount, "id" | "created_at" | "updated_at"> = {
@@ -184,6 +191,7 @@ export async function validateAndSaveAccount(
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes || "",
       can_check_in: freshAccountData.can_check_in,
+      supports_check_in: supportsCheckIn,
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),
@@ -221,7 +229,8 @@ export async function validateAndUpdateAccount(
   accessToken: string,
   userId: string,
   exchangeRate: string,
-  notes: string
+  notes: string,
+  supports_check_in: boolean
 ): Promise<AccountSaveResult> {
   // 表单验证
   if (
@@ -244,7 +253,8 @@ export async function validateAndUpdateAccount(
     const freshAccountData = await fetchAccountData(
       url.trim(),
       parsedUserId,
-      accessToken.trim()
+      accessToken.trim(),
+      supports_check_in
     )
 
     const updateData: Partial<Omit<SiteAccount, "id" | "created_at">> = {
@@ -253,6 +263,7 @@ export async function validateAndUpdateAccount(
       health_status: "healthy", // 成功获取数据说明状态正常
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes,
+      supports_check_in,
       can_check_in: freshAccountData.can_check_in,
       account_info: {
         id: parsedUserId,

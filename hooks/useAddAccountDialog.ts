@@ -33,6 +33,7 @@ export function useAddAccountDialog({
   const [exchangeRate, setExchangeRate] = useState("")
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
+  const [supportsCheckIn, setSupportsCheckIn] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -49,6 +50,7 @@ export function useAddAccountDialog({
       setCurrentTabUrl(null)
       setUrl("")
       setNotes("")
+      setSupportsCheckIn(false)
 
       // 获取当前标签页的 URL 作为初始参考
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -99,6 +101,7 @@ export function useAddAccountDialog({
         setUsername(result.data.username)
         setAccessToken(result.data.accessToken)
         setUserId(result.data.userId)
+        setSupportsCheckIn(result.data.checkSupport || false)
 
         if (result.data.exchangeRate) {
           setExchangeRate(result.data.exchangeRate.toString())
@@ -113,7 +116,8 @@ export function useAddAccountDialog({
         console.log("自动识别成功:", {
           username: result.data.username,
           siteName,
-          exchangeRate: result.data.exchangeRate
+          exchangeRate: result.data.exchangeRate,
+          supportsCheckIn: result.data.checkSupport
         })
       }
     } catch (error) {
@@ -142,7 +146,8 @@ export function useAddAccountDialog({
           accessToken.trim(),
           userId.trim(),
           exchangeRate,
-          notes.trim()
+          notes.trim(),
+          supportsCheckIn
         ),
         {
           loading: "正在添加账号...",
@@ -197,7 +202,8 @@ export function useAddAccountDialog({
       showManualForm,
       exchangeRate,
       currentTabUrl,
-      notes
+      notes,
+      supportsCheckIn
     },
     setters: {
       setUrl,
@@ -208,7 +214,8 @@ export function useAddAccountDialog({
       setShowAccessToken,
       setShowManualForm,
       setExchangeRate,
-      setNotes
+      setNotes,
+      setSupportsCheckIn
     },
     handlers: {
       handleUseCurrentTabUrl,

@@ -1,5 +1,6 @@
 import {
   CheckCircleIcon,
+  ExclamationTriangleIcon,
   PencilSquareIcon,
   UserIcon,
   XCircleIcon
@@ -40,14 +41,22 @@ export default function SiteInfo({ site, detectedAccountId }: SiteInfoProps) {
             </a>
           </div>
           {/* 签到状态显示 */}
-          {site.can_check_in ? (
-            <Tooltip content="今日已签到" position="top">
-              <CheckCircleIcon className="h-4 w-4 text-green-500" />
-            </Tooltip>
-          ) : (
-            <Tooltip content="今日未签到" position="top">
-              <XCircleIcon className="h-4 w-4 text-red-500" />
-            </Tooltip>
+          {site.supports_check_in && (
+            <>
+              {site.can_check_in === undefined ? (
+                <Tooltip content="站点可能不支持签到" position="top">
+                  <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
+                </Tooltip>
+              ) : site.can_check_in === false ? (
+                <Tooltip content="今日已签到" position="top">
+                  <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                </Tooltip>
+              ) : (
+                <Tooltip content="今日未签到" position="top">
+                  <XCircleIcon className="h-4 w-4 text-red-500" />
+                </Tooltip>
+              )}
+            </>
           )}
         </div>
         <div className="text-xs text-gray-500 truncate ml-4 flex items-start space-x-1">

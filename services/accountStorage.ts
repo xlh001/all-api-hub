@@ -191,7 +191,8 @@ class AccountStorageService {
       const result = await refreshAccountData(
         account.site_url,
         account.account_info.id,
-        account.account_info.access_token
+        account.account_info.access_token,
+        account.supports_check_in ?? false
       )
 
       // 构建更新数据
@@ -349,7 +350,8 @@ class AccountStorageService {
       token: account.account_info.access_token,
       userId: account.account_info.id, // 添加真实的用户 ID
       notes: account.notes,
-      can_check_in: account.can_check_in
+      can_check_in: account.can_check_in,
+      supports_check_in: account.supports_check_in
     }))
   }
 

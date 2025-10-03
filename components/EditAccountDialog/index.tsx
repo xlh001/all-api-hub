@@ -50,7 +50,9 @@ export default function EditAccountDialog({
     handleSubmit,
     isFormValid,
     notes,
-    setNotes
+    setNotes,
+    supportsCheckIn,
+    setSupportsCheckIn
   } = useEditAccountDialog({ account, onClose })
 
   return (
@@ -108,6 +110,8 @@ export default function EditAccountDialog({
                     setExchangeRate={setExchangeRate}
                     notes={notes}
                     setNotes={setNotes}
+                    supportsCheckIn={supportsCheckIn}
+                    setSupportsCheckIn={setSupportsCheckIn}
                   />
 
                   <ActionButtons

@@ -117,6 +117,8 @@ export default function AddAccountDialog({
                         }
                         notes={state.notes}
                         onNotesChange={setters.setNotes}
+                        supportsCheckIn={state.supportsCheckIn}
+                        setSupportsCheckIn={setters.setSupportsCheckIn}
                       />
                       <FormActions
                         isDetected={state.isDetected}

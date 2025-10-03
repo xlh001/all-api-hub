@@ -444,12 +444,30 @@ export const fetchCheckInStatus = async (
     return undefined
   } catch (error) {
     // 如果接口不存在或返回错误（如 404 Not Found），则认为不支持签到功能
-    if (error instanceof ApiError && (error.statusCode === 404 || error.statusCode === 500)) {
+    if (
+      error instanceof ApiError &&
+      (error.statusCode === 404 || error.statusCode === 500)
+    ) {
       return undefined
     }
     console.warn("获取签到状态失败:", error)
     return undefined // 其他错误也视为不支持
   }
+}
+
+/**
+ * 检查是否支持签到功能
+ * @param baseUrl
+ * @param userId
+ * @param accessToken
+ */
+export const fetchSupportCheckIn = async (
+  baseUrl: string,
+  userId: number,
+  accessToken: string
+): Promise<boolean> => {
+  const checkInStatus = await fetchCheckInStatus(baseUrl, userId, accessToken)
+  return checkInStatus !== undefined
 }
 
 /**
@@ -532,13 +550,23 @@ export const fetchTodayUsage = async (
 export const fetchAccountData = async (
   baseUrl: string,
   userId: number,
-  accessToken: string
+  accessToken: string,
+  checkSupport: boolean
 ): Promise<AccountData> => {
-  const [quota, todayUsage, canCheckIn] = await Promise.all([
+  const promises: (
+    | Promise<number>
+    | Promise<TodayUsageData>
+    | Promise<boolean | undefined>
+  )[] = [
     fetchAccountQuota(baseUrl, userId, accessToken),
-    fetchTodayUsage(baseUrl, userId, accessToken),
-    fetchCheckInStatus(baseUrl, userId, accessToken)
-  ])
+    fetchTodayUsage(baseUrl, userId, accessToken)
+  ]
+
+  if (checkSupport) {
+    promises.push(fetchCheckInStatus(baseUrl, userId, accessToken))
+  }
+
+  const [quota, todayUsage, canCheckIn] = await Promise.all(promises)
 
   return {
     quota,
@@ -553,10 +581,16 @@ export const fetchAccountData = async (
 export const refreshAccountData = async (
   baseUrl: string,
   userId: number,
-  accessToken: string
+  accessToken: string,
+  checkSupport: boolean
 ): Promise<RefreshAccountResult> => {
   try {
-    const data = await fetchAccountData(baseUrl, userId, accessToken)
+    const data = await fetchAccountData(
+      baseUrl,
+      userId,
+      accessToken,
+      checkSupport
+    )
     return {
       success: true,
       data,

@@ -1,3 +1,4 @@
+import { Switch } from "@headlessui/react"
 import {
   CurrencyDollarIcon,
   EyeIcon,
@@ -25,6 +26,8 @@ interface AccountFormProps {
   setExchangeRate: (rate: string) => void
   notes: string
   setNotes: (notes: string) => void
+  supportsCheckIn: boolean
+  setSupportsCheckIn: (value: boolean) => void
 }
 
 export default function AccountForm({
@@ -41,7 +44,9 @@ export default function AccountForm({
   exchangeRate,
   setExchangeRate,
   notes,
-  setNotes
+  setNotes,
+  supportsCheckIn,
+  setSupportsCheckIn
 }: AccountFormProps) {
   return (
     <div className="space-y-6">
@@ -171,6 +176,28 @@ export default function AccountForm({
             请输入有效的汇率 (0.1 - 100)
           </p>
         )}
+      </div>
+
+      {/* 签到功能开关 */}
+      <div className="flex items-center justify-between">
+        <label
+          htmlFor="supports-check-in"
+          className="text-sm font-medium text-gray-700">
+          启用签到功能
+        </label>
+        <Switch
+          checked={supportsCheckIn}
+          onChange={setSupportsCheckIn}
+          id="supports-check-in"
+          className={`${
+            supportsCheckIn ? "bg-green-600" : "bg-gray-200"
+          } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2`}>
+          <span
+            className={`${
+              supportsCheckIn ? "translate-x-6" : "translate-x-1"
+            } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+          />
+        </Switch>
       </div>
 
       {/* 备注 */}
