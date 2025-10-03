@@ -6,9 +6,11 @@ export const fetchSiteOriginalTitle = async (url: string) => {
   const match = html.match(/<title>(.*?)<\/title>/i)
   const title = match ? match[1] : "未找到"
   console.log("原始 document title:", title)
+  return title
 }
 
-export const getSiteType = async (title: string) => {
+export const getSiteType = async (url: string) => {
+  const title = await fetchSiteOriginalTitle(url)
   let detected = "unknown"
   for (const rule of SITE_TITLE_RULES) {
     if (rule.regex.test(title)) {
