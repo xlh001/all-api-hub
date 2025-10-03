@@ -9,11 +9,21 @@ export const SUPER_API = "Super-API"
 
 // 定义网站类型及匹配规则
 export const SITE_TITLE_RULES = [
-  { name: ONE_API, regex: new RegExp(ONE_API.replace("-", "[-_ ]?"), "i") },
-  { name: NEW_API, regex: new RegExp(NEW_API.replace("-", "[-_ ]?"), "i") },
-  { name: VELOERA, regex: new RegExp(VELOERA, "i") },
-  { name: ONE_HUB, regex: new RegExp(ONE_HUB.replace("-", "[-_ ]?"), "i") },
-  { name: DONE_HUB, regex: new RegExp(DONE_HUB.replace("-", "[-_ ]?"), "i") },
-  { name: VO_API, regex: new RegExp(VO_API.replace("-", "[-_ ]?"), "i") },
-  { name: SUPER_API, regex: new RegExp(SUPER_API.replace("-", "[-_ ]?"), "i") }
+  { name: ONE_API, regex: makeTitleRegex(ONE_API) },
+  { name: NEW_API, regex: makeTitleRegex(NEW_API) },
+  { name: VELOERA, regex: makeTitleRegex(VELOERA) },
+  { name: ONE_HUB, regex: makeTitleRegex(ONE_HUB) },
+  { name: DONE_HUB, regex: makeTitleRegex(DONE_HUB) },
+  { name: VO_API, regex: makeTitleRegex(VO_API) },
+  { name: SUPER_API, regex: makeTitleRegex(SUPER_API) }
 ]
+
+/**
+ * 根据站点名生成正则
+ * - 自动处理连字符替换成 [-_ ]?
+ * - 加上单词边界 \b，避免误匹配
+ */
+function makeTitleRegex(name: string): RegExp {
+  const pattern = name.replace("-", "[-_ ]?")
+  return new RegExp(`\\b${pattern}\\b`, "i")
+}
