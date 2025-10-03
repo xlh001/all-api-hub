@@ -72,6 +72,7 @@ export type TokenUsage = { upload: number; download: number }
 
 // 展示用的站点数据 (兼容当前 UI)
 export interface DisplaySiteData {
+  siteType: string
   id: string
   icon: string
   name: string
