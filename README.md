@@ -1,3 +1,9 @@
+<h4 align="center">
+简体中文 | <a href="./README_EN.md">English</a>
+</h4>
+
+<hr/>
+
 <div align="center">
   <img src="assets/icon.png" alt="All API Hub Logo" width="128" height="128">
 
@@ -71,25 +77,25 @@
 
 <div style="display: flex; justify-content: center; gap: 20px; box-sizing: border-box; flex-wrap: wrap;">
   <figure>
-    <img src="docs/docs/static/image/current-site-check.png" alt="current-site-check" style="width:49%;height:auto;">
-    <img src="docs/docs/static/image/try-add-existing-site.png" alt="try-add-existing-site" style="width:49%;height:auto;">
+    <img src="docs/docs/.vuepress/image/current-site-check.png" alt="current-site-check" style="width:49%;height:auto;">
+    <img src="docs/docs/.vuepress/image/try-add-existing-site.png" alt="try-add-existing-site" style="width:49%;height:auto;">
     <figcaption style="text-align:center;">站点重复检测</figcaption>
   </figure>
 </div>
   <figure>
-    <img src="docs/docs/static/image/model-list.png" alt="model-list" style="height:auto;">
+    <img src="docs/docs/.vuepress/image/model-list.png" alt="model-list" style="height:auto;">
     <figcaption style="text-align:center;">模型列表</figcaption>
   </figure>
   <figure>
-    <img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
+    <img src="docs/docs/.vuepress/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
     <figcaption style="text-align:center;">数据导入导出</figcaption>
   </figure>
   <figure>
-    <img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="height:auto;">
+    <img src="docs/docs/.vuepress/image/api-key-list.png" alt="api-key-list" style="height:auto;">
     <figcaption style="text-align:center;">密钥列表</figcaption>
   </figure>
   <figure>
-    <img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="height:auto;">
+    <img src="docs/docs/.vuepress/image/account-manage.png" alt="account-manage" style="height:auto;">
     <figcaption style="text-align:center;">账户管理</figcaption>
   </figure>
 
