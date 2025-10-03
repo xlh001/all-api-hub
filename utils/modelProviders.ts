@@ -34,6 +34,7 @@ export interface ProviderConfig {
   bgColor: string
 }
 
+// todo: 考虑优先使用owner_by来识别厂商
 // 厂商配置映射
 export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   OpenAI: {
