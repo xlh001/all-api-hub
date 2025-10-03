@@ -34,6 +34,7 @@ export function useAddAccountDialog({
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
   const [supportsCheckIn, setSupportsCheckIn] = useState(false)
+  const [siteType, setSiteType] = useState("unknown")
 
   useEffect(() => {
     if (isOpen) {
@@ -51,6 +52,7 @@ export function useAddAccountDialog({
       setUrl("")
       setNotes("")
       setSupportsCheckIn(false)
+      setSiteType("unknown")
 
       // 获取当前标签页的 URL 作为初始参考
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -111,13 +113,18 @@ export function useAddAccountDialog({
           console.log("未获取到默认充值比例，设置为空")
         }
 
+        if (result.data.siteType) {
+          setSiteType(result.data.siteType)
+        }
+
         setIsDetected(true)
 
         console.log("自动识别成功:", {
           username: result.data.username,
           siteName,
           exchangeRate: result.data.exchangeRate,
-          supportsCheckIn: result.data.checkSupport
+          supportsCheckIn: result.data.checkSupport,
+          siteType: result.data.siteType
         })
       }
     } catch (error) {
@@ -147,7 +154,8 @@ export function useAddAccountDialog({
           userId.trim(),
           exchangeRate,
           notes.trim(),
-          supportsCheckIn
+          supportsCheckIn,
+          siteType
         ),
         {
           loading: "正在添加账号...",
@@ -203,7 +211,8 @@ export function useAddAccountDialog({
       exchangeRate,
       currentTabUrl,
       notes,
-      supportsCheckIn
+      supportsCheckIn,
+      siteType
     },
     setters: {
       setUrl,
@@ -215,7 +224,8 @@ export function useAddAccountDialog({
       setShowManualForm,
       setExchangeRate,
       setNotes,
-      setSupportsCheckIn
+      setSupportsCheckIn,
+      setSiteType
     },
     handlers: {
       handleUseCurrentTabUrl,

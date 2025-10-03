@@ -52,7 +52,9 @@ export default function EditAccountDialog({
     notes,
     setNotes,
     supportsCheckIn,
-    setSupportsCheckIn
+    setSupportsCheckIn,
+    siteType,
+    setSiteType
   } = useEditAccountDialog({ account, onClose })
 
   return (
@@ -112,8 +114,10 @@ export default function EditAccountDialog({
                     setNotes={setNotes}
                     supportsCheckIn={supportsCheckIn}
                     setSupportsCheckIn={setSupportsCheckIn}
+                    siteType={siteType}
+                    setSiteType={setSiteType}
                   />
-
+                
                   <ActionButtons
                     onClose={onClose}
                     handleAutoDetect={handleAutoDetect}

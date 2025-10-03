@@ -49,6 +49,7 @@ export interface AccountValidationResult {
     userId: string
     exchangeRate?: number
     checkSupport: boolean | undefined
+    siteType?: string
   }
   error?: string
   detailedError?: AutoDetectError
@@ -132,7 +133,8 @@ export async function autoDetectAccount(
         accessToken: access_token,
         userId: userId.toString(),
         exchangeRate: defaultExchangeRate,
-        checkSupport: checkSupport
+        checkSupport: checkSupport,
+        siteType: response.data.siteType
       }
     }
   } catch (error) {
@@ -156,7 +158,8 @@ export async function validateAndSaveAccount(
   userId: string,
   exchangeRate: string,
   notes: string,
-  supportsCheckIn: boolean
+  supportsCheckIn: boolean,
+  siteType: string
 ): Promise<AccountSaveResult> {
   // 表单验证
   if (
@@ -188,6 +191,7 @@ export async function validateAndSaveAccount(
       site_name: siteName.trim(),
       site_url: url.trim(),
       health_status: "healthy", // 成功获取数据说明状态正常
+      site_type: siteType,
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes || "",
       can_check_in: freshAccountData.can_check_in,
@@ -230,7 +234,8 @@ export async function validateAndUpdateAccount(
   userId: string,
   exchangeRate: string,
   notes: string,
-  supports_check_in: boolean
+  supports_check_in: boolean,
+  siteType: string
 ): Promise<AccountSaveResult> {
   // 表单验证
   if (
@@ -261,6 +266,7 @@ export async function validateAndUpdateAccount(
       site_name: siteName.trim(),
       site_url: url.trim(),
       health_status: "healthy", // 成功获取数据说明状态正常
+      site_type: siteType,
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes,
       supports_check_in,

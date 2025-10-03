@@ -24,6 +24,7 @@ export interface SiteAccount {
   site_name: string // 站点名称
   site_url: string // 站点 url
   health_status: SiteHealthStatus // 站点健康状态
+  site_type: string // 站点类型
   exchange_rate: number // 人民币与美元充值比例 (CNY per USD)
   account_info: AccountInfo // 账号信息
   last_sync_time: number // 最后同步时间 (timestamp)
@@ -79,6 +80,7 @@ export interface DisplaySiteData {
   todayConsumption: CurrencyAmount
   todayTokens: TokenUsage
   healthStatus?: SiteHealthStatus // 可选的健康状态
+  site_type: string // 站点类型
   baseUrl: string // 站点 URL，用于复制功能
   token: string // 访问令牌，用于复制功能
   userId: number // 真实的用户 ID，用于 API 调用

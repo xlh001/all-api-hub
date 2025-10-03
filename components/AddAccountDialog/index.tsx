@@ -119,8 +119,10 @@ export default function AddAccountDialog({
                         onNotesChange={setters.setNotes}
                         supportsCheckIn={state.supportsCheckIn}
                         setSupportsCheckIn={setters.setSupportsCheckIn}
-                      />
-                      <FormActions
+                        siteType={state.siteType}
+                        onSiteTypeChange={setters.setSiteType}
+                        />
+                        <FormActions
                         isDetected={state.isDetected}
                         isSaving={state.isSaving}
                         siteName={state.siteName}

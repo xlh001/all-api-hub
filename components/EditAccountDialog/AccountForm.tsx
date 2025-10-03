@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline"
 
 import { isValidExchangeRate } from "~/services/accountOperations"
+import { SITE_TITLE_RULES } from "~/constants/siteType"
 
 interface AccountFormProps {
   siteName: string
@@ -28,6 +29,8 @@ interface AccountFormProps {
   setNotes: (notes: string) => void
   supportsCheckIn: boolean
   setSupportsCheckIn: (value: boolean) => void
+  siteType: string
+  setSiteType: (value: string) => void
 }
 
 export default function AccountForm({
@@ -46,7 +49,9 @@ export default function AccountForm({
   notes,
   setNotes,
   supportsCheckIn,
-  setSupportsCheckIn
+  setSupportsCheckIn,
+  siteType,
+  setSiteType
 }: AccountFormProps) {
   return (
     <div className="space-y-6">
@@ -67,6 +72,29 @@ export default function AccountForm({
             className="block w-full pl-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
             required
           />
+        </div>
+      </div>
+
+      {/* 站点类型 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          站点类型
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <GlobeAltIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <select
+            value={siteType}
+            onChange={(e) => setSiteType(e.target.value)}
+            className="block w-full pl-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+          >
+            {SITE_TITLE_RULES.map((rule) => (
+              <option key={rule.name} value={rule.name}>
+                {rule.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

@@ -35,6 +35,7 @@ export function useEditAccountDialog({
   const [exchangeRate, setExchangeRate] = useState("")
   const [notes, setNotes] = useState("")
   const [supportsCheckIn, setSupportsCheckIn] = useState(false)
+  const [siteType, setSiteType] = useState("")
 
   const resetForm = useCallback(() => {
     setUrl("")
@@ -49,6 +50,7 @@ export function useEditAccountDialog({
     setExchangeRate("")
     setNotes("")
     setSupportsCheckIn(false)
+    setSiteType("")
   }, [])
 
   const loadAccountData = useCallback(async (accountId: string) => {
@@ -63,6 +65,7 @@ export function useEditAccountDialog({
         setExchangeRate(siteAccount.exchange_rate.toString())
         setNotes(siteAccount.notes || "")
         setSupportsCheckIn(siteAccount.supports_check_in || false)
+        setSiteType(siteAccount.site_type || "")
       }
     } catch (error) {
       console.error("加载账号数据失败:", error)
@@ -97,6 +100,9 @@ export function useEditAccountDialog({
         if (result.data.exchangeRate) {
           setExchangeRate(result.data.exchangeRate.toString())
         }
+        if (result.data.siteType) {
+          setSiteType(result.data.siteType)
+        }
         setIsDetected(true)
         toast.success("自动识别成功！")
       }
@@ -127,7 +133,8 @@ export function useEditAccountDialog({
           userId.trim(),
           exchangeRate,
           notes.trim(),
-          supportsCheckIn
+          supportsCheckIn,
+          siteType
         ),
         {
           loading: "正在保存更改...",
@@ -188,6 +195,8 @@ export function useEditAccountDialog({
     setNotes,
     supportsCheckIn,
     setSupportsCheckIn,
+    siteType,
+    setSiteType,
     handleAutoDetect,
     handleSubmit,
     isFormValid
