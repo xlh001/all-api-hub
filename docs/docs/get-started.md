@@ -5,8 +5,10 @@
 ## 1. 下载
 
 ::: info 推荐
-[前往 Release 下载](https://github.com/qixing-jk/all-api-hub/releases)
+[前往 Edge商店 下载](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
 :::
+
+[Release 下载](https://github.com/qixing-jk/all-api-hub/releases)
 
 ## 2. 支持的站点
 

@@ -102,6 +102,9 @@
 
 ## 🚀 安装使用
 
+### Edge 应用商店（推荐）
+[🔗 前往下载](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
+
 ### 手动安装
 
 1. 下载最新版本的扩展包

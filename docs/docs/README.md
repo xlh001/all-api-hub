@@ -12,6 +12,10 @@ actions:
   - text: 查看源码
     link: https://github.com/qixing-jk/all-api-hub # 假设这是您的项目仓库地址
     type: secondary
+    
+  - text: Edge 商店
+    link: https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa
+    type: secondary
 
   - text: Release 下载
     link: https://github.com/qixing-jk/all-api-hub/releases

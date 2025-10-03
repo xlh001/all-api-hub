@@ -101,6 +101,9 @@ This extension allows for convenient integrated management of AI relay station a
 
 ## 🚀 Installation
 
+### Edge App Store (Recommended)
+[🔗 Go to download](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
+
 ### Manual Installation
 
 1. Download the latest release package.

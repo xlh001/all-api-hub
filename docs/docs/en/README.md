@@ -2,7 +2,7 @@
 home: true
 title: Home
 heroImage: https://github.com/qixing-jk/all-api-hub/blob/main/assets/icon.png?raw=true
-heroText: All API Hub
+heroText: All API Hub - Relay Station Manager
 tagline: An open-source browser extension for managing AI relay station accounts.
 actions:
   - text: Get Started
@@ -10,6 +10,9 @@ actions:
     type: primary
   - text: View Source
     link: https://github.com/qixing-jk/all-api-hub
+    type: secondary
+  - text: Edge Store
+    link: https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa
     type: secondary
   - text: Releases
     link: https://github.com/qixing-jk/all-api-hub/releases

@@ -5,8 +5,10 @@ An open-source browser extension designed to optimize the experience of managing
 ## 1. Download
 
 ::: info Recommended
-[Go to Releases to download](https://github.com/qixing-jk/all-api-hub/releases)
+[Go to Edge Store to download](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
 :::
+
+[Release Download](https://github.com/qixing-jk/all-api-hub/releases)
 
 ## 2. Supported Sites
 
