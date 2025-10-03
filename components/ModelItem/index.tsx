@@ -5,7 +5,7 @@
 import React, { useState } from "react"
 
 import { useModelItemActions } from "~/hooks/useModelItemActions"
-import type { ModelPricing } from "~/services/apiService"
+import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CalculatedPrice } from "~/utils/modelPricing"
 
 import { ModelItemDescription } from "./ModelItemDescription"

@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import type { PricingResponse } from "~/services/apiService"
+import type { PricingResponse } from "~/services/apiService/common/type"
 import type { ProviderType } from "~/utils/modelProviders"
 
 export function useModelListState() {

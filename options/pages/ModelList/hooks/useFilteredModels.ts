@@ -1,8 +1,13 @@
 import { useMemo } from "react"
-import { calculateModelPrice } from "~/utils/modelPricing"
-import { filterModelsByProvider, type ProviderType } from "~/utils/modelProviders"
-import type { PricingResponse, Model } from "~/services/apiService"
+
+import type { Model } from "~/services/apiService"
+import type { PricingResponse } from "~/services/apiService/common/type"
 import type { Account } from "~/types"
+import { calculateModelPrice } from "~/utils/modelPricing"
+import {
+  filterModelsByProvider,
+  type ProviderType
+} from "~/utils/modelProviders"
 
 interface UseFilteredModelsProps {
   pricingData: PricingResponse | null
@@ -76,7 +81,8 @@ export function useFilteredModels({
       return baseFilteredModels
     }
     return baseFilteredModels.filter(
-      (item) => filterModelsByProvider([item.model], selectedProvider).length > 0
+      (item) =>
+        filterModelsByProvider([item.model], selectedProvider).length > 0
     )
   }, [baseFilteredModels, selectedProvider])
 

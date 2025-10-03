@@ -1,8 +1,9 @@
-import { useEffect, useCallback } from "react"
+import { useCallback, useEffect } from "react"
 import toast from "react-hot-toast"
 
 import { useAccountData } from "~/hooks/useAccountData"
-import { fetchModelPricing, type PricingResponse } from "~/services/apiService"
+import { fetchModelPricing } from "~/services/apiService"
+import type { PricingResponse } from "~/services/apiService/common/type"
 
 interface UseModelDataProps {
   selectedAccount: string

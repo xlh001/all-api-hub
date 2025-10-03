@@ -1,153 +1,29 @@
+import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
+import type {
+  AccessTokenInfo,
+  AccountData,
+  ApiResponse,
+  CreateTokenRequest,
+  GroupInfo,
+  HealthCheckResult,
+  LogResponseData,
+  PaginatedTokenResponse,
+  PricingResponse,
+  RefreshAccountResult,
+  SiteStatusInfo,
+  TodayUsageData,
+  UserInfo
+} from "~/services/apiService/common/type"
+import {
+  aggregateUsageData,
+  apiRequest,
+  createCookieAuthRequest,
+  createRequestHeaders,
+  createTokenAuthRequest,
+  getTodayTimestampRange
+} from "~/services/apiService/common/utils"
 import type { ApiToken } from "~/types"
 import { joinUrl } from "~/utils/url"
-
-/**
- * API 服务 - 用于与 One API/New API 站点进行交互
- */
-
-// ============= 类型定义 =============
-export interface UserInfo {
-  id: number
-  username: string
-  access_token: string | null
-}
-
-export interface AccessTokenInfo {
-  username: string
-  access_token: string
-}
-
-export interface TodayUsageData {
-  today_quota_consumption: number
-  today_prompt_tokens: number
-  today_completion_tokens: number
-  today_requests_count: number
-}
-
-export interface AccountData extends TodayUsageData {
-  quota: number
-  can_check_in?: boolean
-}
-
-export interface RefreshAccountResult {
-  success: boolean
-  data?: AccountData
-  healthStatus: HealthCheckResult
-}
-
-export interface HealthCheckResult {
-  status: "healthy" | "warning" | "error" | "unknown"
-  message: string
-}
-
-export interface SiteStatusInfo {
-  price?: number
-  stripe_unit_price?: number
-  PaymentUSDRate?: number
-  system_name?: string
-  check_in_enabled?: boolean
-}
-
-export interface CheckInStatus {
-  can_check_in: boolean
-}
-
-// 模型列表响应类型
-export interface ModelsResponse {
-  data: string[]
-  message: string
-  success: boolean
-}
-
-// 分组信息类型
-export interface GroupInfo {
-  desc: string
-  ratio: number
-}
-
-// 分组响应类型
-export interface GroupsResponse {
-  data: Record<string, GroupInfo>
-  message: string
-  success: boolean
-}
-
-// 创建令牌请求类型
-export interface CreateTokenRequest {
-  name: string
-  remain_quota: number
-  expired_time: number
-  unlimited_quota: boolean
-  model_limits_enabled: boolean
-  model_limits: string
-  allow_ips: string
-  group: string
-}
-
-// 创建令牌响应类型
-export interface CreateTokenResponse {
-  message: string
-  success: boolean
-}
-
-// 模型定价信息类型
-export interface ModelPricing {
-  model_name: string
-  model_description?: string
-  quota_type: number // 0 = 按量计费，1 = 按次计费
-  model_ratio: number
-  model_price: number
-  owner_by?: string
-  completion_ratio: number
-  enable_groups: string[]
-  supported_endpoint_types: string[]
-}
-
-// 模型定价响应类型
-export interface PricingResponse {
-  data: ModelPricing[]
-  group_ratio: Record<string, number>
-  success: boolean
-  usable_group: Record<string, string>
-}
-
-// 分页令牌响应类型
-interface PaginatedTokenResponse {
-  page: number
-  page_size: number
-  total: number
-  items: ApiToken[]
-}
-
-// API 响应的通用格式
-interface ApiResponse<T = any> {
-  success: boolean
-  data: T
-  message?: string
-}
-
-// 日志条目类型
-interface LogItem {
-  quota?: number
-  prompt_tokens?: number
-  completion_tokens?: number
-}
-
-// 日志响应数据
-interface LogResponseData {
-  items: LogItem[]
-  total: number
-}
-
-// ============= 常量定义 =============
-const REQUEST_CONFIG = {
-  DEFAULT_PAGE_SIZE: 100,
-  MAX_PAGES: 100,
-  HEADERS: {
-    CONTENT_TYPE: "application/json",
-    PRAGMA: "no-cache"
-  }
-} as const
 
 // ============= 错误处理 =============
 export class ApiError extends Error {
@@ -159,124 +35,6 @@ export class ApiError extends Error {
     super(message)
     this.name = "ApiError"
   }
-}
-
-// ============= 工具函数 =============
-/**
- * 创建请求头
- */
-const createRequestHeaders = (
-  userId?: number,
-  accessToken?: string
-): Record<string, string> => {
-  const baseHeaders = {
-    "Content-Type": REQUEST_CONFIG.HEADERS.CONTENT_TYPE,
-    Pragma: REQUEST_CONFIG.HEADERS.PRAGMA
-  }
-
-  const userHeaders =
-    userId != null
-      ? {
-          "New-API-User": userId.toString(),
-          "Veloera-User": userId.toString(),
-          "voapi-user": userId.toString(),
-          "User-id": userId.toString()
-        }
-      : {}
-
-  const headers: Record<string, string> = { ...baseHeaders, ...userHeaders }
-  // TODO：bug，还是带上了 cookie，导致网站没有使用 access_token进行验证
-  if (accessToken) {
-    headers["Cookie"] = "" // 使用 Bearer token 时清空 Cookie 头
-    headers["Authorization"] = `Bearer ${accessToken}`
-  }
-
-  return headers
-}
-
-/**
- * 通用 API 请求处理器
- */
-const apiRequest = async <T>(
-  url: string,
-  options: RequestInit,
-  endpoint: string
-): Promise<T> => {
-  const response = await fetch(url, options)
-
-  if (!response.ok) {
-    throw new ApiError(
-      `请求失败: ${response.status}`,
-      response.status,
-      endpoint
-    )
-  }
-
-  const data: ApiResponse<T> = await response.json()
-  if (!data.success || data.data === undefined) {
-    throw new ApiError("响应数据格式错误", undefined, endpoint)
-  }
-
-  return data.data
-}
-
-/**
- * 创建带 cookie 认证的请求
- */
-const createCookieAuthRequest = (userId?: number): RequestInit => ({
-  method: "GET",
-  headers: createRequestHeaders(userId),
-  credentials: "include"
-})
-
-/**
- * 创建带 Bearer token 认证的请求
- */
-const createTokenAuthRequest = (
-  userId: number,
-  accessToken: string
-): RequestInit => ({
-  method: "GET",
-  headers: createRequestHeaders(userId, accessToken),
-  credentials: "omit" // 明确不携带 cookies
-})
-
-/**
- * 计算今日时间戳范围
- */
-const getTodayTimestampRange = (): { start: number; end: number } => {
-  const today = new Date()
-
-  // 今日开始时间戳
-  today.setHours(0, 0, 0, 0)
-  const start = Math.floor(today.getTime() / 1000)
-
-  // 今日结束时间戳
-  today.setHours(23, 59, 59, 999)
-  const end = Math.floor(today.getTime() / 1000)
-
-  return { start, end }
-}
-
-/**
- * 聚合使用量数据
- */
-const aggregateUsageData = (
-  items: LogItem[]
-): Omit<TodayUsageData, "today_requests_count"> => {
-  return items.reduce(
-    (acc, item) => ({
-      today_quota_consumption: acc.today_quota_consumption + (item.quota || 0),
-      today_prompt_tokens: acc.today_prompt_tokens + (item.prompt_tokens || 0),
-      today_completion_tokens:
-        acc.today_completion_tokens + (item.completion_tokens || 0)
-    }),
-    {
-      today_quota_consumption: 0,
-      today_prompt_tokens: 0,
-      today_completion_tokens: 0
-    }
-  )
 }
 
 // ============= 核心 API 函数 =============

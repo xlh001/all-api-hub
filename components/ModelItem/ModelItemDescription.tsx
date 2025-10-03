@@ -1,6 +1,6 @@
 import React from "react"
 
-import type { ModelPricing } from "~/services/apiService"
+import type { ModelPricing } from "~/services/apiService/common/type"
 
 interface ModelItemDescriptionProps {
   model: ModelPricing

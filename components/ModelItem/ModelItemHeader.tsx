@@ -1,7 +1,7 @@
 import { DocumentDuplicateIcon } from "@heroicons/react/24/outline"
 import React from "react"
 
-import type { ModelPricing } from "~/services/apiService"
+import type { ModelPricing } from "~/services/apiService/common/type"
 import { getBillingModeStyle, getBillingModeText } from "~/utils/modelPricing"
 import { getProviderConfig } from "~/utils/modelProviders"
 

@@ -7,6 +7,8 @@ export const DONE_HUB = "done-hub"
 export const VO_API = "VoAPI"
 export const SUPER_API = "Super-API"
 
+export type SiteType = (typeof SITE_TITLE_RULES)[number]["name"]
+
 // 定义网站类型及匹配规则
 export const SITE_TITLE_RULES = [
   { name: ONE_API, regex: makeTitleRegex(ONE_API) },

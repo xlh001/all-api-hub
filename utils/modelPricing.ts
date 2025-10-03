@@ -2,7 +2,7 @@
  * 模型定价计算工具
  */
 
-import type { ModelPricing } from "~/services/apiService"
+import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CurrencyType } from "~/types"
 
 export interface CalculatedPrice {

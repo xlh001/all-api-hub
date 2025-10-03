@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
-import {
-  fetchAvailableModels,
-  fetchUserGroups,
-  type GroupInfo
-} from "~/services/apiService"
+import { fetchAvailableModels, fetchUserGroups } from "~/services/apiService"
+import type { GroupInfo } from "~/services/apiService/common/type"
 
 import type { FormData } from "./useTokenForm"
 

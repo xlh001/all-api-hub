@@ -2,7 +2,7 @@ import { Switch } from "@headlessui/react"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 import type { FormData } from "~/hooks/useTokenForm"
-import type { GroupInfo } from "~/services/apiService"
+import type { GroupInfo } from "~/services/apiService/common/type"
 
 interface Account {
   id: string

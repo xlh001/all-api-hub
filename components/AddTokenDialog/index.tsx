@@ -5,11 +5,8 @@ import toast from "react-hot-toast"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useTokenData } from "~/hooks/useTokenData"
 import { useTokenForm } from "~/hooks/useTokenForm"
-import {
-  createApiToken,
-  updateApiToken,
-  type CreateTokenRequest
-} from "~/services/apiService"
+import { createApiToken, updateApiToken } from "~/services/apiService"
+import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import type { ApiToken } from "~/types"
 
 import { DialogHeader } from "./DialogHeader"

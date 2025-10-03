@@ -5,7 +5,7 @@ import {
 } from "@heroicons/react/24/outline"
 import React from "react"
 
-import type { ModelPricing } from "~/services/apiService"
+import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CalculatedPrice } from "~/utils/modelPricing"
 import { formatPrice, getEndpointTypesText } from "~/utils/modelPricing"
 
