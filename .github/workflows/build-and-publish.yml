@@ -2,8 +2,12 @@ name: build-and-publish
 
 on:
   release:
-    types: [published]   # 当有新的 GitHub Release 发布时自动触发
-  workflow_dispatch:      # 也允许手动触发（比如重跑构建）
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to upload artifact to"
+        required: false
 
 permissions:
   contents: write   # 上传构建产物到 Release 需要写权限
@@ -44,7 +48,14 @@ jobs:
 
       # 上传打包文件到 GitHub Release
       - name: Upload Release Artifact
-        run: gh release upload ${{ github.event.release.tag_name }} build/*.zip
+        run: |
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            echo "⚠️ No tag provided, skipping upload."
+            exit 0
+          fi
+          echo "📦 Uploading build/*.zip to release $TAG"
+          gh release upload "$TAG" build/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
