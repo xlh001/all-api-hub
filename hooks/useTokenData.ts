@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
 import { fetchAvailableModels, fetchUserGroups } from "~/services/apiService"
-import type { GroupInfo } from "~/services/apiService/common/type"
+import type { UserGroupInfo } from "~/services/apiService/common/type"
 
 import type { FormData } from "./useTokenForm"
 
@@ -21,7 +21,7 @@ export function useTokenData(
 ) {
   const [isLoading, setIsLoading] = useState(false)
   const [availableModels, setAvailableModels] = useState<string[]>([])
-  const [groups, setGroups] = useState<Record<string, GroupInfo>>({})
+  const [groups, setGroups] = useState<Record<string, UserGroupInfo>>({})
 
   useEffect(() => {
     if (isOpen && currentAccount) {

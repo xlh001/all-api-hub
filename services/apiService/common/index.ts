@@ -4,7 +4,7 @@ import type {
   AccountData,
   ApiResponse,
   CreateTokenRequest,
-  GroupInfo,
+  UserGroupInfo,
   HealthCheckResult,
   LogResponseData,
   PaginatedTokenResponse,
@@ -459,12 +459,12 @@ export const fetchUserGroups = async (
   baseUrl: string,
   userId: number,
   accessToken: string
-): Promise<Record<string, GroupInfo>> => {
+): Promise<Record<string, UserGroupInfo>> => {
   const url = joinUrl(baseUrl, "/api/user/self/groups")
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
-    const response = await apiRequestData<Record<string, GroupInfo>>(
+    const response = await apiRequestData<Record<string, UserGroupInfo>>(
       url,
       options,
       "/api/user/self/groups"

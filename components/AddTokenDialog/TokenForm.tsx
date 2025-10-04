@@ -2,7 +2,7 @@ import { Switch } from "@headlessui/react"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 import type { FormData } from "~/hooks/useTokenForm"
-import type { GroupInfo } from "~/services/apiService/common/type"
+import type { UserGroupInfo } from "~/services/apiService/common/type"
 
 interface Account {
   id: string
@@ -15,7 +15,7 @@ interface TokenFormProps {
   errors: Record<string, string>
   isEditMode: boolean
   availableAccounts: Account[]
-  groups: Record<string, GroupInfo>
+  groups: Record<string, UserGroupInfo>
   availableModels: string[]
 }
 

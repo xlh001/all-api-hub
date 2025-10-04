@@ -58,14 +58,14 @@ export interface ModelsResponse {
 }
 
 // 分组信息类型
-export interface GroupInfo {
+export interface UserGroupInfo {
   desc: string
   ratio: number
 }
 
 // 分组响应类型
-export interface GroupsResponse {
-  data: Record<string, GroupInfo>
+export interface UserGroupsResponse {
+  data: Record<string, UserGroupInfo>
   message: string
   success: boolean
 }
