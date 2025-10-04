@@ -1,5 +1,6 @@
 import type { FormData } from "~/hooks/useTokenForm"
 import type { UserGroupInfo } from "~/services/apiService/common/type"
+import { isNotEmptyArray } from "~/utils"
 
 import { FormSection } from "./FormSection"
 import { GroupSelection } from "./GroupSelection"
@@ -34,13 +35,15 @@ export function AdvancedSettingsSection({
         handleInputChange={handleInputChange}
         groups={groups}
       />
-      <ModelLimits
-        modelLimitsEnabled={formData.modelLimitsEnabled}
-        modelLimits={formData.modelLimits}
-        availableModels={availableModels}
-        setFormData={setFormData}
-        handleModelSelectChange={handleModelSelectChange}
-      />
+      {isNotEmptyArray(availableModels) && (
+        <ModelLimits
+          modelLimitsEnabled={formData.modelLimitsEnabled}
+          modelLimits={formData.modelLimits}
+          availableModels={availableModels}
+          setFormData={setFormData}
+          handleModelSelectChange={handleModelSelectChange}
+        />
+      )}
       <IpLimitsInput
         allowIps={formData.allowIps}
         handleInputChange={handleInputChange}
