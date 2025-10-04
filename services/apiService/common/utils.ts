@@ -37,31 +37,7 @@ export const createRequestHeaders = (
 
   return headers
 }
-/**
- * 通用 API 请求处理器
- */
-export const apiRequestData = async <T>(
-  url: string,
-  options?: RequestInit,
-  endpoint?: string
-): Promise<T> => {
-  const response = await fetch(url, options)
 
-  if (!response.ok) {
-    throw new ApiError(
-      `请求失败: ${response.status}`,
-      response.status,
-      endpoint
-    )
-  }
-
-  const data: ApiResponse<T> = await response.json()
-  if (!data.success || data.data === undefined) {
-    throw new ApiError("响应数据格式错误", undefined, endpoint)
-  }
-
-  return data.data
-}
 /**
  * 创建带 cookie 认证的请求
  */
@@ -70,6 +46,7 @@ export const createCookieAuthRequest = (userId?: number): RequestInit => ({
   headers: createRequestHeaders(userId),
   credentials: "include"
 })
+
 /**
  * 创建带 Bearer token 认证的请求
  */
@@ -81,6 +58,7 @@ export const createTokenAuthRequest = (
   headers: createRequestHeaders(userId, accessToken),
   credentials: "omit" // 明确不携带 cookies
 })
+
 /**
  * 计算今日时间戳范围
  */
@@ -97,6 +75,7 @@ export const getTodayTimestampRange = (): { start: number; end: number } => {
 
   return { start, end }
 }
+
 /**
  * 聚合使用量数据
  */
@@ -116,4 +95,47 @@ export const aggregateUsageData = (
       today_completion_tokens: 0
     }
   )
+}
+
+/**
+ * 基于 apiRequest 的快捷函数：直接提取 data
+ */
+export const apiRequestData = async <T>(
+  url: string,
+  options?: RequestInit,
+  endpoint?: string
+): Promise<T> => {
+  const res = await apiRequest<T>(url, options, endpoint)
+
+  if (!res.success || res.data === undefined) {
+    throw new ApiError("响应数据格式错误", undefined, endpoint)
+  }
+
+  return res.data
+}
+
+/**
+ * 通用 API 请求函数
+ * @param url 请求 URL
+ * @param options 请求配置
+ * @param endpoint 可选，接口名称，用于错误追踪
+ * @returns ApiResponse 对象
+ * 默认：返回完整响应，不提取 data
+ */
+export const apiRequest = async <T>(
+  url: string,
+  options?: RequestInit,
+  endpoint?: string
+): Promise<ApiResponse<T>> => {
+  const response = await fetch(url, options)
+
+  if (!response.ok) {
+    throw new ApiError(
+      `请求失败: ${response.status}`,
+      response.status,
+      endpoint
+    )
+  }
+
+  return response.json()
 }
