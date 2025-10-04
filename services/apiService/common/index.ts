@@ -4,7 +4,6 @@ import type {
   AccountData,
   ApiResponse,
   CreateTokenRequest,
-  UserGroupInfo,
   HealthCheckResult,
   LogResponseData,
   PaginatedTokenResponse,
@@ -12,6 +11,7 @@ import type {
   RefreshAccountResult,
   SiteStatusInfo,
   TodayUsageData,
+  UserGroupInfo,
   UserInfo
 } from "~/services/apiService/common/type"
 import {
@@ -455,11 +455,11 @@ export const fetchAvailableModels = async (
 /**
  * 获取用户分组信息
  */
-export const fetchUserGroups = async (
-  baseUrl: string,
-  userId: number,
-  accessToken: string
-): Promise<Record<string, UserGroupInfo>> => {
+export const fetchUserGroups = async ({
+  baseUrl,
+  userId,
+  token: accessToken
+}): Promise<Record<string, UserGroupInfo>> => {
   const url = joinUrl(baseUrl, "/api/user/self/groups")
   const options = createTokenAuthRequest(userId, accessToken)
 

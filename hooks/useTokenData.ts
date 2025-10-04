@@ -40,11 +40,7 @@ export function useTokenData(
           currentAccount.userId,
           currentAccount.token
         ),
-        fetchUserGroups(
-          currentAccount.baseUrl,
-          currentAccount.userId,
-          currentAccount.token
-        )
+        fetchUserGroups(currentAccount)
       ])
 
       setAvailableModels(models)

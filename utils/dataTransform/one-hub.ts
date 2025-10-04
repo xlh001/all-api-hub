@@ -1,4 +1,6 @@
 // 类型定义
+import type { OneHubUserGroupsResponse } from "~/services/apiService/oneHub/type"
+
 export interface NormalizedModelItem {
   model_name: string
   quota_type: number
@@ -105,4 +107,20 @@ export function transformModelPricing(
     usable_group,
     vendors
   }
+}
+
+export function transformUserGroup(
+  input: OneHubUserGroupsResponse["data"]
+): OneHubUserGroupsResponse["data"] {
+  const result = {}
+
+  // 转换已有的分组
+  for (const key in input) {
+    const group = input[key]
+    result[key] = {
+      desc: group.name,
+      ratio: group.ratio
+    }
+  }
+  return result
 }

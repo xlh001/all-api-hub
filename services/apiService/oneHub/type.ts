@@ -34,3 +34,23 @@ export interface PaginatedTokenResponse {
   message: string
   success: boolean
 }
+
+export type OneHubUserGroupInfo = {
+  id: number
+  symbol: string
+  name: string
+  ratio: number
+  api_rate: number
+  public: boolean
+  promotion: boolean
+  min: number
+  max: number
+  enable: boolean
+}
+
+// 分组响应类型
+export interface OneHubUserGroupsResponse {
+  data: Record<string, OneHubUserGroupInfo>
+  message: string
+  success: boolean
+}
