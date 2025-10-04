@@ -1,40 +1,3 @@
-# [1.1.0](https://github.com/qixing-jk/all-api-hub/compare/v1.0.0...v1.1.0) (2025-09-08)
-
-
-### Features
-
-* **account:** add manual addition support with streamlined UI flow ([429b924](https://github.com/qixing-jk/all-api-hub/commit/429b924f11a78bafe87b63b3c3aaf01569e85020))
-
-
-
-# [1.0.0](https://github.com/qixing-jk/all-api-hub/compare/v0.0.3...v1.0.0) (2025-09-08)
-
-
-### Bug Fixes
-
-* **account:** handle URL with port in fetchSiteStatus call ([f50ae36](https://github.com/qixing-jk/all-api-hub/commit/f50ae367729174d9db2e75b98f6b328ffdf9a4cc))
-* **ci:** move Node.js setup after pnpm initialization ([f692d91](https://github.com/qixing-jk/all-api-hub/commit/f692d911b1ef677673890978f67d5fd06a4345bf))
-
-
-### Features
-
-* **account:** implement current site detection and highlight ([648e94c](https://github.com/qixing-jk/all-api-hub/commit/648e94c5bf690b01c259dc1ebcc2f3cc6095dfe6))
-* **account:** prioritize site's own name over domain prefix for site naming ([b27a77b](https://github.com/qixing-jk/all-api-hub/commit/b27a77bc71aae484973489f9bbba38fa8e21e848))
-* add Firefox browser detection and account addition warning ([713e304](https://github.com/qixing-jk/all-api-hub/commit/713e304a1044d8fbbe9c176747300fe1c4205319))
-* add Firefox MV3 support with dev and build scripts ([de43f5c](https://github.com/qixing-jk/all-api-hub/commit/de43f5c099cfbb3e48bcf7f2661db82dc266a695))
-* add Firefox WebExtension browser types support ([e5b6f79](https://github.com/qixing-jk/all-api-hub/commit/e5b6f795dee98669de8f22b7640003429f542ccd))
-* add support for Super-API site type ([cb7527d](https://github.com/qixing-jk/all-api-hub/commit/cb7527d2b15a2c99bc39827fe3ae1d7590622428))
-* **api:** add PaymentUSDRate field and fallback logic for price retrieval ([6059450](https://github.com/qixing-jk/all-api-hub/commit/6059450875dbe9735f7e156636f771038b5ddcb6))
-* **api:** add VoAPI site type support ([7093d18](https://github.com/qixing-jk/all-api-hub/commit/7093d1896dec5fa51c905f7f5e3ae74f79a2fe10))
-* **apiService.ts:** 支持Veloera，添加Veloera请求头项 ([5299d73](https://github.com/qixing-jk/all-api-hub/commit/5299d73c9d09f05f530272e1a6f549927a52ccc5))
-* **content:** implement fallback to fetchUserInfo for done-hub and one-hub sites ([e709338](https://github.com/qixing-jk/all-api-hub/commit/e709338b331708917dd91ab8c93115d997e43eed))
-* **popup:** add edit account functionality to AddAccountDialog ([b316213](https://github.com/qixing-jk/all-api-hub/commit/b316213ee086914670c7a408e5675da23d0d2694))
-* **popup:** close window after opening sidebar action ([60972d7](https://github.com/qixing-jk/all-api-hub/commit/60972d7770e8aa9389b04d1ca86505d469b40b51))
-* **sidebar:** Add the sidebar feature to replace the automatic site configuration feature of the pop-up window ([a9a7a61](https://github.com/qixing-jk/all-api-hub/commit/a9a7a619aaffb62522765484c1eb9c6057c01a3b)), closes [#10](https://github.com/qixing-jk/all-api-hub/issues/10)
-* 支持 one-hub 和 done-hub 站点类型 ([#18](https://github.com/qixing-jk/all-api-hub/issues/18)) ([a8a2ac8](https://github.com/qixing-jk/all-api-hub/commit/a8a2ac83a3afc9196e2ea8d6f73e0458bf209d50))
-
-
-
 ## [1.9.0](https://github.com/qixing-jk/all-api-hub/compare/v1.8.0...v1.9.0) (2025-10-04)
 
 
@@ -175,6 +138,39 @@
 
 * **account-operations:** handle missing system name and correct check ([32d8a46](https://github.com/qixing-jk/all-api-hub/commit/32d8a4694f37bbbe1dddfaa6bdd1f165643886fa))
 * **account:** optimize site name retrieval with early return ([75fd551](https://github.com/qixing-jk/all-api-hub/commit/75fd5516a5f3c8d157efc969c2f7c283b8246807))
+
+## [1.1.0](https://github.com/qixing-jk/all-api-hub/compare/v1.0.0...v1.1.0) (2025-09-08)
+
+
+### Features
+
+* **account:** add manual addition support with streamlined UI flow ([429b924](https://github.com/qixing-jk/all-api-hub/commit/429b924f11a78bafe87b63b3c3aaf01569e85020))
+
+## [1.0.0](https://github.com/qixing-jk/all-api-hub/compare/v0.0.3...v1.0.0) (2025-09-08)
+
+
+### Bug Fixes
+
+* **account:** handle URL with port in fetchSiteStatus call ([f50ae36](https://github.com/qixing-jk/all-api-hub/commit/f50ae367729174d9db2e75b98f6b328ffdf9a4cc))
+* **ci:** move Node.js setup after pnpm initialization ([f692d91](https://github.com/qixing-jk/all-api-hub/commit/f692d911b1ef677673890978f67d5fd06a4345bf))
+
+
+### Features
+
+* **account:** implement current site detection and highlight ([648e94c](https://github.com/qixing-jk/all-api-hub/commit/648e94c5bf690b01c259dc1ebcc2f3cc6095dfe6))
+* **account:** prioritize site's own name over domain prefix for site naming ([b27a77b](https://github.com/qixing-jk/all-api-hub/commit/b27a77bc71aae484973489f9bbba38fa8e21e848))
+* add Firefox browser detection and account addition warning ([713e304](https://github.com/qixing-jk/all-api-hub/commit/713e304a1044d8fbbe9c176747300fe1c4205319))
+* add Firefox MV3 support with dev and build scripts ([de43f5c](https://github.com/qixing-jk/all-api-hub/commit/de43f5c099cfbb3e48bcf7f2661db82dc266a695))
+* add Firefox WebExtension browser types support ([e5b6f79](https://github.com/qixing-jk/all-api-hub/commit/e5b6f795dee98669de8f22b7640003429f542ccd))
+* add support for Super-API site type ([cb7527d](https://github.com/qixing-jk/all-api-hub/commit/cb7527d2b15a2c99bc39827fe3ae1d7590622428))
+* **api:** add PaymentUSDRate field and fallback logic for price retrieval ([6059450](https://github.com/qixing-jk/all-api-hub/commit/6059450875dbe9735f7e156636f771038b5ddcb6))
+* **api:** add VoAPI site type support ([7093d18](https://github.com/qixing-jk/all-api-hub/commit/7093d1896dec5fa51c905f7f5e3ae74f79a2fe10))
+* **apiService.ts:** 支持Veloera，添加Veloera请求头项 ([5299d73](https://github.com/qixing-jk/all-api-hub/commit/5299d73c9d09f05f530272e1a6f549927a52ccc5))
+* **content:** implement fallback to fetchUserInfo for done-hub and one-hub sites ([e709338](https://github.com/qixing-jk/all-api-hub/commit/e709338b331708917dd91ab8c93115d997e43eed))
+* **popup:** add edit account functionality to AddAccountDialog ([b316213](https://github.com/qixing-jk/all-api-hub/commit/b316213ee086914670c7a408e5675da23d0d2694))
+* **popup:** close window after opening sidebar action ([60972d7](https://github.com/qixing-jk/all-api-hub/commit/60972d7770e8aa9389b04d1ca86505d469b40b51))
+* **sidebar:** Add the sidebar feature to replace the automatic site configuration feature of the pop-up window ([a9a7a61](https://github.com/qixing-jk/all-api-hub/commit/a9a7a619aaffb62522765484c1eb9c6057c01a3b)), closes [#10](https://github.com/qixing-jk/all-api-hub/issues/10)
+* 支持 one-hub 和 done-hub 站点类型 ([#18](https://github.com/qixing-jk/all-api-hub/issues/18)) ([a8a2ac8](https://github.com/qixing-jk/all-api-hub/commit/a8a2ac83a3afc9196e2ea8d6f73e0458bf209d50))
 
 ## [0.0.3](https://github.com/qixing-jk/all-api-hub/compare/v0.0.2...v0.0.3) (2025-08-19)
 
