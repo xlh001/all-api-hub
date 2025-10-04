@@ -40,7 +40,7 @@ export const createRequestHeaders = (
 /**
  * 通用 API 请求处理器
  */
-export const apiRequest = async <T>(
+export const apiRequestData = async <T>(
   url: string,
   options?: RequestInit,
   endpoint?: string

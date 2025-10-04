@@ -1,6 +1,6 @@
 import type { PricingResponse } from "~/services/apiService/common/type"
 import {
-  apiRequest,
+  apiRequestData,
   createTokenAuthRequest
 } from "~/services/apiService/common/utils"
 import { transformModelPricing } from "~/utils/dataTransform/one-hub"
@@ -14,9 +14,9 @@ export const fetchModelPricing = async ({
   try {
     const options = createTokenAuthRequest(userId, accessToken)
     const [availableModel, modelOwnedBy, userGroupMap] = await Promise.all([
-      apiRequest(joinUrl(baseUrl, "/api/available_model")),
-      apiRequest(joinUrl(baseUrl, "/api/model_ownedby")),
-      apiRequest(joinUrl(baseUrl, "/api/user_group_map"))
+      apiRequestData(joinUrl(baseUrl, "/api/available_model")),
+      apiRequestData(joinUrl(baseUrl, "/api/model_ownedby")),
+      apiRequestData(joinUrl(baseUrl, "/api/user_group_map"))
     ])
 
     const result = transformModelPricing(

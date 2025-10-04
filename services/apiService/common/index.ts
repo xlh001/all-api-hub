@@ -16,7 +16,7 @@ import type {
 } from "~/services/apiService/common/type"
 import {
   aggregateUsageData,
-  apiRequest,
+  apiRequestData,
   createCookieAuthRequest,
   createRequestHeaders,
   createTokenAuthRequest,
@@ -49,7 +49,11 @@ export const fetchUserInfo = async (
   const url = joinUrl(baseUrl, "/api/user/self")
   const options = createCookieAuthRequest(userId)
 
-  const userData = await apiRequest<UserInfo>(url, options, "/api/user/self")
+  const userData = await apiRequestData<UserInfo>(
+    url,
+    options,
+    "/api/user/self"
+  )
 
   return {
     id: userData.id,
@@ -68,7 +72,7 @@ export const createAccessToken = async (
   const url = joinUrl(baseUrl, "/api/user/token")
   const options = createCookieAuthRequest(userId)
 
-  return await apiRequest<string>(url, options, "/api/user/token")
+  return await apiRequestData<string>(url, options, "/api/user/token")
 }
 
 /**
@@ -170,7 +174,7 @@ export const fetchAccountQuota = async (
   const url = joinUrl(baseUrl, "/api/user/self")
   const options = createTokenAuthRequest(userId, accessToken)
 
-  const userData = await apiRequest<{ quota?: number }>(
+  const userData = await apiRequestData<{ quota?: number }>(
     url,
     options,
     "/api/user/self"
@@ -191,7 +195,7 @@ export const fetchCheckInStatus = async (
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
-    const checkInData = await apiRequest<{ can_check_in?: boolean }>(
+    const checkInData = await apiRequestData<{ can_check_in?: boolean }>(
       url,
       options,
       "/api/user/check_in_status"
@@ -259,7 +263,7 @@ export const fetchTodayUsage = async (
     const url = joinUrl(baseUrl, `/api/log/self?${params.toString()}`)
     const options = createTokenAuthRequest(userId, accessToken)
 
-    const logData = await apiRequest<LogResponseData>(
+    const logData = await apiRequestData<LogResponseData>(
       url,
       options,
       "/api/log/self"
@@ -400,11 +404,9 @@ export const fetchAccountTokens = async (
 
   try {
     // 尝试获取响应数据，可能是直接的数组或者分页对象
-    const tokensData = await apiRequest<ApiToken[] | PaginatedTokenResponse>(
-      url,
-      options,
-      "/api/token"
-    )
+    const tokensData = await apiRequestData<
+      ApiToken[] | PaginatedTokenResponse
+    >(url, options, "/api/token")
 
     // 处理不同的响应格式
     if (Array.isArray(tokensData)) {
@@ -440,7 +442,7 @@ export const fetchAvailableModels = async (
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
-    const response = await apiRequest<string[]>(
+    const response = await apiRequestData<string[]>(
       url,
       options,
       "/api/user/models"
@@ -464,7 +466,7 @@ export const fetchUserGroups = async (
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
-    const response = await apiRequest<Record<string, GroupInfo>>(
+    const response = await apiRequestData<Record<string, GroupInfo>>(
       url,
       options,
       "/api/user/self/groups"
@@ -535,7 +537,7 @@ export const fetchTokenById = async (
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
-    const response = await apiRequest<ApiToken>(
+    const response = await apiRequestData<ApiToken>(
       url,
       options,
       `/api/token/${tokenId}`
@@ -649,7 +651,7 @@ export const fetchModelPricing = async ({
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
-    // /api/pricing 接口直接返回 PricingResponse 格式，不需要通过 apiRequest 包装
+    // /api/pricing 接口直接返回 PricingResponse 格式，不需要通过 apiRequestData 包装
     const response = await fetch(url, options)
 
     if (!response.ok) {
