@@ -2,7 +2,7 @@ name: build-and-publish
 
 on:
   release:
-    types: [published]   # 自动监听 GitHub Release 发布
+    types: [created]   # 自动监听 GitHub Release 发布
   workflow_dispatch:      # 允许手动触发
     inputs:
       tag:
