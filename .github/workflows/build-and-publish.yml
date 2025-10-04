@@ -2,12 +2,13 @@ name: build-and-publish
 
 on:
   release:
-    types: [published]
-  workflow_dispatch:
+    types: [published]   # 自动监听 GitHub Release 发布
+  workflow_dispatch:      # 允许手动触发
     inputs:
       tag:
-        description: "Release tag to upload artifact to"
+        description: "Release tag to build (e.g. v1.0.0). Leave empty to auto-detect latest."
         required: false
+        default: ""
 
 permissions:
   contents: write   # 上传构建产物到 Release 需要写权限
@@ -17,50 +18,83 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 拉取完整仓库（fetch-depth: 0 保留 tag 信息）
-      - uses: actions/checkout@v4
+      # 先 checkout 完整仓库，后面要用 git 命令找 tag
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 安装并启用 pnpm（固定版本更可控）
+      # 决定使用哪个 tag
+      - name: Determine tag
+        id: get_tag
+        run: |
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            # 没有输入 tag，就自动找出语义化版本号最大的 tag
+            TAG=$(git tag --sort=-v:refname | head -n 1)
+            echo "⚠️ No tag provided. Using latest tag: $TAG"
+          else
+            echo "ℹ️ Using provided/release tag: $TAG"
+          fi
+
+          # 防御：万一仓库里没有任何 tag
+          if [ -z "$TAG" ]; then
+            echo "❌ No tag found in repo. Skipping build."
+            echo "tag=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      # 再 checkout 到指定的 tag 确保代码一致
+      - name: Checkout specific tag
+        if: ${{ steps.get_tag.outputs.tag != '' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.get_tag.outputs.tag }}
+          fetch-depth: 0
+
+      # 安装 pnpm
       - uses: pnpm/action-setup@v4
+        if: ${{ steps.get_tag.outputs.tag != '' }}
         with:
           version: 10
           run_install: false
 
-      # 设置 Node.js 环境，并启用 pnpm 缓存
+      # 设置 Node.js 环境 + pnpm 缓存
       - uses: actions/setup-node@v4
+        if: ${{ steps.get_tag.outputs.tag != '' }}
         with:
           node-version: 20
           cache: 'pnpm'
 
-      # 安装项目依赖
+      # 安装依赖
       - name: Install dependencies
+        if: ${{ steps.get_tag.outputs.tag != '' }}
         run: pnpm install
 
-      # 构建项目（生成 build 文件夹）
+      # 构建
       - name: Build dist
+        if: ${{ steps.get_tag.outputs.tag != '' }}
         run: pnpm run build:all
 
-      # 打包扩展（例如生成 build/chrome-mv3-prod.zip）
+      # 打包扩展
       - name: Package the extension
+        if: ${{ steps.get_tag.outputs.tag != '' }}
         run: pnpm package:all
 
-      # 上传打包文件到 GitHub Release
+      # 上传 Release Artifact（仅当有 tag 时）
       - name: Upload Release Artifact
+        if: ${{ steps.get_tag.outputs.tag != '' }}
         run: |
-          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
-          if [ -z "$TAG" ]; then
-            echo "⚠️ No tag provided, skipping upload."
-            exit 0
-          fi
-          echo "📦 Uploading build/*.zip to release $TAG"
-          gh release upload "$TAG" build/*.zip
+          echo "Uploading build/*.zip to release ${{ steps.get_tag.outputs.tag }}"
+          gh release upload "${{ steps.get_tag.outputs.tag }}" build/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # （可选）自动提交到浏览器商店
+      # （可选）提交到浏览器商店
       - name: Browser Platform Publish
+        if: ${{ steps.get_tag.outputs.tag != '' }}
         uses: PlasmoHQ/bpp@v3
         with:
           keys: ${{ secrets.SUBMIT_KEYS }}
