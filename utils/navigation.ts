@@ -1,4 +1,6 @@
+import { getSiteApiRouter } from "~/constants/siteType"
 import type { DisplaySiteData } from "~/types"
+import { joinUrl } from "~/utils/url"
 
 const getURL = (path: string) => chrome.runtime.getURL(path)
 
@@ -30,6 +32,9 @@ export const openModelsPage = (accountId?: string) => {
 }
 
 export const openUsagePage = (account: DisplaySiteData) => {
-  const logUrl = `${account.baseUrl}/log`
+  const logUrl = joinUrl(
+    account.baseUrl,
+    getSiteApiRouter(account.siteType).usagePath
+  )
   chrome.tabs.create({ url: logUrl })
 }

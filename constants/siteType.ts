@@ -29,3 +29,26 @@ function makeTitleRegex(name: string): RegExp {
   const pattern = name.replace("-", "[-_ ]?")
   return new RegExp(`\\b${pattern}\\b`, "i")
 }
+
+// 默认的用量路径
+const DEFAULT_USAGE_PATH = "/log"
+
+// 定义各站点对应的 API 路径
+export const SITE_API_ROUTER = {
+  [ONE_API]: { usagePath: DEFAULT_USAGE_PATH },
+  [NEW_API]: { usagePath: DEFAULT_USAGE_PATH },
+  [VO_API]: { usagePath: DEFAULT_USAGE_PATH },
+  [VELOERA]: { usagePath: "/app/logs/api-usage" },
+  [ONE_HUB]: { usagePath: "/panel/log" },
+  [DONE_HUB]: { usagePath: "/panel/log" },
+  Default: { usagePath: DEFAULT_USAGE_PATH }
+}
+
+/**
+ * 获取站点对应的 API 路由对象
+ * @param key 站点名称
+ * @returns 对应的 API 路由对象，否则返回 Default 的路由对象
+ */
+export function getSiteApiRouter(key) {
+  return SITE_API_ROUTER[key] ?? SITE_API_ROUTER["Default"]
+}
