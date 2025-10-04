@@ -33,6 +33,18 @@ const exportedAPI: Record<ApiFuncName, (...args: any[]) => any> = {} as any
     if (typeof lastArg === "string" && lastArg in siteOverrideMap) {
       currentSite = lastArg as SiteType
       args.pop() // 移除站点参数
+    } else {
+      // 2. 如果不行，从第一个参数开始查找对象的 siteType 属性
+      for (let i = 0; i < args.length; i++) {
+        const arg = args[i]
+        if (arg && typeof arg === "object" && "siteType" in arg) {
+          const candidate = arg.siteType
+          if (typeof candidate === "string" && candidate in siteOverrideMap) {
+            currentSite = candidate as SiteType
+            break
+          }
+        }
+      }
     }
 
     return getApiFunc(funcName, currentSite)(...args)

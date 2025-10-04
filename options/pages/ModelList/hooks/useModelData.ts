@@ -35,7 +35,7 @@ export function useModelData({
       setIsLoading(true)
       setDataFormatError(false)
       try {
-        const data = await fetchModelPricing(account, account.siteType)
+        const data = await fetchModelPricing(account)
 
         if (!Array.isArray(data.data)) {
           setDataFormatError(true)
