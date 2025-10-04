@@ -1,0 +1,55 @@
+name: build-and-publish
+
+on:
+  release:
+    types: [published]   # 当有新的 GitHub Release 发布时自动触发
+  workflow_dispatch:      # 也允许手动触发（比如重跑构建）
+
+permissions:
+  contents: write   # 上传构建产物到 Release 需要写权限
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 拉取完整仓库（fetch-depth: 0 保留 tag 信息）
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 安装并启用 pnpm（固定版本更可控）
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      # 设置 Node.js 环境，并启用 pnpm 缓存
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      # 安装项目依赖
+      - name: Install dependencies
+        run: pnpm install
+
+      # 构建项目（生成 build 文件夹）
+      - name: Build dist
+        run: pnpm run build:all
+
+      # 打包扩展（例如生成 build/chrome-mv3-prod.zip）
+      - name: Package the extension
+        run: pnpm package:all
+
+      # 上传打包文件到 GitHub Release
+      - name: Upload Release Artifact
+        run: gh release upload ${{ github.event.release.tag_name }} build/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # （可选）自动提交到浏览器商店
+      - name: Browser Platform Publish
+        uses: PlasmoHQ/bpp@v3
+        with:
+          keys: ${{ secrets.SUBMIT_KEYS }}
