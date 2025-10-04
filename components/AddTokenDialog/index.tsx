@@ -7,7 +7,7 @@ import { useTokenData } from "~/hooks/useTokenData"
 import { useTokenForm } from "~/hooks/useTokenForm"
 import { createApiToken, updateApiToken } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
-import type { ApiToken } from "~/types"
+import type { ApiToken, DisplaySiteData } from "~/types"
 
 import { DialogHeader } from "./DialogHeader"
 import { FormActions } from "./FormActions"
@@ -18,13 +18,7 @@ import { WarningNote } from "./WarningNote"
 interface AddTokenDialogProps {
   isOpen: boolean
   onClose: () => void
-  availableAccounts: Array<{
-    id: string
-    name: string
-    baseUrl: string
-    userId: number
-    token: string
-  }>
+  availableAccounts: DisplaySiteData[]
   preSelectedAccountId?: string | null
   editingToken?: (ApiToken & { accountName: string }) | null
 }

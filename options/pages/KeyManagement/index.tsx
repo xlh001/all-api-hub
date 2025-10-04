@@ -70,13 +70,7 @@ export default function KeyManagement({
       <AddTokenDialog
         isOpen={isAddTokenOpen}
         onClose={handleCloseAddToken}
-        availableAccounts={displayData.map((account) => ({
-          id: account.id,
-          name: account.name,
-          baseUrl: account.baseUrl,
-          userId: account.userId,
-          token: account.token
-        }))}
+        availableAccounts={displayData}
         preSelectedAccountId={selectedAccount || null}
         editingToken={editingToken}
       />
