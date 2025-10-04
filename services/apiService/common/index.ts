@@ -431,11 +431,11 @@ export const fetchAccountTokens = async (
 /**
  * 获取可用模型列表
  */
-export const fetchAvailableModels = async (
-  baseUrl: string,
-  userId: number,
-  accessToken: string
-): Promise<string[]> => {
+export const fetchAvailableModels = async ({
+  baseUrl,
+  userId,
+  token: accessToken
+}): Promise<string[]> => {
   const url = joinUrl(baseUrl, "/api/user/models")
   const options = createTokenAuthRequest(userId, accessToken)
 

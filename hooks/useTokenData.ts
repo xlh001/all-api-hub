@@ -35,11 +35,7 @@ export function useTokenData(
     setIsLoading(true)
     try {
       const [models, groupsData] = await Promise.all([
-        fetchAvailableModels(
-          currentAccount.baseUrl,
-          currentAccount.userId,
-          currentAccount.token
-        ),
+        fetchAvailableModels(currentAccount),
         fetchUserGroups(currentAccount)
       ])
 

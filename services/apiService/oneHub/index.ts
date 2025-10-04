@@ -111,3 +111,7 @@ export const fetchUserGroups = async ({
     throw error
   }
 }
+
+export function fetchAvailableModels() {
+  return []
+}
