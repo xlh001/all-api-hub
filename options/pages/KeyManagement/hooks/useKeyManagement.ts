@@ -31,11 +31,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
         return
       }
 
-      const accountTokens = await fetchAccountTokens(
-        account.baseUrl,
-        account.userId,
-        account.token
-      )
+      const accountTokens = await fetchAccountTokens(account)
 
       const tokensWithAccount = accountTokens.map((token) => ({
         ...token,

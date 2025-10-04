@@ -21,11 +21,7 @@ export function useCopyKeyDialog(
     setError(null)
 
     try {
-      const tokensResponse = await fetchAccountTokens(
-        account.baseUrl,
-        account.userId,
-        account.token
-      )
+      const tokensResponse = await fetchAccountTokens(account)
       if (Array.isArray(tokensResponse)) {
         setTokens(tokensResponse)
       } else {

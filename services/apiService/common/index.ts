@@ -388,9 +388,7 @@ export const validateAccountConnection = async (
  * 获取账号令牌列表
  */
 export const fetchAccountTokens = async (
-  baseUrl: string,
-  userId: number,
-  accessToken: string,
+  { baseUrl, userId, token: accessToken },
   page: number = 0,
   size: number = 100
 ): Promise<ApiToken[]> => {
