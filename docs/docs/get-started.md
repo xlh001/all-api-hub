@@ -6,6 +6,7 @@
 
 ::: info 推荐
 [前往 Edge商店 下载](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
+[前往 FireFox商店 下载](https://addons.mozilla.org/firefox/addon/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub/)
 :::
 
 [Release 下载](https://github.com/qixing-jk/all-api-hub/releases)
