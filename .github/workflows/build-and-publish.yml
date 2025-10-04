@@ -92,7 +92,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # （可选）提交到浏览器商店
+      # 提交到浏览器商店
       - name: Browser Platform Publish
         if: ${{ steps.get_tag.outputs.tag != '' }}
         uses: PlasmoHQ/bpp@v3
