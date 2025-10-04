@@ -3,6 +3,8 @@ import {
   apiRequestData,
   createTokenAuthRequest
 } from "~/services/apiService/common/utils"
+import type { PaginatedTokenDate } from "~/services/apiService/oneHub/type"
+import type { ApiToken } from "~/types"
 import { transformModelPricing } from "~/utils/dataTransform/one-hub"
 import { joinUrl } from "~/utils/url"
 
@@ -29,6 +31,52 @@ export const fetchModelPricing = async ({
     return result
   } catch (error) {
     console.error("获取模型定价失败:", error)
+    throw error
+  }
+}
+
+/**
+ * 获取账号令牌列表
+ */
+export const fetchAccountTokens = async (
+  { baseUrl, userId, token: accessToken },
+  page: number = 0,
+  size: number = 100
+): Promise<ApiToken[]> => {
+  const params = new URLSearchParams({
+    p: page.toString(),
+    size: size.toString()
+  })
+
+  const url = joinUrl(baseUrl, `/api/token/?${params.toString()}`)
+  const options = createTokenAuthRequest(userId, accessToken)
+
+  try {
+    // 尝试获取响应数据，可能是直接的数组或者分页对象
+    const tokensData = await apiRequestData<PaginatedTokenDate>(
+      url,
+      options,
+      "/api/token"
+    )
+
+    // 处理不同的响应格式
+    if (Array.isArray(tokensData)) {
+      // 直接返回数组格式
+      return tokensData
+    } else if (
+      tokensData &&
+      typeof tokensData === "object" &&
+      "data" in tokensData
+    ) {
+      // 分页格式，返回 data 数组
+      return tokensData.data || []
+    } else {
+      // 其他情况，返回空数组
+      console.warn("Unexpected token response format:", tokensData)
+      return []
+    }
+  } catch (error) {
+    console.error("获取令牌列表失败:", error)
     throw error
   }
 }
