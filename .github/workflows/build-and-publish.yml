@@ -86,6 +86,7 @@ jobs:
       # 上传 Release Artifact（仅当有 tag 时）
       - name: Upload Release Artifact
         if: ${{ steps.get_tag.outputs.tag != '' }}
+        continue-on-error: true
         run: |
           echo "Uploading build/*.zip to release ${{ steps.get_tag.outputs.tag }}"
           gh release upload "${{ steps.get_tag.outputs.tag }}" build/*.zip
@@ -95,6 +96,7 @@ jobs:
       # 提交到浏览器商店
       - name: Browser Platform Publish
         if: ${{ steps.get_tag.outputs.tag != '' }}
+        continue-on-error: true
         uses: PlasmoHQ/bpp@v3
         with:
           keys: ${{ secrets.SUBMIT_KEYS }}
