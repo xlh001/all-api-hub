@@ -22,7 +22,7 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          # 默认 GITHUB_TOKEN 即可
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # 不使用 GITHUB_TOKEN ，从而可以触发其它的Actions
+          token: ${{ secrets.PAT_TOKEN }}
           # 适配 Node.js 项目
           release-type: node
