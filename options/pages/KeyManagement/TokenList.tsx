@@ -4,6 +4,8 @@ import type { ApiToken } from "~/types"
 
 import { TokenListItem } from "./TokenListItem"
 
+import type { DisplaySiteData } from "~/types"
+
 interface TokenListProps {
   isLoading: boolean
   tokens: (ApiToken & { accountName: string })[]
@@ -15,7 +17,7 @@ interface TokenListProps {
   handleDeleteToken: (token: ApiToken & { accountName: string }) => void
   handleAddToken: () => void
   selectedAccount: string
-  displayData: { id: string }[]
+  displayData: DisplaySiteData[]
 }
 
 function LoadingSkeleton() {
@@ -110,6 +112,7 @@ export function TokenList({
           copyKey={copyKey}
           handleEditToken={handleEditToken}
           handleDeleteToken={handleDeleteToken}
+          account={displayData.find((acc) => acc.name === token.accountName)}
         />
       ))}
     </div>

@@ -4,7 +4,7 @@ import {
   UserGroupIcon
 } from "@heroicons/react/24/outline"
 
-import type { ApiToken } from "~/types"
+import type { ApiToken, DisplaySiteData } from "~/types"
 
 import { TokenDetails } from "./TokenDetails"
 
@@ -19,6 +19,7 @@ interface TokenItemProps {
   formatQuota: (token: ApiToken) => string
   getGroupBadgeStyle: (group: string) => string
   getStatusBadgeStyle: (status: number) => string
+  account: DisplaySiteData | null
 }
 
 export function TokenItem({
@@ -31,7 +32,8 @@ export function TokenItem({
   formatUsedQuota,
   formatQuota,
   getGroupBadgeStyle,
-  getStatusBadgeStyle
+  getStatusBadgeStyle,
+  account
 }: TokenItemProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-sm transition-all duration-200">
@@ -73,6 +75,7 @@ export function TokenItem({
           formatUsedQuota={formatUsedQuota}
           formatQuota={formatQuota}
           onCopyKey={onCopyKey}
+          account={account}
         />
       )}
     </div>

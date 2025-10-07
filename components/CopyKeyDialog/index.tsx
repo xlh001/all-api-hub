@@ -63,6 +63,7 @@ export default function CopyKeyDialog({
         formatQuota={formatQuota}
         getGroupBadgeStyle={getGroupBadgeStyle}
         getStatusBadgeStyle={getStatusBadgeStyle}
+        account={account}
       />
     )
   }

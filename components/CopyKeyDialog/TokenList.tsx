@@ -1,6 +1,6 @@
 import { KeyIcon } from "@heroicons/react/24/outline"
 
-import type { ApiToken } from "~/types"
+import type { ApiToken, DisplaySiteData } from "~/types"
 
 import { TokenItem } from "./TokenItem"
 
@@ -15,6 +15,7 @@ interface TokenListProps {
   formatQuota: (token: ApiToken) => string
   getGroupBadgeStyle: (group: string) => string
   getStatusBadgeStyle: (status: number) => string
+  account: DisplaySiteData | null
 }
 
 export function TokenList({
@@ -27,7 +28,8 @@ export function TokenList({
   formatUsedQuota,
   formatQuota,
   getGroupBadgeStyle,
-  getStatusBadgeStyle
+  getStatusBadgeStyle,
+  account
 }: TokenListProps) {
   if (!Array.isArray(tokens) || tokens.length === 0) {
     return (
@@ -53,6 +55,7 @@ export function TokenList({
           formatQuota={formatQuota}
           getGroupBadgeStyle={getGroupBadgeStyle}
           getStatusBadgeStyle={getStatusBadgeStyle}
+          account={account}
         />
       ))}
     </div>

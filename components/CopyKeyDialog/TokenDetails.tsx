@@ -3,8 +3,10 @@ import {
   ClockIcon,
   DocumentDuplicateIcon
 } from "@heroicons/react/24/outline"
+import { CherryIcon } from "~/components/icons/CherryIcon"
 
-import type { ApiToken } from "~/types"
+import type { ApiToken, DisplaySiteData } from "~/types"
+import { OpenInCherryStudio } from "~/utils/cherryStudio"
 
 interface TokenDetailsProps {
   token: ApiToken
@@ -13,6 +15,7 @@ interface TokenDetailsProps {
   formatUsedQuota: (token: ApiToken) => string
   formatQuota: (token: ApiToken) => string
   onCopyKey: (key: string) => void
+  account: DisplaySiteData | null
 }
 
 export function TokenDetails({
@@ -21,7 +24,8 @@ export function TokenDetails({
   formatTime,
   formatUsedQuota,
   formatQuota,
-  onCopyKey
+  onCopyKey,
+  account
 }: TokenDetailsProps) {
   return (
     <div className="px-3 pb-3 border-t border-gray-100 bg-gray-50/30">
@@ -57,24 +61,35 @@ export function TokenDetails({
           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
             API 密钥
           </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onCopyKey(token.key)
-            }}
-            className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-medium rounded hover:from-purple-600 hover:to-indigo-700 transition-all duration-200">
-            {copiedKey === token.key ? (
-              <>
-                <CheckIcon className="w-3 h-3" />
-                <span>已复制</span>
-              </>
-            ) : (
-              <>
-                <DocumentDuplicateIcon className="w-3 h-3" />
-                <span>复制</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onCopyKey(token.key)
+              }}
+              className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-medium rounded hover:from-purple-600 hover:to-indigo-700 transition-all duration-200">
+              {copiedKey === token.key ? (
+                <>
+                  <CheckIcon className="w-3 h-3" />
+                  <span>已复制</span>
+                </>
+              ) : (
+                <>
+                  <DocumentDuplicateIcon className="w-3 h-3" />
+                  <span>复制</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                OpenInCherryStudio(account, token)
+              }}
+              className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-cyan-600 text-white text-xs font-medium rounded hover:from-blue-600 hover:to-cyan-700 transition-all duration-200">
+              <CherryIcon className="w-3 h-3" />
+              <span>在Cherry Studio中使用</span>
+            </button>
+          </div>
         </div>
         <div className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 break-all">
           <span className="text-gray-900">{token.key.substring(0, 16)}</span>

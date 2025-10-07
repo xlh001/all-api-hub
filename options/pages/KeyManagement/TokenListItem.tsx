@@ -5,8 +5,10 @@ import {
   PencilIcon,
   TrashIcon
 } from "@heroicons/react/24/outline"
+import { CherryIcon } from "~/components/icons/CherryIcon"
 
-import type { ApiToken } from "~/types"
+import type { ApiToken, DisplaySiteData } from "~/types"
+import { OpenInCherryStudio } from "~/utils/cherryStudio"
 
 import { formatKey, formatQuota, formatTime } from "./utils"
 
@@ -17,6 +19,7 @@ interface TokenListItemProps {
   copyKey: (key: string, name: string) => void
   handleEditToken: (token: ApiToken & { accountName: string }) => void
   handleDeleteToken: (token: ApiToken & { accountName: string }) => void
+  account: DisplaySiteData | undefined
 }
 
 export function TokenListItem({
@@ -25,7 +28,8 @@ export function TokenListItem({
   toggleKeyVisibility,
   copyKey,
   handleEditToken,
-  handleDeleteToken
+  handleDeleteToken,
+  account
 }: TokenListItemProps) {
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
@@ -109,6 +113,12 @@ export function TokenListItem({
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             title="复制密钥">
             <DocumentDuplicateIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => OpenInCherryStudio(account, token)}
+            className="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+            title="在Cherry Studio中使用">
+            <CherryIcon className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleEditToken(token)}
