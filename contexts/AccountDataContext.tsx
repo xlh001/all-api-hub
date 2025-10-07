@@ -4,27 +4,21 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode
 } from "react"
 
-import {
-  DATA_TYPE_BALANCE,
-  DATA_TYPE_CONSUMPTION,
-  UI_CONSTANTS
-} from "~/constants/ui"
-import { accountStorage } from "~/services/accountStorage"
-import type {
-  AccountStats,
-  CurrencyAmount,
-  CurrencyAmountMap,
-  DisplaySiteData,
-  SiteAccount,
-  SortField,
-  SortOrder
-} from "~/types"
 
-import { useUserPreferencesContext } from "./UserPreferencesContext"
+
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION, UI_CONSTANTS } from "~/constants/ui";
+import { accountStorage } from "~/services/accountStorage";
+import type { AccountStats, CurrencyAmount, CurrencyAmountMap, DisplaySiteData, SiteAccount, SortField, SortOrder } from "~/types";
+
+
+
+import { useUserPreferencesContext } from "./UserPreferencesContext";
+
 
 // 1. 定义 Context 的值类型
 interface AccountDataContextType {
@@ -84,6 +78,8 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
     null
   )
   const [isDetecting, setIsDetecting] = useState(true)
+
+  const { preferences,isLoading:isPreferencesLoading } = useUserPreferencesContext()
 
   const checkCurrentTab = useCallback(async () => {
     setIsDetecting(true)
@@ -161,6 +157,38 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
       setIsRefreshing(false)
     }
   }, [loadAccountData])
+
+  const hasRefreshedOnOpen = useRef(false)
+
+
+  // 处理打开插件时自动刷新
+  useEffect(() => {
+    const handleRefreshOnOpen = async () => {
+      // 如果已经执行过，直接返回
+      if (hasRefreshedOnOpen.current) {
+        return
+      }
+
+      // 等待偏好设置加载完成
+      if (isPreferencesLoading) {
+        return
+      }
+
+      // 检查是否启用了打开插件时自动刷新
+      if (preferences?.refreshOnOpen) {
+        hasRefreshedOnOpen.current = true // 标记已执行
+        console.log("[Popup] 打开插件时自动刷新已启用，开始刷新")
+        try {
+          await handleRefresh()
+          console.log("[Popup] 打开插件时自动刷新完成")
+        } catch (error) {
+          console.error("[Popup] 打开插件时自动刷新失败:", error)
+        }
+      }
+    }
+
+    handleRefreshOnOpen()
+  }, [handleRefresh, isPreferencesLoading, preferences?.refreshOnOpen])
 
   useEffect(() => {
     loadAccountData()
