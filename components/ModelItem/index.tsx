@@ -4,7 +4,6 @@
 
 import React, { useState } from "react"
 
-import { useModelItemActions } from "~/hooks/useModelItemActions"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CalculatedPrice } from "~/utils/modelPricing"
 
@@ -13,6 +12,7 @@ import { ModelItemDetails } from "./ModelItemDetails"
 import { ModelItemExpandButton } from "./ModelItemExpandButton"
 import { ModelItemHeader } from "./ModelItemHeader"
 import { ModelItemPricing } from "./ModelItemPricing"
+import toast from "react-hot-toast"
 
 interface ModelItemProps {
   model: ModelPricing
@@ -40,7 +40,14 @@ export default function ModelItem({
   isAllGroupsMode = false
 }: ModelItemProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const { handleCopyModelName } = useModelItemActions(model)
+  const handleCopyModelName = async () => {
+    try {
+      await navigator.clipboard.writeText(model.model_name)
+      toast.success("模型名称已复制")
+    } catch (error) {
+      toast.error("复制失败")
+    }
+  }
 
   // 检查模型是否对当前用户分组可用
   const isAvailableForUser = isAllGroupsMode

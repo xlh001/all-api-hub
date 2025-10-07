@@ -7,7 +7,7 @@ import {
 import { Fragment } from "react"
 
 import { useAccountDataContext, useDialogStateContext } from "~/contexts"
-import { useAddAccountDialog } from "~/hooks/useAddAccountDialog"
+import { useAddAccountDialog } from "~/components/AddAccountDialog/useAddAccountDialog"
 
 import AutoDetectErrorAlert from "../AutoDetectErrorAlert"
 import AccountForm from "./AccountForm"

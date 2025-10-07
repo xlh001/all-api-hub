@@ -1,4 +1,4 @@
-import type { FormData } from "~/hooks/useTokenForm"
+import type { FormData } from "~/components/AddTokenDialog/hooks/useTokenForm"
 
 interface IpLimitsInputProps {
   allowIps: string
