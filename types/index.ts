@@ -72,7 +72,6 @@ export type TokenUsage = { upload: number; download: number }
 
 // 展示用的站点数据 (兼容当前 UI)
 export interface DisplaySiteData {
-  siteType: string
   id: string
   icon: string
   name: string
@@ -81,7 +80,7 @@ export interface DisplaySiteData {
   todayConsumption: CurrencyAmount
   todayTokens: TokenUsage
   healthStatus?: SiteHealthStatus // 可选的健康状态
-  site_type: string // 站点类型
+  siteType: string // 站点类型
   baseUrl: string // 站点 URL，用于复制功能
   token: string // 访问令牌，用于复制功能
   userId: number // 真实的用户 ID，用于 API 调用
