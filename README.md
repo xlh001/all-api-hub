@@ -102,6 +102,9 @@
 
 ## 🚀 安装使用
 
+### Chrome 应用商店（推荐）
+[🔗 前往下载](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo)
+
 ### Edge 应用商店（推荐）
 [🔗 前往下载](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
 

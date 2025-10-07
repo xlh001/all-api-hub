@@ -5,6 +5,7 @@ An open-source browser extension designed to optimize the experience of managing
 ## 1. Download
 
 ::: info Recommended
+[Go to Chrome Store to download](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo)
 [Go to Edge Store to download](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
 [Go to FireFox Store to download](https://addons.mozilla.org/firefox/addon/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub/)
 :::

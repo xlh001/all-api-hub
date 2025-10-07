@@ -13,6 +13,10 @@ actions:
     link: https://github.com/qixing-jk/all-api-hub # 假设这是您的项目仓库地址
     type: secondary
     
+  - text: Chrome 商店
+    link: https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo
+    type: secondary
+
   - text: Edge 商店
     link: https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa
     type: secondary

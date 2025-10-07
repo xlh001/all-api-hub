@@ -11,6 +11,10 @@ actions:
   - text: View Source
     link: https://github.com/qixing-jk/all-api-hub
     type: secondary
+  - text: Chrome Store
+    link: https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo
+    type: secondary
+    
   - text: Edge Store
     link: https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa
     type: secondary

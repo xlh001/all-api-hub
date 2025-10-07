@@ -101,6 +101,10 @@ This extension allows for convenient integrated management of AI relay station a
 
 ## 🚀 Installation
 
+### Chrome App Store (Recommended)
+
+[🔗 Go to download](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo)
+
 ### Edge App Store (Recommended)
 
 [🔗 Go to download](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
