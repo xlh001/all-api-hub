@@ -1,13 +1,4 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode
-} from "react"
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 
 
@@ -79,7 +70,8 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
   )
   const [isDetecting, setIsDetecting] = useState(true)
 
-  const { preferences,isLoading:isPreferencesLoading } = useUserPreferencesContext()
+  const { preferences, isLoading: isPreferencesLoading } =
+    useUserPreferencesContext()
 
   const checkCurrentTab = useCallback(async () => {
     setIsDetecting(true)
@@ -104,21 +96,14 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
 
   const loadAccountData = useCallback(async () => {
     try {
+      console.log("[AccountContext] Loading account data...")
       const allAccounts = await accountStorage.getAllAccounts()
       const accountStats = await accountStorage.getAccountStats()
       const displaySiteData = accountStorage.convertToDisplayData(allAccounts)
 
       if (!isInitialLoad) {
-        setPrevTotalConsumption((stats) => ({
-          USD: stats.today_total_consumption,
-          CNY: stats.today_total_consumption
-        }))
-        setPrevBalances(
-          displayData.reduce((acc, site) => {
-            acc[site.id] = site.balance
-            return acc
-          }, {})
-        )
+        setPrevTotalConsumption(prevTotalConsumption)
+        setPrevBalances(prevBalances)
       }
 
       setAccounts(allAccounts)
@@ -140,7 +125,7 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Failed to load account data:", error)
     }
-  }, [isInitialLoad, displayData])
+  }, [])
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
@@ -159,7 +144,6 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
   }, [loadAccountData])
 
   const hasRefreshedOnOpen = useRef(false)
-
 
   // 处理打开插件时自动刷新
   useEffect(() => {
@@ -193,7 +177,7 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     loadAccountData()
     checkCurrentTab()
-  }, [loadAccountData, checkCurrentTab])
+  }, [])
 
   // 监听后台自动刷新的更新通知
   useEffect(() => {
