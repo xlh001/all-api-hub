@@ -6,8 +6,8 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 
+import { useAccountDataContext, useDialogStateContext } from "~/contexts"
 import { useAddAccountDialog } from "~/hooks/useAddAccountDialog"
-import type { DisplaySiteData } from "~/types"
 
 import AutoDetectErrorAlert from "../AutoDetectErrorAlert"
 import AccountForm from "./AccountForm"
@@ -17,31 +17,27 @@ import FormActions from "./FormActions"
 import InfoPanel from "./InfoPanel"
 import UrlInput from "./UrlInput"
 
-interface AddAccountDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  isCurrentSiteAdded?: boolean
-  onEditAccount?: (account: DisplaySiteData) => void
-  detectedAccount?: DisplaySiteData | null
-}
+export default function AddAccountDialog() {
+  const { isAddAccountOpen, closeAddAccount, openEditAccount } =
+    useDialogStateContext()
+  const { displayData, detectedAccount } = useAccountDataContext()
 
-export default function AddAccountDialog({
-  isOpen,
-  onClose,
-  isCurrentSiteAdded,
-  onEditAccount,
-  detectedAccount
-}: AddAccountDialogProps) {
-  const { state, setters, handlers } = useAddAccountDialog({ isOpen, onClose })
+  const { state, setters, handlers } = useAddAccountDialog({
+    isOpen: isAddAccountOpen,
+    onClose: closeAddAccount
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     handlers.handleSaveAccount()
   }
 
+  const detectedDisplayAccount =
+    displayData.find((acc) => acc.id === detectedAccount?.id) ?? null
+
   return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog onClose={onClose} className="relative z-50">
+    <Transition show={isAddAccountOpen} as={Fragment}>
+      <Dialog onClose={closeAddAccount} className="relative z-50">
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
@@ -66,7 +62,7 @@ export default function AddAccountDialog({
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
             <DialogPanel className="w-full max-w-sm bg-white rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto">
-              <DialogHeader onClose={onClose} />
+              <DialogHeader onClose={closeAddAccount} />
 
               <div className="p-4">
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -81,12 +77,12 @@ export default function AddAccountDialog({
                     url={state.url}
                     isDetected={state.isDetected}
                     currentTabUrl={state.currentTabUrl}
-                    isCurrentSiteAdded={isCurrentSiteAdded}
-                    detectedAccount={detectedAccount}
+                    isCurrentSiteAdded={!!detectedAccount}
+                    detectedAccount={detectedDisplayAccount}
                     onUrlChange={handlers.handleUrlChange}
                     onClearUrl={() => setters.setUrl("")}
                     onUseCurrentTab={handlers.handleUseCurrentTabUrl}
-                    onEditAccount={onEditAccount}
+                    onEditAccount={openEditAccount}
                   />
 
                   {!state.isDetected && !state.showManualForm && (
@@ -121,8 +117,8 @@ export default function AddAccountDialog({
                         setSupportsCheckIn={setters.setSupportsCheckIn}
                         siteType={state.siteType}
                         onSiteTypeChange={setters.setSiteType}
-                        />
-                        <FormActions
+                      />
+                      <FormActions
                         isDetected={state.isDetected}
                         isSaving={state.isSaving}
                         siteName={state.siteName}
@@ -130,7 +126,7 @@ export default function AddAccountDialog({
                         accessToken={state.accessToken}
                         userId={state.userId}
                         exchangeRate={state.exchangeRate}
-                        onClose={onClose}
+                        onClose={closeAddAccount}
                       />
                     </>
                   )}

@@ -3,25 +3,44 @@ import {
   ArrowsPointingOutIcon,
   Cog6ToothIcon
 } from "@heroicons/react/24/outline"
+import { useCallback } from "react"
+import toast from "react-hot-toast"
 
 import { UI_CONSTANTS } from "~/constants/ui"
+import { useAccountDataContext } from "~/contexts"
+import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
 
 import iconImage from "../assets/icon.png"
 import Tooltip from "./Tooltip"
 
-interface HeaderSectionProps {
-  isRefreshing: boolean
-  onRefresh: () => void
-  onOpenTab: () => void
-  onOpenSettings: () => void
-}
+export default function HeaderSection() {
+  const { isRefreshing, handleRefresh } = useAccountDataContext()
 
-export default function HeaderSection({
-  isRefreshing,
-  onRefresh,
-  onOpenTab,
-  onOpenSettings
-}: HeaderSectionProps) {
+  const handleGlobalRefresh = useCallback(async () => {
+    try {
+      await toast.promise(handleRefresh(), {
+        loading: "正在刷新所有账号...",
+        success: (result) => {
+          if (result.failed > 0) {
+            return `刷新完成: ${result.success} 成功, ${result.failed} 失败`
+          }
+          return "所有账号刷新成功！"
+        },
+        error: "刷新失败，请稍后重试"
+      })
+    } catch (error) {
+      console.error("Error during global refresh:", error)
+    }
+  }, [handleRefresh])
+
+  const handleOpenFullManagerPage = () => {
+    openFullManagerPage()
+  }
+
+  const handleOpenSetting = () => {
+    openSettingsPage()
+  }
+
   return (
     <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 flex-shrink-0">
       <div className="flex items-center space-x-3">
@@ -39,7 +58,7 @@ export default function HeaderSection({
       <div className="flex items-center space-x-2">
         <Tooltip content="刷新数据">
           <button
-            onClick={onRefresh}
+            onClick={handleGlobalRefresh}
             disabled={isRefreshing}
             className={`${UI_CONSTANTS.STYLES.BUTTON.ICON} ${isRefreshing ? "animate-spin" : ""}`}
             title="刷新数据">
@@ -47,13 +66,13 @@ export default function HeaderSection({
           </button>
         </Tooltip>
         <button
-          onClick={onOpenTab}
+          onClick={handleOpenFullManagerPage}
           className={UI_CONSTANTS.STYLES.BUTTON.ICON}
           title="打开完整管理页面">
           <ArrowsPointingOutIcon className="w-4 h-4" />
         </button>
         <button
-          onClick={onOpenSettings}
+          onClick={handleOpenSetting}
           className={UI_CONSTANTS.STYLES.BUTTON.ICON}
           title="设置">
           <Cog6ToothIcon className="w-4 h-4" />

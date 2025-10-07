@@ -1,12 +1,10 @@
-import {
-  AccountSelection,
-  type Account
-} from "./AccountSelection"
+import type { FormData } from "~/hooks/useTokenForm"
+
+import { AccountSelection, type Account } from "./AccountSelection"
 import { ExpirationTimeInput } from "./ExpirationTimeInput"
+import { FormSection } from "./FormSection"
 import { QuotaSettings } from "./QuotaSettings"
 import { TokenNameInput } from "./TokenNameInput"
-import type { FormData } from "~/hooks/useTokenForm"
-import { FormSection } from "./FormSection"
 
 interface BasicInfoSectionProps {
   formData: FormData

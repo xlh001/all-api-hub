@@ -1,78 +1,47 @@
+import React from "react"
+
 import AccountActionButtons from "~/components/AccountActionButtons"
+import { useAccountDataContext } from "~/contexts"
 import { useAccountListItem } from "~/hooks/useAccountListItem"
-import type { CurrencyAmountMap, CurrencyType, DisplaySiteData } from "~/types"
+import type { DisplaySiteData } from "~/types"
 
 import BalanceDisplay from "./BalanceDisplay"
 import SiteInfo from "./SiteInfo"
 
 interface AccountListItemProps {
   site: DisplaySiteData
-  currencyType: CurrencyType
-  isInitialLoad: boolean
-  prevBalances: CurrencyAmountMap
-  refreshingAccountId?: string | null
-  detectedAccountId?: string | null
-  onRefreshAccount?: (site: DisplaySiteData) => Promise<void>
-  onCopyUrl?: (site: DisplaySiteData) => void
-  onViewUsage?: (site: DisplaySiteData) => void
-  onViewModels?: (siteId: string) => void
-  onEditAccount?: (site: DisplaySiteData) => void
-  onDeleteAccount?: (site: DisplaySiteData) => void
-  onViewKeys?: (siteId: string) => void
   onCopyKey: (site: DisplaySiteData) => void
+  onDeleteWithDialog: (site: DisplaySiteData) => void
 }
 
-export default function AccountListItem({
-  site,
-  currencyType,
-  isInitialLoad,
-  prevBalances,
-  refreshingAccountId,
-  detectedAccountId,
-  onRefreshAccount,
-  onCopyUrl,
-  onViewUsage,
-  onViewModels,
-  onEditAccount,
-  onDeleteAccount,
-  onViewKeys,
-  onCopyKey
-}: AccountListItemProps) {
-  const { hoveredSiteId, handleMouseEnter, handleMouseLeave } =
-    useAccountListItem()
+const AccountListItem: React.FC<AccountListItemProps> = React.memo(
+  ({ site, onCopyKey, onDeleteWithDialog }) => {
+    const { detectedAccount } = useAccountDataContext()
+    const { hoveredSiteId, handleMouseEnter, handleMouseLeave } =
+      useAccountListItem()
 
-  return (
-    <div
-      className={`px-5 py-4 border-b border-gray-50 transition-colors relative group ${
-        site.id === detectedAccountId ? "bg-blue-50" : "hover:bg-gray-25"
-      }`}
-      onMouseEnter={() => handleMouseEnter(site.id)}
-      onMouseLeave={handleMouseLeave}>
-      <div className="flex items-center space-x-4">
-        <SiteInfo site={site} detectedAccountId={detectedAccountId} />
+    return (
+      <div
+        className={`px-5 py-4 border-b border-gray-50 transition-colors relative group ${
+          site.id === detectedAccount?.id ? "bg-blue-50" : "hover:bg-gray-25"
+        }`}
+        onMouseEnter={() => handleMouseEnter(site.id)}
+        onMouseLeave={handleMouseLeave}>
+        <div className="flex items-center space-x-4">
+          <SiteInfo site={site} />
 
-        {hoveredSiteId === site.id && (
-          <AccountActionButtons
-            site={site}
-            refreshingAccountId={refreshingAccountId}
-            onRefreshAccount={onRefreshAccount}
-            onCopyUrl={onCopyUrl}
-            onViewUsage={onViewUsage}
-            onViewModels={onViewModels}
-            onEditAccount={onEditAccount}
-            onDeleteAccount={onDeleteAccount}
-            onViewKeys={onViewKeys}
-            onCopyKey={onCopyKey}
-          />
-        )}
+          {hoveredSiteId === site.id && (
+            <AccountActionButtons
+              site={site}
+              onDeleteAccount={onDeleteWithDialog}
+              onCopyKey={onCopyKey}
+            />
+          )}
 
-        <BalanceDisplay
-          site={site}
-          currencyType={currencyType}
-          isInitialLoad={isInitialLoad}
-          prevBalances={prevBalances}
-        />
+          <BalanceDisplay site={site} />
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
+)
+export default AccountListItem

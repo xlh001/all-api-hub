@@ -1,5 +1,9 @@
 // 格式化密钥显示
-export const formatKey = (key: string, tokenId: number, visibleKeys: Set<number>) => {
+export const formatKey = (
+  key: string,
+  tokenId: number,
+  visibleKeys: Set<number>
+) => {
   if (visibleKeys.has(tokenId)) {
     return key
   }

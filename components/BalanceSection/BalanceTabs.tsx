@@ -1,37 +1,50 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react"
-import React from "react"
+import React, { useMemo } from "react"
 import CountUp from "react-countup"
 
-import { DATA_TYPE_CONSUMPTION, UI_CONSTANTS } from "~/constants/ui"
-import type { BalanceType, CurrencyAmount, CurrencyType } from "~/types"
-import { getCurrencySymbol } from "~/utils/formatters"
+import {
+  DATA_TYPE_BALANCE,
+  DATA_TYPE_CONSUMPTION,
+  UI_CONSTANTS
+} from "~/constants/ui"
+import { useAccountDataContext, useUserPreferencesContext } from "~/contexts"
+import {
+  calculateTotalBalance,
+  calculateTotalConsumption,
+  getCurrencySymbol,
+  getOppositeCurrency
+} from "~/utils/formatters"
 
-interface BalanceTabsProps {
-  activeTab: BalanceType
-  onTabChange: (index: number) => void
-  currencyType: CurrencyType
-  onCurrencyToggle: () => void
-  totalConsumption: CurrencyAmount
-  totalBalance: CurrencyAmount
-  isInitialLoad: boolean
-  prevTotalConsumption: CurrencyAmount
-}
+export const BalanceTabs: React.FC = () => {
+  const { accounts, displayData, stats, isInitialLoad, prevTotalConsumption } =
+    useAccountDataContext()
+  const { activeTab, currencyType, updateActiveTab, updateCurrencyType } =
+    useUserPreferencesContext()
 
-export const BalanceTabs: React.FC<BalanceTabsProps> = ({
-  activeTab,
-  onTabChange,
-  currencyType,
-  onCurrencyToggle,
-  totalConsumption,
-  totalBalance,
-  isInitialLoad,
-  prevTotalConsumption
-}) => {
+  const totalConsumption = useMemo(
+    () => calculateTotalConsumption(stats, accounts),
+    [stats, accounts]
+  )
+
+  const totalBalance = useMemo(
+    () => calculateTotalBalance(displayData),
+    [displayData]
+  )
+
+  const handleTabChange = (index: number) => {
+    const newTab = index === 0 ? DATA_TYPE_CONSUMPTION : DATA_TYPE_BALANCE
+    updateActiveTab(newTab)
+  }
+
+  const handleCurrencyToggle = () => {
+    updateCurrencyType(getOppositeCurrency(currencyType))
+  }
+
   return (
     <div>
       <TabGroup
         selectedIndex={activeTab === DATA_TYPE_CONSUMPTION ? 0 : 1}
-        onChange={onTabChange}>
+        onChange={handleTabChange}>
         <div className="flex justify-start mb-3">
           <TabList className="flex space-x-1 bg-gray-100 rounded-lg p-1">
             <Tab
@@ -59,10 +72,9 @@ export const BalanceTabs: React.FC<BalanceTabsProps> = ({
 
         <TabPanels>
           <TabPanel>
-            {/* 今日消耗面板 */}
             <div className="flex items-center space-x-1">
               <button
-                onClick={onCurrencyToggle}
+                onClick={handleCurrencyToggle}
                 className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
                 title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
                 {totalConsumption[currencyType] > 0 ? "-" : ""}
@@ -83,10 +95,9 @@ export const BalanceTabs: React.FC<BalanceTabsProps> = ({
           </TabPanel>
 
           <TabPanel>
-            {/* 总余额面板 */}
             <div className="flex items-center space-x-1">
               <button
-                onClick={onCurrencyToggle}
+                onClick={handleCurrencyToggle}
                 className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
                 title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
                 {getCurrencySymbol(currencyType)}

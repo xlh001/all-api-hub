@@ -1,4 +1,5 @@
 import { EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
+
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import type { BalanceType, CurrencyType } from "~/types"
 
@@ -24,9 +25,7 @@ export default function DisplaySettings({
           <div className="flex items-center space-x-3">
             <GlobeAltIcon className="w-5 h-5 text-gray-400" />
             <div>
-              <h3 className="text-sm font-medium text-gray-900">
-                货币单位
-              </h3>
+              <h3 className="text-sm font-medium text-gray-900">货币单位</h3>
               <p className="text-sm text-gray-500">
                 设置余额和消费显示的默认货币单位
               </p>
@@ -59,9 +58,7 @@ export default function DisplaySettings({
           <div className="flex items-center space-x-3">
             <EyeIcon className="w-5 h-5 text-gray-400" />
             <div>
-              <h3 className="text-sm font-medium text-gray-900">
-                默认标签页
-              </h3>
+              <h3 className="text-sm font-medium text-gray-900">默认标签页</h3>
               <p className="text-sm text-gray-500">
                 设置插件启动时显示的默认标签页
               </p>

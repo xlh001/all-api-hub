@@ -1,22 +1,19 @@
+import React from "react"
 import CountUp from "react-countup"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import type { CurrencyAmountMap, CurrencyType, DisplaySiteData } from "~/types"
+import { useAccountDataContext, useUserPreferencesContext } from "~/contexts"
+import type { DisplaySiteData } from "~/types"
 import { getCurrencySymbol } from "~/utils/formatters"
 
 interface BalanceDisplayProps {
   site: DisplaySiteData
-  currencyType: CurrencyType
-  isInitialLoad: boolean
-  prevBalances: CurrencyAmountMap
 }
 
-export default function BalanceDisplay({
-  site,
-  currencyType,
-  isInitialLoad,
-  prevBalances
-}: BalanceDisplayProps) {
+const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
+  const { isInitialLoad, prevBalances } = useAccountDataContext()
+  const { currencyType } = useUserPreferencesContext()
+
   return (
     <div className="text-right flex-shrink-0">
       <div className="font-semibold text-gray-900 text-lg mb-0.5">
@@ -54,4 +51,5 @@ export default function BalanceDisplay({
       </div>
     </div>
   )
-}
+})
+export default BalanceDisplay

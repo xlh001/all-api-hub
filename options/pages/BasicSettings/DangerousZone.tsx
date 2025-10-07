@@ -11,9 +11,7 @@ export default function DangerousZone({
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-red-800">
-              重置所有设置
-            </h3>
+            <h3 className="text-sm font-medium text-red-800">重置所有设置</h3>
             <p className="text-sm text-red-600 mt-1">
               将所有配置重置为默认值，此操作不可撤销
             </p>

@@ -7,16 +7,19 @@ import {
 } from "@heroicons/react/24/outline"
 
 import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
+import { useAccountDataContext } from "~/contexts"
 import type { DisplaySiteData } from "~/types"
 
 import Tooltip from "../Tooltip"
 
 interface SiteInfoProps {
   site: DisplaySiteData
-  detectedAccountId?: string | null
 }
 
-export default function SiteInfo({ site, detectedAccountId }: SiteInfoProps) {
+export default function SiteInfo({ site }: SiteInfoProps) {
+  const { detectedAccount } = useAccountDataContext()
+  const detectedAccountId = detectedAccount?.id
+
   return (
     <div className="flex items-center space-x-3 flex-1 min-w-0">
       <div className="flex-1 min-w-0">
@@ -27,7 +30,7 @@ export default function SiteInfo({ site, detectedAccountId }: SiteInfoProps) {
               UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
             }`}></div>
           {site.id === detectedAccountId && (
-            <Tooltip content="当前tab站点已经存在" position="top">
+            <Tooltip content="当前标签页站点已存在" position="top">
               <span className={`text-yellow-700`}>当前站点</span>
             </Tooltip>
           )}
@@ -40,7 +43,6 @@ export default function SiteInfo({ site, detectedAccountId }: SiteInfoProps) {
               {site.name}
             </a>
           </div>
-          {/* 签到状态显示 */}
           {site.supports_check_in && (
             <>
               {site.can_check_in === undefined ? (

@@ -7,8 +7,8 @@ import {
   UserIcon
 } from "@heroicons/react/24/outline"
 
-import AccountManagement from "./pages/AccountManagement"
 import About from "./pages/About"
+import AccountManagement from "./pages/AccountManagement"
 import BasicSettings from "./pages/BasicSettings"
 import ImportExport from "./pages/ImportExport"
 import KeyManagement from "./pages/KeyManagement"

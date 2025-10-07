@@ -1,4 +1,5 @@
 import { Switch } from "@headlessui/react"
+
 import { UI_CONSTANTS } from "~/constants/ui"
 import type { FormData } from "~/hooks/useTokenForm"
 
@@ -55,7 +56,8 @@ export function QuotaSettings({
           />
           {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
           <p className="mt-1 text-xs text-gray-500">
-            1美元 = {UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR.toLocaleString()}{" "}
+            1美元 ={" "}
+            {UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR.toLocaleString()}{" "}
             配额点数
           </p>
         </div>

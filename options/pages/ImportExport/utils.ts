@@ -4,7 +4,9 @@ import { accountStorage } from "~/services/accountStorage"
 import { userPreferences } from "~/services/userPreferences"
 
 // 导出所有数据
-export const handleExportAll = async (setIsExporting: (isExporting: boolean) => void) => {
+export const handleExportAll = async (
+  setIsExporting: (isExporting: boolean) => void
+) => {
   try {
     setIsExporting(true)
 
@@ -44,7 +46,9 @@ export const handleExportAll = async (setIsExporting: (isExporting: boolean) => 
 }
 
 // 导出账号数据
-export const handleExportAccounts = async (setIsExporting: (isExporting: boolean) => void) => {
+export const handleExportAccounts = async (
+  setIsExporting: (isExporting: boolean) => void
+) => {
   try {
     setIsExporting(true)
 
@@ -78,7 +82,9 @@ export const handleExportAccounts = async (setIsExporting: (isExporting: boolean
 }
 
 // 导出用户设置
-export const handleExportPreferences = async (setIsExporting: (isExporting: boolean) => void) => {
+export const handleExportPreferences = async (
+  setIsExporting: (isExporting: boolean) => void
+) => {
   try {
     setIsExporting(true)
 

@@ -6,8 +6,8 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 
+import { useDialogStateContext } from "~/contexts"
 import { useEditAccountDialog } from "~/hooks/useEditAccountDialog"
-import type { DisplaySiteData } from "~/types"
 
 import AutoDetectErrorAlert from "../AutoDetectErrorAlert"
 import AccountForm from "./AccountForm"
@@ -16,17 +16,10 @@ import DialogHeader from "./DialogHeader"
 import InfoPanel from "./InfoPanel"
 import UrlInput from "./UrlInput"
 
-interface EditAccountDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  account: DisplaySiteData | null
-}
+export default function EditAccountDialog() {
+  const { isEditAccountOpen, closeEditAccount, editingAccount } =
+    useDialogStateContext()
 
-export default function EditAccountDialog({
-  isOpen,
-  onClose,
-  account
-}: EditAccountDialogProps) {
   const {
     url,
     setUrl,
@@ -55,11 +48,14 @@ export default function EditAccountDialog({
     setSupportsCheckIn,
     siteType,
     setSiteType
-  } = useEditAccountDialog({ account, onClose })
+  } = useEditAccountDialog({
+    account: editingAccount,
+    onClose: closeEditAccount
+  })
 
   return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog onClose={onClose} className="relative z-50">
+    <Transition show={isEditAccountOpen} as={Fragment}>
+      <Dialog onClose={closeEditAccount} className="relative z-50">
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
@@ -84,7 +80,7 @@ export default function EditAccountDialog({
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
             <DialogPanel className="w-full max-w-sm bg-white rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto">
-              <DialogHeader onClose={onClose} />
+              <DialogHeader onClose={closeEditAccount} />
 
               <div className="p-4">
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -117,9 +113,9 @@ export default function EditAccountDialog({
                     siteType={siteType}
                     setSiteType={setSiteType}
                   />
-                
+
                   <ActionButtons
-                    onClose={onClose}
+                    onClose={closeEditAccount}
                     handleAutoDetect={handleAutoDetect}
                     isDetected={isDetected}
                     isDetecting={isDetecting}

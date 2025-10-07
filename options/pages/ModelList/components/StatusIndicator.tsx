@@ -3,6 +3,7 @@ import {
   CpuChipIcon,
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline"
+
 import type { Account } from "~/types"
 
 interface StatusIndicatorProps {

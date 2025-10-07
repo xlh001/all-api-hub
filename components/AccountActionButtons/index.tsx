@@ -1,6 +1,8 @@
 import React from "react"
 
+import { useAccountActionsContext, useDialogStateContext } from "~/contexts"
 import type { DisplaySiteData } from "~/types"
+import { openKeysPage, openModelsPage, openUsagePage } from "~/utils/navigation"
 
 import { CopyDropdown } from "./CopyDropdown"
 import { MoreActionsDropdown } from "./MoreActionsDropdown"
@@ -8,49 +10,39 @@ import { RefreshButton } from "./RefreshButton"
 
 export interface ActionButtonsProps {
   site: DisplaySiteData
-  refreshingAccountId: string | null
-  onRefreshAccount: (site: DisplaySiteData) => Promise<void>
-  onCopyUrl: (site: DisplaySiteData) => void
-  onViewUsage: (site: DisplaySiteData) => void
-  onViewModels: (siteId: string) => void
-  onEditAccount: (site: DisplaySiteData) => void
-  onDeleteAccount: (site: DisplaySiteData) => void
-  onViewKeys: (siteId: string) => void
   onCopyKey: (site: DisplaySiteData) => void
+  onDeleteAccount: (site: DisplaySiteData) => void
 }
 
 export default function AccountActionButtons({
   site,
-  refreshingAccountId,
-  onRefreshAccount,
-  onCopyUrl,
-  onViewUsage,
-  onViewModels,
-  onEditAccount,
-  onDeleteAccount,
-  onViewKeys,
-  onCopyKey
+  onCopyKey,
+  onDeleteAccount
 }: ActionButtonsProps) {
+  const { refreshingAccountId, handleRefreshAccount, handleCopyUrl } =
+    useAccountActionsContext()
+  const { openEditAccount } = useDialogStateContext()
+
   return (
     <div className="flex items-center space-x-2 flex-shrink-0">
       <RefreshButton
         site={site}
         refreshingAccountId={refreshingAccountId}
-        onRefreshAccount={onRefreshAccount}
+        onRefreshAccount={() => handleRefreshAccount(site)}
       />
 
       <CopyDropdown
         site={site}
-        onCopyUrl={onCopyUrl}
-        onViewKeys={onViewKeys}
+        onCopyUrl={() => handleCopyUrl(site)}
+        onViewKeys={() => openKeysPage(site.id)}
         onCopyKey={onCopyKey}
       />
 
       <MoreActionsDropdown
         site={site}
-        onViewUsage={onViewUsage}
-        onViewModels={onViewModels}
-        onEditAccount={onEditAccount}
+        onViewUsage={() => openUsagePage(site)}
+        onViewModels={() => openModelsPage(site.id)}
+        onEditAccount={() => openEditAccount(site)}
         onDeleteAccount={onDeleteAccount}
       />
     </div>

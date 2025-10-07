@@ -1,0 +1,121 @@
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode
+} from "react"
+import toast from "react-hot-toast"
+
+import { accountStorage } from "~/services/accountStorage"
+import type { DisplaySiteData } from "~/types"
+
+import { useAccountDataContext } from "./AccountDataContext"
+
+// 1. 定义 Context 的值类型
+interface AccountActionsContextType {
+  refreshingAccountId: string | null
+  handleRefreshAccount: (account: DisplaySiteData) => Promise<void>
+  handleDeleteAccount: (account: DisplaySiteData) => void
+  handleCopyUrl: (account: DisplaySiteData) => void
+}
+
+// 2. 创建 Context
+const AccountActionsContext = createContext<
+  AccountActionsContextType | undefined
+>(undefined)
+
+// 3. 创建 Provider 组件
+export const AccountActionsProvider = ({
+  children
+}: {
+  children: ReactNode
+}) => {
+  const { loadAccountData } = useAccountDataContext()
+  const [refreshingAccountId, setRefreshingAccountId] = useState<string | null>(
+    null
+  )
+
+  const handleRefreshAccount = useCallback(
+    async (account: DisplaySiteData) => {
+      if (refreshingAccountId) return
+
+      setRefreshingAccountId(account.id)
+
+      const refreshPromise = async () => {
+        const success = await accountStorage.refreshAccount(account.id)
+        if (success) {
+          await loadAccountData()
+          return success
+        } else {
+          throw new Error("刷新失败")
+        }
+      }
+
+      try {
+        await toast.promise(refreshPromise(), {
+          loading: `正在刷新 ${account.name}...`,
+          success: `${account.name} 刷新成功！`,
+          error: `刷新 ${account.name} 失败`
+        })
+      } catch (error) {
+        console.error("Error refreshing account:", error)
+      } finally {
+        setRefreshingAccountId(null)
+      }
+    },
+    [refreshingAccountId, loadAccountData]
+  )
+
+  const handleDeleteAccount = useCallback(
+    (account: DisplaySiteData) => {
+      // The actual deletion logic is in DelAccountDialog,
+      // this just reloads the data after deletion.
+      loadAccountData()
+    },
+    [loadAccountData]
+  )
+
+  const handleCopyUrl = (account: DisplaySiteData) => {
+    navigator.clipboard.writeText(account.baseUrl)
+    toast.success(`已复制 ${account.name} 的 URL 到剪贴板`)
+  }
+
+  const value = useMemo(
+    () => ({
+      refreshingAccountId,
+      handleRefreshAccount,
+      handleDeleteAccount,
+      handleCopyUrl
+    }),
+    [
+      refreshingAccountId,
+      handleRefreshAccount,
+      handleDeleteAccount,
+      handleCopyUrl
+    ]
+  )
+
+  return (
+    <AccountActionsContext.Provider value={value}>
+      {children}
+    </AccountActionsContext.Provider>
+  )
+}
+
+// 4. 创建自定义 Hook
+export const useAccountActionsContext = () => {
+  const context = useContext(AccountActionsContext)
+  if (
+    context === undefined ||
+    !context.handleRefreshAccount ||
+    !context.handleDeleteAccount ||
+    !context.handleCopyUrl
+  ) {
+    throw new Error(
+      "useAccountActionsContext 必须在 AccountActionsProvider 中使用，并且必须提供所有必需的函数"
+    )
+  }
+  return context
+}

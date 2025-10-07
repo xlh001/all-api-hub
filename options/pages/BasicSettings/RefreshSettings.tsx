@@ -47,9 +47,7 @@ export default function RefreshSettings({
         {autoRefresh && (
           <div className="flex items-center justify-between py-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-medium text-gray-900">
-                刷新间隔
-              </h3>
+              <h3 className="text-sm font-medium text-gray-900">刷新间隔</h3>
               <p className="text-sm text-gray-500">
                 设置自动刷新的时间间隔（默认360秒，建议不要设置过小以避免频繁请求）
               </p>
@@ -59,9 +57,7 @@ export default function RefreshSettings({
                 type="number"
                 min="10"
                 value={intervalInput}
-                onChange={(e) =>
-                  handleRefreshIntervalChange(e.target.value)
-                }
+                onChange={(e) => handleRefreshIntervalChange(e.target.value)}
                 onBlur={handleRefreshIntervalBlur}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {

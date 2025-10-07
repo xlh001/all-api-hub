@@ -9,8 +9,8 @@ import {
   UserIcon
 } from "@heroicons/react/24/outline"
 
-import { isValidExchangeRate } from "~/services/accountOperations"
 import { SITE_TITLE_RULES } from "~/constants/siteType"
+import { isValidExchangeRate } from "~/services/accountOperations"
 
 interface AccountFormProps {
   siteName: string
@@ -90,8 +90,7 @@ export default function AccountForm({
           <select
             value={siteType}
             onChange={(e) => onSiteTypeChange(e.target.value)}
-            className="block w-full pl-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-          >
+            className="block w-full pl-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
             {SITE_TITLE_RULES.map((rule) => (
               <option key={rule.name} value={rule.name}>
                 {rule.name}

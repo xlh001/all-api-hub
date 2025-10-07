@@ -1,6 +1,7 @@
 import { Toaster } from "react-hot-toast"
 
 import "~/popup/style.css"
+
 import Header from "~/options/components/Header"
 import Sidebar from "~/options/components/Sidebar"
 import { menuItems } from "~/options/constants"
