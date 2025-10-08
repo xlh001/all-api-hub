@@ -31,7 +31,7 @@ export default function ActionButtons({
 
   if (isAddMode && !isDetected && !isFormValid) {
     return (
-      <div className="flex space-x-3 pt-4">
+      <div className="flex space-x-3">
         <button
           type="button"
           onClick={onAutoDetect}

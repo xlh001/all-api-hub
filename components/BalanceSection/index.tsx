@@ -6,7 +6,7 @@ import { UpdateTimeAndWarning } from "./UpdateTimeAndWarning"
 
 const BalanceSection = () => {
   return (
-    <div className="px-6 py-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
+    <div className="p-4 bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
       <div className="space-y-3">
         <BalanceTabs />
         <TokenStats />
