@@ -1,17 +1,16 @@
 import { useMemo } from "react"
 
-import type { Model } from "~/services/apiService"
 import type { PricingResponse } from "~/services/apiService/common/type"
-import type { Account } from "~/types"
 import { calculateModelPrice } from "~/utils/modelPricing"
 import {
   filterModelsByProvider,
   type ProviderType
 } from "~/utils/modelProviders"
+import type { DisplaySiteData } from "~/types"
 
 interface UseFilteredModelsProps {
   pricingData: PricingResponse | null
-  currentAccount: Account | undefined
+  currentAccount: DisplaySiteData | undefined
   selectedGroup: string
   searchTerm: string
   selectedProvider: ProviderType | "all"
