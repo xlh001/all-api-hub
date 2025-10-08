@@ -1,24 +1,65 @@
-import { CheckIcon, SparklesIcon } from "@heroicons/react/24/outline"
+import {
+  CheckIcon,
+  PencilIcon,
+  SparklesIcon
+} from "@heroicons/react/24/outline"
 
 interface ActionButtonsProps {
-  onClose: () => void
-  handleAutoDetect: () => void
-  isDetected: boolean
+  mode: "add" | "edit"
+  url: string
   isDetecting: boolean
   isSaving: boolean
   isFormValid: boolean
-  url: string
+  isDetected?: boolean
+  onAutoDetect: () => void
+  onShowManualForm: () => void
+  onClose: () => void
 }
 
 export default function ActionButtons({
-  onClose,
-  handleAutoDetect,
-  isDetected,
+  mode,
+  url,
   isDetecting,
   isSaving,
   isFormValid,
-  url
+  isDetected,
+  onAutoDetect,
+  onShowManualForm,
+  onClose
 }: ActionButtonsProps) {
+  const isAddMode = mode === "add"
+
+  if (isAddMode && !isDetected && !isFormValid) {
+    return (
+      <div className="flex space-x-3 pt-4">
+        <button
+          type="button"
+          onClick={onAutoDetect}
+          disabled={!url.trim() || isDetecting}
+          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          {isDetecting ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span>识别中...</span>
+            </>
+          ) : (
+            <>
+              <SparklesIcon className="w-4 h-4" />
+              <span>自动识别</span>
+            </>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={onShowManualForm}
+          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+          <PencilIcon className="w-4 h-4" />
+          <span>手动添加</span>
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex space-x-3 pt-2">
       <button
@@ -28,11 +69,10 @@ export default function ActionButtons({
         取消
       </button>
 
-      {/* 重新识别按钮 */}
-      {!isDetected && (
+      {mode === "edit" && !isDetected && (
         <button
           type="button"
-          onClick={handleAutoDetect}
+          onClick={onAutoDetect}
           disabled={!url.trim() || isDetecting}
           className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
           {isDetecting ? (
@@ -49,7 +89,6 @@ export default function ActionButtons({
         </button>
       )}
 
-      {/* 保存按钮 */}
       <button
         type="submit"
         disabled={!isFormValid || isSaving}
@@ -62,7 +101,7 @@ export default function ActionButtons({
         ) : (
           <>
             <CheckIcon className="w-4 h-4" />
-            <span>保存更改</span>
+            <span>{isAddMode ? (isDetected ? "确认添加" : "保存账号") : "保存更改"}</span>
           </>
         )}
       </button>

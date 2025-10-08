@@ -4,9 +4,7 @@ import { Toaster } from "react-hot-toast"
 
 import AccountList from "~/components/AccountList"
 import ActionButtons from "~/components/ActionButtons"
-import AddAccountDialog from "~/components/AddAccountDialog"
 import BalanceSection from "~/components/BalanceSection"
-import EditAccountDialog from "~/components/EditAccountDialog"
 import HeaderSection from "~/components/HeaderSection"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { PopupProvider, useUserPreferencesContext } from "~/contexts"
@@ -26,9 +24,6 @@ function PopupContent({ inSidePanel = false }) {
 
         <AccountList />
       </div>
-
-      <AddAccountDialog />
-      <EditAccountDialog />
 
       <Toaster position="bottom-center" reverseOrder={true} />
     </div>

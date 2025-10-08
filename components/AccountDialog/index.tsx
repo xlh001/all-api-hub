@@ -7,37 +7,62 @@ import {
 import { Fragment } from "react"
 
 import { useAccountDataContext, useDialogStateContext } from "~/contexts"
-import { useAddAccountDialog } from "~/components/AddAccountDialog/useAddAccountDialog"
+import type { DisplaySiteData } from "~/types"
 
 import AutoDetectErrorAlert from "../AutoDetectErrorAlert"
 import AccountForm from "./AccountForm"
 import ActionButtons from "./ActionButtons"
 import DialogHeader from "./DialogHeader"
-import FormActions from "./FormActions"
 import InfoPanel from "./InfoPanel"
 import UrlInput from "./UrlInput"
+import { useAccountDialog } from "./useAccountDialog"
 
-export default function AddAccountDialog() {
-  const { isAddAccountOpen, closeAddAccount, openEditAccount } =
-    useDialogStateContext()
+interface AccountDialogProps {
+  isOpen: boolean
+  onClose: () => void
+  mode: "add" | "edit"
+  account?: DisplaySiteData | null
+  onSuccess: (data: any) => void;
+  onError: (error: Error) => void;
+}
+
+export default function AccountDialog({
+  isOpen,
+  onClose,
+  mode,
+  account,
+  onSuccess,
+  onError,
+}: AccountDialogProps) {
   const { displayData, detectedAccount } = useAccountDataContext()
+  const { openEditAccount } = useDialogStateContext()
 
-  const { state, setters, handlers } = useAddAccountDialog({
-    isOpen: isAddAccountOpen,
-    onClose: closeAddAccount
+  const { state, setters, handlers } = useAccountDialog({
+    isOpen,
+    onClose: () => {
+      onClose();
+      onError(new Error("Dialog closed by user"));
+    },
+    mode,
+    account,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    handlers.handleSaveAccount()
+    try {
+      const result = await handlers.handleSaveAccount()
+      onSuccess(result)
+    } catch (error) {
+      onError(error)
+    }
   }
 
   const detectedDisplayAccount =
     displayData.find((acc) => acc.id === detectedAccount?.id) ?? null
 
   return (
-    <Transition show={isAddAccountOpen} as={Fragment}>
-      <Dialog onClose={closeAddAccount} className="relative z-50">
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog onClose={onClose} className="relative z-50">
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
@@ -62,7 +87,7 @@ export default function AddAccountDialog() {
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
             <DialogPanel className="w-full max-w-sm bg-white rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto">
-              <DialogHeader onClose={closeAddAccount} />
+              <DialogHeader mode={mode} onClose={onClose} />
 
               <div className="p-4">
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -75,24 +100,32 @@ export default function AddAccountDialog() {
 
                   <UrlInput
                     url={state.url}
-                    isDetected={state.isDetected}
-                    currentTabUrl={state.currentTabUrl}
-                    isCurrentSiteAdded={!!detectedAccount}
-                    detectedAccount={detectedDisplayAccount}
                     onUrlChange={handlers.handleUrlChange}
+                    isDetected={state.isDetected}
                     onClearUrl={() => setters.setUrl("")}
-                    onUseCurrentTab={handlers.handleUseCurrentTabUrl}
-                    onEditAccount={openEditAccount}
+                    {...(mode === "add" && {
+                      currentTabUrl: state.currentTabUrl,
+                      isCurrentSiteAdded: !!detectedAccount,
+                      detectedAccount: detectedDisplayAccount,
+                      onUseCurrentTab: handlers.handleUseCurrentTabUrl,
+                      onEditAccount: openEditAccount,
+                    })}
                   />
 
-                  {!state.isDetected && !state.showManualForm && (
-                    <ActionButtons
-                      url={state.url}
-                      isDetecting={state.isDetecting}
-                      onAutoDetect={handlers.handleAutoDetect}
-                      onShowManualForm={() => setters.setShowManualForm(true)}
-                    />
-                  )}
+                  {mode === "add" &&
+                    !state.isDetected &&
+                    !state.showManualForm && (
+                      <ActionButtons
+                        mode={mode}
+                        url={state.url}
+                        isDetecting={state.isDetecting}
+                        onAutoDetect={handlers.handleAutoDetect}
+                        onShowManualForm={() => setters.setShowManualForm(true)}
+                        onClose={onClose}
+                        isFormValid={state.isFormValid}
+                        isSaving={state.isSaving}
+                      />
+                    )}
 
                   {(state.isDetected || state.showManualForm) && (
                     <>
@@ -118,15 +151,16 @@ export default function AddAccountDialog() {
                         siteType={state.siteType}
                         onSiteTypeChange={setters.setSiteType}
                       />
-                      <FormActions
-                        isDetected={state.isDetected}
+                      <ActionButtons
+                        mode={mode}
+                        url={state.url}
+                        isDetecting={state.isDetecting}
+                        onAutoDetect={handlers.handleAutoDetect}
+                        onShowManualForm={() => setters.setShowManualForm(true)}
+                        onClose={onClose}
+                        isFormValid={state.isFormValid}
                         isSaving={state.isSaving}
-                        siteName={state.siteName}
-                        username={state.username}
-                        accessToken={state.accessToken}
-                        userId={state.userId}
-                        exchangeRate={state.exchangeRate}
-                        onClose={closeAddAccount}
+                        isDetected={state.isDetected}
                       />
                     </>
                   )}
@@ -134,6 +168,7 @@ export default function AddAccountDialog() {
               </div>
 
               <InfoPanel
+                mode={mode}
                 isDetected={state.isDetected}
                 showManualForm={state.showManualForm}
               />

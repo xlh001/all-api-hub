@@ -2,16 +2,40 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode
 } from "react"
+import ReactDOM from "react-dom/client"
 
-import { useAccountDataContext } from "~/contexts/AccountDataContext"
-import type { DisplaySiteData } from "~/types"
 
-// 1. 定义 Context 的值类型
+
+import AccountDialog from "~/components/AccountDialog";
+import { useAccountDataContext } from "~/contexts/AccountDataContext";
+import type { DisplaySiteData } from "~/types";
+
+
+
+
+
+type DialogMode = "add" | "edit"
+
+interface DialogOptions {
+  mode: DialogMode
+  account?: DisplaySiteData | null
+}
+
+interface DialogState {
+  isOpen: boolean
+  mode: DialogMode
+  account: DisplaySiteData | null
+}
+
 interface DialogStateContextType {
+  openAccountDialog: (options: DialogOptions) => Promise<any>
+  // For backward compatibility
   isAddAccountOpen: boolean
   isEditAccountOpen: boolean
   editingAccount: DisplaySiteData | null
@@ -21,40 +45,69 @@ interface DialogStateContextType {
   closeEditAccount: () => void
 }
 
-// 2. 创建 Context
 const DialogStateContext = createContext<DialogStateContextType | undefined>(
   undefined
 )
 
-// 3. 创建 Provider 组件
 export const DialogStateProvider = ({ children }: { children: ReactNode }) => {
   const { loadAccountData } = useAccountDataContext()
-  const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
-  const [isEditAccountOpen, setIsEditAccountOpen] = useState(false)
-  const [editingAccount, setEditingAccount] = useState<DisplaySiteData | null>(
-    null
-  )
+  const [dialogState, setDialogState] = useState<DialogState>({
+    isOpen: false,
+    mode: "add",
+    account: null
+  })
 
-  const openAddAccount = useCallback(() => setIsAddAccountOpen(true), [])
+  const promiseRef = useRef<{
+    resolve: (value: any) => void
+    reject: (reason?: any) => void
+  } | null>(null)
 
-  const closeAddAccount = useCallback(() => {
-    setIsAddAccountOpen(false)
-    loadAccountData()
-  }, [loadAccountData])
-
-  const openEditAccount = useCallback((account: DisplaySiteData) => {
-    setEditingAccount(account)
-    setIsEditAccountOpen(true)
+  const openAccountDialog = useCallback((options: DialogOptions) => {
+    return new Promise((resolve, reject) => {
+      setDialogState({
+        isOpen: true,
+        mode: options.mode,
+        account: options.account || null
+      })
+      promiseRef.current = { resolve, reject }
+    })
   }, [])
 
-  const closeEditAccount = useCallback(() => {
-    setIsEditAccountOpen(false)
-    setEditingAccount(null)
+  const handleClose = () => {
+    setDialogState((prev) => ({ ...prev, isOpen: false }))
     loadAccountData()
-  }, [loadAccountData])
+  }
+
+  const handleSuccess = (data: any) => {
+    promiseRef.current?.resolve(data)
+    handleClose()
+  }
+
+  const handleError = (error: Error) => {
+    promiseRef.current?.reject(error)
+    handleClose()
+  }
+
+  // For backward compatibility
+  const isAddAccountOpen = dialogState.isOpen && dialogState.mode === "add"
+  const isEditAccountOpen = dialogState.isOpen && dialogState.mode === "edit"
+  const editingAccount = dialogState.account
+
+  const openAddAccount = useCallback(
+    () => openAccountDialog({ mode: "add" }),
+    [openAccountDialog]
+  )
+  const closeAddAccount = useCallback(handleClose, [loadAccountData])
+  const openEditAccount = useCallback(
+    (account: DisplaySiteData) =>
+      openAccountDialog({ mode: "edit", account }),
+    [openAccountDialog]
+  )
+  const closeEditAccount = useCallback(handleClose, [loadAccountData])
 
   const value = useMemo(
     () => ({
+      openAccountDialog,
       isAddAccountOpen,
       isEditAccountOpen,
       editingAccount,
@@ -64,6 +117,7 @@ export const DialogStateProvider = ({ children }: { children: ReactNode }) => {
       closeEditAccount
     }),
     [
+      openAccountDialog,
       isAddAccountOpen,
       isEditAccountOpen,
       editingAccount,
@@ -77,23 +131,53 @@ export const DialogStateProvider = ({ children }: { children: ReactNode }) => {
   return (
     <DialogStateContext.Provider value={value}>
       {children}
+      {dialogState.isOpen && (
+        <AccountDialog
+          isOpen={dialogState.isOpen}
+          onClose={handleClose}
+          mode={dialogState.mode}
+          account={dialogState.account}
+          onSuccess={handleSuccess}
+          onError={handleError}
+        />
+      )}
     </DialogStateContext.Provider>
   )
 }
 
-// 4. 创建自定义 Hook
 export const useDialogStateContext = () => {
   const context = useContext(DialogStateContext)
-  if (
-    context === undefined ||
-    !context.openAddAccount ||
-    !context.closeAddAccount ||
-    !context.openEditAccount ||
-    !context.closeEditAccount
-  ) {
+  if (!context) {
     throw new Error(
       "useDialogStateContext 必须在 DialogStateProvider 中使用，并且必须提供所有必需的函数"
     )
   }
   return context
+}
+
+// Imperative API
+let dialogRoot = document.getElementById("dialog-root")
+if (!dialogRoot) {
+  dialogRoot = document.createElement("div")
+  dialogRoot.id = "dialog-root"
+  document.body.appendChild(dialogRoot)
+}
+const root = ReactDOM.createRoot(dialogRoot)
+
+export const showAccountDialog = (options: DialogOptions): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const DialogWrapper = () => {
+      const { openAccountDialog } = useDialogStateContext()
+      useEffect(() => {
+        openAccountDialog(options).then(resolve).catch(reject)
+      }, [openAccountDialog])
+      return null
+    }
+    // We need to wrap it in the provider to access the context
+    root.render(
+      <DialogStateProvider>
+        <DialogWrapper />
+      </DialogStateProvider>
+    )
+  })
 }
