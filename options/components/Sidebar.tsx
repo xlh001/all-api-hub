@@ -1,4 +1,4 @@
-import { MenuItem, menuItems } from "~/options/constants"
+import { menuItems } from "~/options/constants"
 
 interface SidebarProps {
   activeMenuItem: string

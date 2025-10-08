@@ -4,13 +4,13 @@ import {
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline"
 
-import type { Account } from "~/types"
+import type { DisplaySiteData } from "~/types"
 
 interface StatusIndicatorProps {
   selectedAccount: string
   isLoading: boolean
   dataFormatError: boolean
-  currentAccount: Account | undefined
+  currentAccount: DisplaySiteData | undefined
   loadPricingData: () => void
 }
 
