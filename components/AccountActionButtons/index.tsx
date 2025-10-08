@@ -24,7 +24,7 @@ export default function AccountActionButtons({
   const { openEditAccount } = useDialogStateContext()
 
   return (
-    <div className="flex items-center space-x-2 flex-shrink-0">
+    <div className="flex items-center flex-shrink-0">
       <RefreshButton
         site={site}
         refreshingAccountId={refreshingAccountId}
