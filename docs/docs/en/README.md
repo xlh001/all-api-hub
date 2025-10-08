@@ -8,18 +8,14 @@ actions:
   - text: Get Started
     link: /en/get-started.html
     type: primary
-  - text: View Source
-    link: https://github.com/qixing-jk/all-api-hub
-    type: secondary
   - text: Chrome Store
     link: https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo
     type: secondary
-    
   - text: Edge Store
     link: https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa
     type: secondary
-  - text: Releases
-    link: https://github.com/qixing-jk/all-api-hub/releases
+  - text: FireFox Store
+    link: https://addons.mozilla.org/firefox/addon/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub
     type: secondary
 features:
   - title: Auto-detect Sites

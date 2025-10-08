@@ -8,10 +8,6 @@ actions:
   - text: 开始使用
     link: /get-started.html # 建议修改为您的实际文档路径，例如 /guide/
     type: primary
-
-  - text: 查看源码
-    link: https://github.com/qixing-jk/all-api-hub # 假设这是您的项目仓库地址
-    type: secondary
     
   - text: Chrome 商店
     link: https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo
@@ -21,8 +17,8 @@ actions:
     link: https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa
     type: secondary
 
-  - text: Release 下载
-    link: https://github.com/qixing-jk/all-api-hub/releases
+  - text: FireFox 商店
+    link: https://addons.mozilla.org/firefox/addon/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub
     type: secondary
 
 features:
