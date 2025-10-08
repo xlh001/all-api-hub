@@ -42,7 +42,7 @@ export default function HeaderSection() {
   }
 
   return (
-    <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 flex-shrink-0">
+    <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-100 flex-shrink-0">
       <div className="flex items-center space-x-3">
         <img
           src={iconImage}

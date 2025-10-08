@@ -66,7 +66,7 @@ export default function AccountList() {
 
   return (
     <div className="flex flex-col">
-      <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+      <div className="px-5 py-3 bg-gray-50 border-y border-gray-200 sticky top-0 z-10">
         <div className="flex items-center space-x-4">
           <div className="flex-1">{renderSortButton("name", "账号")}</div>
           <div className="text-right flex-shrink-0">

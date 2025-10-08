@@ -34,7 +34,7 @@ export default function ActionButtons({
   }
 
   return (
-    <div className="px-5 py-4 bg-gray-50/50">
+    <div className="px-5 mb-4 bg-gray-50/50">
       <div className="flex space-x-2">
         <button
           onClick={handleAddAccountClick}

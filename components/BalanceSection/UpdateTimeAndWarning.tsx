@@ -22,7 +22,7 @@ export const UpdateTimeAndWarning = () => {
   }, [])
 
   return (
-    <div className="mt-4 pt-3 border-t border-gray-100">
+    <div className="mt-4">
       <div className="ml-2 flex items-center justify-between">
         <Tooltip content={formatFullTime(lastUpdateTime)}>
           <p className="text-xs text-gray-400 cursor-help">
