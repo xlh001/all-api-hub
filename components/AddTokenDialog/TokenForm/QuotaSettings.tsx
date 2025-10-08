@@ -5,7 +5,7 @@ import type { FormData } from "~/components/AddTokenDialog/hooks/useTokenForm"
 
 interface QuotaSettingsProps {
   unlimitedQuota: boolean
-  quota: number
+  quota: string
   handleSwitchChange: (field: keyof FormData) => (checked: boolean) => void
   handleInputChange: (
     field: keyof FormData

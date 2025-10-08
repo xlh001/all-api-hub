@@ -47,6 +47,7 @@ const exportedAPI: Record<ApiFuncName, (...args: any[]) => any> = {} as any
       }
     }
 
+    // @ts-ignore
     return getApiFunc(funcName, currentSite)(...args)
   }
 })
