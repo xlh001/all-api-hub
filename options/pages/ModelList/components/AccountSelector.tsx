@@ -1,9 +1,9 @@
-import type { Account } from "~/types"
+import type { DisplaySiteData } from "~/types"
 
 interface AccountSelectorProps {
   selectedAccount: string
   setSelectedAccount: (accountId: string) => void
-  accounts: Account[]
+  accounts: DisplaySiteData[]
 }
 
 export function AccountSelector({
