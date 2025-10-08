@@ -65,23 +65,23 @@ export default function UrlInput({
           </button>
         )}
       </div>
-      {onUseCurrentTab && (
-        <div className="flex flex-col gap-y-2 justify-between text-xs">
-          {isCurrentSiteAdded && (
-            <div className="w-full flex items-center justify-between text-xs text-yellow-700 bg-yellow-50 p-2 rounded-md">
-              <div className="flex items-center">
-                <ExclamationTriangleIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
-                <span>当前站点已添加</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleEditClick}
-                className="flex items-center font-medium text-yellow-800 hover:text-yellow-900">
-                <PencilIcon className="w-3 h-3 mr-1" />
-                <span>立即编辑</span>
-              </button>
+      <div className="flex flex-col gap-y-2 justify-between text-xs">
+        {isCurrentSiteAdded && handleEditClick && (
+          <div className="w-full flex items-center justify-between text-xs text-yellow-700 bg-yellow-50 p-2 rounded-md">
+            <div className="flex items-center">
+              <ExclamationTriangleIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
+              <span>当前站点已添加</span>
             </div>
-          )}
+            <button
+              type="button"
+              onClick={handleEditClick}
+              className="flex items-center font-medium text-yellow-800 hover:text-yellow-900">
+              <PencilIcon className="w-3 h-3 mr-1" />
+              <span>立即编辑</span>
+            </button>
+          </div>
+        )}
+        {onUseCurrentTab && (
           <div className="w-full flex items-center justify-between text-xs text-blue-700 bg-blue-50 p-2 rounded-md">
             <div className="flex items-center">
               <InformationCircleIcon className="h-4 w-4" />
@@ -102,8 +102,8 @@ export default function UrlInput({
               <span>使用当前站点</span>
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
