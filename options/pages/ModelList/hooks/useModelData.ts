@@ -1,31 +1,32 @@
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
-import { useAccountData } from "~/hooks/useAccountData"
 import { fetchModelPricing } from "~/services/apiService"
 import type { PricingResponse } from "~/services/apiService/common/type"
+import type { DisplaySiteData } from "~/types"
 
 interface UseModelDataProps {
   selectedAccount: string
-  setSelectedGroup: (group: string) => void
-  setIsLoading: (loading: boolean) => void
-  setDataFormatError: (error: boolean) => void
-  setPricingData: (data: PricingResponse | null) => void
-  pricingData: PricingResponse | null
+  accounts: DisplaySiteData[] // ✅ Pass data instead of setState
   selectedGroup: string
+}
+
+interface UseModelDataReturn {
+  pricingData: PricingResponse | null
+  isLoading: boolean
+  dataFormatError: boolean
+  loadPricingData: (accountId: string) => Promise<void>
 }
 
 export function useModelData({
   selectedAccount,
-  setSelectedGroup,
-  setIsLoading,
-  setDataFormatError,
-  setPricingData,
-  pricingData,
-  selectedGroup
-}: UseModelDataProps) {
-  const { displayData } = useAccountData()
-  const safeDisplayData = displayData || []
+  accounts
+}: UseModelDataProps): UseModelDataReturn {
+  const [pricingData, setPricingData] = useState<PricingResponse | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [dataFormatError, setDataFormatError] = useState(false)
+
+  const safeDisplayData = accounts || []
 
   const loadPricingData = useCallback(
     async (accountId: string) => {
@@ -57,7 +58,7 @@ export function useModelData({
         setIsLoading(false)
       }
     },
-    [safeDisplayData, setIsLoading, setDataFormatError, setPricingData]
+    [safeDisplayData]
   )
 
   useEffect(() => {
@@ -66,28 +67,12 @@ export function useModelData({
     } else {
       setPricingData(null)
     }
-  }, [selectedAccount, loadPricingData, setPricingData])
+  }, [selectedAccount, loadPricingData])
 
-  useEffect(() => {
-    if (pricingData && pricingData.group_ratio) {
-      const availableGroupsList = Object.keys(pricingData.group_ratio).filter(
-        (key) => key !== ""
-      )
-
-      if (
-        selectedGroup !== "all" &&
-        !availableGroupsList.includes(selectedGroup)
-      ) {
-        if (availableGroupsList.includes("default")) {
-          setSelectedGroup("default")
-        } else if (availableGroupsList.length > 0) {
-          setSelectedGroup(availableGroupsList[0])
-        } else {
-          setSelectedGroup("all")
-        }
-      }
-    }
-  }, [pricingData, selectedGroup, setSelectedGroup])
-
-  return { loadPricingData }
+  return {
+    pricingData,
+    isLoading,
+    dataFormatError,
+    loadPricingData
+  }
 }

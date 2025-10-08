@@ -1,7 +1,6 @@
 import { Tab } from "@headlessui/react"
 import { useEffect, useMemo } from "react"
 
-import { useAccountData } from "~/hooks/useAccountData"
 import { getAllProviders } from "~/utils/modelProviders"
 
 import { AccountSelector } from "./components/AccountSelector"
@@ -11,19 +10,19 @@ import { Header } from "./components/Header"
 import { ModelDisplay } from "./components/ModelDisplay"
 import { ProviderTabs } from "./components/ProviderTabs"
 import { StatusIndicator } from "./components/StatusIndicator"
-import { useFilteredModels } from "./hooks/useFilteredModels"
-import { useModelData } from "./hooks/useModelData"
-import { useModelListState } from "./hooks/useModelListState"
+import { useModelListData } from "./hooks/useModelListData"
 
 export default function ModelList({
   routeParams
 }: {
   routeParams?: Record<string, string>
 }) {
-  const { displayData } = useAccountData()
-  const safeDisplayData = displayData || []
-
   const {
+    // Account data
+    accounts,
+    currentAccount,
+
+    // UI state
     selectedAccount,
     setSelectedAccount,
     searchTerm,
@@ -32,47 +31,31 @@ export default function ModelList({
     setSelectedProvider,
     selectedGroup,
     setSelectedGroup,
-    isLoading,
-    setIsLoading,
-    pricingData,
-    setPricingData,
-    dataFormatError,
-    setDataFormatError,
+
+    // Display options
     showRealPrice,
     setShowRealPrice,
     showRatioColumn,
     setShowRatioColumn,
     showEndpointTypes,
-    setShowEndpointTypes
-  } = useModelListState()
+    setShowEndpointTypes,
 
-  const { loadPricingData } = useModelData({
-    selectedAccount,
-    setSelectedGroup,
-    setIsLoading,
-    setDataFormatError,
-    setPricingData,
+    // Data state
     pricingData,
-    selectedGroup
-  })
+    isLoading,
+    dataFormatError,
 
-  const currentAccount = safeDisplayData.find(
-    (acc) => acc.id === selectedAccount
-  )
-  const providers = getAllProviders()
-
-  const {
+    // Computed data
     filteredModels,
     baseFilteredModels,
-    getProviderFilteredCount,
-    availableGroups
-  } = useFilteredModels({
-    pricingData,
-    currentAccount,
-    selectedGroup,
-    searchTerm,
-    selectedProvider
-  })
+    availableGroups,
+
+    // Operations
+    loadPricingData,
+    getProviderFilteredCount
+  } = useModelListData()
+
+  const providers = getAllProviders()
 
   const sortedProviders = useMemo(
     () =>
@@ -83,15 +66,15 @@ export default function ModelList({
   )
 
   useEffect(() => {
-    if (routeParams?.accountId && safeDisplayData.length > 0) {
-      const accountExists = safeDisplayData.some(
+    if (routeParams?.accountId && accounts.length > 0) {
+      const accountExists = accounts.some(
         (acc) => acc.id === routeParams.accountId
       )
       if (accountExists) {
         setSelectedAccount(routeParams.accountId)
       }
     }
-  }, [routeParams?.accountId, safeDisplayData, setSelectedAccount])
+  }, [routeParams?.accountId, accounts, setSelectedAccount])
 
   const handleGroupClick = (group: string) => {
     setSelectedGroup(group)
@@ -103,7 +86,7 @@ export default function ModelList({
       <AccountSelector
         selectedAccount={selectedAccount}
         setSelectedAccount={setSelectedAccount}
-        accounts={safeDisplayData}
+        accounts={accounts}
       />
 
       <StatusIndicator
