@@ -69,7 +69,7 @@ class AutoRefreshService {
       console.log("[AutoRefresh] 开始执行后台刷新")
 
       // 直接调用accountStorage的刷新方法
-      const result = await accountStorage.refreshAllAccounts()
+      const result = await accountStorage.refreshAllAccounts(false)
       console.log(
         `[AutoRefresh] 后台刷新完成 - 成功: ${result.success}, 失败: ${result.failed}`
       )
@@ -88,7 +88,7 @@ class AutoRefreshService {
   async refreshNow(): Promise<{ success: number; failed: number }> {
     try {
       console.log("[AutoRefresh] 执行立即刷新")
-      const result = await accountStorage.refreshAllAccounts()
+      const result = await accountStorage.refreshAllAccounts(true)
       console.log(
         `[AutoRefresh] 立即刷新完成 - 成功: ${result.success}, 失败: ${result.failed}`
       )

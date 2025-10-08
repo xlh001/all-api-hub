@@ -16,6 +16,7 @@ export interface UserPreferences {
   // 自动刷新相关配置
   autoRefresh: boolean // 是否启用定时自动刷新
   refreshInterval: number // 刷新间隔（秒）
+  minRefreshInterval: number // 最小刷新间隔（秒）
   refreshOnOpen: boolean // 打开插件时自动刷新
   showHealthStatus: boolean // 是否显示健康状态
 
@@ -41,6 +42,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   sortOrder: "desc", // 与 UI_CONSTANTS.SORT.DEFAULT_ORDER 保持一致
   autoRefresh: true, // 默认启用自动刷新
   refreshInterval: 360, // 默认360秒刷新间隔
+  minRefreshInterval: 60, // 默认60秒最小刷新间隔
   refreshOnOpen: true, // 默认打开插件时自动刷新
   showHealthStatus: true, // 默认显示健康状态
   webdavUrl: "",
@@ -144,6 +146,13 @@ class UserPreferencesService {
    */
   async updateRefreshInterval(refreshInterval: number): Promise<boolean> {
     return this.savePreferences({ refreshInterval })
+  }
+
+  /**
+   * 更新最小刷新间隔
+   */
+  async updateMinRefreshInterval(minRefreshInterval: number): Promise<boolean> {
+    return this.savePreferences({ minRefreshInterval })
   }
 
   /**

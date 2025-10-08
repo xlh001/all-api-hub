@@ -18,7 +18,7 @@ export default function HeaderSection() {
 
   const handleGlobalRefresh = useCallback(async () => {
     try {
-      await toast.promise(handleRefresh(), {
+      await toast.promise(handleRefresh(true), {
         loading: "正在刷新所有账号...",
         success: (result) => {
           if (result.failed > 0) {

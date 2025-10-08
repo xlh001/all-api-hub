@@ -10,6 +10,8 @@ import type {
 } from "~/types"
 
 import { refreshAccountData } from "./apiService"
+import { userPreferences } from "./userPreferences" // 存储键名常量
+
 
 // 存储键名常量
 const STORAGE_KEYS = {
@@ -180,11 +182,23 @@ class AccountStorageService {
   /**
    * 刷新单个账号数据
    */
-  async refreshAccount(id: string): Promise<boolean> {
+  async refreshAccount(id: string, force: boolean = false): Promise<boolean> {
     try {
       const account = await this.getAccountById(id)
       if (!account) {
         throw new Error(`账号 ${id} 不存在`)
+      }
+
+      const preferences = await userPreferences.getPreferences()
+      const minIntervalMs = preferences.minRefreshInterval * 1000
+      if (
+        minIntervalMs != 0 &&
+        (await this.shouldSkipRefresh(account, minIntervalMs, force))
+      ) {
+        console.log(
+          `[AccountStorage] 账号 ${account.site_name} 刷新间隔未到，跳过刷新`
+        )
+        return true // 这种情况不算失败
       }
 
       // 使用同步导入的API服务
@@ -244,14 +258,16 @@ class AccountStorageService {
   /**
    * 刷新所有账号数据
    */
-  async refreshAllAccounts(): Promise<{ success: number; failed: number }> {
+  async refreshAllAccounts(
+    force: boolean = false
+  ): Promise<{ success: number; failed: number }> {
     const accounts = await this.getAllAccounts()
     let success = 0
     let failed = 0
 
     // 使用 Promise.allSettled 来并发刷新，避免单个失败影响其他账号
     const results = await Promise.allSettled(
-      accounts.map((account) => this.refreshAccount(account.id))
+      accounts.map((account) => this.refreshAccount(account.id, force))
     )
 
     results.forEach((result, index) => {
@@ -435,6 +451,30 @@ class AccountStorageService {
    */
   private generateId(): string {
     return `account_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+  }
+
+  /**
+   * 检查是否应跳过刷新
+   */
+  private async shouldSkipRefresh(
+    account: SiteAccount,
+    minIntervalMs: number,
+    force: boolean = false
+  ): Promise<boolean> {
+    if (force) {
+      return false // 强制刷新，不跳过
+    }
+
+    if (minIntervalMs === undefined) {
+      const preferences = await userPreferences.getPreferences()
+      minIntervalMs = preferences.minRefreshInterval * 1000
+    }
+    if (minIntervalMs === 0) {
+      return false
+    }
+    const timeSinceLastRefresh = Date.now() - (account.last_sync_time || 0)
+
+    return timeSinceLastRefresh < minIntervalMs
   }
 }
 

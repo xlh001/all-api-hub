@@ -156,6 +156,30 @@ export function useUserPreferences() {
     [preferences]
   )
 
+  // 更新最小刷新间隔
+  const updateMinRefreshInterval = useCallback(
+    async (minRefreshInterval: number) => {
+      try {
+        const success =
+          await userPreferences.updateMinRefreshInterval(minRefreshInterval)
+        if (success && preferences) {
+          setPreferences((prev) =>
+            prev ? { ...prev, minRefreshInterval } : null
+          )
+          console.log(
+            "[useUserPreferences] 最小刷新间隔更新成功:",
+            minRefreshInterval
+          )
+        }
+        return success
+      } catch (error) {
+        console.error("[useUserPreferences] 更新最小刷新间隔失败:", error)
+        return false
+      }
+    },
+    [preferences]
+  )
+
   // 更新健康状态显示设置
   const updateShowHealthStatus = useCallback(
     async (showHealthStatus: boolean) => {
@@ -234,6 +258,7 @@ export function useUserPreferences() {
     updateSortConfig,
     updateAutoRefresh,
     updateRefreshInterval,
+    updateMinRefreshInterval,
     updateRefreshOnOpen,
     updateShowHealthStatus,
     updatePreferences,

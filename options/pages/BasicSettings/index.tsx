@@ -19,6 +19,7 @@ export default function BasicSettings() {
     updateActiveTab,
     updateAutoRefresh,
     updateRefreshInterval,
+    updateMinRefreshInterval,
     updateRefreshOnOpen,
     resetToDefaults
   } = useUserPreferences()
@@ -26,17 +27,22 @@ export default function BasicSettings() {
   // 从偏好设置中获取值，或使用默认值
   const autoRefresh = preferences?.autoRefresh ?? true
   const refreshInterval = preferences?.refreshInterval ?? 360
+  const minRefreshInterval = preferences?.minRefreshInterval ?? 60
   const refreshOnOpen = preferences?.refreshOnOpen ?? true
 
   // 本地状态用于输入框编辑
   const [intervalInput, setIntervalInput] = useState<string>(
     refreshInterval.toString()
   )
+  const [minIntervalInput, setMinIntervalInput] = useState<string>(
+    minRefreshInterval.toString()
+  )
 
   // 同步刷新间隔值到输入框
   useEffect(() => {
     setIntervalInput(refreshInterval.toString())
-  }, [refreshInterval])
+    setMinIntervalInput(minRefreshInterval.toString())
+  }, [refreshInterval, minRefreshInterval])
 
   const handleCurrencyChange = async (currency: CurrencyType) => {
     const success = await updateCurrencyType(currency)
@@ -113,6 +119,28 @@ export default function BasicSettings() {
     }
   }
 
+  const handleMinRefreshIntervalChange = async (value: string) => {
+    setMinIntervalInput(value)
+  }
+
+  const handleMinRefreshIntervalBlur = async () => {
+    const interval = Number(minIntervalInput)
+
+    if (!minIntervalInput || isNaN(interval) || interval < 0) {
+      toast.error("最小刷新间隔必须大于等于0秒")
+      setMinIntervalInput(minRefreshInterval.toString())
+      return
+    }
+
+    const success = await updateMinRefreshInterval(interval)
+    if (success) {
+      toast.success(`最小刷新间隔已设置为 ${interval} 秒`)
+    } else {
+      toast.error("设置保存失败")
+      setMinIntervalInput(minRefreshInterval.toString())
+    }
+  }
+
   const handleResetToDefaults = async () => {
     if (window.confirm("确定要重置所有设置到默认值吗？此操作不可撤销。")) {
       const success = await resetToDefaults()
@@ -144,10 +172,13 @@ export default function BasicSettings() {
           autoRefresh={autoRefresh}
           refreshOnOpen={refreshOnOpen}
           intervalInput={intervalInput}
+          minIntervalInput={minIntervalInput}
           handleAutoRefreshChange={handleAutoRefreshChange}
           handleRefreshOnOpenChange={handleRefreshOnOpenChange}
           handleRefreshIntervalChange={handleRefreshIntervalChange}
           handleRefreshIntervalBlur={handleRefreshIntervalBlur}
+          handleMinRefreshIntervalChange={handleMinRefreshIntervalChange}
+          handleMinRefreshIntervalBlur={handleMinRefreshIntervalBlur}
         />
 
         <DangerousZone handleResetToDefaults={handleResetToDefaults} />

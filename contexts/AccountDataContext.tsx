@@ -25,7 +25,7 @@ interface AccountDataContextType {
   detectedAccount: SiteAccount | null
   isDetecting: boolean
   loadAccountData: () => Promise<void>
-  handleRefresh: () => Promise<{ success: number; failed: number }>
+  handleRefresh: (force?: boolean) => Promise<{ success: number; failed: number }>
   handleSort: (field: SortField) => void
   sortField: SortField
   sortOrder: SortOrder
@@ -127,21 +127,24 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [])
 
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true)
-    try {
-      const refreshResult = await accountStorage.refreshAllAccounts()
-      await loadAccountData()
-      setLastUpdateTime(new Date())
-      return refreshResult
-    } catch (error) {
-      console.error("Failed to refresh data:", error)
-      await loadAccountData()
-      throw error
-    } finally {
-      setIsRefreshing(false)
-    }
-  }, [loadAccountData])
+  const handleRefresh = useCallback(
+    async (force: boolean = false) => {
+      setIsRefreshing(true)
+      try {
+        const refreshResult = await accountStorage.refreshAllAccounts(force)
+        await loadAccountData()
+        setLastUpdateTime(new Date())
+        return refreshResult
+      } catch (error) {
+        console.error("Failed to refresh data:", error)
+        await loadAccountData()
+        throw error
+      } finally {
+        setIsRefreshing(false)
+      }
+    },
+    [loadAccountData]
+  )
 
   const hasRefreshedOnOpen = useRef(false)
 
@@ -163,7 +166,7 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
         hasRefreshedOnOpen.current = true // 标记已执行
         console.log("[Popup] 打开插件时自动刷新已启用，开始刷新")
         try {
-          await handleRefresh()
+          await handleRefresh(false)
           console.log("[Popup] 打开插件时自动刷新完成")
         } catch (error) {
           console.error("[Popup] 打开插件时自动刷新失败:", error)

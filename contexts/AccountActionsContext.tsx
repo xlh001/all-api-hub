@@ -16,7 +16,10 @@ import { useAccountDataContext } from "./AccountDataContext"
 // 1. 定义 Context 的值类型
 interface AccountActionsContextType {
   refreshingAccountId: string | null
-  handleRefreshAccount: (account: DisplaySiteData) => Promise<void>
+  handleRefreshAccount: (
+    account: DisplaySiteData,
+    force?: boolean
+  ) => Promise<void>
   handleDeleteAccount: (account: DisplaySiteData) => void
   handleCopyUrl: (account: DisplaySiteData) => void
 }
@@ -38,13 +41,13 @@ export const AccountActionsProvider = ({
   )
 
   const handleRefreshAccount = useCallback(
-    async (account: DisplaySiteData) => {
+    async (account: DisplaySiteData, force: boolean = true) => {
       if (refreshingAccountId) return
 
       setRefreshingAccountId(account.id)
 
       const refreshPromise = async () => {
-        const success = await accountStorage.refreshAccount(account.id)
+        const success = await accountStorage.refreshAccount(account.id, force)
         if (success) {
           await loadAccountData()
           return success
