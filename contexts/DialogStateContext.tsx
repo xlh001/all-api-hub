@@ -10,15 +10,9 @@ import React, {
 } from "react"
 import ReactDOM from "react-dom/client"
 
-
-
-import AccountDialog from "~/components/AccountDialog";
-import { useAccountDataContext } from "~/contexts/AccountDataContext";
-import type { DisplaySiteData } from "~/types";
-
-
-
-
+import AccountDialog from "~/components/AccountDialog"
+import { useAccountDataContext } from "~/contexts/AccountDataContext"
+import type { DisplaySiteData } from "~/types"
 
 type DialogMode = "add" | "edit"
 
@@ -99,8 +93,7 @@ export const DialogStateProvider = ({ children }: { children: ReactNode }) => {
   )
   const closeAddAccount = useCallback(handleClose, [loadAccountData])
   const openEditAccount = useCallback(
-    (account: DisplaySiteData) =>
-      openAccountDialog({ mode: "edit", account }),
+    (account: DisplaySiteData) => openAccountDialog({ mode: "edit", account }),
     [openAccountDialog]
   )
   const closeEditAccount = useCallback(handleClose, [loadAccountData])

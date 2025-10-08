@@ -101,7 +101,9 @@ export default function ActionButtons({
         ) : (
           <>
             <CheckIcon className="w-4 h-4" />
-            <span>{isAddMode ? (isDetected ? "确认添加" : "保存账号") : "保存更改"}</span>
+            <span>
+              {isAddMode ? (isDetected ? "确认添加" : "保存账号") : "保存更改"}
+            </span>
           </>
         )}
       </button>

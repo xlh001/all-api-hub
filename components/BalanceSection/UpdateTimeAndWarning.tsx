@@ -14,7 +14,10 @@ export const UpdateTimeAndWarning = () => {
     // 每隔一段时间更新 tick，以触发相对时间的重新计算
     // 这样可以确保 "更新于 X 分钟前" 这样的文本是动态更新的
     // 而不是仅在组件初次渲染时计算一次
-    const timer = setInterval(() => setTick(t => t + 1), UI_CONSTANTS.UPDATE_INTERVAL)
+    const timer = setInterval(
+      () => setTick((t) => t + 1),
+      UI_CONSTANTS.UPDATE_INTERVAL
+    )
     return () => clearInterval(timer)
   }, [])
 

@@ -88,24 +88,27 @@ export function useAccountDialog({
         loadAccountData(account.id)
       } else {
         // Get current tab URL for add mode
-        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-          const tab = tabs[0]
-          if (tab.url) {
-            try {
-              const urlObj = new URL(tab.url)
-              const baseUrl = `${urlObj.protocol}//${urlObj.host}`
-              if (!baseUrl.startsWith("http")) {
-                return
+        chrome.tabs.query(
+          { active: true, currentWindow: true },
+          async (tabs) => {
+            const tab = tabs[0]
+            if (tab.url) {
+              try {
+                const urlObj = new URL(tab.url)
+                const baseUrl = `${urlObj.protocol}//${urlObj.host}`
+                if (!baseUrl.startsWith("http")) {
+                  return
+                }
+                setCurrentTabUrl(baseUrl)
+                setSiteName(await getSiteName(tab))
+              } catch (error) {
+                console.log("无法解析 URL:", error)
+                setCurrentTabUrl(null)
+                setSiteName("")
               }
-              setCurrentTabUrl(baseUrl)
-              setSiteName(await getSiteName(tab))
-            } catch (error) {
-              console.log("无法解析 URL:", error)
-              setCurrentTabUrl(null)
-              setSiteName("")
             }
           }
-        })
+        )
       }
     }
   }, [isOpen, mode, account, resetForm, loadAccountData])
@@ -234,7 +237,7 @@ export function useAccountDialog({
       }
     }
   }
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     handleSaveAccount()

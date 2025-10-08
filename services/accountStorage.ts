@@ -1,14 +1,16 @@
-import { Storage } from "@plasmohq/storage";
+import { Storage } from "@plasmohq/storage"
 
+import type {
+  AccountStats,
+  CurrencyType,
+  DisplaySiteData,
+  SiteAccount,
+  SiteHealthStatus,
+  StorageConfig
+} from "~/types"
 
-
-import type { AccountStats, CurrencyType, DisplaySiteData, SiteAccount, SiteHealthStatus, StorageConfig } from "~/types";
-
-
-
-import { refreshAccountData } from "./apiService";
-import { userPreferences } from "./userPreferences"; // 存储键名常量
-
+import { refreshAccountData } from "./apiService"
+import { userPreferences } from "./userPreferences" // 存储键名常量
 
 // 存储键名常量
 const STORAGE_KEYS = {
@@ -254,9 +256,7 @@ class AccountStorageService {
   /**
    * 刷新所有账号数据
    */
-  async refreshAllAccounts(
-    force: boolean = false
-  ) {
+  async refreshAllAccounts(force: boolean = false) {
     const accounts = await this.getAllAccounts()
     let successCount = 0
     let failedCount = 0
@@ -287,7 +287,12 @@ class AccountStorageService {
       }
     })
 
-    return { success: successCount, failed: failedCount, latestSyncTime,refreshedCount }
+    return {
+      success: successCount,
+      failed: failedCount,
+      latestSyncTime,
+      refreshedCount
+    }
   }
 
   /**

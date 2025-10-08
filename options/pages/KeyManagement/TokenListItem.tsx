@@ -5,8 +5,8 @@ import {
   PencilIcon,
   TrashIcon
 } from "@heroicons/react/24/outline"
-import { CherryIcon } from "~/components/icons/CherryIcon"
 
+import { CherryIcon } from "~/components/icons/CherryIcon"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 

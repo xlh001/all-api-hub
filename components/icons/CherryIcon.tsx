@@ -1,3 +1,3 @@
-export function CherryIcon({className}) {
+export function CherryIcon({ className }) {
   return <div className={className}>🍒</div>
 }

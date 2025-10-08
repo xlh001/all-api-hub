@@ -6,7 +6,6 @@ import { useFilteredModels } from "./useFilteredModels"
 import { useModelData } from "./useModelData"
 import { useModelListState } from "./useModelListState"
 
-
 export function useModelListData() {
   // Single source of account data
   const { displayData } = useAccountData()

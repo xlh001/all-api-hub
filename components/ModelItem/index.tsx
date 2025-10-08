@@ -3,6 +3,7 @@
  */
 
 import React, { useState } from "react"
+import toast from "react-hot-toast"
 
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CalculatedPrice } from "~/utils/modelPricing"
@@ -12,7 +13,6 @@ import { ModelItemDetails } from "./ModelItemDetails"
 import { ModelItemExpandButton } from "./ModelItemExpandButton"
 import { ModelItemHeader } from "./ModelItemHeader"
 import { ModelItemPricing } from "./ModelItemPricing"
-import toast from "react-hot-toast"
 
 interface ModelItemProps {
   model: ModelPricing

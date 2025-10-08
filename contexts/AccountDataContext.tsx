@@ -1,16 +1,32 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import toast from "react-hot-toast"; // 1. 定义 Context 的值类型
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode
+} from "react"
+import toast from "react-hot-toast" // 1. 定义 Context 的值类型
 
+import {
+  DATA_TYPE_BALANCE,
+  DATA_TYPE_CONSUMPTION,
+  UI_CONSTANTS
+} from "~/constants/ui"
+import { accountStorage } from "~/services/accountStorage"
+import type {
+  AccountStats,
+  CurrencyAmount,
+  CurrencyAmountMap,
+  DisplaySiteData,
+  SiteAccount,
+  SortField,
+  SortOrder
+} from "~/types"
 
-
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION, UI_CONSTANTS } from "~/constants/ui";
-import { accountStorage } from "~/services/accountStorage";
-import type { AccountStats, CurrencyAmount, CurrencyAmountMap, DisplaySiteData, SiteAccount, SortField, SortOrder } from "~/types";
-
-
-
-import { useUserPreferencesContext } from "./UserPreferencesContext"; // 1. 定义 Context 的值类型
-
+import { useUserPreferencesContext } from "./UserPreferencesContext" // 1. 定义 Context 的值类型
 
 // 1. 定义 Context 的值类型
 interface AccountDataContextType {

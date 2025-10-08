@@ -1,10 +1,8 @@
 import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 
-import type { ApiToken } from "~/types"
+import type { ApiToken, DisplaySiteData } from "~/types"
 
 import { TokenListItem } from "./TokenListItem"
-
-import type { DisplaySiteData } from "~/types"
 
 interface TokenListProps {
   isLoading: boolean

@@ -1,12 +1,12 @@
 import { useMemo } from "react"
 
 import type { PricingResponse } from "~/services/apiService/common/type"
+import type { DisplaySiteData } from "~/types"
 import { calculateModelPrice } from "~/utils/modelPricing"
 import {
   filterModelsByProvider,
   type ProviderType
 } from "~/utils/modelProviders"
-import type { DisplaySiteData } from "~/types"
 
 interface UseFilteredModelsProps {
   pricingData: PricingResponse | null

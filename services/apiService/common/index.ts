@@ -312,7 +312,7 @@ export const fetchAccountData = async (
   accessToken: string,
   checkSupport: boolean
 ): Promise<AccountData> => {
-  const promises:Promise<any>[] = [
+  const promises: Promise<any>[] = [
     fetchAccountQuota(baseUrl, userId, accessToken),
     fetchTodayUsage(baseUrl, userId, accessToken)
   ]

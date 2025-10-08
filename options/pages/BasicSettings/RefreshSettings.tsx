@@ -105,9 +105,7 @@ export default function RefreshSettings({
         {/* 最小刷新间隔 */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">
-              最小刷新间隔
-            </h3>
+            <h3 className="text-sm font-medium text-gray-900">最小刷新间隔</h3>
             <p className="text-sm text-gray-500">
               自动刷新时的最小时间间隔，避免频繁请求（手动刷新不受限制）
             </p>

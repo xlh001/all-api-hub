@@ -22,8 +22,8 @@ interface AccountDialogProps {
   onClose: () => void
   mode: "add" | "edit"
   account?: DisplaySiteData | null
-  onSuccess: (data: any) => void;
-  onError: (error: Error) => void;
+  onSuccess: (data: any) => void
+  onError: (error: Error) => void
 }
 
 export default function AccountDialog({
@@ -32,7 +32,7 @@ export default function AccountDialog({
   mode,
   account,
   onSuccess,
-  onError,
+  onError
 }: AccountDialogProps) {
   const { displayData, detectedAccount } = useAccountDataContext()
   const { openEditAccount } = useDialogStateContext()
@@ -40,11 +40,11 @@ export default function AccountDialog({
   const { state, setters, handlers } = useAccountDialog({
     isOpen,
     onClose: () => {
-      onClose();
-      onError(new Error("Dialog closed by user"));
+      onClose()
+      onError(new Error("Dialog closed by user"))
     },
     mode,
-    account,
+    account
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,7 +108,7 @@ export default function AccountDialog({
                       isCurrentSiteAdded: !!detectedAccount,
                       detectedAccount: detectedDisplayAccount,
                       onUseCurrentTab: handlers.handleUseCurrentTabUrl,
-                      onEditAccount: openEditAccount,
+                      onEditAccount: openEditAccount
                     })}
                   />
 
