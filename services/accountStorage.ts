@@ -182,23 +182,21 @@ class AccountStorageService {
   /**
    * 刷新单个账号数据
    */
-  async refreshAccount(id: string, force: boolean = false): Promise<boolean> {
+  async refreshAccount(
+    id: string,
+    force: boolean = false
+  ): Promise<SiteAccount | null> {
     try {
       const account = await this.getAccountById(id)
       if (!account) {
         throw new Error(`账号 ${id} 不存在`)
       }
 
-      const preferences = await userPreferences.getPreferences()
-      const minIntervalMs = preferences.minRefreshInterval * 1000
-      if (
-        minIntervalMs != 0 &&
-        (await this.shouldSkipRefresh(account, minIntervalMs, force))
-      ) {
+      if (await this.shouldSkipRefresh(account, force)) {
         console.log(
           `[AccountStorage] 账号 ${account.site_name} 刷新间隔未到，跳过刷新`
         )
-        return true // 这种情况不算失败
+        return account
       }
 
       // 使用同步导入的API服务
@@ -229,7 +227,8 @@ class AccountStorageService {
       }
 
       // 更新账号信息
-      const updateSuccess = await this.updateAccount(id, updateData)
+      await this.updateAccount(id, updateData)
+      const updatedAccount = await this.getAccountById(id)
 
       // 记录健康状态变化
       if (account.health_status !== result.healthStatus.status) {
@@ -239,7 +238,7 @@ class AccountStorageService {
         console.log(`状态详情: ${result.healthStatus.message}`)
       }
 
-      return updateSuccess
+      return updatedAccount
     } catch (error) {
       console.error("刷新账号数据失败:", error)
       // 在出现异常时也尝试更新健康状态为unknown
@@ -251,7 +250,7 @@ class AccountStorageService {
       } catch (updateError) {
         console.error("更新健康状态失败:", updateError)
       }
-      return false
+      return null
     }
   }
 
@@ -260,10 +259,11 @@ class AccountStorageService {
    */
   async refreshAllAccounts(
     force: boolean = false
-  ): Promise<{ success: number; failed: number }> {
+  ): Promise<{ success: number; failed: number; latestSyncTime: number }> {
     const accounts = await this.getAllAccounts()
     let success = 0
     let failed = 0
+    let latestSyncTime = 0
 
     // 使用 Promise.allSettled 来并发刷新，避免单个失败影响其他账号
     const results = await Promise.allSettled(
@@ -273,6 +273,10 @@ class AccountStorageService {
     results.forEach((result, index) => {
       if (result.status === "fulfilled" && result.value) {
         success++
+        latestSyncTime = Math.max(
+          result.value.last_sync_time || 0,
+          latestSyncTime
+        )
       } else {
         failed++
         console.error(
@@ -282,7 +286,7 @@ class AccountStorageService {
       }
     })
 
-    return { success, failed }
+    return { success, failed, latestSyncTime }
   }
 
   /**
@@ -458,20 +462,14 @@ class AccountStorageService {
    */
   private async shouldSkipRefresh(
     account: SiteAccount,
-    minIntervalMs: number,
     force: boolean = false
   ): Promise<boolean> {
     if (force) {
       return false // 强制刷新，不跳过
     }
 
-    if (minIntervalMs === undefined) {
-      const preferences = await userPreferences.getPreferences()
-      minIntervalMs = preferences.minRefreshInterval * 1000
-    }
-    if (minIntervalMs === 0) {
-      return false
-    }
+    const preferences = await userPreferences.getPreferences()
+    const minIntervalMs = preferences.minRefreshInterval * 1000
     const timeSinceLastRefresh = Date.now() - (account.last_sync_time || 0)
 
     return timeSinceLastRefresh < minIntervalMs

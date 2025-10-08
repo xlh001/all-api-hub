@@ -25,7 +25,9 @@ interface AccountDataContextType {
   detectedAccount: SiteAccount | null
   isDetecting: boolean
   loadAccountData: () => Promise<void>
-  handleRefresh: (force?: boolean) => Promise<{ success: number; failed: number }>
+  handleRefresh: (
+    force?: boolean
+  ) => Promise<{ success: number; failed: number; latestSyncTime?: number }>
   handleSort: (field: SortField) => void
   sortField: SortField
   sortOrder: SortOrder
@@ -53,7 +55,7 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
     today_total_prompt_tokens: 0,
     today_total_completion_tokens: 0
   })
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date())
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>()
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [prevTotalConsumption, setPrevTotalConsumption] =
@@ -133,7 +135,9 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
       try {
         const refreshResult = await accountStorage.refreshAllAccounts(force)
         await loadAccountData()
-        setLastUpdateTime(new Date())
+        if (refreshResult.latestSyncTime > 0) {
+          setLastUpdateTime(new Date(refreshResult.latestSyncTime))
+        }
         return refreshResult
       } catch (error) {
         console.error("Failed to refresh data:", error)

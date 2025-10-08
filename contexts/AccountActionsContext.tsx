@@ -47,10 +47,13 @@ export const AccountActionsProvider = ({
       setRefreshingAccountId(account.id)
 
       const refreshPromise = async () => {
-        const success = await accountStorage.refreshAccount(account.id, force)
-        if (success) {
+        const updatedAccount = await accountStorage.refreshAccount(
+          account.id,
+          force
+        )
+        if (updatedAccount) {
           await loadAccountData()
-          return success
+          return updatedAccount
         } else {
           throw new Error("刷新失败")
         }
