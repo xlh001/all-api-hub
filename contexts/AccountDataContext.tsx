@@ -218,8 +218,11 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     loadAccountData()
-    checkCurrentTab()
   }, [])
+
+  useEffect(() => {
+    checkCurrentTab()
+  }, [accounts, checkCurrentTab])
 
   // 监听后台自动刷新的更新通知
   useEffect(() => {
