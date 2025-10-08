@@ -141,3 +141,9 @@ export interface LogResponseData {
   items: LogItem[]
   total: number
 }
+
+export type BaseFetchParams = {
+  baseUrl: string
+  userId: number
+  token: string
+}

@@ -54,3 +54,34 @@ export interface OneHubUserGroupsResponse {
   message: string
   success: boolean
 }
+
+export type OneHubModelPricing = Record<string, OneHubModelPricingItem>
+
+export interface OneHubModelPricingItem {
+  groups: string[]
+  owned_by: string
+  price: {
+    model: string
+    type: "tokens" | "times"
+    channel_type: number
+    input: number
+    output: number
+    locked: boolean
+    extra_ratios?: Record<string, number>
+  }
+}
+
+interface OneHubVendor {
+  id: number
+  name: string
+  icon?: string
+}
+
+export interface OneHubUserGroupMap {
+  [key: string]: {
+    id: number
+    symbol: string
+    name: string
+    ratio: number
+  }
+}

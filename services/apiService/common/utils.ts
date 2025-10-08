@@ -5,6 +5,7 @@ import type {
   LogItem,
   TodayUsageData
 } from "~/services/apiService/common/type"
+import { joinUrl } from "~/utils/url"
 
 /**
  * 创建请求头
@@ -138,4 +139,42 @@ export const apiRequest = async <T>(
   }
 
   return response.json()
+}
+
+// 通用请求函数
+export interface FetchApiParams<T> {
+  baseUrl: string
+  endpoint: string
+  userId: number
+  token: string
+  options?: RequestInit // 可额外自定义 fetch 参数
+}
+
+/**
+ * 通用 API 请求函数
+ * @param baseUrl 基础 URL
+ * @param endpoint API 路径
+ * @param userId 用户 ID
+ * @param token 访问 token
+ * @param options 额外 fetch 配置
+ */
+export const fetchApi = async <T>({
+  baseUrl,
+  endpoint,
+  userId,
+  token,
+  options
+}: FetchApiParams<T>): Promise<T> => {
+  const url = joinUrl(baseUrl, endpoint)
+  const fetchOptions = {
+    ...createTokenAuthRequest(userId, token),
+    ...options
+  }
+
+  try {
+    return await apiRequestData<T>(url, fetchOptions, endpoint)
+  } catch (error) {
+    console.error(`请求 ${endpoint} 失败:`, error)
+    throw error
+  }
 }

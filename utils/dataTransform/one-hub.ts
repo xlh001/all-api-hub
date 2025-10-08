@@ -3,47 +3,21 @@ import type {
   ModelPricing,
   PricingResponse
 } from "~/services/apiService/common/type"
-import type { OneHubUserGroupsResponse } from "~/services/apiService/oneHub/type"
-
-interface OneHubModelPricing {
-  groups: string[]
-  owned_by: string
-  price: {
-    model: string
-    type: "tokens" | "times"
-    channel_type: number
-    input: number
-    output: number
-    locked: boolean
-    extra_ratios?: Record<string, number>
-  }
-}
-
-interface OneHubVendor {
-  id: number
-  name: string
-  icon?: string
-}
-
-interface OneHubUserGroupMap {
-  [key: string]: {
-    id: number
-    symbol: string
-    name: string
-    ratio: number
-  }
-}
+import type {
+  OneHubModelPricing,
+  OneHubModelPricingItem,
+  OneHubUserGroupMap,
+  OneHubUserGroupsResponse
+} from "~/services/apiService/oneHub/type"
 
 /**
- * 通用 transform 函数
+ * 将 OneHub 模型定价转换为通用定价
  */
 export function transformModelPricing(
-  modelPricing: Record<string, OneHubModelPricing>,
-  vendors: OneHubVendor[] = [],
+  modelPricing: OneHubModelPricing,
   userGroupMap: OneHubUserGroupMap = {},
   supportedEndpoints: EndpointMap = {}
 ): PricingResponse {
-
   const data: ModelPricing[] = Object.entries(modelPricing).map(
     ([modelName, model]) => {
       const enableGroups = model.groups.length > 0 ? model.groups : ["default"]
@@ -78,10 +52,14 @@ export function transformModelPricing(
     data,
     group_ratio,
     success: true,
-    usable_group,
+    usable_group
   }
 }
 
+/**
+ * 将 OneHub 用户分组转换为通用分组
+ * @param input
+ */
 export function transformUserGroup(
   input: OneHubUserGroupsResponse["data"]
 ): OneHubUserGroupsResponse["data"] {

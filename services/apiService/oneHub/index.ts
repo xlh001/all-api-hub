@@ -1,10 +1,16 @@
-import type { PricingResponse } from "~/services/apiService/common/type"
+import type {
+  BaseFetchParams,
+  PricingResponse
+} from "~/services/apiService/common/type"
 import {
   apiRequestData,
-  createTokenAuthRequest
+  createTokenAuthRequest,
+  fetchApi
 } from "~/services/apiService/common/utils"
 import type {
+  OneHubModelPricing,
   OneHubUserGroupInfo,
+  OneHubUserGroupMap,
   OneHubUserGroupsResponse,
   PaginatedTokenDate
 } from "~/services/apiService/oneHub/type"
@@ -15,24 +21,29 @@ import {
 } from "~/utils/dataTransform/one-hub"
 import { joinUrl } from "~/utils/url"
 
-export const fetchModelPricing = async ({
-  baseUrl,
-  userId,
-  token: accessToken
-}): Promise<PricingResponse> => {
+export const fetchAvailableModel = async (params: BaseFetchParams) => {
+  return fetchApi<OneHubModelPricing>({
+    ...params,
+    endpoint: "/api/available_model"
+  })
+}
+
+export const fetchUserGroupMap = async (params: BaseFetchParams) => {
+  return fetchApi<OneHubUserGroupMap>({
+    ...params,
+    endpoint: "/api/user_group_map"
+  })
+}
+export const fetchModelPricing = async (
+  params: BaseFetchParams
+): Promise<PricingResponse> => {
   try {
-    const options = createTokenAuthRequest(userId, accessToken)
-    const [availableModel, modelOwnedBy, userGroupMap] = await Promise.all([
-      apiRequestData(joinUrl(baseUrl, "/api/available_model")),
-      apiRequestData(joinUrl(baseUrl, "/api/model_ownedby")),
-      apiRequestData(joinUrl(baseUrl, "/api/user_group_map"))
+    const [availableModel, userGroupMap] = await Promise.all([
+      fetchAvailableModel(params),
+      fetchUserGroupMap(params)
     ])
 
-    const result = transformModelPricing(
-      availableModel,
-      modelOwnedBy,
-      userGroupMap
-    )
+    const result = transformModelPricing(availableModel, userGroupMap)
     console.log(result)
 
     return result
