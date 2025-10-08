@@ -5,7 +5,7 @@ import { joinUrl } from "~/utils/url"
 const getURL = (path: string) => chrome.runtime.getURL(path)
 
 export const openFullManagerPage = () => {
-  chrome.tabs.create({ url: getURL("options.html") })
+  chrome.tabs.create({ url: getURL("options.html#account") })
 }
 
 export const openSettingsPage = () => {
