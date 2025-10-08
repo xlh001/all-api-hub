@@ -312,11 +312,7 @@ export const fetchAccountData = async (
   accessToken: string,
   checkSupport: boolean
 ): Promise<AccountData> => {
-  const promises: (
-    | Promise<number>
-    | Promise<TodayUsageData>
-    | Promise<boolean | undefined>
-  )[] = [
+  const promises:Promise<any>[] = [
     fetchAccountQuota(baseUrl, userId, accessToken),
     fetchTodayUsage(baseUrl, userId, accessToken)
   ]
@@ -325,7 +321,11 @@ export const fetchAccountData = async (
     promises.push(fetchCheckInStatus(baseUrl, userId, accessToken))
   }
 
-  const [quota, todayUsage, canCheckIn] = await Promise.all(promises)
+  const [quota, todayUsage, canCheckIn] = (await Promise.all(promises)) as [
+    number,
+    TodayUsageData,
+    boolean | undefined
+  ]
 
   return {
     quota,
