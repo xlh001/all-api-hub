@@ -81,7 +81,7 @@ export default function UrlInput({
             </button>
           </div>
         )}
-        {onUseCurrentTab && (
+        {!isDetected && onUseCurrentTab && (
           <div className="w-full flex items-center justify-between text-xs text-blue-700 bg-blue-50 p-2 rounded-md">
             <div className="flex items-center">
               <InformationCircleIcon className="h-4 w-4" />
