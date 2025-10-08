@@ -24,11 +24,35 @@ export default function SiteInfo({ site }: SiteInfoProps) {
     <div className="flex items-center space-x-3 flex-1 min-w-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-2 mb-0.5">
-          <div
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${
-              HEALTH_STATUS_MAP[site.healthStatus]?.color ||
-              UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
-            }`}></div>
+          <Tooltip
+            content={
+              <div className="text-xs">
+                <p>
+                  状态:{" "}
+                  <span
+                    className={
+                      HEALTH_STATUS_MAP[site.health?.status]?.color ||
+                      "text-gray-400"
+                    }>
+                    {HEALTH_STATUS_MAP[site.health?.status]?.text || "未知"}
+                  </span>
+                </p>
+                {site.health?.reason && <p>原因: {site.health.reason}</p>}
+                <p>
+                  上次同步:{" "}
+                  {site.last_sync_time
+                    ? new Date(site.last_sync_time).toLocaleString()
+                    : "N/A"}
+                </p>
+              </div>
+            }
+            position="top">
+            <div
+              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                HEALTH_STATUS_MAP[site.health?.status]?.color ||
+                UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
+              }`}></div>
+          </Tooltip>
           {site.id === detectedAccountId && (
             <Tooltip content="当前标签页站点已存在" position="top">
               <span className={`text-yellow-700`}>当前站点</span>

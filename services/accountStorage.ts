@@ -173,8 +173,7 @@ class AccountStorageService {
    */
   async updateSyncTime(id: string): Promise<boolean> {
     return this.updateAccount(id, {
-      last_sync_time: Date.now(),
-      updated_at: Date.now()
+      last_sync_time: Date.now()
     })
   }
 
@@ -208,7 +207,10 @@ class AccountStorageService {
 
       // 构建更新数据
       const updateData: Partial<Omit<SiteAccount, "id" | "created_at">> = {
-        health_status: result.healthStatus.status,
+        health: {
+          status: result.healthStatus.status,
+          reason: result.healthStatus.message
+        },
         last_sync_time: Date.now()
       }
 
@@ -230,9 +232,9 @@ class AccountStorageService {
       const updatedAccount = await this.getAccountById(id)
 
       // 记录健康状态变化
-      if (account.health_status !== result.healthStatus.status) {
+      if (account.health?.status !== result.healthStatus.status) {
         console.log(
-          `账号 ${account.site_name} 健康状态变化: ${account.health_status} -> ${result.healthStatus.status}`
+          `账号 ${account.site_name} 健康状态变化: ${account.health?.status} -> ${result.healthStatus.status}`
         )
         console.log(`状态详情: ${result.healthStatus.message}`)
       }
@@ -243,7 +245,10 @@ class AccountStorageService {
       // 在出现异常时也尝试更新健康状态为unknown
       try {
         await this.updateAccount(id, {
-          health_status: "unknown",
+          health: {
+            status: "unknown",
+            reason: error.message
+          },
           last_sync_time: Date.now()
         })
       } catch (updateError) {
@@ -371,7 +376,8 @@ class AccountStorageService {
         upload: account.account_info.today_prompt_tokens,
         download: account.account_info.today_completion_tokens
       },
-      healthStatus: account.health_status,
+      health: account.health,
+      last_sync_time: account.last_sync_time,
       baseUrl: account.site_url,
       token: account.account_info.access_token,
       userId: account.account_info.id, // 添加真实的用户 ID
@@ -529,7 +535,7 @@ export const AccountStorageUtils = {
       errors.push("用户名不能为空")
     }
 
-    if (!account.health_status) {
+    if (!account.health?.status) {
       errors.push("站点健康状态不能为空")
     }
 
@@ -577,7 +583,7 @@ export const AccountStorageUtils = {
    */
   isAccountStale(account: SiteAccount, maxAgeMinutes: number = 30): boolean {
     const now = Date.now()
-    const ageMinutes = (now - account.last_sync_time) / (1000 * 60)
+    const ageMinutes = (now - (account.last_sync_time || 0)) / (1000 * 60)
     return ageMinutes > maxAgeMinutes
   },
 

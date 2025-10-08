@@ -277,8 +277,8 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Priority 2: Health status
-      const healthA = healthPriority[a.healthStatus] || 4
-      const healthB = healthPriority[b.healthStatus] || 4
+      const healthA = healthPriority[a.health?.status] || 4
+      const healthB = healthPriority[b.health?.status] || 4
       if (healthA !== healthB) {
         return healthA - healthB
       }
