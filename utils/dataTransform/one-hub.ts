@@ -1,33 +1,25 @@
-// 类型定义
+import type {
+  EndpointMap,
+  ModelPricing
+} from "~/services/apiService/common/type"
 import type { OneHubUserGroupsResponse } from "~/services/apiService/oneHub/type"
-
-export interface NormalizedModelItem {
-  model_name: string
-  quota_type: number
-  model_ratio: number
-  model_price: number
-  owner_by: string
-  completion_ratio: number
-  enable_groups: string[]
-  supported_endpoint_types: string[]
-}
 
 export interface NormalizedModel {
   auto_groups: string[]
-  data: NormalizedModelItem[]
+  data: ModelPricing[]
   group_ratio: Record<string, number>
   success: boolean
-  supported_endpoint: Record<string, { path: string; method: "POST" | "GET" }>
+  supported_endpoint: EndpointMap
   usable_group: Record<string, string>
   vendors: Array<{ id?: number; name: string; icon?: string }>
 }
 
-interface RawModel {
+interface OneHubModelPricing {
   groups: string[]
   owned_by: string
   price: {
     model: string
-    type: string // "tokens" | "times"
+    type: "tokens" | "times"
     channel_type: number
     input: number
     output: number
@@ -36,13 +28,13 @@ interface RawModel {
   }
 }
 
-interface Vendor {
+interface OneHubVendor {
   id: number
   name: string
   icon?: string
 }
 
-interface GroupMap {
+interface OneHubUserGroupMap {
   [key: string]: {
     id: number
     symbol: string
@@ -51,24 +43,20 @@ interface GroupMap {
   }
 }
 
-interface EndpointMap {
-  [key: string]: { path: string; method: "POST" | "GET" }
-}
-
 /**
  * 通用 transform 函数
  */
 export function transformModelPricing(
-  rawData: Record<string, RawModel>,
-  vendors: Vendor[] = [],
-  groupMap: GroupMap = {},
-  supportedEndpoints: EndpointMap = null
+  modelPricing: Record<string, OneHubModelPricing>,
+  vendors: OneHubVendor[] = [],
+  userGroupMap: OneHubUserGroupMap = {},
+  supportedEndpoints: EndpointMap = {}
 ): NormalizedModel {
-  const autoGroups = Object.keys(groupMap).length
-    ? Object.keys(groupMap)
+  const autoGroups = Object.keys(userGroupMap).length
+    ? Object.keys(userGroupMap)
     : ["default"]
 
-  const data: NormalizedModelItem[] = Object.entries(rawData).map(
+  const data: ModelPricing[] = Object.entries(modelPricing).map(
     ([modelName, model]) => {
       const enableGroups = model.groups.length > 0 ? model.groups : ["default"]
 
@@ -83,18 +71,18 @@ export function transformModelPricing(
         owner_by: model.owned_by || "",
         completion_ratio: model.price.output / model.price.input || 1,
         enable_groups: enableGroups,
-        supported_endpoint_types: supportedEndpoints || []
+        supported_endpoint_types: supportedEndpoints
       }
     }
   )
 
   const group_ratio: Record<string, number> = {}
-  for (const [key, group] of Object.entries(groupMap)) {
+  for (const [key, group] of Object.entries(userGroupMap)) {
     group_ratio[key] = group.ratio || 1
   }
 
   const usable_group: Record<string, string> = {}
-  for (const [key, group] of Object.entries(groupMap)) {
+  for (const [key, group] of Object.entries(userGroupMap)) {
     usable_group[key] = group.name
   }
 

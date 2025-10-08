@@ -13,7 +13,7 @@ export interface CalculatedPrice {
   perCallPrice?: PerCallPrice // 按次计费时每次调用的价格
 }
 
-type PerCallPrice = number | { input: number; output: number }
+export type PerCallPrice = number | { input: number; output: number }
 
 /**
  * 计算模型价格

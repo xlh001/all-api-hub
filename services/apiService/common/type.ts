@@ -2,6 +2,7 @@
  * API 服务 - 用于与 One API/New API 站点进行交互
  */
 import type { ApiToken } from "~/types"
+import type { PerCallPrice } from "~/utils/modelPricing"
 
 // ============= 类型定义 =============
 export interface UserInfo {
@@ -88,17 +89,21 @@ export interface CreateTokenResponse {
   success: boolean
 }
 
+export interface EndpointMap {
+  [key: string]: { path: string; method: "POST" | "GET" }
+}
+
 // 模型定价信息类型
 export interface ModelPricing {
   model_name: string
   model_description?: string
   quota_type: number // 0 = 按量计费，1 = 按次计费
   model_ratio: number
-  model_price: number
+  model_price: number | PerCallPrice
   owner_by?: string
   completion_ratio: number
   enable_groups: string[]
-  supported_endpoint_types: string[]
+  supported_endpoint_types: EndpointMap
 }
 
 // 模型定价响应类型
