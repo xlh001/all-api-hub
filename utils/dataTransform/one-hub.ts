@@ -1,18 +1,9 @@
 import type {
   EndpointMap,
-  ModelPricing
+  ModelPricing,
+  PricingResponse
 } from "~/services/apiService/common/type"
 import type { OneHubUserGroupsResponse } from "~/services/apiService/oneHub/type"
-
-export interface NormalizedModel {
-  auto_groups: string[]
-  data: ModelPricing[]
-  group_ratio: Record<string, number>
-  success: boolean
-  supported_endpoint: EndpointMap
-  usable_group: Record<string, string>
-  vendors: Array<{ id?: number; name: string; icon?: string }>
-}
 
 interface OneHubModelPricing {
   groups: string[]
@@ -51,10 +42,7 @@ export function transformModelPricing(
   vendors: OneHubVendor[] = [],
   userGroupMap: OneHubUserGroupMap = {},
   supportedEndpoints: EndpointMap = {}
-): NormalizedModel {
-  const autoGroups = Object.keys(userGroupMap).length
-    ? Object.keys(userGroupMap)
-    : ["default"]
+): PricingResponse {
 
   const data: ModelPricing[] = Object.entries(modelPricing).map(
     ([modelName, model]) => {
@@ -87,13 +75,10 @@ export function transformModelPricing(
   }
 
   return {
-    auto_groups: autoGroups,
     data,
     group_ratio,
     success: true,
-    supported_endpoint: supportedEndpoints,
     usable_group,
-    vendors
   }
 }
 
