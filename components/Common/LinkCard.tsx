@@ -24,7 +24,7 @@ const LinkCard = ({
       <div className="flex items-start space-x-4">
         <Icon className={`w-6 h-6 mt-1 flex-shrink-0 ${iconClass}`} />
         <div className="flex-1">
-          <h3 className="font-medium text-gray-900 mb-2">{title}</h3>
+          <h3 className="text-base font-medium text-gray-900 mb-2">{title}</h3>
           <p className="text-sm text-gray-600 mb-3">{description}</p>
           <a
             href={href}

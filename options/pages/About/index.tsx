@@ -61,7 +61,7 @@ export default function About() {
         <p className="text-gray-500">了解插件信息和开发团队</p>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* 插件信息 */}
         <section>
           <PluginIntroCard version={version} />

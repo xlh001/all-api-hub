@@ -6,7 +6,9 @@ const CreditsCard = () => {
       <div className="flex items-start space-x-4">
         <HeartIcon className="w-6 h-6 text-red-500 mt-1 flex-shrink-0" />
         <div className="flex-1">
-          <h3 className="font-medium text-gray-900 mb-2">开发与维护</h3>
+          <h3 className="text-base font-medium text-gray-900 mb-2">
+            开发与维护
+          </h3>
           <p className="text-sm text-gray-600 mb-4">
             感谢所有为开源社区做出贡献的开发者们，本插件的开发得益于这些优秀的开源项目和工具。
           </p>
