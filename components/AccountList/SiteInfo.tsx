@@ -46,7 +46,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                 </p>
               </div>
             }
-            position="top">
+            position="right">
             <div
               className={`w-2 h-2 rounded-full flex-shrink-0 ${
                 HEALTH_STATUS_MAP[site.health?.status]?.color ||
