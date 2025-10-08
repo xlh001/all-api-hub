@@ -1,16 +1,13 @@
-import { Storage } from "@plasmohq/storage"
+import { Storage } from "@plasmohq/storage";
 
-import type {
-  AccountStats,
-  CurrencyType,
-  DisplaySiteData,
-  SiteAccount,
-  SiteHealthStatus,
-  StorageConfig
-} from "~/types"
 
-import { refreshAccountData } from "./apiService"
-import { userPreferences } from "./userPreferences" // 存储键名常量
+
+import type { AccountStats, CurrencyType, DisplaySiteData, SiteAccount, SiteHealthStatus, StorageConfig } from "~/types";
+
+
+
+import { refreshAccountData } from "./apiService";
+import { userPreferences } from "./userPreferences"; // 存储键名常量
 
 
 // 存储键名常量
@@ -185,7 +182,7 @@ class AccountStorageService {
   async refreshAccount(
     id: string,
     force: boolean = false
-  ): Promise<SiteAccount | null> {
+  ): Promise<{ account: SiteAccount; refreshed: boolean } | null> {
     try {
       const account = await this.getAccountById(id)
       if (!account) {
@@ -196,7 +193,7 @@ class AccountStorageService {
         console.log(
           `[AccountStorage] 账号 ${account.site_name} 刷新间隔未到，跳过刷新`
         )
-        return account
+        return { account, refreshed: false }
       }
 
       // 使用同步导入的API服务
@@ -238,7 +235,7 @@ class AccountStorageService {
         console.log(`状态详情: ${result.healthStatus.message}`)
       }
 
-      return updatedAccount
+      return { account: updatedAccount, refreshed: true }
     } catch (error) {
       console.error("刷新账号数据失败:", error)
       // 在出现异常时也尝试更新健康状态为unknown
@@ -259,10 +256,11 @@ class AccountStorageService {
    */
   async refreshAllAccounts(
     force: boolean = false
-  ): Promise<{ success: number; failed: number; latestSyncTime: number }> {
+  ) {
     const accounts = await this.getAllAccounts()
-    let success = 0
-    let failed = 0
+    let successCount = 0
+    let failedCount = 0
+    let refreshedCount = 0
     let latestSyncTime = 0
 
     // 使用 Promise.allSettled 来并发刷新，避免单个失败影响其他账号
@@ -272,13 +270,16 @@ class AccountStorageService {
 
     results.forEach((result, index) => {
       if (result.status === "fulfilled" && result.value) {
-        success++
+        successCount++
         latestSyncTime = Math.max(
-          result.value.last_sync_time || 0,
+          result.value.account.last_sync_time || 0,
           latestSyncTime
         )
+        if (result.value.refreshed) {
+          refreshedCount++
+        }
       } else {
-        failed++
+        failedCount++
         console.error(
           `刷新账号 ${accounts[index].site_name} 失败:`,
           result.status === "rejected" ? result.reason : "未知错误"
@@ -286,7 +287,7 @@ class AccountStorageService {
       }
     })
 
-    return { success, failed, latestSyncTime }
+    return { success: successCount, failed: failedCount, latestSyncTime,refreshedCount }
   }
 
   /**

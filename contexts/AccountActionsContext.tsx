@@ -47,24 +47,29 @@ export const AccountActionsProvider = ({
       setRefreshingAccountId(account.id)
 
       const refreshPromise = async () => {
-        const updatedAccount = await accountStorage.refreshAccount(
-          account.id,
-          force
-        )
-        if (updatedAccount) {
+        const result = await accountStorage.refreshAccount(account.id, force)
+        if (result) {
           await loadAccountData()
-          return updatedAccount
+          return result
         } else {
           throw new Error("刷新失败")
         }
       }
 
       try {
-        await toast.promise(refreshPromise(), {
-          loading: `正在刷新 ${account.name}...`,
-          success: `${account.name} 刷新成功！`,
-          error: `刷新 ${account.name} 失败`
-        })
+        await toast.promise(
+          refreshPromise().then((result) => {
+            if (!result.refreshed) {
+              return "刷新间隔未到，已跳过"
+            }
+            return `${account.name} 刷新成功！`
+          }),
+          {
+            loading: `正在刷新 ${account.name}...`,
+            success: (message) => message,
+            error: `刷新 ${account.name} 失败`
+          }
+        )
       } catch (error) {
         console.error("Error refreshing account:", error)
       } finally {

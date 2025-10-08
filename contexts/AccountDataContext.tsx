@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import toast from "react-hot-toast"; // 1. 定义 Context 的值类型
 
 
 
@@ -8,7 +9,7 @@ import type { AccountStats, CurrencyAmount, CurrencyAmountMap, DisplaySiteData, 
 
 
 
-import { useUserPreferencesContext } from "./UserPreferencesContext";
+import { useUserPreferencesContext } from "./UserPreferencesContext"; // 1. 定义 Context 的值类型
 
 
 // 1. 定义 Context 的值类型
@@ -170,8 +171,26 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
         hasRefreshedOnOpen.current = true // 标记已执行
         console.log("[Popup] 打开插件时自动刷新已启用，开始刷新")
         try {
-          await handleRefresh(false)
-          console.log("[Popup] 打开插件时自动刷新完成")
+          if (toast) {
+            await toast.promise(handleRefresh(false), {
+              loading: "正在自动刷新所有账号...",
+              success: (result) => {
+                if (result.failed > 0) {
+                  return `自动刷新完成: ${result.success} 成功, ${result.failed} 失败`
+                }
+                const sum = result.success + result.failed
+                const refreshedCount = result.refreshedCount
+                if (refreshedCount < sum) {
+                  return `自动刷新完成：${refreshedCount} 个账号刷新成功，${sum - refreshedCount}个因刷新间隔未到未刷新`
+                }
+                console.log("[Popup] 打开插件时自动刷新完成")
+                return "所有账号自动刷新成功！"
+              },
+              error: "自动刷新失败，请稍后重试"
+            })
+          } else {
+            await handleRefresh(false)
+          }
         } catch (error) {
           console.error("[Popup] 打开插件时自动刷新失败:", error)
         }
