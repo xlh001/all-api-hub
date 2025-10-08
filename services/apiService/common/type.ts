@@ -89,10 +89,6 @@ export interface CreateTokenResponse {
   success: boolean
 }
 
-export interface EndpointMap {
-  [key: string]: { path: string; method: "POST" | "GET" }
-}
-
 // 模型定价信息类型
 export interface ModelPricing {
   model_name: string
@@ -103,7 +99,7 @@ export interface ModelPricing {
   owner_by?: string
   completion_ratio: number
   enable_groups: string[]
-  supported_endpoint_types: EndpointMap
+  supported_endpoint_types: string[]
 }
 
 // 模型定价响应类型

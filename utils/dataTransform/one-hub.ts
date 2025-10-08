@@ -1,5 +1,4 @@
 import type {
-  EndpointMap,
   ModelPricing,
   PricingResponse
 } from "~/services/apiService/common/type"
@@ -15,8 +14,7 @@ import type {
  */
 export function transformModelPricing(
   modelPricing: OneHubModelPricing,
-  userGroupMap: OneHubUserGroupMap = {},
-  supportedEndpoints: EndpointMap = {}
+  userGroupMap: OneHubUserGroupMap = {}
 ): PricingResponse {
   const data: ModelPricing[] = Object.entries(modelPricing).map(
     ([modelName, model]) => {
@@ -33,7 +31,7 @@ export function transformModelPricing(
         owner_by: model.owned_by || "",
         completion_ratio: model.price.output / model.price.input || 1,
         enable_groups: enableGroups,
-        supported_endpoint_types: supportedEndpoints
+        supported_endpoint_types: []
       }
     }
   )
