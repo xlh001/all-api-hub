@@ -90,7 +90,7 @@ export default function AccountDialog({
               <DialogHeader mode={mode} onClose={onClose} />
 
               <div className="p-4">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-2">
                   {state.detectionError && (
                     <AutoDetectErrorAlert
                       error={state.detectionError}

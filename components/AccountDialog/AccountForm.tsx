@@ -60,7 +60,7 @@ export default function AccountForm({
     <>
       {/* 网站名称 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700">
           网站名称
         </label>
         <div className="relative">
@@ -80,7 +80,7 @@ export default function AccountForm({
 
       {/* 站点类型 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700">
           站点类型
         </label>
         <div className="relative">
@@ -102,7 +102,7 @@ export default function AccountForm({
 
       {/* 用户名 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700">
           用户名
         </label>
         <div className="relative">
@@ -122,7 +122,7 @@ export default function AccountForm({
 
       {/* 用户 ID */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700">
           用户 ID
         </label>
         <div className="relative">
@@ -142,7 +142,7 @@ export default function AccountForm({
 
       {/* 访问令牌 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700">
           访问令牌
         </label>
         <div className="relative">
@@ -172,7 +172,7 @@ export default function AccountForm({
 
       {/* 充值金额比例 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700">
           充值金额比例 (CNY/USD)
         </label>
         <div className="relative">
@@ -210,7 +210,7 @@ export default function AccountForm({
       </div>
 
       {/* 签到功能开关 */}
-      <div className="flex items-center justify-between">
+      <div className="w-full flex items-center justify-between">
         <label
           htmlFor="supports-check-in"
           className="text-sm font-medium text-gray-700">
@@ -233,9 +233,7 @@ export default function AccountForm({
 
       {/* 备注 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          备注
-        </label>
+        <label className="block text-sm font-medium text-gray-700">备注</label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <PencilSquareIcon className="h-5 w-5 text-gray-400" />
