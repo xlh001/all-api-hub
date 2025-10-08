@@ -262,11 +262,28 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
   )
 
   const sortedData = useMemo(() => {
+    const healthPriority = {
+      error: 1,
+      warning: 2,
+      unknown: 3,
+      healthy: 4
+    }
+
     return [...displayData].sort((a, b) => {
+      // Priority 1: Current site
       if (detectedAccount?.id) {
         if (a.id === detectedAccount.id) return -1
         if (b.id === detectedAccount.id) return 1
       }
+
+      // Priority 2: Health status
+      const healthA = healthPriority[a.healthStatus] || 4
+      const healthB = healthPriority[b.healthStatus] || 4
+      if (healthA !== healthB) {
+        return healthA - healthB
+      }
+
+      // Priority 3: User-selected sort field
       switch (sortField) {
         case "name":
           return sortOrder === "asc"
