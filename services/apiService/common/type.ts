@@ -143,3 +143,13 @@ export type BaseFetchParams = {
   userId: number
   token: string
 }
+
+// 上游模型列表（OpenAI格式）
+export type UpstreamModelItem = {
+  id: string
+  object: "model"
+  created: number
+  owned_by: string
+}
+
+export type UpstreamModelList = UpstreamModelItem[]

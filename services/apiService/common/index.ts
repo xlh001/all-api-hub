@@ -11,6 +11,8 @@ import type {
   RefreshAccountResult,
   SiteStatusInfo,
   TodayUsageData,
+  UpstreamModelItem,
+  UpstreamModelList,
   UserGroupInfo,
   UserInfo
 } from "~/services/apiService/common/type"
@@ -445,6 +447,34 @@ export const fetchAvailableModels = async ({
     console.error("获取模型列表失败:", error)
     throw error
   }
+}
+
+/**
+ * 获取上游模型列表
+ * @param baseUrl
+ * @param accessToken
+ */
+export const fetchUpstreamModels = async ({ baseUrl, token: accessToken }) => {
+  const url = joinUrl(baseUrl, "/v1/models")
+  const options = createTokenAuthRequest(null, accessToken)
+
+  try {
+    return await apiRequestData<UpstreamModelList>(url, options, "/v1/models")
+  } catch (error) {
+    console.error("获取上游模型列表失败:", error)
+    throw error
+  }
+}
+
+export const fetchUpstreamModelsNameList = async ({
+  baseUrl,
+  token: accessToken
+}) => {
+  const upstreamModels = await fetchUpstreamModels({
+    baseUrl: baseUrl,
+    token: accessToken
+  })
+  return upstreamModels.map((item: UpstreamModelItem) => item.id)
 }
 
 /**

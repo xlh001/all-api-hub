@@ -68,6 +68,8 @@ export const {
   validateAccountConnection,
   fetchAccountTokens,
   fetchAvailableModels,
+  fetchUpstreamModels,
+  fetchUpstreamModelsNameList,
   fetchUserGroups,
   createApiToken,
   fetchTokenById,
