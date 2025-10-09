@@ -3,8 +3,12 @@ import {
   PencilIcon,
   TrashIcon
 } from "@heroicons/react/24/outline"
+import { NewAPI } from "@lobehub/icons"
+import { useState } from "react"
+import toast from "react-hot-toast"
 
 import { CherryIcon } from "~/components/icons/CherryIcon"
+import { importToNewApi } from "~/services/newApiService"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 
@@ -23,6 +27,24 @@ function TokenActionButtons({
   handleDeleteToken,
   account
 }: TokenHeaderProps) {
+  const [isImporting, setIsImporting] = useState(false)
+
+  const handleImportToNewApi = async () => {
+    setIsImporting(true)
+    try {
+      const ImportResult = await importToNewApi(account, token)
+      if (ImportResult.success) {
+        toast.success(ImportResult.message)
+      } else {
+        toast.error(ImportResult.message)
+      }
+    } catch (error) {
+      toast.error(`导入失败: ${error.message}`)
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
   return (
     <div className="flex items-center space-x-2 ml-4">
       <button
@@ -36,6 +58,13 @@ function TokenActionButtons({
         className="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
         title="在Cherry Studio中使用">
         <CherryIcon className="w-4 h-4" />
+      </button>
+      <button
+        onClick={handleImportToNewApi}
+        disabled={isImporting}
+        className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        title="导入到New API">
+        <NewAPI.Color className="w-4 h-4" />
       </button>
       <button
         onClick={() => handleEditToken(token)}
