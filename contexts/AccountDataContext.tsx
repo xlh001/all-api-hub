@@ -78,12 +78,8 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
   const [prevTotalConsumption, setPrevTotalConsumption] =
     useState<CurrencyAmount>({ USD: 0, CNY: 0 })
   const [prevBalances, setPrevBalances] = useState<CurrencyAmountMap>({})
-  const [sortField, setSortField] = useState<SortField>(
-    initialSortField || UI_CONSTANTS.SORT.DEFAULT_FIELD
-  )
-  const [sortOrder, setSortOrder] = useState<SortOrder>(
-    initialSortOrder || UI_CONSTANTS.SORT.DEFAULT_ORDER
-  )
+  const [sortField, setSortField] = useState<SortField>(initialSortField)
+  const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder)
   const [detectedAccount, setDetectedAccount] = useState<SiteAccount | null>(
     null
   )

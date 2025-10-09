@@ -8,7 +8,7 @@ import React, {
   type ReactNode
 } from "react"
 
-import { DATA_TYPE_CONSUMPTION } from "~/constants/ui"
+import { DATA_TYPE_CONSUMPTION, UI_CONSTANTS } from "~/constants/ui"
 import {
   userPreferences,
   type UserPreferences
@@ -100,8 +100,8 @@ export const UserPreferencesProvider = ({
       isLoading,
       activeTab: preferences?.activeTab || DATA_TYPE_CONSUMPTION,
       currencyType: preferences?.currencyType || "USD",
-      sortField: preferences?.sortField || "name",
-      sortOrder: preferences?.sortOrder || "asc",
+      sortField: preferences?.sortField || UI_CONSTANTS.SORT.DEFAULT_FIELD,
+      sortOrder: preferences?.sortOrder || UI_CONSTANTS.SORT.DEFAULT_ORDER,
       updateActiveTab,
       updateCurrencyType,
       updateSortConfig,
