@@ -1,3 +1,4 @@
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import React, { useEffect, useState } from "react"
 
 interface NewApiSettingsProps {
@@ -19,6 +20,7 @@ export default function NewApiSettings({
 }: NewApiSettingsProps) {
   const [localBaseUrl, setLocalBaseUrl] = useState(newApiBaseUrl)
   const [localAdminToken, setLocalAdminToken] = useState(newApiAdminToken)
+  const [showAdminToken, setShowAdminToken] = useState(false)
   const [localUserId, setLocalUserId] = useState(newApiUserId)
 
   useEffect(() => {
@@ -65,13 +67,25 @@ export default function NewApiSettings({
               用于访问 New API 管理员功能的令牌
             </p>
           </div>
-          <input
-            type="password"
-            value={localAdminToken}
-            onChange={(e) => setLocalAdminToken(e.target.value)}
-            onBlur={(e) => onAdminTokenChange(e.target.value)}
-            className="w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <div className="relative w-72">
+            <input
+              type={showAdminToken ? "text" : "password"}
+              value={localAdminToken}
+              onChange={(e) => setLocalAdminToken(e.target.value)}
+              onBlur={(e) => onAdminTokenChange(e.target.value)}
+              className="w-full px-3 py-1.5 pr-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              type="button"
+              onClick={() => setShowAdminToken(!showAdminToken)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+              {showAdminToken ? (
+                <EyeSlashIcon className="h-4 w-4" />
+              ) : (
+                <EyeIcon className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between py-4 border-b border-gray-100">
