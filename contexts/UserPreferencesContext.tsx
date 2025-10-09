@@ -117,6 +117,10 @@ export const UserPreferencesProvider = ({
     ]
   )
 
+  if (isLoading) {
+    return null
+  }
+
   return (
     <UserPreferencesContext.Provider value={value}>
       {children}
