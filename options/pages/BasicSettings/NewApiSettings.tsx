@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 
 interface NewApiSettingsProps {
   newApiBaseUrl: string
@@ -17,6 +17,22 @@ export default function NewApiSettings({
   onAdminTokenChange,
   onUserIdChange
 }: NewApiSettingsProps) {
+  const [localBaseUrl, setLocalBaseUrl] = useState(newApiBaseUrl)
+  const [localAdminToken, setLocalAdminToken] = useState(newApiAdminToken)
+  const [localUserId, setLocalUserId] = useState(newApiUserId)
+
+  useEffect(() => {
+    setLocalBaseUrl(newApiBaseUrl)
+  }, [newApiBaseUrl])
+
+  useEffect(() => {
+    setLocalAdminToken(newApiAdminToken)
+  }, [newApiAdminToken])
+
+  useEffect(() => {
+    setLocalUserId(newApiUserId)
+  }, [newApiUserId])
+
   return (
     <section>
       <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
@@ -34,8 +50,8 @@ export default function NewApiSettings({
           </div>
           <input
             type="text"
-            value={newApiBaseUrl}
-            onChange={(e) => onBaseUrlChange(e.target.value)}
+            value={localBaseUrl}
+            onChange={(e) => setLocalBaseUrl(e.target.value)}
             onBlur={(e) => onBaseUrlChange(e.target.value)}
             placeholder="https://api.example.com"
             className="w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -51,8 +67,8 @@ export default function NewApiSettings({
           </div>
           <input
             type="password"
-            value={newApiAdminToken}
-            onChange={(e) => onAdminTokenChange(e.target.value)}
+            value={localAdminToken}
+            onChange={(e) => setLocalAdminToken(e.target.value)}
             onBlur={(e) => onAdminTokenChange(e.target.value)}
             className="w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -65,8 +81,8 @@ export default function NewApiSettings({
           </div>
           <input
             type="text"
-            value={newApiUserId}
-            onChange={(e) => onUserIdChange(e.target.value)}
+            value={localUserId}
+            onChange={(e) => setLocalUserId(e.target.value)}
             onBlur={(e) => onUserIdChange(e.target.value)}
             className="w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
