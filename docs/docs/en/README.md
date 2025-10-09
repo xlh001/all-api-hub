@@ -40,6 +40,8 @@ features:
     details: Can intelligently identify and obtain the real name of the site, rather than simply displaying the domain name, improving readability.
   - title: WebDav Data Backup & Restore
     details: Supports backing up and restoring all accounts and settings via WebDav, ensuring data security and enabling cross-device synchronization.
+  - title: Quick Site Export
+    details: Supports one-click export of site API configurations to CherryStudio and New API, simplifying the process of adding upstream providers to these platforms.
   - title: Firefox Support
     details: The extension is now fully compatible with the Firefox browser, providing a seamless experience for Firefox users.
   - title: Plugin Works Offline

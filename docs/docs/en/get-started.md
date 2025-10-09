@@ -62,3 +62,21 @@ The plugin will automatically identify your account's:
 When automatic detection fails, you can manually enter the site account. You will need to obtain the following information first. (Each site may have a different UI, please find it yourself.)
 :::
 ![User Info](../static/image/site-user-info.png)
+
+## 4. Quick Site Export
+
+This extension supports one-click export of added site API configurations to [CherryStudio](https://github.com/easy-cherry/cherry-studio) and [New API](https://github.com/Calcium-Ion/new-api), simplifying the process of adding upstream providers in these platforms.
+
+### 4.1 Configuration
+
+Before using the quick export feature, you need to configure the **Server Address** and **Admin Token** for the target platform (CherryStudio or New API) in the extension's **Basic Settings** page. For New API, you also need to configure the **User ID**.
+
+### 4.2 Export Process
+
+1.  **Navigate to Key Management**: In the extension's **Key Management** page, find the API key corresponding to the site you want to export.
+2.  **Click Export**: In the key's action menu, select **"Export to CherryStudio"** or **"Export to New API"**.
+3.  **Automatic Handling**:
+    *   **For New API**: The extension will automatically check if a channel with the same `Base URL` already exists on the target platform. If not, it will create a new channel and automatically populate the site name, `Base URL`, API key, and the list of available models, avoiding duplicate entries.
+    *   **For CherryStudio**: The extension will send the site and key information directly to your configured CherryStudio instance.
+
+With this feature, you can easily synchronize your API provider configurations to other management platforms without manual copy-pasting, improving efficiency.

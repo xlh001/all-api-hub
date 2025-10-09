@@ -52,11 +52,12 @@ This extension allows for convenient integrated management of AI relay station a
 ## 🧬 Feature Changes
 
 - 🌐 **Broader Site Support** - Added support for sites like VoAPI, Super-API, etc.
-- 📝 **Manual Add** - Supports manually adding any relay site, preventing failures when automatic detection doesn't work.
-- 🔄 **Duplicate Site Detection** - Prevents adding the same site multiple times.
+- 🚀 **Quick Site Export** - Supports one-click export of site API configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio) and [New API](https://github.com/QuantumNous/new-api), simplifying the API management workflow.
 - ✅ **Site Check-in Status Detection** - Supports detecting whether a site supports check-in and its check-in status.
-- ️🏷️ **Smart Site Name Fetching** - Gets the real site name, not just the domain.
+- 🔄 **Duplicate Site Detection** - Prevent the repeated addition of the same site and quickly modify the currently added site.
+- ️🏷️ **Smart Site Name Fetching** - There are multiple ways to obtain the real site name, and the domain name method is used as the last resort.
 - ☁️ **WebDav Data Backup** - Supports backing up and restoring all accounts and settings via WebDav, ensuring data security and enabling cross-device synchronization.
+- 📝 **Manual Add** - Supports manually adding any relay site, preventing failures when automatic detection doesn't work.
 - ⚙️ **Firefox Support** - The extension is now available for Firefox browsers.
 
 > [!NOTE]
