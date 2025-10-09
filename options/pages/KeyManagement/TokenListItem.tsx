@@ -32,81 +32,24 @@ export function TokenListItem({
   account
 }: TokenListItemProps) {
   return (
-    <div className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+    <div className="flex flex-col border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
       <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-3 mb-2">
-            <h3 className="text-lg font-medium text-gray-900 truncate">
-              {token.name}
-            </h3>
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                token.status === 1
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}>
-              {token.status === 1 ? "启用" : "禁用"}
-            </span>
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {token.accountName}
-            </span>
-          </div>
-
-          <div className="space-y-2 text-sm text-gray-600">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-500">密钥:</span>
-                <code className="bg-gray-100 px-2 py-1 rounded font-mono text-xs">
-                  {formatKey(token.key, token.id, visibleKeys)}
-                </code>
-                <button
-                  onClick={() => toggleKeyVisibility(token.id)}
-                  className="p-1 text-gray-400 hover:text-gray-600">
-                  {visibleKeys.has(token.id) ? (
-                    <EyeSlashIcon className="w-4 h-4" />
-                  ) : (
-                    <EyeIcon className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <span className="text-gray-500">剩余额度:</span>
-                <span className="ml-2 font-medium">
-                  {formatQuota(token.remain_quota, token.unlimited_quota)}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">已用额度:</span>
-                <span className="ml-2 font-medium">
-                  {formatQuota(token.used_quota, false)}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">过期时间:</span>
-                <span className="ml-2 font-medium">
-                  {formatTime(token.expired_time)}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">创建时间:</span>
-                <span className="ml-2 font-medium">
-                  {formatTime(token.created_time)}
-                </span>
-              </div>
-            </div>
-
-            {token.group && (
-              <div>
-                <span className="text-gray-500">分组:</span>
-                <span className="ml-2 font-medium">{token.group}</span>
-              </div>
-            )}
-          </div>
+        <div className="flex items-center space-x-3 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 truncate">
+            {token.name}
+          </h3>
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              token.status === 1
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}>
+            {token.status === 1 ? "启用" : "禁用"}
+          </span>
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            {token.accountName}
+          </span>
         </div>
-
         <div className="flex items-center space-x-2 ml-4">
           <button
             onClick={() => copyKey(token.key, token.name)}
@@ -132,6 +75,61 @@ export function TokenListItem({
             title="删除密钥">
             <TrashIcon className="w-4 h-4" />
           </button>
+        </div>
+      </div>
+      <div className="flex-1 min-w-0 m-2">
+        <div className="space-y-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500">密钥:</span>
+              <code className="bg-gray-100 px-2 py-1 rounded font-mono text-xs">
+                {formatKey(token.key, token.id, visibleKeys)}
+              </code>
+              <button
+                onClick={() => toggleKeyVisibility(token.id)}
+                className="p-1 text-gray-400 hover:text-gray-600">
+                {visibleKeys.has(token.id) ? (
+                  <EyeSlashIcon className="w-4 h-4" />
+                ) : (
+                  <EyeIcon className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <span className="text-gray-500">剩余额度:</span>
+              <span className="ml-2 font-medium">
+                  {formatQuota(token.remain_quota, token.unlimited_quota)}
+                </span>
+            </div>
+            <div>
+              <span className="text-gray-500">已用额度:</span>
+              <span className="ml-2 font-medium">
+                  {formatQuota(token.used_quota, false)}
+                </span>
+            </div>
+            <div>
+              <span className="text-gray-500">过期时间:</span>
+              <span className="ml-2 font-medium">
+                  {formatTime(token.expired_time)}
+                </span>
+            </div>
+            <div>
+              <span className="text-gray-500">创建时间:</span>
+              <span className="ml-2 font-medium">
+                  {formatTime(token.created_time)}
+                </span>
+            </div>
+          </div>
+
+          {token.group && (
+            <div>
+              <span className="text-gray-500">分组:</span>
+              <span className="ml-2 font-medium">{token.group}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
