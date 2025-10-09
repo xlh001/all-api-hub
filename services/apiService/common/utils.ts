@@ -109,6 +109,9 @@ export const apiRequestData = async <T>(
   const res = await apiRequest<T>(url, options, endpoint)
 
   if (!res.success || res.data === undefined) {
+    if (res.message) {
+      throw new ApiError(res.message, undefined, endpoint)
+    }
     throw new ApiError("响应数据格式错误", undefined, endpoint)
   }
 
