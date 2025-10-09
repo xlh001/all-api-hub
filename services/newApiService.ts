@@ -1,5 +1,11 @@
-import { fetchAvailableModels } from "~/services/apiService/common"
+import { ApiError, fetchAvailableModels } from "~/services/apiService/common"
+import {
+  apiRequest,
+  apiRequestData,
+  createTokenAuthRequest
+} from "~/services/apiService/common/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
+import { joinUrl } from "~/utils/url"
 
 import { userPreferences } from "./userPreferences"
 
@@ -29,40 +35,32 @@ interface NewApiResponse<T> {
 /**
  * 搜索指定关键词的渠道
  * @param baseUrl New API 的基础 URL
- * @param adminToken 管理员令牌
+ * @param accessToken 管理员令牌
  * @param userId 用户 ID
  * @param keyword 搜索关键词
  */
 export async function searchChannel(
   baseUrl: string,
-  adminToken: string,
-  userId: string,
+  accessToken: string,
+  userId: number | string,
   keyword: string
-) {
+): Promise<NewApiChannelData | null> {
+  const url = joinUrl(baseUrl, `/api/channel/search?keyword=${keyword}`)
+  const options = createTokenAuthRequest(userId, accessToken)
+
   try {
-    const response = await fetch(
-      `${baseUrl}/api/channel/search?keyword=${keyword}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-          "New-Api-User": userId
-        }
-      }
+    return await apiRequestData<NewApiChannelData>(
+      url,
+      options,
+      "/api/channel/search"
     )
-
-    if (!response.ok) {
-      throw new Error(`网络响应错误: ${response.statusText}`)
-    }
-
-    const result: NewApiResponse<NewApiChannelData> = await response.json()
-    if (result.success) {
-      return result.data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`API 请求失败: ${error.message}`)
+    } else {
+      console.error("搜索渠道失败:", error)
     }
     return null
-  } catch (error) {
-    console.error("搜索渠道失败:", error)
-    throw new Error("搜索渠道失败，请检查网络或 New API 配置。")
   }
 }
 
@@ -76,29 +74,20 @@ export async function searchChannel(
 export async function createChannel(
   baseUrl: string,
   adminToken: string,
-  userId: string,
+  userId: number | string,
   channelData: object
-): Promise<NewApiChannel> {
+) {
   try {
-    const response = await fetch(`${baseUrl}/api/channel/`, {
+    const url = joinUrl(baseUrl, `/api/channel`)
+    const options = createTokenAuthRequest(userId, adminToken, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminToken}`,
-        "New-Api-User": userId
-      },
       body: JSON.stringify(channelData)
     })
-
-    if (!response.ok) {
-      throw new Error(`网络响应错误: ${response.statusText}`)
-    }
-
-    const result: NewApiResponse<NewApiChannel> = await response.json()
-    if (result.success) {
-      return result.data
-    }
-    throw new Error(result.message || "创建渠道失败。")
+    return await apiRequest<NewApiResponse<undefined>>(
+      url,
+      options,
+      "/api/channel"
+    )
   } catch (error) {
     console.error("创建渠道失败:", error)
     throw new Error("创建渠道失败，请检查网络或 New API 配置。")
@@ -152,11 +141,12 @@ export async function importToNewApi(
       token: account.token
     })
 
+    const newChannelName = `${account.name} - ${token.name}`
     // 3. 如果没有匹配项，则创建新渠道
     const newChannelData = {
       mode: "single",
       channel: {
-        name: `${account.name} - ${token.name}`,
+        name: newChannelName,
         type: 1, // 默认为 OpenAI 类型
         key: token.key,
         base_url: account.baseUrl,
@@ -167,16 +157,23 @@ export async function importToNewApi(
       }
     }
 
-    const createdChannel = await createChannel(
+    const createdChannelResponse = await createChannel(
       newApiBaseUrl,
       newApiAdminToken,
       newApiUserId,
       newChannelData
     )
 
-    return {
-      success: true,
-      message: `成功导入新渠道 ${createdChannel.name}。`
+    if (createdChannelResponse.success) {
+      return {
+        success: true,
+        message: `成功导入新渠道 ${newChannelName}。`
+      }
+    } else {
+      return {
+        success: false,
+        message: createdChannelResponse.message
+      }
     }
   } catch (error) {
     return {

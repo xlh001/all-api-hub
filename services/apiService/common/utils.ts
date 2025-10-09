@@ -11,7 +11,7 @@ import { joinUrl } from "~/utils/url"
  * 创建请求头
  */
 export const createRequestHeaders = (
-  userId?: number,
+  userId?: number | string,
   accessToken?: string
 ): Record<string, string> => {
   const baseHeaders = {
@@ -74,7 +74,7 @@ const createBaseRequest = (
  * 创建带 cookie 认证的请求
  */
 export const createCookieAuthRequest = (
-  userId?: number,
+  userId?: number | string,
   options: RequestInit = {}
 ): RequestInit =>
   createBaseRequest(createRequestHeaders(userId), "include", options)
@@ -83,7 +83,7 @@ export const createCookieAuthRequest = (
  * 创建带 Bearer token 认证的请求
  */
 export const createTokenAuthRequest = (
-  userId: number,
+  userId: number | string,
   accessToken: string,
   options: RequestInit = {}
 ): RequestInit =>
