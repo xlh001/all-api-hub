@@ -1,0 +1,54 @@
+import type { ApiToken, DisplaySiteData } from "~/types"
+
+import { KeyDisplay } from "./KeyDisplay"
+import { TokenDetails } from "./TokenDetails"
+import { TokenHeader } from "./TokenHeader"
+
+interface TokenListItemProps {
+  token: ApiToken & { accountName: string }
+  visibleKeys: Set<number>
+  toggleKeyVisibility: (id: number) => void
+  copyKey: (key: string, name: string) => void
+  handleEditToken: (token: ApiToken & { accountName: string }) => void
+  handleDeleteToken: (token: ApiToken & { accountName: string }) => void
+  account: DisplaySiteData | undefined
+}
+
+export function TokenListItem({
+  token,
+  visibleKeys,
+  toggleKeyVisibility,
+  copyKey,
+  handleEditToken,
+  handleDeleteToken,
+  account
+}: TokenListItemProps) {
+  return (
+    <div className="flex flex-col space-y-2 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+      <TokenHeader
+        token={token}
+        copyKey={copyKey}
+        handleEditToken={handleEditToken}
+        handleDeleteToken={handleDeleteToken}
+        account={account}
+      />
+      <div className="flex-1">
+        <div className="space-y-2 text-sm text-gray-600">
+          <KeyDisplay
+            tokenKey={token.key}
+            tokenId={token.id}
+            visibleKeys={visibleKeys}
+            toggleKeyVisibility={toggleKeyVisibility}
+          />
+          <TokenDetails token={token} />
+          {token.group && (
+            <div>
+              <span className="text-gray-500">分组:</span>
+              <span className="ml-2 font-medium">{token.group}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
