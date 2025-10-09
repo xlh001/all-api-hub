@@ -1,4 +1,7 @@
-import { fetchAvailableModels } from "~/services/apiService"
+import {
+  fetchAvailableModels,
+  fetchUpstreamModelsNameList
+} from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common"
 import {
   apiRequest,
@@ -6,6 +9,7 @@ import {
   createTokenAuthRequest
 } from "~/services/apiService/common/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
+import { isNotEmptyArray } from "~/utils"
 import { joinUrl } from "~/utils/url"
 
 import { userPreferences } from "./userPreferences"
@@ -136,7 +140,11 @@ export async function importToNewApi(
       }
     }
 
-    const availableModels = await fetchAvailableModels(account)
+    const availableModels =
+      (await fetchUpstreamModelsNameList(
+        { baseUrl: account.baseUrl, token: token.key },
+        account
+      )) ?? (await fetchAvailableModels(account))
 
     const newChannelName = `${account.name} - ${token.name}`
     // 3. 如果没有匹配项，则创建新渠道
@@ -147,7 +155,9 @@ export async function importToNewApi(
         type: 1, // 默认为 OpenAI 类型
         key: token.key,
         base_url: account.baseUrl,
-        models: availableModels ? availableModels.join(",") : "",
+        models: isNotEmptyArray(availableModels)
+          ? availableModels.join(",")
+          : "",
         groups: token.group ? [token.group] : ["default"],
         priority: 0,
         weight: 0
