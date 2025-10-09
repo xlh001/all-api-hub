@@ -1,4 +1,8 @@
-import { ArrowPathIcon } from "@heroicons/react/24/outline"
+import {
+  ArrowPathIcon,
+  EyeIcon,
+  EyeSlashIcon
+} from "@heroicons/react/24/outline"
 import { useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 
@@ -22,6 +26,8 @@ export default function WebDAVSettings() {
   const [testing, setTesting] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [downloading, setDownloading] = useState(false)
+
+  const [showWebdavPassword, setShowWebdavPassword] = useState(false)
 
   const webdavConfigFilled = useMemo(
     () => Boolean(webdavUrl && webdavUsername && webdavPassword),
@@ -83,12 +89,24 @@ export default function WebDAVSettings() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               密码
             </label>
-            <input
-              type="password"
-              value={webdavPassword}
-              onChange={(e) => setWebdavPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
+            <div className="relative">
+              <input
+                type={showWebdavPassword ? "text" : "password"}
+                value={webdavPassword}
+                onChange={(e) => setWebdavPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => setShowWebdavPassword(!showWebdavPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+                {showWebdavPassword ? (
+                  <EyeSlashIcon className="h-4 w-4" />
+                ) : (
+                  <EyeIcon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
