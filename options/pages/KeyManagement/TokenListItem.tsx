@@ -32,7 +32,7 @@ export function TokenListItem({
   account
 }: TokenListItemProps) {
   return (
-    <div className="flex flex-col border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+    <div className="flex flex-col space-y-2 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3 mb-2">
           <h3 className="text-lg font-medium text-gray-900 truncate">
@@ -77,7 +77,7 @@ export function TokenListItem({
           </button>
         </div>
       </div>
-      <div className="flex-1 min-w-0 m-2">
+      <div className="flex-1">
         <div className="space-y-2 text-sm text-gray-600">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -101,26 +101,26 @@ export function TokenListItem({
             <div>
               <span className="text-gray-500">剩余额度:</span>
               <span className="ml-2 font-medium">
-                  {formatQuota(token.remain_quota, token.unlimited_quota)}
-                </span>
+                {formatQuota(token.remain_quota, token.unlimited_quota)}
+              </span>
             </div>
             <div>
               <span className="text-gray-500">已用额度:</span>
               <span className="ml-2 font-medium">
-                  {formatQuota(token.used_quota, false)}
-                </span>
+                {formatQuota(token.used_quota, false)}
+              </span>
             </div>
             <div>
               <span className="text-gray-500">过期时间:</span>
               <span className="ml-2 font-medium">
-                  {formatTime(token.expired_time)}
-                </span>
+                {formatTime(token.expired_time)}
+              </span>
             </div>
             <div>
               <span className="text-gray-500">创建时间:</span>
               <span className="ml-2 font-medium">
-                  {formatTime(token.created_time)}
-                </span>
+                {formatTime(token.created_time)}
+              </span>
             </div>
           </div>
 
