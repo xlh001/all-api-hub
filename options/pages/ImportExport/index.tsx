@@ -1,10 +1,10 @@
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 
-import WebDAVSettings from "~/components/WebDAVSettings"
 import ExportSection from "~/options/pages/ImportExport/ExportSection"
 import { useImportExport } from "~/options/pages/ImportExport/hooks/useImportExport"
 import ImportSection from "~/options/pages/ImportExport/ImportSection"
 import PageHeader from "~/options/pages/ImportExport/PageHeader"
+import WebDAVSettings from "~/options/pages/ImportExport/WebDAVSettings"
 
 export default function ImportExport() {
   const {
