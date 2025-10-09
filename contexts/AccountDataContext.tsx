@@ -61,7 +61,8 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
     currencyType,
     sortField: initialSortField,
     sortOrder: initialSortOrder,
-    updateSortConfig
+    updateSortConfig,
+    preferences
   } = useUserPreferencesContext()
   const [accounts, setAccounts] = useState<SiteAccount[]>([])
   const [displayData, setDisplayData] = useState<DisplaySiteData[]>([])
@@ -84,9 +85,6 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
     null
   )
   const [isDetecting, setIsDetecting] = useState(true)
-
-  const { preferences, isLoading: isPreferencesLoading } =
-    useUserPreferencesContext()
 
   const checkCurrentTab = useCallback(async () => {
     setIsDetecting(true)
@@ -173,11 +171,6 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
         return
       }
 
-      // 等待偏好设置加载完成
-      if (isPreferencesLoading) {
-        return
-      }
-
       // 检查是否启用了打开插件时自动刷新
       if (preferences?.refreshOnOpen) {
         hasRefreshedOnOpen.current = true // 标记已执行
@@ -210,7 +203,7 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
     }
 
     handleRefreshOnOpen()
-  }, [handleRefresh, isPreferencesLoading, preferences?.refreshOnOpen])
+  }, [handleRefresh, preferences?.refreshOnOpen])
 
   useEffect(() => {
     loadAccountData()
