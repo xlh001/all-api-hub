@@ -40,25 +40,54 @@ export const createRequestHeaders = (
 }
 
 /**
+ * 创建基本请求配置
+ * @param headers 请求头
+ * @param credentials 请求凭证信息
+ * @param options 可选，请求配置
+ * @returns RequestInit - 基本请求配置
+ */
+const createBaseRequest = (
+  headers: HeadersInit,
+  credentials: RequestCredentials,
+  options: RequestInit = {}
+): RequestInit => {
+  const method = (options.method ?? "GET").toUpperCase()
+
+  const defaultHeaders: HeadersInit = {
+    ...headers,
+    // 非 GET 请求自动加 Content-Type
+    ...(method !== "GET" ? { "Content-Type": "application/json" } : {})
+  }
+
+  return {
+    method,
+    headers: {
+      ...defaultHeaders,
+      ...(options.headers || {}) // 用户自定义 headers 可覆盖默认值
+    },
+    credentials,
+    ...options
+  }
+}
+
+/**
  * 创建带 cookie 认证的请求
  */
-export const createCookieAuthRequest = (userId?: number): RequestInit => ({
-  method: "GET",
-  headers: createRequestHeaders(userId),
-  credentials: "include"
-})
+export const createCookieAuthRequest = (
+  userId?: number,
+  options: RequestInit = {}
+): RequestInit =>
+  createBaseRequest(createRequestHeaders(userId), "include", options)
 
 /**
  * 创建带 Bearer token 认证的请求
  */
 export const createTokenAuthRequest = (
   userId: number,
-  accessToken: string
-): RequestInit => ({
-  method: "GET",
-  headers: createRequestHeaders(userId, accessToken),
-  credentials: "omit" // 明确不携带 cookies
-})
+  accessToken: string,
+  options: RequestInit = {}
+): RequestInit =>
+  createBaseRequest(createRequestHeaders(userId, accessToken), "omit", options)
 
 /**
  * 计算今日时间戳范围
