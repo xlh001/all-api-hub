@@ -440,12 +440,7 @@ export const fetchAvailableModels = async ({
   const options = createTokenAuthRequest(userId, accessToken)
 
   try {
-    const response = await apiRequestData<string[]>(
-      url,
-      options,
-      "/api/user/models"
-    )
-    return response
+    return await apiRequestData<string[]>(url, options, "/api/user/models")
   } catch (error) {
     console.error("获取模型列表失败:", error)
     throw error
