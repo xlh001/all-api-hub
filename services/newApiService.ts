@@ -1,4 +1,5 @@
-import { ApiError, fetchAvailableModels } from "~/services/apiService/common"
+import { fetchAvailableModels } from "~/services/apiService"
+import { ApiError } from "~/services/apiService/common"
 import {
   apiRequest,
   apiRequestData,
@@ -135,11 +136,7 @@ export async function importToNewApi(
       }
     }
 
-    const availableModels = await fetchAvailableModels({
-      baseUrl: account.baseUrl,
-      userId: account.userId,
-      token: account.token
-    })
+    const availableModels = await fetchAvailableModels(account)
 
     const newChannelName = `${account.name} - ${token.name}`
     // 3. 如果没有匹配项，则创建新渠道

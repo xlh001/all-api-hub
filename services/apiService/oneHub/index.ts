@@ -123,6 +123,10 @@ export const fetchUserGroups = async ({
   }
 }
 
-export function fetchAvailableModels() {
-  return []
+/**
+ * 获取可用模型列表
+ */
+export const fetchAvailableModels = async (params: BaseFetchParams) => {
+  const availableModel = await fetchAvailableModel(params)
+  return Object.keys(availableModel)
 }
