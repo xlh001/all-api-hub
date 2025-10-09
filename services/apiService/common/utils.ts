@@ -74,7 +74,7 @@ const createBaseRequest = (
  * 创建带 cookie 认证的请求
  */
 export const createCookieAuthRequest = (
-  userId?: number | string,
+  userId: number | string = null,
   options: RequestInit = {}
 ): RequestInit =>
   createBaseRequest(createRequestHeaders(userId), "include", options)
@@ -83,7 +83,7 @@ export const createCookieAuthRequest = (
  * 创建带 Bearer token 认证的请求
  */
 export const createTokenAuthRequest = (
-  userId: number | string,
+  userId: number | string = null,
   accessToken: string,
   options: RequestInit = {}
 ): RequestInit =>
@@ -137,7 +137,7 @@ export const apiRequestData = async <T>(
 ): Promise<T> => {
   const res = await apiRequest<T>(url, options, endpoint)
 
-  if (!res.success || res.data === undefined) {
+  if (res.success === false || res.data === undefined) {
     if (res.message) {
       throw new ApiError(res.message, undefined, endpoint)
     }
