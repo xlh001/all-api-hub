@@ -5,6 +5,7 @@ import { useUserPreferences } from "~/hooks/useUserPreferences"
 import DangerousZone from "~/options/pages/BasicSettings/DangerousZone"
 import DisplaySettings from "~/options/pages/BasicSettings/DisplaySettings"
 import LoadingSkeleton from "~/options/pages/BasicSettings/LoadingSkeleton"
+import NewApiSettings from "~/options/pages/BasicSettings/NewApiSettings"
 import RefreshSettings from "~/options/pages/BasicSettings/RefreshSettings"
 import SettingsHeader from "~/options/pages/BasicSettings/SettingsHeader"
 import type { BalanceType, CurrencyType } from "~/types"
@@ -21,7 +22,10 @@ export default function BasicSettings() {
     updateRefreshInterval,
     updateMinRefreshInterval,
     updateRefreshOnOpen,
-    resetToDefaults
+    resetToDefaults,
+    updateNewApiBaseUrl,
+    updateNewApiAdminToken,
+    updateNewApiUserId
   } = useUserPreferences()
 
   // 从偏好设置中获取值，或使用默认值
@@ -141,6 +145,33 @@ export default function BasicSettings() {
     }
   }
 
+  const handleNewApiBaseUrlChange = async (value: string) => {
+    const success = await updateNewApiBaseUrl(value)
+    if (success) {
+      toast.success("New API Base URL 已更新")
+    } else {
+      toast.error("设置保存失败")
+    }
+  }
+
+  const handleNewApiAdminTokenChange = async (value: string) => {
+    const success = await updateNewApiAdminToken(value)
+    if (success) {
+      toast.success("New API Admin Token 已更新")
+    } else {
+      toast.error("设置保存失败")
+    }
+  }
+
+  const handleNewApiUserIdChange = async (value: string) => {
+    const success = await updateNewApiUserId(value)
+    if (success) {
+      toast.success("New API User ID 已更新")
+    } else {
+      toast.error("设置保存失败")
+    }
+  }
+
   const handleResetToDefaults = async () => {
     if (window.confirm("确定要重置所有设置到默认值吗？此操作不可撤销。")) {
       const success = await resetToDefaults()
@@ -179,6 +210,15 @@ export default function BasicSettings() {
           handleRefreshIntervalBlur={handleRefreshIntervalBlur}
           handleMinRefreshIntervalChange={handleMinRefreshIntervalChange}
           handleMinRefreshIntervalBlur={handleMinRefreshIntervalBlur}
+        />
+
+        <NewApiSettings
+          newApiBaseUrl={preferences?.newApiBaseUrl ?? ""}
+          newApiAdminToken={preferences?.newApiAdminToken ?? ""}
+          newApiUserId={preferences?.newApiUserId ?? ""}
+          onBaseUrlChange={handleNewApiBaseUrlChange}
+          onAdminTokenChange={handleNewApiAdminTokenChange}
+          onUserIdChange={handleNewApiUserIdChange}
         />
 
         <DangerousZone handleResetToDefaults={handleResetToDefaults} />

@@ -222,6 +222,54 @@ export function useUserPreferences() {
     [preferences]
   )
 
+  const updateNewApiBaseUrl = useCallback(
+    async (newApiBaseUrl: string) => {
+      try {
+        const success = await userPreferences.updateNewApiBaseUrl(newApiBaseUrl)
+        if (success && preferences) {
+          setPreferences((prev) => (prev ? { ...prev, newApiBaseUrl } : null))
+        }
+        return success
+      } catch (error) {
+        return false
+      }
+    },
+    [preferences]
+  )
+
+  const updateNewApiAdminToken = useCallback(
+    async (newApiAdminToken: string) => {
+      try {
+        const success =
+          await userPreferences.updateNewApiAdminToken(newApiAdminToken)
+        if (success && preferences) {
+          setPreferences((prev) =>
+            prev ? { ...prev, newApiAdminToken } : null
+          )
+        }
+        return success
+      } catch (error) {
+        return false
+      }
+    },
+    [preferences]
+  )
+
+  const updateNewApiUserId = useCallback(
+    async (newApiUserId: string) => {
+      try {
+        const success = await userPreferences.updateNewApiUserId(newApiUserId)
+        if (success && preferences) {
+          setPreferences((prev) => (prev ? { ...prev, newApiUserId } : null))
+        }
+        return success
+      } catch (error) {
+        return false
+      }
+    },
+    [preferences]
+  )
+
   // 重置为默认设置
   const resetToDefaults = useCallback(async () => {
     try {
@@ -263,6 +311,9 @@ export function useUserPreferences() {
     updateShowHealthStatus,
     updatePreferences,
     resetToDefaults,
-    loadPreferences
+    loadPreferences,
+    updateNewApiBaseUrl,
+    updateNewApiAdminToken,
+    updateNewApiUserId
   }
 }

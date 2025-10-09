@@ -27,6 +27,11 @@ export interface UserPreferences {
 
   // 其他配置可在此扩展
   lastUpdated: number // 最后更新时间
+
+  // New API 相关配置
+  newApiBaseUrl?: string
+  newApiAdminToken?: string
+  newApiUserId?: string
 }
 
 // 存储键名常量
@@ -48,7 +53,10 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   webdavUrl: "",
   webdavUsername: "",
   webdavPassword: "",
-  lastUpdated: Date.now()
+  lastUpdated: Date.now(),
+  newApiBaseUrl: "",
+  newApiAdminToken: "",
+  newApiUserId: ""
 }
 
 class UserPreferencesService {
@@ -178,6 +186,29 @@ class UserPreferencesService {
     webdavPassword?: string
   }): Promise<boolean> {
     return this.savePreferences(settings)
+  }
+
+  /**
+   * 更新 New API 设置
+   */
+  async updateNewApiSettings(settings: {
+    newApiBaseUrl?: string
+    newApiAdminToken?: string
+    newApiUserId?: string
+  }): Promise<boolean> {
+    return this.savePreferences(settings)
+  }
+
+  async updateNewApiBaseUrl(newApiBaseUrl: string): Promise<boolean> {
+    return this.savePreferences({ newApiBaseUrl })
+  }
+
+  async updateNewApiAdminToken(newApiAdminToken: string): Promise<boolean> {
+    return this.savePreferences({ newApiAdminToken })
+  }
+
+  async updateNewApiUserId(newApiUserId: string): Promise<boolean> {
+    return this.savePreferences({ newApiUserId })
   }
 
   /**
