@@ -4,8 +4,8 @@ import {
   InformationCircleIcon
 } from "@heroicons/react/24/outline"
 
-import FeatureList from "~/components/Common/FeatureList"
-import LinkCard from "~/components/Common/LinkCard"
+import FeatureList from "~/components/FeatureList"
+import LinkCard from "~/components/LinkCard"
 import { FEATURES, FUTURE_FEATURES } from "~/constants/about"
 import CreditsCard from "~/options/pages/About/CreditsCard"
 import PluginIntroCard from "~/options/pages/About/PluginIntroCard"
