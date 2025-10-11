@@ -6,7 +6,6 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 
-import { useAccountDataContext, useDialogStateContext } from "~/contexts"
 import type { DisplaySiteData } from "~/types"
 
 import AccountForm from "./AccountForm"
@@ -16,6 +15,8 @@ import DialogHeader from "./DialogHeader"
 import InfoPanel from "./InfoPanel"
 import UrlInput from "./UrlInput"
 import { useAccountDialog } from "./useAccountDialog"
+import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
+import { useDialogStateContext } from "~/options/pages/AccountManagement/hooks/DialogStateContext"
 
 interface AccountDialogProps {
   isOpen: boolean

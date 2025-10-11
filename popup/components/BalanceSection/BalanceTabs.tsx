@@ -7,13 +7,14 @@ import {
   DATA_TYPE_CONSUMPTION,
   UI_CONSTANTS
 } from "~/constants/ui"
-import { useAccountDataContext, useUserPreferencesContext } from "~/contexts"
 import {
   calculateTotalBalance,
   calculateTotalConsumption,
   getCurrencySymbol,
   getOppositeCurrency
 } from "~/utils/formatters"
+import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 const StyledTab: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Tab

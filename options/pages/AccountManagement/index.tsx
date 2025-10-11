@@ -1,8 +1,8 @@
 import { UserIcon } from "@heroicons/react/24/outline"
 import { Toaster } from "react-hot-toast"
 
-import { AccountManagementProvider } from "~/contexts"
 import AccountList from "~/options/pages/AccountManagement/components/AccountList"
+import { AccountManagementProvider } from "~/options/pages/AccountManagement/hooks/AccountManagementProvider"
 
 function AccountManagement() {
   return (

@@ -7,10 +7,10 @@ import {
 } from "@heroicons/react/24/outline"
 
 import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
-import { useAccountDataContext } from "~/contexts"
 import type { DisplaySiteData } from "~/types"
 
 import Tooltip from "../../../../../components/Tooltip"
+import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
 
 interface SiteInfoProps {
   site: DisplaySiteData

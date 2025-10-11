@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import { useAccountDataContext } from "~/contexts"
 import { formatFullTime, formatRelativeTime } from "~/utils/formatters"
 
 import Tooltip from "../../../components/Tooltip"
+import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
 
 export const UpdateTimeAndWarning = () => {
   const { lastUpdateTime, detectedAccount } = useAccountDataContext()

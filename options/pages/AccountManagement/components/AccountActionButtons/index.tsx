@@ -1,12 +1,13 @@
 import React from "react"
 
-import { useAccountActionsContext, useDialogStateContext } from "~/contexts"
 import type { DisplaySiteData } from "~/types"
 import { openKeysPage, openModelsPage, openUsagePage } from "~/utils/navigation"
 
 import { CopyDropdown } from "./CopyDropdown"
 import { MoreActionsDropdown } from "./MoreActionsDropdown"
 import { RefreshButton } from "./RefreshButton"
+import { useAccountActionsContext } from "~/options/pages/AccountManagement/hooks/AccountActionsContext"
+import { useDialogStateContext } from "~/options/pages/AccountManagement/hooks/DialogStateContext"
 
 export interface ActionButtonsProps {
   site: DisplaySiteData
