@@ -12,7 +12,7 @@ import type { ApiToken, DisplaySiteData } from "~/types"
 import { DialogHeader } from "./DialogHeader"
 import { FormActions } from "./FormActions"
 import { LoadingIndicator } from "./LoadingIndicator"
-import { Index } from "./TokenForm"
+import { TokenForm } from "./TokenForm"
 import { WarningNote } from "./WarningNote"
 
 interface AddTokenDialogProps {
@@ -128,7 +128,7 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
                   <LoadingIndicator />
                 ) : (
                   <>
-                    <Index
+                    <TokenForm
                       formData={formData}
                       setFormData={setFormData}
                       errors={errors}

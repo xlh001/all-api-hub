@@ -15,7 +15,7 @@ interface TokenFormProps {
   availableModels: string[]
 }
 
-export function Index({
+export function TokenForm({
   formData,
   setFormData,
   errors,
