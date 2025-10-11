@@ -1,4 +1,4 @@
-import type { FormData } from "~/components/AddTokenDialog/hooks/useTokenForm"
+import type { FormData } from "~/options/pages/KeyManagement/components/AddTokenDialog/hooks/useTokenForm"
 import type { UserGroupInfo } from "~/services/apiService/common/type"
 
 interface GroupSelectionProps {

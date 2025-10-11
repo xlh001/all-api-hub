@@ -1,4 +1,4 @@
-import AddTokenDialog from "~/components/AddTokenDialog"
+import AddTokenDialog from "~/options/pages/KeyManagement/components/AddTokenDialog"
 
 import { Controls } from "./Controls"
 import { Footer } from "./Footer"

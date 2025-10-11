@@ -1,6 +1,6 @@
 import type { ApiToken } from "~/types"
 
-import { formatQuota, formatTime } from "../utils"
+import { formatQuota, formatTime } from "../../utils"
 
 interface TokenDetailsProps {
   token: ApiToken

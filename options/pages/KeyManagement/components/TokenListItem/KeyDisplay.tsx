@@ -1,6 +1,6 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 
-import { formatKey } from "../utils"
+import { formatKey } from "../../utils"
 
 interface KeyDisplayProps {
   tokenKey: string
