@@ -10,8 +10,8 @@ import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountDataContext } from "~/contexts"
 import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
 
-import iconImage from "../assets/icon.png"
-import Tooltip from "./Tooltip"
+import iconImage from "../../assets/icon.png"
+import Tooltip from "../../components/Tooltip"
 
 export default function HeaderSection() {
   const { isRefreshing, handleRefresh } = useAccountDataContext()

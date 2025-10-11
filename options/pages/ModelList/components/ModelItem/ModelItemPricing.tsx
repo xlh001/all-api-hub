@@ -1,7 +1,7 @@
 import React from "react"
 
-import { ModelItemPerCallPricingView } from "~/components/ModelItem/ModelItemPerCallPricingView"
-import { PriceView } from "~/components/ModelItem/ModelItemPicingView"
+import { ModelItemPerCallPricingView } from "~/options/pages/ModelList/components/ModelItem/ModelItemPerCallPricingView"
+import { PriceView } from "~/options/pages/ModelList/components/ModelItem/ModelItemPicingView"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import {
   formatPriceCompact,

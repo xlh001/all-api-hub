@@ -1,7 +1,7 @@
 import { CpuChipIcon } from "@heroicons/react/24/outline"
 import { Virtuoso } from "react-virtuoso"
 
-import ModelItem from "~/components/ModelItem"
+import ModelItem from "~/options/pages/ModelList/components/ModelItem"
 import type { DisplaySiteData } from "~/types"
 
 interface ModelDisplayProps {

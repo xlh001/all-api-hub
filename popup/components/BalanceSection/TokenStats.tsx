@@ -4,7 +4,7 @@ import React from "react"
 import { useAccountDataContext } from "~/contexts"
 import { formatTokenCount } from "~/utils/formatters"
 
-import Tooltip from "../Tooltip"
+import Tooltip from "../../../components/Tooltip"
 
 export const TokenStats = React.memo(() => {
   const { stats } = useAccountDataContext()

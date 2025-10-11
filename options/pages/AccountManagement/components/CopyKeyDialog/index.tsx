@@ -6,7 +6,7 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 
-import { useCopyKeyDialog } from "~/components/CopyKeyDialog/useCopyKeyDialog"
+import { useCopyKeyDialog } from "~/options/pages/AccountManagement/components/CopyKeyDialog/useCopyKeyDialog"
 import type { DisplaySiteData } from "~/types"
 import {
   formatQuota,

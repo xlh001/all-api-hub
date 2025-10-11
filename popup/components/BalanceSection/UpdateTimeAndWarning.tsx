@@ -4,7 +4,7 @@ import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountDataContext } from "~/contexts"
 import { formatFullTime, formatRelativeTime } from "~/utils/formatters"
 
-import Tooltip from "../Tooltip"
+import Tooltip from "../../../components/Tooltip"
 
 export const UpdateTimeAndWarning = () => {
   const { lastUpdateTime, detectedAccount } = useAccountDataContext()

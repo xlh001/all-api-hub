@@ -3,7 +3,7 @@ import React from "react"
 
 import type { DisplaySiteData } from "~/types"
 
-import Tooltip from "../Tooltip"
+import Tooltip from "../../../../../components/Tooltip"
 
 interface RefreshButtonProps {
   site: DisplaySiteData

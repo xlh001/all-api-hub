@@ -2,15 +2,15 @@ import "./style.css"
 
 import { Toaster } from "react-hot-toast"
 
-import AccountList from "~/components/AccountList"
-import ActionButtons from "~/components/ActionButtons"
-import BalanceSection from "~/components/BalanceSection"
-import HeaderSection from "~/components/HeaderSection"
 import { UI_CONSTANTS } from "~/constants/ui"
 import {
   AccountManagementProvider,
   useUserPreferencesContext
 } from "~/contexts"
+import AccountList from "~/options/pages/AccountManagement/components/AccountList"
+import ActionButtons from "~/popup/components/ActionButtons"
+import BalanceSection from "~/popup/components/BalanceSection"
+import HeaderSection from "~/popup/components/HeaderSection"
 
 function PopupContent({ inSidePanel = false }) {
   const { isLoading } = useUserPreferencesContext()
