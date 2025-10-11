@@ -10,11 +10,7 @@ import React, {
 } from "react"
 import toast from "react-hot-toast" // 1. 定义 Context 的值类型
 
-import {
-  DATA_TYPE_BALANCE,
-  DATA_TYPE_CONSUMPTION,
-  UI_CONSTANTS
-} from "~/constants/ui"
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import { accountStorage } from "~/services/accountStorage"
 import type {
   AccountStats,

@@ -1,5 +1,3 @@
-import type { SVGProps } from "react"
-
 export interface LinkCardProps {
   Icon: any
   title: string

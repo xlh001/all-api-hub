@@ -1,7 +1,5 @@
 import "./style.css"
 
-import { Toaster } from "react-hot-toast"
-
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import AccountList from "~/features/AccountManagement/components/AccountList"

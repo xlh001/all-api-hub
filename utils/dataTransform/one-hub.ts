@@ -4,7 +4,6 @@ import type {
 } from "~/services/apiService/common/type"
 import type {
   OneHubModelPricing,
-  OneHubModelPricingItem,
   OneHubUserGroupMap,
   OneHubUserGroupsResponse
 } from "~/services/apiService/oneHub/type"

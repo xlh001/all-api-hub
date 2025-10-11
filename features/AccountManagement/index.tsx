@@ -1,5 +1,3 @@
-import { Toaster } from "react-hot-toast"
-
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
 

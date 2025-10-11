@@ -2,12 +2,8 @@ import {
   ExclamationTriangleIcon,
   QuestionMarkCircleIcon
 } from "@heroicons/react/24/outline"
-import { Fragment } from "react"
 
-import type {
-  AutoDetectError,
-  AutoDetectErrorProps
-} from "~/utils/autoDetectUtils"
+import type { AutoDetectErrorProps } from "~/utils/autoDetectUtils"
 import { openLoginTab } from "~/utils/autoDetectUtils"
 
 export default function AutoDetectErrorAlert({
