@@ -1,13 +1,13 @@
+import DangerousZone from "~/options/pages/BasicSettings/components/DangerousZone"
+import DisplaySettings from "~/options/pages/BasicSettings/components/DisplaySettings"
+import LoadingSkeleton from "~/options/pages/BasicSettings/components/LoadingSkeleton"
+import NewApiSettings from "~/options/pages/BasicSettings/components/NewApiSettings"
+import RefreshSettings from "~/options/pages/BasicSettings/components/RefreshSettings"
+import SettingsHeader from "~/options/pages/BasicSettings/components/SettingsHeader"
 import {
   BasicSettingsProvider,
   useBasicSettings
 } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
-import DangerousZone from "~/options/pages/BasicSettings/DangerousZone"
-import DisplaySettings from "~/options/pages/BasicSettings/DisplaySettings"
-import LoadingSkeleton from "~/options/pages/BasicSettings/LoadingSkeleton"
-import NewApiSettings from "~/options/pages/BasicSettings/NewApiSettings"
-import RefreshSettings from "~/options/pages/BasicSettings/RefreshSettings"
-import SettingsHeader from "~/options/pages/BasicSettings/SettingsHeader"
 
 function BasicSettingsContent() {
   const { isLoading } = useBasicSettings()
