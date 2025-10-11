@@ -127,7 +127,7 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
                 {isLoading ? (
                   <LoadingIndicator />
                 ) : (
-                  <>
+                  <div className="space-y-4">
                     <TokenForm
                       formData={formData}
                       setFormData={setFormData}
@@ -145,7 +145,7 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
                       onSubmit={handleSubmit}
                       canSubmit={!!currentAccount}
                     />
-                  </>
+                  </div>
                 )}
               </Dialog.Panel>
             </Transition.Child>
