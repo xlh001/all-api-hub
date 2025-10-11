@@ -1,7 +1,7 @@
 export {
   AccountDataProvider,
   useAccountDataContext
-} from "./AccountDataContext"
+} from "../options/pages/AccountManagement/hooks/AccountDataContext"
 export {
   UserPreferencesProvider,
   useUserPreferencesContext
@@ -9,9 +9,9 @@ export {
 export {
   DialogStateProvider,
   useDialogStateContext
-} from "./DialogStateContext"
+} from "../options/pages/AccountManagement/hooks/DialogStateContext"
 export {
   AccountActionsProvider,
   useAccountActionsContext
-} from "./AccountActionsContext"
-export * from "./AccountManagementProvider"
+} from "../options/pages/AccountManagement/hooks/AccountActionsContext"
+export * from "../options/pages/AccountManagement/hooks/AccountManagementProvider"
