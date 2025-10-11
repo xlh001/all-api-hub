@@ -4,7 +4,7 @@ import React from "react"
 
 import type { DisplaySiteData } from "~/types"
 
-import Tooltip from "../../../../../components/Tooltip"
+import Tooltip from "../../../../components/Tooltip"
 import { AccountActionMenuItem } from "./AccountActionMenuItem"
 
 interface CopyDropdownProps {

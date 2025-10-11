@@ -1,8 +1,8 @@
 import React from "react"
 
-import AccountActionButtons from "~/options/pages/AccountManagement/components/AccountActionButtons"
-import { useAccountListItem } from "~/options/pages/AccountManagement/components/AccountList/useAccountListItem"
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
+import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
+import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/useAccountListItem"
+import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
 
 import BalanceDisplay from "./BalanceDisplay"

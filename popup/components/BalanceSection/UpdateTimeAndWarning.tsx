@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
+import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { formatFullTime, formatRelativeTime } from "~/utils/formatters"
 
 import Tooltip from "../../../components/Tooltip"

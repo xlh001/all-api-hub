@@ -6,9 +6,9 @@ import {
 import { useState } from "react"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
-import { useAccountActionsContext } from "~/options/pages/AccountManagement/hooks/AccountActionsContext"
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
-import { useDialogStateContext } from "~/options/pages/AccountManagement/hooks/DialogStateContext"
+import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
+import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
+import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import type { DisplaySiteData, SortField } from "~/types"
 
 import CopyKeyDialog from "../CopyKeyDialog"

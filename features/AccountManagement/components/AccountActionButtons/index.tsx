@@ -1,7 +1,7 @@
 import React from "react"
 
-import { useAccountActionsContext } from "~/options/pages/AccountManagement/hooks/AccountActionsContext"
-import { useDialogStateContext } from "~/options/pages/AccountManagement/hooks/DialogStateContext"
+import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
+import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import type { DisplaySiteData } from "~/types"
 import { openKeysPage, openModelsPage, openUsagePage } from "~/utils/navigation"
 

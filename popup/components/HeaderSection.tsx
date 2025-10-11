@@ -7,7 +7,7 @@ import { useCallback } from "react"
 import toast from "react-hot-toast"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
+import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
 
 import iconImage from "../../assets/icon.png"

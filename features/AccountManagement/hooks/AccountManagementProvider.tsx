@@ -1,6 +1,6 @@
 import React, { type ReactNode } from "react"
 
-import { UserPreferencesProvider } from "../../../../contexts/UserPreferencesContext"
+import { UserPreferencesProvider } from "../../../contexts/UserPreferencesContext"
 import { AccountActionsProvider } from "./AccountActionsContext"
 import { AccountDataProvider } from "./AccountDataContext"
 import { DialogStateProvider } from "./DialogStateContext"

@@ -10,8 +10,8 @@ import React, {
 } from "react"
 import ReactDOM from "react-dom/client"
 
-import AccountDialog from "~/options/pages/AccountManagement/components/AccountDialog"
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
+import AccountDialog from "~/features/AccountManagement/components/AccountDialog"
+import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
 
 type DialogMode = "add" | "edit"

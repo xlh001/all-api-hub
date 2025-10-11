@@ -6,8 +6,8 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
-import { useDialogStateContext } from "~/options/pages/AccountManagement/hooks/DialogStateContext"
+import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
+import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import type { DisplaySiteData } from "~/types"
 
 import AccountForm from "./AccountForm"

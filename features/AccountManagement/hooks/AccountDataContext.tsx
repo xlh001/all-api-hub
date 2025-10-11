@@ -26,7 +26,7 @@ import type {
   SortOrder
 } from "~/types"
 
-import { useUserPreferencesContext } from "../../../../contexts/UserPreferencesContext" // 1. 定义 Context 的值类型
+import { useUserPreferencesContext } from "../../../contexts/UserPreferencesContext" // 1. 定义 Context 的值类型
 
 // 1. 定义 Context 的值类型
 interface AccountDataContextType {
