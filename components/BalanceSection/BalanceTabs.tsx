@@ -15,6 +15,56 @@ import {
   getOppositeCurrency
 } from "~/utils/formatters"
 
+const StyledTab: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Tab
+    className={({ selected }) =>
+      `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+        selected
+          ? "bg-white text-gray-900 shadow-sm"
+          : "text-gray-500 hover:text-gray-700"
+      }`
+    }>
+    {children}
+  </Tab>
+)
+
+const BalanceDisplay: React.FC<{
+  value: number
+  startValue: number
+  isInitialLoad: boolean
+  currencyType: "USD" | "CNY"
+  onCurrencyToggle: () => void
+  isConsumption?: boolean
+}> = ({
+  value,
+  startValue,
+  isInitialLoad,
+  currencyType,
+  onCurrencyToggle,
+  isConsumption = false
+}) => (
+  <div className="flex items-center space-x-1">
+    <button
+      onClick={onCurrencyToggle}
+      className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
+      title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
+      {isConsumption && value > 0 ? "-" : ""}
+      {getCurrencySymbol(currencyType)}
+      <CountUp
+        start={startValue}
+        end={value}
+        duration={
+          isInitialLoad
+            ? UI_CONSTANTS.ANIMATION.INITIAL_DURATION
+            : UI_CONSTANTS.ANIMATION.UPDATE_DURATION
+        }
+        decimals={2}
+        preserveValue
+      />
+    </button>
+  </div>
+)
+
 export const BalanceTabs: React.FC = () => {
   const { accounts, displayData, stats, isInitialLoad, prevTotalConsumption } =
     useAccountDataContext()
@@ -47,73 +97,33 @@ export const BalanceTabs: React.FC = () => {
         onChange={handleTabChange}>
         <div className="flex justify-start mb-3">
           <TabList className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-            <Tab
-              className={({ selected }) =>
-                `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-                  selected
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`
-              }>
-              今日消耗
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-                  selected
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`
-              }>
-              总余额
-            </Tab>
+            <StyledTab>今日消耗</StyledTab>
+            <StyledTab>总余额</StyledTab>
           </TabList>
         </div>
 
         <TabPanels>
           <TabPanel>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={handleCurrencyToggle}
-                className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
-                title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
-                {totalConsumption[currencyType] > 0 ? "-" : ""}
-                {getCurrencySymbol(currencyType)}
-                <CountUp
-                  start={isInitialLoad ? 0 : prevTotalConsumption[currencyType]}
-                  end={totalConsumption[currencyType]}
-                  duration={
-                    isInitialLoad
-                      ? UI_CONSTANTS.ANIMATION.INITIAL_DURATION
-                      : UI_CONSTANTS.ANIMATION.UPDATE_DURATION
-                  }
-                  decimals={2}
-                  preserveValue
-                />
-              </button>
-            </div>
+            <BalanceDisplay
+              value={totalConsumption[currencyType]}
+              startValue={
+                isInitialLoad ? 0 : prevTotalConsumption[currencyType]
+              }
+              isInitialLoad={isInitialLoad}
+              currencyType={currencyType}
+              onCurrencyToggle={handleCurrencyToggle}
+              isConsumption
+            />
           </TabPanel>
 
           <TabPanel>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={handleCurrencyToggle}
-                className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
-                title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
-                {getCurrencySymbol(currencyType)}
-                <CountUp
-                  start={isInitialLoad ? 0 : 0}
-                  end={totalBalance[currencyType]}
-                  duration={
-                    isInitialLoad
-                      ? UI_CONSTANTS.ANIMATION.INITIAL_DURATION
-                      : UI_CONSTANTS.ANIMATION.UPDATE_DURATION
-                  }
-                  decimals={2}
-                  preserveValue
-                />
-              </button>
-            </div>
+            <BalanceDisplay
+              value={totalBalance[currencyType]}
+              startValue={0}
+              isInitialLoad={isInitialLoad}
+              currencyType={currencyType}
+              onCurrencyToggle={handleCurrencyToggle}
+            />
           </TabPanel>
         </TabPanels>
       </TabGroup>
