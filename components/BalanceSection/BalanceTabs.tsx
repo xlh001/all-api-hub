@@ -43,10 +43,10 @@ const BalanceDisplay: React.FC<{
   onCurrencyToggle,
   isConsumption = false
 }) => (
-  <div className="flex items-center space-x-1">
+  <div className="flex items-center space-x-1 break-all">
     <button
       onClick={onCurrencyToggle}
-      className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer"
+      className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left"
       title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
       {isConsumption && value > 0 ? "-" : ""}
       {getCurrencySymbol(currencyType)}
