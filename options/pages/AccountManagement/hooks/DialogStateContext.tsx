@@ -10,7 +10,7 @@ import React, {
 } from "react"
 import ReactDOM from "react-dom/client"
 
-import AccountDialog from "~/components/AccountDialog"
+import AccountDialog from "~/options/pages/AccountManagement/components/AccountDialog"
 import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
 
