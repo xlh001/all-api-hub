@@ -210,7 +210,30 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   useEffect(() => {
+    // 打开 popup 时立即检测一次
     checkCurrentTab()
+
+    // Tab 激活变化时检测
+    const onActivated = () => {
+      checkCurrentTab()
+    }
+    chrome.tabs.onActivated.addListener(onActivated)
+
+    // Tab URL 或状态更新时检测（只对当前 tab）
+    const onUpdated = (tabId, changeInfo, tab) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id === tabId) {
+          checkCurrentTab()
+        }
+      })
+    }
+    chrome.tabs.onUpdated.addListener(onUpdated)
+
+    // 清理监听器
+    return () => {
+      chrome.tabs.onActivated.removeListener(onActivated)
+      chrome.tabs.onUpdated.removeListener(onUpdated)
+    }
   }, [accounts, checkCurrentTab])
 
   // 监听后台自动刷新的更新通知
