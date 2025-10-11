@@ -1,4 +1,5 @@
 import React, { type ReactNode } from "react"
+import { Toaster } from "react-hot-toast"
 
 import { UserPreferencesProvider } from "../../../contexts/UserPreferencesContext"
 import { AccountActionsProvider } from "./AccountActionsContext"
@@ -15,6 +16,7 @@ export const AccountManagementProvider = ({
       <AccountDataProvider>
         <DialogStateProvider>
           <AccountActionsProvider>{children}</AccountActionsProvider>
+          <Toaster position="bottom-center" reverseOrder={true} />
         </DialogStateProvider>
       </AccountDataProvider>
     </UserPreferencesProvider>

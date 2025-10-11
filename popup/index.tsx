@@ -25,8 +25,6 @@ function PopupContent({ inSidePanel = false }) {
 
         <AccountList />
       </div>
-
-      <Toaster position="bottom-center" reverseOrder={true} />
     </div>
   )
 }

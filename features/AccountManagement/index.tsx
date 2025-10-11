@@ -8,7 +8,6 @@ function AccountManagement() {
     <AccountManagementProvider>
       <div className={`bg-white flex flex-col`}>
         <AccountList />
-        <Toaster position="bottom-center" reverseOrder={true} />
       </div>
     </AccountManagementProvider>
   )
