@@ -7,7 +7,7 @@ import React, {
 } from "react"
 import toast from "react-hot-toast"
 
-import { useUserPreferences } from "~/hooks/useUserPreferences"
+import { useUserPreferences } from "~/options/pages/BasicSettings/hooks/useUserPreferences"
 import type { UserPreferences } from "~/services/userPreferences"
 import type { BalanceType, CurrencyType } from "~/types"
 
