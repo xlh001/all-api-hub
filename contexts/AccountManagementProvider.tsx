@@ -5,7 +5,11 @@ import { AccountDataProvider } from "./AccountDataContext"
 import { DialogStateProvider } from "./DialogStateContext"
 import { UserPreferencesProvider } from "./UserPreferencesContext"
 
-export const PopupProvider = ({ children }: { children: ReactNode }) => {
+export const AccountManagementProvider = ({
+  children
+}: {
+  children: ReactNode
+}) => {
   return (
     <UserPreferencesProvider>
       <AccountDataProvider>

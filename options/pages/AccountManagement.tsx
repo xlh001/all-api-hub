@@ -2,7 +2,7 @@ import { UserIcon } from "@heroicons/react/24/outline"
 import { Toaster } from "react-hot-toast"
 
 import AccountList from "~/components/AccountList"
-import { PopupProvider } from "~/contexts"
+import { AccountManagementProvider } from "~/contexts"
 
 function AccountManagement() {
   return (
@@ -15,12 +15,12 @@ function AccountManagement() {
         </div>
         <p className="text-gray-500">查看和管理站点账户</p>
       </div>
-      <PopupProvider>
+      <AccountManagementProvider>
         <div className={`bg-white flex flex-col`}>
           <AccountList />
           <Toaster position="bottom-center" reverseOrder={true} />
         </div>
-      </PopupProvider>
+      </AccountManagementProvider>
     </div>
   )
 }

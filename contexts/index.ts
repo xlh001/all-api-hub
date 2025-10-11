@@ -14,4 +14,4 @@ export {
   AccountActionsProvider,
   useAccountActionsContext
 } from "./AccountActionsContext"
-export * from "./PopupProvider"
+export * from "./AccountManagementProvider"

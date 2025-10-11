@@ -7,7 +7,10 @@ import ActionButtons from "~/components/ActionButtons"
 import BalanceSection from "~/components/BalanceSection"
 import HeaderSection from "~/components/HeaderSection"
 import { UI_CONSTANTS } from "~/constants/ui"
-import { PopupProvider, useUserPreferencesContext } from "~/contexts"
+import {
+  AccountManagementProvider,
+  useUserPreferencesContext
+} from "~/contexts"
 
 function PopupContent({ inSidePanel = false }) {
   const { isLoading } = useUserPreferencesContext()
@@ -32,9 +35,9 @@ function PopupContent({ inSidePanel = false }) {
 
 function IndexPopup({ inSidePanel = false }) {
   return (
-    <PopupProvider>
+    <AccountManagementProvider>
       <PopupContent inSidePanel={inSidePanel} />
-    </PopupProvider>
+    </AccountManagementProvider>
   )
 }
 
