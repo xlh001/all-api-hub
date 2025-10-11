@@ -82,6 +82,8 @@ export const BasicSettingsProvider = ({
   }, [refreshInterval, minRefreshInterval])
 
   const handleCurrencyChange = async (currency: CurrencyType) => {
+    if (currency === currencyType) return
+
     const success = await updateCurrencyType(currency)
     if (success) {
       toast.success(
@@ -93,6 +95,8 @@ export const BasicSettingsProvider = ({
   }
 
   const handleDefaultTabChange = async (tab: BalanceType) => {
+    if (tab === activeTab) return
+
     const success = await updateActiveTab(tab)
     if (success) {
       toast.success(
@@ -104,6 +108,8 @@ export const BasicSettingsProvider = ({
   }
 
   const handleAutoRefreshChange = async (enabled: boolean) => {
+    if (enabled === autoRefresh) return
+
     const success = await updateAutoRefresh(enabled)
     if (success) {
       chrome.runtime.sendMessage({
@@ -128,6 +134,8 @@ export const BasicSettingsProvider = ({
       return
     }
 
+    if (interval === refreshInterval) return
+
     const success = await updateRefreshInterval(interval)
     if (success) {
       chrome.runtime.sendMessage({
@@ -142,6 +150,8 @@ export const BasicSettingsProvider = ({
   }
 
   const handleRefreshOnOpenChange = async (enabled: boolean) => {
+    if (enabled === refreshOnOpen) return
+
     const success = await updateRefreshOnOpen(enabled)
     if (success) {
       toast.success(`打开插件时自动刷新已${enabled ? "启用" : "关闭"}`)
@@ -162,6 +172,8 @@ export const BasicSettingsProvider = ({
       return
     }
 
+    if (interval === minRefreshInterval) return
+
     const success = await updateMinRefreshInterval(interval)
     if (success) {
       toast.success(`最小刷新间隔已设置为 ${interval} 秒`)
@@ -172,6 +184,8 @@ export const BasicSettingsProvider = ({
   }
 
   const handleNewApiBaseUrlChange = async (value: string) => {
+    if (value === (preferences?.newApiBaseUrl ?? "")) return
+
     const success = await updateNewApiBaseUrl(value)
     if (success) {
       toast.success("New API Base URL 已更新")
@@ -181,6 +195,8 @@ export const BasicSettingsProvider = ({
   }
 
   const handleNewApiAdminTokenChange = async (value: string) => {
+    if (value === (preferences?.newApiAdminToken ?? "")) return
+
     const success = await updateNewApiAdminToken(value)
     if (success) {
       toast.success("New API Admin Token 已更新")
@@ -190,6 +206,8 @@ export const BasicSettingsProvider = ({
   }
 
   const handleNewApiUserIdChange = async (value: string) => {
+    if (value === (preferences?.newApiUserId ?? "")) return
+
     const success = await updateNewApiUserId(value)
     if (success) {
       toast.success("New API User ID 已更新")
