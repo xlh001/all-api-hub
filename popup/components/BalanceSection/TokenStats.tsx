@@ -1,10 +1,10 @@
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline"
 import React from "react"
 
+import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
 import { formatTokenCount } from "~/utils/formatters"
 
 import Tooltip from "../../../components/Tooltip"
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
 
 export const TokenStats = React.memo(() => {
   const { stats } = useAccountDataContext()

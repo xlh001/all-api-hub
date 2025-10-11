@@ -2,10 +2,10 @@ import React from "react"
 import CountUp from "react-countup"
 
 import { UI_CONSTANTS } from "~/constants/ui"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
 import { getCurrencySymbol } from "~/utils/formatters"
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
-import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 interface BalanceDisplayProps {
   site: DisplaySiteData

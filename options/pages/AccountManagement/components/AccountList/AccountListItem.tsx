@@ -2,11 +2,11 @@ import React from "react"
 
 import AccountActionButtons from "~/options/pages/AccountManagement/components/AccountActionButtons"
 import { useAccountListItem } from "~/options/pages/AccountManagement/components/AccountList/useAccountListItem"
+import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
 
 import BalanceDisplay from "./BalanceDisplay"
 import SiteInfo from "./SiteInfo"
-import { useAccountDataContext } from "~/options/pages/AccountManagement/hooks/AccountDataContext"
 
 interface AccountListItemProps {
   site: DisplaySiteData

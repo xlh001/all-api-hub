@@ -3,12 +3,12 @@ import "./style.css"
 import { Toaster } from "react-hot-toast"
 
 import { UI_CONSTANTS } from "~/constants/ui"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import AccountList from "~/options/pages/AccountManagement/components/AccountList"
+import { AccountManagementProvider } from "~/options/pages/AccountManagement/hooks/AccountManagementProvider"
 import ActionButtons from "~/popup/components/ActionButtons"
 import BalanceSection from "~/popup/components/BalanceSection"
 import HeaderSection from "~/popup/components/HeaderSection"
-import { AccountManagementProvider } from "~/options/pages/AccountManagement/hooks/AccountManagementProvider"
-import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 function PopupContent({ inSidePanel = false }) {
   const { isLoading } = useUserPreferencesContext()
