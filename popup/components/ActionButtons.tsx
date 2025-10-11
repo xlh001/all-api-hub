@@ -1,12 +1,11 @@
 import { CpuChipIcon, KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 
+import Tooltip from "~/components/Tooltip"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import { showFirefoxWarningDialog } from "~/popup/components/FirefoxAddAccountWarningDialog/showFirefoxWarningDialog"
 import { isFirefox } from "~/utils/browser"
 import { openKeysPage, openModelsPage } from "~/utils/navigation"
-
-import Tooltip from "../../components/Tooltip"
 
 interface ActionButtonsProps {
   inSidePanel?: boolean

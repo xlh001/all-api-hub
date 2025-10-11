@@ -2,9 +2,9 @@ import { Menu, MenuButton, MenuItems } from "@headlessui/react"
 import { DocumentDuplicateIcon, KeyIcon } from "@heroicons/react/24/outline"
 import React from "react"
 
+import Tooltip from "~/components/Tooltip"
 import type { DisplaySiteData } from "~/types"
 
-import Tooltip from "../../../../components/Tooltip"
 import { AccountActionMenuItem } from "./AccountActionMenuItem"
 
 interface CopyDropdownProps {

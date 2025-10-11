@@ -6,11 +6,10 @@ import {
   XCircleIcon
 } from "@heroicons/react/24/outline"
 
+import Tooltip from "~/components/Tooltip"
 import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
-
-import Tooltip from "../../../../components/Tooltip"
 
 interface SiteInfoProps {
   site: DisplaySiteData

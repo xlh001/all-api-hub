@@ -11,6 +11,7 @@ import React, {
 import toast from "react-hot-toast" // 1. 定义 Context 的值类型
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext" // 1. 定义 Context 的值类型
 import { accountStorage } from "~/services/accountStorage"
 import type {
   AccountStats,
@@ -21,8 +22,6 @@ import type {
   SortField,
   SortOrder
 } from "~/types"
-
-import { useUserPreferencesContext } from "../../../contexts/UserPreferencesContext" // 1. 定义 Context 的值类型
 
 // 1. 定义 Context 的值类型
 interface AccountDataContextType {

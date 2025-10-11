@@ -6,12 +6,11 @@ import {
 import { useCallback } from "react"
 import toast from "react-hot-toast"
 
+import iconImage from "~/assets/icon.png"
+import Tooltip from "~/components/Tooltip"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
-
-import iconImage from "../../assets/icon.png"
-import Tooltip from "../../components/Tooltip"
 
 export default function HeaderSection() {
   const { isRefreshing, handleRefresh } = useAccountDataContext()
