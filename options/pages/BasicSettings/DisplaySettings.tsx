@@ -1,21 +1,16 @@
 import { EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
-import type { BalanceType, CurrencyType } from "~/types"
+import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
 
-interface DisplaySettingsProps {
-  currencyType: CurrencyType
-  activeTab: BalanceType
-  handleCurrencyChange: (currency: CurrencyType) => void
-  handleDefaultTabChange: (tab: BalanceType) => void
-}
+export default function DisplaySettings() {
+  const {
+    currencyType,
+    activeTab,
+    handleCurrencyChange,
+    handleDefaultTabChange
+  } = useBasicSettings()
 
-export default function DisplaySettings({
-  currencyType,
-  activeTab,
-  handleCurrencyChange,
-  handleDefaultTabChange
-}: DisplaySettingsProps) {
   return (
     <section>
       <h2 className="text-lg font-medium text-gray-900 mb-4">显示设置</h2>

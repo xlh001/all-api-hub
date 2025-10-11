@@ -1,39 +1,38 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import React, { useEffect, useState } from "react"
 
-interface NewApiSettingsProps {
-  newApiBaseUrl: string
-  newApiAdminToken: string
-  newApiUserId: string
-  onBaseUrlChange: (value: string) => void
-  onAdminTokenChange: (value: string) => void
-  onUserIdChange: (value: string) => void
-}
+import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
 
-export default function NewApiSettings({
-  newApiBaseUrl,
-  newApiAdminToken,
-  newApiUserId,
-  onBaseUrlChange,
-  onAdminTokenChange,
-  onUserIdChange
-}: NewApiSettingsProps) {
-  const [localBaseUrl, setLocalBaseUrl] = useState(newApiBaseUrl)
-  const [localAdminToken, setLocalAdminToken] = useState(newApiAdminToken)
+export default function NewApiSettings() {
+  const {
+    preferences,
+    handleNewApiBaseUrlChange,
+    handleNewApiAdminTokenChange,
+    handleNewApiUserIdChange
+  } = useBasicSettings()
+
+  const [localBaseUrl, setLocalBaseUrl] = useState(
+    preferences?.newApiBaseUrl ?? ""
+  )
+  const [localAdminToken, setLocalAdminToken] = useState(
+    preferences?.newApiAdminToken ?? ""
+  )
   const [showAdminToken, setShowAdminToken] = useState(false)
-  const [localUserId, setLocalUserId] = useState(newApiUserId)
+  const [localUserId, setLocalUserId] = useState(
+    preferences?.newApiUserId ?? ""
+  )
 
   useEffect(() => {
-    setLocalBaseUrl(newApiBaseUrl)
-  }, [newApiBaseUrl])
+    setLocalBaseUrl(preferences?.newApiBaseUrl ?? "")
+  }, [preferences?.newApiBaseUrl])
 
   useEffect(() => {
-    setLocalAdminToken(newApiAdminToken)
-  }, [newApiAdminToken])
+    setLocalAdminToken(preferences?.newApiAdminToken ?? "")
+  }, [preferences?.newApiAdminToken])
 
   useEffect(() => {
-    setLocalUserId(newApiUserId)
-  }, [newApiUserId])
+    setLocalUserId(preferences?.newApiUserId ?? "")
+  }, [preferences?.newApiUserId])
 
   return (
     <section>
@@ -54,7 +53,7 @@ export default function NewApiSettings({
             type="text"
             value={localBaseUrl}
             onChange={(e) => setLocalBaseUrl(e.target.value)}
-            onBlur={(e) => onBaseUrlChange(e.target.value)}
+            onBlur={(e) => handleNewApiBaseUrlChange(e.target.value)}
             placeholder="https://api.example.com"
             className="w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -72,7 +71,7 @@ export default function NewApiSettings({
               type={showAdminToken ? "text" : "password"}
               value={localAdminToken}
               onChange={(e) => setLocalAdminToken(e.target.value)}
-              onBlur={(e) => onAdminTokenChange(e.target.value)}
+              onBlur={(e) => handleNewApiAdminTokenChange(e.target.value)}
               className="w-full px-3 py-1.5 pr-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button
@@ -97,7 +96,7 @@ export default function NewApiSettings({
             type="text"
             value={localUserId}
             onChange={(e) => setLocalUserId(e.target.value)}
-            onBlur={(e) => onUserIdChange(e.target.value)}
+            onBlur={(e) => handleNewApiUserIdChange(e.target.value)}
             className="w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>

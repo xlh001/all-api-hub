@@ -1,10 +1,8 @@
-interface DangerousZoneProps {
-  handleResetToDefaults: () => void
-}
+import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
 
-export default function DangerousZone({
-  handleResetToDefaults
-}: DangerousZoneProps) {
+export default function DangerousZone() {
+  const { handleResetToDefaults } = useBasicSettings()
+
   return (
     <section>
       <h2 className="text-lg font-medium text-red-600 mb-4">危险操作</h2>

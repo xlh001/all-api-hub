@@ -1,30 +1,21 @@
 import { Switch } from "@headlessui/react"
 
-interface RefreshSettingsProps {
-  autoRefresh: boolean
-  refreshOnOpen: boolean
-  intervalInput: string
-  minIntervalInput: string
-  handleAutoRefreshChange: (enabled: boolean) => void
-  handleRefreshOnOpenChange: (enabled: boolean) => void
-  handleRefreshIntervalChange: (value: string) => void
-  handleRefreshIntervalBlur: () => void
-  handleMinRefreshIntervalChange: (value: string) => void
-  handleMinRefreshIntervalBlur: () => void
-}
+import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
 
-export default function RefreshSettings({
-  autoRefresh,
-  refreshOnOpen,
-  intervalInput,
-  minIntervalInput,
-  handleAutoRefreshChange,
-  handleRefreshOnOpenChange,
-  handleRefreshIntervalChange,
-  handleRefreshIntervalBlur,
-  handleMinRefreshIntervalChange,
-  handleMinRefreshIntervalBlur
-}: RefreshSettingsProps) {
+export default function RefreshSettings() {
+  const {
+    autoRefresh,
+    refreshOnOpen,
+    intervalInput,
+    minIntervalInput,
+    handleAutoRefreshChange,
+    handleRefreshOnOpenChange,
+    handleRefreshIntervalChange,
+    handleRefreshIntervalBlur,
+    handleMinRefreshIntervalChange,
+    handleMinRefreshIntervalBlur
+  } = useBasicSettings()
+
   return (
     <section>
       <h2 className="text-lg font-medium text-gray-900 mb-4">刷新设置</h2>
