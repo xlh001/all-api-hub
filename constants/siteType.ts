@@ -33,7 +33,7 @@ function makeTitleRegex(name: string): RegExp {
 }
 
 // 默认的用量路径
-const DEFAULT_USAGE_PATH = "/log"
+const DEFAULT_USAGE_PATH = "/console/log"
 const DEFAULT_CHECKIN_PATH = "/app/me"
 
 // 定义各站点对应的 API 路径
