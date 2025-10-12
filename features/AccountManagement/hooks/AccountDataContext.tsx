@@ -290,7 +290,14 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
         return healthA - healthB
       }
 
-      // Priority 3: User-selected sort field
+      // Priority 3: Accounts needing check-in
+      const checkInA = a.can_check_in ? 1 : 0
+      const checkInB = b.can_check_in ? 1 : 0
+      if (checkInA !== checkInB) {
+        return checkInB - checkInA
+      }
+
+      // Priority 4: User-selected sort field
       switch (sortField) {
         case "name":
           return sortOrder === "asc"
