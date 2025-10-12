@@ -177,65 +177,66 @@ export const apiRequest = async <T>(
 export interface FetchApiParams<T> {
   baseUrl: string
   endpoint: string
-  userId?: number
+  userId?: number | string
   token?: string
+  authType?: "cookie" | "token"
   options?: RequestInit // 可额外自定义 fetch 参数
 }
 
-/**
- * 通用 API 请求函数，直接返回 data
- * @param baseUrl 基础 URL
- * @param endpoint API 路径
- * @param userId 用户 ID
- * @param token 访问 token
- * @param options 额外 fetch 配置
- */
-export const fetchApiData = async <T>({
-  baseUrl,
-  endpoint,
-  userId,
-  token,
-  options
-}: FetchApiParams<T>): Promise<T> => {
+const _fetchApi = async <T>(
+  {
+    baseUrl,
+    endpoint,
+    userId,
+    token,
+    authType = "token",
+    options
+  }: FetchApiParams<T>,
+  isData: boolean
+) => {
+  if (authType === "token" && !token) {
+    throw new ApiError(
+      `Token is required for token authentication.`,
+      401,
+      endpoint
+    )
+  }
+
   const url = joinUrl(baseUrl, endpoint)
   const fetchOptions = {
-    ...createTokenAuthRequest(userId, token),
+    ...(authType === "cookie"
+      ? createCookieAuthRequest(userId)
+      : createTokenAuthRequest(userId, token!)),
     ...options
   }
 
   try {
-    return await apiRequestData<T>(url, fetchOptions, endpoint)
-  } catch (error) {
-    console.error(`请求 ${endpoint} 失败:`, error)
-    throw error
-  }
-}
-
-/**
- * 通用 API 请求函数
- * @param baseUrl 基础 URL
- * @param endpoint API 路径
- * @param userId 用户 ID
- * @param token 访问 token
- * @param options 额外 fetch 配置
- */
-export const fetchApi = async <T>({
-  baseUrl,
-  endpoint,
-  userId,
-  token,
-  options
-}: FetchApiParams<T>): Promise<ApiResponse<T>> => {
-  const url = joinUrl(baseUrl, endpoint)
-  const fetchOptions = {
-    ...createTokenAuthRequest(userId, token),
-    ...options
-  }
-
-  try {
+    if (isData) {
+      return await apiRequestData<T>(url, fetchOptions, endpoint)
+    }
     return await apiRequest<T>(url, fetchOptions, endpoint)
   } catch (error) {
     console.error(`请求 ${endpoint} 失败:`, error)
     throw error
   }
+}
+
+/**
+ * 通用 API 请求函数，直接返回 data
+ * @param params
+ */
+export const fetchApiData = async <T>(
+  params: FetchApiParams<T>
+): Promise<T> => {
+  return (await _fetchApi(params, true)) as T
+}
+
+/**
+ * 通用 API 请求函数
+ * @param params
+ */
+export const fetchApi = async <T>(
+  params: FetchApiParams<T>
+): Promise<ApiResponse<T>> => {
+  return (await _fetchApi(params, false)) as ApiResponse<T>
 }

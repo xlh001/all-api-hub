@@ -83,14 +83,15 @@ export async function createChannel(
   channelData: object
 ) {
   try {
-    const options = createTokenAuthRequest(userId, adminToken, {
-      method: "POST",
-      body: JSON.stringify(channelData)
-    })
     return await fetchApi<NewApiResponse<undefined>>({
-      baseUrl: baseUrl,
+      baseUrl,
       endpoint: "/api/channel",
-      options: options
+      userId,
+      token: adminToken,
+      options: {
+        method: "POST",
+        body: JSON.stringify(channelData)
+      }
     })
   } catch (error) {
     console.error("创建渠道失败:", error)
