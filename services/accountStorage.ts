@@ -346,8 +346,10 @@ class AccountStorageService {
   /**
    * 转换为展示用的数据格式 (兼容当前 UI)
    */
-  convertToDisplayData(accounts: SiteAccount[]): DisplaySiteData[] {
-    return accounts.map((account) => ({
+  convertToDisplayData(
+    input: SiteAccount | SiteAccount[]
+  ): DisplaySiteData | DisplaySiteData[] {
+    const transform = (account: SiteAccount): DisplaySiteData => ({
       id: account.id,
       icon: account.emoji,
       name: account.site_name,
@@ -380,12 +382,19 @@ class AccountStorageService {
       last_sync_time: account.last_sync_time,
       baseUrl: account.site_url,
       token: account.account_info.access_token,
-      userId: account.account_info.id, // 添加真实的用户 ID
+      userId: account.account_info.id,
       notes: account.notes,
       siteType: account.site_type,
       can_check_in: account.can_check_in,
       supports_check_in: account.supports_check_in
-    }))
+    })
+
+    // 判断是否是数组
+    if (Array.isArray(input)) {
+      return input.map(transform)
+    } else {
+      return transform(input)
+    }
   }
 
   /**
