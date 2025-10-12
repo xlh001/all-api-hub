@@ -10,7 +10,7 @@ import { joinUrl } from "~/utils/url"
 /**
  * 创建请求头
  */
-export const createRequestHeaders = (
+const createRequestHeaders = (
   userId?: number | string,
   accessToken?: string
 ): Record<string, string> => {
@@ -73,7 +73,7 @@ const createBaseRequest = (
 /**
  * 创建带 cookie 认证的请求
  */
-export const createCookieAuthRequest = (
+const createCookieAuthRequest = (
   userId: number | string = null,
   options: RequestInit = {}
 ): RequestInit =>
@@ -82,7 +82,7 @@ export const createCookieAuthRequest = (
 /**
  * 创建带 Bearer token 认证的请求
  */
-export const createTokenAuthRequest = (
+const createTokenAuthRequest = (
   userId: number | string = null,
   accessToken: string,
   options: RequestInit = {}
@@ -130,7 +130,7 @@ export const aggregateUsageData = (
 /**
  * 基于 apiRequest 的快捷函数：直接提取 data
  */
-export const apiRequestData = async <T>(
+const apiRequestData = async <T>(
   url: string,
   options?: RequestInit,
   endpoint?: string
