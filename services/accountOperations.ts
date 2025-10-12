@@ -25,7 +25,16 @@
  * - autoDetectUtils: 错误处理工具
  */
 
-import type { SiteAccount } from "~/types"
+import toast from "react-hot-toast"
+
+import {
+  createApiToken,
+  fetchAccountTokens
+} from "~/services/apiService/common"
+import type { CreateTokenRequest } from "~/services/apiService/common/type"
+import { importToNewApi } from "~/services/newApiService"
+import { userPreferences } from "~/services/userPreferences"
+import type { DisplaySiteData, SiteAccount } from "~/types"
 import {
   analyzeAutoDetectError,
   type AutoDetectError
@@ -382,4 +391,130 @@ export async function getSiteName(tab: chrome.tabs.Tab) {
 export function isValidExchangeRate(rate: string): boolean {
   const num = parseFloat(rate)
   return !isNaN(num) && num > 0 && num <= 100
+}
+
+// Helper function to validate New API configuration
+async function validateNewApiConfig(): Promise<{
+  valid: boolean
+  errors: string[]
+}> {
+  const prefs = await userPreferences.getPreferences()
+  const errors = []
+
+  if (!prefs.newApiBaseUrl) {
+    errors.push("New API 基础 URL 未配置")
+  }
+  if (!prefs.newApiAdminToken) {
+    errors.push("New API 管理员令牌未配置")
+  }
+  if (!prefs.newApiUserId) {
+    errors.push("New API 用户 ID 未配置")
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  }
+}
+
+// Helper function to generate a default token name
+function generateDefaultToken(siteName: string): CreateTokenRequest {
+  return {
+    name: `${siteName}-auto-${Date.now()}`,
+    unlimited_quota: true,
+    expired_time: -1, // Never expires
+    remain_quota: 0,
+    allow_ips: "", // No IP restriction
+    model_limits_enabled: false,
+    model_limits: "", // All models allowed
+    group: "default"
+  }
+}
+
+export async function autoConfigToNewApi(
+  account: SiteAccount,
+  toastId?: string
+) {
+  const configValidation = await validateNewApiConfig()
+  if (!configValidation.valid) {
+    return { success: false, error: configValidation.errors.join(", ") }
+  }
+
+  let lastError: any
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      toast.loading("正在检查 API 密钥...", { id: toastId })
+      // 1. Check for existing API token
+      const tokens = await fetchAccountTokens({
+        baseUrl: account.site_url,
+        userId: account.account_info.id,
+        token: account.account_info.access_token
+      })
+      let apiToken = tokens[0]
+
+      // 2. Create a new token if one doesn't exist
+      if (!apiToken) {
+        const newTokenData = generateDefaultToken(account.site_name)
+        const createApiTokenRsult = await createApiToken(
+          account.site_url,
+          account.account_info.id,
+          account.account_info.access_token,
+          newTokenData
+        )
+        if (!createApiTokenRsult) {
+          return { success: false, error: "Failed to create API token." }
+        }
+        // Re-fetch tokens to get the newly created one
+        const updatedTokens = await fetchAccountTokens({
+          baseUrl: account.site_url,
+          userId: account.account_info.id,
+          token: account.account_info.access_token
+        })
+        apiToken = updatedTokens[-1]
+      }
+
+      if (!apiToken) {
+        return {
+          success: false,
+          error: "Failed to create or find an API token."
+        }
+      }
+
+      // 3. Import to New API as a channel
+      toast.loading("正在导入到 New API...", { id: toastId })
+      const importResult = await importToNewApi(
+        accountStorage.convertToDisplayData(account) as DisplaySiteData,
+        apiToken
+      )
+
+      if (importResult.success) {
+        toast.success(importResult.message, { id: toastId })
+      } else {
+        throw new Error(importResult.message)
+      }
+
+      return {
+        token: apiToken,
+        ...importResult
+      }
+    } catch (error) {
+      lastError = error
+      if (
+        (error.message.includes("network") ||
+          error.message.includes("Failed to fetch")) &&
+        attempt < 3
+      ) {
+        toast.error(lastError, { id: toastId })
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+        continue
+      }
+      throw error
+    }
+  }
+  return {
+    success: false,
+    message:
+      lastError?.message ||
+      "An unknown error occurred during auto-configuration."
+  }
 }

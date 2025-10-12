@@ -125,6 +125,8 @@ export default function AccountDialog({
                         onClose={onClose}
                         isFormValid={state.isFormValid}
                         isSaving={state.isSaving}
+                        onAutoConfig={handlers.handleAutoConfig}
+                        isAutoConfiguring={state.isAutoConfiguring}
                       />
                     )}
 
@@ -162,6 +164,8 @@ export default function AccountDialog({
                         isFormValid={state.isFormValid}
                         isSaving={state.isSaving}
                         isDetected={state.isDetected}
+                        onAutoConfig={handlers.handleAutoConfig}
+                        isAutoConfiguring={state.isAutoConfiguring}
                       />
                     </>
                   )}

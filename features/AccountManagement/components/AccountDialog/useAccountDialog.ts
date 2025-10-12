@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 
 import {
+  autoConfigToNewApi,
   autoDetectAccount,
   getSiteName,
   isValidExchangeRate,
@@ -43,6 +44,10 @@ export function useAccountDialog({
   const [notes, setNotes] = useState("")
   const [supportsCheckIn, setSupportsCheckIn] = useState(false)
   const [siteType, setSiteType] = useState("unknown")
+  const [isAutoConfiguring, setIsAutoConfiguring] = useState(false)
+
+  // useRef 保存跨渲染引用
+  const newAccountRef = useRef(null)
 
   const resetForm = useCallback(() => {
     setUrl("")
@@ -59,6 +64,7 @@ export function useAccountDialog({
     setNotes("")
     setSupportsCheckIn(false)
     setSiteType("unknown")
+    setIsAutoConfiguring(false)
   }, [mode])
 
   const loadAccountData = useCallback(async (accountId: string) => {
@@ -171,54 +177,92 @@ export function useAccountDialog({
     }
   }
 
-  const handleSaveAccount = () => {
-    return new Promise(async (resolve, reject) => {
-      setIsSaving(true)
-      try {
-        const result =
-          mode === "add"
-            ? await validateAndSaveAccount(
-                url.trim(),
-                siteName.trim(),
-                username.trim(),
-                accessToken.trim(),
-                userId.trim(),
-                exchangeRate,
-                notes.trim(),
-                supportsCheckIn,
-                siteType
-              )
-            : await validateAndUpdateAccount(
-                account!.id,
-                url.trim(),
-                siteName.trim(),
-                username.trim(),
-                accessToken.trim(),
-                userId.trim(),
-                exchangeRate,
-                notes.trim(),
-                supportsCheckIn,
-                siteType
-              )
+  const handleSaveAccount = async () => {
+    setIsSaving(true)
+    try {
+      const result =
+        mode === "add"
+          ? await validateAndSaveAccount(
+              url.trim(),
+              siteName.trim(),
+              username.trim(),
+              accessToken.trim(),
+              userId.trim(),
+              exchangeRate,
+              notes.trim(),
+              supportsCheckIn,
+              siteType
+            )
+          : await validateAndUpdateAccount(
+              account!.id,
+              url.trim(),
+              siteName.trim(),
+              username.trim(),
+              accessToken.trim(),
+              userId.trim(),
+              exchangeRate,
+              notes.trim(),
+              supportsCheckIn,
+              siteType
+            )
 
-        if (result.success) {
-          toast.success(
-            mode === "add"
-              ? `账号 ${siteName} 添加成功!`
-              : `账号 ${siteName} 更新成功!`
-          )
-          resolve(result)
-        } else {
-          toast.error(`操作失败: ${result.error || "未知错误"}`)
-          reject(new Error(result.error || "保存失败"))
-        }
-      } catch (error) {
-        toast.error(`操作失败: ${error.message}`)
-        reject(error)
-      } finally {
-        setIsSaving(false)
+      if (result.success) {
+        toast.success(
+          mode === "add"
+            ? `账号 ${siteName} 添加成功!`
+            : `账号 ${siteName} 更新成功!`
+        )
+        return result
+      } else {
+        toast.error(`操作失败: ${result.error || "未知错误"}`)
+        throw new Error(result.error || "保存失败")
       }
-    })
+    } catch (error: any) {
+      toast.error(`操作失败: ${error.message}`)
+      throw error
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleAutoConfig = async () => {
+    setIsAutoConfiguring(true)
+    const toastId = toast.loading("正在开始自动配置...")
+    try {
+      let targetAccount: any = account || newAccountRef.current
+      // 如果是新增（account 不存在），就先保存
+      if (!targetAccount) {
+        targetAccount = await handleSaveAccount()
+        if (!targetAccount) {
+          toast.error("保存账号失败", { id: toastId })
+          return
+        }
+        // 缓存到 ref，避免重复保存
+        newAccountRef.current = targetAccount
+      }
+
+      // 获取账户详细信息
+      const siteAccount = await accountStorage.getAccountById(
+        targetAccount.accountId
+      )
+      if (!siteAccount) {
+        toast.error("Could not find account details.", { id: toastId })
+        setIsAutoConfiguring(false)
+        return
+      }
+
+      // 检查 API 密钥并 导入到 New API
+      const result = await autoConfigToNewApi(siteAccount, toastId)
+      if (result.success) {
+        toast.success(result.message, { id: toastId })
+      } else {
+        throw new Error(result.message)
+      }
+    } catch (error) {
+      toast.error(`自动配置失败: ${error.message}`, { id: toastId })
+    } finally {
+      setIsAutoConfiguring(false)
+    }
   }
 
   const handleUrlChange = (newUrl: string) => {
@@ -268,7 +312,8 @@ export function useAccountDialog({
       notes,
       supportsCheckIn,
       siteType,
-      isFormValid
+      isFormValid,
+      isAutoConfiguring
     },
     setters: {
       setUrl,
@@ -288,7 +333,8 @@ export function useAccountDialog({
       handleAutoDetect,
       handleSaveAccount,
       handleUrlChange,
-      handleSubmit
+      handleSubmit,
+      handleAutoConfig
     }
   }
 }
