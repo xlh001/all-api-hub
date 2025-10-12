@@ -204,10 +204,21 @@ const _fetchApi = async <T>(
   }
 
   const url = joinUrl(baseUrl, endpoint)
+  let authOptions = {}
+  switch (authType) {
+    case AuthTypeEnum.Cookie:
+      authOptions = createCookieAuthRequest(userId)
+      break
+    case AuthTypeEnum.AccessToken:
+      authOptions = createTokenAuthRequest(userId, token!)
+      break
+    case AuthTypeEnum.None:
+      authOptions = {}
+      break
+  }
+
   const fetchOptions = {
-    ...(authType === "cookie"
-      ? createCookieAuthRequest(userId)
-      : createTokenAuthRequest(userId, token!)),
+    ...authOptions,
     ...options
   }
 

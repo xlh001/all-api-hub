@@ -124,5 +124,6 @@ export type BalanceType =
 
 export enum AuthTypeEnum {
   AccessToken = "access_token",
-  Cookie = "cookie"
+  Cookie = "cookie",
+  None = "none"
 }
