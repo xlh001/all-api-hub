@@ -108,7 +108,9 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
       console.log("[AccountContext] Loading account data...")
       const allAccounts = await accountStorage.getAllAccounts()
       const accountStats = await accountStorage.getAccountStats()
-      const displaySiteData = accountStorage.convertToDisplayData(allAccounts)
+      const displaySiteData = accountStorage.convertToDisplayData(
+        allAccounts
+      ) as DisplaySiteData[]
 
       if (!isInitialLoad) {
         setPrevTotalConsumption(prevTotalConsumption)
