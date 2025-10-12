@@ -76,7 +76,7 @@ export default function DelAccountDialog({
             leave="ease-in duration-20"
             leaveFrom="opacity-10 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
-            <DialogPanel className="w-full max-w-sm transform rounded-lg bg-white shadow-xl transition-all">
+            <DialogPanel className="w-full container transform rounded-lg bg-white shadow-xl transition-all">
               <DialogHeader onClose={onClose} />
               <div className="p-4">
                 <WarningSection accountName={account?.name} />

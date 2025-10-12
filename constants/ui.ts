@@ -7,7 +7,7 @@ export const DATA_TYPE_BALANCE = "balance"
 export const UI_CONSTANTS = {
   // 弹窗尺寸
   POPUP: {
-    WIDTH: "w-96",
+    WIDTH: "w-[400px]",
     HEIGHT: "h-[600px]",
     MAX_HEIGHT: "max-h-[90vh]"
   },
