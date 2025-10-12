@@ -2,11 +2,7 @@ import type {
   BaseFetchParams,
   PricingResponse
 } from "~/services/apiService/common/type"
-import {
-  apiRequestData,
-  createTokenAuthRequest,
-  fetchApiData
-} from "~/services/apiService/common/utils"
+import { fetchApiData } from "~/services/apiService/common/utils"
 import type {
   OneHubModelPricing,
   OneHubUserGroupInfo,
@@ -19,7 +15,6 @@ import {
   transformModelPricing,
   transformUserGroup
 } from "~/utils/dataTransform/one-hub"
-import { joinUrl } from "~/utils/url"
 
 export const fetchAvailableModel = async (params: BaseFetchParams) => {
   return fetchApiData<OneHubModelPricing>({
@@ -66,16 +61,14 @@ export const fetchAccountTokens = async (
     size: size.toString()
   })
 
-  const url = joinUrl(baseUrl, `/api/token/?${params.toString()}`)
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
     // 尝试获取响应数据，可能是直接的数组或者分页对象
-    const tokensData = await apiRequestData<PaginatedTokenDate>(
-      url,
-      options,
-      "/api/token"
-    )
+    const tokensData = await fetchApiData<PaginatedTokenDate>({
+      baseUrl,
+      endpoint: `/api/token/?${params.toString()}`,
+      userId,
+      token: accessToken
+    })
 
     // 处理不同的响应格式
     if (Array.isArray(tokensData)) {
@@ -107,15 +100,13 @@ export const fetchUserGroups = async ({
   userId,
   token: accessToken
 }): Promise<Record<string, OneHubUserGroupInfo>> => {
-  const url = joinUrl(baseUrl, "/api/user_group_map")
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
-    const response = await apiRequestData<OneHubUserGroupsResponse["data"]>(
-      url,
-      options,
-      "/api/user_group_map"
-    )
+    const response = await fetchApiData<OneHubUserGroupsResponse["data"]>({
+      baseUrl,
+      endpoint: "/api/user_group_map",
+      userId,
+      token: accessToken
+    })
     return transformUserGroup(response)
   } catch (error) {
     console.error("获取分组信息失败:", error)

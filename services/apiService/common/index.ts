@@ -18,10 +18,8 @@ import type {
 } from "~/services/apiService/common/type"
 import {
   aggregateUsageData,
-  apiRequestData,
-  createCookieAuthRequest,
-  createRequestHeaders,
-  createTokenAuthRequest,
+  fetchApi,
+  fetchApiData,
   getTodayTimestampRange
 } from "~/services/apiService/common/utils"
 import type { ApiToken } from "~/types"
@@ -48,14 +46,12 @@ export const fetchUserInfo = async (
   baseUrl: string,
   userId?: number
 ): Promise<UserInfo> => {
-  const url = joinUrl(baseUrl, "/api/user/self")
-  const options = createCookieAuthRequest(userId)
-
-  const userData = await apiRequestData<UserInfo>(
-    url,
-    options,
-    "/api/user/self"
-  )
+  const userData = await fetchApiData<UserInfo>({
+    baseUrl,
+    endpoint: "/api/user/self",
+    userId,
+    authType: "cookie"
+  })
 
   return {
     id: userData.id,
@@ -71,10 +67,12 @@ export const createAccessToken = async (
   baseUrl: string,
   userId: number
 ): Promise<string> => {
-  const url = joinUrl(baseUrl, "/api/user/token")
-  const options = createCookieAuthRequest(userId)
-
-  return await apiRequestData<string>(url, options, "/api/user/token")
+  return await fetchApiData<string>({
+    baseUrl,
+    endpoint: "/api/user/token",
+    userId,
+    authType: "cookie"
+  })
 }
 
 /**
@@ -173,14 +171,12 @@ export const fetchAccountQuota = async (
   userId: number,
   accessToken: string
 ): Promise<number> => {
-  const url = joinUrl(baseUrl, "/api/user/self")
-  const options = createTokenAuthRequest(userId, accessToken)
-
-  const userData = await apiRequestData<{ quota?: number }>(
-    url,
-    options,
-    "/api/user/self"
-  )
+  const userData = await fetchApiData<{ quota?: number }>({
+    baseUrl,
+    endpoint: "/api/user/self",
+    userId,
+    token: accessToken
+  })
 
   return userData.quota || 0
 }
@@ -193,15 +189,13 @@ export const fetchCheckInStatus = async (
   userId: number,
   accessToken: string
 ): Promise<boolean | undefined> => {
-  const url = joinUrl(baseUrl, "/api/user/check_in_status")
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
-    const checkInData = await apiRequestData<{ can_check_in?: boolean }>(
-      url,
-      options,
-      "/api/user/check_in_status"
-    )
+    const checkInData = await fetchApiData<{ can_check_in?: boolean }>({
+      baseUrl,
+      endpoint: "/api/user/check_in_status",
+      userId,
+      token: accessToken
+    })
     // 仅当 can_check_in 明确为 true 或 false 时才返回，否则返回 undefined
     if (typeof checkInData.can_check_in === "boolean") {
       return checkInData.can_check_in
@@ -262,14 +256,12 @@ export const fetchTodayUsage = async (
       group: ""
     })
 
-    const url = joinUrl(baseUrl, `/api/log/self?${params.toString()}`)
-    const options = createTokenAuthRequest(userId, accessToken)
-
-    const logData = await apiRequestData<LogResponseData>(
-      url,
-      options,
-      "/api/log/self"
-    )
+    const logData = await fetchApiData<LogResponseData>({
+      baseUrl,
+      endpoint: `/api/log/self?${params.toString()}`,
+      userId,
+      token: accessToken
+    })
 
     const items = logData.items || []
     const currentPageItemCount = items.length
@@ -399,14 +391,14 @@ export const fetchAccountTokens = async (
     size: size.toString()
   })
 
-  const url = joinUrl(baseUrl, `/api/token/?${params.toString()}`)
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
     // 尝试获取响应数据，可能是直接的数组或者分页对象
-    const tokensData = await apiRequestData<
-      ApiToken[] | PaginatedTokenResponse
-    >(url, options, "/api/token")
+    const tokensData = await fetchApiData<ApiToken[] | PaginatedTokenResponse>({
+      baseUrl,
+      endpoint: `/api/token/?${params.toString()}`,
+      userId,
+      token: accessToken
+    })
 
     // 处理不同的响应格式
     if (Array.isArray(tokensData)) {
@@ -438,11 +430,13 @@ export const fetchAvailableModels = async ({
   userId,
   token: accessToken
 }): Promise<string[]> => {
-  const url = joinUrl(baseUrl, "/api/user/models")
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
-    return await apiRequestData<string[]>(url, options, "/api/user/models")
+    return await fetchApiData<string[]>({
+      baseUrl,
+      endpoint: "/api/user/models",
+      userId,
+      token: accessToken
+    })
   } catch (error) {
     console.error("获取模型列表失败:", error)
     throw error
@@ -455,11 +449,12 @@ export const fetchAvailableModels = async ({
  * @param accessToken
  */
 export const fetchUpstreamModels = async ({ baseUrl, token: accessToken }) => {
-  const url = joinUrl(baseUrl, "/v1/models")
-  const options = createTokenAuthRequest(null, accessToken)
-
   try {
-    return await apiRequestData<UpstreamModelList>(url, options, "/v1/models")
+    return await fetchApiData<UpstreamModelList>({
+      baseUrl,
+      endpoint: "/v1/models",
+      token: accessToken
+    })
   } catch (error) {
     console.error("获取上游模型列表失败:", error)
     throw error
@@ -485,16 +480,13 @@ export const fetchUserGroups = async ({
   userId,
   token: accessToken
 }): Promise<Record<string, UserGroupInfo>> => {
-  const url = joinUrl(baseUrl, "/api/user/self/groups")
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
-    const response = await apiRequestData<Record<string, UserGroupInfo>>(
-      url,
-      options,
-      "/api/user/self/groups"
-    )
-    return response
+    return await fetchApiData<Record<string, UserGroupInfo>>({
+      baseUrl,
+      endpoint: "/api/user/self/groups",
+      userId,
+      token: accessToken
+    })
   } catch (error) {
     console.error("获取分组信息失败:", error)
     throw error
@@ -510,31 +502,22 @@ export const createApiToken = async (
   accessToken: string,
   tokenData: CreateTokenRequest
 ): Promise<boolean> => {
-  const url = joinUrl(baseUrl, "/api/token/")
-  const options = {
-    method: "POST",
-    headers: createRequestHeaders(userId, accessToken),
-    credentials: "omit" as RequestCredentials,
-    body: JSON.stringify(tokenData)
-  }
-
   try {
-    const response = await fetch(url, options)
-
-    if (!response.ok) {
-      throw new ApiError(
-        `请求失败: ${response.status}`,
-        response.status,
-        "/api/token"
-      )
-    }
-
-    const data: ApiResponse<any> = await response.json()
+    const response = await fetchApi<any>({
+      baseUrl,
+      endpoint: "/api/token/",
+      userId,
+      token: accessToken,
+      options: {
+        method: "POST",
+        body: JSON.stringify(tokenData)
+      }
+    })
 
     // 对于创建令牌的响应，只检查success字段，不要求data字段存在
-    if (!data.success) {
+    if (!response.success) {
       throw new ApiError(
-        data.message || "创建令牌失败",
+        response.message || "创建令牌失败",
         undefined,
         "/api/token"
       )
@@ -556,16 +539,13 @@ export const fetchTokenById = async (
   accessToken: string,
   tokenId: number
 ): Promise<ApiToken> => {
-  const url = joinUrl(baseUrl, `/api/token/${tokenId}`)
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
-    const response = await apiRequestData<ApiToken>(
-      url,
-      options,
-      `/api/token/${tokenId}`
-    )
-    return response
+    return await fetchApiData<ApiToken>({
+      baseUrl,
+      endpoint: `/api/token/${tokenId}`,
+      userId,
+      token: accessToken
+    })
   } catch (error) {
     console.error("获取令牌详情失败:", error)
     throw error
@@ -582,30 +562,21 @@ export const updateApiToken = async (
   tokenId: number,
   tokenData: CreateTokenRequest
 ): Promise<boolean> => {
-  const url = joinUrl(baseUrl, "/api/token/")
-  const options = {
-    method: "PUT",
-    headers: createRequestHeaders(userId, accessToken),
-    credentials: "omit" as RequestCredentials,
-    body: JSON.stringify({ ...tokenData, id: tokenId })
-  }
-
   try {
-    const response = await fetch(url, options)
+    const response = await fetchApi<any>({
+      baseUrl,
+      endpoint: "/api/token/",
+      userId,
+      token: accessToken,
+      options: {
+        method: "PUT",
+        body: JSON.stringify({ ...tokenData, id: tokenId })
+      }
+    })
 
-    if (!response.ok) {
+    if (!response.success) {
       throw new ApiError(
-        `请求失败: ${response.status}`,
-        response.status,
-        "/api/token"
-      )
-    }
-
-    const data: ApiResponse<any> = await response.json()
-
-    if (!data.success) {
-      throw new ApiError(
-        data.message || "更新令牌失败",
+        response.message || "更新令牌失败",
         undefined,
         "/api/token"
       )
@@ -627,29 +598,20 @@ export const deleteApiToken = async (
   accessToken: string,
   tokenId: number
 ): Promise<boolean> => {
-  const url = joinUrl(baseUrl, `/api/token/${tokenId}`)
-  const options = {
-    method: "DELETE",
-    headers: createRequestHeaders(userId, accessToken),
-    credentials: "omit" as RequestCredentials
-  }
-
   try {
-    const response = await fetch(url, options)
+    const response = await fetchApi<any>({
+      baseUrl,
+      endpoint: `/api/token/${tokenId}`,
+      userId,
+      token: accessToken,
+      options: {
+        method: "DELETE"
+      }
+    })
 
-    if (!response.ok) {
+    if (!response.success) {
       throw new ApiError(
-        `请求失败: ${response.status}`,
-        response.status,
-        `/api/token/${tokenId}`
-      )
-    }
-
-    const data: ApiResponse<any> = await response.json()
-
-    if (!data.success) {
-      throw new ApiError(
-        data.message || "删除令牌失败",
+        response.message || "删除令牌失败",
         undefined,
         `/api/token/${tokenId}`
       )
@@ -670,28 +632,20 @@ export const fetchModelPricing = async ({
   userId,
   token: accessToken
 }): Promise<PricingResponse> => {
-  const url = joinUrl(baseUrl, "/api/pricing")
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
     // /api/pricing 接口直接返回 PricingResponse 格式，不需要通过 apiRequestData 包装
-    const response = await fetch(url, options)
-
-    if (!response.ok) {
-      throw new ApiError(
-        `请求失败: ${response.status}`,
-        response.status,
-        "/api/pricing"
-      )
-    }
-
-    const data: PricingResponse = await response.json()
+    const data = await fetchApi<PricingResponse["data"]>({
+      baseUrl,
+      endpoint: "/api/pricing",
+      userId,
+      token: accessToken
+    })
 
     if (!data.success) {
       throw new ApiError("获取定价信息失败", undefined, "/api/pricing")
     }
 
-    return data
+    return data as PricingResponse
   } catch (error) {
     console.error("获取模型定价失败:", error)
     throw error

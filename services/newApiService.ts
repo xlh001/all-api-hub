@@ -3,14 +3,9 @@ import {
   fetchUpstreamModelsNameList
 } from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common"
-import {
-  apiRequestData,
-  createTokenAuthRequest,
-  fetchApi
-} from "~/services/apiService/common/utils"
+import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { isNotEmptyArray } from "~/utils"
-import { joinUrl } from "~/utils/url"
 
 import { userPreferences } from "./userPreferences"
 
@@ -50,15 +45,13 @@ export async function searchChannel(
   userId: number | string,
   keyword: string
 ): Promise<NewApiChannelData | null> {
-  const url = joinUrl(baseUrl, `/api/channel/search?keyword=${keyword}`)
-  const options = createTokenAuthRequest(userId, accessToken)
-
   try {
-    return await apiRequestData<NewApiChannelData>(
-      url,
-      options,
-      "/api/channel/search"
-    )
+    return await fetchApiData<NewApiChannelData>({
+      baseUrl,
+      endpoint: `/api/channel/search?keyword=${keyword}`,
+      userId,
+      token: accessToken
+    })
   } catch (error) {
     if (error instanceof ApiError) {
       console.error(`API 请求失败: ${error.message}`)
