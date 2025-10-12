@@ -6,6 +6,7 @@ export const ONE_HUB = "one-hub"
 export const DONE_HUB = "done-hub"
 export const VO_API = "VoAPI"
 export const SUPER_API = "Super-API"
+export const UNKNOWN_SITE = "unknown"
 
 export type SiteType = (typeof SITE_TITLE_RULES)[number]["name"]
 
@@ -17,7 +18,8 @@ export const SITE_TITLE_RULES = [
   { name: ONE_HUB, regex: makeTitleRegex(ONE_HUB) },
   { name: DONE_HUB, regex: makeTitleRegex(DONE_HUB) },
   { name: VO_API, regex: makeTitleRegex(VO_API) },
-  { name: SUPER_API, regex: makeTitleRegex(SUPER_API) }
+  { name: SUPER_API, regex: makeTitleRegex(SUPER_API) },
+  { name: UNKNOWN_SITE, regex: makeTitleRegex(UNKNOWN_SITE) }
 ]
 
 /**
