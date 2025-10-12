@@ -195,14 +195,6 @@ const _fetchApi = async <T>(
   }: FetchApiParams<T>,
   isData: boolean
 ) => {
-  if (authType === AuthTypeEnum.AccessToken && !token) {
-    throw new ApiError(
-      `Token is required for token authentication.`,
-      401,
-      endpoint
-    )
-  }
-
   const url = joinUrl(baseUrl, endpoint)
   let authOptions = {}
   switch (authType) {
