@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -8,8 +9,13 @@ import React, {
 import toast from "react-hot-toast"
 
 import { useUserPreferences } from "~/options/pages/BasicSettings/hooks/useUserPreferences"
-import type { UserPreferences } from "~/services/userPreferences"
+import {
+  userPreferences,
+  type UserPreferences
+} from "~/services/userPreferences"
 import type { BalanceType, CurrencyType } from "~/types"
+import type { SortingPriorityConfig } from "~/types/sorting"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 interface BasicSettingsContextType {
   preferences: UserPreferences | null
@@ -24,6 +30,10 @@ interface BasicSettingsContextType {
   minIntervalInput: string
   setIntervalInput: (value: string) => void
   setMinIntervalInput: (value: string) => void
+  sortingPriorityConfig: SortingPriorityConfig
+  updateSortingPriorityConfig: (
+    sortingPriority: SortingPriorityConfig
+  ) => Promise<boolean>
   handleCurrencyChange: (currency: CurrencyType) => Promise<void>
   handleDefaultTabChange: (tab: BalanceType) => Promise<void>
   handleAutoRefreshChange: (enabled: boolean) => Promise<void>
@@ -227,6 +237,20 @@ export const BasicSettingsProvider = ({
     }
   }
 
+  const updateSortingPriorityConfig = useCallback(
+    async (sortingPriority: SortingPriorityConfig) => {
+      const success =
+        await userPreferences.setSortingPriorityConfig(sortingPriority)
+      if (success) {
+        toast.success("排序优先级已更新")
+      } else {
+        toast.error("排序优先级更新失败")
+      }
+      return success
+    },
+    []
+  )
+
   const value = {
     preferences,
     isLoading,
@@ -240,6 +264,9 @@ export const BasicSettingsProvider = ({
     minIntervalInput,
     setIntervalInput,
     setMinIntervalInput,
+    sortingPriorityConfig:
+      preferences?.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG,
+    updateSortingPriorityConfig,
     handleCurrencyChange,
     handleDefaultTabChange,
     handleAutoRefreshChange,

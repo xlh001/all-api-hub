@@ -2,6 +2,8 @@ import { Storage } from "@plasmohq/storage"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
+import type { SortingPriorityConfig } from "~/types/sorting"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 用户偏好设置类型定义
 export interface UserPreferences {
@@ -32,6 +34,8 @@ export interface UserPreferences {
   newApiBaseUrl?: string
   newApiAdminToken?: string
   newApiUserId?: string
+
+  sortingPriorityConfig?: SortingPriorityConfig
 }
 
 // 存储键名常量
@@ -56,7 +60,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   lastUpdated: Date.now(),
   newApiBaseUrl: "",
   newApiAdminToken: "",
-  newApiUserId: ""
+  newApiUserId: "",
+  sortingPriorityConfig: undefined
 }
 
 class UserPreferencesService {
@@ -261,6 +266,24 @@ class UserPreferencesService {
       console.error("[UserPreferences] 导入偏好设置失败:", error)
       return false
     }
+  }
+
+  async getSortingPriorityConfig(): Promise<SortingPriorityConfig> {
+    const prefs = await this.getPreferences()
+    return prefs.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG
+  }
+
+  async setSortingPriorityConfig(
+    config: SortingPriorityConfig
+  ): Promise<boolean> {
+    config.lastModified = Date.now()
+    return this.savePreferences({ sortingPriorityConfig: config })
+  }
+
+  async resetSortingPriorityConfig(): Promise<boolean> {
+    const prefs = await this.getPreferences()
+    const { sortingPriorityConfig, ...rest } = prefs
+    return this.savePreferences(rest as any)
   }
 }
 

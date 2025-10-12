@@ -10,8 +10,7 @@ import React, {
 } from "react"
 import toast from "react-hot-toast" // 1. 定义 Context 的值类型
 
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
-import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext" // 1. 定义 Context 的值类型
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { accountStorage } from "~/services/accountStorage"
 import type {
   AccountStats,
@@ -22,6 +21,7 @@ import type {
   SortField,
   SortOrder
 } from "~/types"
+import { createDynamicSortComparator } from "~/utils/sortingPriority"
 
 // 1. 定义 Context 的值类型
 interface AccountDataContextType {
@@ -57,6 +57,7 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
     sortField: initialSortField,
     sortOrder: initialSortOrder,
     updateSortConfig,
+    sortingPriorityConfig,
     preferences
   } = useUserPreferencesContext()
   const [accounts, setAccounts] = useState<SiteAccount[]>([])
@@ -269,55 +270,22 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
   )
 
   const sortedData = useMemo(() => {
-    const healthPriority = {
-      error: 1,
-      warning: 2,
-      unknown: 3,
-      healthy: 4
-    }
-
-    return [...displayData].sort((a, b) => {
-      // Priority 1: Current site
-      if (detectedAccount?.id) {
-        if (a.id === detectedAccount.id) return -1
-        if (b.id === detectedAccount.id) return 1
-      }
-
-      // Priority 2: Health status
-      const healthA = healthPriority[a.health?.status] || 4
-      const healthB = healthPriority[b.health?.status] || 4
-      if (healthA !== healthB) {
-        return healthA - healthB
-      }
-
-      // Priority 3: Accounts needing check-in
-      const checkInA = a.can_check_in ? 1 : 0
-      const checkInB = b.can_check_in ? 1 : 0
-      if (checkInA !== checkInB) {
-        return checkInB - checkInA
-      }
-
-      // Priority 4: User-selected sort field
-      switch (sortField) {
-        case "name":
-          return sortOrder === "asc"
-            ? a.name.localeCompare(b.name)
-            : b.name.localeCompare(a.name)
-        case DATA_TYPE_BALANCE:
-          return sortOrder === "asc"
-            ? a.balance[currencyType] - b.balance[currencyType]
-            : b.balance[currencyType] - a.balance[currencyType]
-        case DATA_TYPE_CONSUMPTION:
-          return sortOrder === "asc"
-            ? a.todayConsumption[currencyType] -
-                b.todayConsumption[currencyType]
-            : b.todayConsumption[currencyType] -
-                a.todayConsumption[currencyType]
-        default:
-          return 0
-      }
-    })
-  }, [displayData, sortField, sortOrder, currencyType, detectedAccount])
+    const comparator = createDynamicSortComparator(
+      sortingPriorityConfig,
+      detectedAccount,
+      sortField,
+      currencyType,
+      sortOrder
+    )
+    return [...displayData].sort(comparator)
+  }, [
+    displayData,
+    sortingPriorityConfig,
+    detectedAccount,
+    sortField,
+    currencyType,
+    sortOrder
+  ])
 
   const value = useMemo(
     () => ({

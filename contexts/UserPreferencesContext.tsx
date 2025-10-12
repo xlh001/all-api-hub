@@ -14,6 +14,8 @@ import {
   type UserPreferences
 } from "~/services/userPreferences"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
+import type { SortingPriorityConfig } from "~/types/sorting"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 1. 定义 Context 的值类型
 interface UserPreferencesContextType {
@@ -21,6 +23,7 @@ interface UserPreferencesContextType {
   isLoading: boolean
   activeTab: BalanceType
   currencyType: CurrencyType
+  sortingPriorityConfig: SortingPriorityConfig
   sortField: SortField
   sortOrder: SortOrder
   updateActiveTab: (activeTab: BalanceType) => Promise<boolean>
@@ -28,6 +31,9 @@ interface UserPreferencesContextType {
   updateSortConfig: (
     sortField: SortField,
     sortOrder: SortOrder
+  ) => Promise<boolean>
+  updateSortingPriorityConfig: (
+    sortingPriority: SortingPriorityConfig
   ) => Promise<boolean>
   loadPreferences: () => Promise<void>
 }
@@ -94,6 +100,25 @@ export const UserPreferencesProvider = ({
     []
   )
 
+  const updateSortingPriorityConfig = useCallback(
+    async (sortingPriority: SortingPriorityConfig) => {
+      const success =
+        await userPreferences.setSortingPriorityConfig(sortingPriority)
+      if (success) {
+        setPreferences((prev) =>
+          prev
+            ? {
+                ...prev,
+                sortingPriorityConfig: sortingPriority
+              }
+            : null
+        )
+      }
+      return success
+    },
+    []
+  )
+
   const value = useMemo(
     () => ({
       preferences,
@@ -102,9 +127,12 @@ export const UserPreferencesProvider = ({
       currencyType: preferences?.currencyType || "USD",
       sortField: preferences?.sortField || UI_CONSTANTS.SORT.DEFAULT_FIELD,
       sortOrder: preferences?.sortOrder || UI_CONSTANTS.SORT.DEFAULT_ORDER,
+      sortingPriorityConfig:
+        preferences?.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG,
       updateActiveTab,
       updateCurrencyType,
       updateSortConfig,
+      updateSortingPriorityConfig,
       loadPreferences
     }),
     [
@@ -113,6 +141,7 @@ export const UserPreferencesProvider = ({
       updateActiveTab,
       updateCurrencyType,
       updateSortConfig,
+      updateSortingPriorityConfig,
       loadPreferences
     ]
   )

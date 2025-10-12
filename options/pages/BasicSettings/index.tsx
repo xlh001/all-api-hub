@@ -4,6 +4,7 @@ import LoadingSkeleton from "~/options/pages/BasicSettings/components/LoadingSke
 import NewApiSettings from "~/options/pages/BasicSettings/components/NewApiSettings"
 import RefreshSettings from "~/options/pages/BasicSettings/components/RefreshSettings"
 import SettingsHeader from "~/options/pages/BasicSettings/components/SettingsHeader"
+import SortingPrioritySettings from "~/options/pages/BasicSettings/components/SortingPrioritySettings"
 import {
   BasicSettingsProvider,
   useBasicSettings
@@ -22,6 +23,7 @@ function BasicSettingsContent() {
       <div className="space-y-6">
         <DisplaySettings />
         <RefreshSettings />
+        <SortingPrioritySettings />
         <NewApiSettings />
         <DangerousZone />
       </div>
