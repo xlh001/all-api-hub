@@ -34,7 +34,7 @@ import {
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import { importToNewApi } from "~/services/newApiService"
 import { userPreferences } from "~/services/userPreferences"
-import type { DisplaySiteData, SiteAccount } from "~/types"
+import { AuthTypeEnum, type DisplaySiteData, type SiteAccount } from "~/types"
 import {
   analyzeAutoDetectError,
   type AutoDetectError
@@ -46,6 +46,7 @@ import {
   fetchAccountData,
   fetchSiteStatus,
   fetchSupportCheckIn,
+  fetchUserInfo,
   getOrCreateAccessToken
 } from "./apiService"
 
@@ -73,7 +74,8 @@ export interface AccountSaveResult {
 
 // 自动检测账号信息
 export async function autoDetectAccount(
-  url: string
+  url: string,
+  authType: AuthTypeEnum
 ): Promise<AccountValidationResult> {
   if (!url.trim()) {
     return { success: false, error: "站点地址不能为空" }
@@ -115,7 +117,9 @@ export async function autoDetectAccount(
 
     // 并行执行：获取用户信息和站点状态
     const [tokenInfo, siteStatus] = await Promise.all([
-      getOrCreateAccessToken(url, userId),
+      authType === AuthTypeEnum.Cookie
+        ? fetchUserInfo(url, userId)
+        : getOrCreateAccessToken(url, userId),
       fetchSiteStatus(url.trim())
     ])
 
@@ -168,7 +172,8 @@ export async function validateAndSaveAccount(
   exchangeRate: string,
   notes: string,
   supportsCheckIn: boolean,
-  siteType: string
+  siteType: string,
+  authType: AuthTypeEnum
 ): Promise<AccountSaveResult> {
   // 表单验证
   if (
@@ -192,7 +197,8 @@ export async function validateAndSaveAccount(
       url.trim(),
       parsedUserId,
       accessToken.trim(),
-      supportsCheckIn
+      supportsCheckIn,
+      authType
     )
 
     const accountData: Omit<SiteAccount, "id" | "created_at" | "updated_at"> = {
@@ -201,6 +207,7 @@ export async function validateAndSaveAccount(
       site_url: url.trim(),
       health: { status: "healthy" }, // 成功获取数据说明状态正常
       site_type: siteType,
+      authType: authType,
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes || "",
       can_check_in: freshAccountData.can_check_in,
@@ -244,7 +251,8 @@ export async function validateAndUpdateAccount(
   exchangeRate: string,
   notes: string,
   supports_check_in: boolean,
-  siteType: string
+  siteType: string,
+  authType: AuthTypeEnum
 ): Promise<AccountSaveResult> {
   // 表单验证
   if (
@@ -268,7 +276,8 @@ export async function validateAndUpdateAccount(
       url.trim(),
       parsedUserId,
       accessToken.trim(),
-      supports_check_in
+      supports_check_in,
+      authType
     )
 
     const updateData: Partial<Omit<SiteAccount, "id" | "created_at">> = {
@@ -276,6 +285,7 @@ export async function validateAndUpdateAccount(
       site_url: url.trim(),
       health: { status: "healthy" }, // 成功获取数据说明状态正常
       site_type: siteType,
+      authType: authType,
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes,
       supports_check_in,
@@ -448,7 +458,8 @@ export async function autoConfigToNewApi(
       const tokens = await fetchAccountTokens({
         baseUrl: account.site_url,
         userId: account.account_info.id,
-        token: account.account_info.access_token
+        token: account.account_info.access_token,
+        authType: account.authType
       })
       let apiToken = tokens[0]
 
@@ -468,7 +479,8 @@ export async function autoConfigToNewApi(
         const updatedTokens = await fetchAccountTokens({
           baseUrl: account.site_url,
           userId: account.account_info.id,
-          token: account.account_info.access_token
+          token: account.account_info.access_token,
+          authType: account.authType
         })
         apiToken = updatedTokens[-1]
       }

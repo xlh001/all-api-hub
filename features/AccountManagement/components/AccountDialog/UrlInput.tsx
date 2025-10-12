@@ -7,13 +7,15 @@ import {
 } from "@heroicons/react/24/outline"
 
 import Tooltip from "~/components/Tooltip"
-import type { DisplaySiteData } from "~/types"
+import { AuthTypeEnum, type DisplaySiteData } from "~/types"
 
 interface UrlInputProps {
   url: string
   onUrlChange: (url: string) => void
   isDetected: boolean
   onClearUrl: () => void
+  authType: AuthTypeEnum
+  onAuthTypeChange: (authType: AuthTypeEnum) => void
   // Props for "add" mode
   currentTabUrl?: string | null
   isCurrentSiteAdded?: boolean
@@ -27,6 +29,8 @@ export default function UrlInput({
   onUrlChange,
   isDetected,
   onClearUrl,
+  authType,
+  onAuthTypeChange,
   currentTabUrl,
   isCurrentSiteAdded,
   detectedAccount,
@@ -46,24 +50,34 @@ export default function UrlInput({
         className="block text-sm font-medium text-gray-700">
         网站 URL
       </label>
-      <div className="relative">
-        <input
-          id="site-url"
-          type="text"
-          value={url}
-          onChange={(e) => onUrlChange(e.target.value)}
-          placeholder="https://example.com"
-          className="block w-full pr-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
-          disabled={isDetected}
-        />
-        {url && !isDetected && (
-          <button
-            type="button"
-            onClick={onClearUrl}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-            <XCircleIcon className="h-5 w-5" />
-          </button>
-        )}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-grow">
+          <input
+            id="site-url"
+            type="text"
+            value={url}
+            onChange={(e) => onUrlChange(e.target.value)}
+            placeholder="https://example.com"
+            className="block w-full pr-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
+            disabled={isDetected}
+          />
+          {url && !isDetected && (
+            <button
+              type="button"
+              onClick={onClearUrl}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+              <XCircleIcon className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+        <select
+          value={authType}
+          onChange={(e) => onAuthTypeChange(e.target.value as AuthTypeEnum)}
+          className="block py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+          disabled={isDetected}>
+          <option value={AuthTypeEnum.AccessToken}>Access Token</option>
+          <option value={AuthTypeEnum.Cookie}>Cookie</option>
+        </select>
       </div>
       <div className="flex flex-col gap-y-2 justify-between text-xs">
         {isCurrentSiteAdded && handleEditClick && (

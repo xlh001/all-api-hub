@@ -44,7 +44,8 @@ export class ApiError extends Error {
  */
 export const fetchUserInfo = async (
   baseUrl: string,
-  userId?: number
+  userId?: number,
+  authType?: AuthTypeEnum
 ): Promise<UserInfo> => {
   const userData = await fetchApiData<UserInfo>({
     baseUrl,

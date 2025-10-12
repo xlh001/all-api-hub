@@ -10,7 +10,7 @@ import {
   validateAndUpdateAccount
 } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
-import type { DisplaySiteData } from "~/types"
+import { AuthTypeEnum, type DisplaySiteData } from "~/types"
 import type { AutoDetectError } from "~/utils/autoDetectUtils"
 
 interface UseAccountDialogProps {
@@ -44,6 +44,7 @@ export function useAccountDialog({
   const [notes, setNotes] = useState("")
   const [supportsCheckIn, setSupportsCheckIn] = useState(false)
   const [siteType, setSiteType] = useState("unknown")
+  const [authType, setAuthType] = useState(AuthTypeEnum.AccessToken)
   const [isAutoConfiguring, setIsAutoConfiguring] = useState(false)
 
   // useRef 保存跨渲染引用
@@ -64,6 +65,7 @@ export function useAccountDialog({
     setNotes("")
     setSupportsCheckIn(false)
     setSiteType("unknown")
+    setAuthType(AuthTypeEnum.AccessToken)
     setIsAutoConfiguring(false)
   }, [mode])
 
@@ -80,6 +82,7 @@ export function useAccountDialog({
         setNotes(siteAccount.notes || "")
         setSupportsCheckIn(siteAccount.supports_check_in || false)
         setSiteType(siteAccount.site_type || "")
+        setAuthType(siteAccount.authType || AuthTypeEnum.AccessToken)
       }
     } catch (error) {
       console.error("加载账号数据失败:", error)
@@ -134,7 +137,7 @@ export function useAccountDialog({
     setDetectionError(null)
 
     try {
-      const result = await autoDetectAccount(url.trim())
+      const result = await autoDetectAccount(url.trim(), authType)
 
       if (!result.success) {
         setDetectionError(result.detailedError || null)
@@ -191,7 +194,8 @@ export function useAccountDialog({
               exchangeRate,
               notes.trim(),
               supportsCheckIn,
-              siteType
+              siteType,
+              authType
             )
           : await validateAndUpdateAccount(
               account!.id,
@@ -203,7 +207,8 @@ export function useAccountDialog({
               exchangeRate,
               notes.trim(),
               supportsCheckIn,
-              siteType
+              siteType,
+              authType
             )
 
       if (result.success) {
@@ -312,6 +317,7 @@ export function useAccountDialog({
       notes,
       supportsCheckIn,
       siteType,
+      authType,
       isFormValid,
       isAutoConfiguring
     },
@@ -326,7 +332,8 @@ export function useAccountDialog({
       setExchangeRate,
       setNotes,
       setSupportsCheckIn,
-      setSiteType
+      setSiteType,
+      setAuthType
     },
     handlers: {
       handleUseCurrentTabUrl,

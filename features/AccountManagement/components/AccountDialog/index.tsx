@@ -104,6 +104,8 @@ export default function AccountDialog({
                     onUrlChange={handlers.handleUrlChange}
                     isDetected={state.isDetected}
                     onClearUrl={() => setters.setUrl("")}
+                    authType={state.authType}
+                    onAuthTypeChange={setters.setAuthType}
                     {...(mode === "add" && {
                       currentTabUrl: state.currentTabUrl,
                       isCurrentSiteAdded: !!detectedAccount,

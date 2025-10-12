@@ -1,12 +1,13 @@
 import { Storage } from "@plasmohq/storage"
 
-import type {
-  AccountStats,
-  CurrencyType,
-  DisplaySiteData,
-  SiteAccount,
-  SiteHealthStatus,
-  StorageConfig
+import {
+  AuthTypeEnum,
+  type AccountStats,
+  type CurrencyType,
+  type DisplaySiteData,
+  type SiteAccount,
+  type SiteHealthStatus,
+  type StorageConfig
 } from "~/types"
 
 import { refreshAccountData } from "./apiService"
@@ -202,7 +203,8 @@ class AccountStorageService {
         account.site_url,
         account.account_info.id,
         account.account_info.access_token,
-        account.supports_check_in ?? false
+        account.supports_check_in ?? false,
+        account.authType
       )
 
       // 构建更新数据
@@ -386,7 +388,8 @@ class AccountStorageService {
       notes: account.notes,
       siteType: account.site_type,
       can_check_in: account.can_check_in,
-      supports_check_in: account.supports_check_in
+      supports_check_in: account.supports_check_in,
+      authType: account.authType || AuthTypeEnum.AccessToken
     })
 
     // 判断是否是数组

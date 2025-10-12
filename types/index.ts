@@ -94,6 +94,7 @@ export interface DisplaySiteData {
   notes?: string
   can_check_in?: boolean // 是否可以签到
   supports_check_in?: boolean // 是否支持签到功能
+  authType?: AuthTypeEnum // 认证方式
 }
 
 // 站点的token 密钥信息(API 密钥)
