@@ -106,7 +106,7 @@ export async function autoDetectAccount(
       authType === AuthTypeEnum.Cookie
         ? fetchUserInfo(url, userId)
         : getOrCreateAccessToken(url, userId),
-      fetchSiteStatus(url.trim())
+      fetchSiteStatus(url, authType)
     ])
 
     const { username: detectedUsername, access_token } = tokenInfo

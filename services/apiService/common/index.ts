@@ -2,7 +2,6 @@ import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import type {
   AccessTokenInfo,
   AccountData,
-  ApiResponse,
   CreateTokenRequest,
   HealthCheckResult,
   LogResponseData,
@@ -23,7 +22,6 @@ import {
   getTodayTimestampRange
 } from "~/services/apiService/common/utils"
 import { AuthTypeEnum, type ApiToken } from "~/types"
-import { joinUrl } from "~/utils/url"
 
 // ============= 错误处理 =============
 export class ApiError extends Error {
@@ -80,32 +78,15 @@ export const createAccessToken = async (
  * 获取站点状态信息（包含充值比例）
  */
 export const fetchSiteStatus = async (
-  baseUrl: string
+  baseUrl: string,
+  authType?: AuthTypeEnum
 ): Promise<SiteStatusInfo | null> => {
   try {
-    const url = joinUrl(baseUrl, "/api/status")
-    const options = {
-      method: "GET",
-      headers: {
-        "Content-Type": REQUEST_CONFIG.HEADERS.CONTENT_TYPE,
-        Pragma: REQUEST_CONFIG.HEADERS.PRAGMA
-      },
-      credentials: "omit" as RequestCredentials // 明确不携带 cookies
-    }
-
-    const response = await fetch(url, options)
-    if (!response.ok) {
-      console.warn(`获取站点状态失败: ${response.status}`)
-      return null
-    }
-
-    const data: ApiResponse<SiteStatusInfo> = await response.json()
-    if (!data.success || !data.data) {
-      console.warn("站点状态响应数据格式错误")
-      return null
-    }
-
-    return data.data
+    return await fetchApiData({
+      baseUrl,
+      endpoint: "/api/status",
+      authType: authType || AuthTypeEnum.None
+    })
   } catch (error) {
     console.warn("获取站点状态信息失败:", error)
     return null
