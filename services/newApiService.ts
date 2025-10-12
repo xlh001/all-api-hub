@@ -4,9 +4,9 @@ import {
 } from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common"
 import {
-  apiRequest,
   apiRequestData,
-  createTokenAuthRequest
+  createTokenAuthRequest,
+  fetchApi
 } from "~/services/apiService/common/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { isNotEmptyArray } from "~/utils"
@@ -83,16 +83,15 @@ export async function createChannel(
   channelData: object
 ) {
   try {
-    const url = joinUrl(baseUrl, `/api/channel`)
     const options = createTokenAuthRequest(userId, adminToken, {
       method: "POST",
       body: JSON.stringify(channelData)
     })
-    return await apiRequest<NewApiResponse<undefined>>(
-      url,
-      options,
-      "/api/channel"
-    )
+    return await fetchApi<NewApiResponse<undefined>>({
+      baseUrl: baseUrl,
+      endpoint: "/api/channel",
+      options: options
+    })
   } catch (error) {
     console.error("创建渠道失败:", error)
     throw new Error("创建渠道失败，请检查网络或 New API 配置。")
