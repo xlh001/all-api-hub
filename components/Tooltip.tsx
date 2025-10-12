@@ -1,6 +1,8 @@
 import type { ReactNode } from "react"
 import { useEffect, useRef, useState } from "react"
 
+import { POPUP_HEIGHT, POPUP_WIDTH } from "~/constants/ui"
+
 interface TooltipProps {
   content: ReactNode
   children: ReactNode
@@ -48,10 +50,6 @@ export default function Tooltip({
       const containerRect = container.getBoundingClientRect()
       const tooltipRect = tooltip.getBoundingClientRect()
 
-      // 插件窗口的边界（假设宽度为384px，高度为600px）
-      const windowWidth = 384
-      const windowHeight = 600
-
       let bestPosition: "top" | "bottom" | "left" | "right" = "top"
 
       // 检查是否有足够空间显示在上方
@@ -59,7 +57,7 @@ export default function Tooltip({
         bestPosition = "top"
       }
       // 检查是否有足够空间显示在下方
-      else if (containerRect.bottom + tooltipRect.height + 10 < windowHeight) {
+      else if (containerRect.bottom + tooltipRect.height + 10 < POPUP_HEIGHT) {
         bestPosition = "bottom"
       }
       // 检查是否有足够空间显示在左侧
@@ -67,7 +65,7 @@ export default function Tooltip({
         bestPosition = "left"
       }
       // 检查是否有足够空间显示在右侧
-      else if (containerRect.right + tooltipRect.width + 10 < windowWidth) {
+      else if (containerRect.right + tooltipRect.width + 10 < POPUP_WIDTH) {
         bestPosition = "right"
       }
       // 默认显示在上方，即使空间不足

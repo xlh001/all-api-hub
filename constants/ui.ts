@@ -3,6 +3,8 @@
  */
 export const DATA_TYPE_CONSUMPTION = "consumption"
 export const DATA_TYPE_BALANCE = "balance"
+export const POPUP_WIDTH = 400
+export const POPUP_HEIGHT = 600
 
 export const UI_CONSTANTS = {
   // 弹窗尺寸
