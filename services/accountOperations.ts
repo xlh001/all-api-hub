@@ -101,11 +101,21 @@ export async function autoDetectAccount(
       }
     }
 
-    // 并行执行：获取用户信息和站点状态
+    let tokenPromise: Promise<any>
+
+    // 根据 authType 选择对应的 Promise
+    if (authType === AuthTypeEnum.Cookie) {
+      tokenPromise = fetchUserInfo(url, userId)
+    } else if (authType === AuthTypeEnum.AccessToken) {
+      tokenPromise = getOrCreateAccessToken(url, userId)
+    } else {
+      // none 或其他情况
+      tokenPromise = Promise.resolve(null)
+    }
+
+    // 并行执行 token 获取和 site 状态获取
     const [tokenInfo, siteStatus] = await Promise.all([
-      authType === AuthTypeEnum.Cookie
-        ? fetchUserInfo(url, userId)
-        : getOrCreateAccessToken(url, userId),
+      tokenPromise,
       fetchSiteStatus(url, authType)
     ])
 
