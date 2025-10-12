@@ -227,7 +227,7 @@ export function useAccountDialog({
 
   const handleAutoConfig = async () => {
     setIsAutoConfiguring(true)
-    const toastId = toast.loading("正在开始自动配置...")
+    const toastId = toast.loading("正在开始自动配置到 New API...")
     try {
       let targetAccount: any = account || newAccountRef.current
       // 如果是新增（account 不存在），就先保存
@@ -259,7 +259,7 @@ export function useAccountDialog({
         throw new Error(result.message)
       }
     } catch (error) {
-      toast.error(`自动配置失败: ${error.message}`, { id: toastId })
+      toast.error(`自动配置到 New API失败: ${error.message}`, { id: toastId })
     } finally {
       setIsAutoConfiguring(false)
     }
