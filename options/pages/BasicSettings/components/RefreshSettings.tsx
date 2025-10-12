@@ -1,20 +1,71 @@
 import { Switch } from "@headlessui/react"
+import { useEffect, useState } from "react"
+import toast from "react-hot-toast"
 
-import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+
+import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function RefreshSettings() {
   const {
     autoRefresh,
     refreshOnOpen,
-    intervalInput,
-    minIntervalInput,
-    handleAutoRefreshChange,
-    handleRefreshOnOpenChange,
-    handleRefreshIntervalChange,
-    handleRefreshIntervalBlur,
-    handleMinRefreshIntervalChange,
-    handleMinRefreshIntervalBlur
-  } = useBasicSettings()
+    refreshInterval,
+    minRefreshInterval,
+    updateAutoRefresh,
+    updateRefreshOnOpen,
+    updateRefreshInterval,
+    updateMinRefreshInterval
+  } = useUserPreferencesContext()
+
+  const [intervalInput, setIntervalInput] = useState(refreshInterval.toString())
+  const [minIntervalInput, setMinIntervalInput] = useState(
+    minRefreshInterval.toString()
+  )
+
+  useEffect(() => {
+    setIntervalInput(refreshInterval.toString())
+  }, [refreshInterval])
+
+  useEffect(() => {
+    setMinIntervalInput(minRefreshInterval.toString())
+  }, [minRefreshInterval])
+
+  const handleAutoRefreshChange = async (value: boolean) => {
+    const success = await updateAutoRefresh(value)
+    showUpdateToast(success, "自动刷新")
+  }
+
+  const handleRefreshOnOpenChange = async (value: boolean) => {
+    const success = await updateRefreshOnOpen(value)
+    showUpdateToast(success, "打开插件时自动刷新")
+  }
+
+  const handleRefreshIntervalBlur = async () => {
+    const value = parseInt(intervalInput, 10)
+    if (isNaN(value) || value < 10) {
+      toast.error("刷新间隔不能小于10秒")
+      setIntervalInput(refreshInterval.toString())
+      return
+    }
+    if (value === refreshInterval) return
+
+    const success = await updateRefreshInterval(value)
+    showUpdateToast(success, "刷新间隔")
+  }
+
+  const handleMinRefreshIntervalBlur = async () => {
+    const value = parseInt(minIntervalInput, 10)
+    if (isNaN(value) || value < 0 || value > 300) {
+      toast.error("最小刷新间隔必须在0到300秒之间")
+      setMinIntervalInput(minRefreshInterval.toString())
+      return
+    }
+    if (value === minRefreshInterval) return
+
+    const success = await updateMinRefreshInterval(value)
+    showUpdateToast(success, "最小刷新间隔")
+  }
 
   return (
     <section>
@@ -54,7 +105,7 @@ export default function RefreshSettings() {
                 type="number"
                 min="10"
                 value={intervalInput}
-                onChange={(e) => handleRefreshIntervalChange(e.target.value)}
+                onChange={(e) => setIntervalInput(e.target.value)}
                 onBlur={handleRefreshIntervalBlur}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -107,7 +158,7 @@ export default function RefreshSettings() {
               min="0"
               max="300"
               value={minIntervalInput}
-              onChange={(e) => handleMinRefreshIntervalChange(e.target.value)}
+              onChange={(e) => setMinIntervalInput(e.target.value)}
               onBlur={handleMinRefreshIntervalBlur}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {

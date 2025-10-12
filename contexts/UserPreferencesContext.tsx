@@ -26,7 +26,16 @@ interface UserPreferencesContextType {
   sortingPriorityConfig: SortingPriorityConfig
   sortField: SortField
   sortOrder: SortOrder
+  autoRefresh: boolean
+  refreshInterval: number
+  minRefreshInterval: number
+  refreshOnOpen: boolean
+  newApiBaseUrl: string
+  newApiAdminToken: string
+  newApiUserId: string
+
   updateActiveTab: (activeTab: BalanceType) => Promise<boolean>
+  updateDefaultTab: (activeTab: BalanceType) => Promise<boolean>
   updateCurrencyType: (currencyType: CurrencyType) => Promise<boolean>
   updateSortConfig: (
     sortField: SortField,
@@ -35,6 +44,14 @@ interface UserPreferencesContextType {
   updateSortingPriorityConfig: (
     sortingPriority: SortingPriorityConfig
   ) => Promise<boolean>
+  updateAutoRefresh: (enabled: boolean) => Promise<boolean>
+  updateRefreshInterval: (interval: number) => Promise<boolean>
+  updateMinRefreshInterval: (interval: number) => Promise<boolean>
+  updateRefreshOnOpen: (enabled: boolean) => Promise<boolean>
+  updateNewApiBaseUrl: (url: string) => Promise<boolean>
+  updateNewApiAdminToken: (token: string) => Promise<boolean>
+  updateNewApiUserId: (userId: string) => Promise<boolean>
+  resetToDefaults: () => Promise<boolean>
   loadPreferences: () => Promise<void>
 }
 
@@ -69,6 +86,14 @@ export const UserPreferencesProvider = ({
   }, [loadPreferences])
 
   const updateActiveTab = useCallback(async (activeTab: BalanceType) => {
+    const success = await userPreferences.updateActiveTab(activeTab)
+    if (success) {
+      setPreferences((prev) => (prev ? { ...prev, activeTab } : null))
+    }
+    return success
+  }, [])
+
+  const updateDefaultTab = useCallback(async (activeTab: BalanceType) => {
     const success = await userPreferences.updateActiveTab(activeTab)
     if (success) {
       setPreferences((prev) => (prev ? { ...prev, activeTab } : null))
@@ -119,6 +144,90 @@ export const UserPreferencesProvider = ({
     []
   )
 
+  const updateAutoRefresh = useCallback(async (enabled: boolean) => {
+    const success = await userPreferences.updateAutoRefresh(enabled)
+    if (success) {
+      setPreferences((prev) =>
+        prev ? { ...prev, autoRefresh: enabled } : null
+      )
+      chrome.runtime.sendMessage({
+        action: "updateAutoRefreshSettings",
+        settings: { autoRefresh: enabled }
+      })
+    }
+    return success
+  }, [])
+
+  const updateRefreshInterval = useCallback(async (interval: number) => {
+    const success = await userPreferences.updateRefreshInterval(interval)
+    if (success) {
+      setPreferences((prev) =>
+        prev ? { ...prev, refreshInterval: interval } : null
+      )
+      chrome.runtime.sendMessage({
+        action: "updateAutoRefreshSettings",
+        settings: { refreshInterval: interval }
+      })
+    }
+    return success
+  }, [])
+
+  const updateMinRefreshInterval = useCallback(async (interval: number) => {
+    const success = await userPreferences.updateMinRefreshInterval(interval)
+    if (success) {
+      setPreferences((prev) =>
+        prev ? { ...prev, minRefreshInterval: interval } : null
+      )
+    }
+    return success
+  }, [])
+
+  const updateRefreshOnOpen = useCallback(async (enabled: boolean) => {
+    const success = await userPreferences.updateRefreshOnOpen(enabled)
+    if (success) {
+      setPreferences((prev) =>
+        prev ? { ...prev, refreshOnOpen: enabled } : null
+      )
+    }
+    return success
+  }, [])
+
+  const updateNewApiBaseUrl = useCallback(async (url: string) => {
+    const success = await userPreferences.updateNewApiBaseUrl(url)
+    if (success) {
+      setPreferences((prev) => (prev ? { ...prev, newApiBaseUrl: url } : null))
+    }
+    return success
+  }, [])
+
+  const updateNewApiAdminToken = useCallback(async (token: string) => {
+    const success = await userPreferences.updateNewApiAdminToken(token)
+    if (success) {
+      setPreferences((prev) =>
+        prev ? { ...prev, newApiAdminToken: token } : null
+      )
+    }
+    return success
+  }, [])
+
+  const updateNewApiUserId = useCallback(async (userId: string) => {
+    const success = await userPreferences.updateNewApiUserId(userId)
+    if (success) {
+      setPreferences((prev) =>
+        prev ? { ...prev, newApiUserId: userId } : null
+      )
+    }
+    return success
+  }, [])
+
+  const resetToDefaults = useCallback(async () => {
+    const success = await userPreferences.resetToDefaults()
+    if (success) {
+      await loadPreferences()
+    }
+    return success
+  }, [loadPreferences])
+
   const value = useMemo(
     () => ({
       preferences,
@@ -129,19 +238,44 @@ export const UserPreferencesProvider = ({
       sortOrder: preferences?.sortOrder || UI_CONSTANTS.SORT.DEFAULT_ORDER,
       sortingPriorityConfig:
         preferences?.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG,
+      autoRefresh: preferences?.autoRefresh ?? true,
+      refreshInterval: preferences?.refreshInterval ?? 360,
+      minRefreshInterval: preferences?.minRefreshInterval ?? 60,
+      refreshOnOpen: preferences?.refreshOnOpen ?? true,
+      newApiBaseUrl: preferences?.newApiBaseUrl || "",
+      newApiAdminToken: preferences?.newApiAdminToken || "",
+      newApiUserId: preferences?.newApiUserId || "",
       updateActiveTab,
+      updateDefaultTab,
       updateCurrencyType,
       updateSortConfig,
       updateSortingPriorityConfig,
+      updateAutoRefresh,
+      updateRefreshInterval,
+      updateMinRefreshInterval,
+      updateRefreshOnOpen,
+      updateNewApiBaseUrl,
+      updateNewApiAdminToken,
+      updateNewApiUserId,
+      resetToDefaults,
       loadPreferences
     }),
     [
       preferences,
       isLoading,
       updateActiveTab,
+      updateDefaultTab,
       updateCurrencyType,
       updateSortConfig,
       updateSortingPriorityConfig,
+      updateAutoRefresh,
+      updateRefreshInterval,
+      updateMinRefreshInterval,
+      updateRefreshOnOpen,
+      updateNewApiBaseUrl,
+      updateNewApiAdminToken,
+      updateNewApiUserId,
+      resetToDefaults,
       loadPreferences
     ]
   )
@@ -164,7 +298,15 @@ export const useUserPreferencesContext = () => {
     context === undefined ||
     !context.updateActiveTab ||
     !context.updateCurrencyType ||
-    !context.updateSortConfig
+    !context.updateSortConfig ||
+    !context.updateAutoRefresh ||
+    !context.updateRefreshInterval ||
+    !context.updateMinRefreshInterval ||
+    !context.updateRefreshOnOpen ||
+    !context.updateNewApiBaseUrl ||
+    !context.updateNewApiAdminToken ||
+    !context.updateNewApiUserId ||
+    !context.resetToDefaults
   ) {
     throw new Error(
       "useUserPreferencesContext 必须在 UserPreferencesProvider 中使用，并且必须提供所有必需的函数"

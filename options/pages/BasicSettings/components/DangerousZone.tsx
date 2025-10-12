@@ -1,7 +1,19 @@
-import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
+import { useState } from "react"
+
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+
+import { showResetToast } from "../utils/toastHelpers"
 
 export default function DangerousZone() {
-  const { handleResetToDefaults } = useBasicSettings()
+  const { resetToDefaults } = useUserPreferencesContext()
+  const [isResetting, setIsResetting] = useState(false)
+
+  const handleResetToDefaults = async () => {
+    setIsResetting(true)
+    const success = await resetToDefaults()
+    showResetToast(success)
+    setIsResetting(false)
+  }
 
   return (
     <section>
@@ -16,8 +28,9 @@ export default function DangerousZone() {
           </div>
           <button
             onClick={handleResetToDefaults}
-            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
-            重置设置
+            disabled={isResetting}
+            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {isResetting ? "重置中..." : "重置设置"}
           </button>
         </div>
       </div>

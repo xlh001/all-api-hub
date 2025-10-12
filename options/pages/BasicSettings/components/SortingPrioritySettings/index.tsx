@@ -2,9 +2,10 @@ import type { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import React, { useEffect, useState } from "react"
 
-import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { SortingCriteriaType, type SortingFieldConfig } from "~/types/sorting"
 
+import { showUpdateToast } from "../../utils/toastHelpers"
 import { SortingPriorityDragList } from "./SortingPriorityDragList"
 
 // Maps sorting criteria IDs to their UI display text (label and description).
@@ -36,7 +37,7 @@ function SortingPrioritySettingsContent() {
     sortingPriorityConfig: initialConfig,
     updateSortingPriorityConfig,
     isLoading
-  } = useBasicSettings()
+  } = useUserPreferencesContext()
   const [items, setItems] = useState<SortingFieldConfig[]>([])
 
   useEffect(() => {
@@ -72,7 +73,8 @@ function SortingPrioritySettingsContent() {
         criteria: items,
         lastModified: Date.now()
       }
-      await updateSortingPriorityConfig(newConfig)
+      const success = await updateSortingPriorityConfig(newConfig)
+      showUpdateToast(success, "排序优先级")
     }
   }
 

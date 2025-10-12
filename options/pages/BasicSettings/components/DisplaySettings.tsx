@@ -1,15 +1,26 @@
 import { EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
-import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import type { BalanceType, CurrencyType } from "~/types"
+
+import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function DisplaySettings() {
-  const {
-    currencyType,
-    activeTab,
-    handleCurrencyChange,
-    handleDefaultTabChange
-  } = useBasicSettings()
+  const { currencyType, activeTab, updateCurrencyType, updateDefaultTab } =
+    useUserPreferencesContext()
+
+  const handleCurrencyChange = async (currency: CurrencyType) => {
+    if (currency === currencyType) return
+    const success = await updateCurrencyType(currency)
+    showUpdateToast(success, "货币单位")
+  }
+
+  const handleDefaultTabChange = async (tab: BalanceType) => {
+    if (tab === activeTab) return
+    const success = await updateDefaultTab(tab)
+    showUpdateToast(success, "默认标签页")
+  }
 
   return (
     <section>

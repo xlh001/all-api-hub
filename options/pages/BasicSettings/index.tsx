@@ -1,3 +1,7 @@
+import {
+  UserPreferencesProvider,
+  useUserPreferencesContext
+} from "~/contexts/UserPreferencesContext"
 import DangerousZone from "~/options/pages/BasicSettings/components/DangerousZone"
 import DisplaySettings from "~/options/pages/BasicSettings/components/DisplaySettings"
 import LoadingSkeleton from "~/options/pages/BasicSettings/components/LoadingSkeleton"
@@ -5,13 +9,9 @@ import NewApiSettings from "~/options/pages/BasicSettings/components/NewApiSetti
 import RefreshSettings from "~/options/pages/BasicSettings/components/RefreshSettings"
 import SettingsHeader from "~/options/pages/BasicSettings/components/SettingsHeader"
 import SortingPrioritySettings from "~/options/pages/BasicSettings/components/SortingPrioritySettings"
-import {
-  BasicSettingsProvider,
-  useBasicSettings
-} from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
 
 function BasicSettingsContent() {
-  const { isLoading } = useBasicSettings()
+  const { isLoading } = useUserPreferencesContext()
 
   if (isLoading) {
     return <LoadingSkeleton />
@@ -33,8 +33,8 @@ function BasicSettingsContent() {
 
 export default function BasicSettings() {
   return (
-    <BasicSettingsProvider>
+    <UserPreferencesProvider>
       <BasicSettingsContent />
-    </BasicSettingsProvider>
+    </UserPreferencesProvider>
   )
 }

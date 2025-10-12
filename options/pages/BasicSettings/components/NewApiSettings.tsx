@@ -1,38 +1,54 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import React, { useEffect, useState } from "react"
 
-import { useBasicSettings } from "~/options/pages/BasicSettings/contexts/BasicSettingsContext"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+
+import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function NewApiSettings() {
   const {
-    preferences,
-    handleNewApiBaseUrlChange,
-    handleNewApiAdminTokenChange,
-    handleNewApiUserIdChange
-  } = useBasicSettings()
+    newApiBaseUrl,
+    newApiAdminToken,
+    newApiUserId,
+    updateNewApiBaseUrl,
+    updateNewApiAdminToken,
+    updateNewApiUserId
+  } = useUserPreferencesContext()
 
-  const [localBaseUrl, setLocalBaseUrl] = useState(
-    preferences?.newApiBaseUrl ?? ""
-  )
-  const [localAdminToken, setLocalAdminToken] = useState(
-    preferences?.newApiAdminToken ?? ""
-  )
+  const [localBaseUrl, setLocalBaseUrl] = useState(newApiBaseUrl ?? "")
+  const [localAdminToken, setLocalAdminToken] = useState(newApiAdminToken ?? "")
   const [showAdminToken, setShowAdminToken] = useState(false)
-  const [localUserId, setLocalUserId] = useState(
-    preferences?.newApiUserId ?? ""
-  )
+  const [localUserId, setLocalUserId] = useState(newApiUserId ?? "")
 
   useEffect(() => {
-    setLocalBaseUrl(preferences?.newApiBaseUrl ?? "")
-  }, [preferences?.newApiBaseUrl])
+    setLocalBaseUrl(newApiBaseUrl ?? "")
+  }, [newApiBaseUrl])
 
   useEffect(() => {
-    setLocalAdminToken(preferences?.newApiAdminToken ?? "")
-  }, [preferences?.newApiAdminToken])
+    setLocalAdminToken(newApiAdminToken ?? "")
+  }, [newApiAdminToken])
 
   useEffect(() => {
-    setLocalUserId(preferences?.newApiUserId ?? "")
-  }, [preferences?.newApiUserId])
+    setLocalUserId(newApiUserId ?? "")
+  }, [newApiUserId])
+
+  const handleNewApiBaseUrlChange = async (url: string) => {
+    if (url === newApiBaseUrl) return
+    const success = await updateNewApiBaseUrl(url)
+    showUpdateToast(success, "New API Base URL")
+  }
+
+  const handleNewApiAdminTokenChange = async (token: string) => {
+    if (token === newApiAdminToken) return
+    const success = await updateNewApiAdminToken(token)
+    showUpdateToast(success, "Admin Token")
+  }
+
+  const handleNewApiUserIdChange = async (id: string) => {
+    if (id === newApiUserId) return
+    const success = await updateNewApiUserId(id)
+    showUpdateToast(success, "User ID")
+  }
 
   return (
     <section>
