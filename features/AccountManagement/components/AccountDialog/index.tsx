@@ -135,6 +135,7 @@ export default function AccountDialog({
                   {(state.isDetected || state.showManualForm) && (
                     <>
                       <AccountForm
+                        authType={state.authType}
                         siteName={state.siteName}
                         username={state.username}
                         userId={state.userId}

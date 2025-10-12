@@ -70,14 +70,16 @@ export default function UrlInput({
             </button>
           )}
         </div>
-        <select
-          value={authType}
-          onChange={(e) => onAuthTypeChange(e.target.value as AuthTypeEnum)}
-          className="block py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-          disabled={isDetected}>
-          <option value={AuthTypeEnum.AccessToken}>Access Token</option>
-          <option value={AuthTypeEnum.Cookie}>Cookie</option>
-        </select>
+        <Tooltip content="Cookie 认证使用您的当前登录账号，无法站点多账号，非必要请勿使用">
+          <select
+            value={authType}
+            onChange={(e) => onAuthTypeChange(e.target.value as AuthTypeEnum)}
+            className="block py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            disabled={isDetected}>
+            <option value={AuthTypeEnum.AccessToken}>Access Token</option>
+            <option value={AuthTypeEnum.Cookie}>Cookie</option>
+          </select>
+        </Tooltip>
       </div>
       <div className="flex flex-col gap-y-2 justify-between text-xs">
         {isCurrentSiteAdded && handleEditClick && (

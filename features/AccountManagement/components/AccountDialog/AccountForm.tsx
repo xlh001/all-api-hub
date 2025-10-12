@@ -11,8 +11,10 @@ import {
 
 import { SITE_TITLE_RULES } from "~/constants/siteType"
 import { isValidExchangeRate } from "~/services/accountOperations"
+import { AuthTypeEnum } from "~/types"
 
 interface AccountFormProps {
+  authType: AuthTypeEnum
   siteName: string
   username: string
   userId: string
@@ -34,6 +36,7 @@ interface AccountFormProps {
 }
 
 export default function AccountForm({
+  authType,
   siteName,
   username,
   userId,
@@ -141,34 +144,36 @@ export default function AccountForm({
       </div>
 
       {/* 访问令牌 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          访问令牌
-        </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <KeyIcon className="h-5 w-5 text-gray-400" />
+      {authType === AuthTypeEnum.AccessToken && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            访问令牌
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <KeyIcon className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type={showAccessToken ? "text" : "password"}
+              value={accessToken}
+              onChange={(e) => onAccessTokenChange(e.target.value)}
+              placeholder="访问令牌"
+              className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              required
+            />
+            <button
+              type="button"
+              onClick={onToggleShowAccessToken}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+              {showAccessToken ? (
+                <EyeSlashIcon className="h-4 w-4" />
+              ) : (
+                <EyeIcon className="h-4 w-4" />
+              )}
+            </button>
           </div>
-          <input
-            type={showAccessToken ? "text" : "password"}
-            value={accessToken}
-            onChange={(e) => onAccessTokenChange(e.target.value)}
-            placeholder="访问令牌"
-            className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-            required
-          />
-          <button
-            type="button"
-            onClick={onToggleShowAccessToken}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
-            {showAccessToken ? (
-              <EyeSlashIcon className="h-4 w-4" />
-            ) : (
-              <EyeIcon className="h-4 w-4" />
-            )}
-          </button>
         </div>
-      </div>
+      )}
 
       {/* 充值金额比例 */}
       <div>
