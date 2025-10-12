@@ -38,3 +38,11 @@ export const openUsagePage = (account: DisplaySiteData) => {
   )
   chrome.tabs.create({ url: logUrl })
 }
+
+export const openCheckInPage = (account: DisplaySiteData) => {
+  const checkInUrl = joinUrl(
+    account.baseUrl,
+    getSiteApiRouter(account.siteType).checkInPath
+  )
+  chrome.tabs.create({ url: checkInUrl })
+}

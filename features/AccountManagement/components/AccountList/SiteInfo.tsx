@@ -10,6 +10,7 @@ import Tooltip from "~/components/Tooltip"
 import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
+import { openCheckInPage } from "~/utils/navigation"
 
 interface SiteInfoProps {
   site: DisplaySiteData
@@ -18,6 +19,10 @@ interface SiteInfoProps {
 export default function SiteInfo({ site }: SiteInfoProps) {
   const { detectedAccount } = useAccountDataContext()
   const detectedAccountId = detectedAccount?.id
+
+  const handleCheckIn = () => {
+    openCheckInPage(site)
+  }
 
   return (
     <div className="flex items-center space-x-3 flex-1 min-w-0">
@@ -73,12 +78,16 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                   <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
                 </Tooltip>
               ) : site.can_check_in === false ? (
-                <Tooltip content="今日已签到" position="top">
-                  <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                <Tooltip content="今日已签到，点我查看" position="top">
+                  <button onClick={handleCheckIn}>
+                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                  </button>
                 </Tooltip>
               ) : (
-                <Tooltip content="今日未签到" position="top">
-                  <XCircleIcon className="h-4 w-4 text-red-500" />
+                <Tooltip content="今日未签到，点我去签到" position="top">
+                  <button onClick={handleCheckIn}>
+                    <XCircleIcon className="h-4 w-4 text-red-500" />
+                  </button>
                 </Tooltip>
               )}
             </>
