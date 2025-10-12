@@ -155,7 +155,7 @@ export const apiRequestData = async <T>(
  * @returns ApiResponse 对象
  * 默认：返回完整响应，不提取 data
  */
-export const apiRequest = async <T>(
+const apiRequest = async <T>(
   url: string,
   options?: RequestInit,
   endpoint?: string
