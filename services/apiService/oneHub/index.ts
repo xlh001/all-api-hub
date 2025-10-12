@@ -5,7 +5,7 @@ import type {
 import {
   apiRequestData,
   createTokenAuthRequest,
-  fetchApi
+  fetchApiData
 } from "~/services/apiService/common/utils"
 import type {
   OneHubModelPricing,
@@ -22,14 +22,14 @@ import {
 import { joinUrl } from "~/utils/url"
 
 export const fetchAvailableModel = async (params: BaseFetchParams) => {
-  return fetchApi<OneHubModelPricing>({
+  return fetchApiData<OneHubModelPricing>({
     ...params,
     endpoint: "/api/available_model"
   })
 }
 
 export const fetchUserGroupMap = async (params: BaseFetchParams) => {
-  return fetchApi<OneHubUserGroupMap>({
+  return fetchApiData<OneHubUserGroupMap>({
     ...params,
     endpoint: "/api/user_group_map"
   })

@@ -183,14 +183,14 @@ export interface FetchApiParams<T> {
 }
 
 /**
- * 通用 API 请求函数
+ * 通用 API 请求函数，直接返回 data
  * @param baseUrl 基础 URL
  * @param endpoint API 路径
  * @param userId 用户 ID
  * @param token 访问 token
  * @param options 额外 fetch 配置
  */
-export const fetchApi = async <T>({
+export const fetchApiData = async <T>({
   baseUrl,
   endpoint,
   userId,
