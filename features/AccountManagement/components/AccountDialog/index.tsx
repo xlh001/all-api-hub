@@ -15,7 +15,7 @@ import ActionButtons from "./ActionButtons"
 import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
 import DialogHeader from "./DialogHeader"
 import InfoPanel from "./InfoPanel"
-import UrlInput from "./UrlInput"
+import SiteInfoInput from "./SiteInfoInput"
 import { useAccountDialog } from "./useAccountDialog"
 
 interface AccountDialogProps {
@@ -99,7 +99,7 @@ export default function AccountDialog({
                     />
                   )}
 
-                  <UrlInput
+                  <SiteInfoInput
                     url={state.url}
                     onUrlChange={handlers.handleUrlChange}
                     isDetected={state.isDetected}

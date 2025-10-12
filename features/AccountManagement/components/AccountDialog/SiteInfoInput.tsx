@@ -9,7 +9,7 @@ import {
 import Tooltip from "~/components/Tooltip"
 import { AuthTypeEnum, type DisplaySiteData } from "~/types"
 
-interface UrlInputProps {
+interface SiteInfoInputProps {
   url: string
   onUrlChange: (url: string) => void
   isDetected: boolean
@@ -24,7 +24,7 @@ interface UrlInputProps {
   onEditAccount?: (account: DisplaySiteData) => void
 }
 
-export default function UrlInput({
+export default function SiteInfoInput({
   url,
   onUrlChange,
   isDetected,
@@ -36,7 +36,7 @@ export default function UrlInput({
   detectedAccount,
   onUseCurrentTab,
   onEditAccount
-}: UrlInputProps) {
+}: SiteInfoInputProps) {
   const handleEditClick = () => {
     if (detectedAccount && onEditAccount) {
       onEditAccount(detectedAccount)
@@ -45,11 +45,18 @@ export default function UrlInput({
 
   return (
     <div className="space-y-2">
-      <label
-        htmlFor="site-url"
-        className="block text-sm font-medium text-gray-700">
-        网站 URL
-      </label>
+      <div className="flex justify-between">
+        <label
+          htmlFor="site-url"
+          className="block text-sm font-medium text-gray-700">
+          网站 URL
+        </label>
+        <label
+          htmlFor="auth-type"
+          className="block text-sm font-medium text-gray-700">
+          认证方式
+        </label>
+      </div>
       <div className="flex items-center gap-2">
         <div className="relative flex-grow">
           <input
@@ -72,6 +79,7 @@ export default function UrlInput({
         </div>
         <Tooltip content="Cookie 认证使用您的当前登录账号，无法站点多账号，非必要请勿使用">
           <select
+            id="auth-type"
             value={authType}
             onChange={(e) => onAuthTypeChange(e.target.value as AuthTypeEnum)}
             className="block py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
