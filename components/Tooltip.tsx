@@ -33,6 +33,7 @@ export default function Tooltip({
   // 判断 content 是否为 string
   const isString = typeof content === "string"
 
+  const defaultClassName = `z-[9999] bg-gray-900 text-white text-xs rounded-lg shadow-lg px-3 py-2 ${className}`
   return (
     <>
       <div id={tooltipId} className="inline-block">
@@ -45,14 +46,14 @@ export default function Tooltip({
           place={position}
           content={content}
           delayShow={delay}
-          className={`bg-gray-900 text-white text-xs rounded-lg shadow-lg px-3 py-2 ${className}`}
+          className={defaultClassName}
         />
       ) : (
         <ReactTooltip
           anchorId={tooltipId}
           place={position}
           delayShow={delay}
-          className={`bg-gray-900 text-white text-xs rounded-lg shadow-lg px-3 py-2 ${className}`}>
+          className={defaultClassName}>
           {content}
         </ReactTooltip>
       )}
