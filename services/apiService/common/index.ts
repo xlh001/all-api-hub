@@ -22,7 +22,7 @@ import {
   fetchApiData,
   getTodayTimestampRange
 } from "~/services/apiService/common/utils"
-import type { ApiToken } from "~/types"
+import { AuthTypeEnum, type ApiToken } from "~/types"
 import { joinUrl } from "~/utils/url"
 
 // ============= 错误处理 =============
@@ -50,7 +50,7 @@ export const fetchUserInfo = async (
     baseUrl,
     endpoint: "/api/user/self",
     userId,
-    authType: "cookie"
+    authType: AuthTypeEnum.Cookie
   })
 
   return {
@@ -71,7 +71,7 @@ export const createAccessToken = async (
     baseUrl,
     endpoint: "/api/user/token",
     userId,
-    authType: "cookie"
+    authType: AuthTypeEnum.Cookie
   })
 }
 
@@ -169,13 +169,15 @@ export const getOrCreateAccessToken = async (
 export const fetchAccountQuota = async (
   baseUrl: string,
   userId: number,
-  accessToken: string
+  accessToken: string,
+  authType?: AuthTypeEnum
 ): Promise<number> => {
   const userData = await fetchApiData<{ quota?: number }>({
     baseUrl,
     endpoint: "/api/user/self",
     userId,
-    token: accessToken
+    token: accessToken,
+    authType
   })
 
   return userData.quota || 0
@@ -187,14 +189,16 @@ export const fetchAccountQuota = async (
 export const fetchCheckInStatus = async (
   baseUrl: string,
   userId: number,
-  accessToken: string
+  accessToken: string,
+  authType?: AuthTypeEnum
 ): Promise<boolean | undefined> => {
   try {
     const checkInData = await fetchApiData<{ can_check_in?: boolean }>({
       baseUrl,
       endpoint: "/api/user/check_in_status",
       userId,
-      token: accessToken
+      token: accessToken,
+      authType
     })
     // 仅当 can_check_in 明确为 true 或 false 时才返回，否则返回 undefined
     if (typeof checkInData.can_check_in === "boolean") {
@@ -231,7 +235,8 @@ export const fetchSupportCheckIn = async (
 export const fetchTodayUsage = async (
   baseUrl: string,
   userId: number,
-  accessToken: string
+  accessToken: string,
+  authType?: AuthTypeEnum
 ): Promise<TodayUsageData> => {
   const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
 
@@ -260,7 +265,8 @@ export const fetchTodayUsage = async (
       baseUrl,
       endpoint: `/api/log/self?${params.toString()}`,
       userId,
-      token: accessToken
+      token: accessToken,
+      authType
     })
 
     const items = logData.items || []
@@ -304,15 +310,16 @@ export const fetchAccountData = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  checkSupport: boolean
+  checkSupport: boolean,
+  authType?: AuthTypeEnum
 ): Promise<AccountData> => {
   const promises: Promise<any>[] = [
-    fetchAccountQuota(baseUrl, userId, accessToken),
-    fetchTodayUsage(baseUrl, userId, accessToken)
+    fetchAccountQuota(baseUrl, userId, accessToken, authType),
+    fetchTodayUsage(baseUrl, userId, accessToken, authType)
   ]
 
   if (checkSupport) {
-    promises.push(fetchCheckInStatus(baseUrl, userId, accessToken))
+    promises.push(fetchCheckInStatus(baseUrl, userId, accessToken, authType))
   }
 
   const [quota, todayUsage, canCheckIn] = (await Promise.all(promises)) as [
@@ -335,14 +342,16 @@ export const refreshAccountData = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  checkSupport: boolean
+  checkSupport: boolean,
+  authType?: AuthTypeEnum
 ): Promise<RefreshAccountResult> => {
   try {
     const data = await fetchAccountData(
       baseUrl,
       userId,
       accessToken,
-      checkSupport
+      checkSupport,
+      authType
     )
     return {
       success: true,
@@ -367,10 +376,11 @@ export const refreshAccountData = async (
 export const validateAccountConnection = async (
   baseUrl: string,
   userId: number,
-  accessToken: string
+  accessToken: string,
+  authType?: AuthTypeEnum
 ): Promise<boolean> => {
   try {
-    await fetchAccountQuota(baseUrl, userId, accessToken)
+    await fetchAccountQuota(baseUrl, userId, accessToken, authType)
     return true
   } catch (error) {
     console.error("账号连接验证失败:", error)
@@ -382,7 +392,7 @@ export const validateAccountConnection = async (
  * 获取账号令牌列表
  */
 export const fetchAccountTokens = async (
-  { baseUrl, userId, token: accessToken },
+  { baseUrl, userId, token: accessToken, authType },
   page: number = 0,
   size: number = 100
 ): Promise<ApiToken[]> => {
@@ -397,7 +407,8 @@ export const fetchAccountTokens = async (
       baseUrl,
       endpoint: `/api/token/?${params.toString()}`,
       userId,
-      token: accessToken
+      token: accessToken,
+      authType
     })
 
     // 处理不同的响应格式
@@ -428,14 +439,16 @@ export const fetchAccountTokens = async (
 export const fetchAvailableModels = async ({
   baseUrl,
   userId,
-  token: accessToken
+  token: accessToken,
+  authType
 }): Promise<string[]> => {
   try {
     return await fetchApiData<string[]>({
       baseUrl,
       endpoint: "/api/user/models",
       userId,
-      token: accessToken
+      token: accessToken,
+      authType
     })
   } catch (error) {
     console.error("获取模型列表失败:", error)
@@ -448,12 +461,17 @@ export const fetchAvailableModels = async ({
  * @param baseUrl
  * @param accessToken
  */
-export const fetchUpstreamModels = async ({ baseUrl, token: accessToken }) => {
+export const fetchUpstreamModels = async ({
+  baseUrl,
+  token: accessToken,
+  authType
+}) => {
   try {
     return await fetchApiData<UpstreamModelList>({
       baseUrl,
       endpoint: "/v1/models",
-      token: accessToken
+      token: accessToken,
+      authType
     })
   } catch (error) {
     console.error("获取上游模型列表失败:", error)
@@ -463,11 +481,13 @@ export const fetchUpstreamModels = async ({ baseUrl, token: accessToken }) => {
 
 export const fetchUpstreamModelsNameList = async ({
   baseUrl,
-  token: accessToken
+  token: accessToken,
+  authType
 }) => {
   const upstreamModels = await fetchUpstreamModels({
     baseUrl: baseUrl,
-    token: accessToken
+    token: accessToken,
+    authType
   })
   return upstreamModels.map((item: UpstreamModelItem) => item.id)
 }
@@ -478,14 +498,16 @@ export const fetchUpstreamModelsNameList = async ({
 export const fetchUserGroups = async ({
   baseUrl,
   userId,
-  token: accessToken
+  token: accessToken,
+  authType
 }): Promise<Record<string, UserGroupInfo>> => {
   try {
     return await fetchApiData<Record<string, UserGroupInfo>>({
       baseUrl,
       endpoint: "/api/user/self/groups",
       userId,
-      token: accessToken
+      token: accessToken,
+      authType
     })
   } catch (error) {
     console.error("获取分组信息失败:", error)
@@ -500,7 +522,8 @@ export const createApiToken = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  tokenData: CreateTokenRequest
+  tokenData: CreateTokenRequest,
+  authType?: AuthTypeEnum
 ): Promise<boolean> => {
   try {
     const response = await fetchApi<any>({
@@ -508,6 +531,7 @@ export const createApiToken = async (
       endpoint: "/api/token/",
       userId,
       token: accessToken,
+      authType,
       options: {
         method: "POST",
         body: JSON.stringify(tokenData)
@@ -537,14 +561,16 @@ export const fetchTokenById = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  tokenId: number
+  tokenId: number,
+  authType?: AuthTypeEnum
 ): Promise<ApiToken> => {
   try {
     return await fetchApiData<ApiToken>({
       baseUrl,
       endpoint: `/api/token/${tokenId}`,
       userId,
-      token: accessToken
+      token: accessToken,
+      authType
     })
   } catch (error) {
     console.error("获取令牌详情失败:", error)
@@ -560,7 +586,8 @@ export const updateApiToken = async (
   userId: number,
   accessToken: string,
   tokenId: number,
-  tokenData: CreateTokenRequest
+  tokenData: CreateTokenRequest,
+  authType?: AuthTypeEnum
 ): Promise<boolean> => {
   try {
     const response = await fetchApi<any>({
@@ -568,6 +595,7 @@ export const updateApiToken = async (
       endpoint: "/api/token/",
       userId,
       token: accessToken,
+      authType,
       options: {
         method: "PUT",
         body: JSON.stringify({ ...tokenData, id: tokenId })
@@ -596,7 +624,8 @@ export const deleteApiToken = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  tokenId: number
+  tokenId: number,
+  authType?: AuthTypeEnum
 ): Promise<boolean> => {
   try {
     const response = await fetchApi<any>({
@@ -604,6 +633,7 @@ export const deleteApiToken = async (
       endpoint: `/api/token/${tokenId}`,
       userId,
       token: accessToken,
+      authType,
       options: {
         method: "DELETE"
       }
@@ -630,7 +660,8 @@ export const deleteApiToken = async (
 export const fetchModelPricing = async ({
   baseUrl,
   userId,
-  token: accessToken
+  token: accessToken,
+  authType
 }): Promise<PricingResponse> => {
   try {
     // /api/pricing 接口直接返回 PricingResponse 格式，不需要通过 apiRequestData 包装
@@ -638,7 +669,8 @@ export const fetchModelPricing = async ({
       baseUrl,
       endpoint: "/api/pricing",
       userId,
-      token: accessToken
+      token: accessToken,
+      authType
     })
 
     if (!data.success) {

@@ -5,6 +5,7 @@ import type {
   LogItem,
   TodayUsageData
 } from "~/services/apiService/common/type"
+import { AuthTypeEnum } from "~/types"
 import { joinUrl } from "~/utils/url"
 
 /**
@@ -179,7 +180,7 @@ export interface FetchApiParams<T> {
   endpoint: string
   userId?: number | string
   token?: string
-  authType?: "cookie" | "token"
+  authType?: AuthTypeEnum // 认证方式，默认 token
   options?: RequestInit // 可额外自定义 fetch 参数
 }
 
@@ -189,12 +190,12 @@ const _fetchApi = async <T>(
     endpoint,
     userId,
     token,
-    authType = "token",
+    authType = AuthTypeEnum.AccessToken,
     options
   }: FetchApiParams<T>,
   isData: boolean
 ) => {
-  if (authType === "token" && !token) {
+  if (authType === AuthTypeEnum.AccessToken && !token) {
     throw new ApiError(
       `Token is required for token authentication.`,
       401,

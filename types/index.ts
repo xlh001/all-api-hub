@@ -38,6 +38,7 @@ export interface SiteAccount {
   notes?: string // 备注
   can_check_in?: boolean // 是否可以签到
   supports_check_in?: boolean // 是否支持签到功能
+  authType?: AuthTypeEnum // 认证方式
 }
 
 // 存储配置
@@ -119,3 +120,8 @@ export interface ApiToken {
 export type BalanceType =
   | typeof DATA_TYPE_CONSUMPTION
   | typeof DATA_TYPE_BALANCE
+
+export enum AuthTypeEnum {
+  AccessToken = "access_token",
+  Cookie = "cookie"
+}
