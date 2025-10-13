@@ -9,7 +9,7 @@ const siteOverrideMap = {
   [DONE_HUB]: oneHubAPI
 }
 
-// 统一获取函数
+// 获取对应站点的 API 函数
 function getApiFunc<T extends keyof typeof commonAPI>(
   funcName: T,
   currentSite: SiteType = "default"
@@ -21,36 +21,39 @@ function getApiFunc<T extends keyof typeof commonAPI>(
   return commonAPI[funcName] as (typeof commonAPI)[T]
 }
 
-// ===== 自动生成包装函数，站点参数放最后 =====
-type ApiFuncName = keyof typeof commonAPI
-const exportedAPI: Record<ApiFuncName, (...args: any[]) => any> = {} as any
+// ===== 使用 Proxy 动态包装 =====
+export const exportedAPI = new Proxy(commonAPI, {
+  get(target, prop: string) {
+    const func = target[prop as keyof typeof target]
 
-;(Object.keys(commonAPI) as ApiFuncName[]).forEach((funcName) => {
-  exportedAPI[funcName] = (...args: any[]) => {
-    // 最后一个参数如果是 SiteType 并在覆盖表里，就当作 currentSite
-    let currentSite: SiteType = "default"
-    const lastArg = args[args.length - 1]
-    if (typeof lastArg === "string" && lastArg in siteOverrideMap) {
-      currentSite = lastArg as SiteType
-      args.pop() // 移除站点参数
-    } else {
-      // 2. 如果不行，从第一个参数开始查找对象的 siteType 属性
-      for (let i = 0; i < args.length; i++) {
-        const arg = args[i]
-        if (arg && typeof arg === "object" && "siteType" in arg) {
-          const candidate = arg.siteType
-          if (typeof candidate === "string" && candidate in siteOverrideMap) {
-            currentSite = candidate as SiteType
-            break
+    if (typeof func !== "function") return func
+
+    return ((...args: Parameters<typeof func>) => {
+      let currentSite: SiteType = "default"
+      const lastArg = args[args.length - 1]
+
+      if (typeof lastArg === "string" && lastArg in siteOverrideMap) {
+        currentSite = lastArg as SiteType
+        args.pop()
+      } else {
+        for (const arg of args) {
+          if (arg && typeof arg === "object" && "siteType" in arg) {
+            const candidate = arg.siteType
+            if (typeof candidate === "string" && candidate in siteOverrideMap) {
+              currentSite = candidate as SiteType
+              break
+            }
           }
         }
       }
-    }
 
-    // @ts-ignore
-    return getApiFunc(funcName, currentSite)(...args)
+      // @ts-ignore
+      return getApiFunc(prop as keyof typeof commonAPI, currentSite)(...args)
+    }) as typeof func
   }
-})
+}) as {
+  [K in keyof typeof commonAPI]: (typeof commonAPI)[K]
+}
 
 // ===== 导出所有函数 =====
 export const {
