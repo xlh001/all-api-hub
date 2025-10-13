@@ -148,8 +148,8 @@ export async function autoDetectAccount(
         userId: userId.toString(),
         exchangeRate: defaultExchangeRate,
         checkIn: {
-          enableDetection: true,
-          isCheckedInToday: checkSupport,
+          enableDetection: checkSupport,
+          isCheckedInToday: false,
           customCheckInUrl: ""
         },
         siteType: response.data.siteType
