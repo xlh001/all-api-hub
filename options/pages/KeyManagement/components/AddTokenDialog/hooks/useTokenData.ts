@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
 import { fetchAvailableModels, fetchUserGroups } from "~/services/apiService"
@@ -16,13 +16,7 @@ export function useTokenData(
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [groups, setGroups] = useState<Record<string, UserGroupInfo>>({})
 
-  useEffect(() => {
-    if (isOpen && currentAccount) {
-      loadInitialData()
-    }
-  }, [isOpen, currentAccount])
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     if (!currentAccount) return
 
     setIsLoading(true)
@@ -50,7 +44,13 @@ export function useTokenData(
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [currentAccount, setFormData])
+
+  useEffect(() => {
+    if (isOpen && currentAccount) {
+      loadInitialData()
+    }
+  }, [isOpen, currentAccount, loadInitialData])
 
   const resetData = () => {
     setAvailableModels([])
