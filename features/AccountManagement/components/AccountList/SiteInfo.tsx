@@ -21,8 +21,8 @@ export default function SiteInfo({ site }: SiteInfoProps) {
   const { detectedAccount } = useAccountDataContext()
   const detectedAccountId = detectedAccount?.id
 
-  const handleCheckIn = () => {
-    openCheckInPage(site)
+  const handleCheckIn = (customCheckInUrl?: string) => () => {
+    openCheckInPage(site, customCheckInUrl)
   }
 
   return (
@@ -78,7 +78,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               <Tooltip
                 content={`自定义签到地址，点我去签到: ${site.checkIn.customCheckInUrl}`}
                 position="top">
-                <button onClick={handleCheckIn}>
+                <button onClick={handleCheckIn(site.checkIn.customCheckInUrl)}>
                   <CurrencyYenIcon className="h-4 w-4 text-green-500" />
                 </button>
               </Tooltip>
@@ -90,13 +90,13 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                   </Tooltip>
                 ) : site.checkIn.isCheckedInToday === false ? (
                   <Tooltip content="今日已签到，点我查看" position="top">
-                    <button onClick={handleCheckIn}>
+                    <button onClick={handleCheckIn()}>
                       <CheckCircleIcon className="h-4 w-4 text-green-500" />
                     </button>
                   </Tooltip>
                 ) : (
                   <Tooltip content="今日未签到，点我去签到" position="top">
-                    <button onClick={handleCheckIn}>
+                    <button onClick={handleCheckIn()}>
                       <XCircleIcon className="h-4 w-4 text-red-500" />
                     </button>
                   </Tooltip>
