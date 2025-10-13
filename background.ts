@@ -1,9 +1,11 @@
 import { getSiteType } from "~/services/detectSiteType"
 
+import { accountStorage } from "./services/accountStorage"
 import {
   autoRefreshService,
   handleAutoRefreshMessage
 } from "./services/autoRefreshService"
+import { migrateAccountsConfig } from "./services/configMigration"
 
 // 管理临时窗口的 Map
 const tempWindows = new Map<string, number>()
@@ -15,9 +17,25 @@ chrome.runtime.onStartup.addListener(async () => {
 })
 
 // 插件安装时初始化自动刷新服务
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   console.log("[Background] 插件安装/更新，初始化自动刷新服务")
   await autoRefreshService.initialize()
+
+  if (details.reason === "install" || details.reason === "update") {
+    console.log(`Extension ${details.reason}: triggering config migration`)
+
+    // Load all accounts and migrate
+    const accounts = await accountStorage.getAllAccounts()
+    const { accounts: migrated, migratedCount } =
+      migrateAccountsConfig(accounts)
+
+    if (migratedCount > 0) {
+      // Save migrated accounts back
+      const config = await accountStorage.exportData()
+      await accountStorage.importData({ ...config, accounts: migrated })
+      console.log(`Migration complete: ${migratedCount} accounts updated`)
+    }
+  }
 })
 
 // 处理来自 popup 的消息

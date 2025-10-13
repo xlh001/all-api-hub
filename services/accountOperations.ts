@@ -11,7 +11,12 @@ import {
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import { importToNewApi } from "~/services/newApiService"
 import { userPreferences } from "~/services/userPreferences"
-import { AuthTypeEnum, type DisplaySiteData, type SiteAccount } from "~/types"
+import {
+  AuthTypeEnum,
+  type CheckInConfig,
+  type DisplaySiteData,
+  type SiteAccount
+} from "~/types"
 import {
   analyzeAutoDetectError,
   type AutoDetectError
@@ -35,7 +40,7 @@ export interface AccountValidationResult {
     accessToken: string
     userId: string
     exchangeRate?: number
-    checkSupport: boolean | undefined
+    checkIn: CheckInConfig
     siteType?: string
   }
   error?: string
@@ -142,7 +147,11 @@ export async function autoDetectAccount(
         accessToken: access_token,
         userId: userId.toString(),
         exchangeRate: defaultExchangeRate,
-        checkSupport: checkSupport,
+        checkIn: {
+          enableDetection: true,
+          isCheckedInToday: checkSupport,
+          customCheckInUrl: ""
+        },
         siteType: response.data.siteType
       }
     }
@@ -167,7 +176,7 @@ export async function validateAndSaveAccount(
   userId: string,
   exchangeRate: string,
   notes: string,
-  supportsCheckIn: boolean,
+  checkInConfig: CheckInConfig,
   siteType: string,
   authType: AuthTypeEnum
 ): Promise<AccountSaveResult> {
@@ -193,7 +202,7 @@ export async function validateAndSaveAccount(
       url.trim(),
       parsedUserId,
       accessToken.trim(),
-      supportsCheckIn,
+      checkInConfig,
       authType
     )
 
@@ -206,8 +215,7 @@ export async function validateAndSaveAccount(
       authType: authType,
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes || "",
-      can_check_in: freshAccountData.can_check_in,
-      supports_check_in: supportsCheckIn,
+      checkIn: freshAccountData.checkIn,
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),
@@ -246,7 +254,7 @@ export async function validateAndUpdateAccount(
   userId: string,
   exchangeRate: string,
   notes: string,
-  supports_check_in: boolean,
+  checkInConfig: CheckInConfig,
   siteType: string,
   authType: AuthTypeEnum
 ): Promise<AccountSaveResult> {
@@ -272,7 +280,7 @@ export async function validateAndUpdateAccount(
       url.trim(),
       parsedUserId,
       accessToken.trim(),
-      supports_check_in,
+      checkInConfig,
       authType
     )
 
@@ -284,8 +292,7 @@ export async function validateAndUpdateAccount(
       authType: authType,
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
       notes: notes,
-      supports_check_in,
-      can_check_in: freshAccountData.can_check_in,
+      checkIn: freshAccountData.checkIn,
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),

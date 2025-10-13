@@ -11,6 +11,11 @@ import {
 } from "~/types"
 
 import { refreshAccountData } from "./apiService"
+import {
+  migrateAccountConfig,
+  migrateAccountsConfig,
+  needsConfigMigration
+} from "./configMigration"
 import { userPreferences } from "./userPreferences" // 存储键名常量
 
 // 存储键名常量
@@ -40,7 +45,16 @@ class AccountStorageService {
   async getAllAccounts(): Promise<SiteAccount[]> {
     try {
       const config = await this.getStorageConfig()
-      return config.accounts
+      const { accounts, migratedCount } = migrateAccountsConfig(config.accounts)
+
+      if (migratedCount > 0) {
+        console.log(
+          `[AccountStorage] ${migratedCount} accounts migrated, saving updated accounts...`
+        )
+        await this.saveAccounts(accounts)
+      }
+
+      return accounts
     } catch (error) {
       console.error("获取账号信息失败:", error)
       return []
@@ -53,7 +67,18 @@ class AccountStorageService {
   async getAccountById(id: string): Promise<SiteAccount | null> {
     try {
       const accounts = await this.getAllAccounts()
-      return accounts.find((account) => account.id === id) || null
+      const account = accounts.find((acc) => acc.id === id)
+
+      if (account && needsConfigMigration(account)) {
+        console.log(
+          `[AccountStorage] Migrating single account ${account.id} on fetch.`
+        )
+        const migratedAccount = migrateAccountConfig(account)
+        await this.updateAccount(id, migratedAccount)
+        return migratedAccount
+      }
+
+      return account || null
     } catch (error) {
       console.error("获取账号信息失败:", error)
       return null
@@ -203,7 +228,7 @@ class AccountStorageService {
         account.site_url,
         account.account_info.id,
         account.account_info.access_token,
-        account.supports_check_in ?? false,
+        account.checkIn,
         account.authType
       )
 
@@ -218,7 +243,7 @@ class AccountStorageService {
 
       // 如果成功获取数据，更新账号信息
       if (result.success && result.data) {
-        updateData.can_check_in = result.data.can_check_in
+        updateData.checkIn = result.data.checkIn
         updateData.account_info = {
           ...account.account_info,
           quota: result.data.quota,
@@ -387,6 +412,7 @@ class AccountStorageService {
       userId: account.account_info.id,
       notes: account.notes,
       siteType: account.site_type,
+      checkIn: account.checkIn,
       can_check_in: account.can_check_in,
       supports_check_in: account.supports_check_in,
       authType: account.authType || AuthTypeEnum.AccessToken
@@ -424,16 +450,33 @@ class AccountStorageService {
   /**
    * 导入数据
    */
-  async importData(data: StorageConfig): Promise<boolean> {
+  async importData(data: { accounts?: SiteAccount[] }): Promise<{
+    migratedCount: number
+  }> {
+    const existingAccounts = await this.getAllAccounts()
     try {
-      await this.storage.set(STORAGE_KEYS.ACCOUNTS, {
-        ...data,
-        last_updated: Date.now()
-      })
-      return true
+      const accountsToImport = data.accounts || []
+
+      const { accounts: migratedAccounts, migratedCount } =
+        migrateAccountsConfig(accountsToImport)
+
+      if (migratedCount > 0) {
+        console.log(
+          `[Migration] Upgraded ${migratedCount} imported account(s) to config v1`
+        )
+      }
+
+      await this.saveAccounts(migratedAccounts)
+
+      return { migratedCount }
     } catch (error) {
-      console.error("导入数据失败:", error)
-      return false
+      console.error(
+        "[Migration Error] Import migration failed, restoring from backup:",
+        error
+      )
+      await this.saveAccounts(existingAccounts)
+      console.log("[Migration] Safety fallback: restored accounts from backup")
+      throw error // Re-throw to inform caller of failure
     }
   }
 

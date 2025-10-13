@@ -1,7 +1,7 @@
 /**
  * API 服务 - 用于与 One API/New API 站点进行交互
  */
-import type { ApiToken } from "~/types"
+import type { ApiToken, CheckInConfig } from "~/types"
 import type { PerCallPrice } from "~/utils/modelPricing"
 
 // ============= 类型定义 =============
@@ -25,7 +25,11 @@ export interface TodayUsageData {
 
 export interface AccountData extends TodayUsageData {
   quota: number
+  /**
+   * @deprecated Use `checkIn.isCheckedInToday` instead.
+   */
   can_check_in?: boolean
+  checkIn?: CheckInConfig
 }
 
 export interface RefreshAccountResult {
@@ -49,6 +53,7 @@ export interface SiteStatusInfo {
 
 export interface CheckInStatus {
   can_check_in: boolean
+  customUrl?: string
 }
 
 // 模型列表响应类型

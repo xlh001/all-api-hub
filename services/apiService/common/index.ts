@@ -21,7 +21,7 @@ import {
   fetchApiData,
   getTodayTimestampRange
 } from "~/services/apiService/common/utils"
-import { AuthTypeEnum, type ApiToken } from "~/types"
+import { AuthTypeEnum, type ApiToken, type CheckInConfig } from "~/types"
 
 // ============= 错误处理 =============
 export class ApiError extends Error {
@@ -292,7 +292,7 @@ export const fetchAccountData = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  checkSupport: boolean,
+  checkSupport: CheckInConfig,
   authType?: AuthTypeEnum
 ): Promise<AccountData> => {
   const promises: Promise<any>[] = [
@@ -300,7 +300,7 @@ export const fetchAccountData = async (
     fetchTodayUsage(baseUrl, userId, accessToken, authType)
   ]
 
-  if (checkSupport) {
+  if (checkSupport?.enableDetection && !checkSupport.customCheckInUrl) {
     promises.push(fetchCheckInStatus(baseUrl, userId, accessToken, authType))
   }
 
@@ -310,11 +310,19 @@ export const fetchAccountData = async (
     boolean | undefined
   ]
 
-  return {
+  const result: AccountData = {
     quota,
-    ...todayUsage,
-    can_check_in: canCheckIn
+    ...todayUsage
   }
+
+  if (checkSupport?.enableDetection) {
+    result.checkIn = {
+      ...checkSupport,
+      isCheckedInToday: canCheckIn
+    }
+  }
+
+  return result
 }
 
 /**
@@ -324,7 +332,7 @@ export const refreshAccountData = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  checkSupport: boolean,
+  checkSupport: CheckInConfig,
   authType?: AuthTypeEnum
 ): Promise<RefreshAccountResult> => {
   try {

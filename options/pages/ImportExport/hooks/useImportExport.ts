@@ -43,22 +43,17 @@ export const useImportExport = () => {
 
       // 根据数据类型进行导入
       if (data.accounts || !data.type) {
-        // 导入账号数据
-        const accountsData = data.accounts || data.data
-        if (accountsData) {
-          // 向后兼容，如果导入的数据没有 notes 字段，则补充为空字符串
-          if (accountsData.accounts && Array.isArray(accountsData.accounts)) {
-            accountsData.accounts.forEach((acc) => {
-              if (typeof acc.notes === "undefined") {
-                acc.notes = ""
-              }
-            })
-          }
-          const success = await accountStorage.importData(accountsData)
-          if (success) {
-            importSuccess = true
-            toast.success("账号数据导入成功")
-          }
+        const accountsToImport = data.accounts?.accounts || data.data?.accounts
+
+        const { migratedCount } = await accountStorage.importData({
+          accounts: accountsToImport
+        })
+
+        importSuccess = true
+        if (migratedCount > 0) {
+          toast.success(`Imported and migrated ${migratedCount} account(s)`)
+        } else {
+          toast.success("Import successful")
         }
       }
 

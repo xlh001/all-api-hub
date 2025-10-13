@@ -209,14 +209,20 @@ export default function WebDAVSettings() {
 
                 let importSuccess = false
                 if (data.accounts || !data.type) {
-                  const accountsData = data.accounts || data.data
-                  if (accountsData) {
-                    const success =
-                      await accountStorage.importData(accountsData)
-                    if (success) {
-                      importSuccess = true
-                      toast.success("账号数据导入成功")
-                    }
+                  const accountsToImport =
+                    data.accounts?.accounts || data.data?.accounts
+
+                  const { migratedCount } = await accountStorage.importData({
+                    accounts: accountsToImport
+                  })
+
+                  importSuccess = true
+                  if (migratedCount > 0) {
+                    toast.success(
+                      `Imported and migrated ${migratedCount} account(s)`
+                    )
+                  } else {
+                    toast.success("Import successful")
                   }
                 }
                 if (data.preferences || data.type === "preferences") {

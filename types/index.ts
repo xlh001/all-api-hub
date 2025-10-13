@@ -36,9 +36,52 @@ export interface SiteAccount {
   updated_at: number // 更改时间 (timestamp)
   created_at: number // 创建时间 (timestamp)
   notes?: string // 备注
+  /**
+   * @deprecated Use `checkIn.isCheckedInToday` instead.
+   */
   can_check_in?: boolean // 是否可以签到
+  /**
+   * @deprecated Use `checkIn` object presence instead.
+   */
   supports_check_in?: boolean // 是否支持签到功能
   authType?: AuthTypeEnum // 认证方式
+  checkIn?: CheckInConfig
+  /**
+   * Configuration version for migration tracking
+   * @since v1.0.0 - Initial version (no version field = version 0)
+   * @since v1.1.0 - Introduced checkIn object structure
+   */
+  configVersion?: number
+}
+export interface CheckInConfig {
+  /**
+   * Whether to enable check-in detection and monitoring.
+   * This is the master toggle that controls whether the system should:
+   * - Detect check-in support during account setup
+   * - Check today's check-in status during refresh operations
+   * - Display check-in UI elements
+   *
+   * When false or undefined, check-in functionality is completely disabled for this account.
+   */
+  enableDetection: boolean
+
+  /**
+   * Today's check-in status.
+   * - true: Can check in today (not yet checked in)
+   * - false: Already checked in today
+   * - undefined: Status unknown or detection not enabled
+   *
+   * This field is only meaningful when enableDetection is true.
+   * It is updated during refresh operations if enableDetection is true.
+   */
+  isCheckedInToday?: boolean
+
+  /**
+   * Custom URL for check-in operations.
+   * When provided, the system will navigate to this URL instead of the default check-in page.
+   * This allows users to specify alternative check-in endpoints.
+   */
+  customCheckInUrl?: string
 }
 
 // 存储配置
@@ -92,9 +135,16 @@ export interface DisplaySiteData {
   token: string // 访问令牌，用于复制功能
   userId: number // 真实的用户 ID，用于 API 调用
   notes?: string
+  /**
+   * @deprecated Use `checkIn.isCheckedInToday` instead.
+   */
   can_check_in?: boolean // 是否可以签到
+  /**
+   * @deprecated Use `checkIn` object presence instead.
+   */
   supports_check_in?: boolean // 是否支持签到功能
   authType?: AuthTypeEnum // 认证方式
+  checkIn?: CheckInConfig
 }
 
 // 站点的token 密钥信息(API 密钥)
@@ -127,3 +177,6 @@ export enum AuthTypeEnum {
   Cookie = "cookie",
   None = "none"
 }
+
+// Current version constant
+export const CURRENT_CONFIG_VERSION = 1
