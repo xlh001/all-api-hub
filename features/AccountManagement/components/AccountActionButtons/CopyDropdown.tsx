@@ -28,13 +28,13 @@ export const CopyDropdown: React.FC<CopyDropdownProps> = ({
   return (
     <Menu as="div" className="relative">
       <Tooltip content="复制" position="top">
-        <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
-          <DocumentDuplicateIcon className="w-4 h-4 text-gray-500" />
+        <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary transition-colors">
+          <DocumentDuplicateIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" />
         </MenuButton>
       </Tooltip>
       <MenuItems
         anchor="bottom end"
-        className="z-50 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
+        className="z-50 w-32 bg-white dark:bg-dark-bg-secondary rounded-lg shadow-lg border border-gray-200 dark:border-dark-bg-tertiary py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
         <AccountActionMenuItem
           onClick={handleCopyUrlLocal}
           icon={DocumentDuplicateIcon}

@@ -13,12 +13,12 @@ export const ModelItemExpandButton: React.FC<ModelItemExpandButtonProps> = ({
   return (
     <button
       onClick={onToggleExpand}
-      className="ml-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+      className="ml-4 p-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors"
       title={isExpanded ? "收起详细信息" : "展开详细信息"}>
       {isExpanded ? (
-        <ChevronUpIcon className="w-4 h-4 text-gray-400" />
+        <ChevronUpIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
       ) : (
-        <ChevronDownIcon className="w-4 h-4 text-gray-400" />
+        <ChevronDownIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
       )}
     </button>
   )

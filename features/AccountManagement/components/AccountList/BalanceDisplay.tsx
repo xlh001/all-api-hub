@@ -17,7 +17,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
 
   return (
     <div className="text-right flex-shrink-0">
-      <div className="font-semibold text-gray-900 text-lg mb-0.5">
+      <div className="font-semibold text-gray-900 dark:text-dark-text-primary text-lg mb-0.5">
         {getCurrencySymbol(currencyType)}
         <CountUp
           start={isInitialLoad ? 0 : prevBalances[site.id]?.[currencyType] || 0}
@@ -35,7 +35,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
         className={`text-xs ${
           site.todayConsumption[currencyType] > 0
             ? "text-green-500"
-            : "text-gray-400"
+            : "text-gray-400 dark:text-dark-text-tertiary"
         }`}>
         -{getCurrencySymbol(currencyType)}
         <CountUp

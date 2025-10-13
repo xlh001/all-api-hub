@@ -13,20 +13,20 @@ const FeatureList = ({ title, items, color }: FeatureListProps) => {
     color === "green"
       ? {
           dot: "bg-green-500",
-          box: "bg-green-50 border-green-200",
-          text: "text-green-800",
+          box: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900/30",
+          text: "text-green-800 dark:text-green-300",
           bullet: "bg-green-500"
         }
       : {
           dot: "bg-blue-500",
-          box: "bg-blue-50 border-blue-200",
-          text: "text-blue-800",
+          box: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900/30",
+          text: "text-blue-800 dark:text-blue-300",
           bullet: "bg-blue-500"
         }
 
   return (
     <div>
-      <h3 className="text-base font-medium text-gray-800 mb-3 flex items-center">
+      <h3 className="text-base font-medium text-gray-800 dark:text-dark-text-primary mb-3 flex items-center">
         <div className={`w-2 h-2 ${palette.dot} rounded-full mr-2`}></div>
         {title}
       </h3>

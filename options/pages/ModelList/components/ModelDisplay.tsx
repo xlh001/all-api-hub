@@ -28,8 +28,10 @@ export function ModelDisplay({
   if (models.length === 0) {
     return (
       <div className="text-center py-12">
-        <CpuChipIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500">没有找到匹配的模型</p>
+        <CpuChipIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-500 dark:text-dark-text-secondary">
+          没有找到匹配的模型
+        </p>
       </div>
     )
   }

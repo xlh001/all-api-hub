@@ -37,8 +37,10 @@ export default function AccountList() {
   if (sortedData.length === 0) {
     return (
       <div className="px-6 py-12 text-center">
-        <InboxIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-        <p className="text-gray-500 text-sm mb-4">暂无站点账号</p>
+        <InboxIcon className="w-16 h-16 text-gray-200 dark:text-gray-700 mx-auto mb-4" />
+        <p className="text-gray-500 dark:text-dark-text-secondary text-sm mb-4">
+          暂无站点账号
+        </p>
         <button
           onClick={openAddAccount}
           className="px-6 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm">
@@ -51,7 +53,7 @@ export default function AccountList() {
   const renderSortButton = (field: SortField, label: string) => (
     <button
       onClick={() => handleSort(field)}
-      className="flex items-center space-x-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors">
+      className="flex items-center space-x-1 text-xs font-medium text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text-primary transition-colors">
       <span>{label}</span>
       {sortField === field &&
         (sortOrder === "asc" ? (
@@ -64,13 +66,15 @@ export default function AccountList() {
 
   return (
     <div className="flex flex-col">
-      <div className="px-5 py-3 bg-gray-50 border-y border-gray-200 sticky top-0 z-10">
+      <div className="px-5 py-3 bg-gray-50 dark:bg-dark-bg-secondary border-y border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-10">
         <div className="flex items-center space-x-4">
           <div className="flex-1">{renderSortButton("name", "账号")}</div>
           <div className="text-right flex-shrink-0">
             <div className="flex items-center space-x-1">
               {renderSortButton(DATA_TYPE_BALANCE, "余额")}
-              <span className="text-xs text-gray-400">/</span>
+              <span className="text-xs text-gray-400 dark:text-dark-text-tertiary">
+                /
+              </span>
               {renderSortButton(DATA_TYPE_CONSUMPTION, "今日消费")}
             </div>
           </div>

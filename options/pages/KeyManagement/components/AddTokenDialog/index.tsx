@@ -121,7 +121,7 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
               leave="ease-in duration-200"
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95">
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-lg bg-white p-6 shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-lg bg-white dark:bg-dark-bg-secondary p-6 shadow-xl transition-all">
                 <DialogHeader isEditMode={isEditMode} onClose={handleClose} />
 
                 {isLoading ? (

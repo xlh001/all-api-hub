@@ -41,10 +41,18 @@ export default function InfoPanel({
 
   const Icon = isAddMode ? SparklesIcon : UsersIcon
   const iconColor = isAddMode ? "text-blue-400" : "text-green-400"
-  const bgColor = isAddMode ? "bg-blue-50" : "bg-green-50"
-  const borderColor = isAddMode ? "border-blue-100" : "border-green-100"
-  const titleColor = isAddMode ? "text-blue-800" : "text-green-800"
-  const textColor = isAddMode ? "text-blue-700" : "text-green-700"
+  const bgColor = isAddMode
+    ? "bg-blue-50 dark:bg-blue-900/20"
+    : "bg-green-50 dark:bg-green-900/20"
+  const borderColor = isAddMode
+    ? "border-blue-100 dark:border-blue-900/30"
+    : "border-green-100 dark:border-green-900/30"
+  const titleColor = isAddMode
+    ? "text-blue-800 dark:text-blue-300"
+    : "text-green-800 dark:text-green-300"
+  const textColor = isAddMode
+    ? "text-blue-700 dark:text-blue-400"
+    : "text-green-700 dark:text-green-400"
 
   return (
     <div className="px-4 pb-4">

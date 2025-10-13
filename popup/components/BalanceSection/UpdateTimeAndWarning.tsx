@@ -24,7 +24,7 @@ export const UpdateTimeAndWarning = () => {
     <div className="mt-4">
       <div className="ml-2 flex items-center justify-between">
         <Tooltip content={formatFullTime(lastUpdateTime)}>
-          <p className="text-xs text-gray-400 cursor-help">
+          <p className="text-xs text-gray-400 dark:text-dark-text-tertiary cursor-help">
             更新于 {formatRelativeTime(lastUpdateTime)}
           </p>
         </Tooltip>

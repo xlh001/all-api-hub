@@ -23,7 +23,7 @@ function OptionsPage() {
     handleMenuItemChange("basic")
   }
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg-primary">
       <Header onTitleClick={handleTitleClick} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -35,7 +35,7 @@ function OptionsPage() {
 
           {/* 右侧内容区域 */}
           <main className="flex-1 min-w-0">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px]">
+            <div className="bg-white dark:bg-dark-bg-secondary rounded-lg shadow-sm border border-gray-200 dark:border-dark-bg-tertiary min-h-[600px]">
               <ActiveComponent
                 routeParams={routeParams}
                 refreshKey={refreshKey}

@@ -7,11 +7,11 @@ interface DialogFooterProps {
 
 export function DialogFooter({ tokenCount, onClose }: DialogFooterProps) {
   return (
-    <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+    <div className="px-4 py-3 border-t border-gray-100 dark:border-dark-bg-tertiary bg-gray-50/50 dark:bg-dark-bg-secondary">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           {tokenCount > 0 && (
-            <div className="flex items-center space-x-1.5 text-xs text-gray-500">
+            <div className="flex items-center space-x-1.5 text-xs text-gray-500 dark:text-dark-text-secondary">
               <KeyIcon className="w-3 h-3" />
               <span>共 {tokenCount} 个密钥</span>
             </div>
@@ -19,7 +19,7 @@ export function DialogFooter({ tokenCount, onClose }: DialogFooterProps) {
         </div>
         <button
           onClick={onClose}
-          className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-colors">
+          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-dark-text-secondary bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-bg-tertiary rounded hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
           关闭
         </button>
       </div>

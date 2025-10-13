@@ -2,6 +2,7 @@ import type { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import React, { useEffect, useState } from "react"
 
+import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { SortingCriteriaType, type SortingFieldConfig } from "~/types/sorting"
 
@@ -97,14 +98,14 @@ function SortingPrioritySettingsContent() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-medium">排序优先级设置</h2>
+      <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
+        排序优先级设置
+      </h2>
       <SortingPriorityDragList
         items={augmentedItems}
         onDragEnd={handleDragEnd}
       />
-      <button
-        onClick={handleSave}
-        className="rounded-md bg-blue-600 px-4 py-2 text-white">
+      <button onClick={handleSave} className={UI_CONSTANTS.STYLES.BUTTON.SAVE}>
         保存
       </button>
     </div>

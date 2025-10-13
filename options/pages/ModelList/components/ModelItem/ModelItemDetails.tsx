@@ -29,13 +29,15 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
   onGroupClick
 }) => {
   return (
-    <div className="border-t border-gray-100 px-4 py-3">
+    <div className="border-t border-gray-100 dark:border-dark-bg-tertiary px-4 py-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         {/* 可用分组 */}
         <div>
           <div className="flex items-center space-x-2 mb-2">
-            <TagIcon className="w-4 h-4 text-gray-400" />
-            <span className="font-medium text-gray-700">可用分组</span>
+            <TagIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
+            <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
+              可用分组
+            </span>
           </div>
           <div className="flex flex-wrap gap-1">
             {model.enable_groups.map((group, index) => {
@@ -48,10 +50,10 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
                   onClick={isClickable ? () => onGroupClick(group) : undefined}
                   className={`inline-flex items-center px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
                     isCurrentGroup
-                      ? "bg-blue-100 text-blue-800 font-medium"
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 font-medium"
                       : isClickable
-                        ? "bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                        : "bg-gray-100 text-gray-600"
+                        ? "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
+                        : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400"
                   }`}
                   title={isClickable ? `点击切换到 ${group} 分组` : undefined}>
                   {isCurrentGroup && <TagIcon className="w-3 h-3 mr-1" />}
@@ -66,10 +68,12 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
         {showEndpointTypes && (
           <div>
             <div className="flex items-center space-x-2 mb-2">
-              <ServerIcon className="w-4 h-4 text-gray-400" />
-              <span className="font-medium text-gray-700">端点类型</span>
+              <ServerIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
+              <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
+                端点类型
+              </span>
             </div>
-            <div className="text-gray-600">
+            <div className="text-gray-600 dark:text-dark-text-secondary">
               {getEndpointTypesText(model.supported_endpoint_types)}
             </div>
           </div>
@@ -79,25 +83,31 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
         {isTokenBillingType(model.quota_type) && (
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-2">
-              <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
-              <span className="font-medium text-gray-700">详细定价</span>
+              <CurrencyDollarIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
+              <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
+                详细定价
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="space-y-1">
-                <div className="text-gray-500">输入(1M tokens)</div>
-                <div className="font-medium">
+                <div className="text-gray-500 dark:text-dark-text-tertiary">
+                  输入(1M tokens)
+                </div>
+                <div className="font-medium text-gray-900 dark:text-dark-text-primary">
                   USD: {formatPrice(calculatedPrice.inputUSD, "USD")}
                 </div>
-                <div className="font-medium">
+                <div className="font-medium text-gray-900 dark:text-dark-text-primary">
                   CNY: {formatPrice(calculatedPrice.inputCNY, "CNY")}
                 </div>
               </div>
               <div className="space-y-1">
-                <div className="text-gray-500">输出(1M tokens)</div>
-                <div className="font-medium">
+                <div className="text-gray-500 dark:text-dark-text-tertiary">
+                  输出(1M tokens)
+                </div>
+                <div className="font-medium text-gray-900 dark:text-dark-text-primary">
                   USD: {formatPrice(calculatedPrice.outputUSD, "USD")}
                 </div>
-                <div className="font-medium">
+                <div className="font-medium text-gray-900 dark:text-dark-text-primary">
                   CNY: {formatPrice(calculatedPrice.outputCNY, "CNY")}
                 </div>
               </div>

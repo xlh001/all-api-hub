@@ -24,7 +24,7 @@ export function TokenListItem({
   account
 }: TokenListItemProps) {
   return (
-    <div className="flex flex-col space-y-2 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+    <div className="flex flex-col space-y-2 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4 hover:border-gray-300 dark:hover:border-blue-500/50 bg-white dark:bg-dark-bg-secondary transition-all duration-200 shadow-sm hover:shadow-md">
       <TokenHeader
         token={token}
         copyKey={copyKey}
@@ -33,7 +33,7 @@ export function TokenListItem({
         account={account}
       />
       <div className="flex-1">
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-600 dark:text-dark-text-secondary">
           <KeyDisplay
             tokenKey={token.key}
             tokenId={token.id}
@@ -43,8 +43,12 @@ export function TokenListItem({
           <TokenDetails token={token} />
           {token.group && (
             <div>
-              <span className="text-gray-500">分组:</span>
-              <span className="ml-2 font-medium">{token.group}</span>
+              <span className="text-gray-500 dark:text-dark-text-tertiary">
+                分组:
+              </span>
+              <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
+                {token.group}
+              </span>
             </div>
           )}
         </div>

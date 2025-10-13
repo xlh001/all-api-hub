@@ -45,12 +45,14 @@ export default function ImportExport() {
       </div>
 
       {/* 重要提示 */}
-      <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg">
         <div className="flex items-start space-x-3">
-          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="text-yellow-800 font-medium mb-1">重要提示</p>
-            <ul className="text-yellow-700 space-y-1">
+            <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-1">
+              重要提示
+            </p>
+            <ul className="text-yellow-700 dark:text-yellow-300 space-y-1">
               <li>• 导入数据将覆盖现有的相同类型数据，请谨慎操作</li>
               <li>• 建议在导入前先导出当前数据进行备份</li>
               <li>• 仅支持本插件导出的JSON格式文件</li>

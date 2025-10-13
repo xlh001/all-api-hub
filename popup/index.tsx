@@ -17,7 +17,7 @@ function PopupContent({ inSidePanel = false }) {
 
   return (
     <div
-      className={`${!inSidePanel && UI_CONSTANTS.POPUP.WIDTH} bg-white flex flex-col ${!inSidePanel && UI_CONSTANTS.POPUP.HEIGHT}`}>
+      className={`${!inSidePanel && UI_CONSTANTS.POPUP.WIDTH} bg-white dark:bg-dark-bg-primary flex flex-col ${!inSidePanel && UI_CONSTANTS.POPUP.HEIGHT}`}>
       <HeaderSection />
 
       <div className="flex-1 overflow-y-auto">

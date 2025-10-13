@@ -52,16 +52,16 @@ export default function NewApiSettings() {
 
   return (
     <section>
-      <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+      <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4 flex items-center">
         New API 集成设置
       </h2>
       <div className="space-y-6">
-        <div className="flex items-center justify-between py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
               New API Base URL
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
               设置用于 New API 集成的基础 URL
             </p>
           </div>
@@ -71,14 +71,16 @@ export default function NewApiSettings() {
             onChange={(e) => setLocalBaseUrl(e.target.value)}
             onBlur={(e) => handleNewApiBaseUrlChange(e.target.value)}
             placeholder="https://api.example.com"
-            className="w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-72 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
           />
         </div>
 
-        <div className="flex items-center justify-between py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">Admin Token</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
+              Admin Token
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
               用于访问 New API 管理员功能的令牌
             </p>
           </div>
@@ -88,12 +90,12 @@ export default function NewApiSettings() {
               value={localAdminToken}
               onChange={(e) => setLocalAdminToken(e.target.value)}
               onBlur={(e) => handleNewApiAdminTokenChange(e.target.value)}
-              className="w-full px-3 py-1.5 pr-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 pr-10 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
             />
             <button
               type="button"
               onClick={() => setShowAdminToken(!showAdminToken)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary transition-colors">
               {showAdminToken ? (
                 <EyeSlashIcon className="h-4 w-4" />
               ) : (
@@ -103,17 +105,21 @@ export default function NewApiSettings() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">User ID</h3>
-            <p className="text-sm text-gray-500">用于 New API 的用户识别 ID</p>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
+              User ID
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+              用于 New API 的用户识别 ID
+            </p>
           </div>
           <input
             type="text"
             value={localUserId}
             onChange={(e) => setLocalUserId(e.target.value)}
             onBlur={(e) => handleNewApiUserIdChange(e.target.value)}
-            className="w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-72 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
           />
         </div>
       </div>

@@ -48,12 +48,12 @@ export default function SiteInfoInput({
       <div className="flex justify-between">
         <label
           htmlFor="site-url"
-          className="block text-sm font-medium text-gray-700">
+          className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
           网站 URL
         </label>
         <label
           htmlFor="auth-type"
-          className="block text-sm font-medium text-gray-700">
+          className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
           认证方式
         </label>
       </div>
@@ -65,14 +65,14 @@ export default function SiteInfoInput({
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
             placeholder="https://example.com"
-            className="block w-full pr-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
+            className="block w-full pr-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 dark:disabled:bg-dark-bg-tertiary bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
             disabled={isDetected}
           />
           {url && !isDetected && (
             <button
               type="button"
               onClick={onClearUrl}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <XCircleIcon className="h-5 w-5" />
             </button>
           )}
@@ -82,7 +82,7 @@ export default function SiteInfoInput({
             id="auth-type"
             value={authType}
             onChange={(e) => onAuthTypeChange(e.target.value as AuthTypeEnum)}
-            className="block py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            className="block py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
             disabled={isDetected}>
             <option value={AuthTypeEnum.AccessToken}>Access Token</option>
             <option value={AuthTypeEnum.Cookie}>Cookie</option>
@@ -91,7 +91,7 @@ export default function SiteInfoInput({
       </div>
       <div className="flex flex-col gap-y-2 justify-between text-xs">
         {isCurrentSiteAdded && handleEditClick && (
-          <div className="w-full flex items-center justify-between text-xs text-yellow-700 bg-yellow-50 p-2 rounded-md">
+          <div className="w-full flex items-center justify-between text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded-md">
             <div className="flex items-center">
               <ExclamationTriangleIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
               <span>当前站点已添加</span>
@@ -99,14 +99,14 @@ export default function SiteInfoInput({
             <button
               type="button"
               onClick={handleEditClick}
-              className="flex items-center font-medium text-yellow-800 hover:text-yellow-900">
+              className="flex items-center font-medium text-yellow-800 dark:text-yellow-200 hover:text-yellow-900 dark:hover:text-yellow-100">
               <PencilIcon className="w-3 h-3 mr-1" />
               <span>立即编辑</span>
             </button>
           </div>
         )}
         {!isDetected && onUseCurrentTab && (
-          <div className="w-full flex items-center justify-between text-xs text-blue-700 bg-blue-50 p-2 rounded-md">
+          <div className="w-full flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md">
             <div className="flex items-center">
               <InformationCircleIcon className="h-4 w-4" />
               <span className="ml-1">当前站点:</span>
@@ -120,7 +120,7 @@ export default function SiteInfoInput({
             <button
               type="button"
               onClick={onUseCurrentTab}
-              className="flex items-center font-medium text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="flex items-center font-medium text-blue-800 dark:text-blue-200 disabled:text-gray-400 dark:disabled:text-gray-600 disabled:cursor-not-allowed"
               disabled={!currentTabUrl}>
               <GlobeAltIcon className="w-3 h-3 mr-1" />
               <span>使用当前站点</span>

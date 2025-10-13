@@ -58,8 +58,8 @@ export default function ModelItem({
     <div
       className={`border rounded-lg transition-all duration-200 ${
         isAvailableForUser
-          ? "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-          : "border-gray-100 bg-gray-50"
+          ? "border-gray-200 dark:border-dark-bg-tertiary bg-white dark:bg-dark-bg-secondary hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md dark:hover:shadow-lg"
+          : "border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-75"
       }`}>
       {/* 主要信息行 */}
       <div className="p-4">

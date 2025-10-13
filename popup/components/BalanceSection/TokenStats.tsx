@@ -22,13 +22,13 @@ export const TokenStats = React.memo(() => {
         <div className="flex items-center space-x-3 cursor-help">
           <div className="flex items-center space-x-1">
             <ArrowUpIcon className="w-4 h-4 text-green-500" />
-            <span className="font-medium text-gray-500">
+            <span className="font-medium text-gray-500 dark:text-dark-text-secondary">
               {formatTokenCount(todayTokens.today_total_prompt_tokens)}
             </span>
           </div>
           <div className="flex items-center space-x-1">
             <ArrowDownIcon className="w-4 h-4 text-blue-500" />
-            <span className="font-medium text-gray-500">
+            <span className="font-medium text-gray-500 dark:text-dark-text-secondary">
               {formatTokenCount(todayTokens.today_total_completion_tokens)}
             </span>
           </div>

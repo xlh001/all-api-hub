@@ -33,8 +33,8 @@ export default function ActionButtons({
   }
 
   return (
-    <div className="px-5 mb-4 bg-gray-50/50">
-      <div className="flex space-x-2">
+    <div className="px-5 mb-4 bg-gray-50 dark:bg-dark-bg-secondary border-b border-gray-200 dark:border-dark-bg-tertiary">
+      <div className="flex space-x-2 py-3">
         <button
           onClick={handleAddAccountClick}
           className={UI_CONSTANTS.STYLES.BUTTON.PRIMARY}>
@@ -44,14 +44,14 @@ export default function ActionButtons({
         <Tooltip content="密钥管理">
           <button
             onClick={handleOpenKeysPageClick}
-            className={UI_CONSTANTS.STYLES.BUTTON.SECONDARY}>
+            className={UI_CONSTANTS.STYLES.BUTTON.ICON}>
             <KeyIcon className="w-4 h-4" />
           </button>
         </Tooltip>
         <Tooltip content="模型列表">
           <button
             onClick={handleOpenModelsPageClick}
-            className={UI_CONSTANTS.STYLES.BUTTON.SECONDARY}>
+            className={UI_CONSTANTS.STYLES.BUTTON.ICON}>
             <CpuChipIcon className="w-4 h-4" />
           </button>
         </Tooltip>

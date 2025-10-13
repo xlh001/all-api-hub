@@ -69,19 +69,27 @@ export default function RefreshSettings() {
 
   return (
     <section>
-      <h2 className="text-lg font-medium text-gray-900 mb-4">刷新设置</h2>
+      <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
+        刷新设置
+      </h2>
       <div className="space-y-6">
         {/* 自动刷新 */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">自动刷新</h3>
-            <p className="text-sm text-gray-500">定期自动刷新账号数据</p>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
+              自动刷新
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+              定期自动刷新账号数据
+            </p>
           </div>
           <Switch
             checked={autoRefresh}
             onChange={handleAutoRefreshChange}
             className={`${
-              autoRefresh ? "bg-blue-600" : "bg-gray-200"
+              autoRefresh
+                ? "bg-blue-600"
+                : "bg-gray-200 dark:bg-dark-bg-tertiary"
             } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}>
             <span
               className={`${
@@ -93,10 +101,12 @@ export default function RefreshSettings() {
 
         {/* 刷新间隔 */}
         {autoRefresh && (
-          <div className="flex items-center justify-between py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
             <div>
-              <h3 className="text-sm font-medium text-gray-900">刷新间隔</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
+                刷新间隔
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
                 设置自动刷新的时间间隔（默认360秒，建议不要设置过小以避免频繁请求）
               </p>
             </div>
@@ -113,20 +123,22 @@ export default function RefreshSettings() {
                   }
                 }}
                 placeholder="360"
-                className="w-20 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
               />
-              <span className="text-sm text-gray-500">秒</span>
+              <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                秒
+              </span>
             </div>
           </div>
         )}
 
         {/* 打开插件时自动刷新 */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
               打开插件时自动刷新
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
               当打开插件弹出层时自动刷新账号数据
             </p>
           </div>
@@ -134,7 +146,9 @@ export default function RefreshSettings() {
             checked={refreshOnOpen}
             onChange={handleRefreshOnOpenChange}
             className={`${
-              refreshOnOpen ? "bg-blue-600" : "bg-gray-200"
+              refreshOnOpen
+                ? "bg-blue-600"
+                : "bg-gray-200 dark:bg-dark-bg-tertiary"
             } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}>
             <span
               className={`${
@@ -145,10 +159,12 @@ export default function RefreshSettings() {
         </div>
 
         {/* 最小刷新间隔 */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">最小刷新间隔</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
+              最小刷新间隔
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
               自动刷新时的最小时间间隔，避免频繁请求（手动刷新不受限制）
             </p>
           </div>
@@ -166,9 +182,11 @@ export default function RefreshSettings() {
                 }
               }}
               placeholder="60"
-              className="w-20 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
             />
-            <span className="text-sm text-gray-500">秒</span>
+            <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
+              秒
+            </span>
           </div>
         </div>
       </div>

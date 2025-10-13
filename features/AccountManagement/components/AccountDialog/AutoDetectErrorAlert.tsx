@@ -31,13 +31,15 @@ export default function AutoDetectErrorAlert({
   }
 
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-3 mb-4">
       <div className="flex">
         <div className="flex-shrink-0">
           <ExclamationTriangleIcon className="h-4 w-4 text-amber-400" />
         </div>
         <div className="ml-2 flex-1">
-          <p className="text-xs text-amber-700">{error.message}</p>
+          <p className="text-xs text-amber-700 dark:text-amber-300">
+            {error.message}
+          </p>
 
           {/* 操作按钮区域 */}
           {(error.actionText || error.helpDocUrl) && (
@@ -47,7 +49,7 @@ export default function AutoDetectErrorAlert({
                 <button
                   type="button"
                   onClick={handleActionClick}
-                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-800 bg-amber-100 border border-amber-300 rounded hover:bg-amber-200 transition-colors">
+                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-800 rounded hover:bg-amber-200 dark:hover:bg-amber-900 transition-colors">
                   {error.actionText}
                 </button>
               )}
@@ -57,7 +59,7 @@ export default function AutoDetectErrorAlert({
                 <button
                   type="button"
                   onClick={handleHelpClick}
-                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-600 hover:text-amber-800 transition-colors">
+                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors">
                   <QuestionMarkCircleIcon className="w-3 h-3 mr-1" />
                   帮助文档
                 </button>

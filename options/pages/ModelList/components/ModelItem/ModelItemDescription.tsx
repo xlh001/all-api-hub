@@ -19,7 +19,9 @@ export const ModelItemDescription: React.FC<ModelItemDescriptionProps> = ({
     <div className="mb-2">
       <p
         className={`text-sm leading-relaxed ${
-          isAvailableForUser ? "text-gray-600" : "text-gray-400"
+          isAvailableForUser
+            ? "text-gray-600 dark:text-dark-text-secondary"
+            : "text-gray-400 dark:text-dark-text-tertiary"
         } overflow-hidden`}
         style={{
           display: "-webkit-box",

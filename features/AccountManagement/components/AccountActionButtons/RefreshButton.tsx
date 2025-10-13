@@ -19,10 +19,10 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
     <Tooltip content="刷新账号" position="top">
       <button
         onClick={() => onRefreshAccount(site, true)}
-        className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
+        className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary transition-colors"
         disabled={refreshingAccountId === site.id}>
         <ArrowPathIcon
-          className={`w-4 h-4 text-gray-500 ${
+          className={`w-4 h-4 text-gray-500 dark:text-dark-text-secondary ${
             refreshingAccountId === site.id ? "animate-spin" : ""
           }`}
         />

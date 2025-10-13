@@ -17,12 +17,16 @@ export default function DangerousZone() {
 
   return (
     <section>
-      <h2 className="text-lg font-medium text-red-600 mb-4">危险操作</h2>
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <h2 className="text-lg font-medium text-red-600 dark:text-red-400 mb-4">
+        危险操作
+      </h2>
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-red-800">重置所有设置</h3>
-            <p className="text-sm text-red-600 mt-1">
+            <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+              重置所有设置
+            </h3>
+            <p className="text-sm text-red-600 dark:text-red-300 mt-1">
               将所有配置重置为默认值，此操作不可撤销
             </p>
           </div>

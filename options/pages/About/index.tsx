@@ -56,9 +56,13 @@ export default function About() {
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <InformationCircleIcon className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-semibold text-gray-900">关于</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-dark-text-primary">
+            关于
+          </h1>
         </div>
-        <p className="text-gray-500">了解插件信息和开发团队</p>
+        <p className="text-gray-500 dark:text-dark-text-secondary">
+          了解插件信息和开发团队
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -69,7 +73,9 @@ export default function About() {
 
         {/* 项目链接 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">项目链接</h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
+            项目链接
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <LinkCard
               Icon={CodeBracketIcon}
@@ -77,8 +83,8 @@ export default function About() {
               description="查看源代码、提交问题或参与项目开发"
               href={repository}
               buttonText="去点个Star"
-              buttonClass="bg-gray-900 text-white hover:bg-gray-800"
-              iconClass="text-gray-900"
+              buttonClass="bg-gray-900 dark:bg-gray-700 text-white hover:bg-gray-800 dark:hover:bg-gray-600"
+              iconClass="text-gray-900 dark:text-gray-100"
             />
             <LinkCard
               Icon={GlobeAltIcon}
@@ -86,15 +92,17 @@ export default function About() {
               description="查看详细文档、使用指南和更多信息"
               href={homepage}
               buttonText="访问官网"
-              buttonClass="bg-blue-600 text-white hover:bg-blue-700"
-              iconClass="text-blue-600"
+              buttonClass="bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-400"
+              iconClass="text-blue-600 dark:text-blue-400"
             />
           </div>
         </section>
 
         {/* 功能特性 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">功能特性</h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
+            功能特性
+          </h2>
           <div className="space-y-6">
             {/* 主要功能 */}
             <FeatureList title="已实现功能" items={FEATURES} color="green" />
@@ -110,13 +118,17 @@ export default function About() {
 
         {/* 技术栈 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">技术栈</h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
+            技术栈
+          </h2>
           <TechStackGrid items={techStack} />
         </section>
 
         {/* 版权和致谢 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">版权与致谢</h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
+            版权与致谢
+          </h2>
           <CreditsCard />
         </section>
 

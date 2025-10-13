@@ -4,7 +4,7 @@ import { AccountManagementProvider } from "~/features/AccountManagement/hooks/Ac
 function AccountManagement() {
   return (
     <AccountManagementProvider>
-      <div className={`bg-white flex flex-col`}>
+      <div className={`bg-white dark:bg-dark-bg-primary flex flex-col`}>
         <AccountList />
       </div>
     </AccountManagementProvider>

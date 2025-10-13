@@ -63,7 +63,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               <span className={`text-yellow-700`}>当前站点</span>
             </Tooltip>
           )}
-          <div className="font-medium text-gray-900 text-sm truncate">
+          <div className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">
             <a
               href={site.baseUrl}
               target="_blank"
@@ -104,14 +104,14 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               </>
             ))}
         </div>
-        <div className="text-xs text-gray-500 truncate ml-4 flex items-start space-x-1">
+        <div className="text-xs text-gray-500 dark:text-dark-text-secondary truncate ml-4 flex items-start space-x-1">
           <UserIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
           <span className="truncate" title={site.username}>
             {site.username}
           </span>
         </div>
         {site.notes && (
-          <div className="text-xs text-gray-500 truncate ml-4 mt-1 flex items-start space-x-1">
+          <div className="text-xs text-gray-500 dark:text-dark-text-secondary truncate ml-4 mt-1 flex items-start space-x-1">
             <PencilSquareIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
             <span className="truncate" title={site.notes}>
               {site.notes}

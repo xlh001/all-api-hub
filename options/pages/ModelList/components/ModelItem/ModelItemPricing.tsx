@@ -45,10 +45,14 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
           {/* 倍率显示 */}
           {showRatioColumn && (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">倍率:</span>
+              <span className="text-sm text-gray-500 dark:text-dark-text-tertiary">
+                倍率:
+              </span>
               <span
                 className={`text-sm font-medium ${
-                  isAvailableForUser ? "text-gray-900" : "text-gray-500"
+                  isAvailableForUser
+                    ? "text-gray-900 dark:text-dark-text-primary"
+                    : "text-gray-500 dark:text-dark-text-tertiary"
                 }`}>
                 {model.model_ratio}x
               </span>
@@ -58,7 +62,9 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
       ) : (
         // 按次计费
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600">每次调用:</span>
+          <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
+            每次调用:
+          </span>
           <ModelItemPerCallPricingView
             perCallPrice={perCallPrice}
             isAvailableForUser={isAvailableForUser}

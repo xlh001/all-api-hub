@@ -30,13 +30,17 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="mb-2 flex items-center rounded-lg border bg-gray-50 p-4">
+      className="mb-2 flex items-center rounded-lg border border-gray-200 dark:border-dark-bg-tertiary bg-gray-50 dark:bg-dark-bg-tertiary p-4 cursor-move hover:bg-gray-100 dark:hover:bg-dark-bg-secondary transition-colors">
       <div className="flex-grow">
-        <div className="font-medium">{item.label}</div>
-        <div className="text-sm text-gray-500">{item.description}</div>
+        <div className="font-medium text-gray-900 dark:text-dark-text-primary">
+          {item.label}
+        </div>
+        <div className="text-sm text-gray-500 dark:text-dark-text-secondary">
+          {item.description}
+        </div>
       </div>
       <div className="ml-4">
-        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+        <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-300">
           优先级: {item.priority + 1}
         </span>
       </div>

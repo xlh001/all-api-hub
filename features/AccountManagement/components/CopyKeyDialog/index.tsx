@@ -94,7 +94,7 @@ export default function CopyKeyDialog({
             leave="ease-in duration-200"
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
-            <DialogPanel className="w-full max-w-md bg-white rounded-lg shadow-xl transform transition-all max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogPanel className="w-full max-w-md bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all max-h-[85vh] overflow-hidden flex flex-col">
               <DialogHeader account={account} onClose={onClose} />
               <div className="flex-1 overflow-y-auto p-4">
                 {renderContent()}

@@ -57,7 +57,7 @@ export default function ActionButtons({
         <button
           type="button"
           onClick={onShowManualForm}
-          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-dark-text-secondary bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-bg-tertiary rounded-lg hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
           <PencilIcon className="w-4 h-4" />
           <span>手动添加</span>
         </button>
@@ -70,7 +70,7 @@ export default function ActionButtons({
       <button
         type="button"
         onClick={onClose}
-        className="px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
+        className="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
         取消
       </button>
 

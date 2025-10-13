@@ -23,10 +23,10 @@ function LoadingSkeleton() {
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className="border border-gray-200 rounded-lg p-4 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+          className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4 animate-pulse">
+          <div className="h-4 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-1/4 mb-2"></div>
+          <div className="h-3 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-1/2 mb-2"></div>
+          <div className="h-3 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-3/4"></div>
         </div>
       ))}
     </div>
@@ -44,16 +44,18 @@ function EmptyState({
 }) {
   return (
     <div className="text-center py-12">
-      <KeyIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-      <p className="text-gray-500 mb-4">
+      <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+      <p className="text-gray-500 dark:text-dark-text-secondary mb-4">
         {tokens.length === 0 ? "暂无密钥数据" : "没有找到匹配的密钥"}
       </p>
       {displayData.length === 0 ? (
-        <p className="text-sm text-gray-400">请先添加账号</p>
+        <p className="text-sm text-gray-400 dark:text-dark-text-tertiary">
+          请先添加账号
+        </p>
       ) : tokens.length === 0 ? (
         <button
           onClick={handleAddToken}
-          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors flex items-center space-x-2 mx-auto">
+          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary transition-colors flex items-center space-x-2 mx-auto">
           <PlusIcon className="w-4 h-4" />
           <span>创建第一个密钥</span>
         </button>
@@ -78,8 +80,10 @@ export function TokenList({
   if (!selectedAccount) {
     return (
       <div className="text-center py-12">
-        <KeyIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500">请先选择一个账号查看密钥列表</p>
+        <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-500 dark:text-dark-text-secondary">
+          请先选择一个账号查看密钥列表
+        </p>
       </div>
     )
   }

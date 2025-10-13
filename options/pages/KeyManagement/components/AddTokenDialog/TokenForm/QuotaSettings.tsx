@@ -23,14 +23,20 @@ export function QuotaSettings({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">额度设置</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
+          额度设置
+        </label>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">无限额度</span>
+          <span className="text-sm text-gray-500 dark:text-dark-text-tertiary">
+            无限额度
+          </span>
           <Switch
             checked={unlimitedQuota}
             onChange={handleSwitchChange("unlimitedQuota")}
             className={`${
-              unlimitedQuota ? "bg-blue-600" : "bg-gray-200"
+              unlimitedQuota
+                ? "bg-blue-600"
+                : "bg-gray-200 dark:bg-dark-bg-tertiary"
             } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}>
             <span
               className={`${
@@ -49,13 +55,19 @@ export function QuotaSettings({
             min="0"
             value={quota}
             onChange={handleInputChange("quota")}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              error ? "border-red-300" : "border-gray-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
+              error
+                ? "border-red-300"
+                : "border-gray-300 dark:border-dark-bg-tertiary"
             }`}
             placeholder="请输入额度金额（美元）"
           />
-          {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-          <p className="mt-1 text-xs text-gray-500">
+          {error && (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+              {error}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
             1美元 ={" "}
             {UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR.toLocaleString()}{" "}
             配额点数

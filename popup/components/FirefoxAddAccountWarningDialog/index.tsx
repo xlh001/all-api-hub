@@ -48,20 +48,20 @@ export default function FirefoxAddAccountWarningDialog({
             leave="ease-in duration-200"
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
-            <DialogPanel className="w-full max-w-md bg-white rounded-lg shadow-xl transform transition-all">
+            <DialogPanel className="w-full max-w-md bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all">
               {/* 头部 */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
                     <ExclamationTriangleIcon className="w-4 h-4 text-white" />
                   </div>
-                  <DialogTitle className="text-lg font-semibold text-gray-900">
+                  <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
                     功能限制提醒
                   </DialogTitle>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
@@ -72,11 +72,11 @@ export default function FirefoxAddAccountWarningDialog({
                   <div className="text-center">
                     <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-orange-500" />
                     <div className="mt-3">
-                      <h3 className="text-base font-medium text-gray-900">
+                      <h3 className="text-base font-medium text-gray-900 dark:text-dark-text-primary">
                         Firefox 浏览器功能限制
                       </h3>
                       <div className="mt-2">
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
                           在 Firefox
                           浏览器的弹窗中无法正常使用此功能。请使用侧边栏模式来添加账号。
                         </p>
@@ -84,16 +84,16 @@ export default function FirefoxAddAccountWarningDialog({
                     </div>
                   </div>
 
-                  <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg p-3">
                     <div className="flex">
                       <div className="flex-shrink-0">
-                        <ExclamationTriangleIcon className="h-5 w-5 text-orange-400" />
+                        <ExclamationTriangleIcon className="h-5 w-5 text-orange-400 dark:text-orange-300" />
                       </div>
                       <div className="ml-3">
-                        <h3 className="text-xs font-medium text-orange-800">
+                        <h3 className="text-xs font-medium text-orange-800 dark:text-orange-200">
                           如何打开侧边栏
                         </h3>
-                        <div className="mt-1 text-xs text-orange-700">
+                        <div className="mt-1 text-xs text-orange-700 dark:text-orange-300">
                           <p>
                             点击浏览器工具栏中的插件图标，然后选择"侧边栏"选项来打开侧边栏模式。
                           </p>
@@ -108,7 +108,7 @@ export default function FirefoxAddAccountWarningDialog({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
+                    className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
                     确定
                   </button>
                   <button

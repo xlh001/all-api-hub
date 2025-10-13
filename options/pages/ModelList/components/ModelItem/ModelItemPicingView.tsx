@@ -22,7 +22,9 @@ export const PriceView = ({
     <div className="flex items-center gap-6">
       {/* 输入价格 */}
       <div className="flex items-center space-x-2">
-        <span className="text-sm text-gray-600">输入:</span>
+        <span className="text-sm text-gray-600 dark:text-dark-text-primary">
+          输入:
+        </span>
         <span
           className={`text-sm ${
             isAvailableForUser ? "text-blue-600" : "text-gray-500"
@@ -33,7 +35,9 @@ export const PriceView = ({
 
       {/* 输出价格 */}
       <div className="flex items-center space-x-2">
-        <span className="text-sm text-gray-600">输出:</span>
+        <span className="text-sm text-gray-600 dark:text-dark-text-primary">
+          输出:
+        </span>
         <span
           className={`text-sm ${
             isAvailableForUser ? "text-green-600" : "text-gray-500"

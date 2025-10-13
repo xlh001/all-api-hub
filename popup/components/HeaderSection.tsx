@@ -10,6 +10,7 @@ import iconImage from "~/assets/icon.png"
 import Tooltip from "~/components/Tooltip"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
+import CompactThemeToggle from "~/popup/components/ThemeToggle"
 import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
 
 export default function HeaderSection() {
@@ -41,7 +42,7 @@ export default function HeaderSection() {
   }
 
   return (
-    <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-100 flex-shrink-0">
+    <div className="flex items-center justify-between px-5 py-3 bg-white dark:bg-dark-bg-primary border-b border-gray-100 dark:border-dark-bg-tertiary flex-shrink-0">
       <div className="flex items-center space-x-3">
         <img
           src={iconImage}
@@ -49,12 +50,17 @@ export default function HeaderSection() {
           className="w-7 h-7 rounded-lg shadow-sm"
         />
         <div className="flex flex-col">
-          <span className="font-semibold text-gray-900">All API Hub</span>
-          <span className="text-xs text-gray-500">一键管理所有AI中转站</span>
+          <span className="font-semibold text-gray-900 dark:text-dark-text-primary">
+            All API Hub
+          </span>
+          <span className="text-xs text-gray-500 dark:text-dark-text-secondary">
+            一键管理所有AI中转站
+          </span>
         </div>
       </div>
 
       <div className="flex items-center space-x-2">
+        <CompactThemeToggle />
         <Tooltip content="刷新数据">
           <button
             onClick={handleGlobalRefresh}

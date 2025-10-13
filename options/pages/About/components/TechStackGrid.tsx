@@ -14,14 +14,18 @@ const TechStackGrid = ({ items }: TechStackGridProps) => {
       {items.map((tech, index) => (
         <div
           key={index}
-          className="bg-white border border-gray-200 rounded-lg p-4">
+          className="bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-base font-medium text-gray-900">{tech.name}</h3>
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+            <h3 className="text-base font-medium text-gray-900 dark:text-dark-text-primary">
+              {tech.name}
+            </h3>
+            <span className="text-xs bg-gray-100 dark:bg-dark-bg-tertiary text-gray-600 dark:text-dark-text-secondary px-2 py-1 rounded">
               v{tech.version}
             </span>
           </div>
-          <p className="text-sm text-gray-500">{tech.description}</p>
+          <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+            {tech.description}
+          </p>
         </div>
       ))}
     </div>

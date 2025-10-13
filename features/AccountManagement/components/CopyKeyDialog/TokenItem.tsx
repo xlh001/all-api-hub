@@ -36,12 +36,12 @@ export function TokenItem({
   account
 }: TokenItemProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-sm transition-all duration-200">
+    <div className="bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden hover:shadow-sm transition-all duration-200">
       <div
-        className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
         onClick={onToggle}>
         <div className="flex-1 min-w-0 space-y-1.5">
-          <h4 className="font-medium text-gray-900 text-sm truncate">
+          <h4 className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">
             {token.name}
           </h4>
           <div className="flex items-center space-x-1.5">

@@ -20,7 +20,9 @@ export function ModelLimits({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">模型限制</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
+          模型限制
+        </label>
         <Switch
           checked={modelLimitsEnabled}
           onChange={(enabled) => {
@@ -31,7 +33,9 @@ export function ModelLimits({
             }))
           }}
           className={`${
-            modelLimitsEnabled ? "bg-blue-600" : "bg-gray-200"
+            modelLimitsEnabled
+              ? "bg-blue-600"
+              : "bg-gray-200 dark:bg-dark-bg-tertiary"
           } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}>
           <span
             className={`${
@@ -47,14 +51,14 @@ export function ModelLimits({
             multiple
             value={modelLimits}
             onChange={handleModelSelectChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32">
+            className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary h-32">
             {availableModels.map((model) => (
               <option key={model} value={model}>
                 {model}
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
             按住 Ctrl/Cmd 键可多选模型，已选择 {modelLimits.length} 个模型
           </p>
         </div>

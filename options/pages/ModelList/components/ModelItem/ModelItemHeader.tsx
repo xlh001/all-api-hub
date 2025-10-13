@@ -34,7 +34,9 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
           <div className="flex items-center space-x-2 min-w-0">
             <h3
               className={`text-lg font-semibold ${
-                isAvailableForUser ? "text-gray-900" : "text-gray-500"
+                isAvailableForUser
+                  ? "text-gray-900 dark:text-dark-text-primary"
+                  : "text-gray-500 dark:text-dark-text-tertiary"
               }`}>
               {model.model_name}
             </h3>
@@ -42,9 +44,9 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
             {/* 复制按钮 */}
             <button
               onClick={handleCopyModelName}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded transition-colors"
               title="复制模型名称">
-              <DocumentDuplicateIcon className="w-3 h-3 text-gray-400" />
+              <DocumentDuplicateIcon className="w-3 h-3 text-gray-400 dark:text-dark-text-tertiary" />
             </button>
           </div>
 
@@ -58,8 +60,8 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
           <span
             className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
               isAvailableForUser
-                ? "bg-green-100 text-green-800"
-                : "bg-gray-100 text-gray-600"
+                ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400"
             }`}>
             {isAvailableForUser ? "可用" : "不可用"}
           </span>

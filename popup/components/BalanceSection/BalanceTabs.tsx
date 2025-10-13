@@ -21,8 +21,8 @@ const StyledTab: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     className={({ selected }) =>
       `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
         selected
-          ? "bg-white text-gray-900 shadow-sm"
-          : "text-gray-500 hover:text-gray-700"
+          ? "bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary shadow-sm"
+          : "text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text-primary"
       }`
     }>
     {children}
@@ -47,7 +47,7 @@ const BalanceDisplay: React.FC<{
   <div className="flex items-center space-x-1 break-all">
     <button
       onClick={onCurrencyToggle}
-      className="text-5xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left"
+      className="text-5xl font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left"
       title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
       {isConsumption && value > 0 ? "-" : ""}
       {getCurrencySymbol(currencyType)}
@@ -97,7 +97,7 @@ export const BalanceTabs: React.FC = () => {
         selectedIndex={activeTab === DATA_TYPE_CONSUMPTION ? 0 : 1}
         onChange={handleTabChange}>
         <div className="flex justify-start mb-3">
-          <TabList className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          <TabList className="flex space-x-1 bg-gray-100 dark:bg-dark-bg-primary rounded-lg p-1">
             <StyledTab>今日消耗</StyledTab>
             <StyledTab>总余额</StyledTab>
           </TabList>

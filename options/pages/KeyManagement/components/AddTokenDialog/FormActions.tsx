@@ -18,13 +18,13 @@ export function FormActions({
       <button
         onClick={onClose}
         disabled={isSubmitting}
-        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50">
+        className="px-4 py-2 text-gray-700 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50">
         取消
       </button>
       <button
         onClick={onSubmit}
         disabled={isSubmitting || !canSubmit}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2">
+        className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center space-x-2">
         {isSubmitting && (
           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
         )}
