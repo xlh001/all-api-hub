@@ -1,7 +1,6 @@
-import { Toaster } from "react-hot-toast"
-
 import "~/popup/style.css"
 
+import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
 import { ThemeProvider } from "~/contexts/ThemeContext"
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
 import Header from "~/options/components/Header"
@@ -44,27 +43,7 @@ function OptionsPage() {
           </main>
         </div>
       </div>
-      <Toaster
-        position="bottom-center"
-        reverseOrder={false}
-        gutter={8}
-        containerClassName=""
-        containerStyle={{}}
-        toastOptions={{
-          className: "",
-          duration: 4000,
-          style: {
-            background: "#fff",
-            color: "#363636"
-          },
-          success: {
-            duration: 3000
-          },
-          error: {
-            duration: 5000
-          }
-        }}
-      />
+      <ThemeAwareToaster reverseOrder={false} />
     </div>
   )
 }

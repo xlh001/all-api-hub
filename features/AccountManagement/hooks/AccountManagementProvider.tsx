@@ -1,6 +1,7 @@
 import React, { type ReactNode } from "react"
-import { Toaster } from "react-hot-toast"
 
+import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
+import { ThemeProvider } from "~/contexts/ThemeContext"
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
 
 import { AccountActionsProvider } from "./AccountActionsContext"
@@ -16,12 +17,14 @@ export const AccountManagementProvider = ({
 }) => {
   return (
     <UserPreferencesProvider>
-      <AccountDataProvider refreshKey={refreshKey}>
-        <DialogStateProvider>
-          <AccountActionsProvider>{children}</AccountActionsProvider>
-          <Toaster position="bottom-center" reverseOrder={true} />
-        </DialogStateProvider>
-      </AccountDataProvider>
+      <ThemeProvider>
+        <AccountDataProvider refreshKey={refreshKey}>
+          <DialogStateProvider>
+            <AccountActionsProvider>{children}</AccountActionsProvider>
+            <ThemeAwareToaster reverseOrder={true} />
+          </DialogStateProvider>
+        </AccountDataProvider>
+      </ThemeProvider>
     </UserPreferencesProvider>
   )
 }

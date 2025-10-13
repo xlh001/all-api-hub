@@ -1,7 +1,6 @@
 import "./style.css"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import { ThemeProvider } from "~/contexts/ThemeContext"
 import {
   UserPreferencesProvider,
   useUserPreferencesContext
@@ -34,11 +33,9 @@ function PopupContent({ inSidePanel = false }) {
 function IndexPopup({ inSidePanel = false }) {
   return (
     <UserPreferencesProvider>
-      <ThemeProvider>
-        <AccountManagementProvider>
-          <PopupContent inSidePanel={inSidePanel} />
-        </AccountManagementProvider>
-      </ThemeProvider>
+      <AccountManagementProvider>
+        <PopupContent inSidePanel={inSidePanel} />
+      </AccountManagementProvider>
     </UserPreferencesProvider>
   )
 }
