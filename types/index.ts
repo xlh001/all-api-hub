@@ -143,7 +143,7 @@ export interface DisplaySiteData {
    * @deprecated Use `checkIn` object presence instead.
    */
   supports_check_in?: boolean // 是否支持签到功能
-  authType?: AuthTypeEnum // 认证方式
+  authType: AuthTypeEnum // 认证方式
   checkIn?: CheckInConfig
 }
 
