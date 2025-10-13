@@ -10,7 +10,7 @@ import {
   type StorageConfig
 } from "~/types"
 
-import { refreshAccountData } from "./apiService"
+import { refreshAccountData, validateAccountConnection } from "./apiService"
 import {
   migrateAccountConfig,
   migrateAccountsConfig,
@@ -660,7 +660,6 @@ export const AccountStorageUtils = {
   async validateAccounts(
     accounts: SiteAccount[]
   ): Promise<{ valid: SiteAccount[]; invalid: SiteAccount[] }> {
-    const { validateAccountConnection } = await import("./apiService")
     const valid: SiteAccount[] = []
     const invalid: SiteAccount[] = []
 
