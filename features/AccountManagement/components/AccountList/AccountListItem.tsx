@@ -1,7 +1,7 @@
 import React from "react"
 
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
-import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/useAccountListItem"
+import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/hooks/useAccountListItem"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
 
