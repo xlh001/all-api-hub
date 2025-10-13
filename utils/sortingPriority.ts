@@ -36,6 +36,11 @@ export const DEFAULT_SORTING_PRIORITY_CONFIG: SortingPriorityConfig = {
       id: SortingCriteriaType.USER_SORT_FIELD,
       enabled: true,
       priority: 3
+    },
+    {
+      id: SortingCriteriaType.CUSTOM_CHECK_IN_URL,
+      enabled: true,
+      priority: 4
     }
   ],
   lastModified: Date.now()
@@ -90,6 +95,11 @@ function applySortingCriteria(
       const checkInA = a?.checkIn?.isCheckedInToday ? 1 : 0
       const checkInB = b?.checkIn?.isCheckedInToday ? 1 : 0
       return checkInB - checkInA
+
+    case SortingCriteriaType.CUSTOM_CHECK_IN_URL:
+      const customUrlA = a?.checkIn?.customCheckInUrl ? 1 : 0
+      const customUrlB = b?.checkIn?.customCheckInUrl ? 1 : 0
+      return customUrlB - customUrlA
 
     case SortingCriteriaType.USER_SORT_FIELD:
       return compareByUserSortField(

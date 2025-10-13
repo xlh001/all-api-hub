@@ -5,6 +5,7 @@ export enum SortingCriteriaType {
   CURRENT_SITE = "current_site",
   HEALTH_STATUS = "health_status",
   CHECK_IN_REQUIREMENT = "check_in_requirement",
+  CUSTOM_CHECK_IN_URL = "custom_check_in_url",
   USER_SORT_FIELD = "user_sort_field"
 }
 

@@ -29,6 +29,10 @@ const SORTING_CRITERIA_UI_TEXT: Record<
   [SortingCriteriaType.USER_SORT_FIELD]: {
     label: "用户自定义排序",
     description: "根据用户在列表视图中选择的字段（如余额）进行排序"
+  },
+  [SortingCriteriaType.CUSTOM_CHECK_IN_URL]: {
+    label: "自定义签到链接",
+    description: "将使用自定义签到链接的站点排在前面"
   }
 }
 
