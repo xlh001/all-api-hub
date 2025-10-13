@@ -1,4 +1,5 @@
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
+import { ApiError } from "~/services/apiService/common/errors"
 import type {
   AccessTokenInfo,
   AccountData,
@@ -22,18 +23,6 @@ import {
   getTodayTimestampRange
 } from "~/services/apiService/common/utils"
 import { AuthTypeEnum, type ApiToken, type CheckInConfig } from "~/types"
-
-// ============= 错误处理 =============
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public statusCode?: number,
-    public endpoint?: string
-  ) {
-    super(message)
-    this.name = "ApiError"
-  }
-}
 
 // ============= 核心 API 函数 =============
 

@@ -2,7 +2,7 @@ import {
   fetchAvailableModels,
   fetchUpstreamModelsNameList
 } from "~/services/apiService"
-import { ApiError } from "~/services/apiService/common"
+import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { isNotEmptyArray } from "~/utils"

@@ -1,5 +1,5 @@
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
-import { ApiError } from "~/services/apiService/common/index"
+import { ApiError } from "~/services/apiService/common/errors"
 import type {
   ApiResponse,
   LogItem,
