@@ -136,6 +136,7 @@ export async function importToNewApi(
     const availableModels =
       (await fetchUpstreamModelsNameList(
         { baseUrl: account.baseUrl, token: token.key },
+        // @ts-ignore
         account
       )) ?? (await fetchAvailableModels(account))
 
