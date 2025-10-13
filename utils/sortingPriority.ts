@@ -87,8 +87,8 @@ function applySortingCriteria(
       return healthA - healthB
 
     case SortingCriteriaType.CHECK_IN_REQUIREMENT:
-      const checkInA = a.can_check_in ? 1 : 0
-      const checkInB = b.can_check_in ? 1 : 0
+      const checkInA = a?.checkIn?.isCheckedInToday ? 1 : 0
+      const checkInB = b?.checkIn?.isCheckedInToday ? 1 : 0
       return checkInB - checkInA
 
     case SortingCriteriaType.USER_SORT_FIELD:

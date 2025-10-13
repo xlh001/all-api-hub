@@ -10,7 +10,7 @@ import {
   validateAndUpdateAccount
 } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
-import { AuthTypeEnum, type DisplaySiteData } from "~/types"
+import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
 import type { AutoDetectError } from "~/utils/autoDetectUtils"
 
 interface UseAccountDialogProps {
@@ -42,7 +42,11 @@ export function useAccountDialog({
   const [exchangeRate, setExchangeRate] = useState("")
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
-  const [supportsCheckIn, setSupportsCheckIn] = useState(false)
+  const [checkIn, setCheckIn] = useState<CheckInConfig>({
+    enableDetection: false,
+    isCheckedInToday: false,
+    customCheckInUrl: ""
+  })
   const [siteType, setSiteType] = useState("unknown")
   const [authType, setAuthType] = useState(AuthTypeEnum.AccessToken)
   const [isAutoConfiguring, setIsAutoConfiguring] = useState(false)
@@ -63,7 +67,11 @@ export function useAccountDialog({
     setExchangeRate("")
     setCurrentTabUrl(null)
     setNotes("")
-    setSupportsCheckIn(false)
+    setCheckIn({
+      enableDetection: false,
+      isCheckedInToday: false,
+      customCheckInUrl: ""
+    })
     setSiteType("unknown")
     setAuthType(AuthTypeEnum.AccessToken)
     setIsAutoConfiguring(false)
@@ -80,7 +88,13 @@ export function useAccountDialog({
         setUserId(siteAccount.account_info.id.toString())
         setExchangeRate(siteAccount.exchange_rate.toString())
         setNotes(siteAccount.notes || "")
-        setSupportsCheckIn(siteAccount.supports_check_in || false)
+        setCheckIn(
+          siteAccount.checkIn || {
+            enableDetection: false,
+            isCheckedInToday: false,
+            customCheckInUrl: ""
+          }
+        )
         setSiteType(siteAccount.site_type || "")
         setAuthType(siteAccount.authType || AuthTypeEnum.AccessToken)
       }
@@ -149,7 +163,13 @@ export function useAccountDialog({
         setUsername(result.data.username)
         setAccessToken(result.data.accessToken)
         setUserId(result.data.userId)
-        setSupportsCheckIn(result.data.checkSupport || false)
+        setCheckIn(
+          result.data.checkIn || {
+            enableDetection: false,
+            isCheckedInToday: false,
+            customCheckInUrl: ""
+          }
+        )
 
         if (result.data.exchangeRate) {
           setExchangeRate(result.data.exchangeRate.toString())
@@ -193,7 +213,7 @@ export function useAccountDialog({
               userId.trim(),
               exchangeRate,
               notes.trim(),
-              supportsCheckIn,
+              checkIn,
               siteType,
               authType
             )
@@ -206,7 +226,7 @@ export function useAccountDialog({
               userId.trim(),
               exchangeRate,
               notes.trim(),
-              supportsCheckIn,
+              checkIn,
               siteType,
               authType
             )
@@ -315,7 +335,7 @@ export function useAccountDialog({
       exchangeRate,
       currentTabUrl,
       notes,
-      supportsCheckIn,
+      checkIn,
       siteType,
       authType,
       isFormValid,
@@ -331,7 +351,7 @@ export function useAccountDialog({
       setShowManualForm,
       setExchangeRate,
       setNotes,
-      setSupportsCheckIn,
+      setCheckIn,
       setSiteType,
       setAuthType
     },

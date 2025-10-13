@@ -152,8 +152,8 @@ export default function AccountDialog({
                         }
                         notes={state.notes}
                         onNotesChange={setters.setNotes}
-                        supportsCheckIn={state.supportsCheckIn}
-                        setSupportsCheckIn={setters.setSupportsCheckIn}
+                        checkIn={state.checkIn}
+                        onCheckInChange={setters.setCheckIn}
                         siteType={state.siteType}
                         onSiteTypeChange={setters.setSiteType}
                       />

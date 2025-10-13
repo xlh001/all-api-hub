@@ -71,27 +71,37 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               {site.name}
             </a>
           </div>
-          {site.supports_check_in && (
-            <>
-              {site.can_check_in === undefined ? (
-                <Tooltip content="站点可能不支持签到" position="top">
-                  <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
-                </Tooltip>
-              ) : site.can_check_in === false ? (
-                <Tooltip content="今日已签到，点我查看" position="top">
-                  <button onClick={handleCheckIn}>
-                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                  </button>
-                </Tooltip>
-              ) : (
-                <Tooltip content="今日未签到，点我去签到" position="top">
-                  <button onClick={handleCheckIn}>
-                    <XCircleIcon className="h-4 w-4 text-red-500" />
-                  </button>
-                </Tooltip>
-              )}
-            </>
-          )}
+          {/* The check-in UI is displayed if the checkIn object exists. */}
+          {site.checkIn?.enableDetection &&
+            (site.checkIn?.customCheckInUrl ? (
+              <Tooltip
+                content={`自定义签到地址，点我去签到: ${site.checkIn.customCheckInUrl}`}
+                position="top">
+                <span className="text-blue-600 text-xs font-bold">
+                  自定义签到
+                </span>
+              </Tooltip>
+            ) : (
+              <>
+                {site.checkIn.isCheckedInToday === undefined ? (
+                  <Tooltip content="站点可能不支持签到" position="top">
+                    <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
+                  </Tooltip>
+                ) : site.checkIn.isCheckedInToday === false ? (
+                  <Tooltip content="今日已签到，点我查看" position="top">
+                    <button onClick={handleCheckIn}>
+                      <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                    </button>
+                  </Tooltip>
+                ) : (
+                  <Tooltip content="今日未签到，点我去签到" position="top">
+                    <button onClick={handleCheckIn}>
+                      <XCircleIcon className="h-4 w-4 text-red-500" />
+                    </button>
+                  </Tooltip>
+                )}
+              </>
+            ))}
         </div>
         <div className="text-xs text-gray-500 truncate ml-4 flex items-start space-x-1">
           <UserIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />

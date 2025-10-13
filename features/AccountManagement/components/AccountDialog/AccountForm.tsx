@@ -11,7 +11,7 @@ import {
 
 import { SITE_TITLE_RULES } from "~/constants/siteType"
 import { isValidExchangeRate } from "~/services/accountOperations"
-import { AuthTypeEnum } from "~/types"
+import { AuthTypeEnum, type CheckInConfig } from "~/types"
 
 interface AccountFormProps {
   authType: AuthTypeEnum
@@ -29,10 +29,10 @@ interface AccountFormProps {
   onExchangeRateChange: (value: string) => void
   onToggleShowAccessToken: () => void
   onNotesChange: (value: string) => void
-  supportsCheckIn: boolean
-  setSupportsCheckIn: (value: boolean) => void
   siteType: string
   onSiteTypeChange: (value: string) => void
+  checkIn: CheckInConfig
+  onCheckInChange: (value: CheckInConfig) => void
 }
 
 export default function AccountForm({
@@ -51,10 +51,10 @@ export default function AccountForm({
   onExchangeRateChange,
   onToggleShowAccessToken,
   onNotesChange,
-  supportsCheckIn,
-  setSupportsCheckIn,
   siteType,
-  onSiteTypeChange
+  onSiteTypeChange,
+  checkIn,
+  onCheckInChange
 }: AccountFormProps) {
   const commonInputClasses =
     "block w-full pl-10 py-3 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
@@ -222,18 +222,47 @@ export default function AccountForm({
           签到状态检测（需站点已开启签到）
         </label>
         <Switch
-          checked={supportsCheckIn}
-          onChange={setSupportsCheckIn}
+          checked={checkIn.enableDetection}
+          onChange={(enableDetection) =>
+            onCheckInChange({ ...checkIn, enableDetection })
+          }
           id="supports-check-in"
           className={`${
-            supportsCheckIn ? "bg-green-600" : "bg-gray-200"
+            checkIn.enableDetection ? "bg-green-600" : "bg-gray-200"
           } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2`}>
           <span
             className={`${
-              supportsCheckIn ? "translate-x-6" : "translate-x-1"
+              checkIn.enableDetection ? "translate-x-6" : "translate-x-1"
             } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
           />
         </Switch>
+      </div>
+
+      {/* Custom Check-in URL */}
+      <div className="space-y-2">
+        <label
+          htmlFor="custom-checkin-url"
+          className="block text-sm font-medium text-gray-700">
+          自定义签到 URL (可选)
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <GlobeAltIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="url"
+            id="custom-checkin-url"
+            value={checkIn.customCheckInUrl}
+            onChange={(e) =>
+              onCheckInChange({ ...checkIn, customCheckInUrl: e.target.value })
+            }
+            placeholder="https://example.com/api/checkin"
+            className={commonInputClasses}
+          />
+        </div>
+        <p className="text-xs text-gray-500">
+          如果设置，将禁用自动签到状态检测。用于具有自定义签到端点的站点。
+        </p>
       </div>
 
       {/* 备注 */}
