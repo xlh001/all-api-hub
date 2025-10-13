@@ -2,6 +2,7 @@ import { EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import ThemeToggle from "~/options/components/ThemeToggle"
 import type { BalanceType, CurrencyType } from "~/types"
 
 import { showUpdateToast } from "../utils/toastHelpers"
@@ -26,6 +27,7 @@ export default function DisplaySettings() {
     <section>
       <h2 className="text-lg font-medium text-gray-900 mb-4">显示设置</h2>
       <div className="space-y-6">
+        <ThemeToggle />
         {/* 默认货币单位 */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100">
           <div className="flex items-center space-x-3">
