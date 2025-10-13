@@ -3,6 +3,7 @@ import { Storage } from "@plasmohq/storage"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { SortingPriorityConfig } from "~/types/sorting"
+import type { ThemeMode } from "~/types/theme"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 用户偏好设置类型定义
@@ -36,6 +37,7 @@ export interface UserPreferences {
   newApiUserId?: string
 
   sortingPriorityConfig?: SortingPriorityConfig
+  themeMode: ThemeMode
 }
 
 // 存储键名常量
@@ -61,7 +63,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   newApiBaseUrl: "",
   newApiAdminToken: "",
   newApiUserId: "",
-  sortingPriorityConfig: undefined
+  sortingPriorityConfig: undefined,
+  themeMode: "system"
 }
 
 class UserPreferencesService {

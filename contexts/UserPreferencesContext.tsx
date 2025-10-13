@@ -15,6 +15,7 @@ import {
 } from "~/services/userPreferences"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { SortingPriorityConfig } from "~/types/sorting"
+import type { ThemeMode } from "~/types/theme"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 1. 定义 Context 的值类型
@@ -33,6 +34,7 @@ interface UserPreferencesContextType {
   newApiBaseUrl: string
   newApiAdminToken: string
   newApiUserId: string
+  themeMode: ThemeMode
 
   updateActiveTab: (activeTab: BalanceType) => Promise<boolean>
   updateDefaultTab: (activeTab: BalanceType) => Promise<boolean>
@@ -51,6 +53,7 @@ interface UserPreferencesContextType {
   updateNewApiBaseUrl: (url: string) => Promise<boolean>
   updateNewApiAdminToken: (token: string) => Promise<boolean>
   updateNewApiUserId: (userId: string) => Promise<boolean>
+  updateThemeMode: (themeMode: ThemeMode) => Promise<boolean>
   resetToDefaults: () => Promise<boolean>
   loadPreferences: () => Promise<void>
 }
@@ -220,6 +223,14 @@ export const UserPreferencesProvider = ({
     return success
   }, [])
 
+  const updateThemeMode = useCallback(async (themeMode: ThemeMode) => {
+    const success = await userPreferences.savePreferences({ themeMode })
+    if (success) {
+      setPreferences((prev) => (prev ? { ...prev, themeMode } : null))
+    }
+    return success
+  }, [])
+
   const resetToDefaults = useCallback(async () => {
     const success = await userPreferences.resetToDefaults()
     if (success) {
@@ -245,6 +256,7 @@ export const UserPreferencesProvider = ({
       newApiBaseUrl: preferences?.newApiBaseUrl || "",
       newApiAdminToken: preferences?.newApiAdminToken || "",
       newApiUserId: preferences?.newApiUserId || "",
+      themeMode: preferences?.themeMode || "system",
       updateActiveTab,
       updateDefaultTab,
       updateCurrencyType,
@@ -257,6 +269,7 @@ export const UserPreferencesProvider = ({
       updateNewApiBaseUrl,
       updateNewApiAdminToken,
       updateNewApiUserId,
+      updateThemeMode,
       resetToDefaults,
       loadPreferences
     }),
@@ -275,6 +288,7 @@ export const UserPreferencesProvider = ({
       updateNewApiBaseUrl,
       updateNewApiAdminToken,
       updateNewApiUserId,
+      updateThemeMode,
       resetToDefaults,
       loadPreferences
     ]
@@ -306,6 +320,7 @@ export const useUserPreferencesContext = () => {
     !context.updateNewApiBaseUrl ||
     !context.updateNewApiAdminToken ||
     !context.updateNewApiUserId ||
+    !context.updateThemeMode ||
     !context.resetToDefaults
   ) {
     throw new Error(

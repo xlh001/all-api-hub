@@ -2,6 +2,8 @@ import { Toaster } from "react-hot-toast"
 
 import "~/popup/style.css"
 
+import { ThemeProvider } from "~/contexts/ThemeContext"
+import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
 import Header from "~/options/components/Header"
 import Sidebar from "~/options/components/Sidebar"
 import { menuItems } from "~/options/constants"
@@ -67,4 +69,14 @@ function OptionsPage() {
   )
 }
 
-export default OptionsPage
+function WrappedOptionsPage() {
+  return (
+    <UserPreferencesProvider>
+      <ThemeProvider>
+        <OptionsPage />
+      </ThemeProvider>
+    </UserPreferencesProvider>
+  )
+}
+
+export default WrappedOptionsPage

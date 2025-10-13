@@ -1,7 +1,11 @@
 import "./style.css"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { ThemeProvider } from "~/contexts/ThemeContext"
+import {
+  UserPreferencesProvider,
+  useUserPreferencesContext
+} from "~/contexts/UserPreferencesContext"
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
 import ActionButtons from "~/popup/components/ActionButtons"
@@ -29,9 +33,13 @@ function PopupContent({ inSidePanel = false }) {
 
 function IndexPopup({ inSidePanel = false }) {
   return (
-    <AccountManagementProvider>
-      <PopupContent inSidePanel={inSidePanel} />
-    </AccountManagementProvider>
+    <UserPreferencesProvider>
+      <ThemeProvider>
+        <AccountManagementProvider>
+          <PopupContent inSidePanel={inSidePanel} />
+        </AccountManagementProvider>
+      </ThemeProvider>
+    </UserPreferencesProvider>
   )
 }
 
