@@ -51,7 +51,13 @@ const AccountDataContext = createContext<AccountDataContextType | undefined>(
 )
 
 // 3. 创建 Provider 组件
-export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
+export const AccountDataProvider = ({
+  children,
+  refreshKey
+}: {
+  children: ReactNode
+  refreshKey?: number
+}) => {
   const {
     currencyType,
     sortField: initialSortField,
@@ -205,7 +211,7 @@ export const AccountDataProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     loadAccountData()
-  }, [])
+  }, [loadAccountData, refreshKey])
 
   useEffect(() => {
     // 打开 popup 时立即检测一次

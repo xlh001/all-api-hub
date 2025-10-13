@@ -8,13 +8,15 @@ import { AccountDataProvider } from "./AccountDataContext"
 import { DialogStateProvider } from "./DialogStateContext"
 
 export const AccountManagementProvider = ({
-  children
+  children,
+  refreshKey
 }: {
   children: ReactNode
+  refreshKey?: number
 }) => {
   return (
     <UserPreferencesProvider>
-      <AccountDataProvider>
+      <AccountDataProvider refreshKey={refreshKey}>
         <DialogStateProvider>
           <AccountActionsProvider>{children}</AccountActionsProvider>
           <Toaster position="bottom-center" reverseOrder={true} />

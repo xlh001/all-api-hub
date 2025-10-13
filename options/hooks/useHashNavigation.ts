@@ -34,6 +34,7 @@ function updateHash(page: string, params?: Record<string, string>) {
 export function useHashNavigation() {
   const [activeMenuItem, setActiveMenuItem] = useState("basic")
   const [routeParams, setRouteParams] = useState<Record<string, string>>({})
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // 初始化路由
   useEffect(() => {
@@ -47,6 +48,9 @@ export function useHashNavigation() {
     // 监听浏览器前进后退
     const handleHashChange = () => {
       const { page, params } = parseHash()
+      if (params.refresh === "true") {
+        setRefreshKey((prev) => prev + 1)
+      }
       const validPage = menuItems.find((item) => item.id === page)
         ? page
         : "basic"
@@ -68,5 +72,5 @@ export function useHashNavigation() {
     updateHash(itemId, params)
   }
 
-  return { activeMenuItem, routeParams, handleMenuItemChange }
+  return { activeMenuItem, routeParams, handleMenuItemChange, refreshKey }
 }

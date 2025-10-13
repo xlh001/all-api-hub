@@ -3,7 +3,7 @@ import { UserIcon } from "@heroicons/react/24/outline"
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
 
-function AccountManagement() {
+function AccountManagement({ refreshKey }: { refreshKey?: number }) {
   return (
     <div className="p-6 bg-white flex flex-col">
       {/* 页面标题 */}
@@ -14,7 +14,7 @@ function AccountManagement() {
         </div>
         <p className="text-gray-500">查看和管理站点账户</p>
       </div>
-      <AccountManagementProvider>
+      <AccountManagementProvider refreshKey={refreshKey}>
         <div className={`bg-white flex flex-col`}>
           <AccountList />
         </div>

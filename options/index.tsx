@@ -9,7 +9,7 @@ import { useHashNavigation } from "~/options/hooks/useHashNavigation"
 import BasicSettings from "~/options/pages/BasicSettings"
 
 function OptionsPage() {
-  const { activeMenuItem, routeParams, handleMenuItemChange } =
+  const { activeMenuItem, routeParams, handleMenuItemChange, refreshKey } =
     useHashNavigation()
 
   // 获取当前活动的组件
@@ -34,7 +34,10 @@ function OptionsPage() {
           {/* 右侧内容区域 */}
           <main className="flex-1 min-w-0">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px]">
-              <ActiveComponent routeParams={routeParams} />
+              <ActiveComponent
+                routeParams={routeParams}
+                refreshKey={refreshKey}
+              />
             </div>
           </main>
         </div>
