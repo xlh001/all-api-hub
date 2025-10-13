@@ -36,7 +36,7 @@ export default function Tooltip({
   const defaultClassName = `z-[9999] bg-gray-900 text-white text-xs rounded-lg shadow-lg px-3 py-2 ${className}`
   return (
     <>
-      <div id={tooltipId} className="inline-block">
+      <div id={tooltipId} className="flex justify-center items-center">
         {children}
       </div>
 
