@@ -1,5 +1,6 @@
 import {
   CheckCircleIcon,
+  CurrencyYenIcon,
   ExclamationTriangleIcon,
   PencilSquareIcon,
   UserIcon,
@@ -77,9 +78,9 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               <Tooltip
                 content={`自定义签到地址，点我去签到: ${site.checkIn.customCheckInUrl}`}
                 position="top">
-                <span className="text-blue-600 text-xs font-bold">
-                  自定义签到
-                </span>
+                <button onClick={handleCheckIn}>
+                  <CurrencyYenIcon className="h-4 w-4 text-green-500" />
+                </button>
               </Tooltip>
             ) : (
               <>

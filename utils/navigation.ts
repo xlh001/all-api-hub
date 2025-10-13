@@ -142,10 +142,12 @@ export const openUsagePage = (account: DisplaySiteData) => {
   createTab(logUrl)
 }
 
-export const openCheckInPage = (account: DisplaySiteData) => {
-  const checkInUrl = joinUrl(
-    account.baseUrl,
-    getSiteApiRouter(account.siteType).checkInPath
-  )
+export const openCheckInPage = (
+  account: DisplaySiteData,
+  targetUrl?: string
+) => {
+  const checkInUrl = targetUrl
+    ? targetUrl
+    : joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
   createTab(checkInUrl)
 }
