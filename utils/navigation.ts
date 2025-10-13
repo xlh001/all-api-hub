@@ -2,14 +2,117 @@ import { getSiteApiRouter } from "~/constants/siteType"
 import type { DisplaySiteData } from "~/types"
 import { joinUrl } from "~/utils/url"
 
-const getURL = (path: string) => chrome.runtime.getURL(path)
+import getURL = chrome.runtime.getURL
+
+const OPTIONS_PAGE_URL = chrome.runtime.getURL("options.html")
+
+/**
+ * Chrome API Wrapper Functions
+ * These functions encapsulate direct Chrome API calls to reduce coupling
+ * and provide consistent error handling across the codebase.
+ */
+
+/**
+ * Handles Chrome API errors
+ */
+const handleChromeError = () => {
+  if (chrome.runtime.lastError) {
+    console.error(chrome.runtime.lastError.message)
+  }
+}
+
+/**
+ * Creates a new tab with the specified URL
+ * @param url - The URL to open in the new tab
+ */
+const createTab = (url: string): void => {
+  chrome.tabs.create({ url }, handleChromeError)
+}
+
+/**
+ * Updates an existing tab with the provided update info
+ * @param tabId - The ID of the tab to update
+ * @param updateInfo - The properties to update on the tab
+ */
+const updateTab = (
+  tabId: number,
+  updateInfo: chrome.tabs.UpdateProperties
+): void => {
+  chrome.tabs.update(tabId, updateInfo, handleChromeError)
+}
+
+/**
+ * Focuses a window by bringing it to the foreground
+ * @param windowId - The ID of the window to focus
+ */
+const focusWindow = (windowId: number): void => {
+  chrome.windows.update(windowId, { focused: true }, handleChromeError)
+}
+
+/**
+ * Queries tabs based on the provided query criteria with error handling
+ * @param queryInfo - The query criteria for filtering tabs
+ * @param callback - Function to execute with the query results
+ */
+const queryTabs = (
+  queryInfo: chrome.tabs.QueryInfo,
+  callback: (tabs: chrome.tabs.Tab[]) => void
+): void => {
+  chrome.tabs.query(queryInfo, (tabs) => {
+    handleChromeError()
+    if (tabs) {
+      callback(tabs)
+    }
+  })
+}
+
+export const openOrFocusOptionsPage = (hash: string) => {
+  const baseUrl = `${OPTIONS_PAGE_URL}${hash}`
+
+  queryTabs({}, (tabs) => {
+    // 查找是否已存在忽略查询参数的 options 页
+    const optionsPageTab = tabs.find((tab) => {
+      if (!tab.url) return false
+      try {
+        const tabUrl = new URL(tab.url)
+        const normalizedUrl = `${tabUrl.origin}${tabUrl.pathname}${tabUrl.hash}`
+        return normalizedUrl === baseUrl
+      } catch {
+        return false
+      }
+    })
+
+    let urlWithHash: string
+
+    if (optionsPageTab) {
+      // 已存在 → 加上 refresh 参数以强制刷新
+      const url = new URL(baseUrl)
+      url.searchParams.set("refresh", "true")
+      url.searchParams.set("t", Date.now().toString())
+      urlWithHash = url.href
+    } else {
+      // 不存在 → 直接使用基础 URL
+      urlWithHash = baseUrl
+    }
+
+    // 打开或聚焦
+    if (optionsPageTab?.id) {
+      updateTab(optionsPageTab.id, { active: true, url: urlWithHash })
+      if (optionsPageTab.windowId) {
+        focusWindow(optionsPageTab.windowId)
+      }
+    } else {
+      createTab(urlWithHash)
+    }
+  })
+}
 
 export const openFullManagerPage = () => {
-  chrome.tabs.create({ url: getURL("options.html#account") })
+  openOrFocusOptionsPage("#account")
 }
 
 export const openSettingsPage = () => {
-  chrome.tabs.create({ url: getURL("options.html#basic") })
+  openOrFocusOptionsPage("#basic")
 }
 
 export const openSidePanel = () => {
@@ -21,14 +124,14 @@ export const openKeysPage = (accountId?: string) => {
   const url = accountId
     ? getURL(`options.html#keys?accountId=${accountId}`)
     : getURL("options.html#keys")
-  chrome.tabs.create({ url })
+  createTab(url)
 }
 
 export const openModelsPage = (accountId?: string) => {
   const url = accountId
     ? getURL(`options.html#models?accountId=${accountId}`)
     : getURL("options.html#models")
-  chrome.tabs.create({ url })
+  createTab(url)
 }
 
 export const openUsagePage = (account: DisplaySiteData) => {
@@ -36,7 +139,7 @@ export const openUsagePage = (account: DisplaySiteData) => {
     account.baseUrl,
     getSiteApiRouter(account.siteType).usagePath
   )
-  chrome.tabs.create({ url: logUrl })
+  createTab(logUrl)
 }
 
 export const openCheckInPage = (account: DisplaySiteData) => {
@@ -44,5 +147,5 @@ export const openCheckInPage = (account: DisplaySiteData) => {
     account.baseUrl,
     getSiteApiRouter(account.siteType).checkInPath
   )
-  chrome.tabs.create({ url: checkInUrl })
+  createTab(checkInUrl)
 }
