@@ -58,6 +58,7 @@ This extension allows for convenient integrated management of AI relay station a
 - ️🏷️ **Smart Site Name Fetching** - There are multiple ways to obtain the real site name, and the domain name method is used as the last resort.
 - ☁️ **WebDav Data Backup** - Supports backing up and restoring all accounts and settings via WebDav, ensuring data security and enabling cross-device synchronization.
 - 📝 **Manual Add** - Supports manually adding any relay site, preventing failures when automatic detection doesn't work.
+- 🌓 **Dark Mode** - Support automatic switching based on system theme
 - ⚙️ **Firefox Support** - The extension is now available for Firefox browsers.
 
 > [!NOTE]
@@ -67,7 +68,7 @@ This extension allows for convenient integrated management of AI relay station a
 
 - 🔍 **Auto-detect Relay Sites** - Automatically creates a system access token and adds it to the extension's site list.
 - 💰 **Auto-detect Top-up Ratios** - Intelligently parses site configuration information.
-- 👥 **Multi-account Management** - Add multiple accounts for each site.
+- 👥 **Multi-account Management** - Add multiple accounts for each site, with support for account grouping and switching.
 - 📊 **Balance & Log Viewing** - Account balance and usage logs at a glance.
 - 🔑 **Token (Key) Management** - Convenient key viewing and management.
 - 🤖 **Model Information Viewing** - View supported model information and channels for each site.
