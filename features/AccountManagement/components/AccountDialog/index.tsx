@@ -14,9 +14,9 @@ import AccountForm from "./AccountForm"
 import ActionButtons from "./ActionButtons"
 import AutoDetectErrorAlert from "./AutoDetectErrorAlert"
 import DialogHeader from "./DialogHeader"
+import { useAccountDialog } from "./hooks/useAccountDialog"
 import InfoPanel from "./InfoPanel"
 import SiteInfoInput from "./SiteInfoInput"
-import { useAccountDialog } from "./useAccountDialog"
 
 interface AccountDialogProps {
   isOpen: boolean
