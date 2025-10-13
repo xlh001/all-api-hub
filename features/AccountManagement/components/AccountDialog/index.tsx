@@ -87,7 +87,7 @@ export default function AccountDialog({
             leave="ease-in duration-200"
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
-            <DialogPanel className="w-full container bg-white rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto">
+            <DialogPanel className="w-full max-w-md bg-white rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto">
               <DialogHeader mode={mode} onClose={onClose} />
 
               <div className="p-4">

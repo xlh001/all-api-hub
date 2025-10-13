@@ -48,7 +48,7 @@ export default function FirefoxAddAccountWarningDialog({
             leave="ease-in duration-200"
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
-            <DialogPanel className="w-full container bg-white rounded-lg shadow-xl transform transition-all">
+            <DialogPanel className="w-full max-w-md bg-white rounded-lg shadow-xl transform transition-all">
               {/* 头部 */}
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <div className="flex items-center space-x-3">
