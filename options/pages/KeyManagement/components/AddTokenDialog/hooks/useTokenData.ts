@@ -3,20 +3,13 @@ import toast from "react-hot-toast"
 
 import { fetchAvailableModels, fetchUserGroups } from "~/services/apiService"
 import type { UserGroupInfo } from "~/services/apiService/common/type"
+import type { DisplaySiteData } from "~/types"
 
 import type { FormData } from "./useTokenForm"
 
-interface Account {
-  id: string
-  name: string
-  baseUrl: string
-  userId: number
-  token: string
-}
-
 export function useTokenData(
   isOpen: boolean,
-  currentAccount: Account | undefined,
+  currentAccount: DisplaySiteData | undefined,
   setFormData: React.Dispatch<React.SetStateAction<FormData>>
 ) {
   const [isLoading, setIsLoading] = useState(false)
