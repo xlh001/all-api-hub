@@ -314,6 +314,10 @@ export function useAccountDialog({
     handleSaveAccount()
   }
 
+  const handleClose = () => {
+    onClose()
+  }
+
   const isFormValid =
     !!siteName.trim() &&
     !!username.trim() &&
@@ -363,7 +367,8 @@ export function useAccountDialog({
       handleSaveAccount,
       handleUrlChange,
       handleSubmit,
-      handleAutoConfig
+      handleAutoConfig,
+      handleClose
     }
   }
 }

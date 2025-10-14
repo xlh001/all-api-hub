@@ -24,7 +24,7 @@ interface AccountDialogProps {
   mode: "add" | "edit"
   account?: DisplaySiteData | null
   onSuccess: (data: any) => void
-  onError: (error: Error) => void
+  onError: (error: any) => void
 }
 
 export default function AccountDialog({
@@ -63,7 +63,7 @@ export default function AccountDialog({
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog onClose={onClose} className="relative z-50">
+      <Dialog onClose={handlers.handleClose} className="relative z-50">
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
@@ -88,7 +88,7 @@ export default function AccountDialog({
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
             <DialogPanel className="w-full max-w-md bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto">
-              <DialogHeader mode={mode} onClose={onClose} />
+              <DialogHeader mode={mode} onClose={handlers.handleClose} />
 
               <div className="p-4">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-2">
@@ -124,7 +124,7 @@ export default function AccountDialog({
                         isDetecting={state.isDetecting}
                         onAutoDetect={handlers.handleAutoDetect}
                         onShowManualForm={() => setters.setShowManualForm(true)}
-                        onClose={onClose}
+                        onClose={handlers.handleClose}
                         isFormValid={state.isFormValid}
                         isSaving={state.isSaving}
                         onAutoConfig={handlers.handleAutoConfig}
@@ -163,7 +163,7 @@ export default function AccountDialog({
                         isDetecting={state.isDetecting}
                         onAutoDetect={handlers.handleAutoDetect}
                         onShowManualForm={() => setters.setShowManualForm(true)}
-                        onClose={onClose}
+                        onClose={handlers.handleClose}
                         isFormValid={state.isFormValid}
                         isSaving={state.isSaving}
                         isDetected={state.isDetected}
