@@ -9,6 +9,7 @@ import {
 
 import Tooltip from "~/components/Tooltip"
 import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
+import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
 import { openCheckInPage } from "~/utils/navigation"
@@ -19,10 +20,20 @@ interface SiteInfoProps {
 
 export default function SiteInfo({ site }: SiteInfoProps) {
   const { detectedAccount } = useAccountDataContext()
+  const { handleRefreshAccount, refreshingAccountId } =
+    useAccountActionsContext()
   const detectedAccountId = detectedAccount?.id
+
+  const isRefreshing = refreshingAccountId === site.id
 
   const handleCheckIn = (customCheckInUrl?: string) => () => {
     openCheckInPage(site, customCheckInUrl)
+  }
+
+  const handleHealthClick = async () => {
+    if (!isRefreshing) {
+      await handleRefreshAccount(site, true) // Force refresh
+    }
   }
 
   return (
@@ -53,10 +64,16 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             }
             position="right">
             <div
-              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+              className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-200 ${
+                isRefreshing
+                  ? "opacity-60 animate-pulse"
+                  : "cursor-pointer hover:scale-125"
+              } ${
                 HEALTH_STATUS_MAP[site.health?.status]?.color ||
                 UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
-              }`}></div>
+              }`}
+              onClick={handleHealthClick}
+              title="点击刷新健康状态"></div>
           </Tooltip>
           {site.id === detectedAccountId && (
             <Tooltip content="当前标签页站点已存在" position="top">
