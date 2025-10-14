@@ -1,5 +1,3 @@
-import React from "react"
-
 import { BalanceTabs } from "./BalanceTabs"
 import { TokenStats } from "./TokenStats"
 import { UpdateTimeAndWarning } from "./UpdateTimeAndWarning"

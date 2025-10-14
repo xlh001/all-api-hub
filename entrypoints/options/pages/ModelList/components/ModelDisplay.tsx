@@ -54,7 +54,7 @@ export function ModelDisplay({
             model={item.model}
             calculatedPrice={item.calculatedPrice}
             exchangeRate={
-              currentAccount?.balance?.USD > 0
+              currentAccount && currentAccount?.balance?.USD > 0
                 ? currentAccount.balance.CNY / currentAccount.balance.USD
                 : 7
             }

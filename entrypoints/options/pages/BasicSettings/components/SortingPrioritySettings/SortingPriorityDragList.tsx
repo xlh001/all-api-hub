@@ -1,6 +1,5 @@
 import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import React from "react"
 
 import type { SortingFieldConfig } from "~/types/sorting"
 

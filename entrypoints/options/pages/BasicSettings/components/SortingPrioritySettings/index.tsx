@@ -1,6 +1,6 @@
 import type { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"

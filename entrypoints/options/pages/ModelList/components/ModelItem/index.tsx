@@ -2,7 +2,7 @@
  * 模型列表项组件
  */
 
-import React, { useState } from "react"
+import { useState } from "react"
 import toast from "react-hot-toast"
 
 import type { ModelPricing } from "~/services/apiService/common/type"

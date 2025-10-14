@@ -32,7 +32,7 @@ import { AuthTypeEnum, type ApiToken, type CheckInConfig } from "~/types"
 export const fetchUserInfo = async (
   baseUrl: string,
   userId?: number,
-  authType?: AuthTypeEnum
+  _authType?: AuthTypeEnum
 ): Promise<UserInfo> => {
   const userData = await fetchApiData<UserInfo>({
     baseUrl,

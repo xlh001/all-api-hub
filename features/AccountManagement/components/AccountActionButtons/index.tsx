@@ -31,7 +31,7 @@ export default function AccountActionButtons({
   onCopyKey,
   onDeleteAccount
 }: ActionButtonsProps) {
-  const { refreshingAccountId, handleRefreshAccount, handleCopyUrl } =
+  const { refreshingAccountId, handleRefreshAccount } =
     useAccountActionsContext()
   const { openEditAccount } = useDialogStateContext()
   const [isCheckingTokens, setIsCheckingTokens] = useState(false)
@@ -80,29 +80,29 @@ export default function AccountActionButtons({
     }
   }
 
-  const handleCopyUrlLocal = async (e: React.MouseEvent) => {
+  const handleCopyUrlLocal = async () => {
     await navigator.clipboard.writeText(site.baseUrl)
     toast.success("网址已复制到剪贴板")
   }
 
   // Navigation functions for secondary menu items
-  const handleNavigateToKeyManagement = (e: React.MouseEvent) => {
+  const handleNavigateToKeyManagement = () => {
     openKeysPage(site.id)
   }
 
-  const handleNavigateToModelManagement = (e: React.MouseEvent) => {
+  const handleNavigateToModelManagement = () => {
     openModelsPage(site.id)
   }
 
-  const handleOpenKeyList = (e: React.MouseEvent) => {
+  const handleOpenKeyList = () => {
     onCopyKey(site)
   }
 
-  const handleRefreshLocal = (e: React.MouseEvent) => {
+  const handleRefreshLocal = () => {
     handleRefreshAccount(site)
   }
 
-  const handleDeleteLocal = (e: React.MouseEvent) => {
+  const handleDeleteLocal = () => {
     onDeleteAccount(site)
   }
 
