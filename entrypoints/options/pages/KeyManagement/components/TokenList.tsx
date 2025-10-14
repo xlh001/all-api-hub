@@ -115,7 +115,11 @@ export function TokenList({
           copyKey={copyKey}
           handleEditToken={handleEditToken}
           handleDeleteToken={handleDeleteToken}
-          account={displayData.find((acc) => acc.name === token.accountName)}
+          account={
+            displayData.find(
+              (account) => account.name === token.accountName
+            ) as DisplaySiteData
+          }
         />
       ))}
     </div>

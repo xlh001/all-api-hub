@@ -12,7 +12,7 @@ interface TokenListItemProps {
   copyKey: (key: string, name: string) => void
   handleEditToken: (token: AccountToken) => void
   handleDeleteToken: (token: AccountToken) => void
-  account: DisplaySiteData | undefined
+  account: DisplaySiteData
 }
 
 export function TokenListItem({
