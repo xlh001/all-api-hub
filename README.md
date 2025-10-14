@@ -126,7 +126,7 @@
 ### 环境要求
 
 - Node.js 18+
-- npm 或 pnpm
+- pnpm
 
 ### 本地开发
 
@@ -137,31 +137,25 @@ cd all-api-hub
 
 # 安装依赖
 pnpm install
-# 或者
-npm install
 
 # 启动开发服务器
 pnpm dev
-# 或者
-npm run dev
 ```
 
-然后在浏览器中加载 `build/chrome-mv3-dev` 目录作为扩展程序。
+然后在浏览器中加载 `.output/chrome-mv3-dev` 目录作为扩展程序。
 
 ### 构建生产版本
 
 ```bash
 pnpm build
-# 或者 
-npm run build
 ```
 
-这将在 `build` 目录中创建生产版本的扩展包。
+这将在 `.output` 目录中创建生产版本的扩展包。
 
 
 ## 🏗️ 技术栈
 
-- **框架**: [Plasmo](https://plasmo.com)
+- **框架**: [WXT](https://wxt.dev)
 - **UI 库**: [React](https://reactjs.org)
 - **样式**: [Tailwind CSS](https://tailwindcss.com)
 - **组件**: [Headless UI](https://headlessui.com)
@@ -175,7 +169,7 @@ npm run build
 
 ## 🙏 致谢
 
-- [Plasmo](https://plasmo.com) - 现代化的浏览器扩展开发框架
+- [WXT](https://wxt.dev) - 现代化的浏览器扩展开发框架
 
 ---
 

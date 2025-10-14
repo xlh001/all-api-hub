@@ -162,7 +162,7 @@ This will create the production-ready extension package in the `build` directory
 
 ## 🏗️ Tech Stack
 
-- **Framework**: [Plasmo](https://plasmo.com)
+- **Framework**: [WXT](https://wxt.dev)
 - **UI Library**: [React](https://reactjs.org)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com)
 - **Components**: [Headless UI](https://headlessui.com)
@@ -176,7 +176,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgements
 
-- [Plasmo](https://plasmo.com) - The modern browser extension development framework.
+- [WXT](https://wxt.dev) - The modern browser extension development framework.
 
 ---
 

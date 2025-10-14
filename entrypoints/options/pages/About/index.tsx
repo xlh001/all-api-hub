@@ -25,8 +25,8 @@ export default function About() {
   // 技术栈版本动态化
   const techStack = [
     {
-      name: "Plasmo",
-      version: getPkgVersion("plasmo"),
+      name: "WXT",
+      version: getPkgVersion("wxt"),
       description: "浏览器扩展开发框架"
     },
     {
