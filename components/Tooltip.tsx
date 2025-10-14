@@ -1,9 +1,9 @@
-import type { ReactNode } from "react"
+import { type ReactElement, type ReactNode, useId } from "react"
 import { Tooltip as ReactTooltip } from "react-tooltip"
 
 interface TooltipProps {
   content: ReactNode
-  children: ReactNode
+  children: ReactElement
   position?:
     | "top"
     | "top-start"
@@ -28,17 +28,16 @@ export default function Tooltip({
   delay = 0,
   className = ""
 }: TooltipProps) {
-  const tooltipId = `tooltip-${Math.random().toString(36).substr(2, 9)}`
+  const tooltipId = `tooltip-${useId()}`
 
-  // 判断 content 是否为 string
   const isString = typeof content === "string"
 
   const defaultClassName = `z-[9999] bg-gray-900 dark:bg-dark-bg-tertiary text-white dark:text-dark-text-primary text-xs rounded-lg shadow-lg px-3 py-2 ${className}`
   return (
     <>
-      <div id={tooltipId} className="flex justify-center items-center">
+      <span id={tooltipId} className="inline-block">
         {children}
-      </div>
+      </span>
 
       {isString ? (
         <ReactTooltip
