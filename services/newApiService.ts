@@ -5,7 +5,7 @@ import {
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
-import { isNotEmptyArray } from "~/utils"
+import { isArraysEqual, isNotEmptyArray } from "~/utils"
 
 import { userPreferences } from "./userPreferences"
 
@@ -16,7 +16,9 @@ interface NewApiChannel {
   key: string
   name: string
   base_url: string
-  models: string[]
+  // models 是逗号分隔的字符串,示例: "gpt-3.5-turbo,gpt-4"
+  models: string
+  // groups 是逗号分隔的字符串,示例: "default,group1"
   groups: string
 }
 
@@ -112,7 +114,7 @@ export async function importToNewApi(
       }
     }
 
-    // 1. 搜索现有渠道
+    // 搜索现有渠道
     const searchResults = await searchChannel(
       newApiBaseUrl,
       newApiAdminToken,
@@ -127,19 +129,7 @@ export async function importToNewApi(
       }
     }
 
-    // 2. 检查是否有匹配的渠道
-    if (searchResults.total > 0) {
-      const existingChannel = searchResults.items.find(
-        (channel) => channel.base_url === account.baseUrl
-      )
-      if (existingChannel) {
-        return {
-          success: true,
-          message: `渠道 ${existingChannel.name} 已存在，无需重复导入。`
-        }
-      }
-    }
-
+    // 获取账户支持的模型列表
     const availableModels =
       (await fetchUpstreamModelsNameList(
         { baseUrl: account.baseUrl, token: token.key },
@@ -147,8 +137,23 @@ export async function importToNewApi(
         account
       )) ?? (await fetchAvailableModels(account))
 
-    const newChannelName = `${account.name} - ${token.name}`
-    // 3. 如果没有匹配项，则创建新渠道
+    // 检查是否有匹配的渠道
+    if (searchResults.total > 0) {
+      const existingChannel = searchResults.items.find(
+        (channel) =>
+          channel.base_url === account.baseUrl &&
+          isArraysEqual(channel.models.split(","), availableModels)
+      )
+      if (existingChannel) {
+        return {
+          success: false,
+          message: `渠道 ${existingChannel.name} 已存在，无需重复导入。`
+        }
+      }
+    }
+
+    const newChannelName = `${account.name} - ${token.name} (auto)`
+    // 如果没有匹配项，则创建新渠道
     const newChannelData = {
       mode: "single",
       channel: {
