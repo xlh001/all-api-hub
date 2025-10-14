@@ -37,8 +37,8 @@ export default function SiteInfo({ site }: SiteInfoProps) {
   }
 
   return (
-    <div className="flex items-center space-x-3 flex-1 min-w-0">
-      <div className="flex-1 min-w-0">
+    <div className="flex items-center space-x-3 flex-1 min-w-[100px]">
+      <div className="flex-1 min-w-[100px]">
         <div className="flex items-center space-x-2 mb-0.5">
           <Tooltip
             content={

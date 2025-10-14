@@ -29,7 +29,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
         }`}
         onMouseEnter={() => handleMouseEnter(site.id)}
         onMouseLeave={handleMouseLeave}>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 min-w-0">
           <SiteInfo site={site} />
 
           {hoveredSiteId === site.id && (

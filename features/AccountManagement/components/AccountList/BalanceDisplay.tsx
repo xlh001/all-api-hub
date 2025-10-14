@@ -33,9 +33,9 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
   }
 
   return (
-    <div className="text-right flex-shrink-0">
+    <div className="text-right flex-1 min-w-[40px] overflow-hidden">
       <div
-        className={`font-semibold text-gray-900 dark:text-dark-text-primary text-lg mb-0.5 transition-all duration-200 ${
+        className={`font-semibold text-gray-900 dark:text-dark-text-primary text-lg mb-0.5 transition-all duration-200 truncate ${
           isRefreshing
             ? "opacity-60 animate-pulse"
             : "cursor-pointer hover:opacity-80 hover:scale-105"
@@ -56,7 +56,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
         />
       </div>
       <div
-        className={`text-xs transition-all duration-200 ${
+        className={`text-xs transition-all duration-200 truncate ${
           site.todayConsumption[currencyType] > 0
             ? "text-green-500"
             : "text-gray-400 dark:text-dark-text-tertiary"
