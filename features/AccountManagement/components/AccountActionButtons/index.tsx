@@ -145,24 +145,24 @@ export default function AccountActionButtons({
         </MenuButton>
         <MenuItems
           anchor="bottom end"
-          className="z-50 w-40 bg-white dark:bg-dark-bg-secondary rounded-lg shadow-lg border border-gray-200 dark:border-dark-bg-tertiary py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
+          className="z-50 bg-white dark:bg-dark-bg-secondary rounded-lg shadow-lg border border-gray-200 dark:border-dark-bg-tertiary py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
           {/* Secondary Menu Items */}
           <AccountActionMenuItem
             onClick={handleOpenKeyList}
             icon={ListBulletIcon}
-            label="打开密钥列表"
+            label="密钥列表"
           />
 
           <AccountActionMenuItem
             onClick={handleNavigateToKeyManagement}
             icon={KeyIcon}
-            label="跳转到密钥管理"
+            label="密钥管理"
           />
 
           <AccountActionMenuItem
             onClick={handleNavigateToModelManagement}
             icon={CpuChipIcon}
-            label="跳转到模型管理"
+            label="模型管理"
           />
 
           <hr />
