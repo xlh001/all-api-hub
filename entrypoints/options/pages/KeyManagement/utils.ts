@@ -1,4 +1,6 @@
 // 格式化密钥显示
+import { UI_CONSTANTS } from "~/constants/ui.ts"
+
 export const formatKey = (
   key: string,
   tokenId: number,
@@ -24,5 +26,5 @@ export const formatTime = (timestamp: number) => {
 // 格式化额度
 export const formatQuota = (quota: number, unlimited: boolean) => {
   if (unlimited || quota < 0) return "无限额度"
-  return `$${(quota / 500000).toFixed(2)}`
+  return `$${(quota / UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR).toFixed(2)}`
 }

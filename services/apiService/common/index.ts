@@ -1,3 +1,4 @@
+import { UI_CONSTANTS } from "~/constants/ui.ts"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import { ApiError } from "~/services/apiService/common/errors"
 import type {
@@ -364,7 +365,9 @@ export const fetchTodayIncome = async (
       totalIncome += items.reduce(
         (sum, item) =>
           sum +
-          (item.quota || 500000 * (extractAmount(item.content)?.amount ?? 0)),
+          (item.quota ||
+            UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR *
+              (extractAmount(item.content)?.amount ?? 0)),
         0
       )
 

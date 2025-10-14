@@ -86,7 +86,12 @@ export const BalanceTabs: React.FC = () => {
 
   const totalIncome = useMemo(() => {
     return {
-      USD: parseFloat((stats.today_total_income / 500000).toFixed(2)),
+      USD: parseFloat(
+        (
+          stats.today_total_income /
+          UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+        ).toFixed(2)
+      ),
       CNY: displayData.reduce((sum, site) => {
         return sum + (site.todayIncome?.CNY || 0)
       }, 0)

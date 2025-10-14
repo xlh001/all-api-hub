@@ -1,5 +1,6 @@
 import { Storage } from "@plasmohq/storage"
 
+import { UI_CONSTANTS } from "~/constants/ui.ts"
 import {
   AuthTypeEnum,
   type AccountStats,
@@ -409,32 +410,46 @@ class AccountStorageService {
       name: account.site_name,
       username: account.account_info.username,
       balance: {
-        USD: parseFloat((account.account_info.quota / 500000).toFixed(2)),
+        USD: parseFloat(
+          (
+            account.account_info.quota /
+            UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+          ).toFixed(2)
+        ),
         CNY: parseFloat(
           (
-            (account.account_info.quota / 500000) *
+            (account.account_info.quota /
+              UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR) *
             account.exchange_rate
           ).toFixed(2)
         )
       },
       todayConsumption: {
         USD: parseFloat(
-          (account.account_info.today_quota_consumption / 500000).toFixed(2)
+          (
+            account.account_info.today_quota_consumption /
+            UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+          ).toFixed(2)
         ),
         CNY: parseFloat(
           (
-            (account.account_info.today_quota_consumption / 500000) *
+            (account.account_info.today_quota_consumption /
+              UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR) *
             account.exchange_rate
           ).toFixed(2)
         )
       },
       todayIncome: {
         USD: parseFloat(
-          ((account.account_info.today_income || 0) / 500000).toFixed(2)
+          (
+            (account.account_info.today_income || 0) /
+            UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+          ).toFixed(2)
         ),
         CNY: parseFloat(
           (
-            ((account.account_info.today_income || 0) / 500000) *
+            ((account.account_info.today_income || 0) /
+              UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR) *
             account.exchange_rate
           ).toFixed(2)
         )
