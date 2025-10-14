@@ -1,5 +1,3 @@
-import "~/popup/style.css"
-
 import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
 import { ThemeProvider } from "~/contexts/ThemeContext"
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
@@ -49,7 +47,7 @@ function OptionsPage() {
   )
 }
 
-function WrappedOptionsPage() {
+function App() {
   return (
     <UserPreferencesProvider>
       <ThemeProvider>
@@ -59,4 +57,4 @@ function WrappedOptionsPage() {
   )
 }
 
-export default WrappedOptionsPage
+export default App
