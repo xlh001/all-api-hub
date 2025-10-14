@@ -10,8 +10,9 @@ import iconImage from "~/assets/icon.png"
 import Tooltip from "~/components/Tooltip"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
-import CompactThemeToggle from "~/popup/components/ThemeToggle"
 import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
+
+import CompactThemeToggle from "./ThemeToggle"
 
 export default function HeaderSection() {
   const { isRefreshing, handleRefresh } = useAccountDataContext()

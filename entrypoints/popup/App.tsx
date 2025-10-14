@@ -7,9 +7,10 @@ import {
 } from "~/contexts/UserPreferencesContext"
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
-import ActionButtons from "~/popup/components/ActionButtons"
-import BalanceSection from "~/popup/components/BalanceSection"
-import HeaderSection from "~/popup/components/HeaderSection"
+
+import ActionButtons from "./components/ActionButtons"
+import BalanceSection from "./components/BalanceSection"
+import HeaderSection from "./components/HeaderSection"
 
 function PopupContent({ inSidePanel = false }) {
   const { isLoading } = useUserPreferencesContext()
@@ -30,7 +31,7 @@ function PopupContent({ inSidePanel = false }) {
   )
 }
 
-function IndexPopup({ inSidePanel = false }) {
+function App({ inSidePanel = false }) {
   return (
     <UserPreferencesProvider>
       <AccountManagementProvider>
@@ -40,4 +41,4 @@ function IndexPopup({ inSidePanel = false }) {
   )
 }
 
-export default IndexPopup
+export default App
