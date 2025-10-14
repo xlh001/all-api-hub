@@ -86,6 +86,7 @@ export const {
   fetchCheckInStatus,
   fetchSupportCheckIn,
   fetchTodayUsage,
+  fetchTodayIncome,
   fetchAccountData,
   refreshAccountData,
   validateAccountConnection,

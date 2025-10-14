@@ -11,7 +11,11 @@ import {
 } from "~/types"
 
 import { getErrorMessage } from "../utils/error.ts" // 存储键名常量
-import { refreshAccountData, validateAccountConnection } from "./apiService"
+import {
+  fetchTodayIncome,
+  refreshAccountData,
+  validateAccountConnection
+} from "./apiService"
 import {
   migrateAccountConfig,
   migrateAccountsConfig,
@@ -252,6 +256,27 @@ class AccountStorageService {
         }
       }
 
+      // 获取今日收入数据
+      try {
+        const todayIncome = await fetchTodayIncome(
+          account.site_url,
+          account.account_info.id,
+          account.account_info.access_token,
+          account.authType
+        )
+        updateData.account_info = {
+          ...(updateData.account_info || account.account_info),
+          today_income: todayIncome
+        }
+      } catch (error) {
+        console.error(`获取账号 ${account.site_name} 今日收入失败:`, error)
+        // 如果获取收入失败，设置为0
+        updateData.account_info = {
+          ...(updateData.account_info || account.account_info),
+          today_income: 0
+        }
+      }
+
       // 更新账号信息
       await this.updateAccount(id, updateData)
       const updatedAccount = await this.getAccountById(id)
@@ -346,14 +371,17 @@ class AccountStorageService {
             account.account_info.today_prompt_tokens,
           today_total_completion_tokens:
             stats.today_total_completion_tokens +
-            account.account_info.today_completion_tokens
+            account.account_info.today_completion_tokens,
+          today_total_income:
+            stats.today_total_income + (account.account_info.today_income || 0)
         }),
         {
           total_quota: 0,
           today_total_consumption: 0,
           today_total_requests: 0,
           today_total_prompt_tokens: 0,
-          today_total_completion_tokens: 0
+          today_total_completion_tokens: 0,
+          today_total_income: 0
         }
       )
     } catch (error) {
@@ -363,7 +391,8 @@ class AccountStorageService {
         today_total_consumption: 0,
         today_total_requests: 0,
         today_total_prompt_tokens: 0,
-        today_total_completion_tokens: 0
+        today_total_completion_tokens: 0,
+        today_total_income: 0
       }
     }
   }
@@ -395,6 +424,17 @@ class AccountStorageService {
         CNY: parseFloat(
           (
             (account.account_info.today_quota_consumption / 500000) *
+            account.exchange_rate
+          ).toFixed(2)
+        )
+      },
+      todayIncome: {
+        USD: parseFloat(
+          ((account.account_info.today_income || 0) / 500000).toFixed(2)
+        ),
+        CNY: parseFloat(
+          (
+            ((account.account_info.today_income || 0) / 500000) *
             account.exchange_rate
           ).toFixed(2)
         )

@@ -241,3 +241,21 @@ export const fetchApi = async <T>(
 ): Promise<ApiResponse<T>> => {
   return (await _fetchApi(params, false)) as ApiResponse<T>
 }
+
+/**
+ * 从文本中提取金额及货币符号
+ * @param {string} text - 输入文本
+ * @returns { {currencySymbol: string, amount: number} | null }
+ */
+export function extractAmount(text: string) {
+  // \p{Sc} 支持所有 Unicode 货币符号
+  const regex = /([\p{Sc}])\s*([\d,]+(?:\.\d+)?)/u
+  const match = text.match(regex)
+
+  if (!match) return null
+
+  const currencySymbol = match[1] // 货币符号，如 $、€、¥
+  const amount = parseFloat(match[2].replace(/,/g, "")) // 数字金额
+
+  return { currencySymbol, amount }
+}

@@ -130,11 +130,36 @@ export interface ApiResponse<T = any> {
   message: string
 }
 
-// 日志条目类型
+/**
+ * 日志条目
+ * https://github.com/QuantumNous/new-api/blob/aa35d8db69b50d6401550bd34b6f37ef5863acd0/model/log.go#L20
+ */
 export interface LogItem {
-  quota?: number
-  prompt_tokens?: number
-  completion_tokens?: number
+  id: number
+  user_id: number
+  created_at: number
+  /**
+   * 日志类型，可选值：1=充值，2=消费，3=管理，4=错误，5=系统 log.go：41-48
+   */
+  type: number
+  /**
+   * 系统消息内容，含有 签到奖励 ＄10.586246 额度等说明文字
+   */
+  content: string
+  username: string
+  token_name: string
+  model_name: string
+  quota: number
+  prompt_tokens: number
+  completion_tokens: number
+  use_time: number
+  is_stream: boolean
+  channel_id: number
+  channel_name: string
+  token_id: number
+  group: string
+  ip: string
+  other: string // JSON 字符串，可以进一步解析为对象
 }
 
 // 日志响应数据

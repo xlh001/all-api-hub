@@ -5,6 +5,15 @@ import { DATA_TYPE_BALANCE, type DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 
 export type SiteHealthStatus = "healthy" | "warning" | "error" | "unknown"
 
+// Log item from API
+export interface LogItem {
+  type: number
+  quota: number
+  created_time: number
+  token_name?: string
+  model_name?: string
+}
+
 export interface HealthStatus {
   status: "healthy" | "error" | "warning" | "unknown"
   reason?: string
@@ -20,6 +29,7 @@ export interface AccountInfo {
   today_completion_tokens: number // 今日 completion_tokens
   today_quota_consumption: number // 今日消耗 quota
   today_requests_count: number // 今日请求次数
+  today_income: number // 今日收入 (recharge + check-in)
 }
 
 // 站点账号完整信息
@@ -101,6 +111,7 @@ export interface AccountStats {
   today_total_requests: number
   today_total_prompt_tokens: number
   today_total_completion_tokens: number
+  today_total_income: number // 今日总收入 (所有账号汇总)
 }
 
 // API 响应相关类型
@@ -131,6 +142,7 @@ export interface DisplaySiteData {
   username: string
   balance: CurrencyAmount
   todayConsumption: CurrencyAmount
+  todayIncome: CurrencyAmount
   todayTokens: TokenUsage
   health: HealthStatus
   last_sync_time?: number

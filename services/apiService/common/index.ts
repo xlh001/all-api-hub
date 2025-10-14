@@ -18,6 +18,7 @@ import type {
 } from "~/services/apiService/common/type"
 import {
   aggregateUsageData,
+  extractAmount,
   fetchApi,
   fetchApiData,
   getTodayTimestampRange
@@ -272,6 +273,126 @@ export const fetchTodayUsage = async (
     ...aggregatedData,
     today_requests_count: totalRequestsCount
   }
+}
+
+/**
+ * 获取今日收入情况
+ */
+export const fetchTodayIncome = async (
+  baseUrl: string,
+  userId: number,
+  accessToken: string,
+  authType?: AuthTypeEnum
+): Promise<number> => {
+  const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
+
+  let totalIncome = 0
+  let maxPageReached = false
+
+  // 获取充值记录 (type=1)
+  try {
+    let currentPage = 1
+    while (currentPage <= REQUEST_CONFIG.MAX_PAGES) {
+      const params = new URLSearchParams({
+        p: currentPage.toString(),
+        page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
+        type: "1",
+        token_name: "",
+        model_name: "",
+        start_timestamp: startTimestamp.toString(),
+        end_timestamp: endTimestamp.toString(),
+        group: ""
+      })
+
+      const logData = await fetchApiData<LogResponseData>({
+        baseUrl,
+        endpoint: `/api/log/self?${params.toString()}`,
+        userId,
+        token: accessToken,
+        authType
+      })
+
+      const items = logData.items || []
+
+      // 聚合充值数据
+      totalIncome += items.reduce((sum, item) => sum + (item.quota || 0), 0)
+
+      // 检查是否还有更多数据
+      const totalPages = Math.ceil(
+        (logData.total || 0) / REQUEST_CONFIG.DEFAULT_PAGE_SIZE
+      )
+      if (currentPage >= totalPages) {
+        break
+      }
+
+      currentPage++
+    }
+
+    if (currentPage > REQUEST_CONFIG.MAX_PAGES) {
+      maxPageReached = true
+    }
+  } catch (error) {
+    console.warn("获取充值记录失败:", error)
+  }
+
+  // 获取签到记录 (type=5)
+  try {
+    let currentPage = 1
+    while (currentPage <= REQUEST_CONFIG.MAX_PAGES) {
+      const params = new URLSearchParams({
+        p: currentPage.toString(),
+        page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
+        type: "5",
+        token_name: "",
+        model_name: "",
+        start_timestamp: startTimestamp.toString(),
+        end_timestamp: endTimestamp.toString(),
+        group: ""
+      })
+
+      const logData = await fetchApiData<LogResponseData>({
+        baseUrl,
+        endpoint: `/api/log/self?${params.toString()}`,
+        userId,
+        token: accessToken,
+        authType
+      })
+
+      const items = logData.items || []
+
+      // 聚合签到数据
+      totalIncome += items.reduce(
+        (sum, item) =>
+          sum +
+          (item.quota || 500000 * (extractAmount(item.content)?.amount ?? 0)),
+        0
+      )
+
+      // 检查是否还有更多数据
+      const totalPages = Math.ceil(
+        (logData.total || 0) / REQUEST_CONFIG.DEFAULT_PAGE_SIZE
+      )
+      if (currentPage >= totalPages) {
+        break
+      }
+
+      currentPage++
+    }
+
+    if (currentPage > REQUEST_CONFIG.MAX_PAGES) {
+      maxPageReached = true
+    }
+  } catch (error) {
+    console.warn("获取签到记录失败:", error)
+  }
+
+  if (maxPageReached) {
+    console.warn(
+      `达到最大分页限制(${REQUEST_CONFIG.MAX_PAGES}页)，停止获取收入数据`
+    )
+  }
+
+  return totalIncome
 }
 
 /**
