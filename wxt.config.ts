@@ -13,6 +13,20 @@ export default defineConfig({
       gecko: {
         id: "{bc73541a-133d-4b50-b261-36ea20df0d24}"
       }
+    },
+    commands: {
+      _execute_sidebar_action: {
+        suggested_key: {
+          default: "Ctrl+Shift+S"
+        },
+        description: "Open sidebar"
+      },
+      _execute_browser_action: {
+        suggested_key: {
+          default: "Ctrl+Shift+A"
+        },
+        description: "Open popup"
+      }
     }
   }
 })
