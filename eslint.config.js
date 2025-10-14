@@ -2,7 +2,10 @@ import reactHooks from "eslint-plugin-react-hooks"
 import { defineConfig } from "eslint/config"
 import tseslint from "typescript-eslint"
 
+import autoImports from "./.wxt/eslint-auto-imports.mjs"
+
 export default defineConfig([
+  autoImports,
   {
     ignores: [
       "node_modules/**",
@@ -10,7 +13,8 @@ export default defineConfig([
       "build/**",
       ".plasmo/**",
       ".output/**",
-      ".wxt/**"
+      ".wxt/**",
+      "docs/**"
     ]
   },
   {
