@@ -61,19 +61,21 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
           )}
         </div>
       ) : (
-        // 按次计费
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
-            每次调用:
-          </span>
-          <ModelItemPerCallPricingView
-            perCallPrice={perCallPrice}
-            isAvailableForUser={isAvailableForUser}
-            exchangeRate={exchangeRate}
-            showRealPrice={showRealPrice}
-            tokenBillingType={tokenBillingType}
-          />
-        </div>
+        perCallPrice && (
+          // 按次计费
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
+              每次调用:
+            </span>
+            <ModelItemPerCallPricingView
+              perCallPrice={perCallPrice}
+              isAvailableForUser={isAvailableForUser}
+              exchangeRate={exchangeRate}
+              showRealPrice={showRealPrice}
+              tokenBillingType={tokenBillingType}
+            />
+          </div>
+        )
       )}
     </div>
   )

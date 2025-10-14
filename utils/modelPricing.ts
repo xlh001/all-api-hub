@@ -10,7 +10,7 @@ export interface CalculatedPrice {
   outputUSD: number // 每1M token输出价格（美元）
   inputCNY: number // 每1M token输入价格（人民币）
   outputCNY: number // 每1M token输出价格（人民币）
-  perCallPrice: PerCallPrice // 按次计费时每次调用的价格
+  perCallPrice?: PerCallPrice // 按次计费时每次调用的价格
 }
 
 export type PerCallPrice = number | { input: number; output: number }

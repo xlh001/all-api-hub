@@ -1,10 +1,20 @@
+import { CurrencyType } from "~/types"
+import { CalculatedPrice } from "~/utils/modelPricing.ts"
+
+interface PriceViewProps {
+  calculatedPrice: CalculatedPrice
+  showRealPrice: boolean
+  tokenBillingType: boolean
+  isAvailableForUser: boolean
+  formatPriceCompact: (price: number, currency?: CurrencyType) => string
+}
 export const PriceView = ({
   calculatedPrice,
   showRealPrice,
   tokenBillingType,
   isAvailableForUser,
   formatPriceCompact
-}) => {
+}: PriceViewProps) => {
   let inputPrice = showRealPrice
     ? `${formatPriceCompact(calculatedPrice.inputCNY, "CNY")}`
     : `${formatPriceCompact(calculatedPrice.inputUSD, "USD")}`

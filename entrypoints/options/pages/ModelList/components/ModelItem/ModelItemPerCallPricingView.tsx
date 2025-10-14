@@ -9,6 +9,7 @@ interface ModelItemPerCallPricingViewProps {
   showRealPrice: boolean
   tokenBillingType: boolean
 }
+
 export const ModelItemPerCallPricingView = ({
   perCallPrice,
   isAvailableForUser,
@@ -28,11 +29,12 @@ export const ModelItemPerCallPricingView = ({
       </span>
     )
   } else {
-    const calculatedPrice = {
+    const calculatedPrice: CalculatedPrice = {
       inputUSD: perCallPrice.input,
       inputCNY: perCallPrice.input * exchangeRate,
       outputUSD: perCallPrice.output,
-      outputCNY: perCallPrice.output * exchangeRate
+      outputCNY: perCallPrice.output * exchangeRate,
+      perCallPrice: 0
     }
     return (
       <PriceView
