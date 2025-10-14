@@ -108,7 +108,7 @@ function main() {
         sendResponse({ success: false, error: "无法创建窗口" })
       }
     } catch (error) {
-      sendResponse({ success: false, error: error.message })
+      sendResponse({ success: false, error: getErrorMessage(error) })
     }
   }
 
@@ -125,7 +125,7 @@ function main() {
 
       sendResponse({ success: true })
     } catch (error) {
-      sendResponse({ success: false, error: error.message })
+      sendResponse({ success: false, error: getErrorMessage(error) })
     }
   }
 
@@ -151,7 +151,7 @@ function main() {
         data: result
       })
     } catch (error) {
-      sendResponse({ success: false, error: error.message })
+      sendResponse({ success: false, error: getErrorMessage(error) })
     }
   }
 
@@ -160,7 +160,7 @@ function main() {
    * @param url
    * @param requestId
    */
-  async function getSiteDataFromTab(url, requestId) {
+  async function getSiteDataFromTab(url: string, requestId: string) {
     try {
       // 1. 打开临时窗口
       const window = await chrome.windows.create({

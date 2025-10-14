@@ -36,8 +36,8 @@ export interface AutoDetectError {
 }
 
 // 分析错误并返回结构化错误信息
-export function analyzeAutoDetectError(error: string | Error): AutoDetectError {
-  const errorMessage = error instanceof Error ? error.message : error
+export function analyzeAutoDetectError(error: any): AutoDetectError {
+  const errorMessage = getErrorMessage(error)
 
   // 超时错误
   if (errorMessage.includes("超时") || errorMessage.includes("timeout")) {

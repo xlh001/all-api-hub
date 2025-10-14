@@ -81,7 +81,7 @@ export const useImportExport = () => {
       if (error instanceof SyntaxError) {
         toast.error("数据格式错误，请检查JSON格式")
       } else {
-        toast.error(`导入失败: ${error.message}`)
+        toast.error(`导入失败: ${getErrorMessage(error)}`)
       }
     } finally {
       setIsImporting(false)

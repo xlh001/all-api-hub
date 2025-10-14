@@ -10,7 +10,7 @@ export default defineUnlistedScript({
 function main() {
   console.log("Hello content script!", { id: browser.runtime.id })
   // 监听来自 popup 和 background 的消息
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === "getLocalStorage") {
       try {
         const { key } = request
@@ -22,7 +22,7 @@ function main() {
         } else {
           // 读取所有 localStorage 数据
           const localStorage = window.localStorage
-          const data = {}
+          const data: Record<string, any> = {}
 
           for (let i = 0; i < localStorage.length; i++) {
             const storageKey = localStorage.key(i)
@@ -34,7 +34,7 @@ function main() {
           sendResponse({ success: true, data })
         }
       } catch (error) {
-        sendResponse({ success: false, error: error.message })
+        sendResponse({ success: false, error: getErrorMessage(error) })
       }
       return true // 保持消息通道开放
     }
@@ -57,8 +57,8 @@ function main() {
           }
 
           sendResponse({ success: true, data: { userId: user.id, user } })
-        } catch (e) {
-          sendResponse({ success: false, error: e.message })
+        } catch (error) {
+          sendResponse({ success: false, error: getErrorMessage(error) })
         }
       })()
       return true

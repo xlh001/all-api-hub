@@ -29,7 +29,7 @@ export interface AccountData extends TodayUsageData {
    * @deprecated Use `checkIn.isCheckedInToday` instead.
    */
   can_check_in?: boolean
-  checkIn?: CheckInConfig
+  checkIn: CheckInConfig
 }
 
 export interface RefreshAccountResult {

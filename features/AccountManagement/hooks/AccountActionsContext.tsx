@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useCallback,
   useContext,
@@ -79,19 +79,16 @@ export const AccountActionsProvider = ({
     [refreshingAccountId, loadAccountData]
   )
 
-  const handleDeleteAccount = useCallback(
-    (account: DisplaySiteData) => {
-      // The actual deletion logic is in DelAccountDialog,
-      // this just reloads the data after deletion.
-      loadAccountData()
-    },
-    [loadAccountData]
-  )
+  const handleDeleteAccount = useCallback(() => {
+    // The actual deletion logic is in DelAccountDialog,
+    // this just reloads the data after deletion.
+    loadAccountData()
+  }, [loadAccountData])
 
-  const handleCopyUrl = (account: DisplaySiteData) => {
+  const handleCopyUrl = useCallback((account: DisplaySiteData) => {
     navigator.clipboard.writeText(account.baseUrl)
     toast.success(`已复制 ${account.name} 的 URL 到剪贴板`)
-  }
+  }, [])
 
   const value = useMemo(
     () => ({

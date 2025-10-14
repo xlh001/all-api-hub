@@ -45,7 +45,10 @@ export interface SiteAccount {
    */
   supports_check_in?: boolean // 是否支持签到功能
   authType?: AuthTypeEnum // 认证方式
-  checkIn?: CheckInConfig
+  /**
+   * 站点签到相关
+   */
+  checkIn: CheckInConfig
   /**
    * Configuration version for migration tracking
    * @since v1.0.0 - Initial version (no version field = version 0)
@@ -53,6 +56,7 @@ export interface SiteAccount {
    */
   configVersion?: number
 }
+
 export interface CheckInConfig {
   /**
    * Whether to enable check-in detection and monitoring.

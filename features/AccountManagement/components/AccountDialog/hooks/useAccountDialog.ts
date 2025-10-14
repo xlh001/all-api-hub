@@ -188,7 +188,7 @@ export function useAccountDialog({
       }
     } catch (error) {
       console.error("自动识别失败:", error)
-      const errorMessage = error instanceof Error ? error.message : "未知错误"
+      const errorMessage = getErrorMessage(error)
       setDetectionError({
         type: "unknown" as any,
         message: `自动识别失败: ${errorMessage}`,
@@ -284,7 +284,9 @@ export function useAccountDialog({
         throw new Error(result.message)
       }
     } catch (error) {
-      toast.error(`自动配置到 New API失败: ${error.message}`, { id: toastId })
+      toast.error(`自动配置到 New API失败: ${getErrorMessage(error)}`, {
+        id: toastId
+      })
     } finally {
       setIsAutoConfiguring(false)
     }

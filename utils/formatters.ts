@@ -31,7 +31,8 @@ export const formatTokenCount = (count: number): string => {
 /**
  * 格式化相对时间
  */
-export const formatRelativeTime = (date: Date): string => {
+export const formatRelativeTime = (date: Date | undefined): string => {
+  if (!date) return ""
   const now = dayjs()
   const targetTime = dayjs(date)
   const diffInSeconds = now.diff(targetTime, "second")
@@ -45,7 +46,8 @@ export const formatRelativeTime = (date: Date): string => {
 /**
  * 格式化具体时间
  */
-export const formatFullTime = (date: Date): string => {
+export const formatFullTime = (date: Date | undefined): string => {
+  if (!date) return ""
   return dayjs(date).format("YYYY/MM/DD HH:mm:ss")
 }
 

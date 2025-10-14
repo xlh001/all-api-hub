@@ -78,7 +78,7 @@ class AutoRefreshService {
       this.notifyFrontend("refresh_completed", result)
     } catch (error) {
       console.error("[AutoRefresh] 后台刷新失败:", error)
-      this.notifyFrontend("refresh_error", { error: error.message })
+      this.notifyFrontend("refresh_error", { error: getErrorMessage(error) })
     }
   }
 
@@ -211,6 +211,6 @@ export const handleAutoRefreshMessage = async (
     }
   } catch (error) {
     console.error("[AutoRefresh] 处理消息失败:", error)
-    sendResponse({ success: false, error: error.message })
+    sendResponse({ success: false, error: getErrorMessage(error) })
   }
 }

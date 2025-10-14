@@ -191,7 +191,7 @@ export async function importToNewApi(
   } catch (error) {
     return {
       success: false,
-      message: error.message || "导入失败，发生未知错误。"
+      message: getErrorMessage(error) || "导入失败，发生未知错误。"
     }
   }
 }

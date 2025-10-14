@@ -71,7 +71,7 @@ export default function AccountActionButtons({
       }
     } catch (error) {
       console.error("获取密钥列表失败:", error)
-      const errorMessage = error instanceof Error ? error.message : "未知错误"
+      const errorMessage = getErrorMessage(error)
       toast.error(`获取密钥列表失败: ${errorMessage}`)
       // Fallback to opening dialog
       onCopyKey(site)

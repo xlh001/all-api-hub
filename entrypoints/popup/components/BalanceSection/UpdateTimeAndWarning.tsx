@@ -7,7 +7,7 @@ import { formatFullTime, formatRelativeTime } from "~/utils/formatters"
 
 export const UpdateTimeAndWarning = () => {
   const { lastUpdateTime, detectedAccount } = useAccountDataContext()
-  const [tick, setTick] = useState(0)
+  const [, setTick] = useState(0)
 
   useEffect(() => {
     // 每隔一段时间更新 tick，以触发相对时间的重新计算

@@ -39,7 +39,7 @@ function TokenActionButtons({
         toast.error(ImportResult.message)
       }
     } catch (error) {
-      toast.error(`导入失败: ${error.message}`)
+      toast.error(`导入失败: ${getErrorMessage(error)}`)
     } finally {
       setIsImporting(false)
     }

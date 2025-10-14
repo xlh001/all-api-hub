@@ -10,13 +10,14 @@ import {
   type StorageConfig
 } from "~/types"
 
+import { getErrorMessage } from "../utils/error.ts" // 存储键名常量
 import { refreshAccountData, validateAccountConnection } from "./apiService"
 import {
   migrateAccountConfig,
   migrateAccountsConfig,
   needsConfigMigration
 } from "./configMigration"
-import { userPreferences } from "./userPreferences" // 存储键名常量
+import { userPreferences } from "./userPreferences"
 
 // 存储键名常量
 const STORAGE_KEYS = {
@@ -206,10 +207,7 @@ class AccountStorageService {
   /**
    * 刷新单个账号数据
    */
-  async refreshAccount(
-    id: string,
-    force: boolean = false
-  ): Promise<{ account: SiteAccount; refreshed: boolean } | null> {
+  async refreshAccount(id: string, force: boolean = false) {
     try {
       const account = await this.getAccountById(id)
       if (!account) {
@@ -274,7 +272,7 @@ class AccountStorageService {
         await this.updateAccount(id, {
           health: {
             status: "unknown",
-            reason: error.message
+            reason: getErrorMessage(error)
           },
           last_sync_time: Date.now()
         })
@@ -304,7 +302,7 @@ class AccountStorageService {
       if (result.status === "fulfilled" && result.value) {
         successCount++
         latestSyncTime = Math.max(
-          result.value.account.last_sync_time || 0,
+          result.value.account?.last_sync_time || 0,
           latestSyncTime
         )
         if (result.value.refreshed) {

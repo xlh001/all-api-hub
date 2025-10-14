@@ -39,7 +39,7 @@ export interface AccountValidationResult {
     username: string
     accessToken: string
     userId: string
-    exchangeRate?: number
+    exchangeRate: number | null
     checkIn: CheckInConfig
     siteType?: string
   }
@@ -158,7 +158,7 @@ export async function autoDetectAccount(
   } catch (error) {
     console.error("自动识别失败:", error)
     const detailedError = analyzeAutoDetectError(error)
-    const errorMessage = error instanceof Error ? error.message : "未知错误"
+    const errorMessage = getErrorMessage(error)
     return {
       success: false,
       error: `自动识别失败: ${errorMessage}`,
@@ -239,7 +239,7 @@ export async function validateAndSaveAccount(
     return { success: true, accountId }
   } catch (error) {
     console.error("保存账号失败:", error)
-    const errorMessage = error instanceof Error ? error.message : "未知错误"
+    const errorMessage = getErrorMessage(error)
     return { success: false, error: `保存失败: ${errorMessage}` }
   }
 }
@@ -320,7 +320,7 @@ export async function validateAndUpdateAccount(
     return { success: true, accountId }
   } catch (error) {
     console.error("更新账号失败:", error)
-    const errorMessage = error instanceof Error ? error.message : "未知错误"
+    const errorMessage = getErrorMessage(error)
     return { success: false, error: `更新失败: ${errorMessage}` }
   }
 }
@@ -381,7 +381,7 @@ export async function getSiteName(tab: chrome.tabs.Tab) {
   let siteName = ""
   // 优先从标题获取
   const tabTitle = tab.title
-  if (IsNotDefaultSiteName(tabTitle)) {
+  if (tabTitle && IsNotDefaultSiteName(tabTitle)) {
     siteName = tabTitle
     return siteName
   }
@@ -391,7 +391,7 @@ export async function getSiteName(tab: chrome.tabs.Tab) {
   // 其次从站点状态获取
   const siteStatusInfo = await fetchSiteStatus(hostWithProtocol)
   const systemName = siteStatusInfo?.system_name
-  if (IsNotDefaultSiteName(systemName)) {
+  if (systemName && IsNotDefaultSiteName(systemName)) {
     siteName = systemName
   } else {
     // 最后从域名获取
@@ -515,6 +515,7 @@ export async function autoConfigToNewApi(
     } catch (error) {
       lastError = error
       if (
+        error instanceof Error &&
         (error.message.includes("network") ||
           error.message.includes("Failed to fetch")) &&
         attempt < 3

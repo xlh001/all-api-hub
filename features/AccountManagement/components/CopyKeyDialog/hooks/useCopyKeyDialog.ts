@@ -30,7 +30,7 @@ export function useCopyKeyDialog(
       }
     } catch (error) {
       console.error("获取密钥列表失败:", error)
-      const errorMessage = error instanceof Error ? error.message : "未知错误"
+      const errorMessage = getErrorMessage(error)
       setError(`获取密钥列表失败: ${errorMessage}`)
     } finally {
       setIsLoading(false)
