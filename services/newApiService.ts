@@ -17,7 +17,7 @@ interface NewApiChannel {
   name: string
   base_url: string
   models: string[]
-  groups: string[]
+  groups: string
 }
 
 interface NewApiChannelData {
@@ -119,6 +119,13 @@ export async function importToNewApi(
       newApiUserId,
       account.baseUrl
     )
+
+    if (!searchResults) {
+      return {
+        success: false,
+        message: "New API数据获取失败，请检查配置是否正确。"
+      }
+    }
 
     // 2. 检查是否有匹配的渠道
     if (searchResults.total > 0) {
