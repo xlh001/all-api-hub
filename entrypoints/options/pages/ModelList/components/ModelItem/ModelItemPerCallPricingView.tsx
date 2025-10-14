@@ -1,38 +1,47 @@
-import React from "react"
-
-import { formatPriceCompact } from "~/utils/modelPricing"
+import { formatPriceCompact, PerCallPrice } from "~/utils/modelPricing"
 
 import { PriceView } from "./ModelItemPicingView"
 
+interface ModelItemPerCallPricingViewProps {
+  perCallPrice: PerCallPrice
+  isAvailableForUser: boolean
+  exchangeRate: number
+  showRealPrice: boolean
+  tokenBillingType: boolean
+}
 export const ModelItemPerCallPricingView = ({
   perCallPrice,
   isAvailableForUser,
   exchangeRate,
   showRealPrice,
   tokenBillingType
-}) => {
-  const calculatedPrice = {
-    inputUSD: perCallPrice.input,
-    inputCNY: perCallPrice.input * exchangeRate,
-    outputUSD: perCallPrice.output,
-    outputCNY: perCallPrice.output * exchangeRate
+}: ModelItemPerCallPricingViewProps) => {
+  if (typeof perCallPrice === "number") {
+    return (
+      <span
+        className={`text-sm ${
+          isAvailableForUser ? "text-purple-600" : "text-gray-500"
+        }`}>
+        {showRealPrice
+          ? formatPriceCompact((perCallPrice || 0) * exchangeRate, "CNY")
+          : formatPriceCompact(perCallPrice || 0, "USD")}
+      </span>
+    )
+  } else {
+    const calculatedPrice = {
+      inputUSD: perCallPrice.input,
+      inputCNY: perCallPrice.input * exchangeRate,
+      outputUSD: perCallPrice.output,
+      outputCNY: perCallPrice.output * exchangeRate
+    }
+    return (
+      <PriceView
+        calculatedPrice={calculatedPrice}
+        showRealPrice={showRealPrice}
+        tokenBillingType={tokenBillingType}
+        isAvailableForUser={isAvailableForUser}
+        formatPriceCompact={formatPriceCompact}
+      />
+    )
   }
-  return typeof perCallPrice === "number" ? (
-    <span
-      className={`text-sm ${
-        isAvailableForUser ? "text-purple-600" : "text-gray-500"
-      }`}>
-      {showRealPrice
-        ? formatPriceCompact((perCallPrice || 0) * exchangeRate, "CNY")
-        : formatPriceCompact(perCallPrice || 0, "USD")}
-    </span>
-  ) : (
-    <PriceView
-      calculatedPrice={calculatedPrice}
-      showRealPrice={showRealPrice}
-      tokenBillingType={tokenBillingType}
-      isAvailableForUser={isAvailableForUser}
-      formatPriceCompact={formatPriceCompact}
-    />
-  )
 }
