@@ -4,6 +4,16 @@ import tseslint from "typescript-eslint"
 
 export default defineConfig([
   {
+    ignores: [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".plasmo/**",
+      ".output/**",
+      ".wxt/**"
+    ]
+  },
+  {
     files: ["**/*.ts", "**/*.tsx"],
 
     plugins: { "react-hooks": reactHooks },
