@@ -7,12 +7,13 @@ import {
 import FeatureList from "~/components/FeatureList"
 import LinkCard from "~/components/LinkCard"
 import { FEATURES, FUTURE_FEATURES } from "~/constants/about"
-import CreditsCard from "~/options/pages/About/components/CreditsCard"
-import PluginIntroCard from "~/options/pages/About/components/PluginIntroCard"
-import PrivacyNotice from "~/options/pages/About/components/PrivacyNotice"
-import TechStackGrid from "~/options/pages/About/components/TechStackGrid"
 import packageJson from "~/package.json"
 import { getHomepage, getPkgVersion, getRepository } from "~/utils/packageMeta"
+
+import CreditsCard from "./components/CreditsCard"
+import PluginIntroCard from "./components/PluginIntroCard"
+import PrivacyNotice from "./components/PrivacyNotice"
+import TechStackGrid from "./components/TechStackGrid"
 
 export default function About() {
   const version = packageJson.version

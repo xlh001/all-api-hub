@@ -1,5 +1,4 @@
-import type { FormData } from "~/options/pages/KeyManagement/components/AddTokenDialog/hooks/useTokenForm"
-
+import type { FormData } from "../hooks/useTokenForm"
 import { AccountSelection, type Account } from "./AccountSelection"
 import { ExpirationTimeInput } from "./ExpirationTimeInput"
 import { FormSection } from "./FormSection"

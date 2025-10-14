@@ -1,7 +1,7 @@
-import type { FormData } from "~/options/pages/KeyManagement/components/AddTokenDialog/hooks/useTokenForm"
 import type { UserGroupInfo } from "~/services/apiService/common/type"
 import { isNotEmptyArray } from "~/utils"
 
+import type { FormData } from "../hooks/useTokenForm"
 import { FormSection } from "./FormSection"
 import { GroupSelection } from "./GroupSelection"
 import { IpLimitsInput } from "./IpLimitsInput"

@@ -1,6 +1,6 @@
 import { Switch } from "@headlessui/react"
 
-import type { FormData } from "~/options/pages/KeyManagement/components/AddTokenDialog/hooks/useTokenForm"
+import type { FormData } from "../hooks/useTokenForm"
 
 interface ModelLimitsProps {
   modelLimitsEnabled: boolean

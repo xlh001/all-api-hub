@@ -1,7 +1,8 @@
 import React from "react"
 
-import { PriceView } from "~/options/pages/ModelList/components/ModelItem/ModelItemPicingView"
 import { formatPriceCompact } from "~/utils/modelPricing"
+
+import { PriceView } from "./ModelItemPicingView"
 
 export const ModelItemPerCallPricingView = ({
   perCallPrice,

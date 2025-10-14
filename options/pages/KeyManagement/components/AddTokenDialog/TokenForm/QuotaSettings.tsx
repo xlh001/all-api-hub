@@ -1,7 +1,8 @@
 import { Switch } from "@headlessui/react"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import type { FormData } from "~/options/pages/KeyManagement/components/AddTokenDialog/hooks/useTokenForm"
+
+import type { FormData } from "../hooks/useTokenForm"
 
 interface QuotaSettingsProps {
   unlimitedQuota: boolean

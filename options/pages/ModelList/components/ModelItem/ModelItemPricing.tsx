@@ -1,13 +1,14 @@
 import React from "react"
 
-import { ModelItemPerCallPricingView } from "~/options/pages/ModelList/components/ModelItem/ModelItemPerCallPricingView"
-import { PriceView } from "~/options/pages/ModelList/components/ModelItem/ModelItemPicingView"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import {
   formatPriceCompact,
   isTokenBillingType,
   type CalculatedPrice
 } from "~/utils/modelPricing"
+
+import { ModelItemPerCallPricingView } from "./ModelItemPerCallPricingView"
+import { PriceView } from "./ModelItemPicingView"
 
 interface ModelItemPricingProps {
   model: ModelPricing

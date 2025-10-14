@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { menuItems } from "~/options/constants"
+import { menuItems } from "../constants"
 
 // 解析URL hash和参数
 function parseHash() {

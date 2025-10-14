@@ -2,13 +2,14 @@ import {
   UserPreferencesProvider,
   useUserPreferencesContext
 } from "~/contexts/UserPreferencesContext"
-import DangerousZone from "~/options/pages/BasicSettings/components/DangerousZone"
-import DisplaySettings from "~/options/pages/BasicSettings/components/DisplaySettings"
-import LoadingSkeleton from "~/options/pages/BasicSettings/components/LoadingSkeleton"
-import NewApiSettings from "~/options/pages/BasicSettings/components/NewApiSettings"
-import RefreshSettings from "~/options/pages/BasicSettings/components/RefreshSettings"
-import SettingsHeader from "~/options/pages/BasicSettings/components/SettingsHeader"
-import SortingPrioritySettings from "~/options/pages/BasicSettings/components/SortingPrioritySettings"
+
+import DangerousZone from "./components/DangerousZone"
+import DisplaySettings from "./components/DisplaySettings"
+import LoadingSkeleton from "./components/LoadingSkeleton"
+import NewApiSettings from "./components/NewApiSettings"
+import RefreshSettings from "./components/RefreshSettings"
+import SettingsHeader from "./components/SettingsHeader"
+import SortingPrioritySettings from "./components/SortingPrioritySettings"
 
 function BasicSettingsContent() {
   const { isLoading } = useUserPreferencesContext()

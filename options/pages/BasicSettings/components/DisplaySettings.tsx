@@ -2,9 +2,9 @@ import { EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import ThemeToggle from "~/options/components/ThemeToggle"
 import type { BalanceType, CurrencyType } from "~/types"
 
+import ThemeToggle from "../../../components/ThemeToggle"
 import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function DisplaySettings() {

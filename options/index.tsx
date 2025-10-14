@@ -3,11 +3,12 @@ import "~/popup/style.css"
 import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
 import { ThemeProvider } from "~/contexts/ThemeContext"
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
-import Header from "~/options/components/Header"
-import Sidebar from "~/options/components/Sidebar"
-import { menuItems } from "~/options/constants"
-import { useHashNavigation } from "~/options/hooks/useHashNavigation"
-import BasicSettings from "~/options/pages/BasicSettings"
+
+import Header from "./components/Header"
+import Sidebar from "./components/Sidebar"
+import { menuItems } from "./constants"
+import { useHashNavigation } from "./hooks/useHashNavigation"
+import BasicSettings from "./pages/BasicSettings"
 
 function OptionsPage() {
   const { activeMenuItem, routeParams, handleMenuItemChange, refreshKey } =
