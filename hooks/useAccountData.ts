@@ -38,7 +38,8 @@ export const useAccountData = (): UseAccountDataResult => {
     today_total_consumption: 0,
     today_total_requests: 0,
     today_total_prompt_tokens: 0,
-    today_total_completion_tokens: 0
+    today_total_completion_tokens: 0,
+    today_total_income: 0
   })
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date())
 

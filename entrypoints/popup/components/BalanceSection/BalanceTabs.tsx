@@ -36,18 +36,20 @@ const BalanceDisplay: React.FC<{
   currencyType: "USD" | "CNY"
   onCurrencyToggle: () => void
   isConsumption?: boolean
+  compact?: boolean
 }> = ({
   value,
   startValue,
   isInitialLoad,
   currencyType,
   onCurrencyToggle,
-  isConsumption = false
+  isConsumption = false,
+  compact = false
 }) => (
   <div className="flex items-center space-x-1 break-all">
     <button
       onClick={onCurrencyToggle}
-      className="text-5xl font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left"
+      className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left`}
       title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
       {isConsumption && value > 0 ? "-" : ""}
       {getCurrencySymbol(currencyType)}
@@ -82,6 +84,15 @@ export const BalanceTabs: React.FC = () => {
     [displayData]
   )
 
+  const totalIncome = useMemo(() => {
+    return {
+      USD: parseFloat((stats.today_total_income / 500000).toFixed(2)),
+      CNY: displayData.reduce((sum, site) => {
+        return sum + (site.todayIncome?.CNY || 0)
+      }, 0)
+    }
+  }, [stats, displayData])
+
   const handleTabChange = (index: number) => {
     const newTab = index === 0 ? DATA_TYPE_CONSUMPTION : DATA_TYPE_BALANCE
     updateActiveTab(newTab)
@@ -98,23 +109,45 @@ export const BalanceTabs: React.FC = () => {
         onChange={handleTabChange}>
         <div className="flex justify-start mb-3">
           <TabList className="flex space-x-1 bg-gray-100 dark:bg-dark-bg-primary rounded-lg p-1">
-            <StyledTab>今日消耗</StyledTab>
+            <StyledTab>今日统计</StyledTab>
             <StyledTab>总余额</StyledTab>
           </TabList>
         </div>
 
         <TabPanels>
           <TabPanel>
-            <BalanceDisplay
-              value={totalConsumption[currencyType]}
-              startValue={
-                isInitialLoad ? 0 : prevTotalConsumption[currencyType]
-              }
-              isInitialLoad={isInitialLoad}
-              currencyType={currencyType}
-              onCurrencyToggle={handleCurrencyToggle}
-              isConsumption
-            />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">
+                  今日消耗
+                </span>
+                <BalanceDisplay
+                  value={totalConsumption[currencyType]}
+                  startValue={
+                    isInitialLoad ? 0 : prevTotalConsumption[currencyType]
+                  }
+                  isInitialLoad={isInitialLoad}
+                  currencyType={currencyType}
+                  onCurrencyToggle={handleCurrencyToggle}
+                  isConsumption
+                  compact
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">
+                  今日收入
+                </span>
+                <BalanceDisplay
+                  value={totalIncome[currencyType]}
+                  startValue={0}
+                  isInitialLoad={isInitialLoad}
+                  currencyType={currencyType}
+                  onCurrencyToggle={handleCurrencyToggle}
+                  isConsumption={false}
+                  compact
+                />
+              </div>
+            </div>
           </TabPanel>
 
           <TabPanel>
