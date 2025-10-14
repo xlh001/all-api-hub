@@ -2,6 +2,7 @@
 build
 dist
 docs
+.output
 coverage
 *.md
 pnpm-lock.yaml

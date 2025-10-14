@@ -13,12 +13,6 @@
 .DS_Store
 *.pem
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
 # local env files
 .env*.local
 
@@ -32,8 +26,6 @@ dist/
 # typescript
 .tsbuildinfo
 
-.idea
-
 # 文档项目的依赖和构建产物
 /docs/node_modules/
 /docs/docs/.vuepress/dist/
@@ -42,3 +34,30 @@ dist/
 
 # 其他可能的文档生成器特定忽略项 (例如 Docusaurus 的 build 目录)
 # /docs/build/
+
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+.output
+stats.html
+stats-*.json
+.wxt
+web-ext.config.ts
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
