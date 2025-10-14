@@ -1,18 +1,19 @@
 import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 
-import type { ApiToken, DisplaySiteData } from "~/types"
+import type { DisplaySiteData } from "~/types"
 
+import { AccountToken } from "../type.ts"
 import { TokenListItem } from "./TokenListItem"
 
 interface TokenListProps {
   isLoading: boolean
-  tokens: (ApiToken & { accountName: string })[]
-  filteredTokens: (ApiToken & { accountName: string })[]
+  tokens: AccountToken[]
+  filteredTokens: AccountToken[]
   visibleKeys: Set<number>
   toggleKeyVisibility: (id: number) => void
   copyKey: (key: string, name: string) => void
-  handleEditToken: (token: ApiToken & { accountName: string }) => void
-  handleDeleteToken: (token: ApiToken & { accountName: string }) => void
+  handleEditToken: (token: AccountToken) => void
+  handleDeleteToken: (token: AccountToken) => void
   handleAddToken: () => void
   selectedAccount: string
   displayData: DisplaySiteData[]

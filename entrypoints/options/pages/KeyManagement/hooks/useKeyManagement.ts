@@ -3,21 +3,18 @@ import toast from "react-hot-toast"
 
 import { useAccountData } from "~/hooks/useAccountData"
 import { deleteApiToken, fetchAccountTokens } from "~/services/apiService"
-import type { ApiToken } from "~/types"
+
+import { AccountToken } from "../type.ts"
 
 export function useKeyManagement(routeParams?: Record<string, string>) {
   const { displayData } = useAccountData()
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [tokens, setTokens] = useState<(ApiToken & { accountName: string })[]>(
-    []
-  )
+  const [tokens, setTokens] = useState<AccountToken[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [visibleKeys, setVisibleKeys] = useState<Set<number>>(new Set())
   const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
-  const [editingToken, setEditingToken] = useState<
-    (ApiToken & { accountName: string }) | null
-  >(null)
+  const [editingToken, setEditingToken] = useState<AccountToken | null>(null)
 
   const loadTokens = async (accountId?: string) => {
     const targetAccountId = accountId || selectedAccount
@@ -108,14 +105,12 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     }
   }
 
-  const handleEditToken = (token: ApiToken & { accountName: string }) => {
+  const handleEditToken = (token: AccountToken) => {
     setEditingToken(token)
     setIsAddTokenOpen(true)
   }
 
-  const handleDeleteToken = async (
-    token: ApiToken & { accountName: string }
-  ) => {
+  const handleDeleteToken = async (token: AccountToken) => {
     if (
       !window.confirm(`确定要删除密钥 "${token.name}" 吗？此操作不可撤销。`)
     ) {

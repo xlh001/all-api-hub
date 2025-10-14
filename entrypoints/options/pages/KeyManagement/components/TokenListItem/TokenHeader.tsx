@@ -9,14 +9,16 @@ import toast from "react-hot-toast"
 
 import { CherryIcon } from "~/components/icons/CherryIcon"
 import { importToNewApi } from "~/services/newApiService"
-import type { ApiToken, DisplaySiteData } from "~/types"
+import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 
+import { AccountToken } from "../../type.ts"
+
 interface TokenHeaderProps {
-  token: ApiToken & { accountName: string }
+  token: AccountToken
   copyKey: (key: string, name: string) => void
-  handleEditToken: (token: ApiToken & { accountName: string }) => void
-  handleDeleteToken: (token: ApiToken & { accountName: string }) => void
+  handleEditToken: (token: AccountToken) => void
+  handleDeleteToken: (token: AccountToken) => void
   account: DisplaySiteData | undefined
 }
 

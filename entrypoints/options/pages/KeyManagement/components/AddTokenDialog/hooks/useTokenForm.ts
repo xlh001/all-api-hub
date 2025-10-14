@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import type { ApiToken } from "~/types"
+
+import { AccountToken } from "../../../type.ts"
 
 // We duplicate some types here to avoid circular dependencies
 // if we were to import them directly from the AddTokenDialog component.
@@ -18,7 +19,7 @@ interface AddTokenDialogProps {
   isOpen: boolean
   availableAccounts: Account[]
   preSelectedAccountId?: string | null
-  editingToken?: (ApiToken & { accountName: string }) | null
+  editingToken?: AccountToken | null
 }
 
 export interface FormData {

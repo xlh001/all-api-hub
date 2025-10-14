@@ -1,16 +1,17 @@
-import type { ApiToken, DisplaySiteData } from "~/types"
+import type { DisplaySiteData } from "~/types"
 
+import { AccountToken } from "../../type.ts"
 import { KeyDisplay } from "./KeyDisplay"
 import { TokenDetails } from "./TokenDetails"
 import { TokenHeader } from "./TokenHeader"
 
 interface TokenListItemProps {
-  token: ApiToken & { accountName: string }
+  token: AccountToken
   visibleKeys: Set<number>
   toggleKeyVisibility: (id: number) => void
   copyKey: (key: string, name: string) => void
-  handleEditToken: (token: ApiToken & { accountName: string }) => void
-  handleDeleteToken: (token: ApiToken & { accountName: string }) => void
+  handleEditToken: (token: AccountToken) => void
+  handleDeleteToken: (token: AccountToken) => void
   account: DisplaySiteData | undefined
 }
 

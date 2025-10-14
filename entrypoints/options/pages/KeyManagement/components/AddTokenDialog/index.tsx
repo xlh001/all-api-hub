@@ -5,8 +5,9 @@ import toast from "react-hot-toast"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { createApiToken, updateApiToken } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
-import type { ApiToken, DisplaySiteData } from "~/types"
+import type { DisplaySiteData } from "~/types"
 
+import { AccountToken } from "../../type.ts"
 import { DialogHeader } from "./DialogHeader"
 import { FormActions } from "./FormActions"
 import { useTokenData } from "./hooks/useTokenData"
@@ -20,7 +21,7 @@ interface AddTokenDialogProps {
   onClose: () => void
   availableAccounts: DisplaySiteData[]
   preSelectedAccountId?: string | null
-  editingToken?: (ApiToken & { accountName: string }) | null
+  editingToken?: AccountToken | null
 }
 
 export default function AddTokenDialog(props: AddTokenDialogProps) {
