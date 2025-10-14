@@ -37,7 +37,7 @@ const DEFAULT_USAGE_PATH = "/console/log"
 const DEFAULT_CHECKIN_PATH = "/app/me"
 
 // 定义各站点对应的 API 路径
-export const SITE_API_ROUTER = {
+export const SITE_API_ROUTER: Record<string, any> = {
   [ONE_API]: { usagePath: DEFAULT_USAGE_PATH },
   [NEW_API]: { usagePath: DEFAULT_USAGE_PATH },
   [VO_API]: { usagePath: DEFAULT_USAGE_PATH },
@@ -52,6 +52,6 @@ export const SITE_API_ROUTER = {
  * @param key 站点名称
  * @returns 对应的 API 路由对象，否则返回 Default 的路由对象
  */
-export function getSiteApiRouter(key) {
+export function getSiteApiRouter(key: string) {
   return SITE_API_ROUTER[key] ?? SITE_API_ROUTER["Default"]
 }

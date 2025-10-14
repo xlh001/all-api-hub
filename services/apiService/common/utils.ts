@@ -20,15 +20,14 @@ const createRequestHeaders = (
     Pragma: REQUEST_CONFIG.HEADERS.PRAGMA
   }
 
-  const userHeaders =
-    userId != null
-      ? {
-          "New-API-User": userId.toString(),
-          "Veloera-User": userId.toString(),
-          "voapi-user": userId.toString(),
-          "User-id": userId.toString()
-        }
-      : {}
+  const userHeaders: Record<string, string> = userId
+    ? {
+        "New-API-User": userId.toString(),
+        "Veloera-User": userId.toString(),
+        "voapi-user": userId.toString(),
+        "User-id": userId.toString()
+      }
+    : {}
 
   const headers: Record<string, string> = { ...baseHeaders, ...userHeaders }
   // TODO：bug，还是带上了 cookie，导致网站没有使用 access_token进行验证
@@ -75,7 +74,7 @@ const createBaseRequest = (
  * 创建带 cookie 认证的请求
  */
 const createCookieAuthRequest = (
-  userId: number | string = null,
+  userId: number | string | undefined,
   options: RequestInit = {}
 ): RequestInit =>
   createBaseRequest(createRequestHeaders(userId), "include", options)
@@ -84,7 +83,7 @@ const createCookieAuthRequest = (
  * 创建带 Bearer token 认证的请求
  */
 const createTokenAuthRequest = (
-  userId: number | string = null,
+  userId: number | string | undefined,
   accessToken: string,
   options: RequestInit = {}
 ): RequestInit =>
@@ -175,7 +174,7 @@ const apiRequest = async <T>(
 }
 
 // 通用请求函数
-export interface FetchApiParams<T> {
+export interface FetchApiParams {
   baseUrl: string
   endpoint: string
   userId?: number | string
@@ -192,7 +191,7 @@ const _fetchApi = async <T>(
     token,
     authType = AuthTypeEnum.AccessToken,
     options
-  }: FetchApiParams<T>,
+  }: FetchApiParams,
   isData: boolean
 ) => {
   const url = joinUrl(baseUrl, endpoint)
@@ -229,9 +228,7 @@ const _fetchApi = async <T>(
  * 通用 API 请求函数，直接返回 data
  * @param params
  */
-export const fetchApiData = async <T>(
-  params: FetchApiParams<T>
-): Promise<T> => {
+export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
   return (await _fetchApi(params, true)) as T
 }
 
@@ -240,7 +237,7 @@ export const fetchApiData = async <T>(
  * @param params
  */
 export const fetchApi = async <T>(
-  params: FetchApiParams<T>
+  params: FetchApiParams
 ): Promise<ApiResponse<T>> => {
   return (await _fetchApi(params, false)) as ApiResponse<T>
 }

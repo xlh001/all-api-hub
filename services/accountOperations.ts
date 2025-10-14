@@ -22,6 +22,7 @@ import {
   type AutoDetectError
 } from "~/utils/autoDetectUtils"
 
+import { getErrorMessage } from "../utils/error.ts"
 import { accountStorage } from "./accountStorage"
 import {
   extractDefaultExchangeRate,

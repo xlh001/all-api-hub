@@ -17,6 +17,8 @@
  */
 import { FAQ_URL } from "~/constants/about"
 
+import { getErrorMessage } from "./error.ts"
+
 // 自动识别错误类型
 export enum AutoDetectErrorType {
   TIMEOUT = "timeout",

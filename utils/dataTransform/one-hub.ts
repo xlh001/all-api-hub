@@ -60,7 +60,7 @@ export function transformModelPricing(
 export function transformUserGroup(
   input: OneHubUserGroupsResponse["data"]
 ): OneHubUserGroupsResponse["data"] {
-  const result = {}
+  const result: Record<string, any> = {}
 
   // 转换已有的分组
   for (const key in input) {

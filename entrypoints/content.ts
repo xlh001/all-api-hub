@@ -1,4 +1,5 @@
 import { fetchUserInfo } from "../services/apiService"
+import { getErrorMessage } from "../utils/error.ts"
 
 export default defineUnlistedScript({
   matches: ["<all_urls>"],

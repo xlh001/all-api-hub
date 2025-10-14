@@ -71,6 +71,7 @@ export interface OneHubModelPricingItem {
   }
 }
 
+// @ts-ignore
 interface OneHubVendor {
   id: number
   name: string

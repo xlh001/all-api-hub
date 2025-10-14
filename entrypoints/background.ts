@@ -5,6 +5,7 @@ import {
 } from "../services/autoRefreshService.ts"
 import { migrateAccountsConfig } from "../services/configMigration.ts"
 import { getSiteType } from "../services/detectSiteType.ts"
+import { getErrorMessage } from "../utils/error.ts"
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id })
