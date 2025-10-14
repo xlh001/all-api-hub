@@ -77,7 +77,8 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             (site.checkIn?.customCheckInUrl ? (
               <Tooltip
                 content={`自定义签到地址，点我去签到: ${site.checkIn.customCheckInUrl}`}
-                position="top">
+                position="top"
+                wrapperClassName="flex justify-center items-center">
                 <button onClick={handleCheckIn(site.checkIn.customCheckInUrl)}>
                   <CurrencyYenIcon className="h-4 w-4 text-green-500" />
                 </button>
@@ -85,17 +86,26 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             ) : (
               <>
                 {site.checkIn.isCheckedInToday === undefined ? (
-                  <Tooltip content="站点可能不支持签到" position="top">
+                  <Tooltip
+                    content="站点可能不支持签到"
+                    position="top"
+                    wrapperClassName="flex justify-center items-center">
                     <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
                   </Tooltip>
                 ) : site.checkIn.isCheckedInToday === false ? (
-                  <Tooltip content="今日已签到，点我查看" position="top">
+                  <Tooltip
+                    content="今日已签到，点我查看"
+                    position="top"
+                    wrapperClassName="flex justify-center items-center">
                     <button onClick={handleCheckIn()}>
                       <CheckCircleIcon className="h-4 w-4 text-green-500" />
                     </button>
                   </Tooltip>
                 ) : (
-                  <Tooltip content="今日未签到，点我去签到" position="top">
+                  <Tooltip
+                    content="今日未签到，点我去签到"
+                    position="top"
+                    wrapperClassName="flex justify-center items-center">
                     <button onClick={handleCheckIn()}>
                       <XCircleIcon className="h-4 w-4 text-red-500" />
                     </button>
