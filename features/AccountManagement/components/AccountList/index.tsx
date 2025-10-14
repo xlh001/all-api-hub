@@ -103,7 +103,7 @@ export default function AccountList() {
       <CopyKeyDialog
         isOpen={copyKeyDialogAccount !== null}
         onClose={() => setCopyKeyDialogAccount(null)}
-        account={copyKeyDialogAccount}
+        account={copyKeyDialogAccount as DisplaySiteData}
       />
     </div>
   )

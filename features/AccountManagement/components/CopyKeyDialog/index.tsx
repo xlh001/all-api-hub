@@ -25,7 +25,7 @@ import { TokenList } from "./TokenList"
 interface CopyKeyDialogProps {
   isOpen: boolean
   onClose: () => void
-  account: DisplaySiteData | null
+  account: DisplaySiteData
 }
 
 export default function CopyKeyDialog({

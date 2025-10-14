@@ -127,7 +127,7 @@ export interface PaginatedTokenResponse {
 export interface ApiResponse<T = any> {
   success: boolean
   data: T
-  message?: string
+  message: string
 }
 
 // 日志条目类型

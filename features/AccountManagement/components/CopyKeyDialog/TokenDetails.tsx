@@ -15,7 +15,7 @@ interface TokenDetailsProps {
   formatUsedQuota: (token: ApiToken) => string
   formatQuota: (token: ApiToken) => string
   onCopyKey: (key: string) => void
-  account: DisplaySiteData | null
+  account: DisplaySiteData
 }
 
 export function TokenDetails({

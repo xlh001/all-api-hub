@@ -15,7 +15,7 @@ interface TokenListProps {
   formatQuota: (token: ApiToken) => string
   getGroupBadgeStyle: (group: string) => string
   getStatusBadgeStyle: (status: number) => string
-  account: DisplaySiteData | null
+  account: DisplaySiteData
 }
 
 export function TokenList({

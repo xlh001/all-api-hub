@@ -19,7 +19,7 @@ interface TokenHeaderProps {
   copyKey: (key: string, name: string) => void
   handleEditToken: (token: AccountToken) => void
   handleDeleteToken: (token: AccountToken) => void
-  account: DisplaySiteData | undefined
+  account: DisplaySiteData
 }
 
 function TokenActionButtons({
