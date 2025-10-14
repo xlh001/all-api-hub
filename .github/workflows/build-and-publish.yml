@@ -73,23 +73,18 @@ jobs:
         if: ${{ steps.get_tag.outputs.tag != '' }}
         run: pnpm install
 
-      # 构建
-      - name: Build dist
-        if: ${{ steps.get_tag.outputs.tag != '' }}
-        run: pnpm run build:all
-
-      # 打包扩展
+      # 编译并打包扩展
       - name: Package the extension
         if: ${{ steps.get_tag.outputs.tag != '' }}
-        run: pnpm package:all
+        run: pnpm zip:all
 
       # 上传 Release Artifact（仅当有 tag 时）
       - name: Upload Release Artifact
         if: ${{ steps.get_tag.outputs.tag != '' }}
         continue-on-error: true
         run: |
-          echo "Uploading build/*.zip to release ${{ steps.get_tag.outputs.tag }}"
-          gh release upload "${{ steps.get_tag.outputs.tag }}" build/*.zip
+          echo "Uploading .output/*.zip to release ${{ steps.get_tag.outputs.tag }}"
+          gh release upload "${{ steps.get_tag.outputs.tag }}" .output/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -97,6 +92,15 @@ jobs:
       - name: Browser Platform Publish
         if: ${{ steps.get_tag.outputs.tag != '' }}
         continue-on-error: true
-        uses: PlasmoHQ/bpp@v3
-        with:
-          keys: ${{ secrets.SUBMIT_KEYS }}
+        run: |
+          pnpm wxt submit \
+            --chrome-zip .output/*-chrome.zip \
+            --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
