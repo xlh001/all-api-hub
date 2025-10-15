@@ -225,7 +225,8 @@ export async function validateAndSaveAccount(
         today_prompt_tokens: freshAccountData.today_prompt_tokens,
         today_completion_tokens: freshAccountData.today_completion_tokens,
         today_quota_consumption: freshAccountData.today_quota_consumption,
-        today_requests_count: freshAccountData.today_requests_count
+        today_requests_count: freshAccountData.today_requests_count,
+        today_income: freshAccountData.today_income
       },
       last_sync_time: Date.now()
     }
@@ -302,7 +303,8 @@ export async function validateAndUpdateAccount(
         today_prompt_tokens: freshAccountData.today_prompt_tokens,
         today_completion_tokens: freshAccountData.today_completion_tokens,
         today_quota_consumption: freshAccountData.today_quota_consumption,
-        today_requests_count: freshAccountData.today_requests_count
+        today_requests_count: freshAccountData.today_requests_count,
+        today_income: freshAccountData.today_income
       },
       last_sync_time: Date.now()
     }

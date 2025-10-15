@@ -29,7 +29,7 @@ export interface TodayIncomeData {
 
 export type TodayStatsData = TodayUsageData & TodayIncomeData
 
-export interface AccountData extends TodayUsageData {
+export interface AccountData extends TodayStatsData {
   quota: number
   /**
    * @deprecated Use `checkIn.isCheckedInToday` instead.
