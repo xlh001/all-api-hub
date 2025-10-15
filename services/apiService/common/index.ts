@@ -227,7 +227,7 @@ export const fetchTodayUsage = async (
     const params = new URLSearchParams({
       p: currentPage.toString(),
       page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
-      type: "0",
+      type: String(LogType.Consume),
       token_name: "",
       model_name: "",
       start_timestamp: startTimestamp.toString(),
