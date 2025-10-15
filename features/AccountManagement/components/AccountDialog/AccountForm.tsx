@@ -194,7 +194,7 @@ export default function AccountForm({
             value={exchangeRate}
             onChange={(e) => onExchangeRateChange(e.target.value)}
             placeholder="请输入充值比例"
-            className={`block w-full pl-10 py-3 border rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
+            className={`block w-full px-10 py-3 border rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
               isValidExchangeRate(exchangeRate)
                 ? "border-gray-200 dark:border-dark-bg-tertiary focus:ring-blue-500 focus:border-transparent"
                 : "border-red-300 focus:ring-red-500 focus:border-red-500"
