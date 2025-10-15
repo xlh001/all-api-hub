@@ -527,11 +527,11 @@
       "typescript": "Type-safe JavaScript",
       "tailwindcss": "Atomic CSS framework",
       "headlessui": "Unstyled UI components"
-    },
-    "billing": {
-      "tokenBased": "Token-based billing",
-      "perCall": "Per-call billing",
-      "notProvided": "Not provided"
     }
+  },
+  "billing": {
+    "tokenBased": "Token-based billing",
+    "perCall": "Per-call billing",
+    "notProvided": "Not provided"
   }
 }

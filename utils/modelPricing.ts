@@ -2,33 +2,10 @@
  * 模型定价计算工具
  */
 
+import i18next, { t } from "i18next"
+
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CurrencyType } from "~/types"
-
-// 计费模式类型映射
-export const BILLING_MODES = {
-  tokenBased: {
-    key: "billing.tokenBased",
-    defaultText: {
-      "zh-CN": "按量计费",
-      "en": "Token-based billing"
-    }
-  },
-  perCall: {
-    key: "billing.perCall",
-    defaultText: {
-      "zh-CN": "按次计费",
-      "en": "Per-call billing"
-    }
-  },
-  notProvided: {
-    key: "billing.notProvided",
-    defaultText: {
-      "zh-CN": "未提供",
-      "en": "Not provided"
-    }
-  }
-} as const
 
 export interface CalculatedPrice {
   inputUSD: number // 每1M token输入价格（美元）
@@ -170,19 +147,10 @@ export const formatPriceRange = (
 /**
  * 获取计费模式的显示文本
  */
-export const getBillingModeText = (quotaType: number, t?: (key: string, defaultValue?: string) => string): string => {
-  const mode = isTokenBillingType(quotaType) ? BILLING_MODES.tokenBased : BILLING_MODES.perCall
-  
-  if (t) {
-    return t(mode.key)
-  }
-  
-  // 如果没有翻译函数，尝试从浏览器语言获取默认文本
-  const language = navigator.language || "en"
-  const isZhCN = language.startsWith("zh")
-  const langKey = isZhCN ? "zh-CN" : "en"
-  
-  return mode.defaultText[langKey] || mode.defaultText["en"]
+export const getBillingModeText = (quotaType: number): string => {
+  return isTokenBillingType(quotaType)
+    ? i18next.t("billing.tokenBased")
+    : i18next.t("billing.perCall")
 }
 
 /**
@@ -210,22 +178,10 @@ export const isModelAvailableForGroup = (
  * 获取模型的可用端点类型显示文本
  */
 export const getEndpointTypesText = (
-  endpointTypes: string[] | undefined,
-  t?: (key: string, defaultValue?: string) => string
+  endpointTypes: string[] | undefined
 ): string => {
   if (!endpointTypes || !Array.isArray(endpointTypes)) {
-    const mode = BILLING_MODES.notProvided
-    
-    if (t) {
-      return t(mode.key)
-    }
-    
-    // 如果没有翻译函数，尝试从浏览器语言获取默认文本
-    const language = navigator.language || "en"
-    const isZhCN = language.startsWith("zh")
-    const langKey = isZhCN ? "zh-CN" : "en"
-    
-    return mode.defaultText[langKey] || mode.defaultText["en"]
+    return t("billing.notProvided")
   }
   return endpointTypes.join(", ")
 }

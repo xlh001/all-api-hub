@@ -527,11 +527,11 @@
       "typescript": "类型安全的JavaScript",
       "tailwindcss": "原子化CSS框架",
       "headlessui": "无样式UI组件"
-    },
-    "billing": {
-      "tokenBased": "按量计费",
-      "perCall": "按次计费",
-      "notProvided": "未提供"
     }
+  },
+  "billing": {
+    "tokenBased": "按量计费",
+    "perCall": "按次计费",
+    "notProvided": "未提供"
   }
 }

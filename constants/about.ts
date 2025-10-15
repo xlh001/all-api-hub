@@ -5,10 +5,3 @@ export const FAQ_URL = HOMEPAGE_URL + "faq.html"
 export const FEATURES: string[] = []
 
 export const FUTURE_FEATURES: string[] = []
-
-export const PRIVACY_TEXT = {
-  title: "about.privacyTitle",
-  body: "about.privacyText"
-}
-
-export const ABOUT_INTRO = "about.intro"
