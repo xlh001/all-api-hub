@@ -184,7 +184,7 @@ export interface LogResponseData {
   total: number
 }
 
-export type BaseFetchParams = {
+export type AuthFetchParams = {
   baseUrl: string
   userId: number
   token: string

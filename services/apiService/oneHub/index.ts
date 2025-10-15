@@ -1,5 +1,5 @@
 import type {
-  BaseFetchParams,
+  AuthFetchParams,
   PricingResponse
 } from "~/services/apiService/common/type"
 import { fetchApiData } from "~/services/apiService/common/utils"
@@ -16,21 +16,21 @@ import {
   transformUserGroup
 } from "~/utils/dataTransform/one-hub"
 
-export const fetchAvailableModel = async (params: BaseFetchParams) => {
+export const fetchAvailableModel = async (params: AuthFetchParams) => {
   return fetchApiData<OneHubModelPricing>({
     ...params,
     endpoint: "/api/available_model"
   })
 }
 
-export const fetchUserGroupMap = async (params: BaseFetchParams) => {
+export const fetchUserGroupMap = async (params: AuthFetchParams) => {
   return fetchApiData<OneHubUserGroupMap>({
     ...params,
     endpoint: "/api/user_group_map"
   })
 }
 export const fetchModelPricing = async (
-  params: BaseFetchParams
+  params: AuthFetchParams
 ): Promise<PricingResponse> => {
   try {
     const [availableModel, userGroupMap] = await Promise.all([
@@ -117,7 +117,7 @@ export const fetchUserGroups = async ({
 /**
  * 获取可用模型列表
  */
-export const fetchAvailableModels = async (params: BaseFetchParams) => {
+export const fetchAvailableModels = async (params: AuthFetchParams) => {
   const availableModel = await fetchAvailableModel(params)
   return Object.keys(availableModel)
 }
