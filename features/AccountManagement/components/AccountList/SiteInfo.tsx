@@ -90,17 +90,17 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             </a>
           </div>
           {/* The check-in UI is displayed if the checkIn object exists. */}
-          {site.checkIn?.enableDetection &&
-            (site.checkIn?.customCheckInUrl ? (
-              <Tooltip
-                content={`自定义签到地址，点我去签到: ${site.checkIn.customCheckInUrl}`}
-                position="top"
-                wrapperClassName="flex justify-center items-center">
-                <button onClick={handleCheckIn(site.checkIn.customCheckInUrl)}>
-                  <CurrencyYenIcon className="h-4 w-4 text-green-500" />
-                </button>
-              </Tooltip>
-            ) : (
+          {site.checkIn?.customCheckInUrl ? (
+            <Tooltip
+              content={`自定义签到地址，点我去签到: ${site.checkIn.customCheckInUrl}`}
+              position="top"
+              wrapperClassName="flex justify-center items-center">
+              <button onClick={handleCheckIn(site.checkIn.customCheckInUrl)}>
+                <CurrencyYenIcon className="h-4 w-4 text-green-500" />
+              </button>
+            </Tooltip>
+          ) : (
+            site.checkIn?.enableDetection && (
               <>
                 {site.checkIn.isCheckedInToday === undefined ? (
                   <Tooltip
@@ -129,7 +129,8 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                   </Tooltip>
                 )}
               </>
-            ))}
+            )
+          )}
         </div>
         <div className="text-xs text-gray-500 dark:text-dark-text-secondary truncate ml-4 flex items-start space-x-1">
           <UserIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
