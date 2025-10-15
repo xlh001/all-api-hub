@@ -316,7 +316,14 @@ export const fetchTodayIncome = async (
       const items = logData.items || []
 
       // 聚合充值数据
-      totalIncome += items.reduce((sum, item) => sum + (item.quota || 0), 0)
+      totalIncome += items.reduce(
+        (sum, item) =>
+          sum +
+          (item.quota ||
+            UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR *
+              (extractAmount(item.content)?.amount ?? 0)),
+        0
+      )
 
       // 检查是否还有更多数据
       const totalPages = Math.ceil(
