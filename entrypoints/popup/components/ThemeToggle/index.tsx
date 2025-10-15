@@ -9,35 +9,33 @@ import { useTranslation } from "react-i18next"
 import { useTheme } from "~/contexts/ThemeContext"
 import type { ThemeMode } from "~/types/theme"
 
-const themeOptions: {
-  mode: ThemeMode
-  label: string
-  icon: React.ElementType
-  description: string
-}[] = [
-  {
-    mode: "light",
-    label: "浅色",
-    icon: SunIcon,
-    description: "使用浅色主题"
-  },
-  {
-    mode: "dark",
-    label: "深色",
-    icon: MoonIcon,
-    description: "使用深色主题"
-  },
-  {
-    mode: "system",
-    label: "跟随系统",
-    icon: ComputerDesktopIcon,
-    description: "跟随系统主题设置"
-  }
-]
+const getThemeOptions = (t: (key: string) => string) => {
+  return [
+    {
+      mode: "light" as ThemeMode,
+      label: t("theme.light"),
+      icon: SunIcon,
+      description: t("theme.useLightTheme")
+    },
+    {
+      mode: "dark" as ThemeMode,
+      label: t("theme.dark"),
+      icon: MoonIcon,
+      description: t("theme.useDarkTheme")
+    },
+    {
+      mode: "system" as ThemeMode,
+      label: t("theme.followSystem"),
+      icon: ComputerDesktopIcon,
+      description: t("theme.followSystemTheme")
+    }
+  ]
+}
 
 const CompactThemeToggle = () => {
   const { themeMode, setThemeMode, resolvedTheme } = useTheme()
   const { t } = useTranslation()
+  const themeOptions = getThemeOptions(t)
 
   const currentIndex = themeOptions.findIndex(
     (option) => option.mode === themeMode

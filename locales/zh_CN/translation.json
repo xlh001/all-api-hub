@@ -343,7 +343,11 @@
   "theme": {
     "light": "浅色",
     "dark": "深色",
-    "system": "跟随系统",
+    "followSystem": "跟随系统",
+    "useLightTheme": "使用浅色主题",
+    "useDarkTheme": "使用深色主题",
+    "followSystemTheme": "跟随系统主题设置",
+    "switchTo": "切换到{{theme}}主题: {{description}}",
     "current": "当前: {{theme}} ({{resolvedTheme}})",
     "clickSwitch": "点击切换到{{nextMode}}模式",
     "toggle": "主题切换，当前{{currentMode}}模式，点击切换到{{nextMode}}模式"

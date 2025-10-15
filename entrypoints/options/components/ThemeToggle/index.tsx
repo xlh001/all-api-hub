@@ -3,39 +3,38 @@ import {
   MoonIcon,
   SunIcon
 } from "@heroicons/react/24/outline"
-import React from "react"
+import { useTranslation } from "react-i18next"
 
 import { useTheme } from "~/contexts/ThemeContext"
 import type { ThemeMode } from "~/types/theme"
 
-const themeOptions: {
-  mode: ThemeMode
-  label: string
-  icon: React.ElementType
-  description: string
-}[] = [
-  {
-    mode: "light",
-    label: "浅色",
-    icon: SunIcon,
-    description: "使用浅色主题"
-  },
-  {
-    mode: "dark",
-    label: "深色",
-    icon: MoonIcon,
-    description: "使用深色主题"
-  },
-  {
-    mode: "system",
-    label: "跟随系统",
-    icon: ComputerDesktopIcon,
-    description: "跟随系统主题设置"
-  }
-]
+const getThemeOptions = (t: (key: string) => string) => {
+  return [
+    {
+      mode: "light" as ThemeMode,
+      label: t("theme.light"),
+      icon: SunIcon,
+      description: t("theme.useLightTheme")
+    },
+    {
+      mode: "dark" as ThemeMode,
+      label: t("theme.dark"),
+      icon: MoonIcon,
+      description: t("theme.useDarkTheme")
+    },
+    {
+      mode: "system" as ThemeMode,
+      label: t("theme.followSystem"),
+      icon: ComputerDesktopIcon,
+      description: t("theme.followSystemTheme")
+    }
+  ]
+}
 
 const ThemeToggle = () => {
   const { themeMode, setThemeMode, resolvedTheme } = useTheme()
+  const { t } = useTranslation()
+  const themeOptions = getThemeOptions(t)
 
   const handleThemeChange = (mode: ThemeMode) => {
     setThemeMode(mode)
@@ -49,15 +48,17 @@ const ThemeToggle = () => {
         </div>
         <div>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
-            外观
+            {t("settings.appearance")}
           </h3>
           <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-            选择一个外观主题
+            {t("settings.selectTheme")}
           </p>
           <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-1 transition-colors">
-            当前: {themeOptions.find((opt) => opt.mode === themeMode)?.label}
-            {themeMode === "system" &&
-              ` (${resolvedTheme === "dark" ? "深色" : "浅色"})`}
+            {t("settings.currentTheme", {
+              theme: themeOptions.find((opt) => opt.mode === themeMode)?.label,
+              resolvedTheme:
+                resolvedTheme === "dark" ? t("theme.dark") : t("theme.light")
+            })}
           </p>
         </div>
       </div>
@@ -80,7 +81,7 @@ const ThemeToggle = () => {
                 focus:ring-blue-500 dark:focus:ring-blue-400
               `}
               title={description}
-              aria-label={`切换到${label}主题: ${description}`}
+              aria-label={t("theme.switchTo", { theme: label, description })}
               aria-pressed={isActive}>
               <span className="flex items-center">
                 <Icon

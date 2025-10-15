@@ -1,5 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { useTranslation } from "react-i18next"
 
 import type { AugmentedSortingFieldConfig } from "./SortingPriorityDragList"
 
@@ -8,6 +9,7 @@ interface SortingCriteriaItemProps {
 }
 
 export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
+  const { t } = useTranslation()
   const {
     attributes,
     listeners,
@@ -40,7 +42,7 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
       </div>
       <div className="ml-4">
         <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-300">
-          优先级: {item.priority + 1}
+          {t("settings.priority")}: {item.priority + 1}
         </span>
       </div>
     </div>

@@ -343,7 +343,11 @@
   "theme": {
     "light": "Light",
     "dark": "Dark",
-    "system": "System",
+    "followSystem": "Follow system",
+    "useLightTheme": "Use light theme",
+    "useDarkTheme": "Use dark theme",
+    "followSystemTheme": "Follow system theme settings",
+    "switchTo": "Switch to {{theme}} theme: {{description}}",
     "current": "Current: {{theme}} ({{resolvedTheme}})",
     "clickSwitch": "Click to switch to {{nextMode}} mode",
     "toggle": "Theme toggle, current {{currentMode}} mode, click to switch to {{nextMode}} mode"
