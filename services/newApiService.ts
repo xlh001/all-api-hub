@@ -152,7 +152,11 @@ export async function importToNewApi(
       }
     }
 
-    const newChannelName = `${account.name} - ${token.name} (auto)`
+    let newChannelName = `${account.name} | ${token.name}`.trim()
+    if (!newChannelName.endsWith("(auto)")) {
+      newChannelName += " (auto)"
+    }
+
     // 如果没有匹配项，则创建新渠道
     const newChannelData = {
       mode: "single",

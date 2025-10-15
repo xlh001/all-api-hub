@@ -434,9 +434,9 @@ async function validateNewApiConfig(): Promise<{
 }
 
 // Helper function to generate a default token name
-function generateDefaultToken(siteName: string): CreateTokenRequest {
+function generateDefaultToken(): CreateTokenRequest {
   return {
-    name: `${siteName}-auto-${Date.now()}`,
+    name: `default (auto)`,
     unlimited_quota: true,
     expired_time: -1, // Never expires
     remain_quota: 0,
