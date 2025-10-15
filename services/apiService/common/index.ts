@@ -413,7 +413,7 @@ export const fetchAccountData = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  checkSupport: CheckInConfig,
+  checkin: CheckInConfig,
   authType?: AuthTypeEnum
 ): Promise<AccountData> => {
   const promises: Promise<any>[] = [
@@ -421,7 +421,7 @@ export const fetchAccountData = async (
     fetchTodayUsage(baseUrl, userId, accessToken, authType)
   ]
 
-  if (checkSupport?.enableDetection && !checkSupport.customCheckInUrl) {
+  if (checkin?.enableDetection && !checkin.customCheckInUrl) {
     promises.push(fetchCheckInStatus(baseUrl, userId, accessToken, authType))
   }
 
@@ -431,19 +431,14 @@ export const fetchAccountData = async (
     boolean | undefined
   ]
 
-  const result: AccountData = {
+  return {
     quota,
-    ...todayUsage
-  }
-
-  if (checkSupport?.enableDetection) {
-    result.checkIn = {
-      ...checkSupport,
+    ...todayUsage,
+    checkIn: {
+      ...checkin,
       isCheckedInToday: canCheckIn
     }
   }
-
-  return result
 }
 
 /**
@@ -453,7 +448,7 @@ export const refreshAccountData = async (
   baseUrl: string,
   userId: number,
   accessToken: string,
-  checkSupport: CheckInConfig,
+  checkIn: CheckInConfig,
   authType?: AuthTypeEnum
 ): Promise<RefreshAccountResult> => {
   try {
@@ -461,7 +456,7 @@ export const refreshAccountData = async (
       baseUrl,
       userId,
       accessToken,
-      checkSupport,
+      checkIn,
       authType
     )
     return {
