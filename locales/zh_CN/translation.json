@@ -518,6 +518,19 @@
     "copyrightAck": "版权与致谢",
     "devMaintenance": "开发与维护",
     "thanksDesc": "感谢所有为开源社区做出贡献的开发者们，本插件的开发得益于这些优秀的开源项目和工具。",
-    "privacyNotice": "隐私声明"
+    "privacyNotice": "隐私声明",
+    "privacyText": "本插件所有数据均存储在本地浏览器中，不会主动上传到任何服务器。您的账号信息和使用数据完全由您自己掌控，确保隐私安全。",
+    "techStack": {
+      "wxt": "浏览器扩展开发框架",
+      "react": "用户界面库",
+      "typescript": "类型安全的JavaScript",
+      "tailwindcss": "原子化CSS框架",
+      "headlessui": "无样式UI组件"
+    },
+    "billing": {
+      "tokenBased": "按量计费",
+      "perCall": "按次计费",
+      "notProvided": "未提供"
+    }
   }
 }

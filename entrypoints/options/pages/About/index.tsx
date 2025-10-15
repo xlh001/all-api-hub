@@ -29,27 +29,27 @@ export default function About() {
     {
       name: "WXT",
       version: getPkgVersion("wxt"),
-      description: t("about.techStack.wxt", "浏览器扩展开发框架")
+      description: t("about.techStack.wxt")
     },
     {
       name: "React",
       version: getPkgVersion("react"),
-      description: t("about.techStack.react", "用户界面库")
+      description: t("about.techStack.react")
     },
     {
       name: "TypeScript",
       version: getPkgVersion("typescript"),
-      description: t("about.techStack.typescript", "类型安全的JavaScript")
+      description: t("about.techStack.typescript")
     },
     {
       name: "Tailwind CSS",
       version: getPkgVersion("tailwindcss"),
-      description: t("about.techStack.tailwindcss", "原子化CSS框架")
+      description: t("about.techStack.tailwindcss")
     },
     {
       name: "Headless UI",
       version: getPkgVersion("@headlessui/react"),
-      description: t("about.techStack.headlessui", "无样式UI组件")
+      description: t("about.techStack.headlessui")
     }
   ]
 

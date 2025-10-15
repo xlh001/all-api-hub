@@ -80,7 +80,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
               </span>
             </div>
             <div className="text-gray-600 dark:text-dark-text-secondary">
-              {getEndpointTypesText(model.supported_endpoint_types)}
+              {getEndpointTypesText(model.supported_endpoint_types, t)}
             </div>
           </div>
         )}

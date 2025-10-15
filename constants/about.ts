@@ -8,7 +8,7 @@ export const FUTURE_FEATURES: string[] = []
 
 export const PRIVACY_TEXT = {
   title: "隐私保护",
-  body: "本插件所有数据均存储在本地浏览器中，不会主动上传到任何服务器。您的账号信息和使用数据完全由您自己掌控，确保隐私安全。"
+  body: "about.privacyText"
 }
 
 export const ABOUT_INTRO =

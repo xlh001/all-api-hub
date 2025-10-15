@@ -1,8 +1,6 @@
 import { InformationCircleIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { PRIVACY_TEXT } from "~/constants/about"
-
 const PrivacyNotice = () => {
   const { t } = useTranslation()
   return (
@@ -14,7 +12,7 @@ const PrivacyNotice = () => {
             {t("about.privacyNotice")}
           </p>
           <p className="text-green-700 dark:text-green-400">
-            {PRIVACY_TEXT.body}
+            {t("about.privacyText")}
           </p>
         </div>
       </div>
