@@ -3,6 +3,11 @@
     "name": "All API Hub",
     "description": "Manage all AI proxy stations with one click"
   },
+  "pageTitle": {
+    "options": "All API Hub | Settings",
+    "popup": "All API Hub | Popup",
+    "sidepanel": "All API Hub | Sidebar"
+  },
   "common": {
     "refresh": "Refresh",
     "add": "Add",

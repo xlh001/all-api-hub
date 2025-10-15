@@ -3,6 +3,11 @@
     "name": "All API Hub",
     "description": "一键管理所有AI中转站"
   },
+  "pageTitle": {
+    "options": "中转站管理器 - All API Hub | 设置",
+    "popup": "中转站管理器 - All API Hub | 弹窗",
+    "sidepanel": "中转站管理器 - All API Hub | 侧边栏"
+  },
   "common": {
     "refresh": "刷新",
     "add": "添加",
