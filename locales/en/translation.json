@@ -25,17 +25,54 @@
     "today_consumption": "Today's Consumption",
     "today_income": "Today's Income"
   },
+  "balance": {
+    "stats": {
+      "prompt": "Prompt",
+      "completion": "Completion",
+      "token": "token"
+    }
+  },
   "account": {
     "title": "Account",
     "balance": "Balance",
     "token": "Token",
     "api_key": "API Key",
     "account_management": "Account Management",
+    "last_updated": "Updated at",
+    "warning_site_added": "⚠️Current site {{siteName}} has been added",
     "refreshing_all_accounts": "Refreshing all accounts...",
     "refresh_complete": "Refresh complete: {{success}} success, {{failed}} failed",
     "refresh_success": "All accounts refreshed successfully!",
     "refresh_failed": "Refresh failed, please try again later",
     "add_account": "Add Account"
+  },
+  "accountList": {
+    "empty_state": "No accounts yet",
+    "add_first_account": "Add your first account",
+    "header": {
+      "account": "Account",
+      "balance": "Balance",
+      "today_consumption": "Today's Consumption"
+    },
+    "balance_display": {
+      "refresh_balance": "Click to refresh balance",
+      "refresh_consumption": "Click to refresh today's consumption",
+      "refresh_income": "Click to refresh today's income"
+    },
+    "site_info": {
+      "status": "Status",
+      "unknown": "Unknown",
+      "reason": "Reason",
+      "last_sync": "Last Sync",
+      "not_available": "N/A",
+      "refresh_health_status": "Click to refresh health status",
+      "current_site_exists": "Current tab site already exists",
+      "current_site": "Current Site",
+      "custom_check_in_url": "Custom check-in URL, click to go: {{url}}",
+      "check_in_unsupported": "Site may not support check-in",
+      "checked_in_today": "Checked in today, click to view",
+      "not_checked_in_today": "Not checked in today, click to go"
+    }
   },
   "status": {
     "loading": "Loading...",

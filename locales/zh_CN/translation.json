@@ -25,17 +25,54 @@
     "today_consumption": "今日消耗",
     "today_income": "今日收入"
   },
+  "balance": {
+    "stats": {
+      "prompt": "提示",
+      "completion": "补全",
+      "token": "令牌"
+    }
+  },
   "account": {
     "title": "账号",
     "balance": "余额",
     "token": "令牌",
     "api_key": "API Key",
     "account_management": "一键管理所有AI中转站",
+    "last_updated": "更新于",
+    "warning_site_added": "⚠️当前站点 {{siteName}} 已被添加",
     "refreshing_all_accounts": "正在刷新所有账号...",
     "refresh_complete": "刷新完成: {{success}} 成功, {{failed}} 失败",
     "refresh_success": "所有账号刷新成功！",
     "refresh_failed": "刷新失败，请稍后重试",
     "add_account": "新增账号"
+  },
+  "accountList": {
+    "empty_state": "暂无站点账号",
+    "add_first_account": "添加你的第一个站点账号",
+    "header": {
+      "account": "账号",
+      "balance": "余额",
+      "today_consumption": "今日消费"
+    },
+    "balance_display": {
+      "refresh_balance": "点击刷新余额",
+      "refresh_consumption": "点击刷新今日消费",
+      "refresh_income": "点击刷新今日收入"
+    },
+    "site_info": {
+      "status": "状态",
+      "unknown": "未知",
+      "reason": "原因",
+      "last_sync": "上次同步",
+      "not_available": "N/A",
+      "refresh_health_status": "点击刷新健康状态",
+      "current_site_exists": "当前标签页站点已存在",
+      "current_site": "当前站点",
+      "custom_check_in_url": "自定义签到地址，点我去签到: {{url}}",
+      "check_in_unsupported": "站点可能不支持签到",
+      "checked_in_today": "今日已签到，点我查看",
+      "not_checked_in_today": "今日未签到，点我去签到"
+    }
   },
   "status": {
     "loading": "加载中...",

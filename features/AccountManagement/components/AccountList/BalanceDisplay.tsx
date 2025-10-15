@@ -1,5 +1,6 @@
 import React from "react"
 import CountUp from "react-countup"
+import { useTranslation } from "react-i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -67,6 +68,7 @@ const AnimatedValue: React.FC<{
 )
 
 const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
+  const { t } = useTranslation()
   const { isInitialLoad, prevBalances } = useAccountDataContext()
   const { currencyType } = useUserPreferencesContext()
   const { handleRefreshAccount, refreshingAccountId } =
@@ -89,7 +91,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
           isInitialLoad ? 0 : prevBalances[site.id]?.[currencyType] || 0
         }
         className="font-semibold text-gray-900 dark:text-dark-text-primary text-lg mb-0.5"
-        title="点击刷新余额"
+        title={t("accountList.balance_display.refresh_balance")}
         onClick={handleRefreshClick}
         isRefreshing={isRefreshing}
       />
@@ -106,7 +108,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
               ? "text-green-500"
               : "text-gray-400 dark:text-dark-text-tertiary"
           }`}
-          title="点击刷新今日消费"
+          title={t("accountList.balance_display.refresh_consumption")}
           onClick={handleRefreshClick}
           isRefreshing={isRefreshing}
         />
@@ -121,7 +123,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
               ? "text-blue-500"
               : "text-gray-400 dark:text-dark-text-tertiary"
           }`}
-          title="点击刷新今日收入"
+          title={t("accountList.balance_display.refresh_income")}
           onClick={handleRefreshClick}
           isRefreshing={isRefreshing}
         />

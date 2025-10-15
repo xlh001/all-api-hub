@@ -1,11 +1,13 @@
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline"
 import React from "react"
+import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { formatTokenCount } from "~/utils/formatters"
 
 export const TokenStats = React.memo(() => {
+  const { t } = useTranslation()
   const { stats } = useAccountDataContext()
   const todayTokens = stats
   let todayTotalPromptTokens = todayTokens.today_total_prompt_tokens
@@ -15,8 +17,16 @@ export const TokenStats = React.memo(() => {
       <Tooltip
         content={
           <div>
-            <div>提示: {todayTotalPromptTokens.toLocaleString()} 令牌</div>
-            <div>补全: {todayTotalCompletionTokens.toLocaleString()} 令牌</div>
+            <div>
+              {t("balance.stats.prompt")}:{" "}
+              {todayTotalPromptTokens.toLocaleString()}{" "}
+              {t("balance.stats.token")}
+            </div>
+            <div>
+              {t("balance.stats.completion")}:{" "}
+              {todayTotalCompletionTokens.toLocaleString()}{" "}
+              {t("balance.stats.token")}
+            </div>
           </div>
         }>
         <div className="flex items-center space-x-3 cursor-help">

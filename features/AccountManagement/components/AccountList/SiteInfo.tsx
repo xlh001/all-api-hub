@@ -6,6 +6,7 @@ import {
   UserIcon,
   XCircleIcon
 } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
 import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
@@ -19,6 +20,7 @@ interface SiteInfoProps {
 }
 
 export default function SiteInfo({ site }: SiteInfoProps) {
+  const { t } = useTranslation()
   const { detectedAccount } = useAccountDataContext()
   const { handleRefreshAccount, refreshingAccountId } =
     useAccountActionsContext()
@@ -44,21 +46,26 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             content={
               <div className="text-xs">
                 <p>
-                  状态:{" "}
+                  {t("accountList.site_info.status")}:{" "}
                   <span
                     className={
                       HEALTH_STATUS_MAP[site.health?.status]?.color ||
                       "text-gray-400"
                     }>
-                    {HEALTH_STATUS_MAP[site.health?.status]?.text || "未知"}
+                    {HEALTH_STATUS_MAP[site.health?.status]?.text ||
+                      t("accountList.site_info.unknown")}
                   </span>
                 </p>
-                {site.health?.reason && <p>原因: {site.health.reason}</p>}
+                {site.health?.reason && (
+                  <p>
+                    {t("accountList.site_info.reason")}: {site.health.reason}
+                  </p>
+                )}
                 <p>
-                  上次同步:{" "}
+                  {t("accountList.site_info.last_sync")}:{" "}
                   {site.last_sync_time
                     ? new Date(site.last_sync_time).toLocaleString()
-                    : "N/A"}
+                    : t("accountList.site_info.not_available")}
                 </p>
               </div>
             }
@@ -92,7 +99,9 @@ export default function SiteInfo({ site }: SiteInfoProps) {
           {/* The check-in UI is displayed if the checkIn object exists. */}
           {site.checkIn?.customCheckInUrl ? (
             <Tooltip
-              content={`自定义签到地址，点我去签到: ${site.checkIn.customCheckInUrl}`}
+              content={t("accountList.site_info.custom_check_in_url", {
+                url: site.checkIn.customCheckInUrl
+              })}
               position="top"
               wrapperClassName="flex justify-center items-center">
               <button onClick={handleCheckIn(site.checkIn.customCheckInUrl)}>
@@ -104,14 +113,14 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               <>
                 {site.checkIn.isCheckedInToday === undefined ? (
                   <Tooltip
-                    content="站点可能不支持签到"
+                    content={t("accountList.site_info.check_in_unsupported")}
                     position="top"
                     wrapperClassName="flex justify-center items-center">
                     <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
                   </Tooltip>
                 ) : site.checkIn.isCheckedInToday === false ? (
                   <Tooltip
-                    content="今日已签到，点我查看"
+                    content={t("accountList.site_info.checked_in_today")}
                     position="top"
                     wrapperClassName="flex justify-center items-center">
                     <button onClick={handleCheckIn()}>
@@ -120,7 +129,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                   </Tooltip>
                 ) : (
                   <Tooltip
-                    content="今日未签到，点我去签到"
+                    content={t("accountList.site_info.not_checked_in_today")}
                     position="top"
                     wrapperClassName="flex justify-center items-center">
                     <button onClick={handleCheckIn()}>
