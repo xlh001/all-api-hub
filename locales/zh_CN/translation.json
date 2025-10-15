@@ -3,14 +3,6 @@
     "name": "All API Hub",
     "description": "一键管理所有AI中转站"
   },
-  "manifest": {
-    "name": "中转站管理器 - All API Hub",
-    "description": "一站式聚合管理所有AI中转站账号的余额、模型和密钥，告别繁琐登录。",
-    "commands": {
-      "sidebar_action": "打开侧边栏",
-      "browser_action": "打开弹窗"
-    }
-  },
   "common": {
     "refresh": "刷新",
     "add": "添加",
@@ -216,30 +208,6 @@
     "display": "显示",
     "refresh": "刷新",
     "danger_zone": "危险区"
-  },
-  "importExport": {
-    "title": "导入/导出",
-    "description": "备份和恢复插件数据",
-    "importData": "导入数据",
-    "importDescription": "从备份文件恢复数据",
-    "selectBackupFile": "选择备份文件",
-    "dataPreview": "数据内容预览",
-    "pasteJsonData": "粘贴JSON数据或通过上面的文件选择器导入...",
-    "dataValid": "数据格式正确",
-    "containsAccountData": "包含账号数据",
-    "containsUserSettings": "包含用户设置",
-    "backupTime": "备份时间",
-    "dataInvalid": "数据格式错误，请检查JSON格式",
-    "importing": "导入中...",
-    "exportData": "导出数据",
-    "exportDescription": "将数据导出为JSON文件进行备份",
-    "fullBackup": "完整备份",
-    "fullBackupDescription": "导出所有账号数据和用户设置，推荐用于完整备份",
-    "accountData": "账号数据",
-    "accountDataDescription": "仅导出账号信息和相关数据",
-    "userSettings": "用户设置",
-    "userSettingsDescription": "仅导出界面设置和偏好配置",
-    "export": "导出"
   },
   "keyManagement": {
     "title": "密钥管理",
@@ -500,7 +468,27 @@
     "downloadImport": "下载并导入",
     "noImportableDataFound": "没有找到可导入的数据",
     "downloadImportFailed": "下载/导入失败",
-    "unknown": "未知"
+    "unknown": "未知",
+    "description": "备份和恢复插件数据",
+    "importData": "导入数据",
+    "importDescription": "从备份文件恢复数据",
+    "selectBackupFile": "选择备份文件",
+    "pasteJsonData": "粘贴JSON数据或通过上面的文件选择器导入...",
+    "dataValid": "数据格式正确",
+    "containsAccountData": "包含账号数据",
+    "containsUserSettings": "包含用户设置",
+    "backupTime": "备份时间",
+    "dataInvalid": "数据格式错误，请检查JSON格式",
+    "importing": "导入中...",
+    "exportData": "导出数据",
+    "exportDescription": "将数据导出为JSON文件进行备份",
+    "fullBackup": "完整备份",
+    "fullBackupDescription": "导出所有账号数据和用户设置，推荐用于完整备份",
+    "accountData": "账号数据",
+    "accountDataDescription": "仅导出账号信息和相关数据",
+    "userSettings": "用户设置",
+    "userSettingsDescription": "仅导出界面设置和偏好配置",
+    "export": "导出"
   },
   "about": {
     "title": "关于",

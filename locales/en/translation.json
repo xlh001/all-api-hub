@@ -3,14 +3,6 @@
     "name": "All API Hub",
     "description": "Manage all AI proxy stations with one click"
   },
-  "manifest": {
-    "name": "API Hub Manager - All API Hub",
-    "description": "One-stop management for all AI API hub accounts' balances, models and keys, say goodbye to tedious logins.",
-    "commands": {
-      "sidebar_action": "Open Sidebar",
-      "browser_action": "Open Popup"
-    }
-  },
   "common": {
     "refresh": "Refresh",
     "add": "Add",
@@ -216,30 +208,6 @@
     "display": "Display",
     "refresh": "Refresh",
     "danger_zone": "Danger Zone"
-  },
-  "importExport": {
-    "title": "Import/Export",
-    "description": "Backup and restore plugin data",
-    "importData": "Import Data",
-    "importDescription": "Restore data from a backup file",
-    "selectBackupFile": "Select backup file",
-    "dataPreview": "Data Content Preview",
-    "pasteJsonData": "Paste JSON data or import via the file selector above...",
-    "dataValid": "Data format is correct",
-    "containsAccountData": "Contains account data",
-    "containsUserSettings": "Contains user settings",
-    "backupTime": "Backup Time",
-    "dataInvalid": "Data format error, please check JSON format",
-    "importing": "Importing...",
-    "exportData": "Export Data",
-    "exportDescription": "Export data as a JSON file for backup",
-    "fullBackup": "Full Backup",
-    "fullBackupDescription": "Export all account data and user settings, recommended for full backup",
-    "accountData": "Account Data",
-    "accountDataDescription": "Only export account information and related data",
-    "userSettings": "User Settings",
-    "userSettingsDescription": "Only export interface settings and preference configurations",
-    "export": "Export"
   },
   "keyManagement": {
     "title": "Key Management",
@@ -500,7 +468,27 @@
     "downloadImport": "Download and Import",
     "noImportableDataFound": "No importable data found",
     "downloadImportFailed": "Download/Import failed",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "description": "Backup and restore plugin data",
+    "importData": "Import Data",
+    "importDescription": "Restore data from a backup file",
+    "selectBackupFile": "Select backup file",
+    "pasteJsonData": "Paste JSON data or import via the file selector above...",
+    "dataValid": "Data format is correct",
+    "containsAccountData": "Contains account data",
+    "containsUserSettings": "Contains user settings",
+    "backupTime": "Backup Time",
+    "dataInvalid": "Data format error, please check JSON format",
+    "importing": "Importing...",
+    "exportData": "Export Data",
+    "exportDescription": "Export data as a JSON file for backup",
+    "fullBackup": "Full Backup",
+    "fullBackupDescription": "Export all account data and user settings, recommended for full backup",
+    "accountData": "Account Data",
+    "accountDataDescription": "Only export account information and related data",
+    "userSettings": "User Settings",
+    "userSettingsDescription": "Only export interface settings and preference configurations",
+    "export": "Export"
   },
   "about": {
     "title": "About",
