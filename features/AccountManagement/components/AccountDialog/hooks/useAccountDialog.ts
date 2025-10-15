@@ -315,6 +315,7 @@ export function useAccountDialog({
           id: toastId
         }
       )
+      console.error(error)
     } finally {
       setIsAutoConfiguring(false)
     }

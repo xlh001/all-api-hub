@@ -197,8 +197,12 @@ const _fetchApi = async <T>(
       authOptions = createTokenAuthRequest(userId, token!)
       break
     case AuthTypeEnum.None:
-    default:
       authOptions = {}
+      break
+    default:
+      if (token) {
+        authOptions = createTokenAuthRequest(userId, token!)
+      }
       break
   }
 

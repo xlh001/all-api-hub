@@ -42,7 +42,6 @@ export default function AccountDialog({
     isOpen,
     onClose: () => {
       onClose()
-      onError(new Error("Dialog closed by user"))
     },
     mode,
     account

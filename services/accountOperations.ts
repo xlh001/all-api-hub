@@ -4,14 +4,12 @@
 
 import toast from "react-hot-toast"
 
-import {
-  createApiToken,
-  fetchAccountTokens
-} from "~/services/apiService/common"
+import { createApiToken, fetchAccountTokens } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import { importToNewApi } from "~/services/newApiService"
 import { userPreferences } from "~/services/userPreferences"
 import {
+  ApiToken,
   AuthTypeEnum,
   type CheckInConfig,
   type DisplaySiteData,
@@ -456,18 +454,17 @@ export async function autoConfigToNewApi(
     return { success: false, error: configValidation.errors.join(", ") }
   }
 
+  const displaySiteData = accountStorage.convertToDisplayData(
+    account
+  ) as DisplaySiteData
+
   let lastError: any
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       toast.loading("正在检查 API 密钥...", { id: toastId })
       // 1. Check for existing API token
-      const tokens = await fetchAccountTokens({
-        baseUrl: account.site_url,
-        userId: account.account_info.id,
-        token: account.account_info.access_token,
-        authType: account.authType
-      })
-      let apiToken = tokens[0]
+      const tokens = await fetchAccountTokens(displaySiteData)
+      let apiToken: ApiToken | undefined = tokens[0]
 
       // 2. Create a new token if one doesn't exist
       if (!apiToken) {
@@ -482,13 +479,8 @@ export async function autoConfigToNewApi(
           return { success: false, error: "Failed to create API token." }
         }
         // Re-fetch tokens to get the newly created one
-        const updatedTokens = await fetchAccountTokens({
-          baseUrl: account.site_url,
-          userId: account.account_info.id,
-          token: account.account_info.access_token,
-          authType: account.authType
-        })
-        apiToken = updatedTokens[-1]
+        const updatedTokens = await fetchAccountTokens(displaySiteData)
+        apiToken = updatedTokens.at(-1)
       }
 
       if (!apiToken) {
@@ -500,10 +492,7 @@ export async function autoConfigToNewApi(
 
       // 3. Import to New API as a channel
       toast.loading("正在导入到 New API...", { id: toastId })
-      const importResult = await importToNewApi(
-        accountStorage.convertToDisplayData(account) as DisplaySiteData,
-        apiToken
-      )
+      const importResult = await importToNewApi(displaySiteData, apiToken)
 
       if (importResult.success) {
         toast.success(importResult.message, { id: toastId })
