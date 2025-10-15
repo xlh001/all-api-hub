@@ -64,7 +64,7 @@ export function QuotaSettings({
                 ? "border-red-300"
                 : "border-gray-300 dark:border-dark-bg-tertiary"
             }`}
-            placeholder="请输入额度金额（美元）"
+            placeholder={t("keyManagement.quotaPlaceholder")}
           />
           {error && (
             <p className="mt-1 text-xs text-red-600 dark:text-red-400">

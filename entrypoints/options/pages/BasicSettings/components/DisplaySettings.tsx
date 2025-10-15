@@ -68,9 +68,9 @@ export default function DisplaySettings() {
                   }
                   focus:ring-green-500 dark:focus:ring-green-400
                 `}
-                aria-label="选择美元作为货币单位"
+                aria-label={t("basicSettings.usd")}
                 aria-pressed={currencyType === "USD"}>
-                美元 ($)
+                {t("basicSettings.usd")}
               </button>
               <button
                 onClick={() => handleCurrencyChange("CNY")}

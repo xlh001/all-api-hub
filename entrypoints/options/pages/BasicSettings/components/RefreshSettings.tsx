@@ -80,7 +80,7 @@ export default function RefreshSettings() {
   return (
     <section>
       <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-        刷新设置
+        {t("basicSettings.refreshSettings")}
       </h2>
       <div className="space-y-6">
         {/* 自动刷新 */}
@@ -146,10 +146,10 @@ export default function RefreshSettings() {
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              打开插件时自动刷新
+              {t("basicSettings.refreshOnOpen")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              当打开插件弹出层时自动刷新账号数据
+              {t("basicSettings.refreshOnOpenDesc")}
             </p>
           </div>
           <Switch
@@ -195,7 +195,7 @@ export default function RefreshSettings() {
               className="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
             />
             <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              秒
+              {t("basicSettings.seconds")}
             </span>
           </div>
         </div>

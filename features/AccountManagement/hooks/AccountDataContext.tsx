@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode
 } from "react"
-import toast from "react-hot-toast" // 1. 定义 Context 的值类型
+import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next" // 1. 定义 Context 的值类型
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { accountStorage } from "~/services/accountStorage"
@@ -58,6 +59,7 @@ export const AccountDataProvider = ({
   children: ReactNode
   refreshKey?: number
 }) => {
+  const { t } = useTranslation()
   const {
     currencyType,
     sortField: initialSortField,
@@ -183,10 +185,13 @@ export const AccountDataProvider = ({
         try {
           if (toast) {
             await toast.promise(handleRefresh(false), {
-              loading: "正在自动刷新所有账号...",
+              loading: t("account.refreshing_all_accounts"),
               success: (result) => {
                 if (result.failed > 0) {
-                  return `自动刷新完成: ${result.success} 成功, ${result.failed} 失败`
+                  return t("account.refresh_complete", {
+                    success: result.success,
+                    failed: result.failed
+                  })
                 }
                 const sum = result.success + result.failed
 
@@ -197,12 +202,15 @@ export const AccountDataProvider = ({
 
                 const refreshedCount = result.refreshedCount
                 if (refreshedCount < sum) {
-                  return `自动刷新完成：${refreshedCount} 个账号刷新成功，${sum - refreshedCount}个因刷新间隔未到未刷新`
+                  return t("account.refresh_complete", {
+                    success: refreshedCount,
+                    failed: sum - refreshedCount
+                  })
                 }
                 console.log("[Popup] 打开插件时自动刷新完成")
-                return "所有账号自动刷新成功！"
+                return t("account.refresh_success")
               },
-              error: "自动刷新失败，请稍后重试"
+              error: t("account.refresh_failed")
             })
           } else {
             await handleRefresh(false)
