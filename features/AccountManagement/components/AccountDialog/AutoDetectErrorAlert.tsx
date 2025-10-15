@@ -52,7 +52,7 @@ export default function AutoDetectErrorAlert({
                 <button
                   type="button"
                   onClick={handleActionClick}
-                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-800 dark:text-amber-200 bg-amber-10 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-800 rounded hover:bg-amber-200 dark:hover:bg-amber-900 transition-colors">
+                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-800 rounded hover:bg-amber-200 dark:hover:bg-amber-900 transition-colors">
                   {error.actionText}
                 </button>
               )}

@@ -90,7 +90,7 @@ export function TokenList({
     return (
       <div className="text-center py-12">
         <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-50 dark:text-dark-text-secondary">
+        <p className="text-gray-500 dark:text-dark-text-secondary">
           {t("keyManagement.pleaseSelectFirst")}
         </p>
       </div>

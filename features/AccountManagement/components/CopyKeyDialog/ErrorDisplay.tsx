@@ -20,7 +20,7 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
           <p className="text-sm text-red-700 dark:text-red-400 mt-1">{error}</p>
           <button
             onClick={onRetry}
-            className="mt-3 px-3 py-1.5 bg-red-10 dark:bg-red-900/50 text-red-800 dark:text-red-200 text-xs rounded-lg hover:bg-red-200 dark:hover:bg-red-900 transition-colors">
+            className="mt-3 px-3 py-1.5 bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 text-xs rounded-lg hover:bg-red-200 dark:hover:bg-red-900 transition-colors">
             {t("copyKeyDialog.retry")}
           </button>
         </div>

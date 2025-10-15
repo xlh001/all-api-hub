@@ -59,7 +59,7 @@ export default function AccountForm({
 }: AccountFormProps) {
   const { t } = useTranslation()
   const commonInputClasses =
-    "block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+    "block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
 
   return (
     <>
@@ -70,7 +70,7 @@ export default function AccountForm({
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <GlobeAltIcon className="h-5 w-5 text-gray-400 dark:text-gray-50" />
+            <GlobeAltIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
           </div>
           <input
             type="text"
@@ -95,7 +95,7 @@ export default function AccountForm({
           <select
             value={siteType}
             onChange={(e) => onSiteTypeChange(e.target.value)}
-            className="block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary">
+            className="block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary">
             {SITE_TITLE_RULES.map((rule) => (
               <option key={rule.name} value={rule.name}>
                 {rule.name}
@@ -132,7 +132,7 @@ export default function AccountForm({
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="text-gray-40 dark:text-gray-500 font-mono text-sm">
+            <span className="text-gray-400 dark:text-gray-500 font-mono text-sm">
               #
             </span>
           </div>
@@ -162,13 +162,13 @@ export default function AccountForm({
               value={accessToken}
               onChange={(e) => onAccessTokenChange(e.target.value)}
               placeholder={t("accountDialog.form.accessToken")}
-              className="block w-full pl-10 pr-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+              className="block w-full pl-10 pr-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
               required
             />
             <button
               type="button"
               onClick={onToggleShowAccessToken}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-30 transition-colors">
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
               {showAccessToken ? (
                 <EyeSlashIcon className="h-4 w-4" />
               ) : (

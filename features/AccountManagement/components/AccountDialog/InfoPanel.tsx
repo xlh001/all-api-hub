@@ -42,7 +42,7 @@ export default function InfoPanel({
   const iconColor = isAddMode ? "text-blue-400" : "text-green-400"
   const bgColor = isAddMode
     ? "bg-blue-50 dark:bg-blue-900/20"
-    : "bg-green-50 dark:bg-green-90/20"
+    : "bg-green-50 dark:bg-green-900/20"
   const borderColor = isAddMode
     ? "border-blue-100 dark:border-blue-900/30"
     : "border-green-100 dark:border-green-900/30"

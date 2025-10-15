@@ -21,7 +21,7 @@ export function KeyDisplay({
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
-        <span className="text-gray-50 dark:text-dark-text-tertiary">
+        <span className="text-gray-500 dark:text-dark-text-tertiary">
           {t("keyManagement.key")}
         </span>
         <code className="bg-gray-100 dark:bg-dark-bg-tertiary px-2 py-1 rounded font-mono text-xs text-gray-800 dark:text-dark-text-secondary">

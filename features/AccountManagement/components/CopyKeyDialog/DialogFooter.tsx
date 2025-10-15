@@ -22,7 +22,7 @@ export function DialogFooter({ tokenCount, onClose }: DialogFooterProps) {
         </div>
         <button
           onClick={onClose}
-          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-dark-text-secondary bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-bg-tertiary rounded hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary hover:border-gray-40 dark:hover:border-gray-500 transition-colors">
+          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-dark-text-secondary bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-bg-tertiary rounded hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
           {t("copyKeyDialog.close")}
         </button>
       </div>

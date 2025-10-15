@@ -75,7 +75,7 @@ export default function SiteInfoInput({
             <button
               type="button"
               onClick={onClearUrl}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-60 dark:hover:text-gray-300">
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <XCircleIcon className="h-5 w-5" />
             </button>
           )}
@@ -85,7 +85,7 @@ export default function SiteInfoInput({
             id="auth-type"
             value={authType}
             onChange={(e) => onAuthTypeChange(e.target.value as AuthTypeEnum)}
-            className="block py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+            className="block py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
             disabled={isDetected}>
             <option value={AuthTypeEnum.AccessToken}>Access Token</option>
             <option value={AuthTypeEnum.Cookie}>Cookie</option>

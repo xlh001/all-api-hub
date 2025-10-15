@@ -28,7 +28,7 @@ export default function FirefoxAddAccountWarningDialog({
         {/* 背景遮罩动画 */}
         <TransitionChild
           as={Fragment}
-          enter="ease-out duration-30"
+          enter="ease-out duration-300"
           enterFrom="opacity-0"
           enterTo="opacity-100"
           leave="ease-in duration-200"
@@ -48,8 +48,8 @@ export default function FirefoxAddAccountWarningDialog({
             enter="ease-out duration-300"
             enterFrom="opacity-0 scale-95 translate-y-4"
             enterTo="opacity-100 scale-100 translate-y-0"
-            leave="ease-in duration-20"
-            leaveFrom="opacity-100 scale-10 translate-y-0"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
             <DialogPanel className="w-full max-w-md bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all">
               {/* 头部 */}
@@ -73,20 +73,20 @@ export default function FirefoxAddAccountWarningDialog({
               <div className="p-4">
                 <div className="space-y-4">
                   <div className="text-center">
-                    <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-orange-50" />
+                    <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-orange-500" />
                     <div className="mt-3">
                       <h3 className="text-base font-medium text-gray-900 dark:text-dark-text-primary">
                         {t("firefox.limitation")}
                       </h3>
                       <div className="mt-2">
-                        <p className="text-sm text-gray-50 dark:text-dark-text-secondary">
+                        <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
                           {t("firefox.popupLimitation")}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-orange-50 dark:bg-orange-90/20 border border-orange-100 dark:border-orange-900/30 rounded-lg p-3">
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg p-3">
                     <div className="flex">
                       <div className="flex-shrink-0">
                         <ExclamationTriangleIcon className="h-5 w-5 text-orange-400 dark:text-orange-300" />

@@ -32,7 +32,7 @@ export function TokenDetails({
 
   return (
     <div className="px-3 pb-3 border-t border-gray-100 dark:border-dark-bg-tertiary bg-gray-50/30 dark:bg-dark-bg-primary">
-      <div className="flex items-center space-x-1 text-xs text-gray-50 dark:text-dark-text-secondary mb-3 pt-3">
+      <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-dark-text-secondary mb-3 pt-3">
         <ClockIcon className="w-3 h-3" />
         <span>
           {t("copyKeyDialog.expireTime", {
@@ -43,14 +43,14 @@ export function TokenDetails({
 
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
-          <div className="text-xs text-gray-50 dark:text-dark-text-secondary mb-0.5">
+          <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-0.5">
             {t("copyKeyDialog.usedQuota")}
           </div>
           <div className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary">
             {formatUsedQuota(token)}
           </div>
         </div>
-        <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-10 dark:border-dark-bg-tertiary">
+        <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
           <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-0.5">
             {t("copyKeyDialog.remainingQuota")}
           </div>
@@ -58,7 +58,7 @@ export function TokenDetails({
             className={`text-sm font-semibold ${
               token.unlimited_quota || token.remain_quota < 0
                 ? "text-green-600"
-                : token.remain_quota < 10000
+                : token.remain_quota < 1000000
                   ? "text-orange-600"
                   : "text-gray-900 dark:text-dark-text-primary"
             }`}>
@@ -67,7 +67,7 @@ export function TokenDetails({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border-gray-10 dark:border-dark-bg-tertiary">
+      <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wide">
             {t("copyKeyDialog.apiKey")}

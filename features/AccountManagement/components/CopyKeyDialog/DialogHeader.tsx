@@ -15,7 +15,7 @@ export function DialogHeader({ account, onClose }: DialogHeaderProps) {
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
       <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-60 rounded-lg flex items-center justify-center">
+        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
           <KeyIcon className="w-4 h-4 text-white" />
         </div>
         <div>
