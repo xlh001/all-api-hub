@@ -189,6 +189,12 @@ export const AccountDataProvider = ({
                   return `自动刷新完成: ${result.success} 成功, ${result.failed} 失败`
                 }
                 const sum = result.success + result.failed
+
+                // 避免无账号时，进行成功提示
+                if (sum === 0) {
+                  return null
+                }
+
                 const refreshedCount = result.refreshedCount
                 if (refreshedCount < sum) {
                   return `自动刷新完成：${refreshedCount} 个账号刷新成功，${sum - refreshedCount}个因刷新间隔未到未刷新`
