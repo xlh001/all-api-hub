@@ -1,4 +1,5 @@
 import iconImage from "~/assets/icon.png"
+import { LanguageSwitcher } from "~/components/LanguageSwitcher"
 
 interface HeaderProps {
   onTitleClick: () => void
@@ -8,7 +9,7 @@ function Header({ onTitleClick }: HeaderProps) {
   return (
     <header className="bg-white dark:bg-dark-bg-secondary shadow-sm border-b border-gray-200 dark:border-dark-bg-tertiary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16">
+        <div className="flex items-center justify-between h-16">
           {/* 插件图标和名称 */}
           <div
             className="flex items-center space-x-3 cursor-pointer"
@@ -27,6 +28,7 @@ function Header({ onTitleClick }: HeaderProps) {
               </p>
             </div>
           </div>
+          <LanguageSwitcher />
         </div>
       </div>
     </header>
