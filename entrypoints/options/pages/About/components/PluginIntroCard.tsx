@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next"
 
 import iconImage from "~/assets/icon.png"
-import { ABOUT_INTRO } from "~/constants/about"
 
 export interface PluginIntroCardProps {
   version: string
@@ -22,7 +21,7 @@ const PluginIntroCard = ({ version }: PluginIntroCardProps) => {
             All API Hub
           </h2>
           <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
-            {ABOUT_INTRO}
+            {t("about.intro")}
           </p>
           <div className="text-sm">
             <div>
