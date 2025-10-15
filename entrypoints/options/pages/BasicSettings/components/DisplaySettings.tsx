@@ -1,4 +1,5 @@
 import { EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -8,29 +9,30 @@ import ThemeToggle from "../../../components/ThemeToggle"
 import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function DisplaySettings() {
+  const { t } = useTranslation()
   const { currencyType, activeTab, updateCurrencyType, updateDefaultTab } =
     useUserPreferencesContext()
 
   const handleCurrencyChange = async (currency: CurrencyType) => {
     if (currency === currencyType) return
     const success = await updateCurrencyType(currency)
-    showUpdateToast(success, "货币单位")
+    showUpdateToast(success, t("basicSettings.currencyUnit"))
   }
 
   const handleDefaultTabChange = async (tab: BalanceType) => {
     if (tab === activeTab) return
     const success = await updateDefaultTab(tab)
-    showUpdateToast(success, "默认标签页")
+    showUpdateToast(success, t("basicSettings.defaultTab"))
   }
 
   return (
     <section className="space-y-6">
       <div className="space-y-2">
         <h2 className="text-xl font-bold text-gray-900 dark:text-dark-text-primary transition-colors">
-          显示设置
+          {t("basicSettings.displaySettings")}
         </h2>
         <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-          自定义插件的外观和显示偏好
+          {t("basicSettings.displayDesc")}
         </p>
       </div>
 
@@ -46,10 +48,10 @@ export default function DisplaySettings() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
-                  货币单位
+                  {t("basicSettings.currencyUnit")}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-                  设置余额和消费显示的默认货币单位
+                  {t("basicSettings.currencyDesc")}
                 </p>
               </div>
             </div>
@@ -82,9 +84,9 @@ export default function DisplaySettings() {
                   }
                   focus:ring-green-500 dark:focus:ring-green-400
                 `}
-                aria-label="选择人民币作为货币单位"
+                aria-label={t("basicSettings.cny")}
                 aria-pressed={currencyType === "CNY"}>
-                人民币 (¥)
+                {t("basicSettings.cny")}
               </button>
             </div>
           </div>
@@ -97,10 +99,10 @@ export default function DisplaySettings() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
-                  默认标签页
+                  {t("basicSettings.defaultTab")}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-                  设置插件启动时显示的默认标签页
+                  {t("basicSettings.defaultTabDesc")}
                 </p>
               </div>
             </div>
@@ -117,9 +119,9 @@ export default function DisplaySettings() {
                   }
                   focus:ring-blue-500 dark:focus:ring-blue-400
                 `}
-                aria-label="设置今日消耗为默认标签页"
+                aria-label={t("basicSettings.todayConsumption")}
                 aria-pressed={activeTab === DATA_TYPE_CONSUMPTION}>
-                今日消耗
+                {t("basicSettings.todayConsumption")}
               </button>
               <button
                 onClick={() => handleDefaultTabChange(DATA_TYPE_BALANCE)}
@@ -133,9 +135,9 @@ export default function DisplaySettings() {
                   }
                   focus:ring-blue-500 dark:focus:ring-blue-400
                 `}
-                aria-label="设置总余额为默认标签页"
+                aria-label={t("basicSettings.totalBalance")}
                 aria-pressed={activeTab === DATA_TYPE_BALANCE}>
-                总余额
+                {t("basicSettings.totalBalance")}
               </button>
             </div>
           </div>

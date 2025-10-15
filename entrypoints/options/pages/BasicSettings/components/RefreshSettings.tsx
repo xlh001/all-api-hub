@@ -1,12 +1,14 @@
 import { Switch } from "@headlessui/react"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function RefreshSettings() {
+  const { t } = useTranslation()
   const {
     autoRefresh,
     refreshOnOpen,
@@ -33,38 +35,46 @@ export default function RefreshSettings() {
 
   const handleAutoRefreshChange = async (value: boolean) => {
     const success = await updateAutoRefresh(value)
-    showUpdateToast(success, "自动刷新")
+    showUpdateToast(success, t("basicSettings.autoRefresh"))
   }
 
   const handleRefreshOnOpenChange = async (value: boolean) => {
     const success = await updateRefreshOnOpen(value)
-    showUpdateToast(success, "打开插件时自动刷新")
+    showUpdateToast(success, t("basicSettings.refreshOnOpen"))
   }
 
   const handleRefreshIntervalBlur = async () => {
     const value = parseInt(intervalInput, 10)
     if (isNaN(value) || value < 10) {
-      toast.error("刷新间隔不能小于10秒")
+      toast.error(
+        t("basicSettings.refreshInterval") +
+          " " +
+          t("basicSettings.minRefreshIntervalDesc")
+      )
       setIntervalInput(refreshInterval.toString())
       return
     }
     if (value === refreshInterval) return
 
     const success = await updateRefreshInterval(value)
-    showUpdateToast(success, "刷新间隔")
+    showUpdateToast(success, t("basicSettings.refreshInterval"))
   }
 
   const handleMinRefreshIntervalBlur = async () => {
     const value = parseInt(minIntervalInput, 10)
     if (isNaN(value) || value < 0 || value > 300) {
-      toast.error("最小刷新间隔必须在0到300秒之间")
+      toast.error(
+        t("basicSettings.minRefreshInterval") +
+          " " +
+          t("basicSettings.minRefreshIntervalDesc")
+      )
       setMinIntervalInput(minRefreshInterval.toString())
       return
     }
     if (value === minRefreshInterval) return
 
     const success = await updateMinRefreshInterval(value)
-    showUpdateToast(success, "最小刷新间隔")
+    showUpdateToast(success, t("basicSettings.minRefreshInterval"))
   }
 
   return (
@@ -77,10 +87,10 @@ export default function RefreshSettings() {
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              自动刷新
+              {t("basicSettings.autoRefresh")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              定期自动刷新账号数据
+              {t("basicSettings.autoRefreshDesc")}
             </p>
           </div>
           <Switch
@@ -104,10 +114,10 @@ export default function RefreshSettings() {
           <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
             <div>
               <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-                刷新间隔
+                {t("basicSettings.refreshInterval")}
               </h3>
               <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                设置自动刷新的时间间隔（默认360秒，建议不要设置过小以避免频繁请求）
+                {t("basicSettings.refreshIntervalDesc")}
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -126,7 +136,7 @@ export default function RefreshSettings() {
                 className="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
               />
               <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                秒
+                {t("basicSettings.seconds")}
               </span>
             </div>
           </div>
@@ -162,10 +172,10 @@ export default function RefreshSettings() {
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              最小刷新间隔
+              {t("basicSettings.minRefreshInterval")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              自动刷新时的最小时间间隔，避免频繁请求（手动刷新不受限制）
+              {t("basicSettings.minRefreshIntervalDesc")}
             </p>
           </div>
           <div className="flex items-center space-x-2">

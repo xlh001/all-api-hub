@@ -1,6 +1,7 @@
 import type { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -11,33 +12,33 @@ import { SortingPriorityDragList } from "./SortingPriorityDragList"
 
 // Maps sorting criteria IDs to their UI display text (label and description).
 // This keeps UI concerns separate from the data-only sorting configuration.
-const SORTING_CRITERIA_UI_TEXT: Record<
-  SortingCriteriaType,
-  { label: string; description?: string }
-> = {
+const getSortingCriteriaUiText = (
+  t: (key: string) => string
+): Record<SortingCriteriaType, { label: string; description?: string }> => ({
   [SortingCriteriaType.CURRENT_SITE]: {
-    label: "当前站点优先",
-    description: "将当前访问的站点置于列表顶部"
+    label: t("basicSettings.currentSitePriority"),
+    description: t("basicSettings.currentSiteDesc")
   },
   [SortingCriteriaType.HEALTH_STATUS]: {
-    label: "健康状态",
-    description: "按站点的健康状况排序（错误 > 警告 > 未知 > 健康）"
+    label: t("basicSettings.healthStatus"),
+    description: t("basicSettings.healthDesc")
   },
   [SortingCriteriaType.CHECK_IN_REQUIREMENT]: {
-    label: "签到需求",
-    description: "将需要签到的站点排在前面"
+    label: t("basicSettings.checkInRequirement"),
+    description: t("basicSettings.checkInDesc")
   },
   [SortingCriteriaType.USER_SORT_FIELD]: {
-    label: "用户自定义排序",
-    description: "根据用户在列表视图中选择的字段（如余额）进行排序"
+    label: t("basicSettings.userCustomSort"),
+    description: t("basicSettings.customSortDesc")
   },
   [SortingCriteriaType.CUSTOM_CHECK_IN_URL]: {
-    label: "自定义签到链接",
-    description: "将使用自定义签到链接的站点排在前面"
+    label: t("basicSettings.customCheckInUrl"),
+    description: t("basicSettings.customCheckInDesc")
   }
-}
+})
 
 function SortingPrioritySettingsContent() {
+  const { t } = useTranslation()
   const {
     sortingPriorityConfig: initialConfig,
     updateSortingPriorityConfig,
@@ -79,34 +80,35 @@ function SortingPrioritySettingsContent() {
         lastModified: Date.now()
       }
       const success = await updateSortingPriorityConfig(newConfig)
-      showUpdateToast(success, "排序优先级")
+      showUpdateToast(success, t("basicSettings.sortingPrioritySettings"))
     }
   }
 
   if (isLoading) {
-    return <div>加载中...</div>
+    return <div>{t("basicSettings.loading")}</div>
   }
 
   // Augment the data-only items with UI text for rendering
+  const sortingCriteriaUiText = getSortingCriteriaUiText(t)
   const augmentedItems = items.map((item) => ({
     ...item,
-    ...(SORTING_CRITERIA_UI_TEXT[item.id] || {
+    ...(sortingCriteriaUiText[item.id] || {
       label: item.id,
-      description: "未知排序规则"
+      description: t("basicSettings.unknownSortRule")
     })
   }))
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-        排序优先级设置
+        {t("basicSettings.sortingPrioritySettings")}
       </h2>
       <SortingPriorityDragList
         items={augmentedItems}
         onDragEnd={handleDragEnd}
       />
       <button onClick={handleSave} className={UI_CONSTANTS.STYLES.BUTTON.SAVE}>
-        保存
+        {t("basicSettings.save")}
       </button>
     </div>
   )

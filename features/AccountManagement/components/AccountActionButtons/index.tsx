@@ -72,7 +72,7 @@ export default function AccountActionButtons({
         toast.error(t("accountActions.fetch_key_info_failed"))
       }
     } catch (error) {
-      console.error("获取密钥列表失败:", error)
+      console.error("Failed to fetch key list:", error)
       const errorMessage = getErrorMessage(error)
       toast.error(t("accountActions.fetch_key_list_failed", { errorMessage }))
       // Fallback to opening dialog

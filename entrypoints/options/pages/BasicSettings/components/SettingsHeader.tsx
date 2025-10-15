@@ -8,11 +8,11 @@ export default function SettingsHeader() {
       <div className="flex items-center space-x-3 mb-2">
         <CogIcon className="w-6 h-6 text-blue-600" />
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-dark-text-primary">
-          {t("settings.title")}
+          {t("basicSettings.title")}
         </h1>
       </div>
       <p className="text-gray-500 dark:text-dark-text-secondary">
-        {t("settings.description")}
+        {t("basicSettings.displayDesc")}
       </p>
     </div>
   )

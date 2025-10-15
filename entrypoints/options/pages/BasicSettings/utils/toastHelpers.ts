@@ -1,4 +1,5 @@
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 /**
  * Shows a toast notification based on the success status of an operation.
@@ -9,7 +10,7 @@ import toast from "react-hot-toast"
 export const showSettingsToast = (
   success: boolean,
   successMsg: string,
-  errorMsg: string = "保存设置失败"
+  errorMsg: string = ""
 ): void => {
   if (success) {
     toast.success(successMsg)
@@ -24,8 +25,9 @@ export const showSettingsToast = (
  * @param setting - The name of the setting that was updated.
  */
 export const showUpdateToast = (success: boolean, setting: string): void => {
-  const successMsg = `${setting} 更新成功`
-  const errorMsg = `${setting} 更新失败`
+  const { t } = useTranslation()
+  const successMsg = `${setting} ${t("basicSettings.updateSuccess")}`
+  const errorMsg = `${setting} ${t("basicSettings.updateFailed")}`
   showSettingsToast(success, successMsg, errorMsg)
 }
 
@@ -34,7 +36,8 @@ export const showUpdateToast = (success: boolean, setting: string): void => {
  * @param success - Whether the reset was successful.
  */
 export const showResetToast = (success: boolean): void => {
-  const successMsg = "所有设置已重置为默认值"
-  const errorMsg = "重置设置失败"
+  const { t } = useTranslation()
+  const successMsg = t("basicSettings.resetSuccess")
+  const errorMsg = t("basicSettings.resetFailed")
   showSettingsToast(success, successMsg, errorMsg)
 }

@@ -1,11 +1,13 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function NewApiSettings() {
+  const { t } = useTranslation()
   const {
     newApiBaseUrl,
     newApiAdminToken,
@@ -53,7 +55,7 @@ export default function NewApiSettings() {
   return (
     <section>
       <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4 flex items-center">
-        New API 集成设置
+        {t("basicSettings.newApiIntegration")}
       </h2>
       <div className="space-y-6">
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
@@ -62,7 +64,7 @@ export default function NewApiSettings() {
               New API Base URL
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              设置用于 New API 集成的基础 URL
+              {t("basicSettings.newApiUrlDesc")}
             </p>
           </div>
           <input
@@ -81,7 +83,7 @@ export default function NewApiSettings() {
               Admin Token
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              用于访问 New API 管理员功能的令牌
+              {t("basicSettings.newApiTokenDesc")}
             </p>
           </div>
           <div className="relative w-72">
@@ -111,7 +113,7 @@ export default function NewApiSettings() {
               User ID
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              用于 New API 的用户识别 ID
+              {t("basicSettings.newApiUserIdDesc")}
             </p>
           </div>
           <input

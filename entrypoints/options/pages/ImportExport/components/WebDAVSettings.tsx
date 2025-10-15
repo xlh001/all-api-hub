@@ -5,17 +5,18 @@ import {
 } from "@heroicons/react/24/outline"
 import { useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { accountStorage } from "~/services/accountStorage"
 import { userPreferences } from "~/services/userPreferences"
 import {
   downloadBackup,
-  PROGRAM_NAME,
   testWebdavConnection,
   uploadBackup
 } from "~/services/webdavService"
 
 export default function WebDAVSettings() {
+  const { t } = useTranslation()
   // 配置表单
   const [webdavUrl, setWebdavUrl] = useState("")
   const [webdavUsername, setWebdavUsername] = useState("")
@@ -50,11 +51,11 @@ export default function WebDAVSettings() {
         <div className="flex items-center space-x-2">
           <ArrowPathIcon className="w-5 h-5 text-indigo-600" />
           <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-            WebDAV 备份与同步（手动）
+            {t("importExport.webdavBackupSync")}
           </h2>
         </div>
         <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
-          配置 WebDAV 并手动上传/下载备份文件
+          {t("importExport.webdavConfigDesc")}
         </p>
       </div>
 
@@ -63,11 +64,11 @@ export default function WebDAVSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              Webdav 地址
+              {t("importExport.webdavUrl")}
             </label>
             <input
               type="url"
-              placeholder={`例如：https://dav.example.com/${PROGRAM_NAME}.json 完整文件 URL或Webdav 根目录 URL`}
+              placeholder={t("importExport.webdavUrlExample")}
               value={webdavUrl}
               onChange={(e) => setWebdavUrl(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
@@ -76,7 +77,7 @@ export default function WebDAVSettings() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              用户名
+              {t("importExport.username")}
             </label>
             <input
               type="text"
@@ -87,7 +88,7 @@ export default function WebDAVSettings() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              密码
+              {t("importExport.password")}
             </label>
             <div className="relative">
               <input
@@ -121,17 +122,17 @@ export default function WebDAVSettings() {
                   webdavUsername,
                   webdavPassword
                 })
-                toast.success("WebDAV 配置已保存")
+                toast.success(t("importExport.saveSettingsFailed"))
               } catch (e) {
                 console.error(e)
-                toast.error("保存失败")
+                toast.error(t("importExport.saveSettingsFailed"))
               } finally {
                 setSaving(false)
               }
             }}
             disabled={saving}
             className="px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50">
-            {saving ? "保存中..." : "保存配置"}
+            {saving ? t("importExport.saving") : t("importExport.saveConfig")}
           </button>
 
           {/* 测试连接 */}
@@ -149,17 +150,19 @@ export default function WebDAVSettings() {
                   webdavUsername,
                   webdavPassword
                 })
-                toast.success("连接成功")
+                toast.success(t("importExport.updateSuccess"))
               } catch (e: any) {
                 console.error(e)
-                toast.error(e?.message || "连接失败")
+                toast.error(e?.message || t("importExport.updateFailed"))
               } finally {
                 setTesting(false)
               }
             }}
             disabled={testing || !webdavConfigFilled}
             className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50">
-            {testing ? "测试中..." : "测试连接"}
+            {testing
+              ? t("importExport.testing")
+              : t("importExport.testConnection")}
           </button>
 
           {/* 上传备份 */}
@@ -182,17 +185,19 @@ export default function WebDAVSettings() {
                   webdavUsername,
                   webdavPassword
                 })
-                toast.success("上传成功")
+                toast.success(t("importExport.dataExported"))
               } catch (e: any) {
                 console.error(e)
-                toast.error(e?.message || "上传失败")
+                toast.error(e?.message || t("importExport.exportFailed"))
               } finally {
                 setUploading(false)
               }
             }}
             disabled={uploading || !webdavConfigFilled}
             className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50">
-            {uploading ? "上传中..." : "上传备份"}
+            {uploading
+              ? t("importExport.uploading")
+              : t("importExport.uploadBackup")}
           </button>
 
           {/* 下载并导入 */}
@@ -232,21 +237,26 @@ export default function WebDAVSettings() {
                       await userPreferences.importPreferences(preferencesData)
                     if (success) {
                       importSuccess = true
-                      toast.success("用户设置导入成功")
+                      toast.success(t("importExport.importSuccess"))
                     }
                   }
                 }
-                if (!importSuccess) throw new Error("没有找到可导入的数据")
+                if (!importSuccess)
+                  throw new Error(t("importExport.noImportableDataFound"))
               } catch (e: any) {
                 console.error(e)
-                toast.error(e?.message || "下载/导入失败")
+                toast.error(
+                  e?.message || t("importExport.downloadImportFailed")
+                )
               } finally {
                 setDownloading(false)
               }
             }}
             disabled={downloading || !webdavConfigFilled}
             className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50">
-            {downloading ? "处理中..." : "下载并导入"}
+            {downloading
+              ? t("importExport.processing")
+              : t("importExport.downloadImport")}
           </button>
         </div>
       </div>

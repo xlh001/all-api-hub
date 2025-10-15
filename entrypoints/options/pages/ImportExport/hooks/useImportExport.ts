@@ -1,10 +1,12 @@
 import { useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { accountStorage } from "~/services/accountStorage"
 import { userPreferences } from "~/services/userPreferences"
 
 export const useImportExport = () => {
+  const { t } = useTranslation()
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importData, setImportData] = useState("")
@@ -25,7 +27,7 @@ export const useImportExport = () => {
   // 导入数据
   const handleImport = async () => {
     if (!importData.trim()) {
-      toast.error("请选择要导入的文件或输入数据")
+      toast.error(t("importExport.selectFileImport"))
       return
     }
 
@@ -36,7 +38,7 @@ export const useImportExport = () => {
 
       // 验证数据格式
       if (!data.version || !data.timestamp) {
-        throw new Error("数据格式不正确")
+        throw new Error(t("importExport.formatNotCorrect"))
       }
 
       let importSuccess = false
@@ -65,13 +67,13 @@ export const useImportExport = () => {
             await userPreferences.importPreferences(preferencesData)
           if (success) {
             importSuccess = true
-            toast.success("用户设置导入成功")
+            toast.success(t("importExport.importSuccess"))
           }
         }
       }
 
       if (!importSuccess) {
-        throw new Error("没有找到可导入的数据")
+        throw new Error(t("importExport.noImportableData"))
       }
 
       // 清空输入框
@@ -79,9 +81,11 @@ export const useImportExport = () => {
     } catch (error) {
       console.error("导入失败:", error)
       if (error instanceof SyntaxError) {
-        toast.error("数据格式错误，请检查JSON格式")
+        toast.error(t("importExport.formatError"))
       } else {
-        toast.error(`导入失败: ${getErrorMessage(error)}`)
+        toast.error(
+          t("importExport.importFailed", { error: getErrorMessage(error) })
+        )
       }
     } finally {
       setIsImporting(false)
@@ -102,8 +106,8 @@ export const useImportExport = () => {
         ),
         hasPreferences: !!(data.preferences || data.type === "preferences"),
         timestamp: data.timestamp
-          ? new Date(data.timestamp).toLocaleString("zh-CN")
-          : "未知"
+          ? new Date(data.timestamp).toLocaleString()
+          : t("importExport.unknown")
       }
     } catch {
       return { valid: false }

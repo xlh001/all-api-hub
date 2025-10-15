@@ -1,4 +1,5 @@
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import ExportSection from "./components/ExportSection"
 import ImportSection from "./components/ImportSection"
@@ -7,6 +8,7 @@ import WebDAVSettings from "./components/WebDAVSettings"
 import { useImportExport } from "./hooks/useImportExport"
 
 export default function ImportExport() {
+  const { t } = useTranslation()
   const {
     isExporting,
     setIsExporting,
@@ -50,13 +52,13 @@ export default function ImportExport() {
           <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
             <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-1">
-              重要提示
+              {t("importExport.importantNotice")}
             </p>
             <ul className="text-yellow-700 dark:text-yellow-300 space-y-1">
-              <li>• 导入数据将覆盖现有的相同类型数据，请谨慎操作</li>
-              <li>• 建议在导入前先导出当前数据进行备份</li>
-              <li>• 仅支持本插件导出的JSON格式文件</li>
-              <li>• 导入的账号数据包含敏感信息，请确保文件来源可信</li>
+              <li>{t("importExport.importWarning1")}</li>
+              <li>{t("importExport.importWarning2")}</li>
+              <li>{t("importExport.importWarning3")}</li>
+              <li>{t("importExport.importWarning4")}</li>
             </ul>
           </div>
         </div>

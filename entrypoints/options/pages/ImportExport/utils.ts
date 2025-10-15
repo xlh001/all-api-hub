@@ -1,4 +1,5 @@
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { accountStorage } from "~/services/accountStorage"
 import { userPreferences } from "~/services/userPreferences"
@@ -7,6 +8,7 @@ import { userPreferences } from "~/services/userPreferences"
 export const handleExportAll = async (
   setIsExporting: (isExporting: boolean) => void
 ) => {
+  const { t } = useTranslation()
   try {
     setIsExporting(true)
 
@@ -36,10 +38,10 @@ export const handleExportAll = async (
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success("数据导出成功")
+    toast.success(t("importExport.dataExported"))
   } catch (error) {
     console.error("导出失败:", error)
-    toast.error("导出失败，请重试")
+    toast.error(t("importExport.exportFailed"))
   } finally {
     setIsExporting(false)
   }
@@ -49,6 +51,7 @@ export const handleExportAll = async (
 export const handleExportAccounts = async (
   setIsExporting: (isExporting: boolean) => void
 ) => {
+  const { t } = useTranslation()
   try {
     setIsExporting(true)
 
@@ -72,10 +75,10 @@ export const handleExportAccounts = async (
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success("账号数据导出成功")
+    toast.success(t("importExport.accountsExported"))
   } catch (error) {
     console.error("导出账号数据失败:", error)
-    toast.error("导出失败，请重试")
+    toast.error(t("importExport.exportFailed"))
   } finally {
     setIsExporting(false)
   }
@@ -85,6 +88,7 @@ export const handleExportAccounts = async (
 export const handleExportPreferences = async (
   setIsExporting: (isExporting: boolean) => void
 ) => {
+  const { t } = useTranslation()
   try {
     setIsExporting(true)
 
@@ -108,10 +112,10 @@ export const handleExportPreferences = async (
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success("用户设置导出成功")
+    toast.success(t("importExport.settingsExported"))
   } catch (error) {
     console.error("导出用户设置失败:", error)
-    toast.error("导出失败，请重试")
+    toast.error(t("importExport.exportFailed"))
   } finally {
     setIsExporting(false)
   }
