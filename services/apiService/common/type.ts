@@ -23,6 +23,12 @@ export interface TodayUsageData {
   today_requests_count: number
 }
 
+export interface TodayIncomeData {
+  today_income: number
+}
+
+export type TodayStatsData = TodayUsageData & TodayIncomeData
+
 export interface AccountData extends TodayUsageData {
   quota: number
   /**
@@ -49,11 +55,6 @@ export interface SiteStatusInfo {
   PaymentUSDRate?: number
   system_name?: string
   check_in_enabled?: boolean
-}
-
-export interface CheckInStatus {
-  can_check_in: boolean
-  customUrl?: string
 }
 
 // 模型列表响应类型
@@ -86,12 +87,6 @@ export interface CreateTokenRequest {
   model_limits: string
   allow_ips: string
   group: string
-}
-
-// 创建令牌响应类型
-export interface CreateTokenResponse {
-  message: string
-  success: boolean
 }
 
 // 模型定价信息类型

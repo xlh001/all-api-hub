@@ -267,7 +267,7 @@ class AccountStorageService {
         )
         updateData.account_info = {
           ...(updateData.account_info || account.account_info),
-          today_income: todayIncome
+          today_income: todayIncome.today_income
         }
       } catch (error) {
         console.error(`获取账号 ${account.site_name} 今日收入失败:`, error)

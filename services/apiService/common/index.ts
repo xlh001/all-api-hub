@@ -12,6 +12,7 @@ import {
   PricingResponse,
   RefreshAccountResult,
   SiteStatusInfo,
+  TodayIncomeData,
   TodayUsageData,
   UpstreamModelItem,
   UpstreamModelList,
@@ -285,7 +286,7 @@ export const fetchTodayIncome = async (
   userId: number,
   accessToken: string,
   authType?: AuthTypeEnum
-): Promise<number> => {
+): Promise<TodayIncomeData> => {
   const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
 
   let totalIncome = 0
@@ -403,7 +404,7 @@ export const fetchTodayIncome = async (
     )
   }
 
-  return totalIncome
+  return { today_income: totalIncome }
 }
 
 /**
@@ -418,22 +419,22 @@ export const fetchAccountData = async (
 ): Promise<AccountData> => {
   const promises: Promise<any>[] = [
     fetchAccountQuota(baseUrl, userId, accessToken, authType),
-    fetchTodayUsage(baseUrl, userId, accessToken, authType)
+    fetchTodayUsage(baseUrl, userId, accessToken, authType),
+    fetchTodayIncome(baseUrl, userId, accessToken, authType)
   ]
 
   if (checkin?.enableDetection && !checkin.customCheckInUrl) {
     promises.push(fetchCheckInStatus(baseUrl, userId, accessToken, authType))
   }
 
-  const [quota, todayUsage, canCheckIn] = (await Promise.all(promises)) as [
-    number,
-    TodayUsageData,
-    boolean | undefined
-  ]
+  const [quota, todayUsage, todayIncome, canCheckIn] = (await Promise.all(
+    promises
+  )) as [number, TodayUsageData, TodayIncomeData, boolean | undefined]
 
   return {
     quota,
     ...todayUsage,
+    ...todayIncome,
     checkIn: {
       ...checkin,
       isCheckedInToday: canCheckIn
