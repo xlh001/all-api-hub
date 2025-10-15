@@ -417,19 +417,30 @@ export const fetchAccountData = async (
   checkin: CheckInConfig,
   authType?: AuthTypeEnum
 ): Promise<AccountData> => {
-  const promises: Promise<any>[] = [
-    fetchAccountQuota(baseUrl, userId, accessToken, authType),
-    fetchTodayUsage(baseUrl, userId, accessToken, authType),
-    fetchTodayIncome(baseUrl, userId, accessToken, authType)
-  ]
+  const quotaPromise = fetchAccountQuota(baseUrl, userId, accessToken, authType)
+  const todayUsagePromise = fetchTodayUsage(
+    baseUrl,
+    userId,
+    accessToken,
+    authType
+  )
+  const todayIncomePromise = fetchTodayIncome(
+    baseUrl,
+    userId,
+    accessToken,
+    authType
+  )
+  const checkInPromise =
+    checkin?.enableDetection && !checkin.customCheckInUrl
+      ? fetchCheckInStatus(baseUrl, userId, accessToken, authType)
+      : Promise.resolve<boolean | undefined>(undefined)
 
-  if (checkin?.enableDetection && !checkin.customCheckInUrl) {
-    promises.push(fetchCheckInStatus(baseUrl, userId, accessToken, authType))
-  }
-
-  const [quota, todayUsage, todayIncome, canCheckIn] = (await Promise.all(
-    promises
-  )) as [number, TodayUsageData, TodayIncomeData, boolean | undefined]
+  const [quota, todayUsage, todayIncome, canCheckIn] = await Promise.all([
+    quotaPromise,
+    todayUsagePromise,
+    todayIncomePromise,
+    checkInPromise
+  ])
 
   return {
     quota,
