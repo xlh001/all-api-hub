@@ -1,0 +1,43 @@
+{
+  "app": {
+    "name": "AI 中转站账号管理插件",
+    "description": "管理您的AI中转站账号的插件。"
+  },
+  "common": {
+    "refresh": "刷新",
+    "add": "添加",
+    "delete": "删除",
+    "edit": "编辑",
+    "copy": "复制",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "settings": "设置",
+    "open_full_management_page": "打开完整管理页面"
+  },
+  "account": {
+    "title": "账号",
+    "balance": "余额",
+    "token": "令牌",
+    "api_key": "API Key",
+    "account_management": "一键管理所有AI中转站",
+    "refreshing_all_accounts": "正在刷新所有账号...",
+    "refresh_complete": "刷新完成",
+    "refresh_failed_retry": "刷新失败，请稍后重试"
+  },
+  "status": {
+    "loading": "加载中...",
+    "success": "成功",
+    "error": "错误",
+    "failed": "失败"
+  },
+  "navigation": {
+    "home": "首页",
+    "settings": "设置",
+    "about": "关于"
+  },
+  "form": {
+    "label": "标签",
+    "placeholder": "占位符"
+  }
+}

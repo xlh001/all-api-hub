@@ -38,6 +38,7 @@ export interface UserPreferences {
 
   sortingPriorityConfig?: SortingPriorityConfig
   themeMode: ThemeMode
+  language?: string // Added language preference
 }
 
 // 存储键名常量
@@ -64,7 +65,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   newApiAdminToken: "",
   newApiUserId: "",
   sortingPriorityConfig: undefined,
-  themeMode: "system"
+  themeMode: "system",
+  language: undefined // Default to undefined to trigger browser detection
 }
 
 class UserPreferencesService {
@@ -287,6 +289,21 @@ class UserPreferencesService {
     const prefs = await this.getPreferences()
     const { sortingPriorityConfig, ...rest } = prefs
     return this.savePreferences(rest as any)
+  }
+
+  /**
+   * 获取语言偏好设置
+   */
+  async getLanguage(): Promise<string | undefined> {
+    const preferences = await this.getPreferences()
+    return preferences.language
+  }
+
+  /**
+   * 更新语言偏好设置
+   */
+  async setLanguage(language: string): Promise<boolean> {
+    return this.savePreferences({ language })
   }
 }
 

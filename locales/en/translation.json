@@ -1,0 +1,43 @@
+{
+  "app": {
+    "name": "AI Hub Account Management",
+    "description": "A plugin to manage your AI intermediary accounts."
+  },
+  "common": {
+    "refresh": "Refresh",
+    "add": "Add",
+    "delete": "Delete",
+    "edit": "Edit",
+    "copy": "Copy",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "settings": "Settings",
+    "open_full_management_page": "Open full management page"
+  },
+  "account": {
+    "title": "Account",
+    "balance": "Balance",
+    "token": "Token",
+    "api_key": "API Key",
+    "account_management": "Account Management",
+    "refreshing_all_accounts": "Refreshing all accounts...",
+    "refresh_complete": "Refresh complete",
+    "refresh_failed_retry": "Refresh failed, please try again later"
+  },
+  "status": {
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "failed": "Failed"
+  },
+  "navigation": {
+    "home": "Home",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "form": {
+    "label": "Label",
+    "placeholder": "Placeholder"
+  }
+}
