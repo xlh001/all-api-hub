@@ -149,7 +149,7 @@ export async function autoDetectAccount(
         userId: userId.toString(),
         exchangeRate: defaultExchangeRate,
         checkIn: {
-          enableDetection: checkSupport,
+          enableDetection: checkSupport ?? false,
           isCheckedInToday: false,
           customCheckInUrl: ""
         },
@@ -471,7 +471,7 @@ export async function autoConfigToNewApi(
 
       // 2. Create a new token if one doesn't exist
       if (!apiToken) {
-        const newTokenData = generateDefaultToken(account.site_name)
+        const newTokenData = generateDefaultToken()
         const createApiTokenRsult = await createApiToken(
           account.site_url,
           account.account_info.id,

@@ -199,7 +199,7 @@ export const fetchCheckInStatus = async (
  */
 export const fetchSupportCheckIn = async (
   baseUrl: string
-): Promise<boolean> => {
+): Promise<boolean | undefined> => {
   const siteStatus = await fetchSiteStatus(baseUrl)
   return siteStatus?.check_in_enabled
 }
