@@ -1,0 +1,14 @@
+{
+  "manifest_name": {
+    "message": "All API Hub"
+  },
+  "manifest_description": {
+    "message": "Manage all AI proxy stations with one click"
+  },
+  "manifest_commands_sidebar_action": {
+    "message": "Open All API Hub in sidebar"
+  },
+  "manifest_commands_browser_action": {
+    "message": "Open All API Hub in popup"
+  }
+}
