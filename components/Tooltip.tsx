@@ -1,4 +1,4 @@
-import { useId, type ReactElement, type ReactNode } from "react"
+import { type ReactElement, type ReactNode, useId } from "react"
 import { Tooltip as ReactTooltip } from "react-tooltip"
 
 interface TooltipProps {
@@ -34,7 +34,7 @@ export default function Tooltip({
 
   const isString = typeof content === "string"
 
-  const defaultClassName = `z-[9999] max-w-full bg-gray-900 dark:bg-dark-bg-tertiary text-white dark:text-dark-text-primary text-xs rounded-lg shadow-lg px-3 py-2 ${className}`
+  const defaultClassName = `z-[9999] max-w-[90vw] bg-gray-900 dark:bg-dark-bg-tertiary text-white dark:text-dark-text-primary text-xs rounded-lg shadow-lg px-3 py-2 ${className}`
   return (
     <>
       <span id={tooltipId} className={`inline-block ${wrapperClassName}`}>
