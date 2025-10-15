@@ -15,18 +15,8 @@ export default defineConfig({
       }
     },
     commands: {
-      _execute_sidebar_action: {
-        suggested_key: {
-          default: "Ctrl+Shift+S"
-        },
-        description: "Open sidebar"
-      },
-      _execute_browser_action: {
-        suggested_key: {
-          default: "Ctrl+Shift+A"
-        },
-        description: "Open popup"
-      }
+      _execute_sidebar_action: {},
+      _execute_browser_action: {}
     }
   }
 })
