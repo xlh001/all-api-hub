@@ -1,6 +1,7 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react"
 import React, { useMemo } from "react"
 import CountUp from "react-countup"
+import { useTranslation } from "react-i18next"
 
 import {
   DATA_TYPE_BALANCE,
@@ -45,30 +46,39 @@ const BalanceDisplay: React.FC<{
   onCurrencyToggle,
   isConsumption = false,
   compact = false
-}) => (
-  <div className="flex items-center space-x-1 break-all">
-    <button
-      onClick={onCurrencyToggle}
-      className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left`}
-      title={`点击切换到 ${currencyType === "USD" ? "人民币" : "美元"}`}>
-      {isConsumption && value > 0 ? "-" : ""}
-      {getCurrencySymbol(currencyType)}
-      <CountUp
-        start={startValue}
-        end={value}
-        duration={
-          isInitialLoad
-            ? UI_CONSTANTS.ANIMATION.INITIAL_DURATION
-            : UI_CONSTANTS.ANIMATION.UPDATE_DURATION
-        }
-        decimals={2}
-        preserveValue
-      />
-    </button>
-  </div>
-)
+}) => {
+  const { t } = useTranslation()
+  return (
+    <div className="flex items-center space-x-1 break-all">
+      <button
+        onClick={onCurrencyToggle}
+        className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left`}
+        title={t("common.click_to_switch_currency", {
+          currency:
+            currencyType === "USD"
+              ? t("common.currency_cny")
+              : t("common.currency_usd")
+        })}>
+        {isConsumption && value > 0 ? "-" : ""}
+        {getCurrencySymbol(currencyType)}
+        <CountUp
+          start={startValue}
+          end={value}
+          duration={
+            isInitialLoad
+              ? UI_CONSTANTS.ANIMATION.INITIAL_DURATION
+              : UI_CONSTANTS.ANIMATION.UPDATE_DURATION
+          }
+          decimals={2}
+          preserveValue
+        />
+      </button>
+    </div>
+  )
+}
 
 export const BalanceTabs: React.FC = () => {
+  const { t } = useTranslation()
   const { accounts, displayData, stats, isInitialLoad, prevTotalConsumption } =
     useAccountDataContext()
   const { activeTab, currencyType, updateActiveTab, updateCurrencyType } =
@@ -114,8 +124,8 @@ export const BalanceTabs: React.FC = () => {
         onChange={handleTabChange}>
         <div className="flex justify-start mb-3">
           <TabList className="flex space-x-1 bg-gray-100 dark:bg-dark-bg-primary rounded-lg p-1">
-            <StyledTab>今日统计</StyledTab>
-            <StyledTab>总余额</StyledTab>
+            <StyledTab>{t("common.today_stats")}</StyledTab>
+            <StyledTab>{t("common.total_balance")}</StyledTab>
           </TabList>
         </div>
 
@@ -124,7 +134,7 @@ export const BalanceTabs: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">
-                  今日消耗
+                  {t("common.today_consumption")}
                 </span>
                 <BalanceDisplay
                   value={totalConsumption[currencyType]}
@@ -140,7 +150,7 @@ export const BalanceTabs: React.FC = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">
-                  今日收入
+                  {t("common.today_income")}
                 </span>
                 <BalanceDisplay
                   value={totalIncome[currencyType]}

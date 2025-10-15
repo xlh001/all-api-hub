@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "AI 中转站账号管理插件",
-    "description": "管理您的AI中转站账号的插件。"
+    "name": "All API Hub",
+    "description": "一键管理所有AI中转站"
   },
   "common": {
     "refresh": "刷新",
@@ -13,7 +13,17 @@
     "cancel": "取消",
     "confirm": "确认",
     "settings": "设置",
-    "open_full_management_page": "打开完整管理页面"
+    "open_full_page": "打开完整管理页面",
+    "refresh_data": "刷新数据",
+    "key_management": "密钥管理",
+    "model_list": "模型列表",
+    "click_to_switch_currency": "点击切换到{currency}",
+    "currency_cny": "人民币",
+    "currency_usd": "美元",
+    "today_stats": "今日统计",
+    "total_balance": "总余额",
+    "today_consumption": "今日消耗",
+    "today_income": "今日收入"
   },
   "account": {
     "title": "账号",
@@ -22,8 +32,10 @@
     "api_key": "API Key",
     "account_management": "一键管理所有AI中转站",
     "refreshing_all_accounts": "正在刷新所有账号...",
-    "refresh_complete": "刷新完成",
-    "refresh_failed_retry": "刷新失败，请稍后重试"
+    "refresh_complete": "刷新完成: {{success}} 成功, {{failed}} 失败",
+    "refresh_success": "所有账号刷新成功！",
+    "refresh_failed": "刷新失败，请稍后重试",
+    "add_account": "新增账号"
   },
   "status": {
     "loading": "加载中...",

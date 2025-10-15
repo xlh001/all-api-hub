@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "AI Hub Account Management",
-    "description": "A plugin to manage your AI intermediary accounts."
+    "name": "All API Hub",
+    "description": "Manage all AI proxy stations with one click"
   },
   "common": {
     "refresh": "Refresh",
@@ -13,7 +13,17 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "settings": "Settings",
-    "open_full_management_page": "Open full management page"
+    "open_full_page": "Open Full Management Page",
+    "refresh_data": "Refresh Data",
+    "key_management": "Key Management",
+    "model_list": "Model List",
+    "click_to_switch_currency": "Click to switch to {currency}",
+    "currency_cny": "CNY",
+    "currency_usd": "USD",
+    "today_stats": "Today's Stats",
+    "total_balance": "Total Balance",
+    "today_consumption": "Today's Consumption",
+    "today_income": "Today's Income"
   },
   "account": {
     "title": "Account",
@@ -22,8 +32,10 @@
     "api_key": "API Key",
     "account_management": "Account Management",
     "refreshing_all_accounts": "Refreshing all accounts...",
-    "refresh_complete": "Refresh complete",
-    "refresh_failed_retry": "Refresh failed, please try again later"
+    "refresh_complete": "Refresh complete: {{success}} success, {{failed}} failed",
+    "refresh_success": "All accounts refreshed successfully!",
+    "refresh_failed": "Refresh failed, please try again later",
+    "add_account": "Add Account"
   },
   "status": {
     "loading": "Loading...",

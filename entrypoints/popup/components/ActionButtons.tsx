@@ -1,4 +1,5 @@
 import { CpuChipIcon, KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
 import { UI_CONSTANTS } from "~/constants/ui"
@@ -15,6 +16,7 @@ interface ActionButtonsProps {
 export default function ActionButtons({
   inSidePanel = false
 }: ActionButtonsProps) {
+  const { t } = useTranslation()
   const { openAddAccount } = useDialogStateContext()
 
   const handleAddAccountClick = () => {
@@ -40,16 +42,16 @@ export default function ActionButtons({
           onClick={handleAddAccountClick}
           className={UI_CONSTANTS.STYLES.BUTTON.PRIMARY}>
           <PlusIcon className="w-4 h-4" />
-          <span>新增账号</span>
+          <span>{t("account.add_account")}</span>
         </button>
-        <Tooltip content="密钥管理">
+        <Tooltip content={t("common.key_management")}>
           <button
             onClick={handleOpenKeysPageClick}
             className={UI_CONSTANTS.STYLES.BUTTON.ICON}>
             <KeyIcon className="w-4 h-4" />
           </button>
         </Tooltip>
-        <Tooltip content="模型列表">
+        <Tooltip content={t("common.model_list")}>
           <button
             onClick={handleOpenModelsPageClick}
             className={UI_CONSTANTS.STYLES.BUTTON.ICON}>

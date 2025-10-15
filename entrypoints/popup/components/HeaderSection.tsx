@@ -5,6 +5,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useCallback } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import iconImage from "~/assets/icon.png"
 import Tooltip from "~/components/Tooltip"
@@ -15,24 +16,28 @@ import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
 import CompactThemeToggle from "./ThemeToggle"
 
 export default function HeaderSection() {
+  const { t } = useTranslation()
   const { isRefreshing, handleRefresh } = useAccountDataContext()
 
   const handleGlobalRefresh = useCallback(async () => {
     try {
       await toast.promise(handleRefresh(true), {
-        loading: "正在刷新所有账号...",
+        loading: t("account.refreshing_all_accounts"),
         success: (result) => {
           if (result.failed > 0) {
-            return `刷新完成: ${result.success} 成功, ${result.failed} 失败`
+            return t("account.refresh_complete", {
+              success: result.success,
+              failed: result.failed
+            })
           }
-          return "所有账号刷新成功！"
+          return t("account.refresh_success")
         },
-        error: "刷新失败，请稍后重试"
+        error: t("account.refresh_failed")
       })
     } catch (error) {
       console.error("Error during global refresh:", error)
     }
-  }, [handleRefresh])
+  }, [handleRefresh, t])
 
   const handleOpenFullManagerPage = () => {
     openFullManagerPage()
@@ -47,40 +52,40 @@ export default function HeaderSection() {
       <div className="flex items-center space-x-3">
         <img
           src={iconImage}
-          alt="All API Hub"
+          alt={t("app.name")}
           className="w-7 h-7 rounded-lg shadow-sm"
         />
         <div className="flex flex-col">
           <span className="font-semibold text-gray-900 dark:text-dark-text-primary">
-            All API Hub
+            {t("app.name")}
           </span>
           <span className="text-xs text-gray-500 dark:text-dark-text-secondary">
-            一键管理所有AI中转站
+            {t("app.description")}
           </span>
         </div>
       </div>
 
       <div className="flex items-center space-x-2">
         <CompactThemeToggle />
-        <Tooltip content="刷新数据">
+        <Tooltip content={t("common.refresh_data")}>
           <button
             onClick={handleGlobalRefresh}
             disabled={isRefreshing}
             className={`${UI_CONSTANTS.STYLES.BUTTON.ICON} ${isRefreshing ? "animate-spin" : ""}`}
-            title="刷新数据">
+            title={t("common.refresh_data")}>
             <ArrowPathIcon className="w-4 h-4" />
           </button>
         </Tooltip>
         <button
           onClick={handleOpenFullManagerPage}
           className={UI_CONSTANTS.STYLES.BUTTON.ICON}
-          title="打开完整管理页面">
+          title={t("common.open_full_page")}>
           <ArrowsPointingOutIcon className="w-4 h-4" />
         </button>
         <button
           onClick={handleOpenSetting}
           className={UI_CONSTANTS.STYLES.BUTTON.ICON}
-          title="设置">
+          title={t("common.settings")}>
           <Cog6ToothIcon className="w-4 h-4" />
         </button>
       </div>
