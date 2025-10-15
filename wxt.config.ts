@@ -14,9 +14,14 @@ export default defineConfig({
         id: "{bc73541a-133d-4b50-b261-36ea20df0d24}"
       }
     },
+    // todo: i18n
     commands: {
-      _execute_sidebar_action: {},
-      _execute_browser_action: {}
+      _execute_sidebar_action: {
+        description: ""
+      },
+      _execute_browser_action: {
+        description: ""
+      }
     }
   }
 })
