@@ -131,19 +131,40 @@ export interface ApiResponse<T = any> {
 }
 
 /**
+ * 日志类型。
+ * - `0` 所有
+ * - `1` 充值
+ * - `2` 消费
+ * - `3` 管理
+ * - `4` 错误
+ * - `5` 系统
+ */
+export enum LogType {
+  /** 所有 */ All = 0,
+  /** 充值 */ Recharge = 1,
+  /** 消费 */ Consume = 2,
+  /** 管理 */ Admin = 3,
+  /** 错误 */ Error = 4,
+  /** 系统 */ System = 5
+}
+
+/**
  * 日志条目
- * https://github.com/QuantumNous/new-api/blob/aa35d8db69b50d6401550bd34b6f37ef5863acd0/model/log.go#L20
+ * @see https://github.com/QuantumNous/new-api/blob/aa35d8db69b50d6401550bd34b6f37ef5863acd0/model/log.go#L20
  */
 export interface LogItem {
   id: number
   user_id: number
   created_at: number
   /**
-   * 日志类型，可选值：1=充值，2=消费，3=管理，4=错误，5=系统 log.go：41-48
+   * 日志类型，可选值：1=充值，2=消费，3=管理，4=错误，5=系统
    */
-  type: number
+  type: LogType
   /**
-   * 系统消息内容，含有 签到奖励 ＄10.586246 额度等说明文字
+   * 系统消息内容，说明文字
+   * @example
+   * 签到奖励 ＄10.586246 额度
+   * 通过兑换码充值 ＄0.200000 额度，兑换码ID 1
    */
   content: string
   username: string

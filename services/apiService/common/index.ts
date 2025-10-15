@@ -1,12 +1,13 @@
 import { UI_CONSTANTS } from "~/constants/ui.ts"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import { ApiError } from "~/services/apiService/common/errors"
-import type {
+import {
   AccessTokenInfo,
   AccountData,
   CreateTokenRequest,
   HealthCheckResult,
   LogResponseData,
+  LogType,
   PaginatedTokenResponse,
   PricingResponse,
   RefreshAccountResult,
@@ -297,7 +298,7 @@ export const fetchTodayIncome = async (
       const params = new URLSearchParams({
         p: currentPage.toString(),
         page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
-        type: "1",
+        type: String(LogType.Recharge),
         token_name: "",
         model_name: "",
         start_timestamp: startTimestamp.toString(),
@@ -350,7 +351,7 @@ export const fetchTodayIncome = async (
       const params = new URLSearchParams({
         p: currentPage.toString(),
         page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
-        type: "5",
+        type: String(LogType.System),
         token_name: "",
         model_name: "",
         start_timestamp: startTimestamp.toString(),
