@@ -8,6 +8,7 @@ import {
   HealthCheckResult,
   LogResponseData,
   LogType,
+  OpenAIAuthParams,
   PaginatedTokenResponse,
   PricingResponse,
   RefreshAccountResult,
@@ -575,21 +576,19 @@ export const fetchAvailableModels = async ({
 }
 
 /**
- * 获取上游模型列表
+ * 获取站点Key的模型列表（OpenAI类型接口）
  * @param baseUrl
  * @param accessToken
  */
 export const fetchUpstreamModels = async ({
   baseUrl,
-  token: accessToken,
-  authType
-}) => {
+  apiKey
+}: OpenAIAuthParams) => {
   try {
     return await fetchApiData<UpstreamModelList>({
       baseUrl,
       endpoint: "/v1/models",
-      token: accessToken,
-      authType
+      token: apiKey
     })
   } catch (error) {
     console.error("获取上游模型列表失败:", error)
@@ -599,13 +598,11 @@ export const fetchUpstreamModels = async ({
 
 export const fetchUpstreamModelsNameList = async ({
   baseUrl,
-  token: accessToken,
-  authType
-}) => {
+  apiKey
+}: OpenAIAuthParams) => {
   const upstreamModels = await fetchUpstreamModels({
     baseUrl: baseUrl,
-    token: accessToken,
-    authType
+    apiKey: apiKey
   })
   return upstreamModels.map((item: UpstreamModelItem) => item.id)
 }

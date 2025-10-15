@@ -184,14 +184,7 @@ export interface FetchApiParams {
 }
 
 const _fetchApi = async <T>(
-  {
-    baseUrl,
-    endpoint,
-    userId,
-    token,
-    authType = AuthTypeEnum.AccessToken,
-    options
-  }: FetchApiParams,
+  { baseUrl, endpoint, userId, token, authType, options }: FetchApiParams,
   isData: boolean
 ) => {
   const url = joinUrl(baseUrl, endpoint)
@@ -204,6 +197,7 @@ const _fetchApi = async <T>(
       authOptions = createTokenAuthRequest(userId, token!)
       break
     case AuthTypeEnum.None:
+    default:
       authOptions = {}
       break
   }

@@ -190,6 +190,16 @@ export type AuthFetchParams = {
   token: string
 }
 
+/**
+ * OpenAI 模型请求认证参数
+ */
+export interface OpenAIAuthParams {
+  // API 基础地址
+  baseUrl: string
+  /** API Key */
+  apiKey: string
+}
+
 // 上游模型列表（OpenAI格式）
 export type UpstreamModelItem = {
   id: string

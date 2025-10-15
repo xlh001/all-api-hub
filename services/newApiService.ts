@@ -131,11 +131,10 @@ export async function importToNewApi(
 
     // 获取账户支持的模型列表
     const availableModels =
-      (await fetchUpstreamModelsNameList(
-        { baseUrl: account.baseUrl, token: token.key },
-        // @ts-ignore
-        account
-      )) ?? (await fetchAvailableModels(account))
+      (await fetchUpstreamModelsNameList({
+        baseUrl: account.baseUrl,
+        apiKey: token.key
+      })) ?? (await fetchAvailableModels(account))
 
     // 检查是否有匹配的渠道
     if (searchResults.total > 0) {
