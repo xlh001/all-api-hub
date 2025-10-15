@@ -4,6 +4,7 @@ import { ApiError } from "~/services/apiService/common/errors"
 import {
   AccessTokenInfo,
   AccountData,
+  AuthTypeFetchParams,
   CreateTokenRequest,
   HealthCheckResult,
   LogResponseData,
@@ -511,7 +512,7 @@ export const validateAccountConnection = async (
  * 获取账号令牌列表
  */
 export const fetchAccountTokens = async (
-  { baseUrl, userId, token: accessToken, authType },
+  { baseUrl, userId, token: accessToken, authType }: AuthTypeFetchParams,
   page: number = 0,
   size: number = 100
 ): Promise<ApiToken[]> => {
@@ -560,7 +561,7 @@ export const fetchAvailableModels = async ({
   userId,
   token: accessToken,
   authType
-}): Promise<string[]> => {
+}: AuthTypeFetchParams): Promise<string[]> => {
   try {
     return await fetchApiData<string[]>({
       baseUrl,
@@ -615,7 +616,7 @@ export const fetchUserGroups = async ({
   userId,
   token: accessToken,
   authType
-}): Promise<Record<string, UserGroupInfo>> => {
+}: AuthTypeFetchParams): Promise<Record<string, UserGroupInfo>> => {
   try {
     return await fetchApiData<Record<string, UserGroupInfo>>({
       baseUrl,
@@ -777,22 +778,19 @@ export const fetchModelPricing = async ({
   userId,
   token: accessToken,
   authType
-}): Promise<PricingResponse> => {
+}: AuthTypeFetchParams): Promise<PricingResponse> => {
   try {
     // /api/pricing 接口直接返回 PricingResponse 格式，不需要通过 apiRequestData 包装
-    const data = await fetchApi<PricingResponse["data"]>({
-      baseUrl,
-      endpoint: "/api/pricing",
-      userId,
-      token: accessToken,
-      authType
-    })
-
-    if (!data.success) {
-      throw new ApiError("获取定价信息失败", undefined, "/api/pricing")
-    }
-
-    return data as PricingResponse
+    return await fetchApi<PricingResponse>(
+      {
+        baseUrl,
+        endpoint: "/api/pricing",
+        userId,
+        token: accessToken,
+        authType
+      },
+      true
+    )
   } catch (error) {
     console.error("获取模型定价失败:", error)
     throw error

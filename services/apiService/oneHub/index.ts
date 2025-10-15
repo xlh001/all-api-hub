@@ -52,7 +52,7 @@ export const fetchModelPricing = async (
  * 获取账号令牌列表
  */
 export const fetchAccountTokens = async (
-  { baseUrl, userId, token: accessToken },
+  { baseUrl, userId, token: accessToken }: AuthFetchParams,
   page: number = 0,
   size: number = 100
 ): Promise<ApiToken[]> => {
@@ -99,7 +99,7 @@ export const fetchUserGroups = async ({
   baseUrl,
   userId,
   token: accessToken
-}): Promise<Record<string, OneHubUserGroupInfo>> => {
+}: AuthFetchParams): Promise<Record<string, OneHubUserGroupInfo>> => {
   try {
     const response = await fetchApiData<OneHubUserGroupsResponse["data"]>({
       baseUrl,

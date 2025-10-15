@@ -1,7 +1,7 @@
 /**
  * API 服务 - 用于与 One API/New API 站点进行交互
  */
-import type { ApiToken, CheckInConfig } from "~/types"
+import { ApiToken, AuthTypeEnum, CheckInConfig } from "~/types"
 import type { PerCallPrice } from "~/utils/modelPricing"
 
 // ============= 类型定义 =============
@@ -184,10 +184,26 @@ export interface LogResponseData {
   total: number
 }
 
-export type AuthFetchParams = {
+/**
+ * 基础请求参数（无需认证）
+ */
+export interface BaseFetchParams {
   baseUrl: string
   userId: number
+}
+
+/**
+ * 带认证信息的请求参数（使用 token 验证）
+ */
+export interface AuthFetchParams extends BaseFetchParams {
   token: string
+}
+
+/**
+ * 带认证类型的请求参数
+ */
+export interface AuthTypeFetchParams extends AuthFetchParams {
+  authType: AuthTypeEnum
 }
 
 /**

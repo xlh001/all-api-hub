@@ -226,16 +226,23 @@ export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
   return (await _fetchApi(params, true)) as T
 }
 
+export function fetchApi<T>(params: FetchApiParams, onlyData: true): Promise<T>
+export function fetchApi<T>(
+  params: FetchApiParams,
+  onlyData?: false
+): Promise<ApiResponse<T>>
+
 /**
  * 通用 API 请求函数
  * @param params
+ * @param _onlyData
  */
-export const fetchApi = async <T>(
-  params: FetchApiParams
-): Promise<ApiResponse<T>> => {
-  return (await _fetchApi(params, false)) as ApiResponse<T>
+export async function fetchApi<T>(
+  params: FetchApiParams,
+  _onlyData?: boolean
+): Promise<T | ApiResponse<T>> {
+  return await _fetchApi(params, false)
 }
-
 /**
  * 从文本中提取金额及货币符号
  * @param {string} text - 输入文本
