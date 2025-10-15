@@ -207,7 +207,13 @@
     "basic_settings": "Basic Settings",
     "display": "Display",
     "refresh": "Refresh",
-    "danger_zone": "Danger Zone"
+    "danger_zone": "Danger Zone",
+    "appearance": "Appearance",
+    "selectTheme": "Select an appearance theme",
+    "currentTheme": "Current: Follow system ({{theme}})",
+    "priority": "Priority",
+    "accountManagement": "Account Management",
+    "viewManageAccounts": "View and manage site accounts"
   },
   "keyManagement": {
     "title": "Key Management",

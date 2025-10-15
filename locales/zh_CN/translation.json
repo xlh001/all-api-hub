@@ -207,7 +207,13 @@
     "basic_settings": "基础设置",
     "display": "显示",
     "refresh": "刷新",
-    "danger_zone": "危险区"
+    "danger_zone": "危险区",
+    "appearance": "外观",
+    "selectTheme": "选择一个外观主题",
+    "currentTheme": "当前: 跟随系统 ({{theme}})",
+    "priority": "优先级",
+    "accountManagement": "账户管理",
+    "viewManageAccounts": "查看和管理站点账户"
   },
   "keyManagement": {
     "title": "密钥管理",

@@ -126,7 +126,7 @@ export default function About() {
         {/* 技术栈 */}
         <section>
           <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-            {t("about.techStack.title")}
+            {t("about.techStack")}
           </h2>
           <TechStackGrid items={techStack} />
         </section>
