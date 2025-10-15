@@ -102,26 +102,28 @@ export default function About() {
         </section>
 
         {/* 功能特性 */}
-        <section>
-          <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-            {t("about.features")}
-          </h2>
-          <div className="space-y-6">
-            {/* 主要功能 */}
-            <FeatureList
-              title={t("about.implementedFeatures")}
-              items={FEATURES}
-              color="green"
-            />
+        {isNotEmptyArray(FEATURES) && isNotEmptyArray(FUTURE_FEATURES) && (
+          <section>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
+              {t("about.features")}
+            </h2>
+            <div className="space-y-6">
+              {/* 主要功能 */}
+              <FeatureList
+                title={t("about.implementedFeatures")}
+                items={FEATURES}
+                color="green"
+              />
 
-            {/* 未来功能 */}
-            <FeatureList
-              title={t("about.upcomingFeatures")}
-              items={FUTURE_FEATURES}
-              color="blue"
-            />
-          </div>
-        </section>
+              {/* 未来功能 */}
+              <FeatureList
+                title={t("about.upcomingFeatures")}
+                items={FUTURE_FEATURES}
+                color="blue"
+              />
+            </div>
+          </section>
+        )}
 
         {/* 技术栈 */}
         <section>
