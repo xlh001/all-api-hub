@@ -55,7 +55,7 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
           {/* 计费模式标签 */}
           <span
             className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${billingStyle.color} ${billingStyle.bgColor}`}>
-            {getBillingModeText(model.quota_type, t)}
+            {getBillingModeText(model.quota_type)}
           </span>
 
           {/* 可用状态标签 */}
