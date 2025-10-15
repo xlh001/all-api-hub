@@ -4,6 +4,7 @@ import {
   SunIcon
 } from "@heroicons/react/24/outline"
 import React from "react"
+import { useTranslation } from "react-i18next"
 
 import { useTheme } from "~/contexts/ThemeContext"
 import type { ThemeMode } from "~/types/theme"
@@ -36,6 +37,7 @@ const themeOptions: {
 
 const CompactThemeToggle = () => {
   const { themeMode, setThemeMode, resolvedTheme } = useTheme()
+  const { t } = useTranslation()
 
   const currentIndex = themeOptions.findIndex(
     (option) => option.mode === themeMode
@@ -50,6 +52,14 @@ const CompactThemeToggle = () => {
     setThemeMode(nextTheme.mode)
   }
 
+  // Get the resolved theme label for system mode
+  const resolvedThemeLabel =
+    themeMode === "system"
+      ? resolvedTheme === "dark"
+        ? t("theme.dark")
+        : t("theme.light")
+      : t(`theme.${currentTheme?.mode}`)
+
   return (
     <button
       onClick={handleThemeToggle}
@@ -62,8 +72,18 @@ const CompactThemeToggle = () => {
         focus:ring-blue-500 dark:focus:ring-blue-400
         shadow-sm hover:shadow-md
       `}
-      title={`当前: ${currentTheme?.label} (${themeMode === "system" ? (resolvedTheme === "dark" ? "深色" : "浅色") : currentTheme?.label})\n点击切换到${nextTheme.label}模式`}
-      aria-label={`主题切换，当前${currentTheme?.label}模式，点击切换到${nextTheme.label}模式`}>
+      title={
+        t("theme.current", {
+          theme: t(`theme.${currentTheme?.mode}`),
+          resolvedTheme: resolvedThemeLabel
+        }) +
+        "\n" +
+        t("theme.clickSwitch", { nextMode: t(`theme.${nextTheme.mode}`) })
+      }
+      aria-label={t("theme.toggle", {
+        currentMode: t(`theme.${currentTheme?.mode}`),
+        nextMode: t(`theme.${nextTheme.mode}`)
+      })}>
       <CurrentIcon
         className={`
         w-5 h-5 transition-colors duration-200

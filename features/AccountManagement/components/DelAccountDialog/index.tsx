@@ -6,6 +6,7 @@ import {
 } from "@headlessui/react"
 import { Fragment } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { accountStorage } from "~/services/accountStorage"
 import type { DisplaySiteData } from "~/types"
@@ -28,21 +29,24 @@ export default function DelAccountDialog({
   account,
   onDeleted
 }: DelAccountDialogProps) {
+  const { t } = useTranslation()
+
   const handleDelete = async () => {
     if (!account) return
 
     try {
       await toast.promise(accountStorage.deleteAccount(account.id), {
-        loading: `正在删除账号 ${account.name}...`,
+        loading: t("deleteDialog.deleting", { name: account.name }),
         success: (isSuccess) => {
           if (!isSuccess) {
-            throw new Error("删除操作未成功返回")
+            throw new Error(t("deleteDialog.noResponse"))
           }
           onDeleted()
           onClose()
-          return `账号 ${account.name} 删除成功!`
+          return t("deleteDialog.deleteSuccess", { name: account.name })
         },
-        error: (err: Error) => `删除失败: ${err.message || "未知错误"}`
+        error: (err: Error) =>
+          t("deleteDialog.deleteFailed", { error: err.message || "未知错误" })
       })
     } catch (error) {
       // toast.promise already handles showing the error toast

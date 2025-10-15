@@ -6,6 +6,7 @@ import {
   MagnifyingGlassIcon
 } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 
@@ -46,16 +47,17 @@ export function ControlPanel({
   totalModels,
   filteredModels
 }: ControlPanelProps) {
+  const { t } = useTranslation()
   const handleCopyModelNames = () => {
     if (filteredModels.length === 0) {
-      toast.error("没有可复制的模型")
+      toast.error(t("modelList.noMatchingModels"))
       return
     }
     const modelNames = filteredModels
       .map((item) => item.model.model_name)
       .join(",")
     navigator.clipboard.writeText(modelNames)
-    toast.success("模型名称已复制到剪贴板")
+    toast.success(t("modelList.modelNameCopied"))
   }
 
   return (
@@ -63,13 +65,13 @@ export function ControlPanel({
       <div className="flex flex-col lg:flex-row gap-4 mb-4">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-            搜索模型
+            {t("modelList.searchModels")}
           </label>
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
             <input
               type="text"
-              placeholder="输入模型名称或描述..."
+              placeholder={t("modelList.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={UI_CONSTANTS.STYLES.INPUT.SEARCH}
@@ -79,13 +81,13 @@ export function ControlPanel({
 
         <div className="w-full lg:w-64">
           <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-            用户分组
+            {t("modelList.userGroup")}
           </label>
           <select
             value={selectedGroup}
             onChange={(e) => setSelectedGroup(e.target.value)}
             className="w-full px-3 py-2.5 border dark:bg-dark-bg-secondary dark:border-dark-bg-tertiary dark:text-dark-text-primary border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <option value="all">所有分组</option>
+            <option value="all">{t("modelList.allGroups")}</option>
             {availableGroups.map((group) => (
               <option key={group} value={group}>
                 {group} ({pricingData?.group_ratio?.[group] || 1}x)
@@ -102,7 +104,7 @@ export function ControlPanel({
             <ArrowPathIcon
               className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
             />
-            <span>刷新数据</span>
+            <span>{t("modelList.refreshData")}</span>
           </button>
         </div>
       </div>
@@ -112,7 +114,7 @@ export function ControlPanel({
           <div className="flex items-center space-x-2">
             <AdjustmentsHorizontalIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
             <span className="text-gray-700 dark:text-dark-text-secondary font-medium">
-              显示选项:
+              {t("modelList.displayOptions")}
             </span>
           </div>
 
@@ -124,7 +126,7 @@ export function ControlPanel({
               className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
             />
             <span className="text-gray-700 dark:text-dark-text-primary">
-              真实充值金额
+              {t("modelList.realAmount")}
             </span>
           </label>
 
@@ -136,7 +138,7 @@ export function ControlPanel({
               className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
             />
             <span className="text-gray-700 dark:text-dark-text-primary">
-              显示倍率
+              {t("modelList.showRatio")}
             </span>
           </label>
 
@@ -148,7 +150,7 @@ export function ControlPanel({
               className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
             />
             <span className="text-gray-700 dark:text-dark-text-primary">
-              端点类型
+              {t("modelList.endpointTypes")}
             </span>
           </label>
 
@@ -156,26 +158,19 @@ export function ControlPanel({
             onClick={handleCopyModelNames}
             className={UI_CONSTANTS.STYLES.BUTTON.COPY}>
             <ClipboardDocumentListIcon className="w-4 h-4" />
-            <span>复制所有模型名称</span>
+            <span>{t("modelList.copyAllNames")}</span>
           </button>
         </div>
 
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2 text-gray-600 dark:text-dark-text-secondary">
             <CpuChipIcon className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" />
-            <span>
-              总计{" "}
-              <span className="font-medium text-gray-900 dark:text-dark-text-primary">
-                {totalModels}
-              </span>{" "}
-              个模型
-            </span>
+            <span>{t("modelList.totalModels", { count: totalModels })}</span>
           </div>
           <div className="h-4 w-px bg-gray-300 dark:bg-dark-bg-tertiary"></div>
           <div className="text-blue-600 dark:text-blue-400">
             <span>
-              显示 <span className="font-medium">{filteredModels.length}</span>{" "}
-              个
+              {t("modelList.showing", { count: filteredModels.length })}
             </span>
           </div>
         </div>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import type { FormData } from "../hooks/useTokenForm"
 
 interface TokenNameInputProps {
@@ -13,10 +15,12 @@ export function TokenNameInput({
   handleInputChange,
   error
 }: TokenNameInputProps) {
+  const { t } = useTranslation()
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        密钥名称 <span className="text-red-500">*</span>
+        {t("keyManagement.tokenName")} <span className="text-red-500">*</span>
       </label>
       <input
         type="text"
@@ -27,7 +31,7 @@ export function TokenNameInput({
             ? "border-red-300"
             : "border-gray-300 dark:border-dark-bg-tertiary"
         }`}
-        placeholder="请输入密钥名称"
+        placeholder={t("keyManagement.tokenName")}
       />
       {error && (
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>

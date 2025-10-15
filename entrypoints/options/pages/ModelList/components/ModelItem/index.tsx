@@ -4,6 +4,7 @@
 
 import { useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CalculatedPrice } from "~/utils/modelPricing"
@@ -39,13 +40,14 @@ export default function ModelItem({
   availableGroups = [],
   isAllGroupsMode = false
 }: ModelItemProps) {
+  const { t } = useTranslation()
   const [isExpanded, setIsExpanded] = useState(false)
   const handleCopyModelName = async () => {
     try {
       await navigator.clipboard.writeText(model.model_name)
-      toast.success("模型名称已复制")
+      toast.success(t("modelList.modelNameCopied"))
     } catch (error) {
-      toast.error("复制失败")
+      toast.error(t("modelList.copyFailed"))
     }
   }
 

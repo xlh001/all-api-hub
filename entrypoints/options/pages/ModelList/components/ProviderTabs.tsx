@@ -1,6 +1,7 @@
 import { Tab } from "@headlessui/react"
 import { CpuChipIcon } from "@heroicons/react/24/outline"
 import { useEffect, useRef, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import { getProviderConfig, type ProviderType } from "~/utils/modelProviders"
 
@@ -21,6 +22,7 @@ export function ProviderTabs({
   getProviderFilteredCount,
   children
 }: ProviderTabsProps) {
+  const { t } = useTranslation()
   const tabListRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -97,7 +99,9 @@ export function ProviderTabs({
           }>
           <div className="flex items-center justify-center space-x-2">
             <CpuChipIcon className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" />
-            <span>所有厂商 ({baseFilteredModelsCount})</span>
+            <span>
+              {t("modelList.allProviders", { count: baseFilteredModelsCount })}
+            </span>
           </div>
         </Tab>
         {providers.map((provider) => {

@@ -1,4 +1,4 @@
-import { type ReactElement, type ReactNode, useId } from "react"
+import { useId, type ReactElement, type ReactNode } from "react"
 import { Tooltip as ReactTooltip } from "react-tooltip"
 
 interface TooltipProps {

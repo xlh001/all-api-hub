@@ -19,7 +19,7 @@ export const WarningSection: FC<WarningSectionProps> = ({ accountName }) => {
       </div>
       <div className="flex-1">
         <h3 className="mb-2 text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-          {t("deleteDialog.confirm_deletion")}
+          {t("deleteDialog.confirmDelete")}
         </h3>
         <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
           {t("deleteDialog.warning", { accountName: accountName })}

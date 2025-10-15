@@ -1,4 +1,5 @@
 import { Switch } from "@headlessui/react"
+import { useTranslation } from "react-i18next"
 
 import type { FormData } from "../hooks/useTokenForm"
 
@@ -17,11 +18,13 @@ export function ModelLimits({
   setFormData,
   handleModelSelectChange
 }: ModelLimitsProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          模型限制
+          {t("keyManagement.modelLimits")}
         </label>
         <Switch
           checked={modelLimitsEnabled}
@@ -59,7 +62,7 @@ export function ModelLimits({
             ))}
           </select>
           <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-            按住 Ctrl/Cmd 键可多选模型，已选择 {modelLimits.length} 个模型
+            {t("keyManagement.modelSelectHint", { count: modelLimits.length })}
           </p>
         </div>
       )}

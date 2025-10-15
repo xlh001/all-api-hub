@@ -4,6 +4,7 @@ import {
   TagIcon
 } from "@heroicons/react/24/outline"
 import React from "react"
+import { useTranslation } from "react-i18next"
 
 import type { ModelPricing } from "~/services/apiService/common/type"
 import {
@@ -28,6 +29,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
   userGroup,
   onGroupClick
 }) => {
+  const { t } = useTranslation()
   return (
     <div className="border-t border-gray-100 dark:border-dark-bg-tertiary px-4 py-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -36,7 +38,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
           <div className="flex items-center space-x-2 mb-2">
             <TagIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
             <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
-              可用分组
+              {t("modelList.availableGroups")}
             </span>
           </div>
           <div className="flex flex-wrap gap-1">
@@ -55,7 +57,11 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
                         ? "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
                         : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400"
                   }`}
-                  title={isClickable ? `点击切换到 ${group} 分组` : undefined}>
+                  title={
+                    isClickable
+                      ? t("modelList.clickSwitchGroup", { group })
+                      : undefined
+                  }>
                   {isCurrentGroup && <TagIcon className="w-3 h-3 mr-1" />}
                   {group}
                 </span>
@@ -70,7 +76,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
             <div className="flex items-center space-x-2 mb-2">
               <ServerIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
               <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
-                端点类型
+                {t("modelList.endpointType")}
               </span>
             </div>
             <div className="text-gray-600 dark:text-dark-text-secondary">
@@ -85,13 +91,13 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
             <div className="flex items-center space-x-2 mb-2">
               <CurrencyDollarIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
               <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
-                详细定价
+                {t("modelList.detailedPricing")}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="space-y-1">
                 <div className="text-gray-500 dark:text-dark-text-tertiary">
-                  输入(1M tokens)
+                  {t("modelList.input1MTokens")}
                 </div>
                 <div className="font-medium text-gray-900 dark:text-dark-text-primary">
                   USD: {formatPrice(calculatedPrice.inputUSD, "USD")}
@@ -102,7 +108,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
               </div>
               <div className="space-y-1">
                 <div className="text-gray-500 dark:text-dark-text-tertiary">
-                  输出(1M tokens)
+                  {t("modelList.output1MTokens")}
                 </div>
                 <div className="font-medium text-gray-900 dark:text-dark-text-primary">
                   USD: {formatPrice(calculatedPrice.outputUSD, "USD")}

@@ -3,6 +3,7 @@ import {
   CpuChipIcon,
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import type { DisplaySiteData } from "~/types"
 
@@ -21,11 +22,12 @@ export function StatusIndicator({
   currentAccount,
   loadPricingData
 }: StatusIndicatorProps) {
+  const { t } = useTranslation()
   if (!selectedAccount) {
     return (
       <div className="text-center py-12">
         <CpuChipIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500">请先选择一个账号查看模型列表</p>
+        <p className="text-gray-500">{t("modelList.pleaseSelectFirst")}</p>
       </div>
     )
   }
@@ -34,7 +36,7 @@ export function StatusIndicator({
     return (
       <div className="text-center py-12">
         <ArrowPathIcon className="w-8 h-8 text-blue-600 mx-auto mb-4 animate-spin" />
-        <p className="text-gray-500">正在加载模型数据...</p>
+        <p className="text-gray-500">{t("modelList.loading")}</p>
       </div>
     )
   }
@@ -46,11 +48,10 @@ export function StatusIndicator({
           <ExclamationTriangleIcon className="w-6 h-6 text-yellow-600 mt-1 flex-shrink-0" />
           <div className="flex-1">
             <h3 className="text-lg font-medium text-yellow-800 mb-2">
-              数据格式不兼容
+              {t("modelList.incompatibleFormat")}
             </h3>
             <p className="text-yellow-700 mb-4">
-              当前站点的模型数据接口返回格式不符合标准规范，可能是经过二次开发的站点。
-              插件暂时无法解析该站点的模型定价信息。
+              {t("modelList.incompatibleDesc")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <a
@@ -58,7 +59,7 @@ export function StatusIndicator({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
-                <span>前往站点查看定价信息</span>
+                <span>{t("modelList.goToSitePricing")}</span>
                 <svg
                   className="w-4 h-4 ml-2"
                   fill="none"
@@ -76,7 +77,7 @@ export function StatusIndicator({
                 onClick={loadPricingData}
                 className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                 <ArrowPathIcon className="w-4 h-4 mr-2" />
-                <span>重新尝试加载</span>
+                <span>{t("modelList.retryLoad")}</span>
               </button>
             </div>
           </div>

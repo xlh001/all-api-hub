@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 interface FormActionsProps {
   isSubmitting: boolean
   isEditMode: boolean
@@ -13,13 +15,15 @@ export function FormActions({
   onSubmit,
   canSubmit
 }: FormActionsProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex justify-end space-x-3 pt-4">
       <button
         onClick={onClose}
         disabled={isSubmitting}
         className="px-4 py-2 text-gray-700 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50">
-        取消
+        {t("keyManagement.cancel")}
       </button>
       <button
         onClick={onSubmit}
@@ -31,11 +35,11 @@ export function FormActions({
         <span>
           {isSubmitting
             ? isEditMode
-              ? "更新中..."
-              : "创建中..."
+              ? t("keyManagement.updating")
+              : t("keyManagement.creating")
             : isEditMode
-              ? "更新密钥"
-              : "创建密钥"}
+              ? t("keyManagement.updateToken")
+              : t("keyManagement.createToken")}
         </span>
       </button>
     </div>

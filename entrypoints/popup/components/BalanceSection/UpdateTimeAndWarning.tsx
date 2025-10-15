@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
 import { UI_CONSTANTS } from "~/constants/ui"
@@ -6,6 +7,7 @@ import { useAccountDataContext } from "~/features/AccountManagement/hooks/Accoun
 import { formatFullTime, formatRelativeTime } from "~/utils/formatters"
 
 export const UpdateTimeAndWarning = () => {
+  const { t } = useTranslation()
   const { lastUpdateTime, detectedAccount } = useAccountDataContext()
   const [, setTick] = useState(0)
 
@@ -25,12 +27,16 @@ export const UpdateTimeAndWarning = () => {
       <div className="ml-2 flex items-center justify-between">
         <Tooltip content={formatFullTime(lastUpdateTime)}>
           <p className="text-xs text-gray-400 dark:text-dark-text-tertiary cursor-help">
-            更新于 {formatRelativeTime(lastUpdateTime)}
+            {t("balance.updateTime", {
+              time: formatRelativeTime(lastUpdateTime)
+            })}
           </p>
         </Tooltip>
         {detectedAccount && (
           <span className="text-xs text-yellow-600 font-medium">
-            ⚠️当前站点 {detectedAccount.site_name} 已被添加
+            {t("balance.currentSiteAdded", {
+              siteName: detectedAccount.site_name
+            })}
           </span>
         )}
       </div>

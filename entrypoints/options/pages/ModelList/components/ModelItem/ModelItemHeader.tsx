@@ -1,5 +1,6 @@
 import { DocumentDuplicateIcon } from "@heroicons/react/24/outline"
 import React from "react"
+import { useTranslation } from "react-i18next"
 
 import type { ModelPricing } from "~/services/apiService/common/type"
 import { getBillingModeStyle, getBillingModeText } from "~/utils/modelPricing"
@@ -16,6 +17,7 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
   isAvailableForUser,
   handleCopyModelName
 }) => {
+  const { t } = useTranslation()
   const providerConfig = getProviderConfig(model.model_name)
   const IconComponent = providerConfig.icon
   const billingStyle = getBillingModeStyle(model.quota_type)
@@ -45,7 +47,7 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
             <button
               onClick={handleCopyModelName}
               className="p-1 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded transition-colors"
-              title="复制模型名称">
+              title={t("modelList.modelNameCopied")}>
               <DocumentDuplicateIcon className="w-3 h-3 text-gray-400 dark:text-dark-text-tertiary" />
             </button>
           </div>
@@ -63,7 +65,9 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
                 ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
                 : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400"
             }`}>
-            {isAvailableForUser ? "可用" : "不可用"}
+            {isAvailableForUser
+              ? t("modelList.available")
+              : t("modelList.unavailable")}
           </span>
         </div>
       </div>

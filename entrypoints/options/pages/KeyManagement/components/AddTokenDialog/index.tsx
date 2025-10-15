@@ -1,6 +1,7 @@
 import { Dialog, Transition } from "@headlessui/react"
 import { Fragment, useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 import { createApiToken, updateApiToken } from "~/services/apiService"
@@ -26,6 +27,7 @@ interface AddTokenDialogProps {
 
 export default function AddTokenDialog(props: AddTokenDialogProps) {
   const { isOpen, onClose, availableAccounts, editingToken } = props
+  const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { formData, setFormData, errors, validateForm, isEditMode, resetForm } =
@@ -78,7 +80,7 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
           editingToken.id,
           tokenData
         )
-        toast.success("密钥更新成功")
+        toast.success(t("keyManagement.updateSuccess"))
       } else {
         await createApiToken(
           currentAccount.baseUrl,
@@ -86,13 +88,17 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
           currentAccount.token,
           tokenData
         )
-        toast.success("密钥创建成功")
+        toast.success(t("keyManagement.createSuccess"))
       }
 
       handleClose()
     } catch (error) {
       console.error(`${isEditMode ? "更新" : "创建"}密钥失败:`, error)
-      toast.error(`${isEditMode ? "更新" : "创建"}密钥失败，请稍后重试`)
+      toast.error(
+        isEditMode
+          ? t("keyManagement.updateFailed")
+          : t("keyManagement.createFailed")
+      )
     } finally {
       setIsSubmitting(false)
     }

@@ -1,4 +1,5 @@
 import { CpuChipIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 import { Virtuoso } from "react-virtuoso"
 
 import type { DisplaySiteData } from "~/types"
@@ -26,12 +27,13 @@ export function ModelDisplay({
   handleGroupClick,
   availableGroups
 }: ModelDisplayProps) {
+  const { t } = useTranslation()
   if (models.length === 0) {
     return (
       <div className="text-center py-12">
         <CpuChipIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-dark-text-secondary">
-          没有找到匹配的模型
+          {t("modelList.noMatchingModels")}
         </p>
       </div>
     )

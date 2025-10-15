@@ -1,4 +1,5 @@
 import { Switch } from "@headlessui/react"
+import { useTranslation } from "react-i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 
@@ -21,15 +22,17 @@ export function QuotaSettings({
   handleInputChange,
   error
 }: QuotaSettingsProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          额度设置
+          {t("keyManagement.quotaSettings")}
         </label>
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-            无限额度
+            {t("keyManagement.unlimitedQuota")}
           </span>
           <Switch
             checked={unlimitedQuota}
@@ -69,9 +72,9 @@ export function QuotaSettings({
             </p>
           )}
           <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-            1美元 ={" "}
-            {UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR.toLocaleString()}{" "}
-            配额点数
+            {t("keyManagement.quotaRate", {
+              rate: UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR.toLocaleString()
+            })}
           </p>
         </div>
       )}

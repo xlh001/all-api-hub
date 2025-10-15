@@ -1,4 +1,5 @@
 import { KeyIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import type { ApiToken, DisplaySiteData } from "~/types"
 
@@ -31,12 +32,14 @@ export function TokenList({
   getStatusBadgeStyle,
   account
 }: TokenListProps) {
+  const { t } = useTranslation()
+
   if (!Array.isArray(tokens) || tokens.length === 0) {
     return (
       <div className="text-center py-8">
         <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-dark-text-secondary text-sm">
-          暂无密钥数据
+        <p className="text-gray-50 dark:text-dark-text-secondary text-sm">
+          {t("copyKeyDialog.noKeys")}
         </p>
       </div>
     )

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import type { FormData } from "../hooks/useTokenForm"
 
 export interface Account {
@@ -22,10 +24,13 @@ export function AccountSelection({
   availableAccounts,
   error
 }: AccountSelectionProps) {
+  const { t } = useTranslation()
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        选择账号 <span className="text-red-500">*</span>
+        {t("keyManagement.accountSelect")}{" "}
+        <span className="text-red-500">*</span>
       </label>
       <select
         value={accountId}
@@ -36,7 +41,7 @@ export function AccountSelection({
             ? "border-red-300"
             : "border-gray-300 dark:border-dark-bg-tertiary"
         } ${isEditMode ? "bg-gray-100 dark:bg-dark-bg-tertiary cursor-not-allowed" : ""}`}>
-        <option value="">请选择账号</option>
+        <option value="">{t("keyManagement.pleaseSelectAccount")}</option>
         {availableAccounts.map((account) => (
           <option key={account.id} value={account.id}>
             {account.name}
@@ -48,7 +53,7 @@ export function AccountSelection({
       )}
       {isEditMode && (
         <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-          编辑模式下无法更改账号
+          {t("keyManagement.editModeNoChange")}
         </p>
       )}
     </div>

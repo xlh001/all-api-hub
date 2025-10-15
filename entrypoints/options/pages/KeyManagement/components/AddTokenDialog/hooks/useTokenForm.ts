@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 
@@ -70,6 +71,7 @@ export function useTokenForm({
   availableAccounts,
   editingToken
 }: AddTokenDialogProps) {
+  const { t } = useTranslation()
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const isEditMode = !!editingToken
@@ -128,25 +130,25 @@ export function useTokenForm({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
     if (!formData.accountId) {
-      newErrors.accountId = "请选择账号"
+      newErrors.accountId = t("keyManagement.selectAccountError")
     }
     if (!formData.name.trim()) {
-      newErrors.name = "密钥名称不能为空"
+      newErrors.name = t("keyManagement.nameRequired")
     }
     if (!formData.unlimitedQuota) {
       const quota = parseFloat(formData.quota)
       if (isNaN(quota) || quota <= 0) {
-        newErrors.quota = "请输入有效的额度金额"
+        newErrors.quota = t("keyManagement.validQuota")
       }
     }
     if (formData.expiredTime) {
       const expiredDate = new Date(formData.expiredTime)
       if (expiredDate <= new Date()) {
-        newErrors.expiredTime = "过期时间必须大于当前时间"
+        newErrors.expiredTime = t("keyManagement.validExpiration")
       }
     }
     if (formData.allowIps && !isValidIpList(formData.allowIps)) {
-      newErrors.allowIps = "请输入有效的IP地址，多个IP用逗号分隔"
+      newErrors.allowIps = t("keyManagement.validIp")
     }
 
     setErrors(newErrors)

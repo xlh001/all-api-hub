@@ -1,5 +1,6 @@
 import { Dialog } from "@headlessui/react"
 import { KeyIcon, XMarkIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 interface DialogHeaderProps {
   isEditMode: boolean
@@ -7,12 +8,16 @@ interface DialogHeaderProps {
 }
 
 export function DialogHeader({ isEditMode, onClose }: DialogHeaderProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center space-x-2">
         <KeyIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
         <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
-          {isEditMode ? "编辑API密钥" : "添加API密钥"}
+          {isEditMode
+            ? t("keyManagement.editToken")
+            : t("keyManagement.addToken")}
         </Dialog.Title>
       </div>
       <button

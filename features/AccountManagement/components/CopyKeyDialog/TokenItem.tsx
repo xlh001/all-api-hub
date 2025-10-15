@@ -3,6 +3,7 @@ import {
   ChevronRightIcon,
   UserGroupIcon
 } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import type { ApiToken, DisplaySiteData } from "~/types"
 
@@ -35,6 +36,8 @@ export function TokenItem({
   getStatusBadgeStyle,
   account
 }: TokenItemProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden hover:shadow-sm transition-all duration-200">
       <div
@@ -48,7 +51,7 @@ export function TokenItem({
             <UserGroupIcon className="w-3 h-3 text-gray-400" />
             <span
               className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getGroupBadgeStyle(token.group || "")}`}>
-              {token.group || "默认组"}
+              {token.group || t("copyKeyDialog.defaultGroup")}
             </span>
           </div>
         </div>
@@ -56,7 +59,9 @@ export function TokenItem({
         <div className="flex items-center space-x-2 ml-3">
           <span
             className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${getStatusBadgeStyle(token.status)}`}>
-            {token.status === 1 ? "启用" : "禁用"}
+            {token.status === 1
+              ? t("copyKeyDialog.enabled")
+              : t("copyKeyDialog.disabled")}
           </span>
 
           {isExpanded ? (

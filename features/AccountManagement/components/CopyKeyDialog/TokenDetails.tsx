@@ -3,6 +3,7 @@ import {
   ClockIcon,
   DocumentDuplicateIcon
 } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import { CherryIcon } from "~/components/icons/CherryIcon"
 import type { ApiToken, DisplaySiteData } from "~/types"
@@ -27,31 +28,37 @@ export function TokenDetails({
   onCopyKey,
   account
 }: TokenDetailsProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="px-3 pb-3 border-t border-gray-100 dark:border-dark-bg-tertiary bg-gray-50/30 dark:bg-dark-bg-primary">
-      <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-dark-text-secondary mb-3 pt-3">
+      <div className="flex items-center space-x-1 text-xs text-gray-50 dark:text-dark-text-secondary mb-3 pt-3">
         <ClockIcon className="w-3 h-3" />
-        <span>过期时间: {formatTime(token.expired_time)}</span>
+        <span>
+          {t("copyKeyDialog.expireTime", {
+            time: formatTime(token.expired_time)
+          })}
+        </span>
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
-          <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-0.5">
-            已用额度
+          <div className="text-xs text-gray-50 dark:text-dark-text-secondary mb-0.5">
+            {t("copyKeyDialog.usedQuota")}
           </div>
           <div className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary">
             {formatUsedQuota(token)}
           </div>
         </div>
-        <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
+        <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-10 dark:border-dark-bg-tertiary">
           <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-0.5">
-            剩余额度
+            {t("copyKeyDialog.remainingQuota")}
           </div>
           <div
             className={`text-sm font-semibold ${
               token.unlimited_quota || token.remain_quota < 0
                 ? "text-green-600"
-                : token.remain_quota < 1000000
+                : token.remain_quota < 10000
                   ? "text-orange-600"
                   : "text-gray-900 dark:text-dark-text-primary"
             }`}>
@@ -60,10 +67,10 @@ export function TokenDetails({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
+      <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border-gray-10 dark:border-dark-bg-tertiary">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wide">
-            API 密钥
+            {t("copyKeyDialog.apiKey")}
           </span>
           <div className="flex items-center space-x-2">
             <button
@@ -75,12 +82,12 @@ export function TokenDetails({
               {copiedKey === token.key ? (
                 <>
                   <CheckIcon className="w-3 h-3" />
-                  <span>已复制</span>
+                  <span>{t("copyKeyDialog.copied")}</span>
                 </>
               ) : (
                 <>
                   <DocumentDuplicateIcon className="w-3 h-3" />
-                  <span>复制</span>
+                  <span>{t("copyKeyDialog.copy")}</span>
                 </>
               )}
             </button>
@@ -91,7 +98,7 @@ export function TokenDetails({
               }}
               className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-cyan-600 text-white text-xs font-medium rounded hover:from-blue-600 hover:to-cyan-700 transition-all duration-200">
               <CherryIcon className="w-3 h-3" />
-              <span>在Cherry Studio中使用</span>
+              <span>{t("copyKeyDialog.useInCherry")}</span>
             </button>
           </div>
         </div>

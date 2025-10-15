@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import type { FormData } from "../hooks/useTokenForm"
 
 interface IpLimitsInputProps {
@@ -13,10 +15,12 @@ export function IpLimitsInput({
   handleInputChange,
   error
 }: IpLimitsInputProps) {
+  const { t } = useTranslation()
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        IP限制
+        {t("keyManagement.ipLimits")}
       </label>
       <input
         type="text"
@@ -27,13 +31,13 @@ export function IpLimitsInput({
             ? "border-red-300"
             : "border-gray-300 dark:border-dark-bg-tertiary"
         }`}
-        placeholder="留空表示不限制，多个IP用逗号分隔"
+        placeholder={t("keyManagement.ipPlaceholder")}
       />
       {error && (
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
       )}
       <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-        例如: 192.168.1.1,10.0.0.1 或使用 * 表示不限制
+        {t("keyManagement.ipExample")}
       </p>
     </div>
   )

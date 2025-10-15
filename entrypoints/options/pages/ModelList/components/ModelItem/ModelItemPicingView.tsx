@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { CurrencyType } from "~/types"
 import { CalculatedPrice } from "~/utils/modelPricing.ts"
 
@@ -15,6 +17,7 @@ export const PriceView = ({
   isAvailableForUser,
   formatPriceCompact
 }: PriceViewProps) => {
+  const { t } = useTranslation()
   let inputPrice = showRealPrice
     ? `${formatPriceCompact(calculatedPrice.inputCNY, "CNY")}`
     : `${formatPriceCompact(calculatedPrice.inputUSD, "USD")}`
@@ -33,7 +36,7 @@ export const PriceView = ({
       {/* 输入价格 */}
       <div className="flex items-center space-x-2">
         <span className="text-sm text-gray-600 dark:text-dark-text-primary">
-          输入:
+          {t("modelList.input")}
         </span>
         <span
           className={`text-sm ${
@@ -46,7 +49,7 @@ export const PriceView = ({
       {/* 输出价格 */}
       <div className="flex items-center space-x-2">
         <span className="text-sm text-gray-600 dark:text-dark-text-primary">
-          输出:
+          {t("modelList.output")}
         </span>
         <span
           className={`text-sm ${

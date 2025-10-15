@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import {
   autoConfigToNewApi,
@@ -26,6 +27,8 @@ export function useAccountDialog({
   isOpen,
   onClose
 }: UseAccountDialogProps) {
+  const { t } = useTranslation()
+
   const [url, setUrl] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
   const [siteName, setSiteName] = useState("")
@@ -77,32 +80,35 @@ export function useAccountDialog({
     setIsAutoConfiguring(false)
   }, [mode])
 
-  const loadAccountData = useCallback(async (accountId: string) => {
-    try {
-      const siteAccount = await accountStorage.getAccountById(accountId)
-      if (siteAccount) {
-        setUrl(siteAccount.site_url)
-        setSiteName(siteAccount.site_name)
-        setUsername(siteAccount.account_info.username)
-        setAccessToken(siteAccount.account_info.access_token)
-        setUserId(siteAccount.account_info.id.toString())
-        setExchangeRate(siteAccount.exchange_rate.toString())
-        setNotes(siteAccount.notes || "")
-        setCheckIn(
-          siteAccount.checkIn || {
-            enableDetection: false,
-            isCheckedInToday: false,
-            customCheckInUrl: ""
-          }
-        )
-        setSiteType(siteAccount.site_type || "")
-        setAuthType(siteAccount.authType || AuthTypeEnum.AccessToken)
+  const loadAccountData = useCallback(
+    async (accountId: string) => {
+      try {
+        const siteAccount = await accountStorage.getAccountById(accountId)
+        if (siteAccount) {
+          setUrl(siteAccount.site_url)
+          setSiteName(siteAccount.site_name)
+          setUsername(siteAccount.account_info.username)
+          setAccessToken(siteAccount.account_info.access_token)
+          setUserId(siteAccount.account_info.id.toString())
+          setExchangeRate(siteAccount.exchange_rate.toString())
+          setNotes(siteAccount.notes || "")
+          setCheckIn(
+            siteAccount.checkIn || {
+              enableDetection: false,
+              isCheckedInToday: false,
+              customCheckInUrl: ""
+            }
+          )
+          setSiteType(siteAccount.site_type || "")
+          setAuthType(siteAccount.authType || AuthTypeEnum.AccessToken)
+        }
+      } catch (error) {
+        console.error(t("accountDialog.hooks.loadFailed"), error)
+        toast.error(t("accountDialog.hooks.loadFailed"))
       }
-    } catch (error) {
-      console.error("加载账号数据失败:", error)
-      toast.error("加载账号数据失败")
-    }
-  }, [])
+    },
+    [t]
+  )
 
   useEffect(() => {
     if (isOpen) {
@@ -125,7 +131,11 @@ export function useAccountDialog({
                 setCurrentTabUrl(baseUrl)
                 setSiteName(await getSiteName(tab))
               } catch (error) {
-                console.log("无法解析 URL:", error)
+                console.log(
+                  t("accountDialog.hooks.urlParseError", {
+                    error: (error as Error).message
+                  })
+                )
                 setCurrentTabUrl(null)
                 setSiteName("")
               }
@@ -183,15 +193,17 @@ export function useAccountDialog({
 
         setIsDetected(true)
         if (mode === "edit") {
-          toast.success("自动识别成功！")
+          toast.success(t("accountDialog.hooks.autoDetectSuccess"))
         }
       }
     } catch (error) {
-      console.error("自动识别失败:", error)
+      console.error(t("accountDialog.hooks.autoDetectFailed"), error)
       const errorMessage = getErrorMessage(error)
       setDetectionError({
         type: "unknown" as any,
-        message: `自动识别失败: ${errorMessage}`,
+        message: t("accountDialog.hooks.autoDetectFailed", {
+          error: errorMessage
+        }),
         helpDocUrl: "#"
       })
       setShowManualForm(true)
@@ -233,17 +245,26 @@ export function useAccountDialog({
 
       if (result.success) {
         toast.success(
-          mode === "add"
-            ? `账号 ${siteName} 添加成功!`
-            : `账号 ${siteName} 更新成功!`
+          t(
+            mode === "add"
+              ? "accountDialog.hooks.addSuccess"
+              : "accountDialog.hooks.updateSuccess",
+            { name: siteName }
+          )
         )
         return result
       } else {
-        toast.error(`操作失败: ${result.error || "未知错误"}`)
-        throw new Error(result.error || "保存失败")
+        toast.error(
+          t("accountDialog.hooks.operationFailed", {
+            error: result.error || t("accountDialog.hooks.saveFailed")
+          })
+        )
+        throw new Error(result.error || t("accountDialog.hooks.saveFailed"))
       }
     } catch (error: any) {
-      toast.error(`操作失败: ${error.message}`)
+      toast.error(
+        t("accountDialog.hooks.operationFailed", { error: error.message })
+      )
       throw error
     } finally {
       setIsSaving(false)
@@ -252,14 +273,16 @@ export function useAccountDialog({
 
   const handleAutoConfig = async () => {
     setIsAutoConfiguring(true)
-    const toastId = toast.loading("正在开始自动配置到 New API...")
+    const toastId = toast.loading(t("accountDialog.hooks.startNewApiConfig"))
     try {
       let targetAccount: any = account || newAccountRef.current
       // 如果是新增（account 不存在），就先保存
       if (!targetAccount) {
         targetAccount = await handleSaveAccount()
         if (!targetAccount) {
-          toast.error("保存账号失败", { id: toastId })
+          toast.error(t("accountDialog.hooks.saveAccountFailed"), {
+            id: toastId
+          })
           return
         }
         // 缓存到 ref，避免重复保存
@@ -284,9 +307,14 @@ export function useAccountDialog({
         throw new Error(result.message)
       }
     } catch (error) {
-      toast.error(`自动配置到 New API失败: ${getErrorMessage(error)}`, {
-        id: toastId
-      })
+      toast.error(
+        t("accountDialog.hooks.newApiConfigFailed", {
+          error: getErrorMessage(error)
+        }),
+        {
+          id: toastId
+        }
+      )
     } finally {
       setIsAutoConfiguring(false)
     }
@@ -371,4 +399,15 @@ export function useAccountDialog({
       handleClose
     }
   }
+}
+
+// Helper function to get error message
+function getErrorMessage(error: any): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+  if (typeof error === "string") {
+    return error
+  }
+  return String(error)
 }

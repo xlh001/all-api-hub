@@ -1,4 +1,5 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import { formatKey } from "../../utils"
 
@@ -15,11 +16,13 @@ export function KeyDisplay({
   visibleKeys,
   toggleKeyVisibility
 }: KeyDisplayProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
-        <span className="text-gray-500 dark:text-dark-text-tertiary">
-          密钥:
+        <span className="text-gray-50 dark:text-dark-text-tertiary">
+          {t("keyManagement.key")}
         </span>
         <code className="bg-gray-100 dark:bg-dark-bg-tertiary px-2 py-1 rounded font-mono text-xs text-gray-800 dark:text-dark-text-secondary">
           {formatKey(tokenKey, tokenId, visibleKeys)}

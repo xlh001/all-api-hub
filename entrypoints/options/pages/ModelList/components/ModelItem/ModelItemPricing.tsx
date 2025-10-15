@@ -1,4 +1,5 @@
 import React from "react"
+import { useTranslation } from "react-i18next"
 
 import type { ModelPricing } from "~/services/apiService/common/type"
 import {
@@ -27,6 +28,7 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
   showRatioColumn,
   isAvailableForUser
 }) => {
+  const { t } = useTranslation()
   const tokenBillingType = isTokenBillingType(model.quota_type)
   const perCallPrice = calculatedPrice.perCallPrice
   return (
@@ -47,7 +49,7 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
           {showRatioColumn && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-                倍率:
+                {t("modelList.ratio")}
               </span>
               <span
                 className={`text-sm font-medium ${
@@ -65,7 +67,7 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
           // 按次计费
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
-              每次调用:
+              {t("modelList.perCall")}
             </span>
             <ModelItemPerCallPricingView
               perCallPrice={perCallPrice}

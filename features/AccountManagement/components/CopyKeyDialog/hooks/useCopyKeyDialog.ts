@@ -1,13 +1,25 @@
 import { useCallback, useEffect, useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { fetchAccountTokens } from "~/services/apiService"
 import type { ApiToken, DisplaySiteData } from "~/types"
+
+function getErrorMessage(error: any): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+  if (typeof error === "string") {
+    return error
+  }
+  return JSON.stringify(error)
+}
 
 export function useCopyKeyDialog(
   isOpen: boolean,
   account: DisplaySiteData | null
 ) {
+  const { t } = useTranslation()
   const [tokens, setTokens] = useState<ApiToken[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,11 +43,11 @@ export function useCopyKeyDialog(
     } catch (error) {
       console.error("获取密钥列表失败:", error)
       const errorMessage = getErrorMessage(error)
-      setError(`获取密钥列表失败: ${errorMessage}`)
+      setError(t("copyKeyDialog.loadFailed", { error: errorMessage }))
     } finally {
       setIsLoading(false)
     }
-  }, [account])
+  }, [account, t])
 
   useEffect(() => {
     if (isOpen && account) {
@@ -53,14 +65,14 @@ export function useCopyKeyDialog(
       const textToCopy = key.startsWith("sk-") ? key : "sk-" + key
       await navigator.clipboard.writeText(textToCopy)
       setCopiedKey(key)
-      toast.success("密钥已复制到剪贴板")
+      toast.success(t("copyKeyDialog.keyCopied"))
 
       setTimeout(() => {
         setCopiedKey(null)
       }, 2000)
     } catch (error) {
       console.error("复制失败:", error)
-      toast.error("复制失败，请手动复制")
+      toast.error(t("copyKeyDialog.copyFailedManual"))
     }
   }
 

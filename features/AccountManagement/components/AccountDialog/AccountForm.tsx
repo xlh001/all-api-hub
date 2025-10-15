@@ -8,6 +8,7 @@ import {
   PencilSquareIcon,
   UserIcon
 } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import { SITE_TITLE_RULES } from "~/constants/siteType"
 import { isValidExchangeRate } from "~/services/accountOperations"
@@ -56,19 +57,20 @@ export default function AccountForm({
   checkIn,
   onCheckInChange
 }: AccountFormProps) {
+  const { t } = useTranslation()
   const commonInputClasses =
-    "block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+    "block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
 
   return (
     <>
       {/* 网站名称 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          网站名称
+          {t("accountDialog.form.siteName")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <GlobeAltIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+            <GlobeAltIcon className="h-5 w-5 text-gray-400 dark:text-gray-50" />
           </div>
           <input
             type="text"
@@ -84,7 +86,7 @@ export default function AccountForm({
       {/* 站点类型 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          站点类型
+          {t("accountDialog.form.siteType")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -93,7 +95,7 @@ export default function AccountForm({
           <select
             value={siteType}
             onChange={(e) => onSiteTypeChange(e.target.value)}
-            className="block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary">
+            className="block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary">
             {SITE_TITLE_RULES.map((rule) => (
               <option key={rule.name} value={rule.name}>
                 {rule.name}
@@ -106,7 +108,7 @@ export default function AccountForm({
       {/* 用户名 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          用户名
+          {t("accountDialog.form.username")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -116,7 +118,7 @@ export default function AccountForm({
             type="text"
             value={username}
             onChange={(e) => onUsernameChange(e.target.value)}
-            placeholder="用户名"
+            placeholder={t("accountDialog.form.username")}
             className={commonInputClasses}
             required
           />
@@ -126,11 +128,11 @@ export default function AccountForm({
       {/* 用户 ID */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          用户 ID
+          {t("accountDialog.form.userId")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="text-gray-400 dark:text-gray-500 font-mono text-sm">
+            <span className="text-gray-40 dark:text-gray-500 font-mono text-sm">
               #
             </span>
           </div>
@@ -138,7 +140,7 @@ export default function AccountForm({
             type="number"
             value={userId}
             onChange={(e) => onUserIdChange(e.target.value)}
-            placeholder="用户 ID (数字)"
+            placeholder={t("accountDialog.form.userIdNumber")}
             className={commonInputClasses}
             required
           />
@@ -149,7 +151,7 @@ export default function AccountForm({
       {authType === AuthTypeEnum.AccessToken && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-            访问令牌
+            {t("accountDialog.form.accessToken")}
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -159,14 +161,14 @@ export default function AccountForm({
               type={showAccessToken ? "text" : "password"}
               value={accessToken}
               onChange={(e) => onAccessTokenChange(e.target.value)}
-              placeholder="访问令牌"
-              className="block w-full pl-10 pr-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+              placeholder={t("accountDialog.form.accessToken")}
+              className="block w-full pl-10 pr-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
               required
             />
             <button
               type="button"
               onClick={onToggleShowAccessToken}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-30 transition-colors">
               {showAccessToken ? (
                 <EyeSlashIcon className="h-4 w-4" />
               ) : (
@@ -180,7 +182,7 @@ export default function AccountForm({
       {/* 充值金额比例 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          充值金额比例 (CNY/USD)
+          {t("accountDialog.form.exchangeRate")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -193,7 +195,7 @@ export default function AccountForm({
             max="100"
             value={exchangeRate}
             onChange={(e) => onExchangeRateChange(e.target.value)}
-            placeholder="请输入充值比例"
+            placeholder={t("accountDialog.form.exchangeRatePlaceholder")}
             className={`block w-full px-10 py-3 border rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
               isValidExchangeRate(exchangeRate)
                 ? "border-gray-200 dark:border-dark-bg-tertiary focus:ring-blue-500 focus:border-transparent"
@@ -208,12 +210,11 @@ export default function AccountForm({
           </div>
         </div>
         <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
-          表示充值 1
-          美元需要多少人民币。系统会尝试自动获取，如未获取到请手动填写
+          {t("accountDialog.form.exchangeRateDesc")}
         </p>
         {!isValidExchangeRate(exchangeRate) && exchangeRate && (
           <p className="mt-1 text-xs text-red-600">
-            请输入有效的汇率 (0.1 - 100)
+            {t("accountDialog.form.validRateError")}
           </p>
         )}
       </div>
@@ -223,7 +224,7 @@ export default function AccountForm({
         <label
           htmlFor="supports-check-in"
           className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          签到状态检测（需站点已开启签到）
+          {t("accountDialog.form.checkInStatus")}
         </label>
         <Switch
           checked={checkIn.enableDetection}
@@ -247,7 +248,7 @@ export default function AccountForm({
         <label
           htmlFor="custom-checkin-url"
           className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          自定义签到 URL (可选)
+          {t("accountDialog.form.customCheckInUrl")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -265,14 +266,14 @@ export default function AccountForm({
           />
         </div>
         <p className="text-xs text-gray-500 dark:text-dark-text-secondary">
-          如果设置，将禁用自动签到状态检测。用于具有自定义签到端点的站点。
+          {t("accountDialog.form.customCheckInDesc")}
         </p>
       </div>
 
       {/* 备注 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          备注
+          {t("accountDialog.form.notes")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -281,7 +282,7 @@ export default function AccountForm({
           <textarea
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
-            placeholder="选填，输入备注信息"
+            placeholder={t("accountDialog.form.notesPlaceholder")}
             className={`${commonInputClasses} resize-none`}
             rows={2}
           />

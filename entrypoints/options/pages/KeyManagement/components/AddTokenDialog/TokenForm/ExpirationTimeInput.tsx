@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import type { FormData } from "../hooks/useTokenForm"
 
 interface ExpirationTimeInputProps {
@@ -13,10 +15,12 @@ export function ExpirationTimeInput({
   handleInputChange,
   error
 }: ExpirationTimeInputProps) {
+  const { t } = useTranslation()
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        过期时间
+        {t("keyManagement.expiration")}
       </label>
       <input
         type="datetime-local"
@@ -32,7 +36,7 @@ export function ExpirationTimeInput({
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
       )}
       <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-        留空表示永不过期
+        {t("keyManagement.expirationPlaceholder")}
       </p>
     </div>
   )

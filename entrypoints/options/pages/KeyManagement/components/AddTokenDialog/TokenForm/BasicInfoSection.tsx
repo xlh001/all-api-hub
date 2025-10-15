@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import type { FormData } from "../hooks/useTokenForm"
 import { AccountSelection, type Account } from "./AccountSelection"
 import { ExpirationTimeInput } from "./ExpirationTimeInput"
@@ -25,8 +27,10 @@ export function BasicInfoSection({
   handleInputChange,
   handleSwitchChange
 }: BasicInfoSectionProps) {
+  const { t } = useTranslation()
+
   return (
-    <FormSection title="基本信息">
+    <FormSection title={t("keyManagement.basicInfo")}>
       <AccountSelection
         accountId={formData.accountId}
         handleInputChange={handleInputChange}

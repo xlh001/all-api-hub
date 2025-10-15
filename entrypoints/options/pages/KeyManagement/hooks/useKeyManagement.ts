@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { useAccountData } from "~/hooks/useAccountData"
 import { deleteApiToken, fetchAccountTokens } from "~/services/apiService"
@@ -7,6 +8,7 @@ import { deleteApiToken, fetchAccountTokens } from "~/services/apiService"
 import { AccountToken } from "../type.ts"
 
 export function useKeyManagement(routeParams?: Record<string, string>) {
+  const { t } = useTranslation()
   const { displayData } = useAccountData()
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [searchTerm, setSearchTerm] = useState("")
@@ -38,7 +40,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       setTokens(tokensWithAccount)
     } catch (error) {
       console.error(`获取账号密钥失败:`, error)
-      toast.error("加载密钥列表失败")
+      toast.error(t("keyManagement.loadFailed"))
       setTokens([])
     } finally {
       setIsLoading(false)
@@ -75,9 +77,9 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     try {
       const textToCopy = key.startsWith("sk-") ? key : "sk-" + key
       await navigator.clipboard.writeText(textToCopy)
-      toast.success(`密钥 ${name} 已复制到剪贴板`)
+      toast.success(t("keyManagement.keyCopied", { name }))
     } catch (error) {
-      toast.error("复制失败")
+      toast.error(t("keyManagement.copyFailed"))
     }
   }
 
@@ -112,7 +114,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
   const handleDeleteToken = async (token: AccountToken) => {
     if (
-      !window.confirm(`确定要删除密钥 "${token.name}" 吗？此操作不可撤销。`)
+      !window.confirm(t("keyManagement.deleteConfirm", { name: token.name }))
     ) {
       return
     }
@@ -120,7 +122,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     try {
       const account = displayData.find((acc) => acc.name === token.accountName)
       if (!account) {
-        toast.error("找不到对应账号信息")
+        toast.error(t("keyManagement.accountNotFound"))
         return
       }
 
@@ -130,14 +132,14 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
         account.token,
         token.id
       )
-      toast.success(`密钥 "${token.name}" 删除成功`)
+      toast.success(t("keyManagement.deleteSuccess", { name: token.name }))
 
       if (selectedAccount) {
         loadTokens()
       }
     } catch (error) {
       console.error("删除密钥失败:", error)
-      toast.error("删除密钥失败，请稍后重试")
+      toast.error(t("keyManagement.deleteFailed"))
     }
   }
 

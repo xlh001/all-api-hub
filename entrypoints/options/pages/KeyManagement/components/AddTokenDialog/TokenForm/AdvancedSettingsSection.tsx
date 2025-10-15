@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import type { UserGroupInfo } from "~/services/apiService/common/type"
 import { isNotEmptyArray } from "~/utils"
 
@@ -28,8 +30,10 @@ export function AdvancedSettingsSection({
   handleInputChange,
   handleModelSelectChange
 }: AdvancedSettingsSectionProps) {
+  const { t } = useTranslation()
+
   return (
-    <FormSection title="高级设置">
+    <FormSection title={t("keyManagement.advancedSettings")}>
       <GroupSelection
         group={formData.group}
         handleInputChange={handleInputChange}

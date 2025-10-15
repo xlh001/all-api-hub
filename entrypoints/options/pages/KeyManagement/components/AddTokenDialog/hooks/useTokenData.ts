@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { fetchAvailableModels, fetchUserGroups } from "~/services/apiService"
 import type { UserGroupInfo } from "~/services/apiService/common/type"
@@ -12,6 +13,7 @@ export function useTokenData(
   currentAccount: DisplaySiteData | undefined,
   setFormData: React.Dispatch<React.SetStateAction<FormData>>
 ) {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [groups, setGroups] = useState<Record<string, UserGroupInfo>>({})
@@ -40,7 +42,7 @@ export function useTokenData(
       }
     } catch (error) {
       console.error("Failed to load initial data:", error)
-      toast.error("加载数据失败，请稍后重试")
+      toast.error(t("keyManagement.loadDataFailed"))
     } finally {
       setIsLoading(false)
     }
