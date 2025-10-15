@@ -1,4 +1,5 @@
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 import {
   handleExportAccounts,
@@ -12,6 +13,7 @@ interface ExportSectionProps {
 }
 
 const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
+  const { t } = useTranslation()
   return (
     <section>
       <div className="h-full bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden">
@@ -19,11 +21,11 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
           <div className="flex items-center space-x-2">
             <ArrowUpTrayIcon className="w-5 h-5 text-green-600" />
             <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-              导出数据
+              {t("importExport.exportData")}
             </h2>
           </div>
           <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
-            将数据导出为JSON文件进行备份
+            {t("importExport.exportDescription")}
           </p>
         </div>
 
@@ -33,17 +35,19 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  完整备份
+                  {t("importExport.fullBackup")}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  导出所有账号数据和用户设置，推荐用于完整备份
+                  {t("importExport.fullBackupDescription")}
                 </p>
               </div>
               <button
                 onClick={() => handleExportAll(setIsExporting)}
                 disabled={isExporting}
                 className="ml-4 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
-                {isExporting ? "导出中..." : "导出"}
+                {isExporting
+                  ? t("importExport.exporting")
+                  : t("importExport.export")}
               </button>
             </div>
           </div>
@@ -53,17 +57,19 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  账号数据
+                  {t("importExport.accountData")}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  仅导出账号信息和相关数据
+                  {t("importExport.accountDataDescription")}
                 </p>
               </div>
               <button
                 onClick={() => handleExportAccounts(setIsExporting)}
                 disabled={isExporting}
                 className="ml-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
-                {isExporting ? "导出中..." : "导出"}
+                {isExporting
+                  ? t("importExport.exporting")
+                  : t("importExport.export")}
               </button>
             </div>
           </div>
@@ -73,17 +79,19 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  用户设置
+                  {t("importExport.userSettings")}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  仅导出界面设置和偏好配置
+                  {t("importExport.userSettingsDescription")}
                 </p>
               </div>
               <button
                 onClick={() => handleExportPreferences(setIsExporting)}
                 disabled={isExporting}
                 className="ml-4 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
-                {isExporting ? "导出中..." : "导出"}
+                {isExporting
+                  ? t("importExport.exporting")
+                  : t("importExport.export")}
               </button>
             </div>
           </div>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { menuItems } from "../constants"
 
 interface SidebarProps {
@@ -6,12 +8,13 @@ interface SidebarProps {
 }
 
 function Sidebar({ activeMenuItem, onMenuItemClick }: SidebarProps) {
+  const { t } = useTranslation()
   return (
     <aside className="w-64 flex-shrink-0">
       <nav className="bg-white dark:bg-dark-bg-secondary rounded-lg shadow-sm border border-gray-200 dark:border-dark-bg-tertiary overflow-hidden">
         <div className="p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <h2 className="text-sm font-medium text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide">
-            设置选项
+            {t("navigation.settings_options")}
           </h2>
         </div>
         <ul className="divide-y divide-gray-100 dark:divide-dark-bg-tertiary">
@@ -35,7 +38,9 @@ function Sidebar({ activeMenuItem, onMenuItemClick }: SidebarProps) {
                         : "text-gray-400 dark:text-dark-text-tertiary"
                     }`}
                   />
-                  <span className="font-medium">{item.name}</span>
+                  <span className="font-medium">
+                    {t(`navigation.${item.id}`)}
+                  </span>
                 </button>
               </li>
             )

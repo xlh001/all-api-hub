@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline"
 import React, { useState } from "react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
@@ -31,6 +32,7 @@ export default function AccountActionButtons({
   onCopyKey,
   onDeleteAccount
 }: ActionButtonsProps) {
+  const { t } = useTranslation()
   const { refreshingAccountId, handleRefreshAccount } =
     useAccountActionsContext()
   const { openEditAccount } = useDialogStateContext()
@@ -57,22 +59,22 @@ export default function AccountActionButtons({
             ? token.key
             : "sk-" + token.key
           await navigator.clipboard.writeText(textToCopy)
-          toast.success("密钥已复制到剪贴板")
+          toast.success(t("accountActions.key_copied"))
         } else if (tokensResponse.length > 1) {
           // Multiple tokens - open dialog
           onCopyKey(site)
         } else {
           // No tokens found
-          toast.error("未找到可用密钥")
+          toast.error(t("accountActions.no_key_found"))
         }
       } else {
         console.warn("Token response is not an array:", tokensResponse)
-        toast.error("获取密钥信息失败")
+        toast.error(t("accountActions.fetch_key_info_failed"))
       }
     } catch (error) {
       console.error("获取密钥列表失败:", error)
       const errorMessage = getErrorMessage(error)
-      toast.error(`获取密钥列表失败: ${errorMessage}`)
+      toast.error(t("accountActions.fetch_key_list_failed", { errorMessage }))
       // Fallback to opening dialog
       onCopyKey(site)
     } finally {
@@ -82,7 +84,7 @@ export default function AccountActionButtons({
 
   const handleCopyUrlLocal = async () => {
     await navigator.clipboard.writeText(site.baseUrl)
-    toast.success("网址已复制到剪贴板")
+    toast.success(t("accountActions.url_copied"))
   }
 
   // Navigation functions for secondary menu items
@@ -115,14 +117,14 @@ export default function AccountActionButtons({
       <button
         onClick={handleCopyUrlLocal}
         className={primaryButtonClasses}
-        title="复制网址">
+        title={t("accountActions.copy_url")}>
         <LinkIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" />
       </button>
       <button
         onClick={handleSmartCopyKey}
         className={primaryButtonClasses}
         disabled={isCheckingTokens}
-        title="复制密钥">
+        title={t("accountActions.copy_key")}>
         <KeyIcon
           className={`w-4 h-4 text-gray-500 dark:text-dark-text-secondary ${isCheckingTokens ? "opacity-50" : ""}`}
         />
@@ -134,7 +136,7 @@ export default function AccountActionButtons({
           openEditAccount(site)
         }}
         className={primaryButtonClasses}
-        title="编辑">
+        title={t("accountActions.edit")}>
         <PencilIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" />
       </button>
 
@@ -150,19 +152,19 @@ export default function AccountActionButtons({
           <AccountActionMenuItem
             onClick={handleOpenKeyList}
             icon={ListBulletIcon}
-            label="密钥列表"
+            label={t("accountActions.key_list")}
           />
 
           <AccountActionMenuItem
             onClick={handleNavigateToKeyManagement}
             icon={KeyIcon}
-            label="密钥管理"
+            label={t("accountActions.key_management")}
           />
 
           <AccountActionMenuItem
             onClick={handleNavigateToModelManagement}
             icon={CpuChipIcon}
-            label="模型管理"
+            label={t("accountActions.model_management")}
           />
 
           <hr />
@@ -170,14 +172,14 @@ export default function AccountActionButtons({
           <AccountActionMenuItem
             onClick={handleRefreshLocal}
             icon={ArrowPathIcon}
-            label="刷新"
+            label={t("accountActions.refresh")}
             disabled={refreshingAccountId === site.id}
           />
 
           <AccountActionMenuItem
             onClick={handleDeleteLocal}
             icon={TrashIcon}
-            label="删除"
+            label={t("accountActions.delete")}
             isDestructive={true}
           />
         </MenuItems>

@@ -46,10 +46,103 @@
   "navigation": {
     "home": "Home",
     "settings": "Settings",
-    "about": "About"
+    "about": "About",
+    "settings_options": "Settings Options",
+    "basic": "Basic Settings",
+    "account": "Account Management",
+    "models": "Model List",
+    "keys": "Key Management",
+    "import-export": "Import/Export"
   },
   "form": {
     "label": "Label",
     "placeholder": "Placeholder"
+  },
+  "accountDialog": {
+    "add_title": "Add Account",
+    "edit_title": "Edit Account",
+    "save": "Save",
+    "cancel": "Cancel",
+    "detecting": "Detecting...",
+    "auto_detect": "Auto Detect",
+    "manual_add": "Manual Add",
+    "re_detect": "Re-detect",
+    "auto_config_aria_label": "Auto configure to New API",
+    "auto_config_title": "Auto configure to New API",
+    "configuring": "Configuring...",
+    "config_to_new_api": "Configure to New API",
+    "saving": "Saving...",
+    "confirm_add": "Confirm Add",
+    "save_account": "Save Account",
+    "save_changes": "Save Changes",
+    "help_document": "Help Document"
+  },
+  "accountActions": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "copy_key": "Copy Key",
+    "refresh": "Refresh",
+    "view_details": "View Details",
+    "key_copied": "Key copied to clipboard",
+    "no_key_found": "No available key found",
+    "fetch_key_info_failed": "Failed to fetch key info",
+    "fetch_key_list_failed": "Failed to fetch key list: {{errorMessage}}",
+    "url_copied": "URL copied to clipboard",
+    "key_list": "Key List",
+    "key_management": "Key Management",
+    "model_management": "Model Management"
+  },
+  "deleteDialog": {
+    "title": "Delete Account",
+    "warning": "You are about to delete account {{accountName}}. Please verify before confirming to delete this account.",
+    "confirm_deletion": "Delete Confirmation"
+  },
+  "settings": {
+    "title": "Basic Settings",
+    "description": "Manage the basic configuration options of the plugin",
+    "basic_settings": "Basic Settings",
+    "display": "Display",
+    "refresh": "Refresh",
+    "danger_zone": "Danger Zone"
+  },
+  "importExport": {
+    "title": "Import/Export",
+    "description": "Backup and restore plugin data",
+    "importData": "Import Data",
+    "importDescription": "Restore data from a backup file",
+    "selectBackupFile": "Select backup file",
+    "dataPreview": "Data Content Preview",
+    "pasteJsonData": "Paste JSON data or import via the file selector above...",
+    "dataValid": "Data format is correct",
+    "containsAccountData": "Contains account data",
+    "containsUserSettings": "Contains user settings",
+    "backupTime": "Backup Time",
+    "dataInvalid": "Data format error, please check JSON format",
+    "importing": "Importing...",
+    "exportData": "Export Data",
+    "exportDescription": "Export data as a JSON file for backup",
+    "fullBackup": "Full Backup",
+    "fullBackupDescription": "Export all account data and user settings, recommended for full backup",
+    "accountData": "Account Data",
+    "accountDataDescription": "Only export account information and related data",
+    "userSettings": "User Settings",
+    "userSettingsDescription": "Only export interface settings and preference configurations",
+    "export": "Export"
+  },
+  "keyManagement": {
+    "title": "Key Management",
+    "description": "View and manage API keys for the selected account",
+    "addToken": "Add Key",
+    "tokenList": "Key List",
+    "filters": "Filters",
+    "refreshing": "Refreshing...",
+    "refreshTokenList": "Refresh List"
+  },
+  "modelList": {
+    "title": "Model List",
+    "description": "View and manage available AI models",
+    "provider": "Provider",
+    "account": "Account",
+    "search": "Search"
   }
 }

@@ -4,6 +4,7 @@ import {
   PencilIcon,
   SparklesIcon
 } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 interface ActionButtonsProps {
   mode: "add" | "edit"
@@ -32,6 +33,7 @@ export default function ActionButtons({
   onAutoConfig,
   isAutoConfiguring
 }: ActionButtonsProps) {
+  const { t } = useTranslation()
   const isAddMode = mode === "add"
 
   if (isAddMode && !isDetected && !isFormValid) {
@@ -45,12 +47,12 @@ export default function ActionButtons({
           {isDetecting ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>识别中...</span>
+              <span>{t("accountDialog.detecting")}</span>
             </>
           ) : (
             <>
               <SparklesIcon className="w-4 h-4" />
-              <span>自动识别</span>
+              <span>{t("accountDialog.auto_detect")}</span>
             </>
           )}
         </button>
@@ -59,7 +61,7 @@ export default function ActionButtons({
           onClick={onShowManualForm}
           className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-dark-text-secondary bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-bg-tertiary rounded-lg hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
           <PencilIcon className="w-4 h-4" />
-          <span>手动添加</span>
+          <span>{t("accountDialog.manual_add")}</span>
         </button>
       </div>
     )
@@ -71,7 +73,7 @@ export default function ActionButtons({
         type="button"
         onClick={onClose}
         className="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
-        取消
+        {t("accountDialog.cancel")}
       </button>
 
       {mode === "edit" && !isDetected && (
@@ -83,12 +85,12 @@ export default function ActionButtons({
           {isDetecting ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>识别中...</span>
+              <span>{t("accountDialog.detecting")}</span>
             </>
           ) : (
             <>
               <SparklesIcon className="w-4 h-4" />
-              <span>重新识别</span>
+              <span>{t("accountDialog.re_detect")}</span>
             </>
           )}
         </button>
@@ -100,17 +102,17 @@ export default function ActionButtons({
           onClick={onAutoConfig}
           disabled={isAutoConfiguring || isSaving}
           className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-          aria-label="自动配置到 New API"
-          title="自动配置到 New API">
+          aria-label={t("accountDialog.auto_config_aria_label")}
+          title={t("accountDialog.auto_config_title")}>
           {isAutoConfiguring ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>配置中...</span>
+              <span>{t("accountDialog.configuring")}</span>
             </>
           ) : (
             <>
               <BoltIcon className="w-4 h-4" />
-              <span>配置到 New API</span>
+              <span>{t("accountDialog.config_to_new_api")}</span>
             </>
           )}
         </button>
@@ -123,13 +125,17 @@ export default function ActionButtons({
         {isSaving ? (
           <>
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            <span>保存中...</span>
+            <span>{t("accountDialog.saving")}</span>
           </>
         ) : (
           <>
             <CheckIcon className="w-4 h-4" />
             <span>
-              {isAddMode ? (isDetected ? "确认添加" : "保存账号") : "保存更改"}
+              {isAddMode
+                ? isDetected
+                  ? t("accountDialog.confirm_add")
+                  : t("accountDialog.save_account")
+                : t("accountDialog.save_changes")}
             </span>
           </>
         )}

@@ -4,6 +4,7 @@ import {
   SparklesIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
 
 interface DialogHeaderProps {
   mode: "add" | "edit"
@@ -11,8 +12,11 @@ interface DialogHeaderProps {
 }
 
 export default function DialogHeader({ mode, onClose }: DialogHeaderProps) {
+  const { t } = useTranslation()
   const isAddMode = mode === "add"
-  const title = isAddMode ? "新增账号" : "编辑账号"
+  const title = isAddMode
+    ? t("accountDialog.add_title")
+    : t("accountDialog.edit_title")
   const Icon = isAddMode ? SparklesIcon : PencilIcon
   const iconBgClass = isAddMode
     ? "bg-gradient-to-r from-blue-500 to-indigo-600"

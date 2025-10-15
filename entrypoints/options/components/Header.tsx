@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import iconImage from "~/assets/icon.png"
 import { LanguageSwitcher } from "~/components/LanguageSwitcher"
 
@@ -6,6 +8,7 @@ interface HeaderProps {
 }
 
 function Header({ onTitleClick }: HeaderProps) {
+  const { t } = useTranslation()
   return (
     <header className="bg-white dark:bg-dark-bg-secondary shadow-sm border-b border-gray-200 dark:border-dark-bg-tertiary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,15 +19,15 @@ function Header({ onTitleClick }: HeaderProps) {
             onClick={onTitleClick}>
             <img
               src={iconImage}
-              alt="All API Hub"
+              alt={t("app.name")}
               className="w-8 h-8 rounded-lg shadow-sm"
             />
             <div>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-dark-text-primary">
-                All API Hub
+                {t("app.name")}
               </h1>
               <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-                AI 中转站账号管理插件
+                {t("app.description")}
               </p>
             </div>
           </div>
