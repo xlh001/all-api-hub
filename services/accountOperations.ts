@@ -527,6 +527,6 @@ export async function autoConfigToNewApi(
     success: false,
     message:
       lastError?.message ||
-      "An unknown error occurred during auto-configuration."
+      i18next.t("errors.unknown")
   }
 }

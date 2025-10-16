@@ -551,5 +551,72 @@
     "api_error": "API error",
     "network_failed": "Network connection failed",
     "unknown_error": "Unknown error"
+  },
+  "toast": {
+    "loading": {
+      "refreshingAccount": "Refreshing {{accountName}}...",
+      "autoConfiguring": "Auto-configuring to New API...",
+      "checkingApiKeys": "Checking API keys...",
+      "importingToNewApi": "Importing to New API..."
+    },
+    "success": {
+      "refreshAccount": "{{accountName}} refreshed successfully!",
+      "refreshSkipped": "Refresh interval not reached, skipped.",
+      "urlCopied": "{{accountName}} URL copied to clipboard",
+      "accountAdded": "Account {{name}} added successfully!",
+      "accountUpdated": "Account {{name}} updated successfully!",
+      "autoDetectSuccess": "Auto-detect successful!",
+      "newApiConfigSuccess": "{{message}}",
+      "keyCopied": "Key {{name}} copied to clipboard",
+      "deleteKeySuccess": "Key {{name}} deleted successfully"
+    },
+    "error": {
+      "refreshAccount": "Failed to refresh {{accountName}}",
+      "loadAccountFailed": "Failed to load account data",
+      "operationFailed": "Operation failed: {{error}}",
+      "saveFailed": "Save failed",
+      "saveAccountFailed": "Failed to save account",
+      "newApiConfigFailed": "Auto-configuration to New API failed: {{error}}",
+      "copyFailed": "Copy failed",
+      "accountNotFound": "Account information not found",
+      "deleteKeyFailed": "Failed to delete key, please try again later",
+      "loadKeyFailed": "Failed to load key list",
+      "findAccountDetailsFailed": "Could not find account details."
+    }
+  },
+  "errors": {
+    "validation": {
+      "urlRequired": "Site URL cannot be empty",
+      "userIdNumeric": "User ID must be a number",
+      "incompleteAccountInfo": "Please fill in all account information",
+      "updateAccountFailed": "Failed to update account",
+      "newApiBaseUrlRequired": "New API base URL not configured",
+      "newApiAdminTokenRequired": "New API admin token not configured",
+      "newApiUserIdRequired": "New API user ID not configured"
+    },
+    "api": {
+      "fetchUserInfoFailed": "Failed to get user info",
+      "getAccessTokenFailed": "Failed to get access token"
+    },
+    "operation": {
+      "autoDetectFailed": "Auto-detect failed: {{error}}",
+      "saveFailed": "Save failed: {{error}}",
+      "updateFailed": "Update failed: {{error}}",
+      "deleteFailed": "Delete failed: {{error}}",
+      "noResponseMessage": "Delete operation did not return a successful response"
+    },
+    "unknown": "Unknown error"
+  },
+  "operations": {
+    "account": {
+      "deleting": "Deleting account {{name}}..."
+    },
+    "token": {
+      "createFailed": "Failed to create API token."
+    },
+    "detection": {
+      "failed": "Auto-detection failed, please enter information manually or ensure you are logged in to the target site",
+      "getUserIdFailed": "Could not get user ID"
+    }
   }
 }

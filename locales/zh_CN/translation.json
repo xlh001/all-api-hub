@@ -551,5 +551,72 @@
     "api_error": "API错误",
     "network_failed": "网络连接失败",
     "unknown_error": "未知错误"
+  },
+  "toast": {
+    "loading": {
+      "refreshingAccount": "正在刷新 {{accountName}}...",
+      "autoConfiguring": "正在自动配置到 New API...",
+      "checkingApiKeys": "正在检查 API 密钥...",
+      "importingToNewApi": "正在导入到 New API..."
+    },
+    "success": {
+      "refreshAccount": "{{accountName}} 刷新成功！",
+      "refreshSkipped": "刷新间隔未到，已跳过",
+      "urlCopied": "{{accountName}} 的 URL 已复制到剪贴板",
+      "accountAdded": "账号 {{name}} 添加成功!",
+      "accountUpdated": "账号 {{name}} 更新成功!",
+      "autoDetectSuccess": "自动识别成功！",
+      "newApiConfigSuccess": "{{message}}",
+      "keyCopied": "密钥 {{name}} 已复制到剪贴板",
+      "deleteKeySuccess": "密钥 {{name}} 删除成功"
+    },
+    "error": {
+      "refreshAccount": "刷新 {{accountName}} 失败",
+      "loadAccountFailed": "加载账号数据失败",
+      "operationFailed": "操作失败: {{error}}",
+      "saveFailed": "保存失败",
+      "saveAccountFailed": "保存账号失败",
+      "newApiConfigFailed": "自动配置到 New API 失败: {{error}}",
+      "copyFailed": "复制失败",
+      "accountNotFound": "找不到对应账号信息",
+      "deleteKeyFailed": "删除密钥失败，请稍后重试",
+      "loadKeyFailed": "加载密钥列表失败",
+      "findAccountDetailsFailed": "找不到账户详情"
+    }
+  },
+  "errors": {
+    "validation": {
+      "urlRequired": "站点地址不能为空",
+      "userIdNumeric": "用户 ID 必须是数字",
+      "incompleteAccountInfo": "请填写完整的账号信息",
+      "updateAccountFailed": "更新账号失败",
+      "newApiBaseUrlRequired": "New API 基础 URL 未配置",
+      "newApiAdminTokenRequired": "New API 管理员令牌未配置",
+      "newApiUserIdRequired": "New API 用户 ID 未配置"
+    },
+    "api": {
+      "fetchUserInfoFailed": "获取用户信息失败",
+      "getAccessTokenFailed": "获取访问令牌失败"
+    },
+    "operation": {
+      "autoDetectFailed": "自动识别失败: {{error}}",
+      "saveFailed": "保存失败: {{error}}",
+      "updateFailed": "更新失败: {{error}}",
+      "deleteFailed": "删除失败: {{error}}",
+      "noResponseMessage": "删除操作未返回成功响应"
+    },
+    "unknown": "未知错误"
+  },
+  "operations": {
+    "account": {
+      "deleting": "正在删除账号 {{name}}..."
+    },
+    "token": {
+      "createFailed": "创建 API 令牌失败。"
+    },
+    "detection": {
+      "failed": "自动检测失败，请手动输入信息或确保已在目标站点登录",
+      "getUserIdFailed": "无法获取用户 ID"
+    }
   }
 }

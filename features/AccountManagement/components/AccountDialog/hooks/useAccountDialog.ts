@@ -294,7 +294,7 @@ export function useAccountDialog({
         targetAccount.accountId
       )
       if (!siteAccount) {
-        toast.error("Could not find account details.", { id: toastId })
+        toast.error(t("toast.error.findAccountDetailsFailed"), { id: toastId })
         setIsAutoConfiguring(false)
         return
       }

@@ -7,6 +7,7 @@ import {
   type ReactNode
 } from "react"
 import toast from "react-hot-toast"
+import i18next from "i18next"
 
 import { accountStorage } from "~/services/accountStorage"
 import type { DisplaySiteData } from "~/types"
@@ -52,7 +53,7 @@ export const AccountActionsProvider = ({
           await loadAccountData()
           return result
         } else {
-          throw new Error("刷新失败")
+          throw new Error(i18next.t("toast.error.refreshAccount", { accountName: account.name }))
         }
       }
 
@@ -60,14 +61,14 @@ export const AccountActionsProvider = ({
         await toast.promise(
           refreshPromise().then((result) => {
             if (!result.refreshed) {
-              return "刷新间隔未到，已跳过"
+              return i18next.t("toast.success.refreshSkipped")
             }
-            return `${account.name} 刷新成功！`
+            return i18next.t("toast.success.refreshAccount", { accountName: account.name })
           }),
           {
-            loading: `正在刷新 ${account.name}...`,
+            loading: i18next.t("toast.loading.refreshingAccount", { accountName: account.name }),
             success: (message) => message,
-            error: `刷新 ${account.name} 失败`
+            error: i18next.t("toast.error.refreshAccount", { accountName: account.name })
           }
         )
       } catch (error) {
@@ -87,7 +88,7 @@ export const AccountActionsProvider = ({
 
   const handleCopyUrl = useCallback((account: DisplaySiteData) => {
     navigator.clipboard.writeText(account.baseUrl)
-    toast.success(`已复制 ${account.name} 的 URL 到剪贴板`)
+    toast.success(i18next.t("toast.success.urlCopied", { accountName: account.name }))
   }, [])
 
   const value = useMemo(
