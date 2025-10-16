@@ -4,6 +4,7 @@
 
 import toast from "react-hot-toast"
 
+import { UI_CONSTANTS } from "~/constants/ui.ts"
 import { createApiToken, fetchAccountTokens } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import { importToNewApi } from "~/services/newApiService"
@@ -213,7 +214,8 @@ export async function validateAndSaveAccount(
       health: { status: SiteHealthStatus.Healthy }, // 成功获取数据说明状态正常
       site_type: siteType,
       authType: authType,
-      exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
+      exchange_rate:
+        parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT, // 使用用户输入的汇率
       notes: notes || "",
       checkIn: freshAccountData.checkIn,
       account_info: {
@@ -291,7 +293,8 @@ export async function validateAndUpdateAccount(
       health: { status: SiteHealthStatus.Healthy }, // 成功获取数据说明状态正常
       site_type: siteType,
       authType: authType,
-      exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
+      exchange_rate:
+        parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT, // 使用用户输入的汇率
       notes: notes,
       checkIn: freshAccountData.checkIn,
       account_info: {
