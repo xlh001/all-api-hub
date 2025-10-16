@@ -215,9 +215,11 @@ class AccountStorageService {
   async refreshAccount(id: string, force: boolean = false) {
     try {
       const account = await this.getAccountById(id)
+
       if (!account) {
         throw new Error(`账号 ${id} 不存在`)
       }
+      const DisplaySiteData = accountStorage.convertToDisplayData(account)
 
       if (await this.shouldSkipRefresh(account, force)) {
         console.log(
@@ -259,12 +261,7 @@ class AccountStorageService {
 
       // 获取今日收入数据
       try {
-        const todayIncome = await fetchTodayIncome(
-          account.site_url,
-          account.account_info.id,
-          account.account_info.access_token,
-          account.authType
-        )
+        const todayIncome = await fetchTodayIncome(DisplaySiteData)
         updateData.account_info = {
           ...(updateData.account_info || account.account_info),
           today_income: todayIncome.today_income
@@ -397,6 +394,9 @@ class AccountStorageService {
       }
     }
   }
+
+  convertToDisplayData(input: SiteAccount): DisplaySiteData
+  convertToDisplayData(input: SiteAccount[]): DisplaySiteData[]
 
   /**
    * 转换为展示用的数据格式 (兼容当前 UI)

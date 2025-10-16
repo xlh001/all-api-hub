@@ -250,9 +250,10 @@ export async function fetchApi<T>(
 /**
  * 从文本中提取金额及货币符号
  * @param {string} text - 输入文本
- * @returns { {currencySymbol: string, amount: number} | null }
  */
-export function extractAmount(text: string) {
+export function extractAmount(
+  text: string
+): { currencySymbol: string; amount: number } | null {
   // \p{Sc} 支持所有 Unicode 货币符号
   const regex = /([\p{Sc}])\s*([\d,]+(?:\.\d+)?)/u
   const match = text.match(regex)

@@ -28,7 +28,7 @@ import {
   fetchApiData,
   getTodayTimestampRange
 } from "~/services/apiService/common/utils"
-import { AuthTypeEnum, type ApiToken, type CheckInConfig } from "~/types"
+import { AuthTypeEnum, CheckInConfig, type ApiToken } from "~/types"
 
 // ============= 核心 API 函数 =============
 
@@ -209,12 +209,12 @@ export const fetchSupportCheckIn = async (
 /**
  * 获取今日使用情况
  */
-export const fetchTodayUsage = async (
-  baseUrl: string,
-  userId: number,
-  accessToken: string,
-  authType?: AuthTypeEnum
-): Promise<TodayUsageData> => {
+export const fetchTodayUsage = async ({
+  baseUrl,
+  userId,
+  token: accessToken,
+  authType
+}: AuthTypeFetchParams): Promise<TodayUsageData> => {
   const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
 
   let currentPage = 1
@@ -283,12 +283,12 @@ export const fetchTodayUsage = async (
 /**
  * 获取今日收入情况
  */
-export const fetchTodayIncome = async (
-  baseUrl: string,
-  userId: number,
-  accessToken: string,
-  authType?: AuthTypeEnum
-): Promise<TodayIncomeData> => {
+export const fetchTodayIncome = async ({
+  baseUrl,
+  userId,
+  token: accessToken,
+  authType
+}: AuthTypeFetchParams): Promise<TodayIncomeData> => {
   const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
 
   let totalIncome = 0
@@ -415,26 +415,17 @@ export const fetchTodayIncome = async (
 export const fetchAccountData = async (
   baseUrl: string,
   userId: number,
-  accessToken: string,
-  checkin: CheckInConfig,
+  token: string,
+  checkIn: CheckInConfig,
   authType?: AuthTypeEnum
 ): Promise<AccountData> => {
-  const quotaPromise = fetchAccountQuota(baseUrl, userId, accessToken, authType)
-  const todayUsagePromise = fetchTodayUsage(
-    baseUrl,
-    userId,
-    accessToken,
-    authType
-  )
-  const todayIncomePromise = fetchTodayIncome(
-    baseUrl,
-    userId,
-    accessToken,
-    authType
-  )
+  const params = { baseUrl, userId, token, authType, checkIn }
+  const quotaPromise = fetchAccountQuota(baseUrl, userId, token, authType)
+  const todayUsagePromise = fetchTodayUsage(params)
+  const todayIncomePromise = fetchTodayIncome(params)
   const checkInPromise =
-    checkin?.enableDetection && !checkin.customCheckInUrl
-      ? fetchCheckInStatus(baseUrl, userId, accessToken, authType)
+    checkIn?.enableDetection && !checkIn.customCheckInUrl
+      ? fetchCheckInStatus(baseUrl, userId, token, authType)
       : Promise.resolve<boolean | undefined>(undefined)
 
   const [quota, todayUsage, todayIncome, canCheckIn] = await Promise.all([
@@ -449,7 +440,7 @@ export const fetchAccountData = async (
     ...todayUsage,
     ...todayIncome,
     checkIn: {
-      ...checkin,
+      ...checkIn,
       isCheckedInToday: canCheckIn
     }
   }

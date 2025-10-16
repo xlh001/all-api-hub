@@ -203,7 +203,7 @@ export interface AuthFetchParams extends BaseFetchParams {
  * 带认证类型的请求参数
  */
 export interface AuthTypeFetchParams extends AuthFetchParams {
-  authType: AuthTypeEnum
+  authType?: AuthTypeEnum
 }
 
 /**
