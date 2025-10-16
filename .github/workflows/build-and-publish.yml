@@ -35,7 +35,7 @@ jobs:
             # 特殊值 latest → 使用默认分支最新 commit
             REF=$(git rev-parse origin/main)
             echo "ℹ️ Using latest commit from main: $REF"
-          if [ -z "$REF" ]; then
+          elif [ -z "$REF" ]; then
             # 如果没有提供任何输入，就找最新语义化版本的 tag
             REF=$(git tag --sort=-v:refname | head -n 1)
             if [ -n "$REF" ]; then
