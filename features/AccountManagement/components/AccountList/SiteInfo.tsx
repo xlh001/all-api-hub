@@ -9,11 +9,12 @@ import {
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
-import { HEALTH_STATUS_MAP, UI_CONSTANTS } from "~/constants/ui"
+import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
 import { openCheckInPage } from "~/utils/navigation"
+import { getHealthStatusDisplay, getStatusIndicatorColor } from "~/features/AccountManagement/utils/healthStatusUtils"
 
 interface SiteInfoProps {
   site: DisplaySiteData
@@ -49,10 +50,10 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                   {t("accountList.site_info.status")}:{" "}
                   <span
                     className={
-                      HEALTH_STATUS_MAP[site.health?.status]?.color ||
+                      getHealthStatusDisplay(site.health?.status, t).color ||
                       "text-gray-400"
                     }>
-                    {HEALTH_STATUS_MAP[site.health?.status]?.text ||
+                    {getHealthStatusDisplay(site.health?.status, t).text ||
                       t("accountList.site_info.unknown")}
                   </span>
                 </p>
@@ -76,7 +77,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                   ? "opacity-60 animate-pulse"
                   : "cursor-pointer hover:scale-125"
               } ${
-                HEALTH_STATUS_MAP[site.health?.status]?.color ||
+                getStatusIndicatorColor(site.health?.status) ||
                 UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
               }`}
               onClick={handleHealthClick}

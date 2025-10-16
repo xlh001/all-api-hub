@@ -78,7 +78,13 @@
       "custom_check_in_url": "自定义签到地址，点我去签到: {{url}}",
       "check_in_unsupported": "站点可能不支持签到",
       "checked_in_today": "今日已签到，点我查看",
-      "not_checked_in_today": "今日未签到，点我去签到"
+      "not_checked_in_today": "今日未签到，点我去签到",
+      "health_status": {
+        "healthy": "健康",
+        "warning": "警告",
+        "error": "错误",
+        "unknown": "未知"
+      }
     }
   },
   "status": {

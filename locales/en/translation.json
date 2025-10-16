@@ -78,7 +78,13 @@
       "custom_check_in_url": "Custom check-in URL, click to go: {{url}}",
       "check_in_unsupported": "Site may not support check-in",
       "checked_in_today": "Checked in today, click to view",
-      "not_checked_in_today": "Not checked in today, click to go"
+      "not_checked_in_today": "Not checked in today, click to go",
+      "health_status": {
+        "healthy": "Healthy",
+        "warning": "Warning",
+        "error": "Error",
+        "unknown": "Unknown"
+      }
     }
   },
   "status": {

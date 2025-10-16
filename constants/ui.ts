@@ -96,16 +96,3 @@ export const CURRENCY_SYMBOLS = {
   USD: "$",
   CNY: "¥"
 } as const
-
-export const HEALTH_STATUS_MAP = {
-  healthy: {
-    color: UI_CONSTANTS.STYLES.STATUS_INDICATOR.HEALTHY,
-    text: "正常"
-  },
-  error: { color: UI_CONSTANTS.STYLES.STATUS_INDICATOR.ERROR, text: "错误" },
-  warning: {
-    color: UI_CONSTANTS.STYLES.STATUS_INDICATOR.WARNING,
-    text: "警告"
-  },
-  unknown: { color: UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN, text: "未知" }
-} as const
