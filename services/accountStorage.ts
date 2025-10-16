@@ -1,3 +1,5 @@
+import merge from "lodash-es/merge"
+
 import { Storage } from "@plasmohq/storage"
 
 import { UI_CONSTANTS } from "~/constants/ui.ts"
@@ -162,11 +164,12 @@ class AccountStorageService {
         throw new Error(`账号 ${id} 不存在`)
       }
 
-      accounts[index] = {
-        ...accounts[index],
-        ...updates,
-        updated_at: Date.now()
-      }
+      accounts[index] = merge(
+        {},
+        accounts[index], // 原对象
+        updates, // 更新数据
+        { updated_at: Date.now() } // 强制更新字段
+      )
 
       await this.saveAccounts(accounts)
       return true
