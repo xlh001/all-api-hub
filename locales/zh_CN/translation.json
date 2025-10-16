@@ -544,5 +544,12 @@
     "tokenBased": "按量计费",
     "perCall": "按次计费",
     "notProvided": "未提供"
+  },
+  "healthStatus": {
+    "normal": "账号状态正常",
+    "http_error": "HTTP {{statusCode}}: {{message}}",
+    "api_error": "API错误",
+    "network_failed": "网络连接失败",
+    "unknown_error": "未知错误"
   }
 }

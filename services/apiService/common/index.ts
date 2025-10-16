@@ -1,3 +1,5 @@
+import i18next from "i18next"
+
 import { UI_CONSTANTS } from "~/constants/ui.ts"
 import { accountStorage } from "~/services/accountStorage.ts"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
@@ -429,7 +431,7 @@ export const refreshAccountData = async (
       data,
       healthStatus: {
         status: SiteHealthStatus.Healthy,
-        message: "账号状态正常"
+        message: i18next.t("healthStatus.normal")
       }
     }
   } catch (error) {
@@ -759,13 +761,16 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
     if (error.statusCode) {
       return {
         status: SiteHealthStatus.Warning,
-        message: `HTTP ${error.statusCode}: ${error.message}`
+        message: i18next.t("healthStatus.http_error", {
+          statusCode: error.statusCode,
+          message: error.message
+        })
       }
     }
     // 其他API错误（数据格式错误等）
     return {
       status: SiteHealthStatus.Unknown,
-      message: error.message
+      message: i18next.t("healthStatus.api_error")
     }
   }
 
@@ -773,13 +778,13 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
   if (error instanceof TypeError && error.message.includes("fetch")) {
     return {
       status: SiteHealthStatus.Error,
-      message: "网络连接失败"
+      message: i18next.t("healthStatus.network_failed")
     }
   }
 
   // 其他未知错误
   return {
     status: SiteHealthStatus.Unknown,
-    message: error?.message || "未知错误"
+    message: i18next.t("healthStatus.unknown_error")
   }
 }

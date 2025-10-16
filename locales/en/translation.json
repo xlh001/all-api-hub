@@ -544,5 +544,12 @@
     "tokenBased": "Token-based billing",
     "perCall": "Per-call billing",
     "notProvided": "Not provided"
+  },
+  "healthStatus": {
+    "normal": "Account status is normal",
+    "http_error": "HTTP {{statusCode}}: {{message}}",
+    "api_error": "API error",
+    "network_failed": "Network connection failed",
+    "unknown_error": "Unknown error"
   }
 }
