@@ -267,7 +267,7 @@ export function extractAmount(
 
   // 如果是人民币
   if (currencySymbol === "¥") {
-    amount %= exchangeRate
+    amount = amount / exchangeRate
   }
 
   return { currencySymbol, amount }
