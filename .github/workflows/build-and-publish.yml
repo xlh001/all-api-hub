@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # 允许手动触发
     inputs:
       tag:
-        description: "Release tag to build (e.g. v1.0.0). Leave empty to auto-detect latest."
+        description: "Release tag or commit hash to build. Leave empty to auto-detect latest."
         required: false
         default: ""
 
@@ -31,6 +31,10 @@ jobs:
           # 优先级：workflow 输入 ref > release tag > 自动找最新 tag
           REF="${{ github.event.inputs.ref || github.event.release.tag_name}}"
           
+          if [ "$REF" = "latest" ]; then
+            # 特殊值 latest → 使用默认分支最新 commit
+            REF=$(git rev-parse origin/main)
+            echo "ℹ️ Using latest commit from main: $REF"
           if [ -z "$REF" ]; then
             # 如果没有提供任何输入，就找最新语义化版本的 tag
             REF=$(git tag --sort=-v:refname | head -n 1)
