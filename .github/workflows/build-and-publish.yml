@@ -24,73 +24,75 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 决定使用哪个 tag
-      - name: Determine tag
-        id: get_tag
+      # 决定要 checkout 的 ref（tag 或 commit）
+      - name: Determine ref (tag or commit)
+        id: get_ref
         run: |
-          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
-          if [ -z "$TAG" ]; then
-            # 没有输入 tag，就自动找出语义化版本号最大的 tag
-            TAG=$(git tag --sort=-v:refname | head -n 1)
-            echo "⚠️ No tag provided. Using latest tag: $TAG"
+          # 优先级：workflow 输入 ref > release tag > 自动找最新 tag
+          REF="${{ github.event.inputs.ref || github.event.release.tag_name}}"
+          
+          if [ -z "$REF" ]; then
+            # 如果没有提供任何输入，就找最新语义化版本的 tag
+            REF=$(git tag --sort=-v:refname | head -n 1)
+            if [ -n "$REF" ]; then
+              echo "⚠️ No ref provided. Using latest tag: $REF"
+            else
+              echo "❌ No tag found in repo and no input ref. Skipping build."
+              echo "ref=" >> $GITHUB_OUTPUT
+              exit 0
+            fi
           else
-            echo "ℹ️ Using provided/release tag: $TAG"
+            echo "ℹ️ Using provided ref (tag or commit): $REF"
           fi
+          
+          # 输出 ref 给后续步骤使用
+          echo "ref=$REF" >> $GITHUB_OUTPUT
 
-          # 防御：万一仓库里没有任何 tag
-          if [ -z "$TAG" ]; then
-            echo "❌ No tag found in repo. Skipping build."
-            echo "tag=" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-      # 再 checkout 到指定的 tag 确保代码一致
-      - name: Checkout specific tag
-        if: ${{ steps.get_tag.outputs.tag != '' }}
+      # 3️⃣ Checkout 到指定的 ref（tag 或 commit hash）
+      - name: Checkout specific ref
+        if: ${{ steps.get_ref.outputs.ref != '' }}
         uses: actions/checkout@v5
         with:
-          ref: ${{ steps.get_tag.outputs.tag }}
-          fetch-depth: 0
+          ref: ${{ steps.get_ref.outputs.ref }}
+          fetch-depth: 0  # 确保获取完整历史，以便 tag、commit 都能找到
 
       # 安装 pnpm
       - uses: pnpm/action-setup@v4
-        if: ${{ steps.get_tag.outputs.tag != '' }}
+        if: ${{ steps.get_ref.outputs.ref != '' }}
         with:
           version: 10
           run_install: false
 
       # 设置 Node.js 环境 + pnpm 缓存
       - uses: actions/setup-node@v4
-        if: ${{ steps.get_tag.outputs.tag != '' }}
+        if: ${{ steps.get_ref.outputs.ref != '' }}
         with:
           node-version: 20
           cache: "pnpm"
 
       # 安装依赖
       - name: Install dependencies
-        if: ${{ steps.get_tag.outputs.tag != '' }}
+        if: ${{ steps.get_ref.outputs.ref != '' }}
         run: pnpm install
 
       # 编译并打包扩展
       - name: Package the extension
-        if: ${{ steps.get_tag.outputs.tag != '' }}
+        if: ${{ steps.get_ref.outputs.ref != '' }}
         run: pnpm zip:all
 
-      # 上传 Release Artifact（仅当有 tag 时）
+      # 上传 Release Artifact（仅当有 ref 时）
       - name: Upload Release Artifact
-        if: ${{ steps.get_tag.outputs.tag != '' }}
+        if: ${{ steps.get_ref.outputs.ref != '' }}
         continue-on-error: true
         run: |
-          echo "Uploading .output/*.zip to release ${{ steps.get_tag.outputs.tag }}"
-          gh release upload "${{ steps.get_tag.outputs.tag }}" .output/*.zip
+          echo "Uploading .output/*.zip to release ${{ steps.get_ref.outputs.ref }}"
+          gh release upload "${{ steps.get_ref.outputs.ref }}" .output/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 提交到浏览器商店
       - name: Browser Platform Publish
-        if: ${{ steps.get_tag.outputs.tag != '' }}
+        if: ${{ steps.get_ref.outputs.ref != '' }}
         continue-on-error: true
         run: |
           pnpm wxt submit \
