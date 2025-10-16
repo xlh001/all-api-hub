@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 
+import { UI_CONSTANTS } from "~/constants/ui.ts"
 import type { PricingResponse } from "~/services/apiService/common/type"
 import type { DisplaySiteData } from "~/types"
 import { calculateModelPrice } from "~/utils/modelPricing"
@@ -32,7 +33,7 @@ export function useFilteredModels({
       const exchangeRate =
         currentAccount?.balance?.USD > 0
           ? currentAccount.balance.CNY / currentAccount.balance.USD
-          : 7
+          : UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
 
       const calculatedPrice = calculateModelPrice(
         model,

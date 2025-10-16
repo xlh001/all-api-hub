@@ -2,6 +2,7 @@ import { CpuChipIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 import { Virtuoso } from "react-virtuoso"
 
+import { UI_CONSTANTS } from "~/constants/ui.ts"
 import type { DisplaySiteData } from "~/types"
 
 import ModelItem from "./ModelItem"
@@ -58,7 +59,7 @@ export function ModelDisplay({
             exchangeRate={
               currentAccount && currentAccount?.balance?.USD > 0
                 ? currentAccount.balance.CNY / currentAccount.balance.USD
-                : 7
+                : UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
             }
             showRealPrice={showRealPrice}
             showRatioColumn={showRatioColumn}
