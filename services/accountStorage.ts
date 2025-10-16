@@ -3,11 +3,11 @@ import { Storage } from "@plasmohq/storage"
 import { UI_CONSTANTS } from "~/constants/ui.ts"
 import {
   AuthTypeEnum,
+  SiteHealthStatus,
   type AccountStats,
   type CurrencyType,
   type DisplaySiteData,
   type SiteAccount,
-  type SiteHealthStatus,
   type StorageConfig
 } from "~/types"
 
@@ -294,7 +294,7 @@ class AccountStorageService {
       try {
         await this.updateAccount(id, {
           health: {
-            status: "unknown",
+            status: SiteHealthStatus.Unknown,
             reason: getErrorMessage(error)
           },
           last_sync_time: Date.now()

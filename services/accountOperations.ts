@@ -11,6 +11,7 @@ import { userPreferences } from "~/services/userPreferences"
 import {
   ApiToken,
   AuthTypeEnum,
+  SiteHealthStatus,
   type CheckInConfig,
   type DisplaySiteData,
   type SiteAccount
@@ -209,7 +210,7 @@ export async function validateAndSaveAccount(
       emoji: "", // 不再使用 emoji
       site_name: siteName.trim(),
       site_url: url.trim(),
-      health: { status: "healthy" }, // 成功获取数据说明状态正常
+      health: { status: SiteHealthStatus.Healthy }, // 成功获取数据说明状态正常
       site_type: siteType,
       authType: authType,
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率
@@ -287,7 +288,7 @@ export async function validateAndUpdateAccount(
     const updateData: Partial<Omit<SiteAccount, "id" | "created_at">> = {
       site_name: siteName.trim(),
       site_url: url.trim(),
-      health: { status: "healthy" }, // 成功获取数据说明状态正常
+      health: { status: SiteHealthStatus.Healthy }, // 成功获取数据说明状态正常
       site_type: siteType,
       authType: authType,
       exchange_rate: parseFloat(exchangeRate) || 7.2, // 使用用户输入的汇率

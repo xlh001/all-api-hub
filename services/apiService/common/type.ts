@@ -1,7 +1,12 @@
 /**
  * API 服务 - 用于与 One API/New API 站点进行交互
  */
-import { ApiToken, AuthTypeEnum, CheckInConfig } from "~/types"
+import {
+  ApiToken,
+  AuthTypeEnum,
+  CheckInConfig,
+  SiteHealthStatus
+} from "~/types"
 import type { PerCallPrice } from "~/utils/modelPricing"
 
 // ============= 类型定义 =============
@@ -45,7 +50,7 @@ export interface RefreshAccountResult {
 }
 
 export interface HealthCheckResult {
-  status: "healthy" | "warning" | "error" | "unknown"
+  status: SiteHealthStatus
   message: string
 }
 

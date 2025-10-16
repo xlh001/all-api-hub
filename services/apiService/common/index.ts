@@ -28,7 +28,12 @@ import {
   fetchApiData,
   getTodayTimestampRange
 } from "~/services/apiService/common/utils"
-import { AuthTypeEnum, CheckInConfig, type ApiToken } from "~/types"
+import {
+  AuthTypeEnum,
+  CheckInConfig,
+  SiteHealthStatus,
+  type ApiToken
+} from "~/types"
 
 // ============= 核心 API 函数 =============
 
@@ -412,7 +417,7 @@ export const refreshAccountData = async (
       success: true,
       data,
       healthStatus: {
-        status: "healthy",
+        status: SiteHealthStatus.Healthy,
         message: "账号状态正常"
       }
     }
@@ -742,13 +747,13 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
     // HTTP响应码不为200的情况
     if (error.statusCode) {
       return {
-        status: "warning",
+        status: SiteHealthStatus.Warning,
         message: `HTTP ${error.statusCode}: ${error.message}`
       }
     }
     // 其他API错误（数据格式错误等）
     return {
-      status: "unknown",
+      status: SiteHealthStatus.Unknown,
       message: error.message
     }
   }
@@ -756,14 +761,14 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
   // 网络连接失败、超时等HTTP请求失败的情况
   if (error instanceof TypeError && error.message.includes("fetch")) {
     return {
-      status: "error",
+      status: SiteHealthStatus.Error,
       message: "网络连接失败"
     }
   }
 
   // 其他未知错误
   return {
-    status: "unknown",
+    status: SiteHealthStatus.Unknown,
     message: error?.message || "未知错误"
   }
 }
