@@ -1,8 +1,6 @@
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 
-import "dayjs/locale/zh-cn"
-
 import { CURRENCY_SYMBOLS, UI_CONSTANTS } from "~/constants/ui"
 import type {
   AccountStats,
@@ -14,7 +12,6 @@ import type {
 
 // 初始化 dayjs
 dayjs.extend(relativeTime)
-dayjs.locale("zh-cn")
 
 /**
  * 格式化 Token 数量
@@ -32,22 +29,19 @@ export const formatTokenCount = (count: number): string => {
  * 格式化相对时间
  */
 export const formatRelativeTime = (date: Date | undefined): string => {
-  if (!date) return ""
-  const now = dayjs()
-  const targetTime = dayjs(date)
-  const diffInSeconds = now.diff(targetTime, "second")
-
-  if (diffInSeconds < 5) {
-    return "刚刚"
+  if (!date) {
+    return ""
   }
-  return targetTime.fromNow()
+  return dayjs(date).fromNow()
 }
 
 /**
  * 格式化具体时间
  */
 export const formatFullTime = (date: Date | undefined): string => {
-  if (!date) return ""
+  if (!date) {
+    return ""
+  }
   return dayjs(date).format("YYYY/MM/DD HH:mm:ss")
 }
 
@@ -205,7 +199,9 @@ export const formatUsedQuota = (token: ApiToken) => {
  * 格式化时间戳
  */
 export const formatTimestamp = (timestamp: number) => {
-  if (timestamp <= 0) return "永不过期"
+  if (timestamp <= 0) {
+    return "永不过期"
+  }
   return new Date(timestamp * 1000).toLocaleDateString("zh-CN")
 }
 
