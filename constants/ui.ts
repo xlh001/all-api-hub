@@ -1,14 +1,8 @@
+import { DATA_TYPE_BALANCE } from "~/constants/index.ts"
+
 /**
  * UI 相关常量定义
  */
-export const DATA_TYPE_CONSUMPTION = "consumption"
-export const DATA_TYPE_INCOME = "income"
-export const DATA_TYPE_BALANCE = "balance"
-export const POPUP_WIDTH = 400
-export const POPUP_HEIGHT = 600
-
-export const DEFAULT_LANG = "zh_CN"
-
 export const UI_CONSTANTS = {
   // 弹窗尺寸
   POPUP: {

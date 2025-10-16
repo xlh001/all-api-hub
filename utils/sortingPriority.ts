@@ -1,4 +1,4 @@
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import type {
   CurrencyType,
   DisplaySiteData,

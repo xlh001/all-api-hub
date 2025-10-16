@@ -3,11 +3,8 @@ import React, { useMemo } from "react"
 import CountUp from "react-countup"
 import { useTranslation } from "react-i18next"
 
-import {
-  DATA_TYPE_BALANCE,
-  DATA_TYPE_CONSUMPTION,
-  UI_CONSTANTS
-} from "~/constants/ui"
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
+import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import {

@@ -1,7 +1,7 @@
 import { EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import type { BalanceType, CurrencyType } from "~/types"
 

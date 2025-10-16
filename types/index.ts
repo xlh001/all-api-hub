@@ -1,7 +1,7 @@
 // 账号信息数据类型定义
 
 // 站点健康状态
-import { DATA_TYPE_BALANCE, type DATA_TYPE_CONSUMPTION } from "~/constants/ui"
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 
 export enum SiteHealthStatus {
   Healthy = "healthy",

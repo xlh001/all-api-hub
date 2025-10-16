@@ -1,6 +1,6 @@
 import { Storage } from "@plasmohq/storage"
 
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants/ui"
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
