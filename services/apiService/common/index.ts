@@ -207,204 +207,148 @@ export const fetchSupportCheckIn = async (
 }
 
 /**
+ * 通用的分页日志获取与聚合函数
+ * @param authParams - 认证参数
+ * @param logTypes - 需要获取的日志类型数组
+ * @param dataAggregator - 数据聚合函数
+ * @param initialValue - 聚合结果的初始值
+ * @param errorHandler - 错误处理函数
+ * @returns 聚合后的结果
+ */
+const fetchPaginatedLogs = async <T>(
+  authParams: AuthTypeFetchParams,
+  logTypes: LogType[],
+  dataAggregator: (accumulator: T, items: LogResponseData["items"]) => T,
+  initialValue: T,
+  errorHandler?: (error: unknown, logType: LogType) => void
+): Promise<T> => {
+  const { baseUrl, userId, token: accessToken, authType } = authParams
+  const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
+  let aggregatedData = initialValue
+  let maxPageReached = false
+
+  for (const logType of logTypes) {
+    try {
+      let currentPage = 1
+      while (currentPage <= REQUEST_CONFIG.MAX_PAGES) {
+        const params = new URLSearchParams({
+          p: currentPage.toString(),
+          page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
+          type: String(logType),
+          token_name: "",
+          model_name: "",
+          start_timestamp: startTimestamp.toString(),
+          end_timestamp: endTimestamp.toString(),
+          group: ""
+        })
+
+        const logData = await fetchApiData<LogResponseData>({
+          baseUrl,
+          endpoint: `/api/log/self?${params.toString()}`,
+          userId,
+          token: accessToken,
+          authType
+        })
+
+        const items = logData.items || []
+        aggregatedData = dataAggregator(aggregatedData, items)
+
+        const totalPages = Math.ceil(
+          (logData.total || 0) / REQUEST_CONFIG.DEFAULT_PAGE_SIZE
+        )
+        if (currentPage >= totalPages) {
+          break
+        }
+        currentPage++
+      }
+
+      if (currentPage > REQUEST_CONFIG.MAX_PAGES) {
+        maxPageReached = true
+      }
+    } catch (error) {
+      if (errorHandler) {
+        errorHandler(error, logType)
+      } else {
+        console.warn(`获取日志类型 ${logType} 失败:`, error)
+      }
+    }
+  }
+
+  if (maxPageReached) {
+    console.warn(
+      `达到最大分页限制(${REQUEST_CONFIG.MAX_PAGES}页)，数据可能不完整`
+    )
+  }
+
+  return aggregatedData
+}
+
+/**
  * 获取今日使用情况
  */
-export const fetchTodayUsage = async ({
-  baseUrl,
-  userId,
-  token: accessToken,
-  authType
-}: AuthTypeFetchParams): Promise<TodayUsageData> => {
-  const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
-
-  let currentPage = 1
-  let totalRequestsCount = 0
-  let aggregatedData = {
+export const fetchTodayUsage = async (
+  authParams: AuthTypeFetchParams
+): Promise<TodayUsageData> => {
+  const initialState = {
     today_quota_consumption: 0,
     today_prompt_tokens: 0,
-    today_completion_tokens: 0
+    today_completion_tokens: 0,
+    today_requests_count: 0
   }
 
-  // 循环获取所有分页数据
-  while (currentPage <= REQUEST_CONFIG.MAX_PAGES) {
-    const params = new URLSearchParams({
-      p: currentPage.toString(),
-      page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
-      type: String(LogType.Consume),
-      token_name: "",
-      model_name: "",
-      start_timestamp: startTimestamp.toString(),
-      end_timestamp: endTimestamp.toString(),
-      group: ""
-    })
-
-    const logData = await fetchApiData<LogResponseData>({
-      baseUrl,
-      endpoint: `/api/log/self?${params.toString()}`,
-      userId,
-      token: accessToken,
-      authType
-    })
-
-    const items = logData.items || []
-    const currentPageItemCount = items.length
-
-    // 聚合当前页数据
+  const usageAggregator = (
+    accumulator: typeof initialState,
+    items: LogResponseData["items"]
+  ) => {
     const pageData = aggregateUsageData(items)
-    aggregatedData.today_quota_consumption += pageData.today_quota_consumption
-    aggregatedData.today_prompt_tokens += pageData.today_prompt_tokens
-    aggregatedData.today_completion_tokens += pageData.today_completion_tokens
-
-    totalRequestsCount += currentPageItemCount
-
-    // 检查是否还有更多数据
-    const totalPages = Math.ceil(
-      (logData.total || 0) / REQUEST_CONFIG.DEFAULT_PAGE_SIZE
-    )
-    if (currentPage >= totalPages) {
-      break
-    }
-
-    currentPage++
+    accumulator.today_quota_consumption += pageData.today_quota_consumption
+    accumulator.today_prompt_tokens += pageData.today_prompt_tokens
+    accumulator.today_completion_tokens += pageData.today_completion_tokens
+    accumulator.today_requests_count += items?.length || 0
+    return accumulator
   }
 
-  if (currentPage > REQUEST_CONFIG.MAX_PAGES) {
-    console.warn(
-      `达到最大分页限制(${REQUEST_CONFIG.MAX_PAGES}页)，停止获取数据`
-    )
-  }
-
-  return {
-    ...aggregatedData,
-    today_requests_count: totalRequestsCount
-  }
+  return fetchPaginatedLogs(
+    authParams,
+    [LogType.Consume],
+    usageAggregator,
+    initialState
+  )
 }
 
 /**
  * 获取今日收入情况
  */
-export const fetchTodayIncome = async ({
-  baseUrl,
-  userId,
-  token: accessToken,
-  authType
-}: AuthTypeFetchParams): Promise<TodayIncomeData> => {
-  const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
-
-  let totalIncome = 0
-  let maxPageReached = false
-
-  // 获取充值记录 (type=1)
-  try {
-    let currentPage = 1
-    while (currentPage <= REQUEST_CONFIG.MAX_PAGES) {
-      const params = new URLSearchParams({
-        p: currentPage.toString(),
-        page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
-        type: String(LogType.Recharge),
-        token_name: "",
-        model_name: "",
-        start_timestamp: startTimestamp.toString(),
-        end_timestamp: endTimestamp.toString(),
-        group: ""
-      })
-
-      const logData = await fetchApiData<LogResponseData>({
-        baseUrl,
-        endpoint: `/api/log/self?${params.toString()}`,
-        userId,
-        token: accessToken,
-        authType
-      })
-
-      const items = logData.items || []
-
-      // 聚合充值数据
-      totalIncome += items.reduce(
+export const fetchTodayIncome = async (
+  authParams: AuthTypeFetchParams
+): Promise<TodayIncomeData> => {
+  const incomeAggregator = (
+    accumulator: number,
+    items: LogResponseData["items"]
+  ) => {
+    return (
+      accumulator +
+      (items?.reduce(
         (sum, item) =>
           sum +
           (item.quota ||
             UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR *
               (extractAmount(item.content)?.amount ?? 0)),
         0
-      )
-
-      // 检查是否还有更多数据
-      const totalPages = Math.ceil(
-        (logData.total || 0) / REQUEST_CONFIG.DEFAULT_PAGE_SIZE
-      )
-      if (currentPage >= totalPages) {
-        break
-      }
-
-      currentPage++
-    }
-
-    if (currentPage > REQUEST_CONFIG.MAX_PAGES) {
-      maxPageReached = true
-    }
-  } catch (error) {
-    console.warn("获取充值记录失败:", error)
-  }
-
-  // 获取签到记录 (type=5)
-  try {
-    let currentPage = 1
-    while (currentPage <= REQUEST_CONFIG.MAX_PAGES) {
-      const params = new URLSearchParams({
-        p: currentPage.toString(),
-        page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
-        type: String(LogType.System),
-        token_name: "",
-        model_name: "",
-        start_timestamp: startTimestamp.toString(),
-        end_timestamp: endTimestamp.toString(),
-        group: ""
-      })
-
-      const logData = await fetchApiData<LogResponseData>({
-        baseUrl,
-        endpoint: `/api/log/self?${params.toString()}`,
-        userId,
-        token: accessToken,
-        authType
-      })
-
-      const items = logData.items || []
-
-      // 聚合签到数据
-      totalIncome += items.reduce(
-        (sum, item) =>
-          sum +
-          (item.quota ||
-            UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR *
-              (extractAmount(item.content)?.amount ?? 0)),
-        0
-      )
-
-      // 检查是否还有更多数据
-      const totalPages = Math.ceil(
-        (logData.total || 0) / REQUEST_CONFIG.DEFAULT_PAGE_SIZE
-      )
-      if (currentPage >= totalPages) {
-        break
-      }
-
-      currentPage++
-    }
-
-    if (currentPage > REQUEST_CONFIG.MAX_PAGES) {
-      maxPageReached = true
-    }
-  } catch (error) {
-    console.warn("获取签到记录失败:", error)
-  }
-
-  if (maxPageReached) {
-    console.warn(
-      `达到最大分页限制(${REQUEST_CONFIG.MAX_PAGES}页)，停止获取收入数据`
+      ) || 0)
     )
   }
+
+  const totalIncome = await fetchPaginatedLogs(
+    authParams,
+    [LogType.Recharge, LogType.System],
+    incomeAggregator,
+    0,
+    (error, logType) => {
+      const typeName = logType === LogType.Recharge ? "充值" : "签到"
+      console.warn(`获取${typeName}记录失败:`, error)
+    }
+  )
 
   return { today_income: totalIncome }
 }
