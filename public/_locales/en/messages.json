@@ -3,7 +3,7 @@
     "message": "All API Hub"
   },
   "manifest_description": {
-    "message": "Manage all AI proxy stations with one click"
+    "message": "Manage all AI redistribution stations with one click"
   },
   "manifest_commands_sidebar_action": {
     "message": "Open All API Hub in sidebar"
