@@ -49,6 +49,7 @@
     "warning_site_added": "⚠️当前站点 {{siteName}} 已被添加",
     "refreshing_all_accounts": "正在刷新所有账号...",
     "refresh_complete": "刷新完成: {{success}} 成功, {{failed}} 失败",
+    "refresh_partial_skipped": "刷新完成: {{success}} 成功, {{skipped}} 跳过",
     "refresh_success": "所有账号刷新成功！",
     "refresh_failed": "刷新失败，请稍后重试",
     "add_account": "新增账号"

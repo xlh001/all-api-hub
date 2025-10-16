@@ -49,6 +49,7 @@
     "warning_site_added": "⚠️Current site {{siteName}} has been added",
     "refreshing_all_accounts": "Refreshing all accounts...",
     "refresh_complete": "Refresh complete: {{success}} success, {{failed}} failed",
+    "refresh_partial_skipped": "Refresh complete: {{success}} success, {{skipped}} skipped",
     "refresh_success": "All accounts refreshed successfully!",
     "refresh_failed": "Refresh failed, please try again later",
     "add_account": "Add Account"

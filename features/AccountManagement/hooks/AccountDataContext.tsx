@@ -200,11 +200,11 @@ export const AccountDataProvider = ({
                   return null
                 }
 
-                const refreshedCount = result.refreshedCount
+                const { refreshedCount } = result
                 if (refreshedCount < sum) {
-                  return t("account.refresh_complete", {
+                  return t("account.refresh_partial_skipped", {
                     success: refreshedCount,
-                    failed: sum - refreshedCount
+                    skipped: sum - refreshedCount
                   })
                 }
                 console.log("[Popup] 打开插件时自动刷新完成")
