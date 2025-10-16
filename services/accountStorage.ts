@@ -94,6 +94,52 @@ class AccountStorageService {
   }
 
   /**
+   * 根据 baseUrl 和 userId 获取单个账号信息
+   */
+  async getAccountByBaseUrlAndUserId(
+    baseUrl: string,
+    userId: string | number
+  ): Promise<SiteAccount | null> {
+    try {
+      console.log(
+        `[AccountStorage] Searching for account with baseUrl: ${baseUrl}, userId: ${userId}`
+      )
+      const accounts = await this.getAllAccounts()
+      const account = accounts.find(
+        (acc) =>
+          acc.site_url === baseUrl && acc.account_info.id.toString() === userId
+      )
+
+      if (account && needsConfigMigration(account)) {
+        console.log(
+          `[AccountStorage] Migrating account ${account.id} (baseUrl: ${baseUrl}, userId: ${userId}) on fetch.`
+        )
+        const migratedAccount = migrateAccountConfig(account)
+        await this.updateAccount(account.id, migratedAccount)
+        return migratedAccount
+      }
+
+      if (account) {
+        console.log(
+          `[AccountStorage] Found account: ${account.site_name} (id: ${account.id})`
+        )
+      } else {
+        console.log(
+          `[AccountStorage] No account found with baseUrl: ${baseUrl}, userId: ${userId}`
+        )
+      }
+
+      return account || null
+    } catch (error) {
+      console.error(
+        `[AccountStorage] Failed to get account by baseUrl and userId:`,
+        error
+      )
+      return null
+    }
+  }
+
+  /**
    * 检查给定 URL 是否已存在
    */
   async checkUrlExists(url: string): Promise<SiteAccount | null> {

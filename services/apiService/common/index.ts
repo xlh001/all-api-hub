@@ -1,4 +1,5 @@
 import { UI_CONSTANTS } from "~/constants/ui.ts"
+import { accountStorage } from "~/services/accountStorage.ts"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import { ApiError } from "~/services/apiService/common/errors"
 import {
@@ -327,6 +328,16 @@ export const fetchTodayUsage = async (
 export const fetchTodayIncome = async (
   authParams: AuthTypeFetchParams
 ): Promise<TodayIncomeData> => {
+  const { baseUrl, userId } = authParams
+  let exchangeRate: number = UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
+
+  const account = await accountStorage.getAccountByBaseUrlAndUserId(
+    baseUrl,
+    userId
+  )
+  if (account) {
+    exchangeRate = account.exchange_rate
+  }
   const incomeAggregator = (
     accumulator: number,
     items: LogResponseData["items"]
@@ -338,7 +349,7 @@ export const fetchTodayIncome = async (
           sum +
           (item.quota ||
             UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR *
-              (extractAmount(item.content)?.amount ?? 0)),
+              (extractAmount(item.content, exchangeRate)?.amount ?? 0)),
         0
       ) || 0)
     )

@@ -250,9 +250,11 @@ export async function fetchApi<T>(
 /**
  * 从文本中提取金额及货币符号
  * @param {string} text - 输入文本
+ * @param exchangeRate - （CNY per USD）
  */
 export function extractAmount(
-  text: string
+  text: string,
+  exchangeRate: number
 ): { currencySymbol: string; amount: number } | null {
   // \p{Sc} 支持所有 Unicode 货币符号
   const regex = /([\p{Sc}])\s*([\d,]+(?:\.\d+)?)/u
@@ -261,7 +263,12 @@ export function extractAmount(
   if (!match) return null
 
   const currencySymbol = match[1] // 货币符号，如 $、€、¥
-  const amount = parseFloat(match[2].replace(/,/g, "")) // 数字金额
+  let amount = parseFloat(match[2].replace(/,/g, "")) // 数字金额
+
+  // 如果是人民币
+  if (currencySymbol === "¥") {
+    amount %= exchangeRate
+  }
 
   return { currencySymbol, amount }
 }
