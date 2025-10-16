@@ -80,11 +80,11 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                 UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
               }`}
               onClick={handleHealthClick}
-              title="点击刷新健康状态"></div>
+              title={t("accountList.site_info.refresh_health_status")}></div>
           </Tooltip>
           {site.id === detectedAccountId && (
-            <Tooltip content="当前标签页站点已存在" position="top">
-              <span className={`text-yellow-700`}>当前站点</span>
+            <Tooltip content={t("accountList.site_info.current_site_exists")} position="top">
+              <span className={`text-yellow-700`}>{t("accountList.site_info.current_site")}</span>
             </Tooltip>
           )}
           <div className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">
