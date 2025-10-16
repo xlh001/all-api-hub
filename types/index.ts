@@ -160,7 +160,7 @@ export interface DisplaySiteData {
    */
   supports_check_in?: boolean // 是否支持签到功能
   authType: AuthTypeEnum // 认证方式
-  checkIn?: CheckInConfig
+  checkIn: CheckInConfig
 }
 
 // 站点的token 密钥信息(API 密钥)
