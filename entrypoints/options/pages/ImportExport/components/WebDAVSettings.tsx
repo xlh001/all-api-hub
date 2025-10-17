@@ -63,10 +63,14 @@ export default function WebDAVSettings() {
         {/* 配置表单 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
+            <label
+              htmlFor="webdavUrl"
+              className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
               {t("importExport.webdavUrl")}
             </label>
             <input
+              id="webdavUrl"
+              title={t("importExport.webdavUrl")}
               type="url"
               placeholder={t("importExport.webdavUrlExample")}
               value={webdavUrl}
@@ -76,23 +80,33 @@ export default function WebDAVSettings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
+            <label
+              htmlFor="webdavUsername"
+              className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
               {t("importExport.username")}
             </label>
             <input
+              id="webdavUsername"
+              title={t("importExport.username")}
               type="text"
+              placeholder={t("importExport.username")}
               value={webdavUsername}
               onChange={(e) => setWebdavUsername(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
+            <label
+              htmlFor="webdavPassword"
+              className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
               {t("importExport.password")}
             </label>
             <div className="relative">
               <input
+                id="webdavPassword"
+                title={t("importExport.password")}
                 type={showWebdavPassword ? "text" : "password"}
+                placeholder={t("importExport.password")}
                 value={webdavPassword}
                 onChange={(e) => setWebdavPassword(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
