@@ -186,6 +186,7 @@
   "accountActions": {
     "edit": "编辑",
     "delete": "删除",
+    "copy_url": "复制网址",
     "copy_key": "复制密钥",
     "refresh": "刷新",
     "view_details": "查看详情",
@@ -510,7 +511,8 @@
     "accountDataDescription": "仅导出账号信息和相关数据",
     "userSettings": "用户设置",
     "userSettingsDescription": "仅导出界面设置和偏好配置",
-    "export": "导出"
+    "export": "导出",
+    "exporting": "导出中"
   },
   "about": {
     "title": "关于",

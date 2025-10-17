@@ -122,10 +122,10 @@ export default function WebDAVSettings() {
                   webdavUsername,
                   webdavPassword
                 })
-                toast.success(t("importExport.saveSettingsFailed"))
+                toast.success(t("basicSettings.updateSuccess"))
               } catch (e) {
                 console.error(e)
-                toast.error(t("importExport.saveSettingsFailed"))
+                toast.error(t("basicSettings.saveSettingsFailed"))
               } finally {
                 setSaving(false)
               }
@@ -150,10 +150,10 @@ export default function WebDAVSettings() {
                   webdavUsername,
                   webdavPassword
                 })
-                toast.success(t("importExport.updateSuccess"))
+                toast.success(t("basicSettings.updateSuccess"))
               } catch (e: any) {
                 console.error(e)
-                toast.error(e?.message || t("importExport.updateFailed"))
+                toast.error(e?.message || t("basicSettings.updateFailed"))
               } finally {
                 setTesting(false)
               }

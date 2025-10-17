@@ -186,6 +186,7 @@
   "accountActions": {
     "edit": "Edit",
     "delete": "Delete",
+    "copy_url": "Copy URL",
     "copy_key": "Copy Key",
     "refresh": "Refresh",
     "view_details": "View Details",
@@ -510,7 +511,8 @@
     "accountDataDescription": "Only export account information and related data",
     "userSettings": "User Settings",
     "userSettingsDescription": "Only export interface settings and preference configurations",
-    "export": "Export"
+    "export": "Export",
+    "exporting": "Exporting"
   },
   "about": {
     "title": "About",
