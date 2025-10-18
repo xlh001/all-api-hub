@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -88,7 +89,6 @@ export const handleExportAccounts = async (
 export const handleExportPreferences = async (
   setIsExporting: (isExporting: boolean) => void
 ) => {
-  const { t } = useTranslation()
   try {
     setIsExporting(true)
 

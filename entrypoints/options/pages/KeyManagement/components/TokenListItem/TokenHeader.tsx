@@ -14,6 +14,7 @@ import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 import { getErrorMessage } from "~/utils/error"
 
+import { showSettingsToast } from "../../../BasicSettings/utils/toastHelpers.ts"
 import { AccountToken } from "../../type.ts"
 
 interface TokenHeaderProps {
@@ -38,13 +39,11 @@ function TokenActionButtons({
     setIsImporting(true)
     try {
       const ImportResult = await importToNewApi(account, token)
-      if (ImportResult.success) {
-        toast.success(ImportResult.message)
-      } else {
-        toast.error(ImportResult.message)
-      }
+      showSettingsToast(ImportResult)
     } catch (error) {
-      toast.error(t("toast.error.importFailed", { error: getErrorMessage(error) }))
+      toast.error(
+        t("toast.error.importFailed", { error: getErrorMessage(error) })
+      )
     } finally {
       setIsImporting(false)
     }
