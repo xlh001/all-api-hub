@@ -13,16 +13,16 @@
 
 <p align="center">
 <a href="https://github.com/qixing-jk/all-api-hub/releases">
-  <img alt="Latest Release" src="https://img.shields.io/github/v/release/qixing-jk/all-api-hub?style=flat">
+  <img alt="GitHub version" src="https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat">
 </a>
-<a href="https://github.com/qixing-jk/all-api-hub/stargazers">
-  <img alt="Stars" src="https://img.shields.io/github/stars/qixing-jk/all-api-hub?style=flat">
+<a href="https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}">
+  <img alt="Firefox Add-on" src="https://img.shields.io/amo/v/{bc73541a-133d-4b50-b261-36ea20df0d24}?label=Firefox&logo=firefoxbrowser&style=flat">
 </a>
-<a href="https://github.com/qixing-jk/all-api-hub/issues">
-  <img alt="Issues" src="https://img.shields.io/github/issues/qixing-jk/all-api-hub?style=flat">
+<a href="https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo">
+  <img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/lapnciffpekdengooeolaienkeoilfeo?label=Chrome&logo=googlechrome&style=flat">
 </a>
-<a href="https://github.com/qixing-jk/all-api-hub/blob/main/LICENSE">
-  <img alt="License" src="https://img.shields.io/github/license/qixing-jk/all-api-hub?style=flat">
+<a href="https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa">
+  <img alt="Microsoft Edge" src="https://img.shields.io/badge/dynamic/json?label=Edge&prefix=v&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fpcokpjaffghgipcgjhapgdpeddlhblaa&logo=microsoftedge&style=flat">
 </a>
 </p>
 
