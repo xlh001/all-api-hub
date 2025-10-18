@@ -12,6 +12,7 @@ import { CherryIcon } from "~/components/icons/CherryIcon"
 import { importToNewApi } from "~/services/newApiService"
 import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
+import { getErrorMessage } from "~/utils/error"
 
 import { AccountToken } from "../../type.ts"
 
@@ -43,7 +44,7 @@ function TokenActionButtons({
         toast.error(ImportResult.message)
       }
     } catch (error) {
-      toast.error(`导入失败: ${getErrorMessage(error)}`)
+      toast.error(t("toast.error.importFailed", { error: getErrorMessage(error) }))
     } finally {
       setIsImporting(false)
     }
