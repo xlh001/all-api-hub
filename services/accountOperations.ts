@@ -3,6 +3,7 @@
  */
 
 import toast from "react-hot-toast"
+import i18next, { t } from "i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui.ts"
 import { createApiToken, fetchAccountTokens } from "~/services/apiService"
@@ -465,7 +466,7 @@ export async function autoConfigToNewApi(
   let lastError: any
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      toast.loading("正在检查 API 密钥...", { id: toastId })
+      toast.loading(t("toast.accountOperations.checkingApiKeys"), { id: toastId })
       // 1. Check for existing API token
       const tokens = await fetchAccountTokens(displaySiteData)
       let apiToken: ApiToken | undefined = tokens[0]
@@ -495,7 +496,7 @@ export async function autoConfigToNewApi(
       }
 
       // 3. Import to New API as a channel
-      toast.loading("正在导入到 New API...", { id: toastId })
+      toast.loading(t("toast.accountOperations.importingToNewApi"), { id: toastId })
       const importResult = await importToNewApi(displaySiteData, apiToken)
 
       if (importResult.success) {
@@ -516,7 +517,7 @@ export async function autoConfigToNewApi(
           error.message.includes("Failed to fetch")) &&
         attempt < 3
       ) {
-        toast.error(lastError, { id: toastId })
+        toast.error(getErrorMessage(lastError), { id: toastId })
         await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
         continue
       }
