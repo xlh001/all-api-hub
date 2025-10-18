@@ -294,6 +294,7 @@
     "updateSuccess": "密钥更新成功",
     "createSuccess": "密钥创建成功",
     "updateFailed": "更新密钥失败，请稍后重试",
+    "createFailed": "创建密钥失败，请稍后重试",
     "loadDataFailed": "加载数据失败，请稍后重试",
     "selectAccountError": "请选择账号",
     "nameRequired": "密钥名称不能为空",
@@ -571,7 +572,9 @@
       "autoDetectSuccess": "自动识别成功！",
       "newApiConfigSuccess": "{{message}}",
       "keyCopied": "密钥 {{name}} 已复制到剪贴板",
-      "deleteKeySuccess": "密钥 {{name}} 删除成功"
+      "deleteKeySuccess": "密钥 {{name}} 删除成功",
+      "importedAccounts": "已导入并迁移 {{migratedCount}} 个账号",
+      "importSuccess": "导入成功"
     },
     "error": {
       "refreshAccount": "刷新 {{accountName}} 失败",
@@ -584,7 +587,17 @@
       "accountNotFound": "找不到对应账号信息",
       "deleteKeyFailed": "删除密钥失败，请稍后重试",
       "loadKeyFailed": "加载密钥列表失败",
-      "findAccountDetailsFailed": "找不到账户详情"
+      "findAccountDetailsFailed": "找不到账户详情",
+      "importFailed": "导入失败: {{error}}"
+    },
+    "cherryStudio": {
+      "missingCredentials": "缺少必要的账户或密钥信息",
+      "attemptingRedirect": "正在尝试跳转到 Cherry Studio",
+      "unableToOpen": "无法打开,请确保已安装 Cherry Studio"
+    },
+    "accountOperations": {
+      "checkingApiKeys": "正在检查 API 密钥...",
+      "importingToNewApi": "正在导入到 New API..."
     }
   },
   "errors": {

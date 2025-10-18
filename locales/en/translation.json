@@ -294,6 +294,7 @@
     "updateSuccess": "Key updated successfully",
     "createSuccess": "Key created successfully",
     "updateFailed": "Failed to update key, please try again later",
+    "createFailed": "Failed to create key, please try again later",
     "loadDataFailed": "Failed to load data, please try again later",
     "selectAccountError": "Please select account",
     "nameRequired": "Key name cannot be empty",
@@ -571,7 +572,9 @@
       "autoDetectSuccess": "Auto-detect successful!",
       "newApiConfigSuccess": "{{message}}",
       "keyCopied": "Key {{name}} copied to clipboard",
-      "deleteKeySuccess": "Key {{name}} deleted successfully"
+      "deleteKeySuccess": "Key {{name}} deleted successfully",
+      "importedAccounts": "Imported and migrated {{migratedCount}} account(s)",
+      "importSuccess": "Import successful"
     },
     "error": {
       "refreshAccount": "Failed to refresh {{accountName}}",
@@ -584,7 +587,17 @@
       "accountNotFound": "Account information not found",
       "deleteKeyFailed": "Failed to delete key, please try again later",
       "loadKeyFailed": "Failed to load key list",
-      "findAccountDetailsFailed": "Could not find account details."
+      "findAccountDetailsFailed": "Could not find account details.",
+      "importFailed": "Import failed: {{error}}"
+    },
+    "cherryStudio": {
+      "missingCredentials": "Missing required account or key information",
+      "attemptingRedirect": "Attempting to redirect to Cherry Studio",
+      "unableToOpen": "Unable to open, please ensure Cherry Studio is installed"
+    },
+    "accountOperations": {
+      "checkingApiKeys": "Checking API key...",
+      "importingToNewApi": "Importing to New API..."
     }
   },
   "errors": {

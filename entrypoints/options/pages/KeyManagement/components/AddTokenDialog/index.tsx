@@ -97,7 +97,7 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
       toast.error(
         isEditMode
           ? t("keyManagement.updateFailed")
-          : t("keyManagement.createSuccess")
+          : t("keyManagement.createFailed")
       )
     } finally {
       setIsSubmitting(false)
