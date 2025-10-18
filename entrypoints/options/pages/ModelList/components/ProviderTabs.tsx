@@ -65,24 +65,27 @@ export function ProviderTabs({
     }
   }
 
+  // Filter out providers with zero models
+  const filteredProviders = providers.filter(provider => getProviderFilteredCount(provider) > 0)
+  
   useEffect(() => {
     const selectedIndex =
       selectedProvider === "all"
         ? 0
-        : Math.max(0, providers.indexOf(selectedProvider as ProviderType) + 1)
+        : Math.max(0, filteredProviders.indexOf(selectedProvider as ProviderType) + 1)
     setTimeout(() => scrollToSelectedTab(selectedIndex), 100)
-  }, [selectedProvider, providers])
+  }, [selectedProvider, filteredProviders])
 
   const selectedIndex =
     selectedProvider === "all"
       ? 0
-      : Math.max(0, providers.indexOf(selectedProvider as ProviderType) + 1)
+      : Math.max(0, filteredProviders.indexOf(selectedProvider as ProviderType) + 1)
 
   return (
     <Tab.Group
       selectedIndex={selectedIndex}
       onChange={(index) => {
-        const newProvider = index === 0 ? "all" : providers[index - 1]
+        const newProvider = index === 0 ? "all" : filteredProviders[index - 1]
         setSelectedProvider(newProvider)
         setTimeout(() => scrollToSelectedTab(index), 50)
       }}>
@@ -104,7 +107,7 @@ export function ProviderTabs({
             </span>
           </div>
         </Tab>
-        {providers.map((provider) => {
+        {filteredProviders.map((provider) => {
           const providerConfig = getProviderConfig(
             provider.toLowerCase().replace(/\s/g, "-")
           )
