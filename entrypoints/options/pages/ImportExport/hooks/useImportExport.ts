@@ -53,9 +53,9 @@ export const useImportExport = () => {
 
         importSuccess = true
         if (migratedCount > 0) {
-          toast.success(`Imported and migrated ${migratedCount} account(s)`)
+          toast.success(t("toast.success.importedAccounts", { migratedCount }))
         } else {
-          toast.success("Import successful")
+          toast.success(t("toast.success.importSuccess"))
         }
       }
 
