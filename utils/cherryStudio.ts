@@ -1,4 +1,5 @@
 import toast from "react-hot-toast"
+import i18next, { t } from "i18next"
 
 import type { ApiToken, DisplaySiteData } from "~/types"
 
@@ -18,7 +19,7 @@ function generateCherryStudioURL(data: CherryStudioExportData): string {
 
 export function OpenInCherryStudio(account: DisplaySiteData, token: ApiToken) {
   if (!account || !token) {
-    toast.error("缺少必要的账户或密钥信息")
+    toast.error(t("toast.cherryStudio.missingCredentials"))
     return
   }
 
@@ -33,9 +34,9 @@ export function OpenInCherryStudio(account: DisplaySiteData, token: ApiToken) {
 
   try {
     window.open(url, "_blank")
-    toast.success("正在尝试跳转到 Cherry Studio")
+    toast.success(t("toast.cherryStudio.attemptingRedirect"))
   } catch (error) {
     console.error("无法打开 Cherry Studio URL:", error)
-    toast.error("无法打开，请确保已安装 Cherry Studio")
+    toast.error(t("toast.cherryStudio.unableToOpen"))
   }
 }
