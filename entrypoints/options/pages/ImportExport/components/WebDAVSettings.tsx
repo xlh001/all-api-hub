@@ -238,10 +238,10 @@ export default function WebDAVSettings() {
                   importSuccess = true
                   if (migratedCount > 0) {
                     toast.success(
-                      `Imported and migrated ${migratedCount} account(s)`
+                      t("toast.success.importedAccounts", { migratedCount })
                     )
                   } else {
-                    toast.success("Import successful")
+                    toast.success(t("toast.success.importSuccess"))
                   }
                 }
                 if (data.preferences || data.type === "preferences") {
