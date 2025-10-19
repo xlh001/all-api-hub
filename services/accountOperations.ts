@@ -2,7 +2,7 @@
  * 账号操作服务模块
  */
 
-import i18next, { t } from "i18next"
+import { t } from "i18next"
 import toast from "react-hot-toast"
 
 import { UI_CONSTANTS } from "~/constants/ui.ts"
@@ -494,7 +494,10 @@ export async function autoConfigToNewApi(
           newTokenData
         )
         if (!createApiTokenRsult) {
-          return { success: false, message: "Failed to create API token." }
+          return {
+            success: false,
+            message: t("toast.accountOperations.createTokenFailed")
+          }
         }
         // Re-fetch tokens to get the newly created one
         const updatedTokens = await fetchAccountTokens(displaySiteData)
@@ -504,7 +507,7 @@ export async function autoConfigToNewApi(
       if (!apiToken) {
         return {
           success: false,
-          message: "Failed to create or find an API token."
+          message: t("toast.accountOperations.tokenNotFound")
         }
       }
 
@@ -541,6 +544,6 @@ export async function autoConfigToNewApi(
   }
   return {
     success: false,
-    message: lastError?.message || i18next.t("errors.unknown")
+    message: lastError?.message || t("errors.unknown")
   }
 }
