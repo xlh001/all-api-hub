@@ -607,6 +607,8 @@
       "urlRequired": "Site URL cannot be empty",
       "userIdNumeric": "User ID must be a number",
       "incompleteAccountInfo": "Please fill in all account information",
+      "accountSaveSuccess": "Account saved successfully",
+      "accountUpdateSuccess": "Account updated successfully",
       "updateAccountFailed": "Failed to update account",
       "newApiBaseUrlRequired": "New API base URL not configured",
       "newApiAdminTokenRequired": "New API admin token not configured",
@@ -620,6 +622,9 @@
       "autoDetectFailed": "Auto-detect failed: {{error}}",
       "saveFailed": "Save failed: {{error}}",
       "updateFailed": "Update failed: {{error}}",
+      "fetchingAccountData": "Fetching account data...",
+      "accountAddSuccess": "Account added successfully",
+      "accountUpdateSuccessLog": "Account updated successfully",
       "deleteFailed": "Delete failed: {{error}}",
       "noResponseMessage": "Delete operation did not return a successful response"
     },

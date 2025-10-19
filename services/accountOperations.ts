@@ -141,7 +141,7 @@ export async function autoDetectAccount(
       }
     }
   } catch (error) {
-    console.error("自动识别失败:", error)
+    console.error(t("autodetect.failed"), error)
     const detailedError = analyzeAutoDetectError(error)
     const errorMessage = getErrorMessage(error)
     return {
@@ -172,17 +172,20 @@ export async function validateAndSaveAccount(
     !accessToken.trim() ||
     !userId.trim()
   ) {
-    return { success: false, message: "请填写完整的账号信息" }
+    return {
+      success: false,
+      message: t("errors.validation.incompleteAccountInfo")
+    }
   }
 
   const parsedUserId = parseInt(userId.trim())
   if (isNaN(parsedUserId)) {
-    return { success: false, message: "用户 ID 必须是数字" }
+    return { success: false, message: t("errors.validation.userIdNumeric") }
   }
 
   try {
     // 获取账号余额和今日使用情况
-    console.log("正在获取账号数据...")
+    console.log(t("errors.operation.fetchingAccountData"))
     const freshAccountData = await fetchAccountData(
       url.trim(),
       parsedUserId,
@@ -217,17 +220,24 @@ export async function validateAndSaveAccount(
     }
 
     const accountId = await accountStorage.addAccount(accountData)
-    console.log("账号添加成功:", {
+    console.log(t("errors.operation.accountAddSuccess"), {
       id: accountId,
       siteName,
       freshAccountData
     })
 
-    return { success: true, message: "账号保存成功", accountId }
+    return {
+      success: true,
+      message: t("errors.validation.accountSaveSuccess"),
+      accountId
+    }
   } catch (error) {
-    console.error("保存账号失败:", error)
+    console.error(t("errors.operation.saveFailed", { error: "" }), error)
     const errorMessage = getErrorMessage(error)
-    return { success: false, message: `保存失败: ${errorMessage}` }
+    return {
+      success: false,
+      message: t("errors.operation.saveFailed", { error: errorMessage })
+    }
   }
 }
 
@@ -252,17 +262,20 @@ export async function validateAndUpdateAccount(
     !accessToken.trim() ||
     !userId.trim()
   ) {
-    return { success: false, message: "请填写完整的账号信息" }
+    return {
+      success: false,
+      message: t("errors.validation.incompleteAccountInfo")
+    }
   }
 
   const parsedUserId = parseInt(userId.trim())
   if (isNaN(parsedUserId)) {
-    return { success: false, message: "用户 ID 必须是数字" }
+    return { success: false, message: t("errors.validation.userIdNumeric") }
   }
 
   try {
     // 获取账号余额和今日使用情况
-    console.log("正在获取账号数据...")
+    console.log(t("errors.operation.fetchingAccountData"))
     const freshAccountData = await fetchAccountData(
       url.trim(),
       parsedUserId,
@@ -297,20 +310,30 @@ export async function validateAndUpdateAccount(
 
     const success = await accountStorage.updateAccount(accountId, updateData)
     if (!success) {
-      return { success: false, message: "更新账号失败" }
+      return {
+        success: false,
+        message: t("errors.validation.updateAccountFailed")
+      }
     }
 
-    console.log("账号更新成功:", {
+    console.log(t("errors.operation.accountUpdateSuccessLog"), {
       id: accountId,
       siteName,
       freshAccountData
     })
 
-    return { success: true, message: "账号更新成功", accountId }
+    return {
+      success: true,
+      message: t("errors.operation.accountUpdateSuccessLog"),
+      accountId
+    }
   } catch (error) {
     console.error("更新账号失败:", error)
     const errorMessage = getErrorMessage(error)
-    return { success: false, message: `更新失败: ${errorMessage}` }
+    return {
+      success: false,
+      message: t("errors.operation.updateFailed", { error: errorMessage })
+    }
   }
 }
 
