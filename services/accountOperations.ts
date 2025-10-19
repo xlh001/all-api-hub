@@ -18,10 +18,12 @@ import {
   type DisplaySiteData,
   type SiteAccount
 } from "~/types"
-import {
-  analyzeAutoDetectError,
-  type AutoDetectError
-} from "~/utils/autoDetectUtils"
+import { analyzeAutoDetectError } from "~/utils/autoDetectUtils"
+import type {
+  AccountValidationResponse,
+  AccountSaveResponse,
+  NewApiResponse
+} from "~/types/serviceResponse"
 
 import { getErrorMessage } from "../utils/error.ts"
 import { accountStorage } from "./accountStorage"
@@ -33,28 +35,6 @@ import {
   fetchUserInfo,
   getOrCreateAccessToken
 } from "./apiService"
-
-// 账号验证结果
-export interface AccountValidationResult {
-  success: boolean
-  data?: {
-    username: string
-    accessToken: string
-    userId: string
-    exchangeRate: number | null
-    checkIn: CheckInConfig
-    siteType?: string
-  }
-  error?: string
-  detailedError?: AutoDetectError
-}
-
-// 账号保存结果
-export interface AccountSaveResult {
-  success: boolean
-  accountId?: string
-  error?: string
-}
 
 /**
  * 自动识别账号信息
@@ -69,9 +49,9 @@ export interface AccountSaveResult {
 export async function autoDetectAccount(
   url: string,
   authType: AuthTypeEnum
-): Promise<AccountValidationResult> {
+): Promise<AccountValidationResponse> {
   if (!url.trim()) {
-    return { success: false, error: "站点地址不能为空" }
+    return { success: false, message: "站点地址不能为空" }
   }
 
   try {
@@ -91,7 +71,7 @@ export async function autoDetectAccount(
       )
       return {
         success: false,
-        error:
+        message:
           response.error ||
           "自动检测失败，请手动输入信息或确保已在目标站点登录",
         detailedError
@@ -103,7 +83,7 @@ export async function autoDetectAccount(
       const detailedError = analyzeAutoDetectError("无法获取用户 ID")
       return {
         success: false,
-        error: "无法获取用户 ID",
+        message: "无法获取用户 ID",
         detailedError
       }
     }
@@ -132,7 +112,7 @@ export async function autoDetectAccount(
       const detailedError = analyzeAutoDetectError("未能获取到用户名或访问令牌")
       return {
         success: false,
-        error: "未能获取到用户名或访问令牌",
+        message: "未能获取到用户名或访问令牌",
         detailedError
       }
     }
@@ -144,6 +124,7 @@ export async function autoDetectAccount(
 
     return {
       success: true,
+      message: "自动识别成功",
       data: {
         username: detectedUsername,
         accessToken: access_token,
@@ -163,7 +144,7 @@ export async function autoDetectAccount(
     const errorMessage = getErrorMessage(error)
     return {
       success: false,
-      error: `自动识别失败: ${errorMessage}`,
+      message: `自动识别失败: ${errorMessage}`,
       detailedError
     }
   }
@@ -181,7 +162,7 @@ export async function validateAndSaveAccount(
   checkInConfig: CheckInConfig,
   siteType: string,
   authType: AuthTypeEnum
-): Promise<AccountSaveResult> {
+): Promise<AccountSaveResponse> {
   // 表单验证
   if (
     !siteName.trim() ||
@@ -189,12 +170,12 @@ export async function validateAndSaveAccount(
     !accessToken.trim() ||
     !userId.trim()
   ) {
-    return { success: false, error: "请填写完整的账号信息" }
+    return { success: false, message: "请填写完整的账号信息" }
   }
 
   const parsedUserId = parseInt(userId.trim())
   if (isNaN(parsedUserId)) {
-    return { success: false, error: "用户 ID 必须是数字" }
+    return { success: false, message: "用户 ID 必须是数字" }
   }
 
   try {
@@ -240,11 +221,11 @@ export async function validateAndSaveAccount(
       freshAccountData
     })
 
-    return { success: true, accountId }
+    return { success: true, message: "账号保存成功", accountId }
   } catch (error) {
     console.error("保存账号失败:", error)
     const errorMessage = getErrorMessage(error)
-    return { success: false, error: `保存失败: ${errorMessage}` }
+    return { success: false, message: `保存失败: ${errorMessage}` }
   }
 }
 
@@ -261,7 +242,7 @@ export async function validateAndUpdateAccount(
   checkInConfig: CheckInConfig,
   siteType: string,
   authType: AuthTypeEnum
-): Promise<AccountSaveResult> {
+): Promise<AccountSaveResponse> {
   // 表单验证
   if (
     !siteName.trim() ||
@@ -269,12 +250,12 @@ export async function validateAndUpdateAccount(
     !accessToken.trim() ||
     !userId.trim()
   ) {
-    return { success: false, error: "请填写完整的账号信息" }
+    return { success: false, message: "请填写完整的账号信息" }
   }
 
   const parsedUserId = parseInt(userId.trim())
   if (isNaN(parsedUserId)) {
-    return { success: false, error: "用户 ID 必须是数字" }
+    return { success: false, message: "用户 ID 必须是数字" }
   }
 
   try {
@@ -314,7 +295,7 @@ export async function validateAndUpdateAccount(
 
     const success = await accountStorage.updateAccount(accountId, updateData)
     if (!success) {
-      return { success: false, error: "更新账号失败" }
+      return { success: false, message: "更新账号失败" }
     }
 
     console.log("账号更新成功:", {
@@ -323,11 +304,11 @@ export async function validateAndUpdateAccount(
       freshAccountData
     })
 
-    return { success: true, accountId }
+    return { success: true, message: "账号更新成功", accountId }
   } catch (error) {
     console.error("更新账号失败:", error)
     const errorMessage = getErrorMessage(error)
-    return { success: false, error: `更新失败: ${errorMessage}` }
+    return { success: false, message: `更新失败: ${errorMessage}` }
   }
 }
 
@@ -464,7 +445,7 @@ function generateDefaultToken(): CreateTokenRequest {
 export async function autoConfigToNewApi(
   account: SiteAccount,
   toastId?: string
-) {
+): Promise<NewApiResponse<{ token?: ApiToken }>> {
   const configValidation = await validateNewApiConfig()
   if (!configValidation.valid) {
     return { success: false, message: configValidation.errors.join(", ") }

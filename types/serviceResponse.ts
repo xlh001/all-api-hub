@@ -6,6 +6,9 @@ import type { CheckInConfig, ApiToken } from './index';
 export interface AutoDetectError {
   type: string;
   message: string;
+  actionText?: string;
+  actionUrl?: string;
+  helpDocUrl?: string;
   details?: any;
 }
 

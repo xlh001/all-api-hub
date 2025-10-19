@@ -12,7 +12,7 @@ import {
 } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
 import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
-import type { AutoDetectError } from "~/utils/autoDetectUtils"
+import type { AutoDetectError } from "~/types/serviceResponse"
 
 interface UseAccountDialogProps {
   mode: "add" | "edit"
@@ -256,10 +256,10 @@ export function useAccountDialog({
       } else {
         toast.error(
           t("accountDialog.hooks.operationFailed", {
-            error: result.error || t("accountDialog.hooks.saveFailed")
+            error: result.message || t("accountDialog.hooks.saveFailed")
           })
         )
-        throw new Error(result.error || t("accountDialog.hooks.saveFailed"))
+        throw new Error(result.message || t("accountDialog.hooks.saveFailed"))
       }
     } catch (error: any) {
       toast.error(
