@@ -44,7 +44,8 @@ export default function AccountDialog({
       onClose()
     },
     mode,
-    account
+    account,
+    onSuccess
   })
 
   const handleSubmit = async (e: React.FormEvent) => {

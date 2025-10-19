@@ -19,13 +19,15 @@ interface UseAccountDialogProps {
   account?: DisplaySiteData | null
   isOpen: boolean
   onClose: () => void
+  onSuccess?: (data: any) => void
 }
 
 export function useAccountDialog({
   mode,
   account,
   isOpen,
-  onClose
+  onClose,
+  onSuccess
 }: UseAccountDialogProps) {
   const { t } = useTranslation()
 
@@ -303,6 +305,10 @@ export function useAccountDialog({
       const result = await autoConfigToNewApi(siteAccount, toastId)
       if (result.success) {
         toast.success(result.message, { id: toastId })
+        // Call onSuccess to close the dialog after successful auto-config
+        if (onSuccess && targetAccount) {
+          onSuccess(targetAccount)
+        }
       } else {
         throw new Error(result.message)
       }
