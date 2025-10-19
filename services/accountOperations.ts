@@ -2,8 +2,8 @@
  * 账号操作服务模块
  */
 
-import toast from "react-hot-toast"
 import i18next, { t } from "i18next"
+import toast from "react-hot-toast"
 
 import { UI_CONSTANTS } from "~/constants/ui.ts"
 import { createApiToken, fetchAccountTokens } from "~/services/apiService"
@@ -467,7 +467,7 @@ export async function autoConfigToNewApi(
 ) {
   const configValidation = await validateNewApiConfig()
   if (!configValidation.valid) {
-    return { success: false, error: configValidation.errors.join(", ") }
+    return { success: false, message: configValidation.errors.join(", ") }
   }
 
   const displaySiteData = accountStorage.convertToDisplayData(
@@ -477,7 +477,9 @@ export async function autoConfigToNewApi(
   let lastError: any
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      toast.loading(t("toast.accountOperations.checkingApiKeys"), { id: toastId })
+      toast.loading(t("toast.accountOperations.checkingApiKeys"), {
+        id: toastId
+      })
       // 1. Check for existing API token
       const tokens = await fetchAccountTokens(displaySiteData)
       let apiToken: ApiToken | undefined = tokens[0]
@@ -492,7 +494,7 @@ export async function autoConfigToNewApi(
           newTokenData
         )
         if (!createApiTokenRsult) {
-          return { success: false, error: "Failed to create API token." }
+          return { success: false, message: "Failed to create API token." }
         }
         // Re-fetch tokens to get the newly created one
         const updatedTokens = await fetchAccountTokens(displaySiteData)
@@ -502,12 +504,14 @@ export async function autoConfigToNewApi(
       if (!apiToken) {
         return {
           success: false,
-          error: "Failed to create or find an API token."
+          message: "Failed to create or find an API token."
         }
       }
 
       // 3. Import to New API as a channel
-      toast.loading(t("toast.accountOperations.importingToNewApi"), { id: toastId })
+      toast.loading(t("toast.accountOperations.importingToNewApi"), {
+        id: toastId
+      })
       const importResult = await importToNewApi(displaySiteData, apiToken)
 
       if (importResult.success) {
@@ -537,8 +541,6 @@ export async function autoConfigToNewApi(
   }
   return {
     success: false,
-    message:
-      lastError?.message ||
-      i18next.t("errors.unknown")
+    message: lastError?.message || i18next.t("errors.unknown")
   }
 }
