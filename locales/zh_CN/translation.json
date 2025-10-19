@@ -141,10 +141,10 @@
       "manualAdd": "手动添加",
       "autoDetect": "自动识别",
       "editInfo": "编辑账号信息",
-      "confirmAddInfo": "请确认账号信息无误后点击\"确认添加\"按钮。",
-      "manualInfo": "手动填写账号信息。账号将被安全地保存在本地存储中。",
-      "autoDetectInfo": "请先在目标站点进行登录，插件将自动检测站点类型，并自动获取访问令牌。",
-      "editInfoDesc": "修改账号信息后，系统会重新验证并获取最新的余额数据。",
+      "confirmAddInfo": "请确认账号信息无误后点击\"确认添加\"按钮",
+      "manualInfo": "手动填写账号信息。账号将被安全地保存在本地存储中",
+      "autoDetectInfo": "请先在目标站点进行登录，插件将自动检测站点类型，并自动获取访问令牌",
+      "editInfoDesc": "修改账号信息后，系统会重新验证并获取最新的余额数据",
       "reDetectInfo": "如果站点信息有变化，建议点击\"重新识别\"按钮（需要在目标站点先自行登录）"
     },
     "form": {
@@ -160,7 +160,7 @@
       "validRateError": "请输入有效的汇率 (0.1 - 100)",
       "checkInStatus": "签到状态检测（需站点已开启签到）",
       "customCheckInUrl": "自定义签到 URL (可选)",
-      "customCheckInDesc": "如果设置，将禁用自动签到状态检测。用于具有自定义签到端点的站点。",
+      "customCheckInDesc": "如果设置，将禁用自动签到状态检测。用于具有自定义签到端点的站点",
       "notes": "备注",
       "notesPlaceholder": "选填，输入备注信息"
     },
@@ -201,7 +201,7 @@
   },
   "deleteDialog": {
     "title": "删除账号",
-    "warning": "您即将删除账号 {{accountName}}. 请核对后确认是否删除此账号。",
+    "warning": "您即将删除账号 {{accountName}}. 请核对后确认是否删除此账号",
     "confirm_deletion": "删除确认",
     "siteName": "站点名称",
     "username": "用户名",
@@ -230,7 +230,7 @@
   },
   "keyManagement": {
     "title": "密钥管理",
-    "description": "此页面显示所有账号的API密钥信息，包括使用情况和过期时间。可以通过右上角的\"添加密钥\"按钮或点击各密钥项目旁的\"+\"按钮为指定账号创建新密钥。请妥善保管您的API密钥，避免泄露给他人。",
+    "description": "此页面显示所有账号的API密钥信息，包括使用情况和过期时间。可以通过右上角的\"添加密钥\"按钮或点击各密钥项目旁的\"+\"按钮为指定账号创建新密钥。请妥善保管您的API密钥，避免泄露给他人",
     "selectAccount": "选择账号",
     "pleaseSelectAccount": "请选择账号",
     "searchPlaceholder": "搜索密钥名称...",
@@ -260,7 +260,7 @@
     "loadFailed": "加载密钥列表失败",
     "keyCopied": "密钥 {{name}} 已复制到剪贴板",
     "copyFailed": "复制失败",
-    "deleteConfirm": "确定要删除密钥 {{name}} 吗？此操作不可撤销。",
+    "deleteConfirm": "确定要删除密钥 {{name}} 吗？此操作不可撤销",
     "accountNotFound": "找不到对应账号信息",
     "deleteSuccess": "密钥 {{name}} 删除成功",
     "deleteFailed": "删除密钥失败，请稍后重试",
@@ -328,7 +328,7 @@
     "pleaseSelectFirst": "请先选择一个账号查看模型列表",
     "loading": "正在加载模型数据...",
     "incompatibleFormat": "数据格式不兼容",
-    "incompatibleDesc": "当前站点的模型数据接口返回格式不符合标准规范，可能是经过二次开发的站点。插件暂时无法解析该站点的模型定价信息。",
+    "incompatibleDesc": "当前站点的模型数据接口返回格式不符合标准规范，可能是经过二次开发的站点。插件暂时无法解析该站点的模型定价信息",
     "goToSitePricing": "前往站点查看定价信息",
     "retryLoad": "重新尝试加载",
     "dataLoaded": "模型数据加载成功",
@@ -352,7 +352,7 @@
     "output": "输出:",
     "allProviders": "所有厂商 ({{count}})",
     "pricingNote": "模型定价说明",
-    "pricingDescription": "价格信息来源于站点提供的 API 接口，实际费用以各站点公布的价格为准。按量计费模型的价格为每 1M tokens 的费用，按次计费模型显示每次调用的费用。"
+    "pricingDescription": "价格信息来源于站点提供的 API 接口，实际费用以各站点公布的价格为准。按量计费模型的价格为每 1M tokens 的费用，按次计费模型显示每次调用的费用"
   },
   "theme": {
     "light": "浅色",
@@ -369,9 +369,9 @@
   "firefox": {
     "warningTitle": "功能限制提醒",
     "limitation": "Firefox 浏览器功能限制",
-    "popupLimitation": "在 Firefox 浏览器的弹窗中无法正常使用此功能。请使用侧边栏模式来添加账号。",
+    "popupLimitation": "在 Firefox 浏览器的弹窗中无法正常使用此功能。请使用侧边栏模式来添加账号",
     "howOpenSidebar": "如何打开侧边栏",
-    "sidebarInstruction": "点击浏览器工具栏中的插件图标，然后选择\"侧边栏\"选项来打开侧边栏模式。",
+    "sidebarInstruction": "点击浏览器工具栏中的插件图标，然后选择\"侧边栏\"选项来打开侧边栏模式",
     "confirm": "确定",
     "openSidebar": "打开侧边栏"
   },
@@ -517,7 +517,7 @@
   },
   "about": {
     "title": "关于",
-    "intro": "AI 中转站账号管理插件，帮助用户便捷地管理多个AI API中转站点的账号。",
+    "intro": "AI 中转站账号管理插件，帮助用户便捷地管理多个AI API中转站点的账号",
     "version": "版本号:",
     "projectLinks": "项目链接",
     "githubRepo": "GitHub 仓库",
@@ -531,9 +531,9 @@
     "upcomingFeatures": "即将支持",
     "copyrightAck": "版权与致谢",
     "devMaintenance": "开发与维护",
-    "thanksDesc": "感谢所有为开源社区做出贡献的开发者们，本插件的开发得益于这些优秀的开源项目和工具。",
+    "thanksDesc": "感谢所有为开源社区做出贡献的开发者们，本插件的开发得益于这些优秀的开源项目和工具",
     "privacyNotice": "隐私声明",
-    "privacyText": "本插件所有数据均存储在本地浏览器中，不会主动上传到任何服务器。您的账号信息和使用数据完全由您自己掌控，确保隐私安全。",
+    "privacyText": "本插件所有数据均存储在本地浏览器中，不会主动上传到任何服务器。您的账号信息和使用数据完全由您自己掌控，确保隐私安全",
     "privacyTitle": "隐私保护",
     "techStack": {
       "title": "技术栈",
@@ -598,8 +598,8 @@
     "accountOperations": {
       "checkingApiKeys": "正在检查 API 密钥...",
       "importingToNewApi": "正在导入到 New API...",
-      "createTokenFailed": "创建 API 令牌失败。",
-      "tokenNotFound": "无法创建或找到 API 令牌。"
+      "createTokenFailed": "创建 API 令牌失败",
+      "tokenNotFound": "无法创建或找到 API 令牌"
     }
   },
   "errors": {
@@ -630,7 +630,7 @@
       "deleting": "正在删除账号 {{name}}..."
     },
     "token": {
-      "createFailed": "创建 API 令牌失败。"
+      "createFailed": "创建 API 令牌失败"
     },
     "detection": {
       "failed": "自动检测失败，请手动输入信息或确保已在目标站点登录",
@@ -638,11 +638,11 @@
     }
   },
   "newapi": {
-    "configMissing": "请先在基础设置中配置 New API 的地址、管理员令牌和用户 ID。",
-    "dataFetchFailed": "New API数据获取失败,请检查配置是否正确。",
-    "channelExists": "渠道 {{channelName}} 已存在，无需重复导入。",
-    "importSuccess": "成功导入新渠道 {{channelName}}。",
-    "importFailed": "导入失败，发生未知错误。"
+    "configMissing": "请先在基础设置中配置 New API 的地址、管理员令牌和用户 ID",
+    "dataFetchFailed": "New API数据获取失败,请检查配置是否正确",
+    "channelExists": "渠道 {{channelName}} 已存在，无需重复导入",
+    "importSuccess": "成功导入新渠道 {{channelName}}",
+    "importFailed": "导入失败，发生未知错误"
   },
   "autodetect": {
     "timeout": "自动识别超时,请尝试手动添加",

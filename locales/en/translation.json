@@ -141,10 +141,10 @@
       "manualAdd": "Manual Add",
       "autoDetect": "Auto Detect",
       "editInfo": "Edit Account Information",
-      "confirmAddInfo": "Please confirm that the account information is correct before clicking the 'Confirm Add' button.",
-      "manualInfo": "Manually fill in the account information. The account will be saved securely in local storage.",
-      "autoDetectInfo": "Please log in to the target site first, the extension will automatically detect the site type and automatically get the access token.",
-      "editInfoDesc": "After modifying the account information, the system will re-verify and get the latest balance data.",
+      "confirmAddInfo": "Please confirm that the account information is correct before clicking the 'Confirm Add' button",
+      "manualInfo": "Manually fill in the account information. The account will be saved securely in local storage",
+      "autoDetectInfo": "Please log in to the target site first, the extension will automatically detect the site type and automatically get the access token",
+      "editInfoDesc": "After modifying the account information, the system will re-verify and get the latest balance data",
       "reDetectInfo": "If the site information changes, it is recommended to click the 'Re-detect' button (you need to log in to the target site first by yourself)"
     },
     "form": {
@@ -160,7 +160,7 @@
       "validRateError": "Please enter a valid exchange rate (0.1 - 100)",
       "checkInStatus": "Check-in Status Detection (site must have check-in enabled)",
       "customCheckInUrl": "Custom Check-in URL (optional)",
-      "customCheckInDesc": "If set, automatic check-in status detection will be disabled. Used for sites with custom check-in endpoints.",
+      "customCheckInDesc": "If set, automatic check-in status detection will be disabled. Used for sites with custom check-in endpoints",
       "notes": "Notes",
       "notesPlaceholder": "Optional, enter notes"
     },
@@ -201,7 +201,7 @@
   },
   "deleteDialog": {
     "title": "Delete Account",
-    "warning": "You are about to delete account {{accountName}}. Please verify before confirming to delete this account.",
+    "warning": "You are about to delete account {{accountName}}. Please verify before confirming to delete this account",
     "confirm_deletion": "Delete Confirmation",
     "siteName": "Site Name",
     "username": "Username",
@@ -230,7 +230,7 @@
   },
   "keyManagement": {
     "title": "Key Management",
-    "description": "This page displays API key information for all accounts, including usage and expiration time. You can create new keys for specific accounts by clicking the 'Add Key' button in the upper right corner or the '+' button next to each key item. Please keep your API keys safe and avoid leaking them to others.",
+    "description": "This page displays API key information for all accounts, including usage and expiration time. You can create new keys for specific accounts by clicking the 'Add Key' button in the upper right corner or the '+' button next to each key item. Please keep your API keys safe and avoid leaking them to others",
     "selectAccount": "Select Account",
     "pleaseSelectAccount": "Please select account",
     "searchPlaceholder": "Search key name...",
@@ -260,7 +260,7 @@
     "loadFailed": "Failed to load key list",
     "keyCopied": "Key {{name}} copied to clipboard",
     "copyFailed": "Copy failed",
-    "deleteConfirm": "Are you sure you want to delete key {{name}}? This action cannot be undone.",
+    "deleteConfirm": "Are you sure you want to delete key {{name}}? This action cannot be undone",
     "accountNotFound": "Account information not found",
     "deleteSuccess": "Key {{name}} deleted successfully",
     "deleteFailed": "Failed to delete key, please try again later",
@@ -328,7 +328,7 @@
     "pleaseSelectFirst": "Please select an account first to view model list",
     "loading": "Loading model data...",
     "incompatibleFormat": "Data format incompatible",
-    "incompatibleDesc": "The model data interface of the current site does not conform to the standard specification, possibly due to secondary development of the site. The extension cannot parse the model pricing information of this site for the time being.",
+    "incompatibleDesc": "The model data interface of the current site does not conform to the standard specification, possibly due to secondary development of the site. The extension cannot parse the model pricing information of this site for the time being",
     "goToSitePricing": "Go to site to view pricing information",
     "retryLoad": "Retry Load",
     "dataLoaded": "Model data loaded successfully",
@@ -352,7 +352,7 @@
     "output": "Output:",
     "allProviders": "All Providers ({{count}})",
     "pricingNote": "Model Pricing Note",
-    "pricingDescription": "Price information comes from the API interface provided by the site, and the actual cost is subject to the prices published by each site. The price of pay-per-use models is the cost per 1M tokens, and pay-per-call models display the cost per call."
+    "pricingDescription": "Price information comes from the API interface provided by the site, and the actual cost is subject to the prices published by each site. The price of pay-per-use models is the cost per 1M tokens, and pay-per-call models display the cost per call"
   },
   "theme": {
     "light": "Light",
@@ -369,9 +369,9 @@
   "firefox": {
     "warningTitle": "Feature Limitation Reminder",
     "limitation": "Firefox Browser Feature Limitation",
-    "popupLimitation": "This feature cannot be used normally in the popup of Firefox browser. Please use the sidebar mode to add accounts.",
+    "popupLimitation": "This feature cannot be used normally in the popup of Firefox browser. Please use the sidebar mode to add accounts",
     "howOpenSidebar": "How to Open Sidebar",
-    "sidebarInstruction": "Click on the extension icon in the browser toolbar, then select the 'Sidebar' option to open the sidebar mode.",
+    "sidebarInstruction": "Click on the extension icon in the browser toolbar, then select the 'Sidebar' option to open the sidebar mode",
     "confirm": "Confirm",
     "openSidebar": "Open Sidebar"
   },
@@ -517,7 +517,7 @@
   },
   "about": {
     "title": "About",
-    "intro": "AI redistribution station account management plugin, helping users easily manage accounts of multiple AI API redistribution stations.",
+    "intro": "AI redistribution station account management plugin, helping users easily manage accounts of multiple AI API redistribution stations",
     "version": "Version:",
     "projectLinks": "Project Links",
     "githubRepo": "GitHub Repository",
@@ -531,9 +531,9 @@
     "upcomingFeatures": "Upcoming Features",
     "copyrightAck": "Copyright & Acknowledgements",
     "devMaintenance": "Development & Maintenance",
-    "thanksDesc": "Thanks to all developers who have contributed to the open source community, the development of this plugin benefits from these excellent open source projects and tools.",
+    "thanksDesc": "Thanks to all developers who have contributed to the open source community, the development of this plugin benefits from these excellent open source projects and tools",
     "privacyNotice": "Privacy Notice",
-    "privacyText": "All data of this plugin is stored locally in the browser and will not be actively uploaded to any server. Your account information and usage data are completely under your control, ensuring privacy and security.",
+    "privacyText": "All data of this plugin is stored locally in the browser and will not be actively uploaded to any server. Your account information and usage data are completely under your control, ensuring privacy and security",
     "privacyTitle": "Privacy Protection",
     "techStack": {
       "title": "Tech Stack",
@@ -565,7 +565,7 @@
     },
     "success": {
       "refreshAccount": "{{accountName}} refreshed successfully!",
-      "refreshSkipped": "Refresh interval not reached, skipped.",
+      "refreshSkipped": "Refresh interval not reached, skipped",
       "urlCopied": "{{accountName}} URL copied to clipboard",
       "accountAdded": "Account {{name}} added successfully!",
       "accountUpdated": "Account {{name}} updated successfully!",
@@ -587,7 +587,7 @@
       "accountNotFound": "Account information not found",
       "deleteKeyFailed": "Failed to delete key, please try again later",
       "loadKeyFailed": "Failed to load key list",
-      "findAccountDetailsFailed": "Could not find account details.",
+      "findAccountDetailsFailed": "Could not find account details",
       "importFailed": "Import failed: {{error}}"
     },
     "cherryStudio": {
@@ -598,8 +598,8 @@
     "accountOperations": {
       "checkingApiKeys": "Checking API key...",
       "importingToNewApi": "Importing to New API...",
-      "createTokenFailed": "Failed to create API token.",
-      "tokenNotFound": "Failed to create or find an API token."
+      "createTokenFailed": "Failed to create API token",
+      "tokenNotFound": "Failed to create or find an API token"
     }
   },
   "errors": {
@@ -630,7 +630,7 @@
       "deleting": "Deleting account {{name}}..."
     },
     "token": {
-      "createFailed": "Failed to create API token."
+      "createFailed": "Failed to create API token"
     },
     "detection": {
       "failed": "Auto-detection failed, please enter information manually or ensure you are logged in to the target site",
@@ -638,11 +638,11 @@
     }
   },
   "newapi": {
-    "configMissing": "Please configure New API address, admin token, and user ID in basic settings first.",
-    "dataFetchFailed": "Failed to fetch New API data, please check if the configuration is correct.",
-    "channelExists": "Channel {{channelName}} already exists, no need to import again.",
-    "importSuccess": "Successfully imported new channel {{channelName}}.",
-    "importFailed": "Import failed, an unknown error occurred."
+    "configMissing": "Please configure New API address, admin token, and user ID in basic settings first",
+    "dataFetchFailed": "Failed to fetch New API data, please check if the configuration is correct",
+    "channelExists": "Channel {{channelName}} already exists, no need to import again",
+    "importSuccess": "Successfully imported new channel {{channelName}}",
+    "importFailed": "Import failed, an unknown error occurred"
   },
   "autodetect": {
     "timeout": "Auto-detection timeout, please try adding manually",
