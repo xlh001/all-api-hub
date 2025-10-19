@@ -436,17 +436,28 @@ async function validateNewApiConfig(): Promise<{
   }
 }
 
-// Helper function to generate a default token name
+/**
+ * 生成默认的令牌信息
+ *  该函数会返回一个 CreateTokenRequest 对象，用于生成一个默认的令牌
+ *  该令牌的特性是：
+ *    - 名称为 "user group (auto)"
+ *    - 不限制调用次数
+ *    - 永不过期
+ *    - 不限制 IP
+ *    - 不限制模型
+ *    - 不指定分组，为用户分组
+ */
 function generateDefaultToken(): CreateTokenRequest {
   return {
-    name: `default (auto)`,
+    name: `user group (auto)`,
     unlimited_quota: true,
     expired_time: -1, // Never expires
     remain_quota: 0,
     allow_ips: "", // No IP restriction
     model_limits_enabled: false,
     model_limits: "", // All models allowed
-    group: "default"
+    // 为空则是跟随用户分组
+    group: ""
   }
 }
 
