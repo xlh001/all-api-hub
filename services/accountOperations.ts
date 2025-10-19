@@ -51,7 +51,7 @@ export async function autoDetectAccount(
   authType: AuthTypeEnum
 ): Promise<AccountValidationResponse> {
   if (!url.trim()) {
-    return { success: false, message: "站点地址不能为空" }
+    return { success: false, message: t("errors.validation.urlRequired") }
   }
 
   try {
@@ -67,23 +67,23 @@ export async function autoDetectAccount(
 
     if (!response.success) {
       const detailedError = analyzeAutoDetectError(
-        response.error || "自动检测失败"
+        response.error || t("operations.detection.failed")
       )
       return {
         success: false,
-        message:
-          response.error ||
-          "自动检测失败，请手动输入信息或确保已在目标站点登录",
+        message: response.error || t("operations.detection.failed"),
         detailedError
       }
     }
 
     const userId = response.data.userId
     if (!userId) {
-      const detailedError = analyzeAutoDetectError("无法获取用户 ID")
+      const detailedError = analyzeAutoDetectError(
+        t("operations.detection.getUserIdFailed")
+      )
       return {
         success: false,
-        message: "无法获取用户 ID",
+        message: t("operations.detection.getUserIdFailed"),
         detailedError
       }
     }
@@ -109,10 +109,12 @@ export async function autoDetectAccount(
     const { username: detectedUsername, access_token } = tokenInfo
 
     if (!detectedUsername || !access_token) {
-      const detailedError = analyzeAutoDetectError("未能获取到用户名或访问令牌")
+      const detailedError = analyzeAutoDetectError(
+        t("operations.detection.getInfoFailed")
+      )
       return {
         success: false,
-        message: "未能获取到用户名或访问令牌",
+        message: t("operations.detection.getInfoFailed"),
         detailedError
       }
     }
@@ -124,7 +126,7 @@ export async function autoDetectAccount(
 
     return {
       success: true,
-      message: "自动识别成功",
+      message: t("toast.success.autoDetectSuccess"),
       data: {
         username: detectedUsername,
         accessToken: access_token,
@@ -144,7 +146,7 @@ export async function autoDetectAccount(
     const errorMessage = getErrorMessage(error)
     return {
       success: false,
-      message: `自动识别失败: ${errorMessage}`,
+      message: t("errors.operation.autoDetectFailed", { error: errorMessage }),
       detailedError
     }
   }

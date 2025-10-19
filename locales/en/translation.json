@@ -634,7 +634,8 @@
     },
     "detection": {
       "failed": "Auto-detection failed, please enter information manually or ensure you are logged in to the target site",
-      "getUserIdFailed": "Could not get user ID"
+      "getUserIdFailed": "Could not get user ID",
+      "getInfoFailed": "Failure to get username or access token"
     }
   },
   "newapi": {

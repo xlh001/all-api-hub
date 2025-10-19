@@ -634,7 +634,8 @@
     },
     "detection": {
       "failed": "自动检测失败，请手动输入信息或确保已在目标站点登录",
-      "getUserIdFailed": "无法获取用户 ID"
+      "getUserIdFailed": "无法获取用户 ID",
+      "getInfoFailed": "未能获取到用户名或访问令牌"
     }
   },
   "newapi": {
