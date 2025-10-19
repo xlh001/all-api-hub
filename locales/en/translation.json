@@ -597,7 +597,9 @@
     },
     "accountOperations": {
       "checkingApiKeys": "Checking API key...",
-      "importingToNewApi": "Importing to New API..."
+      "importingToNewApi": "Importing to New API...",
+      "createTokenFailed": "Failed to create API token.",
+      "tokenNotFound": "Failed to create or find an API token."
     }
   },
   "errors": {
