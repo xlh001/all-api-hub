@@ -1,3 +1,5 @@
+import { t } from "i18next"
+
 import {
   fetchAvailableModels,
   fetchUpstreamModelsNameList
@@ -110,7 +112,7 @@ export async function importToNewApi(
     if (!newApiBaseUrl || !newApiAdminToken || !newApiUserId) {
       return {
         success: false,
-        message: "请先在基础设置中配置 New API 的地址、管理员令牌和用户 ID。"
+        message: t("newapi.configMissing")
       }
     }
 
@@ -125,7 +127,7 @@ export async function importToNewApi(
     if (!searchResults) {
       return {
         success: false,
-        message: "New API数据获取失败，请检查配置是否正确。"
+        message: t("newapi.dataFetchFailed")
       }
     }
 

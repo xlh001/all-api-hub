@@ -636,5 +636,17 @@
       "failed": "Auto-detection failed, please enter information manually or ensure you are logged in to the target site",
       "getUserIdFailed": "Could not get user ID"
     }
+  },
+  "newapi": {
+    "configMissing": "Please configure New API address, admin token, and user ID in basic settings first.",
+    "dataFetchFailed": "Failed to fetch New API data, please check if the configuration is correct."
+  },
+  "autodetect": {
+    "timeout": "Auto-detection timeout, please try adding manually",
+    "notLoggedIn": "You are not logged in to the current site, or the login information has expired. Cannot auto-add. Please check the help documentation or click to login first",
+    "loginThisSite": "Login to this site",
+    "unexpectedData": "Auto-detection failed, site returned unexpected data. Please enter information manually or ensure you are logged in to the target site",
+    "networkError": "Network connection failed, please check your network connection and try again",
+    "failed": "Auto-detection failed: "
   }
 }

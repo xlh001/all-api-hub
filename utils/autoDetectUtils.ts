@@ -15,6 +15,8 @@
  * - AddAccountDialog 和 EditAccountDialog 中的自动识别错误处理
  * - AutoDetectErrorAlert 组件中的错误展示和操作
  */
+import { t } from "i18next"
+
 import { FAQ_URL } from "~/constants/about"
 
 import { getErrorMessage } from "./error.ts"
@@ -45,7 +47,7 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   if (errorMessage.includes("超时") || errorMessage.includes("timeout")) {
     return {
       type: AutoDetectErrorType.TIMEOUT,
-      message: "自动识别超时，请尝试手动添加",
+      message: t("autodetect.timeout"),
       helpDocUrl: FAQ_URL
     }
   }
@@ -58,9 +60,8 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   ) {
     return {
       type: AutoDetectErrorType.UNAUTHORIZED,
-      message:
-        "您未在当前站点登录，或者登录信息已过期，无法自动添加，可查看帮助文档或点击先进行登录",
-      actionText: "登录此站点",
+      message: t("autodetect.notLoggedIn"),
+      actionText: t("autodetect.loginThisSite"),
       helpDocUrl: FAQ_URL
     }
   }
@@ -75,8 +76,7 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   ) {
     return {
       type: AutoDetectErrorType.INVALID_RESPONSE,
-      message:
-        "自动识别未成功，站点返回数据不符合预期，请手动输入信息或确保已在目标站点登录",
+      message: t("autodetect.unexpectedData"),
       helpDocUrl: FAQ_URL
     }
   }
@@ -89,7 +89,7 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   ) {
     return {
       type: AutoDetectErrorType.NETWORK_ERROR,
-      message: "网络连接失败，请检查网络连接后重试",
+      message: t("autodetect.networkError"),
       helpDocUrl: FAQ_URL
     }
   }
@@ -97,7 +97,7 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   // 未知错误
   return {
     type: AutoDetectErrorType.UNKNOWN,
-    message: "自动识别失败：" + errorMessage,
+    message: t("autodetect.failed") + errorMessage,
     helpDocUrl: FAQ_URL
   }
 }
