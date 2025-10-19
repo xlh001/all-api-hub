@@ -505,8 +505,9 @@ export async function autoConfigToNewApi(
       }
 
       return {
-        token: apiToken,
-        ...importResult
+        success: importResult.success,
+        message: importResult.message,
+        data: { token: apiToken }
       }
     } catch (error) {
       lastError = error

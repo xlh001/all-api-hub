@@ -7,6 +7,7 @@ import {
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
+import type { NewApiResponse, ServiceResponse } from "~/types/serviceResponse"
 import { isArraysEqual, isNotEmptyArray } from "~/utils"
 
 import { userPreferences } from "./userPreferences"
@@ -30,11 +31,6 @@ interface NewApiChannelData {
   type_counts: Record<string, number>
 }
 
-interface NewApiResponse<T> {
-  success: boolean
-  message: string
-  data: T
-}
 
 /**
  * 搜索指定关键词的渠道
@@ -104,7 +100,7 @@ export async function createChannel(
 export async function importToNewApi(
   account: DisplaySiteData,
   token: ApiToken
-): Promise<{ success: boolean; message: string }> {
+): Promise<ServiceResponse<void>> {
   try {
     const prefs = await userPreferences.getPreferences()
     const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
