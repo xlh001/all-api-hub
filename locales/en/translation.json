@@ -639,7 +639,10 @@
   },
   "newapi": {
     "configMissing": "Please configure New API address, admin token, and user ID in basic settings first.",
-    "dataFetchFailed": "Failed to fetch New API data, please check if the configuration is correct."
+    "dataFetchFailed": "Failed to fetch New API data, please check if the configuration is correct.",
+    "channelExists": "Channel {{channelName}} already exists, no need to import again.",
+    "importSuccess": "Successfully imported new channel {{channelName}}.",
+    "importFailed": "Import failed, an unknown error occurred."
   },
   "autodetect": {
     "timeout": "Auto-detection timeout, please try adding manually",

@@ -46,7 +46,9 @@ export default function DelAccountDialog({
           return t("deleteDialog.deleteSuccess", { name: account.name })
         },
         error: (err: Error) =>
-          t("deleteDialog.deleteFailed", { error: err.message || "未知错误" })
+          t("deleteDialog.deleteFailed", {
+            error: err.message || t("errors.unknown")
+          })
       })
     } catch (error) {
       // toast.promise already handles showing the error toast

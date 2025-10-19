@@ -148,7 +148,7 @@ export async function importToNewApi(
       if (existingChannel) {
         return {
           success: false,
-          message: `渠道 ${existingChannel.name} 已存在，无需重复导入。`
+          message: t("newapi.channelExists", { channelName: existingChannel.name })
         }
       }
     }
@@ -185,7 +185,7 @@ export async function importToNewApi(
     if (createdChannelResponse.success) {
       return {
         success: true,
-        message: `成功导入新渠道 ${newChannelName}。`
+        message: t("newapi.importSuccess", { channelName: newChannelName })
       }
     } else {
       return {
@@ -196,7 +196,7 @@ export async function importToNewApi(
   } catch (error) {
     return {
       success: false,
-      message: getErrorMessage(error) || "导入失败，发生未知错误。"
+      message: getErrorMessage(error) || t("newapi.importFailed")
     }
   }
 }
