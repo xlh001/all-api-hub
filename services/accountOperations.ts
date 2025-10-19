@@ -18,12 +18,12 @@ import {
   type DisplaySiteData,
   type SiteAccount
 } from "~/types"
-import { analyzeAutoDetectError } from "~/utils/autoDetectUtils"
 import type {
-  AccountValidationResponse,
   AccountSaveResponse,
+  AccountValidationResponse,
   NewApiResponse
 } from "~/types/serviceResponse"
+import { analyzeAutoDetectError } from "~/utils/autoDetectUtils"
 
 import { getErrorMessage } from "../utils/error.ts"
 import { accountStorage } from "./accountStorage"
@@ -402,13 +402,13 @@ async function validateNewApiConfig(): Promise<{
   const errors = []
 
   if (!prefs.newApiBaseUrl) {
-    errors.push("New API 基础 URL 未配置")
+    errors.push(t("errors.validation.newApiBaseUrlRequired"))
   }
   if (!prefs.newApiAdminToken) {
-    errors.push("New API 管理员令牌未配置")
+    errors.push(t("errors.validation.newApiAdminTokenRequired"))
   }
   if (!prefs.newApiUserId) {
-    errors.push("New API 用户 ID 未配置")
+    errors.push(t("errors.validation.newApiUserIdRequired"))
   }
 
   return {
