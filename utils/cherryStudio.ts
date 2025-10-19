@@ -1,5 +1,5 @@
+import { t } from "i18next"
 import toast from "react-hot-toast"
-import i18next, { t } from "i18next"
 
 import type { ApiToken, DisplaySiteData } from "~/types"
 

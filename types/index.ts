@@ -201,3 +201,13 @@ export enum AuthTypeEnum {
 
 // Current version constant
 export const CURRENT_CONFIG_VERSION = 1
+
+// Service Response Types
+export * from './serviceResponse';
+export type {
+  ServiceResponse,
+  AccountValidationResponse,
+  AccountSaveResponse,
+  NewApiResponse,
+  AutoDetectError
+} from './serviceResponse';
