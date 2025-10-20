@@ -228,7 +228,7 @@ export async function validateAndSaveAccount(
     }
 
     const accountId = await accountStorage.addAccount(accountData)
-    console.log(t("messages:errors.operation.accountAddSuccess"), {
+    console.log(t("messages:toast.success.accountSaveSuccess"), {
       id: accountId,
       siteName,
       freshAccountData
@@ -236,7 +236,7 @@ export async function validateAndSaveAccount(
 
     return {
       success: true,
-      message: t("messages:errors.validation.accountSaveSuccess"),
+      message: t("messages:toast.success.accountSaveSuccess"),
       accountId
     }
   } catch (error) {
@@ -332,7 +332,7 @@ export async function validateAndUpdateAccount(
       }
     }
 
-    console.log(t("messages:errors.operation.accountUpdateSuccessLog"), {
+    console.log(t("messages:toast.success.accountUpdateSuccess"), {
       id: accountId,
       siteName,
       freshAccountData
@@ -340,7 +340,7 @@ export async function validateAndUpdateAccount(
 
     return {
       success: true,
-      message: t("messages:errors.operation.accountUpdateSuccessLog"),
+      message: t("messages:toast.success.accountUpdateSuccess"),
       accountId
     }
   } catch (error) {
