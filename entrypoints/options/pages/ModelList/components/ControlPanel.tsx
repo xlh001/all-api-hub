@@ -47,17 +47,17 @@ export function ControlPanel({
   totalModels,
   filteredModels
 }: ControlPanelProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   const handleCopyModelNames = () => {
     if (filteredModels.length === 0) {
-      toast.error(t("modelList.noMatchingModels"))
+      toast.error(t("noMatchingModels"))
       return
     }
     const modelNames = filteredModels
       .map((item) => item.model.model_name)
       .join(",")
     navigator.clipboard.writeText(modelNames)
-    toast.success(t("modelList.modelNameCopied"))
+    toast.success(t("messages.modelNameCopied"))
   }
 
   return (
@@ -65,13 +65,13 @@ export function ControlPanel({
       <div className="flex flex-col lg:flex-row gap-4 mb-4">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-            {t("modelList.searchModels")}
+            {t("searchModels")}
           </label>
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
             <input
               type="text"
-              placeholder={t("modelList.searchPlaceholder")}
+              placeholder={t("searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={UI_CONSTANTS.STYLES.INPUT.SEARCH}
@@ -81,13 +81,13 @@ export function ControlPanel({
 
         <div className="w-full lg:w-64">
           <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-            {t("modelList.userGroup")}
+            {t("userGroup")}
           </label>
           <select
             value={selectedGroup}
             onChange={(e) => setSelectedGroup(e.target.value)}
             className="w-full px-3 py-2.5 border dark:bg-dark-bg-secondary dark:border-dark-bg-tertiary dark:text-dark-text-primary border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <option value="all">{t("modelList.allGroups")}</option>
+            <option value="all">{t("allGroups")}</option>
             {availableGroups.map((group) => (
               <option key={group} value={group}>
                 {group} ({pricingData?.group_ratio?.[group] || 1}x)
@@ -104,7 +104,7 @@ export function ControlPanel({
             <ArrowPathIcon
               className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
             />
-            <span>{t("modelList.refreshData")}</span>
+            <span>{t("refreshData")}</span>
           </button>
         </div>
       </div>
@@ -114,7 +114,7 @@ export function ControlPanel({
           <div className="flex items-center space-x-2">
             <AdjustmentsHorizontalIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
             <span className="text-gray-700 dark:text-dark-text-secondary font-medium">
-              {t("modelList.displayOptions")}
+              {t("displayOptions")}
             </span>
           </div>
 
@@ -126,7 +126,7 @@ export function ControlPanel({
               className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
             />
             <span className="text-gray-700 dark:text-dark-text-primary">
-              {t("modelList.realAmount")}
+              {t("realAmount")}
             </span>
           </label>
 
@@ -138,7 +138,7 @@ export function ControlPanel({
               className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
             />
             <span className="text-gray-700 dark:text-dark-text-primary">
-              {t("modelList.showRatio")}
+              {t("showRatio")}
             </span>
           </label>
 
@@ -150,7 +150,7 @@ export function ControlPanel({
               className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
             />
             <span className="text-gray-700 dark:text-dark-text-primary">
-              {t("modelList.endpointTypes")}
+              {t("endpointTypes")}
             </span>
           </label>
 
@@ -158,20 +158,18 @@ export function ControlPanel({
             onClick={handleCopyModelNames}
             className={UI_CONSTANTS.STYLES.BUTTON.COPY}>
             <ClipboardDocumentListIcon className="w-4 h-4" />
-            <span>{t("modelList.copyAllNames")}</span>
+            <span>{t("copyAllNames")}</span>
           </button>
         </div>
 
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2 text-gray-600 dark:text-dark-text-secondary">
             <CpuChipIcon className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" />
-            <span>{t("modelList.totalModels", { count: totalModels })}</span>
+            <span>{t("totalModels", { count: totalModels })}</span>
           </div>
           <div className="h-4 w-px bg-gray-300 dark:bg-dark-bg-tertiary"></div>
           <div className="text-blue-600 dark:text-blue-400">
-            <span>
-              {t("modelList.showing", { count: filteredModels.length })}
-            </span>
+            <span>{t("showing", { count: filteredModels.length })}</span>
           </div>
         </div>
       </div>
