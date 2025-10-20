@@ -8,29 +8,26 @@ import { initReactI18next } from "react-i18next"
 
 import { DEFAULT_LANG } from "~/constants"
 // Import all namespace files
-import enCommon from "~/locales/en/common.json"
+import enAbout from "~/locales/en/about.json"
 import enAccount from "~/locales/en/account.json"
 import enAccountDialog from "~/locales/en/accountDialog.json"
+import enCommon from "~/locales/en/common.json"
+import enImportExport from "~/locales/en/importExport.json"
 import enKeyManagement from "~/locales/en/keyManagement.json"
+import enMessages from "~/locales/en/messages.json"
 import enModelList from "~/locales/en/modelList.json"
 import enSettings from "~/locales/en/settings.json"
-import enMessages from "~/locales/en/messages.json"
 import enUi from "~/locales/en/ui.json"
-import enImportExport from "~/locales/en/importExport.json"
-import enAbout from "~/locales/en/about.json"
-import enTranslation from "~/locales/en/translation.json"
-
-import zhCNCommon from "~/locales/zh_CN/common.json"
+import zhCNAbout from "~/locales/zh_CN/about.json"
 import zhCNAccount from "~/locales/zh_CN/account.json"
 import zhCNAccountDialog from "~/locales/zh_CN/accountDialog.json"
+import zhCNCommon from "~/locales/zh_CN/common.json"
+import zhCNImportExport from "~/locales/zh_CN/importExport.json"
 import zhCNKeyManagement from "~/locales/zh_CN/keyManagement.json"
+import zhCNMessages from "~/locales/zh_CN/messages.json"
 import zhCNModelList from "~/locales/zh_CN/modelList.json"
 import zhCNSettings from "~/locales/zh_CN/settings.json"
-import zhCNMessages from "~/locales/zh_CN/messages.json"
 import zhCNUi from "~/locales/zh_CN/ui.json"
-import zhCNImportExport from "~/locales/zh_CN/importExport.json"
-import zhCNAbout from "~/locales/zh_CN/about.json"
-import zhCNTranslation from "~/locales/zh_CN/translation.json"
 import { userPreferences } from "~/services/userPreferences"
 
 i18n
@@ -39,9 +36,8 @@ i18n
   .init({
     debug: process.env.NODE_ENV === "development",
     fallbackLng: DEFAULT_LANG,
-    defaultNS: "translation",
+    defaultNS: "common",
     ns: [
-      "translation",
       "common",
       "account",
       "accountDialog",
@@ -55,7 +51,6 @@ i18n
     ],
     resources: {
       en: {
-        translation: enTranslation,
         common: enCommon,
         account: enAccount,
         accountDialog: enAccountDialog,
@@ -68,7 +63,6 @@ i18n
         about: enAbout
       },
       zh_CN: {
-        translation: zhCNTranslation,
         common: zhCNCommon,
         account: zhCNAccount,
         accountDialog: zhCNAccountDialog,
