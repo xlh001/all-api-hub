@@ -49,7 +49,7 @@ export const menuItems: MenuItem[] = [
     component: KeyManagement
   },
   {
-    id: "import-export",
+    id: "importExport",
     name: "导入/导出",
     icon: ArrowPathIcon,
     component: ImportExport
