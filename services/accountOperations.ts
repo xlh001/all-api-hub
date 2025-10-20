@@ -51,7 +51,10 @@ export async function autoDetectAccount(
   authType: AuthTypeEnum
 ): Promise<AccountValidationResponse> {
   if (!url.trim()) {
-    return { success: false, message: t("errors.validation.urlRequired") }
+    return {
+      success: false,
+      message: t("messages:errors.validation.urlRequired")
+    }
   }
 
   try {
@@ -67,11 +70,11 @@ export async function autoDetectAccount(
 
     if (!response.success) {
       const detailedError = analyzeAutoDetectError(
-        response.error || t("operations.detection.failed")
+        response.error || t("messages:operations.detection.failed")
       )
       return {
         success: false,
-        message: response.error || t("operations.detection.failed"),
+        message: response.error || t("messages:operations.detection.failed"),
         detailedError
       }
     }
@@ -79,11 +82,11 @@ export async function autoDetectAccount(
     const userId = response.data.userId
     if (!userId) {
       const detailedError = analyzeAutoDetectError(
-        t("operations.detection.getUserIdFailed")
+        t("messages:operations.detection.getUserIdFailed")
       )
       return {
         success: false,
-        message: t("operations.detection.getUserIdFailed"),
+        message: t("messages:operations.detection.getUserIdFailed"),
         detailedError
       }
     }
@@ -110,11 +113,11 @@ export async function autoDetectAccount(
 
     if (!detectedUsername || !access_token) {
       const detailedError = analyzeAutoDetectError(
-        t("operations.detection.getInfoFailed")
+        t("messages:operations.detection.getInfoFailed")
       )
       return {
         success: false,
-        message: t("operations.detection.getInfoFailed"),
+        message: t("messages:operations.detection.getInfoFailed"),
         detailedError
       }
     }
@@ -141,7 +144,7 @@ export async function autoDetectAccount(
       }
     }
   } catch (error) {
-    console.error(t("autodetect.failed"), error)
+    console.error(t("messages:autodetect.failed"), error)
     const detailedError = analyzeAutoDetectError(error)
     const errorMessage = getErrorMessage(error)
     return {
@@ -176,18 +179,21 @@ export async function validateAndSaveAccount(
   ) {
     return {
       success: false,
-      message: t("errors.validation.incompleteAccountInfo")
+      message: t("messages:errors.validation.incompleteAccountInfo")
     }
   }
 
   const parsedUserId = parseInt(userId.trim())
   if (isNaN(parsedUserId)) {
-    return { success: false, message: t("errors.validation.userIdNumeric") }
+    return {
+      success: false,
+      message: t("messages:errors.validation.userIdNumeric")
+    }
   }
 
   try {
     // 获取账号余额和今日使用情况
-    console.log(t("errors.operation.fetchingAccountData"))
+    console.log(t("messages:errors.operation.fetchingAccountData"))
     const freshAccountData = await fetchAccountData(
       url.trim(),
       parsedUserId,
@@ -222,7 +228,7 @@ export async function validateAndSaveAccount(
     }
 
     const accountId = await accountStorage.addAccount(accountData)
-    console.log(t("errors.operation.accountAddSuccess"), {
+    console.log(t("messages:errors.operation.accountAddSuccess"), {
       id: accountId,
       siteName,
       freshAccountData
@@ -230,15 +236,20 @@ export async function validateAndSaveAccount(
 
     return {
       success: true,
-      message: t("errors.validation.accountSaveSuccess"),
+      message: t("messages:errors.validation.accountSaveSuccess"),
       accountId
     }
   } catch (error) {
-    console.error(t("errors.operation.saveFailed", { error: "" }), error)
+    console.error(
+      t("messages:errors.operation.saveFailed", { error: "" }),
+      error
+    )
     const errorMessage = getErrorMessage(error)
     return {
       success: false,
-      message: t("errors.operation.saveFailed", { error: errorMessage })
+      message: t("messages:errors.operation.saveFailed", {
+        error: errorMessage
+      })
     }
   }
 }
@@ -266,18 +277,21 @@ export async function validateAndUpdateAccount(
   ) {
     return {
       success: false,
-      message: t("errors.validation.incompleteAccountInfo")
+      message: t("messages:errors.validation.incompleteAccountInfo")
     }
   }
 
   const parsedUserId = parseInt(userId.trim())
   if (isNaN(parsedUserId)) {
-    return { success: false, message: t("errors.validation.userIdNumeric") }
+    return {
+      success: false,
+      message: t("messages:errors.validation.userIdNumeric")
+    }
   }
 
   try {
     // 获取账号余额和今日使用情况
-    console.log(t("errors.operation.fetchingAccountData"))
+    console.log(t("messages:errors.operation.fetchingAccountData"))
     const freshAccountData = await fetchAccountData(
       url.trim(),
       parsedUserId,
@@ -314,11 +328,11 @@ export async function validateAndUpdateAccount(
     if (!success) {
       return {
         success: false,
-        message: t("errors.validation.updateAccountFailed")
+        message: t("messages:errors.validation.updateAccountFailed")
       }
     }
 
-    console.log(t("errors.operation.accountUpdateSuccessLog"), {
+    console.log(t("messages:errors.operation.accountUpdateSuccessLog"), {
       id: accountId,
       siteName,
       freshAccountData
@@ -326,7 +340,7 @@ export async function validateAndUpdateAccount(
 
     return {
       success: true,
-      message: t("errors.operation.accountUpdateSuccessLog"),
+      message: t("messages:errors.operation.accountUpdateSuccessLog"),
       accountId
     }
   } catch (error) {
@@ -334,7 +348,9 @@ export async function validateAndUpdateAccount(
     const errorMessage = getErrorMessage(error)
     return {
       success: false,
-      message: t("errors.operation.updateFailed", { error: errorMessage })
+      message: t("messages:errors.operation.updateFailed", {
+        error: errorMessage
+      })
     }
   }
 }
@@ -429,13 +445,13 @@ async function validateNewApiConfig(): Promise<{
   const errors = []
 
   if (!prefs.newApiBaseUrl) {
-    errors.push(t("errors.validation.newApiBaseUrlRequired"))
+    errors.push(t("messages:errors.validation.newApiBaseUrlRequired"))
   }
   if (!prefs.newApiAdminToken) {
-    errors.push(t("errors.validation.newApiAdminTokenRequired"))
+    errors.push(t("messages:errors.validation.newApiAdminTokenRequired"))
   }
   if (!prefs.newApiUserId) {
-    errors.push(t("errors.validation.newApiUserIdRequired"))
+    errors.push(t("messages:errors.validation.newApiUserIdRequired"))
   }
 
   return {
@@ -485,7 +501,7 @@ export async function autoConfigToNewApi(
   let lastError: any
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      toast.loading(t("toast.accountOperations.checkingApiKeys"), {
+      toast.loading(t("messages:accountOperations.checkingApiKeys"), {
         id: toastId
       })
       // 1. Check for existing API token
@@ -504,7 +520,7 @@ export async function autoConfigToNewApi(
         if (!createApiTokenRsult) {
           return {
             success: false,
-            message: t("toast.accountOperations.createTokenFailed")
+            message: t("messages:accountOperations.createTokenFailed")
           }
         }
         // Re-fetch tokens to get the newly created one
@@ -515,12 +531,12 @@ export async function autoConfigToNewApi(
       if (!apiToken) {
         return {
           success: false,
-          message: t("toast.accountOperations.tokenNotFound")
+          message: t("messages:accountOperations.tokenNotFound")
         }
       }
 
       // 3. Import to New API as a channel
-      toast.loading(t("toast.accountOperations.importingToNewApi"), {
+      toast.loading(t("messages:accountOperations.importingToNewApi"), {
         id: toastId
       })
       const importResult = await importToNewApi(displaySiteData, apiToken)
@@ -553,6 +569,6 @@ export async function autoConfigToNewApi(
   }
   return {
     success: false,
-    message: lastError?.message || t("errors.unknown")
+    message: lastError?.message || t("messages:errors.unknown")
   }
 }
