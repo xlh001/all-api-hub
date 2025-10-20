@@ -38,7 +38,7 @@ export default function SiteInfoInput({
   onUseCurrentTab,
   onEditAccount
 }: SiteInfoInputProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("accountDialog")
 
   const handleEditClick = () => {
     if (detectedAccount && onEditAccount) {
@@ -52,12 +52,12 @@ export default function SiteInfoInput({
         <label
           htmlFor="site-url"
           className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.siteInfo.siteUrl")}
+          {t("siteInfo.siteUrl")}
         </label>
         <label
           htmlFor="auth-type"
           className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.siteInfo.authMethod")}
+          {t("siteInfo.authMethod")}
         </label>
       </div>
       <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ export default function SiteInfoInput({
             </button>
           )}
         </div>
-        <Tooltip content={t("accountDialog.siteInfo.cookieWarning")}>
+        <Tooltip content={t("siteInfo.cookieWarning")}>
           <select
             id="auth-type"
             value={authType}
@@ -97,14 +97,14 @@ export default function SiteInfoInput({
           <div className="w-full flex items-center justify-between text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded-md">
             <div className="flex items-center">
               <ExclamationTriangleIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
-              <span>{t("accountDialog.siteInfo.alreadyAdded")}</span>
+              <span>{t("siteInfo.alreadyAdded")}</span>
             </div>
             <button
               type="button"
               onClick={handleEditClick}
               className="flex items-center font-medium text-yellow-800 dark:text-yellow-200 hover:text-yellow-900 dark:hover:text-yellow-100">
               <PencilIcon className="w-3 h-3 mr-1" />
-              <span>{t("accountDialog.siteInfo.editNow")}</span>
+              <span>{t("siteInfo.editNow")}</span>
             </button>
           </div>
         )}
@@ -113,7 +113,7 @@ export default function SiteInfoInput({
             <div className="flex items-center">
               <InformationCircleIcon className="h-4 w-4" />
               <span className="ml-1">
-                {t("accountDialog.siteInfo.currentSite")}:
+                {t("siteInfo.currentSite")}:
               </span>
               <Tooltip content={currentTabUrl}>
                 <span className="font-medium max-w-[150px] truncate ml-1">
@@ -129,7 +129,7 @@ export default function SiteInfoInput({
               className="flex items-center font-medium text-blue-800 dark:text-blue-200 disabled:text-gray-400 dark:disabled:text-gray-600 disabled:cursor-not-allowed"
               disabled={!currentTabUrl}>
               <GlobeAltIcon className="w-3 h-3 mr-1" />
-              <span>{t("accountDialog.siteInfo.useCurrent")}</span>
+              <span>{t("siteInfo.useCurrent")}</span>
             </button>
           </div>
         )}

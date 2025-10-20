@@ -1,4 +1,5 @@
 import type { FC } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { DisplaySiteData } from "~/types"
 
@@ -25,10 +26,14 @@ const AccountInfoDetail: FC<{
   </div>
 )
 
-export const AccountInfo: FC<{ account: DisplaySiteData }> = ({ account }) => (
-  <div className="mb-4 space-y-1 rounded-lg bg-gray-50 dark:bg-dark-bg-secondary p-3 text-sm">
-    <AccountInfoDetail label="站点名称" value={account.name} />
-    <AccountInfoDetail label="用户名" value={account.username} />
-    <AccountInfoDetail label="站点地址" value={account.baseUrl} isUrl />
-  </div>
-)
+export const AccountInfo: FC<{ account: DisplaySiteData }> = ({ account }) => {
+  const { t } = useTranslation("ui")
+  
+  return (
+    <div className="mb-4 space-y-1 rounded-lg bg-gray-50 dark:bg-dark-bg-secondary p-3 text-sm">
+      <AccountInfoDetail label={t("dialog.delete.siteName")} value={account.name} />
+      <AccountInfoDetail label={t("dialog.delete.username")} value={account.username} />
+      <AccountInfoDetail label={t("dialog.delete.siteUrl")} value={account.baseUrl} isUrl />
+    </div>
+  )
+}

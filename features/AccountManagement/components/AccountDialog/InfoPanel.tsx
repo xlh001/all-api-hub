@@ -12,28 +12,28 @@ export default function InfoPanel({
   isDetected,
   showManualForm
 }: InfoPanelProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("accountDialog")
   const isAddMode = mode === "add"
 
   const getTitle = () => {
     if (isAddMode) {
-      if (isDetected) return t("accountDialog.infoPanel.confirmation")
-      if (showManualForm) return t("accountDialog.infoPanel.manualAdd")
-      return t("accountDialog.infoPanel.autoDetect")
+      if (isDetected) return t("infoPanel.confirmation")
+      if (showManualForm) return t("infoPanel.manualAdd")
+      return t("infoPanel.autoDetect")
     }
-    return t("accountDialog.infoPanel.editInfo")
+    return t("infoPanel.editInfo")
   }
 
   const getDescription = () => {
     if (isAddMode) {
-      if (isDetected) return t("accountDialog.infoPanel.confirmAddInfo")
-      if (showManualForm) return t("accountDialog.infoPanel.manualInfo")
-      return t("accountDialog.infoPanel.autoDetectInfo")
+      if (isDetected) return t("infoPanel.confirmAddInfo")
+      if (showManualForm) return t("infoPanel.manualInfo")
+      return t("infoPanel.autoDetectInfo")
     }
     return (
       <>
-        <p>{t("accountDialog.infoPanel.editInfoDesc")}</p>
-        <p>{t("accountDialog.infoPanel.reDetectInfo")}</p>
+        <p>{t("infoPanel.editInfoDesc")}</p>
+        <p>{t("infoPanel.reDetectInfo")}</p>
       </>
     )
   }

@@ -8,7 +8,7 @@ interface DialogHeaderProps {
 }
 
 export const DialogHeader: FC<DialogHeaderProps> = ({ onClose }) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
 
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
@@ -17,7 +17,7 @@ export const DialogHeader: FC<DialogHeaderProps> = ({ onClose }) => {
           <TrashIcon className="h-4 w-4 text-white" />
         </div>
         <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
-          {t("deleteDialog.title")}
+          {t("dialog.delete.title")}
         </DialogTitle>
       </div>
       <button

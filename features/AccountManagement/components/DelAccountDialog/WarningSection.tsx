@@ -7,7 +7,7 @@ interface WarningSectionProps {
 }
 
 export const WarningSection: FC<WarningSectionProps> = ({ accountName }) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
 
   return (
     <div className="mb-4 flex items-start space-x-3">
@@ -19,10 +19,10 @@ export const WarningSection: FC<WarningSectionProps> = ({ accountName }) => {
       </div>
       <div className="flex-1">
         <h3 className="mb-2 text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-          {t("deleteDialog.confirmDelete")}
+          {t("dialog.delete.confirmDeletion")}
         </h3>
         <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-          {t("deleteDialog.warning", { accountName: accountName })}
+          {t("dialog.delete.warning", { accountName: accountName })}
         </p>
       </div>
     </div>
