@@ -31,7 +31,6 @@ interface NewApiChannelData {
   type_counts: Record<string, number>
 }
 
-
 /**
  * 搜索指定关键词的渠道
  * @param baseUrl New API 的基础 URL
@@ -108,7 +107,7 @@ export async function importToNewApi(
     if (!newApiBaseUrl || !newApiAdminToken || !newApiUserId) {
       return {
         success: false,
-        message: t("newapi.configMissing")
+        message: t("messages:newapi.configMissing")
       }
     }
 
@@ -123,7 +122,7 @@ export async function importToNewApi(
     if (!searchResults) {
       return {
         success: false,
-        message: t("newapi.dataFetchFailed")
+        message: t("messages:newapi.dataFetchFailed")
       }
     }
 
@@ -144,7 +143,9 @@ export async function importToNewApi(
       if (existingChannel) {
         return {
           success: false,
-          message: t("newapi.channelExists", { channelName: existingChannel.name })
+          message: t("messages:newapi.channelExists", {
+            channelName: existingChannel.name
+          })
         }
       }
     }
@@ -181,7 +182,9 @@ export async function importToNewApi(
     if (createdChannelResponse.success) {
       return {
         success: true,
-        message: t("newapi.importSuccess", { channelName: newChannelName })
+        message: t("messages:newapi.importSuccess", {
+          channelName: newChannelName
+        })
       }
     } else {
       return {
@@ -192,7 +195,7 @@ export async function importToNewApi(
   } catch (error) {
     return {
       success: false,
-      message: getErrorMessage(error) || t("newapi.importFailed")
+      message: getErrorMessage(error) || t("messages:newapi.importFailed")
     }
   }
 }
