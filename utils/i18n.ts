@@ -7,28 +7,22 @@ import LanguageDetector from "i18next-browser-languagedetector"
 import { initReactI18next } from "react-i18next"
 
 import { DEFAULT_LANG } from "~/constants"
-// Import all namespace files
-import enAbout from "~/locales/en/about.json"
-import enAccount from "~/locales/en/account.json"
-import enAccountDialog from "~/locales/en/accountDialog.json"
-import enCommon from "~/locales/en/common.json"
-import enImportExport from "~/locales/en/importExport.json"
-import enKeyManagement from "~/locales/en/keyManagement.json"
-import enMessages from "~/locales/en/messages.json"
-import enModelList from "~/locales/en/modelList.json"
-import enSettings from "~/locales/en/settings.json"
-import enUi from "~/locales/en/ui.json"
-import zhCNAbout from "~/locales/zh_CN/about.json"
-import zhCNAccount from "~/locales/zh_CN/account.json"
-import zhCNAccountDialog from "~/locales/zh_CN/accountDialog.json"
-import zhCNCommon from "~/locales/zh_CN/common.json"
-import zhCNImportExport from "~/locales/zh_CN/importExport.json"
-import zhCNKeyManagement from "~/locales/zh_CN/keyManagement.json"
-import zhCNMessages from "~/locales/zh_CN/messages.json"
-import zhCNModelList from "~/locales/zh_CN/modelList.json"
-import zhCNSettings from "~/locales/zh_CN/settings.json"
-import zhCNUi from "~/locales/zh_CN/ui.json"
 import { userPreferences } from "~/services/userPreferences"
+
+// 自动导入所有 locales 下的 json 文件
+const modules = import.meta.glob("~/locales/*/*.json", { eager: true })
+
+// 动态组装成 i18n 资源对象
+const resources: Record<string, Record<string, any>> = {}
+
+for (const path in modules) {
+  const match = path.match(/locales\/([^/]+)\/([^/]+)\.json$/)
+  if (match) {
+    const [, lang, ns] = match
+    resources[lang] ??= {}
+    resources[lang][ns] = (modules[path] as any).default
+  }
+}
 
 i18n
   .use(LanguageDetector)
@@ -49,32 +43,7 @@ i18n
       "importExport",
       "about"
     ],
-    resources: {
-      en: {
-        common: enCommon,
-        account: enAccount,
-        accountDialog: enAccountDialog,
-        keyManagement: enKeyManagement,
-        modelList: enModelList,
-        settings: enSettings,
-        messages: enMessages,
-        ui: enUi,
-        importExport: enImportExport,
-        about: enAbout
-      },
-      zh_CN: {
-        common: zhCNCommon,
-        account: zhCNAccount,
-        accountDialog: zhCNAccountDialog,
-        keyManagement: zhCNKeyManagement,
-        modelList: zhCNModelList,
-        settings: zhCNSettings,
-        messages: zhCNMessages,
-        ui: zhCNUi,
-        importExport: zhCNImportExport,
-        about: zhCNAbout
-      }
-    },
+    resources,
     interpolation: {
       escapeValue: false // react already escapes by default
     },
