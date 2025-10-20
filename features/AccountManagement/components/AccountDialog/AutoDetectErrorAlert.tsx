@@ -13,7 +13,7 @@ export default function AutoDetectErrorAlert({
   onHelpClick,
   onActionClick
 }: AutoDetectErrorProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("accountDialog")
 
   const handleActionClick = () => {
     if (onActionClick) {
@@ -64,7 +64,7 @@ export default function AutoDetectErrorAlert({
                   onClick={handleHelpClick}
                   className="inline-flex items-center px-2 py-1 text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors">
                   <QuestionMarkCircleIcon className="w-3 h-3 mr-1" />
-                  {t("accountDialog.autoDetectError.helpDoc")}
+                  {t("common:actions.helpDocument")}
                 </button>
               )}
             </div>

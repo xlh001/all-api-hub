@@ -1,6 +1,7 @@
 // 格式化密钥显示
+import { t } from "i18next"
+
 import { UI_CONSTANTS } from "~/constants/ui.ts"
-import i18n from "~/utils/i18n.ts"
 
 export const formatKey = (
   key: string,
@@ -20,12 +21,12 @@ export const formatKey = (
 
 // 格式化时间
 export const formatTime = (timestamp: number) => {
-  if (timestamp <= 0) return i18n.t("keyManagement.neverExpires")
+  if (timestamp <= 0) return t("keyManagement:keyDetails.neverExpires")
   return new Date(timestamp * 1000).toLocaleDateString("zh-CN")
 }
 
 // 格式化额度
 export const formatQuota = (quota: number, unlimited: boolean) => {
-  if (unlimited || quota < 0) return i18n.t("keyManagement.unlimitedQuota")
+  if (unlimited || quota < 0) return t("keyManagement:dialog.unlimitedQuota")
   return `$${(quota / UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR).toFixed(2)}`
 }

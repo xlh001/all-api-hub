@@ -7,7 +7,7 @@ export interface PluginIntroCardProps {
 }
 
 const PluginIntroCard = ({ version }: PluginIntroCardProps) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("about")
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
       <div className="flex items-start space-x-4">
@@ -21,12 +21,12 @@ const PluginIntroCard = ({ version }: PluginIntroCardProps) => {
             All API Hub
           </h2>
           <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
-            {t("about.intro")}
+            {t("intro")}
           </p>
           <div className="text-sm">
             <div>
               <span className="text-gray-500 dark:text-dark-text-secondary">
-                {t("about.version")}
+                {t("version")}
               </span>
               <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
                 v{version}

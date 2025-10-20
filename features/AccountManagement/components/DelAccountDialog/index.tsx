@@ -29,25 +29,25 @@ export default function DelAccountDialog({
   account,
   onDeleted
 }: DelAccountDialogProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(["ui", "messages"])
 
   const handleDelete = async () => {
     if (!account) return
 
     try {
       await toast.promise(accountStorage.deleteAccount(account.id), {
-        loading: t("deleteDialog.deleting", { name: account.name }),
+        loading: t("ui:dialog.delete.deleting", { name: account.name }),
         success: (isSuccess) => {
           if (!isSuccess) {
-            throw new Error(t("deleteDialog.noResponse"))
+            throw new Error(t("ui:dialog.delete.noResponse"))
           }
           onDeleted()
           onClose()
-          return t("deleteDialog.deleteSuccess", { name: account.name })
+          return t("ui:dialog.delete.deleteSuccess", { name: account.name })
         },
         error: (err: Error) =>
-          t("deleteDialog.deleteFailed", {
-            error: err.message || t("errors.unknown")
+          t("ui:dialog.delete.deleteFailed", {
+            error: err.message || t("messages:errors.unknown")
           })
       })
     } catch (error) {

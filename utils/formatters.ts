@@ -1,5 +1,6 @@
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
+import { t } from "i18next"
 
 import { CURRENCY_SYMBOLS, UI_CONSTANTS } from "~/constants/ui"
 import type {
@@ -102,7 +103,9 @@ export const getCurrencySymbol = (currencyType: CurrencyType): string => {
  * 获取货币显示名称
  */
 export const getCurrencyDisplayName = (currencyType: CurrencyType): string => {
-  return currencyType === "USD" ? "美元" : "人民币"
+  return currencyType === "USD"
+    ? t("common:currency.usd")
+    : t("common:currency.cny")
 }
 
 /**
@@ -177,7 +180,7 @@ export const throttle = <T extends (...args: any[]) => any>(
  */
 export const formatQuota = (token: ApiToken) => {
   if (token.unlimited_quota || token.remain_quota < 0) {
-    return "无限额度"
+    return t("common:quota.unlimited")
   }
 
   // 使用CONVERSION_FACTOR转换真实额度
@@ -200,7 +203,7 @@ export const formatUsedQuota = (token: ApiToken) => {
  */
 export const formatTimestamp = (timestamp: number) => {
   if (timestamp <= 0) {
-    return "永不过期"
+    return t("common:time.neverExpires")
   }
   return new Date(timestamp * 1000).toLocaleDateString("zh-CN")
 }

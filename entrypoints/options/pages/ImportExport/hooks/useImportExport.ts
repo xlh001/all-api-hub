@@ -27,7 +27,7 @@ export const useImportExport = () => {
   // 导入数据
   const handleImport = async () => {
     if (!importData.trim()) {
-      toast.error(t("importExport.selectFileImport"))
+      toast.error(t("importExport:import.selectFileImport"))
       return
     }
 
@@ -38,7 +38,7 @@ export const useImportExport = () => {
 
       // 验证数据格式
       if (!data.version || !data.timestamp) {
-        throw new Error(t("importExport.formatNotCorrect"))
+        throw new Error(t("importExport:import.formatNotCorrect"))
       }
 
       let importSuccess = false
@@ -53,9 +53,11 @@ export const useImportExport = () => {
 
         importSuccess = true
         if (migratedCount > 0) {
-          toast.success(t("toast.success.importedAccounts", { migratedCount }))
+          toast.success(
+            t("messages:toast.success.importedAccounts", { migratedCount })
+          )
         } else {
-          toast.success(t("toast.success.importSuccess"))
+          toast.success(t("messages:toast.success.importSuccess"))
         }
       }
 
@@ -67,13 +69,13 @@ export const useImportExport = () => {
             await userPreferences.importPreferences(preferencesData)
           if (success) {
             importSuccess = true
-            toast.success(t("importExport.importSuccess"))
+            toast.success(t("importExport:import.importSuccess"))
           }
         }
       }
 
       if (!importSuccess) {
-        throw new Error(t("importExport.noImportableData"))
+        throw new Error(t("importExport:import.noImportableData"))
       }
 
       // 清空输入框
@@ -81,10 +83,12 @@ export const useImportExport = () => {
     } catch (error) {
       console.error("导入失败:", error)
       if (error instanceof SyntaxError) {
-        toast.error(t("importExport.formatError"))
+        toast.error(t("importExport:import.formatError"))
       } else {
         toast.error(
-          t("importExport.importFailed", { error: getErrorMessage(error) })
+          t("importExport:import.importFailed", {
+            error: getErrorMessage(error)
+          })
         )
       }
     } finally {
@@ -107,7 +111,7 @@ export const useImportExport = () => {
         hasPreferences: !!(data.preferences || data.type === "preferences"),
         timestamp: data.timestamp
           ? new Date(data.timestamp).toLocaleString()
-          : t("importExport.unknown")
+          : t("common:labels.unknown")
       }
     } catch {
       return { valid: false }

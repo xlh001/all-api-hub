@@ -13,7 +13,7 @@ interface ExportSectionProps {
 }
 
 const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("importExport")
   return (
     <section>
       <div className="h-full bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden">
@@ -21,11 +21,11 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
           <div className="flex items-center space-x-2">
             <ArrowUpTrayIcon className="w-5 h-5 text-green-600" />
             <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("importExport.exportData")}
+              {t("export.title")}
             </h2>
           </div>
           <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
-            {t("importExport.exportDescription")}
+            {t("export.description")}
           </p>
         </div>
 
@@ -35,10 +35,10 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("importExport.fullBackup")}
+                  {t("export.fullBackup")}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  {t("importExport.fullBackupDescription")}
+                  {t("export.fullBackupDescription")}
                 </p>
               </div>
               <button
@@ -46,8 +46,8 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
                 disabled={isExporting}
                 className="ml-4 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
                 {isExporting
-                  ? t("importExport.exporting")
-                  : t("importExport.export")}
+                  ? t("common:status.exporting")
+                  : t("common:actions.export")}
               </button>
             </div>
           </div>
@@ -57,10 +57,10 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("importExport.accountData")}
+                  {t("export.accountData")}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  {t("importExport.accountDataDescription")}
+                  {t("export.accountDataDescription")}
                 </p>
               </div>
               <button
@@ -68,8 +68,8 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
                 disabled={isExporting}
                 className="ml-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
                 {isExporting
-                  ? t("importExport.exporting")
-                  : t("importExport.export")}
+                  ? t("common:status.exporting")
+                  : t("common:actions.export")}
               </button>
             </div>
           </div>
@@ -79,10 +79,10 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("importExport.userSettings")}
+                  {t("export.userSettings")}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  {t("importExport.userSettingsDescription")}
+                  {t("export.userSettingsDescription")}
                 </p>
               </div>
               <button
@@ -90,8 +90,8 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
                 disabled={isExporting}
                 className="ml-4 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
                 {isExporting
-                  ? t("importExport.exporting")
-                  : t("importExport.export")}
+                  ? t("common:status.exporting")
+                  : t("common:actions.export")}
               </button>
             </div>
           </div>

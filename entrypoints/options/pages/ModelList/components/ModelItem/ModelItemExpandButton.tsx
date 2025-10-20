@@ -11,16 +11,14 @@ export const ModelItemExpandButton: React.FC<ModelItemExpandButtonProps> = ({
   isExpanded,
   onToggleExpand
 }) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   return (
     <button
       onClick={onToggleExpand}
       className="ml-4 p-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors"
-      title={
-        isExpanded
-          ? t("modelList.collapseDetails")
-          : t("modelList.expandDetails")
-      }>
+      title={isExpanded ? t("collapseDetails") : t("expandDetails")}
+      aria-label={isExpanded ? t("collapseDetails") : t("expandDetails")}
+      aria-expanded={isExpanded}>
       {isExpanded ? (
         <ChevronUpIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
       ) : (

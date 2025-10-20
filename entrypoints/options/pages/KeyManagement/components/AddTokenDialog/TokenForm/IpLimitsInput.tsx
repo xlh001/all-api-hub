@@ -15,12 +15,12 @@ export function IpLimitsInput({
   handleInputChange,
   error
 }: IpLimitsInputProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        {t("keyManagement.ipLimits")}
+        {t("dialog.ipLimits")}
       </label>
       <input
         type="text"
@@ -31,13 +31,13 @@ export function IpLimitsInput({
             ? "border-red-300"
             : "border-gray-300 dark:border-dark-bg-tertiary"
         }`}
-        placeholder={t("keyManagement.ipPlaceholder")}
+        placeholder={t("dialog.ipPlaceholder")}
       />
       {error && (
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
       )}
       <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-        {t("keyManagement.ipExample")}
+        {t("dialog.ipExample")}
       </p>
     </div>
   )

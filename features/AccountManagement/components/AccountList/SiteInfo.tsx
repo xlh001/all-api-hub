@@ -21,7 +21,7 @@ interface SiteInfoProps {
 }
 
 export default function SiteInfo({ site }: SiteInfoProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("account")
   const { detectedAccount } = useAccountDataContext()
   const { handleRefreshAccount, refreshingAccountId } =
     useAccountActionsContext()
@@ -47,26 +47,26 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             content={
               <div className="text-xs">
                 <p>
-                  {t("accountList.site_info.status")}:{" "}
+                  {t("list.site.status")}:{" "}
                   <span
                     className={
                       getHealthStatusDisplay(site.health?.status, t).color ||
                       "text-gray-400"
                     }>
                     {getHealthStatusDisplay(site.health?.status, t).text ||
-                      t("accountList.site_info.unknown")}
+                      t("list.site.unknown")}
                   </span>
                 </p>
                 {site.health?.reason && (
                   <p>
-                    {t("accountList.site_info.reason")}: {site.health.reason}
+                    {t("list.site.reason")}: {site.health.reason}
                   </p>
                 )}
                 <p>
-                  {t("accountList.site_info.last_sync")}:{" "}
+                  {t("list.site.lastSync")}:{" "}
                   {site.last_sync_time
                     ? new Date(site.last_sync_time).toLocaleString()
-                    : t("accountList.site_info.not_available")}
+                    : t("list.site.notAvailable")}
                 </p>
               </div>
             }
@@ -81,11 +81,11 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                 UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
               }`}
               onClick={handleHealthClick}
-              title={t("accountList.site_info.refresh_health_status")}></div>
+              title={t("list.site.refreshHealthStatus")}></div>
           </Tooltip>
           {site.id === detectedAccountId && (
-            <Tooltip content={t("accountList.site_info.current_site_exists")} position="top">
-              <span className={`text-yellow-700`}>{t("accountList.site_info.current_site")}</span>
+            <Tooltip content={t("list.site.currentSiteExists")} position="top">
+              <span className={`text-yellow-700`}>{t("list.site.currentSite")}</span>
             </Tooltip>
           )}
           <div className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">
@@ -100,7 +100,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
           {/* The check-in UI is displayed if the checkIn object exists. */}
           {site.checkIn?.customCheckInUrl ? (
             <Tooltip
-              content={t("accountList.site_info.custom_check_in_url", {
+              content={t("list.site.customCheckInUrl", {
                 url: site.checkIn.customCheckInUrl
               })}
               position="top"
@@ -114,14 +114,14 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               <>
                 {site.checkIn.isCheckedInToday === undefined ? (
                   <Tooltip
-                    content={t("accountList.site_info.check_in_unsupported")}
+                    content={t("list.site.checkInUnsupported")}
                     position="top"
                     wrapperClassName="flex justify-center items-center">
                     <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
                   </Tooltip>
                 ) : site.checkIn.isCheckedInToday === false ? (
                   <Tooltip
-                    content={t("accountList.site_info.checked_in_today")}
+                    content={t("list.site.checkedInToday")}
                     position="top"
                     wrapperClassName="flex justify-center items-center">
                     <button onClick={handleCheckIn()}>
@@ -130,7 +130,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                   </Tooltip>
                 ) : (
                   <Tooltip
-                    content={t("accountList.site_info.not_checked_in_today")}
+                    content={t("list.site.notCheckedInToday")}
                     position="top"
                     wrapperClassName="flex justify-center items-center">
                     <button onClick={handleCheckIn()}>

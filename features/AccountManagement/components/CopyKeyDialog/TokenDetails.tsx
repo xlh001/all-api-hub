@@ -28,14 +28,14 @@ export function TokenDetails({
   onCopyKey,
   account
 }: TokenDetailsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
 
   return (
     <div className="px-3 pb-3 border-t border-gray-100 dark:border-dark-bg-tertiary bg-gray-50/30 dark:bg-dark-bg-primary">
       <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-dark-text-secondary mb-3 pt-3">
         <ClockIcon className="w-3 h-3" />
         <span>
-          {t("copyKeyDialog.expireTime", {
+          {t("dialog.copyKey.expireTime", {
             time: formatTime(token.expired_time)
           })}
         </span>
@@ -44,7 +44,7 @@ export function TokenDetails({
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
           <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-0.5">
-            {t("copyKeyDialog.usedQuota")}
+            {t("dialog.copyKey.usedQuota")}
           </div>
           <div className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary">
             {formatUsedQuota(token)}
@@ -52,7 +52,7 @@ export function TokenDetails({
         </div>
         <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
           <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-0.5">
-            {t("copyKeyDialog.remainingQuota")}
+            {t("dialog.copyKey.remainingQuota")}
           </div>
           <div
             className={`text-sm font-semibold ${
@@ -70,7 +70,7 @@ export function TokenDetails({
       <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wide">
-            {t("copyKeyDialog.apiKey")}
+            {t("dialog.copyKey.apiKey")}
           </span>
           <div className="flex items-center space-x-2">
             <button
@@ -82,12 +82,12 @@ export function TokenDetails({
               {copiedKey === token.key ? (
                 <>
                   <CheckIcon className="w-3 h-3" />
-                  <span>{t("copyKeyDialog.copied")}</span>
+                  <span>{t("dialog.copyKey.copied")}</span>
                 </>
               ) : (
                 <>
                   <DocumentDuplicateIcon className="w-3 h-3" />
-                  <span>{t("copyKeyDialog.copy")}</span>
+                  <span>{t("dialog.copyKey.copy")}</span>
                 </>
               )}
             </button>
@@ -98,7 +98,7 @@ export function TokenDetails({
               }}
               className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-cyan-600 text-white text-xs font-medium rounded hover:from-blue-600 hover:to-cyan-700 transition-all duration-200">
               <CherryIcon className="w-3 h-3" />
-              <span>{t("copyKeyDialog.useInCherry")}</span>
+              <span>{t("dialog.copyKey.useInCherry")}</span>
             </button>
           </div>
         </div>

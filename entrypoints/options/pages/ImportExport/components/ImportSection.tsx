@@ -28,7 +28,7 @@ const ImportSection = ({
   isImporting,
   validation
 }: ImportSectionProps) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("importExport")
   return (
     <section>
       <div className="h-full bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden">
@@ -36,11 +36,11 @@ const ImportSection = ({
           <div className="flex items-center space-x-2">
             <ArrowDownTrayIcon className="w-5 h-5 text-blue-600" />
             <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("importExport.importData")}
+              {t("import.title")}
             </h2>
           </div>
           <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
-            {t("importExport.importDescription")}
+            {t("import.description")}
           </p>
         </div>
 
@@ -48,7 +48,7 @@ const ImportSection = ({
           {/* 文件选择 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-              {t("importExport.selectBackupFile")}
+              {t("import.selectBackupFile")}
             </label>
             <div className="flex items-center space-x-3">
               <input
@@ -64,12 +64,12 @@ const ImportSection = ({
           {/* 数据预览 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-              {t("importExport.dataPreview")}
+              {t("import.dataPreview")}
             </label>
             <textarea
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
-              placeholder={t("importExport.pasteJsonData")}
+              placeholder={t("import.pasteJsonData")}
               className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
@@ -92,24 +92,23 @@ const ImportSection = ({
                   {validation.valid ? (
                     <div>
                       <p className="text-green-800 dark:text-green-200 font-medium">
-                        {t("importExport.dataValid")}
+                        {t("import.dataValid")}
                       </p>
                       <div className="mt-1 text-green-700 dark:text-green-300">
                         {validation.hasAccounts && (
-                          <p>• {t("importExport.containsAccountData")}</p>
+                          <p>• {t("import.containsAccountData")}</p>
                         )}
                         {validation.hasPreferences && (
-                          <p>• {t("importExport.containsUserSettings")}</p>
+                          <p>• {t("import.containsUserSettings")}</p>
                         )}
                         <p>
-                          • {t("importExport.backupTime")}:{" "}
-                          {validation.timestamp}
+                          • {t("import.backupTime")}: {validation.timestamp}
                         </p>
                       </div>
                     </div>
                   ) : (
                     <p className="text-red-800 dark:text-red-200">
-                      {t("importExport.dataInvalid")}
+                      {t("import.dataInvalid")}
                     </p>
                   )}
                 </div>
@@ -123,8 +122,8 @@ const ImportSection = ({
             disabled={isImporting || !validation?.valid}
             className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {isImporting
-              ? t("importExport.importing")
-              : t("importExport.importData")}
+              ? t("common:status.importing")
+              : t("common:actions.import")}
           </button>
         </div>
       </div>

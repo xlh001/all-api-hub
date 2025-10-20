@@ -15,17 +15,13 @@ function getErrorMessage(error: any): string {
   return JSON.stringify(error)
 }
 
-export function useCopyKeyDialog(
-  isOpen: boolean,
-  account: DisplaySiteData | null
-) {
-  const { t } = useTranslation()
+export function useCopyKeyDialog(isOpen: boolean, account: DisplaySiteData) {
+  const { t } = useTranslation(["ui", "messages"])
   const [tokens, setTokens] = useState<ApiToken[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [expandedTokens, setExpandedTokens] = useState<Set<number>>(new Set())
-
   const fetchTokens = useCallback(async () => {
     if (!account) return
 
@@ -43,7 +39,7 @@ export function useCopyKeyDialog(
     } catch (error) {
       console.error("获取密钥列表失败:", error)
       const errorMessage = getErrorMessage(error)
-      setError(t("copyKeyDialog.loadFailed", { error: errorMessage }))
+      setError(t("ui:dialog.copyKey.loadFailed", { error: errorMessage }))
     } finally {
       setIsLoading(false)
     }
@@ -65,14 +61,14 @@ export function useCopyKeyDialog(
       const textToCopy = key.startsWith("sk-") ? key : "sk-" + key
       await navigator.clipboard.writeText(textToCopy)
       setCopiedKey(key)
-      toast.success(t("copyKeyDialog.keyCopied"))
+      toast.success(t("ui:dialog.copyKey.keyCopied"))
 
       setTimeout(() => {
         setCopiedKey(null)
       }, 2000)
     } catch (error) {
       console.error("复制失败:", error)
-      toast.error(t("copyKeyDialog.copyFailedManual"))
+      toast.error(t("ui:dialog.copyKey.copyFailedManual"))
     }
   }
 

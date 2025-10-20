@@ -2,7 +2,7 @@
  * 模型定价计算工具
  */
 
-import i18next, { t } from "i18next"
+import { t } from "i18next"
 
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CurrencyType } from "~/types"
@@ -149,8 +149,8 @@ export const formatPriceRange = (
  */
 export const getBillingModeText = (quotaType: number): string => {
   return isTokenBillingType(quotaType)
-    ? i18next.t("billing.tokenBased")
-    : i18next.t("billing.perCall")
+    ? t("ui:billing.tokenBased")
+    : t("ui:billing.perCall")
 }
 
 /**
@@ -181,7 +181,7 @@ export const getEndpointTypesText = (
   endpointTypes: string[] | undefined
 ): string => {
   if (!endpointTypes || !Array.isArray(endpointTypes)) {
-    return t("billing.notProvided")
+    return t("ui:billing.notProvided")
   }
   return endpointTypes.join(", ")
 }

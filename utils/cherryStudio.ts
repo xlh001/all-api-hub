@@ -19,7 +19,7 @@ function generateCherryStudioURL(data: CherryStudioExportData): string {
 
 export function OpenInCherryStudio(account: DisplaySiteData, token: ApiToken) {
   if (!account || !token) {
-    toast.error(t("toast.cherryStudio.missingCredentials"))
+    toast.error(t("messages:cherryStudio.missingCredentials"))
     return
   }
 
@@ -34,9 +34,9 @@ export function OpenInCherryStudio(account: DisplaySiteData, token: ApiToken) {
 
   try {
     window.open(url, "_blank")
-    toast.success(t("toast.cherryStudio.attemptingRedirect"))
+    toast.success(t("messages:cherryStudio.attemptingRedirect"))
   } catch (error) {
     console.error("无法打开 Cherry Studio URL:", error)
-    toast.error(t("toast.cherryStudio.unableToOpen"))
+    toast.error(t("messages:cherryStudio.unableToOpen"))
   }
 }

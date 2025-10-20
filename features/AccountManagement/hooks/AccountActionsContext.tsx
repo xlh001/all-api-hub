@@ -1,3 +1,4 @@
+import i18next from "i18next"
 import {
   createContext,
   useCallback,
@@ -7,7 +8,6 @@ import {
   type ReactNode
 } from "react"
 import toast from "react-hot-toast"
-import i18next from "i18next"
 
 import { accountStorage } from "~/services/accountStorage"
 import type { DisplaySiteData } from "~/types"
@@ -53,7 +53,11 @@ export const AccountActionsProvider = ({
           await loadAccountData()
           return result
         } else {
-          throw new Error(i18next.t("toast.error.refreshAccount", { accountName: account.name }))
+          throw new Error(
+            i18next.t("messages:toast.error.refreshAccount", {
+              accountName: account.name
+            })
+          )
         }
       }
 
@@ -61,14 +65,20 @@ export const AccountActionsProvider = ({
         await toast.promise(
           refreshPromise().then((result) => {
             if (!result.refreshed) {
-              return i18next.t("toast.success.refreshSkipped")
+              return i18next.t("messages:toast.success.refreshSkipped")
             }
-            return i18next.t("toast.success.refreshAccount", { accountName: account.name })
+            return i18next.t("messages:toast.success.refreshAccount", {
+              accountName: account.name
+            })
           }),
           {
-            loading: i18next.t("toast.loading.refreshingAccount", { accountName: account.name }),
+            loading: i18next.t("messages:toast.loading.refreshingAccount", {
+              accountName: account.name
+            }),
             success: (message) => message,
-            error: i18next.t("toast.error.refreshAccount", { accountName: account.name })
+            error: i18next.t("messages:toast.error.refreshAccount", {
+              accountName: account.name
+            })
           }
         )
       } catch (error) {
@@ -88,7 +98,11 @@ export const AccountActionsProvider = ({
 
   const handleCopyUrl = useCallback((account: DisplaySiteData) => {
     navigator.clipboard.writeText(account.baseUrl)
-    toast.success(i18next.t("toast.success.urlCopied", { accountName: account.name }))
+    toast.success(
+      i18next.t("messages:toast.success.urlCopied", {
+        accountName: account.name
+      })
+    )
   }, [])
 
   const value = useMemo(

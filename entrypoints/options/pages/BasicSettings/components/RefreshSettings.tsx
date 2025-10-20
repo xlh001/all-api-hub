@@ -8,7 +8,7 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function RefreshSettings() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("settings")
   const {
     autoRefresh,
     refreshOnOpen,
@@ -35,21 +35,19 @@ export default function RefreshSettings() {
 
   const handleAutoRefreshChange = async (value: boolean) => {
     const success = await updateAutoRefresh(value)
-    showUpdateToast(success, t("basicSettings.autoRefresh"))
+    showUpdateToast(success, t("refresh.autoRefresh"))
   }
 
   const handleRefreshOnOpenChange = async (value: boolean) => {
     const success = await updateRefreshOnOpen(value)
-    showUpdateToast(success, t("basicSettings.refreshOnOpen"))
+    showUpdateToast(success, t("refresh.refreshOnOpen"))
   }
 
   const handleRefreshIntervalBlur = async () => {
     const value = parseInt(intervalInput, 10)
     if (isNaN(value) || value < 10) {
       toast.error(
-        t("basicSettings.refreshInterval") +
-          " " +
-          t("basicSettings.minRefreshIntervalDesc")
+        t("refresh.refreshInterval") + " " + t("refresh.minRefreshIntervalDesc")
       )
       setIntervalInput(refreshInterval.toString())
       return
@@ -57,16 +55,16 @@ export default function RefreshSettings() {
     if (value === refreshInterval) return
 
     const success = await updateRefreshInterval(value)
-    showUpdateToast(success, t("basicSettings.refreshInterval"))
+    showUpdateToast(success, t("refresh.refreshInterval"))
   }
 
   const handleMinRefreshIntervalBlur = async () => {
     const value = parseInt(minIntervalInput, 10)
     if (isNaN(value) || value < 0 || value > 300) {
       toast.error(
-        t("basicSettings.minRefreshInterval") +
+        t("refresh.minRefreshInterval") +
           " " +
-          t("basicSettings.minRefreshIntervalDesc")
+          t("refresh.minRefreshIntervalDesc")
       )
       setMinIntervalInput(minRefreshInterval.toString())
       return
@@ -74,23 +72,23 @@ export default function RefreshSettings() {
     if (value === minRefreshInterval) return
 
     const success = await updateMinRefreshInterval(value)
-    showUpdateToast(success, t("basicSettings.minRefreshInterval"))
+    showUpdateToast(success, t("refresh.minRefreshInterval"))
   }
 
   return (
     <section>
       <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-        {t("basicSettings.refreshSettings")}
+        {t("refresh.title")}
       </h2>
       <div className="space-y-6">
         {/* 自动刷新 */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("basicSettings.autoRefresh")}
+              {t("refresh.autoRefresh")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              {t("basicSettings.autoRefreshDesc")}
+              {t("refresh.autoRefreshDesc")}
             </p>
           </div>
           <Switch
@@ -114,10 +112,10 @@ export default function RefreshSettings() {
           <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
             <div>
               <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-                {t("basicSettings.refreshInterval")}
+                {t("refresh.refreshInterval")}
               </h3>
               <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                {t("basicSettings.refreshIntervalDesc")}
+                {t("refresh.refreshIntervalDesc")}
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -136,7 +134,7 @@ export default function RefreshSettings() {
                 className="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
               />
               <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                {t("basicSettings.seconds")}
+                {t("common:time.seconds")}
               </span>
             </div>
           </div>
@@ -146,10 +144,10 @@ export default function RefreshSettings() {
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("basicSettings.refreshOnOpen")}
+              {t("refresh.refreshOnOpen")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              {t("basicSettings.refreshOnOpenDesc")}
+              {t("refresh.refreshOnOpenDesc")}
             </p>
           </div>
           <Switch
@@ -172,10 +170,10 @@ export default function RefreshSettings() {
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("basicSettings.minRefreshInterval")}
+              {t("refresh.minRefreshInterval")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              {t("basicSettings.minRefreshIntervalDesc")}
+              {t("refresh.minRefreshIntervalDesc")}
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -195,7 +193,7 @@ export default function RefreshSettings() {
               className="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
             />
             <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              {t("basicSettings.seconds")}
+              {t("common:time.seconds")}
             </span>
           </div>
         </div>

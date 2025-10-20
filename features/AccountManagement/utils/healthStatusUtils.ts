@@ -28,7 +28,7 @@ const HEALTH_STATUS_CONFIG = {
 export function getHealthStatusDisplay(status: string | undefined, t: (key: string) => string) {
   if (!status) {
     return {
-      text: t("accountList.site_info.health_status.unknown"),
+      text: t("account:healthStatus.unknown"),
       color: HEALTH_STATUS_CONFIG.unknown.color
     }
   }
@@ -36,13 +36,13 @@ export function getHealthStatusDisplay(status: string | undefined, t: (key: stri
   const config = HEALTH_STATUS_CONFIG[status as keyof typeof HEALTH_STATUS_CONFIG]
   if (!config) {
     return {
-      text: t("accountList.site_info.health_status.unknown"),
+      text: t("account:healthStatus.unknown"),
       color: HEALTH_STATUS_CONFIG.unknown.color
     }
   }
 
   return {
-    text: t(`accountList.site_info.health_status.${status}`),
+    text: t(`account:healthStatus.${status}`),
     color: config.color
   }
 }

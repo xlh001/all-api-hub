@@ -7,9 +7,22 @@ import LanguageDetector from "i18next-browser-languagedetector"
 import { initReactI18next } from "react-i18next"
 
 import { DEFAULT_LANG } from "~/constants"
-import enTranslation from "~/locales/en/translation.json"
-import zhCNTranslation from "~/locales/zh_CN/translation.json"
 import { userPreferences } from "~/services/userPreferences"
+
+// 自动导入所有 locales 下的 json 文件
+const modules = import.meta.glob("~/locales/*/*.json", { eager: true })
+
+// 动态组装成 i18n 资源对象
+const resources: Record<string, Record<string, any>> = {}
+
+for (const path in modules) {
+  const match = path.match(/locales\/([^/]+)\/([^/]+)\.json$/)
+  if (match) {
+    const [, lang, ns] = match
+    resources[lang] ??= {}
+    resources[lang][ns] = (modules[path] as any).default
+  }
+}
 
 i18n
   .use(LanguageDetector)
@@ -17,15 +30,20 @@ i18n
   .init({
     debug: process.env.NODE_ENV === "development",
     fallbackLng: DEFAULT_LANG,
-    defaultNS: "translation",
-    resources: {
-      en: {
-        translation: enTranslation
-      },
-      zh_CN: {
-        translation: zhCNTranslation
-      }
-    },
+    defaultNS: "common",
+    ns: [
+      "common",
+      "account",
+      "accountDialog",
+      "keyManagement",
+      "modelList",
+      "settings",
+      "messages",
+      "ui",
+      "importExport",
+      "about"
+    ],
+    resources,
     interpolation: {
       escapeValue: false // react already escapes by default
     },

@@ -29,7 +29,7 @@ export function useAccountDialog({
   onClose,
   onSuccess
 }: UseAccountDialogProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("accountDialog")
 
   const [url, setUrl] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
@@ -105,8 +105,8 @@ export function useAccountDialog({
           setAuthType(siteAccount.authType || AuthTypeEnum.AccessToken)
         }
       } catch (error) {
-        console.error(t("accountDialog.hooks.loadFailed"), error)
-        toast.error(t("accountDialog.hooks.loadFailed"))
+        console.error(t("messages.loadFailed"), error)
+        toast.error(t("messages.loadFailed"))
       }
     },
     [t]
@@ -134,7 +134,7 @@ export function useAccountDialog({
                 setSiteName(await getSiteName(tab))
               } catch (error) {
                 console.log(
-                  t("accountDialog.hooks.urlParseError", {
+                  t("messages.urlParseError", {
                     error: (error as Error).message
                   })
                 )
@@ -195,15 +195,15 @@ export function useAccountDialog({
 
         setIsDetected(true)
         if (mode === "edit") {
-          toast.success(t("accountDialog.hooks.autoDetectSuccess"))
+          toast.success(t("messages.autoDetectSuccess"))
         }
       }
     } catch (error) {
-      console.error(t("accountDialog.hooks.autoDetectFailed"), error)
+      console.error(t("messages.autoDetectFailed"), error)
       const errorMessage = getErrorMessage(error)
       setDetectionError({
         type: "unknown" as any,
-        message: t("accountDialog.hooks.autoDetectFailed", {
+        message: t("messages.autoDetectFailed", {
           error: errorMessage
         }),
         helpDocUrl: "#"
@@ -247,26 +247,21 @@ export function useAccountDialog({
 
       if (result.success) {
         toast.success(
-          t(
-            mode === "add"
-              ? "accountDialog.hooks.addSuccess"
-              : "accountDialog.hooks.updateSuccess",
-            { name: siteName }
-          )
+          t(mode === "add" ? "messages.addSuccess" : "messages.updateSuccess", {
+            name: siteName
+          })
         )
         return result
       } else {
         toast.error(
-          t("accountDialog.hooks.operationFailed", {
-            error: result.message || t("accountDialog.hooks.saveFailed")
+          t("messages.operationFailed", {
+            error: result.message || t("messages.saveFailed")
           })
         )
-        throw new Error(result.message || t("accountDialog.hooks.saveFailed"))
+        throw new Error(result.message || t("messages.saveFailed"))
       }
     } catch (error: any) {
-      toast.error(
-        t("accountDialog.hooks.operationFailed", { error: error.message })
-      )
+      toast.error(t("messages.operationFailed", { error: error.message }))
       throw error
     } finally {
       setIsSaving(false)
@@ -275,14 +270,14 @@ export function useAccountDialog({
 
   const handleAutoConfig = async () => {
     setIsAutoConfiguring(true)
-    const toastId = toast.loading(t("accountDialog.hooks.startNewApiConfig"))
+    const toastId = toast.loading(t("messages.startNewApiConfig"))
     try {
       let targetAccount: any = account || newAccountRef.current
       // 如果是新增（account 不存在），就先保存
       if (!targetAccount) {
         targetAccount = await handleSaveAccount()
         if (!targetAccount) {
-          toast.error(t("accountDialog.hooks.saveAccountFailed"), {
+          toast.error(t("messages.saveAccountFailed"), {
             id: toastId
           })
           return
@@ -296,7 +291,9 @@ export function useAccountDialog({
         targetAccount.accountId
       )
       if (!siteAccount) {
-        toast.error(t("toast.error.findAccountDetailsFailed"), { id: toastId })
+        toast.error(t("messages:toast.error.findAccountDetailsFailed"), {
+          id: toastId
+        })
         setIsAutoConfiguring(false)
         return
       }
@@ -314,7 +311,7 @@ export function useAccountDialog({
       }
     } catch (error) {
       toast.error(
-        t("accountDialog.hooks.newApiConfigFailed", {
+        t("messages.newApiConfigFailed", {
           error: getErrorMessage(error)
         }),
         {

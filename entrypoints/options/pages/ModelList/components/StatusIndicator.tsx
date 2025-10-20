@@ -22,12 +22,14 @@ export function StatusIndicator({
   currentAccount,
   loadPricingData
 }: StatusIndicatorProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   if (!selectedAccount) {
     return (
       <div className="text-center py-12">
         <CpuChipIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500">{t("modelList.pleaseSelectFirst")}</p>
+        <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+          {t("pleaseSelectFirst")}
+        </p>
       </div>
     )
   }
@@ -36,7 +38,9 @@ export function StatusIndicator({
     return (
       <div className="text-center py-12">
         <ArrowPathIcon className="w-8 h-8 text-blue-600 mx-auto mb-4 animate-spin" />
-        <p className="text-gray-500">{t("modelList.loading")}</p>
+        <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+          {t("status.loading")}
+        </p>
       </div>
     )
   }
@@ -48,10 +52,10 @@ export function StatusIndicator({
           <ExclamationTriangleIcon className="w-6 h-6 text-yellow-600 mt-1 flex-shrink-0" />
           <div className="flex-1">
             <h3 className="text-lg font-medium text-yellow-800 mb-2">
-              {t("modelList.incompatibleFormat")}
+              {t("status.incompatibleFormat")}
             </h3>
-            <p className="text-yellow-700 mb-4">
-              {t("modelList.incompatibleDesc")}
+            <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+              {t("status.incompatibleDesc")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <a
@@ -59,7 +63,7 @@ export function StatusIndicator({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
-                <span>{t("modelList.goToSitePricing")}</span>
+                <span>{t("status.goToSitePricing")}</span>
                 <svg
                   className="w-4 h-4 ml-2"
                   fill="none"
@@ -77,7 +81,7 @@ export function StatusIndicator({
                 onClick={loadPricingData}
                 className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                 <ArrowPathIcon className="w-4 h-4 mr-2" />
-                <span>{t("modelList.retryLoad")}</span>
+                <span>{t("status.retryLoad")}</span>
               </button>
             </div>
           </div>

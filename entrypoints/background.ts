@@ -1,3 +1,5 @@
+import { t } from "i18next"
+
 import { accountStorage } from "../services/accountStorage.ts"
 import {
   autoRefreshService,
@@ -106,7 +108,7 @@ function main() {
         tempWindows.set(requestId, window.id)
         sendResponse({ success: true, windowId: window.id })
       } else {
-        sendResponse({ success: false, error: "无法创建窗口" })
+        sendResponse({ success: false, error: t("messages:background.cannotCreateWindow") })
       }
     } catch (error) {
       sendResponse({ success: false, error: getErrorMessage(error) })
@@ -173,7 +175,7 @@ function main() {
       })
 
       if (!window.id || !window.tabs?.[0]?.id) {
-        throw new Error("无法创建窗口或获取标签页")
+        throw new Error(t("messages:background.cannotCreateWindowOrTab"))
       }
 
       const windowId = window.id
@@ -224,7 +226,7 @@ function main() {
 function waitForTabComplete(tabId: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      reject(new Error("页面加载超时"))
+      reject(new Error(t("messages:background.pageLoadTimeout")))
     }, 10000) // 10秒超时
 
     const checkStatus = () => {

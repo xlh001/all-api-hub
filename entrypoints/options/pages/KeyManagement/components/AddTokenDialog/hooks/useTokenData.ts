@@ -13,7 +13,7 @@ export function useTokenData(
   currentAccount: DisplaySiteData | undefined,
   setFormData: React.Dispatch<React.SetStateAction<FormData>>
 ) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
   const [isLoading, setIsLoading] = useState(false)
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [groups, setGroups] = useState<Record<string, UserGroupInfo>>({})
@@ -42,7 +42,7 @@ export function useTokenData(
       }
     } catch (error) {
       console.error("Failed to load initial data:", error)
-      toast.error(t("keyManagement.loadDataFailed"))
+      toast.error(t("dialog.loadDataFailed"))
     } finally {
       setIsLoading(false)
     }

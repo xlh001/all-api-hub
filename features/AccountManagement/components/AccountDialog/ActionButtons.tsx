@@ -33,7 +33,7 @@ export default function ActionButtons({
   onAutoConfig,
   isAutoConfiguring
 }: ActionButtonsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(["accountDialog", "common"])
   const isAddMode = mode === "add"
 
   if (isAddMode && !isDetected && !isFormValid) {
@@ -47,12 +47,12 @@ export default function ActionButtons({
           {isDetecting ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>{t("accountDialog.detecting")}</span>
+              <span>{t("accountDialog:mode.detecting")}</span>
             </>
           ) : (
             <>
               <SparklesIcon className="w-4 h-4" />
-              <span>{t("accountDialog.auto_detect")}</span>
+              <span>{t("accountDialog:mode.autoDetect")}</span>
             </>
           )}
         </button>
@@ -61,7 +61,7 @@ export default function ActionButtons({
           onClick={onShowManualForm}
           className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-dark-text-secondary bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-bg-tertiary rounded-lg hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
           <PencilIcon className="w-4 h-4" />
-          <span>{t("accountDialog.manual_add")}</span>
+          <span>{t("accountDialog:mode.manualAdd")}</span>
         </button>
       </div>
     )
@@ -73,7 +73,7 @@ export default function ActionButtons({
         type="button"
         onClick={onClose}
         className="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
-        {t("accountDialog.cancel")}
+        {t("common:actions.cancel")}
       </button>
 
       {mode === "edit" && !isDetected && (
@@ -85,12 +85,12 @@ export default function ActionButtons({
           {isDetecting ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>{t("accountDialog.detecting")}</span>
+              <span>{t("accountDialog:mode.detecting")}</span>
             </>
           ) : (
             <>
               <SparklesIcon className="w-4 h-4" />
-              <span>{t("accountDialog.re_detect")}</span>
+              <span>{t("accountDialog:mode.reDetect")}</span>
             </>
           )}
         </button>
@@ -102,17 +102,17 @@ export default function ActionButtons({
           onClick={onAutoConfig}
           disabled={isAutoConfiguring || isSaving}
           className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-          aria-label={t("accountDialog.auto_config_aria_label")}
-          title={t("accountDialog.auto_config_title")}>
+          aria-label={t("accountDialog:actions.autoConfigAriaLabel")}
+          title={t("accountDialog:actions.autoConfigTitle")}>
           {isAutoConfiguring ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>{t("accountDialog.configuring")}</span>
+              <span>{t("accountDialog:actions.configuring")}</span>
             </>
           ) : (
             <>
               <BoltIcon className="w-4 h-4" />
-              <span>{t("accountDialog.config_to_new_api")}</span>
+              <span>{t("accountDialog:actions.configToNewApi")}</span>
             </>
           )}
         </button>
@@ -125,7 +125,7 @@ export default function ActionButtons({
         {isSaving ? (
           <>
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            <span>{t("accountDialog.saving")}</span>
+            <span>{t("common:status.saving")}</span>
           </>
         ) : (
           <>
@@ -133,9 +133,9 @@ export default function ActionButtons({
             <span>
               {isAddMode
                 ? isDetected
-                  ? t("accountDialog.confirm_add")
-                  : t("accountDialog.save_account")
-                : t("accountDialog.save_changes")}
+                  ? t("accountDialog:actions.confirmAdd")
+                  : t("accountDialog:actions.saveAccount")
+                : t("accountDialog:actions.saveChanges")}
             </span>
           </>
         )}

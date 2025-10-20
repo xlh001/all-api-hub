@@ -9,12 +9,12 @@ interface TokenDetailsProps {
 }
 
 export function TokenDetails({ token }: TokenDetailsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div>
         <span className="text-gray-500 dark:text-dark-text-tertiary">
-          {t("keyManagement.remainingQuota")}
+          {t("keyDetails.remainingQuota")}
         </span>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
           {formatQuota(token.remain_quota, token.unlimited_quota)}
@@ -22,7 +22,7 @@ export function TokenDetails({ token }: TokenDetailsProps) {
       </div>
       <div>
         <span className="text-gray-500 dark:text-dark-text-tertiary">
-          {t("keyManagement.usedQuota")}
+          {t("keyDetails.usedQuota")}
         </span>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
           {formatQuota(token.used_quota, false)}
@@ -30,7 +30,7 @@ export function TokenDetails({ token }: TokenDetailsProps) {
       </div>
       <div>
         <span className="text-gray-500 dark:text-dark-text-tertiary">
-          {t("keyManagement.expireTime")}
+          {t("keyDetails.expireTime")}
         </span>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
           {formatTime(token.expired_time)}
@@ -38,7 +38,7 @@ export function TokenDetails({ token }: TokenDetailsProps) {
       </div>
       <div>
         <span className="text-gray-500 dark:text-dark-text-tertiary">
-          {t("keyManagement.createTime")}
+          {t("keyDetails.createTime")}
         </span>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
           {formatTime(token.created_time)}

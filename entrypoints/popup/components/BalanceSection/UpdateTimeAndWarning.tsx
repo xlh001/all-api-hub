@@ -7,7 +7,7 @@ import { useAccountDataContext } from "~/features/AccountManagement/hooks/Accoun
 import { formatFullTime, formatRelativeTime } from "~/utils/formatters"
 
 export const UpdateTimeAndWarning = () => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("account")
   const { lastUpdateTime, detectedAccount } = useAccountDataContext()
   const [, setTick] = useState(0)
 
@@ -27,14 +27,14 @@ export const UpdateTimeAndWarning = () => {
       <div className="ml-2 flex items-center justify-between">
         <Tooltip content={formatFullTime(lastUpdateTime)}>
           <p className="text-xs text-gray-400 dark:text-dark-text-tertiary cursor-help">
-            {t("balance.updateTime", {
+            {t("common:time.updatedAt", {
               time: formatRelativeTime(lastUpdateTime)
             })}
           </p>
         </Tooltip>
         {detectedAccount && (
           <span className="text-xs text-yellow-600 font-medium">
-            {t("balance.currentSiteAdded", {
+            {t("currentSiteAdded", {
               siteName: detectedAccount.site_name
             })}
           </span>

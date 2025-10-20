@@ -47,7 +47,7 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   if (errorMessage.includes("超时") || errorMessage.includes("timeout")) {
     return {
       type: AutoDetectErrorType.TIMEOUT,
-      message: t("autodetect.timeout"),
+      message: t("messages:autodetect.timeout"),
       helpDocUrl: FAQ_URL
     }
   }
@@ -60,8 +60,8 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   ) {
     return {
       type: AutoDetectErrorType.UNAUTHORIZED,
-      message: t("autodetect.notLoggedIn"),
-      actionText: t("autodetect.loginThisSite"),
+      message: t("messages:autodetect.notLoggedIn"),
+      actionText: t("messages:autodetect.loginThisSite"),
       helpDocUrl: FAQ_URL
     }
   }
@@ -76,7 +76,7 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   ) {
     return {
       type: AutoDetectErrorType.INVALID_RESPONSE,
-      message: t("autodetect.unexpectedData"),
+      message: t("messages:autodetect.unexpectedData"),
       helpDocUrl: FAQ_URL
     }
   }
@@ -89,7 +89,7 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   ) {
     return {
       type: AutoDetectErrorType.NETWORK_ERROR,
-      message: t("autodetect.networkError"),
+      message: t("messages:autodetect.networkError"),
       helpDocUrl: FAQ_URL
     }
   }
@@ -97,7 +97,7 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
   // 未知错误
   return {
     type: AutoDetectErrorType.UNKNOWN,
-    message: t("autodetect.failed") + errorMessage,
+    message: t("messages:autodetect.failed") + errorMessage,
     helpDocUrl: FAQ_URL
   }
 }

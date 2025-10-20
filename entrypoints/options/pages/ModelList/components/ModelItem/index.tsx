@@ -40,14 +40,14 @@ export default function ModelItem({
   availableGroups = [],
   isAllGroupsMode = false
 }: ModelItemProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   const [isExpanded, setIsExpanded] = useState(false)
   const handleCopyModelName = async () => {
     try {
       await navigator.clipboard.writeText(model.model_name)
-      toast.success(t("modelList.modelNameCopied"))
+      toast.success(t("messages.modelNameCopied"))
     } catch (error) {
-      toast.error(t("modelList.copyFailed"))
+      toast.error(t("messages.copyFailed"))
     }
   }
 

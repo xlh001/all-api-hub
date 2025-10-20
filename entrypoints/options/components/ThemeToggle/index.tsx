@@ -12,28 +12,28 @@ const getThemeOptions = (t: (key: string) => string) => {
   return [
     {
       mode: "light" as ThemeMode,
-      label: t("theme.light"),
+      label: t("settings:theme.light"),
       icon: SunIcon,
-      description: t("theme.useLightTheme")
+      description: t("settings:theme.useLightTheme")
     },
     {
       mode: "dark" as ThemeMode,
-      label: t("theme.dark"),
+      label: t("settings:theme.dark"),
       icon: MoonIcon,
-      description: t("theme.useDarkTheme")
+      description: t("settings:theme.useDarkTheme")
     },
     {
       mode: "system" as ThemeMode,
-      label: t("theme.followSystem"),
+      label: t("settings:theme.followSystem"),
       icon: ComputerDesktopIcon,
-      description: t("theme.followSystemTheme")
+      description: t("settings:theme.followSystemTheme")
     }
   ]
 }
 
 const ThemeToggle = () => {
   const { themeMode, setThemeMode, resolvedTheme } = useTheme()
-  const { t } = useTranslation()
+  const { t } = useTranslation("settings")
   const themeOptions = getThemeOptions(t)
 
   const handleThemeChange = (mode: ThemeMode) => {
@@ -48,13 +48,13 @@ const ThemeToggle = () => {
         </div>
         <div>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
-            {t("settings.appearance")}
+            {t("theme.appearance")}
           </h3>
           <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-            {t("settings.selectTheme")}
+            {t("theme.selectTheme")}
           </p>
           <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-1 transition-colors">
-            {t("settings.currentTheme", {
+            {t("theme.currentTheme", {
               theme: themeOptions.find((opt) => opt.mode === themeMode)?.label,
               resolvedTheme:
                 resolvedTheme === "dark" ? t("theme.dark") : t("theme.light")

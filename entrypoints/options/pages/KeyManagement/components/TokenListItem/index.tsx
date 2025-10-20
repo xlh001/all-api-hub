@@ -26,7 +26,7 @@ export function TokenListItem({
   handleDeleteToken,
   account
 }: TokenListItemProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div className="flex flex-col space-y-2 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4 hover:border-gray-300 dark:hover:border-blue-500/50 bg-white dark:bg-dark-bg-secondary transition-all duration-200 shadow-sm hover:shadow-md">
@@ -49,7 +49,7 @@ export function TokenListItem({
           {token.group && (
             <div>
               <span className="text-gray-500 dark:text-dark-text-tertiary">
-                {t("keyManagement.group")}
+                {t("keyDetails.group")}
               </span>
               <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
                 {token.group}

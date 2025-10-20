@@ -25,8 +25,7 @@ export function setDocumentTitle(
   pageType: "options" | "popup" | "sidepanel"
 ): void {
   try {
-    const titleKey = `pageTitle.${pageType}`
-    document.title = i18n.t(titleKey)
+    document.title = i18n.t(`ui:pageTitle.${pageType}`)
   } catch (error) {
     console.error(error)
   }

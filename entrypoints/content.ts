@@ -1,3 +1,5 @@
+import { t } from "i18next"
+
 import { fetchUserInfo } from "~/services/apiService"
 
 import { getErrorMessage } from "../utils/error.ts"
@@ -53,7 +55,7 @@ function main() {
           if (!user || !user.id) {
             sendResponse({
               success: false,
-              error: "未找到用户信息，请确保已登录"
+              error: t("messages:content.userInfoNotFound")
             })
             return
           }
@@ -103,5 +105,5 @@ async function waitForUserInfo(
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
 
-  throw new Error("等待用户信息超时，请确保已登录")
+  throw new Error(t("messages:content.waitUserInfoTimeout"))
 }

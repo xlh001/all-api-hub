@@ -8,7 +8,7 @@ import WebDAVSettings from "./components/WebDAVSettings"
 import { useImportExport } from "./hooks/useImportExport"
 
 export default function ImportExport() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("importExport")
   const {
     isExporting,
     setIsExporting,
@@ -52,13 +52,13 @@ export default function ImportExport() {
           <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
             <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-1">
-              {t("importExport.importantNotice")}
+              {t("notice.importantNotice")}
             </p>
             <ul className="text-yellow-700 dark:text-yellow-300 space-y-1">
-              <li>{t("importExport.importWarning1")}</li>
-              <li>{t("importExport.importWarning2")}</li>
-              <li>{t("importExport.importWarning3")}</li>
-              <li>{t("importExport.importWarning4")}</li>
+              <li>{t("notice.importWarning1")}</li>
+              <li>{t("notice.importWarning2")}</li>
+              <li>{t("notice.importWarning3")}</li>
+              <li>{t("notice.importWarning4")}</li>
             </ul>
           </div>
         </div>

@@ -17,7 +17,7 @@ import PrivacyNotice from "./components/PrivacyNotice"
 import TechStackGrid from "./components/TechStackGrid"
 
 export default function About() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("about")
   const version = packageJson.version
 
   // 从工具函数获取元数据
@@ -29,27 +29,27 @@ export default function About() {
     {
       name: "WXT",
       version: getPkgVersion("wxt"),
-      description: t("about.techStack.wxt")
+      description: t("techStack.wxt")
     },
     {
       name: "React",
       version: getPkgVersion("react"),
-      description: t("about.techStack.react")
+      description: t("techStack.react")
     },
     {
       name: "TypeScript",
       version: getPkgVersion("typescript"),
-      description: t("about.techStack.typescript")
+      description: t("techStack.typescript")
     },
     {
       name: "Tailwind CSS",
       version: getPkgVersion("tailwindcss"),
-      description: t("about.techStack.tailwindcss")
+      description: t("techStack.tailwindcss")
     },
     {
       name: "Headless UI",
       version: getPkgVersion("@headlessui/react"),
-      description: t("about.techStack.headlessui")
+      description: t("techStack.headlessui")
     }
   ]
 
@@ -60,11 +60,11 @@ export default function About() {
         <div className="flex items-center space-x-3 mb-2">
           <InformationCircleIcon className="w-6 h-6 text-blue-600" />
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-dark-text-primary">
-            {t("about.title")}
+            {t("title")}
           </h1>
         </div>
         <p className="text-gray-500 dark:text-dark-text-secondary">
-          {t("about.intro")}
+          {t("intro")}
         </p>
       </div>
 
@@ -77,24 +77,24 @@ export default function About() {
         {/* 项目链接 */}
         <section>
           <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-            {t("about.projectLinks")}
+            {t("projectLinks")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <LinkCard
               Icon={CodeBracketIcon}
-              title={t("about.githubRepo")}
-              description={t("about.githubDesc")}
+              title={t("githubRepo")}
+              description={t("githubDesc")}
               href={repository}
-              buttonText={t("about.starRepo")}
+              buttonText={t("starRepo")}
               buttonClass="bg-gray-900 dark:bg-gray-700 text-white hover:bg-gray-800 dark:hover:bg-gray-600"
               iconClass="text-gray-900 dark:text-gray-100"
             />
             <LinkCard
               Icon={GlobeAltIcon}
-              title={t("about.homepage")}
-              description={t("about.homepageDesc")}
+              title={t("homepage")}
+              description={t("homepageDesc")}
               href={homepage}
-              buttonText={t("about.visitHomepage")}
+              buttonText={t("visitHomepage")}
               buttonClass="bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-400"
               iconClass="text-blue-600 dark:text-blue-400"
             />
@@ -105,19 +105,19 @@ export default function About() {
         {isNotEmptyArray(FEATURES) && isNotEmptyArray(FUTURE_FEATURES) && (
           <section>
             <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-              {t("about.features")}
+              {t("features")}
             </h2>
             <div className="space-y-6">
               {/* 主要功能 */}
               <FeatureList
-                title={t("about.implementedFeatures")}
+                title={t("implementedFeatures")}
                 items={FEATURES}
                 color="green"
               />
 
               {/* 未来功能 */}
               <FeatureList
-                title={t("about.upcomingFeatures")}
+                title={t("upcomingFeatures")}
                 items={FUTURE_FEATURES}
                 color="blue"
               />
@@ -128,7 +128,7 @@ export default function About() {
         {/* 技术栈 */}
         <section>
           <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-            {t("about.techStack.title")}
+            {t("techStack.title")}
           </h2>
           <TechStackGrid items={techStack} />
         </section>
@@ -136,7 +136,7 @@ export default function About() {
         {/* 版权和致谢 */}
         <section>
           <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-            {t("about.copyrightAck")}
+            {t("copyrightAck")}
           </h2>
           <CreditsCard />
         </section>

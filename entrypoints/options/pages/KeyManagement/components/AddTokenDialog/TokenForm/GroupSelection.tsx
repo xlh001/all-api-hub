@@ -17,12 +17,12 @@ export function GroupSelection({
   handleInputChange,
   groups
 }: GroupSelectionProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        {t("keyManagement.groupLabel")}
+        {t("dialog.groupLabel")}
       </label>
       <select
         value={group}
@@ -30,7 +30,7 @@ export function GroupSelection({
         className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary">
         {Object.entries(groups).map(([key, group]) => (
           <option key={key} value={key}>
-            {group.desc} ({t("keyManagement.groupRate")}: {group.ratio})
+            {group.desc} ({t("dialog.groupRate")}: {group.ratio})
           </option>
         ))}
       </select>

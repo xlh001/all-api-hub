@@ -9,7 +9,7 @@ interface SortingCriteriaItemProps {
 }
 
 export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("settings")
   const {
     attributes,
     listeners,
@@ -42,7 +42,7 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
       </div>
       <div className="ml-4">
         <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-300">
-          {t("settings.priority")}: {item.priority + 1}
+          {t(`sorting.priority`)}: {item.priority + 1}
         </span>
       </div>
     </div>

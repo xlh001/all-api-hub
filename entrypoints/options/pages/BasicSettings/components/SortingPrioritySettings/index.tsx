@@ -16,29 +16,29 @@ const getSortingCriteriaUiText = (
   t: (key: string) => string
 ): Record<SortingCriteriaType, { label: string; description?: string }> => ({
   [SortingCriteriaType.CURRENT_SITE]: {
-    label: t("basicSettings.currentSitePriority"),
-    description: t("basicSettings.currentSiteDesc")
+    label: t("settings:sorting.currentSitePriority"),
+    description: t("settings:sorting.currentSiteDesc")
   },
   [SortingCriteriaType.HEALTH_STATUS]: {
-    label: t("basicSettings.healthStatus"),
-    description: t("basicSettings.healthDesc")
+    label: t("settings:sorting.healthStatus"),
+    description: t("settings:sorting.healthDesc")
   },
   [SortingCriteriaType.CHECK_IN_REQUIREMENT]: {
-    label: t("basicSettings.checkInRequirement"),
-    description: t("basicSettings.checkInDesc")
+    label: t("settings:sorting.checkInRequirement"),
+    description: t("settings:sorting.checkInDesc")
   },
   [SortingCriteriaType.USER_SORT_FIELD]: {
-    label: t("basicSettings.userCustomSort"),
-    description: t("basicSettings.customSortDesc")
+    label: t("settings:sorting.userCustomSort"),
+    description: t("settings:sorting.customSortDesc")
   },
   [SortingCriteriaType.CUSTOM_CHECK_IN_URL]: {
-    label: t("basicSettings.customCheckInUrl"),
-    description: t("basicSettings.customCheckInDesc")
+    label: t("settings:sorting.customCheckInUrl"),
+    description: t("settings:sorting.customCheckInDesc")
   }
 })
 
 function SortingPrioritySettingsContent() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("settings")
   const {
     sortingPriorityConfig: initialConfig,
     updateSortingPriorityConfig,
@@ -80,12 +80,12 @@ function SortingPrioritySettingsContent() {
         lastModified: Date.now()
       }
       const success = await updateSortingPriorityConfig(newConfig)
-      showUpdateToast(success, t("basicSettings.sortingPrioritySettings"))
+      showUpdateToast(success, t("sorting.title"))
     }
   }
 
   if (isLoading) {
-    return <div>{t("basicSettings.loading")}</div>
+    return <div>{t("common:status.loading")}</div>
   }
 
   // Augment the data-only items with UI text for rendering
@@ -94,21 +94,21 @@ function SortingPrioritySettingsContent() {
     ...item,
     ...(sortingCriteriaUiText[item.id] || {
       label: item.id,
-      description: t("basicSettings.unknownSortRule")
+      description: t("sorting.unknownSortRule")
     })
   }))
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-        {t("basicSettings.sortingPrioritySettings")}
+        {t("sorting.title")}
       </h2>
       <SortingPriorityDragList
         items={augmentedItems}
         onDragEnd={handleDragEnd}
       />
       <button onClick={handleSave} className={UI_CONSTANTS.STYLES.BUTTON.SAVE}>
-        {t("basicSettings.save")}
+        {t("common:actions.save")}
       </button>
     </div>
   )

@@ -9,30 +9,30 @@ import ThemeToggle from "../../../components/ThemeToggle"
 import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function DisplaySettings() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("settings")
   const { currencyType, activeTab, updateCurrencyType, updateDefaultTab } =
     useUserPreferencesContext()
 
   const handleCurrencyChange = async (currency: CurrencyType) => {
     if (currency === currencyType) return
     const success = await updateCurrencyType(currency)
-    showUpdateToast(success, t("basicSettings.currencyUnit"))
+    showUpdateToast(success, t("display.currencyUnit"))
   }
 
   const handleDefaultTabChange = async (tab: BalanceType) => {
     if (tab === activeTab) return
     const success = await updateDefaultTab(tab)
-    showUpdateToast(success, t("basicSettings.defaultTab"))
+    showUpdateToast(success, t("display.defaultTab"))
   }
 
   return (
     <section className="space-y-6">
       <div className="space-y-2">
         <h2 className="text-xl font-bold text-gray-900 dark:text-dark-text-primary transition-colors">
-          {t("basicSettings.displaySettings")}
+          {t("display.title")}
         </h2>
         <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-          {t("basicSettings.displayDesc")}
+          {t("display.description")}
         </p>
       </div>
 
@@ -48,10 +48,10 @@ export default function DisplaySettings() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
-                  {t("basicSettings.currencyUnit")}
+                  {t("display.currencyUnit")}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-                  {t("basicSettings.currencyDesc")}
+                  {t("display.currencyDesc")}
                 </p>
               </div>
             </div>
@@ -68,9 +68,9 @@ export default function DisplaySettings() {
                   }
                   focus:ring-green-500 dark:focus:ring-green-400
                 `}
-                aria-label={t("basicSettings.usd")}
+                aria-label={t("display.usd")}
                 aria-pressed={currencyType === "USD"}>
-                {t("basicSettings.usd")}
+                {t("display.usd")}
               </button>
               <button
                 onClick={() => handleCurrencyChange("CNY")}
@@ -84,14 +84,13 @@ export default function DisplaySettings() {
                   }
                   focus:ring-green-500 dark:focus:ring-green-400
                 `}
-                aria-label={t("basicSettings.cny")}
+                aria-label={t("display.cny")}
                 aria-pressed={currencyType === "CNY"}>
-                {t("basicSettings.cny")}
+                {t("display.cny")}
               </button>
             </div>
           </div>
 
-          {/* 默认标签页 */}
           <div className="flex items-center justify-between py-4 px-6 transition-colors">
             <div className="flex items-center space-x-3">
               <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 transition-colors">
@@ -99,10 +98,10 @@ export default function DisplaySettings() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
-                  {t("basicSettings.defaultTab")}
+                  {t("display.defaultTab")}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-                  {t("basicSettings.defaultTabDesc")}
+                  {t("display.defaultTabDesc")}
                 </p>
               </div>
             </div>
@@ -119,9 +118,9 @@ export default function DisplaySettings() {
                   }
                   focus:ring-blue-500 dark:focus:ring-blue-400
                 `}
-                aria-label={t("basicSettings.todayConsumption")}
+                aria-label={t("display.todayConsumption")}
                 aria-pressed={activeTab === DATA_TYPE_CONSUMPTION}>
-                {t("basicSettings.todayConsumption")}
+                {t("display.todayConsumption")}
               </button>
               <button
                 onClick={() => handleDefaultTabChange(DATA_TYPE_BALANCE)}
@@ -135,9 +134,9 @@ export default function DisplaySettings() {
                   }
                   focus:ring-blue-500 dark:focus:ring-blue-400
                 `}
-                aria-label={t("basicSettings.totalBalance")}
+                aria-label={t("display.totalBalance")}
                 aria-pressed={activeTab === DATA_TYPE_BALANCE}>
-                {t("basicSettings.totalBalance")}
+                {t("display.totalBalance")}
               </button>
             </div>
           </div>

@@ -37,10 +37,10 @@ export const handleExportAll = async (
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success(t("importExport.dataExported"))
+    toast.success(t("importExport:export.dataExported"))
   } catch (error) {
     console.error("导出失败:", error)
-    toast.error(t("importExport.exportFailed"))
+    toast.error(t("importExport:export.exportFailed"))
   } finally {
     setIsExporting(false)
   }
@@ -73,10 +73,10 @@ export const handleExportAccounts = async (
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success(t("importExport.accountsExported"))
+    toast.success(t("importExport:export.accountsExported"))
   } catch (error) {
     console.error("导出账号数据失败:", error)
-    toast.error(t("importExport.exportFailed"))
+    toast.error(t("importExport:export.exportFailed"))
   } finally {
     setIsExporting(false)
   }
@@ -109,10 +109,10 @@ export const handleExportPreferences = async (
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success(t("importExport.settingsExported"))
+    toast.success(t("importExport:export.settingsExported"))
   } catch (error) {
     console.error("导出用户设置失败:", error)
-    toast.error(t("importExport.exportFailed"))
+    toast.error(t("importExport:export.exportFailed"))
   } finally {
     setIsExporting(false)
   }

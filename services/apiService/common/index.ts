@@ -431,7 +431,7 @@ export const refreshAccountData = async (
       data,
       healthStatus: {
         status: SiteHealthStatus.Healthy,
-        message: i18next.t("healthStatus.normal")
+        message: i18next.t("account:healthStatus.normal")
       }
     }
   } catch (error) {
@@ -761,7 +761,7 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
     if (error.statusCode) {
       return {
         status: SiteHealthStatus.Warning,
-        message: i18next.t("healthStatus.http_error", {
+        message: i18next.t("account:healthStatus.httpError", {
           statusCode: error.statusCode,
           message: error.message
         })
@@ -770,7 +770,7 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
     // 其他API错误（数据格式错误等）
     return {
       status: SiteHealthStatus.Unknown,
-      message: i18next.t("healthStatus.api_error")
+      message: i18next.t("account:healthStatus.apiError")
     }
   }
 
@@ -778,13 +778,13 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
   if (error instanceof TypeError && error.message.includes("fetch")) {
     return {
       status: SiteHealthStatus.Error,
-      message: i18next.t("healthStatus.network_failed")
+      message: i18next.t("account:healthStatus.networkFailed")
     }
   }
 
   // 其他未知错误
   return {
     status: SiteHealthStatus.Unknown,
-    message: i18next.t("healthStatus.unknown_error")
+    message: i18next.t("account:healthStatus.unknownError")
   }
 }

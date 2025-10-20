@@ -16,13 +16,13 @@ export function KeyDisplay({
   visibleKeys,
   toggleKeyVisibility
 }: KeyDisplayProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
         <span className="text-gray-500 dark:text-dark-text-tertiary">
-          {t("keyManagement.key")}
+          {t("keyDetails.key")}
         </span>
         <code className="bg-gray-100 dark:bg-dark-bg-tertiary px-2 py-1 rounded font-mono text-xs text-gray-800 dark:text-dark-text-secondary">
           {formatKey(tokenKey, tokenId, visibleKeys)}

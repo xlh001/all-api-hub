@@ -8,13 +8,13 @@ interface SidebarProps {
 }
 
 function Sidebar({ activeMenuItem, onMenuItemClick }: SidebarProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
   return (
     <aside className="w-64 flex-shrink-0">
       <nav className="bg-white dark:bg-dark-bg-secondary rounded-lg shadow-sm border border-gray-200 dark:border-dark-bg-tertiary overflow-hidden">
         <div className="p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <h2 className="text-sm font-medium text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide">
-            {t("navigation.settings_options")}
+            {t("navigation.settingsOptions")}
           </h2>
         </div>
         <ul className="divide-y divide-gray-100 dark:divide-dark-bg-tertiary">

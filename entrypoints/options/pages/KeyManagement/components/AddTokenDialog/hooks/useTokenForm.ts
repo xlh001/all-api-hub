@@ -71,7 +71,7 @@ export function useTokenForm({
   availableAccounts,
   editingToken
 }: AddTokenDialogProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const isEditMode = !!editingToken
@@ -130,25 +130,25 @@ export function useTokenForm({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
     if (!formData.accountId) {
-      newErrors.accountId = t("keyManagement.selectAccountError")
+      newErrors.accountId = t("dialog.selectAccountError")
     }
     if (!formData.name.trim()) {
-      newErrors.name = t("keyManagement.nameRequired")
+      newErrors.name = t("dialog.nameRequired")
     }
     if (!formData.unlimitedQuota) {
       const quota = parseFloat(formData.quota)
       if (isNaN(quota) || quota <= 0) {
-        newErrors.quota = t("keyManagement.validQuota")
+        newErrors.quota = t("dialog.validQuota")
       }
     }
     if (formData.expiredTime) {
       const expiredDate = new Date(formData.expiredTime)
       if (expiredDate <= new Date()) {
-        newErrors.expiredTime = t("keyManagement.validExpiration")
+        newErrors.expiredTime = t("dialog.validExpiration")
       }
     }
     if (formData.allowIps && !isValidIpList(formData.allowIps)) {
-      newErrors.allowIps = t("keyManagement.validIp")
+      newErrors.allowIps = t("dialog.validIp")
     }
 
     setErrors(newErrors)

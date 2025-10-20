@@ -23,7 +23,7 @@ export function useModelData({
   selectedAccount,
   accounts
 }: UseModelDataProps): UseModelDataReturn {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   const [pricingData, setPricingData] = useState<PricingResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [dataFormatError, setDataFormatError] = useState(false)
@@ -43,15 +43,15 @@ export function useModelData({
         if (!Array.isArray(data.data)) {
           setDataFormatError(true)
           setPricingData(null)
-          toast.error(t("modelList.formatNotStandard"))
+          toast.error(t("status.formatNotStandard"))
           return
         }
 
         setPricingData(data)
-        toast.success(t("modelList.dataLoaded"))
+        toast.success(t("status.dataLoaded"))
       } catch (error) {
         console.error("加载模型数据失败:", error)
-        toast.error(t("modelList.loadFailed"))
+        toast.error(t("status.loadFailed"))
         setPricingData(null)
         setDataFormatError(false)
       } finally {

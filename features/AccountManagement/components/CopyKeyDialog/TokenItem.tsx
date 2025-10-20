@@ -36,7 +36,7 @@ export function TokenItem({
   getStatusBadgeStyle,
   account
 }: TokenItemProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
 
   return (
     <div className="bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden hover:shadow-sm transition-all duration-200">
@@ -51,7 +51,7 @@ export function TokenItem({
             <UserGroupIcon className="w-3 h-3 text-gray-400" />
             <span
               className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getGroupBadgeStyle(token.group || "")}`}>
-              {token.group || t("copyKeyDialog.defaultGroup")}
+              {token.group || t("dialog.copyKey.defaultGroup")}
             </span>
           </div>
         </div>
@@ -60,8 +60,8 @@ export function TokenItem({
           <span
             className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${getStatusBadgeStyle(token.status)}`}>
             {token.status === 1
-              ? t("copyKeyDialog.enabled")
-              : t("copyKeyDialog.disabled")}
+              ? t("dialog.copyKey.enabled")
+              : t("dialog.copyKey.disabled")}
           </span>
 
           {isExpanded ? (

@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next"
 
 export function LoadingIndicator() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
 
   return (
     <div className="flex flex-col items-center justify-center py-8">
       <div className="w-8 h-8 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin mb-4" />
       <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-        {t("copyKeyDialog.loading")}
+        {t("dialog.copyKey.loading")}
       </p>
     </div>
   )

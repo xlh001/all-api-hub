@@ -22,7 +22,7 @@ export function ProviderTabs({
   getProviderFilteredCount,
   children
 }: ProviderTabsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   const tabListRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export function ProviderTabs({
           <div className="flex items-center justify-center space-x-2">
             <CpuChipIcon className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" />
             <span>
-              {t("modelList.allProviders", { count: baseFilteredModelsCount })}
+              {t("allProviders", { count: baseFilteredModelsCount })}
             </span>
           </div>
         </Tab>

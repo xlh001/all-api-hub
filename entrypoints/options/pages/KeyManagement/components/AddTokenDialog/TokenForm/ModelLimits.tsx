@@ -18,13 +18,13 @@ export function ModelLimits({
   setFormData,
   handleModelSelectChange
 }: ModelLimitsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("keyManagement.modelLimits")}
+          {t("dialog.modelLimits")}
         </label>
         <Switch
           checked={modelLimitsEnabled}
@@ -62,7 +62,7 @@ export function ModelLimits({
             ))}
           </select>
           <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-            {t("keyManagement.modelSelectHint", { count: modelLimits.length })}
+            {t("dialog.modelSelectHint", { count: modelLimits.length })}
           </p>
         </div>
       )}

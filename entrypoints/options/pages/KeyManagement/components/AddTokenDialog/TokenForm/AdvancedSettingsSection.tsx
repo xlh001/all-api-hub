@@ -30,10 +30,10 @@ export function AdvancedSettingsSection({
   handleInputChange,
   handleModelSelectChange
 }: AdvancedSettingsSectionProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
-    <FormSection title={t("keyManagement.advancedSettings")}>
+    <FormSection title={t("dialog.advancedSettings")}>
       <GroupSelection
         group={formData.group}
         handleInputChange={handleInputChange}

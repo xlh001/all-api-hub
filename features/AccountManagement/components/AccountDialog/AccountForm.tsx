@@ -57,7 +57,7 @@ export default function AccountForm({
   checkIn,
   onCheckInChange
 }: AccountFormProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("accountDialog")
   const commonInputClasses =
     "block w-full pl-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
 
@@ -66,7 +66,7 @@ export default function AccountForm({
       {/* 网站名称 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.form.siteName")}
+          {t("form.siteName")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -86,7 +86,7 @@ export default function AccountForm({
       {/* 站点类型 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.form.siteType")}
+          {t("form.siteType")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -108,7 +108,7 @@ export default function AccountForm({
       {/* 用户名 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.form.username")}
+          {t("form.username")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -118,7 +118,7 @@ export default function AccountForm({
             type="text"
             value={username}
             onChange={(e) => onUsernameChange(e.target.value)}
-            placeholder={t("accountDialog.form.username")}
+            placeholder={t("form.username")}
             className={commonInputClasses}
             required
           />
@@ -128,7 +128,7 @@ export default function AccountForm({
       {/* 用户 ID */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.form.userId")}
+          {t("form.userId")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -140,7 +140,7 @@ export default function AccountForm({
             type="number"
             value={userId}
             onChange={(e) => onUserIdChange(e.target.value)}
-            placeholder={t("accountDialog.form.userIdNumber")}
+            placeholder={t("form.userIdNumber")}
             className={commonInputClasses}
             required
           />
@@ -151,7 +151,7 @@ export default function AccountForm({
       {authType === AuthTypeEnum.AccessToken && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-            {t("accountDialog.form.accessToken")}
+            {t("form.accessToken")}
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -161,7 +161,7 @@ export default function AccountForm({
               type={showAccessToken ? "text" : "password"}
               value={accessToken}
               onChange={(e) => onAccessTokenChange(e.target.value)}
-              placeholder={t("accountDialog.form.accessToken")}
+              placeholder={t("form.accessToken")}
               className="block w-full pl-10 pr-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
               required
             />
@@ -182,7 +182,7 @@ export default function AccountForm({
       {/* 充值金额比例 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.form.exchangeRate")}
+          {t("form.exchangeRate")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -195,7 +195,7 @@ export default function AccountForm({
             max="100"
             value={exchangeRate}
             onChange={(e) => onExchangeRateChange(e.target.value)}
-            placeholder={t("accountDialog.form.exchangeRatePlaceholder")}
+            placeholder={t("form.exchangeRatePlaceholder")}
             className={`block w-full px-10 py-3 border rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
               isValidExchangeRate(exchangeRate)
                 ? "border-gray-200 dark:border-dark-bg-tertiary focus:ring-blue-500 focus:border-transparent"
@@ -210,11 +210,11 @@ export default function AccountForm({
           </div>
         </div>
         <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
-          {t("accountDialog.form.exchangeRateDesc")}
+          {t("form.exchangeRateDesc")}
         </p>
         {!isValidExchangeRate(exchangeRate) && exchangeRate && (
           <p className="mt-1 text-xs text-red-600">
-            {t("accountDialog.form.validRateError")}
+            {t("form.validRateError")}
           </p>
         )}
       </div>
@@ -224,7 +224,7 @@ export default function AccountForm({
         <label
           htmlFor="supports-check-in"
           className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.form.checkInStatus")}
+          {t("form.checkInStatus")}
         </label>
         <Switch
           checked={checkIn.enableDetection}
@@ -248,7 +248,7 @@ export default function AccountForm({
         <label
           htmlFor="custom-checkin-url"
           className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.form.customCheckInUrl")}
+          {t("form.customCheckInUrl")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -266,14 +266,14 @@ export default function AccountForm({
           />
         </div>
         <p className="text-xs text-gray-500 dark:text-dark-text-secondary">
-          {t("accountDialog.form.customCheckInDesc")}
+          {t("form.customCheckInDesc")}
         </p>
       </div>
 
       {/* 备注 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("accountDialog.form.notes")}
+          {t("form.notes")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -282,7 +282,7 @@ export default function AccountForm({
           <textarea
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
-            placeholder={t("accountDialog.form.notesPlaceholder")}
+            placeholder={t("form.notesPlaceholder")}
             className={`${commonInputClasses} resize-none`}
             rows={2}
           />
