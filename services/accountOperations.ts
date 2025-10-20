@@ -193,7 +193,7 @@ export async function validateAndSaveAccount(
 
   try {
     // 获取账号余额和今日使用情况
-    console.log(t("messages:errors.operation.fetchingAccountData"))
+    console.log(t("messages:toast.loading.fetchingAccountData"))
     const freshAccountData = await fetchAccountData(
       url.trim(),
       parsedUserId,
@@ -291,7 +291,7 @@ export async function validateAndUpdateAccount(
 
   try {
     // 获取账号余额和今日使用情况
-    console.log(t("messages:errors.operation.fetchingAccountData"))
+    console.log(t("messages:toast.loading.fetchingAccountData"))
     const freshAccountData = await fetchAccountData(
       url.trim(),
       parsedUserId,

@@ -4,7 +4,8 @@
       "refreshingAccount": "Refreshing {{accountName}}...",
       "autoConfiguring": "Auto-configuring to New API...",
       "checkingApiKeys": "Checking API keys...",
-      "importingToNewApi": "Importing to New API..."
+      "importingToNewApi": "Importing to New API...",
+      "fetchingAccountData": "Fetching account data..."
     },
     "success": {
       "refreshAccount": "{{accountName}} refreshed successfully!",
@@ -54,7 +55,6 @@
       "autoDetectFailed": "Auto-detect failed: {{error}}",
       "saveFailed": "Save failed: {{error}}",
       "updateFailed": "Update failed: {{error}}",
-      "fetchingAccountData": "Fetching account data...",
       "deleteFailed": "Delete failed: {{error}}",
       "noResponseMessage": "Delete operation did not return a successful response"
     },

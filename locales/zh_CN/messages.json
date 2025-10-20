@@ -4,7 +4,8 @@
       "refreshingAccount": "正在刷新 {{accountName}}...",
       "autoConfiguring": "正在自动配置到 New API...",
       "checkingApiKeys": "正在检查 API 密钥...",
-      "importingToNewApi": "正在导入到 New API..."
+      "importingToNewApi": "正在导入到 New API...",
+      "fetchingAccountData": "正在获取账号数据..."
     },
     "success": {
       "refreshAccount": "{{accountName}} 刷新成功！",
@@ -54,7 +55,6 @@
       "autoDetectFailed": "自动识别失败: {{error}}",
       "saveFailed": "保存失败: {{error}}",
       "updateFailed": "更新失败: {{error}}",
-      "fetchingAccountData": "正在获取账号数据...",
       "deleteFailed": "删除失败: {{error}}",
       "noResponseMessage": "删除操作未返回成功响应"
     },
