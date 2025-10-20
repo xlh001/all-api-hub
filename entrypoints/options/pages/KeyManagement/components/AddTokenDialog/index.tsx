@@ -27,7 +27,7 @@ interface AddTokenDialogProps {
 
 export default function AddTokenDialog(props: AddTokenDialogProps) {
   const { isOpen, onClose, availableAccounts, editingToken } = props
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { formData, setFormData, errors, validateForm, isEditMode, resetForm } =
@@ -80,7 +80,7 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
           editingToken.id,
           tokenData
         )
-        toast.success(t("keyManagement.updateSuccess"))
+        toast.success(t("dialog.updateSuccess"))
       } else {
         await createApiToken(
           currentAccount.baseUrl,
@@ -88,16 +88,14 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
           currentAccount.token,
           tokenData
         )
-        toast.success(t("keyManagement.createSuccess"))
+        toast.success(t("dialog.createSuccess"))
       }
 
       handleClose()
     } catch (error) {
       console.error(`${isEditMode ? "更新" : "创建"}密钥失败:`, error)
       toast.error(
-        isEditMode
-          ? t("keyManagement.updateFailed")
-          : t("keyManagement.createFailed")
+        isEditMode ? t("dialog.updateFailed") : t("dialog.createFailed")
       )
     } finally {
       setIsSubmitting(false)
