@@ -61,6 +61,7 @@
     "currentTheme": "Current: Follow system ({{theme}})",
     "light": "Light",
     "dark": "Dark",
+    "system": "System",
     "followSystem": "Follow system",
     "useLightTheme": "Use light theme",
     "useDarkTheme": "Use dark theme",
