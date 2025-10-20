@@ -16,7 +16,7 @@ import {
 } from "~/services/webdavService"
 
 export default function WebDAVSettings() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("importExport")
   // 配置表单
   const [webdavUrl, setWebdavUrl] = useState("")
   const [webdavUsername, setWebdavUsername] = useState("")
@@ -51,11 +51,11 @@ export default function WebDAVSettings() {
         <div className="flex items-center space-x-2">
           <ArrowPathIcon className="w-5 h-5 text-indigo-600" />
           <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-            {t("importExport.webdavBackupSync")}
+            {t("webdav.title")}
           </h2>
         </div>
         <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
-          {t("importExport.webdavConfigDesc")}
+          {t("webdav.configDesc")}
         </p>
       </div>
 
@@ -66,13 +66,13 @@ export default function WebDAVSettings() {
             <label
               htmlFor="webdavUrl"
               className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              {t("importExport.webdavUrl")}
+              {t("webdav.webdavUrl")}
             </label>
             <input
               id="webdavUrl"
               title={t("importExport.webdavUrl")}
               type="url"
-              placeholder={t("importExport.webdavUrlExample")}
+              placeholder={t("webdav.webdavUrlExample")}
               value={webdavUrl}
               onChange={(e) => setWebdavUrl(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
@@ -83,13 +83,13 @@ export default function WebDAVSettings() {
             <label
               htmlFor="webdavUsername"
               className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              {t("importExport.username")}
+              {t("webdav.username")}
             </label>
             <input
               id="webdavUsername"
-              title={t("importExport.username")}
+              title={t("webdav.username")}
               type="text"
-              placeholder={t("importExport.username")}
+              placeholder={t("webdav.username")}
               value={webdavUsername}
               onChange={(e) => setWebdavUsername(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
@@ -99,14 +99,14 @@ export default function WebDAVSettings() {
             <label
               htmlFor="webdavPassword"
               className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              {t("importExport.password")}
+              {t("webdav.password")}
             </label>
             <div className="relative">
               <input
                 id="webdavPassword"
-                title={t("importExport.password")}
+                title={t("webdav.password")}
                 type={showWebdavPassword ? "text" : "password"}
-                placeholder={t("importExport.password")}
+                placeholder={t("webdav.password")}
                 value={webdavPassword}
                 onChange={(e) => setWebdavPassword(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
@@ -136,17 +136,17 @@ export default function WebDAVSettings() {
                   webdavUsername,
                   webdavPassword
                 })
-                toast.success(t("basicSettings.updateSuccess"))
+                toast.success(t("settings:messages.updateSuccess"))
               } catch (e) {
                 console.error(e)
-                toast.error(t("basicSettings.saveSettingsFailed"))
+                toast.error(t("settings:messages.saveSettingsFailed"))
               } finally {
                 setSaving(false)
               }
             }}
             disabled={saving}
             className="px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50">
-            {saving ? t("importExport.saving") : t("importExport.saveConfig")}
+            {saving ? t("common:status.saving") : t("webdav.saveConfig")}
           </button>
 
           {/* 测试连接 */}
@@ -164,19 +164,17 @@ export default function WebDAVSettings() {
                   webdavUsername,
                   webdavPassword
                 })
-                toast.success(t("basicSettings.updateSuccess"))
+                toast.success(t("settings:messages.updateSuccess"))
               } catch (e: any) {
                 console.error(e)
-                toast.error(e?.message || t("basicSettings.updateFailed"))
+                toast.error(e?.message || t("settings:messages.updateFailed"))
               } finally {
                 setTesting(false)
               }
             }}
             disabled={testing || !webdavConfigFilled}
             className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50">
-            {testing
-              ? t("importExport.testing")
-              : t("importExport.testConnection")}
+            {testing ? t("common:status.testing") : t("webdav.testConnection")}
           </button>
 
           {/* 上传备份 */}
@@ -199,10 +197,10 @@ export default function WebDAVSettings() {
                   webdavUsername,
                   webdavPassword
                 })
-                toast.success(t("importExport.dataExported"))
+                toast.success(t("export.dataExported"))
               } catch (e: any) {
                 console.error(e)
-                toast.error(e?.message || t("importExport.exportFailed"))
+                toast.error(e?.message || t("export.exportFailed"))
               } finally {
                 setUploading(false)
               }
@@ -210,8 +208,8 @@ export default function WebDAVSettings() {
             disabled={uploading || !webdavConfigFilled}
             className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50">
             {uploading
-              ? t("importExport.uploading")
-              : t("importExport.uploadBackup")}
+              ? t("common:status.uploading")
+              : t("webdav.uploadBackup")}
           </button>
 
           {/* 下载并导入 */}
@@ -238,10 +236,12 @@ export default function WebDAVSettings() {
                   importSuccess = true
                   if (migratedCount > 0) {
                     toast.success(
-                      t("toast.success.importedAccounts", { migratedCount })
+                      t("messages:toast.success.importedAccounts", {
+                        migratedCount
+                      })
                     )
                   } else {
-                    toast.success(t("toast.success.importSuccess"))
+                    toast.success(t("import.importSuccess"))
                   }
                 }
                 if (data.preferences || data.type === "preferences") {
@@ -251,17 +251,15 @@ export default function WebDAVSettings() {
                       await userPreferences.importPreferences(preferencesData)
                     if (success) {
                       importSuccess = true
-                      toast.success(t("importExport.importSuccess"))
+                      toast.success(t("import.importSuccess"))
                     }
                   }
                 }
                 if (!importSuccess)
-                  throw new Error(t("importExport.noImportableDataFound"))
+                  throw new Error(t("import.noImportableDataFound"))
               } catch (e: any) {
                 console.error(e)
-                toast.error(
-                  e?.message || t("importExport.downloadImportFailed")
-                )
+                toast.error(e?.message || t("import.downloadImportFailed"))
               } finally {
                 setDownloading(false)
               }
@@ -269,8 +267,8 @@ export default function WebDAVSettings() {
             disabled={downloading || !webdavConfigFilled}
             className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50">
             {downloading
-              ? t("importExport.processing")
-              : t("importExport.downloadImport")}
+              ? t("common:status.processing")
+              : t("webdav.downloadImport")}
           </button>
         </div>
       </div>
