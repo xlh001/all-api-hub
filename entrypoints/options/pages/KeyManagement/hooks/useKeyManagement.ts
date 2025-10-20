@@ -77,9 +77,9 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     try {
       const textToCopy = key.startsWith("sk-") ? key : "sk-" + key
       await navigator.clipboard.writeText(textToCopy)
-      toast.success(t("keyManagement.keyCopied", { name }))
+      toast.success(t("keyManagement:messages.keyCopied", { name }))
     } catch (error) {
-      toast.error(t("keyManagement.copyFailed"))
+      toast.error(t("keyManagement:messages.copyFailed"))
     }
   }
 
@@ -114,7 +114,9 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
   const handleDeleteToken = async (token: AccountToken) => {
     if (
-      !window.confirm(t("keyManagement.deleteConfirm", { name: token.name }))
+      !window.confirm(
+        t("keyManagement:messages.deleteConfirm", { name: token.name })
+      )
     ) {
       return
     }
@@ -122,7 +124,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     try {
       const account = displayData.find((acc) => acc.name === token.accountName)
       if (!account) {
-        toast.error(t("keyManagement.accountNotFound"))
+        toast.error(t("keyManagement:messages.accountNotFound"))
         return
       }
 
