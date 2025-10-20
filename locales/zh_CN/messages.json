@@ -100,5 +100,26 @@
     "unexpectedData": "自动识别未成功,站点返回数据不符合预期,请手动输入信息或确保已在目标站点登录",
     "networkError": "网络连接失败,请检查网络连接后重试",
     "failed": "自动识别失败:"
+  },
+  "webdav": {
+    "configIncomplete": "请先完整填写 WebDAV URL、用户名和密码",
+    "authFailed": "鉴权失败，请检查用户名/密码",
+    "connectionFailed": "连接失败，状态码: {{status}}",
+    "fileNotFound": "远程备份文件不存在",
+    "downloadFailed": "下载失败，状态码: {{status}}",
+    "uploadFailed": "上传失败，状态码: {{status}}"
+  },
+  "storage": {
+    "accountNotFound": "账号 {{id}} 不存在",
+    "updateFailed": "更新账号失败"
+  },
+  "background": {
+    "cannotCreateWindow": "无法创建窗口",
+    "cannotCreateWindowOrTab": "无法创建窗口或获取标签页",
+    "pageLoadTimeout": "页面加载超时"
+  },
+  "content": {
+    "userInfoNotFound": "未找到用户信息，请确保已登录",
+    "waitUserInfoTimeout": "等待用户信息超时，请确保已登录"
   }
 }

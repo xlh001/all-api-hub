@@ -1,3 +1,5 @@
+import { t } from "i18next"
+
 import { userPreferences } from "~/services/userPreferences"
 
 export interface WebdavConfig {
@@ -97,7 +99,7 @@ async function getConfig(): Promise<WebdavConfig> {
 export async function testWebdavConnection(custom?: Partial<WebdavConfig>) {
   const cfg = { ...(await getConfig()), ...custom }
   if (!cfg.webdavUrl || !cfg.webdavUsername || !cfg.webdavPassword) {
-    throw new Error("请先完整填写 WebDAV URL、用户名和密码")
+    throw new Error(t("messages:webdav.configIncomplete"))
   }
   const targetUrl = ensureFilename(cfg.webdavUrl)
 
@@ -110,14 +112,14 @@ export async function testWebdavConnection(custom?: Partial<WebdavConfig>) {
   // 200 存在；404 文件不存在但鉴权通过也视为连通
   if (res.status === 200 || res.status === 404) return true
   if (res.status === 401 || res.status === 403)
-    throw new Error("鉴权失败，请检查用户名/密码")
-  throw new Error(`连接失败，状态码: ${res.status}`)
+    throw new Error(t("messages:webdav.authFailed"))
+  throw new Error(t("messages:webdav.connectionFailed", { status: res.status }))
 }
 
 export async function downloadBackup(custom?: Partial<WebdavConfig>) {
   const cfg = { ...(await getConfig()), ...custom }
   if (!cfg.webdavUrl || !cfg.webdavUsername || !cfg.webdavPassword) {
-    throw new Error("请先完整填写 WebDAV URL、用户名和密码")
+    throw new Error(t("messages:webdav.configIncomplete"))
   }
   const targetUrl = ensureFilename(cfg.webdavUrl)
 
@@ -132,10 +134,10 @@ export async function downloadBackup(custom?: Partial<WebdavConfig>) {
     const text = await res.text()
     return text
   }
-  if (res.status === 404) throw new Error("远程备份文件不存在")
+  if (res.status === 404) throw new Error(t("messages:webdav.fileNotFound"))
   if (res.status === 401 || res.status === 403)
-    throw new Error("鉴权失败，请检查用户名/密码")
-  throw new Error(`下载失败，状态码: ${res.status}`)
+    throw new Error(t("messages:webdav.authFailed"))
+  throw new Error(t("messages:webdav.downloadFailed", { status: res.status }))
 }
 
 export async function uploadBackup(
@@ -144,7 +146,7 @@ export async function uploadBackup(
 ) {
   const cfg = { ...(await getConfig()), ...custom }
   if (!cfg.webdavUrl || !cfg.webdavUsername || !cfg.webdavPassword) {
-    throw new Error("请先完整填写 WebDAV URL、用户名和密码")
+    throw new Error(t("messages:webdav.configIncomplete"))
   }
   const targetUrl = ensureFilename(cfg.webdavUrl)
 
@@ -162,6 +164,6 @@ export async function uploadBackup(
 
   if (res.status >= 200 && res.status < 300) return true
   if (res.status === 401 || res.status === 403)
-    throw new Error("鉴权失败，请检查用户名/密码")
-  throw new Error(`上传失败，状态码: ${res.status}`)
+    throw new Error(t("messages:webdav.authFailed"))
+  throw new Error(t("messages:webdav.uploadFailed", { status: res.status }))
 }

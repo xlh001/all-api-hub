@@ -100,5 +100,26 @@
     "unexpectedData": "Auto-detection failed, site returned unexpected data. Please enter information manually or ensure you are logged in to the target site",
     "networkError": "Network connection failed, please check your network connection and try again",
     "failed": "Auto-detection failed: "
+  },
+  "webdav": {
+    "configIncomplete": "Please fill in WebDAV URL, username and password completely",
+    "authFailed": "Authentication failed, please check username/password",
+    "connectionFailed": "Connection failed, status code: {{status}}",
+    "fileNotFound": "Remote backup file does not exist",
+    "downloadFailed": "Download failed, status code: {{status}}",
+    "uploadFailed": "Upload failed, status code: {{status}}"
+  },
+  "storage": {
+    "accountNotFound": "Account {{id}} does not exist",
+    "updateFailed": "Failed to update account"
+  },
+  "background": {
+    "cannotCreateWindow": "Unable to create window",
+    "cannotCreateWindowOrTab": "Unable to create window or get tab",
+    "pageLoadTimeout": "Page load timeout"
+  },
+  "content": {
+    "userInfoNotFound": "User information not found, please ensure you are logged in",
+    "waitUserInfoTimeout": "Waiting for user information timeout, please ensure you are logged in"
   }
 }

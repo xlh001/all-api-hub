@@ -126,7 +126,7 @@ export async function autoDetectAccount(
 
     return {
       success: true,
-      message: t("toast.success.autoDetectSuccess"),
+      message: t("accountDialog:messages.autoDetectSuccess"),
       data: {
         username: detectedUsername,
         accessToken: access_token,
@@ -146,7 +146,9 @@ export async function autoDetectAccount(
     const errorMessage = getErrorMessage(error)
     return {
       success: false,
-      message: t("errors.operation.autoDetectFailed", { error: errorMessage }),
+      message: t("accountDialog:messages.autoDetectFailed", {
+        error: errorMessage
+      }),
       detailedError
     }
   }

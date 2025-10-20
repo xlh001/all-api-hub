@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import merge from "lodash-es/merge"
 
 import { Storage } from "@plasmohq/storage"
@@ -207,7 +208,7 @@ class AccountStorageService {
       const index = accounts.findIndex((account) => account.id === id)
 
       if (index === -1) {
-        throw new Error(`账号 ${id} 不存在`)
+        throw new Error(t("messages:storage.accountNotFound", { id }))
       }
 
       accounts[index] = merge(
@@ -238,7 +239,7 @@ class AccountStorageService {
           `账号 ${id} 不存在，当前账号列表:`,
           accounts.map((acc) => ({ id: acc.id, name: acc.site_name }))
         )
-        throw new Error(`账号 ${id} 不存在`)
+        throw new Error(t("messages:storage.accountNotFound", { id }))
       }
 
       await this.saveAccounts(filteredAccounts)
@@ -266,7 +267,7 @@ class AccountStorageService {
       const account = await this.getAccountById(id)
 
       if (!account) {
-        throw new Error(`账号 ${id} 不存在`)
+        throw new Error(t("messages:storage.accountNotFound", { id }))
       }
       const DisplaySiteData = accountStorage.convertToDisplayData(account)
 
