@@ -32,7 +32,7 @@ export default function AccountActionButtons({
   onCopyKey,
   onDeleteAccount
 }: ActionButtonsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("account")
   const { refreshingAccountId, handleRefreshAccount } =
     useAccountActionsContext()
   const { openEditAccount } = useDialogStateContext()
@@ -59,22 +59,22 @@ export default function AccountActionButtons({
             ? token.key
             : "sk-" + token.key
           await navigator.clipboard.writeText(textToCopy)
-          toast.success(t("accountActions.key_copied"))
+          toast.success(t("actions.keyCopied"))
         } else if (tokensResponse.length > 1) {
           // Multiple tokens - open dialog
           onCopyKey(site)
         } else {
           // No tokens found
-          toast.error(t("accountActions.no_key_found"))
+          toast.error(t("actions.noKeyFound"))
         }
       } else {
         console.warn("Token response is not an array:", tokensResponse)
-        toast.error(t("accountActions.fetch_key_info_failed"))
+        toast.error(t("actions.fetchKeyInfoFailed"))
       }
     } catch (error) {
       console.error("Failed to fetch key list:", error)
       const errorMessage = getErrorMessage(error)
-      toast.error(t("accountActions.fetch_key_list_failed", { errorMessage }))
+      toast.error(t("actions.fetchKeyListFailed", { errorMessage }))
       // Fallback to opening dialog
       onCopyKey(site)
     } finally {
@@ -84,7 +84,7 @@ export default function AccountActionButtons({
 
   const handleCopyUrlLocal = async () => {
     await navigator.clipboard.writeText(site.baseUrl)
-    toast.success(t("accountActions.url_copied"))
+    toast.success(t("actions.urlCopied"))
   }
 
   // Navigation functions for secondary menu items
@@ -117,14 +117,14 @@ export default function AccountActionButtons({
       <button
         onClick={handleCopyUrlLocal}
         className={primaryButtonClasses}
-        title={t("accountActions.copy_url")}>
+        title={t("actions.copyUrl")}>
         <LinkIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" />
       </button>
       <button
         onClick={handleSmartCopyKey}
         className={primaryButtonClasses}
         disabled={isCheckingTokens}
-        title={t("accountActions.copy_key")}>
+        title={t("actions.copyKey")}>
         <KeyIcon
           className={`w-4 h-4 text-gray-500 dark:text-dark-text-secondary ${isCheckingTokens ? "opacity-50" : ""}`}
         />
@@ -136,7 +136,7 @@ export default function AccountActionButtons({
           openEditAccount(site)
         }}
         className={primaryButtonClasses}
-        title={t("accountActions.edit")}>
+        title={t("actions.edit")}>
         <PencilIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" />
       </button>
 
@@ -152,19 +152,19 @@ export default function AccountActionButtons({
           <AccountActionMenuItem
             onClick={handleOpenKeyList}
             icon={ListBulletIcon}
-            label={t("accountActions.key_list")}
+            label={t("actions.keyList")}
           />
 
           <AccountActionMenuItem
             onClick={handleNavigateToKeyManagement}
             icon={KeyIcon}
-            label={t("accountActions.key_management")}
+            label={t("actions.keyManagement")}
           />
 
           <AccountActionMenuItem
             onClick={handleNavigateToModelManagement}
             icon={CpuChipIcon}
-            label={t("accountActions.model_management")}
+            label={t("actions.modelManagement")}
           />
 
           <hr />
@@ -172,14 +172,14 @@ export default function AccountActionButtons({
           <AccountActionMenuItem
             onClick={handleRefreshLocal}
             icon={ArrowPathIcon}
-            label={t("accountActions.refresh")}
+            label={t("actions.refresh")}
             disabled={refreshingAccountId === site.id}
           />
 
           <AccountActionMenuItem
             onClick={handleDeleteLocal}
             icon={TrashIcon}
-            label={t("accountActions.delete")}
+            label={t("actions.delete")}
             isDestructive={true}
           />
         </MenuItems>

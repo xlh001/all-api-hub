@@ -46,10 +46,14 @@
     "usd": "美元",
     "clickToSwitch": "点击切换到{currency}"
   },
+  "quota": {
+    "unlimited": "无限额度"
+  },
   "time": {
     "today": "今日",
     "seconds": "秒",
-    "updatedAt": "更新于 {{time}}"
+    "updatedAt": "更新于 {{time}}",
+    "neverExpires": "永不过期"
   },
   "validation": {
     "required": "此字段为必填项",

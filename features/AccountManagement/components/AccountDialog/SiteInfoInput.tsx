@@ -117,8 +117,7 @@ export default function SiteInfoInput({
               </span>
               <Tooltip content={currentTabUrl}>
                 <span className="font-medium max-w-[150px] truncate ml-1">
-                  {currentTabUrl ||
-                    t("accountList.site_info.unknown", "无法获取")}
+                  {currentTabUrl || t("siteInfo.unknown")}
                 </span>
               </Tooltip>
             </div>

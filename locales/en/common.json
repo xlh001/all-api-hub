@@ -46,10 +46,14 @@
     "usd": "USD",
     "clickToSwitch": "Click to switch to {currency}"
   },
+  "quota": {
+    "unlimited": "Unlimited"
+  },
   "time": {
     "today": "Today",
     "seconds": "seconds",
-    "updatedAt": "Updated at {{time}}"
+    "updatedAt": "Updated at {{time}}",
+    "neverExpires": "Never Expires"
   },
   "validation": {
     "required": "This field is required",

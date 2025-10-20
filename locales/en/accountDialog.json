@@ -26,7 +26,8 @@
     "useCurrent": "Use Current Site",
     "alreadyAdded": "Current site already added",
     "editNow": "Edit Now",
-    "cookieWarning": "Cookie authentication uses your current login account, cannot be used for multiple accounts on the same site, do not use unless necessary"
+    "cookieWarning": "Cookie authentication uses your current login account, cannot be used for multiple accounts on the same site, do not use unless necessary",
+    "unknown": "Unable to get"
   },
   "infoPanel": {
     "confirmation": "Account Information Confirmation",
