@@ -46,7 +46,7 @@
   "currency": {
     "cny": "CNY",
     "usd": "USD",
-    "clickToSwitch": "Click to switch to {currency}"
+    "clickToSwitch": "Click to switch to {{currency}}"
   },
   "quota": {
     "unlimited": "Unlimited"
