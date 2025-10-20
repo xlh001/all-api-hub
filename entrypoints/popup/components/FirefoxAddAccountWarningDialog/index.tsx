@@ -20,7 +20,7 @@ export default function FirefoxAddAccountWarningDialog({
   onClose,
   onConfirm
 }: FirefoxWarningDialogProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -59,7 +59,7 @@ export default function FirefoxAddAccountWarningDialog({
                     <ExclamationTriangleIcon className="w-4 h-4 text-white" />
                   </div>
                   <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
-                    {t("firefox.warningTitle")}
+                    {t("dialog.firefox.warningTitle")}
                   </DialogTitle>
                 </div>
                 <button
@@ -76,11 +76,11 @@ export default function FirefoxAddAccountWarningDialog({
                     <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-orange-500" />
                     <div className="mt-3">
                       <h3 className="text-base font-medium text-gray-900 dark:text-dark-text-primary">
-                        {t("firefox.limitation")}
+                        {t("dialog.firefox.limitation")}
                       </h3>
                       <div className="mt-2">
                         <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                          {t("firefox.popupLimitation")}
+                          {t("dialog.firefox.popupLimitation")}
                         </p>
                       </div>
                     </div>
@@ -93,10 +93,10 @@ export default function FirefoxAddAccountWarningDialog({
                       </div>
                       <div className="ml-3">
                         <h3 className="text-xs font-medium text-orange-800 dark:text-orange-200">
-                          {t("firefox.howOpenSidebar")}
+                          {t("dialog.firefox.howOpenSidebar")}
                         </h3>
                         <div className="mt-1 text-xs text-orange-700 dark:text-orange-300">
-                          <p>{t("firefox.sidebarInstruction")}</p>
+                          <p>{t("dialog.firefox.sidebarInstruction")}</p>
                         </div>
                       </div>
                     </div>
@@ -109,13 +109,13 @@ export default function FirefoxAddAccountWarningDialog({
                     type="button"
                     onClick={onClose}
                     className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
-                    {t("firefox.confirm")}
+                    {t("dialog.firefox.confirm")}
                   </button>
                   <button
                     type="button"
                     onClick={onConfirm}
                     className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-amber-600 rounded-lg hover:from-orange-600 hover:to-amber-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                    {t("firefox.openSidebar")}
+                    {t("dialog.firefox.openSidebar")}
                   </button>
                 </div>
               </div>

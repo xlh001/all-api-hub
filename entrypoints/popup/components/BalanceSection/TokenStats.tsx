@@ -7,7 +7,7 @@ import { useAccountDataContext } from "~/features/AccountManagement/hooks/Accoun
 import { formatTokenCount } from "~/utils/formatters"
 
 export const TokenStats = React.memo(() => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("account")
   const { stats } = useAccountDataContext()
   const todayTokens = stats
   let todayTotalPromptTokens = todayTokens.today_total_prompt_tokens
@@ -18,14 +18,14 @@ export const TokenStats = React.memo(() => {
         content={
           <div>
             <div>
-              {t("balance.stats.prompt")}:{" "}
+              {t("common:stats.prompt")}:{" "}
               {todayTotalPromptTokens.toLocaleString()}{" "}
-              {t("balance.stats.token")}
+              {t("common:labels.token")}
             </div>
             <div>
-              {t("balance.stats.completion")}:{" "}
+              {t("common:stats.completion")}:{" "}
               {todayTotalCompletionTokens.toLocaleString()}{" "}
-              {t("balance.stats.token")}
+              {t("common:labels.token")}
             </div>
           </div>
         }>
