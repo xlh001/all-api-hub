@@ -18,12 +18,12 @@ export const TokenStats = React.memo(() => {
         content={
           <div>
             <div>
-              {t("common:stats.prompt")}:{" "}
+              {t("stats.prompt")}:{" "}
               {todayTotalPromptTokens.toLocaleString()}{" "}
               {t("common:labels.token")}
             </div>
             <div>
-              {t("common:stats.completion")}:{" "}
+              {t("stats.completion")}:{" "}
               {todayTotalCompletionTokens.toLocaleString()}{" "}
               {t("common:labels.token")}
             </div>

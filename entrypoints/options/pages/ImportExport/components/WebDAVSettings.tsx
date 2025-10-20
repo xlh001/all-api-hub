@@ -70,7 +70,7 @@ export default function WebDAVSettings() {
             </label>
             <input
               id="webdavUrl"
-              title={t("importExport.webdavUrl")}
+              title={t("webdav.webdavUrl")}
               type="url"
               placeholder={t("webdav.webdavUrlExample")}
               value={webdavUrl}
