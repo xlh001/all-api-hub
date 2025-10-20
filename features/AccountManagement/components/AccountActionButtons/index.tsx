@@ -17,6 +17,7 @@ import { useAccountActionsContext } from "~/features/AccountManagement/hooks/Acc
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import { fetchAccountTokens } from "~/services/apiService"
 import type { DisplaySiteData } from "~/types"
+import { getErrorMessage } from "~/utils/error"
 import { openKeysPage, openModelsPage } from "~/utils/navigation"
 
 import { AccountActionMenuItem } from "./AccountActionMenuItem"
