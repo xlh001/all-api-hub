@@ -27,6 +27,7 @@
   },
   "sorting": {
     "title": "Sorting Priority Settings",
+    "priority": "Priority",
     "currentSitePriority": "Current Site Priority",
     "currentSiteDesc": "Place the currently accessed site at the top of the list",
     "healthStatus": "Health Status",

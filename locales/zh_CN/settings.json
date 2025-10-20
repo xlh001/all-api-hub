@@ -27,6 +27,7 @@
   },
   "sorting": {
     "title": "排序优先级设置",
+    "priority": "优先级",
     "currentSitePriority": "当前站点优先",
     "currentSiteDesc": "将当前访问的站点置于列表顶部",
     "healthStatus": "健康状态",

@@ -7,7 +7,7 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { showUpdateToast } from "../utils/toastHelpers"
 
 export default function NewApiSettings() {
-  const { t } = useTranslation()
+  const { t } = useTranslation("settings")
   const {
     newApiBaseUrl,
     newApiAdminToken,
@@ -55,7 +55,7 @@ export default function NewApiSettings() {
   return (
     <section>
       <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4 flex items-center">
-        {t("basicSettings.newApiIntegration")}
+        {t("newApi.title")}
       </h2>
       <div className="space-y-6">
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
@@ -64,7 +64,7 @@ export default function NewApiSettings() {
               New API Base URL
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              {t("basicSettings.newApiUrlDesc")}
+              {t("newApi.urlDesc")}
             </p>
           </div>
           <input
@@ -83,7 +83,7 @@ export default function NewApiSettings() {
               Admin Token
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              {t("basicSettings.newApiTokenDesc")}
+              {t("newApi.tokenDesc")}
             </p>
           </div>
           <div className="relative w-72">
@@ -113,7 +113,7 @@ export default function NewApiSettings() {
               User ID
             </h3>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              {t("basicSettings.newApiUserIdDesc")}
+              {t("newApi.userIdDesc")}
             </p>
           </div>
           <input
