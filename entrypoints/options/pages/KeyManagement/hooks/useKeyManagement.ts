@@ -8,7 +8,7 @@ import { deleteApiToken, fetchAccountTokens } from "~/services/apiService"
 import { AccountToken } from "../type.ts"
 
 export function useKeyManagement(routeParams?: Record<string, string>) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(["keyManagement", "messages"])
   const { displayData } = useAccountData()
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [searchTerm, setSearchTerm] = useState("")
@@ -40,7 +40,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       setTokens(tokensWithAccount)
     } catch (error) {
       console.error(`获取账号密钥失败:`, error)
-      toast.error(t("keyManagement.loadFailed"))
+      toast.error(t("keyManagement:messages.loadFailed"))
       setTokens([])
     } finally {
       setIsLoading(false)
@@ -132,14 +132,16 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
         account.token,
         token.id
       )
-      toast.success(t("keyManagement.deleteSuccess", { name: token.name }))
+      toast.success(
+        t("keyManagement:messages.deleteSuccess", { name: token.name })
+      )
 
       if (selectedAccount) {
         loadTokens()
       }
     } catch (error) {
       console.error("删除密钥失败:", error)
-      toast.error(t("keyManagement.deleteFailed"))
+      toast.error(t("keyManagement:messages.deleteFailed"))
     }
   }
 

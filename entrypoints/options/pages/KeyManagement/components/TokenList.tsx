@@ -45,7 +45,7 @@ function EmptyState({
   handleAddToken: () => void
   displayData: { id: string }[]
 }) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div className="text-center py-12">
@@ -64,7 +64,7 @@ function EmptyState({
           onClick={handleAddToken}
           className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary transition-colors flex items-center space-x-2 mx-auto">
           <PlusIcon className="w-4 h-4" />
-          <span>{t("keyManagement.createFirstKey")}</span>
+          <span>{t("createFirstKey")}</span>
         </button>
       ) : null}
     </div>
@@ -84,14 +84,14 @@ export function TokenList({
   selectedAccount,
   displayData
 }: TokenListProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   if (!selectedAccount) {
     return (
       <div className="text-center py-12">
         <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-dark-text-secondary">
-          {t("keyManagement.pleaseSelectFirst")}
+        <p className="text-gray-500 dark:text-dark-text-secondary mb-4">
+          {t("noKeys")}
         </p>
       </div>
     )
