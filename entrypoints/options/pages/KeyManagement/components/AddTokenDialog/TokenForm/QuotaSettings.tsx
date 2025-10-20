@@ -22,17 +22,17 @@ export function QuotaSettings({
   handleInputChange,
   error
 }: QuotaSettingsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
-          {t("keyManagement.quotaSettings")}
+          {t("dialog.quotaSettings")}
         </label>
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-            {t("keyManagement.unlimitedQuota")}
+            {t("dialog.unlimitedQuota")}
           </span>
           <Switch
             checked={unlimitedQuota}
@@ -64,7 +64,7 @@ export function QuotaSettings({
                 ? "border-red-300"
                 : "border-gray-300 dark:border-dark-bg-tertiary"
             }`}
-            placeholder={t("keyManagement.quotaPlaceholder")}
+            placeholder={t("dialog.quotaPlaceholder")}
           />
           {error && (
             <p className="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -72,7 +72,7 @@ export function QuotaSettings({
             </p>
           )}
           <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-            {t("keyManagement.quotaRate", {
+            {t("dialog.quotaRate", {
               rate: UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR.toLocaleString()
             })}
           </p>

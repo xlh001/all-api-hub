@@ -15,7 +15,7 @@ export function FormActions({
   onSubmit,
   canSubmit
 }: FormActionsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div className="flex justify-end space-x-3 pt-4">
@@ -23,7 +23,7 @@ export function FormActions({
         onClick={onClose}
         disabled={isSubmitting}
         className="px-4 py-2 text-gray-700 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50">
-        {t("keyManagement.cancel")}
+        {t("common:actions.cancel")}
       </button>
       <button
         onClick={onSubmit}
@@ -35,11 +35,11 @@ export function FormActions({
         <span>
           {isSubmitting
             ? isEditMode
-              ? t("keyManagement.updating")
-              : t("keyManagement.creating")
+              ? t("common:status.updating")
+              : t("common:status.creating")
             : isEditMode
-              ? t("keyManagement.updateToken")
-              : t("keyManagement.createToken")}
+              ? t("dialog.updateToken")
+              : t("dialog.createToken")}
         </span>
       </button>
     </div>

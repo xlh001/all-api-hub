@@ -24,13 +24,12 @@ export function AccountSelection({
   availableAccounts,
   error
 }: AccountSelectionProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        {t("keyManagement.accountSelect")}{" "}
-        <span className="text-red-500">*</span>
+        {t("dialog.accountSelect")} <span className="text-red-500">*</span>
       </label>
       <select
         value={accountId}
@@ -41,7 +40,7 @@ export function AccountSelection({
             ? "border-red-300"
             : "border-gray-300 dark:border-dark-bg-tertiary"
         } ${isEditMode ? "bg-gray-100 dark:bg-dark-bg-tertiary cursor-not-allowed" : ""}`}>
-        <option value="">{t("keyManagement.pleaseSelectAccount")}</option>
+        <option value="">{t("pleaseSelectAccount")}</option>
         {availableAccounts.map((account) => (
           <option key={account.id} value={account.id}>
             {account.name}
@@ -53,7 +52,7 @@ export function AccountSelection({
       )}
       {isEditMode && (
         <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-          {t("keyManagement.editModeNoChange")}
+          {t("dialog.editModeNoChange")}
         </p>
       )}
     </div>

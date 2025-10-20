@@ -15,12 +15,12 @@ export function TokenNameInput({
   handleInputChange,
   error
 }: TokenNameInputProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        {t("keyManagement.tokenName")} <span className="text-red-500">*</span>
+        {t("dialog.tokenName")} <span className="text-red-500">*</span>
       </label>
       <input
         type="text"
@@ -31,7 +31,7 @@ export function TokenNameInput({
             ? "border-red-300"
             : "border-gray-300 dark:border-dark-bg-tertiary"
         }`}
-        placeholder={t("keyManagement.tokenName")}
+        placeholder={t("dialog.tokenName")}
       />
       {error && (
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>

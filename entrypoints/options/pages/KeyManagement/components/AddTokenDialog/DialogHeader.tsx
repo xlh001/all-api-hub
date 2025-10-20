@@ -8,16 +8,14 @@ interface DialogHeaderProps {
 }
 
 export function DialogHeader({ isEditMode, onClose }: DialogHeaderProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center space-x-2">
         <KeyIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
         <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
-          {isEditMode
-            ? t("keyManagement.editToken")
-            : t("keyManagement.addToken")}
+          {isEditMode ? t("dialog.editToken") : t("dialog.addToken")}
         </Dialog.Title>
       </div>
       <button

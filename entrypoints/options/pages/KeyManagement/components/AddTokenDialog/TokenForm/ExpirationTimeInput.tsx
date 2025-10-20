@@ -15,12 +15,12 @@ export function ExpirationTimeInput({
   handleInputChange,
   error
 }: ExpirationTimeInputProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        {t("keyManagement.expiration")}
+        {t("dialog.expiration")}
       </label>
       <input
         type="datetime-local"
@@ -36,7 +36,7 @@ export function ExpirationTimeInput({
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
       )}
       <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-        {t("keyManagement.expirationPlaceholder")}
+        {t("dialog.expirationPlaceholder")}
       </p>
     </div>
   )

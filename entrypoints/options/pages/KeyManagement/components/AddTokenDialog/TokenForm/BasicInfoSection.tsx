@@ -27,10 +27,10 @@ export function BasicInfoSection({
   handleInputChange,
   handleSwitchChange
 }: BasicInfoSectionProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("keyManagement")
 
   return (
-    <FormSection title={t("keyManagement.basicInfo")}>
+    <FormSection title={t("dialog.basicInfo")}>
       <AccountSelection
         accountId={formData.accountId}
         handleInputChange={handleInputChange}
