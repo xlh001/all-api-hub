@@ -68,7 +68,7 @@ const AnimatedValue: React.FC<{
 )
 
 const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("account")
   const { isInitialLoad, prevBalances } = useAccountDataContext()
   const { currencyType } = useUserPreferencesContext()
   const { handleRefreshAccount, refreshingAccountId } =
@@ -91,7 +91,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
           isInitialLoad ? 0 : prevBalances[site.id]?.[currencyType] || 0
         }
         className="font-semibold text-gray-900 dark:text-dark-text-primary text-lg mb-0.5"
-        title={t("accountList.balance_display.refresh_balance")}
+        title={t("list.balance.refreshBalance")}
         onClick={handleRefreshClick}
         isRefreshing={isRefreshing}
       />
@@ -108,7 +108,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
               ? "text-green-500"
               : "text-gray-400 dark:text-dark-text-tertiary"
           }`}
-          title={t("accountList.balance_display.refresh_consumption")}
+          title={t("list.balance.refreshConsumption")}
           onClick={handleRefreshClick}
           isRefreshing={isRefreshing}
         />
@@ -123,7 +123,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
               ? "text-blue-500"
               : "text-gray-400 dark:text-dark-text-tertiary"
           }`}
-          title={t("accountList.balance_display.refresh_income")}
+          title={t("list.balance.refreshIncome")}
           onClick={handleRefreshClick}
           isRefreshing={isRefreshing}
         />
