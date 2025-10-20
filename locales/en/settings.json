@@ -1,0 +1,77 @@
+{
+  "title": "Settings",
+  "description": "Manage the basic configuration options of the plugin",
+  "display": {
+    "title": "Display Settings",
+    "description": "Customize the appearance and display preferences of the plugin",
+    "defaultCurrency": "Default Currency Unit",
+    "currencyUnit": "Currency Unit",
+    "currencyDesc": "Set the default currency unit for balance and consumption display",
+    "usd": "USD ($)",
+    "cny": "CNY (¥)",
+    "defaultTab": "Default Tab",
+    "defaultTabDesc": "Set the default tab displayed when the plugin starts",
+    "todayConsumption": "Today's Consumption",
+    "totalBalance": "Total Balance"
+  },
+  "refresh": {
+    "title": "Refresh Settings",
+    "autoRefresh": "Auto Refresh",
+    "autoRefreshDesc": "Regularly auto-refresh account data",
+    "refreshInterval": "Refresh Interval",
+    "refreshIntervalDesc": "Set the time interval for auto-refresh (default 360 seconds, it is recommended not to set too small to avoid frequent requests)",
+    "refreshOnOpen": "Auto-refresh when opening plugin",
+    "refreshOnOpenDesc": "Auto-refresh account data when opening the plugin popup",
+    "minRefreshInterval": "Minimum Refresh Interval",
+    "minRefreshIntervalDesc": "Minimum time interval for auto-refresh to avoid frequent requests (manual refresh is not restricted)"
+  },
+  "sorting": {
+    "title": "Sorting Priority Settings",
+    "currentSitePriority": "Current Site Priority",
+    "currentSiteDesc": "Place the currently accessed site at the top of the list",
+    "healthStatus": "Health Status",
+    "healthDesc": "Sort by site health status (Error > Warning > Unknown > Healthy)",
+    "checkInRequirement": "Check-in Requirement",
+    "checkInDesc": "Place sites that need check-in at the front",
+    "userCustomSort": "User Custom Sort",
+    "customSortDesc": "Sort according to the field (such as balance) selected by the user in the list view",
+    "customCheckInUrl": "Custom Check-in URL",
+    "customCheckInDesc": "Place sites using custom check-in links at the front",
+    "unknownSortRule": "Unknown sorting rule"
+  },
+  "newApi": {
+    "title": "New API Integration Settings",
+    "urlDesc": "Set the base URL for New API integration",
+    "tokenDesc": "Token for accessing New API admin functions",
+    "userIdDesc": "User identification ID for New API"
+  },
+  "danger": {
+    "title": "Danger Zone",
+    "resetAllSettings": "Reset All Settings",
+    "resetDesc": "Reset all configurations to default values, this operation cannot be undone",
+    "resetSettings": "Reset Settings",
+    "resetAllConfirm": "Reset All Settings",
+    "resetSuccess": "All settings have been reset to default values",
+    "resetFailed": "Failed to reset settings"
+  },
+  "theme": {
+    "appearance": "Appearance",
+    "selectTheme": "Select an appearance theme",
+    "currentTheme": "Current: Follow system ({{theme}})",
+    "light": "Light",
+    "dark": "Dark",
+    "followSystem": "Follow system",
+    "useLightTheme": "Use light theme",
+    "useDarkTheme": "Use dark theme",
+    "followSystemTheme": "Follow system theme settings",
+    "switchTo": "Switch to {{theme}} theme: {{description}}",
+    "current": "Current: {{theme}} ({{resolvedTheme}})",
+    "clickSwitch": "Click to switch to {{nextMode}} mode",
+    "toggle": "Theme toggle, current {{currentMode}} mode, click to switch to {{nextMode}} mode"
+  },
+  "messages": {
+    "updateSuccess": "Update successful",
+    "updateFailed": "Update failed",
+    "saveSettingsFailed": "Failed to save settings"
+  }
+}

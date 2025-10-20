@@ -1,0 +1,77 @@
+{
+  "title": "设置",
+  "description": "管理插件的基本配置选项",
+  "display": {
+    "title": "显示设置",
+    "description": "自定义插件的外观和显示偏好",
+    "defaultCurrency": "默认货币单位",
+    "currencyUnit": "货币单位",
+    "currencyDesc": "设置余额和消费显示的默认货币单位",
+    "usd": "美元 ($)",
+    "cny": "人民币 (¥)",
+    "defaultTab": "默认标签页",
+    "defaultTabDesc": "设置插件启动时显示的默认标签页",
+    "todayConsumption": "今日消耗",
+    "totalBalance": "总余额"
+  },
+  "refresh": {
+    "title": "刷新设置",
+    "autoRefresh": "自动刷新",
+    "autoRefreshDesc": "定期自动刷新账号数据",
+    "refreshInterval": "刷新间隔",
+    "refreshIntervalDesc": "设置自动刷新的时间间隔（默认360秒，建议不要设置过小以避免频繁请求）",
+    "refreshOnOpen": "打开插件时自动刷新",
+    "refreshOnOpenDesc": "当打开插件弹出层时自动刷新账号数据",
+    "minRefreshInterval": "最小刷新间隔",
+    "minRefreshIntervalDesc": "自动刷新时的最小时间间隔，避免频繁请求（手动刷新不受限制）"
+  },
+  "sorting": {
+    "title": "排序优先级设置",
+    "currentSitePriority": "当前站点优先",
+    "currentSiteDesc": "将当前访问的站点置于列表顶部",
+    "healthStatus": "健康状态",
+    "healthDesc": "按站点的健康状况排序（错误 > 警告 > 未知 > 健康）",
+    "checkInRequirement": "签到需求",
+    "checkInDesc": "将需要签到的站点排在前面",
+    "userCustomSort": "用户自定义排序",
+    "customSortDesc": "根据用户在列表视图中选择的字段（如余额）进行排序",
+    "customCheckInUrl": "自定义签到链接",
+    "customCheckInDesc": "将使用自定义签到链接的站点排在前面",
+    "unknownSortRule": "未知排序规则"
+  },
+  "newApi": {
+    "title": "New API 集成设置",
+    "urlDesc": "设置用于 New API 集成的基础 URL",
+    "tokenDesc": "用于访问 New API 管理员功能的令牌",
+    "userIdDesc": "用于 New API 的用户识别 ID"
+  },
+  "danger": {
+    "title": "危险操作",
+    "resetAllSettings": "重置所有设置",
+    "resetDesc": "将所有配置重置为默认值，此操作不可撤销",
+    "resetSettings": "重置设置",
+    "resetAllConfirm": "重置所有设置",
+    "resetSuccess": "所有设置已重置为默认值",
+    "resetFailed": "重置设置失败"
+  },
+  "theme": {
+    "appearance": "外观",
+    "selectTheme": "选择一个外观主题",
+    "currentTheme": "当前: 跟随系统 ({{theme}})",
+    "light": "浅色",
+    "dark": "深色",
+    "followSystem": "跟随系统",
+    "useLightTheme": "使用浅色主题",
+    "useDarkTheme": "使用深色主题",
+    "followSystemTheme": "跟随系统主题设置",
+    "switchTo": "切换到{{theme}}主题: {{description}}",
+    "current": "当前: {{theme}} ({{resolvedTheme}})",
+    "clickSwitch": "点击切换到{{nextMode}}模式",
+    "toggle": "主题切换，当前{{currentMode}}模式，点击切换到{{nextMode}}模式"
+  },
+  "messages": {
+    "updateSuccess": "更新成功",
+    "updateFailed": "更新失败",
+    "saveSettingsFailed": "保存设置失败"
+  }
+}

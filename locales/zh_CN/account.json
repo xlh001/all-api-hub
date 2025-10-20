@@ -1,0 +1,71 @@
+{
+  "title": "账户管理",
+  "description": "一键管理所有AI中转站",
+  "emptyState": "暂无站点账号",
+  "addFirstAccount": "添加你的第一个站点账号",
+  "addAccount": "新增账号",
+  "currentSiteAdded": "⚠️当前站点 {{siteName}} 已被添加",
+  "list": {
+    "header": {
+      "account": "账号",
+      "balance": "余额",
+      "todayConsumption": "今日消费"
+    },
+    "balance": {
+      "refreshBalance": "点击刷新余额",
+      "refreshConsumption": "点击刷新今日消费",
+      "refreshIncome": "点击刷新今日收入"
+    },
+    "site": {
+      "currentSiteExists": "当前标签页站点已存在",
+      "currentSite": "当前站点",
+      "lastSync": "上次同步",
+      "refreshHealthStatus": "点击刷新健康状态",
+      "customCheckInUrl": "自定义签到地址，点我去签到: {{url}}",
+      "checkInUnsupported": "站点可能不支持签到",
+      "checkedInToday": "今日已签到，点我查看",
+      "notCheckedInToday": "今日未签到，点我去签到"
+    }
+  },
+  "stats": {
+    "totalBalance": "总余额",
+    "todayConsumption": "今日消耗",
+    "todayIncome": "今日收入",
+    "prompt": "提示",
+    "completion": "补全"
+  },
+  "refresh": {
+    "refreshingAll": "正在刷新所有账号...",
+    "refreshComplete": "刷新完成: {{success}} 成功, {{failed}} 失败",
+    "refreshPartialSkipped": "刷新完成: {{success}} 成功, {{skipped}} 跳过",
+    "refreshSuccess": "所有账号刷新成功！",
+    "refreshFailed": "刷新失败，请稍后重试"
+  },
+  "healthStatus": {
+    "healthy": "健康",
+    "warning": "警告",
+    "error": "错误",
+    "unknown": "未知",
+    "normal": "账号状态正常",
+    "httpError": "HTTP {{statusCode}}: {{message}}",
+    "apiError": "API错误",
+    "networkFailed": "网络连接失败",
+    "unknownError": "未知错误"
+  },
+  "actions": {
+    "edit": "编辑",
+    "delete": "删除",
+    "copyUrl": "复制网址",
+    "copyKey": "复制密钥",
+    "refresh": "刷新",
+    "viewDetails": "查看详情",
+    "keyCopied": "密钥已复制到剪贴板",
+    "noKeyFound": "未找到可用密钥",
+    "fetchKeyInfoFailed": "获取密钥信息失败",
+    "fetchKeyListFailed": "获取密钥列表失败: {{errorMessage}}",
+    "urlCopied": "网址已复制到剪贴板",
+    "keyList": "密钥列表",
+    "keyManagement": "密钥管理",
+    "modelManagement": "模型管理"
+  }
+}

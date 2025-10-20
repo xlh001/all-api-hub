@@ -1,0 +1,71 @@
+{
+  "title": "Account Management",
+  "description": "Manage all AI redistribution stations with one click",
+  "emptyState": "No accounts yet",
+  "addFirstAccount": "Add your first account",
+  "addAccount": "Add Account",
+  "currentSiteAdded": "⚠️Current site {{siteName}} has been added",
+  "list": {
+    "header": {
+      "account": "Account",
+      "balance": "Balance",
+      "todayConsumption": "Today's Consumption"
+    },
+    "balance": {
+      "refreshBalance": "Click to refresh balance",
+      "refreshConsumption": "Click to refresh today's consumption",
+      "refreshIncome": "Click to refresh today's income"
+    },
+    "site": {
+      "currentSiteExists": "Current tab site already exists",
+      "currentSite": "Current Site",
+      "lastSync": "Last Sync",
+      "refreshHealthStatus": "Click to refresh health status",
+      "customCheckInUrl": "Custom check-in URL, click to go: {{url}}",
+      "checkInUnsupported": "Site may not support check-in",
+      "checkedInToday": "Checked in today, click to view",
+      "notCheckedInToday": "Not checked in today, click to go"
+    }
+  },
+  "stats": {
+    "totalBalance": "Total Balance",
+    "todayConsumption": "Today's Consumption",
+    "todayIncome": "Today's Income",
+    "prompt": "Prompt",
+    "completion": "Completion"
+  },
+  "refresh": {
+    "refreshingAll": "Refreshing all accounts...",
+    "refreshComplete": "Refresh complete: {{success}} success, {{failed}} failed",
+    "refreshPartialSkipped": "Refresh complete: {{success}} success, {{skipped}} skipped",
+    "refreshSuccess": "All accounts refreshed successfully!",
+    "refreshFailed": "Refresh failed, please try again later"
+  },
+  "healthStatus": {
+    "healthy": "Healthy",
+    "warning": "Warning",
+    "error": "Error",
+    "unknown": "Unknown",
+    "normal": "Account status is normal",
+    "httpError": "HTTP {{statusCode}}: {{message}}",
+    "apiError": "API error",
+    "networkFailed": "Network connection failed",
+    "unknownError": "Unknown error"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "copyUrl": "Copy URL",
+    "copyKey": "Copy Key",
+    "refresh": "Refresh",
+    "viewDetails": "View Details",
+    "keyCopied": "Key copied to clipboard",
+    "noKeyFound": "No available key found",
+    "fetchKeyInfoFailed": "Failed to fetch key info",
+    "fetchKeyListFailed": "Failed to fetch key list: {{errorMessage}}",
+    "urlCopied": "URL copied to clipboard",
+    "keyList": "Key List",
+    "keyManagement": "Key Management",
+    "modelManagement": "Model Management"
+  }
+}

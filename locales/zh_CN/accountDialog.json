@@ -1,0 +1,72 @@
+{
+  "title": {
+    "add": "新增账号",
+    "edit": "编辑账号"
+  },
+  "mode": {
+    "autoDetect": "自动识别",
+    "manualAdd": "手动添加",
+    "detecting": "识别中...",
+    "reDetect": "重新识别"
+  },
+  "actions": {
+    "confirmAdd": "确认添加",
+    "saveAccount": "保存账号",
+    "saveChanges": "保存更改",
+    "helpDocument": "帮助文档",
+    "autoConfigTitle": "自动配置到 New API",
+    "autoConfigAriaLabel": "自动配置到 New API",
+    "configuring": "配置中...",
+    "configToNewApi": "配置到 New API"
+  },
+  "siteInfo": {
+    "siteUrl": "网站 URL",
+    "authMethod": "认证方式",
+    "currentSite": "当前站点",
+    "useCurrent": "使用当前站点",
+    "alreadyAdded": "当前站点已添加",
+    "editNow": "立即编辑",
+    "cookieWarning": "Cookie 认证使用您的当前登录账号，无法站点多账号，非必要请勿使用"
+  },
+  "infoPanel": {
+    "confirmation": "账号信息确认",
+    "manualAdd": "手动添加",
+    "autoDetect": "自动识别",
+    "editInfo": "编辑账号信息",
+    "confirmAddInfo": "请确认账号信息无误后点击\"确认添加\"按钮",
+    "manualInfo": "手动填写账号信息。账号将被安全地保存在本地存储中",
+    "autoDetectInfo": "请先在目标站点进行登录，插件将自动检测站点类型，并自动获取访问令牌",
+    "editInfoDesc": "修改账号信息后，系统会重新验证并获取最新的余额数据",
+    "reDetectInfo": "如果站点信息有变化，建议点击\"重新识别\"按钮（需要在目标站点先自行登录）"
+  },
+  "form": {
+    "siteName": "网站名称",
+    "siteType": "站点类型",
+    "username": "用户名",
+    "userId": "用户 ID",
+    "userIdNumber": "用户 ID (数字)",
+    "accessToken": "访问令牌",
+    "exchangeRate": "充值金额比例 (CNY/USD)",
+    "exchangeRatePlaceholder": "请输入充值比例",
+    "exchangeRateDesc": "表示充值 1 美元需要多少人民币。系统会尝试自动获取，如未获取到请手动填写",
+    "validRateError": "请输入有效的汇率 (0.1 - 100)",
+    "checkInStatus": "签到状态检测（需站点已开启签到）",
+    "customCheckInUrl": "自定义签到 URL (可选)",
+    "customCheckInDesc": "如果设置，将禁用自动签到状态检测。用于具有自定义签到端点的站点",
+    "notes": "备注",
+    "notesPlaceholder": "选填，输入备注信息"
+  },
+  "messages": {
+    "loadFailed": "加载账号数据失败",
+    "urlParseError": "无法解析 URL: {{error}}",
+    "autoDetectSuccess": "自动识别成功！",
+    "autoDetectFailed": "自动识别失败: {{error}}",
+    "addSuccess": "账号 {{name}} 添加成功!",
+    "updateSuccess": "账号 {{name}} 更新成功!",
+    "operationFailed": "操作失败: {{error}}",
+    "saveFailed": "保存失败",
+    "startNewApiConfig": "正在开始自动配置到 New API...",
+    "saveAccountFailed": "保存账号失败",
+    "newApiConfigFailed": "自动配置到 New API失败: {{error}}"
+  }
+}
