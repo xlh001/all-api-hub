@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 function Header({ onTitleClick }: HeaderProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
   return (
     <header className="bg-white dark:bg-dark-bg-secondary shadow-sm border-b border-gray-200 dark:border-dark-bg-tertiary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

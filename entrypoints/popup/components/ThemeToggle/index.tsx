@@ -12,28 +12,28 @@ const getThemeOptions = (t: (key: string) => string) => {
   return [
     {
       mode: "light" as ThemeMode,
-      label: t("theme.light"),
+      label: t("settings:theme.light"),
       icon: SunIcon,
-      description: t("theme.useLightTheme")
+      description: t("settings:theme.useLightTheme")
     },
     {
       mode: "dark" as ThemeMode,
-      label: t("theme.dark"),
+      label: t("settings:theme.dark"),
       icon: MoonIcon,
-      description: t("theme.useDarkTheme")
+      description: t("settings:theme.useDarkTheme")
     },
     {
       mode: "system" as ThemeMode,
-      label: t("theme.followSystem"),
+      label: t("settings:theme.followSystem"),
       icon: ComputerDesktopIcon,
-      description: t("theme.followSystemTheme")
+      description: t("settings:theme.followSystemTheme")
     }
   ]
 }
 
 const CompactThemeToggle = () => {
   const { themeMode, setThemeMode, resolvedTheme } = useTheme()
-  const { t } = useTranslation()
+  const { t } = useTranslation("settings")
   const themeOptions = getThemeOptions(t)
 
   const currentIndex = themeOptions.findIndex(
