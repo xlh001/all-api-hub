@@ -29,7 +29,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
   userGroup,
   onGroupClick
 }) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   return (
     <div className="border-t border-gray-100 dark:border-dark-bg-tertiary px-4 py-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -38,7 +38,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
           <div className="flex items-center space-x-2 mb-2">
             <TagIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
             <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
-              {t("modelList.availableGroups")}
+              {t("availableGroups")}
             </span>
           </div>
           <div className="flex flex-wrap gap-1">
@@ -59,7 +59,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
                   }`}
                   title={
                     isClickable
-                      ? t("modelList.clickSwitchGroup", { group })
+                      ? t("clickSwitchGroup", { group })
                       : undefined
                   }>
                   {isCurrentGroup && <TagIcon className="w-3 h-3 mr-1" />}
@@ -76,7 +76,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
             <div className="flex items-center space-x-2 mb-2">
               <ServerIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
               <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
-                {t("modelList.endpointType")}
+                {t("endpointType")}
               </span>
             </div>
             <div className="text-gray-600 dark:text-dark-text-secondary">
@@ -91,13 +91,13 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
             <div className="flex items-center space-x-2 mb-2">
               <CurrencyDollarIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
               <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
-                {t("modelList.detailedPricing")}
+                {t("detailedPricing")}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="space-y-1">
                 <div className="text-gray-500 dark:text-dark-text-tertiary">
-                  {t("modelList.input1MTokens")}
+                  {t("input1MTokens")}
                 </div>
                 <div className="font-medium text-gray-900 dark:text-dark-text-primary">
                   USD: {formatPrice(calculatedPrice.inputUSD, "USD")}
@@ -108,7 +108,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
               </div>
               <div className="space-y-1">
                 <div className="text-gray-500 dark:text-dark-text-tertiary">
-                  {t("modelList.output1MTokens")}
+                  {t("output1MTokens")}
                 </div>
                 <div className="font-medium text-gray-900 dark:text-dark-text-primary">
                   USD: {formatPrice(calculatedPrice.outputUSD, "USD")}

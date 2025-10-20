@@ -17,7 +17,7 @@ export const PriceView = ({
   isAvailableForUser,
   formatPriceCompact
 }: PriceViewProps) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   let inputPrice = showRealPrice
     ? `${formatPriceCompact(calculatedPrice.inputCNY, "CNY")}`
     : `${formatPriceCompact(calculatedPrice.inputUSD, "USD")}`
@@ -36,7 +36,7 @@ export const PriceView = ({
       {/* 输入价格 */}
       <div className="flex items-center space-x-2">
         <span className="text-sm text-gray-600 dark:text-dark-text-primary">
-          {t("modelList.input")}
+          {t("input")}
         </span>
         <span
           className={`text-sm ${
@@ -49,7 +49,7 @@ export const PriceView = ({
       {/* 输出价格 */}
       <div className="flex items-center space-x-2">
         <span className="text-sm text-gray-600 dark:text-dark-text-primary">
-          {t("modelList.output")}
+          {t("output")}
         </span>
         <span
           className={`text-sm ${

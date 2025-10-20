@@ -28,7 +28,7 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
   showRatioColumn,
   isAvailableForUser
 }) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("modelList")
   const tokenBillingType = isTokenBillingType(model.quota_type)
   const perCallPrice = calculatedPrice.perCallPrice
   return (
@@ -49,7 +49,7 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
           {showRatioColumn && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-                {t("modelList.ratio")}
+                {t("ratio")}
               </span>
               <span
                 className={`text-sm font-medium ${
@@ -67,7 +67,7 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
           // 按次计费
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
-              {t("modelList.perCall")}
+              {t("perCall")}
             </span>
             <ModelItemPerCallPricingView
               perCallPrice={perCallPrice}
