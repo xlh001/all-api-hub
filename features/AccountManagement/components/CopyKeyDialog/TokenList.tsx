@@ -32,14 +32,14 @@ export function TokenList({
   getStatusBadgeStyle,
   account
 }: TokenListProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
 
   if (!Array.isArray(tokens) || tokens.length === 0) {
     return (
       <div className="text-center py-8">
         <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-dark-text-secondary text-sm">
-          {t("copyKeyDialog.noKeys")}
+          {t("dialog.copyKey.noKeys")}
         </p>
       </div>
     )

@@ -10,7 +10,7 @@ interface DialogHeaderProps {
 }
 
 export function DialogHeader({ account, onClose }: DialogHeaderProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("ui")
 
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
@@ -20,7 +20,7 @@ export function DialogHeader({ account, onClose }: DialogHeaderProps) {
         </div>
         <div>
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
-            {t("copyKeyDialog.title")}
+            {t("dialog.copyKey.title")}
           </DialogTitle>
           <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-0.5">
             {account?.name}
