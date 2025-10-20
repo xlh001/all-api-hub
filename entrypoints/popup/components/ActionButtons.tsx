@@ -16,7 +16,7 @@ interface ActionButtonsProps {
 export default function ActionButtons({
   inSidePanel = false
 }: ActionButtonsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation(["account", "ui"])
   const { openAddAccount } = useDialogStateContext()
 
   const handleAddAccountClick = () => {
@@ -42,16 +42,16 @@ export default function ActionButtons({
           onClick={handleAddAccountClick}
           className={UI_CONSTANTS.STYLES.BUTTON.PRIMARY}>
           <PlusIcon className="w-4 h-4" />
-          <span>{t("account.add_account")}</span>
+          <span>{t("account:addAccount")}</span>
         </button>
-        <Tooltip content={t("common.key_management")}>
+        <Tooltip content={t("ui:navigation.keys")}>
           <button
             onClick={handleOpenKeysPageClick}
             className={UI_CONSTANTS.STYLES.BUTTON.ICON}>
             <KeyIcon className="w-4 h-4" />
           </button>
         </Tooltip>
-        <Tooltip content={t("common.model_list")}>
+        <Tooltip content={t("ui:navigation.models")}>
           <button
             onClick={handleOpenModelsPageClick}
             className={UI_CONSTANTS.STYLES.BUTTON.ICON}>

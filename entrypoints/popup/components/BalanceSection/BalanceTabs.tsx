@@ -44,17 +44,17 @@ const BalanceDisplay: React.FC<{
   isConsumption = false,
   compact = false
 }) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("common")
   return (
     <div className="flex items-center space-x-1 break-all">
       <button
         onClick={onCurrencyToggle}
         className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left`}
-        title={t("common.click_to_switch_currency", {
+        title={t("currency.clickToSwitch", {
           currency:
             currencyType === "USD"
-              ? t("common.currency_cny")
-              : t("common.currency_usd")
+              ? t("currency.cny")
+              : t("currency.usd")
         })}>
         {isConsumption && value > 0 ? "-" : ""}
         {getCurrencySymbol(currencyType)}
@@ -75,7 +75,7 @@ const BalanceDisplay: React.FC<{
 }
 
 export const BalanceTabs: React.FC = () => {
-  const { t } = useTranslation()
+  const { t } = useTranslation(["account", "common"])
   const { accounts, displayData, stats, isInitialLoad, prevTotalConsumption } =
     useAccountDataContext()
   const { activeTab, currencyType, updateActiveTab, updateCurrencyType } =
@@ -121,8 +121,8 @@ export const BalanceTabs: React.FC = () => {
         onChange={handleTabChange}>
         <div className="flex justify-start mb-3">
           <TabList className="flex space-x-1 bg-gray-100 dark:bg-dark-bg-primary rounded-lg p-1">
-            <StyledTab>{t("common.today_stats")}</StyledTab>
-            <StyledTab>{t("common.total_balance")}</StyledTab>
+            <StyledTab>{t("account:stats.todayConsumption")}</StyledTab>
+            <StyledTab>{t("account:stats.totalBalance")}</StyledTab>
           </TabList>
         </div>
 
@@ -131,7 +131,7 @@ export const BalanceTabs: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">
-                  {t("common.today_consumption")}
+                  {t("account:stats.todayConsumption")}
                 </span>
                 <BalanceDisplay
                   value={totalConsumption[currencyType]}
@@ -147,7 +147,7 @@ export const BalanceTabs: React.FC = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">
-                  {t("common.today_income")}
+                  {t("account:stats.todayIncome")}
                 </span>
                 <BalanceDisplay
                   value={totalIncome[currencyType]}
