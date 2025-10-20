@@ -221,7 +221,7 @@ class AccountStorageService {
       await this.saveAccounts(accounts)
       return true
     } catch (error) {
-      console.error("更新账号失败:", error)
+      console.error(t("messages:storage.updateFailed", { error: "" }), error)
       return false
     }
   }

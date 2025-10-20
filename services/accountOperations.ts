@@ -328,7 +328,9 @@ export async function validateAndUpdateAccount(
     if (!success) {
       return {
         success: false,
-        message: t("messages:errors.validation.updateAccountFailed")
+        message: t("messages:errors.validation.updateAccountFailed", {
+          error: ""
+        })
       }
     }
 
@@ -344,11 +346,16 @@ export async function validateAndUpdateAccount(
       accountId
     }
   } catch (error) {
-    console.error("更新账号失败:", error)
     const errorMessage = getErrorMessage(error)
+    console.error(
+      t("messages:errors.validation.updateAccountFailed", {
+        error: errorMessage
+      }),
+      error
+    )
     return {
       success: false,
-      message: t("messages:errors.operation.updateFailed", {
+      message: t("messages:errors.validation.updateAccountFailed", {
         error: errorMessage
       })
     }

@@ -41,7 +41,7 @@
       "urlRequired": "Site URL cannot be empty",
       "userIdNumeric": "User ID must be a number",
       "incompleteAccountInfo": "Please fill in all account information",
-      "updateAccountFailed": "Failed to update account",
+      "updateAccountFailed": "Failed to update account {{error}}",
       "newApiBaseUrlRequired": "New API base URL not configured",
       "newApiAdminTokenRequired": "New API admin token not configured",
       "newApiUserIdRequired": "New API user ID not configured"
