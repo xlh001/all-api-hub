@@ -12,11 +12,11 @@ interface DialogHeaderProps {
 }
 
 export default function DialogHeader({ mode, onClose }: DialogHeaderProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("accountDialog")
   const isAddMode = mode === "add"
   const title = isAddMode
-    ? t("accountDialog.add_title")
-    : t("accountDialog.edit_title")
+    ? t("title.add")
+    : t("title.edit")
   const Icon = isAddMode ? SparklesIcon : PencilIcon
   const iconBgClass = isAddMode
     ? "bg-gradient-to-r from-blue-500 to-indigo-600"

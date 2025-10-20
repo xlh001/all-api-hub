@@ -17,7 +17,7 @@ import DelAccountDialog from "../DelAccountDialog"
 import AccountListItem from "./AccountListItem"
 
 export default function AccountList() {
-  const { t } = useTranslation()
+  const { t } = useTranslation(["account", "common"])
   const { sortedData, handleSort, sortField, sortOrder } =
     useAccountDataContext()
   const { openAddAccount } = useDialogStateContext()
@@ -41,12 +41,12 @@ export default function AccountList() {
       <div className="px-6 py-12 text-center">
         <InboxIcon className="w-16 h-16 text-gray-200 dark:text-gray-700 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-dark-text-secondary text-sm mb-4">
-          {t("accountList.empty_state")}
+          {t("account:emptyState")}
         </p>
         <button
           onClick={openAddAccount}
           className="px-6 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm">
-          {t("accountList.add_first_account")}
+          {t("account:addFirstAccount")}
         </button>
       </div>
     )
@@ -71,20 +71,20 @@ export default function AccountList() {
       <div className="px-5 py-3 bg-gray-50 dark:bg-dark-bg-secondary border-y border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-10">
         <div className="flex items-center space-x-4">
           <div className="flex-1">
-            {renderSortButton("name", t("accountList.header.account"))}
+            {renderSortButton("name", t("account:list.header.account"))}
           </div>
           <div className="text-right flex-shrink-0">
             <div className="flex items-center space-x-1">
               {renderSortButton(
                 DATA_TYPE_BALANCE,
-                t("accountList.header.balance")
+                t("account:list.header.balance")
               )}
               <span className="text-xs text-gray-400 dark:text-dark-text-tertiary">
                 /
               </span>
               {renderSortButton(
                 DATA_TYPE_CONSUMPTION,
-                t("accountList.header.today_consumption")
+                t("account:list.header.todayConsumption")
               )}
             </div>
           </div>
