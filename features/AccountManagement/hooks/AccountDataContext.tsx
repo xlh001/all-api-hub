@@ -59,7 +59,7 @@ export const AccountDataProvider = ({
   children: ReactNode
   refreshKey?: number
 }) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation("account")
   const {
     currencyType,
     sortField: initialSortField,
@@ -185,10 +185,10 @@ export const AccountDataProvider = ({
         try {
           if (toast) {
             await toast.promise(handleRefresh(false), {
-              loading: t("account.refreshing_all_accounts"),
+              loading: t("refresh.refreshingAll"),
               success: (result) => {
                 if (result.failed > 0) {
-                  return t("account.refresh_complete", {
+                  return t("refresh.refreshComplete", {
                     success: result.success,
                     failed: result.failed
                   })
@@ -202,15 +202,15 @@ export const AccountDataProvider = ({
 
                 const { refreshedCount } = result
                 if (refreshedCount < sum) {
-                  return t("account.refresh_partial_skipped", {
+                  return t("refresh.refreshPartialSkipped", {
                     success: refreshedCount,
                     skipped: sum - refreshedCount
                   })
                 }
                 console.log("[Popup] 打开插件时自动刷新完成")
-                return t("account.refresh_success")
+                return t("refresh.refreshSuccess")
               },
-              error: t("account.refresh_failed")
+              error: t("refresh.refreshFailed")
             })
           } else {
             await handleRefresh(false)
