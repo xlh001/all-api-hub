@@ -16,40 +16,46 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
   const [isDesktop, setIsDesktop] = useState(true)
 
   useEffect(() => {
-    const checkDevice = () => {
+    // 使用 Tailwind 的断点值保持一致
+    // sm: 480px, md: 768px, lg: 1024px
+    const mobileQuery = window.matchMedia("(max-width: 767px)") // < md (768px)
+    const tabletQuery = window.matchMedia(
+      "(min-width: 768px) and (max-width: 1023px)"
+    ) // md to lg
+    const desktopQuery = window.matchMedia("(min-width: 1024px)") // >= lg
+    const touchQuery = window.matchMedia("(pointer: coarse)")
+
+    const updateDevice = () => {
       // 检测触摸设备
       const hasTouch =
         "ontouchstart" in window ||
         navigator.maxTouchPoints > 0 ||
-        window.matchMedia("(pointer: coarse)").matches
+        touchQuery.matches
 
       setIsTouchDevice(hasTouch)
 
-      // 检测屏幕尺寸
-      const width = window.innerWidth
-      setIsMobile(width < 768)
-      setIsTablet(width >= 768 && width < 1024)
-      setIsDesktop(width >= 1024)
+      // 使用媒体查询检测屏幕尺寸，与 Tailwind 断点保持一致
+      setIsMobile(mobileQuery.matches)
+      setIsTablet(tabletQuery.matches)
+      setIsDesktop(desktopQuery.matches)
     }
 
-    checkDevice()
-
-    // 监听窗口大小变化
-    window.addEventListener("resize", checkDevice)
+    // 初始检测
+    updateDevice()
 
     // 监听媒体查询变化
-    const touchMediaQuery = window.matchMedia("(pointer: coarse)")
-    const handler = () => checkDevice()
+    const handleChange = () => updateDevice()
 
-    if (touchMediaQuery.addEventListener) {
-      touchMediaQuery.addEventListener("change", handler)
-    }
+    mobileQuery.addEventListener("change", handleChange)
+    tabletQuery.addEventListener("change", handleChange)
+    desktopQuery.addEventListener("change", handleChange)
+    touchQuery.addEventListener("change", handleChange)
 
     return () => {
-      window.removeEventListener("resize", checkDevice)
-      if (touchMediaQuery.removeEventListener) {
-        touchMediaQuery.removeEventListener("change", handler)
-      }
+      mobileQuery.removeEventListener("change", handleChange)
+      tabletQuery.removeEventListener("change", handleChange)
+      desktopQuery.removeEventListener("change", handleChange)
+      touchQuery.removeEventListener("change", handleChange)
     }
   }, [])
 
