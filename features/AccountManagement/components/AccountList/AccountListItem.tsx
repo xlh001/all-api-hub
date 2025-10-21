@@ -18,12 +18,14 @@ interface AccountListItemProps {
 const AccountListItem: React.FC<AccountListItemProps> = React.memo(
   ({ site, onCopyKey, onDeleteWithDialog }) => {
     const { detectedAccount } = useAccountDataContext()
-    const { hoveredSiteId, handleMouseEnter, handleMouseLeave } =
-      useAccountListItem()
+    const { handleMouseEnter, handleMouseLeave } = useAccountListItem()
     const { isTouchDevice } = useDevice()
 
     // 触摸设备始终显示按钮，PC端根据hover状态显示
-    const shouldShowButtons = isTouchDevice || hoveredSiteId === site.id
+    // PC: 默认隐藏，通过 hover/focus-within 显示；触摸设备始终可见
+    const revealButtonsClass = isTouchDevice
+      ? ""
+      : "opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto"
 
     return (
       <div
@@ -41,15 +43,14 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
           </div>
 
           {/* 中间：操作按钮 - 固定不压缩 */}
-          {shouldShowButtons && (
-            <div className="flex-shrink-0">
-              <AccountActionButtons
-                site={site}
-                onDeleteAccount={onDeleteWithDialog}
-                onCopyKey={onCopyKey}
-              />
-            </div>
-          )}
+          <div
+            className={`flex-shrink-0 transition-opacity ${revealButtonsClass}`}>
+            <AccountActionButtons
+              site={site}
+              onDeleteAccount={onDeleteWithDialog}
+              onCopyKey={onCopyKey}
+            />
+          </div>
 
           {/* 右侧：余额显示 - 可压缩 */}
           <div className="flex-1 min-w-0 max-w-[120px] sm:max-w-[140px]">
