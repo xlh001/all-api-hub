@@ -18,8 +18,7 @@ export const TokenStats = React.memo(() => {
         content={
           <div>
             <div>
-              {t("stats.prompt")}:{" "}
-              {todayTotalPromptTokens.toLocaleString()}{" "}
+              {t("stats.prompt")}: {todayTotalPromptTokens.toLocaleString()}{" "}
               {t("common:labels.token")}
             </div>
             <div>

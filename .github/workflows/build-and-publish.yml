@@ -30,7 +30,7 @@ jobs:
         run: |
           # 优先级：workflow 输入 ref > release tag > 自动找最新 tag
           REF="${{ github.event.inputs.ref || github.event.release.tag_name}}"
-          
+
           if [ "$REF" = "latest" ]; then
             # 特殊值 latest → 使用默认分支最新 commit
             REF=$(git rev-parse origin/main)
@@ -48,7 +48,7 @@ jobs:
           else
             echo "ℹ️ Using provided ref (tag or commit): $REF"
           fi
-          
+
           # 输出 ref 给后续步骤使用
           echo "ref=$REF" >> $GITHUB_OUTPUT
 
@@ -58,7 +58,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ steps.get_ref.outputs.ref }}
-          fetch-depth: 0  # 确保获取完整历史，以便 tag、commit 都能找到
+          fetch-depth: 0 # 确保获取完整历史，以便 tag、commit 都能找到
 
       # 安装 pnpm
       - uses: pnpm/action-setup@v4

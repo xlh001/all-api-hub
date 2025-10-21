@@ -66,9 +66,7 @@ export function Controls({
               count: tokens.filter((t: any) => t.status === 1).length
             })}
           </span>
-          <span>
-            {t("showingCount", { count: filteredTokens.length })}
-          </span>
+          <span>{t("showingCount", { count: filteredTokens.length })}</span>
         </div>
       )}
     </div>

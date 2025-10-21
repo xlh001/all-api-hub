@@ -6,15 +6,15 @@
 // Local configuration object for health status
 const HEALTH_STATUS_CONFIG = {
   healthy: {
-    color: "bg-green-500",
+    color: "bg-green-500"
   },
-  error: { 
+  error: {
     color: "bg-red-500"
   },
   warning: {
     color: "bg-yellow-500"
   },
-  unknown: { 
+  unknown: {
     color: "bg-gray-400"
   }
 } as const
@@ -25,7 +25,10 @@ const HEALTH_STATUS_CONFIG = {
  * @param t - The translation function
  * @returns Object with text and color properties
  */
-export function getHealthStatusDisplay(status: string | undefined, t: (key: string) => string) {
+export function getHealthStatusDisplay(
+  status: string | undefined,
+  t: (key: string) => string
+) {
   if (!status) {
     return {
       text: t("account:healthStatus.unknown"),
@@ -33,7 +36,8 @@ export function getHealthStatusDisplay(status: string | undefined, t: (key: stri
     }
   }
 
-  const config = HEALTH_STATUS_CONFIG[status as keyof typeof HEALTH_STATUS_CONFIG]
+  const config =
+    HEALTH_STATUS_CONFIG[status as keyof typeof HEALTH_STATUS_CONFIG]
   if (!config) {
     return {
       text: t("account:healthStatus.unknown"),
@@ -57,6 +61,7 @@ export function getStatusIndicatorColor(status: string | undefined) {
     return HEALTH_STATUS_CONFIG.unknown.color
   }
 
-  const config = HEALTH_STATUS_CONFIG[status as keyof typeof HEALTH_STATUS_CONFIG]
+  const config =
+    HEALTH_STATUS_CONFIG[status as keyof typeof HEALTH_STATUS_CONFIG]
   return config?.color || HEALTH_STATUS_CONFIG.unknown.color
 }

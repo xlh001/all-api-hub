@@ -12,9 +12,12 @@ import Tooltip from "~/components/Tooltip"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
+import {
+  getHealthStatusDisplay,
+  getStatusIndicatorColor
+} from "~/features/AccountManagement/utils/healthStatusUtils"
 import type { DisplaySiteData } from "~/types"
 import { openCheckInPage } from "~/utils/navigation"
-import { getHealthStatusDisplay, getStatusIndicatorColor } from "~/features/AccountManagement/utils/healthStatusUtils"
 
 interface SiteInfoProps {
   site: DisplaySiteData
@@ -85,7 +88,9 @@ export default function SiteInfo({ site }: SiteInfoProps) {
           </Tooltip>
           {site.id === detectedAccountId && (
             <Tooltip content={t("list.site.currentSiteExists")} position="top">
-              <span className={`text-yellow-700`}>{t("list.site.currentSite")}</span>
+              <span className={`text-yellow-700`}>
+                {t("list.site.currentSite")}
+              </span>
             </Tooltip>
           )}
           <div className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">

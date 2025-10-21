@@ -52,9 +52,7 @@ const BalanceDisplay: React.FC<{
         className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left`}
         title={t("currency.clickToSwitch", {
           currency:
-            currencyType === "USD"
-              ? t("currency.cny")
-              : t("currency.usd")
+            currencyType === "USD" ? t("currency.cny") : t("currency.usd")
         })}>
         {isConsumption && value > 0 ? "-" : ""}
         {getCurrencySymbol(currencyType)}

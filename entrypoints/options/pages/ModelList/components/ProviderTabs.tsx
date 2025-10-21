@@ -66,20 +66,28 @@ export function ProviderTabs({
   }
 
   // Filter out providers with zero models
-  const filteredProviders = providers.filter(provider => getProviderFilteredCount(provider) > 0)
-  
+  const filteredProviders = providers.filter(
+    (provider) => getProviderFilteredCount(provider) > 0
+  )
+
   useEffect(() => {
     const selectedIndex =
       selectedProvider === "all"
         ? 0
-        : Math.max(0, filteredProviders.indexOf(selectedProvider as ProviderType) + 1)
+        : Math.max(
+            0,
+            filteredProviders.indexOf(selectedProvider as ProviderType) + 1
+          )
     setTimeout(() => scrollToSelectedTab(selectedIndex), 100)
   }, [selectedProvider, filteredProviders])
 
   const selectedIndex =
     selectedProvider === "all"
       ? 0
-      : Math.max(0, filteredProviders.indexOf(selectedProvider as ProviderType) + 1)
+      : Math.max(
+          0,
+          filteredProviders.indexOf(selectedProvider as ProviderType) + 1
+        )
 
   return (
     <Tab.Group
@@ -102,9 +110,7 @@ export function ProviderTabs({
           }>
           <div className="flex items-center justify-center space-x-2">
             <CpuChipIcon className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" />
-            <span>
-              {t("allProviders", { count: baseFilteredModelsCount })}
-            </span>
+            <span>{t("allProviders", { count: baseFilteredModelsCount })}</span>
           </div>
         </Tab>
         {filteredProviders.map((provider) => {

@@ -28,12 +28,22 @@ const AccountInfoDetail: FC<{
 
 export const AccountInfo: FC<{ account: DisplaySiteData }> = ({ account }) => {
   const { t } = useTranslation("ui")
-  
+
   return (
     <div className="mb-4 space-y-1 rounded-lg bg-gray-50 dark:bg-dark-bg-secondary p-3 text-sm">
-      <AccountInfoDetail label={t("dialog.delete.siteName")} value={account.name} />
-      <AccountInfoDetail label={t("dialog.delete.username")} value={account.username} />
-      <AccountInfoDetail label={t("dialog.delete.siteUrl")} value={account.baseUrl} isUrl />
+      <AccountInfoDetail
+        label={t("dialog.delete.siteName")}
+        value={account.name}
+      />
+      <AccountInfoDetail
+        label={t("dialog.delete.username")}
+        value={account.username}
+      />
+      <AccountInfoDetail
+        label={t("dialog.delete.siteUrl")}
+        value={account.baseUrl}
+        isUrl
+      />
     </div>
   )
 }

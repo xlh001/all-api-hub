@@ -108,7 +108,10 @@ function main() {
         tempWindows.set(requestId, window.id)
         sendResponse({ success: true, windowId: window.id })
       } else {
-        sendResponse({ success: false, error: t("messages:background.cannotCreateWindow") })
+        sendResponse({
+          success: false,
+          error: t("messages:background.cannotCreateWindow")
+        })
       }
     } catch (error) {
       sendResponse({ success: false, error: getErrorMessage(error) })

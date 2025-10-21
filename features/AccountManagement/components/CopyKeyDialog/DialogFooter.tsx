@@ -16,7 +16,9 @@ export function DialogFooter({ tokenCount, onClose }: DialogFooterProps) {
           {tokenCount > 0 && (
             <div className="flex items-center space-x-1.5 text-xs text-gray-500 dark:text-dark-text-secondary">
               <KeyIcon className="w-3 h-3" />
-              <span>{t("ui:dialog.copyKey.totalKeys", { count: tokenCount })}</span>
+              <span>
+                {t("ui:dialog.copyKey.totalKeys", { count: tokenCount })}
+              </span>
             </div>
           )}
         </div>

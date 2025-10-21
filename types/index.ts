@@ -203,11 +203,11 @@ export enum AuthTypeEnum {
 export const CURRENT_CONFIG_VERSION = 1
 
 // Service Response Types
-export * from './serviceResponse';
+export * from "./serviceResponse"
 export type {
   ServiceResponse,
   AccountValidationResponse,
   AccountSaveResponse,
   NewApiResponse,
   AutoDetectError
-} from './serviceResponse';
+} from "./serviceResponse"

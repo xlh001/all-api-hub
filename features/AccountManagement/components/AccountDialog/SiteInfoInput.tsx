@@ -112,9 +112,7 @@ export default function SiteInfoInput({
           <div className="w-full flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md">
             <div className="flex items-center">
               <InformationCircleIcon className="h-4 w-4" />
-              <span className="ml-1">
-                {t("siteInfo.currentSite")}:
-              </span>
+              <span className="ml-1">{t("siteInfo.currentSite")}:</span>
               <Tooltip content={currentTabUrl}>
                 <span className="font-medium max-w-[150px] truncate ml-1">
                   {currentTabUrl || t("siteInfo.unknown")}

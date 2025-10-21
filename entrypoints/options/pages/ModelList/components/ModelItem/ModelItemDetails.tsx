@@ -58,9 +58,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
                         : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400"
                   }`}
                   title={
-                    isClickable
-                      ? t("clickSwitchGroup", { group })
-                      : undefined
+                    isClickable ? t("clickSwitchGroup", { group }) : undefined
                   }>
                   {isCurrentGroup && <TagIcon className="w-3 h-3 mr-1" />}
                   {group}
