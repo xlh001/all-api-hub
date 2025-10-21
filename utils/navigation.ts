@@ -24,7 +24,7 @@ const createActiveTab = async (url: string): Promise<void> => {
  */
 const updateTab = async (
   tabId: number,
-  updateInfo: chrome.tabs.UpdateProperties
+  updateInfo: browser.tabs._UpdateUpdateProperties
 ): Promise<void> => {
   await browser.tabs.update(tabId, updateInfo)
 }
@@ -43,7 +43,7 @@ const focusWindow = async (tab: browser.tabs.Tab) => {
  * @param callback - Function to execute with the query results
  */
 const queryTabs = async (
-  queryInfo: chrome.tabs.QueryInfo,
+  queryInfo: browser.tabs._QueryQueryInfo,
   callback: (tabs: browser.tabs.Tab[]) => void
 ): Promise<void> => {
   try {

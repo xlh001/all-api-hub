@@ -24,14 +24,21 @@ export async function getActiveTabs(): Promise<browser.tabs.Tab[]> {
     }
   } catch (error) {
     // Firefox Android fallback
+    console.debug(
+      "getActiveTabs: currentWindow not supported, falling back to active-only",
+      error
+    )
   }
 
   // Fallback: 只使用 active
   try {
     return await queryTabs({ active: true })
   } catch (error) {
-    // 最后的 fallback: 返回所有标签页
-    return await queryTabs({})
+    console.warn(
+      "getActiveTabs: active query failed, returning empty array",
+      error
+    )
+    return []
   }
 }
 
@@ -59,7 +66,7 @@ export async function createTab(
  */
 export async function updateTab(
   tabId: number,
-  updateInfo: chrome.tabs.UpdateProperties
+  updateInfo: browser.tabs._UpdateUpdateProperties
 ): Promise<browser.tabs.Tab | undefined> {
   return await browser.tabs.update(tabId, updateInfo)
 }
@@ -68,7 +75,7 @@ export async function updateTab(
  * 查询标签页
  */
 export async function queryTabs(
-  queryInfo: chrome.tabs.QueryInfo
+  queryInfo: browser.tabs._QueryQueryInfo
 ): Promise<browser.tabs.Tab[]> {
   return await browser.tabs.query(queryInfo)
 }
@@ -84,6 +91,10 @@ export async function removeTabOrWindow(id: number): Promise<void> {
       return
     } catch (error) {
       // 如果不是窗口 ID，尝试作为标签页 ID
+      console.debug(
+        `removeTabOrWindow: Failed to remove as window (id=${id}), trying as tab`,
+        error
+      )
     }
   }
 
@@ -170,7 +181,7 @@ export function onRuntimeMessage(
  * 返回清理函数
  */
 export function onTabActivated(
-  callback: (activeInfo: chrome.tabs.TabActiveInfo) => void
+  callback: (activeInfo: browser.tabs._OnActivatedActiveInfo) => void
 ): () => void {
   browser.tabs.onActivated.addListener(callback)
   return () => {
@@ -200,7 +211,10 @@ export function onTabUpdated(
  * 返回清理函数
  */
 export function onTabRemoved(
-  callback: (tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => void
+  callback: (
+    tabId: number,
+    removeInfo: browser.tabs._OnRemovedRemoveInfo
+  ) => void
 ): () => void {
   browser.tabs.onRemoved.addListener(callback)
   return () => {
