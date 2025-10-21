@@ -29,7 +29,7 @@ export function TokenListItem({
   const { t } = useTranslation("keyManagement")
 
   return (
-    <div className="flex flex-col space-y-2 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4 hover:border-gray-300 dark:hover:border-blue-500/50 bg-white dark:bg-dark-bg-secondary transition-all duration-200 shadow-sm hover:shadow-md">
+    <div className="flex flex-col gap-2 sm:gap-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-3 sm:p-4 hover:border-gray-300 dark:hover:border-blue-500/50 bg-white dark:bg-dark-bg-secondary transition-all duration-200 shadow-sm hover:shadow-md">
       <TokenHeader
         token={token}
         copyKey={copyKey}
@@ -37,8 +37,8 @@ export function TokenListItem({
         handleDeleteToken={handleDeleteToken}
         account={account}
       />
-      <div className="flex-1">
-        <div className="space-y-2 text-sm text-gray-600 dark:text-dark-text-secondary">
+      <div className="flex-1 min-w-0">
+        <div className="space-y-2 text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary">
           <KeyDisplay
             tokenKey={token.key}
             tokenId={token.id}
