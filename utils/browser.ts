@@ -1,4 +1,4 @@
-export function isFirefox(): boolean {
+export function isFirefoxByUA(): boolean {
   return (
     navigator.userAgent.indexOf(" Firefox/") !== -1 ||
     navigator.userAgent.indexOf(" Gecko/") !== -1
@@ -14,7 +14,7 @@ export function isFirefox(): boolean {
  *
  * @returns {boolean} true if the device is a mobile device, false otherwise.
  */
-export function isMobile(): boolean {
+export function isMobileByUA(): boolean {
   // 检测是否为移动设备，如果不是移动设备则认为是桌面设备
   const userAgent = navigator.userAgent.toLowerCase()
   return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
@@ -28,6 +28,6 @@ export function isMobile(): boolean {
  *
  * Returns a boolean indicating whether the device is a desktop.
  */
-export function isDesktop(): boolean {
-  return !isMobile()
+export function isDesktopByUA(): boolean {
+  return !isMobileByUA()
 }
