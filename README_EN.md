@@ -74,6 +74,7 @@ This extension allows for convenient integrated management of AI relay station a
 - 🤖 **Model Information Viewing** - View supported model information and channels for each site.
 - ⚙️ **Data Import/Export** - Supports data backup and recovery in JSON format.
 - 🔒 **Fully Offline** - The extension works offline, protecting your privacy.
+- 📱 **Mobile Support** - Use on mobile devices via Kiwi Browser or the mobile version of Firefox for a full feature experience.
 
 ## 🖥️ Screenshots
 
