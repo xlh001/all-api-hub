@@ -110,7 +110,7 @@ export default function AccountActionButtons({
   }
 
   const primaryButtonClasses =
-    "flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary transition-colors mr-1"
+    "flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary active:bg-gray-200 dark:active:bg-dark-bg-primary transition-colors mr-0.5 sm:mr-1 touch-manipulation tap-highlight-transparent"
 
   return (
     <div className="flex items-center flex-shrink-0">
@@ -119,7 +119,7 @@ export default function AccountActionButtons({
         onClick={handleCopyUrlLocal}
         className={primaryButtonClasses}
         title={t("actions.copyUrl")}>
-        <LinkIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" />
+        <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-dark-text-secondary" />
       </button>
       <button
         onClick={handleSmartCopyKey}
@@ -127,7 +127,7 @@ export default function AccountActionButtons({
         disabled={isCheckingTokens}
         title={t("actions.copyKey")}>
         <KeyIcon
-          className={`w-4 h-4 text-gray-500 dark:text-dark-text-secondary ${isCheckingTokens ? "opacity-50" : ""}`}
+          className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-dark-text-secondary ${isCheckingTokens ? "opacity-50" : ""}`}
         />
       </button>
       <button
@@ -138,13 +138,13 @@ export default function AccountActionButtons({
         }}
         className={primaryButtonClasses}
         title={t("actions.edit")}>
-        <PencilIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" />
+        <PencilIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-dark-text-secondary" />
       </button>
 
       {/* Secondary Level - Dropdown menu */}
       <Menu as="div" className="relative">
-        <MenuButton className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary transition-colors">
-          <EllipsisHorizontalIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" />
+        <MenuButton className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary active:bg-gray-200 dark:active:bg-dark-bg-primary transition-colors touch-manipulation tap-highlight-transparent">
+          <EllipsisHorizontalIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-dark-text-secondary" />
         </MenuButton>
         <MenuItems
           anchor="bottom end"
