@@ -6,9 +6,15 @@
 // 确保 browser 全局对象可用
 import { isNotEmptyArray } from "~/utils/index"
 
-if (typeof browser === "undefined") {
-  // @ts-ignore
-  globalThis.browser = chrome
+if (typeof (globalThis as any).browser === "undefined") {
+  // Prefer chrome if present; otherwise leave undefined to fail fast where appropriate
+  if (typeof (globalThis as any).chrome !== "undefined") {
+    // @ts-ignore
+    ;(globalThis as any).browser = (globalThis as any).chrome
+  } else {
+    // Optional: provide a minimal stub or log for non-extension environments
+    console.warn("browser API unavailable: running outside extension context?")
+  }
 }
 
 /**
