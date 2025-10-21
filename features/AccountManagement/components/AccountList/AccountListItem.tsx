@@ -22,14 +22,16 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
 
     return (
       <div
-        className={`px-4 py-3 border-b border-gray-50 dark:border-dark-bg-tertiary transition-colors relative group ${
+        className={`px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-50 dark:border-dark-bg-tertiary transition-colors relative group touch-manipulation ${
           site.id === detectedAccount?.id
             ? "bg-blue-50 dark:bg-blue-900/50"
-            : "hover:bg-gray-25 dark:hover:bg-dark-bg-secondary"
+            : "hover:bg-gray-25 dark:hover:bg-dark-bg-secondary active:bg-gray-50 dark:active:bg-dark-bg-tertiary"
         }`}
         onMouseEnter={() => handleMouseEnter(site.id)}
-        onMouseLeave={handleMouseLeave}>
-        <div className="flex items-center space-x-2 min-w-0">
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={() => handleMouseEnter(site.id)}
+        onTouchEnd={handleMouseLeave}>
+        <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
           <SiteInfo site={site} />
 
           {hoveredSiteId === site.id && (
