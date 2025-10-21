@@ -7,6 +7,12 @@ import {
 } from "../services/autoRefreshService.ts"
 import { migrateAccountsConfig } from "../services/configMigration.ts"
 import { getSiteType } from "../services/detectSiteType.ts"
+import {
+  onInstalled,
+  onStartup,
+  onTabRemoved,
+  onWindowRemoved
+} from "../utils/browserApi.ts"
 import { getErrorMessage } from "../utils/error.ts"
 
 export default defineBackground(() => {
@@ -19,13 +25,13 @@ function main() {
   const tempWindows = new Map<string, number>()
 
   // 插件启动时初始化自动刷新服务
-  chrome.runtime.onStartup.addListener(async () => {
+  onStartup(async () => {
     console.log("[Background] 插件启动，初始化自动刷新服务")
     await autoRefreshService.initialize()
   })
 
   // 插件安装时初始化自动刷新服务
-  chrome.runtime.onInstalled.addListener(async (details) => {
+  onInstalled(async (details) => {
     console.log("[Background] 插件安装/更新，初始化自动刷新服务")
     await autoRefreshService.initialize()
 
@@ -80,19 +86,17 @@ function main() {
   })
 
   // 监听窗口/标签页关闭事件，清理记录
-  if (chrome.windows) {
-    chrome.windows.onRemoved.addListener((windowId) => {
-      for (const [requestId, storedId] of tempWindows.entries()) {
-        if (storedId === windowId) {
-          tempWindows.delete(requestId)
-          break
-        }
+  onWindowRemoved((windowId) => {
+    for (const [requestId, storedId] of tempWindows.entries()) {
+      if (storedId === windowId) {
+        tempWindows.delete(requestId)
+        break
       }
-    })
-  }
+    }
+  })
 
   // 手机: 监听标签页关闭
-  chrome.tabs.onRemoved.addListener((tabId) => {
+  onTabRemoved((tabId) => {
     for (const [requestId, storedId] of tempWindows.entries()) {
       if (storedId === tabId) {
         tempWindows.delete(requestId)
@@ -129,7 +133,7 @@ function main() {
         }
       } else {
         // 手机: 使用标签页
-        const tab = await chrome.tabs.create({ url, active: false })
+        const tab = await browser.tabs.create({ url, active: false })
         if (tab.id) {
           tempWindows.set(requestId, tab.id)
           sendResponse({ success: true, tabId: tab.id })
@@ -156,7 +160,7 @@ function main() {
           await chrome.windows.remove(id)
         } else {
           // 手机: 关闭标签页
-          await chrome.tabs.remove(id)
+          await browser.tabs.remove(id)
         }
         tempWindows.delete(requestId)
       }
@@ -221,7 +225,7 @@ function main() {
         tabId = window.tabs[0].id
       } else {
         // 手机: 使用标签页
-        const tab = await chrome.tabs.create({ url, active: false })
+        const tab = await browser.tabs.create({ url, active: false })
         if (!tab.id) {
           throw new Error(t("messages:background.cannotCreateWindowOrTab"))
         }
@@ -245,7 +249,7 @@ function main() {
       if (chrome.windows) {
         await chrome.windows.remove(id)
       } else {
-        await chrome.tabs.remove(id)
+        await browser.tabs.remove(id)
       }
       tempWindows.delete(requestId)
 
@@ -267,7 +271,7 @@ function main() {
           if (chrome.windows) {
             await chrome.windows.remove(storedId)
           } else {
-            await chrome.tabs.remove(storedId)
+            await browser.tabs.remove(storedId)
           }
           tempWindows.delete(requestId)
         } catch (cleanupError) {
@@ -287,21 +291,21 @@ function waitForTabComplete(tabId: number): Promise<void> {
     }, 10000) // 10秒超时
 
     const checkStatus = () => {
-      chrome.tabs.get(tabId, (tab) => {
-        if (chrome.runtime.lastError) {
+      browser.tabs
+        .get(tabId)
+        .then((tab) => {
+          if (tab.status === "complete") {
+            clearTimeout(timeout)
+            // 再等待一秒确保页面完全加载
+            setTimeout(resolve, 1000)
+          } else {
+            setTimeout(checkStatus, 100)
+          }
+        })
+        .catch((error) => {
           clearTimeout(timeout)
-          reject(new Error(chrome.runtime.lastError.message))
-          return
-        }
-
-        if (tab.status === "complete") {
-          clearTimeout(timeout)
-          // 再等待一秒确保页面完全加载
-          setTimeout(resolve, 1000)
-        } else {
-          setTimeout(checkStatus, 100)
-        }
-      })
+          reject(error)
+        })
     }
 
     checkStatus()

@@ -1,17 +1,20 @@
 import { getSiteApiRouter } from "~/constants/siteType"
 import type { DisplaySiteData } from "~/types"
+import {
+  createTab as createTabApi,
+  focusTab,
+  getExtensionURL
+} from "~/utils/browserApi"
 import { joinUrl } from "~/utils/url"
 
-import getURL = chrome.runtime.getURL
-
-const OPTIONS_PAGE_URL = chrome.runtime.getURL("options.html")
+const OPTIONS_PAGE_URL = getExtensionURL("options.html")
 
 /**
  * Creates a new tab with the specified URL
  * @param url - The URL to open in the new tab
  */
-const createTab = async (url: string): Promise<void> => {
-  await browser.tabs.create({ url, active: true })
+const createActiveTab = async (url: string): Promise<void> => {
+  await createTabApi(url, true)
 }
 
 /**
@@ -31,14 +34,7 @@ const updateTab = async (
  * @param tab
  */
 const focusWindow = async (tab: browser.tabs.Tab) => {
-  // 先聚焦窗口 （Android 不支持 windows API
-  if (tab.windowId != null) {
-    await browser.windows.update(tab.windowId, { focused: true })
-  }
-  // 再激活 tab
-  if (tab.id != null) {
-    await browser.tabs.update(tab.id, { active: true })
-  }
+  await focusTab(tab)
 }
 
 /**
@@ -94,7 +90,7 @@ export const openOrFocusOptionsPage = (hash: string) => {
       updateTab(optionsPageTab.id, { active: true, url: urlWithHash })
       focusWindow(optionsPageTab)
     } else {
-      createTab(urlWithHash)
+      createActiveTab(urlWithHash)
     }
   })
 }
@@ -114,16 +110,16 @@ export const openSidePanel = () => {
 
 export const openKeysPage = async (accountId?: string) => {
   const url = accountId
-    ? getURL(`options.html#keys?accountId=${accountId}`)
-    : getURL("options.html#keys")
-  await createTab(url)
+    ? getExtensionURL(`options.html#keys?accountId=${accountId}`)
+    : getExtensionURL("options.html#keys")
+  await createActiveTab(url)
 }
 
 export const openModelsPage = async (accountId?: string) => {
   const url = accountId
-    ? getURL(`options.html#models?accountId=${accountId}`)
-    : getURL("options.html#models")
-  await createTab(url)
+    ? getExtensionURL(`options.html#models?accountId=${accountId}`)
+    : getExtensionURL("options.html#models")
+  await createActiveTab(url)
 }
 
 export const openUsagePage = async (account: DisplaySiteData) => {
@@ -131,7 +127,7 @@ export const openUsagePage = async (account: DisplaySiteData) => {
     account.baseUrl,
     getSiteApiRouter(account.siteType).usagePath
   )
-  await createTab(logUrl)
+  await createActiveTab(logUrl)
 }
 
 export const openCheckInPage = async (
@@ -141,5 +137,5 @@ export const openCheckInPage = async (
   const checkInUrl =
     targetUrl ||
     joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
-  await createTab(checkInUrl)
+  await createActiveTab(checkInUrl)
 }
