@@ -1,7 +1,10 @@
 import { t } from "i18next"
 
 import { accountStorage } from "../services/accountStorage"
-import { autoRefreshService, handleAutoRefreshMessage } from "../services/autoRefreshService"
+import {
+  autoRefreshService,
+  handleAutoRefreshMessage
+} from "../services/autoRefreshService"
 import { migrateAccountsConfig } from "../services/configMigration"
 import { getSiteType } from "../services/detectSiteType"
 import {

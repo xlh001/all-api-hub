@@ -9,7 +9,11 @@
  */
 import { t } from "i18next"
 
-import { getActiveTabs, getBrowserTabs, sendRuntimeMessage } from "~/utils/browserApi"
+import {
+  getActiveTabs,
+  getBrowserTabs,
+  sendRuntimeMessage
+} from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 
 import { fetchUserInfo } from "./apiService"
