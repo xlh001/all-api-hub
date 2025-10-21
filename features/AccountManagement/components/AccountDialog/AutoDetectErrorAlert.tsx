@@ -29,7 +29,7 @@ export default function AutoDetectErrorAlert({
       onHelpClick()
     } else if (error.helpDocUrl) {
       // 默认行为：打开帮助文档
-      chrome.tabs.create({ url: error.helpDocUrl })
+      browser.tabs.create({ url: error.helpDocUrl, active: true })
     }
   }
 

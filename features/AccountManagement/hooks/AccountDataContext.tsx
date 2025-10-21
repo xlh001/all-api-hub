@@ -235,23 +235,32 @@ export const AccountDataProvider = ({
     const onActivated = () => {
       checkCurrentTab()
     }
-    chrome.tabs.onActivated.addListener(onActivated)
+    browser.tabs.onActivated.addListener(onActivated)
 
     // Tab URL 或状态更新时检测（只对当前 tab）
-    const onUpdated = (tabId: number, _changeInfo: any, _tab: any) => {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const onUpdated = async (tabId: number, _changeInfo: any, _tab: any) => {
+      try {
+        const tabs = await browser.tabs.query({
+          active: true,
+          currentWindow: true
+        })
         if (tabs[0]?.id === tabId) {
           checkCurrentTab()
         }
-      })
+      } catch (error) {
+        const tabs = await browser.tabs.query({ active: true })
+        if (tabs[0]?.id === tabId) {
+          checkCurrentTab()
+        }
+      }
     }
 
-    chrome.tabs.onUpdated.addListener(onUpdated)
+    browser.tabs.onUpdated.addListener(onUpdated)
 
     // 清理监听器
     return () => {
-      chrome.tabs.onActivated.removeListener(onActivated)
-      chrome.tabs.onUpdated.removeListener(onUpdated)
+      browser.tabs.onActivated.removeListener(onActivated)
+      browser.tabs.onUpdated.removeListener(onUpdated)
     }
   }, [accounts, checkCurrentTab])
 

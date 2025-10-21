@@ -119,9 +119,12 @@ export function useAccountDialog({
         loadAccountData(account.id)
       } else {
         // Get current tab URL for add mode
-        chrome.tabs.query(
-          { active: true, currentWindow: true },
-          async (tabs) => {
+        ;(async () => {
+          try {
+            const tabs = await browser.tabs.query({
+              active: true,
+              currentWindow: true
+            })
             const tab = tabs[0]
             if (tab.url) {
               try {
@@ -142,8 +145,24 @@ export function useAccountDialog({
                 setSiteName("")
               }
             }
+          } catch (error) {
+            // Fallback for Firefox Android
+            try {
+              const tabs = await browser.tabs.query({ active: true })
+              const tab = tabs[0]
+              if (tab.url) {
+                const urlObj = new URL(tab.url)
+                const baseUrl = `${urlObj.protocol}//${urlObj.host}`
+                if (baseUrl.startsWith("http")) {
+                  setCurrentTabUrl(baseUrl)
+                  setSiteName(await getSiteName(tab))
+                }
+              }
+            } catch (fallbackError) {
+              console.log("Failed to get current tab:", fallbackError)
+            }
           }
-        )
+        })()
       }
     }
   }, [isOpen, mode, account, resetForm, loadAccountData])

@@ -412,7 +412,7 @@ function IsNotDefaultSiteName(siteName: string) {
   return !defaultSiteNameList.includes(siteName)
 }
 
-export async function getSiteName(tab: chrome.tabs.Tab) {
+export async function getSiteName(tab: browser.tabs.Tab) {
   let siteName = ""
   // 优先从标题获取
   const tabTitle = tab.title

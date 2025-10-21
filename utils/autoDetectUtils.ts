@@ -122,7 +122,7 @@ export function getLoginUrl(siteUrl: string): string {
 }
 
 // 打开新标签页进行登录
-export function openLoginTab(siteUrl: string): void {
+export async function openLoginTab(siteUrl: string): Promise<void> {
   const loginUrl = getLoginUrl(siteUrl)
-  chrome.tabs.create({ url: loginUrl })
+  await browser.tabs.create({ url: loginUrl, active: true })
 }
