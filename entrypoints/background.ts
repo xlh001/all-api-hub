@@ -217,12 +217,22 @@ function main() {
           focused: false
         })
 
-        if (!window?.id || !window.tabs?.[0]?.id) {
+        if (!window?.id) {
           throw new Error(t("messages:background.cannotCreateWindowOrTab"))
         }
 
         id = window.id
-        tabId = window.tabs[0].id
+
+        // 获取新窗口中的活动标签页
+        const tabs = await browser.tabs.query({
+          windowId: window.id,
+          active: true
+        })
+        tabId = tabs[0]?.id
+
+        if (!tabId) {
+          throw new Error(t("messages:background.cannotCreateWindowOrTab"))
+        }
       } else {
         // 手机: 使用标签页
         const tab = await createTab(url, false)
