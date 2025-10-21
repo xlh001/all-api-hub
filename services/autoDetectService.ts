@@ -9,11 +9,7 @@
  */
 import { t } from "i18next"
 
-import {
-  getActiveTabs,
-  getBrowserTabs,
-  sendRuntimeMessage
-} from "~/utils/browserApi"
+import { getActiveTabs, getBrowserTabs, sendRuntimeMessage } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 
 import { fetchUserInfo } from "./apiService"
@@ -238,10 +234,11 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
     try {
       // 手机 不支持 currentWindow，需要 fallback
       let tabs = await getBrowserTabs()
+      const currentTab = tabs.find((t) => t.active) ?? tabs[0]
 
-      if (tabs && tabs.length > 0 && tabs[0]?.url) {
+      if (currentTab?.url) {
         // 检查当前标签页是否是目标站点
-        const currentUrl = new URL(tabs[0].url)
+        const currentUrl = new URL(currentTab.url)
         const targetUrl = new URL(url)
 
         if (currentUrl.origin === targetUrl.origin) {
