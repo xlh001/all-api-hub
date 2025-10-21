@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
-import { isFirefox } from "~/utils/browser"
+import { isDesktop, isFirefox } from "~/utils/browser"
 import { openKeysPage, openModelsPage } from "~/utils/navigation"
 
 import { showFirefoxWarningDialog } from "./FirefoxAddAccountWarningDialog/showFirefoxWarningDialog"
@@ -19,7 +19,7 @@ export default function ActionButtons({
   const { openAddAccount } = useDialogStateContext()
 
   const handleAddAccountClick = () => {
-    if (isFirefox() && !inSidePanel) {
+    if (isFirefox() && isDesktop() && !inSidePanel) {
       showFirefoxWarningDialog()
     } else {
       openAddAccount()
