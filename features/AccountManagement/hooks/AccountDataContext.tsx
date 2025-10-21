@@ -253,7 +253,7 @@ export const AccountDataProvider = ({
       cleanupActivated()
       cleanupUpdated()
     }
-  }, [accounts, checkCurrentTab])
+  }, [checkCurrentTab])
 
   // 监听后台自动刷新的更新通知
   useEffect(() => {
