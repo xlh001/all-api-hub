@@ -70,9 +70,11 @@ export default function HeaderSection() {
           <button
             onClick={handleGlobalRefresh}
             disabled={isRefreshing}
-            className={`p-1.5 sm:p-2 text-gray-400 dark:text-dark-text-tertiary hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary border border-gray-200 dark:border-dark-bg-tertiary touch-manipulation tap-highlight-transparent ${isRefreshing ? "animate-spin" : ""}`}
+            className="p-1.5 sm:p-2 text-gray-400 dark:text-dark-text-tertiary hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary border border-gray-200 dark:border-dark-bg-tertiary touch-manipulation tap-highlight-transparent"
             title={t("common:actions.refresh")}>
-            <ArrowPathIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <ArrowPathIcon
+              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
           </button>
         </Tooltip>
         <button
