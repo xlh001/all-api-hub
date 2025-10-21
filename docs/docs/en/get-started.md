@@ -1,6 +1,6 @@
 # Get Started
 
-An open-source browser extension designed to optimize the experience of managing AI relay station accounts like New API. Users can easily centralize management and view account balances, models, and keys, as well as automatically add new sites.
+An open-source browser extension designed to optimize the experience of managing AI relay station accounts like New API. Users can easily centralize management and view account balances, models, and keys, as well as automatically add new sites. The extension is also available on mobile devices via Kiwi Browser or the mobile version of Firefox.
 
 ## 1. Download
 
