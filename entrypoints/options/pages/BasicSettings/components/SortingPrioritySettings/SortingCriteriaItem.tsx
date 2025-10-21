@@ -31,17 +31,17 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="mb-2 flex items-center rounded-lg border border-gray-200 dark:border-dark-bg-tertiary bg-gray-50 dark:bg-dark-bg-tertiary p-4 cursor-move hover:bg-gray-100 dark:hover:bg-dark-bg-secondary transition-colors">
-      <div className="flex-grow">
-        <div className="font-medium text-gray-900 dark:text-dark-text-primary">
+      className="mb-2 flex items-center rounded-lg border border-gray-200 dark:border-dark-bg-tertiary bg-gray-50 dark:bg-dark-bg-tertiary p-3 sm:p-4 cursor-move hover:bg-gray-100 dark:hover:bg-dark-bg-secondary transition-colors touch-manipulation">
+      <div className="flex-grow min-w-0 mr-2 sm:mr-3">
+        <div className="font-medium text-sm sm:text-base text-gray-900 dark:text-dark-text-primary truncate">
           {item.label}
         </div>
-        <div className="text-sm text-gray-500 dark:text-dark-text-secondary">
+        <div className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-secondary truncate">
           {item.description}
         </div>
       </div>
-      <div className="ml-4">
-        <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-300">
+      <div className="shrink-0">
+        <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 sm:px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-300 whitespace-nowrap">
           {t(`sorting.priority`)}: {item.priority + 1}
         </span>
       </div>
