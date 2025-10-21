@@ -71,7 +71,7 @@ const ThemeToggle = () => {
               key={mode}
               onClick={() => handleThemeChange(mode)}
               className={`
-                relative p-2 sm:p-1 text-sm font-medium rounded-md transition-all duration-200
+                relative p-2 text-sm font-medium rounded-md transition-all duration-200
                 focus:outline-none focus:ring-2 focus:ring-offset-1
                 ${
                   isActive
