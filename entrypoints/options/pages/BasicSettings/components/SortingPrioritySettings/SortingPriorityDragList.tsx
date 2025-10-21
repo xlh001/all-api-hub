@@ -1,4 +1,16 @@
-import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core"
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent
+} from "@dnd-kit/core"
+import {
+  restrictToVerticalAxis,
+  restrictToWindowEdges
+} from "@dnd-kit/modifiers"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 import type { SortingFieldConfig } from "~/types/sorting"
@@ -19,8 +31,27 @@ export function SortingPriorityDragList({
   items,
   onDragEnd
 }: SortingPriorityDragListProps) {
+  // 自定义传感器配置，优化移动端体验
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8 // 需要移动8px才触发拖动，避免误触
+      }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // 250ms后触发拖动，避免与点击事件冲突
+        tolerance: 5 // 允许5px的移动容差
+      }
+    })
+  )
+
   return (
-    <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={onDragEnd}
+      modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
       <SortableContext
         items={items.map((i) => i.id)}
         strategy={verticalListSortingStrategy}>

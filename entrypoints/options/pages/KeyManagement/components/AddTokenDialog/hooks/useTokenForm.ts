@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 
-import { AccountToken } from "../../../type.ts"
+import { AccountToken } from "../../../type"
 
 // We duplicate some types here to avoid circular dependencies
 // if we were to import them directly from the AddTokenDialog component.

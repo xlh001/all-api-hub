@@ -8,7 +8,7 @@ import { createApiToken, updateApiToken } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import type { DisplaySiteData } from "~/types"
 
-import { AccountToken } from "../../type.ts"
+import { AccountToken } from "../../type"
 import { DialogHeader } from "./DialogHeader"
 import { FormActions } from "./FormActions"
 import { useTokenData } from "./hooks/useTokenData"

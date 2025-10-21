@@ -15,12 +15,12 @@ export default function AutoDetectErrorAlert({
 }: AutoDetectErrorProps) {
   const { t } = useTranslation("accountDialog")
 
-  const handleActionClick = () => {
+  const handleActionClick = async () => {
     if (onActionClick) {
       onActionClick()
     } else if (error.type === "unauthorized" && siteUrl) {
       // 默认行为：打开登录页面
-      openLoginTab(siteUrl)
+      await openLoginTab(siteUrl)
     }
   }
 
@@ -29,7 +29,7 @@ export default function AutoDetectErrorAlert({
       onHelpClick()
     } else if (error.helpDocUrl) {
       // 默认行为：打开帮助文档
-      chrome.tabs.create({ url: error.helpDocUrl })
+      browser.tabs.create({ url: error.helpDocUrl, active: true })
     }
   }
 

@@ -48,6 +48,8 @@ features:
     details: 能够智能识别并获取站点的真实名称，而非简单显示域名，提升了可读性。
   - title: WebDav 数据备份与恢复
     details: 支持通过 WebDav 备份和恢复所有账号与设置，保障数据安全并实现跨设备同步。
+  - title: 移动端支持
+    details: 支持在移动设备上通过 Kiwi 浏览器或手机版 Firefox 使用，完整功能体验。
   - title: 手动添加站点
     details: 支持手动添加任意中转站点，解决了自动识别失败时无法添加的问题，增强了灵活性。
   - title: 深色模式

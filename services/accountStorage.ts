@@ -3,7 +3,7 @@ import merge from "lodash-es/merge"
 
 import { Storage } from "@plasmohq/storage"
 
-import { UI_CONSTANTS } from "~/constants/ui.ts"
+import { UI_CONSTANTS } from "~/constants/ui"
 import {
   AuthTypeEnum,
   SiteHealthStatus,
@@ -14,7 +14,7 @@ import {
   type StorageConfig
 } from "~/types"
 
-import { getErrorMessage } from "../utils/error.ts" // 存储键名常量
+import { getErrorMessage } from "../utils/error" // 存储键名常量
 import {
   fetchTodayIncome,
   refreshAccountData,

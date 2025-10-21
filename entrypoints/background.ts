@@ -1,13 +1,24 @@
 import { t } from "i18next"
 
-import { accountStorage } from "../services/accountStorage.ts"
+import { accountStorage } from "../services/accountStorage"
 import {
   autoRefreshService,
   handleAutoRefreshMessage
-} from "../services/autoRefreshService.ts"
-import { migrateAccountsConfig } from "../services/configMigration.ts"
-import { getSiteType } from "../services/detectSiteType.ts"
-import { getErrorMessage } from "../utils/error.ts"
+} from "../services/autoRefreshService"
+import { migrateAccountsConfig } from "../services/configMigration"
+import { getSiteType } from "../services/detectSiteType"
+import {
+  createTab,
+  createWindow,
+  hasWindowsAPI,
+  onInstalled,
+  onRuntimeMessage,
+  onStartup,
+  onTabRemoved,
+  onWindowRemoved,
+  removeTabOrWindow
+} from "../utils/browserApi"
+import { getErrorMessage } from "../utils/error"
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id })
@@ -19,13 +30,13 @@ function main() {
   const tempWindows = new Map<string, number>()
 
   // 插件启动时初始化自动刷新服务
-  chrome.runtime.onStartup.addListener(async () => {
+  onStartup(async () => {
     console.log("[Background] 插件启动，初始化自动刷新服务")
     await autoRefreshService.initialize()
   })
 
   // 插件安装时初始化自动刷新服务
-  chrome.runtime.onInstalled.addListener(async (details) => {
+  onInstalled(async (details) => {
     console.log("[Background] 插件安装/更新，初始化自动刷新服务")
     await autoRefreshService.initialize()
 
@@ -47,7 +58,7 @@ function main() {
   })
 
   // 处理来自 popup 的消息
-  chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  onRuntimeMessage((request, _sender, sendResponse) => {
     if (request.action === "openTempWindow") {
       handleOpenTempWindow(request, sendResponse)
       return true // 保持异步响应通道
@@ -79,10 +90,20 @@ function main() {
     }
   })
 
-  // 监听窗口关闭事件，清理记录
-  chrome.windows.onRemoved.addListener((windowId) => {
-    for (const [requestId, storedWindowId] of tempWindows.entries()) {
-      if (storedWindowId === windowId) {
+  // 监听窗口/标签页关闭事件，清理记录
+  onWindowRemoved((windowId) => {
+    for (const [requestId, storedId] of tempWindows.entries()) {
+      if (storedId === windowId) {
+        tempWindows.delete(requestId)
+        break
+      }
+    }
+  })
+
+  // 手机: 监听标签页关闭
+  onTabRemoved((tabId) => {
+    for (const [requestId, storedId] of tempWindows.entries()) {
+      if (storedId === tabId) {
         tempWindows.delete(requestId)
         break
       }
@@ -94,24 +115,39 @@ function main() {
     try {
       const { url, requestId } = request
 
-      // 创建新窗口
-      const window = await chrome.windows.create({
-        url: url,
-        type: "popup",
-        width: 800,
-        height: 600,
-        focused: false
-      })
-
-      if (window.id) {
-        // 记录窗口ID
-        tempWindows.set(requestId, window.id)
-        sendResponse({ success: true, windowId: window.id })
-      } else {
-        sendResponse({
-          success: false,
-          error: t("messages:background.cannotCreateWindow")
+      // 手机 不支持 windows API，使用 tabs 替代
+      if (hasWindowsAPI()) {
+        // 创建新窗口
+        const window = await createWindow({
+          url: url,
+          type: "popup",
+          width: 800,
+          height: 600,
+          focused: false
         })
+
+        if (window?.id) {
+          // 记录窗口ID
+          tempWindows.set(requestId, window.id)
+          sendResponse({ success: true, windowId: window.id })
+        } else {
+          sendResponse({
+            success: false,
+            error: t("messages:background.cannotCreateWindow")
+          })
+        }
+      } else {
+        // 手机: 使用标签页
+        const tab = await createTab(url, false)
+        if (tab?.id) {
+          tempWindows.set(requestId, tab.id)
+          sendResponse({ success: true, tabId: tab.id })
+        } else {
+          sendResponse({
+            success: false,
+            error: t("messages:background.cannotCreateWindow")
+          })
+        }
       }
     } catch (error) {
       sendResponse({ success: false, error: getErrorMessage(error) })
@@ -122,10 +158,10 @@ function main() {
   async function handleCloseTempWindow(request: any, sendResponse: Function) {
     try {
       const { requestId } = request
-      const windowId = tempWindows.get(requestId)
+      const id = tempWindows.get(requestId)
 
-      if (windowId) {
-        await chrome.windows.remove(windowId)
+      if (id) {
+        await removeTabOrWindow(id)
         tempWindows.delete(requestId)
       }
 
@@ -140,14 +176,14 @@ function main() {
     const { url, requestId } = request
 
     try {
-      const [userDate, siteType] = await Promise.all([
+      const [userData, siteType] = await Promise.all([
         getSiteDataFromTab(url, requestId),
         getSiteType(url)
       ])
 
       const result = {
         siteType,
-        ...userDate
+        ...(userData ?? {})
       }
       console.log("自动检测结果:", result)
 
@@ -167,57 +203,81 @@ function main() {
    * @param requestId
    */
   async function getSiteDataFromTab(url: string, requestId: string) {
-    try {
-      // 1. 打开临时窗口
-      const window = await chrome.windows.create({
-        url: url,
-        type: "popup",
-        width: 800,
-        height: 600,
-        focused: false
-      })
+    let id: number | undefined
+    let tabId: number | undefined
 
-      if (!window.id || !window.tabs?.[0]?.id) {
-        throw new Error(t("messages:background.cannotCreateWindowOrTab"))
+    try {
+      // 1. 打开临时窗口或标签页
+      if (hasWindowsAPI()) {
+        const window = await createWindow({
+          url: url,
+          type: "popup",
+          width: 800,
+          height: 600,
+          focused: false
+        })
+
+        if (!window?.id) {
+          throw new Error(t("messages:background.cannotCreateWindowOrTab"))
+        }
+
+        id = window.id
+
+        // 获取新窗口中的活动标签页
+        const tabs = await browser.tabs.query({
+          windowId: window.id,
+          active: true
+        })
+        tabId = tabs[0]?.id
+
+        if (!tabId) {
+          throw new Error(t("messages:background.cannotCreateWindowOrTab"))
+        }
+      } else {
+        // 手机: 使用标签页
+        const tab = await createTab(url, false)
+        if (!tab?.id) {
+          throw new Error(t("messages:background.cannotCreateWindowOrTab"))
+        }
+        id = tab.id
+        tabId = tab.id
       }
 
-      const windowId = window.id
-      const tabId = window.tabs[0].id
-
-      // 记录窗口
-      tempWindows.set(requestId, windowId)
+      // 记录ID
+      tempWindows.set(requestId, id)
 
       // 2. 等待页面加载完成
       await waitForTabComplete(tabId)
 
       // 3. 通过 content script 获取用户信息
-      const userResponse = await chrome.tabs.sendMessage(tabId, {
+      const userResponse = await browser.tabs.sendMessage(tabId, {
         action: "getUserFromLocalStorage",
         url: url
       })
 
-      if (!userResponse.success) {
-        console.log(userResponse.error)
-      }
-
-      // 4. 关闭临时窗口
-      await chrome.windows.remove(windowId)
+      // 4. 关闭临时窗口或标签页
+      await removeTabOrWindow(id)
       tempWindows.delete(requestId)
 
-      // 5. 返回结果
+      // 5. 检查响应并返回结果
+      if (!userResponse || !userResponse.success) {
+        console.log("获取用户信息失败:", userResponse?.error)
+        return null
+      }
+
       return {
-        userId: userResponse.data.userId,
-        user: userResponse.data.user
+        userId: userResponse.data?.userId,
+        user: userResponse.data?.user
       }
     } catch (error) {
-      // 清理窗口
-      const windowId = tempWindows.get(requestId)
-      if (windowId) {
+      // 清理窗口或标签页
+      const storedId = tempWindows.get(requestId)
+      if (storedId) {
         try {
-          await chrome.windows.remove(windowId)
+          await removeTabOrWindow(storedId)
           tempWindows.delete(requestId)
         } catch (cleanupError) {
-          console.log("清理窗口失败:", cleanupError)
+          console.log("清理失败:", cleanupError)
         }
       }
       return null
@@ -233,21 +293,21 @@ function waitForTabComplete(tabId: number): Promise<void> {
     }, 10000) // 10秒超时
 
     const checkStatus = () => {
-      chrome.tabs.get(tabId, (tab) => {
-        if (chrome.runtime.lastError) {
+      browser.tabs
+        .get(tabId)
+        .then((tab) => {
+          if (tab.status === "complete") {
+            clearTimeout(timeout)
+            // 再等待一秒确保页面完全加载
+            setTimeout(resolve, 1000)
+          } else {
+            setTimeout(checkStatus, 100)
+          }
+        })
+        .catch((error) => {
           clearTimeout(timeout)
-          reject(new Error(chrome.runtime.lastError.message))
-          return
-        }
-
-        if (tab.status === "complete") {
-          clearTimeout(timeout)
-          // 再等待一秒确保页面完全加载
-          setTimeout(resolve, 1000)
-        } else {
-          setTimeout(checkStatus, 100)
-        }
-      })
+          reject(error)
+        })
     }
 
     checkStatus()

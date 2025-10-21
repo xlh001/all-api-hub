@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client"
 
 import "../../utils/i18n" // Import the i18n configuration
 
-import { setDocumentTitle } from "~/utils/documentTitle.ts"
+import { setDocumentTitle } from "~/utils/documentTitle"
 
 import App from "./App.tsx"
 

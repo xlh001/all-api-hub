@@ -22,5 +22,14 @@ export default defineConfig({
         description: "__MSG_manifest_commands_browser_action__"
       }
     }
+  },
+  vite: (env) => {
+    console.log("当前构建模式:", env.mode)
+    return {
+      build: {
+        sourcemap: env.mode === "development" ? "inline" : false,
+        minify: env.mode !== "development"
+      }
+    }
   }
 })

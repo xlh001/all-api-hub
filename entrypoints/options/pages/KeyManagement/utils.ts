@@ -1,7 +1,7 @@
 // 格式化密钥显示
 import { t } from "i18next"
 
-import { UI_CONSTANTS } from "~/constants/ui.ts"
+import { UI_CONSTANTS } from "~/constants/ui"
 
 export const formatKey = (
   key: string,

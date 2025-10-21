@@ -64,8 +64,8 @@ export default function ModelItem({
           : "border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-75"
       }`}>
       {/* 主要信息行 */}
-      <div className="p-4">
-        <div className="flex items-start justify-between">
+      <div className="p-3 sm:p-4">
+        <div className="flex items-start gap-2 min-w-0">
           <ModelItemHeader
             model={model}
             isAvailableForUser={isAvailableForUser}

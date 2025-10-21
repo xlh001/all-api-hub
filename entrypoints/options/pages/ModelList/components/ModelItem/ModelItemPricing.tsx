@@ -35,7 +35,7 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
     <div className="mt-2">
       {tokenBillingType ? (
         // 按量计费 - 横向并排显示价格
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 md:gap-6">
           {/* 输入价格 */}
           <PriceView
             calculatedPrice={calculatedPrice}
@@ -47,12 +47,12 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
 
           {/* 倍率显示 */}
           {showRatioColumn && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500 dark:text-dark-text-tertiary">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary whitespace-nowrap">
                 {t("ratio")}
               </span>
               <span
-                className={`text-sm font-medium ${
+                className={`text-xs sm:text-sm font-medium ${
                   isAvailableForUser
                     ? "text-gray-900 dark:text-dark-text-primary"
                     : "text-gray-500 dark:text-dark-text-tertiary"
@@ -65,8 +65,8 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
       ) : (
         perCallPrice && (
           // 按次计费
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary whitespace-nowrap">
               {t("perCall")}
             </span>
             <ModelItemPerCallPricingView

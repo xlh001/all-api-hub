@@ -1,12 +1,12 @@
 import {
   createContext,
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
-  useState,
-  type ReactNode
+  useState
 } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next" // 1. 定义 Context 的值类型
@@ -22,6 +22,12 @@ import type {
   SortField,
   SortOrder
 } from "~/types"
+import {
+  getActiveTabs,
+  onRuntimeMessage,
+  onTabActivated,
+  onTabUpdated
+} from "~/utils/browserApi"
 import { createDynamicSortComparator } from "~/utils/sortingPriority"
 
 // 1. 定义 Context 的值类型
@@ -94,11 +100,9 @@ export const AccountDataProvider = ({
   const checkCurrentTab = useCallback(async () => {
     setIsDetecting(true)
     try {
-      const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-      })
-      if (tabs[0]?.url) {
+      const tabs = await getActiveTabs()
+
+      if (tabs && tabs.length > 0 && tabs[0]?.url) {
         const existingAccount = await accountStorage.checkUrlExists(tabs[0].url)
         setDetectedAccount(existingAccount)
       } else {
@@ -223,7 +227,6 @@ export const AccountDataProvider = ({
 
     handleRefreshOnOpen()
   }, [handleRefresh, preferences?.refreshOnOpen])
-
   useEffect(() => {
     loadAccountData()
   }, [loadAccountData, refreshKey])
@@ -233,32 +236,28 @@ export const AccountDataProvider = ({
     checkCurrentTab()
 
     // Tab 激活变化时检测
-    const onActivated = () => {
+    const cleanupActivated = onTabActivated(() => {
       checkCurrentTab()
-    }
-    chrome.tabs.onActivated.addListener(onActivated)
+    })
 
     // Tab URL 或状态更新时检测（只对当前 tab）
-    const onUpdated = (tabId: number, _changeInfo: any, _tab: any) => {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]?.id === tabId) {
-          checkCurrentTab()
-        }
-      })
-    }
-
-    chrome.tabs.onUpdated.addListener(onUpdated)
+    const cleanupUpdated = onTabUpdated(async (tabId) => {
+      const tabs = await getActiveTabs()
+      if (tabs[0]?.id === tabId) {
+        checkCurrentTab()
+      }
+    })
 
     // 清理监听器
     return () => {
-      chrome.tabs.onActivated.removeListener(onActivated)
-      chrome.tabs.onUpdated.removeListener(onUpdated)
+      cleanupActivated()
+      cleanupUpdated()
     }
-  }, [accounts, checkCurrentTab])
+  }, [checkCurrentTab])
 
   // 监听后台自动刷新的更新通知
   useEffect(() => {
-    const handleBackgroundRefreshUpdate = (message: any) => {
+    return onRuntimeMessage((message: any) => {
       if (
         message.type === "AUTO_REFRESH_UPDATE" &&
         message.payload.type === "refresh_completed"
@@ -268,13 +267,7 @@ export const AccountDataProvider = ({
         )
         loadAccountData()
       }
-    }
-
-    chrome.runtime.onMessage.addListener(handleBackgroundRefreshUpdate)
-
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleBackgroundRefreshUpdate)
-    }
+    })
   }, [loadAccountData])
 
   const handleSort = useCallback(

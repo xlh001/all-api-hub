@@ -43,9 +43,9 @@ export default function SiteInfo({ site }: SiteInfoProps) {
   }
 
   return (
-    <div className="flex items-center space-x-3 flex-1 min-w-[100px]">
-      <div className="flex-1 min-w-[100px]">
-        <div className="flex items-center space-x-2 mb-0.5">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-full">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5">
           <Tooltip
             content={
               <div className="text-xs">
@@ -88,17 +88,17 @@ export default function SiteInfo({ site }: SiteInfoProps) {
           </Tooltip>
           {site.id === detectedAccountId && (
             <Tooltip content={t("list.site.currentSiteExists")} position="top">
-              <span className={`text-yellow-700`}>
+              <span className="text-yellow-700 text-xs sm:text-sm whitespace-nowrap">
                 {t("list.site.currentSite")}
               </span>
             </Tooltip>
           )}
-          <div className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">
+          <div className="font-medium text-gray-900 dark:text-dark-text-primary text-xs sm:text-sm truncate flex-1 min-w-0">
             <a
               href={site.baseUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:underline">
+              className="hover:underline truncate block">
               {site.name}
             </a>
           </div>
@@ -147,15 +147,15 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             )
           )}
         </div>
-        <div className="text-xs text-gray-500 dark:text-dark-text-secondary truncate ml-4 flex items-start space-x-1">
-          <UserIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
+        <div className="text-[10px] sm:text-xs text-gray-500 dark:text-dark-text-secondary truncate ml-3 sm:ml-4 flex items-start gap-1 min-w-0">
+          <UserIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mt-0.5 flex-shrink-0" />
           <span className="truncate" title={site.username}>
             {site.username}
           </span>
         </div>
         {site.notes && (
-          <div className="text-xs text-gray-500 dark:text-dark-text-secondary truncate ml-4 mt-1 flex items-start space-x-1">
-            <PencilSquareIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
+          <div className="text-[10px] sm:text-xs text-gray-500 dark:text-dark-text-secondary truncate ml-3 sm:ml-4 mt-0.5 sm:mt-1 flex items-start gap-1 min-w-0">
+            <PencilSquareIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mt-0.5 flex-shrink-0" />
             <span className="truncate" title={site.notes}>
               {site.notes}
             </span>

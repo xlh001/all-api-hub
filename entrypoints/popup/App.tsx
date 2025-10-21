@@ -1,6 +1,7 @@
 import "./style.css"
 
 import { UI_CONSTANTS } from "~/constants/ui"
+import { DeviceProvider } from "~/contexts/DeviceContext"
 import {
   UserPreferencesProvider,
   useUserPreferencesContext
@@ -33,11 +34,13 @@ function PopupContent({ inSidePanel = false }) {
 
 function App({ inSidePanel = false }) {
   return (
-    <UserPreferencesProvider>
-      <AccountManagementProvider>
-        <PopupContent inSidePanel={inSidePanel} />
-      </AccountManagementProvider>
-    </UserPreferencesProvider>
+    <DeviceProvider>
+      <UserPreferencesProvider>
+        <AccountManagementProvider>
+          <PopupContent inSidePanel={inSidePanel} />
+        </AccountManagementProvider>
+      </UserPreferencesProvider>
+    </DeviceProvider>
   )
 }
 

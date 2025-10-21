@@ -4,6 +4,12 @@ module.exports = {
   content: ["!./node_modules", "./**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      screens: {
+        xs: "360px",
+        sm: "480px",
+        md: "768px",
+        lg: "1024px"
+      },
       colors: {
         "dark-bg": {
           primary: "#0f172a", // Main background
@@ -22,6 +28,12 @@ module.exports = {
           yellow: "#f59e0b",
           purple: "#a855f7"
         }
+      },
+      spacing: {
+        "safe-top": "env(safe-area-inset-top)",
+        "safe-bottom": "env(safe-area-inset-bottom)",
+        "safe-left": "env(safe-area-inset-left)",
+        "safe-right": "env(safe-area-inset-right)"
       }
     }
   },
@@ -39,6 +51,9 @@ module.exports = {
           "&::-webkit-scrollbar": {
             display: "none"
           }
+        },
+        ".tap-highlight-transparent": {
+          "-webkit-tap-highlight-color": "transparent"
         }
       }
       addUtilities(newUtilities)

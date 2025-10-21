@@ -2,7 +2,7 @@ import { t } from "i18next"
 
 import { fetchUserInfo } from "~/services/apiService"
 
-import { getErrorMessage } from "../utils/error.ts"
+import { getErrorMessage } from "../utils/error"
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -14,7 +14,7 @@ export default defineContentScript({
 function main() {
   console.log("Hello content script!", { id: browser.runtime.id })
   // 监听来自 popup 和 background 的消息
-  chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === "getLocalStorage") {
       try {
         const { key } = request

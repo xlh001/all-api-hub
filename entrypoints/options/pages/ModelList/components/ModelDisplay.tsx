@@ -2,7 +2,7 @@ import { CpuChipIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 import { Virtuoso } from "react-virtuoso"
 
-import { UI_CONSTANTS } from "~/constants/ui.ts"
+import { UI_CONSTANTS } from "~/constants/ui"
 import type { DisplaySiteData } from "~/types"
 
 import ModelItem from "./ModelItem"

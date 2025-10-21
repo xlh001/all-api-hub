@@ -4,6 +4,13 @@ import { openSidePanel } from "~/utils/navigation"
 
 import FirefoxAddAccountWarningDialog from "./index"
 
+/**
+ * Shows a Firefox-specific warning dialog that warns users about
+ * the risks of adding an account in a non-side-panel context.
+ *
+ * @param {function} [onConfirm=openSidePanel] - Called when the user confirms
+ * that they want to add an account in a non-side-panel context.
+ */
 export function showFirefoxWarningDialog(
   onConfirm: () => void = openSidePanel
 ) {

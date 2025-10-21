@@ -17,9 +17,9 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <div className="flex items-center space-x-2">
-      <Languages className="h-[1.2rem] w-[1.2rem]" />
-      <div className="flex bg-gray-100 dark:bg-dark-bg-primary rounded-lg p-1 shadow-sm transition-all duration-200">
+    <div className="flex items-center space-x-1.5 sm:space-x-2">
+      <Languages className="h-4 w-4 sm:h-[1.2rem] sm:w-[1.2rem]" />
+      <div className="flex bg-gray-100 dark:bg-dark-bg-primary rounded-lg p-0.5 sm:p-1 shadow-sm transition-all duration-200">
         {languageOptions.map(({ code, label }) => {
           const isActive = i18n.language === code
           return (
@@ -27,8 +27,9 @@ export function LanguageSwitcher() {
               key={code}
               onClick={() => handleLanguageChange(code)}
               className={`
-                relative px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200
+                relative px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200
                 focus:outline-none focus:ring-2 focus:ring-offset-1
+                touch-manipulation tap-highlight-transparent
                 ${
                   isActive
                     ? "bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary shadow-sm scale-105"

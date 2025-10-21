@@ -1,32 +1,20 @@
 import { getSiteApiRouter } from "~/constants/siteType"
 import type { DisplaySiteData } from "~/types"
+import {
+  createTab as createTabApi,
+  focusTab,
+  getExtensionURL
+} from "~/utils/browserApi"
 import { joinUrl } from "~/utils/url"
 
-import getURL = chrome.runtime.getURL
-
-const OPTIONS_PAGE_URL = chrome.runtime.getURL("options.html")
-
-/**
- * Chrome API Wrapper Functions
- * These functions encapsulate direct Chrome API calls to reduce coupling
- * and provide consistent error handling across the codebase.
- */
-
-/**
- * Handles Chrome API errors
- */
-const handleChromeError = () => {
-  if (chrome.runtime.lastError) {
-    console.error(chrome.runtime.lastError.message)
-  }
-}
+const OPTIONS_PAGE_URL = getExtensionURL("options.html")
 
 /**
  * Creates a new tab with the specified URL
  * @param url - The URL to open in the new tab
  */
-const createTab = (url: string): void => {
-  chrome.tabs.create({ url }, handleChromeError)
+const createActiveTab = async (url: string): Promise<void> => {
+  await createTabApi(url, true)
 }
 
 /**
@@ -34,19 +22,19 @@ const createTab = (url: string): void => {
  * @param tabId - The ID of the tab to update
  * @param updateInfo - The properties to update on the tab
  */
-const updateTab = (
+const updateTab = async (
   tabId: number,
-  updateInfo: chrome.tabs.UpdateProperties
-): void => {
-  chrome.tabs.update(tabId, updateInfo, handleChromeError)
+  updateInfo: browser.tabs._UpdateUpdateProperties
+): Promise<void> => {
+  await browser.tabs.update(tabId, updateInfo)
 }
 
 /**
  * Focuses a window by bringing it to the foreground
- * @param windowId - The ID of the window to focus
+ * @param tab
  */
-const focusWindow = (windowId: number): void => {
-  chrome.windows.update(windowId, { focused: true }, handleChromeError)
+const focusWindow = async (tab: browser.tabs.Tab) => {
+  await focusTab(tab)
 }
 
 /**
@@ -54,16 +42,18 @@ const focusWindow = (windowId: number): void => {
  * @param queryInfo - The query criteria for filtering tabs
  * @param callback - Function to execute with the query results
  */
-const queryTabs = (
-  queryInfo: chrome.tabs.QueryInfo,
-  callback: (tabs: chrome.tabs.Tab[]) => void
-): void => {
-  chrome.tabs.query(queryInfo, (tabs) => {
-    handleChromeError()
+const queryTabs = async (
+  queryInfo: browser.tabs._QueryQueryInfo,
+  callback: (tabs: browser.tabs.Tab[]) => void
+): Promise<void> => {
+  try {
+    const tabs = await browser.tabs.query(queryInfo)
     if (tabs) {
       callback(tabs)
     }
-  })
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 export const openOrFocusOptionsPage = (hash: string) => {
@@ -98,11 +88,9 @@ export const openOrFocusOptionsPage = (hash: string) => {
     // 打开或聚焦
     if (optionsPageTab?.id) {
       updateTab(optionsPageTab.id, { active: true, url: urlWithHash })
-      if (optionsPageTab.windowId) {
-        focusWindow(optionsPageTab.windowId)
-      }
+      focusWindow(optionsPageTab)
     } else {
-      createTab(urlWithHash)
+      createActiveTab(urlWithHash)
     }
   })
 }
@@ -120,34 +108,34 @@ export const openSidePanel = () => {
   window.close()
 }
 
-export const openKeysPage = (accountId?: string) => {
+export const openKeysPage = async (accountId?: string) => {
   const url = accountId
-    ? getURL(`options.html#keys?accountId=${accountId}`)
-    : getURL("options.html#keys")
-  createTab(url)
+    ? getExtensionURL(`options.html#keys?accountId=${accountId}`)
+    : getExtensionURL("options.html#keys")
+  await createActiveTab(url)
 }
 
-export const openModelsPage = (accountId?: string) => {
+export const openModelsPage = async (accountId?: string) => {
   const url = accountId
-    ? getURL(`options.html#models?accountId=${accountId}`)
-    : getURL("options.html#models")
-  createTab(url)
+    ? getExtensionURL(`options.html#models?accountId=${accountId}`)
+    : getExtensionURL("options.html#models")
+  await createActiveTab(url)
 }
 
-export const openUsagePage = (account: DisplaySiteData) => {
+export const openUsagePage = async (account: DisplaySiteData) => {
   const logUrl = joinUrl(
     account.baseUrl,
     getSiteApiRouter(account.siteType).usagePath
   )
-  createTab(logUrl)
+  await createActiveTab(logUrl)
 }
 
-export const openCheckInPage = (
+export const openCheckInPage = async (
   account: DisplaySiteData,
   targetUrl?: string
 ) => {
-  const checkInUrl = targetUrl
-    ? targetUrl
-    : joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
-  createTab(checkInUrl)
+  const checkInUrl =
+    targetUrl ||
+    joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
+  await createActiveTab(checkInUrl)
 }

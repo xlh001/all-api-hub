@@ -1,4 +1,4 @@
-import { getErrorMessage } from "../utils/error.ts"
+import { getErrorMessage } from "../utils/error"
 import { accountStorage } from "./accountStorage"
 import { userPreferences } from "./userPreferences"
 
@@ -178,7 +178,7 @@ export const autoRefreshService = new AutoRefreshService()
 // 消息处理器
 export const handleAutoRefreshMessage = async (
   request: any,
-  sendResponse: Function
+  sendResponse: (response: any) => void
 ) => {
   try {
     switch (request.action) {

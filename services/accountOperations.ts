@@ -5,12 +5,18 @@
 import { t } from "i18next"
 import toast from "react-hot-toast"
 
-import { UI_CONSTANTS } from "~/constants/ui.ts"
-import { createApiToken, fetchAccountTokens } from "~/services/apiService"
+import { UI_CONSTANTS } from "~/constants/ui"
+import { accountStorage } from "~/services/accountStorage"
+import {
+  createApiToken,
+  extractDefaultExchangeRate,
+  fetchAccountTokens
+} from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import { importToNewApi } from "~/services/newApiService"
 import { userPreferences } from "~/services/userPreferences"
 import {
+  AccountValidationResponse,
   ApiToken,
   AuthTypeEnum,
   SiteHealthStatus,
@@ -20,24 +26,22 @@ import {
 } from "~/types"
 import type {
   AccountSaveResponse,
-  AccountValidationResponse,
   NewApiResponse
 } from "~/types/serviceResponse"
 import { analyzeAutoDetectError } from "~/utils/autoDetectUtils"
 
-import { getErrorMessage } from "../utils/error.ts"
-import { accountStorage } from "./accountStorage"
+import { getErrorMessage } from "../utils/error"
 import {
-  extractDefaultExchangeRate,
   fetchAccountData,
   fetchSiteStatus,
   fetchSupportCheckIn,
   fetchUserInfo,
   getOrCreateAccessToken
 } from "./apiService"
+import { autoDetectSmart } from "./autoDetectService"
 
 /**
- * 自动识别账号信息
+ * 智能自动识别账号信息
  * 工作流程：
  * 1. 通过 background script 创建临时窗口访问目标站点
  * 2. 使用 content script 从站点获取用户信息
@@ -58,28 +62,22 @@ export async function autoDetectAccount(
   }
 
   try {
-    // 生成唯一的请求ID
-    const requestId = `auto-detect-${Date.now()}`
+    // 使用智能自动识别服务
+    const detectResult = await autoDetectSmart(url.trim())
 
-    // 尝试通过 background script 自动打开窗口并获取信息
-    const response = await chrome.runtime.sendMessage({
-      action: "autoDetectSite",
-      url: url.trim(),
-      requestId: requestId
-    })
-
-    if (!response.success) {
-      const detailedError = analyzeAutoDetectError(
-        response.error || t("messages:operations.detection.failed")
-      )
+    if (!detectResult.success || !detectResult.data) {
+      const errorMsg =
+        detectResult.error || t("messages:operations.detection.failed")
+      const detailedError = analyzeAutoDetectError(errorMsg)
       return {
         success: false,
-        message: response.error || t("messages:operations.detection.failed"),
+        message: errorMsg,
         detailedError
       }
     }
 
-    const userId = response.data.userId
+    const { userId, siteType } = detectResult.data
+
     if (!userId) {
       const detailedError = analyzeAutoDetectError(
         t("messages:operations.detection.getUserIdFailed")
@@ -140,7 +138,7 @@ export async function autoDetectAccount(
           isCheckedInToday: false,
           customCheckInUrl: ""
         },
-        siteType: response.data.siteType
+        siteType: siteType
       }
     }
   } catch (error) {
@@ -414,7 +412,7 @@ function IsNotDefaultSiteName(siteName: string) {
   return !defaultSiteNameList.includes(siteName)
 }
 
-export async function getSiteName(tab: chrome.tabs.Tab) {
+export async function getSiteName(tab: browser.tabs.Tab) {
   let siteName = ""
   // 优先从标题获取
   const tabTitle = tab.title
