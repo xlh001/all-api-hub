@@ -23,6 +23,7 @@ import type {
   SortOrder
 } from "~/types"
 import { createDynamicSortComparator } from "~/utils/sortingPriority"
+import { getBrowserTabs } from "~/utils/tabs.ts"
 
 // 1. 定义 Context 的值类型
 interface AccountDataContextType {
@@ -94,10 +95,8 @@ export const AccountDataProvider = ({
   const checkCurrentTab = useCallback(async () => {
     setIsDetecting(true)
     try {
-      const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-      })
+      let tabs = await getBrowserTabs()
+
       if (tabs[0]?.url) {
         const existingAccount = await accountStorage.checkUrlExists(tabs[0].url)
         setDetectedAccount(existingAccount)

@@ -46,7 +46,10 @@ const updateTab = (
  * @param windowId - The ID of the window to focus
  */
 const focusWindow = (windowId: number): void => {
-  chrome.windows.update(windowId, { focused: true }, handleChromeError)
+  // Android 不支持 windows API
+  if (chrome.windows) {
+    chrome.windows.update(windowId, { focused: true }, handleChromeError)
+  }
 }
 
 /**
