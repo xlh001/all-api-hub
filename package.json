@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "dev:mobile:firefox": "wxt build -b firefox --mode development",
+    "dev:mobile:firefox": "node scripts/android-dev.js",
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "build:all": "pnpm run build && pnpm run build:firefox",
