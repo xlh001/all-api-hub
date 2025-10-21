@@ -52,9 +52,6 @@ module.exports = {
             display: "none"
           }
         },
-        ".touch-manipulation": {
-          "touch-action": "manipulation"
-        },
         ".tap-highlight-transparent": {
           "-webkit-tap-highlight-color": "transparent"
         }
