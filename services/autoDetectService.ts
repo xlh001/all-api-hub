@@ -38,10 +38,11 @@ export interface UserDataResult {
  * 检测平台能力
  */
 export function detectPlatformCapabilities() {
+  const b = (globalThis as any).browser
   return {
-    hasWindows: typeof chrome !== "undefined" && !!chrome.windows,
-    hasTabs: typeof chrome !== "undefined" && !!chrome.tabs,
-    hasBackgroundMessaging: typeof chrome !== "undefined" && !!chrome.runtime
+    hasWindows: !!b?.windows,
+    hasTabs: !!b?.tabs,
+    hasBackgroundMessaging: !!b?.runtime
   }
 }
 

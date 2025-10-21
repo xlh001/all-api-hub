@@ -1,13 +1,16 @@
 import {
   closestCenter,
   DndContext,
-  type DragEndEvent,
   PointerSensor,
   TouchSensor,
   useSensor,
-  useSensors
+  useSensors,
+  type DragEndEvent
 } from "@dnd-kit/core"
-import { restrictToVerticalAxis, restrictToWindowEdges } from "@dnd-kit/modifiers"
+import {
+  restrictToVerticalAxis,
+  restrictToWindowEdges
+} from "@dnd-kit/modifiers"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 import type { SortingFieldConfig } from "~/types/sorting"
