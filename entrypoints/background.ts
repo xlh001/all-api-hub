@@ -8,10 +8,14 @@ import {
 import { migrateAccountsConfig } from "../services/configMigration.ts"
 import { getSiteType } from "../services/detectSiteType.ts"
 import {
+  createTab,
+  createWindow,
+  hasWindowsAPI,
   onInstalled,
   onStartup,
   onTabRemoved,
-  onWindowRemoved
+  onWindowRemoved,
+  removeTabOrWindow
 } from "../utils/browserApi.ts"
 import { getErrorMessage } from "../utils/error.ts"
 
@@ -111,9 +115,9 @@ function main() {
       const { url, requestId } = request
 
       // 手机 不支持 windows API，使用 tabs 替代
-      if (chrome.windows) {
+      if (hasWindowsAPI()) {
         // 创建新窗口
-        const window = await chrome.windows.create({
+        const window = await createWindow({
           url: url,
           type: "popup",
           width: 800,
@@ -121,7 +125,7 @@ function main() {
           focused: false
         })
 
-        if (window.id) {
+        if (window?.id) {
           // 记录窗口ID
           tempWindows.set(requestId, window.id)
           sendResponse({ success: true, windowId: window.id })
@@ -133,8 +137,8 @@ function main() {
         }
       } else {
         // 手机: 使用标签页
-        const tab = await browser.tabs.create({ url, active: false })
-        if (tab.id) {
+        const tab = await createTab(url, false)
+        if (tab?.id) {
           tempWindows.set(requestId, tab.id)
           sendResponse({ success: true, tabId: tab.id })
         } else {
@@ -156,12 +160,7 @@ function main() {
       const id = tempWindows.get(requestId)
 
       if (id) {
-        if (chrome.windows) {
-          await chrome.windows.remove(id)
-        } else {
-          // 手机: 关闭标签页
-          await browser.tabs.remove(id)
-        }
+        await removeTabOrWindow(id)
         tempWindows.delete(requestId)
       }
 
@@ -208,8 +207,8 @@ function main() {
 
     try {
       // 1. 打开临时窗口或标签页
-      if (chrome.windows) {
-        const window = await chrome.windows.create({
+      if (hasWindowsAPI()) {
+        const window = await createWindow({
           url: url,
           type: "popup",
           width: 800,
@@ -217,7 +216,7 @@ function main() {
           focused: false
         })
 
-        if (!window.id || !window.tabs?.[0]?.id) {
+        if (!window?.id || !window.tabs?.[0]?.id) {
           throw new Error(t("messages:background.cannotCreateWindowOrTab"))
         }
 
@@ -225,8 +224,8 @@ function main() {
         tabId = window.tabs[0].id
       } else {
         // 手机: 使用标签页
-        const tab = await browser.tabs.create({ url, active: false })
-        if (!tab.id) {
+        const tab = await createTab(url, false)
+        if (!tab?.id) {
           throw new Error(t("messages:background.cannotCreateWindowOrTab"))
         }
         id = tab.id
@@ -246,11 +245,7 @@ function main() {
       })
 
       // 4. 关闭临时窗口或标签页
-      if (chrome.windows) {
-        await chrome.windows.remove(id)
-      } else {
-        await browser.tabs.remove(id)
-      }
+      await removeTabOrWindow(id)
       tempWindows.delete(requestId)
 
       // 5. 检查响应并返回结果
@@ -268,11 +263,7 @@ function main() {
       const storedId = tempWindows.get(requestId)
       if (storedId) {
         try {
-          if (chrome.windows) {
-            await chrome.windows.remove(storedId)
-          } else {
-            await browser.tabs.remove(storedId)
-          }
+          await removeTabOrWindow(storedId)
           tempWindows.delete(requestId)
         } catch (cleanupError) {
           console.log("清理失败:", cleanupError)

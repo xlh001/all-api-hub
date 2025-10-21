@@ -78,7 +78,7 @@ export async function queryTabs(
  * 自动检测平台能力并选择合适的 API
  */
 export async function removeTabOrWindow(id: number): Promise<void> {
-  if (browser.windows) {
+  if (hasWindowsAPI()) {
     try {
       await browser.windows.remove(id)
       return
@@ -92,12 +92,32 @@ export async function removeTabOrWindow(id: number): Promise<void> {
 }
 
 /**
+ * 创建新窗口（如果支持）
+ * 返回窗口对象，如果不支持则返回 null
+ */
+export async function createWindow(
+  createData: browser.windows._CreateCreateData
+): Promise<browser.windows.Window | null> {
+  if (hasWindowsAPI()) {
+    return await browser.windows.create(createData)
+  }
+  return null
+}
+
+/**
+ * 检查是否支持 windows API
+ */
+export function hasWindowsAPI(): boolean {
+  return !!browser.windows
+}
+
+/**
  * 聚焦标签页
  * 同时聚焦窗口（如果支持）和激活标签页
  */
 export async function focusTab(tab: browser.tabs.Tab): Promise<void> {
   // 先聚焦窗口（如果支持）
-  if (browser.windows && tab.windowId != null) {
+  if (hasWindowsAPI() && tab.windowId != null) {
     try {
       await browser.windows.update(tab.windowId, { focused: true })
     } catch (error) {
@@ -162,7 +182,7 @@ export function onTabActivated(
 export function onTabUpdated(
   callback: (
     tabId: number,
-    changeInfo: chrome.tabs.TabChangeInfo,
+    changeInfo: browser.tabs._OnUpdatedChangeInfo,
     tab: browser.tabs.Tab
   ) => void
 ): () => void {
@@ -192,7 +212,7 @@ export function onTabRemoved(
 export function onWindowRemoved(
   callback: (windowId: number) => void
 ): () => void {
-  if (browser.windows) {
+  if (hasWindowsAPI()) {
     browser.windows.onRemoved.addListener(callback)
     return () => {
       browser.windows.onRemoved.removeListener(callback)
