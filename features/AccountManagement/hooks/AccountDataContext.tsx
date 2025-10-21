@@ -12,7 +12,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next" // 1. 定义 Context 的值类型
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { accountStorage } from "~/services/accountStorage.ts"
+import { accountStorage } from "~/services/accountStorage"
 import type {
   AccountStats,
   CurrencyAmount,

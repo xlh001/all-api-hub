@@ -14,8 +14,8 @@ import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 import { getErrorMessage } from "~/utils/error"
 
-import { showSettingsToast } from "../../../BasicSettings/utils/toastHelpers.ts"
-import { AccountToken } from "../../type.ts"
+import { showSettingsToast } from "../../../BasicSettings/utils/toastHelpers"
+import { AccountToken } from "../../type"
 
 interface TokenHeaderProps {
   token: AccountToken

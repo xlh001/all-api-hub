@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useAccountData } from "~/hooks/useAccountData"
 import { deleteApiToken, fetchAccountTokens } from "~/services/apiService"
 
-import { AccountToken } from "../type.ts"
+import { AccountToken } from "../type"
 
 export function useKeyManagement(routeParams?: Record<string, string>) {
   const { t } = useTranslation(["keyManagement", "messages"])

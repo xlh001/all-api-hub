@@ -4,7 +4,7 @@
  */
 
 // 确保 browser 全局对象可用
-import { isNotEmptyArray } from "~/utils/index.ts"
+import { isNotEmptyArray } from "~/utils/index"
 
 if (typeof browser === "undefined") {
   // @ts-ignore

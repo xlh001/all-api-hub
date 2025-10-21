@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 
 import type { DisplaySiteData } from "~/types"
 
-import { AccountToken } from "../../type.ts"
+import { AccountToken } from "../../type"
 import { KeyDisplay } from "./KeyDisplay"
 import { TokenDetails } from "./TokenDetails"
 import { TokenHeader } from "./TokenHeader"

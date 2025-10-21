@@ -1,7 +1,7 @@
 import i18next from "i18next"
 
-import { UI_CONSTANTS } from "~/constants/ui.ts"
-import { accountStorage } from "~/services/accountStorage.ts"
+import { UI_CONSTANTS } from "~/constants/ui"
+import { accountStorage } from "~/services/accountStorage"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import { ApiError } from "~/services/apiService/common/errors"
 import {

@@ -18,7 +18,7 @@ export default defineConfig([
     ]
   },
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ["**/*", "**/*.tsx"],
 
     plugins: { "react-hooks": reactHooks },
 

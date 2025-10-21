@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import type { DisplaySiteData } from "~/types"
 
-import { AccountToken } from "../type.ts"
+import { AccountToken } from "../type"
 import { TokenListItem } from "./TokenListItem"
 
 interface TokenListProps {

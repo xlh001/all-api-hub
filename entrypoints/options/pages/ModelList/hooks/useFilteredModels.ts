@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 
-import { UI_CONSTANTS } from "~/constants/ui.ts"
+import { UI_CONSTANTS } from "~/constants/ui"
 import type { PricingResponse } from "~/services/apiService/common/type"
 import type { DisplaySiteData } from "~/types"
 import { calculateModelPrice } from "~/utils/modelPricing"

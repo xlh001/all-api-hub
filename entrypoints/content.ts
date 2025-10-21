@@ -2,7 +2,7 @@ import { t } from "i18next"
 
 import { fetchUserInfo } from "~/services/apiService"
 
-import { getErrorMessage } from "../utils/error.ts"
+import { getErrorMessage } from "../utils/error"
 
 export default defineContentScript({
   matches: ["<all_urls>"],

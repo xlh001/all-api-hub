@@ -1,4 +1,4 @@
-import { getErrorMessage } from "../utils/error.ts"
+import { getErrorMessage } from "../utils/error"
 import { accountStorage } from "./accountStorage"
 import { userPreferences } from "./userPreferences"
 

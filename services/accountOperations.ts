@@ -5,8 +5,8 @@
 import { t } from "i18next"
 import toast from "react-hot-toast"
 
-import { UI_CONSTANTS } from "~/constants/ui.ts"
-import { accountStorage } from "~/services/accountStorage.ts"
+import { UI_CONSTANTS } from "~/constants/ui"
+import { accountStorage } from "~/services/accountStorage"
 import {
   createApiToken,
   extractDefaultExchangeRate,
@@ -30,7 +30,7 @@ import type {
 } from "~/types/serviceResponse"
 import { analyzeAutoDetectError } from "~/utils/autoDetectUtils"
 
-import { getErrorMessage } from "../utils/error.ts"
+import { getErrorMessage } from "../utils/error"
 import {
   fetchAccountData,
   fetchSiteStatus,

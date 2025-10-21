@@ -1,12 +1,12 @@
 import { t } from "i18next"
 
-import { accountStorage } from "../services/accountStorage.ts"
+import { accountStorage } from "../services/accountStorage"
 import {
   autoRefreshService,
   handleAutoRefreshMessage
-} from "../services/autoRefreshService.ts"
-import { migrateAccountsConfig } from "../services/configMigration.ts"
-import { getSiteType } from "../services/detectSiteType.ts"
+} from "../services/autoRefreshService"
+import { migrateAccountsConfig } from "../services/configMigration"
+import { getSiteType } from "../services/detectSiteType"
 import {
   createTab,
   createWindow,
@@ -17,8 +17,8 @@ import {
   onTabRemoved,
   onWindowRemoved,
   removeTabOrWindow
-} from "../utils/browserApi.ts"
-import { getErrorMessage } from "../utils/error.ts"
+} from "../utils/browserApi"
+import { getErrorMessage } from "../utils/error"
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id })
