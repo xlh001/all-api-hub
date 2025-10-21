@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react"
+import React from "react"
 
+import { useDevice } from "~/contexts/DeviceContext"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/hooks/useAccountListItem"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -19,31 +20,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
     const { detectedAccount } = useAccountDataContext()
     const { hoveredSiteId, handleMouseEnter, handleMouseLeave } =
       useAccountListItem()
-
-    // 检测是否为触摸设备
-    const [isTouchDevice, setIsTouchDevice] = useState(false)
-
-    useEffect(() => {
-      // 检测是否为触摸设备
-      const checkTouchDevice = () => {
-        setIsTouchDevice(
-          "ontouchstart" in window ||
-            navigator.maxTouchPoints > 0 ||
-            window.matchMedia("(pointer: coarse)").matches
-        )
-      }
-
-      checkTouchDevice()
-
-      // 监听媒体查询变化
-      const mediaQuery = window.matchMedia("(pointer: coarse)")
-      const handler = () => checkTouchDevice()
-
-      if (mediaQuery.addEventListener) {
-        mediaQuery.addEventListener("change", handler)
-        return () => mediaQuery.removeEventListener("change", handler)
-      }
-    }, [])
+    const { isTouchDevice } = useDevice()
 
     // 触摸设备始终显示按钮，PC端根据hover状态显示
     const shouldShowButtons = isTouchDevice || hoveredSiteId === site.id

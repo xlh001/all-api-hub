@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
+import { DeviceProvider } from "~/contexts/DeviceContext"
 import { ThemeProvider } from "~/contexts/ThemeContext"
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
 
@@ -64,11 +65,13 @@ function OptionsPage() {
 
 function App() {
   return (
-    <UserPreferencesProvider>
-      <ThemeProvider>
-        <OptionsPage />
-      </ThemeProvider>
-    </UserPreferencesProvider>
+    <DeviceProvider>
+      <UserPreferencesProvider>
+        <ThemeProvider>
+          <OptionsPage />
+        </ThemeProvider>
+      </UserPreferencesProvider>
+    </DeviceProvider>
   )
 }
 
