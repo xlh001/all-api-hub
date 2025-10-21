@@ -28,7 +28,7 @@ export default defineConfig({
     return {
       build: {
         sourcemap: env.mode === "development" ? "inline" : false,
-        minify: false // 开发阶段关闭压缩更易调试
+        minify: env.mode !== "development"
       }
     }
   }
