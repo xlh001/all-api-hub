@@ -34,18 +34,27 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
         }`}
         onMouseEnter={() => handleMouseEnter(site.id)}
         onMouseLeave={handleMouseLeave}>
-        <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
-          <SiteInfo site={site} />
+        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+          {/* 左侧：站点信息 - 可压缩 */}
+          <div className="flex-1 min-w-0">
+            <SiteInfo site={site} />
+          </div>
 
+          {/* 中间：操作按钮 - 固定不压缩 */}
           {shouldShowButtons && (
-            <AccountActionButtons
-              site={site}
-              onDeleteAccount={onDeleteWithDialog}
-              onCopyKey={onCopyKey}
-            />
+            <div className="flex-shrink-0">
+              <AccountActionButtons
+                site={site}
+                onDeleteAccount={onDeleteWithDialog}
+                onCopyKey={onCopyKey}
+              />
+            </div>
           )}
 
-          <BalanceDisplay site={site} />
+          {/* 右侧：余额显示 - 可压缩 */}
+          <div className="flex-1 min-w-0 max-w-[120px] sm:max-w-[140px]">
+            <BalanceDisplay site={site} />
+          </div>
         </div>
       </div>
     )

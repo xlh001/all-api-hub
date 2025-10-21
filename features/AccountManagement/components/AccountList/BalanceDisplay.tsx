@@ -83,14 +83,14 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
   }
 
   return (
-    <div className="text-right flex-1 min-w-[40px] overflow-hidden">
+    <div className="text-right w-full overflow-hidden">
       {/* Balance */}
       <AnimatedValue
         value={site.balance[currencyType]}
         startValue={
           isInitialLoad ? 0 : prevBalances[site.id]?.[currencyType] || 0
         }
-        className="font-semibold text-gray-900 dark:text-dark-text-primary text-lg mb-0.5"
+        className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm sm:text-base md:text-lg mb-0.5"
         title={t("list.balance.refreshBalance")}
         onClick={handleRefreshClick}
         isRefreshing={isRefreshing}
@@ -103,7 +103,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
           value={site.todayConsumption[currencyType]}
           startValue={0}
           prefix="-"
-          className={`text-xs ${
+          className={`text-[10px] sm:text-xs ${
             site.todayConsumption[currencyType] > 0
               ? "text-green-500"
               : "text-gray-400 dark:text-dark-text-tertiary"
@@ -118,7 +118,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
           value={site.todayIncome[currencyType]}
           startValue={0}
           prefix="+"
-          className={`text-xs ${
+          className={`text-[10px] sm:text-xs ${
             site.todayIncome[currencyType] > 0
               ? "text-blue-500"
               : "text-gray-400 dark:text-dark-text-tertiary"
