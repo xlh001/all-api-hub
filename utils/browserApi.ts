@@ -1,11 +1,11 @@
 /**
  * Browser API 工具函数
  * 提供跨浏览器兼容的 API 封装和常用 fallback 逻辑
- *
- * 整合了 tabs.ts 和 navigation.ts 的功能
  */
 
 // 确保 browser 全局对象可用
+import { isNotEmptyArray } from "~/utils/index.ts"
+
 if (typeof browser === "undefined") {
   // @ts-ignore
   globalThis.browser = chrome
@@ -18,7 +18,7 @@ if (typeof browser === "undefined") {
 export async function getActiveTabs(): Promise<browser.tabs.Tab[]> {
   try {
     // 优先尝试使用 currentWindow
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+    const tabs = await queryTabs({ active: true, currentWindow: true })
     if (tabs && tabs.length > 0) {
       return tabs
     }
@@ -28,10 +28,10 @@ export async function getActiveTabs(): Promise<browser.tabs.Tab[]> {
 
   // Fallback: 只使用 active
   try {
-    return await browser.tabs.query({ active: true })
+    return await queryTabs({ active: true })
   } catch (error) {
     // 最后的 fallback: 返回所有标签页
-    return await browser.tabs.query({})
+    return await queryTabs({})
   }
 }
 
@@ -219,4 +219,15 @@ export function onInstalled(callback: (details: any) => void): () => void {
   return () => {
     browser.runtime.onInstalled.removeListener(callback)
   }
+}
+export async function getBrowserTabs() {
+  let tabs = []
+  tabs = await queryTabs({
+    active: true,
+    currentWindow: true
+  })
+  if (!isNotEmptyArray(tabs)) {
+    tabs = await queryTabs({})
+  }
+  return tabs || []
 }

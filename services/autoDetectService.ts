@@ -9,8 +9,8 @@
  */
 import { t } from "i18next"
 
+import { getBrowserTabs } from "~/utils/browserApi.ts"
 import { getErrorMessage } from "~/utils/error"
-import { getBrowserTabs } from "~/utils/tabs.ts"
 
 import { fetchUserInfo } from "./apiService"
 import { getSiteType } from "./detectSiteType"
