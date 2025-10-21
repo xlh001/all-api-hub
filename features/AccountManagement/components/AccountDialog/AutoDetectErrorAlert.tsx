@@ -15,12 +15,12 @@ export default function AutoDetectErrorAlert({
 }: AutoDetectErrorProps) {
   const { t } = useTranslation("accountDialog")
 
-  const handleActionClick = () => {
+  const handleActionClick = async () => {
     if (onActionClick) {
       onActionClick()
     } else if (error.type === "unauthorized" && siteUrl) {
       // 默认行为：打开登录页面
-      openLoginTab(siteUrl)
+      await openLoginTab(siteUrl)
     }
   }
 
