@@ -7,26 +7,11 @@ import getURL = chrome.runtime.getURL
 const OPTIONS_PAGE_URL = chrome.runtime.getURL("options.html")
 
 /**
- * Chrome API Wrapper Functions
- * These functions encapsulate direct Chrome API calls to reduce coupling
- * and provide consistent error handling across the codebase.
- */
-
-/**
- * Handles Chrome API errors
- */
-const handleChromeError = () => {
-  if (chrome.runtime.lastError) {
-    console.error(chrome.runtime.lastError.message)
-  }
-}
-
-/**
  * Creates a new tab with the specified URL
  * @param url - The URL to open in the new tab
  */
-const createTab = (url: string): void => {
-  chrome.tabs.create({ url }, handleChromeError)
+const createTab = async (url: string): Promise<void> => {
+  await browser.tabs.create({ url, active: true })
 }
 
 /**
@@ -34,21 +19,25 @@ const createTab = (url: string): void => {
  * @param tabId - The ID of the tab to update
  * @param updateInfo - The properties to update on the tab
  */
-const updateTab = (
+const updateTab = async (
   tabId: number,
   updateInfo: chrome.tabs.UpdateProperties
-): void => {
-  chrome.tabs.update(tabId, updateInfo, handleChromeError)
+): Promise<void> => {
+  await browser.tabs.update(tabId, updateInfo)
 }
 
 /**
  * Focuses a window by bringing it to the foreground
- * @param windowId - The ID of the window to focus
+ * @param tab
  */
-const focusWindow = (windowId: number): void => {
-  // Android 不支持 windows API
-  if (chrome.windows) {
-    chrome.windows.update(windowId, { focused: true }, handleChromeError)
+const focusWindow = async (tab: browser.tabs.Tab) => {
+  // 先聚焦窗口 （Android 不支持 windows API
+  if (tab.windowId != null) {
+    await browser.windows.update(tab.windowId, { focused: true })
+  }
+  // 再激活 tab
+  if (tab.id != null) {
+    await browser.tabs.update(tab.id, { active: true })
   }
 }
 
@@ -57,16 +46,18 @@ const focusWindow = (windowId: number): void => {
  * @param queryInfo - The query criteria for filtering tabs
  * @param callback - Function to execute with the query results
  */
-const queryTabs = (
+const queryTabs = async (
   queryInfo: chrome.tabs.QueryInfo,
-  callback: (tabs: chrome.tabs.Tab[]) => void
-): void => {
-  chrome.tabs.query(queryInfo, (tabs) => {
-    handleChromeError()
+  callback: (tabs: browser.tabs.Tab[]) => void
+): Promise<void> => {
+  try {
+    const tabs = await browser.tabs.query(queryInfo)
     if (tabs) {
       callback(tabs)
     }
-  })
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 export const openOrFocusOptionsPage = (hash: string) => {
@@ -101,9 +92,7 @@ export const openOrFocusOptionsPage = (hash: string) => {
     // 打开或聚焦
     if (optionsPageTab?.id) {
       updateTab(optionsPageTab.id, { active: true, url: urlWithHash })
-      if (optionsPageTab.windowId) {
-        focusWindow(optionsPageTab.windowId)
-      }
+      focusWindow(optionsPageTab)
     } else {
       createTab(urlWithHash)
     }
@@ -123,34 +112,34 @@ export const openSidePanel = () => {
   window.close()
 }
 
-export const openKeysPage = (accountId?: string) => {
+export const openKeysPage = async (accountId?: string) => {
   const url = accountId
     ? getURL(`options.html#keys?accountId=${accountId}`)
     : getURL("options.html#keys")
-  createTab(url)
+  await createTab(url)
 }
 
-export const openModelsPage = (accountId?: string) => {
+export const openModelsPage = async (accountId?: string) => {
   const url = accountId
     ? getURL(`options.html#models?accountId=${accountId}`)
     : getURL("options.html#models")
-  createTab(url)
+  await createTab(url)
 }
 
-export const openUsagePage = (account: DisplaySiteData) => {
+export const openUsagePage = async (account: DisplaySiteData) => {
   const logUrl = joinUrl(
     account.baseUrl,
     getSiteApiRouter(account.siteType).usagePath
   )
-  createTab(logUrl)
+  await createTab(logUrl)
 }
 
-export const openCheckInPage = (
+export const openCheckInPage = async (
   account: DisplaySiteData,
   targetUrl?: string
 ) => {
-  const checkInUrl = targetUrl
-    ? targetUrl
-    : joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
-  createTab(checkInUrl)
+  const checkInUrl =
+    targetUrl ||
+    joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
+  await createTab(checkInUrl)
 }

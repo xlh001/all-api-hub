@@ -1,5 +1,10 @@
 import { isNotEmptyArray } from "~/utils/index.ts"
 
+if (typeof browser === "undefined") {
+  // @ts-ignore
+  window.browser = chrome
+}
+
 export async function getBrowserTabs() {
   let tabs = []
   tabs = await browser.tabs.query({
