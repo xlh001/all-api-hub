@@ -51,6 +51,21 @@ export async function getActiveTab(): Promise<browser.tabs.Tab | null> {
 }
 
 /**
+ * 返回所有浏览器标签页，优先返回当前活动的标签页。
+ * 如果未找到任何活动的标签页，则查询所有标签页作为备选方案。
+ *
+ * 返回一个浏览器标签页对象数组，如果未找到任何标签页，则返回一个空数组。
+ */
+export async function getBrowserTabs() {
+  let tabs
+  tabs = await getActiveTabs()
+  if (!isNotEmptyArray(tabs)) {
+    tabs = await queryTabs({})
+  }
+  return tabs || []
+}
+
+/**
  * 创建新标签页
  * 统一接口，自动设置 active: true
  */
@@ -256,15 +271,4 @@ export function onInstalled(callback: (details: any) => void): () => void {
   return () => {
     browser.runtime.onInstalled.removeListener(callback)
   }
-}
-export async function getBrowserTabs() {
-  let tabs = []
-  tabs = await queryTabs({
-    active: true,
-    currentWindow: true
-  })
-  if (!isNotEmptyArray(tabs)) {
-    tabs = await queryTabs({})
-  }
-  return tabs || []
 }
