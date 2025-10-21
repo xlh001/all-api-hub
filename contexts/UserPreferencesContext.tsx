@@ -1,12 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode
-} from "react"
+import type { ReactNode } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 
 import { DATA_TYPE_CONSUMPTION } from "~/constants"
 import { UI_CONSTANTS } from "~/constants/ui"
@@ -17,6 +10,7 @@ import {
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
+import { sendRuntimeMessage } from "~/utils/browserApi"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 1. 定义 Context 的值类型
@@ -154,7 +148,7 @@ export const UserPreferencesProvider = ({
       setPreferences((prev) =>
         prev ? { ...prev, autoRefresh: enabled } : null
       )
-      chrome.runtime.sendMessage({
+      sendRuntimeMessage({
         action: "updateAutoRefreshSettings",
         settings: { autoRefresh: enabled }
       })
@@ -168,7 +162,7 @@ export const UserPreferencesProvider = ({
       setPreferences((prev) =>
         prev ? { ...prev, refreshInterval: interval } : null
       )
-      chrome.runtime.sendMessage({
+      sendRuntimeMessage({
         action: "updateAutoRefreshSettings",
         settings: { refreshInterval: interval }
       })

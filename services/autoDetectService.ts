@@ -2,14 +2,14 @@
  * 自动识别服务
  * 提供跨平台的账号自动识别功能
  *
- * 核心流程：
+ * 样心流程：
  * 1. 获取用户 ID (通过 localStorage 或 API)
  * 2. 检测站点类型
  * 3. 返回统一的结果格式
  */
 import { t } from "i18next"
 
-import { getBrowserTabs } from "~/utils/browserApi.ts"
+import { getActiveTabs, sendRuntimeMessage } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 
 import { fetchUserInfo } from "./apiService"
@@ -127,7 +127,7 @@ async function getUserDataViaBackground(
 ): Promise<UserDataResult | null> {
   try {
     const requestId = `auto-detect-${Date.now()}`
-    const response = await chrome.runtime.sendMessage({
+    const response = await sendRuntimeMessage({
       action: "autoDetectSite",
       url: url,
       requestId: requestId
@@ -172,8 +172,7 @@ async function getUserDataFromCurrentTab(
 ): Promise<UserDataResult | null> {
   try {
     // 1. 获取当前活动标签页
-    // 手机 不支持 currentWindow，需要 fallback
-    let tabs = await getBrowserTabs()
+    const tabs = await getActiveTabs()
 
     if (!tabs || tabs.length === 0 || !tabs[0]?.id) {
       console.log("[AutoDetect] 无法获取当前标签页")

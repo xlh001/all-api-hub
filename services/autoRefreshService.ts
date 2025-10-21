@@ -178,7 +178,7 @@ export const autoRefreshService = new AutoRefreshService()
 // 消息处理器
 export const handleAutoRefreshMessage = async (
   request: any,
-  sendResponse: Function
+  sendResponse: ((response: any) => void) | undefined
 ) => {
   try {
     switch (request.action) {

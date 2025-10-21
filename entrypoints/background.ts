@@ -12,6 +12,7 @@ import {
   createWindow,
   hasWindowsAPI,
   onInstalled,
+  onRuntimeMessage,
   onStartup,
   onTabRemoved,
   onWindowRemoved,
@@ -57,7 +58,7 @@ function main() {
   })
 
   // 处理来自 popup 的消息
-  chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  onRuntimeMessage((request, _sender, sendResponse) => {
     if (request.action === "openTempWindow") {
       handleOpenTempWindow(request, sendResponse)
       return true // 保持异步响应通道

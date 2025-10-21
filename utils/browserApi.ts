@@ -149,12 +149,15 @@ export function getExtensionURL(path: string): string {
 /**
  * 监听 runtime 消息
  * 返回清理函数
+ *
+ * 注意：callback 可以返回 true 来保持异步响应通道
  */
 export function onRuntimeMessage(
   callback: (
     message: any,
-    sender: browser.runtime.MessageSender
-  ) => void | Promise<void>
+    sender: browser.runtime.MessageSender,
+    sendResponse: (response?: any) => void
+  ) => void
 ): () => void {
   browser.runtime.onMessage.addListener(callback)
   return () => {
