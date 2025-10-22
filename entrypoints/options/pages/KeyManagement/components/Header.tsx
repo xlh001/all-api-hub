@@ -25,7 +25,11 @@ export function Header({
           <Heading2>{t("title")}</Heading2>
         </div>
         <div className="flex items-center space-x-3">
-          <Button onClick={onAddToken} disabled={isAddTokenDisabled} size="sm">
+          <Button
+            onClick={onAddToken}
+            disabled={isAddTokenDisabled}
+            size="sm"
+            variant="success">
             <PlusIcon className="w-4 h-4" />
             <span className="ml-1">{t("dialog.addToken")}</span>
           </Button>

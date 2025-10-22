@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next"
 
+import { BodySmall } from "~/components/ui"
 import type { ApiToken } from "~/types"
 
 import { formatQuota, formatTime } from "../../utils"
@@ -11,35 +12,43 @@ interface TokenDetailsProps {
 export function TokenDetails({ token }: TokenDetailsProps) {
   const { t } = useTranslation("keyManagement")
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div>
-        <span className="text-gray-500 dark:text-dark-text-tertiary">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
+      <div className="min-w-0 truncate">
+        <BodySmall
+          as="span"
+          className="text-gray-500 dark:text-dark-text-tertiary">
           {t("keyDetails.remainingQuota")}
-        </span>
+        </BodySmall>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
           {formatQuota(token.remain_quota, token.unlimited_quota)}
         </span>
       </div>
-      <div>
-        <span className="text-gray-500 dark:text-dark-text-tertiary">
+      <div className="min-w-0 truncate">
+        <BodySmall
+          as="span"
+          className="text-gray-500 dark:text-dark-text-tertiary">
           {t("keyDetails.usedQuota")}
-        </span>
+        </BodySmall>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
           {formatQuota(token.used_quota, false)}
         </span>
       </div>
-      <div>
-        <span className="text-gray-500 dark:text-dark-text-tertiary">
+      <div className="min-w-0 truncate">
+        <BodySmall
+          as="span"
+          className="text-gray-500 dark:text-dark-text-tertiary">
           {t("keyDetails.expireTime")}
-        </span>
+        </BodySmall>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
           {formatTime(token.expired_time)}
         </span>
       </div>
-      <div>
-        <span className="text-gray-500 dark:text-dark-text-tertiary">
+      <div className="min-w-0 truncate">
+        <BodySmall
+          as="span"
+          className="text-gray-500 dark:text-dark-text-tertiary">
           {t("keyDetails.createTime")}
-        </span>
+        </BodySmall>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
           {formatTime(token.created_time)}
         </span>
