@@ -175,7 +175,7 @@ const Link = React.forwardRef<
   HTMLAnchorElement,
   Omit<TypographyProps, "variant"> & { href?: string }
 >(({ href, ...props }, ref) => (
-  <Typography ref={ref} variant="link" as="a" href={href} {...props} />
+  <Typography ref={ref} variant="link" as="a" {...(props as any)} href={href} />
 ))
 Link.displayName = "Link"
 

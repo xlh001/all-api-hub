@@ -29,7 +29,7 @@ const selectVariants = cva(
 )
 
 export interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement>,
+  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size">,
     VariantProps<typeof selectVariants> {
   leftIcon?: React.ReactNode
   error?: string
@@ -68,7 +68,8 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             "pr-10"
           )}
           ref={ref}
-          {...props}>
+          {...props}
+          title={props.title || props["aria-label"] || placeholder}>
           {placeholder && (
             <option value="" disabled>
               {placeholder}
