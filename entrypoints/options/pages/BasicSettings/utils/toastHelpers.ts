@@ -26,8 +26,8 @@ export function showSettingsToast(...args: ToastParams): void {
  * @param setting - The name of the setting that was updated.
  */
 export const showUpdateToast = (success: boolean, setting: string): void => {
-  const successMsg = `${setting} ${t("basicSettings.updateSuccess")}`
-  const errorMsg = `${setting} ${t("basicSettings.updateFailed")}`
+  const successMsg = t("settings:messages.updateSuccess", { name: setting })
+  const errorMsg = t("settings:messages.updateFailed", { name: setting })
   showSettingsToast(success, successMsg, errorMsg)
 }
 
@@ -36,7 +36,7 @@ export const showUpdateToast = (success: boolean, setting: string): void => {
  * @param success - Whether the reset was successful.
  */
 export const showResetToast = (success: boolean): void => {
-  const successMsg = t("basicSettings.resetSuccess")
-  const errorMsg = t("basicSettings.resetFailed")
+  const successMsg = t("settings:messages.updateSuccess")
+  const errorMsg = t("settings:danger.resetFailed")
   showSettingsToast(success, successMsg, errorMsg)
 }

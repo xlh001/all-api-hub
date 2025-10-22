@@ -72,8 +72,8 @@
     "toggle": "Theme toggle, current {{currentMode}} mode, click to switch to {{nextMode}} mode"
   },
   "messages": {
-    "updateSuccess": "Update successful",
-    "updateFailed": "Update failed",
+    "updateSuccess": "{{name}} Update successful",
+    "updateFailed": "{{name}} Update failed",
     "saveSettingsFailed": "Failed to save settings"
   }
 }
