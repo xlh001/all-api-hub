@@ -82,7 +82,6 @@ const ThemeToggle = () => {
               size="sm"
               className={`
                 relative p-2 text-sm font-medium rounded-md
-                focus:outline-none focus:ring-2 focus:ring-offset-1
                 ${
                   isActive
                     ? `${COLORS.background.elevated} ${COLORS.text.primary} shadow-sm scale-105`
