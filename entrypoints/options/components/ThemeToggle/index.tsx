@@ -5,7 +5,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Button, Caption, Heading5 } from "~/components/ui"
+import { BodySmall, Caption, Heading5, ToggleButton } from "~/components/ui"
 import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { useTheme } from "~/contexts/ThemeContext"
 import type { ThemeMode } from "~/types/theme"
@@ -75,23 +75,13 @@ const ThemeToggle = () => {
         {themeOptions.map(({ mode, label, icon: Icon, description }) => {
           const isActive = themeMode === mode
           return (
-            <Button
+            <ToggleButton
               key={mode}
               onClick={() => handleThemeChange(mode)}
-              variant={isActive ? "default" : "ghost"}
-              size="sm"
-              className={`
-                relative p-2 text-sm font-medium rounded-md
-                ${
-                  isActive
-                    ? `${COLORS.background.elevated} ${COLORS.text.primary} shadow-sm scale-105`
-                    : `${COLORS.text.secondary} hover:${COLORS.text.primary} hover:${COLORS.background.secondary}`
-                }
-                focus:ring-blue-500 dark:focus:ring-blue-400
-              `}
+              isActive={isActive}
+              showActiveIndicator
               title={description}
-              aria-label={t("theme.switchTo", { theme: label, description })}
-              aria-pressed={isActive}>
+              aria-label={t("theme.switchTo", { theme: label, description })}>
               <span className="flex items-center">
                 <Icon
                   className={`
@@ -105,10 +95,7 @@ const ThemeToggle = () => {
                 />
                 {label}
               </span>
-              {isActive && (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-500 dark:bg-blue-400 rounded-t-sm" />
-              )}
-            </Button>
+            </ToggleButton>
           )
         })}
       </div>

@@ -9,6 +9,7 @@ import {
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
+import { IconButton } from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -110,9 +111,13 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               })}
               position="top"
               wrapperClassName="flex justify-center items-center">
-              <button onClick={handleCheckIn(site.checkIn.customCheckInUrl)}>
+              <IconButton
+                onClick={handleCheckIn(site.checkIn.customCheckInUrl)}
+                variant="ghost"
+                size="sm"
+                aria-label={t("list.site.customCheckIn")}>
                 <CurrencyYenIcon className="h-4 w-4 text-green-500" />
-              </button>
+              </IconButton>
             </Tooltip>
           ) : (
             site.checkIn?.enableDetection && (
@@ -129,18 +134,26 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                     content={t("list.site.checkedInToday")}
                     position="top"
                     wrapperClassName="flex justify-center items-center">
-                    <button onClick={handleCheckIn()}>
+                    <IconButton
+                      onClick={handleCheckIn()}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t("list.site.checkIn")}>
                       <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                    </button>
+                    </IconButton>
                   </Tooltip>
                 ) : (
                   <Tooltip
                     content={t("list.site.notCheckedInToday")}
                     position="top"
                     wrapperClassName="flex justify-center items-center">
-                    <button onClick={handleCheckIn()}>
+                    <IconButton
+                      onClick={handleCheckIn()}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t("list.site.checkIn")}>
                       <XCircleIcon className="h-4 w-4 text-red-500" />
-                    </button>
+                    </IconButton>
                   </Tooltip>
                 )}
               </>

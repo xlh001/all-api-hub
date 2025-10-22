@@ -1,7 +1,7 @@
 import { Languages } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-import { Button } from "~/components/ui"
+import { ToggleButton } from "~/components/ui"
 import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { userPreferences } from "~/services/userPreferences"
 
@@ -26,29 +26,16 @@ export function LanguageSwitcher() {
         {languageOptions.map(({ code, label }) => {
           const isActive = i18n.language === code
           return (
-            <Button
+            <ToggleButton
               key={code}
               onClick={() => handleLanguageChange(code)}
-              variant={isActive ? "default" : "ghost"}
+              isActive={isActive}
               size="sm"
-              className={`
-                relative px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md
-                touch-manipulation tap-highlight-transparent
-                ${
-                  isActive
-                    ? `${COLORS.background.elevated} ${COLORS.text.primary} shadow-sm scale-105`
-                    : `${COLORS.text.secondary} hover:${COLORS.text.primary} hover:${COLORS.background.secondary}`
-                }
-                focus:ring-blue-500 dark:focus:ring-blue-400
-              `}
+              showActiveIndicator
               title={`Switch to ${label}`}
-              aria-label={`Switch to ${label}`}
-              aria-pressed={isActive}>
+              aria-label={`Switch to ${label}`}>
               {label}
-              {isActive && (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-500 dark:bg-blue-400 rounded-t-sm" />
-              )}
-            </Button>
+            </ToggleButton>
           )
         })}
       </div>

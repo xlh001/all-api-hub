@@ -3,6 +3,7 @@ import { CpuChipIcon } from "@heroicons/react/24/outline"
 import { useEffect, useRef, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
+import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { getProviderConfig, type ProviderType } from "~/utils/modelProviders"
 
 interface ProviderTabsProps {
@@ -99,10 +100,10 @@ export function ProviderTabs({
       }}>
       <Tab.List
         ref={tabListRef}
-        className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-dark-bg-tertiary p-1 mb-6 overflow-x-auto touch-pan-x scrollbar-hide">
+        className={`flex space-x-1 rounded-xl ${COLORS.background.tertiary} p-1 mb-6 overflow-x-auto touch-pan-x scrollbar-hide`}>
         <Tab
           className={({ selected }) =>
-            `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${
+            `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${ANIMATIONS.transition.base} ${
               selected
                 ? "bg-white dark:bg-dark-bg-secondary text-blue-700 dark:text-blue-400 shadow"
                 : "text-gray-700 dark:text-dark-text-secondary hover:bg-white/60 dark:hover:bg-dark-bg-secondary/60 hover:text-gray-900 dark:hover:text-dark-text-primary"
@@ -122,7 +123,7 @@ export function ProviderTabs({
             <Tab
               key={provider}
               className={({ selected }) =>
-                `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${
+                `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${ANIMATIONS.transition.base} ${
                   selected
                     ? "bg-white dark:bg-dark-bg-secondary text-blue-700 dark:text-blue-400 shadow"
                     : "text-gray-700 dark:text-dark-text-secondary hover:bg-white/60 dark:hover:bg-dark-bg-secondary/60 hover:text-gray-900 dark:hover:text-dark-text-primary"

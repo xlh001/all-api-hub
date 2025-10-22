@@ -86,7 +86,7 @@ export default function About() {
               description={t("githubDesc")}
               href={repository}
               buttonText={t("starRepo")}
-              buttonClass="bg-gray-900 dark:bg-gray-700 text-white hover:bg-gray-800 dark:hover:bg-gray-600"
+              buttonVariant="default"
               iconClass="text-gray-900 dark:text-gray-100"
             />
             <LinkCard
@@ -95,7 +95,7 @@ export default function About() {
               description={t("homepageDesc")}
               href={homepage}
               buttonText={t("visitHomepage")}
-              buttonClass="bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-400"
+              buttonVariant="default"
               iconClass="text-blue-600 dark:text-blue-400"
             />
           </div>

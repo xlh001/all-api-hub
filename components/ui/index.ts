@@ -17,6 +17,7 @@ export { Textarea, textareaVariants } from "./Textarea"
 export { IconButton, iconButtonVariants } from "./IconButton"
 export { Spinner, spinnerVariants } from "./Spinner"
 export { FormField } from "./FormField"
+export { ToggleButton, toggleButtonVariants } from "./ToggleButton"
 
 // Typography Components
 export {
