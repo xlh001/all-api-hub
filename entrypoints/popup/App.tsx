@@ -8,14 +8,15 @@ import {
 } from "~/contexts/UserPreferencesContext"
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
-import { isMobileByUA } from "~/utils/browser.ts"
+import { isExtensionSidePanel, isMobileByUA } from "~/utils/browser.ts"
 
 import ActionButtons from "./components/ActionButtons"
 import BalanceSection from "./components/BalanceSection"
 import HeaderSection from "./components/HeaderSection"
 
-function PopupContent({ inSidePanel = false }) {
+function PopupContent() {
   const { isLoading } = useUserPreferencesContext()
+  const inSidePanel = isExtensionSidePanel()
 
   const popupWidthClass = isMobileByUA()
     ? "w-full"
@@ -37,7 +38,7 @@ function PopupContent({ inSidePanel = false }) {
       <div className="flex-1 overflow-y-auto">
         {!isLoading && <BalanceSection />}
 
-        <ActionButtons inSidePanel={inSidePanel} />
+        <ActionButtons />
 
         <AccountList />
       </div>
@@ -45,12 +46,12 @@ function PopupContent({ inSidePanel = false }) {
   )
 }
 
-function App({ inSidePanel = false }) {
+function App() {
   return (
     <DeviceProvider>
       <UserPreferencesProvider>
         <AccountManagementProvider>
-          <PopupContent inSidePanel={inSidePanel} />
+          <PopupContent />
         </AccountManagementProvider>
       </UserPreferencesProvider>
     </DeviceProvider>

@@ -36,13 +36,32 @@ export function isDesktopByUA(): boolean {
   return !isMobileByUA()
 }
 
+/**
+ * Checks if the given URL is an extension page.
+ *
+ * Extension pages have a protocol that includes "-extension:", such as
+ * "chrome-extension:" or "moz-extension:".
+ *
+ * @param url - The URL to check.
+ * @returns {boolean} true if the URL is an extension page, false otherwise.
+ */
+export function isExtensionPage(url: URL) {
+  return url.protocol.includes("-extension:")
+}
+
 export function isExtensionPopup() {
   try {
     const url = new URL(window.location.href)
-    // 检查是否是扩展内部页面
-    const isExtensionPage = url.protocol.includes("-extension:")
-    // 进一步限定 popup.html 或其它命名规则
-    return isExtensionPage && /popup.html/i.test(url.pathname)
+    return isExtensionPage(url) && /popup.html/i.test(url.pathname)
+  } catch {
+    return false
+  }
+}
+
+export function isExtensionSidePanel() {
+  try {
+    const url = new URL(window.location.href)
+    return isExtensionPage(url) && /sidepanel.html/i.test(url.pathname)
   } catch {
     return false
   }

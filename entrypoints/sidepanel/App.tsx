@@ -8,7 +8,7 @@ function SidePanel() {
     <DeviceProvider>
       <UserPreferencesProvider>
         <ThemeProvider>
-          <Popup inSidePanel={true} />
+          <Popup />
         </ThemeProvider>
       </UserPreferencesProvider>
     </DeviceProvider>

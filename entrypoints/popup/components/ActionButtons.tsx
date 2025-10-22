@@ -3,24 +3,22 @@ import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
-import { isDesktopByUA, isFirefoxByUA } from "~/utils/browser"
+import {
+  isDesktopByUA,
+  isExtensionSidePanel,
+  isFirefoxByUA
+} from "~/utils/browser"
 import { openKeysPage, openModelsPage } from "~/utils/navigation"
 
 import { showFirefoxWarningDialog } from "./FirefoxAddAccountWarningDialog/showFirefoxWarningDialog"
 
-interface ActionButtonsProps {
-  inSidePanel?: boolean
-}
-
-export default function ActionButtons({
-  inSidePanel = false
-}: ActionButtonsProps) {
+export default function ActionButtons() {
   const { t } = useTranslation(["account", "ui"])
   const { openAddAccount } = useDialogStateContext()
 
   const handleAddAccountClick = () => {
     // Firefox 桌面端的Pop-up不支持添加账号
-    if (isFirefoxByUA() && isDesktopByUA() && !inSidePanel) {
+    if (isFirefoxByUA() && isDesktopByUA() && !isExtensionSidePanel()) {
       showFirefoxWarningDialog()
     } else {
       openAddAccount()
