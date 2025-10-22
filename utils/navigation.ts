@@ -9,6 +9,24 @@ import { joinUrl } from "~/utils/url"
 
 const OPTIONS_PAGE_URL = getExtensionURL("options.html")
 
+export function isExtensionPopup() {
+  try {
+    const url = new URL(window.location.href)
+    // 检查是否是扩展内部页面
+    const isExtensionPage = url.protocol.includes("-extension:")
+    // 进一步限定 popup.html 或其它命名规则
+    return isExtensionPage && /popup.html/i.test(url.pathname)
+  } catch {
+    return false
+  }
+}
+
+export function closeIfPopup() {
+  if (isExtensionPopup()) {
+    window.close()
+  }
+}
+
 /**
  * Creates a new tab with the specified URL
  * @param url - The URL to open in the new tab
@@ -97,15 +115,19 @@ export const openOrFocusOptionsPage = (hash: string) => {
 
 export const openFullManagerPage = () => {
   openOrFocusOptionsPage("#account")
+  closeIfPopup()
 }
 
 export const openSettingsPage = () => {
   openOrFocusOptionsPage("#basic")
+  if (isExtensionPopup()) {
+    closeIfPopup()
+  }
 }
 
-export const openSidePanel = () => {
-  browser.sidebarAction.open()
-  window.close()
+export const openSidePanel = async () => {
+  await browser.sidebarAction.open()
+  closeIfPopup()
 }
 
 export const openKeysPage = async (accountId?: string) => {
@@ -113,6 +135,7 @@ export const openKeysPage = async (accountId?: string) => {
     ? getExtensionURL(`options.html#keys?accountId=${accountId}`)
     : getExtensionURL("options.html#keys")
   await createActiveTab(url)
+  closeIfPopup()
 }
 
 export const openModelsPage = async (accountId?: string) => {
@@ -120,6 +143,7 @@ export const openModelsPage = async (accountId?: string) => {
     ? getExtensionURL(`options.html#models?accountId=${accountId}`)
     : getExtensionURL("options.html#models")
   await createActiveTab(url)
+  closeIfPopup()
 }
 
 export const openUsagePage = async (account: DisplaySiteData) => {
@@ -128,6 +152,7 @@ export const openUsagePage = async (account: DisplaySiteData) => {
     getSiteApiRouter(account.siteType).usagePath
   )
   await createActiveTab(logUrl)
+  closeIfPopup()
 }
 
 export const openCheckInPage = async (
@@ -138,4 +163,5 @@ export const openCheckInPage = async (
     targetUrl ||
     joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
   await createActiveTab(checkInUrl)
+  closeIfPopup()
 }
