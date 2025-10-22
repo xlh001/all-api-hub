@@ -8,6 +8,7 @@ import {
 } from "~/contexts/UserPreferencesContext"
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
+import { isMobileByUA } from "~/utils/browser.ts"
 
 import ActionButtons from "./components/ActionButtons"
 import BalanceSection from "./components/BalanceSection"
@@ -16,9 +17,21 @@ import HeaderSection from "./components/HeaderSection"
 function PopupContent({ inSidePanel = false }) {
   const { isLoading } = useUserPreferencesContext()
 
+  const popupWidthClass = isMobileByUA()
+    ? "w-full"
+    : inSidePanel
+      ? ""
+      : UI_CONSTANTS.POPUP.WIDTH
+
+  const popupHeightClass = isMobileByUA()
+    ? ""
+    : inSidePanel
+      ? ""
+      : UI_CONSTANTS.POPUP.HEIGHT
+
   return (
     <div
-      className={`${!inSidePanel && UI_CONSTANTS.POPUP.WIDTH} bg-white dark:bg-dark-bg-primary flex flex-col ${!inSidePanel && UI_CONSTANTS.POPUP.HEIGHT}`}>
+      className={`${popupWidthClass} ${popupHeightClass} bg-white dark:bg-dark-bg-primary flex flex-col`}>
       <HeaderSection />
 
       <div className="flex-1 overflow-y-auto">
