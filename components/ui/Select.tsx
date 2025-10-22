@@ -1,5 +1,4 @@
 import { cva, type VariantProps } from "class-variance-authority"
-import { ChevronDown } from "lucide-react"
 import React from "react"
 
 import { cn } from "~/utils/cn"
@@ -77,9 +76,6 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           )}
           {children}
         </select>
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-        </div>
         {(error || success) && (
           <p
             className={cn(
