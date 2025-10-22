@@ -31,17 +31,20 @@ export default function DangerousZone() {
         className={`text-lg font-medium text-red-600 dark:text-red-400 mb-4`}>
         {t("danger.title")}
       </Heading5>
-      <Alert variant="destructive" className="p-4">
-        <AlertTitle>{t("danger.resetAllSettings")}</AlertTitle>
-        <AlertDescription>
-          <BodySmall>{t("danger.resetDesc")}</BodySmall>
-        </AlertDescription>
-        <div className="mt-3 flex justify-end">
+      <Alert variant="destructive" className="p-3 sm:p-4">
+        <div className="flex items-start sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <AlertTitle className="text-sm">
+              {t("danger.resetAllSettings")}
+            </AlertTitle>
+            <AlertDescription className="mt-0.5">
+              <BodySmall>{t("danger.resetDesc")}</BodySmall>
+            </AlertDescription>
+          </div>
           <Button
             onClick={handleResetToDefaults}
             disabled={isResetting}
             variant="destructive"
-            size="sm"
             loading={isResetting}>
             {isResetting
               ? t("common:status.resetting")
