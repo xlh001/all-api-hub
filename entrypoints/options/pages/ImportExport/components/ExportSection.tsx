@@ -1,6 +1,8 @@
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { BodySmall, Heading4, Heading6 } from "~/components/ui"
+
 import {
   handleExportAccounts,
   handleExportAll,
@@ -20,13 +22,13 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
         <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary">
           <div className="flex items-center space-x-2">
             <ArrowUpTrayIcon className="w-5 h-5 text-green-600" />
-            <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
+            <Heading4 className="text-gray-900 dark:text-dark-text-primary">
               {t("export.title")}
-            </h2>
+            </Heading4>
           </div>
-          <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
+          <BodySmall className="text-gray-500 dark:text-dark-text-secondary mt-1">
             {t("export.description")}
-          </p>
+          </BodySmall>
         </div>
 
         <div className="p-6 space-y-4">
@@ -34,12 +36,10 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
           <div className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("export.fullBackup")}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                <Heading6 className="mb-1">{t("export.fullBackup")}</Heading6>
+                <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
                   {t("export.fullBackupDescription")}
-                </p>
+                </BodySmall>
               </div>
               <button
                 onClick={() => handleExportAll(setIsExporting)}
@@ -56,12 +56,10 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
           <div className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("export.accountData")}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                <Heading6 className="mb-1">{t("export.accountData")}</Heading6>
+                <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
                   {t("export.accountDataDescription")}
-                </p>
+                </BodySmall>
               </div>
               <button
                 onClick={() => handleExportAccounts(setIsExporting)}
@@ -78,12 +76,10 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
           <div className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("export.userSettings")}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                <Heading6 className="mb-1">{t("export.userSettings")}</Heading6>
+                <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
                   {t("export.userSettingsDescription")}
-                </p>
+                </BodySmall>
               </div>
               <button
                 onClick={() => handleExportPreferences(setIsExporting)}

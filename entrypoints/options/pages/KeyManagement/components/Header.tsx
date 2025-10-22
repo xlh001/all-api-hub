@@ -1,6 +1,7 @@
 import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { Body, Heading2 } from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 
 interface HeaderProps {
@@ -22,9 +23,7 @@ export function Header({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-3">
           <KeyIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-dark-text-primary">
-            {t("title")}
-          </h1>
+          <Heading2>{t("title")}</Heading2>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -42,9 +41,9 @@ export function Header({
           </button>
         </div>
       </div>
-      <p className="text-gray-500 dark:text-dark-text-secondary">
+      <Body className="text-gray-500 dark:text-dark-text-secondary">
         {t("description")}
-      </p>
+      </Body>
     </div>
   )
 }

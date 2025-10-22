@@ -2,6 +2,7 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
+import { BodySmall, Heading4, Heading6 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../utils/toastHelpers"
@@ -54,18 +55,16 @@ export default function NewApiSettings() {
 
   return (
     <section>
-      <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4 flex items-center">
+      <Heading4 className="mb-4 flex items-center">
         {t("newApi.title")}
-      </h2>
+      </Heading4>
       <div className="space-y-6">
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              New API Base URL
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+            <Heading6>New API Base URL</Heading6>
+            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
               {t("newApi.urlDesc")}
-            </p>
+            </BodySmall>
           </div>
           <input
             type="text"
@@ -79,12 +78,10 @@ export default function NewApiSettings() {
 
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              Admin Token
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+            <Heading6>Admin Token</Heading6>
+            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
               {t("newApi.tokenDesc")}
-            </p>
+            </BodySmall>
           </div>
           <div className="relative w-72">
             <input
@@ -109,12 +106,10 @@ export default function NewApiSettings() {
 
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              User ID
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+            <Heading6>User ID</Heading6>
+            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
               {t("newApi.userIdDesc")}
-            </p>
+            </BodySmall>
           </div>
           <input
             type="text"

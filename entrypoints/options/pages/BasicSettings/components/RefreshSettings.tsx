@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { BodySmall, Heading4, Heading6 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../utils/toastHelpers"
@@ -77,19 +78,15 @@ export default function RefreshSettings() {
 
   return (
     <section>
-      <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-        {t("refresh.title")}
-      </h2>
+      <Heading4 className="mb-4">{t("refresh.title")}</Heading4>
       <div className="space-y-6">
         {/* 自动刷新 */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("refresh.autoRefresh")}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+            <Heading6>{t("refresh.autoRefresh")}</Heading6>
+            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
               {t("refresh.autoRefreshDesc")}
-            </p>
+            </BodySmall>
           </div>
           <Switch
             checked={autoRefresh}
@@ -111,12 +108,10 @@ export default function RefreshSettings() {
         {autoRefresh && (
           <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-                {t("refresh.refreshInterval")}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+              <Heading6>{t("refresh.refreshInterval")}</Heading6>
+              <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
                 {t("refresh.refreshIntervalDesc")}
-              </p>
+              </BodySmall>
             </div>
             <div className="flex items-center space-x-2">
               <input
@@ -143,12 +138,10 @@ export default function RefreshSettings() {
         {/* 打开插件时自动刷新 */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("refresh.refreshOnOpen")}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+            <Heading6>{t("refresh.refreshOnOpen")}</Heading6>
+            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
               {t("refresh.refreshOnOpenDesc")}
-            </p>
+            </BodySmall>
           </div>
           <Switch
             checked={refreshOnOpen}
@@ -169,12 +162,10 @@ export default function RefreshSettings() {
         {/* 最小刷新间隔 */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("refresh.minRefreshInterval")}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+            <Heading6>{t("refresh.minRefreshInterval")}</Heading6>
+            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
               {t("refresh.minRefreshIntervalDesc")}
-            </p>
+            </BodySmall>
           </div>
           <div className="flex items-center space-x-2">
             <input

@@ -6,7 +6,7 @@ import {
   Card,
   CardItem,
   CardList,
-  Heading2,
+  Heading3,
   ToggleButton
 } from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
@@ -37,7 +37,7 @@ export default function DisplaySettings() {
   return (
     <section className="space-y-6">
       <div className="space-y-2">
-        <Heading2>{t("display.title")}</Heading2>
+        <Heading3>{t("display.title")}</Heading3>
         <BodySmall>{t("display.description")}</BodySmall>
       </div>
 

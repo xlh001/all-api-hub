@@ -3,6 +3,8 @@ import React from "react"
 
 import { cn } from "~/utils/cn"
 
+import { BodySmall, Typography } from "./Typography"
+
 const cardItemVariants = cva(
   "flex items-center justify-between transition-colors",
   {
@@ -56,8 +58,10 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
   ) => {
     const isClickable = onClick || interactive
 
+    const Component = (isClickable ? "button" : "div") as any
+
     return (
-      <div
+      <Component
         ref={ref}
         className={cn(
           cardItemVariants({
@@ -67,18 +71,7 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
           })
         )}
         onClick={onClick}
-        role={isClickable ? "button" : undefined}
-        tabIndex={isClickable ? 0 : undefined}
-        onKeyDown={
-          isClickable
-            ? (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault()
-                  onClick?.()
-                }
-              }
-            : undefined
-        }
+        type={isClickable ? "button" : undefined}
         {...props}>
         {children || (
           <>
@@ -90,14 +83,16 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
               )}
               <div>
                 {title && (
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
+                  <Typography
+                    variant="h6"
+                    className="transition-colors text-gray-900 dark:text-dark-text-primary">
                     {title}
-                  </h3>
+                  </Typography>
                 )}
                 {description && (
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
+                  <BodySmall className="transition-colors text-gray-600 dark:text-dark-text-secondary">
                     {description}
-                  </p>
+                  </BodySmall>
                 )}
                 {leftContent}
               </div>
@@ -105,7 +100,7 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
             {rightContent && <div>{rightContent}</div>}
           </>
         )}
-      </div>
+      </Component>
     )
   }
 )

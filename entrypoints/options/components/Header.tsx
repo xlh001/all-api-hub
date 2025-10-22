@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import iconImage from "~/assets/icon.png"
 import { LanguageSwitcher } from "~/components/LanguageSwitcher"
+import { BodySmall, Heading5 } from "~/components/ui"
 
 interface HeaderProps {
   onTitleClick: () => void
@@ -42,12 +43,12 @@ function Header({
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-sm"
             />
             <div className="hidden xs:block">
-              <h1 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-dark-text-primary">
+              <Heading5 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-dark-text-primary">
                 {t("app.name")}
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary hidden sm:block">
+              </Heading5>
+              <BodySmall className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary hidden sm:block">
                 {t("app.description")}
-              </p>
+              </BodySmall>
             </div>
           </div>
           <LanguageSwitcher />

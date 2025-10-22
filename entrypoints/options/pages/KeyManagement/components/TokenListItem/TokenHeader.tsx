@@ -9,6 +9,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { CherryIcon } from "~/components/icons/CherryIcon"
+import { Heading6 } from "~/components/ui"
 import { importToNewApi } from "~/services/newApiService"
 import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
@@ -101,9 +102,9 @@ export function TokenHeader({
       {/* 左侧：标题和标签 - 可压缩 */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-          <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-dark-text-primary truncate">
+          <Heading6 className="text-sm sm:text-base md:text-lg truncate">
             {token.name}
-          </h3>
+          </Heading6>
         </div>
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <span

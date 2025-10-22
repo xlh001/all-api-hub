@@ -3,6 +3,8 @@ import React from "react"
 
 import { cn } from "~/utils/cn"
 
+import { BodySmall, Heading3 } from "./Typography"
+
 const cardVariants = cva(
   "rounded-lg border bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary",
   {
@@ -62,30 +64,26 @@ CardHeader.displayName = "CardHeader"
 const CardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
+>(({ className, children, ...props }, ref) => (
+  <Heading3
     ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight text-gray-900 dark:text-dark-text-primary",
-      className
-    )}
-    {...props}
-  />
+    className={cn("leading-none tracking-tight", className)}
+    {...props}>
+    {children}
+  </Heading3>
 ))
 CardTitle.displayName = "CardTitle"
 
 const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
-  <p
+>(({ className, children, ...props }, ref) => (
+  <BodySmall
     ref={ref}
-    className={cn(
-      "text-sm text-gray-600 dark:text-dark-text-secondary",
-      className
-    )}
-    {...props}
-  />
+    className={cn("text-gray-600 dark:text-dark-text-secondary", className)}
+    {...props}>
+    {children}
+  </BodySmall>
 ))
 CardDescription.displayName = "CardDescription"
 

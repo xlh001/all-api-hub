@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import iconImage from "~/assets/icon.png"
+import { Body, Heading4 } from "~/components/ui"
 
 export interface PluginIntroCardProps {
   version: string
@@ -17,12 +18,10 @@ const PluginIntroCard = ({ version }: PluginIntroCardProps) => {
           className="w-16 h-16 rounded-lg shadow-sm flex-shrink-0"
         />
         <div className="flex-1">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
-            All API Hub
-          </h2>
-          <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
+          <Heading4 className="mb-2">All API Hub</Heading4>
+          <Body className="text-gray-600 dark:text-dark-text-secondary mb-4">
             {t("intro")}
-          </p>
+          </Body>
           <div className="text-sm">
             <div>
               <span className="text-gray-500 dark:text-dark-text-secondary">

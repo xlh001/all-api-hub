@@ -6,6 +6,8 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { BodySmall, Heading4 } from "~/components/ui"
+
 interface ImportSectionProps {
   importData: string
   setImportData: (data: string) => void
@@ -35,13 +37,13 @@ const ImportSection = ({
         <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary">
           <div className="flex items-center space-x-2">
             <ArrowDownTrayIcon className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
+            <Heading4 className="text-gray-900 dark:text-dark-text-primary">
               {t("import.title")}
-            </h2>
+            </Heading4>
           </div>
-          <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
+          <BodySmall className="text-gray-500 dark:text-dark-text-secondary mt-1">
             {t("import.description")}
-          </p>
+          </BodySmall>
         </div>
 
         <div className="p-6 space-y-4">
