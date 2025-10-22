@@ -20,6 +20,7 @@ export { IconButton, iconButtonVariants } from "./IconButton"
 export { Spinner, spinnerVariants } from "./Spinner"
 export { FormField } from "./FormField"
 export { ToggleButton, toggleButtonVariants } from "./ToggleButton"
+export { Switch, switchVariants } from "./Switch"
 
 // Typography Components
 export {

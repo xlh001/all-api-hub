@@ -1,9 +1,16 @@
-import { Switch } from "@headlessui/react"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading4, Heading6, Input } from "~/components/ui"
+import {
+  BodySmall,
+  Card,
+  CardItem,
+  CardList,
+  Heading4,
+  Input,
+  Switch
+} from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../utils/toastHelpers"
@@ -82,108 +89,86 @@ export default function RefreshSettings() {
       <BodySmall className="mb-4">
         {t("refresh.description", { defaultValue: "" })}
       </BodySmall>
-      <div className="space-y-6">
-        {/* 自动刷新 */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
-          <div>
-            <Heading6>{t("refresh.autoRefresh")}</Heading6>
-            <BodySmall>{t("refresh.autoRefreshDesc")}</BodySmall>
-          </div>
-          <Switch
-            checked={autoRefresh}
-            onChange={handleAutoRefreshChange}
-            className={`${
-              autoRefresh
-                ? "bg-blue-600"
-                : "bg-gray-200 dark:bg-dark-bg-tertiary"
-            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}>
-            <span
-              className={`${
-                autoRefresh ? "translate-x-6" : "translate-x-1"
-              } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-            />
-          </Switch>
-        </div>
-
-        {/* 刷新间隔 */}
-        {autoRefresh && (
-          <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
-            <div>
-              <Heading6>{t("refresh.refreshInterval")}</Heading6>
-              <BodySmall>{t("refresh.refreshIntervalDesc")}</BodySmall>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="number"
-                min={10}
-                value={intervalInput}
-                onChange={(e) => setIntervalInput(e.target.value)}
-                onBlur={handleRefreshIntervalBlur}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    ;(e.currentTarget as HTMLInputElement).blur()
-                  }
-                }}
-                placeholder="360"
-                className="w-24"
+      <Card padding="none">
+        <CardList>
+          <CardItem
+            title={t("refresh.autoRefresh")}
+            description={t("refresh.autoRefreshDesc")}
+            rightContent={
+              <Switch
+                checked={autoRefresh}
+                onChange={handleAutoRefreshChange}
               />
-              <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                {t("common:time.seconds")}
-              </span>
-            </div>
-          </div>
-        )}
+            }
+          />
 
-        {/* 打开插件时自动刷新 */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
-          <div>
-            <Heading6>{t("refresh.refreshOnOpen")}</Heading6>
-            <BodySmall>{t("refresh.refreshOnOpenDesc")}</BodySmall>
-          </div>
-          <Switch
-            checked={refreshOnOpen}
-            onChange={handleRefreshOnOpenChange}
-            className={`${
-              refreshOnOpen
-                ? "bg-blue-600"
-                : "bg-gray-200 dark:bg-dark-bg-tertiary"
-            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}>
-            <span
-              className={`${
-                refreshOnOpen ? "translate-x-6" : "translate-x-1"
-              } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+          {autoRefresh && (
+            <CardItem
+              title={t("refresh.refreshInterval")}
+              description={t("refresh.refreshIntervalDesc")}
+              rightContent={
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    min={10}
+                    value={intervalInput}
+                    onChange={(e) => setIntervalInput(e.target.value)}
+                    onBlur={handleRefreshIntervalBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        ;(e.currentTarget as HTMLInputElement).blur()
+                      }
+                    }}
+                    placeholder="360"
+                    className="w-24"
+                  />
+                  <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                    {t("common:time.seconds")}
+                  </span>
+                </div>
+              }
             />
-          </Switch>
-        </div>
+          )}
 
-        {/* 最小刷新间隔 */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
-          <div>
-            <Heading6>{t("refresh.minRefreshInterval")}</Heading6>
-            <BodySmall>{t("refresh.minRefreshIntervalDesc")}</BodySmall>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Input
-              type="number"
-              min={0}
-              max={300}
-              value={minIntervalInput}
-              onChange={(e) => setMinIntervalInput(e.target.value)}
-              onBlur={handleMinRefreshIntervalBlur}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  ;(e.currentTarget as HTMLInputElement).blur()
-                }
-              }}
-              placeholder="60"
-              className="w-24"
-            />
-            <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
-              {t("common:time.seconds")}
-            </span>
-          </div>
-        </div>
-      </div>
+          <CardItem
+            title={t("refresh.refreshOnOpen")}
+            description={t("refresh.refreshOnOpenDesc")}
+            rightContent={
+              <Switch
+                checked={refreshOnOpen}
+                onChange={handleRefreshOnOpenChange}
+              />
+            }
+          />
+
+          <CardItem
+            title={t("refresh.minRefreshInterval")}
+            description={t("refresh.minRefreshIntervalDesc")}
+            rightContent={
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={300}
+                  value={minIntervalInput}
+                  onChange={(e) => setMinIntervalInput(e.target.value)}
+                  onBlur={handleMinRefreshIntervalBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      ;(e.currentTarget as HTMLInputElement).blur()
+                    }
+                  }}
+                  placeholder="60"
+                  className="w-24"
+                />
+                <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                  {t("common:time.seconds")}
+                </span>
+              </div>
+            }
+          />
+        </CardList>
+      </Card>
     </section>
   )
 }

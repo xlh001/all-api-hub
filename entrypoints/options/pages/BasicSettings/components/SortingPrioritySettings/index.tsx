@@ -3,7 +3,7 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { UI_CONSTANTS } from "~/constants/ui"
+import { Button } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { SortingCriteriaType, type SortingFieldConfig } from "~/types/sorting"
 
@@ -107,9 +107,9 @@ function SortingPrioritySettingsContent() {
         items={augmentedItems}
         onDragEnd={handleDragEnd}
       />
-      <button onClick={handleSave} className={UI_CONSTANTS.STYLES.BUTTON.SAVE}>
+      <Button onClick={handleSave} size="sm">
         {t("common:actions.save")}
-      </button>
+      </Button>
     </div>
   )
 }

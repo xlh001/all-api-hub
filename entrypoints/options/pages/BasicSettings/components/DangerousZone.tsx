@@ -1,8 +1,14 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Button, Heading5 } from "~/components/ui"
-import { COLORS } from "~/constants/designTokens"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  BodySmall,
+  Button,
+  Heading5
+} from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showResetToast } from "../utils/toastHelpers"
@@ -25,17 +31,12 @@ export default function DangerousZone() {
         className={`text-lg font-medium text-red-600 dark:text-red-400 mb-4`}>
         {t("danger.title")}
       </Heading5>
-      <div
-        className={`${COLORS.semantic.error.bg} ${COLORS.semantic.error.border} border rounded-lg p-4`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className={`text-sm font-medium ${COLORS.semantic.error.text}`}>
-              {t("danger.resetAllSettings")}
-            </h3>
-            <BodySmall className={`${COLORS.semantic.error.text} mt-1`}>
-              {t("danger.resetDesc")}
-            </BodySmall>
-          </div>
+      <Alert variant="destructive" className="p-4">
+        <AlertTitle>{t("danger.resetAllSettings")}</AlertTitle>
+        <AlertDescription>
+          <BodySmall>{t("danger.resetDesc")}</BodySmall>
+        </AlertDescription>
+        <div className="mt-3 flex justify-end">
           <Button
             onClick={handleResetToDefaults}
             disabled={isResetting}
@@ -47,7 +48,7 @@ export default function DangerousZone() {
               : t("danger.resetSettings")}
           </Button>
         </div>
-      </div>
+      </Alert>
     </section>
   )
 }
