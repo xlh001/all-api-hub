@@ -2,6 +2,8 @@ import { Dialog } from "@headlessui/react"
 import { KeyIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { IconButton } from "~/components/ui"
+
 interface DialogHeaderProps {
   isEditMode: boolean
   onClose: () => void
@@ -18,11 +20,13 @@ export function DialogHeader({ isEditMode, onClose }: DialogHeaderProps) {
           {isEditMode ? t("dialog.editToken") : t("dialog.addToken")}
         </Dialog.Title>
       </div>
-      <button
-        onClick={onClose}
-        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors">
+      <IconButton
+        aria-label="close"
+        variant="ghost"
+        size="sm"
+        onClick={onClose}>
         <XMarkIcon className="w-5 h-5" />
-      </button>
+      </IconButton>
     </div>
   )
 }
