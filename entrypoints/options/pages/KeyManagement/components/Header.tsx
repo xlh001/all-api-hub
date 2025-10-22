@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { BodySmall, Button, Heading2 } from "~/components/ui"
 
 interface HeaderProps {
+  selectedAccount: string
   onAddToken: () => void
   onRefresh: () => void
   isLoading: boolean
@@ -14,6 +15,7 @@ export function Header({
   onAddToken,
   onRefresh,
   isLoading,
+  selectedAccount,
   isAddTokenDisabled
 }: HeaderProps) {
   const { t } = useTranslation("keyManagement")
@@ -34,7 +36,9 @@ export function Header({
             <span className="ml-1">{t("dialog.addToken")}</span>
           </Button>
           <Button onClick={onRefresh} disabled={isLoading} size="sm">
-            {isLoading ? t("common:status.refreshing") : t("refreshTokenList")}
+            {isLoading && selectedAccount
+              ? t("common:status.refreshing")
+              : t("refreshTokenList")}
           </Button>
         </div>
       </div>
