@@ -105,22 +105,18 @@ export function TokenHeader({
   return (
     <div className="flex items-start gap-2 min-w-0">
       {/* 左侧：标题和标签 - 可压缩 */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-          <Heading6 className="text-sm sm:text-base md:text-lg truncate">
-            {token.name}
-          </Heading6>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <Badge
-            variant={token.status === 1 ? "success" : "destructive"}
-            size="sm">
-            {token.status === 1 ? t("actions.enable") : t("actions.disable")}
-          </Badge>
-          <Badge variant="outline" size="sm">
-            {token.accountName}
-          </Badge>
-        </div>
+      <div className="flex-1 flex-wrap flex min-w-0 gap-1.5 sm:gap-2 items-center">
+        <Heading6 className="text-sm sm:text-base md:text-lg truncate">
+          {token.name}
+        </Heading6>
+        <Badge
+          variant={token.status === 1 ? "success" : "destructive"}
+          size="sm">
+          {token.status === 1 ? t("actions.enable") : t("actions.disable")}
+        </Badge>
+        <Badge variant="outline" size="sm">
+          {token.accountName}
+        </Badge>
       </div>
 
       {/* 右侧：操作按钮 - 固定不压缩 */}
