@@ -1,25 +1,12 @@
 import { getSiteApiRouter } from "~/constants/siteType"
 import type { DisplaySiteData } from "~/types"
+import { isExtensionPopup, OPTIONS_PAGE_URL } from "~/utils/browser.ts"
 import {
   createTab as createTabApi,
   focusTab,
   getExtensionURL
 } from "~/utils/browserApi"
 import { joinUrl } from "~/utils/url"
-
-const OPTIONS_PAGE_URL = getExtensionURL("options.html")
-
-export function isExtensionPopup() {
-  try {
-    const url = new URL(window.location.href)
-    // 检查是否是扩展内部页面
-    const isExtensionPage = url.protocol.includes("-extension:")
-    // 进一步限定 popup.html 或其它命名规则
-    return isExtensionPage && /popup.html/i.test(url.pathname)
-  } catch {
-    return false
-  }
-}
 
 export function closeIfPopup() {
   if (isExtensionPopup()) {

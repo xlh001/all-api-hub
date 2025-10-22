@@ -1,3 +1,7 @@
+import { getExtensionURL } from "~/utils/browserApi.ts"
+
+export const OPTIONS_PAGE_URL = getExtensionURL("options.html")
+
 export function isFirefoxByUA(): boolean {
   return (
     navigator.userAgent.indexOf(" Firefox/") !== -1 ||
@@ -30,4 +34,16 @@ export function isMobileByUA(): boolean {
  */
 export function isDesktopByUA(): boolean {
   return !isMobileByUA()
+}
+
+export function isExtensionPopup() {
+  try {
+    const url = new URL(window.location.href)
+    // 检查是否是扩展内部页面
+    const isExtensionPage = url.protocol.includes("-extension:")
+    // 进一步限定 popup.html 或其它命名规则
+    return isExtensionPage && /popup.html/i.test(url.pathname)
+  } catch {
+    return false
+  }
 }
