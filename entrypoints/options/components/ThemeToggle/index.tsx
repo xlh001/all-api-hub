@@ -5,7 +5,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Caption, Heading5, ToggleButton } from "~/components/ui"
+import { Caption, CardItem, ToggleButton } from "~/components/ui"
 import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { useTheme } from "~/contexts/ThemeContext"
 import type { ThemeMode } from "~/types/theme"
@@ -43,63 +43,52 @@ const ThemeToggle = () => {
   }
 
   return (
-    <div
-      className={`flex items-center justify-between px-6 py-4 border-b ${COLORS.border.default} ${ANIMATIONS.transition.base}`}>
-      <div className="flex items-center space-x-3">
+    <CardItem
+      icon={<SunIcon className="w-5 h-5 text-amber-500 dark:text-amber-400" />}
+      title={t("theme.appearance")}
+      description={t("theme.selectTheme")}
+      rightContent={
         <div
-          className={`p-2 rounded-lg ${COLORS.background.tertiary} ${ANIMATIONS.transition.base}`}>
-          <SunIcon className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+          className={`flex ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
+          {themeOptions.map(({ mode, label, icon: Icon, description }) => {
+            const isActive = themeMode === mode
+            return (
+              <ToggleButton
+                key={mode}
+                onClick={() => handleThemeChange(mode)}
+                isActive={isActive}
+                showActiveIndicator
+                title={description}
+                aria-label={t("theme.switchTo", { theme: label, description })}>
+                <span className="flex items-center">
+                  <Icon
+                    className={`
+                    w-4 h-4 mr-2 transition-colors
+                    ${
+                      isActive
+                        ? "text-blue-500 dark:text-blue-400"
+                        : "text-gray-500 dark:text-gray-400"
+                    }
+                  `}
+                  />
+                  {label}
+                </span>
+              </ToggleButton>
+            )
+          })}
         </div>
-        <div>
-          <Heading5
-            className={`text-sm font-semibold ${COLORS.text.primary} ${ANIMATIONS.transition.base}`}>
-            {t("theme.appearance")}
-          </Heading5>
-          <BodySmall
-            className={`${COLORS.text.secondary} ${ANIMATIONS.transition.base}`}>
-            {t("theme.selectTheme")}
-          </BodySmall>
-          <Caption
-            className={`${COLORS.text.tertiary} mt-1 ${ANIMATIONS.transition.base}`}>
-            {t("theme.currentTheme", {
-              theme: themeOptions.find((opt) => opt.mode === themeMode)?.label,
-              resolvedTheme:
-                resolvedTheme === "dark" ? t("theme.dark") : t("theme.light")
-            })}
-          </Caption>
-        </div>
-      </div>
-
-      <div
-        className={`flex ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
-        {themeOptions.map(({ mode, label, icon: Icon, description }) => {
-          const isActive = themeMode === mode
-          return (
-            <ToggleButton
-              key={mode}
-              onClick={() => handleThemeChange(mode)}
-              isActive={isActive}
-              showActiveIndicator
-              title={description}
-              aria-label={t("theme.switchTo", { theme: label, description })}>
-              <span className="flex items-center">
-                <Icon
-                  className={`
-                  w-4 h-4 mr-2 transition-colors
-                  ${
-                    isActive
-                      ? "text-blue-500 dark:text-blue-400"
-                      : "text-gray-500 dark:text-gray-400"
-                  }
-                `}
-                />
-                {label}
-              </span>
-            </ToggleButton>
-          )
-        })}
-      </div>
-    </div>
+      }
+      leftContent={
+        <Caption
+          className={`${COLORS.text.tertiary} mt-1 ${ANIMATIONS.transition.base}`}>
+          {t("theme.currentTheme", {
+            theme: themeOptions.find((opt) => opt.mode === themeMode)?.label,
+            resolvedTheme:
+              resolvedTheme === "dark" ? t("theme.dark") : t("theme.light")
+          })}
+        </Caption>
+      }
+    />
   )
 }
 

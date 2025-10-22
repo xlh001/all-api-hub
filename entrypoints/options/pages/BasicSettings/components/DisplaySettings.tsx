@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next"
 import {
   BodySmall,
   Card,
-  CardContent,
+  CardItem,
+  CardList,
   Heading2,
   ToggleButton
 } from "~/components/ui"
@@ -40,26 +41,17 @@ export default function DisplaySettings() {
         <BodySmall>{t("display.description")}</BodySmall>
       </div>
 
-      <Card>
-        <CardContent>
-          <div className={`divide-y ${COLORS.border.default}`}>
-            <ThemeToggle />
+      <Card padding="none">
+        <CardList>
+          <ThemeToggle />
 
-            {/* 默认货币单位 */}
-            <div className="flex items-center justify-between py-4 px-6 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 transition-colors">
-                  <GlobeAltIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
-                    {t("display.currencyUnit")}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-                    {t("display.currencyDesc")}
-                  </p>
-                </div>
-              </div>
+          <CardItem
+            icon={
+              <GlobeAltIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+            }
+            title={t("display.currencyUnit")}
+            description={t("display.currencyDesc")}
+            rightContent={
               <div
                 className={`flex ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
                 <ToggleButton
@@ -77,22 +69,16 @@ export default function DisplaySettings() {
                   {t("display.cny")}
                 </ToggleButton>
               </div>
-            </div>
+            }
+          />
 
-            <div className="flex items-center justify-between py-4 px-6 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 transition-colors">
-                  <EyeIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary transition-colors">
-                    {t("display.defaultTab")}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-dark-text-secondary transition-colors">
-                    {t("display.defaultTabDesc")}
-                  </p>
-                </div>
-              </div>
+          <CardItem
+            icon={
+              <EyeIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            }
+            title={t("display.defaultTab")}
+            description={t("display.defaultTabDesc")}
+            rightContent={
               <div
                 className={`flex ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
                 <ToggleButton
@@ -110,9 +96,9 @@ export default function DisplaySettings() {
                   {t("display.totalBalance")}
                 </ToggleButton>
               </div>
-            </div>
-          </div>
-        </CardContent>
+            }
+          />
+        </CardList>
       </Card>
     </section>
   )
