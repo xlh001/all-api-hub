@@ -6,7 +6,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading4 } from "~/components/ui"
+import { BodySmall, Heading4, Textarea } from "~/components/ui"
 
 interface ImportSectionProps {
   importData: string
@@ -41,9 +41,7 @@ const ImportSection = ({
               {t("import.title")}
             </Heading4>
           </div>
-          <BodySmall className="text-gray-500 dark:text-dark-text-secondary mt-1">
-            {t("import.description")}
-          </BodySmall>
+          <BodySmall className="mt-1">{t("import.description")}</BodySmall>
         </div>
 
         <div className="p-6 space-y-4">
@@ -68,11 +66,11 @@ const ImportSection = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
               {t("import.dataPreview")}
             </label>
-            <textarea
+            <Textarea
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
               placeholder={t("import.pasteJsonData")}
-              className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
+              className="w-full h-32 font-mono resize-none"
             />
           </div>
 

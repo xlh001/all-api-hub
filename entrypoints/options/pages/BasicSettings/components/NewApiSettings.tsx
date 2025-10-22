@@ -2,7 +2,7 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading4, Heading6 } from "~/components/ui"
+import { BodySmall, Heading4, Heading6, Input } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../utils/toastHelpers"
@@ -55,41 +55,40 @@ export default function NewApiSettings() {
 
   return (
     <section>
-      <Heading4 className="mb-4 flex items-center">
+      <Heading4 className="mb-2 flex items-center">
         {t("newApi.title")}
       </Heading4>
+      <BodySmall className="mb-4">
+        {t("newApi.description", { defaultValue: "" })}
+      </BodySmall>
       <div className="space-y-6">
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <Heading6>New API Base URL</Heading6>
-            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-              {t("newApi.urlDesc")}
-            </BodySmall>
+            <BodySmall>{t("newApi.urlDesc")}</BodySmall>
           </div>
-          <input
+          <Input
             type="text"
             value={localBaseUrl}
             onChange={(e) => setLocalBaseUrl(e.target.value)}
             onBlur={(e) => handleNewApiBaseUrlChange(e.target.value)}
             placeholder="https://api.example.com"
-            className="w-72 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+            className="w-72"
           />
         </div>
 
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <Heading6>Admin Token</Heading6>
-            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-              {t("newApi.tokenDesc")}
-            </BodySmall>
+            <BodySmall>{t("newApi.tokenDesc")}</BodySmall>
           </div>
           <div className="relative w-72">
-            <input
+            <Input
               type={showAdminToken ? "text" : "password"}
               value={localAdminToken}
               onChange={(e) => setLocalAdminToken(e.target.value)}
               onBlur={(e) => handleNewApiAdminTokenChange(e.target.value)}
-              className="w-full px-3 py-1.5 pr-10 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+              className="w-full pr-10"
             />
             <button
               type="button"
@@ -107,16 +106,14 @@ export default function NewApiSettings() {
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <Heading6>User ID</Heading6>
-            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-              {t("newApi.userIdDesc")}
-            </BodySmall>
+            <BodySmall>{t("newApi.userIdDesc")}</BodySmall>
           </div>
-          <input
+          <Input
             type="text"
             value={localUserId}
             onChange={(e) => setLocalUserId(e.target.value)}
             onBlur={(e) => handleNewApiUserIdChange(e.target.value)}
-            className="w-72 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+            className="w-72"
           />
         </div>
       </div>

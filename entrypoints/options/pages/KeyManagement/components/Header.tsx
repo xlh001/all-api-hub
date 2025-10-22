@@ -1,7 +1,7 @@
 import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { Body, Heading2 } from "~/components/ui"
+import { BodySmall, Heading2 } from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 
 interface HeaderProps {
@@ -41,9 +41,7 @@ export function Header({
           </button>
         </div>
       </div>
-      <Body className="text-gray-500 dark:text-dark-text-secondary">
-        {t("description")}
-      </Body>
+      <BodySmall>{t("description")}</BodySmall>
     </div>
   )
 }

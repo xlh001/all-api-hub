@@ -36,7 +36,7 @@ export default function DisplaySettings() {
 
   return (
     <section className="space-y-6">
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Heading3>{t("display.title")}</Heading3>
         <BodySmall>{t("display.description")}</BodySmall>
       </div>

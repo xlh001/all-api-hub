@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 
 import FeatureList from "~/components/FeatureList"
 import LinkCard from "~/components/LinkCard"
-import { Body, Heading2, Heading4 } from "~/components/ui"
+import { BodySmall, Heading2, Heading4 } from "~/components/ui"
 import { FEATURES, FUTURE_FEATURES } from "~/constants/about"
 import packageJson from "~/package.json"
 import { getHomepage, getPkgVersion, getRepository } from "~/utils/packageMeta"
@@ -62,9 +62,7 @@ export default function About() {
           <InformationCircleIcon className="w-6 h-6 text-blue-600" />
           <Heading2>{t("title")}</Heading2>
         </div>
-        <Body className="text-gray-500 dark:text-dark-text-secondary">
-          {t("intro")}
-        </Body>
+        <BodySmall>{t("intro")}</BodySmall>
       </div>
 
       <div className="space-y-6">

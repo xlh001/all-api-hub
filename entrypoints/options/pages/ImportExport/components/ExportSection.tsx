@@ -26,9 +26,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
               {t("export.title")}
             </Heading4>
           </div>
-          <BodySmall className="text-gray-500 dark:text-dark-text-secondary mt-1">
-            {t("export.description")}
-          </BodySmall>
+          <BodySmall className="mt-1">{t("export.description")}</BodySmall>
         </div>
 
         <div className="p-6 space-y-4">
@@ -37,9 +35,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <Heading6 className="mb-1">{t("export.fullBackup")}</Heading6>
-                <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-                  {t("export.fullBackupDescription")}
-                </BodySmall>
+                <BodySmall>{t("export.fullBackupDescription")}</BodySmall>
               </div>
               <button
                 onClick={() => handleExportAll(setIsExporting)}
@@ -57,9 +53,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <Heading6 className="mb-1">{t("export.accountData")}</Heading6>
-                <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-                  {t("export.accountDataDescription")}
-                </BodySmall>
+                <BodySmall>{t("export.accountDataDescription")}</BodySmall>
               </div>
               <button
                 onClick={() => handleExportAccounts(setIsExporting)}
@@ -77,9 +71,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <Heading6 className="mb-1">{t("export.userSettings")}</Heading6>
-                <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-                  {t("export.userSettingsDescription")}
-                </BodySmall>
+                <BodySmall>{t("export.userSettingsDescription")}</BodySmall>
               </div>
               <button
                 onClick={() => handleExportPreferences(setIsExporting)}

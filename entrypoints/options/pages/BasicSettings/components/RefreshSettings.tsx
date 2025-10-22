@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading4, Heading6 } from "~/components/ui"
+import { BodySmall, Heading4, Heading6, Input } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../utils/toastHelpers"
@@ -78,15 +78,16 @@ export default function RefreshSettings() {
 
   return (
     <section>
-      <Heading4 className="mb-4">{t("refresh.title")}</Heading4>
+      <Heading4 className="mb-2">{t("refresh.title")}</Heading4>
+      <BodySmall className="mb-4">
+        {t("refresh.description", { defaultValue: "" })}
+      </BodySmall>
       <div className="space-y-6">
         {/* 自动刷新 */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <Heading6>{t("refresh.autoRefresh")}</Heading6>
-            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-              {t("refresh.autoRefreshDesc")}
-            </BodySmall>
+            <BodySmall>{t("refresh.autoRefreshDesc")}</BodySmall>
           </div>
           <Switch
             checked={autoRefresh}
@@ -109,24 +110,22 @@ export default function RefreshSettings() {
           <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
             <div>
               <Heading6>{t("refresh.refreshInterval")}</Heading6>
-              <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-                {t("refresh.refreshIntervalDesc")}
-              </BodySmall>
+              <BodySmall>{t("refresh.refreshIntervalDesc")}</BodySmall>
             </div>
             <div className="flex items-center space-x-2">
-              <input
+              <Input
                 type="number"
-                min="10"
+                min={10}
                 value={intervalInput}
                 onChange={(e) => setIntervalInput(e.target.value)}
                 onBlur={handleRefreshIntervalBlur}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    e.currentTarget.blur() // 触发onBlur事件
+                    ;(e.currentTarget as HTMLInputElement).blur()
                   }
                 }}
                 placeholder="360"
-                className="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+                className="w-24"
               />
               <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
                 {t("common:time.seconds")}
@@ -139,9 +138,7 @@ export default function RefreshSettings() {
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <Heading6>{t("refresh.refreshOnOpen")}</Heading6>
-            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-              {t("refresh.refreshOnOpenDesc")}
-            </BodySmall>
+            <BodySmall>{t("refresh.refreshOnOpenDesc")}</BodySmall>
           </div>
           <Switch
             checked={refreshOnOpen}
@@ -163,25 +160,23 @@ export default function RefreshSettings() {
         <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
           <div>
             <Heading6>{t("refresh.minRefreshInterval")}</Heading6>
-            <BodySmall className="text-gray-500 dark:text-dark-text-secondary">
-              {t("refresh.minRefreshIntervalDesc")}
-            </BodySmall>
+            <BodySmall>{t("refresh.minRefreshIntervalDesc")}</BodySmall>
           </div>
           <div className="flex items-center space-x-2">
-            <input
+            <Input
               type="number"
-              min="0"
-              max="300"
+              min={0}
+              max={300}
               value={minIntervalInput}
               onChange={(e) => setMinIntervalInput(e.target.value)}
               onBlur={handleMinRefreshIntervalBlur}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  e.currentTarget.blur()
+                  ;(e.currentTarget as HTMLInputElement).blur()
                 }
               }}
               placeholder="60"
-              className="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-dark-bg-tertiary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+              className="w-24"
             />
             <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
               {t("common:time.seconds")}

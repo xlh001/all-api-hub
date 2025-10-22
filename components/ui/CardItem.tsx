@@ -89,11 +89,7 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
                     {title}
                   </Typography>
                 )}
-                {description && (
-                  <BodySmall className="transition-colors text-gray-600 dark:text-dark-text-secondary">
-                    {description}
-                  </BodySmall>
-                )}
+                {description && <BodySmall>{description}</BodySmall>}
                 {leftContent}
               </div>
             </div>

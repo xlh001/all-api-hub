@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading4 } from "~/components/ui"
+import { BodySmall, Heading4, Input } from "~/components/ui"
 import { accountStorage } from "~/services/accountStorage"
 import { userPreferences } from "~/services/userPreferences"
 import {
@@ -55,9 +55,7 @@ export default function WebDAVSettings() {
             {t("webdav.title")}
           </Heading4>
         </div>
-        <BodySmall className="text-gray-500 dark:text-dark-text-secondary mt-1">
-          {t("webdav.configDesc")}
-        </BodySmall>
+        <BodySmall className="mt-1">{t("webdav.configDesc")}</BodySmall>
       </div>
 
       <div className="p-6 space-y-4">
@@ -69,14 +67,13 @@ export default function WebDAVSettings() {
               className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
               {t("webdav.webdavUrl")}
             </label>
-            <input
+            <Input
               id="webdavUrl"
               title={t("webdav.webdavUrl")}
               type="url"
               placeholder={t("webdav.webdavUrlExample")}
               value={webdavUrl}
               onChange={(e) => setWebdavUrl(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
@@ -86,14 +83,13 @@ export default function WebDAVSettings() {
               className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
               {t("webdav.username")}
             </label>
-            <input
+            <Input
               id="webdavUsername"
               title={t("webdav.username")}
               type="text"
               placeholder={t("webdav.username")}
               value={webdavUsername}
               onChange={(e) => setWebdavUsername(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
           <div>
@@ -103,14 +99,14 @@ export default function WebDAVSettings() {
               {t("webdav.password")}
             </label>
             <div className="relative">
-              <input
+              <Input
                 id="webdavPassword"
                 title={t("webdav.password")}
                 type={showWebdavPassword ? "text" : "password"}
                 placeholder={t("webdav.password")}
                 value={webdavPassword}
                 onChange={(e) => setWebdavPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500"
+                className="pr-10"
               />
               <button
                 type="button"
