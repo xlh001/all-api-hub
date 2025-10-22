@@ -1,16 +1,6 @@
-import type { ApiToken, CheckInConfig } from "./index"
+import { AutoDetectError } from "~/utils/autoDetectUtils.ts"
 
-/**
- * Auto-detect error details for backwards compatibility
- */
-export interface AutoDetectError {
-  type: string
-  message: string
-  actionText?: string
-  actionUrl?: string
-  helpDocUrl?: string
-  details?: any
-}
+import type { ApiToken, CheckInConfig } from "./index"
 
 /**
  * Unified service response structure

@@ -12,7 +12,7 @@ import {
 } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
 import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
-import type { AutoDetectError } from "~/types/serviceResponse"
+import { AutoDetectError } from "~/utils/autoDetectUtils.ts"
 
 interface UseAccountDialogProps {
   mode: "add" | "edit"

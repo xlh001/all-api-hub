@@ -208,6 +208,5 @@ export type {
   ServiceResponse,
   AccountValidationResponse,
   AccountSaveResponse,
-  NewApiResponse,
-  AutoDetectError
+  NewApiResponse
 } from "./serviceResponse"
