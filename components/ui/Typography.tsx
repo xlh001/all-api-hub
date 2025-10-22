@@ -38,8 +38,8 @@ const typographyVariants = cva("", {
   },
   defaultVariants: {
     variant: "body",
-    align: "left",
-    weight: "normal"
+    align: "left"
+    // Note: weight intentionally has no default to allow variant-specific weights
   }
 })
 
