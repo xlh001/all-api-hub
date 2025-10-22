@@ -44,7 +44,6 @@ export function Controls({
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
           <Input
             type="text"
             placeholder={t("searchPlaceholder")}
@@ -52,6 +51,9 @@ export function Controls({
             onChange={(e) => setSearchTerm(e.target.value)}
             disabled={!selectedAccount}
             className="pl-9"
+            leftIcon={
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
+            }
           />
         </div>
       </div>
