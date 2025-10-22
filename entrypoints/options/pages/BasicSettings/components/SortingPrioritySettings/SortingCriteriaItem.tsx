@@ -31,12 +31,12 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="mb-2 flex items-center rounded-lg border border-gray-200 dark:border-dark-bg-tertiary bg-gray-50 dark:bg-dark-bg-tertiary p-3 sm:p-4 cursor-move hover:bg-gray-100 dark:hover:bg-dark-bg-secondary transition-colors touch-none">
+      className="mb-2 flex items-center rounded-lg border border-gray-200 dark:border-dark-bg-tertiary bg-gray-50 dark:bg-dark-bg-tertiary p-2.5 sm:p-3 cursor-move hover:bg-gray-100 dark:hover:bg-dark-bg-secondary transition-colors touch-none">
       <div className="flex-grow min-w-0 mr-2 sm:mr-3">
-        <div className="font-medium text-sm sm:text-base text-gray-900 dark:text-dark-text-primary truncate">
+        <div className="font-medium text-sm text-gray-900 dark:text-dark-text-primary truncate">
           {item.label}
         </div>
-        <div className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-secondary truncate">
+        <div className="text-xs text-gray-500 dark:text-dark-text-secondary truncate">
           {item.description}
         </div>
       </div>

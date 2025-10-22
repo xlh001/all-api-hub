@@ -3,7 +3,7 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { Button } from "~/components/ui"
+import { BodySmall, Button, Card, CardFooter, Heading4 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { SortingCriteriaType, type SortingFieldConfig } from "~/types/sorting"
 
@@ -99,18 +99,23 @@ function SortingPrioritySettingsContent() {
   }))
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-        {t("sorting.title")}
-      </h2>
-      <SortingPriorityDragList
-        items={augmentedItems}
-        onDragEnd={handleDragEnd}
-      />
-      <Button onClick={handleSave} size="sm">
-        {t("common:actions.save")}
-      </Button>
-    </div>
+    <section className="space-y-3">
+      <Heading4>{t("sorting.title")}</Heading4>
+      <BodySmall>{t("sorting.description", { defaultValue: "" })}</BodySmall>
+      <Card>
+        <SortingPriorityDragList
+          items={augmentedItems}
+          onDragEnd={handleDragEnd}
+        />
+        <CardFooter>
+          <div className="flex justify-end">
+            <Button onClick={handleSave} size="sm">
+              {t("common:actions.save")}
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+    </section>
   )
 }
 
