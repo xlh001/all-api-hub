@@ -33,7 +33,6 @@ export function LanguageSwitcher() {
               size="sm"
               className={`
                 relative px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md
-                focus:outline-none focus:ring-2 focus:ring-offset-1
                 touch-manipulation tap-highlight-transparent
                 ${
                   isActive
