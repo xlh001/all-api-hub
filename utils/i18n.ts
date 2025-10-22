@@ -47,6 +47,7 @@ i18n
     interpolation: {
       escapeValue: false // react already escapes by default
     },
+    missingInterpolationHandler: () => "",
     // Set the language determined by user preferences, or let detector handle it
     react: {
       useSuspense: false
