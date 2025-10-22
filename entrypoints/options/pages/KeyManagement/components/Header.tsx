@@ -1,8 +1,7 @@
 import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading2 } from "~/components/ui"
-import { UI_CONSTANTS } from "~/constants/ui"
+import { BodySmall, Button, Heading2 } from "~/components/ui"
 
 interface HeaderProps {
   onAddToken: () => void
@@ -26,19 +25,13 @@ export function Header({
           <Heading2>{t("title")}</Heading2>
         </div>
         <div className="flex items-center space-x-3">
-          <button
-            onClick={onAddToken}
-            disabled={isAddTokenDisabled}
-            className={UI_CONSTANTS.STYLES.BUTTON.SUCCESS}>
+          <Button onClick={onAddToken} disabled={isAddTokenDisabled} size="sm">
             <PlusIcon className="w-4 h-4" />
-            <span>{t("dialog.addToken")}</span>
-          </button>
-          <button
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary transition-colors disabled:opacity-50">
+            <span className="ml-1">{t("dialog.addToken")}</span>
+          </Button>
+          <Button onClick={onRefresh} disabled={isLoading} size="sm">
             {isLoading ? t("common:status.refreshing") : t("refreshTokenList")}
-          </button>
+          </Button>
         </div>
       </div>
       <BodySmall>{t("description")}</BodySmall>

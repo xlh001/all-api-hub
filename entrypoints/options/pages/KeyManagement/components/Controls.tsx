@@ -1,7 +1,7 @@
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { UI_CONSTANTS } from "~/constants/ui"
+import { Heading3, Input, Select } from "~/components/ui"
 import type { DisplaySiteData } from "~/types"
 
 interface ControlsProps {
@@ -27,33 +27,31 @@ export function Controls({
 
   return (
     <div className="mb-6 space-y-4">
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-          {t("selectAccount")}
-        </label>
-        <select
+      <div className="mb-2">
+        <Heading3 className="mb-1">{t("selectAccount")}</Heading3>
+        <Select
           value={selectedAccount}
           onChange={(e) => setSelectedAccount(e.target.value)}
-          className="w-full sm:w-80 px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary disabled:bg-gray-100 dark:disabled:bg-dark-bg-tertiary disabled:cursor-not-allowed">
+          className="w-full sm:w-80">
           <option value="">{t("pleaseSelectAccount")}</option>
           {displayData.map((account) => (
             <option key={account.id} value={account.id}>
               {account.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
-          <input
+          <Input
             type="text"
             placeholder={t("searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             disabled={!selectedAccount}
-            className={UI_CONSTANTS.STYLES.INPUT.SEARCH}
+            className="pl-9"
           />
         </div>
       </div>
