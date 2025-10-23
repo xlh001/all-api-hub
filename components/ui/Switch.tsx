@@ -40,10 +40,42 @@ const thumbVariants = cva(
         lg: "h-5 w-5"
       },
       checked: {
-        true: "translate-x-5",
-        false: "translate-x-1"
+        true: "",
+        false: ""
       }
     },
+    compoundVariants: [
+      {
+        size: "sm",
+        checked: true,
+        className: "translate-x-4"
+      },
+      {
+        size: "default",
+        checked: true,
+        className: "translate-x-6"
+      },
+      {
+        size: "lg",
+        checked: true,
+        className: "translate-x-8"
+      },
+      {
+        size: "sm",
+        checked: false,
+        className: "translate-x-1"
+      },
+      {
+        size: "default",
+        checked: false,
+        className: "translate-x-1"
+      },
+      {
+        size: "lg",
+        checked: false,
+        className: "translate-x-1"
+      }
+    ],
     defaultVariants: {
       size: "default",
       checked: false
