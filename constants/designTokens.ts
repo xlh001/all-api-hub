@@ -29,35 +29,35 @@ export const COLORS = {
     subtle: "border-gray-100 dark:border-gray-700",
     strong: "border-gray-300 dark:border-gray-600",
     focus: "border-blue-500 dark:border-blue-400"
-  },
+  }
 
   // Semantic colors
-  semantic: {
-    success: {
-      bg: "bg-semantic-success-50 dark:bg-semantic-success-900/20",
-      border: "border-semantic-success-200 dark:border-semantic-success-800",
-      text: "text-semantic-success-800 dark:text-semantic-success-200",
-      icon: "text-semantic-success-600 dark:text-semantic-success-400"
-    },
-    warning: {
-      bg: "bg-semantic-warning-50 dark:bg-semantic-warning-900/20",
-      border: "border-semantic-warning-200 dark:border-semantic-warning-800",
-      text: "text-semantic-warning-800 dark:text-semantic-warning-200",
-      icon: "text-semantic-warning-600 dark:text-semantic-warning-400"
-    },
-    error: {
-      bg: "bg-semantic-error-50 dark:bg-semantic-error-900/20",
-      border: "border-semantic-error-200 dark:border-semantic-error-800",
-      text: "text-semantic-error-800 dark:text-semantic-error-200",
-      icon: "text-semantic-error-600 dark:text-semantic-error-400"
-    },
-    info: {
-      bg: "bg-semantic-info-50 dark:bg-semantic-info-900/20",
-      border: "border-semantic-info-200 dark:border-semantic-info-800",
-      text: "text-semantic-info-800 dark:text-semantic-info-200",
-      icon: "text-semantic-info-600 dark:text-semantic-info-400"
-    }
-  }
+  // semantic: {
+  //   success: {
+  //     bg: "bg-semantic-success-50 dark:bg-semantic-success-900/20",
+  //     border: "border-semantic-success-200 dark:border-semantic-success-800",
+  //     text: "text-semantic-success-800 dark:text-semantic-success-200",
+  //     icon: "text-semantic-success-600 dark:text-semantic-success-400"
+  //   },
+  //   warning: {
+  //     bg: "bg-semantic-warning-50 dark:bg-semantic-warning-900/20",
+  //     border: "border-semantic-warning-200 dark:border-semantic-warning-800",
+  //     text: "text-semantic-warning-800 dark:text-semantic-warning-200",
+  //     icon: "text-semantic-warning-600 dark:text-semantic-warning-400"
+  //   },
+  //   error: {
+  //     bg: "bg-semantic-error-50 dark:bg-semantic-error-900/20",
+  //     border: "border-semantic-error-200 dark:border-semantic-error-800",
+  //     text: "text-semantic-error-800 dark:text-semantic-error-200",
+  //     icon: "text-semantic-error-600 dark:text-semantic-error-400"
+  //   },
+  //   info: {
+  //     bg: "bg-semantic-info-50 dark:bg-semantic-info-900/20",
+  //     border: "border-semantic-info-200 dark:border-semantic-info-800",
+  //     text: "text-semantic-info-800 dark:text-semantic-info-200",
+  //     icon: "text-semantic-info-600 dark:text-semantic-info-400"
+  //   }
+  // }
 } as const
 
 // Typography tokens
