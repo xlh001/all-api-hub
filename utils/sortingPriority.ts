@@ -92,9 +92,9 @@ function applySortingCriteria(
       return healthA - healthB
 
     case SortingCriteriaType.CHECK_IN_REQUIREMENT:
-      const checkInA = a?.checkIn?.isCheckedInToday ? 1 : 0
-      const checkInB = b?.checkIn?.isCheckedInToday ? 1 : 0
-      return checkInB - checkInA
+      const checkInA = a?.checkIn?.isCheckedInToday === false ? 0 : 1
+      const checkInB = b?.checkIn?.isCheckedInToday === false ? 0 : 1
+      return checkInA - checkInB
 
     case SortingCriteriaType.CUSTOM_CHECK_IN_URL:
       const customUrlA = a?.checkIn?.customCheckInUrl ? 1 : 0

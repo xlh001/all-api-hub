@@ -140,7 +140,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                       wrapperClassName="flex items-center">
                       <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
                     </Tooltip>
-                  ) : site.checkIn.isCheckedInToday === false ? (
+                  ) : site.checkIn.isCheckedInToday ? (
                     <Tooltip
                       content={t("list.site.checkedInToday")}
                       position="top"
