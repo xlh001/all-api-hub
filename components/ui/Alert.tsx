@@ -12,12 +12,12 @@ const alertVariants = cva(
         default:
           "bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary border-gray-200 dark:border-dark-bg-tertiary",
         destructive:
-          "bg-semantic-error-50 dark:bg-semantic-error-900/20 text-semantic-error-800 dark:text-semantic-error-200 border-semantic-error-200 dark:border-semantic-error-800",
+          "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700",
         success:
-          "bg-semantic-success-50 dark:bg-semantic-success-900/20 text-semantic-success-800 dark:text-semantic-success-200 border-semantic-success-200 dark:border-semantic-success-800",
+          "bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700",
         warning:
-          "bg-semantic-warning-50 dark:bg-semantic-warning-900/20 text-semantic-warning-800 dark:text-semantic-warning-200 border-semantic-warning-200 dark:border-semantic-warning-800",
-        info: "bg-semantic-info-50 dark:bg-semantic-info-900/20 text-semantic-info-800 dark:text-semantic-info-200 border-semantic-info-200 dark:border-semantic-info-800"
+          "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700",
+        info: "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-700"
       }
     },
     defaultVariants: {
