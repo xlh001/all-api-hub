@@ -73,7 +73,7 @@ export default function AccountList() {
   return (
     <Card padding="none" className="flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-3 sm:px-5 py- sm:py-2 bg-gray-50 dark:bg-dark-bg-secondary border-b border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-10">
+      <div className="px-3 sm:px-5 py-2 bg-gray-50 dark:bg-dark-bg-secondary border-b border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-10">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Account Name Column */}
           <div className="flex-1 min-w-0">

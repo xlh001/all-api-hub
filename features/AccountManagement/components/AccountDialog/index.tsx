@@ -59,9 +59,29 @@ export default function AccountDialog({
       isOpen={isOpen}
       onClose={handlers.handleClose}
       panelClassName="w-full max-w-md bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto"
-      header={<DialogHeader mode={mode} />}>
+      header={<DialogHeader mode={mode} />}
+      footer={
+        <ActionButtons
+          mode={mode}
+          url={state.url}
+          isDetecting={state.isDetecting}
+          onAutoDetect={handlers.handleAutoDetect}
+          onShowManualForm={() => setters.setShowManualForm(true)}
+          onClose={handlers.handleClose}
+          isFormValid={state.isFormValid}
+          isSaving={state.isSaving}
+          isDetected={state.isDetected}
+          onAutoConfig={handlers.handleAutoConfig}
+          isAutoConfiguring={state.isAutoConfiguring}
+          // ensure submit button in footer can submit the form by linking via form id
+          formId="account-form"
+        />
+      }>
       <div className="p-4">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <form
+          id="account-form"
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-2">
           {state.detectionError && (
             <AutoDetectErrorAlert
               error={state.detectionError}
@@ -125,19 +145,7 @@ export default function AccountDialog({
                 siteType={state.siteType}
                 onSiteTypeChange={setters.setSiteType}
               />
-              <ActionButtons
-                mode={mode}
-                url={state.url}
-                isDetecting={state.isDetecting}
-                onAutoDetect={handlers.handleAutoDetect}
-                onShowManualForm={() => setters.setShowManualForm(true)}
-                onClose={handlers.handleClose}
-                isFormValid={state.isFormValid}
-                isSaving={state.isSaving}
-                isDetected={state.isDetected}
-                onAutoConfig={handlers.handleAutoConfig}
-                isAutoConfiguring={state.isAutoConfiguring}
-              />
+              {/* ActionButtons moved to Modal.footer for consistent layout */}
             </>
           )}
         </form>
