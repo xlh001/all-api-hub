@@ -8,6 +8,7 @@ import {
   CardItem,
   CardList,
   Heading4,
+  IconButton,
   Input
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -97,16 +98,20 @@ export default function NewApiSettings() {
                   onBlur={(e) => handleNewApiAdminTokenChange(e.target.value)}
                   className="w-full pr-10"
                 />
-                <button
-                  type="button"
+                <IconButton
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowAdminToken(!showAdminToken)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary transition-colors">
+                  aria-label={
+                    showAdminToken ? "Hide password" : "Show password"
+                  }
+                  className="absolute inset-y-0 right-0 mr-1">
                   {showAdminToken ? (
                     <EyeSlashIcon className="h-4 w-4" />
                   ) : (
                     <EyeIcon className="h-4 w-4" />
                   )}
-                </button>
+                </IconButton>
               </div>
             }
           />
