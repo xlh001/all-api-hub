@@ -1,12 +1,15 @@
-import {
-  ArrowDownTrayIcon,
-  CheckCircleIcon,
-  DocumentIcon,
-  ExclamationTriangleIcon
-} from "@heroicons/react/24/outline"
+import { ArrowDownTrayIcon, DocumentIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading4, Textarea } from "~/components/ui"
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  FormField,
+  Textarea
+} from "~/components/ui"
 
 interface ImportSectionProps {
   importData: string
@@ -33,23 +36,18 @@ const ImportSection = ({
   const { t } = useTranslation("importExport")
   return (
     <section>
-      <div className="h-full bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary">
-          <div className="flex items-center space-x-2">
-            <ArrowDownTrayIcon className="w-5 h-5 text-blue-600" />
-            <Heading4 className="text-gray-900 dark:text-dark-text-primary">
-              {t("import.title")}
-            </Heading4>
-          </div>
-          <BodySmall className="mt-1">{t("import.description")}</BodySmall>
-        </div>
+      <Card padding="none">
+        <CardHeader
+          icon={
+            <ArrowDownTrayIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          }
+          title={t("import.title")}
+          description={t("import.description")}
+        />
 
-        <div className="p-6 space-y-4">
+        <CardContent className="p-6 space-y-4">
           {/* 文件选择 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-              {t("import.selectBackupFile")}
-            </label>
+          <FormField label={t("import.selectBackupFile")}>
             <div className="flex items-center space-x-3">
               <input
                 type="file"
@@ -59,74 +57,57 @@ const ImportSection = ({
               />
               <DocumentIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </div>
-          </div>
+          </FormField>
 
           {/* 数据预览 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-              {t("import.dataPreview")}
-            </label>
+          <FormField label={t("import.dataPreview")}>
             <Textarea
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
               placeholder={t("import.pasteJsonData")}
               className="w-full h-32 font-mono resize-none"
             />
-          </div>
+          </FormField>
 
           {/* 数据验证结果 */}
           {validation && (
-            <div
-              className={`p-3 rounded-lg ${
-                validation.valid
-                  ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30"
-                  : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30"
-              }`}>
-              <div className="flex items-start space-x-2">
+            <Alert variant={validation.valid ? "success" : "destructive"}>
+              <div>
                 {validation.valid ? (
-                  <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                ) : (
-                  <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                )}
-                <div className="text-sm">
-                  {validation.valid ? (
-                    <div>
-                      <p className="text-green-800 dark:text-green-200 font-medium">
-                        {t("import.dataValid")}
+                  <>
+                    <p className="font-medium mb-1">{t("import.dataValid")}</p>
+                    <div className="text-sm space-y-1">
+                      {validation.hasAccounts && (
+                        <p>• {t("import.containsAccountData")}</p>
+                      )}
+                      {validation.hasPreferences && (
+                        <p>• {t("import.containsUserSettings")}</p>
+                      )}
+                      <p>
+                        • {t("import.backupTime")}: {validation.timestamp}
                       </p>
-                      <div className="mt-1 text-green-700 dark:text-green-300">
-                        {validation.hasAccounts && (
-                          <p>• {t("import.containsAccountData")}</p>
-                        )}
-                        {validation.hasPreferences && (
-                          <p>• {t("import.containsUserSettings")}</p>
-                        )}
-                        <p>
-                          • {t("import.backupTime")}: {validation.timestamp}
-                        </p>
-                      </div>
                     </div>
-                  ) : (
-                    <p className="text-red-800 dark:text-red-200">
-                      {t("import.dataInvalid")}
-                    </p>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  <p>{t("import.dataInvalid")}</p>
+                )}
               </div>
-            </div>
+            </Alert>
           )}
 
           {/* 导入按钮 */}
-          <button
+          <Button
             onClick={handleImport}
             disabled={isImporting || !validation?.valid}
-            className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            loading={isImporting}
+            variant="default"
+            className="w-full">
             {isImporting
               ? t("common:status.importing")
               : t("common:actions.import")}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardContent>
+      </Card>
     </section>
   )
 }

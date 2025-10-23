@@ -1,33 +1,38 @@
 import { HeartIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading6 } from "~/components/ui"
+import { Badge, BodySmall, Card, CardContent, Heading6 } from "~/components/ui"
 
 const CreditsCard = () => {
   const { t } = useTranslation("about")
   return (
-    <div className="bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-6">
-      <div className="flex items-start space-x-4">
-        <HeartIcon className="w-6 h-6 text-red-500 mt-1 flex-shrink-0" />
-        <div className="flex-1">
-          <Heading6 className="mb-2">{t("devMaintenance")}</Heading6>
-          <BodySmall className="text-gray-600 dark:text-dark-text-secondary mb-4">
-            {t("thanksDesc")}
-          </BodySmall>
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">
-              Made with ❤️
-            </span>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-dark-bg-tertiary text-gray-800 dark:text-dark-text-secondary">
-              Open Source
-            </span>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300">
-              Privacy First
-            </span>
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-start space-x-4">
+          <HeartIcon className="w-6 h-6 text-red-500 dark:text-red-400 mt-1 flex-shrink-0" />
+          <div className="flex-1">
+            <Heading6 className="mb-2">{t("devMaintenance")}</Heading6>
+            <BodySmall className="text-gray-600 dark:text-dark-text-secondary mb-4">
+              {t("thanksDesc")}
+            </BodySmall>
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant="destructive"
+                size="sm"
+                className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/70">
+                Made with ❤️
+              </Badge>
+              <Badge variant="secondary" size="sm">
+                Open Source
+              </Badge>
+              <Badge variant="default" size="sm">
+                Privacy First
+              </Badge>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

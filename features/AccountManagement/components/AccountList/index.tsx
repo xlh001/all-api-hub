@@ -1,11 +1,13 @@
 import {
   ChevronDownIcon,
   ChevronUpIcon,
-  InboxIcon
+  InboxIcon,
+  PlusIcon
 } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
+import { EmptyState } from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -38,17 +40,16 @@ export default function AccountList() {
 
   if (sortedData.length === 0) {
     return (
-      <div className="px-4 sm:px-6 py-8 sm:py-12 text-center">
-        <InboxIcon className="w-12 h-12 sm:w-16 sm:h-16 text-gray-200 dark:text-gray-700 mx-auto mb-3 sm:mb-4" />
-        <p className="text-gray-500 dark:text-dark-text-secondary text-xs sm:text-sm mb-3 sm:mb-4">
-          {t("account:emptyState")}
-        </p>
-        <button
-          onClick={openAddAccount}
-          className="px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm touch-manipulation tap-highlight-transparent">
-          {t("account:addFirstAccount")}
-        </button>
-      </div>
+      <EmptyState
+        icon={<InboxIcon className="w-12 h-12" />}
+        title={t("account:emptyState")}
+        action={{
+          label: t("account:addFirstAccount"),
+          onClick: openAddAccount,
+          variant: "default",
+          icon: <PlusIcon className="w-4 h-4" />
+        }}
+      />
     )
   }
 

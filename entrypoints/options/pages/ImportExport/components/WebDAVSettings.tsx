@@ -1,13 +1,16 @@
-import {
-  ArrowPathIcon,
-  EyeIcon,
-  EyeSlashIcon
-} from "@heroicons/react/24/outline"
+import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import { useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Heading4, Input } from "~/components/ui"
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  FormField,
+  Input
+} from "~/components/ui"
 import { accountStorage } from "~/services/accountStorage"
 import { userPreferences } from "~/services/userPreferences"
 import {
@@ -29,8 +32,6 @@ export default function WebDAVSettings() {
   const [uploading, setUploading] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
-  const [showWebdavPassword, setShowWebdavPassword] = useState(false)
-
   const webdavConfigFilled = useMemo(
     () => Boolean(webdavUrl && webdavUsername && webdavPassword),
     [webdavUrl, webdavUsername, webdavPassword]
@@ -47,42 +48,32 @@ export default function WebDAVSettings() {
   }, [])
 
   return (
-    <div className="bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary">
-        <div className="flex items-center space-x-2">
-          <ArrowPathIcon className="w-5 h-5 text-indigo-600" />
-          <Heading4 className="text-gray-900 dark:text-dark-text-primary">
-            {t("webdav.title")}
-          </Heading4>
-        </div>
-        <BodySmall className="mt-1">{t("webdav.configDesc")}</BodySmall>
-      </div>
+    <Card padding="none">
+      <CardHeader
+        icon={
+          <ArrowPathIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+        }
+        title={t("webdav.title")}
+        description={t("webdav.configDesc")}
+      />
 
-      <div className="p-6 space-y-4">
+      <CardContent className="p-6 space-y-4">
         {/* 配置表单 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label
-              htmlFor="webdavUrl"
-              className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              {t("webdav.webdavUrl")}
-            </label>
-            <Input
-              id="webdavUrl"
-              title={t("webdav.webdavUrl")}
-              type="url"
-              placeholder={t("webdav.webdavUrlExample")}
-              value={webdavUrl}
-              onChange={(e) => setWebdavUrl(e.target.value)}
-            />
+            <FormField label={t("webdav.webdavUrl")}>
+              <Input
+                id="webdavUrl"
+                title={t("webdav.webdavUrl")}
+                type="url"
+                placeholder={t("webdav.webdavUrlExample")}
+                value={webdavUrl}
+                onChange={(e) => setWebdavUrl(e.target.value)}
+              />
+            </FormField>
           </div>
 
-          <div>
-            <label
-              htmlFor="webdavUsername"
-              className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              {t("webdav.username")}
-            </label>
+          <FormField label={t("webdav.username")}>
             <Input
               id="webdavUsername"
               title={t("webdav.username")}
@@ -91,40 +82,23 @@ export default function WebDAVSettings() {
               value={webdavUsername}
               onChange={(e) => setWebdavUsername(e.target.value)}
             />
-          </div>
-          <div>
-            <label
-              htmlFor="webdavPassword"
-              className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              {t("webdav.password")}
-            </label>
-            <div className="relative">
-              <Input
-                id="webdavPassword"
-                title={t("webdav.password")}
-                type={showWebdavPassword ? "text" : "password"}
-                placeholder={t("webdav.password")}
-                value={webdavPassword}
-                onChange={(e) => setWebdavPassword(e.target.value)}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowWebdavPassword(!showWebdavPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                {showWebdavPassword ? (
-                  <EyeSlashIcon className="h-4 w-4" />
-                ) : (
-                  <EyeIcon className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-          </div>
+          </FormField>
+
+          <FormField label={t("webdav.password")}>
+            <Input
+              id="webdavPassword"
+              title={t("webdav.password")}
+              type="password"
+              placeholder={t("webdav.password")}
+              value={webdavPassword}
+              onChange={(e) => setWebdavPassword(e.target.value)}
+            />
+          </FormField>
         </div>
 
         <div className="flex flex-wrap gap-3">
           {/* 保存配置 */}
-          <button
+          <Button
             onClick={async () => {
               setSaving(true)
               try {
@@ -142,12 +116,15 @@ export default function WebDAVSettings() {
               }
             }}
             disabled={saving}
-            className="px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50">
+            loading={saving}
+            variant="secondary"
+            size="sm"
+            className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-800 text-white">
             {saving ? t("common:status.saving") : t("webdav.saveConfig")}
-          </button>
+          </Button>
 
           {/* 测试连接 */}
-          <button
+          <Button
             onClick={async () => {
               setTesting(true)
               try {
@@ -170,12 +147,15 @@ export default function WebDAVSettings() {
               }
             }}
             disabled={testing || !webdavConfigFilled}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50">
+            loading={testing}
+            variant="secondary"
+            size="sm"
+            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white">
             {testing ? t("common:status.testing") : t("webdav.testConnection")}
-          </button>
+          </Button>
 
           {/* 上传备份 */}
-          <button
+          <Button
             onClick={async () => {
               setUploading(true)
               try {
@@ -203,14 +183,16 @@ export default function WebDAVSettings() {
               }
             }}
             disabled={uploading || !webdavConfigFilled}
-            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50">
+            loading={uploading}
+            variant="success"
+            size="sm">
             {uploading
               ? t("common:status.uploading")
               : t("webdav.uploadBackup")}
-          </button>
+          </Button>
 
           {/* 下载并导入 */}
-          <button
+          <Button
             onClick={async () => {
               setDownloading(true)
               try {
@@ -262,13 +244,15 @@ export default function WebDAVSettings() {
               }
             }}
             disabled={downloading || !webdavConfigFilled}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50">
+            loading={downloading}
+            variant="default"
+            size="sm">
             {downloading
               ? t("common:status.processing")
               : t("webdav.downloadImport")}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

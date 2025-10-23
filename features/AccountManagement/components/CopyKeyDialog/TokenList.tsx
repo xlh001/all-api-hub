@@ -1,6 +1,7 @@
 import { KeyIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { EmptyState } from "~/components/ui"
 import type { ApiToken, DisplaySiteData } from "~/types"
 
 import { TokenItem } from "./TokenItem"
@@ -36,12 +37,10 @@ export function TokenList({
 
   if (!Array.isArray(tokens) || tokens.length === 0) {
     return (
-      <div className="text-center py-8">
-        <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-dark-text-secondary text-sm">
-          {t("dialog.copyKey.noKeys")}
-        </p>
-      </div>
+      <EmptyState
+        icon={<KeyIcon className="w-12 h-12" />}
+        title={t("dialog.copyKey.noKeys")}
+      />
     )
   }
 

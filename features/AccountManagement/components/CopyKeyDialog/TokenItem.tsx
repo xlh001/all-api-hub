@@ -5,6 +5,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { Badge, Card, CardContent, IconButton } from "~/components/ui"
 import type { ApiToken, DisplaySiteData } from "~/types"
 
 import { TokenDetails } from "./TokenDetails"
@@ -39,38 +40,51 @@ export function TokenItem({
   const { t } = useTranslation("ui")
 
   return (
-    <div className="bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden hover:shadow-sm transition-all duration-200">
-      <div
-        className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
+    <Card variant="interactive" padding="none">
+      <CardContent
+        className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
         onClick={onToggle}>
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <h4 className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">
-            {token.name}
-          </h4>
-          <div className="flex items-center space-x-1.5">
-            <UserGroupIcon className="w-3 h-3 text-gray-400" />
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getGroupBadgeStyle(token.group || "")}`}>
-              {token.group || t("dialog.copyKey.defaultGroup")}
-            </span>
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <h4 className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">
+              {token.name}
+            </h4>
+            <div className="flex items-center space-x-1.5">
+              <UserGroupIcon className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+              <Badge
+                variant="outline"
+                size="sm"
+                className={getGroupBadgeStyle(token.group || "")}>
+                {token.group || t("dialog.copyKey.defaultGroup")}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 ml-3">
+            <Badge
+              variant={token.status === 1 ? "success" : "secondary"}
+              size="sm"
+              className={getStatusBadgeStyle(token.status)}>
+              {token.status === 1
+                ? t("dialog.copyKey.enabled")
+                : t("dialog.copyKey.disabled")}
+            </Badge>
+
+            <IconButton
+              variant="ghost"
+              size="sm"
+              aria-label={
+                isExpanded ? t("dialog.collapse") : t("dialog.expand")
+              }>
+              {isExpanded ? (
+                <ChevronDownIcon className="w-4 h-4" />
+              ) : (
+                <ChevronRightIcon className="w-4 h-4" />
+              )}
+            </IconButton>
           </div>
         </div>
-
-        <div className="flex items-center space-x-2 ml-3">
-          <span
-            className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${getStatusBadgeStyle(token.status)}`}>
-            {token.status === 1
-              ? t("dialog.copyKey.enabled")
-              : t("dialog.copyKey.disabled")}
-          </span>
-
-          {isExpanded ? (
-            <ChevronDownIcon className="w-4 h-4 text-gray-400" />
-          ) : (
-            <ChevronRightIcon className="w-4 h-4 text-gray-400" />
-          )}
-        </div>
-      </div>
+      </CardContent>
 
       {isExpanded && (
         <TokenDetails
@@ -83,6 +97,6 @@ export function TokenItem({
           account={account}
         />
       )}
-    </div>
+    </Card>
   )
 }
