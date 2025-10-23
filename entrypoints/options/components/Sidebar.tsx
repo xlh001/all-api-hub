@@ -1,6 +1,8 @@
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
+import { Heading3 } from "~/components/ui"
+
 import { menuItems } from "../constants"
 
 interface SidebarProps {
@@ -52,9 +54,9 @@ function Sidebar({
       `}>
         <nav className="bg-white dark:bg-dark-bg-secondary rounded-none md:rounded-lg shadow-sm border-r md:border border-gray-200 dark:border-dark-bg-tertiary overflow-hidden h-full md:h-auto">
           <div className="p-3 sm:p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
-            <h2 className="text-xs sm:text-sm font-medium text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide">
+            <Heading3 className="text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide">
               {t("navigation.settingsOptions")}
-            </h2>
+            </Heading3>
           </div>
           <ul className="divide-y divide-gray-100 dark:divide-dark-bg-tertiary overflow-y-auto max-h-[calc(100vh-8rem)] md:max-h-none">
             {menuItems.map((item) => {
@@ -77,7 +79,7 @@ function Sidebar({
                           : "text-gray-400 dark:text-dark-text-tertiary"
                       }`}
                     />
-                    <span className="font-medium text-sm sm:text-base">
+                    <span className="text-sm sm:text-base">
                       {t(`navigation.${item.id}`)}
                     </span>
                   </button>
