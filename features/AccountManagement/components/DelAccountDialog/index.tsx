@@ -54,12 +54,11 @@ export default function DelAccountDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      panelClassName="w-full max-w-md transform rounded-lg bg-white dark:bg-dark-bg-secondary shadow-xl transition-all"
-      header={<DialogHeader />}>
-      <div className="p-4">
+      header={<DialogHeader />}
+      footer={<ActionButtons onClose={onClose} onDelete={handleDelete} />}>
+      <div>
         <WarningSection accountName={account?.name} />
         {account && <AccountInfo account={account} />}
-        <ActionButtons onClose={onClose} onDelete={handleDelete} />
       </div>
     </Modal>
   )
