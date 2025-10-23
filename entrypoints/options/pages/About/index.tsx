@@ -10,6 +10,7 @@ import LinkCard from "~/components/LinkCard"
 import { BodySmall, Heading2, Heading4 } from "~/components/ui"
 import { FEATURES, FUTURE_FEATURES } from "~/constants/about"
 import packageJson from "~/package.json"
+import { isNotEmptyArray } from "~/utils"
 import { getHomepage, getPkgVersion, getRepository } from "~/utils/packageMeta"
 
 import CreditsCard from "./components/CreditsCard"

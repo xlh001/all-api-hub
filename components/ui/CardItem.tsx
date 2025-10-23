@@ -6,12 +6,12 @@ import { cn } from "~/utils/cn"
 import { BodySmall, Typography } from "./Typography"
 
 const cardItemVariants = cva(
-  "flex items-center justify-between transition-colors",
+  "flex flex-1 items-center justify-between gap-4 transition-colors",
   {
     variants: {
       padding: {
         none: "p-0",
-        sm: "p-3",
+        sm: "py-3 px-4",
         default: "py-4 px-6",
         md: "py-5 px-6",
         lg: "py-6 px-8"
@@ -75,25 +75,31 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
         {...props}>
         {children || (
           <>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               {icon && (
-                <div className="p-2 rounded-lg bg-gray-100 dark:bg-dark-bg-tertiary transition-colors">
+                <div className="p-2 rounded-lg bg-gray-100 dark:bg-dark-bg-tertiary transition-colors flex-shrink-0">
                   {icon}
                 </div>
               )}
-              <div>
+              <div className="flex-1 min-w-0">
                 {title && (
                   <Typography
                     variant="h6"
-                    className="transition-colors text-gray-900 dark:text-dark-text-primary">
+                    className="transition-colors text-gray-900 dark:text-dark-text-primary mb-0.5">
                     {title}
                   </Typography>
                 )}
-                {description && <BodySmall>{description}</BodySmall>}
+                {description && (
+                  <BodySmall className="text-gray-500 dark:text-dark-text-tertiary">
+                    {description}
+                  </BodySmall>
+                )}
                 {leftContent}
               </div>
             </div>
-            {rightContent && <div>{rightContent}</div>}
+            {rightContent && (
+              <div className="flex-shrink-0 ml-auto">{rightContent}</div>
+            )}
           </>
         )}
       </Component>

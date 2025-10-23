@@ -26,7 +26,7 @@ export default function ImportExport() {
     <div className="p-6">
       <PageHeader />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:items-stretch">
         <ExportSection
           isExporting={isExporting}
           setIsExporting={setIsExporting}
