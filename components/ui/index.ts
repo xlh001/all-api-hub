@@ -26,6 +26,7 @@ export { FormField } from "./FormField"
 export { ToggleButton, toggleButtonVariants } from "./ToggleButton"
 export { Switch, switchVariants } from "./Switch"
 export { EmptyState } from "./EmptyState"
+export { Modal } from "./Dialog/Modal"
 
 // Typography Components
 export {

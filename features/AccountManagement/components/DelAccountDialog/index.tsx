@@ -1,13 +1,7 @@
-import {
-  Dialog,
-  DialogPanel,
-  Transition,
-  TransitionChild
-} from "@headlessui/react"
-import { Fragment } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import Modal from "~/components/ui/Dialog/Modal"
 import { accountStorage } from "~/services/accountStorage"
 import type { DisplaySiteData } from "~/types"
 
@@ -57,42 +51,16 @@ export default function DelAccountDialog({
   }
 
   return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog onClose={onClose} className="relative z-50">
-        <TransitionChild
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0">
-          <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm"
-            aria-hidden="true"
-          />
-        </TransitionChild>
-
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <TransitionChild
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 scale-95 translate-y-4"
-            enterTo="opacity-100 scale-100 translate-y-0"
-            leave="ease-in duration-20"
-            leaveFrom="opacity-10 scale-100 translate-y-0"
-            leaveTo="opacity-0 scale-95 translate-y-4">
-            <DialogPanel className="w-full max-w-md transform rounded-lg bg-white dark:bg-dark-bg-secondary shadow-xl transition-all">
-              <DialogHeader onClose={onClose} />
-              <div className="p-4">
-                <WarningSection accountName={account?.name} />
-                {account && <AccountInfo account={account} />}
-                <ActionButtons onClose={onClose} onDelete={handleDelete} />
-              </div>
-            </DialogPanel>
-          </TransitionChild>
-        </div>
-      </Dialog>
-    </Transition>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      panelClassName="w-full max-w-md transform rounded-lg bg-white dark:bg-dark-bg-secondary shadow-xl transition-all"
+      header={<DialogHeader onClose={onClose} />}>
+      <div className="p-4">
+        <WarningSection accountName={account?.name} />
+        {account && <AccountInfo account={account} />}
+        <ActionButtons onClose={onClose} onDelete={handleDelete} />
+      </div>
+    </Modal>
   )
 }
