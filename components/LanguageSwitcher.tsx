@@ -20,7 +20,7 @@ export function LanguageSwitcher() {
 
   return (
     <div className="flex items-center space-x-1.5 sm:space-x-2">
-      <Languages className="h-4 w-4 sm:h-[1.2rem] sm:w-[1.2rem]" />
+      <Languages className="h-4 w-4 sm:h-[1.2rem] sm:w-[1.2rem] dark:text-dark-text-secondary" />
       <div
         className={`flex ${COLORS.background.tertiary} rounded-lg p-0.5 sm:p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
         {languageOptions.map(({ code, label }) => {
