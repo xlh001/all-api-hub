@@ -66,7 +66,7 @@ export default function ModelItem({
           : "opacity-75 bg-gray-50 dark:bg-gray-800/50"
       }>
       {/* 主要信息行 */}
-      <CardContent>
+      <CardContent padding="default">
         <div className="flex items-start gap-2 min-w-0">
           <ModelItemHeader
             model={model}

@@ -27,7 +27,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
   return (
     <section className="flex h-full">
       <Card padding="none" className="flex flex-col flex-1">
-        <CardHeader className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary space-y-1">
+        <CardHeader>
           <div className="flex items-center gap-2">
             <ArrowUpTrayIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
             <CardTitle className="mb-0">{t("export.title")}</CardTitle>

@@ -36,7 +36,7 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
       variant="default"
       padding="none"
       className="mb-2 cursor-move hover:bg-gray-100 dark:hover:bg-dark-bg-secondary transition-colors touch-none">
-      <CardContent className="p-2.5 sm:p-3">
+      <CardContent padding="sm">
         <div className="flex items-center">
           <div className="flex-grow min-w-0 mr-2 sm:mr-3">
             <div className="font-medium text-sm text-gray-900 dark:text-dark-text-primary truncate">

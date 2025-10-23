@@ -107,7 +107,7 @@ function SortingPrioritySettingsContent() {
           items={augmentedItems}
           onDragEnd={handleDragEnd}
         />
-        <CardFooter className="px-6 py-4 mt-4 border-t border-gray-200 dark:border-dark-bg-tertiary">
+        <CardFooter>
           <Button onClick={handleSave} size="sm">
             {t("common:actions.save")}
           </Button>

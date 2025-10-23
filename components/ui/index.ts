@@ -7,7 +7,11 @@ export {
   CardFooter,
   CardTitle,
   CardDescription,
-  CardContent
+  CardContent,
+  type CardProps,
+  type CardHeaderProps,
+  type CardContentProps,
+  type CardFooterProps
 } from "./Card"
 export { CardItem, cardItemVariants } from "./CardItem.tsx"
 export { CardList } from "./CardList"

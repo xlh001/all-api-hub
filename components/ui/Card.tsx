@@ -49,16 +49,36 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 )
 Card.displayName = "Card"
 
-const CardHeader = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex flex-col space-y-1.5", className)}
-    {...props}
-  />
-))
+export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Whether to show a bottom border. Defaults to true */
+  bordered?: boolean
+  /** Padding size. Defaults to "default" (px-6 py-4) */
+  padding?: "none" | "sm" | "default" | "lg"
+}
+
+const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
+  ({ className, bordered = true, padding = "default", ...props }, ref) => {
+    const paddingClasses = {
+      none: "",
+      sm: "px-4 py-3",
+      default: "px-6 py-4",
+      lg: "px-8 py-6"
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex flex-col space-y-1.5",
+          bordered && "border-b border-gray-200 dark:border-dark-bg-tertiary",
+          paddingClasses[padding],
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+)
 CardHeader.displayName = "CardHeader"
 
 const CardTitle = React.forwardRef<
@@ -87,24 +107,61 @@ const CardDescription = React.forwardRef<
 ))
 CardDescription.displayName = "CardDescription"
 
-const CardContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn(className)} {...props} />
-))
+export interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Padding size. Defaults to "none" to avoid duplicate padding with Card. Set explicitly when using Card padding="none" */
+  padding?: "none" | "sm" | "default" | "lg"
+}
+
+const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
+  ({ className, padding = "none", ...props }, ref) => {
+    const paddingClasses = {
+      none: "",
+      sm: "px-4 py-3",
+      default: "px-6 py-4",
+      lg: "px-8 py-6"
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={cn(paddingClasses[padding], className)}
+        {...props}
+      />
+    )
+  }
+)
 CardContent.displayName = "CardContent"
 
-const CardFooter = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex items-center justify-end space-x-3", className)}
-    {...props}
-  />
-))
+export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Whether to show a top border. Defaults to true */
+  bordered?: boolean
+  /** Padding size. Defaults to "default" (px-6 py-4) */
+  padding?: "none" | "sm" | "default" | "lg"
+}
+
+const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
+  ({ className, bordered = true, padding = "default", ...props }, ref) => {
+    const paddingClasses = {
+      none: "",
+      sm: "px-4 py-3",
+      default: "px-6 py-4",
+      lg: "px-8 py-6"
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex items-center justify-end space-x-3",
+          bordered && "border-t border-gray-200 dark:border-dark-bg-tertiary",
+          paddingClasses[padding],
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+)
 CardFooter.displayName = "CardFooter"
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }

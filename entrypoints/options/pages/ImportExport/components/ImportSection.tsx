@@ -39,7 +39,7 @@ const ImportSection = ({
   return (
     <section className="flex h-full">
       <Card padding="none" className="flex flex-col flex-1">
-        <CardHeader className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary space-y-1">
+        <CardHeader>
           <div className="flex items-center gap-2">
             <ArrowDownTrayIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <CardTitle className="mb-0">{t("import.title")}</CardTitle>
@@ -47,7 +47,7 @@ const ImportSection = ({
           <CardDescription>{t("import.description")}</CardDescription>
         </CardHeader>
 
-        <CardContent className="p-6 space-y-4">
+        <CardContent padding="default" className="space-y-4">
           {/* 文件选择 */}
           <FormField label={t("import.selectBackupFile")}>
             <div className="flex items-center space-x-3">

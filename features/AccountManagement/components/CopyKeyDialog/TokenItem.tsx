@@ -42,7 +42,8 @@ export function TokenItem({
   return (
     <Card variant="interactive" padding="none">
       <CardContent
-        className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
+        padding="sm"
+        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
         onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0 space-y-1.5">

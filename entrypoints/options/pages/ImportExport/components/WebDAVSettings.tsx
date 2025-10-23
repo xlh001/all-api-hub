@@ -57,7 +57,7 @@ export default function WebDAVSettings() {
 
   return (
     <Card>
-      <CardHeader className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary space-y-0">
+      <CardHeader>
         <div className="flex items-center space-x-2 mb-1">
           <ArrowPathIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
           <CardTitle className="mb-0">{t("webdav.title")}</CardTitle>
@@ -65,7 +65,7 @@ export default function WebDAVSettings() {
         <CardDescription>{t("webdav.configDesc")}</CardDescription>
       </CardHeader>
 
-      <CardContent className="p-6 space-y-4">
+      <CardContent padding="default" className="space-y-4">
         {/* 配置表单 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">

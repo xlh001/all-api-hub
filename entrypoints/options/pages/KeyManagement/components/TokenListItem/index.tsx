@@ -31,7 +31,7 @@ export function TokenListItem({
 
   return (
     <Card variant="interactive">
-      <CardContent>
+      <CardContent padding="default">
         <div className="flex flex-col gap-2 sm:gap-3">
           <TokenHeader
             token={token}
