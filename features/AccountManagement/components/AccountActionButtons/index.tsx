@@ -13,6 +13,7 @@ import React, { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { IconButton } from "~/components/ui"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import { fetchAccountTokens } from "~/services/apiService"
@@ -109,43 +110,55 @@ export default function AccountActionButtons({
     onDeleteAccount(site)
   }
 
-  const primaryButtonClasses =
-    "flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary active:bg-gray-200 dark:active:bg-dark-bg-primary transition-colors mr-0.5 sm:mr-1 touch-manipulation tap-highlight-transparent"
-
   return (
-    <div className="flex items-center flex-shrink-0">
+    <div className="flex items-center gap-1 flex-shrink-0">
       {/* Primary Level - Three standalone buttons */}
-      <button
+      <IconButton
         onClick={handleCopyUrlLocal}
-        className={primaryButtonClasses}
+        variant="ghost"
+        size="sm"
+        className="touch-manipulation"
+        aria-label={t("actions.copyUrl")}
         title={t("actions.copyUrl")}>
-        <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-dark-text-secondary" />
-      </button>
-      <button
+        <LinkIcon className="w-4 h-4" />
+      </IconButton>
+
+      <IconButton
         onClick={handleSmartCopyKey}
-        className={primaryButtonClasses}
+        variant="ghost"
+        size="sm"
+        className="touch-manipulation"
         disabled={isCheckingTokens}
+        aria-label={t("actions.copyKey")}
         title={t("actions.copyKey")}>
-        <KeyIcon
-          className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-dark-text-secondary ${isCheckingTokens ? "opacity-50" : ""}`}
-        />
-      </button>
-      <button
+        <KeyIcon className="w-4 h-4" />
+      </IconButton>
+
+      <IconButton
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
           openEditAccount(site)
         }}
-        className={primaryButtonClasses}
+        variant="ghost"
+        size="sm"
+        className="touch-manipulation"
+        aria-label={t("actions.edit")}
         title={t("actions.edit")}>
-        <PencilIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-dark-text-secondary" />
-      </button>
+        <PencilIcon className="w-4 h-4" />
+      </IconButton>
 
       {/* Secondary Level - Dropdown menu */}
       <Menu as="div" className="relative">
-        <MenuButton className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary active:bg-gray-200 dark:active:bg-dark-bg-primary transition-colors touch-manipulation tap-highlight-transparent">
-          <EllipsisHorizontalIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-dark-text-secondary" />
+        <MenuButton
+          as={IconButton}
+          variant="ghost"
+          size="sm"
+          className="touch-manipulation"
+          aria-label={t("actions.more")}>
+          <EllipsisHorizontalIcon className="w-4 h-4" />
         </MenuButton>
+
         <MenuItems
           anchor="bottom end"
           className="z-50 bg-white dark:bg-dark-bg-secondary rounded-lg shadow-lg border border-gray-200 dark:border-dark-bg-tertiary py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
@@ -168,7 +181,7 @@ export default function AccountActionButtons({
             label={t("actions.modelManagement")}
           />
 
-          <hr />
+          <hr className="my-1 border-gray-200 dark:border-dark-bg-tertiary" />
 
           <AccountActionMenuItem
             onClick={handleRefreshLocal}

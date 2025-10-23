@@ -36,36 +36,39 @@ export default function ActionButtons() {
   }
 
   return (
-    <div
-      className={`px-3 sm:px-5 mb-3 sm:mb-4 ${COLORS.background.secondary} border-b ${COLORS.border.default}`}>
-      <div className="flex space-x-1.5 sm:space-x-2 py-2 sm:py-3">
+    <section
+      className={`px-3 sm:px-5 py-2 sm:py-3 ${COLORS.background.secondary} ${COLORS.border.default} border-b`}>
+      <div className="flex gap-1.5 sm:gap-2">
         <Button
           onClick={handleAddAccountClick}
-          className="flex-1 flex items-center justify-center space-x-1.5 sm:space-x-2 py-2 sm:py-2.5 px-2 sm:px-3 text-xs sm:text-sm font-medium shadow-sm border border-blue-600 touch-manipulation tap-highlight-transparent"
-          leftIcon={<PlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}>
+          className="flex-1 touch-manipulation"
+          size="sm"
+          leftIcon={<PlusIcon className="w-4 h-4" />}>
           {t("account:addAccount")}
         </Button>
+
         <Tooltip content={t("ui:navigation.keys")}>
           <IconButton
             onClick={handleOpenKeysPageClick}
             variant="outline"
             size="sm"
-            className="p-1.5 sm:p-2 touch-manipulation tap-highlight-transparent"
+            className="touch-manipulation"
             aria-label={t("ui:navigation.keys")}>
-            <KeyIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <KeyIcon className="w-4 h-4" />
           </IconButton>
         </Tooltip>
+
         <Tooltip content={t("ui:navigation.models")}>
           <IconButton
             onClick={handleOpenModelsPageClick}
             variant="outline"
             size="sm"
-            className="p-1.5 sm:p-2 touch-manipulation tap-highlight-transparent"
+            className="touch-manipulation"
             aria-label={t("ui:navigation.models")}>
-            <CpuChipIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <CpuChipIcon className="w-4 h-4" />
           </IconButton>
         </Tooltip>
       </div>
-    </div>
+    </section>
   )
 }

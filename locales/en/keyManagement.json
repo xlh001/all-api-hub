@@ -47,7 +47,7 @@
     "addToken": "Add API Key",
     "editToken": "Edit API Key",
     "warningTitle": "Notes",
-    "warningText": "• Please keep API keys safe and avoid leaking",
+    "warningText": "Please keep API keys safe and avoid leaking",
     "basicInfo": "Basic Information",
     "advancedSettings": "Advanced Settings",
     "tokenName": "Token Name",

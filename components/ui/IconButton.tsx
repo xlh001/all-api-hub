@@ -23,6 +23,7 @@ const iconButtonVariants = cva(
           "bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500"
       },
       size: {
+        none: "",
         default: "h-10 w-10",
         sm: "h-8 w-8",
         lg: "h-12 w-12",

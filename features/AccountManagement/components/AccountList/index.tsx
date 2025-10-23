@@ -57,9 +57,9 @@ export default function AccountList() {
     <IconButton
       onClick={() => handleSort(field)}
       variant="ghost"
-      size="sm"
+      size="none"
       aria-label={`${t("account:list.sort")} ${label}`}
-      className="flex items-center space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs font-medium">
+      className="space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs font-medium">
       <span>{label}</span>
       {sortField === field &&
         (sortOrder === "asc" ? (
@@ -73,20 +73,25 @@ export default function AccountList() {
   return (
     <Card padding="none" className="flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-3 sm:px-5 py-2 sm:py-3 bg-gray-50 dark:bg-dark-bg-secondary border-b border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-10">
-        <div className="flex items-center space-x-2 sm:space-x-4">
+      <div className="px-3 sm:px-5 py- sm:py-2 bg-gray-50 dark:bg-dark-bg-secondary border-b border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-10">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          {/* Account Name Column */}
           <div className="flex-1 min-w-0">
             {renderSortButton("name", t("account:list.header.account"))}
           </div>
-          <div className="text-right flex-shrink-0">
-            <div className="flex items-center space-x-0.5 sm:space-x-1">
+
+          {/* Balance & Consumption Column */}
+          <div className="flex items-end gap-0.5 flex-shrink-0">
+            <div className="flex items-center">
               {renderSortButton(
                 DATA_TYPE_BALANCE,
                 t("account:list.header.balance")
               )}
-              <span className="text-[10px] sm:text-xs text-gray-400 dark:text-dark-text-tertiary">
-                /
-              </span>
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400 dark:text-dark-text-tertiary">
+              /
+            </div>
+            <div className="flex items-center text-[9px] sm:text-[10px] text-gray-400 dark:text-dark-text-tertiary">
               {renderSortButton(
                 DATA_TYPE_CONSUMPTION,
                 t("account:list.header.todayConsumption")
