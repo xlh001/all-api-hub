@@ -66,7 +66,7 @@ function TokenActionButtons({
         size="sm"
         variant="ghost"
         onClick={() => OpenInCherryStudio(account, token)}>
-        <CherryIcon className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+        <CherryIcon className="text-purple-500 dark:text-purple-400" />
       </IconButton>
       <IconButton
         aria-label={t("actions.importToNewApi")}

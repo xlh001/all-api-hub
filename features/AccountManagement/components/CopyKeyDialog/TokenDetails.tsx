@@ -102,7 +102,7 @@ export function TokenDetails({
               variant="default"
               size="sm"
               className="flex items-center space-x-1 px-2 py-1">
-              <CherryIcon className="w-3 h-3" />
+              <CherryIcon />
               <span>{t("dialog.copyKey.useInCherry")}</span>
             </Button>
           </div>
