@@ -21,6 +21,7 @@ export { Spinner, spinnerVariants } from "./Spinner"
 export { FormField } from "./FormField"
 export { ToggleButton, toggleButtonVariants } from "./ToggleButton"
 export { Switch, switchVariants } from "./Switch"
+export { EmptyState } from "./EmptyState"
 
 // Typography Components
 export {

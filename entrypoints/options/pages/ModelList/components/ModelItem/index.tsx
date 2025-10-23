@@ -6,6 +6,7 @@ import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { Card, CardContent } from "~/components/ui"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CalculatedPrice } from "~/utils/modelPricing"
 
@@ -57,14 +58,16 @@ export default function ModelItem({
     : model.enable_groups.includes(userGroup) // 特定分组模式：必须该分组可用
 
   return (
-    <div
-      className={`border rounded-lg transition-all duration-200 ${
+    <Card
+      variant="interactive"
+      padding="none"
+      className={
         isAvailableForUser
-          ? "border-gray-200 dark:border-dark-bg-tertiary bg-white dark:bg-dark-bg-secondary hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md dark:hover:shadow-lg"
-          : "border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-75"
-      }`}>
+          ? "hover:border-blue-300 dark:hover:border-blue-500/50"
+          : "opacity-75 bg-gray-50 dark:bg-gray-800/50"
+      }>
       {/* 主要信息行 */}
-      <div className="p-3 sm:p-4">
+      <CardContent className="p-3 sm:p-4">
         <div className="flex items-start gap-2 min-w-0">
           <ModelItemHeader
             model={model}
@@ -88,7 +91,7 @@ export default function ModelItem({
           showRatioColumn={showRatioColumn}
           isAvailableForUser={isAvailableForUser}
         />
-      </div>
+      </CardContent>
 
       {/* 展开的详细信息 */}
       {isExpanded && (
@@ -100,6 +103,6 @@ export default function ModelItem({
           onGroupClick={onGroupClick}
         />
       )}
-    </div>
+    </Card>
   )
 }

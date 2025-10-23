@@ -8,7 +8,15 @@ import {
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { UI_CONSTANTS } from "~/constants/ui"
+import {
+  Button,
+  Card,
+  FormField,
+  Input,
+  Label,
+  Select,
+  Switch
+} from "~/components/ui"
 
 interface ControlPanelProps {
   searchTerm: string
@@ -61,51 +69,40 @@ export function ControlPanel({
   }
 
   return (
-    <div className="mb-6 bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4 shadow-sm">
+    <Card className="mb-6">
       <div className="flex flex-col lg:flex-row gap-4 mb-4">
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-            {t("searchModels")}
-          </label>
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
-            <input
-              type="text"
-              placeholder={t("searchPlaceholder")}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={UI_CONSTANTS.STYLES.INPUT.SEARCH}
-            />
-          </div>
-        </div>
+        <FormField label={t("searchModels")} className="flex-1">
+          <Input
+            type="text"
+            placeholder={t("searchPlaceholder")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
+          />
+        </FormField>
 
-        <div className="w-full lg:w-64">
-          <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
-            {t("userGroup")}
-          </label>
-          <select
+        <FormField label={t("userGroup")} className="w-full lg:w-64">
+          <Select
             value={selectedGroup}
-            onChange={(e) => setSelectedGroup(e.target.value)}
-            className="w-full px-3 py-2.5 border dark:bg-dark-bg-secondary dark:border-dark-bg-tertiary dark:text-dark-text-primary border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            onChange={(e) => setSelectedGroup(e.target.value)}>
             <option value="all">{t("allGroups")}</option>
             {availableGroups.map((group) => (
               <option key={group} value={group}>
                 {group} ({pricingData?.group_ratio?.[group] || 1}x)
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </FormField>
 
         <div className="w-full lg:w-auto lg:flex lg:items-end">
-          <button
+          <Button
             onClick={loadPricingData}
             disabled={isLoading}
-            className="w-full lg:w-auto leading-6 px-3 py-2.5 border border-transparent bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center space-x-2 text-sm font-medium  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary">
-            <ArrowPathIcon
-              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-            />
-            <span>{t("refreshData")}</span>
-          </button>
+            loading={isLoading}
+            className="w-full lg:w-auto"
+            leftIcon={!isLoading && <ArrowPathIcon className="w-4 h-4" />}>
+            {t("refreshData")}
+          </Button>
         </div>
       </div>
 
@@ -119,52 +116,44 @@ export function ControlPanel({
           </div>
 
           <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
+            <Switch
               checked={showRealPrice}
-              onChange={(e) => setShowRealPrice(e.target.checked)}
-              className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
+              onChange={setShowRealPrice}
+              size="sm"
             />
-            <span className="text-gray-700 dark:text-dark-text-primary">
-              {t("realAmount")}
-            </span>
+            <Label className="cursor-pointer">{t("realAmount")}</Label>
           </label>
 
           <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
+            <Switch
               checked={showRatioColumn}
-              onChange={(e) => setShowRatioColumn(e.target.checked)}
-              className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
+              onChange={setShowRatioColumn}
+              size="sm"
             />
-            <span className="text-gray-700 dark:text-dark-text-primary">
-              {t("showRatio")}
-            </span>
+            <Label className="cursor-pointer">{t("showRatio")}</Label>
           </label>
 
           <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
+            <Switch
               checked={showEndpointTypes}
-              onChange={(e) => setShowEndpointTypes(e.target.checked)}
-              className={UI_CONSTANTS.STYLES.INPUT.CHECKBOX}
+              onChange={setShowEndpointTypes}
+              size="sm"
             />
-            <span className="text-gray-700 dark:text-dark-text-primary">
-              {t("endpointTypes")}
-            </span>
+            <Label className="cursor-pointer">{t("endpointTypes")}</Label>
           </label>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleCopyModelNames}
-            className={UI_CONSTANTS.STYLES.BUTTON.COPY}>
-            <ClipboardDocumentListIcon className="w-4 h-4" />
-            <span>{t("copyAllNames")}</span>
-          </button>
+            leftIcon={<ClipboardDocumentListIcon className="w-4 h-4" />}>
+            {t("copyAllNames")}
+          </Button>
         </div>
 
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2 text-gray-600 dark:text-dark-text-secondary">
-            <CpuChipIcon className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" />
+            <CpuChipIcon className="w-4 h-4" />
             <span>{t("totalModels", { count: totalModels })}</span>
           </div>
           <div className="h-4 w-px bg-gray-300 dark:bg-dark-bg-tertiary"></div>
@@ -173,6 +162,6 @@ export function ControlPanel({
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }
