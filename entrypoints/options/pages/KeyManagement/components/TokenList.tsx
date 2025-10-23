@@ -1,6 +1,7 @@
 import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { Card, EmptyState } from "~/components/ui"
 import type { DisplaySiteData } from "~/types"
 
 import { AccountToken } from "../type"
@@ -24,19 +25,17 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {[...Array(3)].map((_, i) => (
-        <div
-          key={i}
-          className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4 animate-pulse">
+        <Card key={i} padding="default" className="animate-pulse">
           <div className="h-4 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-1/4 mb-2"></div>
           <div className="h-3 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-1/2 mb-2"></div>
           <div className="h-3 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-3/4"></div>
-        </div>
+        </Card>
       ))}
     </div>
   )
 }
 
-function EmptyState({
+function TokenEmptyState({
   tokens,
   handleAddToken,
   displayData
@@ -47,25 +46,39 @@ function EmptyState({
 }) {
   const { t } = useTranslation("keyManagement")
 
+  // 如果没有账户
+  if (displayData.length === 0) {
+    return (
+      <EmptyState
+        icon={<KeyIcon className="w-12 h-12" />}
+        title={tokens.length === 0 ? t("noKeys") : t("noMatchingKeys")}
+        description={t("pleaseAddAccount")}
+      />
+    )
+  }
+
+  // 如果没有密钥
+  if (tokens.length === 0) {
+    return (
+      <EmptyState
+        icon={<KeyIcon className="w-12 h-12" />}
+        title={t("noKeys")}
+        action={{
+          label: t("createFirstKey"),
+          onClick: handleAddToken,
+          variant: "success",
+          icon: <PlusIcon className="w-4 h-4" />
+        }}
+      />
+    )
+  }
+
+  // 搜索无结果
   return (
-    <div className="text-center py-12">
-      <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-      <p className="text-gray-500 dark:text-dark-text-secondary mb-4">
-        {tokens.length === 0 ? t("noKeys") : t("noMatchingKeys")}
-      </p>
-      {displayData.length === 0 ? (
-        <p className="text-sm text-gray-400 dark:text-dark-text-tertiary">
-          {t("pleaseAddAccount")}
-        </p>
-      ) : tokens.length === 0 ? (
-        <button
-          onClick={handleAddToken}
-          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary transition-colors flex items-center space-x-2 mx-auto">
-          <PlusIcon className="w-4 h-4" />
-          <span>{t("createFirstKey")}</span>
-        </button>
-      ) : null}
-    </div>
+    <EmptyState
+      icon={<KeyIcon className="w-12 h-12" />}
+      title={t("noMatchingKeys")}
+    />
   )
 }
 
@@ -86,12 +99,10 @@ export function TokenList({
 
   if (!selectedAccount) {
     return (
-      <div className="text-center py-12">
-        <KeyIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-dark-text-secondary mb-4">
-          {t("noKeys")}
-        </p>
-      </div>
+      <EmptyState
+        icon={<KeyIcon className="w-12 h-12" />}
+        title={t("noKeys")}
+      />
     )
   }
 
@@ -101,7 +112,7 @@ export function TokenList({
 
   if (filteredTokens.length === 0) {
     return (
-      <EmptyState
+      <TokenEmptyState
         tokens={tokens}
         handleAddToken={handleAddToken}
         displayData={displayData}

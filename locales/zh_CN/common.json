@@ -46,7 +46,7 @@
   "currency": {
     "cny": "人民币",
     "usd": "美元",
-    "clickToSwitch": "点击切换到 {{currency}}"
+    "clickToSwitch": "点击切换到{{currency}}"
   },
   "quota": {
     "unlimited": "无限额度"

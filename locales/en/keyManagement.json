@@ -30,7 +30,9 @@
     "editKey": "Edit Key",
     "deleteKey": "Delete Key",
     "enable": "Enable",
-    "disable": "Disable"
+    "disable": "Disable",
+    "showKey": "Show Key",
+    "hideKey": "Hide Key"
   },
   "messages": {
     "loadFailed": "Failed to load key list",
@@ -45,7 +47,7 @@
     "addToken": "Add API Key",
     "editToken": "Edit API Key",
     "warningTitle": "Notes",
-    "warningText": "• Please keep API keys safe and avoid leaking",
+    "warningText": "Please keep API keys safe and avoid leaking",
     "basicInfo": "Basic Information",
     "advancedSettings": "Advanced Settings",
     "tokenName": "Token Name",

@@ -2,6 +2,7 @@ import { CpuChipIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 import { Virtuoso } from "react-virtuoso"
 
+import { EmptyState } from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 import type { DisplaySiteData } from "~/types"
 
@@ -31,12 +32,10 @@ export function ModelDisplay({
   const { t } = useTranslation("modelList")
   if (models.length === 0) {
     return (
-      <div className="text-center py-12">
-        <CpuChipIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-dark-text-secondary">
-          {t("noMatchingModels")}
-        </p>
-      </div>
+      <EmptyState
+        icon={<CpuChipIcon className="w-12 h-12" />}
+        title={t("noMatchingModels")}
+      />
     )
   }
 

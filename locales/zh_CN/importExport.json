@@ -44,10 +44,10 @@
   },
   "notice": {
     "importantNotice": "重要提示",
-    "importWarning1": "• 导入数据将覆盖现有的相同类型数据，请谨慎操作",
-    "importWarning2": "• 建议在导入前先导出当前数据进行备份",
-    "importWarning3": "• 仅支持本插件导出的JSON格式文件",
-    "importWarning4": "• 导入的账号数据包含敏感信息，请确保文件来源可信"
+    "importWarning1": "导入数据将覆盖现有的相同类型数据，请谨慎操作",
+    "importWarning2": "建议在导入前先导出当前数据进行备份",
+    "importWarning3": "仅支持本插件导出的JSON格式文件",
+    "importWarning4": "导入的账号数据包含敏感信息，请确保文件来源可信"
   },
   "webdav": {
     "title": "WebDAV 备份与同步（手动）",

@@ -5,6 +5,8 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { IconButton } from "~/components/ui"
+import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { useTheme } from "~/contexts/ThemeContext"
 import type { ThemeMode } from "~/types/theme"
 
@@ -58,16 +60,19 @@ const CompactThemeToggle = () => {
       : t(`theme.${currentTheme?.mode}`)
 
   return (
-    <button
+    <IconButton
       onClick={handleThemeToggle}
+      variant="ghost"
+      size="default"
       className={`
-        relative p-2.5 rounded-full transition-all duration-200
+        relative p-2.5 rounded-full
         focus:outline-none focus:ring-2 focus:ring-offset-2
-        bg-gray-100 dark:bg-dark-bg-primary
-        hover:bg-gray-200 dark:hover:bg-dark-bg-tertiary
+        ${COLORS.background.tertiary}
+        hover:${COLORS.background.secondary}
         hover:scale-105 active:scale-95
         focus:ring-blue-500 dark:focus:ring-blue-400
         shadow-sm hover:shadow-md
+        ${ANIMATIONS.transition.base}
       `}
       title={
         t("theme.current", {
@@ -93,7 +98,7 @@ const CompactThemeToggle = () => {
         }
       `}
       />
-    </button>
+    </IconButton>
   )
 }
 

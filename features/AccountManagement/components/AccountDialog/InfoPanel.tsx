@@ -54,23 +54,19 @@ export default function InfoPanel({
     : "text-green-700 dark:text-green-400"
 
   return (
-    <div className="px-4 pb-4">
-      <div className={`${bgColor} border ${borderColor} rounded-lg p-3`}>
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <Icon className={`h-5 w-5 ${iconColor}`} />
-          </div>
-          <div className="ml-3">
-            <h3 className={`text-xs font-medium ${titleColor}`}>
-              {getTitle()}
-            </h3>
-            <div className={`mt-1 text-xs ${textColor}`}>
-              {typeof getDescription() === "string" ? (
-                <p>{getDescription()}</p>
-              ) : (
-                getDescription()
-              )}
-            </div>
+    <div className={`${bgColor} border ${borderColor} rounded-lg p-3`}>
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+        <div className="ml-3">
+          <h3 className={`text-xs font-medium ${titleColor}`}>{getTitle()}</h3>
+          <div className={`mt-1 text-xs ${textColor}`}>
+            {typeof getDescription() === "string" ? (
+              <p>{getDescription()}</p>
+            ) : (
+              getDescription()
+            )}
           </div>
         </div>
       </div>

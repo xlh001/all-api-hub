@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
+import { Badge, Caption } from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { formatFullTime, formatRelativeTime } from "~/utils/formatters"
@@ -23,23 +24,21 @@ export const UpdateTimeAndWarning = () => {
   }, [])
 
   return (
-    <div className="mt-4">
-      <div className="ml-2 flex items-center justify-between">
-        <Tooltip content={formatFullTime(lastUpdateTime)}>
-          <p className="text-xs text-gray-400 dark:text-dark-text-tertiary cursor-help">
-            {t("common:time.updatedAt", {
-              time: formatRelativeTime(lastUpdateTime)
-            })}
-          </p>
-        </Tooltip>
-        {detectedAccount && (
-          <span className="text-xs text-yellow-600 font-medium">
-            {t("currentSiteAdded", {
-              siteName: detectedAccount.site_name
-            })}
-          </span>
-        )}
-      </div>
+    <div className="mt-4 flex items-center justify-between gap-2">
+      <Tooltip content={formatFullTime(lastUpdateTime)}>
+        <Caption className="cursor-help">
+          {t("common:time.updatedAt", {
+            time: formatRelativeTime(lastUpdateTime)
+          })}
+        </Caption>
+      </Tooltip>
+      {detectedAccount && (
+        <Badge variant="warning" size="sm">
+          {t("currentSiteAdded", {
+            siteName: detectedAccount.site_name
+          })}
+        </Badge>
+      )}
     </div>
   )
 }

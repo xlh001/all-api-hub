@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next"
 
+import { FormField, Select } from "~/components/ui"
 import type { UserGroupInfo } from "~/services/apiService/common/type"
 
 import type { FormData } from "../hooks/useTokenForm"
@@ -20,20 +21,17 @@ export function GroupSelection({
   const { t } = useTranslation("keyManagement")
 
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-        {t("dialog.groupLabel")}
-      </label>
-      <select
+    <FormField label={t("dialog.groupLabel")} htmlFor="groupSelect">
+      <Select
+        id="groupSelect"
         value={group}
-        onChange={handleInputChange("group")}
-        className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary">
+        onChange={handleInputChange("group")}>
         {Object.entries(groups).map(([key, group]) => (
           <option key={key} value={key}>
             {group.desc} ({t("dialog.groupRate")}: {group.ratio})
           </option>
         ))}
-      </select>
-    </div>
+      </Select>
+    </FormField>
   )
 }

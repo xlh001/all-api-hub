@@ -1,10 +1,19 @@
+import { BodySmall, Button, Card, Heading5 } from "~/components/ui"
+
 export interface LinkCardProps {
   Icon: any
   title: string
   description: string
   href: string
   buttonText: string
-  buttonClass?: string
+  buttonVariant?:
+    | "default"
+    | "secondary"
+    | "outline"
+    | "ghost"
+    | "destructive"
+    | "success"
+    | "warning"
   iconClass?: string
 }
 
@@ -14,30 +23,26 @@ const LinkCard = ({
   description,
   href,
   buttonText,
-  buttonClass = "bg-gray-900 dark:bg-gray-700 text-white hover:bg-gray-800 dark:hover:bg-gray-600",
+  buttonVariant = "default",
   iconClass = "text-gray-900 dark:text-gray-100"
 }: LinkCardProps) => {
   return (
-    <div className="bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-6">
+    <Card padding="md">
       <div className="flex items-start space-x-4">
         <Icon className={`w-6 h-6 mt-1 flex-shrink-0 ${iconClass}`} />
         <div className="flex-1">
-          <h3 className="text-base font-medium text-gray-900 dark:text-dark-text-primary mb-2">
+          <Heading5 weight="medium" className="mb-2">
             {title}
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-3">
-            {description}
-          </p>
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${buttonClass}`}>
-            {buttonText}
-          </a>
+          </Heading5>
+          <BodySmall className="mb-3">{description}</BodySmall>
+          <Button asChild variant={buttonVariant} size="sm">
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {buttonText}
+            </a>
+          </Button>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }
 

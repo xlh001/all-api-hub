@@ -2,6 +2,8 @@ import { CpuChipIcon, KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
+import { Button, IconButton } from "~/components/ui"
+import { COLORS } from "~/constants/designTokens"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import {
   isDesktopByUA,
@@ -34,29 +36,39 @@ export default function ActionButtons() {
   }
 
   return (
-    <div className="px-3 sm:px-5 mb-3 sm:mb-4 bg-gray-50 dark:bg-dark-bg-secondary border-b border-gray-200 dark:border-dark-bg-tertiary">
-      <div className="flex space-x-1.5 sm:space-x-2 py-2 sm:py-3">
-        <button
+    <section
+      className={`px-3 sm:px-5 py-2 sm:py-3 ${COLORS.background.secondary} ${COLORS.border.default} border-b`}>
+      <div className="flex gap-1.5 sm:gap-2">
+        <Button
           onClick={handleAddAccountClick}
-          className="flex-1 flex items-center justify-center space-x-1.5 sm:space-x-2 py-2 sm:py-2.5 px-2 sm:px-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary transition-colors text-xs sm:text-sm font-medium shadow-sm border border-blue-600 touch-manipulation tap-highlight-transparent">
-          <PlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span>{t("account:addAccount")}</span>
-        </button>
+          className="flex-1 touch-manipulation"
+          size="sm"
+          leftIcon={<PlusIcon className="w-4 h-4" />}>
+          {t("account:addAccount")}
+        </Button>
+
         <Tooltip content={t("ui:navigation.keys")}>
-          <button
+          <IconButton
             onClick={handleOpenKeysPageClick}
-            className="p-1.5 sm:p-2 text-gray-400 dark:text-dark-text-tertiary hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary border border-gray-200 dark:border-dark-bg-tertiary touch-manipulation tap-highlight-transparent">
-            <KeyIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+            variant="outline"
+            size="sm"
+            className="touch-manipulation"
+            aria-label={t("ui:navigation.keys")}>
+            <KeyIcon className="w-4 h-4" />
+          </IconButton>
         </Tooltip>
+
         <Tooltip content={t("ui:navigation.models")}>
-          <button
+          <IconButton
             onClick={handleOpenModelsPageClick}
-            className="p-1.5 sm:p-2 text-gray-400 dark:text-dark-text-tertiary hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary border border-gray-200 dark:border-dark-bg-tertiary touch-manipulation tap-highlight-transparent">
-            <CpuChipIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+            variant="outline"
+            size="sm"
+            className="touch-manipulation"
+            aria-label={t("ui:navigation.models")}>
+            <CpuChipIcon className="w-4 h-4" />
+          </IconButton>
         </Tooltip>
       </div>
-    </div>
+    </section>
   )
 }

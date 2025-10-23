@@ -44,10 +44,10 @@
   },
   "notice": {
     "importantNotice": "Important Notice",
-    "importWarning1": "• Imported data will overwrite existing data of the same type, please operate with caution",
-    "importWarning2": "• It is recommended to export current data for backup before importing",
-    "importWarning3": "• Only supports JSON format files exported by this extension",
-    "importWarning4": "• Imported account data contains sensitive information, please ensure the file source is trustworthy"
+    "importWarning1": "Imported data will overwrite existing data of the same type, please operate with caution",
+    "importWarning2": "It is recommended to export current data for backup before importing",
+    "importWarning3": "Only supports JSON format files exported by this extension",
+    "importWarning4": "Imported account data contains sensitive information, please ensure the file source is trustworthy"
   },
   "webdav": {
     "title": "WebDAV Backup and Sync (Manual)",

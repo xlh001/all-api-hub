@@ -30,7 +30,9 @@
     "editKey": "编辑密钥",
     "deleteKey": "删除密钥",
     "enable": "启用",
-    "disable": "禁用"
+    "disable": "禁用",
+    "showKey": "显示密钥",
+    "hideKey": "隐藏密钥"
   },
   "messages": {
     "loadFailed": "加载密钥列表失败",
@@ -45,7 +47,7 @@
     "addToken": "添加API密钥",
     "editToken": "编辑API密钥",
     "warningTitle": "注意事项",
-    "warningText": "• 请妥善保管API密钥，避免泄露",
+    "warningText": "请妥善保管API密钥，避免泄露",
     "basicInfo": "基本信息",
     "advancedSettings": "高级设置",
     "tokenName": "密钥名称",

@@ -1,6 +1,6 @@
-import { Switch } from "@headlessui/react"
 import { useTranslation } from "react-i18next"
 
+import { FormField, Input, Switch } from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 
 import type { FormData } from "../hooks/useTokenForm"
@@ -53,29 +53,23 @@ export function QuotaSettings({
 
       {!unlimitedQuota && (
         <div>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={quota}
-            onChange={handleInputChange("quota")}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary ${
-              error
-                ? "border-red-300"
-                : "border-gray-300 dark:border-dark-bg-tertiary"
-            }`}
-            placeholder={t("dialog.quotaPlaceholder")}
-          />
-          {error && (
-            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-              {error}
-            </p>
-          )}
-          <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-tertiary">
-            {t("dialog.quotaRate", {
+          <FormField
+            label={t("dialog.quotaSettingsLabel")}
+            htmlFor="quotaInput"
+            error={error}
+            description={t("dialog.quotaRate", {
               rate: UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR.toLocaleString()
-            })}
-          </p>
+            })}>
+            <Input
+              id="quotaInput"
+              type="number"
+              step="0.01"
+              min="0"
+              value={quota}
+              onChange={handleInputChange("quota")}
+              placeholder={t("dialog.quotaPlaceholder")}
+            />
+          </FormField>
         </div>
       )}
     </div>

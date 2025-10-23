@@ -1,6 +1,8 @@
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
+import { Heading3 } from "~/components/ui"
+
 import { menuItems } from "../constants"
 
 interface SidebarProps {
@@ -35,7 +37,7 @@ function Sidebar({
       {/* 移动端遮罩层 */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/20 z-40 md:hidden"
           onClick={onMobileClose}
         />
       )}
@@ -45,16 +47,16 @@ function Sidebar({
         className={`
         w-64 flex-shrink-0
         md:relative md:translate-x-0
-        fixed inset-y-0 left-0 z-50
+        fixed inset-y-0 left-0 z-10
         transform transition-transform duration-300 ease-in-out
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         mt-0 md:mt-0
       `}>
         <nav className="bg-white dark:bg-dark-bg-secondary rounded-none md:rounded-lg shadow-sm border-r md:border border-gray-200 dark:border-dark-bg-tertiary overflow-hidden h-full md:h-auto">
           <div className="p-3 sm:p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
-            <h2 className="text-xs sm:text-sm font-medium text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide">
+            <Heading3 className="text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide">
               {t("navigation.settingsOptions")}
-            </h2>
+            </Heading3>
           </div>
           <ul className="divide-y divide-gray-100 dark:divide-dark-bg-tertiary overflow-y-auto max-h-[calc(100vh-8rem)] md:max-h-none">
             {menuItems.map((item) => {
@@ -77,7 +79,7 @@ function Sidebar({
                           : "text-gray-400 dark:text-dark-text-tertiary"
                       }`}
                     />
-                    <span className="font-medium text-sm sm:text-base">
+                    <span className="text-sm sm:text-base">
                       {t(`navigation.${item.id}`)}
                     </span>
                   </button>

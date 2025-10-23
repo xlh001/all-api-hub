@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import iconImage from "~/assets/icon.png"
 import { LanguageSwitcher } from "~/components/LanguageSwitcher"
+import { BodySmall, Heading5, IconButton } from "~/components/ui"
 
 interface HeaderProps {
   onTitleClick: () => void
@@ -21,16 +22,18 @@ function Header({
       <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* 移动端菜单按钮 */}
-          <button
+          <IconButton
             onClick={onMenuToggle}
-            className="md:hidden p-2 rounded-lg text-gray-600 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary touch-manipulation tap-highlight-transparent"
+            variant="ghost"
+            size="default"
+            className="md:hidden touch-manipulation tap-highlight-transparent"
             aria-label="Toggle menu">
             {isMobileSidebarOpen ? (
               <XMarkIcon className="w-6 h-6" />
             ) : (
               <Bars3Icon className="w-6 h-6" />
             )}
-          </button>
+          </IconButton>
 
           {/* 插件图标和名称 */}
           <div
@@ -42,12 +45,12 @@ function Header({
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-sm"
             />
             <div className="hidden xs:block">
-              <h1 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-dark-text-primary">
+              <Heading5 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-dark-text-primary">
                 {t("app.name")}
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary hidden sm:block">
+              </Heading5>
+              <BodySmall className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary hidden sm:block">
                 {t("app.description")}
-              </p>
+              </BodySmall>
             </div>
           </div>
           <LanguageSwitcher />

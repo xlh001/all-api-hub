@@ -6,6 +6,7 @@
   "addAccount": "新增账号",
   "currentSiteAdded": "⚠️当前站点 {{siteName}} 已被添加",
   "list": {
+    "sort": "排序",
     "header": {
       "account": "账号",
       "balance": "余额",

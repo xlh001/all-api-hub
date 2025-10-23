@@ -36,6 +36,7 @@ export default function KeyManagement({
       <Header
         onAddToken={handleAddToken}
         onRefresh={() => selectedAccount && loadTokens()}
+        selectedAccount={selectedAccount}
         isLoading={isLoading || !selectedAccount}
         isAddTokenDisabled={!selectedAccount || displayData.length === 0}
       />

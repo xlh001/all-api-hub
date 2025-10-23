@@ -2,6 +2,16 @@ import { ArrowUpTrayIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 import {
+  Button,
+  Card,
+  CardDescription,
+  CardHeader,
+  CardItem,
+  CardList,
+  CardTitle
+} from "~/components/ui"
+
+import {
   handleExportAccounts,
   handleExportAll,
   handleExportPreferences
@@ -15,88 +25,76 @@ interface ExportSectionProps {
 const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
   const { t } = useTranslation("importExport")
   return (
-    <section>
-      <div className="h-full bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary">
-          <div className="flex items-center space-x-2">
-            <ArrowUpTrayIcon className="w-5 h-5 text-green-600" />
-            <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
-              {t("export.title")}
-            </h2>
+    <section className="flex h-full">
+      <Card padding="none" className="flex flex-col flex-1">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ArrowUpTrayIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <CardTitle className="mb-0">{t("export.title")}</CardTitle>
           </div>
-          <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">
-            {t("export.description")}
-          </p>
-        </div>
+          <CardDescription>{t("export.description")}</CardDescription>
+        </CardHeader>
 
-        <div className="p-6 space-y-4">
+        <CardList className="flex flex-col flex-1">
           {/* 导出所有数据 */}
-          <div className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("export.fullBackup")}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  {t("export.fullBackupDescription")}
-                </p>
-              </div>
-              <button
+          <CardItem
+            className="flex-1 flex items-center"
+            title={t("export.fullBackup")}
+            description={t("export.fullBackupDescription")}
+            rightContent={
+              <Button
                 onClick={() => handleExportAll(setIsExporting)}
                 disabled={isExporting}
-                className="ml-4 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
+                variant="success"
+                size="sm"
+                loading={isExporting}>
                 {isExporting
                   ? t("common:status.exporting")
                   : t("common:actions.export")}
-              </button>
-            </div>
-          </div>
+              </Button>
+            }
+          />
 
           {/* 导出账号数据 */}
-          <div className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("export.accountData")}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  {t("export.accountDataDescription")}
-                </p>
-              </div>
-              <button
+          <CardItem
+            className="flex-1 flex items-center"
+            title={t("export.accountData")}
+            description={t("export.accountDataDescription")}
+            rightContent={
+              <Button
                 onClick={() => handleExportAccounts(setIsExporting)}
                 disabled={isExporting}
-                className="ml-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
+                variant="default"
+                size="sm"
+                loading={isExporting}>
                 {isExporting
                   ? t("common:status.exporting")
                   : t("common:actions.export")}
-              </button>
-            </div>
-          </div>
+              </Button>
+            }
+          />
 
           {/* 导出用户设置 */}
-          <div className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-dark-text-primary mb-1">
-                  {t("export.userSettings")}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                  {t("export.userSettingsDescription")}
-                </p>
-              </div>
-              <button
+          <CardItem
+            className="flex-1 flex items-center"
+            title={t("export.userSettings")}
+            description={t("export.userSettingsDescription")}
+            rightContent={
+              <Button
                 onClick={() => handleExportPreferences(setIsExporting)}
                 disabled={isExporting}
-                className="ml-4 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
+                variant="secondary"
+                size="sm"
+                loading={isExporting}
+                className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700 text-white">
                 {isExporting
                   ? t("common:status.exporting")
                   : t("common:actions.export")}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+              </Button>
+            }
+          />
+        </CardList>
+      </Card>
     </section>
   )
 }

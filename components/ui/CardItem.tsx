@@ -1,0 +1,111 @@
+import { cva, type VariantProps } from "class-variance-authority"
+import React from "react"
+
+import { cn } from "~/utils/cn"
+
+import { BodySmall, Typography } from "./Typography"
+
+const cardItemVariants = cva(
+  "flex flex-1 items-center justify-between gap-4 transition-colors",
+  {
+    variants: {
+      padding: {
+        none: "p-0",
+        sm: "py-3 px-4",
+        default: "py-4 px-6",
+        md: "py-5 px-6",
+        lg: "py-6 px-8"
+      },
+      interactive: {
+        false: "",
+        true: "hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary cursor-pointer"
+      }
+    },
+    defaultVariants: {
+      padding: "default",
+      interactive: false
+    }
+  }
+)
+
+export interface CardSectionProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardItemVariants> {
+  leftContent?: React.ReactNode
+  rightContent?: React.ReactNode
+  icon?: React.ReactNode
+  title?: string
+  description?: string
+  onClick?: () => void
+}
+
+const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
+  (
+    {
+      className,
+      padding,
+      interactive,
+      leftContent,
+      rightContent,
+      icon,
+      title,
+      description,
+      onClick,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const isClickable = onClick || interactive
+
+    const Component = (isClickable ? "button" : "div") as any
+
+    return (
+      <Component
+        ref={ref}
+        className={cn(
+          cardItemVariants({
+            padding,
+            interactive: !!isClickable,
+            className
+          })
+        )}
+        onClick={onClick}
+        type={isClickable ? "button" : undefined}
+        {...props}>
+        {children || (
+          <>
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {icon && (
+                <div className="p-2 rounded-lg bg-gray-100 dark:bg-dark-bg-tertiary transition-colors flex-shrink-0">
+                  {icon}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                {title && (
+                  <Typography
+                    variant="h6"
+                    className="transition-colors text-gray-900 dark:text-dark-text-primary mb-0.5">
+                    {title}
+                  </Typography>
+                )}
+                {description && (
+                  <BodySmall className="text-gray-500 dark:text-dark-text-tertiary">
+                    {description}
+                  </BodySmall>
+                )}
+                {leftContent}
+              </div>
+            </div>
+            {rightContent && (
+              <div className="flex-shrink-0 ml-auto">{rightContent}</div>
+            )}
+          </>
+        )}
+      </Component>
+    )
+  }
+)
+CardItem.displayName = "CardItem"
+
+export { CardItem, cardItemVariants }

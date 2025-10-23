@@ -9,6 +9,8 @@ import { useTranslation } from "react-i18next"
 
 import iconImage from "~/assets/icon.png"
 import Tooltip from "~/components/Tooltip"
+import { BodySmall, Caption, IconButton } from "~/components/ui"
+import { COLORS } from "~/constants/designTokens"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
 
@@ -47,49 +49,65 @@ export default function HeaderSection() {
   }
 
   return (
-    <div className="flex items-center justify-between px-3 sm:px-5 py-2 sm:py-3 bg-white dark:bg-dark-bg-primary border-b border-gray-100 dark:border-dark-bg-tertiary flex-shrink-0">
-      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+    <header
+      className={`flex items-center justify-between px-3 sm:px-5 py-2 sm:py-3 ${COLORS.background.primary} ${COLORS.border.default} border-b flex-shrink-0`}>
+      {/* Logo and Title Section */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <img
           src={iconImage}
           alt={t("ui:app.name")}
           className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg shadow-sm flex-shrink-0"
         />
-        <div className="flex flex-col min-w-0">
-          <span className="font-semibold text-sm sm:text-base text-gray-900 dark:text-dark-text-primary truncate">
+        <div className="flex flex-col min-w-0 flex-1">
+          <BodySmall weight="semibold" className="truncate">
             {t("ui:app.name")}
-          </span>
-          <span className="text-xs text-gray-500 dark:text-dark-text-secondary truncate hidden xs:block">
+          </BodySmall>
+          <Caption className="truncate hidden xs:block">
             {t("ui:app.description")}
-          </span>
+          </Caption>
         </div>
       </div>
 
-      <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+      {/* Action Buttons Section */}
+      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
         <CompactThemeToggle />
+
         <Tooltip content={t("common:actions.refresh")}>
-          <button
+          <IconButton
             onClick={handleGlobalRefresh}
             disabled={isRefreshing}
-            className="p-1.5 sm:p-2 text-gray-400 dark:text-dark-text-tertiary hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary border border-gray-200 dark:border-dark-bg-tertiary touch-manipulation tap-highlight-transparent"
-            title={t("common:actions.refresh")}>
+            variant="outline"
+            size="sm"
+            aria-label={t("common:actions.refresh")}
+            className="touch-manipulation">
             <ArrowPathIcon
-              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? "animate-spin" : ""}`}
+              className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
-          </button>
+          </IconButton>
         </Tooltip>
-        <button
-          onClick={handleOpenFullManagerPage}
-          className="p-1.5 sm:p-2 text-gray-400 dark:text-dark-text-tertiary hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary border border-gray-200 dark:border-dark-bg-tertiary touch-manipulation tap-highlight-transparent"
-          title={t("ui:navigation.home")}>
-          <ArrowsPointingOutIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </button>
-        <button
-          onClick={handleOpenSetting}
-          className="p-1.5 sm:p-2 text-gray-400 dark:text-dark-text-tertiary hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg-primary border border-gray-200 dark:border-dark-bg-tertiary touch-manipulation tap-highlight-transparent"
-          title={t("common:labels.settings")}>
-          <Cog6ToothIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </button>
+
+        <Tooltip content={t("ui:navigation.home")}>
+          <IconButton
+            onClick={handleOpenFullManagerPage}
+            variant="outline"
+            size="sm"
+            aria-label={t("ui:navigation.home")}
+            className="touch-manipulation">
+            <ArrowsPointingOutIcon className="w-4 h-4" />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip content={t("common:labels.settings")}>
+          <IconButton
+            onClick={handleOpenSetting}
+            variant="outline"
+            size="sm"
+            aria-label={t("common:labels.settings")}
+            className="touch-manipulation">
+            <Cog6ToothIcon className="w-4 h-4" />
+          </IconButton>
+        </Tooltip>
       </div>
-    </div>
+    </header>
   )
 }

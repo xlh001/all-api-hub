@@ -1,5 +1,6 @@
 import React from "react"
 
+import { CardItem } from "~/components/ui"
 import { useDevice } from "~/contexts/DeviceContext"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/hooks/useAccountListItem"
@@ -22,21 +23,23 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
     const { isTouchDevice } = useDevice()
 
     // 触摸设备始终显示按钮，PC端根据hover状态显示
-    // PC: 默认隐藏，通过 hover/focus-within 显示；触摸设备始终可见
     const revealButtonsClass = isTouchDevice
       ? ""
       : "opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto"
 
+    const isDetected = site.id === detectedAccount?.id
+
     return (
-      <div
-        className={`px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-50 dark:border-dark-bg-tertiary transition-colors relative group touch-manipulation ${
-          site.id === detectedAccount?.id
-            ? "bg-blue-50 dark:bg-blue-900/50"
-            : "hover:bg-gray-25 dark:hover:bg-dark-bg-secondary active:bg-gray-50 dark:active:bg-dark-bg-tertiary"
+      <CardItem
+        padding="none"
+        className={`px-3 sm:px-4 py-2.5 sm:py-3 group touch-manipulation transition-all ${
+          isDetected
+            ? "bg-blue-50 dark:bg-blue-900/50 border-l-4 border-l-blue-500 dark:border-l-blue-400"
+            : ""
         }`}
         onMouseEnter={() => handleMouseEnter(site.id)}
         onMouseLeave={handleMouseLeave}>
-        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+        <div className="flex items-center gap-1 sm:gap-2 min-w-0 w-full">
           {/* 左侧：站点信息 - 可压缩 */}
           <div className="flex-1 min-w-0">
             <SiteInfo site={site} />
@@ -44,7 +47,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
 
           {/* 中间：操作按钮 - 固定不压缩 */}
           <div
-            className={`flex-shrink-0 transition-opacity ${revealButtonsClass}`}>
+            className={`flex-shrink-0 transition-opacity duration-200 ${revealButtonsClass}`}>
             <AccountActionButtons
               site={site}
               onDeleteAccount={onDeleteWithDialog}
@@ -57,8 +60,11 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
             <BalanceDisplay site={site} />
           </div>
         </div>
-      </div>
+      </CardItem>
     )
   }
 )
+
+AccountListItem.displayName = "AccountListItem"
+
 export default AccountListItem

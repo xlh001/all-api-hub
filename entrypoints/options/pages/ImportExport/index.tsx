@@ -1,5 +1,6 @@
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
+
+import { Alert } from "~/components/ui"
 
 import ExportSection from "./components/ExportSection"
 import ImportSection from "./components/ImportSection"
@@ -26,7 +27,7 @@ export default function ImportExport() {
     <div className="p-6">
       <PageHeader />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:items-stretch">
         <ExportSection
           isExporting={isExporting}
           setIsExporting={setIsExporting}
@@ -47,21 +48,18 @@ export default function ImportExport() {
       </div>
 
       {/* 重要提示 */}
-      <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg">
-        <div className="flex items-start space-x-3">
-          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-          <div className="text-sm">
-            <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-1">
-              {t("notice.importantNotice")}
-            </p>
-            <ul className="text-yellow-700 dark:text-yellow-300 space-y-1">
-              <li>{t("notice.importWarning1")}</li>
-              <li>{t("notice.importWarning2")}</li>
-              <li>{t("notice.importWarning3")}</li>
-              <li>{t("notice.importWarning4")}</li>
+      <div className="mt-8">
+        <Alert variant="warning">
+          <div>
+            <p className="font-medium mb-2">{t("notice.importantNotice")}</p>
+            <ul className="space-y-1 text-sm">
+              <li>• {t("notice.importWarning1")}</li>
+              <li>• {t("notice.importWarning2")}</li>
+              <li>• {t("notice.importWarning3")}</li>
+              <li>• {t("notice.importWarning4")}</li>
             </ul>
           </div>
-        </div>
+        </Alert>
       </div>
     </div>
   )

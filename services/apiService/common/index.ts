@@ -403,7 +403,7 @@ export const fetchAccountData = async (
     ...todayIncome,
     checkIn: {
       ...checkIn,
-      isCheckedInToday: canCheckIn
+      isCheckedInToday: !canCheckIn
     }
   }
 }

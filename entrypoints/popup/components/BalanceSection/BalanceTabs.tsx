@@ -3,7 +3,9 @@ import React, { useMemo } from "react"
 import CountUp from "react-countup"
 import { useTranslation } from "react-i18next"
 
+import { BodySmall } from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
+import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -17,7 +19,7 @@ import {
 const StyledTab: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Tab
     className={({ selected }) =>
-      `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+      `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${ANIMATIONS.transition.base} ${
         selected
           ? "bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary shadow-sm"
           : "text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text-primary"
@@ -49,8 +51,8 @@ const BalanceDisplay: React.FC<{
     <div className="flex items-center space-x-1 break-all">
       <button
         onClick={onCurrencyToggle}
-        className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left`}
-        title={t("currency.clickToSwitch", {
+        className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors text-left p-0`}
+        aria-label={t("currency.clickToSwitch", {
           currency:
             currencyType === "USD" ? t("currency.cny") : t("currency.usd")
         })}>
@@ -118,7 +120,8 @@ export const BalanceTabs: React.FC = () => {
         selectedIndex={activeTab === DATA_TYPE_CONSUMPTION ? 0 : 1}
         onChange={handleTabChange}>
         <div className="flex justify-start mb-3">
-          <TabList className="flex space-x-1 bg-gray-100 dark:bg-dark-bg-primary rounded-lg p-1">
+          <TabList
+            className={`flex space-x-1 ${COLORS.background.tertiary} rounded-lg p-1`}>
             <StyledTab>{t("account:stats.todayConsumption")}</StyledTab>
             <StyledTab>{t("account:stats.totalBalance")}</StyledTab>
           </TabList>
@@ -128,9 +131,9 @@ export const BalanceTabs: React.FC = () => {
           <TabPanel>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">
+                <BodySmall className="font-medium">
                   {t("account:stats.todayConsumption")}
-                </span>
+                </BodySmall>
                 <BalanceDisplay
                   value={totalConsumption[currencyType]}
                   startValue={
@@ -144,9 +147,9 @@ export const BalanceTabs: React.FC = () => {
                 />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600 dark:text-dark-text-secondary">
+                <BodySmall className="font-medium">
                   {t("account:stats.todayIncome")}
-                </span>
+                </BodySmall>
                 <BalanceDisplay
                   value={totalIncome[currencyType]}
                   startValue={0}

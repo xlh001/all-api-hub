@@ -6,6 +6,7 @@ import {
 import { useTranslation } from "react-i18next"
 
 import { CherryIcon } from "~/components/icons/CherryIcon"
+import { Button } from "~/components/ui"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 
@@ -73,12 +74,14 @@ export function TokenDetails({
             {t("dialog.copyKey.apiKey")}
           </span>
           <div className="flex items-center space-x-2">
-            <button
+            <Button
               onClick={(e) => {
                 e.stopPropagation()
                 onCopyKey(token.key)
               }}
-              className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-medium rounded hover:from-purple-600 hover:to-indigo-700 transition-all duration-200">
+              variant="default"
+              size="sm"
+              className="flex items-center space-x-1 px-2 py-1">
               {copiedKey === token.key ? (
                 <>
                   <CheckIcon className="w-3 h-3" />
@@ -90,16 +93,18 @@ export function TokenDetails({
                   <span>{t("dialog.copyKey.copy")}</span>
                 </>
               )}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={(e) => {
                 e.stopPropagation()
                 OpenInCherryStudio(account, token)
               }}
-              className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-cyan-600 text-white text-xs font-medium rounded hover:from-blue-600 hover:to-cyan-700 transition-all duration-200">
-              <CherryIcon className="w-3 h-3" />
+              variant="default"
+              size="sm"
+              className="flex items-center space-x-1 px-2 py-1">
+              <CherryIcon />
               <span>{t("dialog.copyKey.useInCherry")}</span>
-            </button>
+            </Button>
           </div>
         </div>
         <div className="font-mono text-xs text-gray-700 dark:text-dark-text-secondary bg-gray-50 dark:bg-dark-bg-primary px-2 py-1 rounded border border-gray-200 dark:border-dark-bg-tertiary break-all">

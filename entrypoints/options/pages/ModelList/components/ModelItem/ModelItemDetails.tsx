@@ -6,6 +6,7 @@ import {
 import React from "react"
 import { useTranslation } from "react-i18next"
 
+import { Badge } from "~/components/ui"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import {
   formatPrice,
@@ -41,28 +42,30 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
               {t("availableGroups")}
             </span>
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {model.enable_groups.map((group, index) => {
               const isCurrentGroup = group === userGroup
               const isClickable = onGroupClick && !isCurrentGroup
 
               return (
-                <span
+                <Badge
                   key={index}
+                  variant={isCurrentGroup ? "default" : "secondary"}
+                  size="sm"
                   onClick={isClickable ? () => onGroupClick(group) : undefined}
-                  className={`inline-flex items-center px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
-                    isCurrentGroup
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 font-medium"
-                      : isClickable
-                        ? "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
-                        : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400"
-                  }`}
+                  className={
+                    isClickable
+                      ? "cursor-pointer hover:opacity-80 transition-opacity"
+                      : ""
+                  }
                   title={
                     isClickable ? t("clickSwitchGroup", { group }) : undefined
+                  }
+                  leftIcon={
+                    isCurrentGroup ? <TagIcon className="w-3 h-3" /> : undefined
                   }>
-                  {isCurrentGroup && <TagIcon className="w-3 h-3 mr-1" />}
                   {group}
-                </span>
+                </Badge>
               )
             })}
           </div>

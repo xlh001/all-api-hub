@@ -7,8 +7,10 @@ import { useTranslation } from "react-i18next"
 
 import FeatureList from "~/components/FeatureList"
 import LinkCard from "~/components/LinkCard"
+import { BodySmall, Heading2, Heading4 } from "~/components/ui"
 import { FEATURES, FUTURE_FEATURES } from "~/constants/about"
 import packageJson from "~/package.json"
+import { isNotEmptyArray } from "~/utils"
 import { getHomepage, getPkgVersion, getRepository } from "~/utils/packageMeta"
 
 import CreditsCard from "./components/CreditsCard"
@@ -59,13 +61,9 @@ export default function About() {
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <InformationCircleIcon className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-dark-text-primary">
-            {t("title")}
-          </h1>
+          <Heading2>{t("title")}</Heading2>
         </div>
-        <p className="text-gray-500 dark:text-dark-text-secondary">
-          {t("intro")}
-        </p>
+        <BodySmall>{t("intro")}</BodySmall>
       </div>
 
       <div className="space-y-6">
@@ -76,9 +74,7 @@ export default function About() {
 
         {/* 项目链接 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-            {t("projectLinks")}
-          </h2>
+          <Heading4 className="mb-4">{t("projectLinks")}</Heading4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <LinkCard
               Icon={CodeBracketIcon}
@@ -86,7 +82,7 @@ export default function About() {
               description={t("githubDesc")}
               href={repository}
               buttonText={t("starRepo")}
-              buttonClass="bg-gray-900 dark:bg-gray-700 text-white hover:bg-gray-800 dark:hover:bg-gray-600"
+              buttonVariant="default"
               iconClass="text-gray-900 dark:text-gray-100"
             />
             <LinkCard
@@ -95,7 +91,7 @@ export default function About() {
               description={t("homepageDesc")}
               href={homepage}
               buttonText={t("visitHomepage")}
-              buttonClass="bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-400"
+              buttonVariant="default"
               iconClass="text-blue-600 dark:text-blue-400"
             />
           </div>
@@ -104,9 +100,7 @@ export default function About() {
         {/* 功能特性 */}
         {isNotEmptyArray(FEATURES) && isNotEmptyArray(FUTURE_FEATURES) && (
           <section>
-            <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-              {t("features")}
-            </h2>
+            <Heading4 className="mb-4">{t("features")}</Heading4>
             <div className="space-y-6">
               {/* 主要功能 */}
               <FeatureList
@@ -127,17 +121,13 @@ export default function About() {
 
         {/* 技术栈 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-            {t("techStack.title")}
-          </h2>
+          <Heading4 className="mb-4">{t("techStack.title")}</Heading4>
           <TechStackGrid items={techStack} />
         </section>
 
         {/* 版权和致谢 */}
         <section>
-          <h2 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary mb-4">
-            {t("copyrightAck")}
-          </h2>
+          <Heading4 className="mb-4">{t("copyrightAck")}</Heading4>
           <CreditsCard />
         </section>
 
