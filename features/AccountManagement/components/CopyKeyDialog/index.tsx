@@ -68,7 +68,7 @@ export default function CopyKeyDialog({
       panelClassName="max-h-[85vh] overflow-hidden flex flex-col"
       header={<DialogHeader account={account} />}
       footer={<DialogFooter tokenCount={tokens.length} onClose={onClose} />}>
-      <div className="flex-1 overflow-y-auto p-4">{renderContent()}</div>
+      <div className="flex-1 overflow-y-auto">{renderContent()}</div>
     </Modal>
   )
 }
