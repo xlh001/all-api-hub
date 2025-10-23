@@ -58,7 +58,7 @@ export default function AccountDialog({
     <Modal
       isOpen={isOpen}
       onClose={handlers.handleClose}
-      panelClassName="max-h-[90vh] overflow-y-auto"
+      panelClassName="max-h-[90vh]"
       header={<DialogHeader mode={mode} />}
       footer={
         <ActionButtons
