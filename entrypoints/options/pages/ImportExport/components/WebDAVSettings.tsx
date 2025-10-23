@@ -11,7 +11,9 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
+  CardTitle,
   FormField,
   IconButton,
   Input
@@ -55,13 +57,13 @@ export default function WebDAVSettings() {
 
   return (
     <Card padding="none">
-      <CardHeader
-        icon={
+      <CardHeader className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary space-y-0">
+        <div className="flex items-center space-x-2 mb-1">
           <ArrowPathIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-        }
-        title={t("webdav.title")}
-        description={t("webdav.configDesc")}
-      />
+          <CardTitle className="mb-0">{t("webdav.title")}</CardTitle>
+        </div>
+        <CardDescription>{t("webdav.configDesc")}</CardDescription>
+      </CardHeader>
 
       <CardContent className="p-6 space-y-4">
         {/* 配置表单 */}
@@ -90,34 +92,36 @@ export default function WebDAVSettings() {
             />
           </FormField>
 
-          <FormField label={t("webdav.password")}>
-            <div className="relative">
-              <Input
-                id="webdavPassword"
-                title={t("webdav.password")}
-                type={showPassword ? "text" : "password"}
-                placeholder={t("webdav.password")}
-                value={webdavPassword}
-                onChange={(e) => setWebdavPassword(e.target.value)}
-                className="pr-10"
-              />
-              <IconButton
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute inset-y-0 right-0 mr-1">
-                {showPassword ? (
-                  <EyeSlashIcon className="h-4 w-4" />
-                ) : (
-                  <EyeIcon className="h-4 w-4" />
-                )}
-              </IconButton>
-            </div>
-          </FormField>
+          <div>
+            <FormField label={t("webdav.password")}>
+              <div className="relative">
+                <Input
+                  id="webdavPassword"
+                  title={t("webdav.password")}
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("webdav.password")}
+                  value={webdavPassword}
+                  onChange={(e) => setWebdavPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <IconButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 mr-1">
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-4 w-4" />
+                  ) : (
+                    <EyeIcon className="h-4 w-4" />
+                  )}
+                </IconButton>
+              </div>
+            </FormField>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* 保存配置 */}
           <Button
             onClick={async () => {
@@ -140,7 +144,7 @@ export default function WebDAVSettings() {
             loading={saving}
             variant="secondary"
             size="sm"
-            className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-800 text-white">
+            className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-800 text-white w-full">
             {saving ? t("common:status.saving") : t("webdav.saveConfig")}
           </Button>
 
@@ -171,7 +175,7 @@ export default function WebDAVSettings() {
             loading={testing}
             variant="secondary"
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white">
+            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white w-full">
             {testing ? t("common:status.testing") : t("webdav.testConnection")}
           </Button>
 
@@ -206,7 +210,8 @@ export default function WebDAVSettings() {
             disabled={uploading || !webdavConfigFilled}
             loading={uploading}
             variant="success"
-            size="sm">
+            size="sm"
+            className="w-full">
             {uploading
               ? t("common:status.uploading")
               : t("webdav.uploadBackup")}
@@ -267,7 +272,8 @@ export default function WebDAVSettings() {
             disabled={downloading || !webdavConfigFilled}
             loading={downloading}
             variant="default"
-            size="sm">
+            size="sm"
+            className="w-full">
             {downloading
               ? t("common:status.processing")
               : t("webdav.downloadImport")}

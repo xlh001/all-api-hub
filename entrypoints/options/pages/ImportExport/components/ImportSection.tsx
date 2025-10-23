@@ -6,7 +6,9 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
+  CardTitle,
   FormField,
   Textarea
 } from "~/components/ui"
@@ -37,13 +39,13 @@ const ImportSection = ({
   return (
     <section>
       <Card padding="none">
-        <CardHeader
-          icon={
+        <CardHeader className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary space-y-0">
+          <div className="flex items-center space-x-2 mb-1">
             <ArrowDownTrayIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          }
-          title={t("import.title")}
-          description={t("import.description")}
-        />
+            <CardTitle className="mb-0">{t("import.title")}</CardTitle>
+          </div>
+          <CardDescription>{t("import.description")}</CardDescription>
+        </CardHeader>
 
         <CardContent className="p-6 space-y-4">
           {/* 文件选择 */}

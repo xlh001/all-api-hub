@@ -5,9 +5,11 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardItem,
-  CardList
+  CardList,
+  CardTitle
 } from "~/components/ui"
 
 import {
@@ -26,15 +28,15 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
   return (
     <section>
       <Card padding="none">
-        <CardHeader
-          icon={
+        <CardHeader className="px-6 py-4 border-b border-gray-200 dark:border-dark-bg-tertiary space-y-0">
+          <div className="flex items-center space-x-2 mb-1">
             <ArrowUpTrayIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
-          }
-          title={t("export.title")}
-          description={t("export.description")}
-        />
+            <CardTitle className="mb-0">{t("export.title")}</CardTitle>
+          </div>
+          <CardDescription>{t("export.description")}</CardDescription>
+        </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-0">
           <CardList>
             {/* 导出所有数据 */}
             <CardItem
