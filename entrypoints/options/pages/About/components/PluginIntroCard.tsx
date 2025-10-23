@@ -11,9 +11,10 @@ const PluginIntroCard = ({ version }: PluginIntroCardProps) => {
   const { t } = useTranslation("about")
   return (
     <Card
+      padding="lg"
       variant="default"
       className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-200 dark:border-blue-800">
-      <CardContent className="p-6">
+      <CardContent>
         <div className="flex items-start space-x-4">
           <img
             src={iconImage}

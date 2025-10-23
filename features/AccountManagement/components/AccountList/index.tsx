@@ -7,7 +7,7 @@ import {
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { EmptyState } from "~/components/ui"
+import { Card, CardList, EmptyState, IconButton } from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -54,9 +54,12 @@ export default function AccountList() {
   }
 
   const renderSortButton = (field: SortField, label: string) => (
-    <button
+    <IconButton
       onClick={() => handleSort(field)}
-      className="flex items-center space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs font-medium text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text-primary transition-colors touch-manipulation tap-highlight-transparent">
+      variant="ghost"
+      size="sm"
+      aria-label={`${t("account:list.sort")} ${label}`}
+      className="flex items-center space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs font-medium">
       <span>{label}</span>
       {sortField === field &&
         (sortOrder === "asc" ? (
@@ -64,12 +67,13 @@ export default function AccountList() {
         ) : (
           <ChevronDownIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
         ))}
-    </button>
+    </IconButton>
   )
 
   return (
-    <div className="flex flex-col">
-      <div className="px-3 sm:px-5 py-2 sm:py-3 bg-gray-50 dark:bg-dark-bg-secondary border-y border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-10">
+    <Card padding="none" className="flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="px-3 sm:px-5 py-2 sm:py-3 bg-gray-50 dark:bg-dark-bg-secondary border-b border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-10">
         <div className="flex items-center space-x-2 sm:space-x-4">
           <div className="flex-1 min-w-0">
             {renderSortButton("name", t("account:list.header.account"))}
@@ -92,15 +96,19 @@ export default function AccountList() {
         </div>
       </div>
 
-      {sortedData.map((site) => (
-        <AccountListItem
-          key={site.id}
-          site={site}
-          onDeleteWithDialog={handleDeleteWithDialog}
-          onCopyKey={handleCopyKeyWithDialog}
-        />
-      ))}
+      {/* Account List */}
+      <CardList>
+        {sortedData.map((site) => (
+          <AccountListItem
+            key={site.id}
+            site={site}
+            onDeleteWithDialog={handleDeleteWithDialog}
+            onCopyKey={handleCopyKeyWithDialog}
+          />
+        ))}
+      </CardList>
 
+      {/* Dialogs */}
       <DelAccountDialog
         isOpen={deleteDialogAccount !== null}
         onClose={() => setDeleteDialogAccount(null)}
@@ -116,6 +124,6 @@ export default function AccountList() {
         onClose={() => setCopyKeyDialogAccount(null)}
         account={copyKeyDialogAccount as DisplaySiteData}
       />
-    </div>
+    </Card>
   )
 }

@@ -15,7 +15,7 @@ const TechStackGrid = ({ items }: TechStackGridProps) => {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {items.map((tech, index) => (
         <Card key={index}>
-          <CardContent className="p-4">
+          <CardContent>
             <div className="flex items-center justify-between mb-2">
               <span className="text-base font-medium text-gray-900 dark:text-dark-text-primary">
                 {tech.name}

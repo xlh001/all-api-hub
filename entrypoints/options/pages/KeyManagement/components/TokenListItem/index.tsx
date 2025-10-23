@@ -30,8 +30,8 @@ export function TokenListItem({
   const { t } = useTranslation("keyManagement")
 
   return (
-    <Card variant="interactive" padding="none">
-      <CardContent className="p-3 sm:p-4">
+    <Card variant="interactive">
+      <CardContent>
         <div className="flex flex-col gap-2 sm:gap-3">
           <TokenHeader
             token={token}

@@ -6,6 +6,7 @@
   "addAccount": "Add Account",
   "currentSiteAdded": "⚠️Current site {{siteName}} has been added",
   "list": {
+    "sort": "Sort",
     "header": {
       "account": "Account",
       "balance": "Balance",

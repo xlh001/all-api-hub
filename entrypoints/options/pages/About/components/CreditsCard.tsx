@@ -7,7 +7,7 @@ const CreditsCard = () => {
   const { t } = useTranslation("about")
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent>
         <div className="flex items-start space-x-4">
           <HeartIcon className="w-6 h-6 text-red-500 dark:text-red-400 mt-1 flex-shrink-0" />
           <div className="flex-1">

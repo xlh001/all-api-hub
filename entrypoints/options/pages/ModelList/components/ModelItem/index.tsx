@@ -60,14 +60,13 @@ export default function ModelItem({
   return (
     <Card
       variant="interactive"
-      padding="none"
       className={
         isAvailableForUser
           ? "hover:border-blue-300 dark:hover:border-blue-500/50"
           : "opacity-75 bg-gray-50 dark:bg-gray-800/50"
       }>
       {/* 主要信息行 */}
-      <CardContent className="p-3 sm:p-4">
+      <CardContent>
         <div className="flex items-start gap-2 min-w-0">
           <ModelItemHeader
             model={model}

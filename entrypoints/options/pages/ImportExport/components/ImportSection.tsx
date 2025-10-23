@@ -47,7 +47,7 @@ const ImportSection = ({
           <CardDescription>{t("import.description")}</CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="p-6 space-y-4">
           {/* 文件选择 */}
           <FormField label={t("import.selectBackupFile")}>
             <div className="flex items-center space-x-3">
