@@ -2,7 +2,7 @@ import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import Modal from "~/components/ui/Dialog/Modal"
+import { Modal } from "~/components/ui/Dialog/Modal"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { createApiToken, updateApiToken } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"

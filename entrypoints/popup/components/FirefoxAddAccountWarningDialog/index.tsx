@@ -2,7 +2,7 @@ import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "~/components/ui"
-import Modal from "~/components/ui/Dialog/Modal"
+import { Modal } from "~/components/ui/Dialog/Modal"
 
 interface FirefoxWarningDialogProps {
   isOpen: boolean

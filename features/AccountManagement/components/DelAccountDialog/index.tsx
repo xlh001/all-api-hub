@@ -1,7 +1,7 @@
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import Modal from "~/components/ui/Dialog/Modal"
+import { Modal } from "~/components/ui/Dialog/Modal"
 import { accountStorage } from "~/services/accountStorage"
 import type { DisplaySiteData } from "~/types"
 

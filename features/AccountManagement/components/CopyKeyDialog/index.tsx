@@ -1,4 +1,4 @@
-import Modal from "~/components/ui/Dialog/Modal"
+import { Modal } from "~/components/ui/Dialog/Modal"
 import { useCopyKeyDialog } from "~/features/AccountManagement/components/CopyKeyDialog/hooks/useCopyKeyDialog"
 import type { DisplaySiteData } from "~/types"
 import {

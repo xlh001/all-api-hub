@@ -1,4 +1,4 @@
-import Modal from "~/components/ui/Dialog/Modal"
+import { Modal } from "~/components/ui/Dialog/Modal"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import type { DisplaySiteData } from "~/types"
