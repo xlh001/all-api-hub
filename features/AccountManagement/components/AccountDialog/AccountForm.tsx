@@ -226,7 +226,6 @@ export default function AccountForm({
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
             placeholder={t("form.notesPlaceholder")}
-            className="pl-10"
             rows={2}
           />
         </div>
