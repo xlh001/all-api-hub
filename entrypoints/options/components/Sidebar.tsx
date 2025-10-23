@@ -37,7 +37,7 @@ function Sidebar({
       {/* 移动端遮罩层 */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/20 z-40 md:hidden"
           onClick={onMobileClose}
         />
       )}
@@ -47,7 +47,7 @@ function Sidebar({
         className={`
         w-64 flex-shrink-0
         md:relative md:translate-x-0
-        fixed inset-y-0 left-0 z-50
+        fixed inset-y-0 left-0 z-10
         transform transition-transform duration-300 ease-in-out
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         mt-0 md:mt-0
