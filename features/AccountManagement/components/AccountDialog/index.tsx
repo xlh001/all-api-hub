@@ -77,7 +77,7 @@ export default function AccountDialog({
           formId="account-form"
         />
       }>
-      <div className="p-4">
+      <div>
         <form
           id="account-form"
           onSubmit={handleSubmit}
@@ -104,21 +104,6 @@ export default function AccountDialog({
               onEditAccount: openEditAccount
             })}
           />
-
-          {mode === "add" && !state.isDetected && !state.showManualForm && (
-            <ActionButtons
-              mode={mode}
-              url={state.url}
-              isDetecting={state.isDetecting}
-              onAutoDetect={handlers.handleAutoDetect}
-              onShowManualForm={() => setters.setShowManualForm(true)}
-              onClose={handlers.handleClose}
-              isFormValid={state.isFormValid}
-              isSaving={state.isSaving}
-              onAutoConfig={handlers.handleAutoConfig}
-              isAutoConfiguring={state.isAutoConfiguring}
-            />
-          )}
 
           {(state.isDetected || state.showManualForm) && (
             <>

@@ -3,7 +3,7 @@ import React, { useMemo } from "react"
 import CountUp from "react-countup"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall } from "~/components/ui"
+import { BodySmall, Button } from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { UI_CONSTANTS } from "~/constants/ui"
@@ -49,10 +49,11 @@ const BalanceDisplay: React.FC<{
   const { t } = useTranslation("common")
   return (
     <div className="flex items-center space-x-1 break-all">
-      <button
+      <Button
         onClick={onCurrencyToggle}
-        className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors cursor-pointer text-left`}
-        title={t("currency.clickToSwitch", {
+        variant="ghost"
+        className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors text-left p-0`}
+        aria-label={t("currency.clickToSwitch", {
           currency:
             currencyType === "USD" ? t("currency.cny") : t("currency.usd")
         })}>
@@ -69,7 +70,7 @@ const BalanceDisplay: React.FC<{
           decimals={2}
           preserveValue
         />
-      </button>
+      </Button>
     </div>
   )
 }

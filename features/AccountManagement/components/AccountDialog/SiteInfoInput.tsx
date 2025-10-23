@@ -8,6 +8,7 @@ import {
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
+import { Button, IconButton } from "~/components/ui"
 import { AuthTypeEnum, type DisplaySiteData } from "~/types"
 
 interface SiteInfoInputProps {
@@ -72,12 +73,15 @@ export default function SiteInfoInput({
             disabled={isDetected}
           />
           {url && !isDetected && (
-            <button
+            <IconButton
               type="button"
               onClick={onClearUrl}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-              <XCircleIcon className="h-5 w-5" />
-            </button>
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              variant="ghost"
+              size="sm"
+              aria-label="clear-url">
+              <XCircleIcon className="h-5 w-5 text-gray-400" />
+            </IconButton>
           )}
         </div>
         <Tooltip content={t("siteInfo.cookieWarning")}>
@@ -99,13 +103,15 @@ export default function SiteInfoInput({
               <ExclamationTriangleIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
               <span>{t("siteInfo.alreadyAdded")}</span>
             </div>
-            <button
+            <Button
               type="button"
               onClick={handleEditClick}
-              className="flex items-center font-medium text-yellow-800 dark:text-yellow-200 hover:text-yellow-900 dark:hover:text-yellow-100">
+              variant="ghost"
+              size="sm"
+              className="flex items-center font-medium text-yellow-800 dark:text-yellow-200">
               <PencilIcon className="w-3 h-3 mr-1" />
               <span>{t("siteInfo.editNow")}</span>
-            </button>
+            </Button>
           </div>
         )}
         {!isDetected && onUseCurrentTab && (
@@ -120,14 +126,16 @@ export default function SiteInfoInput({
               </Tooltip>
             </div>
 
-            <button
+            <Button
               type="button"
               onClick={onUseCurrentTab}
+              variant="ghost"
+              size="sm"
               className="flex items-center font-medium text-blue-800 dark:text-blue-200 disabled:text-gray-400 dark:disabled:text-gray-600 disabled:cursor-not-allowed"
               disabled={!currentTabUrl}>
               <GlobeAltIcon className="w-3 h-3 mr-1" />
               <span>{t("siteInfo.useCurrent")}</span>
-            </button>
+            </Button>
           </div>
         )}
       </div>

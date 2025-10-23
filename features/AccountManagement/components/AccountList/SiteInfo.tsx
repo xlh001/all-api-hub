@@ -101,75 +101,72 @@ export default function SiteInfo({ site }: SiteInfoProps) {
 
           {/* Site Name Link */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <Link
-                href={site.baseUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="truncate block">
-                <BodySmall weight="medium" className="truncate">
-                  {site.name}
-                </BodySmall>
-              </Link>
-
-              {/* Inline check-in UI placed next to site name for tighter spacing */}
-              {site.checkIn?.customCheckInUrl ? (
-                <Tooltip
-                  content={t("list.site.customCheckInUrl", {
-                    url: site.checkIn.customCheckInUrl
-                  })}
-                  position="top"
-                  wrapperClassName="flex items-center">
-                  <IconButton
-                    onClick={handleCheckIn(site.checkIn.customCheckInUrl)}
-                    variant="ghost"
-                    size="sm"
-                    aria-label={t("list.site.customCheckIn")}>
-                    <CurrencyYenIcon className="h-4 w-4 text-green-500" />
-                  </IconButton>
-                </Tooltip>
-              ) : (
-                site.checkIn?.enableDetection && (
-                  <>
-                    {site.checkIn.isCheckedInToday === undefined ? (
-                      <Tooltip
-                        content={t("list.site.checkInUnsupported")}
-                        position="top"
-                        wrapperClassName="flex items-center">
-                        <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
-                      </Tooltip>
-                    ) : site.checkIn.isCheckedInToday === false ? (
-                      <Tooltip
-                        content={t("list.site.checkedInToday")}
-                        position="top"
-                        wrapperClassName="flex items-center">
-                        <IconButton
-                          onClick={handleCheckIn()}
-                          variant="ghost"
-                          size="sm"
-                          aria-label={t("list.site.checkIn")}>
-                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                        </IconButton>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip
-                        content={t("list.site.notCheckedInToday")}
-                        position="top"
-                        wrapperClassName="flex items-center">
-                        <IconButton
-                          onClick={handleCheckIn()}
-                          variant="ghost"
-                          size="sm"
-                          aria-label={t("list.site.checkIn")}>
-                          <XCircleIcon className="h-4 w-4 text-red-500" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </>
-                )
-              )}
-            </div>
+            <Link
+              href={site.baseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate block">
+              <BodySmall weight="medium" className="truncate">
+                {site.name}
+              </BodySmall>
+            </Link>
           </div>
+          {/* The check-in UI is displayed if the checkIn object exists. */}
+          {site.checkIn?.customCheckInUrl ? (
+            <Tooltip
+              content={t("list.site.customCheckInUrl", {
+                url: site.checkIn.customCheckInUrl
+              })}
+              position="top"
+              wrapperClassName="flex justify-center items-center">
+              <IconButton
+                onClick={handleCheckIn(site.checkIn.customCheckInUrl)}
+                variant="ghost"
+                size="sm"
+                aria-label={t("list.site.customCheckIn")}>
+                <CurrencyYenIcon className="h-4 w-4 text-green-500" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            site.checkIn?.enableDetection && (
+              <>
+                {site.checkIn.isCheckedInToday === undefined ? (
+                  <Tooltip
+                    content={t("list.site.checkInUnsupported")}
+                    position="top"
+                    wrapperClassName="flex justify-center items-center">
+                    <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
+                  </Tooltip>
+                ) : site.checkIn.isCheckedInToday === false ? (
+                  <Tooltip
+                    content={t("list.site.checkedInToday")}
+                    position="top"
+                    wrapperClassName="flex justify-center items-center">
+                    <IconButton
+                      onClick={handleCheckIn()}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t("list.site.checkIn")}>
+                      <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                    </IconButton>
+                  </Tooltip>
+                ) : (
+                  <Tooltip
+                    content={t("list.site.notCheckedInToday")}
+                    position="top"
+                    wrapperClassName="flex justify-center items-center">
+                    <IconButton
+                      onClick={handleCheckIn()}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t("list.site.checkIn")}>
+                      <XCircleIcon className="h-4 w-4 text-red-500" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </>
+            )
+          )}
         </div>
 
         {/* Username */}
