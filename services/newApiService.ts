@@ -150,6 +150,13 @@ export async function importToNewApi(
       }
     }
 
+    if (availableModels.length === 0) {
+      return {
+        success: false,
+        message: t("messages:newapi.noAnyModels")
+      }
+    }
+
     let newChannelName = `${account.name} | ${token.name}`.trim()
     if (!newChannelName.endsWith("(auto)")) {
       newChannelName += " (auto)"

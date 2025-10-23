@@ -87,6 +87,7 @@
   "newapi": {
     "configMissing": "请先在基础设置中配置 New API 的地址、管理员令牌和用户 ID",
     "dataFetchFailed": "New API数据获取失败,请检查配置是否正确",
+    "noAnyModels": "没有任何可用模型",
     "channelExists": "渠道 {{channelName}} 已存在，无需重复导入",
     "importSuccess": "成功导入新渠道 {{channelName}}",
     "importFailed": "导入失败，发生未知错误"
