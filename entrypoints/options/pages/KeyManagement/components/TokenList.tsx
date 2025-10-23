@@ -1,7 +1,7 @@
 import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { EmptyState } from "~/components/ui"
+import { Card, EmptyState } from "~/components/ui"
 import type { DisplaySiteData } from "~/types"
 
 import { AccountToken } from "../type"
@@ -25,13 +25,11 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {[...Array(3)].map((_, i) => (
-        <div
-          key={i}
-          className="border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-4 animate-pulse">
+        <Card key={i} padding="default" className="animate-pulse">
           <div className="h-4 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-1/4 mb-2"></div>
           <div className="h-3 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-1/2 mb-2"></div>
           <div className="h-3 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-3/4"></div>
-        </div>
+        </Card>
       ))}
     </div>
   )

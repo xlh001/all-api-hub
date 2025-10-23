@@ -30,7 +30,9 @@
     "editKey": "Edit Key",
     "deleteKey": "Delete Key",
     "enable": "Enable",
-    "disable": "Disable"
+    "disable": "Disable",
+    "showKey": "Show Key",
+    "hideKey": "Hide Key"
   },
   "messages": {
     "loadFailed": "Failed to load key list",

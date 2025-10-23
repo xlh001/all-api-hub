@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next"
 
+import { Card, CardContent } from "~/components/ui"
 import type { DisplaySiteData } from "~/types"
 
 import { AccountToken } from "../../type"
@@ -29,35 +30,39 @@ export function TokenListItem({
   const { t } = useTranslation("keyManagement")
 
   return (
-    <div className="flex flex-col gap-2 sm:gap-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg p-3 sm:p-4 hover:border-gray-300 dark:hover:border-blue-500/50 bg-white dark:bg-dark-bg-secondary transition-all duration-200 shadow-sm hover:shadow-md">
-      <TokenHeader
-        token={token}
-        copyKey={copyKey}
-        handleEditToken={handleEditToken}
-        handleDeleteToken={handleDeleteToken}
-        account={account}
-      />
-      <div className="flex-1 min-w-0">
-        <div className="space-y-2 text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary">
-          <KeyDisplay
-            tokenKey={token.key}
-            tokenId={token.id}
-            visibleKeys={visibleKeys}
-            toggleKeyVisibility={toggleKeyVisibility}
+    <Card variant="interactive" padding="none">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex flex-col gap-2 sm:gap-3">
+          <TokenHeader
+            token={token}
+            copyKey={copyKey}
+            handleEditToken={handleEditToken}
+            handleDeleteToken={handleDeleteToken}
+            account={account}
           />
-          <TokenDetails token={token} />
-          {token.group && (
-            <div>
-              <span className="text-gray-500 dark:text-dark-text-tertiary">
-                {t("keyDetails.group")}
-              </span>
-              <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
-                {token.group}
-              </span>
+          <div className="flex-1 min-w-0">
+            <div className="space-y-2 text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary">
+              <KeyDisplay
+                tokenKey={token.key}
+                tokenId={token.id}
+                visibleKeys={visibleKeys}
+                toggleKeyVisibility={toggleKeyVisibility}
+              />
+              <TokenDetails token={token} />
+              {token.group && (
+                <div>
+                  <span className="text-gray-500 dark:text-dark-text-tertiary">
+                    {t("keyDetails.group")}
+                  </span>
+                  <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
+                    {token.group}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
