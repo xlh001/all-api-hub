@@ -55,7 +55,7 @@ export default function DelAccountDialog({
       isOpen={isOpen}
       onClose={onClose}
       panelClassName="w-full max-w-md transform rounded-lg bg-white dark:bg-dark-bg-secondary shadow-xl transition-all"
-      header={<DialogHeader onClose={onClose} />}>
+      header={<DialogHeader />}>
       <div className="p-4">
         <WarningSection accountName={account?.name} />
         {account && <AccountInfo account={account} />}

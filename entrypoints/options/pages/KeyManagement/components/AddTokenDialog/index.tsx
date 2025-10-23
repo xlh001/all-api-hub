@@ -1,8 +1,8 @@
-import { Dialog, Transition } from "@headlessui/react"
-import { Fragment, useState } from "react"
+import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import Modal from "~/components/ui/Dialog/Modal"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { createApiToken, updateApiToken } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
@@ -103,60 +103,38 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
   }
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0">
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
-        </Transition.Child>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95">
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-lg bg-white dark:bg-dark-bg-secondary p-6 shadow-xl transition-all">
-                <DialogHeader isEditMode={isEditMode} onClose={handleClose} />
-
-                {isLoading ? (
-                  <LoadingIndicator />
-                ) : (
-                  <div className="space-y-4">
-                    <TokenForm
-                      formData={formData}
-                      setFormData={setFormData}
-                      errors={errors}
-                      isEditMode={isEditMode}
-                      availableAccounts={availableAccounts}
-                      groups={groups}
-                      availableModels={availableModels}
-                    />
-                    <WarningNote />
-                    <FormActions
-                      isSubmitting={isSubmitting}
-                      isEditMode={isEditMode}
-                      onClose={handleClose}
-                      onSubmit={handleSubmit}
-                      canSubmit={!!currentAccount}
-                    />
-                  </div>
-                )}
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      size="lg"
+      header={<DialogHeader isEditMode={isEditMode} />}
+      footer={
+        isLoading ? null : (
+          <FormActions
+            isSubmitting={isSubmitting}
+            isEditMode={isEditMode}
+            onClose={handleClose}
+            onSubmit={handleSubmit}
+            canSubmit={!!currentAccount}
+          />
+        )
+      }>
+      {isLoading ? (
+        <LoadingIndicator />
+      ) : (
+        <div className="space-y-4">
+          <TokenForm
+            formData={formData}
+            setFormData={setFormData}
+            errors={errors}
+            isEditMode={isEditMode}
+            availableAccounts={availableAccounts}
+            groups={groups}
+            availableModels={availableModels}
+          />
+          <WarningNote />
         </div>
-      </Dialog>
-    </Transition>
+      )}
+    </Modal>
   )
 }

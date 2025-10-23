@@ -1,4 +1,4 @@
-import { ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline"
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 import Modal from "~/components/ui/Dialog/Modal"
@@ -26,12 +26,6 @@ export default function FirefoxAddAccountWarningDialog({
           {t("dialog.firefox.warningTitle")}
         </div>
       </div>
-      <button
-        onClick={onClose}
-        aria-label={t("common:actions.close")}
-        className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors">
-        <XMarkIcon className="w-5 h-5" />
-      </button>
     </div>
   )
 

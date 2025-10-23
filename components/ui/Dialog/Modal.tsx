@@ -53,8 +53,8 @@ export function Modal({
   }
 
   const panelBaseClass =
-    panelClassName ||
-    `w-full ${sizeMap[size]} bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all`
+    `w-full ${sizeMap[size]} bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all` +
+    (panelClassName ? ` ${panelClassName}` : "")
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -88,24 +88,36 @@ export function Modal({
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4">
             <Dialog.Panel className={panelBaseClass}>
-              {/* optional header slot */}
-              {header}
-
               {/* close button */}
               {showCloseButton && (
                 <button
                   onClick={onClose}
                   aria-label="Close"
-                  className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors">
+                  className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               )}
 
-              {/* content */}
-              {children}
+              {/* header area: modal controls header padding and divider */}
+              {header && (
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
+                  <div className="flex items-start justify-between">
+                    {header}
+                  </div>
+                </div>
+              )}
 
-              {/* optional footer slot */}
-              {footer}
+              {/* content area */}
+              <div className={`p-4 overflow-y-auto max-h-[80vh]`}>
+                {children}
+              </div>
+
+              {/* footer area with top divider when present */}
+              {footer && (
+                <div className="px-6 py-4 border-t border-gray-100 dark:border-dark-bg-tertiary">
+                  {footer}
+                </div>
+              )}
             </Dialog.Panel>
           </Transition.Child>
         </div>

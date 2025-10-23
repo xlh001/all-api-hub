@@ -52,10 +52,14 @@ const thumbVariants = cva(
 )
 
 export interface SwitchProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onChange">,
-    VariantProps<typeof switchVariants> {
+  extends Omit<
+      React.ButtonHTMLAttributes<HTMLButtonElement>,
+      "onChange" | "value"
+    >,
+    Omit<VariantProps<typeof switchVariants>, "disabled"> {
   checked: boolean
   onChange: (checked: boolean) => void
+  disabled?: boolean
 }
 
 export const Switch: React.FC<SwitchProps> = ({

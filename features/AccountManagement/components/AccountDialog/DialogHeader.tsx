@@ -1,17 +1,12 @@
 import { DialogTitle } from "@headlessui/react"
-import {
-  PencilIcon,
-  SparklesIcon,
-  XMarkIcon
-} from "@heroicons/react/24/outline"
+import { PencilIcon, SparklesIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 interface DialogHeaderProps {
   mode: "add" | "edit"
-  onClose: () => void
 }
 
-export default function DialogHeader({ mode, onClose }: DialogHeaderProps) {
+export default function DialogHeader({ mode }: DialogHeaderProps) {
   const { t } = useTranslation("accountDialog")
   const isAddMode = mode === "add"
   const title = isAddMode ? t("title.add") : t("title.edit")
@@ -21,7 +16,7 @@ export default function DialogHeader({ mode, onClose }: DialogHeaderProps) {
     : "bg-gradient-to-r from-green-500 to-emerald-600"
 
   return (
-    <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
+    <div className="flex items-center justify-between">
       <div className="flex items-center space-x-3">
         <div
           className={`w-8 h-8 ${iconBgClass} rounded-lg flex items-center justify-center`}>
@@ -31,11 +26,7 @@ export default function DialogHeader({ mode, onClose }: DialogHeaderProps) {
           {title}
         </DialogTitle>
       </div>
-      <button
-        onClick={onClose}
-        className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors">
-        <XMarkIcon className="w-5 h-5" />
-      </button>
+      {/* Modal provides close button */}
     </div>
   )
 }

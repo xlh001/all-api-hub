@@ -59,7 +59,7 @@ export default function AccountDialog({
       isOpen={isOpen}
       onClose={handlers.handleClose}
       panelClassName="w-full max-w-md bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all max-h-[90vh] overflow-y-auto"
-      header={<DialogHeader mode={mode} onClose={handlers.handleClose} />}>
+      header={<DialogHeader mode={mode} />}>
       <div className="p-4">
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           {state.detectionError && (

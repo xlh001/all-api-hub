@@ -173,7 +173,8 @@ Label.displayName = "Label"
 
 const Link = React.forwardRef<
   HTMLAnchorElement,
-  Omit<TypographyProps, "variant"> & { href?: string }
+  Omit<TypographyProps, "variant"> &
+    React.AnchorHTMLAttributes<HTMLAnchorElement> & { href?: string }
 >(({ href, ...props }, ref) => (
   <Typography ref={ref} variant="link" as="a" {...(props as any)} href={href} />
 ))

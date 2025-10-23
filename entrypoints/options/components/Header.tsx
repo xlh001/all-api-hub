@@ -25,7 +25,7 @@ function Header({
           <IconButton
             onClick={onMenuToggle}
             variant="ghost"
-            size="md"
+            size="default"
             className="md:hidden touch-manipulation tap-highlight-transparent"
             aria-label="Toggle menu">
             {isMobileSidebarOpen ? (
