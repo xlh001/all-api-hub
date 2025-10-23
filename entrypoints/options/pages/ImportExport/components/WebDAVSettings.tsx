@@ -1,4 +1,8 @@
-import { ArrowPathIcon } from "@heroicons/react/24/outline"
+import {
+  ArrowPathIcon,
+  EyeIcon,
+  EyeSlashIcon
+} from "@heroicons/react/24/outline"
 import { useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -9,6 +13,7 @@ import {
   CardContent,
   CardHeader,
   FormField,
+  IconButton,
   Input
 } from "~/components/ui"
 import { accountStorage } from "~/services/accountStorage"
@@ -25,6 +30,7 @@ export default function WebDAVSettings() {
   const [webdavUrl, setWebdavUrl] = useState("")
   const [webdavUsername, setWebdavUsername] = useState("")
   const [webdavPassword, setWebdavPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
 
   // 独立的动作状态，避免互相影响
   const [saving, setSaving] = useState(false)
@@ -85,14 +91,29 @@ export default function WebDAVSettings() {
           </FormField>
 
           <FormField label={t("webdav.password")}>
-            <Input
-              id="webdavPassword"
-              title={t("webdav.password")}
-              type="password"
-              placeholder={t("webdav.password")}
-              value={webdavPassword}
-              onChange={(e) => setWebdavPassword(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="webdavPassword"
+                title={t("webdav.password")}
+                type={showPassword ? "text" : "password"}
+                placeholder={t("webdav.password")}
+                value={webdavPassword}
+                onChange={(e) => setWebdavPassword(e.target.value)}
+                className="pr-10"
+              />
+              <IconButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 mr-1">
+                {showPassword ? (
+                  <EyeSlashIcon className="h-4 w-4" />
+                ) : (
+                  <EyeIcon className="h-4 w-4" />
+                )}
+              </IconButton>
+            </div>
           </FormField>
         </div>
 
