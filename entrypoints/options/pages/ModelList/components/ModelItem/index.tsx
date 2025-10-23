@@ -63,11 +63,11 @@ export default function ModelItem({
       className={
         isAvailableForUser
           ? "hover:border-blue-300 dark:hover:border-blue-500/50"
-          : "opacity-75 bg-gray-50 dark:bg-gray-800/50"
+          : "bg-gray-50 opacity-75 dark:bg-gray-800/50"
       }>
       {/* 主要信息行 */}
       <CardContent padding="default">
-        <div className="flex items-start gap-2 min-w-0">
+        <div className="flex min-w-0 items-start gap-2">
           <ModelItemHeader
             model={model}
             isAvailableForUser={isAvailableForUser}

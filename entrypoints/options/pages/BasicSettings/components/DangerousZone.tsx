@@ -28,11 +28,11 @@ export default function DangerousZone() {
   return (
     <section>
       <Heading5
-        className={`text-lg font-medium text-red-600 dark:text-red-400 mb-4`}>
+        className={`mb-4 text-lg font-medium text-red-600 dark:text-red-400`}>
         {t("danger.title")}
       </Heading5>
       <Alert variant="destructive" className="p-3 sm:p-4">
-        <div className="flex items-start sm:items-center justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 sm:items-center">
           <div className="min-w-0">
             <AlertTitle className="text-sm">
               {t("danger.resetAllSettings")}

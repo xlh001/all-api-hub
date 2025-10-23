@@ -39,7 +39,7 @@ const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
       className={cn(labelVariants({ variant, size, className }))}
       {...props}>
       {children}
-      {required && <span className="text-red-500 ml-1">*</span>}
+      {required && <span className="ml-1 text-red-500">*</span>}
     </label>
   )
 )

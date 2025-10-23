@@ -23,7 +23,7 @@ export function StatusIndicator({
   if (!selectedAccount) {
     return (
       <EmptyState
-        icon={<CpuChipIcon className="w-12 h-12" />}
+        icon={<CpuChipIcon className="h-12 w-12" />}
         title={t("pleaseSelectFirst")}
       />
     )
@@ -31,7 +31,7 @@ export function StatusIndicator({
 
   if (isLoading) {
     return (
-      <div className="text-center py-12">
+      <div className="py-12 text-center">
         <Spinner size="lg" className="mx-auto mb-4" />
         <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
           {t("status.loading")}
@@ -44,11 +44,11 @@ export function StatusIndicator({
     return (
       <Alert variant="warning" className="mb-6">
         <div>
-          <h3 className="text-lg font-medium mb-2">
+          <h3 className="mb-2 text-lg font-medium">
             {t("status.incompatibleFormat")}
           </h3>
-          <p className="text-sm mb-4">{t("status.incompatibleDesc")}</p>
-          <div className="flex flex-col sm:flex-row gap-3">
+          <p className="mb-4 text-sm">{t("status.incompatibleDesc")}</p>
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Button
               variant="warning"
               onClick={() =>
@@ -56,7 +56,7 @@ export function StatusIndicator({
               }
               rightIcon={
                 <svg
-                  className="w-4 h-4"
+                  className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24">
@@ -73,7 +73,7 @@ export function StatusIndicator({
             <Button
               variant="secondary"
               onClick={loadPricingData}
-              leftIcon={<ArrowPathIcon className="w-4 h-4" />}>
+              leftIcon={<ArrowPathIcon className="h-4 w-4" />}>
               {t("status.retryLoad")}
             </Button>
           </div>

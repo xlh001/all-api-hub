@@ -8,8 +8,8 @@ export function WarningNote() {
   return (
     <Alert variant="warning">
       <div>
-        <p className="font-medium mb-1">{t("dialog.warningTitle")}</p>
-        <ul className="text-xs space-y-1">
+        <p className="mb-1 font-medium">{t("dialog.warningTitle")}</p>
+        <ul className="space-y-1 text-xs">
           <li>• {t("dialog.warningText")}</li>
         </ul>
       </div>

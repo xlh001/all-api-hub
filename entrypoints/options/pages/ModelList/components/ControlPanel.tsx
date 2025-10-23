@@ -70,14 +70,14 @@ export function ControlPanel({
 
   return (
     <Card className="mb-6">
-      <div className="flex flex-col lg:flex-row gap-4 mb-4">
+      <div className="mb-4 flex flex-col gap-4 lg:flex-row">
         <FormField label={t("searchModels")} className="flex-1">
           <Input
             type="text"
             placeholder={t("searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
+            leftIcon={<MagnifyingGlassIcon className="h-4 w-4" />}
           />
         </FormField>
 
@@ -94,28 +94,28 @@ export function ControlPanel({
           </Select>
         </FormField>
 
-        <div className="w-full lg:w-auto lg:flex lg:items-end">
+        <div className="w-full lg:flex lg:w-auto lg:items-end">
           <Button
             onClick={loadPricingData}
             disabled={isLoading}
             loading={isLoading}
             className="w-full lg:w-auto"
-            leftIcon={!isLoading && <ArrowPathIcon className="w-4 h-4" />}>
+            leftIcon={!isLoading && <ArrowPathIcon className="h-4 w-4" />}>
             {t("refreshData")}
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pt-4 border-t border-gray-100 dark:border-dark-bg-tertiary">
+      <div className="flex flex-col gap-4 border-t border-gray-100 pt-4 dark:border-dark-bg-tertiary lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <div className="flex items-center space-x-2">
-            <AdjustmentsHorizontalIcon className="w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
-            <span className="text-gray-700 dark:text-dark-text-secondary font-medium">
+            <AdjustmentsHorizontalIcon className="h-4 w-4 text-gray-400 dark:text-dark-text-tertiary" />
+            <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
               {t("displayOptions")}
             </span>
           </div>
 
-          <label className="flex items-center space-x-2 cursor-pointer">
+          <label className="flex cursor-pointer items-center space-x-2">
             <Switch
               checked={showRealPrice}
               onChange={setShowRealPrice}
@@ -124,7 +124,7 @@ export function ControlPanel({
             <Label className="cursor-pointer">{t("realAmount")}</Label>
           </label>
 
-          <label className="flex items-center space-x-2 cursor-pointer">
+          <label className="flex cursor-pointer items-center space-x-2">
             <Switch
               checked={showRatioColumn}
               onChange={setShowRatioColumn}
@@ -133,7 +133,7 @@ export function ControlPanel({
             <Label className="cursor-pointer">{t("showRatio")}</Label>
           </label>
 
-          <label className="flex items-center space-x-2 cursor-pointer">
+          <label className="flex cursor-pointer items-center space-x-2">
             <Switch
               checked={showEndpointTypes}
               onChange={setShowEndpointTypes}
@@ -146,14 +146,14 @@ export function ControlPanel({
             variant="ghost"
             size="sm"
             onClick={handleCopyModelNames}
-            leftIcon={<ClipboardDocumentListIcon className="w-4 h-4" />}>
+            leftIcon={<ClipboardDocumentListIcon className="h-4 w-4" />}>
             {t("copyAllNames")}
           </Button>
         </div>
 
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2 text-gray-600 dark:text-dark-text-secondary">
-            <CpuChipIcon className="w-4 h-4" />
+            <CpuChipIcon className="h-4 w-4" />
             <span>{t("totalModels", { count: totalModels })}</span>
           </div>
           <div className="h-4 w-px bg-gray-300 dark:bg-dark-bg-tertiary"></div>

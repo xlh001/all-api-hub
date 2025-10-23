@@ -69,14 +69,14 @@ export default function SiteInfoInput({
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
             placeholder="https://example.com"
-            className="block w-full pr-10 py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100 dark:disabled:bg-dark-bg-tertiary bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+            className="block w-full rounded-lg border border-gray-200 bg-white py-3 pr-10 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:placeholder-gray-500 dark:disabled:bg-dark-bg-tertiary"
             disabled={isDetected}
           />
           {url && !isDetected && (
             <IconButton
               type="button"
               onClick={onClearUrl}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              className="absolute inset-y-0 right-0 flex items-center pr-3"
               variant="ghost"
               size="sm"
               aria-label="clear-url">
@@ -89,18 +89,18 @@ export default function SiteInfoInput({
             id="auth-type"
             value={authType}
             onChange={(e) => onAuthTypeChange(e.target.value as AuthTypeEnum)}
-            className="block py-3 border border-gray-200 dark:border-dark-bg-tertiary rounded-lg text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary"
+            className="block rounded-lg border border-gray-200 bg-white py-3 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:placeholder-gray-500"
             disabled={isDetected}>
             <option value={AuthTypeEnum.AccessToken}>Access Token</option>
             <option value={AuthTypeEnum.Cookie}>Cookie</option>
           </select>
         </Tooltip>
       </div>
-      <div className="flex flex-col gap-y-2 justify-between text-xs">
+      <div className="flex flex-col justify-between gap-y-2 text-xs">
         {isCurrentSiteAdded && handleEditClick && (
-          <div className="w-full flex items-center justify-between text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded-md">
+          <div className="flex w-full items-center justify-between rounded-md bg-yellow-50 p-2 text-xs text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300">
             <div className="flex items-center">
-              <ExclamationTriangleIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
+              <ExclamationTriangleIcon className="mr-1.5 h-4 w-4 flex-shrink-0" />
               <span>{t("siteInfo.alreadyAdded")}</span>
             </div>
             <Button
@@ -109,18 +109,18 @@ export default function SiteInfoInput({
               variant="ghost"
               size="sm"
               className="flex items-center font-medium text-yellow-800 dark:text-yellow-200">
-              <PencilIcon className="w-3 h-3 mr-1" />
+              <PencilIcon className="mr-1 h-3 w-3" />
               <span>{t("siteInfo.editNow")}</span>
             </Button>
           </div>
         )}
         {!isDetected && onUseCurrentTab && (
-          <div className="w-full flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md">
+          <div className="flex w-full items-center justify-between rounded-md bg-blue-50 p-2 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
             <div className="flex items-center">
               <InformationCircleIcon className="h-4 w-4" />
               <span className="ml-1">{t("siteInfo.currentSite")}:</span>
               <Tooltip content={currentTabUrl}>
-                <span className="font-medium max-w-[150px] truncate ml-1">
+                <span className="ml-1 max-w-[150px] truncate font-medium">
                   {currentTabUrl || t("siteInfo.unknown")}
                 </span>
               </Tooltip>
@@ -129,9 +129,9 @@ export default function SiteInfoInput({
             <button
               type="button"
               onClick={onUseCurrentTab}
-              className="flex items-center font-medium text-blue-800 dark:text-blue-200 disabled:text-gray-400 dark:disabled:text-gray-600 disabled:cursor-not-allowed"
+              className="flex items-center font-medium text-blue-800 disabled:cursor-not-allowed disabled:text-gray-400 dark:text-blue-200 dark:disabled:text-gray-600"
               disabled={!currentTabUrl}>
-              <GlobeAltIcon className="w-3 h-3 mr-1" />
+              <GlobeAltIcon className="mr-1 h-3 w-3" />
               <span>{t("siteInfo.useCurrent")}</span>
             </button>
           </div>

@@ -53,13 +53,13 @@ function TokenActionButtons({
   }
 
   return (
-    <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+    <div className="flex flex-shrink-0 items-center gap-1 sm:gap-1.5">
       <IconButton
         aria-label={t("common:actions.copyKey")}
         size="sm"
         variant="ghost"
         onClick={() => copyKey(token.key, token.name)}>
-        <DocumentDuplicateIcon className="w-4 h-4 text-gray-500 dark:text-dark-text-tertiary" />
+        <DocumentDuplicateIcon className="h-4 w-4 text-gray-500 dark:text-dark-text-tertiary" />
       </IconButton>
       <IconButton
         aria-label={t("actions.useInCherry")}
@@ -74,21 +74,21 @@ function TokenActionButtons({
         variant="ghost"
         loading={isImporting}
         onClick={handleImportToNewApi}>
-        <NewAPI.Color className="w-4 h-4" />
+        <NewAPI.Color className="h-4 w-4" />
       </IconButton>
       <IconButton
         aria-label={t("actions.editKey")}
         size="sm"
         variant="outline"
         onClick={() => handleEditToken(token)}>
-        <PencilIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+        <PencilIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
       </IconButton>
       <IconButton
         aria-label={t("actions.deleteKey")}
         size="sm"
         variant="destructive"
         onClick={() => handleDeleteToken(token)}>
-        <TrashIcon className="w-4 h-4" />
+        <TrashIcon className="h-4 w-4" />
       </IconButton>
     </div>
   )
@@ -103,10 +103,10 @@ export function TokenHeader({
 }: TokenHeaderProps) {
   const { t } = useTranslation("keyManagement")
   return (
-    <div className="flex items-start gap-2 min-w-0">
+    <div className="flex min-w-0 items-start gap-2">
       {/* 左侧：标题和标签 - 可压缩 */}
-      <div className="flex-1 flex-wrap flex min-w-0 gap-1.5 sm:gap-2 items-center">
-        <Heading6 className="text-sm sm:text-base md:text-lg truncate">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 sm:gap-2">
+        <Heading6 className="truncate text-sm sm:text-base md:text-lg">
           {token.name}
         </Heading6>
         <Badge

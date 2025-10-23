@@ -47,7 +47,7 @@ export default function DisplaySettings() {
 
           <CardItem
             icon={
-              <GlobeAltIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <GlobeAltIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
             }
             title={t("display.currencyUnit")}
             description={t("display.currencyDesc")}
@@ -74,7 +74,7 @@ export default function DisplaySettings() {
 
           <CardItem
             icon={
-              <EyeIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <EyeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             }
             title={t("display.defaultTab")}
             description={t("display.defaultTabDesc")}

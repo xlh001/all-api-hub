@@ -111,7 +111,7 @@ export default function AccountActionButtons({
   }
 
   return (
-    <div className="flex items-center gap-1 flex-shrink-0">
+    <div className="flex flex-shrink-0 items-center gap-1">
       {/* Primary Level - Three standalone buttons */}
       <IconButton
         onClick={handleCopyUrlLocal}
@@ -120,7 +120,7 @@ export default function AccountActionButtons({
         className="touch-manipulation"
         aria-label={t("actions.copyUrl")}
         title={t("actions.copyUrl")}>
-        <LinkIcon className="w-4 h-4" />
+        <LinkIcon className="h-4 w-4" />
       </IconButton>
 
       <IconButton
@@ -131,7 +131,7 @@ export default function AccountActionButtons({
         disabled={isCheckingTokens}
         aria-label={t("actions.copyKey")}
         title={t("actions.copyKey")}>
-        <KeyIcon className="w-4 h-4" />
+        <KeyIcon className="h-4 w-4" />
       </IconButton>
 
       <IconButton
@@ -145,7 +145,7 @@ export default function AccountActionButtons({
         className="touch-manipulation"
         aria-label={t("actions.edit")}
         title={t("actions.edit")}>
-        <PencilIcon className="w-4 h-4" />
+        <PencilIcon className="h-4 w-4" />
       </IconButton>
 
       {/* Secondary Level - Dropdown menu */}
@@ -156,12 +156,12 @@ export default function AccountActionButtons({
           size="sm"
           className="touch-manipulation"
           aria-label={t("actions.more")}>
-          <EllipsisHorizontalIcon className="w-4 h-4" />
+          <EllipsisHorizontalIcon className="h-4 w-4" />
         </MenuButton>
 
         <MenuItems
           anchor="bottom end"
-          className="z-50 bg-white dark:bg-dark-bg-secondary rounded-lg shadow-lg border border-gray-200 dark:border-dark-bg-tertiary py-1 focus:outline-none [--anchor-gap:4px] [--anchor-padding:8px]">
+          className="z-50 rounded-lg border border-gray-200 bg-white py-1 shadow-lg [--anchor-gap:4px] [--anchor-padding:8px] focus:outline-none dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
           {/* Secondary Menu Items */}
           <AccountActionMenuItem
             onClick={handleOpenKeyList}

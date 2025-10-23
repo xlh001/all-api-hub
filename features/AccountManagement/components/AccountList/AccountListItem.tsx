@@ -32,16 +32,16 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
     return (
       <CardItem
         padding="none"
-        className={`px-3 sm:px-4 py-2.5 sm:py-3 group touch-manipulation transition-all ${
+        className={`group touch-manipulation px-3 py-2.5 transition-all sm:px-4 sm:py-3 ${
           isDetected
-            ? "bg-blue-50 dark:bg-blue-900/50 border-l-4 border-l-blue-500 dark:border-l-blue-400"
+            ? "border-l-4 border-l-blue-500 bg-blue-50 dark:border-l-blue-400 dark:bg-blue-900/50"
             : ""
         }`}
         onMouseEnter={() => handleMouseEnter(site.id)}
         onMouseLeave={handleMouseLeave}>
-        <div className="flex items-center gap-1 sm:gap-2 min-w-0 w-full">
+        <div className="flex w-full min-w-0 items-center gap-1 sm:gap-2">
           {/* 左侧：站点信息 - 可压缩 */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <SiteInfo site={site} />
           </div>
 
@@ -56,7 +56,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
           </div>
 
           {/* 右侧：余额显示 - 可压缩 */}
-          <div className="flex-1 min-w-0 max-w-[120px] sm:max-w-[140px]">
+          <div className="min-w-0 max-w-[120px] flex-1 sm:max-w-[140px]">
             <BalanceDisplay site={site} />
           </div>
         </div>

@@ -50,26 +50,26 @@ export default function HeaderSection() {
 
   return (
     <header
-      className={`flex items-center justify-between px-3 sm:px-5 py-2 sm:py-3 ${COLORS.background.primary} ${COLORS.border.default} border-b flex-shrink-0`}>
+      className={`flex items-center justify-between px-3 py-2 sm:px-5 sm:py-3 ${COLORS.background.primary} ${COLORS.border.default} flex-shrink-0 border-b`}>
       {/* Logo and Title Section */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <img
           src={iconImage}
           alt={t("ui:app.name")}
-          className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg shadow-sm flex-shrink-0"
+          className="h-6 w-6 flex-shrink-0 rounded-lg shadow-sm sm:h-7 sm:w-7"
         />
-        <div className="flex flex-col min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
           <BodySmall weight="semibold" className="truncate">
             {t("ui:app.name")}
           </BodySmall>
-          <Caption className="truncate hidden xs:block">
+          <Caption className="hidden truncate xs:block">
             {t("ui:app.description")}
           </Caption>
         </div>
       </div>
 
       {/* Action Buttons Section */}
-      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
         <CompactThemeToggle />
 
         <Tooltip content={t("common:actions.refresh")}>
@@ -81,7 +81,7 @@ export default function HeaderSection() {
             aria-label={t("common:actions.refresh")}
             className="touch-manipulation">
             <ArrowPathIcon
-              className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
           </IconButton>
         </Tooltip>
@@ -93,7 +93,7 @@ export default function HeaderSection() {
             size="sm"
             aria-label={t("ui:navigation.home")}
             className="touch-manipulation">
-            <ArrowsPointingOutIcon className="w-4 h-4" />
+            <ArrowsPointingOutIcon className="h-4 w-4" />
           </IconButton>
         </Tooltip>
 
@@ -104,7 +104,7 @@ export default function HeaderSection() {
             size="sm"
             aria-label={t("common:labels.settings")}
             className="touch-manipulation">
-            <Cog6ToothIcon className="w-4 h-4" />
+            <Cog6ToothIcon className="h-4 w-4" />
           </IconButton>
         </Tooltip>
       </div>

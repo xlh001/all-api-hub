@@ -58,8 +58,8 @@ export default function WebDAVSettings() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center space-x-2 mb-1">
-          <ArrowPathIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+        <div className="mb-1 flex items-center space-x-2">
+          <ArrowPathIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           <CardTitle className="mb-0">{t("webdav.title")}</CardTitle>
         </div>
         <CardDescription>{t("webdav.configDesc")}</CardDescription>
@@ -67,7 +67,7 @@ export default function WebDAVSettings() {
 
       <CardContent padding="default" className="space-y-4">
         {/* 配置表单 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <FormField label={t("webdav.webdavUrl")}>
               <Input
@@ -121,7 +121,7 @@ export default function WebDAVSettings() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {/* 保存配置 */}
           <Button
             onClick={async () => {
@@ -144,7 +144,7 @@ export default function WebDAVSettings() {
             loading={saving}
             variant="secondary"
             size="sm"
-            className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-800 text-white w-full">
+            className="w-full bg-gray-700 text-white hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-800">
             {saving ? t("common:status.saving") : t("webdav.saveConfig")}
           </Button>
 
@@ -175,7 +175,7 @@ export default function WebDAVSettings() {
             loading={testing}
             variant="secondary"
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white w-full">
+            className="w-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700">
             {testing ? t("common:status.testing") : t("webdav.testConnection")}
           </Button>
 

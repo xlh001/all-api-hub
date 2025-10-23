@@ -24,9 +24,9 @@ export const ModelItemExpandButton: React.FC<ModelItemExpandButtonProps> = ({
       aria-expanded={isExpanded}
       className="ml-4">
       {isExpanded ? (
-        <ChevronUpIcon className="w-4 h-4" />
+        <ChevronUpIcon className="h-4 w-4" />
       ) : (
-        <ChevronDownIcon className="w-4 h-4" />
+        <ChevronDownIcon className="h-4 w-4" />
       )}
     </IconButton>
   )

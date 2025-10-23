@@ -44,7 +44,7 @@ const ThemeToggle = () => {
 
   return (
     <CardItem
-      icon={<SunIcon className="w-5 h-5 text-amber-500 dark:text-amber-400" />}
+      icon={<SunIcon className="h-5 w-5 text-amber-500 dark:text-amber-400" />}
       title={t("theme.appearance")}
       description={t("theme.selectTheme")}
       rightContent={
@@ -62,14 +62,11 @@ const ThemeToggle = () => {
                 aria-label={t("theme.switchTo", { theme: label, description })}>
                 <span className="flex items-center">
                   <Icon
-                    className={`
-                    w-4 h-4 mr-2 transition-colors
-                    ${
+                    className={`mr-2 h-4 w-4 transition-colors ${
                       isActive
                         ? "text-blue-500 dark:text-blue-400"
                         : "text-gray-500 dark:text-gray-400"
-                    }
-                  `}
+                    } `}
                   />
                   {label}
                 </span>

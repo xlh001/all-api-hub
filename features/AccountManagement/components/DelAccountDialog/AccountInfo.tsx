@@ -14,7 +14,7 @@ const AccountInfoDetail: FC<{
     </span>
     {isUrl ? (
       <span
-        className="truncate ml-2 max-w-48 font-medium text-gray-900 dark:text-dark-text-primary"
+        className="ml-2 max-w-48 truncate font-medium text-gray-900 dark:text-dark-text-primary"
         title={value}>
         {value}
       </span>
@@ -30,7 +30,7 @@ export const AccountInfo: FC<{ account: DisplaySiteData }> = ({ account }) => {
   const { t } = useTranslation("ui")
 
   return (
-    <div className="mb-4 space-y-1 rounded-lg bg-gray-50 dark:bg-dark-bg-secondary p-3 text-sm">
+    <div className="mb-4 space-y-1 rounded-lg bg-gray-50 p-3 text-sm dark:bg-dark-bg-secondary">
       <AccountInfoDetail
         label={t("dialog.delete.siteName")}
         value={account.name}

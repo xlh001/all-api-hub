@@ -21,12 +21,12 @@ export function KeyDisplay({
   const { t } = useTranslation("keyManagement")
 
   return (
-    <div className="flex items-center gap-2 min-w-0">
-      <span className="text-gray-500 dark:text-dark-text-tertiary whitespace-nowrap flex-shrink-0">
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="flex-shrink-0 whitespace-nowrap text-gray-500 dark:text-dark-text-tertiary">
         {t("keyDetails.key")}
       </span>
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <code className="bg-gray-100 dark:bg-dark-bg-tertiary px-1.5 sm:px-2 py-0.5 sm:py-1 rounded font-mono text-[10px] sm:text-xs text-gray-800 dark:text-dark-text-secondary truncate inline-block max-w-full align-middle">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <code className="inline-block max-w-full truncate rounded bg-gray-100 px-1.5 py-0.5 align-middle font-mono text-[10px] text-gray-800 dark:bg-dark-bg-tertiary dark:text-dark-text-secondary sm:px-2 sm:py-1 sm:text-xs">
           {formatKey(tokenKey, tokenId, visibleKeys)}
         </code>
         <IconButton
@@ -40,9 +40,9 @@ export function KeyDisplay({
           }
           className="flex-shrink-0">
           {visibleKeys.has(tokenId) ? (
-            <EyeSlashIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <EyeSlashIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           ) : (
-            <EyeIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <EyeIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           )}
         </IconButton>
       </div>

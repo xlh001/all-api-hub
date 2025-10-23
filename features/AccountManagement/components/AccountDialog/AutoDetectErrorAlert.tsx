@@ -34,7 +34,7 @@ export default function AutoDetectErrorAlert({
   return (
     <Alert variant="warning" className="mb-4">
       <div>
-        <p className="text-xs mb-2">{error.message}</p>
+        <p className="mb-2 text-xs">{error.message}</p>
 
         {/* 操作按钮区域 */}
         {(error.actionText || error.helpDocUrl) && (
@@ -57,7 +57,7 @@ export default function AutoDetectErrorAlert({
                 onClick={handleHelpClick}
                 variant="secondary"
                 size="sm"
-                leftIcon={<QuestionMarkCircleIcon className="w-3 h-3" />}>
+                leftIcon={<QuestionMarkCircleIcon className="h-3 w-3" />}>
                 {t("actions.helpDocument")}
               </Button>
             )}

@@ -35,14 +35,14 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
       {...listeners}
       variant="default"
       padding="none"
-      className="mb-2 cursor-move hover:bg-gray-100 dark:hover:bg-dark-bg-secondary transition-colors touch-none">
+      className="mb-2 cursor-move touch-none transition-colors hover:bg-gray-100 dark:hover:bg-dark-bg-secondary">
       <CardContent padding="sm">
         <div className="flex items-center">
-          <div className="flex-grow min-w-0 mr-2 sm:mr-3">
-            <div className="font-medium text-sm text-gray-900 dark:text-dark-text-primary truncate">
+          <div className="mr-2 min-w-0 flex-grow sm:mr-3">
+            <div className="truncate text-sm font-medium text-gray-900 dark:text-dark-text-primary">
               {item.label}
             </div>
-            <div className="text-xs text-gray-500 dark:text-dark-text-secondary truncate">
+            <div className="truncate text-xs text-gray-500 dark:text-dark-text-secondary">
               {item.description}
             </div>
           </div>

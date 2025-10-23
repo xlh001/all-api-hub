@@ -8,17 +8,17 @@ import { AccountManagementProvider } from "~/features/AccountManagement/hooks/Ac
 function AccountManagement({ refreshKey }: { refreshKey?: number }) {
   const { t } = useTranslation("account")
   return (
-    <div className="p-6 bg-white dark:bg-dark-bg-secondary flex flex-col">
+    <div className="flex flex-col bg-white p-6 dark:bg-dark-bg-secondary">
       {/* 页面标题 */}
       <div className="mb-6">
-        <div className="flex items-center space-x-3 mb-2">
-          <UserIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        <div className="mb-2 flex items-center space-x-3">
+          <UserIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           <Heading2>{t("title")}</Heading2>
         </div>
         <BodySmall>{t("description")}</BodySmall>
       </div>
       <AccountManagementProvider refreshKey={refreshKey}>
-        <div className={`bg-white dark:bg-dark-bg-secondary flex flex-col`}>
+        <div className={`flex flex-col bg-white dark:bg-dark-bg-secondary`}>
           <AccountList />
         </div>
       </AccountManagementProvider>

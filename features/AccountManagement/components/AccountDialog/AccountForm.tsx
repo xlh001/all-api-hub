@@ -177,7 +177,7 @@ export default function AccountForm({
       </FormField>
 
       {/* 签到功能开关 */}
-      <div className="w-full flex items-center justify-between">
+      <div className="flex w-full items-center justify-between">
         <label
           htmlFor="supports-check-in"
           className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
@@ -219,7 +219,7 @@ export default function AccountForm({
       {/* 备注 */}
       <FormField label={t("form.notes")}>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <PencilSquareIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
           </div>
           <Textarea

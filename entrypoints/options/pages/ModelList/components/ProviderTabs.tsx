@@ -100,17 +100,17 @@ export function ProviderTabs({
       }}>
       <Tab.List
         ref={tabListRef}
-        className={`flex space-x-1 rounded-xl ${COLORS.background.tertiary} p-1 mb-6 overflow-x-auto touch-pan-x scrollbar-hide`}>
+        className={`flex space-x-1 rounded-xl ${COLORS.background.tertiary} mb-6 touch-pan-x overflow-x-auto p-1 scrollbar-hide`}>
         <Tab
           className={({ selected }) =>
-            `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${ANIMATIONS.transition.base} ${
+            `flex-shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium leading-5 transition-all ${ANIMATIONS.transition.base} ${
               selected
-                ? "bg-white dark:bg-dark-bg-secondary text-blue-700 dark:text-blue-400 shadow"
-                : "text-gray-700 dark:text-dark-text-secondary hover:bg-white/60 dark:hover:bg-dark-bg-secondary/60 hover:text-gray-900 dark:hover:text-dark-text-primary"
+                ? "bg-white text-blue-700 shadow dark:bg-dark-bg-secondary dark:text-blue-400"
+                : "text-gray-700 hover:bg-white/60 hover:text-gray-900 dark:text-dark-text-secondary dark:hover:bg-dark-bg-secondary/60 dark:hover:text-dark-text-primary"
             }`
           }>
           <div className="flex items-center justify-center space-x-2">
-            <CpuChipIcon className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" />
+            <CpuChipIcon className="h-4 w-4 text-gray-600 dark:text-dark-text-secondary" />
             <span>{t("allProviders", { count: baseFilteredModelsCount })}</span>
           </div>
         </Tab>
@@ -123,14 +123,14 @@ export function ProviderTabs({
             <Tab
               key={provider}
               className={({ selected }) =>
-                `flex-shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all ${ANIMATIONS.transition.base} ${
+                `flex-shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium leading-5 transition-all ${ANIMATIONS.transition.base} ${
                   selected
-                    ? "bg-white dark:bg-dark-bg-secondary text-blue-700 dark:text-blue-400 shadow"
-                    : "text-gray-700 dark:text-dark-text-secondary hover:bg-white/60 dark:hover:bg-dark-bg-secondary/60 hover:text-gray-900 dark:hover:text-dark-text-primary"
+                    ? "bg-white text-blue-700 shadow dark:bg-dark-bg-secondary dark:text-blue-400"
+                    : "text-gray-700 hover:bg-white/60 hover:text-gray-900 dark:text-dark-text-secondary dark:hover:bg-dark-bg-secondary/60 dark:hover:text-dark-text-primary"
                 }`
               }>
               <div className="flex items-center justify-center space-x-2">
-                <IconComponent className="w-4 h-4" />
+                <IconComponent className="h-4 w-4" />
                 <span>
                   {provider} ({getProviderFilteredCount(provider)})
                 </span>

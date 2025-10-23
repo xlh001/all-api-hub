@@ -27,7 +27,7 @@ export default function ImportExport() {
     <div className="p-6">
       <PageHeader />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:items-stretch">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
         <ExportSection
           isExporting={isExporting}
           setIsExporting={setIsExporting}
@@ -51,7 +51,7 @@ export default function ImportExport() {
       <div className="mt-8">
         <Alert variant="warning">
           <div>
-            <p className="font-medium mb-2">{t("notice.importantNotice")}</p>
+            <p className="mb-2 font-medium">{t("notice.importantNotice")}</p>
             <ul className="space-y-1 text-sm">
               <li>• {t("notice.importWarning1")}</li>
               <li>• {t("notice.importWarning2")}</li>

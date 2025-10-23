@@ -7,8 +7,8 @@ export default function SettingsHeader() {
   const { t } = useTranslation("settings")
   return (
     <div className="mb-8">
-      <div className="flex items-center space-x-3 mb-2">
-        <CogIcon className="w-6 h-6 text-blue-600" />
+      <div className="mb-2 flex items-center space-x-3">
+        <CogIcon className="h-6 w-6 text-blue-600" />
         <Heading2>{t("title")}</Heading2>
       </div>
       <BodySmall>{t("description")}</BodySmall>

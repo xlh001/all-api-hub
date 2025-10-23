@@ -44,9 +44,9 @@ export default function SiteInfo({ site }: SiteInfoProps) {
   }
 
   return (
-    <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-full">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
+    <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
+      <div className="min-w-0 flex-1">
+        <div className="mb-0.5 flex items-center gap-1.5">
           {/* Health Status Indicator */}
           <Tooltip
             content={
@@ -77,9 +77,9 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             }
             position="right">
             <button
-              className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-200 ${
+              className={`h-2 w-2 flex-shrink-0 rounded-full transition-all duration-200 ${
                 isRefreshing
-                  ? "opacity-60 animate-pulse"
+                  ? "animate-pulse opacity-60"
                   : "cursor-pointer hover:scale-125"
               } ${
                 getStatusIndicatorColor(site.health?.status) ||
@@ -100,12 +100,12 @@ export default function SiteInfo({ site }: SiteInfoProps) {
           )}
 
           {/* Site Name Link */}
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
             <a
               href={site.baseUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="truncate min-w-0 block"
+              className="block min-w-0 truncate"
               title={site.name}>
               <BodySmall weight="medium" className="truncate">
                 {site.name}
@@ -174,8 +174,8 @@ export default function SiteInfo({ site }: SiteInfoProps) {
         </div>
 
         {/* Username */}
-        <div className="flex items-start gap-1 ml-3 sm:ml-4 min-w-0">
-          <UserIcon className="h-3 w-3 mt-0.5 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
+        <div className="ml-3 flex min-w-0 items-start gap-1 sm:ml-4">
+          <UserIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
           <Caption className="truncate" title={site.username}>
             {site.username}
           </Caption>
@@ -183,8 +183,8 @@ export default function SiteInfo({ site }: SiteInfoProps) {
 
         {/* Notes */}
         {site.notes && (
-          <div className="flex items-start gap-1 ml-3 sm:ml-4 mt-0.5 sm:mt-1 min-w-0">
-            <PencilSquareIcon className="h-3 w-3 mt-0.5 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
+          <div className="ml-3 mt-0.5 flex min-w-0 items-start gap-1 sm:ml-4 sm:mt-1">
+            <PencilSquareIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.notes}>
               {site.notes}
             </Caption>

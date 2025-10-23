@@ -37,13 +37,13 @@ export default function ActionButtons() {
 
   return (
     <section
-      className={`px-3 sm:px-5 py-2 sm:py-3 ${COLORS.background.secondary} ${COLORS.border.default} border-b`}>
+      className={`px-3 py-2 sm:px-5 sm:py-3 ${COLORS.background.secondary} ${COLORS.border.default} border-b`}>
       <div className="flex gap-1.5 sm:gap-2">
         <Button
           onClick={handleAddAccountClick}
           className="flex-1 touch-manipulation"
           size="sm"
-          leftIcon={<PlusIcon className="w-4 h-4" />}>
+          leftIcon={<PlusIcon className="h-4 w-4" />}>
           {t("account:addAccount")}
         </Button>
 
@@ -54,7 +54,7 @@ export default function ActionButtons() {
             size="sm"
             className="touch-manipulation"
             aria-label={t("ui:navigation.keys")}>
-            <KeyIcon className="w-4 h-4" />
+            <KeyIcon className="h-4 w-4" />
           </IconButton>
         </Tooltip>
 
@@ -65,7 +65,7 @@ export default function ActionButtons() {
             size="sm"
             className="touch-manipulation"
             aria-label={t("ui:navigation.models")}>
-            <CpuChipIcon className="w-4 h-4" />
+            <CpuChipIcon className="h-4 w-4" />
           </IconButton>
         </Tooltip>
       </div>

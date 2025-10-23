@@ -13,8 +13,8 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
   return (
     <Alert variant="destructive">
       <div>
-        <h3 className="font-medium mb-1">{t("dialog.copyKey.getFailed")}</h3>
-        <p className="text-sm mb-3">{error}</p>
+        <h3 className="mb-1 font-medium">{t("dialog.copyKey.getFailed")}</h3>
+        <p className="mb-3 text-sm">{error}</p>
         <Button onClick={onRetry} variant="destructive" size="sm">
           {t("dialog.copyKey.retry")}
         </Button>

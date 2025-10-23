@@ -29,15 +29,15 @@ export const TokenStats = React.memo(() => {
           </div>
         </div>
       }>
-      <div className="flex items-center gap-3 cursor-help">
+      <div className="flex cursor-help items-center gap-3">
         <div className="flex items-center gap-1">
-          <ArrowUpIcon className="w-4 h-4 text-green-500" />
+          <ArrowUpIcon className="h-4 w-4 text-green-500" />
           <BodySmall weight="medium">
             {formatTokenCount(todayTokens.today_total_prompt_tokens)}
           </BodySmall>
         </div>
         <div className="flex items-center gap-1">
-          <ArrowDownIcon className="w-4 h-4 text-blue-500" />
+          <ArrowDownIcon className="h-4 w-4 text-blue-500" />
           <BodySmall weight="medium">
             {formatTokenCount(todayTokens.today_total_completion_tokens)}
           </BodySmall>

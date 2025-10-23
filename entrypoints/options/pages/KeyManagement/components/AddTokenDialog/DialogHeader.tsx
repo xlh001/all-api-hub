@@ -12,7 +12,7 @@ export function DialogHeader({ isEditMode }: DialogHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-2">
-        <KeyIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        <KeyIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
         <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
           {isEditMode ? t("dialog.editToken") : t("dialog.addToken")}
         </Dialog.Title>

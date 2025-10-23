@@ -38,8 +38,8 @@ function OptionsPage() {
         isMobileSidebarOpen={isMobileSidebarOpen}
       />
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-4 md:py-8">
-        <div className="flex flex-col md:flex-row gap-2 sm:gap-4 md:gap-8">
+      <div className="mx-auto max-w-7xl px-2 py-2 sm:px-4 sm:py-4 md:px-6 md:py-8 lg:px-8">
+        <div className="flex flex-col gap-2 sm:gap-4 md:flex-row md:gap-8">
           <Sidebar
             activeMenuItem={activeMenuItem}
             onMenuItemClick={handleMenuItemClick}
@@ -48,8 +48,8 @@ function OptionsPage() {
           />
 
           {/* 右侧内容区域 */}
-          <main className="flex-1 min-w-0">
-            <div className="bg-white dark:bg-dark-bg-secondary rounded-lg shadow-sm border border-gray-200 dark:border-dark-bg-tertiary min-h-[400px] md:min-h-[600px]">
+          <main className="min-w-0 flex-1">
+            <div className="min-h-[400px] rounded-lg border border-gray-200 bg-white shadow-sm dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary md:min-h-[600px]">
               <ActiveComponent
                 routeParams={routeParams}
                 refreshKey={refreshKey}

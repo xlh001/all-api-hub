@@ -12,12 +12,12 @@ export function DialogFooter({ tokenCount, onClose }: DialogFooterProps) {
   const { t } = useTranslation(["ui", "common"])
 
   return (
-    <div className="px-4 py-3 border-t border-gray-100 dark:border-dark-bg-tertiary bg-gray-50/50 dark:bg-dark-bg-secondary">
+    <div className="border-t border-gray-100 bg-gray-50/50 px-4 py-3 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           {tokenCount > 0 && (
             <div className="flex items-center space-x-1.5 text-xs text-gray-500 dark:text-dark-text-secondary">
-              <KeyIcon className="w-3 h-3" />
+              <KeyIcon className="h-3 w-3" />
               <span>
                 {t("ui:dialog.copyKey.totalKeys", { count: tokenCount })}
               </span>

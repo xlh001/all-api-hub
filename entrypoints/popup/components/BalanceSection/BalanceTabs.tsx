@@ -19,10 +19,10 @@ import {
 const StyledTab: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Tab
     className={({ selected }) =>
-      `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${ANIMATIONS.transition.base} ${
+      `rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${ANIMATIONS.transition.base} ${
         selected
-          ? "bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary shadow-sm"
-          : "text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text-primary"
+          ? "bg-white text-gray-900 shadow-sm dark:bg-dark-bg-secondary dark:text-dark-text-primary"
+          : "text-gray-500 hover:text-gray-700 dark:text-dark-text-secondary dark:hover:text-dark-text-primary"
       }`
     }>
     {children}
@@ -51,7 +51,7 @@ const BalanceDisplay: React.FC<{
     <div className="flex items-center space-x-1 break-all">
       <button
         onClick={onCurrencyToggle}
-        className={`${compact ? "text-2xl" : "text-5xl"} font-bold text-gray-900 dark:text-dark-text-primary tracking-tight hover:text-blue-600 transition-colors text-left p-0`}
+        className={`${compact ? "text-2xl" : "text-5xl"} p-0 text-left font-bold tracking-tight text-gray-900 transition-colors hover:text-blue-600 dark:text-dark-text-primary`}
         aria-label={t("currency.clickToSwitch", {
           currency:
             currencyType === "USD" ? t("currency.cny") : t("currency.usd")
@@ -119,7 +119,7 @@ export const BalanceTabs: React.FC = () => {
       <TabGroup
         selectedIndex={activeTab === DATA_TYPE_CONSUMPTION ? 0 : 1}
         onChange={handleTabChange}>
-        <div className="flex justify-start mb-3">
+        <div className="mb-3 flex justify-start">
           <TabList
             className={`flex space-x-1 ${COLORS.background.tertiary} rounded-lg p-1`}>
             <StyledTab>{t("account:stats.todayConsumption")}</StyledTab>

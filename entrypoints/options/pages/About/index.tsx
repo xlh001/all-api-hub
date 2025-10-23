@@ -59,8 +59,8 @@ export default function About() {
     <div className="p-6">
       {/* 页面标题 */}
       <div className="mb-8">
-        <div className="flex items-center space-x-3 mb-2">
-          <InformationCircleIcon className="w-6 h-6 text-blue-600" />
+        <div className="mb-2 flex items-center space-x-3">
+          <InformationCircleIcon className="h-6 w-6 text-blue-600" />
           <Heading2>{t("title")}</Heading2>
         </div>
         <BodySmall>{t("intro")}</BodySmall>
@@ -75,7 +75,7 @@ export default function About() {
         {/* 项目链接 */}
         <section>
           <Heading4 className="mb-4">{t("projectLinks")}</Heading4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <LinkCard
               Icon={CodeBracketIcon}
               title={t("githubRepo")}

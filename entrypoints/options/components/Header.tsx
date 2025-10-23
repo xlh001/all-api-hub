@@ -18,37 +18,37 @@ function Header({
 }: HeaderProps) {
   const { t } = useTranslation("ui")
   return (
-    <header className="bg-white dark:bg-dark-bg-secondary shadow-sm border-b border-gray-200 dark:border-dark-bg-tertiary sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16">
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
+      <div className="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex h-14 items-center justify-between sm:h-16">
           {/* 移动端菜单按钮 */}
           <IconButton
             onClick={onMenuToggle}
             variant="ghost"
             size="default"
-            className="md:hidden touch-manipulation tap-highlight-transparent"
+            className="touch-manipulation tap-highlight-transparent md:hidden"
             aria-label="Toggle menu">
             {isMobileSidebarOpen ? (
-              <XMarkIcon className="w-6 h-6" />
+              <XMarkIcon className="h-6 w-6" />
             ) : (
-              <Bars3Icon className="w-6 h-6" />
+              <Bars3Icon className="h-6 w-6" />
             )}
           </IconButton>
 
           {/* 插件图标和名称 */}
           <div
-            className="flex items-center space-x-2 sm:space-x-3 cursor-pointer touch-manipulation tap-highlight-transparent"
+            className="flex cursor-pointer touch-manipulation items-center space-x-2 tap-highlight-transparent sm:space-x-3"
             onClick={onTitleClick}>
             <img
               src={iconImage}
               alt={t("app.name")}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-sm"
+              className="h-7 w-7 rounded-lg shadow-sm sm:h-8 sm:w-8"
             />
             <div className="hidden xs:block">
-              <Heading5 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-dark-text-primary">
+              <Heading5 className="text-base font-semibold text-gray-900 dark:text-dark-text-primary sm:text-xl">
                 {t("app.name")}
               </Heading5>
-              <BodySmall className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary hidden sm:block">
+              <BodySmall className="hidden text-xs text-gray-500 dark:text-dark-text-tertiary sm:block sm:text-sm">
                 {t("app.description")}
               </BodySmall>
             </div>

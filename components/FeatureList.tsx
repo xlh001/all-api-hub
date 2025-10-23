@@ -26,18 +26,18 @@ const FeatureList = ({ title, items, color }: FeatureListProps) => {
 
   return (
     <div>
-      <h3 className="text-base font-medium text-gray-800 dark:text-dark-text-primary mb-3 flex items-center">
-        <div className={`w-2 h-2 ${palette.dot} rounded-full mr-2`}></div>
+      <h3 className="mb-3 flex items-center text-base font-medium text-gray-800 dark:text-dark-text-primary">
+        <div className={`h-2 w-2 ${palette.dot} mr-2 rounded-full`}></div>
         {title}
       </h3>
-      <div className={`rounded-lg p-4 border ${palette.box}`}>
+      <div className={`rounded-lg border p-4 ${palette.box}`}>
         <ul className="space-y-2">
           {items.map((feature, index) => (
             <li
               key={index}
               className={`flex items-start space-x-2 text-sm ${palette.text}`}>
               <div
-                className={`w-1.5 h-1.5 ${palette.bullet} rounded-full mt-2 flex-shrink-0`}></div>
+                className={`h-1.5 w-1.5 ${palette.bullet} mt-2 flex-shrink-0 rounded-full`}></div>
               <span>{feature}</span>
             </li>
           ))}

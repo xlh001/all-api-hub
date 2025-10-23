@@ -39,11 +39,11 @@ const AnimatedValue: React.FC<{
 
     return (
       <div
-        className={`transition-all duration-200 truncate ${
+        className={`truncate transition-all duration-200 ${
           isRefreshing
-            ? "opacity-60 animate-pulse"
+            ? "animate-pulse opacity-60"
             : onClick
-              ? "cursor-pointer hover:opacity-80 hover:scale-105"
+              ? "cursor-pointer hover:scale-105 hover:opacity-80"
               : ""
         } ${className}`}
         onClick={onClick}
@@ -83,14 +83,14 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = React.memo(({ site }) => {
   }
 
   return (
-    <div className="text-right w-full overflow-hidden">
+    <div className="w-full overflow-hidden text-right">
       {/* Balance */}
       <AnimatedValue
         value={site.balance[currencyType]}
         startValue={
           isInitialLoad ? 0 : prevBalances[site.id]?.[currencyType] || 0
         }
-        className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm sm:text-base md:text-lg mb-0.5"
+        className="mb-0.5 text-sm font-semibold text-gray-900 dark:text-dark-text-primary sm:text-base md:text-lg"
         title={t("list.balance.refreshBalance")}
         onClick={handleRefreshClick}
         isRefreshing={isRefreshing}

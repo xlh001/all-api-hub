@@ -38,7 +38,7 @@ export function TokenList({
   if (!Array.isArray(tokens) || tokens.length === 0) {
     return (
       <EmptyState
-        icon={<KeyIcon className="w-12 h-12" />}
+        icon={<KeyIcon className="h-12 w-12" />}
         title={t("dialog.copyKey.noKeys")}
       />
     )

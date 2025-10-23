@@ -42,15 +42,15 @@ export function Controls({
         </Select>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-1">
           <Input
             type="text"
             placeholder={t("searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             disabled={!selectedAccount}
-            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
+            leftIcon={<MagnifyingGlassIcon className="h-4 w-4" />}
           />
         </div>
       </div>

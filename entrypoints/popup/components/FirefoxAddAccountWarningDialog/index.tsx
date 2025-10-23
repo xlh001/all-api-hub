@@ -19,8 +19,8 @@ export default function FirefoxAddAccountWarningDialog({
 
   const header = (
     <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
-        <ExclamationTriangleIcon className="w-4 h-4 text-white" />
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-amber-600">
+        <ExclamationTriangleIcon className="h-4 w-4 text-white" />
       </div>
       <div className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
         {t("dialog.firefox.warningTitle")}
@@ -44,7 +44,7 @@ export default function FirefoxAddAccountWarningDialog({
         </div>
       </div>
 
-      <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg p-3">
+      <div className="rounded-lg border border-orange-100 bg-orange-50 p-3 dark:border-orange-900/30 dark:bg-orange-900/20">
         <div className="flex">
           <div className="flex-shrink-0">
             <ExclamationTriangleIcon className="h-5 w-5 text-orange-400 dark:text-orange-300" />

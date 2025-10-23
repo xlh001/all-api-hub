@@ -45,15 +45,15 @@ export default function ActionButtons({
           type="button"
           onClick={onAutoDetect}
           disabled={!url.trim() || isDetecting}
-          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50">
           {isDetecting ? (
             <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               <span>{t("accountDialog:mode.detecting")}</span>
             </>
           ) : (
             <>
-              <SparklesIcon className="w-4 h-4" />
+              <SparklesIcon className="h-4 w-4" />
               <span>{t("accountDialog:mode.autoDetect")}</span>
             </>
           )}
@@ -61,8 +61,8 @@ export default function ActionButtons({
         <button
           type="button"
           onClick={onShowManualForm}
-          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-dark-text-secondary bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-bg-tertiary rounded-lg hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
-          <PencilIcon className="w-4 h-4" />
+          className="flex flex-1 items-center justify-center space-x-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-secondary dark:hover:bg-dark-bg-tertiary">
+          <PencilIcon className="h-4 w-4" />
           <span>{t("accountDialog:mode.manualAdd")}</span>
         </button>
       </div>
@@ -74,7 +74,7 @@ export default function ActionButtons({
       <button
         type="button"
         onClick={onClose}
-        className="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
+        className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-dark-bg-tertiary dark:text-dark-text-secondary dark:hover:bg-gray-700">
         {t("common:actions.cancel")}
       </button>
 
@@ -83,15 +83,15 @@ export default function ActionButtons({
           type="button"
           onClick={onAutoDetect}
           disabled={!url.trim() || isDetecting}
-          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50">
           {isDetecting ? (
             <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               <span>{t("accountDialog:mode.detecting")}</span>
             </>
           ) : (
             <>
-              <SparklesIcon className="w-4 h-4" />
+              <SparklesIcon className="h-4 w-4" />
               <span>{t("accountDialog:mode.reDetect")}</span>
             </>
           )}
@@ -103,17 +103,17 @@ export default function ActionButtons({
           type="button"
           onClick={onAutoConfig}
           disabled={isAutoConfiguring || isSaving}
-          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-purple-600 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={t("accountDialog:actions.autoConfigAriaLabel")}
           title={t("accountDialog:actions.autoConfigTitle")}>
           {isAutoConfiguring ? (
             <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               <span>{t("accountDialog:actions.configuring")}</span>
             </>
           ) : (
             <>
-              <BoltIcon className="w-4 h-4" />
+              <BoltIcon className="h-4 w-4" />
               <span>{t("accountDialog:actions.configToNewApi")}</span>
             </>
           )}
@@ -124,15 +124,15 @@ export default function ActionButtons({
         type="submit"
         {...(formId ? { form: formId } : {})}
         disabled={!isFormValid || isSaving || isAutoConfiguring}
-        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+        className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:opacity-50">
         {isSaving ? (
           <>
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             <span>{t("common:status.saving")}</span>
           </>
         ) : (
           <>
-            <CheckIcon className="w-4 h-4" />
+            <CheckIcon className="h-4 w-4" />
             <span>
               {isAddMode
                 ? isDetected

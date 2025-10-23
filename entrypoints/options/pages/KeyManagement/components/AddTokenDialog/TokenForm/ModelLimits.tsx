@@ -54,7 +54,7 @@ export function ModelLimits({
             multiple
             value={modelLimits}
             onChange={handleModelSelectChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-dark-bg-tertiary rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-dark-bg-secondary text-gray-900 dark:text-dark-text-primary h-32">
+            className="h-32 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary">
             {availableModels.map((model) => (
               <option key={model} value={model}>
                 {model}

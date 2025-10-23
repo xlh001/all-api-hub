@@ -22,17 +22,17 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
     return (
       <div
         ref={ref}
-        className={cn("text-center py-12", className)}
+        className={cn("py-12 text-center", className)}
         role="status"
         aria-live="polite">
-        <div className="w-12 h-12 mx-auto mb-4 flex items-center justify-center text-gray-300 dark:text-gray-600">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center text-gray-300 dark:text-gray-600">
           {icon}
         </div>
-        <p className="text-sm text-gray-500 dark:text-dark-text-secondary mb-4">
+        <p className="mb-4 text-sm text-gray-500 dark:text-dark-text-secondary">
           {title}
         </p>
         {description && (
-          <p className="text-sm text-gray-400 dark:text-dark-text-tertiary mb-4">
+          <p className="mb-4 text-sm text-gray-400 dark:text-dark-text-tertiary">
             {description}
           </p>
         )}

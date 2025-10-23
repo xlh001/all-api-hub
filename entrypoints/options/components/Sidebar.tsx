@@ -37,28 +37,21 @@ function Sidebar({
       {/* 移动端遮罩层 */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/20 md:hidden"
           onClick={onMobileClose}
         />
       )}
 
       {/* 侧边栏 */}
       <aside
-        className={`
-        w-64 flex-shrink-0
-        md:relative md:translate-x-0
-        fixed inset-y-0 left-0 z-10
-        transform transition-transform duration-300 ease-in-out
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-        mt-0 md:mt-0
-      `}>
-        <nav className="bg-white dark:bg-dark-bg-secondary rounded-none md:rounded-lg shadow-sm border-r md:border border-gray-200 dark:border-dark-bg-tertiary overflow-hidden h-full md:h-auto">
-          <div className="p-3 sm:p-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
-            <Heading3 className="text-gray-500 dark:text-dark-text-tertiary uppercase tracking-wide">
+        className={`fixed inset-y-0 left-0 z-10 w-64 flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} mt-0 md:mt-0`}>
+        <nav className="h-full overflow-hidden rounded-none border-r border-gray-200 bg-white shadow-sm dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary md:h-auto md:rounded-lg md:border">
+          <div className="border-b border-gray-100 p-3 dark:border-dark-bg-tertiary sm:p-4">
+            <Heading3 className="uppercase tracking-wide text-gray-500 dark:text-dark-text-tertiary">
               {t("navigation.settingsOptions")}
             </Heading3>
           </div>
-          <ul className="divide-y divide-gray-100 dark:divide-dark-bg-tertiary overflow-y-auto max-h-[calc(100vh-8rem)] md:max-h-none">
+          <ul className="max-h-[calc(100vh-8rem)] divide-y divide-gray-100 overflow-y-auto dark:divide-dark-bg-tertiary md:max-h-none">
             {menuItems.map((item) => {
               const Icon = item.icon
               const isActive = activeMenuItem === item.id
@@ -67,13 +60,13 @@ function Sidebar({
                 <li key={item.id}>
                   <button
                     onClick={() => onMenuItemClick(item.id)}
-                    className={`w-full flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-left hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors touch-manipulation tap-highlight-transparent ${
+                    className={`flex w-full touch-manipulation items-center px-3 py-2.5 text-left transition-colors tap-highlight-transparent hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary sm:px-4 sm:py-3 ${
                       isActive
-                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-r-2 border-blue-600 dark:border-blue-500"
+                        ? "border-r-2 border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-900/20 dark:text-blue-400"
                         : "text-gray-700 dark:text-dark-text-secondary"
                     }`}>
                     <Icon
-                      className={`w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 flex-shrink-0 ${
+                      className={`mr-2 h-4 w-4 flex-shrink-0 sm:mr-3 sm:h-5 sm:w-5 ${
                         isActive
                           ? "text-blue-600 dark:text-blue-500"
                           : "text-gray-400 dark:text-dark-text-tertiary"

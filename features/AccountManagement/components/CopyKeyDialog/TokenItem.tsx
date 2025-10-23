@@ -43,15 +43,15 @@ export function TokenItem({
     <Card variant="interactive" padding="none">
       <CardContent
         padding="sm"
-        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
+        className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary"
         onClick={onToggle}>
         <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0 space-y-1.5">
-            <h4 className="font-medium text-gray-900 dark:text-dark-text-primary text-sm truncate">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <h4 className="truncate text-sm font-medium text-gray-900 dark:text-dark-text-primary">
               {token.name}
             </h4>
             <div className="flex items-center space-x-1.5">
-              <UserGroupIcon className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+              <UserGroupIcon className="h-3 w-3 text-gray-400 dark:text-gray-500" />
               <Badge
                 variant="outline"
                 size="sm"
@@ -61,7 +61,7 @@ export function TokenItem({
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 ml-3">
+          <div className="ml-3 flex items-center space-x-2">
             <Badge
               variant={token.status === 1 ? "success" : "secondary"}
               size="sm"
@@ -78,9 +78,9 @@ export function TokenItem({
                 isExpanded ? t("dialog.collapse") : t("dialog.expand")
               }>
               {isExpanded ? (
-                <ChevronDownIcon className="w-4 h-4" />
+                <ChevronDownIcon className="h-4 w-4" />
               ) : (
-                <ChevronRightIcon className="w-4 h-4" />
+                <ChevronRightIcon className="h-4 w-4" />
               )}
             </IconButton>
           </div>

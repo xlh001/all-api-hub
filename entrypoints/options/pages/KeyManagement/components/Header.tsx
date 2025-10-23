@@ -21,9 +21,9 @@ export function Header({
   const { t } = useTranslation("keyManagement")
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <KeyIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <KeyIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           <Heading2>{t("title")}</Heading2>
         </div>
         <div className="flex items-center space-x-3">
@@ -32,7 +32,7 @@ export function Header({
             disabled={isAddTokenDisabled}
             size="sm"
             variant="success">
-            <PlusIcon className="w-4 h-4" />
+            <PlusIcon className="h-4 w-4" />
             <span className="ml-1">{t("dialog.addToken")}</span>
           </Button>
           <Button onClick={onRefresh} disabled={isLoading} size="sm">

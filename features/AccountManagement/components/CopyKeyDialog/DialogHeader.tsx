@@ -12,16 +12,16 @@ export function DialogHeader({ account }: DialogHeaderProps) {
   const { t } = useTranslation("ui")
 
   return (
-    <div className="flex items-center justify-between ">
+    <div className="flex items-center justify-between">
       <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
-          <KeyIcon className="w-4 h-4 text-white" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600">
+          <KeyIcon className="h-4 w-4 text-white" />
         </div>
         <div>
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
             {t("dialog.copyKey.title")}
           </DialogTitle>
-          <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-0.5">
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-dark-text-secondary">
             {account?.name}
           </p>
         </div>

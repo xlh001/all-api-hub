@@ -32,9 +32,9 @@ export function TokenDetails({
   const { t } = useTranslation("ui")
 
   return (
-    <div className="px-3 pb-3 border-t border-gray-100 dark:border-dark-bg-tertiary bg-gray-50/30 dark:bg-dark-bg-primary">
-      <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-dark-text-secondary mb-3 pt-3">
-        <ClockIcon className="w-3 h-3" />
+    <div className="border-t border-gray-100 bg-gray-50/30 px-3 pb-3 dark:border-dark-bg-tertiary dark:bg-dark-bg-primary">
+      <div className="mb-3 flex items-center space-x-1 pt-3 text-xs text-gray-500 dark:text-dark-text-secondary">
+        <ClockIcon className="h-3 w-3" />
         <span>
           {t("dialog.copyKey.expireTime", {
             time: formatTime(token.expired_time)
@@ -42,17 +42,17 @@ export function TokenDetails({
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
-          <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-0.5">
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        <div className="rounded border border-gray-100 bg-white p-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
+          <div className="mb-0.5 text-xs text-gray-500 dark:text-dark-text-secondary">
             {t("dialog.copyKey.usedQuota")}
           </div>
           <div className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary">
             {formatUsedQuota(token)}
           </div>
         </div>
-        <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
-          <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-0.5">
+        <div className="rounded border border-gray-100 bg-white p-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
+          <div className="mb-0.5 text-xs text-gray-500 dark:text-dark-text-secondary">
             {t("dialog.copyKey.remainingQuota")}
           </div>
           <div
@@ -68,9 +68,9 @@ export function TokenDetails({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-dark-bg-secondary rounded p-2 border border-gray-100 dark:border-dark-bg-tertiary">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wide">
+      <div className="rounded border border-gray-100 bg-white p-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-dark-text-secondary">
             {t("dialog.copyKey.apiKey")}
           </span>
           <div className="flex items-center space-x-2">
@@ -84,12 +84,12 @@ export function TokenDetails({
               className="flex items-center space-x-1 px-2 py-1">
               {copiedKey === token.key ? (
                 <>
-                  <CheckIcon className="w-3 h-3" />
+                  <CheckIcon className="h-3 w-3" />
                   <span>{t("dialog.copyKey.copied")}</span>
                 </>
               ) : (
                 <>
-                  <DocumentDuplicateIcon className="w-3 h-3" />
+                  <DocumentDuplicateIcon className="h-3 w-3" />
                   <span>{t("dialog.copyKey.copy")}</span>
                 </>
               )}
@@ -107,7 +107,7 @@ export function TokenDetails({
             </Button>
           </div>
         </div>
-        <div className="font-mono text-xs text-gray-700 dark:text-dark-text-secondary bg-gray-50 dark:bg-dark-bg-primary px-2 py-1 rounded border border-gray-200 dark:border-dark-bg-tertiary break-all">
+        <div className="break-all rounded border border-gray-200 bg-gray-50 px-2 py-1 font-mono text-xs text-gray-700 dark:border-dark-bg-tertiary dark:bg-dark-bg-primary dark:text-dark-text-secondary">
           <span className="text-gray-900 dark:text-dark-text-primary">
             {token.key.substring(0, 16)}
           </span>

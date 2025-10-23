@@ -33,7 +33,7 @@ export function ModelDisplay({
   if (models.length === 0) {
     return (
       <EmptyState
-        icon={<CpuChipIcon className="w-12 h-12" />}
+        icon={<CpuChipIcon className="h-12 w-12" />}
         title={t("noMatchingModels")}
       />
     )

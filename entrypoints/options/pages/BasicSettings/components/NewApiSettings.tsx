@@ -105,7 +105,7 @@ export default function NewApiSettings() {
                   aria-label={
                     showAdminToken ? "Hide password" : "Show password"
                   }
-                  className="h-full absolute inset-y-0 right-0 mr-1">
+                  className="absolute inset-y-0 right-0 mr-1 h-full">
                   {showAdminToken ? (
                     <EyeSlashIcon className="h-4 w-4" />
                   ) : (

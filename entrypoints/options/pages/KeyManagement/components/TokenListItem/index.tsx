@@ -40,8 +40,8 @@ export function TokenListItem({
             handleDeleteToken={handleDeleteToken}
             account={account}
           />
-          <div className="flex-1 min-w-0">
-            <div className="space-y-2 text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary">
+          <div className="min-w-0 flex-1">
+            <div className="space-y-2 text-xs text-gray-600 dark:text-dark-text-secondary sm:text-sm">
               <KeyDisplay
                 tokenKey={token.key}
                 tokenId={token.id}

@@ -93,14 +93,14 @@ export function Modal({
                 <button
                   onClick={onClose}
                   aria-label="Close"
-                  className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary rounded-lg transition-colors">
-                  <XMarkIcon className="w-5 h-5" />
+                  className="absolute right-4 top-4 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-bg-tertiary dark:hover:text-dark-text-secondary">
+                  <XMarkIcon className="h-5 w-5" />
                 </button>
               )}
 
               {/* header area: modal controls header padding and divider */}
               {header && (
-                <div className="px-6 py-4 border-b border-gray-100 dark:border-dark-bg-tertiary">
+                <div className="border-b border-gray-100 px-6 py-4 dark:border-dark-bg-tertiary">
                   <div className="flex items-start justify-between">
                     {header}
                   </div>
@@ -108,13 +108,13 @@ export function Modal({
               )}
 
               {/* content area */}
-              <div className={`p-4 overflow-y-auto max-h-[65vh] space-y-2`}>
+              <div className={`max-h-[65vh] space-y-2 overflow-y-auto p-4`}>
                 {children}
               </div>
 
               {/* footer area with top divider when present */}
               {footer && (
-                <div className="px-6 py-4 border-t border-gray-100 dark:border-dark-bg-tertiary">
+                <div className="border-t border-gray-100 px-6 py-4 dark:border-dark-bg-tertiary">
                   {footer}
                 </div>
               )}

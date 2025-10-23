@@ -26,19 +26,19 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
   const { t } = useTranslation("importExport")
   return (
     <section className="flex h-full">
-      <Card padding="none" className="flex flex-col flex-1">
+      <Card padding="none" className="flex flex-1 flex-col">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <ArrowUpTrayIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <ArrowUpTrayIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
             <CardTitle className="mb-0">{t("export.title")}</CardTitle>
           </div>
           <CardDescription>{t("export.description")}</CardDescription>
         </CardHeader>
 
-        <CardList className="flex flex-col flex-1">
+        <CardList className="flex flex-1 flex-col">
           {/* 导出所有数据 */}
           <CardItem
-            className="flex-1 flex items-center"
+            className="flex flex-1 items-center"
             title={t("export.fullBackup")}
             description={t("export.fullBackupDescription")}
             rightContent={
@@ -57,7 +57,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
 
           {/* 导出账号数据 */}
           <CardItem
-            className="flex-1 flex items-center"
+            className="flex flex-1 items-center"
             title={t("export.accountData")}
             description={t("export.accountDataDescription")}
             rightContent={
@@ -76,7 +76,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
 
           {/* 导出用户设置 */}
           <CardItem
-            className="flex-1 flex items-center"
+            className="flex flex-1 items-center"
             title={t("export.userSettings")}
             description={t("export.userSettingsDescription")}
             rightContent={
@@ -86,7 +86,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
                 variant="secondary"
                 size="sm"
                 loading={isExporting}
-                className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700 text-white">
+                className="bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700">
                 {isExporting
                   ? t("common:status.exporting")
                   : t("common:actions.export")}

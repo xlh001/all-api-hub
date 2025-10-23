@@ -12,7 +12,7 @@ interface TokenDetailsProps {
 export function TokenDetails({ token }: TokenDetailsProps) {
   const { t } = useTranslation("keyManagement")
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3.5">
       <div className="min-w-0 truncate">
         <BodySmall
           as="span"

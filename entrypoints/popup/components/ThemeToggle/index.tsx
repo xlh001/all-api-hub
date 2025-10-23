@@ -64,16 +64,7 @@ const CompactThemeToggle = () => {
       onClick={handleThemeToggle}
       variant="ghost"
       size="default"
-      className={`
-        relative p-2.5 rounded-full
-        focus:outline-none focus:ring-2 focus:ring-offset-2
-        ${COLORS.background.tertiary}
-        hover:${COLORS.background.secondary}
-        hover:scale-105 active:scale-95
-        focus:ring-blue-500 dark:focus:ring-blue-400
-        shadow-sm hover:shadow-md
-        ${ANIMATIONS.transition.base}
-      `}
+      className={`relative rounded-full p-2.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${COLORS.background.tertiary} hover:${COLORS.background.secondary} shadow-sm hover:scale-105 hover:shadow-md focus:ring-blue-500 active:scale-95 dark:focus:ring-blue-400 ${ANIMATIONS.transition.base} `}
       title={
         t("theme.current", {
           theme: t(`theme.${currentTheme?.mode}`),
@@ -87,16 +78,13 @@ const CompactThemeToggle = () => {
         nextMode: t(`theme.${nextTheme.mode}`)
       })}>
       <CurrentIcon
-        className={`
-        w-5 h-5 transition-colors duration-200
-        ${
+        className={`h-5 w-5 transition-colors duration-200 ${
           themeMode === "light"
             ? "text-amber-500 dark:text-amber-400"
             : themeMode === "dark"
               ? "text-blue-500 dark:text-blue-400"
               : "text-purple-500 dark:text-purple-400"
-        }
-      `}
+        } `}
       />
     </IconButton>
   )

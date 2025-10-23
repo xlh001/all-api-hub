@@ -26,9 +26,9 @@ function LoadingSkeleton() {
     <div className="space-y-3">
       {[...Array(3)].map((_, i) => (
         <Card key={i} padding="default" className="animate-pulse">
-          <div className="h-4 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-1/4 mb-2"></div>
-          <div className="h-3 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-1/2 mb-2"></div>
-          <div className="h-3 bg-gray-200 dark:bg-dark-bg-tertiary rounded w-3/4"></div>
+          <div className="mb-2 h-4 w-1/4 rounded bg-gray-200 dark:bg-dark-bg-tertiary"></div>
+          <div className="mb-2 h-3 w-1/2 rounded bg-gray-200 dark:bg-dark-bg-tertiary"></div>
+          <div className="h-3 w-3/4 rounded bg-gray-200 dark:bg-dark-bg-tertiary"></div>
         </Card>
       ))}
     </div>
@@ -50,7 +50,7 @@ function TokenEmptyState({
   if (displayData.length === 0) {
     return (
       <EmptyState
-        icon={<KeyIcon className="w-12 h-12" />}
+        icon={<KeyIcon className="h-12 w-12" />}
         title={tokens.length === 0 ? t("noKeys") : t("noMatchingKeys")}
         description={t("pleaseAddAccount")}
       />
@@ -61,13 +61,13 @@ function TokenEmptyState({
   if (tokens.length === 0) {
     return (
       <EmptyState
-        icon={<KeyIcon className="w-12 h-12" />}
+        icon={<KeyIcon className="h-12 w-12" />}
         title={t("noKeys")}
         action={{
           label: t("createFirstKey"),
           onClick: handleAddToken,
           variant: "success",
-          icon: <PlusIcon className="w-4 h-4" />
+          icon: <PlusIcon className="h-4 w-4" />
         }}
       />
     )
@@ -76,7 +76,7 @@ function TokenEmptyState({
   // 搜索无结果
   return (
     <EmptyState
-      icon={<KeyIcon className="w-12 h-12" />}
+      icon={<KeyIcon className="h-12 w-12" />}
       title={t("noMatchingKeys")}
     />
   )
@@ -100,7 +100,7 @@ export function TokenList({
   if (!selectedAccount) {
     return (
       <EmptyState
-        icon={<KeyIcon className="w-12 h-12" />}
+        icon={<KeyIcon className="h-12 w-12" />}
         title={t("noKeys")}
       />
     )
