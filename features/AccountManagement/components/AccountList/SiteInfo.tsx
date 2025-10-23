@@ -100,7 +100,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
           )}
 
           {/* Site Name Link */}
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
             <a
               href={site.baseUrl}
               target="_blank"
