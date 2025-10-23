@@ -1,6 +1,8 @@
 import { KeyIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { Button } from "~/components/ui"
+
 interface DialogFooterProps {
   tokenCount: number
   onClose: () => void
@@ -22,11 +24,9 @@ export function DialogFooter({ tokenCount, onClose }: DialogFooterProps) {
             </div>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-dark-text-secondary bg-white dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-bg-tertiary rounded hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+        <Button onClick={onClose} variant="secondary" size="sm">
           {t("common:actions.close")}
-        </button>
+        </Button>
       </div>
     </div>
   )

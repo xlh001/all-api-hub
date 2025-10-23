@@ -1,6 +1,7 @@
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { Button } from "~/components/ui"
 import Modal from "~/components/ui/Dialog/Modal"
 
 interface FirefoxWarningDialogProps {
@@ -61,18 +62,22 @@ export default function FirefoxAddAccountWarningDialog({
 
       {/* 按钮组 */}
       <div className="flex space-x-3 pt-2">
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          className="flex-1"
           onClick={onClose}
-          className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-bg-tertiary rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500">
+          aria-label={t("dialog.firefox.confirm")}>
           {t("dialog.firefox.confirm")}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="default"
+          className="flex-1"
           onClick={onConfirm}
-          className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-amber-600 rounded-lg hover:from-orange-600 hover:to-amber-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500">
+          aria-label={t("dialog.firefox.openSidebar")}>
           {t("dialog.firefox.openSidebar")}
-        </button>
+        </Button>
       </div>
     </div>
   )

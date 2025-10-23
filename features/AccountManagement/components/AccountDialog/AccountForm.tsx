@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { FormField, Input, Select, Textarea } from "~/components/ui"
+import { FormField, IconButton, Input, Select, Textarea } from "~/components/ui"
 import { SITE_TITLE_RULES } from "~/constants/siteType"
 import { isValidExchangeRate } from "~/services/accountOperations"
 import { AuthTypeEnum, type CheckInConfig } from "~/types"
@@ -125,16 +125,18 @@ export default function AccountForm({
             placeholder={t("form.accessToken")}
             leftIcon={<KeyIcon className="h-5 w-5" />}
             rightIcon={
-              <button
+              <IconButton
                 type="button"
                 onClick={onToggleShowAccessToken}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                variant="ghost"
+                size="sm"
+                aria-label={t("form.toggleAccessTokenVisibility")}>
                 {showAccessToken ? (
                   <EyeSlashIcon className="h-4 w-4" />
                 ) : (
                   <EyeIcon className="h-4 w-4" />
                 )}
-              </button>
+              </IconButton>
             }
             required
           />
