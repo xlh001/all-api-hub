@@ -83,12 +83,7 @@ export default function FirefoxAddAccountWarningDialog({
   )
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      panelClassName="w-full max-w-md bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl transform transition-all"
-      header={header}
-      footer={footer}>
+    <Modal isOpen={isOpen} onClose={onClose} header={header} footer={footer}>
       {/* empty: header/footer contain the content */}
     </Modal>
   )
