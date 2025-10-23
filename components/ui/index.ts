@@ -42,7 +42,6 @@ export {
   BodySmall,
   Caption,
   Muted,
-  Label as TypographyLabel,
   Link,
   Code,
   typographyVariants

@@ -163,14 +163,6 @@ const Muted = React.forwardRef<
 >((props, ref) => <Typography ref={ref} variant="muted" as="span" {...props} />)
 Muted.displayName = "Muted"
 
-const Label = React.forwardRef<
-  HTMLLabelElement,
-  Omit<TypographyProps, "variant">
->((props, ref) => (
-  <Typography ref={ref} variant="label" as="label" {...props} />
-))
-Label.displayName = "Label"
-
 const Link = React.forwardRef<
   HTMLAnchorElement,
   Omit<TypographyProps, "variant"> &
@@ -198,7 +190,6 @@ export {
   BodySmall,
   Caption,
   Muted,
-  Label,
   Link,
   Code,
   typographyVariants
