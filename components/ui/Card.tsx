@@ -114,8 +114,9 @@ const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
   ({ className, padding = "none", ...props }, ref) => {
     const paddingClasses = {
       none: "",
+      default: "",
       sm: "px-4 py-3",
-      default: "px-6 py-4",
+      md: "px-6 py-4",
       lg: "px-8 py-6"
     }
 
