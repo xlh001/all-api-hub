@@ -50,10 +50,7 @@ export function Controls({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             disabled={!selectedAccount}
-            className="pl-9"
-            leftIcon={
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-dark-text-tertiary" />
-            }
+            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
           />
         </div>
       </div>
