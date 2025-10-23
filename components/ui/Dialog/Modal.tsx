@@ -108,7 +108,7 @@ export function Modal({
               )}
 
               {/* content area */}
-              <div className={`p-4 overflow-y-auto max-h-[70vh] space-y-2`}>
+              <div className={`p-4 overflow-y-auto max-h-[65vh] space-y-2`}>
                 {children}
               </div>
 

@@ -126,16 +126,14 @@ export default function SiteInfoInput({
               </Tooltip>
             </div>
 
-            <Button
+            <button
               type="button"
               onClick={onUseCurrentTab}
-              variant="ghost"
-              size="sm"
               className="flex items-center font-medium text-blue-800 dark:text-blue-200 disabled:text-gray-400 dark:disabled:text-gray-600 disabled:cursor-not-allowed"
               disabled={!currentTabUrl}>
               <GlobeAltIcon className="w-3 h-3 mr-1" />
               <span>{t("siteInfo.useCurrent")}</span>
-            </Button>
+            </button>
           </div>
         )}
       </div>
