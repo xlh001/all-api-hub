@@ -47,7 +47,7 @@ export const fetchUserInfo = async (
   baseUrl: string,
   userId?: number,
   _authType?: AuthTypeEnum
-): Promise<UserInfo> => {
+) => {
   const userData = await fetchApiData<UserInfo>({
     baseUrl,
     endpoint: "/api/user/self",
@@ -58,7 +58,8 @@ export const fetchUserInfo = async (
   return {
     id: userData.id,
     username: userData.username,
-    access_token: userData.access_token || null
+    access_token: userData.access_token || null,
+    user: userData
   }
 }
 

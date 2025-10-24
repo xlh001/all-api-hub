@@ -181,9 +181,12 @@ function main() {
         getSiteType(url)
       ])
 
-      const result = {
-        siteType,
-        ...(userData ?? {})
+      let result = null
+      if (siteType && userData) {
+        result = {
+          siteType,
+          ...(userData ?? {})
+        }
       }
       console.log("自动检测结果:", result)
 

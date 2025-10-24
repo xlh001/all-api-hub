@@ -139,7 +139,16 @@ async function getUserDataViaBackground(
     })
 
     if (!response || !response.success || !response.data) {
-      return null
+      // fallback
+      const userInfo = await fetchUserInfo(url)
+      if (userInfo) {
+        return {
+          userId: userInfo.id,
+          user: userInfo
+        }
+      } else {
+        return null
+      }
     }
 
     return {
@@ -187,13 +196,22 @@ async function getUserDataFromCurrentTab(
     const tabId = tabs[0].id
 
     // 2. 通过 content script 获取用户信息
-    const userResponse = await browser.tabs.sendMessage(tabId, {
+    let userResponse = await browser.tabs.sendMessage(tabId, {
       action: "getUserFromLocalStorage",
       url: url
     })
 
     if (!userResponse || !userResponse.success || !userResponse.data) {
-      return null
+      // fallback
+      const userInfo = await fetchUserInfo(url)
+      if (userInfo) {
+        return {
+          userId: userInfo.id,
+          user: userInfo
+        }
+      } else {
+        return null
+      }
     }
 
     return {
