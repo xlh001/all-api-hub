@@ -64,3 +64,4 @@ web-ext.config.ts
 
 .env
 .env.*
+public/react-devtools*
