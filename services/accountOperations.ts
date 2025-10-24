@@ -125,11 +125,14 @@ export async function autoDetectAccount(
 
     const checkSupport = await fetchSupportCheckIn(url)
 
+    const siteName = await getSiteName(url)
+
     return {
       success: true,
       message: t("accountDialog:messages.autoDetectSuccess"),
       data: {
         username: detectedUsername,
+        siteName: siteName,
         accessToken: access_token,
         userId: userId.toString(),
         exchangeRate: defaultExchangeRate,
@@ -412,27 +415,33 @@ function IsNotDefaultSiteName(siteName: string) {
   return !defaultSiteNameList.includes(siteName)
 }
 
-export async function getSiteName(tab: browser.tabs.Tab) {
-  let siteName = ""
-  // 优先从标题获取
-  const tabTitle = tab.title
+export async function getSiteName(
+  input: browser.tabs.Tab | string
+): Promise<string> {
+  // 1. 统一提取信息
+  const urlString = typeof input === "string" ? input : input.url ?? ""
+  const tabTitle = typeof input === "string" ? null : input.title
+
+  // 2. 优先从 Tab 标题获取
   if (tabTitle && IsNotDefaultSiteName(tabTitle)) {
-    siteName = tabTitle
-    return siteName
+    return tabTitle
   }
-  const urlObj = new URL(tab.url!)
-  // 包含端口
+
+  // 3. 解析 URL
+  const urlObj = new URL(urlString)
   const hostWithProtocol = `${urlObj.protocol}//${urlObj.host}`
-  // 其次从站点状态获取
+
+  // 4. 从站点状态获取
   const siteStatusInfo = await fetchSiteStatus(hostWithProtocol)
-  const systemName = siteStatusInfo?.system_name
-  if (systemName && IsNotDefaultSiteName(systemName)) {
-    siteName = systemName
-  } else {
-    // 最后从域名获取
-    siteName = extractDomainPrefix(urlObj.hostname)
+  if (
+    siteStatusInfo?.system_name &&
+    IsNotDefaultSiteName(siteStatusInfo.system_name)
+  ) {
+    return siteStatusInfo.system_name
   }
-  return siteName
+
+  // 5. 最后从域名获取
+  return extractDomainPrefix(urlObj.hostname)
 }
 
 // 验证充值比例是否有效

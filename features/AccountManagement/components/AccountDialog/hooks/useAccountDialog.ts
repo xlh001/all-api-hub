@@ -190,29 +190,31 @@ export function useAccountDialog({
         return
       }
 
-      if (result.data) {
-        setUsername(result.data.username)
-        setAccessToken(result.data.accessToken)
-        setUserId(result.data.userId)
+      let resultData = result.data
+      if (resultData) {
+        setUsername(resultData.username)
+        setAccessToken(resultData.accessToken)
+        setUserId(resultData.userId)
         setCheckIn(
-          result.data.checkIn || {
+          resultData.checkIn || {
             enableDetection: false,
             isCheckedInToday: false,
             customCheckInUrl: ""
           }
         )
 
-        if (result.data.exchangeRate) {
-          setExchangeRate(result.data.exchangeRate.toString())
+        if (resultData.exchangeRate) {
+          setExchangeRate(resultData.exchangeRate.toString())
         } else if (mode === "add") {
           setExchangeRate("")
         }
 
-        if (result.data.siteType) {
-          setSiteType(result.data.siteType)
+        if (resultData.siteType) {
+          setSiteType(resultData.siteType)
         }
 
         setIsDetected(true)
+        setSiteName(resultData.siteName)
         if (mode === "edit") {
           toast.success(t("messages.autoDetectSuccess"))
         }

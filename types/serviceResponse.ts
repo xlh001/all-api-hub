@@ -22,6 +22,7 @@ export interface AccountValidationResponse
     userId: string
     exchangeRate: number | null
     checkIn: CheckInConfig
+    siteName: string
     siteType?: string
   }> {
   detailedError?: AutoDetectError // Keep for backwards compatibility
