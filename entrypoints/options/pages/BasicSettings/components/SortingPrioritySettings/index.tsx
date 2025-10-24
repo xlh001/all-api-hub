@@ -37,7 +37,7 @@ const getSortingCriteriaUiText = (
   }
 })
 
-function SortingPrioritySettingsContent() {
+export default function SortingPrioritySettings() {
   const { t } = useTranslation("settings")
   const {
     sortingPriorityConfig: initialConfig,
@@ -108,8 +108,4 @@ function SortingPrioritySettingsContent() {
       </Card>
     </section>
   )
-}
-
-export default function SortingPrioritySettings() {
-  return <SortingPrioritySettingsContent />
 }
