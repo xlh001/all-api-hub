@@ -3,7 +3,7 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Button, Card, CardFooter, Heading4 } from "~/components/ui"
+import { BodySmall, Card, Heading4 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { SortingCriteriaType, type SortingFieldConfig } from "~/types/sorting"
 
@@ -55,32 +55,30 @@ function SortingPrioritySettingsContent() {
     }
   }, [initialConfig])
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
-      setItems((currentItems) => {
-        const oldIndex = currentItems.findIndex((item) => item.id === active.id)
-        const newIndex = currentItems.findIndex((item) => item.id === over.id)
-        const reorderedItems = arrayMove(currentItems, oldIndex, newIndex)
-        // Update the priority based on the new array index
-        return reorderedItems.map((item, index) => ({
-          ...item,
-          priority: index
-        }))
-      })
-    }
-  }
+      const oldIndex = items.findIndex((item) => item.id === active.id)
+      const newIndex = items.findIndex((item) => item.id === over.id)
+      const reorderedItems = arrayMove(items, oldIndex, newIndex)
+      const updatedItems = reorderedItems.map((item, index) => ({
+        ...item,
+        priority: index
+      }))
 
-  const handleSave = async () => {
-    if (initialConfig) {
-      // Create the new config with updated criteria and lastModified timestamp
-      const newConfig = {
-        ...initialConfig,
-        criteria: items,
-        lastModified: Date.now()
+      setItems(updatedItems)
+
+      // 立即保存
+      if (initialConfig) {
+        const success = await updateSortingPriorityConfig({
+          ...initialConfig,
+          criteria: updatedItems,
+          lastModified: Date.now()
+        })
+        if (success) {
+          showUpdateToast(success, t("sorting.title"))
+        }
       }
-      const success = await updateSortingPriorityConfig(newConfig)
-      showUpdateToast(success, t("sorting.title"))
     }
   }
 
@@ -107,11 +105,6 @@ function SortingPrioritySettingsContent() {
           items={augmentedItems}
           onDragEnd={handleDragEnd}
         />
-        <CardFooter>
-          <Button onClick={handleSave} size="sm">
-            {t("common:actions.save")}
-          </Button>
-        </CardFooter>
       </Card>
     </section>
   )
