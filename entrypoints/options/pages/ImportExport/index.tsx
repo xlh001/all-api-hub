@@ -24,7 +24,7 @@ export default function ImportExport() {
   const validation = validateImportData()
 
   return (
-    <div className="p-6">
+    <div className="space-y-6 p-6">
       <PageHeader />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
@@ -43,24 +43,20 @@ export default function ImportExport() {
       </div>
 
       {/* WebDAV 备份/同步 */}
-      <div className="mt-8">
-        <WebDAVSettings />
-      </div>
+      <WebDAVSettings />
 
       {/* 重要提示 */}
-      <div className="mt-8">
-        <Alert variant="warning">
-          <div>
-            <p className="mb-2 font-medium">{t("notice.importantNotice")}</p>
-            <ul className="space-y-1 text-sm">
-              <li>• {t("notice.importWarning1")}</li>
-              <li>• {t("notice.importWarning2")}</li>
-              <li>• {t("notice.importWarning3")}</li>
-              <li>• {t("notice.importWarning4")}</li>
-            </ul>
-          </div>
-        </Alert>
-      </div>
+      <Alert variant="warning">
+        <div>
+          <p className="mb-2 font-medium">{t("notice.importantNotice")}</p>
+          <ul className="space-y-1 text-sm">
+            <li>• {t("notice.importWarning1")}</li>
+            <li>• {t("notice.importWarning2")}</li>
+            <li>• {t("notice.importWarning3")}</li>
+            <li>• {t("notice.importWarning4")}</li>
+          </ul>
+        </div>
+      </Alert>
     </div>
   )
 }
