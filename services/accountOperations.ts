@@ -102,9 +102,11 @@ export async function autoDetectAccount(
     }
 
     // 并行执行 token 获取和 site 状态获取
-    const [tokenInfo, siteStatus] = await Promise.all([
+    const [tokenInfo, siteStatus, checkSupport, siteName] = await Promise.all([
       tokenPromise,
-      fetchSiteStatus(url, authType)
+      fetchSiteStatus(url, authType),
+      fetchSupportCheckIn(url),
+      getSiteName(url)
     ])
 
     const { username: detectedUsername, access_token } = tokenInfo
@@ -122,10 +124,6 @@ export async function autoDetectAccount(
 
     // 获取默认充值比例
     const defaultExchangeRate = extractDefaultExchangeRate(siteStatus)
-
-    const checkSupport = await fetchSupportCheckIn(url)
-
-    const siteName = await getSiteName(url)
 
     return {
       success: true,
