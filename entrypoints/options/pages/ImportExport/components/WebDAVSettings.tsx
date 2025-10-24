@@ -56,7 +56,7 @@ export default function WebDAVSettings() {
   }, [])
 
   return (
-    <Card>
+    <Card padding="none">
       <CardHeader>
         <div className="mb-1 flex items-center space-x-2">
           <ArrowPathIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
@@ -65,7 +65,7 @@ export default function WebDAVSettings() {
         <CardDescription>{t("webdav.configDesc")}</CardDescription>
       </CardHeader>
 
-      <CardContent padding="default" className="space-y-4">
+      <CardContent padding="md" className="space-y-4">
         {/* 配置表单 */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
@@ -92,33 +92,31 @@ export default function WebDAVSettings() {
             />
           </FormField>
 
-          <div>
-            <FormField label={t("webdav.password")}>
-              <div className="relative">
-                <Input
-                  id="webdavPassword"
-                  title={t("webdav.password")}
-                  type={showPassword ? "text" : "password"}
-                  placeholder={t("webdav.password")}
-                  value={webdavPassword}
-                  onChange={(e) => setWebdavPassword(e.target.value)}
-                  className="pr-10"
-                />
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute inset-y-0 right-0 mr-1">
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-4 w-4" />
-                  ) : (
-                    <EyeIcon className="h-4 w-4" />
-                  )}
-                </IconButton>
-              </div>
-            </FormField>
-          </div>
+          <FormField label={t("webdav.password")}>
+            <div className="relative">
+              <Input
+                id="webdavPassword"
+                title={t("webdav.password")}
+                type={showPassword ? "text" : "password"}
+                placeholder={t("webdav.password")}
+                value={webdavPassword}
+                onChange={(e) => setWebdavPassword(e.target.value)}
+                className="pr-10"
+              />
+              <IconButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 mr-1 h-full">
+                {showPassword ? (
+                  <EyeSlashIcon className="h-full w-full" />
+                ) : (
+                  <EyeIcon className="h-4 w-4" />
+                )}
+              </IconButton>
+            </div>
+          </FormField>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

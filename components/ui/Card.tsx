@@ -107,7 +107,7 @@ CardDescription.displayName = "CardDescription"
 
 export interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Padding size. Defaults to "none" to avoid duplicate padding with Card. Set explicitly when using Card padding="none" */
-  padding?: "none" | "sm" | "default" | "lg"
+  padding?: "none" | "sm" | "md" | "default" | "lg"
 }
 
 const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
