@@ -56,7 +56,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
           </div>
 
           {/* 右侧：余额显示 - 可压缩 */}
-          <div className="min-w-0 max-w-[120px] flex-1 sm:max-w-[140px]">
+          <div className="min-w-0 max-w-[60px] flex-1 sm:max-w-[80px]">
             <BalanceDisplay site={site} />
           </div>
         </div>
