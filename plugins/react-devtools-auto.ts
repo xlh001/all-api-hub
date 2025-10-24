@@ -6,29 +6,48 @@ import { Plugin } from "vite"
 interface ReactDevToolsOptions {
   autoStart?: boolean // 是否自动启动 standalone
   port?: number // DevTools 端口
-  maxWait?: number // 最大等待 DevTools 启动时间(ms)
-  cacheDuration?: number // backend.js 缓存时间(ms)
+  maxWait?: number // 最大等待时间(ms)
+  cacheDuration?: number // 缓存时长(ms)
+  forceFetch?: boolean // 是否强制更新 backend.js
 }
 
 let devtoolsProcess: ChildProcess | null = null
 
 export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
-  const {
-    autoStart = true,
-    port = 8097,
-    maxWait = 5000,
-    cacheDuration = 24 * 60 * 60 * 1000 // 1天
-  } = options
+  const env = process.env
+
+  // ======== 参数合并与优先级 ========
+  const config = {
+    autoStart:
+      options.autoStart ?? boolEnv(env.REACT_DEVTOOLS_AUTO_START, true),
+    port: options.port ?? numEnv(env.REACT_DEVTOOLS_PORT, 8097),
+    maxWait: options.maxWait ?? numEnv(env.REACT_DEVTOOLS_MAX_WAIT, 5000),
+    cacheDuration:
+      options.cacheDuration ??
+      numEnv(env.REACT_DEVTOOLS_CACHE_DURATION, 86400000),
+    forceFetch:
+      options.forceFetch ?? boolEnv(env.REACT_DEVTOOLS_FORCE_FETCH, false)
+  }
 
   const publicDir = path.resolve(process.cwd(), "public")
   const backendPath = path.join(publicDir, "react-devtools-backend.js")
 
-  // 轮询 DevTools 是否可用
+  function boolEnv(envValue: string | undefined, defaultValue: boolean) {
+    if (envValue === "true") return true
+    if (envValue === "false") return false
+    return defaultValue
+  }
+
+  function numEnv(envValue: string | undefined, defaultValue: number) {
+    return envValue ? Number(envValue) : defaultValue
+  }
+
+  // ======== 辅助函数 ========
   async function waitForDevTools(): Promise<boolean> {
     const start = Date.now()
-    while (Date.now() - start < maxWait) {
+    while (Date.now() - start < config.maxWait) {
       try {
-        const res = await fetch(`http://localhost:${port}`)
+        const res = await fetch(`http://localhost:${config.port}`)
         if (res.ok) return true
       } catch {}
       await new Promise((resolve) => setTimeout(resolve, 200))
@@ -36,20 +55,18 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
     return false
   }
 
-  // 判断缓存是否过期
   async function isCacheExpired(filePath: string): Promise<boolean> {
     try {
       const stats = await fs.stat(filePath)
-      return Date.now() - stats.mtimeMs > cacheDuration
+      return Date.now() - stats.mtimeMs > config.cacheDuration
     } catch {
       return true
     }
   }
 
-  // fetch backend.js
   async function fetchBackend() {
     try {
-      const content = await fetch(`http://localhost:${port}`).then((r) =>
+      const content = await fetch(`http://localhost:${config.port}`).then((r) =>
         r.text()
       )
       await fs.mkdir(path.dirname(backendPath), { recursive: true })
@@ -61,25 +78,26 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
     }
   }
 
+  // ======== Vite 插件逻辑 ========
   return {
     name: "wxt-react-devtools-auto",
     apply: "serve",
 
     async configureServer(server) {
-      // 自动启动 DevTools standalone
-      if (autoStart && !devtoolsProcess) {
+      if (config.autoStart && !devtoolsProcess) {
         devtoolsProcess = spawn("npx", ["react-devtools"], {
           stdio: "inherit",
           shell: true
         })
-        console.log("🚀 React DevTools standalone starting...")
+        console.log(
+          `🚀 React DevTools standalone starting on port ${config.port}...`
+        )
       }
 
-      // 等待 DevTools 可用，stale 更新策略
       const ready = await waitForDevTools()
       const expired = await isCacheExpired(backendPath)
 
-      if (ready && expired) {
+      if (config.forceFetch || (ready && expired)) {
         await fetchBackend()
       } else if (!expired) {
         console.log("✅ React DevTools backend cache is valid")
@@ -87,7 +105,6 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
         console.warn("⚠️ DevTools not started, using stale backend (if exists)")
       }
 
-      // 监听 Vite 关闭
       server.httpServer?.once("close", () => {
         if (devtoolsProcess) {
           devtoolsProcess.kill()

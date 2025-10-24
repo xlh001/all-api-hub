@@ -62,4 +62,5 @@ web-ext.config.ts
 *.sln
 *.sw?
 
-.env.submit*
+.env
+.env.*
