@@ -125,7 +125,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                 <IconButton
                   onClick={handleCheckIn(site.checkIn.customCheckInUrl)}
                   variant="ghost"
-                  size="sm"
+                  size="xs"
                   aria-label={t("list.site.customCheckIn")}>
                   <CurrencyYenIcon className="h-4 w-4 text-green-500" />
                 </IconButton>
@@ -148,8 +148,8 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                       <IconButton
                         onClick={handleCheckIn()}
                         variant="ghost"
-                        size="sm"
-                        aria-label={t("list.site.checkIn")}>
+                        size="xs"
+                        aria-label={t("list.site.checkedInToday")}>
                         <CheckCircleIcon className="h-4 w-4 text-green-500" />
                       </IconButton>
                     </Tooltip>
@@ -161,8 +161,8 @@ export default function SiteInfo({ site }: SiteInfoProps) {
                       <IconButton
                         onClick={handleCheckIn()}
                         variant="ghost"
-                        size="sm"
-                        aria-label={t("list.site.checkIn")}>
+                        size="xs"
+                        aria-label={t("list.site.notCheckedInToday")}>
                         <XCircleIcon className="h-4 w-4 text-red-500" />
                       </IconButton>
                     </Tooltip>
