@@ -1,5 +1,7 @@
 import { defineConfig } from "wxt"
 
+import { reactDevToolsAuto } from "./plugins/react-devtools-auto"
+
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
@@ -26,36 +28,7 @@ export default defineConfig({
   vite: (env) => {
     console.log("当前构建模式:", env.mode)
     return {
-      plugins: [
-        {
-          name: "inject-react-devtools",
-          transformIndexHtml: {
-            order: "pre",
-            handler(html) {
-              let isDev = env.mode === "development"
-              if (isDev) {
-                // 检查是否已经注入，防止因为 Strict Mode 重复注入
-                if (html.includes("devtools-entry.js")) {
-                  return html
-                }
-                return {
-                  html,
-                  tags: [
-                    {
-                      tag: "script",
-                      attrs: {
-                        src: "/devtools-entry.js"
-                      },
-                      injectTo: "head"
-                    }
-                  ]
-                }
-              }
-              return html
-            }
-          }
-        }
-      ],
+      plugins: [reactDevToolsAuto()],
       content_security_policy: {
         extension_pages: {
           "script-src": ["'self'", "http://localhost:8097"]
