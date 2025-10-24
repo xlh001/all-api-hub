@@ -165,7 +165,7 @@ export function useAccountDialog({
         })()
       }
     }
-  }, [isOpen, mode, account, resetForm, loadAccountData])
+  }, [isOpen, mode, account, resetForm, loadAccountData, t])
 
   const handleUseCurrentTabUrl = () => {
     if (currentTabUrl) {

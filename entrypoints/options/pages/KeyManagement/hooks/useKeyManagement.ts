@@ -18,34 +18,37 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
   const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
   const [editingToken, setEditingToken] = useState<AccountToken | null>(null)
 
-  const loadTokens = async (accountId?: string) => {
-    const targetAccountId = accountId || selectedAccount
-    if (!targetAccountId || displayData.length === 0) return
+  const loadTokens = useCallback(
+    async (accountId?: string) => {
+      const targetAccountId = accountId || selectedAccount
+      if (!targetAccountId || displayData.length === 0) return
 
-    setIsLoading(true)
-    try {
-      const account = displayData.find((acc) => acc.id === targetAccountId)
-      if (!account) {
+      setIsLoading(true)
+      try {
+        const account = displayData.find((acc) => acc.id === targetAccountId)
+        if (!account) {
+          setTokens([])
+          return
+        }
+
+        const accountTokens = await fetchAccountTokens(account)
+
+        const tokensWithAccount = accountTokens.map((token) => ({
+          ...token,
+          accountName: account.name
+        }))
+
+        setTokens(tokensWithAccount)
+      } catch (error) {
+        console.error(`获取账号密钥失败:`, error)
+        toast.error(t("keyManagement:messages.loadFailed"))
         setTokens([])
-        return
+      } finally {
+        setIsLoading(false)
       }
-
-      const accountTokens = await fetchAccountTokens(account)
-
-      const tokensWithAccount = accountTokens.map((token) => ({
-        ...token,
-        accountName: account.name
-      }))
-
-      setTokens(tokensWithAccount)
-    } catch (error) {
-      console.error(`获取账号密钥失败:`, error)
-      toast.error(t("keyManagement:messages.loadFailed"))
-      setTokens([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    },
+    [selectedAccount, displayData, t]
+  )
 
   useEffect(() => {
     if (selectedAccount) {
@@ -53,7 +56,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     } else {
       setTokens([])
     }
-  }, [selectedAccount, displayData])
+  }, [selectedAccount, displayData, loadTokens])
 
   useEffect(() => {
     if (routeParams?.accountId && displayData.length > 0) {

@@ -149,7 +149,7 @@ export const AccountDataProvider = ({
     } catch (error) {
       console.error("Failed to load account data:", error)
     }
-  }, [])
+  }, [isInitialLoad, prevTotalConsumption, prevBalances])
 
   const handleRefresh = useCallback(
     async (force: boolean = false) => {
@@ -226,7 +226,7 @@ export const AccountDataProvider = ({
     }
 
     handleRefreshOnOpen()
-  }, [handleRefresh, preferences?.refreshOnOpen])
+  }, [handleRefresh, preferences?.refreshOnOpen, t])
   useEffect(() => {
     loadAccountData()
   }, [loadAccountData, refreshKey])

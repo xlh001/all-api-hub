@@ -46,7 +46,7 @@ export function useTokenData(
     } finally {
       setIsLoading(false)
     }
-  }, [currentAccount, setFormData])
+  }, [currentAccount, setFormData, t])
 
   useEffect(() => {
     if (isOpen && currentAccount) {

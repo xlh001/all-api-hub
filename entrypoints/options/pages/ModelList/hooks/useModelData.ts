@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -28,7 +28,7 @@ export function useModelData({
   const [isLoading, setIsLoading] = useState(false)
   const [dataFormatError, setDataFormatError] = useState(false)
 
-  const safeDisplayData = accounts || []
+  const safeDisplayData = useMemo(() => accounts || [], [accounts])
 
   const loadPricingData = useCallback(
     async (accountId: string) => {
@@ -58,7 +58,7 @@ export function useModelData({
         setIsLoading(false)
       }
     },
-    [safeDisplayData]
+    [safeDisplayData, t]
   )
 
   useEffect(() => {
