@@ -9,6 +9,7 @@ import {
   PencilIcon,
   TrashIcon
 } from "@heroicons/react/24/outline"
+import { ChartPieIcon } from "lucide-react"
 import React, { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -19,7 +20,7 @@ import { useDialogStateContext } from "~/features/AccountManagement/hooks/Dialog
 import { fetchAccountTokens } from "~/services/apiService"
 import type { DisplaySiteData } from "~/types"
 import { getErrorMessage } from "~/utils/error"
-import { openKeysPage, openModelsPage } from "~/utils/navigation"
+import { openKeysPage, openModelsPage, openUsagePage } from "~/utils/navigation"
 
 import { AccountActionMenuItem } from "./AccountActionMenuItem"
 
@@ -96,6 +97,10 @@ export default function AccountActionButtons({
 
   const handleNavigateToModelManagement = () => {
     openModelsPage(site.id)
+  }
+
+  const handleNavigateToUsageManagement = () => {
+    openUsagePage(site)
   }
 
   const handleOpenKeyList = () => {
@@ -179,6 +184,12 @@ export default function AccountActionButtons({
             onClick={handleNavigateToModelManagement}
             icon={CpuChipIcon}
             label={t("actions.modelManagement")}
+          />
+
+          <AccountActionMenuItem
+            onClick={handleNavigateToUsageManagement}
+            icon={ChartPieIcon}
+            label={t("actions.usageLog")}
           />
 
           <hr className="my-1 border-gray-200 dark:border-dark-bg-tertiary" />
