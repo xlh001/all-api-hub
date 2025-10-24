@@ -47,6 +47,7 @@
     "userId": "用户 ID",
     "userIdNumber": "用户 ID (数字)",
     "accessToken": "访问令牌",
+    "toggleAccessTokenVisibility": "切换访问令牌的可见性",
     "exchangeRate": "充值金额比例 (CNY/USD)",
     "exchangeRatePlaceholder": "请输入充值比例",
     "exchangeRateDesc": "表示充值 1 美元需要多少人民币。系统会尝试自动获取，如未获取到请手动填写",

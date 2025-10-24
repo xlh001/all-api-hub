@@ -16,6 +16,7 @@
   },
   "refresh": {
     "title": "刷新设置",
+    "description": "配置自动数据刷新相关的设置，例如刷新间隔和启动时的行为。",
     "autoRefresh": "自动刷新",
     "autoRefreshDesc": "定期自动刷新账号数据",
     "refreshInterval": "刷新间隔",
@@ -27,6 +28,7 @@
   },
   "sorting": {
     "title": "排序优先级设置",
+    "description": "定义账户列表的排序优先级，以组织账户的显示方式。",
     "priority": "优先级",
     "currentSitePriority": "当前站点优先",
     "currentSiteDesc": "将当前访问的站点置于列表顶部",
@@ -42,6 +44,7 @@
   },
   "newApi": {
     "title": "New API 集成设置",
+    "description": "配置用于连接 New API 兼容服务的集成设置。",
     "urlDesc": "设置用于 New API 集成的基础 URL",
     "tokenDesc": "用于访问 New API 管理员功能的令牌",
     "userIdDesc": "用于 New API 的用户识别 ID"

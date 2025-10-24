@@ -16,6 +16,7 @@
   },
   "refresh": {
     "title": "Refresh Settings",
+    "description": "Configure auto-refresh related settings, such as refresh interval and behavior at startup",
     "autoRefresh": "Auto Refresh",
     "autoRefreshDesc": "Regularly auto-refresh account data",
     "refreshInterval": "Refresh Interval",
@@ -27,6 +28,7 @@
   },
   "sorting": {
     "title": "Sorting Priority Settings",
+    "description": "Define the sorting priority of accounts in the list to organize the display of accounts",
     "priority": "Priority",
     "currentSitePriority": "Current Site Priority",
     "currentSiteDesc": "Place the currently accessed site at the top of the list",
@@ -42,6 +44,7 @@
   },
   "newApi": {
     "title": "New API Integration Settings",
+    "description": "Configure integration settings for connecting to New API compatible services",
     "urlDesc": "Set the base URL for New API integration",
     "tokenDesc": "Token for accessing New API admin functions",
     "userIdDesc": "User identification ID for New API"

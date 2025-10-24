@@ -47,6 +47,7 @@
     "userId": "User ID",
     "userIdNumber": "User ID (number)",
     "accessToken": "Access Token",
+    "toggleAccessTokenVisibility": "Toggle Access Token Visibility",
     "exchangeRate": "Recharge Amount Ratio (CNY/USD)",
     "exchangeRatePlaceholder": "Please enter exchange rate",
     "exchangeRateDesc": "Indicates how much RMB is needed to recharge 1 USD. The system will try to get it automatically, please fill in manually if not obtained",
