@@ -13,7 +13,11 @@ export default defineConfig({
     host_permissions: ["https://*/*"],
     browser_specific_settings: {
       gecko: {
-        id: "{bc73541a-133d-4b50-b261-36ea20df0d24}"
+        id: "{bc73541a-133d-4b50-b261-36ea20df0d24}",
+        strict_min_version: "58.0"
+      },
+      gecko_android: {
+        strict_min_version: "120.0"
       }
     },
     commands: {
