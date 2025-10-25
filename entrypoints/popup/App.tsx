@@ -1,11 +1,8 @@
 import "./style.css"
 
+import AppLayout from "~/components/AppLayout"
 import { UI_CONSTANTS } from "~/constants/ui"
-import { DeviceProvider } from "~/contexts/DeviceContext"
-import {
-  UserPreferencesProvider,
-  useUserPreferencesContext
-} from "~/contexts/UserPreferencesContext"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
 import { isExtensionSidePanel, isMobileByUA } from "~/utils/browser.ts"
@@ -48,13 +45,11 @@ function PopupContent() {
 
 function App() {
   return (
-    <DeviceProvider>
-      <UserPreferencesProvider>
-        <AccountManagementProvider>
-          <PopupContent />
-        </AccountManagementProvider>
-      </UserPreferencesProvider>
-    </DeviceProvider>
+    <AppLayout>
+      <AccountManagementProvider>
+        <PopupContent />
+      </AccountManagementProvider>
+    </AppLayout>
   )
 }
 

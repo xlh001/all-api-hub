@@ -1,9 +1,6 @@
 import { useState } from "react"
 
-import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
-import { DeviceProvider } from "~/contexts/DeviceContext"
-import { ThemeProvider } from "~/contexts/ThemeContext"
-import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
+import AppLayout from "~/components/AppLayout"
 
 import Header from "./components/Header"
 import Sidebar from "./components/Sidebar"
@@ -58,20 +55,15 @@ function OptionsPage() {
           </main>
         </div>
       </div>
-      <ThemeAwareToaster reverseOrder={false} />
     </div>
   )
 }
 
 function App() {
   return (
-    <DeviceProvider>
-      <UserPreferencesProvider>
-        <ThemeProvider>
-          <OptionsPage />
-        </ThemeProvider>
-      </UserPreferencesProvider>
-    </DeviceProvider>
+    <AppLayout>
+      <OptionsPage />
+    </AppLayout>
   )
 }
 

@@ -1,18 +1,7 @@
-import { DeviceProvider } from "../../contexts/DeviceContext.tsx"
-import { ThemeProvider } from "../../contexts/ThemeContext.tsx"
-import { UserPreferencesProvider } from "../../contexts/UserPreferencesContext.tsx"
-import Popup from "../popup/App.tsx"
+import Popup from "../popup/App"
 
 function SidePanel() {
-  return (
-    <DeviceProvider>
-      <UserPreferencesProvider>
-        <ThemeProvider>
-          <Popup />
-        </ThemeProvider>
-      </UserPreferencesProvider>
-    </DeviceProvider>
-  )
+  return <Popup />
 }
 
 export default SidePanel
