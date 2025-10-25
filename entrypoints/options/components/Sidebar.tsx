@@ -37,7 +37,7 @@ function Sidebar({
       {/* 移动端遮罩层 */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/20 md:hidden"
+          className="z-5 fixed inset-0 bg-black/20 md:hidden"
           onClick={onMobileClose}
         />
       )}
