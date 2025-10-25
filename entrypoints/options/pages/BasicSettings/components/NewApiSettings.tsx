@@ -81,7 +81,6 @@ export default function NewApiSettings() {
                 onChange={(e) => setLocalBaseUrl(e.target.value)}
                 onBlur={(e) => handleNewApiBaseUrlChange(e.target.value)}
                 placeholder="https://api.example.com"
-                className="w-72"
               />
             }
           />
@@ -90,13 +89,12 @@ export default function NewApiSettings() {
             title={"Admin Token"}
             description={t("newApi.tokenDesc")}
             rightContent={
-              <div className="relative w-72">
+              <div className="relative">
                 <Input
                   type={showAdminToken ? "text" : "password"}
                   value={localAdminToken}
                   onChange={(e) => setLocalAdminToken(e.target.value)}
                   onBlur={(e) => handleNewApiAdminTokenChange(e.target.value)}
-                  className="w-full pr-10"
                 />
                 <IconButton
                   variant="ghost"
@@ -125,7 +123,6 @@ export default function NewApiSettings() {
                 value={localUserId}
                 onChange={(e) => setLocalUserId(e.target.value)}
                 onBlur={(e) => handleNewApiUserIdChange(e.target.value)}
-                className="w-72"
               />
             }
           />
