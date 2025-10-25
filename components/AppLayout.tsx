@@ -1,5 +1,7 @@
 import { ReactNode } from "react"
 
+import "~/styles/style.css"
+
 import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
 import { DeviceProvider } from "~/contexts/DeviceContext"
 import { ThemeProvider } from "~/contexts/ThemeContext"

@@ -1,5 +1,3 @@
-import "./style.css"
-
 import AppLayout from "~/components/AppLayout"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
