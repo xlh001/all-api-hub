@@ -11,10 +11,10 @@ const cardItemVariants = cva(
     variants: {
       padding: {
         none: "p-0",
-        sm: "py-3 px-4",
-        default: "py-4 px-6",
-        md: "py-5 px-6",
-        lg: "py-6 px-8"
+        sm: "sm:py-3 sm:px-4 py-2 px-3",
+        default: "sm:py-4 sm:px-6 py-3 px-4",
+        md: "sm:py-5 sm:px-6 py-4 px-5",
+        lg: "sm:py-6 sm:px-8 py-5 px-6"
       },
       interactive: {
         false: "",
@@ -77,7 +77,7 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
           <>
             <div className="flex min-w-0 flex-1 items-center gap-3">
               {icon && (
-                <div className="flex-shrink-0 rounded-lg bg-gray-100 p-2 transition-colors dark:bg-dark-bg-tertiary">
+                <div className="flex-shrink-0 rounded-lg bg-gray-100 p-1 transition-colors dark:bg-dark-bg-tertiary sm:p-2">
                   {icon}
                 </div>
               )}

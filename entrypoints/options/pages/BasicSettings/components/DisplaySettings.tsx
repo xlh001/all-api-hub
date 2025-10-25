@@ -53,7 +53,7 @@ export default function DisplaySettings() {
             description={t("display.currencyDesc")}
             rightContent={
               <div
-                className={`flex ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
+                className={`flex flex-col sm:flex-row ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
                 <ToggleButton
                   onClick={() => handleCurrencyChange("USD")}
                   isActive={currencyType === "USD"}
@@ -80,7 +80,7 @@ export default function DisplaySettings() {
             description={t("display.defaultTabDesc")}
             rightContent={
               <div
-                className={`flex ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
+                className={`flex flex-col sm:flex-row ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
                 <ToggleButton
                   onClick={() => handleDefaultTabChange(DATA_TYPE_CONSUMPTION)}
                   isActive={activeTab === DATA_TYPE_CONSUMPTION}

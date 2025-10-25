@@ -24,11 +24,11 @@ const iconButtonVariants = cva(
       },
       size: {
         none: "",
-        xs: "h-6 w-6",
-        sm: "h-8 w-8",
-        default: "h-10 w-10",
-        lg: "h-12 w-12",
-        xl: "h-14 w-14"
+        xs: "h-5 w-5 sm:h-6 sm:w-6",
+        sm: "h-6 w-6 sm:h-8 sm:w-8",
+        default: "h-8 w-8 sm:h-10 sm:w-10",
+        lg: "h-10 w-10 sm:h-12 sm:w-12",
+        xl: "h-12 w-12 sm:h-14 sm:w-14"
       }
     },
     defaultVariants: {

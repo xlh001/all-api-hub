@@ -49,7 +49,7 @@ const ThemeToggle = () => {
       description={t("theme.selectTheme")}
       rightContent={
         <div
-          className={`flex ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
+          className={`flex flex-col sm:flex-row ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}>
           {themeOptions.map(({ mode, label, icon: Icon, description }) => {
             const isActive = themeMode === mode
             return (
