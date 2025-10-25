@@ -101,20 +101,22 @@ export default function WebDAVSettings() {
                 placeholder={t("webdav.password")}
                 value={webdavPassword}
                 onChange={(e) => setWebdavPassword(e.target.value)}
-                className="pr-10"
+                rightIcon={
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }>
+                    {showPassword ? (
+                      <EyeSlashIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
+                  </IconButton>
+                }
               />
-              <IconButton
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute inset-y-0 right-0 mr-1 h-full">
-                {showPassword ? (
-                  <EyeSlashIcon className="h-full w-full" />
-                ) : (
-                  <EyeIcon className="h-4 w-4" />
-                )}
-              </IconButton>
             </div>
           </FormField>
         </div>

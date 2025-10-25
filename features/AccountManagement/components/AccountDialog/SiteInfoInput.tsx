@@ -76,7 +76,7 @@ export default function SiteInfoInput({
             <IconButton
               type="button"
               onClick={onClearUrl}
-              className="absolute inset-y-0 right-0 flex items-center pr-3"
+              className="absolute inset-y-0 right-0 flex items-center pr-2"
               variant="ghost"
               size="sm"
               aria-label="clear-url">

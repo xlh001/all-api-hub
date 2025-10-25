@@ -95,21 +95,22 @@ export default function NewApiSettings() {
                   value={localAdminToken}
                   onChange={(e) => setLocalAdminToken(e.target.value)}
                   onBlur={(e) => handleNewApiAdminTokenChange(e.target.value)}
-                />
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAdminToken(!showAdminToken)}
-                  aria-label={
-                    showAdminToken ? "Hide password" : "Show password"
+                  rightIcon={
+                    <IconButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAdminToken(!showAdminToken)}
+                      aria-label={
+                        showAdminToken ? "Hide password" : "Show password"
+                      }>
+                      {showAdminToken ? (
+                        <EyeSlashIcon className="h-4 w-4" />
+                      ) : (
+                        <EyeIcon className="h-4 w-4" />
+                      )}
+                    </IconButton>
                   }
-                  className="absolute inset-y-0 right-0 mr-1 h-full">
-                  {showAdminToken ? (
-                    <EyeSlashIcon className="h-4 w-4" />
-                  ) : (
-                    <EyeIcon className="h-4 w-4" />
-                  )}
-                </IconButton>
+                />
               </div>
             }
           />

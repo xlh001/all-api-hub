@@ -5,7 +5,6 @@ import {
   EyeSlashIcon,
   GlobeAltIcon,
   KeyIcon,
-  PencilSquareIcon,
   UserIcon
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
@@ -219,9 +218,6 @@ export default function AccountForm({
       {/* 备注 */}
       <FormField label={t("form.notes")}>
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <PencilSquareIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-          </div>
           <Textarea
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
