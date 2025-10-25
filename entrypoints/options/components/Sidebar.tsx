@@ -37,14 +37,14 @@ function Sidebar({
       {/* 移动端遮罩层 */}
       {isMobileOpen && (
         <div
-          className="z-5 fixed inset-0 bg-black/20 md:hidden"
+          className="fixed inset-0 z-30 bg-black/20 md:hidden"
           onClick={onMobileClose}
         />
       )}
 
       {/* 侧边栏 */}
       <aside
-        className={`fixed inset-y-0 left-0 z-10 w-64 flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} mt-0 md:mt-0`}>
+        className={`fixed inset-y-0 left-0 z-40 w-64 flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} mt-0 md:mt-0`}>
         <nav className="h-full overflow-hidden rounded-none border-r border-gray-200 bg-white shadow-sm dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary md:h-auto md:rounded-lg md:border">
           <div className="border-b border-gray-100 p-3 dark:border-dark-bg-tertiary sm:p-4">
             <Heading3 className="uppercase tracking-wide text-gray-500 dark:text-dark-text-tertiary">
