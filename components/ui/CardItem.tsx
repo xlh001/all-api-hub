@@ -98,7 +98,7 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
               </div>
             </div>
             {rightContent && (
-              <div className="ml-auto w-full min-w-0 flex-1 sm:max-w-md">
+              <div className="ml-auto w-full min-w-0 flex-1 sm:w-auto sm:flex-none">
                 {rightContent}
               </div>
             )}
