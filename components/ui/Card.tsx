@@ -19,10 +19,10 @@ const cardVariants = cva(
       },
       padding: {
         none: "p-0",
-        sm: "p-3",
-        default: "p-4",
-        md: "p-6",
-        lg: "p-8"
+        default: "p-0",
+        sm: "p-2 sm:p-3",
+        md: "p-4 sm:p-6",
+        lg: "p-6 sm:p-8"
       }
     },
     defaultVariants: {
@@ -105,30 +105,45 @@ const CardDescription = React.forwardRef<
 ))
 CardDescription.displayName = "CardDescription"
 
-export interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Padding size. Defaults to "none" to avoid duplicate padding with Card. Set explicitly when using Card padding="none" */
-  padding?: "none" | "sm" | "md" | "default" | "lg"
-}
+const cardContentVariants = cva("", {
+  variants: {
+    padding: {
+      none: "p-0",
+      sm: "p-3",
+      default: "p-4",
+      md: "p-6",
+      lg: "p-8"
+    },
+    spacing: {
+      none: "",
+      sm: "space-y-2",
+      default: "space-y-4",
+      md: "space-y-6",
+      lg: "space-y-8"
+    }
+  },
+  defaultVariants: {
+    padding: "default",
+    spacing: "default"
+  }
+})
+
+export interface CardContentProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardContentVariants> {}
 
 const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
-  ({ className, padding = "none", ...props }, ref) => {
-    const paddingClasses = {
-      none: "",
-      default: "",
-      sm: "px-4 py-3",
-      md: "px-6 py-4",
-      lg: "px-8 py-6"
-    }
-
+  ({ className, padding, spacing, ...props }, ref) => {
     return (
       <div
         ref={ref}
-        className={cn(paddingClasses[padding], className)}
+        className={cn(cardContentVariants({ padding, spacing }), className)}
         {...props}
       />
     )
   }
 )
+
 CardContent.displayName = "CardContent"
 
 export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {

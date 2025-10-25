@@ -3,7 +3,7 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Card, Heading4 } from "~/components/ui"
+import { BodySmall, Card, CardContent, Heading4 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { SortingCriteriaType, type SortingFieldConfig } from "~/types/sorting"
 
@@ -101,10 +101,12 @@ export default function SortingPrioritySettings() {
       <Heading4>{t("sorting.title")}</Heading4>
       <BodySmall>{t("sorting.description", { defaultValue: "" })}</BodySmall>
       <Card>
-        <SortingPriorityDragList
-          items={augmentedItems}
-          onDragEnd={handleDragEnd}
-        />
+        <CardContent>
+          <SortingPriorityDragList
+            items={augmentedItems}
+            onDragEnd={handleDragEnd}
+          />
+        </CardContent>
       </Card>
     </section>
   )

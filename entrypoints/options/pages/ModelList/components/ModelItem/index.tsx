@@ -90,18 +90,18 @@ export default function ModelItem({
           showRatioColumn={showRatioColumn}
           isAvailableForUser={isAvailableForUser}
         />
-      </CardContent>
 
-      {/* 展开的详细信息 */}
-      {isExpanded && (
-        <ModelItemDetails
-          model={model}
-          calculatedPrice={calculatedPrice}
-          showEndpointTypes={showEndpointTypes}
-          userGroup={userGroup}
-          onGroupClick={onGroupClick}
-        />
-      )}
+        {/* 展开的详细信息 */}
+        {isExpanded && (
+          <ModelItemDetails
+            model={model}
+            calculatedPrice={calculatedPrice}
+            showEndpointTypes={showEndpointTypes}
+            userGroup={userGroup}
+            onGroupClick={onGroupClick}
+          />
+        )}
+      </CardContent>
     </Card>
   )
 }

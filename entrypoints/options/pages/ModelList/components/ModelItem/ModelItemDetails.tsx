@@ -32,7 +32,7 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
 }) => {
   const { t } = useTranslation("modelList")
   return (
-    <div className="border-t border-gray-100 px-4 py-3 dark:border-dark-bg-tertiary">
+    <>
       <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
         {/* 可用分组 */}
         <div>
@@ -122,6 +122,6 @@ export const ModelItemDetails: React.FC<ModelItemDetailsProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }
