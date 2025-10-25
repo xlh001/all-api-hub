@@ -25,7 +25,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {[...Array(3)].map((_, i) => (
-        <Card key={i} padding="default" className="animate-pulse">
+        <Card key={i} padding="sm" className="animate-pulse">
           <div className="mb-2 h-4 w-1/4 rounded bg-gray-200 dark:bg-dark-bg-tertiary"></div>
           <div className="mb-2 h-3 w-1/2 rounded bg-gray-200 dark:bg-dark-bg-tertiary"></div>
           <div className="h-3 w-3/4 rounded bg-gray-200 dark:bg-dark-bg-tertiary"></div>

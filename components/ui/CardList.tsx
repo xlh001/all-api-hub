@@ -15,7 +15,7 @@ const CardList = React.forwardRef<HTMLDivElement, CardListProps>(
         className={cn(
           dividers
             ? "divide-y divide-gray-200 dark:divide-dark-bg-tertiary"
-            : "",
+            : "space-y-4",
           className
         )}
         {...props}>

@@ -7,7 +7,13 @@ import {
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { Card, CardList, EmptyState, IconButton } from "~/components/ui"
+import {
+  Card,
+  CardContent,
+  CardList,
+  EmptyState,
+  IconButton
+} from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -72,46 +78,48 @@ export default function AccountList() {
 
   return (
     <Card padding="none" className="flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary sm:px-5">
-        <div className="flex items-center justify-between gap-2 sm:gap-4">
-          {/* Account Name Column */}
-          <div className="min-w-0 flex-1">
-            {renderSortButton("name", t("account:list.header.account"))}
-          </div>
+      <CardContent padding={"none"} spacing={"none"}>
+        {/* Header */}
+        <div className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary sm:px-5">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            {/* Account Name Column */}
+            <div className="min-w-0 flex-1">
+              {renderSortButton("name", t("account:list.header.account"))}
+            </div>
 
-          {/* Balance & Consumption Column */}
-          <div className="flex flex-shrink-0 items-end gap-0.5">
-            <div className="flex items-center">
-              {renderSortButton(
-                DATA_TYPE_BALANCE,
-                t("account:list.header.balance")
-              )}
-            </div>
-            <div className="text-[10px] text-gray-400 dark:text-dark-text-tertiary sm:text-xs">
-              /
-            </div>
-            <div className="flex items-center text-[9px] text-gray-400 dark:text-dark-text-tertiary sm:text-[10px]">
-              {renderSortButton(
-                DATA_TYPE_CONSUMPTION,
-                t("account:list.header.todayConsumption")
-              )}
+            {/* Balance & Consumption Column */}
+            <div className="flex flex-shrink-0 items-end gap-0.5">
+              <div className="flex items-center">
+                {renderSortButton(
+                  DATA_TYPE_BALANCE,
+                  t("account:list.header.balance")
+                )}
+              </div>
+              <div className="text-[10px] text-gray-400 dark:text-dark-text-tertiary sm:text-xs">
+                /
+              </div>
+              <div className="flex items-center text-[9px] text-gray-400 dark:text-dark-text-tertiary sm:text-[10px]">
+                {renderSortButton(
+                  DATA_TYPE_CONSUMPTION,
+                  t("account:list.header.todayConsumption")
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Account List */}
-      <CardList>
-        {sortedData.map((site) => (
-          <AccountListItem
-            key={site.id}
-            site={site}
-            onDeleteWithDialog={handleDeleteWithDialog}
-            onCopyKey={handleCopyKeyWithDialog}
-          />
-        ))}
-      </CardList>
+        {/* Account List */}
+        <CardList>
+          {sortedData.map((site) => (
+            <AccountListItem
+              key={site.id}
+              site={site}
+              onDeleteWithDialog={handleDeleteWithDialog}
+              onCopyKey={handleCopyKeyWithDialog}
+            />
+          ))}
+        </CardList>
+      </CardContent>
 
       {/* Dialogs */}
       <DelAccountDialog
