@@ -116,7 +116,7 @@ export default function AccountActionButtons({
   }
 
   return (
-    <div className="flex flex-shrink-0 items-center gap-1">
+    <div className="grid grid-cols-2 justify-end gap-2 sm:grid-cols-4">
       {/* Primary Level - Three standalone buttons */}
       <IconButton
         onClick={handleCopyUrlLocal}
@@ -159,7 +159,6 @@ export default function AccountActionButtons({
           as={IconButton}
           variant="ghost"
           size="sm"
-          className="touch-manipulation"
           aria-label={t("actions.more")}>
           <EllipsisHorizontalIcon className="h-4 w-4" />
         </MenuButton>

@@ -41,11 +41,11 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
         onMouseLeave={handleMouseLeave}>
         <div className="flex w-full min-w-0 items-center gap-1 sm:gap-2">
           {/* 左侧：站点信息 - 可压缩 */}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[60px] flex-1 sm:min-w-[80px]">
             <SiteInfo site={site} />
           </div>
 
-          {/* 中间：操作按钮 - 固定不压缩 */}
+          {/* 中间：操作按钮 */}
           <div
             className={`flex-shrink-0 transition-opacity duration-200 ${revealButtonsClass}`}>
             <AccountActionButtons
@@ -56,7 +56,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
           </div>
 
           {/* 右侧：余额显示 - 可压缩 */}
-          <div className="min-w-0 max-w-[60px] flex-1 sm:max-w-[80px]">
+          <div className="min-w-[60px] flex-1 sm:min-w-[80px]">
             <BalanceDisplay site={site} />
           </div>
         </div>
