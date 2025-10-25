@@ -24,11 +24,11 @@ const buttonVariants = cva(
           "bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500"
       },
       size: {
-        default: "h-10 py-2 px-4",
-        sm: "h-8 px-3 rounded-md",
-        lg: "h-11 px-8 rounded-md",
-        xl: "h-12 px-10 rounded-lg",
-        icon: "h-10 w-10"
+        default: "h-8 py-1 px-3 sm:h-10 sm:py-2 sm:px-4",
+        sm: "h-6 py-1 px-2 sm:h-8 sm:py-2 sm:px-3 rounded-md",
+        lg: "h-9 py-2 px-6 sm:h-11 sm:py-2 sm:px-8 rounded-md",
+        xl: "h-10 py-2 px-8 sm:h-12 sm:py-2 sm:px-10 rounded-lg",
+        icon: "h-8 w-8 sm:h-10 sm:w-10"
       }
     },
     defaultVariants: {
