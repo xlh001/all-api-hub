@@ -50,7 +50,8 @@ export function useAccountDialog({
   const [checkIn, setCheckIn] = useState<CheckInConfig>({
     enableDetection: false,
     isCheckedInToday: false,
-    customCheckInUrl: ""
+    customCheckInUrl: "",
+    customRedeemPath: ""
   })
   const [siteType, setSiteType] = useState("unknown")
   const [authType, setAuthType] = useState(AuthTypeEnum.AccessToken)
@@ -75,7 +76,8 @@ export function useAccountDialog({
     setCheckIn({
       enableDetection: false,
       isCheckedInToday: false,
-      customCheckInUrl: ""
+      customCheckInUrl: "",
+      customRedeemPath: ""
     })
     setSiteType("unknown")
     setAuthType(AuthTypeEnum.AccessToken)
@@ -94,13 +96,12 @@ export function useAccountDialog({
           setUserId(siteAccount.account_info.id.toString())
           setExchangeRate(siteAccount.exchange_rate.toString())
           setNotes(siteAccount.notes || "")
-          setCheckIn(
-            siteAccount.checkIn || {
-              enableDetection: false,
-              isCheckedInToday: false,
-              customCheckInUrl: ""
-            }
-          )
+          setCheckIn({
+            enableDetection: siteAccount.checkIn?.enableDetection ?? false,
+            isCheckedInToday: siteAccount.checkIn?.isCheckedInToday ?? false,
+            customCheckInUrl: siteAccount.checkIn?.customCheckInUrl ?? "",
+            customRedeemPath: siteAccount.checkIn?.customRedeemPath ?? ""
+          })
           setSiteType(siteAccount.site_type || "")
           setAuthType(siteAccount.authType || AuthTypeEnum.AccessToken)
         }
@@ -195,13 +196,12 @@ export function useAccountDialog({
         setUsername(resultData.username)
         setAccessToken(resultData.accessToken)
         setUserId(resultData.userId)
-        setCheckIn(
-          resultData.checkIn || {
-            enableDetection: false,
-            isCheckedInToday: false,
-            customCheckInUrl: ""
-          }
-        )
+        setCheckIn({
+          enableDetection: resultData.checkIn?.enableDetection ?? false,
+          isCheckedInToday: resultData.checkIn?.isCheckedInToday ?? false,
+          customCheckInUrl: resultData.checkIn?.customCheckInUrl ?? "",
+          customRedeemPath: resultData.checkIn?.customRedeemPath ?? ""
+        })
 
         if (resultData.exchangeRate) {
           setExchangeRate(resultData.exchangeRate.toString())

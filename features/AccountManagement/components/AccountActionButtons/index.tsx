@@ -1,6 +1,7 @@
 import { Menu, MenuButton, MenuItems } from "@headlessui/react"
 import {
   ArrowPathIcon,
+  BanknotesIcon,
   CpuChipIcon,
   EllipsisHorizontalIcon,
   KeyIcon,
@@ -20,7 +21,7 @@ import { useDialogStateContext } from "~/features/AccountManagement/hooks/Dialog
 import { fetchAccountTokens } from "~/services/apiService"
 import type { DisplaySiteData } from "~/types"
 import { getErrorMessage } from "~/utils/error"
-import { openKeysPage, openModelsPage, openUsagePage } from "~/utils/navigation"
+import { openKeysPage, openModelsPage, openRedeemPage, openUsagePage } from "~/utils/navigation"
 
 import { AccountActionMenuItem } from "./AccountActionMenuItem"
 
@@ -101,6 +102,10 @@ export default function AccountActionButtons({
 
   const handleNavigateToUsageManagement = () => {
     openUsagePage(site)
+  }
+
+  const handleNavigateToRedeemPage = () => {
+    openRedeemPage(site)
   }
 
   const handleOpenKeyList = () => {
@@ -189,6 +194,12 @@ export default function AccountActionButtons({
             onClick={handleNavigateToUsageManagement}
             icon={ChartPieIcon}
             label={t("actions.usageLog")}
+          />
+
+          <AccountActionMenuItem
+            onClick={handleNavigateToRedeemPage}
+            icon={BanknotesIcon}
+            label={t("actions.redeemPage")}
           />
 
           <hr className="my-1 border-gray-200 dark:border-dark-bg-tertiary" />

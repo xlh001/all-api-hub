@@ -215,6 +215,22 @@ export default function AccountForm({
         />
       </FormField>
 
+      {/* Custom Redeem Path */}
+      <FormField
+        label={t("form.customRedeemPath")}
+        description={t("form.customRedeemPathDesc")}>
+        <Input
+          type="text"
+          id="custom-redeem-path"
+          value={checkIn.customRedeemPath || ""}
+          onChange={(e) =>
+            onCheckInChange({ ...checkIn, customRedeemPath: e.target.value })
+          }
+          placeholder="console/topup"
+          leftIcon={<GlobeAltIcon className="h-5 w-5" />}
+        />
+      </FormField>
+
       {/* 备注 */}
       <FormField label={t("form.notes")}>
         <div className="relative">

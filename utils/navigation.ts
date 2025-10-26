@@ -152,3 +152,12 @@ export const openCheckInPage = async (
   await createActiveTab(checkInUrl)
   closeIfPopup()
 }
+
+export const openRedeemPage = async (account: DisplaySiteData) => {
+  const redeemPath =
+    account.checkIn?.customRedeemPath ||
+    getSiteApiRouter(account.siteType).redeemPath
+  const redeemUrl = joinUrl(account.baseUrl, redeemPath)
+  await createActiveTab(redeemUrl)
+  closeIfPopup()
+}

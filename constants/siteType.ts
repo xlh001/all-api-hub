@@ -35,16 +35,17 @@ function makeTitleRegex(name: string): RegExp {
 // 默认的用量路径
 const DEFAULT_USAGE_PATH = "/console/log"
 const DEFAULT_CHECKIN_PATH = "/app/me"
+const DEFAULT_REDEEM_PATH = "/console/topup"
 
 // 定义各站点对应的 API 路径
 export const SITE_API_ROUTER: Record<string, any> = {
-  [ONE_API]: { usagePath: DEFAULT_USAGE_PATH },
-  [NEW_API]: { usagePath: DEFAULT_USAGE_PATH },
-  [VO_API]: { usagePath: DEFAULT_USAGE_PATH },
-  [VELOERA]: { usagePath: "/app/logs/api-usage", checkInPath: "/app/me" },
-  [ONE_HUB]: { usagePath: "/panel/log" },
-  [DONE_HUB]: { usagePath: "/panel/log" },
-  Default: { usagePath: DEFAULT_USAGE_PATH, checkInPath: DEFAULT_CHECKIN_PATH }
+  [ONE_API]: { usagePath: DEFAULT_USAGE_PATH, redeemPath: DEFAULT_REDEEM_PATH },
+  [NEW_API]: { usagePath: DEFAULT_USAGE_PATH, redeemPath: DEFAULT_REDEEM_PATH },
+  [VO_API]: { usagePath: DEFAULT_USAGE_PATH, redeemPath: DEFAULT_REDEEM_PATH },
+  [VELOERA]: { usagePath: "/app/logs/api-usage", checkInPath: "/app/me", redeemPath: DEFAULT_REDEEM_PATH },
+  [ONE_HUB]: { usagePath: "/panel/log", redeemPath: DEFAULT_REDEEM_PATH },
+  [DONE_HUB]: { usagePath: "/panel/log", redeemPath: DEFAULT_REDEEM_PATH },
+  Default: { usagePath: DEFAULT_USAGE_PATH, checkInPath: DEFAULT_CHECKIN_PATH, redeemPath: DEFAULT_REDEEM_PATH }
 }
 
 /**

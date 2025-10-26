@@ -55,6 +55,8 @@
     "checkInStatus": "Check-in Status Detection (site must have check-in enabled)",
     "customCheckInUrl": "Custom Check-in URL (optional)",
     "customCheckInDesc": "If set, automatic check-in status detection will be disabled. Used for sites with custom check-in endpoints",
+    "customRedeemPath": "Custom Redeem Page Path (optional)",
+    "customRedeemPathDesc": "Relative path for the redeem/top-up page. Default: console/topup",
     "notes": "Notes",
     "notesPlaceholder": "Optional, enter notes"
   },
