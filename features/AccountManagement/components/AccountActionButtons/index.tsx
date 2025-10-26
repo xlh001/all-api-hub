@@ -159,7 +159,7 @@ export default function AccountActionButtons({
           as={IconButton}
           variant="ghost"
           size="sm"
-          aria-label={t("actions.more")}>
+          aria-label={t("common:actions.more")}>
           <EllipsisHorizontalIcon className="h-4 w-4" />
         </MenuButton>
 

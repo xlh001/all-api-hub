@@ -101,6 +101,12 @@ export interface CheckInConfig {
    * This allows users to specify alternative check-in endpoints.
    */
   customCheckInUrl?: string
+
+  /**
+   * The date (YYYY-MM-DD format) when the user last checked in manually.
+   * Used to reset the check-in status daily for custom check-in URLs.
+   */
+  lastCheckInDate?: string
 }
 
 // 存储配置
