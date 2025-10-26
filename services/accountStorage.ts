@@ -270,15 +270,52 @@ class AccountStorageService {
         throw new Error(t("messages:storage.accountNotFound", { id }))
       }
 
+      const today = new Date()
+      const todayDate = today.toISOString().split("T")[0]
+      const currentCheckIn = account.checkIn ?? { enableDetection: false }
+
       return this.updateAccount(id, {
         checkIn: {
-          ...account.checkIn,
-          isCheckedInToday: true
+          ...currentCheckIn,
+          isCheckedInToday: true,
+          lastCheckInDate: todayDate
         }
       })
     } catch (error) {
       console.error("标记账号为已签到失败:", error)
       return false
+    }
+  }
+
+  /**
+   * 重置过期的签到状态（针对自定义签到URL的账号）
+   */
+  async resetExpiredCheckIns(): Promise<void> {
+    try {
+      const accounts = await this.getAllAccounts()
+      const today = new Date().toISOString().split("T")[0]
+      let needsSave = false
+
+      for (const account of accounts) {
+        if (
+          account.checkIn?.customCheckInUrl &&
+          account.checkIn.lastCheckInDate &&
+          account.checkIn.lastCheckInDate !== today &&
+          account.checkIn.isCheckedInToday === true
+        ) {
+          // 日期已过，重置签到状态
+          account.checkIn.isCheckedInToday = false
+          account.checkIn.lastCheckInDate = undefined
+          needsSave = true
+        }
+      }
+
+      if (needsSave) {
+        await this.saveAccounts(accounts)
+        console.log("[AccountStorage] 已重置过期的签到状态")
+      }
+    } catch (error) {
+      console.error("重置签到状态失败:", error)
     }
   }
 
@@ -321,7 +358,28 @@ class AccountStorageService {
 
       // 如果成功获取数据，更新账号信息
       if (result.success && result.data) {
-        updateData.checkIn = result.data.checkIn
+        // 处理签到配置
+        if (account.checkIn?.customCheckInUrl) {
+          // 有自定义签到URL的账号，需要检查日期重置
+          const today = new Date().toISOString().split("T")[0]
+          const lastCheckInDate = account.checkIn.lastCheckInDate
+
+          if (lastCheckInDate && lastCheckInDate !== today) {
+            // 日期变了，重置签到状态
+            updateData.checkIn = {
+              ...account.checkIn,
+              isCheckedInToday: false,
+              lastCheckInDate: undefined
+            }
+          } else {
+            // 保留当前的签到状态（不被刷新覆盖）
+            updateData.checkIn = account.checkIn
+          }
+        } else {
+          // 没有自定义签到URL，使用API返回的签到状态
+          updateData.checkIn = result.data.checkIn
+        }
+
         updateData.account_info = {
           ...account.account_info,
           quota: result.data.quota,

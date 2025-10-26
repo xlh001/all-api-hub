@@ -119,6 +119,7 @@ export const AccountDataProvider = ({
   const loadAccountData = useCallback(async () => {
     try {
       console.log("[AccountContext] Loading account data...")
+      await accountStorage.resetExpiredCheckIns()
       const allAccounts = await accountStorage.getAllAccounts()
       const accountStats = await accountStorage.getAccountStats()
       const displaySiteData = accountStorage.convertToDisplayData(
