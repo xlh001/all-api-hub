@@ -258,7 +258,7 @@ export const formatTimestamp = (timestamp: number) => {
   if (timestamp <= 0) {
     return t("common:time.neverExpires")
   }
-  return new Date(timestamp * 1000).toLocaleDateString("zh-CN")
+  return normalizeToDate(timestamp).toLocaleDateString("zh-CN")
 }
 
 /**
