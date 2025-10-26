@@ -99,65 +99,96 @@ export const openOrFocusOptionsPage = (hash: string) => {
     }
   })
 }
-
-export const openFullManagerPage = () => {
-  openOrFocusOptionsPage("#account")
-  closeIfPopup()
-}
-
-export const openSettingsPage = () => {
-  openOrFocusOptionsPage("#basic")
-  if (isExtensionPopup()) {
+// 核心工具函数
+const withPopupClose = <T extends any[]>(
+  fn: (...args: T) => Promise<void> | void
+) => {
+  return async (...args: T) => {
+    await fn(...args)
     closeIfPopup()
   }
 }
 
-export const openSidePanel = async () => {
-  await browser.sidebarAction.open()
-  closeIfPopup()
+// 重构后的函数 - 去掉 closeIfPopup
+const _openFullManagerPage = () => {
+  openOrFocusOptionsPage("#account")
 }
 
-export const openKeysPage = async (accountId?: string) => {
+const _openSettingsPage = () => {
+  openOrFocusOptionsPage("#basic")
+}
+
+const _openSidePanel = async () => {
+  await browser.sidebarAction.open()
+}
+
+const _openKeysPage = async (accountId?: string) => {
   const url = accountId
     ? getExtensionURL(`options.html#keys?accountId=${accountId}`)
     : getExtensionURL("options.html#keys")
   await createActiveTab(url)
-  closeIfPopup()
 }
 
-export const openModelsPage = async (accountId?: string) => {
+const _openModelsPage = async (accountId?: string) => {
   const url = accountId
     ? getExtensionURL(`options.html#models?accountId=${accountId}`)
     : getExtensionURL("options.html#models")
   await createActiveTab(url)
-  closeIfPopup()
 }
 
-export const openUsagePage = async (account: DisplaySiteData) => {
+const _openUsagePage = async (account: DisplaySiteData) => {
   const logUrl = joinUrl(
     account.baseUrl,
     getSiteApiRouter(account.siteType).usagePath
   )
   await createActiveTab(logUrl)
-  closeIfPopup()
 }
 
-export const openCheckInPage = async (
-  account: DisplaySiteData,
-  targetUrl?: string
-) => {
-  const checkInUrl =
-    targetUrl ||
-    joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
+const _openCheckInPage = async (account: DisplaySiteData) => {
+  const checkInUrl = joinUrl(
+    account.baseUrl,
+    getSiteApiRouter(account.siteType).checkInPath
+  )
   await createActiveTab(checkInUrl)
-  closeIfPopup()
 }
 
-export const openRedeemPage = async (account: DisplaySiteData) => {
+const _openCustomCheckInPage = async (account: DisplaySiteData) => {
+  const customCheckInUrl =
+    account.checkIn?.customCheckInUrl ||
+    joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).checkInPath)
+  await createActiveTab(customCheckInUrl)
+}
+
+const _openRedeemPage = async (account: DisplaySiteData) => {
   const redeemPath =
     account.checkIn?.customRedeemPath ||
     getSiteApiRouter(account.siteType).redeemPath
   const redeemUrl = joinUrl(account.baseUrl, redeemPath)
   await createActiveTab(redeemUrl)
+}
+
+// 导出带自动关闭的版本
+export const openFullManagerPage = withPopupClose(_openFullManagerPage)
+export const openSettingsPage = withPopupClose(_openSettingsPage)
+export const openSidePanel = withPopupClose(_openSidePanel)
+export const openKeysPage = withPopupClose(_openKeysPage)
+export const openModelsPage = withPopupClose(_openModelsPage)
+export const openUsagePage = withPopupClose(_openUsagePage)
+export const openCheckInPage = withPopupClose(_openCheckInPage)
+export const openCustomCheckInPage = withPopupClose(_openCustomCheckInPage)
+export const openRedeemPage = withPopupClose(_openRedeemPage)
+
+// 批量操作
+export const openMultiplePages = async (
+  operations: (() => Promise<void> | void)[]
+) => {
+  await Promise.all(operations.map((op) => op()))
   closeIfPopup()
+}
+
+export const openCheckInAndRedeem = async (account: DisplaySiteData) => {
+  await openMultiplePages([
+    () => _openRedeemPage(account),
+    () => _openCustomCheckInPage(account)
+  ])
 }
