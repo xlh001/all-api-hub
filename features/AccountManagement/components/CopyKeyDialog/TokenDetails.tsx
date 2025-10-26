@@ -9,13 +9,15 @@ import { CherryIcon } from "~/components/icons/CherryIcon"
 import { Button } from "~/components/ui"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
+import {
+  formatKeyTime,
+  formatQuota,
+  formatUsedQuota
+} from "~/utils/formatters.ts"
 
 interface TokenDetailsProps {
   token: ApiToken
   copiedKey: string | null
-  formatTime: (timestamp: number) => string
-  formatUsedQuota: (token: ApiToken) => string
-  formatQuota: (token: ApiToken) => string
   onCopyKey: (key: string) => void
   account: DisplaySiteData
 }
@@ -23,9 +25,6 @@ interface TokenDetailsProps {
 export function TokenDetails({
   token,
   copiedKey,
-  formatTime,
-  formatUsedQuota,
-  formatQuota,
   onCopyKey,
   account
 }: TokenDetailsProps) {
@@ -37,7 +36,7 @@ export function TokenDetails({
         <ClockIcon className="h-3 w-3" />
         <span>
           {t("dialog.copyKey.expireTime", {
-            time: formatTime(token.expired_time)
+            time: formatKeyTime(token.expired_time)
           })}
         </span>
       </div>

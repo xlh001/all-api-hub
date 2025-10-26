@@ -26,6 +26,59 @@ export const formatTokenCount = (count: number): string => {
   return count.toString()
 }
 
+export function normalizeToMs(input: number | string | Date): number
+export function normalizeToMs(input: null | undefined): null
+export function normalizeToMs(
+  input: number | string | Date | null | undefined
+): number | null
+/**
+ * 自动修正时间输入为毫秒级时间戳
+ * 支持输入秒级/毫秒级时间戳、Date 对象、字符串
+ *
+ * @param input - 时间输入，可以是 number | string | Date | null | undefined
+ * @returns number | null  返回标准毫秒时间戳，无法识别时返回 null
+ */
+export function normalizeToMs(
+  input: string | number | Date | null | undefined
+) {
+  if (input == null) return null
+
+  if (input instanceof Date) {
+    return input.getTime()
+  }
+
+  const ts = Number(input)
+  if (Number.isNaN(ts)) return null
+
+  // 判断是否为秒级时间戳（1e12 毫秒 ≈ 2001 年）
+  if (ts < 1e12) {
+    return ts * 1000
+  }
+
+  return Math.round(ts)
+}
+
+export function normalizeToDate(input: number | string | Date): Date
+export function normalizeToDate(input: null | undefined): null
+
+/**
+ * 将任意输入标准化为 Date 对象
+ * @param input - 时间输入（支持多种类型）
+ * @returns Date | null
+ */
+export function normalizeToDate(
+  input: number | string | Date | null | undefined
+): Date | null {
+  const ms = normalizeToMs(input)
+  return ms == null ? null : new Date(ms)
+}
+
+// 格式化时间
+export const formatKeyTime = (timestamp: number) => {
+  if (timestamp <= 0) return t("keyManagement:keyDetails.neverExpires")
+  return normalizeToDate(timestamp).toLocaleDateString("zh-CN")
+}
+
 /**
  * 格式化相对时间
  */
