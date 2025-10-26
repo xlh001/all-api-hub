@@ -21,7 +21,12 @@ import { useDialogStateContext } from "~/features/AccountManagement/hooks/Dialog
 import { fetchAccountTokens } from "~/services/apiService"
 import type { DisplaySiteData } from "~/types"
 import { getErrorMessage } from "~/utils/error"
-import { openKeysPage, openModelsPage, openRedeemPage, openUsagePage } from "~/utils/navigation"
+import {
+  openKeysPage,
+  openModelsPage,
+  openRedeemPage,
+  openUsagePage
+} from "~/utils/navigation"
 
 import { AccountActionMenuItem } from "./AccountActionMenuItem"
 
