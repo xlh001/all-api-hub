@@ -96,6 +96,11 @@ async function getConfig(): Promise<WebdavConfig> {
   return { webdavUrl, webdavUsername, webdavPassword }
 }
 
+export async function getWebdavConfig(custom?: Partial<WebdavConfig>) {
+  const cfg = await getConfig()
+  return { ...cfg, ...custom }
+}
+
 export async function testWebdavConnection(custom?: Partial<WebdavConfig>) {
   const cfg = { ...(await getConfig()), ...custom }
   if (!cfg.webdavUrl || !cfg.webdavUsername || !cfg.webdavPassword) {
@@ -114,6 +119,55 @@ export async function testWebdavConnection(custom?: Partial<WebdavConfig>) {
   if (res.status === 401 || res.status === 403)
     throw new Error(t("messages:webdav.authFailed"))
   throw new Error(t("messages:webdav.connectionFailed", { status: res.status }))
+}
+
+export interface RemoteBackupFetchResult {
+  exists: boolean
+  content?: string
+  etag?: string | null
+  lastModified?: string | null
+  url: string
+}
+
+export async function fetchRemoteBackup(
+  custom?: Partial<WebdavConfig>
+): Promise<RemoteBackupFetchResult> {
+  const cfg = await getWebdavConfig(custom)
+  if (!cfg.webdavUrl || !cfg.webdavUsername || !cfg.webdavPassword) {
+    throw new Error(t("messages:webdav.configIncomplete"))
+  }
+  const targetUrl = ensureFilename(cfg.webdavUrl)
+
+  const res = await fetch(targetUrl, {
+    method: "GET",
+    headers: {
+      Authorization: buildAuthHeader(cfg.webdavUsername, cfg.webdavPassword),
+      Accept: "application/json"
+    }
+  })
+
+  if (res.status === 200) {
+    const content = await res.text()
+    return {
+      exists: true,
+      content,
+      etag: res.headers.get("ETag"),
+      lastModified: res.headers.get("Last-Modified"),
+      url: targetUrl
+    }
+  }
+
+  if (res.status === 404) {
+    return {
+      exists: false,
+      url: targetUrl
+    }
+  }
+
+  if (res.status === 401 || res.status === 403)
+    throw new Error(t("messages:webdav.authFailed"))
+
+  throw new Error(t("messages:webdav.downloadFailed", { status: res.status }))
 }
 
 export async function downloadBackup(custom?: Partial<WebdavConfig>) {

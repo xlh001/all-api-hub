@@ -172,6 +172,14 @@ export async function sendRuntimeMessage(message: any): Promise<any> {
 }
 
 /**
+ * 发送消息到 background
+ * 通用的消息发送函数
+ */
+export async function sendMessage(message: any): Promise<any> {
+  return await browser.runtime.sendMessage(message)
+}
+
+/**
  * 获取扩展资源 URL
  */
 export function getExtensionURL(path: string): string {

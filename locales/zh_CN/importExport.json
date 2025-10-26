@@ -59,6 +59,28 @@
     "saveConfig": "保存配置",
     "testConnection": "测试连接",
     "uploadBackup": "上传备份",
-    "downloadImport": "下载并导入"
+    "downloadImport": "下载并导入",
+    "syncing": "同步中",
+    "syncSuccess": "同步成功",
+    "syncError": "同步失败",
+    "syncFailed": "同步失败",
+    "notSynced": "未同步",
+    "autoSync": {
+      "title": "WebDAV 自动同步",
+      "description": "配置自动同步设置，定期备份和恢复数据",
+      "enable": "启用自动同步",
+      "enableDesc": "开启后将按设定间隔自动同步数据到 WebDAV",
+      "interval": "同步间隔（秒）",
+      "intervalDesc": "设置自动同步的时间间隔",
+      "intervalHint": "约 {{minutes}} 分钟",
+      "strategy": "同步策略",
+      "strategyDesc": "选择数据同步方式",
+      "strategyMerge": "智能合并 - 根据时间戳合并本地和远程数据",
+      "strategyUploadOnly": "仅上传 - 只上传本地数据到远程",
+      "strategyDownloadOnly": "仅下载 - 只下载远程数据到本地",
+      "lastSync": "上次同步",
+      "saveSettings": "保存设置",
+      "syncNow": "立即同步"
+    }
   }
 }
