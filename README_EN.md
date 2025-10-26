@@ -168,7 +168,7 @@ This will create the production-ready extension package in the `build` directory
 - **Styling**: [Tailwind CSS](https://tailwindcss.com)
 - **Components**: [Headless UI](https://headlessui.com)
 - **Icons**: [Heroicons](https://heroicons.com)
-- **State Management**: [Zustand](https://zustand-demo.pmnd.rs)
+- **State Management**: React Context API
 - **Type Checking**: [TypeScript](https://typescriptlang.org)
 
 ## 📄 License

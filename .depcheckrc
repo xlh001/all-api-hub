@@ -1,0 +1,23 @@
+{
+  "ignores": [
+    "@eslint/js",
+    "@ianvs/prettier-plugin-sort-imports",
+    "@types/chrome",
+    "@types/firefox-webext-browser",
+    "@wxt-dev/module-react",
+    "eslint-import-resolver-typescript",
+    "prettier-plugin-tailwindcss",
+    "react-devtools",
+    "web-ext",
+    "vite"
+  ],
+  "specials": [
+    "bin",
+    "eslint",
+    "prettier",
+    "webpack",
+    "tsconfig",
+    "postcss"
+  ],
+  "skipMissing": true
+}
