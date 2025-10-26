@@ -8,7 +8,7 @@ import {
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
-import { Button, IconButton } from "~/components/ui"
+import { Button, IconButton, Input } from "~/components/ui"
 import { AuthTypeEnum, type DisplaySiteData } from "~/types"
 
 interface SiteInfoInputProps {
@@ -63,26 +63,27 @@ export default function SiteInfoInput({
       </div>
       <div className="flex items-center gap-2">
         <div className="relative flex-grow">
-          <input
+          <Input
             id="site-url"
             type="text"
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
             placeholder="https://example.com"
-            className="block w-full rounded-lg border border-gray-200 bg-white py-3 pr-10 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:placeholder-gray-500 dark:disabled:bg-dark-bg-tertiary"
             disabled={isDetected}
+            rightIcon={
+              url &&
+              !isDetected && (
+                <IconButton
+                  type="button"
+                  onClick={onClearUrl}
+                  variant="ghost"
+                  size="sm"
+                  aria-label="clear-url">
+                  <XCircleIcon className="h-5 w-5 text-gray-400" />
+                </IconButton>
+              )
+            }
           />
-          {url && !isDetected && (
-            <IconButton
-              type="button"
-              onClick={onClearUrl}
-              className="absolute inset-y-0 right-0 flex items-center pr-2"
-              variant="ghost"
-              size="sm"
-              aria-label="clear-url">
-              <XCircleIcon className="h-5 w-5 text-gray-400" />
-            </IconButton>
-          )}
         </div>
         <Tooltip content={t("siteInfo.cookieWarning")}>
           <select
