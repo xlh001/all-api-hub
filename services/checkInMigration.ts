@@ -52,7 +52,7 @@ function needsCheckInMigration(account: Partial<SiteAccount>): boolean {
  * // Scenario 3: `can_check_in` is undefined
  * const account3 = { id: '3', supports_check_in: true };
  * const migrated3 = migrateCheckInConfig(account3);
- * // migrated3 will be { id: '3', checkIn: { enableDetection: true, isCheckedInToday: true } }
+ * // migrated3 will be { id: '3', checkIn: { enableDetection: true, isCheckedInToday: false } }
  *
  * @example
  * // Scenario 4: Feature not supported
