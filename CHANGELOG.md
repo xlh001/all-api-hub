@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.36.0](https://github.com/qixing-jk/all-api-hub/compare/v1.35.0...v1.36.0) (2025-10-26)
+
+
+### Features
+
+* **account:** add configurable redeem page path and navigation action ([7a78e1a](https://github.com/qixing-jk/all-api-hub/commit/7a78e1af598f24f3380fd2e8035f92142dd35b98))
+* **check-in:** allow disabling auto-open redeem ([#78](https://github.com/qixing-jk/all-api-hub/issues/78)) ([a4cc3f4](https://github.com/qixing-jk/all-api-hub/commit/a4cc3f4314d860a5466e7e1927d0c4e1b19d1f9f))
+* **navigation:** support opening both check-in and redeem pages simultaneously ([b5242af](https://github.com/qixing-jk/all-api-hub/commit/b5242af5808931cab159da7a47f442c0a9d91730))
+
+
+### Bug Fixes
+
+* correct site URL input icon alignment ([1234a35](https://github.com/qixing-jk/all-api-hub/commit/1234a351830c51f0a36459ce3c58fe2a0f2050ed))
+* **siteType:** update API router paths for various sites ([4c54093](https://github.com/qixing-jk/all-api-hub/commit/4c540937c00458d4e07fba2aa4504af3c94c1d1f))
+
 ## [1.35.0](https://github.com/qixing-jk/all-api-hub/compare/v1.34.0...v1.35.0) (2025-10-26)
 
 
