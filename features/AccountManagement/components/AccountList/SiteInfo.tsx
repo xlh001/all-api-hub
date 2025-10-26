@@ -58,7 +58,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               variant="ghost"
               size="xs"
               aria-label={t("list.site.checkedInToday")}>
-              <CheckCircleIcon className="h-4 w-4 text-green-500" />
+              <CurrencyYenIcon className="h-4 w-4 text-green-500" />
             </IconButton>
           </Tooltip>
         )
@@ -74,7 +74,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             variant="ghost"
             size="xs"
             aria-label={t("list.site.notCheckedInToday")}>
-            <XCircleIcon className="h-4 w-4 text-red-500" />
+            <CurrencyYenIcon className="h-4 w-4 text-red-500" />
           </IconButton>
         </Tooltip>
       )
@@ -206,21 +206,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
 
           <div className="flex items-center gap-2">
             {/* Inline check-in placed next to site name for tighter spacing */}
-            {site.checkIn?.customCheckInUrl ? (
-              <Tooltip
-                content={t("list.site.customCheckInUrl", {
-                  url: site.checkIn.customCheckInUrl
-                })}
-                position="top"
-                wrapperClassName="flex items-center">
-                <div className="flex items-center gap-1">
-                  <CurrencyYenIcon className="h-4 w-4 text-green-500" />
-                  {renderCheckInIcon()}
-                </div>
-              </Tooltip>
-            ) : (
-              site.checkIn?.enableDetection && renderCheckInIcon()
-            )}
+            {renderCheckInIcon()}
           </div>
         </div>
 
