@@ -245,18 +245,18 @@ export default function AccountForm({
         </div>
       )}
 
-      {/* Custom Redeem Path */}
+      {/* Custom Redeem Url */}
       <FormField
-        label={t("form.customRedeemPath")}
-        description={t("form.customRedeemPathDesc")}>
+        label={t("form.customRedeemUrl")}
+        description={t("form.customRedeemUrlDesc")}>
         <Input
           type="text"
-          id="custom-redeem-path"
-          value={checkIn.customRedeemPath || ""}
+          id="custom-redeem-url"
+          value={checkIn.customRedeemUrl || ""}
           onChange={(e) =>
-            onCheckInChange({ ...checkIn, customRedeemPath: e.target.value })
+            onCheckInChange({ ...checkIn, customRedeemUrl: e.target.value })
           }
-          placeholder="console/topup"
+          placeholder="https://example.com/console/topup"
           leftIcon={<GlobeAltIcon className="h-5 w-5" />}
         />
       </FormField>

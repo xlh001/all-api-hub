@@ -160,10 +160,9 @@ const _openCustomCheckInPage = async (account: DisplaySiteData) => {
 }
 
 const _openRedeemPage = async (account: DisplaySiteData) => {
-  const redeemPath =
-    account.checkIn?.customRedeemPath ||
-    getSiteApiRouter(account.siteType).redeemPath
-  const redeemUrl = joinUrl(account.baseUrl, redeemPath)
+  const redeemUrl =
+    account.checkIn?.customRedeemUrl ||
+    joinUrl(account.baseUrl, getSiteApiRouter(account.siteType).redeemPath)
   await createActiveTab(redeemUrl)
 }
 

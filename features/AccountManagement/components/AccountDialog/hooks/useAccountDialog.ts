@@ -51,7 +51,7 @@ export function useAccountDialog({
     enableDetection: false,
     isCheckedInToday: false,
     customCheckInUrl: "",
-    customRedeemPath: "",
+    customRedeemUrl: "",
     openRedeemWithCheckIn: true
   })
   const [siteType, setSiteType] = useState("unknown")
@@ -78,7 +78,7 @@ export function useAccountDialog({
       enableDetection: false,
       isCheckedInToday: false,
       customCheckInUrl: "",
-      customRedeemPath: "",
+      customRedeemUrl: "",
       openRedeemWithCheckIn: true
     })
     setSiteType("unknown")
@@ -102,7 +102,7 @@ export function useAccountDialog({
             enableDetection: siteAccount.checkIn?.enableDetection ?? false,
             isCheckedInToday: siteAccount.checkIn?.isCheckedInToday ?? false,
             customCheckInUrl: siteAccount.checkIn?.customCheckInUrl ?? "",
-            customRedeemPath: siteAccount.checkIn?.customRedeemPath ?? "",
+            customRedeemUrl: siteAccount.checkIn?.customRedeemUrl ?? "",
             openRedeemWithCheckIn:
               siteAccount.checkIn?.openRedeemWithCheckIn ?? true
           })
@@ -204,7 +204,7 @@ export function useAccountDialog({
           enableDetection: resultData.checkIn?.enableDetection ?? false,
           isCheckedInToday: resultData.checkIn?.isCheckedInToday ?? false,
           customCheckInUrl: resultData.checkIn?.customCheckInUrl ?? "",
-          customRedeemPath: resultData.checkIn?.customRedeemPath ?? "",
+          customRedeemUrl: resultData.checkIn?.customRedeemUrl ?? "",
           openRedeemWithCheckIn:
             resultData.checkIn?.openRedeemWithCheckIn ?? true
         })

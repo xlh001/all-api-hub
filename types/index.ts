@@ -110,10 +110,8 @@ export interface CheckInConfig {
 
   /**
    * Custom URL path for redeem/topup operations.
-   * When provided, the system will navigate to this path (relative to baseUrl) instead of the default redeem page.
-   * Default value from SITE_API_ROUTER is used when not provided.
    */
-  customRedeemPath?: string
+  customRedeemUrl?: string
 
   /**
    * Whether to open the redeem page when opening a custom check-in URL.
