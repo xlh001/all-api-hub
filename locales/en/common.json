@@ -12,7 +12,8 @@
     "close": "Close",
     "retry": "Retry",
     "export": "Export",
-    "import": "Import"
+    "import": "Import",
+    "more": "More"
   },
   "status": {
     "loading": "Loading...",
