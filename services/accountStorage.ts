@@ -260,6 +260,29 @@ class AccountStorageService {
   }
 
   /**
+   * 标记账号为已签到
+   */
+  async markAccountAsCheckedIn(id: string): Promise<boolean> {
+    try {
+      const account = await this.getAccountById(id)
+
+      if (!account) {
+        throw new Error(t("messages:storage.accountNotFound", { id }))
+      }
+
+      return this.updateAccount(id, {
+        checkIn: {
+          ...account.checkIn,
+          isCheckedInToday: true
+        }
+      })
+    } catch (error) {
+      console.error("标记账号为已签到失败:", error)
+      return false
+    }
+  }
+
+  /**
    * 刷新单个账号数据
    */
   async refreshAccount(id: string, force: boolean = false) {

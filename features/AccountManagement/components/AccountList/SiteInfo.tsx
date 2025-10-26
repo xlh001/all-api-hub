@@ -27,14 +27,22 @@ interface SiteInfoProps {
 export default function SiteInfo({ site }: SiteInfoProps) {
   const { t } = useTranslation("account")
   const { detectedAccount } = useAccountDataContext()
-  const { handleRefreshAccount, refreshingAccountId } =
+  const { handleRefreshAccount, refreshingAccountId, handleMarkAsCheckedIn } =
     useAccountActionsContext()
   const detectedAccountId = detectedAccount?.id
 
   const isRefreshing = refreshingAccountId === site.id
 
-  const handleCheckIn = (customCheckInUrl?: string) => () => {
-    openCheckInPage(site, customCheckInUrl)
+  const handleCheckIn = (customCheckInUrl?: string) => async () => {
+    try {
+      if (customCheckInUrl) {
+        await handleMarkAsCheckedIn(site)
+      }
+
+      await openCheckInPage(site, customCheckInUrl)
+    } catch (error) {
+      console.error("Failed to handle check-in navigation:", error)
+    }
   }
 
   const handleHealthClick = async () => {
