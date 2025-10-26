@@ -18,7 +18,11 @@ import {
   getStatusIndicatorColor
 } from "~/features/AccountManagement/utils/healthStatusUtils"
 import type { DisplaySiteData } from "~/types"
-import { openCheckInPage } from "~/utils/navigation"
+import {
+  openCheckInAndRedeem,
+  openCheckInPage,
+  openCustomCheckInPage
+} from "~/utils/navigation"
 
 interface SiteInfoProps {
   site: DisplaySiteData
@@ -37,9 +41,17 @@ export default function SiteInfo({ site }: SiteInfoProps) {
     try {
       if (customCheckInUrl) {
         await handleMarkAsCheckedIn(site)
+        // Check if we should open redeem page with check-in
+        // Default to true for backward compatibility
+        const shouldOpenRedeem = site.checkIn?.openRedeemWithCheckIn ?? true
+        if (shouldOpenRedeem) {
+          await openCheckInAndRedeem(site)
+        } else {
+          await openCustomCheckInPage(site)
+        }
+      } else {
+        await openCheckInPage(site)
       }
-
-      await openCheckInPage(site, customCheckInUrl)
     } catch (error) {
       console.error("Failed to handle check-in navigation:", error)
     }

@@ -107,6 +107,20 @@ export interface CheckInConfig {
    * Used to reset the check-in status daily for custom check-in URLs.
    */
   lastCheckInDate?: string
+
+  /**
+   * Custom URL path for redeem/topup operations.
+   */
+  customRedeemUrl?: string
+
+  /**
+   * Whether to open the redeem page when opening a custom check-in URL.
+   * Only applicable when customCheckInUrl is set.
+   * When true, both the custom check-in URL and redeem page will be opened.
+   * When false, only the custom check-in URL will be opened.
+   * Default: true (for backward compatibility)
+   */
+  openRedeemWithCheckIn?: boolean
 }
 
 // 存储配置

@@ -55,6 +55,9 @@
     "checkInStatus": "Check-in Status Detection (site must have check-in enabled)",
     "customCheckInUrl": "Custom Check-in URL (optional)",
     "customCheckInDesc": "If set, automatic check-in status detection will be disabled. Used for sites with custom check-in endpoints",
+    "customRedeemUrl": "Custom recharge/redeem page URL (optional)",
+    "customRedeemUrlDesc": "URL for recharge/exchange page",
+    "openRedeemWithCheckIn": "Also open redeem page when using custom check-in",
     "notes": "Notes",
     "notesPlaceholder": "Optional, enter notes"
   },

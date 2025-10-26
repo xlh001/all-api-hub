@@ -1,13 +1,6 @@
-import { Modal } from "~/components/ui/Dialog/Modal"
+import { Modal } from "~/components/ui"
 import { useCopyKeyDialog } from "~/features/AccountManagement/components/CopyKeyDialog/hooks/useCopyKeyDialog"
 import type { DisplaySiteData } from "~/types"
-import {
-  formatQuota,
-  formatTimestamp,
-  formatUsedQuota,
-  getGroupBadgeStyle,
-  getStatusBadgeStyle
-} from "~/utils/formatters"
 
 import { DialogFooter } from "./DialogFooter"
 import { DialogHeader } from "./DialogHeader"
@@ -51,11 +44,6 @@ export default function CopyKeyDialog({
         copiedKey={copiedKey}
         onToggleToken={toggleTokenExpansion}
         onCopyKey={copyKey}
-        formatTime={formatTimestamp}
-        formatUsedQuota={formatUsedQuota}
-        formatQuota={formatQuota}
-        getGroupBadgeStyle={getGroupBadgeStyle}
-        getStatusBadgeStyle={getStatusBadgeStyle}
         account={account}
       />
     )
