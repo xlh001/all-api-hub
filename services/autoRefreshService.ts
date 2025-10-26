@@ -143,14 +143,18 @@ class AutoRefreshService {
   private notifyFrontend(type: string, data: any) {
     try {
       // 向所有连接的客户端发送消息
-      chrome.runtime
+      browser.runtime
         .sendMessage({
           type: "AUTO_REFRESH_UPDATE",
           payload: { type, data }
         })
         .catch((error) => {
           // 静默处理"没有接收者"的错误（popup可能没打开）
-          if (error.message.includes("receiving end does not exist")) {
+          if (
+            String(error?.message || "").includes(
+              "receiving end does not exist"
+            )
+          ) {
             console.log("[AutoRefresh] 前端未打开，跳过通知")
           } else {
             console.warn("[AutoRefresh] 通知前端失败:", error)

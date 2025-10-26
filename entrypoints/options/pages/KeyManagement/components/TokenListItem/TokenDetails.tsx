@@ -2,8 +2,9 @@ import { useTranslation } from "react-i18next"
 
 import { BodySmall } from "~/components/ui"
 import type { ApiToken } from "~/types"
+import { formatKeyTime } from "~/utils/formatters.ts"
 
-import { formatQuota, formatTime } from "../../utils"
+import { formatQuota } from "../../utils"
 
 interface TokenDetailsProps {
   token: ApiToken
@@ -40,7 +41,7 @@ export function TokenDetails({ token }: TokenDetailsProps) {
           {t("keyDetails.expireTime")}
         </BodySmall>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
-          {formatTime(token.expired_time)}
+          {formatKeyTime(token.expired_time)}
         </span>
       </div>
       <div className="min-w-0 truncate">
@@ -50,7 +51,7 @@ export function TokenDetails({ token }: TokenDetailsProps) {
           {t("keyDetails.createTime")}
         </BodySmall>
         <span className="ml-2 font-medium text-gray-900 dark:text-dark-text-primary">
-          {formatTime(token.created_time)}
+          {formatKeyTime(token.created_time)}
         </span>
       </div>
     </div>

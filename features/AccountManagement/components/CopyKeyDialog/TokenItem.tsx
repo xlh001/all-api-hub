@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next"
 
 import { Badge, Card, CardContent, IconButton } from "~/components/ui"
 import type { ApiToken, DisplaySiteData } from "~/types"
+import { getGroupBadgeStyle, getStatusBadgeStyle } from "~/utils/formatters.ts"
 
 import { TokenDetails } from "./TokenDetails"
 
@@ -16,11 +17,6 @@ interface TokenItemProps {
   copiedKey: string | null
   onToggle: () => void
   onCopyKey: (key: string) => void
-  formatTime: (timestamp: number) => string
-  formatUsedQuota: (token: ApiToken) => string
-  formatQuota: (token: ApiToken) => string
-  getGroupBadgeStyle: (group: string) => string
-  getStatusBadgeStyle: (status: number) => string
   account: DisplaySiteData
 }
 
@@ -30,11 +26,6 @@ export function TokenItem({
   copiedKey,
   onToggle,
   onCopyKey,
-  formatTime,
-  formatUsedQuota,
-  formatQuota,
-  getGroupBadgeStyle,
-  getStatusBadgeStyle,
   account
 }: TokenItemProps) {
   const { t } = useTranslation("ui")
@@ -91,9 +82,6 @@ export function TokenItem({
         <TokenDetails
           token={token}
           copiedKey={copiedKey}
-          formatTime={formatTime}
-          formatUsedQuota={formatUsedQuota}
-          formatQuota={formatQuota}
           onCopyKey={onCopyKey}
           account={account}
         />

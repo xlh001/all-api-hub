@@ -5,6 +5,7 @@ import { Alert } from "~/components/ui"
 import ExportSection from "./components/ExportSection"
 import ImportSection from "./components/ImportSection"
 import PageHeader from "./components/PageHeader"
+import WebDAVAutoSyncSettings from "./components/WebDAVAutoSyncSettings"
 import WebDAVSettings from "./components/WebDAVSettings"
 import { useImportExport } from "./hooks/useImportExport"
 
@@ -44,6 +45,9 @@ export default function ImportExport() {
 
       {/* WebDAV 备份/同步 */}
       <WebDAVSettings />
+
+      {/* WebDAV 自动同步 */}
+      <WebDAVAutoSyncSettings />
 
       {/* 重要提示 */}
       <Alert variant="warning">

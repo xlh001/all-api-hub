@@ -27,6 +27,9 @@ export interface UserPreferences {
   webdavUrl: string // 远程备份文件完整URL（例如：https://dav.example.com/backups/all-api-hub.json）
   webdavUsername: string // 用户名
   webdavPassword: string // 密码
+  webdavAutoSync: boolean // 是否启用自动同步
+  webdavSyncInterval: number // 同步间隔（秒）
+  webdavSyncStrategy: "merge" | "upload_only" | "download_only" // 同步策略
 
   // 其他配置可在此扩展
   lastUpdated: number // 最后更新时间
@@ -60,6 +63,9 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   webdavUrl: "",
   webdavUsername: "",
   webdavPassword: "",
+  webdavAutoSync: false,
+  webdavSyncInterval: 3600,
+  webdavSyncStrategy: "merge",
   lastUpdated: Date.now(),
   newApiBaseUrl: "",
   newApiAdminToken: "",
@@ -194,6 +200,17 @@ class UserPreferencesService {
     webdavUrl?: string
     webdavUsername?: string
     webdavPassword?: string
+  }): Promise<boolean> {
+    return this.savePreferences(settings)
+  }
+
+  /**
+   * 更新 WebDAV 自动同步设置
+   */
+  async updateWebdavAutoSyncSettings(settings: {
+    webdavAutoSync?: boolean
+    webdavSyncInterval?: number
+    webdavSyncStrategy?: "merge" | "upload_only" | "download_only"
   }): Promise<boolean> {
     return this.savePreferences(settings)
   }

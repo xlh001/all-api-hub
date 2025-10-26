@@ -12,11 +12,6 @@ interface TokenListProps {
   copiedKey: string | null
   onToggleToken: (id: number) => void
   onCopyKey: (key: string) => void
-  formatTime: (timestamp: number) => string
-  formatUsedQuota: (token: ApiToken) => string
-  formatQuota: (token: ApiToken) => string
-  getGroupBadgeStyle: (group: string) => string
-  getStatusBadgeStyle: (status: number) => string
   account: DisplaySiteData
 }
 
@@ -26,11 +21,6 @@ export function TokenList({
   copiedKey,
   onToggleToken,
   onCopyKey,
-  formatTime,
-  formatUsedQuota,
-  formatQuota,
-  getGroupBadgeStyle,
-  getStatusBadgeStyle,
   account
 }: TokenListProps) {
   const { t } = useTranslation("ui")
@@ -54,11 +44,6 @@ export function TokenList({
           copiedKey={copiedKey}
           onToggle={() => onToggleToken(token.id)}
           onCopyKey={onCopyKey}
-          formatTime={formatTime}
-          formatUsedQuota={formatUsedQuota}
-          formatQuota={formatQuota}
-          getGroupBadgeStyle={getGroupBadgeStyle}
-          getStatusBadgeStyle={getStatusBadgeStyle}
           account={account}
         />
       ))}

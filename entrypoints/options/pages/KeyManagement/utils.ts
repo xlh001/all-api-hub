@@ -19,12 +19,6 @@ export const formatKey = (
   )}`
 }
 
-// 格式化时间
-export const formatTime = (timestamp: number) => {
-  if (timestamp <= 0) return t("keyManagement:keyDetails.neverExpires")
-  return new Date(timestamp * 1000).toLocaleDateString("zh-CN")
-}
-
 // 格式化额度
 export const formatQuota = (quota: number, unlimited: boolean) => {
   if (unlimited || quota < 0) return t("keyManagement:dialog.unlimitedQuota")

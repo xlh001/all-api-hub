@@ -43,6 +43,9 @@
     "unknown": "Unknown",
     "notAvailable": "N/A"
   },
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "error": "Error",
   "currency": {
     "cny": "CNY",
     "usd": "USD",

@@ -8,6 +8,10 @@ import {
 import { migrateAccountsConfig } from "../services/configMigration"
 import { getSiteType } from "../services/detectSiteType"
 import {
+  handleWebdavAutoSyncMessage,
+  webdavAutoSyncService
+} from "../services/webdavAutoSyncService"
+import {
   createTab,
   createWindow,
   hasWindowsAPI,
@@ -29,16 +33,20 @@ function main() {
   // 管理临时窗口的 Map
   const tempWindows = new Map<string, number>()
 
-  // 插件启动时初始化自动刷新服务
+  // 插件启动时初始化自动刷新服务和WebDAV自动同步服务
   onStartup(async () => {
-    console.log("[Background] 插件启动，初始化自动刷新服务")
+    console.log("[Background] 插件启动，初始化自动刷新服务和WebDAV自动同步服务")
     await autoRefreshService.initialize()
+    await webdavAutoSyncService.initialize()
   })
 
-  // 插件安装时初始化自动刷新服务
+  // 插件安装时初始化自动刷新服务和WebDAV自动同步服务
   onInstalled(async (details) => {
-    console.log("[Background] 插件安装/更新，初始化自动刷新服务")
+    console.log(
+      "[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务"
+    )
     await autoRefreshService.initialize()
+    await webdavAutoSyncService.initialize()
 
     if (details.reason === "install" || details.reason === "update") {
       console.log(`Extension ${details.reason}: triggering config migration`)
@@ -86,6 +94,12 @@ function main() {
       ].includes(request.action)
     ) {
       handleAutoRefreshMessage(request, sendResponse)
+      return true
+    }
+
+    // 处理WebDAV自动同步相关消息
+    if (request.action && request.action.startsWith("webdavAutoSync:")) {
+      handleWebdavAutoSyncMessage(request, sendResponse)
       return true
     }
   })
