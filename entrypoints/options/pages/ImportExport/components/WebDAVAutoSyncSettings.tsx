@@ -276,7 +276,7 @@ export default function WebDAVAutoSyncSettings() {
             size="sm"
             className="flex-1">
             {syncing || isSyncing
-              ? t("webdav.autoSync.syncing")
+              ? t("webdav.syncing")
               : t("webdav.autoSync.syncNow")}
           </Button>
         </div>
