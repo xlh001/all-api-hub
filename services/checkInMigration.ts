@@ -90,7 +90,7 @@ export function migrateCheckInConfig<T extends Partial<SiteAccount>>(
       // The logic is inverted:
       // old `can_check_in: true` (can check in) => new `isCheckedInToday: false` (not checked in)
       // old `can_check_in: false` (already checked in) => new `isCheckedInToday: true` (checked in)
-      isCheckedInToday: !(migratedAccount.can_check_in ?? false)
+      isCheckedInToday: !(migratedAccount.can_check_in ?? true)
     }
   }
 
