@@ -42,7 +42,9 @@ function main() {
 
   // 插件安装时初始化自动刷新服务和WebDAV自动同步服务
   onInstalled(async (details) => {
-    console.log("[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务")
+    console.log(
+      "[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务"
+    )
     await autoRefreshService.initialize()
     await webdavAutoSyncService.initialize()
 

@@ -182,10 +182,7 @@ export default function WebDAVAutoSyncSettings() {
           label={t("webdav.autoSync.enable")}
           description={t("webdav.autoSync.enableDesc")}>
           <div className="flex items-center gap-2">
-            <Switch
-              checked={autoSyncEnabled}
-              onChange={setAutoSyncEnabled}
-            />
+            <Switch checked={autoSyncEnabled} onChange={setAutoSyncEnabled} />
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {autoSyncEnabled ? t("common:enabled") : t("common:disabled")}
             </span>
@@ -225,7 +222,9 @@ export default function WebDAVAutoSyncSettings() {
                     e.target.value as "merge" | "upload_only" | "download_only"
                   )
                 }>
-                <option value="merge">{t("webdav.autoSync.strategyMerge")}</option>
+                <option value="merge">
+                  {t("webdav.autoSync.strategyMerge")}
+                </option>
                 <option value="upload_only">
                   {t("webdav.autoSync.strategyUploadOnly")}
                 </option>

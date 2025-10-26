@@ -189,9 +189,7 @@ class WebdavAutoSyncService {
 
       accountsToSave = mergeResult.accounts
       preferencesToSave = mergeResult.preferences
-      console.log(
-        `[WebdavAutoSync] 合并完成: ${accountsToSave.length} 个账号`
-      )
+      console.log(`[WebdavAutoSync] 合并完成: ${accountsToSave.length} 个账号`)
     } else if (strategy === "upload_only" || !remoteData) {
       // 仅上传或远程无数据
       accountsToSave = localAccountsConfig.accounts
@@ -265,9 +263,7 @@ class WebdavAutoSyncService {
       if (!localAccount) {
         // 远程账号在本地不存在，直接添加
         accountMap.set(remoteAccount.id, remoteAccount)
-        console.log(
-          `[WebdavAutoSync] 添加远程账号: ${remoteAccount.site_name}`
-        )
+        console.log(`[WebdavAutoSync] 添加远程账号: ${remoteAccount.site_name}`)
       } else {
         // 账号在两边都存在，比较时间戳
         const localUpdatedAt = localAccount.updated_at || 0
@@ -298,7 +294,9 @@ class WebdavAutoSyncService {
 
     console.log(
       `[WebdavAutoSync] 合并完成 - 总账号数: ${mergedAccounts.length}, 使用${
-        remote.preferencesTimestamp > local.preferencesTimestamp ? "远程" : "本地"
+        remote.preferencesTimestamp > local.preferencesTimestamp
+          ? "远程"
+          : "本地"
       }偏好设置`
     )
 
