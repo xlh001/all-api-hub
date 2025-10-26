@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.34.0](https://github.com/qixing-jk/all-api-hub/compare/v1.33.0...v1.34.0) (2025-10-26)
+
+
+### Features
+
+* **webdav:** add automatic WebDAV account data sync with merge strategy ([b03df00](https://github.com/qixing-jk/all-api-hub/commit/b03df00a094312a8629670ff41c76634f67ff73a))
+
+
+### Bug Fixes
+
+* correct WebDAV auto-sync button text and add missing locale keys ([ebc487c](https://github.com/qixing-jk/all-api-hub/commit/ebc487c10c81a4307e223fc26cdd40c350a81b61))
+* replace chrome.runtime with browser.runtime and improve error handling ([f122d0a](https://github.com/qixing-jk/all-api-hub/commit/f122d0a94794a5cdb6eb30f896fa53aa41e61386))
+
 ## [1.33.0](https://github.com/qixing-jk/all-api-hub/compare/v1.32.1...v1.33.0) (2025-10-25)
 
 
