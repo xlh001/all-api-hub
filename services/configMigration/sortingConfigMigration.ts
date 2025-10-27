@@ -12,10 +12,12 @@ import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 export function needsSortingConfigMigration(
   config: SortingPriorityConfig | undefined
 ): boolean {
-  if (!config) return false
-  return (
-    config.criteria.length != DEFAULT_SORTING_PRIORITY_CONFIG.criteria.length
-  )
+  if (!config) return true
+  const src = new Set(config.criteria.map((c) => c.id))
+  const dst = new Set(DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => c.id))
+  if (src.size !== dst.size) return true
+  for (const id of dst) if (!src.has(id)) return true
+  return false
 }
 
 /**
