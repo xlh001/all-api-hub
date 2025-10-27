@@ -39,12 +39,12 @@ export const DEFAULT_SORTING_PRIORITY_CONFIG: SortingPriorityConfig = {
     },
     {
       id: SortingCriteriaType.CUSTOM_REDEEM_URL,
-      enabled: true,
+      enabled: false,
       priority: 4
     },
     {
       id: SortingCriteriaType.MATCHED_OPEN_TABS,
-      enabled: true,
+      enabled: false,
       priority: 5
     },
     {
