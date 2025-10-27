@@ -127,7 +127,7 @@ This extension allows for convenient integrated management of AI relay station a
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm or pnpm
 
 ### Local Development
