@@ -1,17 +1,20 @@
-import { defineConfig } from "vitest/config"
+import { fileURLToPath } from "node:url"
 import path from "path"
+import { defineConfig } from "vitest/config"
+
+const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   test: {
     // Test environment
     environment: "jsdom",
-    
+
     // Setup files to run before tests
     setupFiles: ["./tests/setup.ts"],
 
     // Global test APIs (describe, it, expect, etc.)
     globals: true,
-    
+
     // Coverage configuration
     coverage: {
       provider: "v8",
@@ -43,7 +46,7 @@ export default defineConfig({
         }
       }
     },
-    
+
     // Exclude patterns
     exclude: [
       "**/node_modules/**",
@@ -53,11 +56,11 @@ export default defineConfig({
       "**/*.config.*"
     ]
   },
-  
+
   resolve: {
     alias: {
       // Mirror WXT/Vite path aliases
-      "~": path.resolve(__dirname, ".")
+      "~": path.resolve(rootDir, ".")
     }
   }
 })
