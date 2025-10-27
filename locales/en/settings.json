@@ -38,8 +38,8 @@
     "checkInDesc": "Place sites that need check-in at the front",
     "userCustomSort": "User Custom Sort",
     "customSortDesc": "Sort according to the field (such as balance) selected by the user in the list view",
-    "customCheckInUrl": "Custom Check-in URL",
-    "customCheckInDesc": "Place sites using custom check-in links at the front",
+    "customCheckInUrl": "Custom Check-in/Redeem URL",
+    "customCheckInDesc": "Place sites using custom check-in or redeem links at the front",
     "unknownSortRule": "Unknown sorting rule"
   },
   "newApi": {

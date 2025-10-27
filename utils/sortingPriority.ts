@@ -97,8 +97,8 @@ function applySortingCriteria(
       return checkInA - checkInB
 
     case SortingCriteriaType.CUSTOM_CHECK_IN_URL:
-      const customUrlA = a?.checkIn?.customCheckInUrl ? 1 : 0
-      const customUrlB = b?.checkIn?.customCheckInUrl ? 1 : 0
+      const customUrlA = a?.checkIn?.customCheckInUrl || a?.checkIn?.customRedeemUrl ? 1 : 0
+      const customUrlB = b?.checkIn?.customCheckInUrl || b?.checkIn?.customRedeemUrl ? 1 : 0
       return customUrlB - customUrlA
 
     case SortingCriteriaType.USER_SORT_FIELD:
