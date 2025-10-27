@@ -9,11 +9,7 @@ import { CherryIcon } from "~/components/icons/CherryIcon"
 import { Button } from "~/components/ui"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
-import {
-  formatKeyTime,
-  formatQuota,
-  formatUsedQuota
-} from "~/utils/formatters.ts"
+import { formatKeyTime, formatQuota, formatUsedQuota } from "~/utils/formatters"
 
 interface TokenDetailsProps {
   token: ApiToken

@@ -1,5 +1,3 @@
-// types/sorting.ts
-
 // Enum for sorting criteria identifiers
 export enum SortingCriteriaType {
   CURRENT_SITE = "current_site",

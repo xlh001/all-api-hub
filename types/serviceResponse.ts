@@ -1,4 +1,4 @@
-import { AutoDetectError } from "~/utils/autoDetectUtils.ts"
+import { AutoDetectError } from "~/utils/autoDetectUtils"
 
 import type { ApiToken, CheckInConfig } from "./index"
 

@@ -13,7 +13,7 @@ export {
   type CardContentProps,
   type CardFooterProps
 } from "./Card"
-export { CardItem, cardItemVariants } from "./CardItem.tsx"
+export { CardItem, cardItemVariants } from "./CardItem"
 export { CardList } from "./CardList"
 export { Label, labelVariants } from "./Label"
 export { Alert, AlertTitle, AlertDescription } from "./Alert"
