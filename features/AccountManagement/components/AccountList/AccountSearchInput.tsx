@@ -43,7 +43,6 @@ export default function AccountSearchInput({
             </button>
           )
         }
-        className="pr-8"
       />
     </div>
   )
