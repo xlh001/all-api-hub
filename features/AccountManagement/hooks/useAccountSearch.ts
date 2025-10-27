@@ -243,6 +243,6 @@ export function useAccountSearch(accounts: DisplaySiteData[]) {
     debouncedQuery,
     searchResults: resultsWithHighlights,
     clearSearch,
-    isSearching: query.trim().length > 0
+    inSearchMode: query.trim().length > 0
   }
 }

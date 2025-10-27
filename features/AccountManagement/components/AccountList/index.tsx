@@ -41,7 +41,7 @@ export default function AccountList() {
   const [copyKeyDialogAccount, setCopyKeyDialogAccount] =
     useState<DisplaySiteData | null>(null)
 
-  const { query, setQuery, clearSearch, searchResults, isSearching } =
+  const { query, setQuery, clearSearch, searchResults, inSearchMode } =
     useAccountSearch(displayData)
 
   const handleDeleteWithDialog = (site: DisplaySiteData) => {
@@ -58,7 +58,7 @@ export default function AccountList() {
       highlights?: SearchResultWithHighlight["highlights"]
     }>
   >(() => {
-    if (isSearching) {
+    if (inSearchMode) {
       return searchResults.map((result) => ({
         account: result.account,
         highlights: result.highlights
@@ -66,7 +66,7 @@ export default function AccountList() {
     }
 
     return sortedData.map((account) => ({ account, highlights: undefined }))
-  }, [isSearching, searchResults, sortedData])
+  }, [inSearchMode, searchResults, sortedData])
 
   const hasAccounts = displayData.length > 0
 
@@ -90,7 +90,7 @@ export default function AccountList() {
       onClick={() => handleSort(field)}
       variant="ghost"
       size="none"
-      disabled={isSearching}
+      disabled={inSearchMode}
       aria-label={`${t("account:list.sort")} ${label}`}
       className="space-x-0.5 text-[10px] font-medium sm:space-x-1 sm:text-xs">
       <span>{label}</span>
@@ -150,7 +150,7 @@ export default function AccountList() {
         }
 
         {/* Account List or No Results */}
-        {isSearching && displayedResults.length === 0 ? (
+        {inSearchMode && displayedResults.length === 0 ? (
           <EmptyState
             icon={<InboxIcon className="h-12 w-12" />}
             title={t("account:search.noResults")}
