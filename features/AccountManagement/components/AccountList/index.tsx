@@ -4,7 +4,7 @@ import {
   InboxIcon,
   PlusIcon
 } from "@heroicons/react/24/outline"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -18,15 +18,20 @@ import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
+import {
+  useAccountSearch,
+  type SearchResultWithHighlight
+} from "~/features/AccountManagement/hooks/useAccountSearch"
 import type { DisplaySiteData, SortField } from "~/types"
 
 import CopyKeyDialog from "../CopyKeyDialog"
 import DelAccountDialog from "../DelAccountDialog"
 import AccountListItem from "./AccountListItem"
+import AccountSearchInput from "./AccountSearchInput"
 
 export default function AccountList() {
   const { t } = useTranslation(["account", "common"])
-  const { sortedData, handleSort, sortField, sortOrder } =
+  const { sortedData, displayData, handleSort, sortField, sortOrder } =
     useAccountDataContext()
   const { openAddAccount } = useDialogStateContext()
   const { handleDeleteAccount } = useAccountActionsContext()
@@ -36,6 +41,9 @@ export default function AccountList() {
   const [copyKeyDialogAccount, setCopyKeyDialogAccount] =
     useState<DisplaySiteData | null>(null)
 
+  const { query, setQuery, clearSearch, searchResults, isSearching } =
+    useAccountSearch(displayData)
+
   const handleDeleteWithDialog = (site: DisplaySiteData) => {
     setDeleteDialogAccount(site)
   }
@@ -44,7 +52,25 @@ export default function AccountList() {
     setCopyKeyDialogAccount(site)
   }
 
-  if (sortedData.length === 0) {
+  const displayedResults = useMemo<
+    Array<{
+      account: DisplaySiteData
+      highlights?: SearchResultWithHighlight["highlights"]
+    }>
+  >(() => {
+    if (isSearching) {
+      return searchResults.map((result) => ({
+        account: result.account,
+        highlights: result.highlights
+      }))
+    }
+
+    return sortedData.map((account) => ({ account, highlights: undefined }))
+  }, [isSearching, searchResults, sortedData])
+
+  const hasAccounts = displayData.length > 0
+
+  if (!hasAccounts) {
     return (
       <EmptyState
         icon={<InboxIcon className="h-12 w-12" />}
@@ -79,46 +105,65 @@ export default function AccountList() {
   return (
     <Card padding="none" className="flex flex-col overflow-hidden">
       <CardContent padding={"none"} spacing={"none"}>
-        {/* Header */}
-        <div className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary sm:px-5">
-          <div className="flex items-center justify-between gap-2 sm:gap-4">
-            {/* Account Name Column */}
-            <div className="min-w-0 flex-1">
-              {renderSortButton("name", t("account:list.header.account"))}
-            </div>
+        {/* Search Bar */}
+        <div className="border-b border-gray-200 bg-white px-3 py-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-primary sm:px-5 sm:py-3">
+          <AccountSearchInput
+            value={query}
+            onChange={setQuery}
+            onClear={clearSearch}
+          />
+        </div>
 
-            {/* Balance & Consumption Column */}
-            <div className="flex flex-shrink-0 items-end gap-0.5">
-              <div className="flex items-center">
-                {renderSortButton(
-                  DATA_TYPE_BALANCE,
-                  t("account:list.header.balance")
-                )}
+        {/* Header */}
+        {!isSearching && (
+          <div className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary sm:px-5">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
+              {/* Account Name Column */}
+              <div className="min-w-0 flex-1">
+                {renderSortButton("name", t("account:list.header.account"))}
               </div>
-              <div className="text-[10px] text-gray-400 dark:text-dark-text-tertiary sm:text-xs">
-                /
-              </div>
-              <div className="flex items-center text-[9px] text-gray-400 dark:text-dark-text-tertiary sm:text-[10px]">
-                {renderSortButton(
-                  DATA_TYPE_CONSUMPTION,
-                  t("account:list.header.todayConsumption")
-                )}
+
+              {/* Balance & Consumption Column */}
+              <div className="flex flex-shrink-0 items-end gap-0.5">
+                <div className="flex items-center">
+                  {renderSortButton(
+                    DATA_TYPE_BALANCE,
+                    t("account:list.header.balance")
+                  )}
+                </div>
+                <div className="text-[10px] text-gray-400 dark:text-dark-text-tertiary sm:text-xs">
+                  /
+                </div>
+                <div className="flex items-center text-[9px] text-gray-400 dark:text-dark-text-tertiary sm:text-[10px]">
+                  {renderSortButton(
+                    DATA_TYPE_CONSUMPTION,
+                    t("account:list.header.todayConsumption")
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Account List */}
-        <CardList>
-          {sortedData.map((site) => (
-            <AccountListItem
-              key={site.id}
-              site={site}
-              onDeleteWithDialog={handleDeleteWithDialog}
-              onCopyKey={handleCopyKeyWithDialog}
-            />
-          ))}
-        </CardList>
+        {/* Account List or No Results */}
+        {isSearching && displayedResults.length === 0 ? (
+          <EmptyState
+            icon={<InboxIcon className="h-12 w-12" />}
+            title={t("account:search.noResults")}
+          />
+        ) : (
+          <CardList>
+            {displayedResults.map((item) => (
+              <AccountListItem
+                key={item.account.id}
+                site={item.account}
+                highlights={item.highlights}
+                onDeleteWithDialog={handleDeleteWithDialog}
+                onCopyKey={handleCopyKeyWithDialog}
+              />
+            ))}
+          </CardList>
+        )}
       </CardContent>
 
       {/* Dialogs */}

@@ -5,6 +5,7 @@ import { useDevice } from "~/contexts/DeviceContext"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/hooks/useAccountListItem"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
+import type { SearchResultWithHighlight } from "~/features/AccountManagement/hooks/useAccountSearch"
 import type { DisplaySiteData } from "~/types"
 
 import BalanceDisplay from "./BalanceDisplay"
@@ -12,12 +13,13 @@ import SiteInfo from "./SiteInfo"
 
 interface AccountListItemProps {
   site: DisplaySiteData
+  highlights?: SearchResultWithHighlight["highlights"]
   onCopyKey: (site: DisplaySiteData) => void
   onDeleteWithDialog: (site: DisplaySiteData) => void
 }
 
 const AccountListItem: React.FC<AccountListItemProps> = React.memo(
-  ({ site, onCopyKey, onDeleteWithDialog }) => {
+  ({ site, highlights, onCopyKey, onDeleteWithDialog }) => {
     const { detectedAccount } = useAccountDataContext()
     const { handleMouseEnter, handleMouseLeave } = useAccountListItem()
     const { isTouchDevice } = useDevice()
@@ -42,7 +44,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
         <div className="flex w-full min-w-0 items-center gap-1 sm:gap-2">
           {/* 左侧：站点信息 - 可压缩 */}
           <div className="min-w-[60px] flex-1 sm:min-w-[80px]">
-            <SiteInfo site={site} />
+            <SiteInfo site={site} highlights={highlights} />
           </div>
 
           {/* 中间：操作按钮 */}
