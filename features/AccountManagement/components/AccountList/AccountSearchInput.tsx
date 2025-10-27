@@ -18,6 +18,8 @@ export default function AccountSearchInput({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
+      e.preventDefault()
+      e.stopPropagation()
       onClear()
     }
   }
