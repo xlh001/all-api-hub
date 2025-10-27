@@ -286,3 +286,21 @@ export function onInstalled(callback: (details: any) => void): () => void {
     browser.runtime.onInstalled.removeListener(callback)
   }
 }
+
+export const openSidePanel = async () => {
+  // Firefox
+  if (typeof browser !== "undefined" && browser.sidebarAction) {
+    return browser.sidebarAction.open()
+  }
+
+  // Chrome
+  if (typeof chrome !== "undefined" && chrome.sidePanel) {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true
+    })
+    return chrome.sidePanel.open({ windowId: tab.windowId })
+  }
+
+  throw new Error("Sidebar not supported")
+}

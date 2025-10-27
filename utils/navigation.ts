@@ -2,6 +2,7 @@ import { getSiteApiRouter } from "~/constants/siteType"
 import type { DisplaySiteData } from "~/types"
 import { isExtensionPopup, OPTIONS_PAGE_URL } from "~/utils/browser.ts"
 import {
+  openSidePanel as _openSidePanel,
   createTab as createTabApi,
   focusTab,
   getExtensionURL
@@ -118,10 +119,6 @@ const _openSettingsPage = () => {
   openOrFocusOptionsPage("#basic")
 }
 
-const _openSidePanel = async () => {
-  await browser.sidebarAction.open()
-}
-
 const _openKeysPage = async (accountId?: string) => {
   const url = accountId
     ? getExtensionURL(`options.html#keys?accountId=${accountId}`)
@@ -167,7 +164,7 @@ const _openRedeemPage = async (account: DisplaySiteData) => {
 }
 
 // 导出带自动关闭的版本
-export const openFullManagerPage = withPopupClose(_openFullManagerPage)
+export const openFullAccountManagerPage = withPopupClose(_openFullManagerPage)
 export const openSettingsPage = withPopupClose(_openSettingsPage)
 export const openSidePanel = withPopupClose(_openSidePanel)
 export const openKeysPage = withPopupClose(_openKeysPage)

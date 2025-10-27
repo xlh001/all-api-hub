@@ -14,7 +14,8 @@
     "export": "Export",
     "import": "Import",
     "more": "More",
-    "clear": "Clear"
+    "clear": "Clear",
+    "openSidePanel": "Open in SidePanel"
   },
   "status": {
     "loading": "Loading...",
