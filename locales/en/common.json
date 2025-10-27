@@ -67,5 +67,6 @@
     "required": "This field is required",
     "invalidFormat": "Invalid format",
     "mustBeNumber": "Must be a number"
-  }
+  },
+  "total": "Total"
 }
