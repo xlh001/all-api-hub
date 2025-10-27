@@ -2,6 +2,7 @@ import { getSiteApiRouter } from "~/constants/siteType"
 import type { DisplaySiteData } from "~/types"
 import { isExtensionPopup, OPTIONS_PAGE_URL } from "~/utils/browser.ts"
 import {
+  openSidePanel as _openSidePanel,
   createTab as createTabApi,
   focusTab,
   getExtensionURL
@@ -116,10 +117,6 @@ const _openFullManagerPage = () => {
 
 const _openSettingsPage = () => {
   openOrFocusOptionsPage("#basic")
-}
-
-const _openSidePanel = async () => {
-  await browser.sidebarAction.open()
 }
 
 const _openKeysPage = async (accountId?: string) => {

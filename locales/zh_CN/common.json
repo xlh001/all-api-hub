@@ -13,7 +13,8 @@
     "retry": "重试",
     "export": "导出",
     "import": "导入",
-    "more": "更多"
+    "more": "更多",
+    "openSidePanel": "在侧边栏中打开"
   },
   "status": {
     "loading": "加载中...",

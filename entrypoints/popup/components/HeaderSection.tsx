@@ -3,6 +3,7 @@ import {
   ArrowsPointingOutIcon,
   Cog6ToothIcon
 } from "@heroicons/react/24/outline"
+import { PanelRightClose } from "lucide-react"
 import { useCallback } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -12,7 +13,11 @@ import Tooltip from "~/components/Tooltip"
 import { BodySmall, Caption, IconButton } from "~/components/ui"
 import { COLORS } from "~/constants/designTokens"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
-import { openFullManagerPage, openSettingsPage } from "~/utils/navigation"
+import {
+  openFullManagerPage,
+  openSettingsPage,
+  openSidePanel
+} from "~/utils/navigation"
 
 import CompactThemeToggle from "./ThemeToggle"
 
@@ -105,6 +110,15 @@ export default function HeaderSection() {
             aria-label={t("common:labels.settings")}
             className="touch-manipulation">
             <Cog6ToothIcon className="h-4 w-4" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip content={t("common:actions.openSidePanel")}>
+          <IconButton
+            aria-label={t("common:actions.openSidePanel")}
+            size="sm"
+            variant="outline"
+            onClick={() => openSidePanel()}>
+            <PanelRightClose className="h-4 w-4" />
           </IconButton>
         </Tooltip>
       </div>
