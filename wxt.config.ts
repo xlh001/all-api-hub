@@ -4,7 +4,7 @@ import { reactDevToolsAuto } from "./plugins/react-devtools-auto"
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
-  modules: ["@wxt-dev/module-react"],
+  modules: ["@wxt-dev/auto-icons", "@wxt-dev/module-react"],
   manifest: {
     name: "__MSG_manifest_name__",
     description: "__MSG_manifest_description__",
