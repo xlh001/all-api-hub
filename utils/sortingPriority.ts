@@ -15,7 +15,6 @@ import {
  * It contains the data-only configuration for sorting criteria, without UI text.
  */
 export const DEFAULT_SORTING_PRIORITY_CONFIG: SortingPriorityConfig = {
-  version: 1,
   criteria: [
     {
       id: SortingCriteriaType.CURRENT_SITE,
