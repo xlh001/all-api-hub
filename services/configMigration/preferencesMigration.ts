@@ -1,12 +1,10 @@
-;
 /**
  * Centralized preferences migration system
  * Handles version-based migrations for UserPreferences configurations
  */
 
-import type { UserPreferences } from "../userPreferences";
-import { migrateSortingConfig } from "./sortingConfigMigration";
-
+import type { UserPreferences } from "../userPreferences"
+import { migrateSortingConfig } from "./sortingConfigMigration"
 
 // Current version of the preferences schema
 export const CURRENT_PREFERENCES_VERSION = 1
@@ -69,9 +67,10 @@ export function getPreferencesVersion(
  * Migrate preferences to the latest version
  * Applies all necessary migrations sequentially
  */
-export function migratePreferences(prefs: UserPreferences): UserPreferences {
-  let currentVersion = getPreferencesVersion(prefs)
-  let migratedPrefs = { ...prefs }
+export function migratePreferences(
+  migratedPrefs: UserPreferences
+): UserPreferences {
+  let currentVersion = getPreferencesVersion(migratedPrefs)
 
   // Apply migrations sequentially until we reach current version
   while (needsPreferencesMigration(migratedPrefs)) {
