@@ -3,8 +3,8 @@
  * Handles version-based migrations for UserPreferences configurations
  */
 
-import type { UserPreferences } from "./userPreferences"
 import { migrateSortingConfig } from "./sortingConfigMigration"
+import type { UserPreferences } from "./userPreferences"
 
 // Current version of the preferences schema
 export const CURRENT_PREFERENCES_VERSION = 1
@@ -13,9 +13,7 @@ export const CURRENT_PREFERENCES_VERSION = 1
  * Migration function type
  * Takes preferences at version N and returns it at version N+1
  */
-type PreferencesMigrationFunction = (
-  prefs: UserPreferences
-) => UserPreferences
+type PreferencesMigrationFunction = (prefs: UserPreferences) => UserPreferences
 
 /**
  * Registry of migration functions
@@ -69,14 +67,12 @@ export function getPreferencesVersion(
  * Migrate preferences to the latest version
  * Applies all necessary migrations sequentially
  */
-export function migratePreferences(
-  prefs: UserPreferences
-): UserPreferences {
+export function migratePreferences(prefs: UserPreferences): UserPreferences {
   let currentVersion = getPreferencesVersion(prefs)
   let migratedPrefs = { ...prefs }
 
   // Apply migrations sequentially until we reach current version
-  while (currentVersion < CURRENT_PREFERENCES_VERSION) {
+  while (needsPreferencesMigration(prefs)) {
     const nextVersion = currentVersion + 1
     const migrationFn = migrations[nextVersion]
 
