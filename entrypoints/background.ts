@@ -5,7 +5,7 @@ import {
   autoRefreshService,
   handleAutoRefreshMessage
 } from "../services/autoRefreshService"
-import { migrateAccountsConfig } from "../services/configMigration"
+import { migrateAccountsConfig } from "../services/configMigration/configMigration.ts"
 import { getSiteType } from "../services/detectSiteType"
 import { userPreferences } from "../services/userPreferences"
 import {

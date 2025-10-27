@@ -4,7 +4,7 @@ import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import {
   CURRENT_PREFERENCES_VERSION,
   migratePreferences
-} from "~/services/preferencesMigration"
+} from "~/services/configMigration/preferencesMigration.ts"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"

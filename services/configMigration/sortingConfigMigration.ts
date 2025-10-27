@@ -3,8 +3,8 @@
  * Handles version-based migrations for sorting priority configurations
  */
 
-import type { SortingPriorityConfig } from "~/types/sorting"
-import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
+import type { SortingPriorityConfig } from "~/types/sorting.ts"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
 
 // Current version of the sorting configuration schema
 export const CURRENT_SORTING_CONFIG_VERSION = 1

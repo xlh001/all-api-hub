@@ -3,8 +3,8 @@
  * Handles version-based migrations for UserPreferences configurations
  */
 
-import { migrateSortingConfig } from "./sortingConfigMigration"
-import type { UserPreferences } from "./userPreferences"
+import type { UserPreferences } from "../userPreferences.ts"
+import { migrateSortingConfig } from "./sortingConfigMigration.ts"
 
 // Current version of the preferences schema
 export const CURRENT_PREFERENCES_VERSION = 1
