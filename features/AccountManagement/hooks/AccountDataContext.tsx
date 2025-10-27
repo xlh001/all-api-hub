@@ -25,7 +25,7 @@ import type {
 } from "~/types"
 import {
   getActiveTabs,
-  getBrowserTabs,
+  getAllTabs,
   onRuntimeMessage,
   onTabActivated,
   onTabRemoved,
@@ -298,7 +298,7 @@ export const AccountDataProvider = ({
   // Check and match open tabs with accounts
   const checkOpenTabs = useCallback(async () => {
     try {
-      const tabs = await getBrowserTabs()
+      const tabs = await getAllTabs()
       if (!tabs || tabs.length === 0 || displayData.length === 0) {
         setMatchedAccountScores({})
         return
@@ -311,21 +311,18 @@ export const AccountDataProvider = ({
         if (!tab.url && !tab.title) continue
 
         // Combine URL and title for search query
-        const searchQuery = [tab.url, tab.title]
-          .filter(Boolean)
-          .join(" ")
-          .trim()
+        for (const searchQuery of [tab.url, tab.title]) {
+          if (!searchQuery) continue
 
-        if (!searchQuery) continue
+          // Search accounts using the combined query
+          const results = searchAccounts(displayData, searchQuery)
 
-        // Search accounts using the combined query
-        const results = searchAccounts(displayData, searchQuery)
-
-        // Accumulate scores for matched accounts
-        results.forEach((result) => {
-          const accountId = result.account.id
-          scores[accountId] = (scores[accountId] || 0) + result.score
-        })
+          // Accumulate scores for matched accounts
+          results.forEach((result) => {
+            const accountId = result.account.id
+            scores[accountId] = (scores[accountId] || 0) + result.score
+          })
+        }
       }
 
       setMatchedAccountScores(scores)

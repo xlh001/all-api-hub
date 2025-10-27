@@ -143,6 +143,7 @@ function applySortingCriteria(
  * @param userSortField The field selected by the user for sorting ('name', 'balance', 'consumption').
  * @param currencyType The currency type to use for sorting balance or consumption.
  * @param sortOrder The sort order ('asc' or 'desc').
+ * @param matchedAccountScores
  * @returns A comparator function for `Array.prototype.sort()`.
  */
 export function createDynamicSortComparator(
