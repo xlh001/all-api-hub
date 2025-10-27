@@ -18,7 +18,7 @@ The extension is built using the WXT framework and supports the following aggreg
 - **Framework**: WXT v0.20.6
 - **Language**: TypeScript
 - **UI**: React, Tailwind CSS v3, Headless UI
-- **State Management**: Zustand
+- **State Management**: React Context API
 - **Icons**: Heroicons, @lobehub/icons
 
 ## Common Development Tasks

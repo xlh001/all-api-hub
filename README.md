@@ -161,7 +161,7 @@ pnpm build
 - **样式**: [Tailwind CSS](https://tailwindcss.com)
 - **组件**: [Headless UI](https://headlessui.com)
 - **图标**: [Heroicons](https://heroicons.com)
-- **状态管理**: [Zustand](https://zustand-demo.pmnd.rs)
+- **状态管理**: React Context API
 - **类型检查**: [TypeScript](https://typescriptlang.org)
 
 ## 📄 许可证
