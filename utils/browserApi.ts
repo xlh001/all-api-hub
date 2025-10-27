@@ -62,7 +62,7 @@ export async function getActiveTab(): Promise<browser.tabs.Tab | null> {
  *
  * 返回一个浏览器标签页对象数组，如果未找到任何标签页，则返回一个空数组。
  */
-export async function getBrowserTabs() {
+export async function getActiveOrAllTabs() {
   let tabs
   tabs = await getActiveTabs()
   if (!isNotEmptyArray(tabs)) {

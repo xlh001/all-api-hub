@@ -10,8 +10,8 @@
 import { t } from "i18next"
 
 import {
+  getActiveOrAllTabs,
   getActiveTabs,
-  getBrowserTabs,
   sendRuntimeMessage
 } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
@@ -255,7 +255,7 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
   if (capabilities.hasTabs) {
     try {
       // 手机 不支持 currentWindow，需要 fallback
-      let tabs = await getBrowserTabs()
+      let tabs = await getActiveOrAllTabs()
       const currentTab = tabs.find((t) => t.active) ?? tabs[0]
 
       if (currentTab?.url) {
