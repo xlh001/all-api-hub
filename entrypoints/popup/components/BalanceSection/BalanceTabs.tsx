@@ -129,7 +129,7 @@ export const BalanceTabs: React.FC = () => {
 
         <TabPanels>
           <TabPanel>
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <BodySmall className="font-medium">
                   {t("account:stats.todayConsumption")}
