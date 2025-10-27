@@ -14,7 +14,7 @@ import { BodySmall, Caption, IconButton } from "~/components/ui"
 import { COLORS } from "~/constants/designTokens"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import {
-  openFullManagerPage,
+  openFullAccountManagerPage,
   openSettingsPage,
   openSidePanel
 } from "~/utils/navigation"
@@ -45,8 +45,8 @@ export default function HeaderSection() {
     }
   }, [handleRefresh, t])
 
-  const handleOpenFullManagerPage = () => {
-    openFullManagerPage()
+  const handleOpenFullAccountManagerPage = () => {
+    openFullAccountManagerPage()
   }
 
   const handleOpenSetting = () => {
@@ -91,12 +91,12 @@ export default function HeaderSection() {
           </IconButton>
         </Tooltip>
 
-        <Tooltip content={t("ui:navigation.home")}>
+        <Tooltip content={t("ui:navigation.account")}>
           <IconButton
-            onClick={handleOpenFullManagerPage}
+            onClick={handleOpenFullAccountManagerPage}
             variant="outline"
             size="sm"
-            aria-label={t("ui:navigation.home")}
+            aria-label={t("ui:navigation.account")}
             className="touch-manipulation">
             <ArrowsPointingOutIcon className="h-4 w-4" />
           </IconButton>

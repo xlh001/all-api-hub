@@ -164,7 +164,7 @@ const _openRedeemPage = async (account: DisplaySiteData) => {
 }
 
 // 导出带自动关闭的版本
-export const openFullManagerPage = withPopupClose(_openFullManagerPage)
+export const openFullAccountManagerPage = withPopupClose(_openFullManagerPage)
 export const openSettingsPage = withPopupClose(_openSettingsPage)
 export const openSidePanel = withPopupClose(_openSidePanel)
 export const openKeysPage = withPopupClose(_openKeysPage)
