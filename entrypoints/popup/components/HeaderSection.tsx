@@ -45,12 +45,16 @@ export default function HeaderSection() {
     }
   }, [handleRefresh, t])
 
-  const handleOpenFullAccountManagerPage = () => {
-    openFullAccountManagerPage()
+  const handleOpenFullAccountManagerPage = async () => {
+    await openFullAccountManagerPage()
   }
 
-  const handleOpenSetting = () => {
-    openSettingsPage()
+  const handleOpenSetting = async () => {
+    await openSettingsPage()
+  }
+
+  const handleOpenSidePanel = async () => {
+    await openSidePanel()
   }
 
   return (
@@ -117,7 +121,7 @@ export default function HeaderSection() {
             aria-label={t("common:actions.openSidePanel")}
             size="sm"
             variant="outline"
-            onClick={() => openSidePanel()}>
+            onClick={handleOpenSidePanel}>
             <PanelRightClose className="h-4 w-4" />
           </IconButton>
         </Tooltip>
