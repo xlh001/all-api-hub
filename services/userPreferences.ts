@@ -292,7 +292,54 @@ class UserPreferencesService {
 
   async getSortingPriorityConfig(): Promise<SortingPriorityConfig> {
     const prefs = await this.getPreferences()
-    return prefs.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG
+    const config = prefs.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG
+    
+    // Migrate old configs to include new sorting criteria
+    const migratedConfig = this.migrateSortingConfig(config)
+    
+    // Save migrated config if it was changed
+    if (migratedConfig !== config) {
+      await this.setSortingPriorityConfig(migratedConfig)
+    }
+    
+    return migratedConfig
+  }
+
+  /**
+   * Migrate old sorting configs to include new criteria
+   */
+  private migrateSortingConfig(config: SortingPriorityConfig): SortingPriorityConfig {
+    const existingIds = new Set(config.criteria.map(c => c.id))
+    const allIds = new Set(DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map(c => c.id))
+    
+    // Check if any new criteria are missing
+    const missingIds = [...allIds].filter(id => !existingIds.has(id))
+    
+    if (missingIds.length === 0) {
+      return config // No migration needed
+    }
+    
+    // Add missing criteria with default values
+    const newCriteria = [...config.criteria]
+    const maxPriority = Math.max(...newCriteria.map(c => c.priority), -1)
+    
+    missingIds.forEach((id, index) => {
+      const defaultCriterion = DEFAULT_SORTING_PRIORITY_CONFIG.criteria.find(c => c.id === id)
+      if (defaultCriterion) {
+        newCriteria.push({
+          ...defaultCriterion,
+          priority: maxPriority + index + 1,
+          enabled: true // Enable by default for backward compatibility
+        })
+      }
+    })
+    
+    return {
+      ...config,
+      criteria: newCriteria,
+      version: DEFAULT_SORTING_PRIORITY_CONFIG.version,
+      lastModified: Date.now()
+    }
   }
 
   async setSortingPriorityConfig(

@@ -25,11 +25,13 @@ export interface AugmentedSortingFieldConfig extends SortingFieldConfig {
 interface SortingPriorityDragListProps {
   items: AugmentedSortingFieldConfig[]
   onDragEnd: (event: DragEndEvent) => void
+  onToggleEnabled?: (id: string, enabled: boolean) => void
 }
 
 export function SortingPriorityDragList({
   items,
-  onDragEnd
+  onDragEnd,
+  onToggleEnabled
 }: SortingPriorityDragListProps) {
   // 自定义传感器配置，优化移动端体验
   const sensors = useSensors(
@@ -56,7 +58,7 @@ export function SortingPriorityDragList({
         items={items.map((i) => i.id)}
         strategy={verticalListSortingStrategy}>
         {items.map((item) => (
-          <SortingCriteriaItem key={item.id} item={item} />
+          <SortingCriteriaItem key={item.id} item={item} onToggleEnabled={onToggleEnabled} />
         ))}
       </SortableContext>
     </DndContext>

@@ -33,14 +33,24 @@ export const DEFAULT_SORTING_PRIORITY_CONFIG: SortingPriorityConfig = {
       priority: 2
     },
     {
-      id: SortingCriteriaType.USER_SORT_FIELD,
+      id: SortingCriteriaType.CUSTOM_CHECK_IN_URL,
       enabled: true,
       priority: 3
     },
     {
-      id: SortingCriteriaType.CUSTOM_CHECK_IN_URL,
+      id: SortingCriteriaType.CUSTOM_REDEEM_URL,
       enabled: true,
       priority: 4
+    },
+    {
+      id: SortingCriteriaType.MATCHED_OPEN_TABS,
+      enabled: true,
+      priority: 5
+    },
+    {
+      id: SortingCriteriaType.USER_SORT_FIELD,
+      enabled: true,
+      priority: 6
     }
   ],
   lastModified: Date.now()
@@ -77,7 +87,8 @@ function applySortingCriteria(
   detectedAccount: SiteAccount | null,
   userSortField: SortField,
   currencyType: CurrencyType,
-  sortOrder: "asc" | "desc"
+  sortOrder: "asc" | "desc",
+  matchedAccountScores: Record<string, number>
 ): number {
   switch (criteriaId) {
     case SortingCriteriaType.CURRENT_SITE:
@@ -97,9 +108,19 @@ function applySortingCriteria(
       return checkInA - checkInB
 
     case SortingCriteriaType.CUSTOM_CHECK_IN_URL:
-      const customUrlA = a?.checkIn?.customCheckInUrl || a?.checkIn?.customRedeemUrl ? 1 : 0
-      const customUrlB = b?.checkIn?.customCheckInUrl || b?.checkIn?.customRedeemUrl ? 1 : 0
-      return customUrlB - customUrlA
+      const customCheckInA = a?.checkIn?.customCheckInUrl ? 1 : 0
+      const customCheckInB = b?.checkIn?.customCheckInUrl ? 1 : 0
+      return customCheckInB - customCheckInA
+
+    case SortingCriteriaType.CUSTOM_REDEEM_URL:
+      const customRedeemA = a?.checkIn?.customRedeemUrl ? 1 : 0
+      const customRedeemB = b?.checkIn?.customRedeemUrl ? 1 : 0
+      return customRedeemB - customRedeemA
+
+    case SortingCriteriaType.MATCHED_OPEN_TABS:
+      const scoreA = matchedAccountScores[a.id] || 0
+      const scoreB = matchedAccountScores[b.id] || 0
+      return scoreB - scoreA // Higher score = higher priority
 
     case SortingCriteriaType.USER_SORT_FIELD:
       return compareByUserSortField(
@@ -129,7 +150,8 @@ export function createDynamicSortComparator(
   detectedAccount: SiteAccount | null,
   userSortField: SortField,
   currencyType: CurrencyType,
-  sortOrder: "asc" | "desc"
+  sortOrder: "asc" | "desc",
+  matchedAccountScores: Record<string, number> = {}
 ) {
   return (a: DisplaySiteData, b: DisplaySiteData): number => {
     const enabledCriteria = config.criteria
@@ -144,7 +166,8 @@ export function createDynamicSortComparator(
         detectedAccount,
         userSortField,
         currencyType,
-        sortOrder
+        sortOrder,
+        matchedAccountScores
       )
       if (comparison !== 0) return comparison
     }

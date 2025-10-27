@@ -38,8 +38,12 @@
     "checkInDesc": "将需要签到的站点排在前面",
     "userCustomSort": "用户自定义排序",
     "customSortDesc": "根据用户在列表视图中选择的字段（如余额）进行排序",
-    "customCheckInUrl": "自定义签到/兑换链接",
-    "customCheckInDesc": "将使用自定义签到或兑换链接的站点排在前面",
+    "customCheckInUrl": "自定义签到链接",
+    "customCheckInDesc": "将使用自定义签到链接的站点排在前面",
+    "customRedeemUrl": "自定义兑换链接",
+    "customRedeemDesc": "将使用自定义兑换链接的站点排在前面",
+    "matchedOpenTabs": "匹配的打开标签页",
+    "matchedOpenTabsDesc": "将与任意打开标签页（标题或URL）匹配的站点排在前面",
     "unknownSortRule": "未知排序规则"
   },
   "newApi": {

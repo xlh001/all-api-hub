@@ -38,8 +38,12 @@
     "checkInDesc": "Place sites that need check-in at the front",
     "userCustomSort": "User Custom Sort",
     "customSortDesc": "Sort according to the field (such as balance) selected by the user in the list view",
-    "customCheckInUrl": "Custom Check-in/Redeem URL",
-    "customCheckInDesc": "Place sites using custom check-in or redeem links at the front",
+    "customCheckInUrl": "Custom Check-in URL",
+    "customCheckInDesc": "Place sites using custom check-in links at the front",
+    "customRedeemUrl": "Custom Redeem URL",
+    "customRedeemDesc": "Place sites using custom redeem links at the front",
+    "matchedOpenTabs": "Matched Open Tabs",
+    "matchedOpenTabsDesc": "Place sites that match any open tab (by title or URL) at the front",
     "unknownSortRule": "Unknown sorting rule"
   },
   "newApi": {

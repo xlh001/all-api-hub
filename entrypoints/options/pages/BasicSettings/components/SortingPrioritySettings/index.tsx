@@ -34,6 +34,14 @@ const getSortingCriteriaUiText = (
   [SortingCriteriaType.CUSTOM_CHECK_IN_URL]: {
     label: t("settings:sorting.customCheckInUrl"),
     description: t("settings:sorting.customCheckInDesc")
+  },
+  [SortingCriteriaType.CUSTOM_REDEEM_URL]: {
+    label: t("settings:sorting.customRedeemUrl"),
+    description: t("settings:sorting.customRedeemDesc")
+  },
+  [SortingCriteriaType.MATCHED_OPEN_TABS]: {
+    label: t("settings:sorting.matchedOpenTabs"),
+    description: t("settings:sorting.matchedOpenTabsDesc")
   }
 })
 
@@ -82,6 +90,26 @@ export default function SortingPrioritySettings() {
     }
   }
 
+  const handleToggleEnabled = async (id: string, enabled: boolean) => {
+    const updatedItems = items.map((item) =>
+      item.id === id ? { ...item, enabled } : item
+    )
+
+    setItems(updatedItems)
+
+    // 立即保存
+    if (initialConfig) {
+      const success = await updateSortingPriorityConfig({
+        ...initialConfig,
+        criteria: updatedItems,
+        lastModified: Date.now()
+      })
+      if (success) {
+        showUpdateToast(success, t("sorting.title"))
+      }
+    }
+  }
+
   if (isLoading) {
     return <div>{t("common:status.loading")}</div>
   }
@@ -105,6 +133,7 @@ export default function SortingPrioritySettings() {
           <SortingPriorityDragList
             items={augmentedItems}
             onDragEnd={handleDragEnd}
+            onToggleEnabled={handleToggleEnabled}
           />
         </CardContent>
       </Card>
