@@ -115,65 +115,64 @@ export const BalanceTabs: React.FC = () => {
   }
 
   return (
-    <div>
-      <TabGroup
-        selectedIndex={activeTab === DATA_TYPE_CONSUMPTION ? 0 : 1}
-        onChange={handleTabChange}>
-        <div className="mb-3 flex justify-start">
-          <TabList
-            className={`flex space-x-1 ${COLORS.background.tertiary} rounded-lg p-1`}>
-            <StyledTab>{t("account:stats.todayConsumption")}</StyledTab>
-            <StyledTab>{t("account:stats.totalBalance")}</StyledTab>
-          </TabList>
-        </div>
+    <TabGroup
+      selectedIndex={activeTab === DATA_TYPE_CONSUMPTION ? 0 : 1}
+      onChange={handleTabChange}
+      className="space-y-2">
+      <div className="flex justify-start">
+        <TabList
+          className={`flex space-x-1 ${COLORS.background.tertiary} rounded-lg p-1`}>
+          <StyledTab>{t("account:stats.todayConsumption")}</StyledTab>
+          <StyledTab>{t("account:stats.totalBalance")}</StyledTab>
+        </TabList>
+      </div>
 
-        <TabPanels>
-          <TabPanel>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <BodySmall className="font-medium">
-                  {t("account:stats.todayConsumption")}
-                </BodySmall>
-                <BalanceDisplay
-                  value={totalConsumption[currencyType]}
-                  startValue={
-                    isInitialLoad ? 0 : prevTotalConsumption[currencyType]
-                  }
-                  isInitialLoad={isInitialLoad}
-                  currencyType={currencyType}
-                  onCurrencyToggle={handleCurrencyToggle}
-                  isConsumption
-                  compact
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <BodySmall className="font-medium">
-                  {t("account:stats.todayIncome")}
-                </BodySmall>
-                <BalanceDisplay
-                  value={totalIncome[currencyType]}
-                  startValue={0}
-                  isInitialLoad={isInitialLoad}
-                  currencyType={currencyType}
-                  onCurrencyToggle={handleCurrencyToggle}
-                  isConsumption={false}
-                  compact
-                />
-              </div>
+      <TabPanels>
+        <TabPanel>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <BodySmall className="font-medium">
+                {t("account:stats.todayConsumption")}
+              </BodySmall>
+              <BalanceDisplay
+                value={totalConsumption[currencyType]}
+                startValue={
+                  isInitialLoad ? 0 : prevTotalConsumption[currencyType]
+                }
+                isInitialLoad={isInitialLoad}
+                currencyType={currencyType}
+                onCurrencyToggle={handleCurrencyToggle}
+                isConsumption
+                compact
+              />
             </div>
-          </TabPanel>
+            <div className="flex items-center justify-between">
+              <BodySmall className="font-medium">
+                {t("account:stats.todayIncome")}
+              </BodySmall>
+              <BalanceDisplay
+                value={totalIncome[currencyType]}
+                startValue={0}
+                isInitialLoad={isInitialLoad}
+                currencyType={currencyType}
+                onCurrencyToggle={handleCurrencyToggle}
+                isConsumption={false}
+                compact
+              />
+            </div>
+          </div>
+        </TabPanel>
 
-          <TabPanel>
-            <BalanceDisplay
-              value={totalBalance[currencyType]}
-              startValue={0}
-              isInitialLoad={isInitialLoad}
-              currencyType={currencyType}
-              onCurrencyToggle={handleCurrencyToggle}
-            />
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
-    </div>
+        <TabPanel>
+          <BalanceDisplay
+            value={totalBalance[currencyType]}
+            startValue={0}
+            isInitialLoad={isInitialLoad}
+            currencyType={currencyType}
+            onCurrencyToggle={handleCurrencyToggle}
+          />
+        </TabPanel>
+      </TabPanels>
+    </TabGroup>
   )
 }
