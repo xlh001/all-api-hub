@@ -1,6 +1,7 @@
-import React from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { Bars2Icon } from "@heroicons/react/24/outline"
+import React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Badge, Card, CardContent, Switch } from "~/components/ui"
@@ -12,7 +13,10 @@ interface SortingCriteriaItemProps {
   onToggleEnabled?: (id: string, enabled: boolean) => void
 }
 
-export function SortingCriteriaItem({ item, onToggleEnabled }: SortingCriteriaItemProps) {
+export function SortingCriteriaItem({
+  item,
+  onToggleEnabled
+}: SortingCriteriaItemProps) {
   const { t } = useTranslation("settings")
   const {
     attributes,
@@ -49,18 +53,7 @@ export function SortingCriteriaItem({ item, onToggleEnabled }: SortingCriteriaIt
             {...attributes}
             {...listeners}
             className="mr-1 flex cursor-move touch-none items-center text-gray-400 hover:text-gray-600 dark:text-dark-text-tertiary dark:hover:text-dark-text-secondary">
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 8h16M4 16h16"
-              />
-            </svg>
+            <Bars2Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-grow">
             <div className="truncate text-sm font-medium text-gray-900 dark:text-dark-text-primary">
