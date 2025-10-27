@@ -4,7 +4,11 @@ import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
-import { migrateSortingConfig } from "~/services/sortingConfigMigration"
+import {
+  CURRENT_PREFERENCES_VERSION,
+  migratePreferences
+} from "~/services/preferencesMigration"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 用户偏好设置类型定义
 export interface UserPreferences {
@@ -42,6 +46,9 @@ export interface UserPreferences {
   sortingPriorityConfig?: SortingPriorityConfig
   themeMode: ThemeMode
   language?: string // Added language preference
+  
+  // Configuration version for migration tracking
+  preferencesVersion?: number
 }
 
 // 存储键名常量
@@ -72,7 +79,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   newApiUserId: "",
   sortingPriorityConfig: undefined,
   themeMode: "system",
-  language: undefined // Default to undefined to trigger browser detection
+  language: undefined, // Default to undefined to trigger browser detection
+  preferencesVersion: CURRENT_PREFERENCES_VERSION
 }
 
 class UserPreferencesService {
@@ -89,10 +97,20 @@ class UserPreferencesService {
    */
   async getPreferences(): Promise<UserPreferences> {
     try {
-      const preferences = (await this.storage.get(
+      const storedPreferences = (await this.storage.get(
         STORAGE_KEYS.USER_PREFERENCES
-      )) as UserPreferences
-      return preferences || DEFAULT_PREFERENCES
+      )) as UserPreferences | undefined
+      const preferences = storedPreferences || DEFAULT_PREFERENCES
+
+      // Run migrations if needed
+      const migratedPreferences = migratePreferences(preferences)
+
+      // If migration changed preferences, save the updated version
+      if (migratedPreferences !== storedPreferences) {
+        await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, migratedPreferences)
+      }
+
+      return migratedPreferences
     } catch (error) {
       console.error("获取用户偏好设置失败:", error)
       return DEFAULT_PREFERENCES
@@ -110,9 +128,10 @@ class UserPreferencesService {
       const updatedPreferences: UserPreferences = {
         ...currentPreferences,
         ...preferences,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
+        preferencesVersion: CURRENT_PREFERENCES_VERSION
       }
-
+      
       await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, updatedPreferences)
       console.log("[UserPreferences] 偏好设置保存成功:", updatedPreferences)
       return true
@@ -278,11 +297,14 @@ class UserPreferencesService {
    */
   async importPreferences(preferences: UserPreferences): Promise<boolean> {
     try {
+      // Migrate imported preferences to ensure compatibility
+      const migratedPreferences = migratePreferences(preferences)
+      
       await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, {
-        ...preferences,
+        ...migratedPreferences,
         lastUpdated: Date.now()
       })
-      console.log("[UserPreferences] 偏好设置导入成功")
+      console.log("[UserPreferences] 偏好设置导入成功，已迁移至最新版本")
       return true
     } catch (error) {
       console.error("[UserPreferences] 导入偏好设置失败:", error)
@@ -292,25 +314,15 @@ class UserPreferencesService {
 
   async getSortingPriorityConfig(): Promise<SortingPriorityConfig> {
     const prefs = await this.getPreferences()
-    const config = prefs.sortingPriorityConfig
-    
-    // Migrate old configs to include new sorting criteria
-    const migratedConfig = migrateSortingConfig(config)
-    
-    // Save migrated config if it was changed
-    if (migratedConfig !== config) {
-      await this.setSortingPriorityConfig(migratedConfig)
-    }
-    
-    return migratedConfig
+    // Migrations are already handled in getPreferences()
+    return prefs.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG
   }
 
   async setSortingPriorityConfig(
     config: SortingPriorityConfig
   ): Promise<boolean> {
-    const normalizedConfig = migrateSortingConfig(config)
-    normalizedConfig.lastModified = Date.now()
-    return this.savePreferences({ sortingPriorityConfig: normalizedConfig })
+    config.lastModified = Date.now()
+    return this.savePreferences({ sortingPriorityConfig: config })
   }
 
   async resetSortingPriorityConfig(): Promise<boolean> {

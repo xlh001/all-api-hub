@@ -7,6 +7,7 @@ import {
 } from "../services/autoRefreshService"
 import { migrateAccountsConfig } from "../services/configMigration"
 import { getSiteType } from "../services/detectSiteType"
+import { userPreferences } from "../services/userPreferences"
 import {
   handleWebdavAutoSyncMessage,
   webdavAutoSyncService
@@ -38,6 +39,9 @@ function main() {
     console.log("[Background] 插件启动，初始化自动刷新服务和WebDAV自动同步服务")
     await autoRefreshService.initialize()
     await webdavAutoSyncService.initialize()
+
+    // Ensure user preferences are migrated on startup
+    await userPreferences.getPreferences()
   })
 
   // 插件安装时初始化自动刷新服务和WebDAV自动同步服务
@@ -50,6 +54,10 @@ function main() {
 
     if (details.reason === "install" || details.reason === "update") {
       console.log(`Extension ${details.reason}: triggering config migration`)
+
+      // Migrate user preferences
+      await userPreferences.getPreferences()
+      console.log("[Background] User preferences migration completed")
 
       // Load all accounts and migrate
       const accounts = await accountStorage.getAllAccounts()
