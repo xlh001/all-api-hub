@@ -26,6 +26,7 @@ export default function AccountSearchInput({
     <div className="relative">
       <Input
         type="text"
+        size="sm"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
