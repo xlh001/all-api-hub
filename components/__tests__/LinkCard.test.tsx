@@ -1,6 +1,8 @@
-import { describe, it, expect } from "vitest"
-import { render, screen } from "~/tests/test-utils/render"
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
+import { describe, expect, it } from "vitest"
+
+import { render, screen } from "~/tests/test-utils/render"
+
 import LinkCard from "../LinkCard"
 
 describe("LinkCard", () => {
@@ -16,9 +18,7 @@ describe("LinkCard", () => {
     render(<LinkCard {...defaultProps} />)
 
     expect(await screen.findByText("Test Title")).toBeInTheDocument()
-    expect(
-      await screen.findByText("Test description text")
-    ).toBeInTheDocument()
+    expect(await screen.findByText("Test description text")).toBeInTheDocument()
     expect(await screen.findByText("Click Me")).toBeInTheDocument()
   })
 

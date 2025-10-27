@@ -1,11 +1,10 @@
-import type { ReactElement, ReactNode } from "react"
 import { render, type RenderOptions } from "@testing-library/react"
+import type { ReactElement, ReactNode } from "react"
 import { I18nextProvider } from "react-i18next"
 
 import { DeviceProvider } from "~/contexts/DeviceContext"
 import { ThemeProvider } from "~/contexts/ThemeContext"
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
-
 import testI18n from "~/tests/test-utils/i18n"
 
 interface AppProvidersProps {

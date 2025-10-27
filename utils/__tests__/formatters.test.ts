@@ -1,14 +1,16 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
+
+import type { CurrencyType } from "~/types"
+
 import {
+  createSortComparator,
   formatTokenCount,
-  normalizeToMs,
-  normalizeToDate,
   generateId,
   getCurrencySymbol,
   getOppositeCurrency,
-  createSortComparator
+  normalizeToDate,
+  normalizeToMs
 } from "../formatters"
-import type { CurrencyType } from "~/types"
 
 describe("formatters utilities", () => {
   describe("formatTokenCount", () => {

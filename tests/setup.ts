@@ -1,8 +1,12 @@
 import "@testing-library/jest-dom/vitest"
+
 import { cleanup, configure } from "@testing-library/react"
+
 import "whatwg-fetch"
+
 import { afterAll, afterEach, beforeAll, vi } from "vitest"
 import { resetContext } from "vitest-webextension-mock"
+
 import "vitest-webextension-mock"
 
 import { server } from "./msw/server"

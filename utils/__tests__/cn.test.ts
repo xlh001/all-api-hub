@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
+
 import { cn } from "../cn"
 
 describe("cn utility", () => {
@@ -9,7 +10,11 @@ describe("cn utility", () => {
   })
 
   it("should handle conditional classes", () => {
-    const result = cn("base-class", true && "conditional-class", false && "hidden")
+    const result = cn(
+      "base-class",
+      true && "conditional-class",
+      false && "hidden"
+    )
     expect(result).toContain("base-class")
     expect(result).toContain("conditional-class")
     expect(result).not.toContain("hidden")
@@ -37,9 +42,9 @@ describe("cn utility", () => {
 
   it("should handle objects with boolean values", () => {
     const result = cn({
-      "class1": true,
-      "class2": false,
-      "class3": true
+      class1: true,
+      class2: false,
+      class3: true
     })
     expect(result).toContain("class1")
     expect(result).not.toContain("class2")
