@@ -90,6 +90,7 @@ export default function AccountList() {
       onClick={() => handleSort(field)}
       variant="ghost"
       size="none"
+      disabled={isSearching}
       aria-label={`${t("account:list.sort")} ${label}`}
       className="space-x-0.5 text-[10px] font-medium sm:space-x-1 sm:text-xs">
       <span>{label}</span>
@@ -115,7 +116,7 @@ export default function AccountList() {
         </div>
 
         {/* Header */}
-        {!isSearching && (
+        {
           <div className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary sm:px-5">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
               {/* Account Name Column */}
@@ -146,7 +147,7 @@ export default function AccountList() {
               </div>
             </div>
           </div>
-        )}
+        }
 
         {/* Account List or No Results */}
         {isSearching && displayedResults.length === 0 ? (
