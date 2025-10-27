@@ -1,7 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Bars2Icon } from "@heroicons/react/24/outline"
-import React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Badge, Card, CardContent, Switch } from "~/components/ui"
@@ -33,13 +32,6 @@ export function SortingCriteriaItem({
     opacity: isDragging ? 0.5 : 1
   }
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (onToggleEnabled) {
-      onToggleEnabled(item.id, !item.enabled)
-    }
-  }
-
   return (
     <Card
       ref={setNodeRef}
@@ -67,13 +59,11 @@ export function SortingCriteriaItem({
             <Badge variant="default" size="sm">
               {t(`sorting.priority`)}: {item.priority + 1}
             </Badge>
-            <div onClick={handleToggle}>
-              <Switch
-                checked={item.enabled}
-                onChange={(checked) => onToggleEnabled?.(item.id, checked)}
-                size="sm"
-              />
-            </div>
+            <Switch
+              checked={item.enabled}
+              onChange={(checked) => onToggleEnabled?.(item.id, checked)}
+              size="sm"
+            />
           </div>
         </div>
       </CardContent>
