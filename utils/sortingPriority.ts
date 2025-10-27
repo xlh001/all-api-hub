@@ -22,28 +22,28 @@ export const DEFAULT_SORTING_PRIORITY_CONFIG: SortingPriorityConfig = {
       priority: 0
     },
     {
-      id: SortingCriteriaType.HEALTH_STATUS,
+      id: SortingCriteriaType.CHECK_IN_REQUIREMENT,
       enabled: true,
       priority: 1
     },
     {
-      id: SortingCriteriaType.CHECK_IN_REQUIREMENT,
+      id: SortingCriteriaType.MATCHED_OPEN_TABS,
       enabled: true,
       priority: 2
     },
     {
-      id: SortingCriteriaType.CUSTOM_CHECK_IN_URL,
+      id: SortingCriteriaType.HEALTH_STATUS,
       enabled: true,
       priority: 3
     },
     {
-      id: SortingCriteriaType.CUSTOM_REDEEM_URL,
-      enabled: false,
+      id: SortingCriteriaType.CUSTOM_CHECK_IN_URL,
+      enabled: true,
       priority: 4
     },
     {
-      id: SortingCriteriaType.MATCHED_OPEN_TABS,
-      enabled: false,
+      id: SortingCriteriaType.CUSTOM_REDEEM_URL,
+      enabled: true,
       priority: 5
     },
     {
