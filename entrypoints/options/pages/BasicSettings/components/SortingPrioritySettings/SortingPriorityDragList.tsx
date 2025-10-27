@@ -58,7 +58,11 @@ export function SortingPriorityDragList({
         items={items.map((i) => i.id)}
         strategy={verticalListSortingStrategy}>
         {items.map((item) => (
-          <SortingCriteriaItem key={item.id} item={item} onToggleEnabled={onToggleEnabled} />
+          <SortingCriteriaItem
+            key={item.id}
+            item={item}
+            onToggleEnabled={onToggleEnabled}
+          />
         ))}
       </SortableContext>
     </DndContext>

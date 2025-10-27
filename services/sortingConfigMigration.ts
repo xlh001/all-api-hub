@@ -42,7 +42,9 @@ export function migrateSortingConfig(
   }
 
   const existingIds = new Set(config.criteria.map((c) => c.id))
-  const allIds = new Set(DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => c.id))
+  const allIds = new Set(
+    DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => c.id)
+  )
 
   // Check if any new criteria are missing
   const missingIds = [...allIds].filter((id) => !existingIds.has(id))

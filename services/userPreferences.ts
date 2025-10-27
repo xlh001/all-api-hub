@@ -1,13 +1,13 @@
 import { Storage } from "@plasmohq/storage"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
-import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
-import type { SortingPriorityConfig } from "~/types/sorting"
-import type { ThemeMode } from "~/types/theme"
 import {
   CURRENT_PREFERENCES_VERSION,
   migratePreferences
 } from "~/services/preferencesMigration"
+import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
+import type { SortingPriorityConfig } from "~/types/sorting"
+import type { ThemeMode } from "~/types/theme"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 用户偏好设置类型定义
@@ -46,7 +46,7 @@ export interface UserPreferences {
   sortingPriorityConfig?: SortingPriorityConfig
   themeMode: ThemeMode
   language?: string // Added language preference
-  
+
   // Configuration version for migration tracking
   preferencesVersion?: number
 }
@@ -107,7 +107,10 @@ class UserPreferencesService {
 
       // If migration changed preferences, save the updated version
       if (migratedPreferences !== storedPreferences) {
-        await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, migratedPreferences)
+        await this.storage.set(
+          STORAGE_KEYS.USER_PREFERENCES,
+          migratedPreferences
+        )
       }
 
       return migratedPreferences
@@ -131,7 +134,7 @@ class UserPreferencesService {
         lastUpdated: Date.now(),
         preferencesVersion: CURRENT_PREFERENCES_VERSION
       }
-      
+
       await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, updatedPreferences)
       console.log("[UserPreferences] 偏好设置保存成功:", updatedPreferences)
       return true
@@ -299,7 +302,7 @@ class UserPreferencesService {
     try {
       // Migrate imported preferences to ensure compatibility
       const migratedPreferences = migratePreferences(preferences)
-      
+
       await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, {
         ...migratedPreferences,
         lastUpdated: Date.now()
