@@ -42,7 +42,7 @@ export default function ActionButtons() {
         <Button
           onClick={handleAddAccountClick}
           className="flex-1 touch-manipulation"
-          size="sm"
+          size="default"
           leftIcon={<PlusIcon className="h-4 w-4" />}>
           {t("account:addAccount")}
         </Button>
@@ -51,7 +51,7 @@ export default function ActionButtons() {
           <IconButton
             onClick={handleOpenKeysPageClick}
             variant="outline"
-            size="sm"
+            size="default"
             className="touch-manipulation"
             aria-label={t("ui:navigation.keys")}>
             <KeyIcon className="h-4 w-4" />
@@ -62,7 +62,7 @@ export default function ActionButtons() {
           <IconButton
             onClick={handleOpenModelsPageClick}
             variant="outline"
-            size="sm"
+            size="default"
             className="touch-manipulation"
             aria-label={t("ui:navigation.models")}>
             <CpuChipIcon className="h-4 w-4" />
