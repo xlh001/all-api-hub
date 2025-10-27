@@ -145,6 +145,23 @@ pnpm dev
 
 然后在浏览器中加载 `.output/chrome-mv3-dev` 目录作为扩展程序。
 
+### 测试
+
+Vitest 已集成用于单元测试与组件测试，默认在 jsdom 环境中运行。
+
+```bash
+# 运行全部测试
+pnpm test
+
+# 在 watch 模式下运行测试
+pnpm test:watch
+
+# 在 CI 中运行并生成覆盖率
+pnpm test:ci
+```
+
+GitHub Actions 会在每次 Pull Request 上自动运行 `pnpm test:ci` 并上传覆盖率报告。
+
 ### 构建生产版本
 
 ```bash

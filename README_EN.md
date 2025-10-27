@@ -150,6 +150,23 @@ npm run dev
 
 Then, load the `build/chrome-mv3-dev` directory as an unpacked extension in your browser.
 
+### Testing
+
+The project uses Vitest for unit and component tests with a jsdom environment.
+
+```bash
+# Run all tests
+pnpm test
+
+# Watch mode for faster iteration
+pnpm test:watch
+
+# Run in CI mode with coverage
+pnpm test:ci
+```
+
+GitHub Actions automatically runs `pnpm test:ci` on pull requests and uploads coverage reports as workflow artifacts.
+
 ### Building for Production
 
 ```bash
