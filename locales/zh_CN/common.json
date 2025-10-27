@@ -13,7 +13,8 @@
     "retry": "重试",
     "export": "导出",
     "import": "导入",
-    "more": "更多"
+    "more": "更多",
+    "clear": "清空"
   },
   "status": {
     "loading": "加载中...",

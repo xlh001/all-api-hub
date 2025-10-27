@@ -13,7 +13,8 @@
     "retry": "Retry",
     "export": "Export",
     "import": "Import",
-    "more": "More"
+    "more": "More",
+    "clear": "Clear"
   },
   "status": {
     "loading": "Loading...",
