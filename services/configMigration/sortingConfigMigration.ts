@@ -6,9 +6,6 @@
 import type { SortingPriorityConfig } from "~/types/sorting.ts"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
 
-// Current version of the sorting configuration schema
-export const CURRENT_SORTING_CONFIG_VERSION = 1
-
 /**
  * Check if a sorting config needs migration
  */
@@ -16,17 +13,9 @@ export function needsSortingConfigMigration(
   config: SortingPriorityConfig | undefined
 ): boolean {
   if (!config) return false
-  const currentVersion = config.version ?? 0
-  return currentVersion < CURRENT_SORTING_CONFIG_VERSION
-}
-
-/**
- * Get the version of a sorting configuration
- */
-export function getSortingConfigVersion(
-  config: SortingPriorityConfig | undefined
-): number {
-  return config?.version ?? 0
+  return (
+    config.criteria.length != DEFAULT_SORTING_PRIORITY_CONFIG.criteria.length
+  )
 }
 
 /**
@@ -41,6 +30,11 @@ export function migrateSortingConfig(
     return DEFAULT_SORTING_PRIORITY_CONFIG
   }
 
+  // If no migration is needed, return the config as is
+  if (!needsSortingConfigMigration(config)) {
+    return config
+  }
+
   const existingIds = new Set(config.criteria.map((c) => c.id))
   const allIds = new Set(
     DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => c.id)
@@ -50,14 +44,6 @@ export function migrateSortingConfig(
   const missingIds = [...allIds].filter((id) => !existingIds.has(id))
 
   if (missingIds.length === 0) {
-    // No new criteria to add, but update version if needed
-    if (config.version !== CURRENT_SORTING_CONFIG_VERSION) {
-      return {
-        ...config,
-        version: CURRENT_SORTING_CONFIG_VERSION,
-        lastModified: Date.now()
-      }
-    }
     return config
   }
 
@@ -84,12 +70,11 @@ export function migrateSortingConfig(
   const migratedConfig: SortingPriorityConfig = {
     ...config,
     criteria: newCriteria,
-    version: CURRENT_SORTING_CONFIG_VERSION,
     lastModified: Date.now()
   }
 
   console.log(
-    `[SortingConfigMigration] Migrated sorting config to v${CURRENT_SORTING_CONFIG_VERSION}, added ${missingIds.length} new criteria`
+    `[SortingConfigMigration] Migrated sorting config, added ${missingIds.length} new criteria`
   )
 
   return migratedConfig
