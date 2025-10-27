@@ -74,5 +74,9 @@
     "modelManagement": "模型管理",
     "usageLog": "用量日志",
     "redeemPage": "充值页面"
+  },
+  "search": {
+    "placeholder": "搜索名称/地址/签到/兑换/令牌",
+    "noResults": "未找到匹配的账户"
   }
 }

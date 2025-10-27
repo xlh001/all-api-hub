@@ -1,7 +1,10 @@
 import {
+  ArrowPathIcon,
   CheckCircleIcon,
   CurrencyYenIcon,
   ExclamationTriangleIcon,
+  GiftIcon,
+  LinkIcon,
   PencilSquareIcon,
   UserIcon,
   XCircleIcon
@@ -13,6 +16,10 @@ import { Badge, BodySmall, Caption, IconButton } from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
+import type {
+  HighlightFragment,
+  SearchResultWithHighlight
+} from "~/features/AccountManagement/hooks/useAccountSearch"
 import {
   getHealthStatusDisplay,
   getStatusIndicatorColor
@@ -26,9 +33,31 @@ import {
 
 interface SiteInfoProps {
   site: DisplaySiteData
+  highlights?: SearchResultWithHighlight["highlights"]
 }
 
-export default function SiteInfo({ site }: SiteInfoProps) {
+function renderHighlightedFragments(
+  fragments: HighlightFragment[] | undefined,
+  fallback: string
+) {
+  if (!fragments || fragments.length === 0) {
+    return fallback
+  }
+
+  return fragments.map((fragment, index) =>
+    fragment.highlighted ? (
+      <mark
+        key={`${fragment.text}-${index}`}
+        className="rounded bg-yellow-200 px-0.5 text-gray-900 dark:bg-yellow-500/30 dark:text-dark-text-primary">
+        {fragment.text}
+      </mark>
+    ) : (
+      <span key={`${fragment.text}-${index}`}>{fragment.text}</span>
+    )
+  )
+}
+
+export default function SiteInfo({ site, highlights }: SiteInfoProps) {
   const { t } = useTranslation("account")
   const { detectedAccount } = useAccountDataContext()
   const { handleRefreshAccount, refreshingAccountId, handleMarkAsCheckedIn } =
@@ -211,7 +240,7 @@ export default function SiteInfo({ site }: SiteInfoProps) {
               className="block min-w-0 truncate"
               title={site.name}>
               <BodySmall weight="medium" className="truncate">
-                {site.name}
+                {renderHighlightedFragments(highlights?.name, site.name)}
               </BodySmall>
             </a>
           </div>
@@ -229,6 +258,42 @@ export default function SiteInfo({ site }: SiteInfoProps) {
             {site.username}
           </Caption>
         </div>
+
+        {/* Highlighted Base URL */}
+        {highlights?.baseUrl && (
+          <div className="ml-3 mt-0.5 flex min-w-0 items-start gap-1 sm:ml-4">
+            <LinkIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
+            <Caption className="truncate" title={site.baseUrl}>
+              {renderHighlightedFragments(highlights.baseUrl, site.baseUrl)}
+            </Caption>
+          </div>
+        )}
+
+        {/* Highlighted Custom Check-in URL */}
+        {highlights?.customCheckInUrl && site.checkIn?.customCheckInUrl && (
+          <div className="ml-3 mt-0.5 flex min-w-0 items-start gap-1 sm:ml-4">
+            <ArrowPathIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
+            <Caption className="truncate" title={site.checkIn.customCheckInUrl}>
+              {renderHighlightedFragments(
+                highlights.customCheckInUrl,
+                site.checkIn.customCheckInUrl
+              )}
+            </Caption>
+          </div>
+        )}
+
+        {/* Highlighted Custom Redeem URL */}
+        {highlights?.customRedeemUrl && site.checkIn?.customRedeemUrl && (
+          <div className="ml-3 mt-0.5 flex min-w-0 items-start gap-1 sm:ml-4">
+            <GiftIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
+            <Caption className="truncate" title={site.checkIn.customRedeemUrl}>
+              {renderHighlightedFragments(
+                highlights.customRedeemUrl,
+                site.checkIn.customRedeemUrl
+              )}
+            </Caption>
+          </div>
+        )}
 
         {/* Notes */}
         {site.notes && (

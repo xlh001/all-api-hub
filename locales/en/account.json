@@ -74,5 +74,9 @@
     "modelManagement": "Model Management",
     "usageLog": "Usage Log",
     "redeemPage": "Redeem/Top-up"
+  },
+  "search": {
+    "placeholder": "Search name/URL/check-in/redeem/token",
+    "noResults": "No matching accounts found"
   }
 }
