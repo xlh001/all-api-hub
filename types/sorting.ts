@@ -1,11 +1,11 @@
-// types/sorting.ts
-
 // Enum for sorting criteria identifiers
 export enum SortingCriteriaType {
   CURRENT_SITE = "current_site",
   HEALTH_STATUS = "health_status",
   CHECK_IN_REQUIREMENT = "check_in_requirement",
   CUSTOM_CHECK_IN_URL = "custom_check_in_url",
+  CUSTOM_REDEEM_URL = "custom_redeem_url",
+  MATCHED_OPEN_TABS = "matched_open_tabs",
   USER_SORT_FIELD = "user_sort_field"
 }
 
@@ -19,7 +19,6 @@ export interface SortingFieldConfig {
 
 // Complete sorting configuration
 export interface SortingPriorityConfig {
-  version: number // For future migrations (currently 1)
   criteria: SortingFieldConfig[]
   lastModified: number // Timestamp
 }

@@ -1,16 +1,21 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { Bars2Icon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { Badge, Card, CardContent } from "~/components/ui"
+import { Badge, Card, CardContent, Switch } from "~/components/ui"
 
 import type { AugmentedSortingFieldConfig } from "./SortingPriorityDragList"
 
 interface SortingCriteriaItemProps {
   item: AugmentedSortingFieldConfig
+  onToggleEnabled?: (id: string, enabled: boolean) => void
 }
 
-export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
+export function SortingCriteriaItem({
+  item,
+  onToggleEnabled
+}: SortingCriteriaItemProps) {
   const { t } = useTranslation("settings")
   const {
     attributes,
@@ -31,14 +36,18 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
     <Card
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       variant="default"
       padding="none"
-      className="mb-2 cursor-move touch-none transition-colors hover:bg-gray-100 dark:hover:bg-dark-bg-secondary">
+      className="mb-2 transition-colors hover:bg-gray-100 dark:hover:bg-dark-bg-secondary">
       <CardContent padding="sm">
-        <div className="flex items-center">
-          <div className="mr-2 min-w-0 flex-grow sm:mr-3">
+        <div className="flex items-center gap-2">
+          <div
+            {...attributes}
+            {...listeners}
+            className="mr-1 flex cursor-move touch-none items-center text-gray-400 hover:text-gray-600 dark:text-dark-text-tertiary dark:hover:text-dark-text-secondary">
+            <Bars2Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-grow">
             <div className="truncate text-sm font-medium text-gray-900 dark:text-dark-text-primary">
               {item.label}
             </div>
@@ -46,10 +55,15 @@ export function SortingCriteriaItem({ item }: SortingCriteriaItemProps) {
               {item.description}
             </div>
           </div>
-          <div className="shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             <Badge variant="default" size="sm">
               {t(`sorting.priority`)}: {item.priority + 1}
             </Badge>
+            <Switch
+              checked={item.enabled}
+              onChange={(checked) => onToggleEnabled?.(item.id, checked)}
+              size="sm"
+            />
           </div>
         </div>
       </CardContent>

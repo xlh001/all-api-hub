@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next" // 1. 定义 Context 的值类型
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { accountStorage } from "~/services/accountStorage"
+import { searchAccounts } from "~/services/search/accountSearch"
 import type {
   AccountStats,
   CurrencyAmount,
@@ -24,8 +25,10 @@ import type {
 } from "~/types"
 import {
   getActiveTabs,
+  getAllTabs,
   onRuntimeMessage,
   onTabActivated,
+  onTabRemoved,
   onTabUpdated
 } from "~/utils/browserApi"
 import { createDynamicSortComparator } from "~/utils/sortingPriority"
@@ -287,13 +290,80 @@ export const AccountDataProvider = ({
     [sortField, sortOrder, updateSortConfig]
   )
 
+  // State to hold matched account scores from open tabs
+  const [matchedAccountScores, setMatchedAccountScores] = useState<
+    Record<string, number>
+  >({})
+
+  // Check and match open tabs with accounts
+  const checkOpenTabs = useCallback(async () => {
+    try {
+      const tabs = await getAllTabs()
+      if (!tabs || tabs.length === 0 || displayData.length === 0) {
+        setMatchedAccountScores({})
+        return
+      }
+
+      const scores: Record<string, number> = {}
+
+      // For each tab, try to match with accounts
+      for (const tab of tabs) {
+        if (!tab.url && !tab.title) continue
+
+        // Combine URL and title for search query
+        for (const searchQuery of [tab.url, tab.title]) {
+          if (!searchQuery) continue
+
+          // Search accounts using the combined query
+          const results = searchAccounts(displayData, searchQuery)
+
+          // Accumulate scores for matched accounts
+          results.forEach((result) => {
+            const accountId = result.account.id
+            scores[accountId] = (scores[accountId] || 0) + result.score
+          })
+        }
+      }
+
+      setMatchedAccountScores(scores)
+    } catch (error) {
+      console.error("Error matching open tabs:", error)
+      setMatchedAccountScores({})
+    }
+  }, [displayData])
+
+  // Update matched scores when displayData changes or tabs change
+  useEffect(() => {
+    void checkOpenTabs()
+
+    // Listen for tab changes
+    const cleanupActivated = onTabActivated(() => {
+      void checkOpenTabs()
+    })
+
+    const cleanupUpdated = onTabUpdated(() => {
+      void checkOpenTabs()
+    })
+
+    const cleanupRemoved = onTabRemoved(() => {
+      void checkOpenTabs()
+    })
+
+    return () => {
+      cleanupActivated()
+      cleanupUpdated()
+      cleanupRemoved()
+    }
+  }, [checkOpenTabs])
+
   const sortedData = useMemo(() => {
     const comparator = createDynamicSortComparator(
       sortingPriorityConfig,
       detectedAccount,
       sortField,
       currencyType,
-      sortOrder
+      sortOrder,
+      matchedAccountScores
     )
     return [...displayData].sort(comparator)
   }, [
@@ -302,7 +372,8 @@ export const AccountDataProvider = ({
     detectedAccount,
     sortField,
     currencyType,
-    sortOrder
+    sortOrder,
+    matchedAccountScores
   ])
 
   const value = useMemo(

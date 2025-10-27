@@ -3,7 +3,7 @@ import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
-import { isExtensionSidePanel, isMobileByUA } from "~/utils/browser.ts"
+import { isExtensionSidePanel, isMobileByUA } from "~/utils/browser"
 
 import ActionButtons from "./components/ActionButtons"
 import BalanceSection from "./components/BalanceSection"

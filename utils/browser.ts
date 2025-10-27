@@ -1,4 +1,4 @@
-import { getExtensionURL } from "~/utils/browserApi.ts"
+import { getExtensionURL } from "~/utils/browserApi"
 
 export const OPTIONS_PAGE_URL = getExtensionURL("options.html")
 

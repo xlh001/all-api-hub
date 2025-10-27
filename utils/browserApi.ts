@@ -62,13 +62,21 @@ export async function getActiveTab(): Promise<browser.tabs.Tab | null> {
  *
  * 返回一个浏览器标签页对象数组，如果未找到任何标签页，则返回一个空数组。
  */
-export async function getBrowserTabs() {
+export async function getActiveOrAllTabs() {
   let tabs
   tabs = await getActiveTabs()
   if (!isNotEmptyArray(tabs)) {
-    tabs = await queryTabs({})
+    tabs = await getAllTabs()
   }
   return tabs || []
+}
+
+/**
+ * Retrieves all browser tabs.
+ * @returns {Promise<browser.tabs.Tab[]>} A promise resolved with an array of browser tabs or an empty array if no tabs are found.
+ */
+export async function getAllTabs(): Promise<browser.tabs.Tab[]> {
+  return (await queryTabs({})) || []
 }
 
 /**

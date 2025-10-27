@@ -1,6 +1,10 @@
 import { Storage } from "@plasmohq/storage"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
+import {
+  CURRENT_PREFERENCES_VERSION,
+  migratePreferences
+} from "~/services/configMigration/preferencesMigration"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
@@ -42,6 +46,9 @@ export interface UserPreferences {
   sortingPriorityConfig?: SortingPriorityConfig
   themeMode: ThemeMode
   language?: string // Added language preference
+
+  // Configuration version for migration tracking
+  preferencesVersion?: number
 }
 
 // 存储键名常量
@@ -72,7 +79,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   newApiUserId: "",
   sortingPriorityConfig: undefined,
   themeMode: "system",
-  language: undefined // Default to undefined to trigger browser detection
+  language: undefined, // Default to undefined to trigger browser detection
+  preferencesVersion: CURRENT_PREFERENCES_VERSION
 }
 
 class UserPreferencesService {
@@ -89,10 +97,23 @@ class UserPreferencesService {
    */
   async getPreferences(): Promise<UserPreferences> {
     try {
-      const preferences = (await this.storage.get(
+      const storedPreferences = (await this.storage.get(
         STORAGE_KEYS.USER_PREFERENCES
-      )) as UserPreferences
-      return preferences || DEFAULT_PREFERENCES
+      )) as UserPreferences | undefined
+      const preferences = storedPreferences || DEFAULT_PREFERENCES
+
+      // Run migrations if needed
+      const migratedPreferences = migratePreferences(preferences)
+
+      // If migration changed preferences, save the updated version
+      if (migratedPreferences !== storedPreferences) {
+        await this.storage.set(
+          STORAGE_KEYS.USER_PREFERENCES,
+          migratedPreferences
+        )
+      }
+
+      return migratedPreferences
     } catch (error) {
       console.error("获取用户偏好设置失败:", error)
       return DEFAULT_PREFERENCES
@@ -110,7 +131,8 @@ class UserPreferencesService {
       const updatedPreferences: UserPreferences = {
         ...currentPreferences,
         ...preferences,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
+        preferencesVersion: CURRENT_PREFERENCES_VERSION
       }
 
       await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, updatedPreferences)
@@ -278,11 +300,14 @@ class UserPreferencesService {
    */
   async importPreferences(preferences: UserPreferences): Promise<boolean> {
     try {
+      // Migrate imported preferences to ensure compatibility
+      const migratedPreferences = migratePreferences(preferences)
+
       await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, {
-        ...preferences,
+        ...migratedPreferences,
         lastUpdated: Date.now()
       })
-      console.log("[UserPreferences] 偏好设置导入成功")
+      console.log("[UserPreferences] 偏好设置导入成功，已迁移至最新版本")
       return true
     } catch (error) {
       console.error("[UserPreferences] 导入偏好设置失败:", error)
@@ -292,6 +317,7 @@ class UserPreferencesService {
 
   async getSortingPriorityConfig(): Promise<SortingPriorityConfig> {
     const prefs = await this.getPreferences()
+    // Migrations are already handled in getPreferences()
     return prefs.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG
   }
 
