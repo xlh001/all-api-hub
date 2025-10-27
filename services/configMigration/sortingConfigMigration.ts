@@ -29,9 +29,12 @@ export function migrateSortingConfig(
 ): SortingPriorityConfig {
   // If no config exists, return default
   if (!config) {
-    return DEFAULT_SORTING_PRIORITY_CONFIG
+    return {
+      ...DEFAULT_SORTING_PRIORITY_CONFIG,
+      criteria: DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => ({ ...c })),
+      lastModified: Date.now()
+    }
   }
-
   // If no migration is needed, return the config as is
   if (!needsSortingConfigMigration(config)) {
     return config
