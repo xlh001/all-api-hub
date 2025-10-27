@@ -51,7 +51,7 @@ const BalanceDisplay: React.FC<{
     <div className="flex items-center space-x-1 break-all">
       <button
         onClick={onCurrencyToggle}
-        className={`${compact ? "text-2xl" : "text-5xl"} p-0 text-left font-bold tracking-tight text-gray-900 transition-colors hover:text-blue-600 dark:text-dark-text-primary`}
+        className={`${compact ? "text-2xl" : "text-4xl"} p-0 text-left font-bold tracking-tight text-gray-900 transition-colors hover:text-blue-600 dark:text-dark-text-primary`}
         aria-label={t("currency.clickToSwitch", {
           currency:
             currencyType === "USD" ? t("currency.cny") : t("currency.usd")
