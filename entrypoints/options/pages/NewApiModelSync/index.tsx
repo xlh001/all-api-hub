@@ -174,13 +174,47 @@ export default function NewApiModelSync() {
       })
 
       if (response.success) {
-        toast.success(
-          t("messages.success.syncCompleted", {
-            success: response.data.statistics.successCount,
-            total: response.data.statistics.total
+        const newItem = response.data.items[0]
+
+        if (newItem) {
+          if (newItem.ok) {
+            toast.success(
+              t("messages.success.syncCompleted", {
+                success: 1,
+                total: 1
+              })
+            )
+          } else {
+            toast.error(
+              t("messages.error.syncFailed", {
+                error: newItem.message || "Unknown error"
+              })
+            )
+          }
+
+          setLastExecution((prev) => {
+            if (!prev) {
+              return response.data
+            }
+
+            const updatedItems = prev.items.map((item) =>
+              item.channelId === channelId ? newItem : item
+            )
+
+            const successCount = updatedItems.filter((item) => item.ok).length
+            const failureCount = updatedItems.length - successCount
+
+            return {
+              ...prev,
+              items: updatedItems,
+              statistics: {
+                ...prev.statistics,
+                successCount,
+                failureCount
+              }
+            }
           })
-        )
-        setLastExecution(response.data)
+        }
       } else {
         toast.error(t("messages.error.syncFailed", { error: response.error }))
       }
