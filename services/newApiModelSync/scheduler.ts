@@ -3,6 +3,13 @@ import {
   ExecutionResult,
   NewApiChannel
 } from "~/types/newApiModelSync"
+import {
+  clearAlarm,
+  createAlarm,
+  getAlarm,
+  hasAlarmsAPI,
+  onAlarm
+} from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 
 import { userPreferences } from "../userPreferences"
@@ -43,20 +50,26 @@ class NewApiModelSyncScheduler {
     }
 
     try {
-      // Set up alarm listener
-      browser.alarms.onAlarm.addListener((alarm) => {
-        if (alarm.name === NewApiModelSyncScheduler.ALARM_NAME) {
-          this.executeSync().catch((error) => {
-            console.error(
-              "[NewApiModelSync] Scheduled execution failed:",
-              error
-            )
-          })
-        }
-      })
+      // Set up alarm listener using browserApi (if supported)
+      if (hasAlarmsAPI()) {
+        onAlarm((alarm) => {
+          if (alarm.name === NewApiModelSyncScheduler.ALARM_NAME) {
+            this.executeSync().catch((error) => {
+              console.error(
+                "[NewApiModelSync] Scheduled execution failed:",
+                error
+              )
+            })
+          }
+        })
 
-      // Setup initial alarm based on preferences
-      await this.setupAlarm()
+        // Setup initial alarm based on preferences
+        await this.setupAlarm()
+      } else {
+        console.warn(
+          "[NewApiModelSync] Alarms API not available, automatic sync disabled"
+        )
+      }
 
       this.isInitialized = true
       console.log("[NewApiModelSync] Scheduler initialized")
@@ -69,25 +82,44 @@ class NewApiModelSyncScheduler {
    * Setup or update the alarm based on current preferences
    */
   async setupAlarm() {
-    const prefs = await newApiModelSyncStorage.getPreferences()
+    // Check if alarms API is supported
+    if (!hasAlarmsAPI()) {
+      console.warn(
+        "[NewApiModelSync] Alarms API not supported, auto-sync disabled"
+      )
+      return
+    }
+
+    const prefs = await userPreferences.getPreferences()
 
     // Clear existing alarm
-    await browser.alarms.clear(NewApiModelSyncScheduler.ALARM_NAME)
+    await clearAlarm(NewApiModelSyncScheduler.ALARM_NAME)
 
-    if (!prefs.enableSync) {
+    if (!prefs.newApiModelSyncEnabled) {
       console.log("[NewApiModelSync] Auto-sync disabled, alarm cleared")
       return
     }
 
-    // Create new alarm
-    const intervalInMinutes = prefs.intervalMs / 1000 / 60
-    await browser.alarms.create(NewApiModelSyncScheduler.ALARM_NAME, {
-      periodInMinutes: intervalInMinutes
-    })
+    const intervalMs = prefs.newApiModelSyncInterval ?? 24 * 60 * 60 * 1000
+    const intervalInMinutes = Math.max(intervalMs / 1000 / 60, 1)
 
-    console.log(
-      `[NewApiModelSync] Alarm set, interval: ${intervalInMinutes} minutes`
-    )
+    try {
+      await createAlarm(NewApiModelSyncScheduler.ALARM_NAME, {
+        periodInMinutes: intervalInMinutes
+      })
+
+      // Verify alarm was created
+      const alarm = await getAlarm(NewApiModelSyncScheduler.ALARM_NAME)
+      if (alarm) {
+        console.log(
+          `[NewApiModelSync] Alarm set successfully, interval: ${intervalInMinutes} minutes`
+        )
+      } else {
+        console.warn("[NewApiModelSync] Alarm was not created properly")
+      }
+    } catch (error) {
+      console.error("[NewApiModelSync] Failed to create alarm:", error)
+    }
   }
 
   async listChannels() {
@@ -104,8 +136,10 @@ class NewApiModelSyncScheduler {
     // Initialize service
     const service = await this.createService()
 
-    // Get preferences
-    const prefs = await newApiModelSyncStorage.getPreferences()
+    // Get preferences from userPreferences
+    const prefs = await userPreferences.getPreferences()
+    const concurrency = prefs.newApiModelSyncConcurrency ?? 5
+    const maxRetries = prefs.newApiModelSyncMaxRetries ?? 2
 
     // List channels
     const newApiChannelListResponse = await service.listChannels()
@@ -135,8 +169,8 @@ class NewApiModelSyncScheduler {
 
     // Execute batch sync
     const result = await service.runBatch(channels, {
-      concurrency: prefs.concurrency,
-      maxRetries: prefs.maxRetries,
+      concurrency,
+      maxRetries,
       onProgress: (payload) => {
         if (!payload.lastResult.ok) {
           failureCount += 1
@@ -202,7 +236,22 @@ class NewApiModelSyncScheduler {
     concurrency?: number
     maxRetries?: number
   }) {
-    await newApiModelSyncStorage.savePreferences(settings)
+    // Map settings to userPreferences format
+    const prefUpdates: any = {}
+    if (settings.enableSync !== undefined) {
+      prefUpdates.newApiModelSyncEnabled = settings.enableSync
+    }
+    if (settings.intervalMs !== undefined) {
+      prefUpdates.newApiModelSyncInterval = settings.intervalMs
+    }
+    if (settings.concurrency !== undefined) {
+      prefUpdates.newApiModelSyncConcurrency = settings.concurrency
+    }
+    if (settings.maxRetries !== undefined) {
+      prefUpdates.newApiModelSyncMaxRetries = settings.maxRetries
+    }
+
+    await userPreferences.savePreferences(prefUpdates)
     await this.setupAlarm()
     console.log("[NewApiModelSync] Settings updated:", settings)
   }

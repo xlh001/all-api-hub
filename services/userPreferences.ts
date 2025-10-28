@@ -43,6 +43,12 @@ export interface UserPreferences {
   newApiAdminToken?: string
   newApiUserId?: string
 
+  // New API Model Sync 配置
+  newApiModelSyncEnabled?: boolean // 是否启用自动同步
+  newApiModelSyncInterval?: number // 同步间隔（毫秒）
+  newApiModelSyncConcurrency?: number // 并发数量
+  newApiModelSyncMaxRetries?: number // 最大重试次数
+
   sortingPriorityConfig?: SortingPriorityConfig
   themeMode: ThemeMode
   language?: string // Added language preference
@@ -77,6 +83,10 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   newApiBaseUrl: "",
   newApiAdminToken: "",
   newApiUserId: "",
+  newApiModelSyncEnabled: false,
+  newApiModelSyncInterval: 24 * 60 * 60 * 1000,
+  newApiModelSyncConcurrency: 5,
+  newApiModelSyncMaxRetries: 2,
   sortingPriorityConfig: undefined,
   themeMode: "system",
   language: undefined, // Default to undefined to trigger browser detection
