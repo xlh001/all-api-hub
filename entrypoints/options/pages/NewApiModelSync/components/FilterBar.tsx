@@ -46,7 +46,7 @@ export default function FilterBar({
           placeholder={t("execution.filters.searchPlaceholder") as string}
           value={keyword}
           onChange={(e) => onKeywordChange(e.target.value)}
-          className="pl-9"
+          leftIcon={<MagnifyingGlassIcon className="h-4 w-4" />}
         />
       </div>
     </div>
