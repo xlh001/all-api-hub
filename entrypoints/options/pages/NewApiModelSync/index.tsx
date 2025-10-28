@@ -26,6 +26,7 @@ export default function NewApiModelSync() {
   const [searchKeyword, setSearchKeyword] = useState("")
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
+  const [runningChannelId, setRunningChannelId] = useState<number | null>(null)
 
   const loadLastExecution = useCallback(async () => {
     try {
@@ -79,6 +80,12 @@ export default function NewApiModelSync() {
       browser.runtime.onMessage.removeListener(handleMessage)
     }
   }, [loadLastExecution, loadProgress])
+
+  useEffect(() => {
+    if (!progress?.isRunning) {
+      setRunningChannelId(null)
+    }
+  }, [progress?.isRunning])
 
   const handleRunAll = async () => {
     try {
@@ -156,6 +163,32 @@ export default function NewApiModelSync() {
   const handleRefresh = () => {
     void loadLastExecution()
     void loadProgress()
+  }
+
+  const handleRunSingle = async (channelId: number) => {
+    setRunningChannelId(channelId)
+    try {
+      const response = await browser.runtime.sendMessage({
+        action: "newApiModelSync:triggerSelected",
+        channelIds: [channelId]
+      })
+
+      if (response.success) {
+        toast.success(
+          t("messages.success.syncCompleted", {
+            success: response.data.statistics.successCount,
+            total: response.data.statistics.total
+          })
+        )
+        setLastExecution(response.data)
+      } else {
+        toast.error(t("messages.error.syncFailed", { error: response.error }))
+      }
+    } catch (error: any) {
+      toast.error(t("messages.error.syncFailed", { error: error.message }))
+    } finally {
+      setRunningChannelId(null)
+    }
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -254,6 +287,9 @@ export default function NewApiModelSync() {
           selectedIds={selectedIds}
           onSelectAll={handleSelectAll}
           onSelectItem={handleSelectItem}
+          onRunSingle={handleRunSingle}
+          isRunning={progress?.isRunning ?? false}
+          runningChannelId={runningChannelId}
         />
       )}
     </div>

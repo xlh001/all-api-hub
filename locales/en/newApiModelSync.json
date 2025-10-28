@@ -51,7 +51,9 @@
       "businessCode": "Business Code",
       "message": "Message",
       "attempts": "Attempts",
-      "finishedAt": "Finished At"
+      "finishedAt": "Finished At",
+      "actions": "Actions",
+      "syncChannel": "Sync"
     },
     "status": {
       "success": "Success",

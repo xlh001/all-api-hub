@@ -51,7 +51,9 @@
       "businessCode": "业务错误码",
       "message": "错误信息",
       "attempts": "尝试次数",
-      "finishedAt": "完成时间"
+      "finishedAt": "完成时间",
+      "actions": "操作",
+      "syncChannel": "同步此渠道"
     },
     "status": {
       "success": "成功",
