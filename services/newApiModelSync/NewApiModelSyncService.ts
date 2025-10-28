@@ -1,12 +1,13 @@
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi } from "~/services/apiService/common/utils"
 import type { ApiResponse } from "~/types"
-import type {
+import {
   BatchExecutionOptions,
   ExecutionItemResult,
   ExecutionResult,
   ExecutionStatistics,
-  NewApiChannel
+  NewApiChannel,
+  NewApiChannelListData
 } from "~/types/newApiModelSync"
 
 type NewApiResponse<T> = ApiResponse<T> & { code?: number }
@@ -29,9 +30,9 @@ export class NewApiModelSyncService {
   /**
    * List all channels from New API
    */
-  async listChannels(): Promise<NewApiChannel[]> {
+  async listChannels(): Promise<NewApiChannelListData> {
     try {
-      const response = (await fetchApi<NewApiChannel[]>(
+      const response = await fetchApi<NewApiChannelListData>(
         {
           baseUrl: this.baseUrl,
           endpoint: "/api/channel/",
@@ -39,9 +40,9 @@ export class NewApiModelSyncService {
           token: this.token
         },
         false
-      )) as NewApiResponse<NewApiChannel[]>
+      )
 
-      if (!response.success || !Array.isArray(response.data)) {
+      if (!response.success) {
         throw new ApiError(
           response.message || "Failed to fetch channels",
           undefined,

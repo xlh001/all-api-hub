@@ -1,4 +1,4 @@
-import type {
+import {
   ExecutionProgress,
   ExecutionResult,
   NewApiChannel
@@ -90,7 +90,7 @@ class NewApiModelSyncScheduler {
     )
   }
 
-  async listChannels(): Promise<NewApiChannel[]> {
+  async listChannels() {
     const service = await this.createService()
     return service.listChannels()
   }
@@ -108,7 +108,8 @@ class NewApiModelSyncScheduler {
     const prefs = await newApiModelSyncStorage.getPreferences()
 
     // List channels
-    const allChannels = await service.listChannels()
+    const newApiChannelListResponse = await service.listChannels()
+    const allChannels = newApiChannelListResponse.items
 
     // Filter channels if specific IDs provided
     let channels: NewApiChannel[]

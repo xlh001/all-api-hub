@@ -3,6 +3,9 @@
  * Types for New API model synchronization feature
  */
 
+import { PaginatedData } from "~/services/apiService/common/type.ts"
+import { ApiResponse } from "~/types/index.ts"
+
 /**
  * Channel representation from New API
  */
@@ -20,14 +23,15 @@ export interface NewApiChannel {
   [key: string]: any // Allow other fields
 }
 
+export interface NewApiChannelListData extends PaginatedData<NewApiChannel> {
+  type_counts: Record<string, number>
+}
+
 /**
  * Channel list response from New API
  */
-export interface NewApiChannelListResponse {
-  success: boolean
-  data?: NewApiChannel[]
-  message?: string
-}
+export interface NewApiChannelListResponse
+  extends ApiResponse<NewApiChannelListData> {}
 
 /**
  * Fetch models response from New API
