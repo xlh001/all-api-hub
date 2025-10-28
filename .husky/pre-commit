@@ -1,38 +1,8 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+echo "🔍 Running lint-staged..."
 
-echo "🔍 Running pre-commit checks..."
-
-# Format check
-echo "📝 Checking code formatting..."
-if ! pnpm format:check; then
-  echo "❌ Formatting issues found. Running auto-fix..."
-  echo "📝 Auto-formatting code..."
-  pnpm format
-  git add -u  # 自动添加格式化后的文件
-  echo "✅ Code formatted and staged"
-fi
-
-# Lint check
-echo "🔎 Running linter..."
-if ! pnpm lint; then
-  echo "❌ Linting issues found. Attempting to auto-fix..."
-  echo "🔧 Auto-fixing lint issues..."
-  pnpm lint:fix
-  git add -u  # 自动添加修复后的文件
-  echo "✅ Lint issues fixed and staged"
-fi
-
-# 最后验证一次，只有无法自动修复的才报错
-echo "🔍 Final validation..."
-pnpm format:check || {
-  echo "❌ Formatting issues remain after auto-fix. Please check manually."
+pnpm lint-staged || {
+  echo "❌ Lint-staged checks failed"
   exit 1
 }
 
-pnpm lint || {
-  echo "❌ Lint issues remain after auto-fix. Please check manually."
-  exit 1
-}
-
-echo "✅ All pre-commit checks passed!"
+echo "✅ All checks passed!"
