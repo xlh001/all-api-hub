@@ -19,6 +19,7 @@ export default function ProgressCard({ progress }: ProgressCardProps) {
     <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
       <CardContent
         padding="default"
+        spacing="none"
         className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:gap-4 sm:text-left">
         <ArrowPathIcon className="h-5 w-5 flex-shrink-0 animate-spin text-blue-600 dark:text-blue-400" />
         <div className="flex flex-col items-center sm:items-start">
