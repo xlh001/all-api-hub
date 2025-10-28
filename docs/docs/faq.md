@@ -77,12 +77,12 @@ AnyRouter 是魔改版的中转站，不支持标准的 Access Token 方式。
 
 插件在多个平台发布，更新速度有差异：
 
-| 平台 | 更新速度 | 版本获取 |
-|------|---------|---------|
-| **GitHub Releases** | ⚡ 最快 | [前往下载](https://github.com/qixing-jk/all-api-hub/releases) |
-| **Chrome Web Store** | 🐌 较慢（1-3天审核） | [前往安装](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) |
-| **Edge Add-ons** | 🐌 较慢（1-3天审核） | [前往安装](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) |
-| **Firefox Add-ons** | 🐌 较慢（1-3天审核） | [前往安装](https://addons.mozilla.org/firefox/addon/中转站管理器-all-api-hub/) |
+| 平台 | 更新速度         | 版本获取 |
+|------|--------------|---------|
+| **GitHub Releases** | ⚡ 最快         | [前往下载](https://github.com/qixing-jk/all-api-hub/releases) |
+| **Chrome Web Store** | 🐌 较慢（3-5天审核） | [前往安装](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) |
+| **Edge Add-ons** | 🐌 较慢（2-3天审核） | [前往安装](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) |
+| **Firefox Add-ons** | ⚡ 快（几个小时审核）  | [前往安装](https://addons.mozilla.org/firefox/addon/中转站管理器-all-api-hub/) |
 
 ::: tip 建议
 如果遇到已修复的Bug，建议从 GitHub Releases 下载最新版本手动安装。
