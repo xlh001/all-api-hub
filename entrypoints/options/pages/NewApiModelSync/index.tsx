@@ -379,6 +379,7 @@ export default function NewApiModelSync() {
             placeholder={t("execution.filters.searchPlaceholder")}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
+            leftIcon={<MagnifyingGlassIcon className="h-4 w-4" />}
             className="pl-9"
           />
         </div>
