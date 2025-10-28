@@ -68,7 +68,7 @@ export default function NewApiModelSyncSettings() {
 
   const handleNavigateToExecution = () => {
     // Navigate to the NewApiModelSync page
-    const url = browser.runtime.getURL("options.html#/newApiModelSync")
+    const url = browser.runtime.getURL("options.html#newApiModelSync")
     window.location.href = url
   }
 
