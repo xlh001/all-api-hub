@@ -6,6 +6,7 @@ import {
 import DangerousZone from "./components/DangerousZone"
 import DisplaySettings from "./components/DisplaySettings"
 import LoadingSkeleton from "./components/LoadingSkeleton"
+import NewApiModelSyncSettings from "./components/NewApiModelSyncSettings"
 import NewApiSettings from "./components/NewApiSettings"
 import RefreshSettings from "./components/RefreshSettings"
 import SettingsHeader from "./components/SettingsHeader"
@@ -26,6 +27,7 @@ function BasicSettingsContent() {
         <RefreshSettings />
         <SortingPrioritySettings />
         <NewApiSettings />
+        <NewApiModelSyncSettings />
         <DangerousZone />
       </div>
     </div>

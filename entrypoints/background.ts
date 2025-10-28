@@ -7,6 +7,10 @@ import {
 } from "../services/autoRefreshService"
 import { migrateAccountsConfig } from "../services/configMigration/configMigration"
 import { getSiteType } from "../services/detectSiteType"
+import {
+  handleNewApiModelSyncMessage,
+  newApiModelSyncScheduler
+} from "../services/newApiModelSync"
 import { userPreferences } from "../services/userPreferences"
 import {
   handleWebdavAutoSyncMessage,
@@ -39,6 +43,7 @@ function main() {
     console.log("[Background] 插件启动，初始化自动刷新服务和WebDAV自动同步服务")
     await autoRefreshService.initialize()
     await webdavAutoSyncService.initialize()
+    await newApiModelSyncScheduler.initialize()
 
     // Ensure user preferences are migrated on startup
     await userPreferences.getPreferences()
@@ -51,6 +56,7 @@ function main() {
     )
     await autoRefreshService.initialize()
     await webdavAutoSyncService.initialize()
+    await newApiModelSyncScheduler.initialize()
 
     if (details.reason === "install" || details.reason === "update") {
       console.log(`Extension ${details.reason}: triggering config migration`)
@@ -108,6 +114,12 @@ function main() {
     // 处理WebDAV自动同步相关消息
     if (request.action && request.action.startsWith("webdavAutoSync:")) {
       handleWebdavAutoSyncMessage(request, sendResponse)
+      return true
+    }
+
+    // 处理New API模型同步相关消息
+    if (request.action && request.action.startsWith("newApiModelSync:")) {
+      handleNewApiModelSyncMessage(request, sendResponse)
       return true
     }
   })
