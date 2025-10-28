@@ -1,0 +1,76 @@
+name: Feature Request / 功能请求
+description: Suggest a new feature or enhancement / 建议新功能或改进
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a new feature! Your ideas help make this project better.
+
+        感谢您抽出时间建议新功能！您的想法有助于改进此项目。
+
+  - type: checkboxes
+    id: pre-submission
+    attributes:
+      label: Pre-submission Checklist / 提交前检查清单
+      description: Please confirm the following before submitting / 提交前请确认以下内容
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested / 我已检索现有 issue 确认该功能未被请求
+          required: true
+        - label: I have checked the latest release and main branch to confirm this feature doesn't exist / 我已检查最新 release 版本和 main 分支确认该功能不存在
+          required: true
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description / 功能描述
+      description: A clear and concise description of the feature you'd like to see / 清晰简洁地描述您希望看到的功能
+      placeholder: Describe the feature... / 描述该功能...
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case / Motivation / 使用场景 / 动机
+      description: Explain the use case or problem this feature would solve / 解释此功能将解决的使用场景或问题
+      placeholder: |
+        Why do you need this feature? What problem does it solve?
+        为什么需要此功能？它解决什么问题？
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution / 建议的解决方案
+      description: How would you like to see this feature implemented? / 您希望如何实现此功能？
+      placeholder: Describe your proposed solution... / 描述您建议的解决方案...
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered / 考虑的替代方案
+      description: What alternative solutions or features have you considered? / 您考虑过哪些替代解决方案或功能？
+      placeholder: Describe any alternatives you've considered... / 描述您考虑过的任何替代方案...
+
+  - type: dropdown
+    id: browsers-affected
+    attributes:
+      label: Target Browsers / 目标浏览器
+      description: Which browsers should this feature support? / 此功能应支持哪些浏览器？
+      multiple: true
+      options:
+        - All browsers / 所有浏览器
+        - Chrome
+        - Firefox
+        - Edge
+        - Safari
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context / 其他信息
+      description: Add any other context, screenshots, or mockups about the feature request here / 在此处添加有关功能请求的任何其他信息、截图或模型
+      placeholder: Any additional information, screenshots, or mockups... / 任何其他信息、截图或模型...

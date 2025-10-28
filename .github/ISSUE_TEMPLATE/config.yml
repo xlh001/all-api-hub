@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions / GitHub 讨论区
+    url: https://github.com/qixing-jk/all-api-hub/discussions
+    about: Ask questions and discuss ideas with the community / 向社区提问和讨论想法
+  - name: Documentation / 文档
+    url: https://qixing-jk.github.io/all-api-hub/
+    about: Read the documentation to learn more about the project / 阅读文档以了解有关项目的更多信息
