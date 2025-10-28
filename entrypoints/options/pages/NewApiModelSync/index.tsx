@@ -305,6 +305,7 @@ export default function NewApiModelSync() {
       {hasHistory && (
         <div className="mb-4">
           <FilterBar
+            statistics={lastExecution.statistics}
             status={filterStatus}
             keyword={searchKeyword}
             onStatusChange={setFilterStatus}
