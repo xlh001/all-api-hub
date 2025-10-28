@@ -115,13 +115,15 @@ export interface PricingResponse {
   usable_group: Record<string, string>
 }
 
-// 分页令牌响应类型
-export interface PaginatedTokenResponse {
+export interface PaginatedData<T> {
   page: number
   page_size: number
   total: number
-  items: ApiToken[]
+  items: T[]
 }
+
+// 分页令牌响应类型
+export interface PaginatedTokenResponse extends PaginatedData<ApiToken> {}
 
 // API 响应的通用格式
 export interface ApiResponse<T = any> {
