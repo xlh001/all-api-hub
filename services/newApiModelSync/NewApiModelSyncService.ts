@@ -1,4 +1,5 @@
 import { ApiError } from "~/services/apiService/common/errors"
+import { fetchAllItems } from "~/services/apiService/common/pagination"
 import { fetchApi } from "~/services/apiService/common/utils"
 import type { ApiResponse } from "~/types"
 import {
@@ -32,25 +33,54 @@ export class NewApiModelSyncService {
    */
   async listChannels(): Promise<NewApiChannelListData> {
     try {
-      const response = await fetchApi<NewApiChannelListData>(
-        {
-          baseUrl: this.baseUrl,
-          endpoint: "/api/channel/",
-          userId: this.userId,
-          token: this.token
-        },
-        false
-      )
+      let total = 0
+      const typeCounts: Record<string, number> = {}
 
-      if (!response.success) {
-        throw new ApiError(
-          response.message || "Failed to fetch channels",
-          undefined,
-          "/api/channel/"
+      const items = await fetchAllItems<NewApiChannel>(async (page) => {
+        const params = new URLSearchParams({
+          p: page.toString(),
+          page_size: "100"
+        })
+
+        const response = await fetchApi<NewApiChannelListData>(
+          {
+            baseUrl: this.baseUrl,
+            endpoint: `/api/channel/?${params.toString()}`,
+            userId: this.userId,
+            token: this.token
+          },
+          false
         )
-      }
 
-      return response.data
+        if (!response.success || !response.data) {
+          throw new ApiError(
+            response.message || "Failed to fetch channels",
+            undefined,
+            "/api/channel/"
+          )
+        }
+
+        const data = response.data
+        if (page === 1) {
+          total = data.total || data.items.length || 0
+          Object.assign(typeCounts, data.type_counts || {})
+        } else if (data.type_counts) {
+          for (const [key, value] of Object.entries(data.type_counts)) {
+            typeCounts[key] = (typeCounts[key] || 0) + value
+          }
+        }
+
+        return {
+          items: data.items || [],
+          total: data.total || 0
+        }
+      })
+
+      return {
+        items,
+        total,
+        type_counts: typeCounts
+      }
     } catch (error) {
       console.error("[NewApiModelSync] Failed to list channels:", error)
       throw error
