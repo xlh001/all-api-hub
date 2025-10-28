@@ -5,20 +5,34 @@ echo "🔍 Running pre-commit checks..."
 
 # Format check
 echo "📝 Checking code formatting..."
-pnpm format:check || {
+if ! pnpm format:check; then
   echo "❌ Formatting issues found. Running auto-fix..."
+  echo "📝 Auto-formatting code..."
   pnpm format
-  echo "✅ Code formatted. Please review and stage the changes."
-  exit 1
-}
+  git add -u  # 自动添加格式化后的文件
+  echo "✅ Code formatted and staged"
+fi
 
 # Lint check
 echo "🔎 Running linter..."
-pnpm lint || {
+if ! pnpm lint; then
   echo "❌ Linting issues found. Attempting to auto-fix..."
+  echo "🔧 Auto-fixing lint issues..."
   pnpm lint:fix
-  echo "⚠️  Please review the fixes and stage the changes."
+  git add -u  # 自动添加修复后的文件
+  echo "✅ Lint issues fixed and staged"
+fi
+
+# 最后验证一次，只有无法自动修复的才报错
+echo "🔍 Final validation..."
+pnpm format:check || {
+  echo "❌ Formatting issues remain after auto-fix. Please check manually."
   exit 1
 }
 
-echo "✅ Pre-commit checks passed!"
+pnpm lint || {
+  echo "❌ Lint issues remain after auto-fix. Please check manually."
+  exit 1
+}
+
+echo "✅ All pre-commit checks passed!"
