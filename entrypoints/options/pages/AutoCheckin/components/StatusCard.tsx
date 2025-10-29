@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
 
-import { Card } from "~/components/ui"
+import { Card, CardContent } from "~/components/ui"
 import type { AutoCheckinStatus } from "~/types/autoCheckin"
 
 interface StatusCardProps {
@@ -45,59 +45,61 @@ export default function StatusCard({ status }: StatusCardProps) {
 
   return (
     <Card>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            {t("status.lastRun")}
+      <CardContent>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {t("status.lastRun")}
+            </div>
+            <div className="mt-1 text-lg font-semibold">
+              {formatDateTime(status.lastRunAt)}
+            </div>
           </div>
-          <div className="mt-1 text-lg font-semibold">
-            {formatDateTime(status.lastRunAt)}
-          </div>
-        </div>
 
-        <div>
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            {t("status.nextScheduled")}
+          <div>
+            <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {t("status.nextScheduled")}
+            </div>
+            <div className="mt-1 text-lg font-semibold">
+              {formatDateTime(status.nextScheduledAt)}
+            </div>
           </div>
-          <div className="mt-1 text-lg font-semibold">
-            {formatDateTime(status.nextScheduledAt)}
-          </div>
-        </div>
 
-        <div>
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            {t("execution.statistics.result")}
+          <div>
+            <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {t("execution.statistics.result")}
+            </div>
+            <div className="mt-1">
+              {status.lastRunResult && (
+                <span
+                  className={`inline-block rounded px-2 py-1 text-sm font-medium ${getResultBadgeColor(status.lastRunResult)}`}>
+                  {t(`status.result.${status.lastRunResult}`)}
+                </span>
+              )}
+              {!status.lastRunResult && (
+                <span className="text-lg font-semibold text-gray-400">-</span>
+              )}
+            </div>
           </div>
-          <div className="mt-1">
-            {status.lastRunResult && (
-              <span
-                className={`inline-block rounded px-2 py-1 text-sm font-medium ${getResultBadgeColor(status.lastRunResult)}`}>
-                {t(`status.result.${status.lastRunResult}`)}
+
+          <div>
+            <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {t("execution.statistics.accounts")}
+            </div>
+            <div className="mt-1 text-lg font-semibold">
+              <span className="text-green-600 dark:text-green-400">
+                {successCount}
               </span>
-            )}
-            {!status.lastRunResult && (
-              <span className="text-lg font-semibold text-gray-400">-</span>
-            )}
+              {" / "}
+              <span className="text-red-600 dark:text-red-400">
+                {failedCount}
+              </span>
+              {" / "}
+              <span>{accountResults.length}</span>
+            </div>
           </div>
         </div>
-
-        <div>
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            {t("execution.statistics.accounts")}
-          </div>
-          <div className="mt-1 text-lg font-semibold">
-            <span className="text-green-600 dark:text-green-400">
-              {successCount}
-            </span>
-            {" / "}
-            <span className="text-red-600 dark:text-red-400">
-              {failedCount}
-            </span>
-            {" / "}
-            <span>{accountResults.length}</span>
-          </div>
-        </div>
-      </div>
+      </CardContent>
     </Card>
   )
 }
