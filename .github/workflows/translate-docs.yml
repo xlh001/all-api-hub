@@ -7,6 +7,7 @@ on:
     paths:
       - 'docs/docs/**/*.md'
       - '!docs/docs/en/**'
+      - '!docs/docs/ja/**'
   workflow_dispatch:
     inputs:
       mode:
