@@ -1,10 +1,10 @@
 {
-  "title": "New API 模型同步",
-  "description": "在同一 New API 站点内自动同步所有渠道的模型配置",
+  "title": "New API 模型列表同步",
+  "description": "自动同步您New API站点所有渠道的模型列表，确保与上游保持一致",
   "settings": {
-    "title": "模型同步设置",
+    "title": "模型列表同步设置",
     "enable": "启用自动同步",
-    "enableDesc": "按照设定间隔自动执行模型同步",
+    "enableDesc": "按照设定间隔自动执行模型列表同步",
     "interval": "执行间隔",
     "intervalDesc": "自动同步的时间间隔",
     "intervalUnit": "小时",
@@ -21,7 +21,7 @@
     "viewExecutionButton": "打开"
   },
   "execution": {
-    "title": "模型同步执行",
+    "title": "模型列表同步执行",
     "lastExecution": "上一次执行",
     "statistics": {
       "total": "渠道总数",
@@ -49,8 +49,8 @@
       "channelId": "渠道 ID",
       "channelName": "渠道名称",
       "status": "状态",
-      "oldModels": "旧模型",
-      "newModels": "新模型",
+      "oldModels": "旧模型列表",
+      "newModels": "新模型列表",
       "httpStatus": "HTTP 状态码",
       "message": "错误信息",
       "attempts": "尝试次数",
@@ -72,7 +72,7 @@
       "noDataDesc": "点击\"执行全部\"开始同步所有渠道",
       "noResults": "没有匹配的结果",
       "noResultsDesc": "尝试修改筛选条件或搜索关键字",
-      "configWarningDesc": "请先配置 New API 的基础 URL、管理员令牌和用户 ID，然后再执行模型同步",
+      "configWarningDesc": "请先配置 New API 的基础 URL、管理员令牌和用户 ID，然后再执行模型列表同步",
       "goToSettings": "前往设置"
     }
   },

@@ -1,10 +1,10 @@
 {
-  "title": "New API Model Sync",
-  "description": "Automatically synchronize models for all channels within the same New API site",
+  "title": "New API Model List Sync",
+  "description": "Automatically synchronize model lists for all channels in your New API site, ensuring consistency with upstream",
   "settings": {
-    "title": "Model Sync Settings",
+    "title": "Model List Sync Settings",
     "enable": "Enable Auto-Sync",
-    "enableDesc": "Automatically sync models at specified intervals",
+    "enableDesc": "Automatically sync model lists at specified intervals",
     "interval": "Sync Interval",
     "intervalDesc": "Time between automatic synchronizations",
     "intervalUnit": "hours",
@@ -21,7 +21,7 @@
     "viewExecutionButton": "Open"
   },
   "execution": {
-    "title": "Model Synchronization",
+    "title": "Model List Synchronization",
     "lastExecution": "Last Execution",
     "statistics": {
       "total": "Total Channels",
@@ -49,8 +49,8 @@
       "channelId": "Channel ID",
       "channelName": "Channel Name",
       "status": "Status",
-      "oldModels": "Old Models",
-      "newModels": "New Models",
+      "oldModels": "Old Model List",
+      "newModels": "New Model List",
       "httpStatus": "HTTP Status",
       "message": "Message",
       "attempts": "Attempts",
@@ -72,7 +72,7 @@
       "noDataDesc": "Click \"Run All\" to start synchronizing all channels",
       "noResults": "No matching results",
       "noResultsDesc": "Try adjusting your filters or search query",
-      "configWarningDesc": "Please configure New API base URL, admin token, and user ID before running model sync",
+      "configWarningDesc": "Please configure New API base URL, admin token, and user ID before running model list sync",
       "goToSettings": "Go to Settings"
     }
   },
