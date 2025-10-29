@@ -1,5 +1,5 @@
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -13,51 +13,73 @@ import {
   Input,
   Switch
 } from "~/components/ui"
-import { newApiModelSyncStorage } from "~/services/newApiModelSync"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
 import type { NewApiModelSyncPreferences } from "~/types/newApiModelSync"
+
+type UserNewApiModelSyncConfig = NonNullable<
+  typeof DEFAULT_PREFERENCES.newApiModelSync
+>
 
 export default function NewApiModelSyncSettings() {
   const { t } = useTranslation(["newApiModelSync", "settings"])
-  const [preferences, setPreferences] =
-    useState<NewApiModelSyncPreferences | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { preferences: userPrefs, updateNewApiModelSync } =
+    useUserPreferencesContext()
   const [isSaving, setIsSaving] = useState(false)
 
-  const loadPreferences = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const prefs = await newApiModelSyncStorage.getPreferences()
-      setPreferences(prefs)
-    } catch (error) {
-      console.error("Failed to load preferences:", error)
-      toast.error(t("newApiModelSync:messages.error.loadFailed", { error }))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [t])
-
-  useEffect(() => {
-    void loadPreferences()
-  }, [loadPreferences])
+  // Convert from UserPreferences.newApiModelSync to NewApiModelSyncPreferences format
+  const rawPrefs = userPrefs?.newApiModelSync
+  const preferences: NewApiModelSyncPreferences = rawPrefs
+    ? {
+        enableSync: rawPrefs.enabled,
+        intervalMs: rawPrefs.interval,
+        concurrency: rawPrefs.concurrency,
+        maxRetries: rawPrefs.maxRetries,
+        rateLimit: rawPrefs.rateLimit
+      }
+    : {
+        enableSync: DEFAULT_PREFERENCES.newApiModelSync?.enabled ?? false,
+        intervalMs:
+          DEFAULT_PREFERENCES.newApiModelSync?.interval ?? 24 * 60 * 60 * 1000,
+        concurrency: DEFAULT_PREFERENCES.newApiModelSync?.concurrency ?? 2,
+        maxRetries: DEFAULT_PREFERENCES.newApiModelSync?.maxRetries ?? 2,
+        rateLimit: DEFAULT_PREFERENCES.newApiModelSync?.rateLimit ?? {
+          requestsPerMinute: 20,
+          burst: 5
+        }
+      }
 
   const savePreferences = async (
     updates: Partial<NewApiModelSyncPreferences>
   ) => {
-    if (!preferences) return
-
     try {
       setIsSaving(true)
-      const updated = { ...preferences, ...updates }
-      await newApiModelSyncStorage.savePreferences(updated)
 
-      // Notify background to update alarm
-      await browser.runtime.sendMessage({
-        action: "newApiModelSync:updateSettings",
-        settings: updates
-      })
+      // Convert to UserPreferences.newApiModelSync format
+      const userPrefsUpdate: Partial<UserNewApiModelSyncConfig> = {}
+      if (updates.enableSync !== undefined) {
+        userPrefsUpdate.enabled = updates.enableSync
+      }
+      if (updates.intervalMs !== undefined) {
+        userPrefsUpdate.interval = updates.intervalMs
+      }
+      if (updates.concurrency !== undefined) {
+        userPrefsUpdate.concurrency = updates.concurrency
+      }
+      if (updates.maxRetries !== undefined) {
+        userPrefsUpdate.maxRetries = updates.maxRetries
+      }
+      if (updates.rateLimit !== undefined) {
+        userPrefsUpdate.rateLimit = updates.rateLimit
+      }
 
-      setPreferences(updated)
-      toast.success(t("newApiModelSync:messages.success.settingsSaved"))
+      const success = await updateNewApiModelSync(userPrefsUpdate)
+
+      if (success) {
+        toast.success(t("newApiModelSync:messages.success.settingsSaved"))
+      } else {
+        toast.error(t("settings:messages.saveSettingsFailed"))
+      }
     } catch (error) {
       console.error("Failed to save preferences:", error)
       toast.error(t("settings:messages.saveSettingsFailed"))
@@ -70,25 +92,6 @@ export default function NewApiModelSyncSettings() {
     // Navigate to the NewApiModelSync page
     const url = browser.runtime.getURL("options.html#newApiModelSync")
     window.location.href = url
-  }
-
-  if (isLoading || !preferences) {
-    return (
-      <section>
-        <Heading4 className="mb-2">
-          {t("newApiModelSync:settings.title")}
-        </Heading4>
-        <BodySmall className="mb-4">
-          {t("newApiModelSync:description")}
-        </BodySmall>
-        <Card padding="none">
-          <div className="animate-pulse space-y-4 p-6">
-            <div className="h-6 w-1/3 rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="h-10 rounded bg-gray-200 dark:bg-gray-700"></div>
-          </div>
-        </Card>
-      </section>
-    )
   }
 
   return (

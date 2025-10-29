@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -11,54 +11,28 @@ import {
   Input,
   Switch
 } from "~/components/ui"
-import {
-  DEFAULT_PREFERENCES,
-  userPreferences
-} from "~/services/userPreferences"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 
 export default function AutoCheckinSettings() {
   const { t } = useTranslation(["autoCheckin", "settings"])
-  const [preferences, setPreferences] = useState<AutoCheckinPreferences | null>(
-    null
-  )
-  const [isLoading, setIsLoading] = useState(true)
+  const { preferences: userPrefs, updateAutoCheckin } =
+    useUserPreferencesContext()
   const [isSaving, setIsSaving] = useState(false)
 
-  const loadPreferences = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const prefs = await userPreferences.getPreferences()
-      const config = prefs.autoCheckin ?? DEFAULT_PREFERENCES.autoCheckin!
-      setPreferences(config)
-    } catch (error) {
-      console.error("Failed to load preferences:", error)
-      toast.error(t("autoCheckin:messages.error.loadFailed", { error }))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [t])
-
-  useEffect(() => {
-    void loadPreferences()
-  }, [loadPreferences])
+  const preferences = userPrefs?.autoCheckin ?? DEFAULT_PREFERENCES.autoCheckin!
 
   const savePreferences = async (updates: Partial<AutoCheckinPreferences>) => {
-    if (!preferences) return
-
     try {
       setIsSaving(true)
-      const updated = { ...preferences, ...updates }
-      await userPreferences.savePreferences({ autoCheckin: updated })
+      const success = await updateAutoCheckin(updates)
 
-      // Notify background to update alarm
-      await browser.runtime.sendMessage({
-        action: "autoCheckin:updateSettings",
-        settings: updates
-      })
-
-      setPreferences(updated)
-      toast.success(t("autoCheckin:messages.success.settingsSaved"))
+      if (success) {
+        toast.success(t("autoCheckin:messages.success.settingsSaved"))
+      } else {
+        toast.error(t("settings:messages.saveSettingsFailed"))
+      }
     } catch (error) {
       console.error("Failed to save preferences:", error)
       toast.error(t("settings:messages.saveSettingsFailed"))
@@ -86,21 +60,6 @@ export default function AutoCheckinSettings() {
     }
 
     return true
-  }
-
-  if (isLoading || !preferences) {
-    return (
-      <section>
-        <Heading4 className="mb-2">{t("autoCheckin:settings.title")}</Heading4>
-        <BodySmall className="mb-4">{t("autoCheckin:description")}</BodySmall>
-        <Card padding="none">
-          <div className="animate-pulse space-y-4 p-6">
-            <div className="h-6 w-1/3 rounded bg-gray-200 dark:bg-gray-700"></div>
-            <div className="h-10 rounded bg-gray-200 dark:bg-gray-700"></div>
-          </div>
-        </Card>
-      </section>
-    )
   }
 
   return (

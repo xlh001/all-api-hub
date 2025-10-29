@@ -15,10 +15,13 @@ import {
   type UserPreferences
 } from "~/services/userPreferences"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
+import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
+
+type UserNewApiModelSyncConfig = NonNullable<UserPreferences["newApiModelSync"]>
 
 // 1. 定义 Context 的值类型
 interface UserPreferencesContextType {
@@ -56,6 +59,12 @@ interface UserPreferencesContextType {
   updateNewApiAdminToken: (token: string) => Promise<boolean>
   updateNewApiUserId: (userId: string) => Promise<boolean>
   updateThemeMode: (themeMode: ThemeMode) => Promise<boolean>
+  updateAutoCheckin: (
+    updates: Partial<AutoCheckinPreferences>
+  ) => Promise<boolean>
+  updateNewApiModelSync: (
+    updates: Partial<UserNewApiModelSyncConfig>
+  ) => Promise<boolean>
   resetToDefaults: () => Promise<boolean>
   loadPreferences: () => Promise<void>
 }
@@ -233,6 +242,80 @@ export const UserPreferencesProvider = ({
     return success
   }, [])
 
+  const updateAutoCheckin = useCallback(
+    async (updates: Partial<AutoCheckinPreferences>) => {
+      // Merge with current values to create complete object
+      const currentPrefs = await userPreferences.getPreferences()
+      const nextAutoCheckin: AutoCheckinPreferences = {
+        ...(currentPrefs.autoCheckin || {
+          globalEnabled: false,
+          windowStart: "09:00",
+          windowEnd: "18:00"
+        }),
+        ...updates
+      }
+
+      const success = await userPreferences.savePreferences({
+        autoCheckin: nextAutoCheckin
+      })
+
+      if (success) {
+        setPreferences((prev) => {
+          if (!prev) return null
+          return {
+            ...prev,
+            autoCheckin: nextAutoCheckin
+          }
+        })
+
+        // Notify background to update alarm
+        await sendRuntimeMessage({
+          action: "autoCheckin:updateSettings",
+          settings: updates
+        })
+      }
+      return success
+    },
+    []
+  )
+
+  const updateNewApiModelSync = useCallback(
+    async (updates: Partial<UserNewApiModelSyncConfig>) => {
+      const currentPrefs = await userPreferences.getPreferences()
+      const nextNewApiModelSync: UserNewApiModelSyncConfig = {
+        ...(currentPrefs.newApiModelSync || {
+          enabled: false,
+          interval: 24 * 60 * 60 * 1000,
+          concurrency: 2,
+          maxRetries: 2,
+          rateLimit: { requestsPerMinute: 20, burst: 5 }
+        }),
+        ...updates
+      }
+
+      const success = await userPreferences.savePreferences({
+        newApiModelSync: nextNewApiModelSync
+      })
+      if (success) {
+        setPreferences((prev) => {
+          if (!prev) return null
+          return {
+            ...prev,
+            newApiModelSync: nextNewApiModelSync
+          }
+        })
+
+        // Notify background to update alarm
+        await sendRuntimeMessage({
+          action: "newApiModelSync:updateSettings",
+          settings: updates
+        })
+      }
+      return success
+    },
+    []
+  )
+
   const resetToDefaults = useCallback(async () => {
     const success = await userPreferences.resetToDefaults()
     if (success) {
@@ -272,6 +355,8 @@ export const UserPreferencesProvider = ({
       updateNewApiAdminToken,
       updateNewApiUserId,
       updateThemeMode,
+      updateAutoCheckin,
+      updateNewApiModelSync,
       resetToDefaults,
       loadPreferences
     }),
@@ -291,6 +376,8 @@ export const UserPreferencesProvider = ({
       updateNewApiAdminToken,
       updateNewApiUserId,
       updateThemeMode,
+      updateAutoCheckin,
+      updateNewApiModelSync,
       resetToDefaults,
       loadPreferences
     ]
@@ -323,6 +410,8 @@ export const useUserPreferencesContext = () => {
     !context.updateNewApiAdminToken ||
     !context.updateNewApiUserId ||
     !context.updateThemeMode ||
+    !context.updateAutoCheckin ||
+    !context.updateNewApiModelSync ||
     !context.resetToDefaults
   ) {
     throw new Error(
