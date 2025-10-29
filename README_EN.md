@@ -57,6 +57,7 @@ This extension allows for convenient integrated management of AI relay station a
 - 🔄 **Duplicate Site Detection** - Prevent the repeated addition of the same site and quickly modify the currently added site.
 - ️🏷️ **Smart Site Name Fetching** - There are multiple ways to obtain the real site name, and the domain name method is used as the last resort.
 - ☁️ **WebDav Data Backup** - Supports backing up and restoring all accounts and settings via WebDav, ensuring data security and enabling cross-device synchronization.
+- 🔄 **New API Model Sync** -Automatically synchronize the list of models for your New API's channels, ensuring model information is always up-to-date.
 - 📝 **Manual Add** - Supports manually adding any relay site, preventing failures when automatic detection doesn't work.
 - 🌓 **Dark Mode** - Support automatic switching based on system theme
 - ⚙️ **Firefox Support** - The extension is now available for Firefox browsers.
