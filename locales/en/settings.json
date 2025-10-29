@@ -82,8 +82,5 @@
     "updateSuccess": "{{name}} Update successful",
     "updateFailed": "{{name}} Update failed",
     "saveSettingsFailed": "Failed to save settings"
-  },
-  "general": {
-    "saveFailed": "Failed to save settings"
   }
 }

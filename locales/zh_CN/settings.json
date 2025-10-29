@@ -82,8 +82,5 @@
     "updateSuccess": "{{name}}更新成功",
     "updateFailed": "{{name}}更新失败",
     "saveSettingsFailed": "保存设置失败"
-  },
-  "general": {
-    "saveFailed": "保存设置失败"
   }
 }

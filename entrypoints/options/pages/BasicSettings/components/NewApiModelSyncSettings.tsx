@@ -60,7 +60,7 @@ export default function NewApiModelSyncSettings() {
       toast.success(t("newApiModelSync:messages.success.settingsSaved"))
     } catch (error) {
       console.error("Failed to save preferences:", error)
-      toast.error(t("settings:general.saveFailed"))
+      toast.error(t("settings:messages.saveSettingsFailed"))
     } finally {
       setIsSaving(false)
     }
