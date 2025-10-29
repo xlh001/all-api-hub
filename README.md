@@ -86,22 +86,25 @@
     <figcaption style="text-align:center;">站点重复检测</figcaption>
   </figure>
 </div>
-  <figure>
-    <img src="docs/docs/static/image/model-list.png" alt="model-list" style="height:auto;">
-    <figcaption style="text-align:center;">模型列表</figcaption>
-  </figure>
-  <figure>
-    <img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
-    <figcaption style="text-align:center;">数据导入导出</figcaption>
-  </figure>
-  <figure>
-    <img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="height:auto;">
-    <figcaption style="text-align:center;">密钥列表</figcaption>
-  </figure>
-  <figure>
-    <img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="height:auto;">
-    <figcaption style="text-align:center;">账户管理</figcaption>
-  </figure>
+<figure>
+<img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="height:auto;">
+<figcaption style="text-align:center;">账户管理</figcaption>
+</figure>
+<figure>
+<img src="docs/docs/static/image/model-list.png" alt="model-list" style="height:auto;">
+<figcaption style="text-align:center;">模型列表</figcaption>
+</figure>
+<figure>
+<img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="height:auto;">
+<figcaption style="text-align:center;">密钥列表</figcaption>
+</figure>
+<figure>
+<img src="docs/docs/static/image/new-api-channel-sync.png" alt="new-api-channel-sync" style="height:auto;">
+<figcaption style="text-align:center;">New API 模型同步</figcaption>
+<figure>
+<img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
+<figcaption style="text-align:center;">导入导出</figcaption>
+</figure>
 
 ## 🚀 安装使用
 

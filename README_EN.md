@@ -85,22 +85,25 @@ This extension allows for convenient integrated management of AI relay station a
     <figcaption style="text-align:center;">Duplicate Site Detection</figcaption>
   </figure>
 </div>
-  <figure>
-    <img src="docs/docs/static/image/model-list.png" alt="model-list" style="height:auto;">
-    <figcaption style="text-align:center;">Model List</figcaption>
-  </figure>
-  <figure>
-    <img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
-    <figcaption style="text-align:center;">Data Import/Export</figcaption>
-  </figure>
-  <figure>
-    <img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="height:auto;">
-    <figcaption style="text-align:center;">Key List</figcaption>
-  </figure>
-  <figure>
-    <img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="height:auto;">
-    <figcaption style="text-align:center;">Account Management</figcaption>
-  </figure>
+<figure>
+<img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="height:auto;">
+<figcaption style="text-align:center;">Account Management</figcaption>
+</figure>
+<figure>
+<img src="docs/docs/static/image/model-list.png" alt="model-list" style="height:auto;">
+<figcaption style="text-align:center;">Model list</figcaption>
+</figure>
+<figure>
+<img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="height:auto;">
+<figcaption style="text-align:center;">Key list</figcaption>
+</figure>
+<figure>
+<img src="docs/docs/static/image/new-api-channel-sync.png" alt="new-api-channel-sync" style="height:auto;">
+<figcaption style="text-align:center;">New API Model Synchronization</figcaption>
+<figure>
+<img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
+<figcaption style="text-align:center;">Import/Export</figcaption>
+</figure>
 
 ## 🚀 Installation
 
