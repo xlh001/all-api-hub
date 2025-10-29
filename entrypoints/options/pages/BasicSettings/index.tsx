@@ -1,7 +1,4 @@
-import {
-  UserPreferencesProvider,
-  useUserPreferencesContext
-} from "~/contexts/UserPreferencesContext"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import AutoCheckinSettings from "./components/AutoCheckinSettings"
 import DangerousZone from "./components/DangerousZone"
@@ -13,7 +10,7 @@ import RefreshSettings from "./components/RefreshSettings"
 import SettingsHeader from "./components/SettingsHeader"
 import SortingPrioritySettings from "./components/SortingPrioritySettings"
 
-function BasicSettingsContent() {
+export default function BasicSettings() {
   const { isLoading } = useUserPreferencesContext()
 
   if (isLoading) {
@@ -33,13 +30,5 @@ function BasicSettingsContent() {
         <DangerousZone />
       </div>
     </div>
-  )
-}
-
-export default function BasicSettings() {
-  return (
-    <UserPreferencesProvider>
-      <BasicSettingsContent />
-    </UserPreferencesProvider>
   )
 }
