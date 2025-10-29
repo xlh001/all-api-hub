@@ -20,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 配置
-DOCS_DIR = Path(__file__).parent.parent / 'docs'
+DOCS_DIR = Path(__file__).parent.parent / 'docs/docs'
 LANGUAGES = {
     'en': {
         'name': 'English',
