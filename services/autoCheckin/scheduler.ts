@@ -142,6 +142,20 @@ class AutoCheckinScheduler {
     const windowEndTime = new Date(today)
     windowEndTime.setHours(endHour, endMinute, 0, 0)
 
+    const nowMinutes = now.getHours() * 60 + now.getMinutes()
+    const windowEndMinutes = endHour * 60 + endMinute
+    if (windowEndTime <= windowStartTime) {
+      windowEndTime.setDate(windowEndTime.getDate() + 1)
+      if (
+        now < windowStartTime &&
+        (endHour !== startHour || endMinute !== startMinute) &&
+        nowMinutes <= windowEndMinutes
+      ) {
+        windowStartTime.setDate(windowStartTime.getDate() - 1)
+        windowEndTime.setDate(windowEndTime.getDate() - 1)
+      }
+    }
+
     // If window already passed today, schedule for tomorrow
     if (now >= windowEndTime) {
       windowStartTime.setDate(windowStartTime.getDate() + 1)
@@ -156,10 +170,9 @@ class AutoCheckinScheduler {
 
     // Calculate random time within window
     const windowDuration = windowEndTime.getTime() - windowStartTime.getTime()
-    const randomOffset = Math.random() * windowDuration
-    const triggerTime = new Date(windowStartTime.getTime() + randomOffset)
-
-    return triggerTime
+    const randomOffset =
+      windowDuration <= 0 ? 0 : Math.random() * windowDuration
+    return new Date(windowStartTime.getTime() + randomOffset)
   }
 
   /**
