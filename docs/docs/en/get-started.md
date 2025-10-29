@@ -52,14 +52,13 @@ You must first log in to the target relay station in your browser so that the pl
 3. After confirming that the automatic detection is correct, click `Confirm Add`.
 
 ::: info Tip
-The plugin will automatically identify your account's:
+The plugin will automatically identify various information from your account, such as:
 - Username
 - User ID
 - [Access Token](#_3-2-manual-add)
 - Top-up ratio
 :::
 
-![Confirm Add](../static/image/add-account-dialog-ok-btn.png)
 
 ### 3.2 Manual Add
 
