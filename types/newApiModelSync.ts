@@ -35,34 +35,6 @@ export interface NewApiChannelListResponse
   extends ApiResponse<NewApiChannelListData> {}
 
 /**
- * Fetch models response from New API
- */
-export interface NewApiFetchModelsResponse {
-  success: boolean
-  data?: string[] // Array of model names
-  message?: string
-  code?: number
-}
-
-/**
- * Update channel response from New API
- */
-export interface NewApiUpdateChannelResponse {
-  success: boolean
-  message?: string
-  code?: number
-}
-
-/**
- * Error details for execution
- */
-export interface ExecutionError {
-  httpStatus?: number
-  businessCode?: number
-  message: string
-}
-
-/**
  * Single channel execution result
  */
 export interface ExecutionItemResult {
@@ -70,7 +42,6 @@ export interface ExecutionItemResult {
   channelName: string
   ok: boolean
   httpStatus?: number
-  businessCode?: number
   message?: string
   attempts: number
   finishedAt: number
@@ -104,7 +75,6 @@ export interface ExecutionResult {
 export interface ExecutionFilter {
   status?: "success" | "failure" | "all"
   httpStatus?: number
-  businessCode?: number
   searchKeyword?: string
 }
 
@@ -121,21 +91,6 @@ export interface NewApiModelSyncPreferences {
     burst: number
   }
 }
-
-/**
- * Default preferences
- */
-export const DEFAULT_NEW_API_MODEL_SYNC_PREFERENCES: NewApiModelSyncPreferences =
-  {
-    enableSync: false,
-    intervalMs: 24 * 60 * 60 * 1000, // 24小时
-    concurrency: 2, // 降低并发数，避免触发速率限制
-    maxRetries: 2,
-    rateLimit: {
-      requestsPerMinute: 20, // 每分钟20个请求
-      burst: 5 // 允许5个突发请求
-    }
-  }
 
 /**
  * Batch execution options

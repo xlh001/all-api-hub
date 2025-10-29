@@ -52,7 +52,6 @@
       "oldModels": "旧模型",
       "newModels": "新模型",
       "httpStatus": "HTTP 状态码",
-      "businessCode": "业务错误码",
       "message": "错误信息",
       "attempts": "尝试次数",
       "finishedAt": "完成时间",

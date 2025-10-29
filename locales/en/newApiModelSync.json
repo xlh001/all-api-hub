@@ -52,7 +52,6 @@
       "oldModels": "Old Models",
       "newModels": "New Models",
       "httpStatus": "HTTP Status",
-      "businessCode": "Business Code",
       "message": "Message",
       "attempts": "Attempts",
       "finishedAt": "Finished At",

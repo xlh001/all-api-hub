@@ -120,11 +120,6 @@ export default function ResultsTable({
                             HTTP: {item.httpStatus}
                           </p>
                         )}
-                        {item.businessCode && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            Code: {item.businessCode}
-                          </p>
-                        )}
                       </div>
                     )}
                   </td>

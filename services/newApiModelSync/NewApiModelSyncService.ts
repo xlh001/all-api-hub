@@ -231,7 +231,6 @@ export class NewApiModelSyncService {
       channelName: channel.name,
       ok: false,
       httpStatus: lastError?.httpStatus,
-      businessCode: lastError?.businessCode,
       message: lastError?.message || "Unknown error",
       attempts,
       finishedAt: Date.now(),
