@@ -47,8 +47,12 @@ export interface UserPreferences {
   newApiModelSync?: {
     enabled: boolean
     interval: number // 同步间隔（毫秒）
-    concurrency: number // 并发数量
+    concurrency: number // 并发数量（单通道并发任务数）
     maxRetries: number // 最大重试次数
+    rateLimit: {
+      requestsPerMinute: number // 每分钟请求次数限制
+      burst: number // 瞬时突发请求数
+    }
   }
 
   sortingPriorityConfig?: SortingPriorityConfig
@@ -65,7 +69,7 @@ const STORAGE_KEYS = {
 } as const
 
 // 默认配置
-const DEFAULT_PREFERENCES: UserPreferences = {
+export const DEFAULT_PREFERENCES: UserPreferences = {
   activeTab: DATA_TYPE_CONSUMPTION,
   currencyType: "USD",
   sortField: DATA_TYPE_BALANCE, // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
@@ -87,9 +91,13 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   newApiUserId: "",
   newApiModelSync: {
     enabled: false,
-    interval: 24 * 60 * 60 * 1000,
-    concurrency: 5,
-    maxRetries: 2
+    interval: 24 * 60 * 60 * 1000, // 24小时
+    concurrency: 2, // 降低并发数，避免触发速率限制
+    maxRetries: 2,
+    rateLimit: {
+      requestsPerMinute: 20, // 每分钟20个请求
+      burst: 5 // 允许5个突发请求
+    }
   },
   sortingPriorityConfig: undefined,
   themeMode: "system",

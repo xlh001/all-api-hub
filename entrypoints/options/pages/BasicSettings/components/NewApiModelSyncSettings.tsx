@@ -149,11 +149,15 @@ export default function NewApiModelSyncSettings() {
               <Input
                 type="number"
                 min="1"
-                max="20"
+                max="10"
                 value={String(preferences.concurrency)}
                 onChange={(e) => {
                   const concurrency = parseInt(e.target.value)
-                  if (concurrency > 0 && concurrency <= 20) {
+                  if (
+                    Number.isFinite(concurrency) &&
+                    concurrency >= 1 &&
+                    concurrency <= 10
+                  ) {
                     savePreferences({ concurrency })
                   }
                 }}
@@ -175,8 +179,66 @@ export default function NewApiModelSyncSettings() {
                 value={String(preferences.maxRetries)}
                 onChange={(e) => {
                   const maxRetries = parseInt(e.target.value)
-                  if (maxRetries >= 0 && maxRetries <= 5) {
+                  if (
+                    Number.isFinite(maxRetries) &&
+                    maxRetries >= 0 &&
+                    maxRetries <= 5
+                  ) {
                     savePreferences({ maxRetries })
+                  }
+                }}
+                disabled={isSaving}
+                className="w-24"
+              />
+            }
+          />
+
+          {/* Rate Limit - Requests per Minute */}
+          <CardItem
+            title={t("newApiModelSync:settings.requestsPerMinute")}
+            description={t("newApiModelSync:settings.requestsPerMinuteDesc")}
+            rightContent={
+              <Input
+                type="number"
+                min="5"
+                max="120"
+                value={String(preferences.rateLimit.requestsPerMinute)}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value)
+                  if (Number.isFinite(value) && value >= 5 && value <= 120) {
+                    savePreferences({
+                      rateLimit: {
+                        ...preferences.rateLimit,
+                        requestsPerMinute: value
+                      }
+                    })
+                  }
+                }}
+                disabled={isSaving}
+                className="w-24"
+              />
+            }
+          />
+
+          {/* Rate Limit - Burst */}
+          <CardItem
+            title={t("newApiModelSync:settings.burst")}
+            description={t("newApiModelSync:settings.burstDesc")}
+            rightContent={
+              <Input
+                type="number"
+                min="1"
+                max="20"
+                value={String(preferences.rateLimit.burst)}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value)
+                  if (Number.isFinite(value) && value >= 1 && value <= 20) {
+                    savePreferences({
+                      rateLimit: {
+                        ...preferences.rateLimit,
+                        burst: value
+                      }
+                    })
                   }
                 }}
                 disabled={isSaving}

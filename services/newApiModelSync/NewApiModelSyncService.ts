@@ -11,6 +11,8 @@ import {
   NewApiChannelListData
 } from "~/types/newApiModelSync"
 
+import { RateLimiter } from "./RateLimiter"
+
 type NewApiResponse<T> = ApiResponse<T> & { code?: number }
 
 /**
@@ -21,11 +23,29 @@ export class NewApiModelSyncService {
   private baseUrl: string
   private token: string
   private userId?: string
+  private rateLimiter: RateLimiter | null = null
 
-  constructor(baseUrl: string, token: string, userId?: string) {
+  constructor(
+    baseUrl: string,
+    token: string,
+    userId?: string,
+    rateLimitConfig?: { requestsPerMinute: number; burst: number }
+  ) {
     this.baseUrl = baseUrl
     this.token = token
     this.userId = userId
+    if (rateLimitConfig) {
+      this.rateLimiter = new RateLimiter(
+        rateLimitConfig.requestsPerMinute,
+        rateLimitConfig.burst
+      )
+    }
+  }
+
+  private async throttle() {
+    if (this.rateLimiter) {
+      await this.rateLimiter.acquire()
+    }
   }
 
   /**
@@ -41,6 +61,8 @@ export class NewApiModelSyncService {
           p: page.toString(),
           page_size: "100"
         })
+
+        await this.throttle()
 
         const response = await fetchApi<NewApiChannelListData>(
           {
@@ -92,6 +114,8 @@ export class NewApiModelSyncService {
    */
   async fetchChannelModels(channelId: number): Promise<string[]> {
     try {
+      await this.throttle()
+
       const response = (await fetchApi<string[]>(
         {
           baseUrl: this.baseUrl,
@@ -137,6 +161,8 @@ export class NewApiModelSyncService {
         ...channel,
         models: models.join(",")
       }
+
+      await this.throttle()
 
       const response = (await fetchApi<unknown>(
         {

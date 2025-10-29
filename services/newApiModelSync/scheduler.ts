@@ -12,7 +12,7 @@ import {
 } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 
-import { userPreferences } from "../userPreferences"
+import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
 import { NewApiModelSyncService } from "./NewApiModelSyncService"
 import { newApiModelSyncStorage } from "./storage"
 
@@ -33,10 +33,14 @@ class NewApiModelSyncScheduler {
       throw new Error("New API configuration is missing")
     }
 
+    const config =
+      userPrefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+
     return new NewApiModelSyncService(
       newApiBaseUrl,
       newApiAdminToken,
-      newApiUserId
+      newApiUserId,
+      config.rateLimit
     )
   }
 
@@ -91,12 +95,7 @@ class NewApiModelSyncScheduler {
     }
 
     const prefs = await userPreferences.getPreferences()
-    const config = prefs.newApiModelSync ?? {
-      enabled: false,
-      interval: 24 * 60 * 60 * 1000,
-      concurrency: 5,
-      maxRetries: 2
-    }
+    const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
 
     // Clear existing alarm
     await clearAlarm(NewApiModelSyncScheduler.ALARM_NAME)
@@ -149,13 +148,8 @@ class NewApiModelSyncScheduler {
 
     // Get preferences from userPreferences
     const prefs = await userPreferences.getPreferences()
-    const config = prefs.newApiModelSync ?? {
-      enabled: false,
-      interval: 24 * 60 * 60 * 1000,
-      concurrency: 5,
-      maxRetries: 2
-    }
-    const concurrency = config.concurrency
+    const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+    const concurrency = Math.max(1, config.concurrency)
     const maxRetries = config.maxRetries
 
     // List channels
@@ -252,15 +246,15 @@ class NewApiModelSyncScheduler {
     intervalMs?: number
     concurrency?: number
     maxRetries?: number
+    rateLimit?: {
+      requestsPerMinute?: number
+      burst?: number
+    }
   }) {
     // Get current config and update
     const prefs = await userPreferences.getPreferences()
-    const current = prefs.newApiModelSync ?? {
-      enabled: false,
-      interval: 24 * 60 * 60 * 1000,
-      concurrency: 5,
-      maxRetries: 2
-    }
+    const current =
+      prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
 
     const updated = {
       enabled:
@@ -278,7 +272,10 @@ class NewApiModelSyncScheduler {
       maxRetries:
         settings.maxRetries !== undefined
           ? settings.maxRetries
-          : current.maxRetries
+          : current.maxRetries,
+      rateLimit: settings.rateLimit
+        ? { ...current.rateLimit, ...settings.rateLimit }
+        : { ...current.rateLimit }
     }
 
     await userPreferences.savePreferences({ newApiModelSync: updated })

@@ -4,9 +4,8 @@ import type {
   ExecutionResult,
   NewApiModelSyncPreferences
 } from "~/types/newApiModelSync"
-import { DEFAULT_NEW_API_MODEL_SYNC_PREFERENCES } from "~/types/newApiModelSync"
 
-import { userPreferences } from "../userPreferences"
+import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
 
 /**
  * Storage keys for New API Model Sync
@@ -33,17 +32,14 @@ class NewApiModelSyncStorage {
   async getPreferences(): Promise<NewApiModelSyncPreferences> {
     try {
       const prefs = await userPreferences.getPreferences()
-      const config = prefs.newApiModelSync ?? {
-        enabled: false,
-        interval: 24 * 60 * 60 * 1000,
-        concurrency: 5,
-        maxRetries: 2
-      }
+      const config =
+        prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
       return {
         enableSync: config.enabled,
         intervalMs: config.interval,
         concurrency: config.concurrency,
-        maxRetries: config.maxRetries
+        maxRetries: config.maxRetries,
+        rateLimit: { ...config.rateLimit }
       }
     } catch (error) {
       console.error("[NewApiModelSync] Failed to get preferences:", error)
@@ -59,12 +55,8 @@ class NewApiModelSyncStorage {
   ): Promise<boolean> {
     try {
       const prefs = await userPreferences.getPreferences()
-      const current = prefs.newApiModelSync ?? {
-        enabled: false,
-        interval: 24 * 60 * 60 * 1000,
-        concurrency: 5,
-        maxRetries: 2
-      }
+      const current =
+        prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
 
       const updated = {
         enabled:
@@ -82,7 +74,10 @@ class NewApiModelSyncStorage {
         maxRetries:
           preferences.maxRetries !== undefined
             ? preferences.maxRetries
-            : current.maxRetries
+            : current.maxRetries,
+        rateLimit: preferences.rateLimit
+          ? { ...current.rateLimit, ...preferences.rateLimit }
+          : { ...current.rateLimit }
       }
 
       await userPreferences.savePreferences({ newApiModelSync: updated })
@@ -142,7 +137,14 @@ class NewApiModelSyncStorage {
    * Get default preferences
    */
   private getDefaultPreferences(): NewApiModelSyncPreferences {
-    return { ...DEFAULT_NEW_API_MODEL_SYNC_PREFERENCES }
+    const defaultConfig = DEFAULT_PREFERENCES.newApiModelSync!
+    return {
+      enableSync: defaultConfig.enabled,
+      intervalMs: defaultConfig.interval,
+      concurrency: defaultConfig.concurrency,
+      maxRetries: defaultConfig.maxRetries,
+      rateLimit: { ...defaultConfig.rateLimit }
+    }
   }
 }
 

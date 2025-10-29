@@ -113,9 +113,13 @@ export interface ExecutionFilter {
  */
 export interface NewApiModelSyncPreferences {
   enableSync: boolean
-  intervalMs: number // Default 24 hours = 86400000 ms
-  concurrency: number // Default 3-5
-  maxRetries: number // Default 2
+  intervalMs: number
+  concurrency: number
+  maxRetries: number
+  rateLimit: {
+    requestsPerMinute: number
+    burst: number
+  }
 }
 
 /**
@@ -124,9 +128,13 @@ export interface NewApiModelSyncPreferences {
 export const DEFAULT_NEW_API_MODEL_SYNC_PREFERENCES: NewApiModelSyncPreferences =
   {
     enableSync: false,
-    intervalMs: 24 * 60 * 60 * 1000, // 24 hours
-    concurrency: 5,
-    maxRetries: 2
+    intervalMs: 24 * 60 * 60 * 1000, // 24小时
+    concurrency: 2, // 降低并发数，避免触发速率限制
+    maxRetries: 2,
+    rateLimit: {
+      requestsPerMinute: 20, // 每分钟20个请求
+      burst: 5 // 允许5个突发请求
+    }
   }
 
 /**
