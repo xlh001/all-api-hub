@@ -8,9 +8,9 @@
     "windowStartDesc": "允许每日自动签到开始的最早本地时间。",
     "windowEnd": "时间窗口结束",
     "windowEndDesc": "允许每日自动签到开始的最晚本地时间。",
-    "runNow": "立即执行",
-    "runNowDesc": "立即对所有符合条件的账号执行一次自动签到。",
-    "runNowButton": "执行签到"
+    "viewExecution": "查看签到历史",
+    "viewExecutionDesc": "查看每次自动签到的详细结果与日志。",
+    "viewExecutionButton": "打开记录"
   },
   "status": {
     "lastRun": "最近运行",
@@ -20,6 +20,38 @@
       "success": "成功",
       "partial": "部分成功",
       "failed": "失败"
+    }
+  },
+  "execution": {
+    "title": "自动签到历史",
+    "runNow": "立即执行",
+    "refresh": "刷新",
+    "statistics": {
+      "result": "执行结果",
+      "accounts": "账号（成功 / 失败 / 总计）"
+    },
+    "status": {
+      "success": "成功",
+      "alreadyChecked": "已签到",
+      "failed": "失败"
+    },
+    "table": {
+      "accountName": "账号名称",
+      "status": "状态",
+      "message": "消息",
+      "time": "时间"
+    },
+    "filters": {
+      "all": "全部",
+      "success": "成功",
+      "failed": "失败",
+      "searchPlaceholder": "搜索账号名称或消息..."
+    },
+    "empty": {
+      "noHistory": "暂无执行历史",
+      "noHistoryDesc": "点击\"立即执行\"对所有符合条件的账号进行自动签到",
+      "noResults": "没有匹配的结果",
+      "noResultsDesc": "尝试修改筛选条件或搜索关键字"
     }
   },
   "messages": {

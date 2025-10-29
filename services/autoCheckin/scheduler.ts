@@ -215,7 +215,8 @@ class AutoCheckinScheduler {
       // Filter eligible accounts
       const eligibleAccounts = allAccounts.filter((account) => {
         if (!account.checkIn?.enableDetection) return false
-        if (!account.checkIn?.autoCheckInEnabled) return false
+        // Default autoCheckInEnabled to true if not explicitly set to false
+        if (account.checkIn?.autoCheckInEnabled === false) return false
 
         const provider = resolveAutoCheckinProvider(account)
         return provider ? provider.canCheckIn(account) : false
