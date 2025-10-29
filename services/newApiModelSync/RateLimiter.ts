@@ -15,11 +15,17 @@ export class RateLimiter {
    * @param burst Maximum burst size (token bucket capacity)
    */
   constructor(requestsPerMinute: number, burst: number) {
-    this.capacity = burst
-    this.tokens = burst
-    this.refillRate = requestsPerMinute / 60000 // convert to tokens per ms
+    if (!Number.isFinite(requestsPerMinute) || requestsPerMinute <= 0) {
+      throw new Error("RateLimiter: requestsPerMinute must be > 0")
+    }
+    if (!Number.isFinite(burst) || burst < 1) {
+      throw new Error("RateLimiter: burst must be >= 1")
+    }
+    this.capacity = Math.floor(burst)
+    this.tokens = this.capacity
+    this.refillRate = requestsPerMinute / 60000 // tokens per ms
     this.lastRefill = Date.now()
-    this.minInterval = 60000 / requestsPerMinute // minimum ms between requests
+    this.minInterval = Math.max(1, Math.floor(60000 / requestsPerMinute)) // ms
   }
 
   /**
