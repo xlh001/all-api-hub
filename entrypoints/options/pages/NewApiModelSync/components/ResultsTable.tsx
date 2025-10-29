@@ -127,7 +127,9 @@ export default function ResultsTable({
                     {item.attempts}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {dayjs(item.finishedAt).format("HH:mm:ss")}
+                    {item.finishedAt
+                      ? dayjs(item.finishedAt).format("HH:mm:ss")
+                      : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button
