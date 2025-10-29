@@ -1,0 +1,39 @@
+{
+  "description": "Automatically check in eligible accounts every day within a configurable time window.",
+  "settings": {
+    "title": "Auto Check-in",
+    "enable": "Enable auto check-in",
+    "enableDesc": "Toggle the global auto check-in feature. When disabled, no check-in tasks will run.",
+    "windowStart": "Time window start",
+    "windowStartDesc": "The earliest local time when the daily check-in can start.",
+    "windowEnd": "Time window end",
+    "windowEndDesc": "The latest local time when the daily check-in can start.",
+    "runNow": "Run now",
+    "runNowDesc": "Immediately execute a one-off auto check-in run for all eligible accounts.",
+    "runNowButton": "Run check-in"
+  },
+  "status": {
+    "lastRun": "Last run",
+    "nextScheduled": "Next scheduled run",
+    "notScheduled": "Not scheduled",
+    "result": {
+      "success": "Success",
+      "partial": "Partial",
+      "failed": "Failed"
+    }
+  },
+  "messages": {
+    "error": {
+      "loadFailed": "Failed to load auto check-in settings: {{error}}",
+      "runFailed": "Failed to run auto check-in: {{error}}",
+      "invalidTimeWindow": "Invalid time window. Start and end cannot be the same."
+    },
+    "success": {
+      "settingsSaved": "Auto check-in settings have been saved.",
+      "runCompleted": "Auto check-in completed."
+    },
+    "loading": {
+      "running": "Running auto check-in..."
+    }
+  }
+}

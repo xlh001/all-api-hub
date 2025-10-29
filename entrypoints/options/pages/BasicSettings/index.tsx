@@ -3,6 +3,7 @@ import {
   useUserPreferencesContext
 } from "~/contexts/UserPreferencesContext"
 
+import AutoCheckinSettings from "./components/AutoCheckinSettings"
 import DangerousZone from "./components/DangerousZone"
 import DisplaySettings from "./components/DisplaySettings"
 import LoadingSkeleton from "./components/LoadingSkeleton"
@@ -26,6 +27,7 @@ function BasicSettingsContent() {
         <DisplaySettings />
         <RefreshSettings />
         <SortingPrioritySettings />
+        <AutoCheckinSettings />
         <NewApiSettings />
         <NewApiModelSyncSettings />
         <DangerousZone />

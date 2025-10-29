@@ -4,6 +4,10 @@ import { initBackgroundI18n } from "~/utils/background-i18n.ts"
 
 import { accountStorage } from "../services/accountStorage"
 import {
+  autoCheckinScheduler,
+  handleAutoCheckinMessage
+} from "../services/autoCheckin/scheduler"
+import {
   autoRefreshService,
   handleAutoRefreshMessage
 } from "../services/autoRefreshService"
@@ -52,6 +56,7 @@ async function main() {
     await autoRefreshService.initialize()
     await webdavAutoSyncService.initialize()
     await newApiModelSyncScheduler.initialize()
+    await autoCheckinScheduler.initialize()
 
     servicesInitialized = true
   }
@@ -127,6 +132,12 @@ async function main() {
     // 处理New API模型同步相关消息
     if (request.action && request.action.startsWith("newApiModelSync:")) {
       handleNewApiModelSyncMessage(request, sendResponse)
+      return true
+    }
+
+    // 处理Auto Check-in相关消息
+    if (request.action && request.action.startsWith("autoCheckin:")) {
+      handleAutoCheckinMessage(request, sendResponse)
       return true
     }
   })

@@ -1,0 +1,39 @@
+{
+  "description": "在每天的指定时间窗口内，自动为符合条件的账号执行签到。",
+  "settings": {
+    "title": "自动签到",
+    "enable": "启用自动签到",
+    "enableDesc": "控制全局自动签到功能开关，关闭后不会执行任何自动签到任务。",
+    "windowStart": "时间窗口开始",
+    "windowStartDesc": "允许每日自动签到开始的最早本地时间。",
+    "windowEnd": "时间窗口结束",
+    "windowEndDesc": "允许每日自动签到开始的最晚本地时间。",
+    "runNow": "立即执行",
+    "runNowDesc": "立即对所有符合条件的账号执行一次自动签到。",
+    "runNowButton": "执行签到"
+  },
+  "status": {
+    "lastRun": "最近运行",
+    "nextScheduled": "下次计划",
+    "notScheduled": "未计划",
+    "result": {
+      "success": "成功",
+      "partial": "部分成功",
+      "failed": "失败"
+    }
+  },
+  "messages": {
+    "error": {
+      "loadFailed": "获取自动签到设置失败：{{error}}",
+      "runFailed": "执行自动签到失败：{{error}}",
+      "invalidTimeWindow": "无效的时间窗口，开始时间和结束时间不能相同。"
+    },
+    "success": {
+      "settingsSaved": "自动签到设置已保存。",
+      "runCompleted": "自动签到已完成。"
+    },
+    "loading": {
+      "running": "正在执行自动签到..."
+    }
+  }
+}
