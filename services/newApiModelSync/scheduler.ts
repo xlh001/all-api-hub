@@ -91,29 +91,40 @@ class NewApiModelSyncScheduler {
     }
 
     const prefs = await userPreferences.getPreferences()
+    const config = prefs.newApiModelSync ?? {
+      enabled: false,
+      interval: 24 * 60 * 60 * 1000,
+      concurrency: 5,
+      maxRetries: 2
+    }
 
     // Clear existing alarm
     await clearAlarm(NewApiModelSyncScheduler.ALARM_NAME)
 
-    if (!prefs.newApiModelSyncEnabled) {
+    if (!config.enabled) {
       console.log("[NewApiModelSync] Auto-sync disabled, alarm cleared")
       return
     }
 
-    const intervalMs = prefs.newApiModelSyncInterval ?? 24 * 60 * 60 * 1000
+    const intervalMs = config.interval
     const intervalInMinutes = Math.max(intervalMs / 1000 / 60, 1)
 
     try {
       await createAlarm(NewApiModelSyncScheduler.ALARM_NAME, {
-        periodInMinutes: intervalInMinutes
+        delayInMinutes: intervalInMinutes, // Initial delay
+        periodInMinutes: intervalInMinutes // Repeat interval
       })
 
       // Verify alarm was created
       const alarm = await getAlarm(NewApiModelSyncScheduler.ALARM_NAME)
       if (alarm) {
-        console.log(
-          `[NewApiModelSync] Alarm set successfully, interval: ${intervalInMinutes} minutes`
-        )
+        console.log(`[NewApiModelSync] Alarm set successfully:`, {
+          name: alarm.name,
+          scheduledTime: alarm.scheduledTime
+            ? new Date(alarm.scheduledTime)
+            : null,
+          periodInMinutes: alarm.periodInMinutes
+        })
       } else {
         console.warn("[NewApiModelSync] Alarm was not created properly")
       }
@@ -138,8 +149,14 @@ class NewApiModelSyncScheduler {
 
     // Get preferences from userPreferences
     const prefs = await userPreferences.getPreferences()
-    const concurrency = prefs.newApiModelSyncConcurrency ?? 5
-    const maxRetries = prefs.newApiModelSyncMaxRetries ?? 2
+    const config = prefs.newApiModelSync ?? {
+      enabled: false,
+      interval: 24 * 60 * 60 * 1000,
+      concurrency: 5,
+      maxRetries: 2
+    }
+    const concurrency = config.concurrency
+    const maxRetries = config.maxRetries
 
     // List channels
     const newApiChannelListResponse = await service.listChannels()
@@ -236,24 +253,37 @@ class NewApiModelSyncScheduler {
     concurrency?: number
     maxRetries?: number
   }) {
-    // Map settings to userPreferences format
-    const prefUpdates: any = {}
-    if (settings.enableSync !== undefined) {
-      prefUpdates.newApiModelSyncEnabled = settings.enableSync
-    }
-    if (settings.intervalMs !== undefined) {
-      prefUpdates.newApiModelSyncInterval = settings.intervalMs
-    }
-    if (settings.concurrency !== undefined) {
-      prefUpdates.newApiModelSyncConcurrency = settings.concurrency
-    }
-    if (settings.maxRetries !== undefined) {
-      prefUpdates.newApiModelSyncMaxRetries = settings.maxRetries
+    // Get current config and update
+    const prefs = await userPreferences.getPreferences()
+    const current = prefs.newApiModelSync ?? {
+      enabled: false,
+      interval: 24 * 60 * 60 * 1000,
+      concurrency: 5,
+      maxRetries: 2
     }
 
-    await userPreferences.savePreferences(prefUpdates)
+    const updated = {
+      enabled:
+        settings.enableSync !== undefined
+          ? settings.enableSync
+          : current.enabled,
+      interval:
+        settings.intervalMs !== undefined
+          ? settings.intervalMs
+          : current.interval,
+      concurrency:
+        settings.concurrency !== undefined
+          ? settings.concurrency
+          : current.concurrency,
+      maxRetries:
+        settings.maxRetries !== undefined
+          ? settings.maxRetries
+          : current.maxRetries
+    }
+
+    await userPreferences.savePreferences({ newApiModelSync: updated })
     await this.setupAlarm()
-    console.log("[NewApiModelSync] Settings updated:", settings)
+    console.log("[NewApiModelSync] Settings updated:", updated)
   }
 
   /**

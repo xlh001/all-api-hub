@@ -33,11 +33,17 @@ class NewApiModelSyncStorage {
   async getPreferences(): Promise<NewApiModelSyncPreferences> {
     try {
       const prefs = await userPreferences.getPreferences()
+      const config = prefs.newApiModelSync ?? {
+        enabled: false,
+        interval: 24 * 60 * 60 * 1000,
+        concurrency: 5,
+        maxRetries: 2
+      }
       return {
-        enableSync: prefs.newApiModelSyncEnabled ?? false,
-        intervalMs: prefs.newApiModelSyncInterval ?? 24 * 60 * 60 * 1000,
-        concurrency: prefs.newApiModelSyncConcurrency ?? 5,
-        maxRetries: prefs.newApiModelSyncMaxRetries ?? 2
+        enableSync: config.enabled,
+        intervalMs: config.interval,
+        concurrency: config.concurrency,
+        maxRetries: config.maxRetries
       }
     } catch (error) {
       console.error("[NewApiModelSync] Failed to get preferences:", error)
@@ -52,22 +58,35 @@ class NewApiModelSyncStorage {
     preferences: Partial<NewApiModelSyncPreferences>
   ): Promise<boolean> {
     try {
-      const prefUpdates: any = {}
-      if (preferences.enableSync !== undefined) {
-        prefUpdates.newApiModelSyncEnabled = preferences.enableSync
-      }
-      if (preferences.intervalMs !== undefined) {
-        prefUpdates.newApiModelSyncInterval = preferences.intervalMs
-      }
-      if (preferences.concurrency !== undefined) {
-        prefUpdates.newApiModelSyncConcurrency = preferences.concurrency
-      }
-      if (preferences.maxRetries !== undefined) {
-        prefUpdates.newApiModelSyncMaxRetries = preferences.maxRetries
+      const prefs = await userPreferences.getPreferences()
+      const current = prefs.newApiModelSync ?? {
+        enabled: false,
+        interval: 24 * 60 * 60 * 1000,
+        concurrency: 5,
+        maxRetries: 2
       }
 
-      await userPreferences.savePreferences(prefUpdates)
-      console.log("[NewApiModelSync] Preferences saved:", preferences)
+      const updated = {
+        enabled:
+          preferences.enableSync !== undefined
+            ? preferences.enableSync
+            : current.enabled,
+        interval:
+          preferences.intervalMs !== undefined
+            ? preferences.intervalMs
+            : current.interval,
+        concurrency:
+          preferences.concurrency !== undefined
+            ? preferences.concurrency
+            : current.concurrency,
+        maxRetries:
+          preferences.maxRetries !== undefined
+            ? preferences.maxRetries
+            : current.maxRetries
+      }
+
+      await userPreferences.savePreferences({ newApiModelSync: updated })
+      console.log("[NewApiModelSync] Preferences saved:", updated)
       return true
     } catch (error) {
       console.error("[NewApiModelSync] Failed to save preferences:", error)

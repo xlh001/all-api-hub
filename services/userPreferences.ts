@@ -44,10 +44,12 @@ export interface UserPreferences {
   newApiUserId?: string
 
   // New API Model Sync 配置
-  newApiModelSyncEnabled?: boolean // 是否启用自动同步
-  newApiModelSyncInterval?: number // 同步间隔（毫秒）
-  newApiModelSyncConcurrency?: number // 并发数量
-  newApiModelSyncMaxRetries?: number // 最大重试次数
+  newApiModelSync?: {
+    enabled: boolean
+    interval: number // 同步间隔（毫秒）
+    concurrency: number // 并发数量
+    maxRetries: number // 最大重试次数
+  }
 
   sortingPriorityConfig?: SortingPriorityConfig
   themeMode: ThemeMode
@@ -83,10 +85,12 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   newApiBaseUrl: "",
   newApiAdminToken: "",
   newApiUserId: "",
-  newApiModelSyncEnabled: false,
-  newApiModelSyncInterval: 24 * 60 * 60 * 1000,
-  newApiModelSyncConcurrency: 5,
-  newApiModelSyncMaxRetries: 2,
+  newApiModelSync: {
+    enabled: false,
+    interval: 24 * 60 * 60 * 1000,
+    concurrency: 5,
+    maxRetries: 2
+  },
   sortingPriorityConfig: undefined,
   themeMode: "system",
   language: undefined, // Default to undefined to trigger browser detection
@@ -138,9 +142,18 @@ class UserPreferencesService {
   ): Promise<boolean> {
     try {
       const currentPreferences = await this.getPreferences()
+      const { newApiModelSync: newSyncConfig, ...rest } = preferences
+
       const updatedPreferences: UserPreferences = {
         ...currentPreferences,
-        ...preferences,
+        ...rest,
+        newApiModelSync: newSyncConfig
+          ? {
+              ...(currentPreferences.newApiModelSync ??
+                DEFAULT_PREFERENCES.newApiModelSync!),
+              ...newSyncConfig
+            }
+          : currentPreferences.newApiModelSync,
         lastUpdated: Date.now(),
         preferencesVersion: CURRENT_PREFERENCES_VERSION
       }
