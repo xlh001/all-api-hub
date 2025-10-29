@@ -127,22 +127,12 @@ export class NewApiModelSyncService {
       )) as NewApiResponse<string[]>
 
       if (!response.success || !Array.isArray(response.data)) {
-        const error: any = new Error(
-          response.message || "Failed to fetch models"
-        )
-        error.httpStatus = 200
-        error.businessCode = response.code
-        throw error
+        throw new Error(response.message || "Failed to fetch models")
       }
 
       return response.data
     } catch (error: any) {
-      // Attach HTTP status if available
-      if (error instanceof ApiError) {
-        const apiError: any = new Error(error.message)
-        apiError.httpStatus = error.statusCode
-        throw apiError
-      }
+      console.error("[NewApiModelSync] Failed to fetch models:", error)
       throw error
     }
   }
@@ -179,19 +169,10 @@ export class NewApiModelSyncService {
       )) as NewApiResponse<unknown>
 
       if (!response.success) {
-        const error: any = new Error(
-          response.message || "Failed to update channel"
-        )
-        error.httpStatus = 200
-        error.businessCode = response.code
-        throw error
+        throw new Error(response.message || "Failed to update channel")
       }
     } catch (error: any) {
-      if (error instanceof ApiError) {
-        const apiError: any = new Error(error.message)
-        apiError.httpStatus = error.statusCode
-        throw apiError
-      }
+      console.error("[NewApiModelSync] Failed to update channel:", error)
       throw error
     }
   }
