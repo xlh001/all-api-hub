@@ -42,11 +42,11 @@ New APIなどのAIハブアカウントの管理体験を最適化するため�
 
 1. 拡張機能のメインページを開き、「`アカウント追加`」をクリックします。
 
-![新增账号](./static/image/add-account-btn.png)
+![新增账号](../static/image/add-account-btn.png)
 
 2. ハブのアドレスを入力し、「`自動認識`」をクリックします。
 
-![自动识别](./static/image/add-account-dialog-btn.png)
+![自动识别](../static/image/add-account-dialog-btn.png)
 
 3. 自動認識が正しいことを確認した後、「`追加を確定`」をクリックします。
 
@@ -63,7 +63,7 @@ New APIなどのAIハブアカウントの管理体験を最適化するため�
 ::: info ヒント
 自動認識が成功しなかった場合、手動でサイトアカウントを追加できます。その際、以下の情報を事前に取得する必要があります。（各サイトのUIは異なる場合があるため、ご自身で探してください）
 :::
-![用户信息](./static/image/site-user-info.png)
+![用户信息](../static/image/site-user-info.png)
 
 ターゲットサイトがカスタマイズバージョン（例：AnyRouter）の場合、アカウント追加時に手動で**Cookieモード**に切り替えてから、自動認識または手動入力を実行してください。詳細は[よくある質問](./faq.md#anyrouter-网站报错怎么办)をご覧ください。
 

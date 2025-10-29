@@ -6,7 +6,7 @@ heroText: All API Hub - プロキシマネージャー
 tagline: オープンソースのAIプロキシアカウント管理プラグイン
 actions:
   - text: 使用を開始する
-    link: /get-started.html # 建议修改为您的实际文档路径，例如 /guide/
+    link: /ja/get-started.html # 建议修改为您的实际文档路径，例如 /guide/
     type: primary
     
   - text: Chrome ウェブストア
