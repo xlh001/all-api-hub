@@ -255,7 +255,9 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
         <div className="ml-3 flex min-w-0 items-start gap-1 sm:ml-4">
           <UserIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
           <Caption className="truncate" title={site.username}>
-            {site.username}
+            {highlights?.username && site.username
+              ? renderHighlightedFragments(highlights.username, site.username)
+              : site.username}
           </Caption>
         </div>
 
