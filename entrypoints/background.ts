@@ -1,5 +1,7 @@
 import { t } from "i18next"
 
+import { initBackgroundI18n } from "~/utils/background-i18n.ts"
+
 import { accountStorage } from "../services/accountStorage"
 import {
   autoRefreshService,
@@ -46,6 +48,7 @@ async function main() {
     }
 
     console.log("[Background] 初始化服务...")
+    await initBackgroundI18n()
     await autoRefreshService.initialize()
     await webdavAutoSyncService.initialize()
     await newApiModelSyncScheduler.initialize()
