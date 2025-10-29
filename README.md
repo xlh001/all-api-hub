@@ -212,6 +212,7 @@ pnpm build
 
 ## 🙏 致谢
 
+- 感谢 [@AngleNaris](https://github.com/AngleNaris) 设计了项目 Logo 🎨
 - [WXT](https://wxt.dev) - 现代化的浏览器扩展开发框架
 
 ---

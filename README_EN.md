@@ -219,6 +219,7 @@ This will create the production-ready extension package in the `build` directory
 
 ## 🙏 Acknowledgements
 
+- Thanks to [@AngleNaris](https://github.com/AngleNaris) for designing the project logo 🎨
 - [WXT](https://wxt.dev) - The modern browser extension development framework.
 
 ---
