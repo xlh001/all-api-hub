@@ -14,7 +14,9 @@ export default function StatusCard({ status }: StatusCardProps) {
     if (!isoString) return t("status.notScheduled")
     try {
       const date = new Date(isoString)
-      return date.toLocaleString()
+      return Number.isNaN(date.getTime())
+        ? t("status.notScheduled")
+        : date.toLocaleString()
     } catch {
       return t("status.notScheduled")
     }
