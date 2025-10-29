@@ -80,28 +80,28 @@ This extension allows for convenient integrated management of AI relay station a
 
 <div style="display: flex; justify-content: center; gap: 20px; box-sizing: border-box; flex-wrap: wrap;">
   <figure>
-    <img src="docs/docs/static/image/current-site-check.png" alt="current-site-check" style="width:49%;height:auto;">
-    <img src="docs/docs/static/image/try-add-existing-site.png" alt="try-add-existing-site" style="width:49%;height:auto;">
+    <img src="docs/docs/static/image/en/current-site-check.png" alt="current-site-check" style="width:49%;height:auto;">
+    <img src="docs/docs/static/image/en/try-add-existing-site.png" alt="try-add-existing-site" style="width:49%;height:auto;">
     <figcaption style="text-align:center;">Duplicate Site Detection</figcaption>
   </figure>
 </div>
 <figure>
-<img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="height:auto;">
+<img src="docs/docs/static/image/en/account-manage.png" alt="account-manage" style="height:auto;">
 <figcaption style="text-align:center;">Account Management</figcaption>
 </figure>
 <figure>
-<img src="docs/docs/static/image/model-list.png" alt="model-list" style="height:auto;">
+<img src="docs/docs/static/image/en/model-list.png" alt="model-list" style="height:auto;">
 <figcaption style="text-align:center;">Model list</figcaption>
 </figure>
 <figure>
-<img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="height:auto;">
+<img src="docs/docs/static/image/en/api-key-list.png" alt="api-key-list" style="height:auto;">
 <figcaption style="text-align:center;">Key list</figcaption>
 </figure>
 <figure>
-<img src="docs/docs/static/image/new-api-channel-sync.png" alt="new-api-channel-sync" style="height:auto;">
+<img src="docs/docs/static/image/en/new-api-channel-sync.png" alt="new-api-channel-sync" style="height:auto;">
 <figcaption style="text-align:center;">New API Model Synchronization</figcaption>
 <figure>
-<img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
+<img src="docs/docs/static/image/en/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
 <figcaption style="text-align:center;">Import/Export</figcaption>
 </figure>
 
