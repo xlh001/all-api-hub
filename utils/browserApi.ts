@@ -312,3 +312,80 @@ export const openSidePanel = async () => {
 
   throw new Error("Sidebar not supported")
 }
+
+/**
+ * 检查是否支持 alarms API
+ */
+export function hasAlarmsAPI(): boolean {
+  return !!browser.alarms
+}
+
+/**
+ * 创建定时任务
+ */
+export async function createAlarm(
+  name: string,
+  alarmInfo: {
+    periodInMinutes?: number
+    delayInMinutes?: number
+    when?: number
+  }
+): Promise<void> {
+  if (!hasAlarmsAPI()) {
+    console.warn("Alarms API not supported")
+    return
+  }
+  return browser.alarms.create(name, alarmInfo)
+}
+
+/**
+ * 清除定时任务
+ */
+export async function clearAlarm(name: string): Promise<boolean> {
+  if (!hasAlarmsAPI()) {
+    console.warn("Alarms API not supported")
+    return false
+  }
+  return (await browser.alarms.clear(name)) || false
+}
+
+/**
+ * 获取定时任务
+ */
+export async function getAlarm(
+  name: string
+): Promise<browser.alarms.Alarm | undefined> {
+  if (!hasAlarmsAPI()) {
+    console.warn("Alarms API not supported")
+    return undefined
+  }
+  return await browser.alarms.get(name)
+}
+
+/**
+ * 获取所有定时任务
+ */
+export async function getAllAlarms(): Promise<browser.alarms.Alarm[]> {
+  if (!hasAlarmsAPI()) {
+    console.warn("Alarms API not supported")
+    return []
+  }
+  return (await browser.alarms.getAll()) || []
+}
+
+/**
+ * 监听定时任务触发事件
+ * 返回清理函数
+ */
+export function onAlarm(
+  callback: (alarm: browser.alarms.Alarm) => void
+): () => void {
+  if (!hasAlarmsAPI()) {
+    console.warn("Alarms API not supported")
+    return () => {}
+  }
+  browser.alarms.onAlarm.addListener(callback)
+  return () => {
+    browser.alarms.onAlarm.removeListener(callback)
+  }
+}

@@ -7,6 +7,10 @@ import {
 } from "../services/autoRefreshService"
 import { migrateAccountsConfig } from "../services/configMigration/configMigration"
 import { getSiteType } from "../services/detectSiteType"
+import {
+  handleNewApiModelSyncMessage,
+  newApiModelSyncScheduler
+} from "../services/newApiModelSync"
 import { userPreferences } from "../services/userPreferences"
 import {
   handleWebdavAutoSyncMessage,
@@ -18,7 +22,6 @@ import {
   hasWindowsAPI,
   onInstalled,
   onRuntimeMessage,
-  onStartup,
   onTabRemoved,
   onWindowRemoved,
   removeTabOrWindow
@@ -30,27 +33,34 @@ export default defineBackground(() => {
   main()
 })
 
-function main() {
+async function main() {
   // 管理临时窗口的 Map
   const tempWindows = new Map<string, number>()
 
-  // 插件启动时初始化自动刷新服务和WebDAV自动同步服务
-  onStartup(async () => {
-    console.log("[Background] 插件启动，初始化自动刷新服务和WebDAV自动同步服务")
+  let servicesInitialized = false
+
+  async function initializeServices() {
+    if (servicesInitialized) {
+      console.log("[Background] 服务已初始化，跳过")
+      return
+    }
+
+    console.log("[Background] 初始化服务...")
     await autoRefreshService.initialize()
     await webdavAutoSyncService.initialize()
+    await newApiModelSyncScheduler.initialize()
 
-    // Ensure user preferences are migrated on startup
-    await userPreferences.getPreferences()
-  })
+    servicesInitialized = true
+  }
+
+  await initializeServices()
 
   // 插件安装时初始化自动刷新服务和WebDAV自动同步服务
   onInstalled(async (details) => {
     console.log(
       "[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务"
     )
-    await autoRefreshService.initialize()
-    await webdavAutoSyncService.initialize()
+    await initializeServices()
 
     if (details.reason === "install" || details.reason === "update") {
       console.log(`Extension ${details.reason}: triggering config migration`)
@@ -108,6 +118,12 @@ function main() {
     // 处理WebDAV自动同步相关消息
     if (request.action && request.action.startsWith("webdavAutoSync:")) {
       handleWebdavAutoSyncMessage(request, sendResponse)
+      return true
+    }
+
+    // 处理New API模型同步相关消息
+    if (request.action && request.action.startsWith("newApiModelSync:")) {
+      handleNewApiModelSyncMessage(request, sendResponse)
       return true
     }
   })

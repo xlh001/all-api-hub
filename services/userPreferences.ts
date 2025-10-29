@@ -43,6 +43,18 @@ export interface UserPreferences {
   newApiAdminToken?: string
   newApiUserId?: string
 
+  // New API Model Sync 配置
+  newApiModelSync?: {
+    enabled: boolean
+    interval: number // 同步间隔（毫秒）
+    concurrency: number // 并发数量（单通道并发任务数）
+    maxRetries: number // 最大重试次数
+    rateLimit: {
+      requestsPerMinute: number // 每分钟请求次数限制
+      burst: number // 瞬时突发请求数
+    }
+  }
+
   sortingPriorityConfig?: SortingPriorityConfig
   themeMode: ThemeMode
   language?: string // Added language preference
@@ -57,7 +69,7 @@ const STORAGE_KEYS = {
 } as const
 
 // 默认配置
-const DEFAULT_PREFERENCES: UserPreferences = {
+export const DEFAULT_PREFERENCES: UserPreferences = {
   activeTab: DATA_TYPE_CONSUMPTION,
   currencyType: "USD",
   sortField: DATA_TYPE_BALANCE, // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
@@ -77,6 +89,16 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   newApiBaseUrl: "",
   newApiAdminToken: "",
   newApiUserId: "",
+  newApiModelSync: {
+    enabled: false,
+    interval: 24 * 60 * 60 * 1000, // 24小时
+    concurrency: 2, // 降低并发数，避免触发速率限制
+    maxRetries: 2,
+    rateLimit: {
+      requestsPerMinute: 20, // 每分钟20个请求
+      burst: 5 // 允许5个突发请求
+    }
+  },
   sortingPriorityConfig: undefined,
   themeMode: "system",
   language: undefined, // Default to undefined to trigger browser detection
@@ -128,9 +150,18 @@ class UserPreferencesService {
   ): Promise<boolean> {
     try {
       const currentPreferences = await this.getPreferences()
+      const { newApiModelSync: newSyncConfig, ...rest } = preferences
+
       const updatedPreferences: UserPreferences = {
         ...currentPreferences,
-        ...preferences,
+        ...rest,
+        newApiModelSync: newSyncConfig
+          ? {
+              ...(currentPreferences.newApiModelSync ??
+                DEFAULT_PREFERENCES.newApiModelSync!),
+              ...newSyncConfig
+            }
+          : currentPreferences.newApiModelSync,
         lastUpdated: Date.now(),
         preferencesVersion: CURRENT_PREFERENCES_VERSION
       }
