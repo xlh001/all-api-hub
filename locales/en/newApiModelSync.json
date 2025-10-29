@@ -71,7 +71,9 @@
       "noData": "No execution history yet",
       "noDataDesc": "Click \"Run All\" to start synchronizing all channels",
       "noResults": "No matching results",
-      "noResultsDesc": "Try adjusting your filters or search query"
+      "noResultsDesc": "Try adjusting your filters or search query",
+      "configWarningDesc": "Please configure New API base URL, admin token, and user ID before running model sync",
+      "goToSettings": "Go to Settings"
     }
   },
   "messages": {
