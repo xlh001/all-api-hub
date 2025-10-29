@@ -118,6 +118,10 @@ With this feature, you can easily synchronize your API provider configurations t
 - In **Settings → Data Management**, export all account configs to JSON in a single click.
 - Import previously exported data from other devices or older versions for quick migration or recovery.
 
+### 5.6 New API Model List Synchronization
+
+For detailed documentation on the New API Model List Synchronization feature, see [New API Model List Synchronization](./new-api-model-sync.md).
+
 ## 6. Support & Troubleshooting
 
 - See the detailed [FAQ](./faq.md) for authentication modes, AnyRouter compatibility, feature tips, and more.
