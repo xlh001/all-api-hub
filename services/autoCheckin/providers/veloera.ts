@@ -41,9 +41,13 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
 
     const responseMessage =
       typeof response.message === "string" ? response.message : ""
+    const normalizedMessage = responseMessage.toLowerCase()
 
     // Check if response.message indicates already checked in
-    if (responseMessage.includes("已签到")) {
+    if (
+      normalizedMessage.includes("已签到") ||
+      normalizedMessage.includes("already checked in")
+    ) {
       return {
         status: "already_checked",
         message: responseMessage || "Already checked in today"
@@ -67,11 +71,12 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
   } catch (error: any) {
     // Handle specific error cases
     const errorMessage = error?.message || String(error)
+    const normalizedErrorMessage = errorMessage.toLowerCase()
 
     // Check if already checked in based on error message
     if (
-      errorMessage.includes("已签到") ||
-      errorMessage.includes("already checked in")
+      normalizedErrorMessage.includes("已签到") ||
+      normalizedErrorMessage.includes("already checked in")
     ) {
       return {
         status: "already_checked",

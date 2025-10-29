@@ -90,8 +90,8 @@ export default function AutoCheckin() {
       const keyword = searchKeyword.toLowerCase()
       return (
         result.accountName.toLowerCase().includes(keyword) ||
-        result.accountId.toLowerCase().includes(keyword) ||
-        result.message?.toLowerCase().includes(keyword)
+        String(result.accountId).toLowerCase().includes(keyword) ||
+        (result.message?.toLowerCase() ?? "").includes(keyword)
       )
     }
 
