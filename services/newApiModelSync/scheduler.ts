@@ -178,37 +178,39 @@ class NewApiModelSyncScheduler {
 
     let failureCount = 0
 
-    // Execute batch sync
-    const result = await service.runBatch(channels, {
-      concurrency,
-      maxRetries,
-      onProgress: (payload) => {
-        if (!payload.lastResult.ok) {
-          failureCount += 1
+    let result
+    try {
+      // Execute batch sync
+      result = await service.runBatch(channels, {
+        concurrency,
+        maxRetries,
+        onProgress: (payload) => {
+          if (!payload.lastResult.ok) {
+            failureCount += 1
+          }
+
+          if (this.currentProgress) {
+            this.currentProgress.completed = payload.completed
+            this.currentProgress.lastResult = payload.lastResult
+            this.currentProgress.currentChannel = payload.lastResult.channelName
+            this.currentProgress.failed = failureCount
+          }
+          this.notifyProgress()
         }
+      })
 
-        if (this.currentProgress) {
-          this.currentProgress.completed = payload.completed
-          this.currentProgress.lastResult = payload.lastResult
-          this.currentProgress.currentChannel = payload.lastResult.channelName
-          this.currentProgress.failed = failureCount
-        }
-        this.notifyProgress()
-      }
-    })
+      // Save execution result
+      await newApiModelSyncStorage.saveLastExecution(result)
+      console.log(
+        `[NewApiModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`
+      )
 
-    // Save execution result
-    await newApiModelSyncStorage.saveLastExecution(result)
-
-    // Clear progress
-    this.currentProgress = null
-    this.notifyProgress()
-
-    console.log(
-      `[NewApiModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`
-    )
-
-    return result
+      return result
+    } finally {
+      // Clear progress
+      this.currentProgress = null
+      this.notifyProgress()
+    }
   }
 
   /**
