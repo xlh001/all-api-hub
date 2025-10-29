@@ -216,9 +216,6 @@ This will create the production-ready extension package in the `build` directory
 - **State Management**: React Context API
 - **Type Checking**: [TypeScript](https://typescriptlang.org)
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgements
 

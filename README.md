@@ -209,9 +209,6 @@ pnpm build
 - **状态管理**: React Context API
 - **类型检查**: [TypeScript](https://typescriptlang.org)
 
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
 ## 🙏 致谢
 

@@ -54,7 +54,7 @@ features:
     details: The extension is now fully compatible with the Firefox browser, providing a seamless experience for Firefox users.
   - title: Plugin Works Offline
     details: All core functions can be run locally offline without an internet connection, effectively protecting your data privacy and ensuring stability.
-footer: MIT Licensed | Copyright © 2025-present All API Hub
+footer: AGPL-3.0 Licensed | Copyright © 2025-present All API Hub
 ---
 
 ## Introduction

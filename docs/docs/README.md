@@ -59,7 +59,7 @@ features:
   - title: 插件无需联网
     details: 所有核心功能均可在本地离线运行，无需联网，有效保护您的数据隐私并保障使用稳定性。
 
-footer: MIT Licensed | Copyright © 2025-present All API Hub
+footer: AGPL-3.0 Licensed | Copyright © 2025-present All API Hub
 ---
 
 ## 介绍
