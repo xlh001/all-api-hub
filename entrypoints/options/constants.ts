@@ -41,6 +41,12 @@ export const menuItems: MenuItem[] = [
     component: AccountManagement
   },
   {
+    id: "autoCheckin",
+    name: "自动签到",
+    icon: CheckBadgeIcon,
+    component: AutoCheckin
+  },
+  {
     id: "models",
     name: "模型列表",
     icon: CpuChipIcon,
@@ -57,12 +63,6 @@ export const menuItems: MenuItem[] = [
     name: "模型同步",
     icon: ArrowPathRoundedSquareIcon,
     component: NewApiModelSync
-  },
-  {
-    id: "autoCheckin",
-    name: "自动签到",
-    icon: CheckBadgeIcon,
-    component: AutoCheckin
   },
   {
     id: "importExport",
