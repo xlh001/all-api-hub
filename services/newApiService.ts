@@ -10,7 +10,7 @@ import type { ApiToken, DisplaySiteData } from "~/types"
 import type { NewApiResponse, ServiceResponse } from "~/types/serviceResponse"
 import { isArraysEqual, isNotEmptyArray } from "~/utils"
 
-import { userPreferences } from "./userPreferences"
+import { UserPreferences, userPreferences } from "./userPreferences"
 
 // 新 API 的返回类型定义
 interface NewApiChannel {
@@ -91,6 +91,15 @@ export async function createChannel(
   }
 }
 
+export function hasValidNewApiConfig(
+  prefs: Partial<UserPreferences>
+): prefs is Required<
+  Pick<UserPreferences, "newApiBaseUrl" | "newApiAdminToken" | "newApiUserId">
+> {
+  const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
+  return Boolean(newApiBaseUrl && newApiAdminToken && newApiUserId)
+}
+
 /**
  * 将账户导入到 New API
  * @param account 站点数据
@@ -102,14 +111,15 @@ export async function importToNewApi(
 ): Promise<ServiceResponse<void>> {
   try {
     const prefs = await userPreferences.getPreferences()
-    const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
 
-    if (!newApiBaseUrl || !newApiAdminToken || !newApiUserId) {
+    if (!hasValidNewApiConfig(prefs)) {
       return {
         success: false,
         message: t("messages:newapi.configMissing")
       }
     }
+
+    const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
 
     // 搜索现有渠道
     const searchResults = await searchChannel(

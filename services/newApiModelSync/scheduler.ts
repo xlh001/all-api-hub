@@ -1,3 +1,6 @@
+import { t } from "i18next"
+
+import { hasValidNewApiConfig } from "~/services/newApiService.ts"
 import {
   ExecutionProgress,
   ExecutionResult,
@@ -27,11 +30,12 @@ class NewApiModelSyncScheduler {
 
   private async createService(): Promise<NewApiModelSyncService> {
     const userPrefs = await userPreferences.getPreferences()
-    const { newApiBaseUrl, newApiAdminToken, newApiUserId } = userPrefs
 
-    if (!newApiBaseUrl || !newApiAdminToken) {
-      throw new Error("New API configuration is missing")
+    if (!hasValidNewApiConfig(userPrefs)) {
+      throw new Error(t("messages:newapi.configMissing"))
     }
+
+    const { newApiBaseUrl, newApiAdminToken, newApiUserId } = userPrefs
 
     const config =
       userPrefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
