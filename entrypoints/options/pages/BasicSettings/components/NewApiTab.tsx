@@ -1,4 +1,3 @@
-import DangerousZone from "./DangerousZone"
 import NewApiModelSyncSettings from "./NewApiModelSyncSettings"
 import NewApiSettings from "./NewApiSettings"
 
@@ -11,10 +10,6 @@ export default function NewApiTab() {
 
       <section id="new-api-model-sync">
         <NewApiModelSyncSettings />
-      </section>
-
-      <section id="dangerous-zone">
-        <DangerousZone />
       </section>
     </div>
   )
