@@ -45,7 +45,7 @@ features:
   - title: WebDav Data Backup & Restore
     details: Supports backing up and restoring all accounts and settings via WebDav, ensuring data security and enabling cross-device synchronization.
   - title: Mobile Support
-    details: Available on mobile devices via Kiwi Browser or the mobile version of Firefox for a full feature experience.
+    details: Use on mobile devices with any extension-supporting browser such as Kiwi or Firefox for mobile, supporting all features.
   - title: Manually Add Sites
     details: Supports manually adding any relay site, which solves the problem of not being able to add a site when automatic recognition fails, enhancing flexibility.
   - title: Dark Mode
