@@ -76,6 +76,7 @@ export function useAccountDialog({
     setNotes("")
     setCheckIn({
       enableDetection: false,
+      autoCheckInEnabled: true,
       isCheckedInToday: false,
       customCheckInUrl: "",
       customRedeemUrl: "",
@@ -100,6 +101,7 @@ export function useAccountDialog({
           setNotes(siteAccount.notes || "")
           setCheckIn({
             enableDetection: siteAccount.checkIn?.enableDetection ?? false,
+            autoCheckInEnabled: siteAccount.checkIn?.autoCheckInEnabled ?? true,
             isCheckedInToday: siteAccount.checkIn?.isCheckedInToday ?? false,
             customCheckInUrl: siteAccount.checkIn?.customCheckInUrl ?? "",
             customRedeemUrl: siteAccount.checkIn?.customRedeemUrl ?? "",
@@ -202,6 +204,7 @@ export function useAccountDialog({
         setUserId(resultData.userId)
         setCheckIn({
           enableDetection: resultData.checkIn?.enableDetection ?? false,
+          autoCheckInEnabled: resultData.checkIn?.autoCheckInEnabled ?? true,
           isCheckedInToday: resultData.checkIn?.isCheckedInToday ?? false,
           customCheckInUrl: resultData.checkIn?.customCheckInUrl ?? "",
           customRedeemUrl: resultData.checkIn?.customRedeemUrl ?? "",

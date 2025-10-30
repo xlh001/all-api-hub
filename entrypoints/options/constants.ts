@@ -1,6 +1,7 @@
 import {
   ArrowPathIcon,
   ArrowPathRoundedSquareIcon,
+  CheckBadgeIcon,
   CogIcon,
   CpuChipIcon,
   InformationCircleIcon,
@@ -10,6 +11,7 @@ import {
 
 import About from "./pages/About"
 import AccountManagement from "./pages/AccountManagement"
+import AutoCheckin from "./pages/AutoCheckin"
 import BasicSettings from "./pages/BasicSettings"
 import ImportExport from "./pages/ImportExport"
 import KeyManagement from "./pages/KeyManagement"
@@ -37,6 +39,12 @@ export const menuItems: MenuItem[] = [
     name: "账户管理",
     icon: UserIcon,
     component: AccountManagement
+  },
+  {
+    id: "autoCheckin",
+    name: "自动签到",
+    icon: CheckBadgeIcon,
+    component: AutoCheckin
   },
   {
     id: "models",

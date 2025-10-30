@@ -85,6 +85,16 @@ export interface CheckInConfig {
   enableDetection: boolean
 
   /**
+   * Whether to enable automatic daily check-in for this account.
+   * Only effective when:
+   * - enableDetection is true
+   * - Global auto check-in feature is enabled
+   * - Account has necessary credentials for check-in
+   * Default: false
+   */
+  autoCheckInEnabled?: boolean
+
+  /**
    * Today's check-in status.
    * - true: Can check in today (not yet checked in)
    * - false: Already checked in today

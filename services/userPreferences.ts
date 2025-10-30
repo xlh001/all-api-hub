@@ -6,6 +6,7 @@ import {
   migratePreferences
 } from "~/services/configMigration/preferencesMigration"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
+import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
@@ -59,6 +60,9 @@ export interface UserPreferences {
   themeMode: ThemeMode
   language?: string // Added language preference
 
+  // Auto Check-in 配置
+  autoCheckin?: AutoCheckinPreferences
+
   // Configuration version for migration tracking
   preferencesVersion?: number
 }
@@ -98,6 +102,11 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
       requestsPerMinute: 20, // 每分钟20个请求
       burst: 5 // 允许5个突发请求
     }
+  },
+  autoCheckin: {
+    globalEnabled: false,
+    windowStart: "09:00",
+    windowEnd: "18:00"
   },
   sortingPriorityConfig: undefined,
   themeMode: "system",
@@ -150,7 +159,11 @@ class UserPreferencesService {
   ): Promise<boolean> {
     try {
       const currentPreferences = await this.getPreferences()
-      const { newApiModelSync: newSyncConfig, ...rest } = preferences
+      const {
+        newApiModelSync: newSyncConfig,
+        autoCheckin: autoCheckinConfig,
+        ...rest
+      } = preferences
 
       const updatedPreferences: UserPreferences = {
         ...currentPreferences,
@@ -162,6 +175,13 @@ class UserPreferencesService {
               ...newSyncConfig
             }
           : currentPreferences.newApiModelSync,
+        autoCheckin: autoCheckinConfig
+          ? {
+              ...(currentPreferences.autoCheckin ??
+                DEFAULT_PREFERENCES.autoCheckin!),
+              ...autoCheckinConfig
+            }
+          : currentPreferences.autoCheckin,
         lastUpdated: Date.now(),
         preferencesVersion: CURRENT_PREFERENCES_VERSION
       }
