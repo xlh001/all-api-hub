@@ -8,7 +8,8 @@
     "checkinRedeem": "Check-in & Redeem",
     "dataBackup": "Data & Backup",
     "newApi": "New API",
-    "more": "More"
+    "more": "More",
+    "select": "Select a tab"
   },
   "display": {
     "title": "Display Settings",
