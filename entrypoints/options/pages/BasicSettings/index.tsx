@@ -43,15 +43,14 @@ const TAB_CONFIGS: TabConfig[] = [
   { id: "newApi", component: NewApiTab }
 ]
 
-// Map anchor IDs to their corresponding tabs
 const ANCHOR_TO_TAB: Record<string, TabId> = {
   "general-display": "general",
   display: "general",
   appearance: "general",
   theme: "general",
+  "account-management": "accountManagement",
   "sorting-priority": "accountManagement",
   sorting: "accountManagement",
-  "account-management": "accountManagement",
   "auto-refresh": "autoRefresh",
   refresh: "autoRefresh",
   "checkin-redeem": "checkinRedeem",
@@ -68,7 +67,6 @@ export default function BasicSettings() {
   const { t } = useTranslation("settings")
   const { isLoading } = useUserPreferencesContext()
 
-  // Define tabs with i18n labels
   const tabs: TabType[] = useMemo(
     () =>
       TAB_CONFIGS.map((config) => ({
@@ -78,11 +76,9 @@ export default function BasicSettings() {
     [t]
   )
 
-  // Parse initial tab from URL
   const [selectedTabIndex, setSelectedTabIndex] = useState(0)
   const selectedTab = TAB_CONFIGS[selectedTabIndex]
 
-  // Tab overflow for mobile
   const {
     visibleTabs,
     overflowTabs,
@@ -91,7 +87,7 @@ export default function BasicSettings() {
     hasOverflow
   } = useTabsOverflow(tabs, selectedTab?.id ?? "general", {
     minVisibleTabs: 1,
-    moreButtonWidth: 90
+    moreButtonWidth: 100
   })
 
   const visibleTabIds = useMemo(
@@ -132,7 +128,6 @@ export default function BasicSettings() {
     }
   }, [])
 
-  // Initialize tab state and listen to history changes
   useEffect(() => {
     applyUrlState()
     window.addEventListener("popstate", applyUrlState)
@@ -148,7 +143,6 @@ export default function BasicSettings() {
     []
   )
 
-  // Update URL when tab changes
   const handleTabChange = useCallback((index: number) => {
     if (index < 0 || index >= TAB_CONFIGS.length) return
     setSelectedTabIndex(index)
@@ -165,12 +159,8 @@ export default function BasicSettings() {
       <SettingsHeader />
 
       <Tab.Group selectedIndex={selectedTabIndex} onChange={handleTabChange}>
-        {/* Tab Navigation */}
-        <div
-          ref={containerRef}
-          className="mb-6 border-b border-gray-200 dark:border-dark-bg-tertiary">
+        <div ref={containerRef} className="mb-6 border-b border-gray-200 dark:border-dark-bg-tertiary">
           <Tab.List className="-mb-px flex items-center space-x-2 overflow-hidden">
-            {/* Desktop: All tabs visible */}
             <div className="hidden md:flex md:space-x-2">
               {tabs.map((tab) => (
                 <Tab key={tab.id} as={Fragment}>
@@ -188,28 +178,30 @@ export default function BasicSettings() {
               ))}
             </div>
 
-            {/* Mobile: Visible tabs + overflow menu */}
             <div className="flex w-full items-center md:hidden">
               <div className="flex flex-1 items-center space-x-1 overflow-hidden">
-                {tabs.map((tab, index) => {
-                  if (!visibleTabIds.has(tab.id)) return null
+                {TAB_CONFIGS.map((config, index) => {
+                  if (!visibleTabIds.has(config.id)) return null
+                  const label = tabs[index]?.label ?? t(`tabs.${config.id}`)
+
                   return (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleTabChange(index)}
-                      data-tab-id={tab.id}
-                      className={`flex-shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-xs font-medium transition-colors focus:outline-none sm:px-3 sm:py-2.5 sm:text-sm ${
-                        selectedTabIndex === index
-                          ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
-                          : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                      }`}>
-                      {tab.label}
-                    </button>
+                    <Tab key={config.id} as={Fragment}>
+                      {({ selected }) => (
+                        <button
+                          data-tab-id={config.id}
+                          className={`flex-shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-xs font-medium transition-colors focus:outline-none sm:px-3 sm:py-2.5 sm:text-sm ${
+                            selected
+                              ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
+                              : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                          }`}>
+                          {label}
+                        </button>
+                      )}
+                    </Tab>
                   )
                 })}
               </div>
 
-              {/* More Menu for overflow tabs */}
               {hasOverflow && overflowTabs.length > 0 && (
                 <Menu as="div" className="relative ml-1 flex-shrink-0">
                   {({ open }) => (
@@ -236,10 +228,11 @@ export default function BasicSettings() {
                         leaveTo="transform opacity-0 scale-95">
                         <Menu.Items className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-bg-secondary dark:ring-gray-700">
                           <div className="py-1">
-                            {tabs.map((tab, index) => {
-                              if (!overflowTabIds.has(tab.id)) return null
+                            {TAB_CONFIGS.map((config, index) => {
+                              if (!overflowTabIds.has(config.id)) return null
+                              const label = tabs[index]?.label ?? t(`tabs.${config.id}`)
                               return (
-                                <Menu.Item key={tab.id}>
+                                <Menu.Item key={config.id}>
                                   {({ active }) => (
                                     <button
                                       onClick={() => handleTabChange(index)}
@@ -250,11 +243,11 @@ export default function BasicSettings() {
                                             ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-200"
                                             : "text-gray-700 dark:text-gray-300"
                                       }`}>
-                                      {tab.label}
+                                      {label}
                                     </button>
                                   )}
                                 </Menu.Item>
-                              )
+                              )}
                             })}
                           </div>
                         </Menu.Items>
@@ -266,23 +259,21 @@ export default function BasicSettings() {
             </div>
           </Tab.List>
 
-          {/* Hidden measurement container for tab width calculations */}
           <div
             ref={measurementRef}
-            className="pointer-events-none fixed left-[-9999px] top-[-9999px] flex space-x-1"
+            className="pointer-events-none fixed left-[-9999px] top-[-9999px] flex space-x-2"
             aria-hidden="true">
             {tabs.map((tab) => (
               <div
                 key={tab.id}
                 data-tab-id={tab.id}
-                className="whitespace-nowrap border-b-2 border-transparent px-2 py-2 text-xs font-medium sm:px-3 sm:py-2.5 sm:text-sm">
+                className="whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-xs font-medium sm:text-sm">
                 {tab.label}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Tab Panels */}
         <Tab.Panels>
           {TAB_CONFIGS.map((config) => {
             const Component = config.component
