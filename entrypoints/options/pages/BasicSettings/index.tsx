@@ -94,6 +94,16 @@ export default function BasicSettings() {
     moreButtonWidth: 90
   })
 
+  const visibleTabIds = useMemo(
+    () => new Set(visibleTabs.map((tab) => tab.id)),
+    [visibleTabs]
+  )
+
+  const overflowTabIds = useMemo(
+    () => new Set(overflowTabs.map((tab) => tab.id)),
+    [overflowTabs]
+  )
+
   const applyUrlState = useCallback(() => {
     const { tab, anchor, isHeadingAnchor } = parseTabFromUrl({
       ignoreAnchors: ["basic"],
@@ -179,34 +189,34 @@ export default function BasicSettings() {
             </div>
 
             {/* Mobile: Visible tabs + overflow menu */}
-            <div className="flex w-full items-center space-x-1 md:hidden">
-              {visibleTabs.map((tab) => {
-                const tabIndex = getTabIndexFromId(tab.id)
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabChange(tabIndex)}
-                    data-tab-id={tab.id}
-                    className={`flex-shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-xs font-medium transition-colors focus:outline-none sm:px-3 sm:py-2.5 sm:text-sm ${
-                      selectedTabIndex === tabIndex
-                        ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
-                        : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}>
-                    {tab.label}
-                  </button>
-                )
-              })}
+            <div className="flex w-full items-center md:hidden">
+              <div className="flex flex-1 items-center space-x-1 overflow-hidden">
+                {tabs.map((tab, index) => {
+                  if (!visibleTabIds.has(tab.id)) return null
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => handleTabChange(index)}
+                      data-tab-id={tab.id}
+                      className={`flex-shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-xs font-medium transition-colors focus:outline-none sm:px-3 sm:py-2.5 sm:text-sm ${
+                        selectedTabIndex === index
+                          ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
+                          : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                      }`}>
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </div>
 
               {/* More Menu for overflow tabs */}
-              {hasOverflow && (
-                <Menu as="div" className="relative flex-shrink-0">
+              {hasOverflow && overflowTabs.length > 0 && (
+                <Menu as="div" className="relative ml-1 flex-shrink-0">
                   {({ open }) => (
                     <>
                       <Menu.Button
                         className={`flex items-center gap-1 whitespace-nowrap border-b-2 px-2 py-2 text-xs font-medium transition-colors focus:outline-none sm:px-3 sm:py-2.5 sm:text-sm ${
-                          overflowTabs.some(
-                            (t) => t.id === selectedTab?.id
-                          )
+                          overflowTabIds.has(selectedTab?.id ?? "")
                             ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
                             : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
                         }`}>
@@ -226,15 +236,15 @@ export default function BasicSettings() {
                         leaveTo="transform opacity-0 scale-95">
                         <Menu.Items className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-bg-secondary dark:ring-gray-700">
                           <div className="py-1">
-                            {overflowTabs.map((tab) => {
-                              const tabIndex = getTabIndexFromId(tab.id)
+                            {tabs.map((tab, index) => {
+                              if (!overflowTabIds.has(tab.id)) return null
                               return (
                                 <Menu.Item key={tab.id}>
                                   {({ active }) => (
                                     <button
-                                      onClick={() => handleTabChange(tabIndex)}
+                                      onClick={() => handleTabChange(index)}
                                       className={`block w-full px-4 py-2 text-left text-sm ${
-                                        selectedTab?.id === tab.id
+                                        selectedTabIndex === index
                                           ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
                                           : active
                                             ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-200"

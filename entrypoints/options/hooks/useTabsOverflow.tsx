@@ -61,7 +61,10 @@ export function useTabsOverflow(
   }, [tabGap, tabWidths])
 
   useEffect(() => {
-    measureTabs()
+    // Initial measurement
+    const initialTimeout = window.setTimeout(() => {
+      measureTabs()
+    }, 50)
 
     const calculateOverflow = () => {
       const container = containerRef.current
@@ -82,7 +85,7 @@ export function useTabsOverflow(
 
       const orderedTabs = tabs.map((tab) => ({
         ...tab,
-        width: tabWidths.get(tab.id) ?? 0
+        width: tabWidths.get(tab.id) ?? 100
       }))
 
       const selectedIndex = orderedTabs.findIndex(
@@ -127,8 +130,8 @@ export function useTabsOverflow(
         overflowIndex < overflow.length
       ) {
         const tab = overflow[overflowIndex]
-        const width = tabWidths.get(tab.id) ?? 0
-        if (currentWidth + width <= containerWidth) {
+        const width = tabWidths.get(tab.id) ?? 100
+        if (currentWidth + width <= containerWidth - moreButtonWidth) {
           visible.push(tab)
           currentWidth += width
           overflow.splice(overflowIndex, 1)
@@ -169,6 +172,7 @@ export function useTabsOverflow(
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
+      window.clearTimeout(initialTimeout)
     }
   }, [
     tabs,
