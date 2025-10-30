@@ -117,12 +117,11 @@ export function navigateToAnchor(
   }
 
   window.requestAnimationFrame(() => {
-    const timeout = window.setTimeout(() => {
+    window.setTimeout(() => {
       const element = document.getElementById(anchor)
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "start" })
       }
-      window.clearTimeout(timeout)
     }, delay)
   })
 }
