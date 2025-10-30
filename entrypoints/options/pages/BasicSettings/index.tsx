@@ -13,25 +13,21 @@ import {
 import { useTabsOverflow } from "../../hooks/useTabsOverflow"
 import type { Tab as TabType } from "../../hooks/useTabsOverflow"
 import AccountManagementTab from "./components/AccountManagementTab"
-import AdvancedTab from "./components/AdvancedTab"
-import AppearanceLanguageTab from "./components/AppearanceLanguageTab"
 import AutoRefreshTab from "./components/AutoRefreshTab"
 import CheckinRedeemTab from "./components/CheckinRedeemTab"
 import DataBackupTab from "./components/DataBackupTab"
 import GeneralTab from "./components/GeneralTab"
 import LoadingSkeleton from "./components/LoadingSkeleton"
+import NewApiTab from "./components/NewApiTab"
 import SettingsHeader from "./components/SettingsHeader"
-import SortingPriorityTab from "./components/SortingPriorityTab"
 
 type TabId =
   | "general"
   | "accountManagement"
-  | "sortingPriority"
-  | "checkinRedeem"
   | "autoRefresh"
+  | "checkinRedeem"
   | "dataBackup"
-  | "appearanceLanguage"
-  | "advanced"
+  | "newApi"
 
 interface TabConfig {
   id: TabId
@@ -41,32 +37,31 @@ interface TabConfig {
 const TAB_CONFIGS: TabConfig[] = [
   { id: "general", component: GeneralTab },
   { id: "accountManagement", component: AccountManagementTab },
-  { id: "sortingPriority", component: SortingPriorityTab },
-  { id: "checkinRedeem", component: CheckinRedeemTab },
   { id: "autoRefresh", component: AutoRefreshTab },
+  { id: "checkinRedeem", component: CheckinRedeemTab },
   { id: "dataBackup", component: DataBackupTab },
-  { id: "appearanceLanguage", component: AppearanceLanguageTab },
-  { id: "advanced", component: AdvancedTab }
+  { id: "newApi", component: NewApiTab }
 ]
 
 // Map anchor IDs to their corresponding tabs
 const ANCHOR_TO_TAB: Record<string, TabId> = {
   "general-display": "general",
   display: "general",
-  "sorting-priority": "sortingPriority",
-  sorting: "sortingPriority",
-  "checkin-redeem": "checkinRedeem",
-  checkin: "checkinRedeem",
+  appearance: "general",
+  theme: "general",
+  "sorting-priority": "accountManagement",
+  sorting: "accountManagement",
+  "account-management": "accountManagement",
   "auto-refresh": "autoRefresh",
   refresh: "autoRefresh",
+  "checkin-redeem": "checkinRedeem",
+  checkin: "checkinRedeem",
   webdav: "dataBackup",
   "webdav-auto-sync": "dataBackup",
   "import-export-entry": "dataBackup",
-  appearance: "appearanceLanguage",
-  theme: "appearanceLanguage",
-  "new-api": "advanced",
-  "new-api-model-sync": "advanced",
-  "dangerous-zone": "advanced"
+  "new-api": "newApi",
+  "new-api-model-sync": "newApi",
+  "dangerous-zone": "newApi"
 }
 
 export default function BasicSettings() {
@@ -94,9 +89,9 @@ export default function BasicSettings() {
     containerRef,
     measurementRef,
     hasOverflow
-  } = useTabsOverflow(tabs, selectedTab.id, {
-    minVisibleTabs: 2,
-    moreButtonWidth: 100
+  } = useTabsOverflow(tabs, selectedTab?.id ?? "general", {
+    minVisibleTabs: 1,
+    moreButtonWidth: 90
   })
 
   const applyUrlState = useCallback(() => {
@@ -164,7 +159,7 @@ export default function BasicSettings() {
         <div
           ref={containerRef}
           className="mb-6 border-b border-gray-200 dark:border-dark-bg-tertiary">
-          <Tab.List className="flex items-center space-x-2 overflow-x-hidden">
+          <Tab.List className="-mb-px flex items-center space-x-2 overflow-hidden">
             {/* Desktop: All tabs visible */}
             <div className="hidden md:flex md:space-x-2">
               {tabs.map((tab) => (
@@ -184,37 +179,40 @@ export default function BasicSettings() {
             </div>
 
             {/* Mobile: Visible tabs + overflow menu */}
-            <div className="flex flex-1 items-center space-x-2 md:hidden">
-              {visibleTabs.map((tab) => (
-                <Tab key={tab.id} as={Fragment}>
-                  {({ selected }) => (
-                    <button
-                      data-tab-id={tab.id}
-                      className={`flex-shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-xs font-medium transition-colors focus:outline-none sm:text-sm ${
-                        selected
-                          ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
-                          : "hover-border-gray-300 border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                      }`}>
-                      {tab.label}
-                    </button>
-                  )}
-                </Tab>
-              ))}
+            <div className="flex w-full items-center space-x-1 md:hidden">
+              {visibleTabs.map((tab) => {
+                const tabIndex = getTabIndexFromId(tab.id)
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tabIndex)}
+                    data-tab-id={tab.id}
+                    className={`flex-shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-xs font-medium transition-colors focus:outline-none sm:px-3 sm:py-2.5 sm:text-sm ${
+                      selectedTabIndex === tabIndex
+                        ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
+                        : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}>
+                    {tab.label}
+                  </button>
+                )
+              })}
 
               {/* More Menu for overflow tabs */}
               {hasOverflow && (
-                <Menu as="div" className="relative">
+                <Menu as="div" className="relative flex-shrink-0">
                   {({ open }) => (
                     <>
                       <Menu.Button
-                        className={`flex items-center gap-1 whitespace-nowrap border-b-2 px-3 py-2.5 text-xs font-medium transition-colors focus:outline-none sm:text-sm ${
-                          overflowTabs.some((t) => t.id === selectedTab.id)
+                        className={`flex items-center gap-1 whitespace-nowrap border-b-2 px-2 py-2 text-xs font-medium transition-colors focus:outline-none sm:px-3 sm:py-2.5 sm:text-sm ${
+                          overflowTabs.some(
+                            (t) => t.id === selectedTab?.id
+                          )
                             ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
                             : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
                         }`}>
                         {t("tabs.more")}
                         <ChevronDownIcon
-                          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+                          className={`h-3 w-3 transition-transform sm:h-4 sm:w-4 ${open ? "rotate-180" : ""}`}
                         />
                       </Menu.Button>
 
@@ -226,7 +224,7 @@ export default function BasicSettings() {
                         leave="transition ease-in duration-75"
                         leaveFrom="transform opacity-100 scale-100"
                         leaveTo="transform opacity-0 scale-95">
-                        <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-bg-secondary dark:ring-gray-700">
+                        <Menu.Items className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-bg-secondary dark:ring-gray-700">
                           <div className="py-1">
                             {overflowTabs.map((tab) => {
                               const tabIndex = getTabIndexFromId(tab.id)
@@ -236,7 +234,7 @@ export default function BasicSettings() {
                                     <button
                                       onClick={() => handleTabChange(tabIndex)}
                                       className={`block w-full px-4 py-2 text-left text-sm ${
-                                        selectedTab.id === tab.id
+                                        selectedTab?.id === tab.id
                                           ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
                                           : active
                                             ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-200"
@@ -261,13 +259,13 @@ export default function BasicSettings() {
           {/* Hidden measurement container for tab width calculations */}
           <div
             ref={measurementRef}
-            className="pointer-events-none fixed left-[-9999px] top-[-9999px] flex space-x-2"
+            className="pointer-events-none fixed left-[-9999px] top-[-9999px] flex space-x-1"
             aria-hidden="true">
             {tabs.map((tab) => (
               <div
                 key={tab.id}
                 data-tab-id={tab.id}
-                className="whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-xs font-medium sm:text-sm">
+                className="whitespace-nowrap border-b-2 border-transparent px-2 py-2 text-xs font-medium sm:px-3 sm:py-2.5 sm:text-sm">
                 {tab.label}
               </div>
             ))}

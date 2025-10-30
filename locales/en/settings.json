@@ -4,12 +4,10 @@
   "tabs": {
     "general": "General",
     "accountManagement": "Account Management",
-    "sortingPriority": "Sorting Priority",
-    "checkinRedeem": "Check-in & Redeem",
     "autoRefresh": "Auto Refresh",
+    "checkinRedeem": "Check-in & Redeem",
     "dataBackup": "Data & Backup",
-    "appearanceLanguage": "Appearance & Language",
-    "advanced": "Advanced",
+    "newApi": "New API",
     "more": "More"
   },
   "display": {
@@ -75,7 +73,7 @@
   },
   "accountManagement": {
     "title": "Account Management",
-    "description": "Manage accounts, balances, and API keys in the dedicated management console.",
+    "description": "Manage accounts, balances, API keys, and configure sorting priorities in the dedicated management console.",
     "openPage": "Open Account Management Page"
   },
   "newApi": {

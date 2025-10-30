@@ -4,12 +4,10 @@
   "tabs": {
     "general": "通用",
     "accountManagement": "账号管理",
-    "sortingPriority": "排序优先级",
-    "checkinRedeem": "签到与兑换",
     "autoRefresh": "自动刷新",
+    "checkinRedeem": "签到与兑换",
     "dataBackup": "数据与备份",
-    "appearanceLanguage": "外观与语言",
-    "advanced": "高级",
+    "newApi": "New API",
     "more": "更多"
   },
   "display": {
@@ -75,7 +73,7 @@
   },
   "accountManagement": {
     "title": "账号管理",
-    "description": "在专用管理控制台中管理账号、余额和 API 密钥。",
+    "description": "在专用管理控制台中管理账号、余额、API 密钥并配置排序优先级。",
     "openPage": "打开账号管理页面"
   },
   "newApi": {

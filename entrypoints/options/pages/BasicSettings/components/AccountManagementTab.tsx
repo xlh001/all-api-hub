@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next"
 
 import { Button, Card, CardContent, Heading4 } from "~/components/ui"
 
+import SortingPrioritySettings from "./SortingPrioritySettings"
+
 export default function AccountManagementTab() {
   const { t } = useTranslation("settings")
 
@@ -32,6 +34,10 @@ export default function AccountManagementTab() {
             </Button>
           </CardContent>
         </Card>
+      </section>
+
+      <section id="sorting-priority">
+        <SortingPrioritySettings />
       </section>
     </div>
   )

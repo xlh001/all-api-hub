@@ -18,9 +18,8 @@ export default function DataBackupTab() {
   }
 
   const handleNavigateToSection = (section: "import" | "export") => {
-    const url = browser.runtime.getURL(
-      `options.html#importExport?section=${section}`
-    )
+    const hash = section === "import" ? "import-section" : "export-section"
+    const url = browser.runtime.getURL(`options.html#importExport#${hash}`)
     window.location.href = url
   }
 
