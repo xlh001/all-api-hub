@@ -198,8 +198,8 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
   }
 
   return (
-    <div className="flex w-full min-w-0 items-start gap-2 sm:gap-3">
-      <div className="flex flex-shrink-0 flex-col items-center gap-0.5 sm:gap-1">
+    <div className="flex w-full min-w-0 items-center gap-2">
+      <div className="flex flex-shrink-0 flex-col items-center justify-center gap-2">
         <Tooltip
           content={
             <div className="space-y-1">
@@ -229,7 +229,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           }
           position="right">
           <button
-            className={`h-2 w-2 flex-shrink-0 rounded-full transition-all duration-200 ${
+            className={`h-2.5 w-2.5 flex-shrink-0 rounded-full transition-all duration-200 ${
               isRefreshing
                 ? "animate-pulse opacity-60"
                 : "cursor-pointer hover:scale-125"
@@ -246,10 +246,10 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           <button
             type="button"
             onClick={handlePinClick}
-            className="flex h-2 w-2 items-center justify-center transition-transform duration-200 hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="h-3 w-3 rounded-full transition-all duration-200"
             aria-label={pinTooltipLabel}>
             <PinIcon
-              className={`h-2 w-2 -rotate-12 transition-colors ${
+              className={`h-3 w-3 -rotate-12 transition-colors ${
                 isPinned
                   ? "text-gray-600 dark:text-gray-200"
                   : "text-gray-400 dark:text-dark-text-tertiary"
@@ -261,7 +261,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="mb-0.5 flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {site.id === detectedAccountId && (
             <Tooltip content={t("list.site.currentSiteExists")} position="top">
               <Badge variant="warning" size="sm" className="whitespace-nowrap">
@@ -288,7 +288,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           </div>
         </div>
 
-        <div className="flex min-w-0 items-start gap-1 pl-1 sm:pl-1.5">
+        <div className="flex min-w-0 items-start gap-1">
           <UserIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
           <Caption className="truncate" title={site.username}>
             {highlights?.username && site.username
@@ -298,7 +298,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
         </div>
 
         {highlights?.baseUrl && (
-          <div className="mt-0.5 flex min-w-0 items-start gap-1 pl-1 sm:pl-1.5">
+          <div className="mt-0.5 flex min-w-0 items-start gap-1">
             <LinkIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.baseUrl}>
               {renderHighlightedFragments(highlights.baseUrl, site.baseUrl)}
@@ -307,7 +307,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
         )}
 
         {highlights?.customCheckInUrl && site.checkIn?.customCheckInUrl && (
-          <div className="mt-0.5 flex min-w-0 items-start gap-1 pl-1 sm:pl-1.5">
+          <div className="mt-0.5 flex min-w-0 items-start gap-1">
             <ArrowPathIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.checkIn.customCheckInUrl}>
               {renderHighlightedFragments(
@@ -319,7 +319,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
         )}
 
         {highlights?.customRedeemUrl && site.checkIn?.customRedeemUrl && (
-          <div className="mt-0.5 flex min-w-0 items-start gap-1 pl-1 sm:pl-1.5">
+          <div className="mt-0.5 flex min-w-0 items-start gap-1">
             <GiftIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.checkIn.customRedeemUrl}>
               {renderHighlightedFragments(
@@ -331,7 +331,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
         )}
 
         {site.notes && (
-          <div className="mt-0.5 flex min-w-0 items-start gap-1 pl-1 sm:mt-1 sm:pl-1.5">
+          <div className="mt-0.5 flex min-w-0 items-start gap-1 sm:mt-1">
             <PencilSquareIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.notes}>
               {site.notes}
