@@ -117,7 +117,9 @@ export const AccountDataProvider = ({
     } finally {
       setIsDetecting(false)
     }
-  }, [])
+    // 确保展示数据刷新时，会重新检测
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayData])
 
   const loadAccountData = useCallback(async () => {
     try {
