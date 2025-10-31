@@ -3,7 +3,7 @@ import React from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { CardItem, IconButton } from "~/components/ui"
+import { CardItem } from "~/components/ui"
 import { useDevice } from "~/contexts/DeviceContext"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/hooks/useAccountListItem"
@@ -65,26 +65,28 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
         onMouseEnter={() => handleMouseEnter(site.id)}
         onMouseLeave={handleMouseLeave}>
         <div className="flex w-full min-w-0 items-center gap-1 sm:gap-2">
-          {/* Pin button */}
-          <div className="flex-shrink-0">
-            <IconButton
-              onClick={handlePinToggle}
-              variant="ghost"
-              size="xs"
-              className={`touch-manipulation ${isPinned ? "text-amber-600 opacity-100 dark:text-amber-400" : revealButtonsClass}`}
-              aria-label={isPinned ? t("actions.unpin") : t("actions.pin")}
-              title={isPinned ? t("actions.unpin") : t("actions.pin")}>
-              {isPinned ? (
-                <PinIcon className="h-4 w-4 fill-current" />
-              ) : (
-                <PinOffIcon className="h-4 w-4" />
-              )}
-            </IconButton>
-          </div>
-
           {/* 左侧：站点信息 - 可压缩 */}
           <div className="min-w-[60px] flex-1 sm:min-w-[80px]">
-            <SiteInfo site={site} highlights={highlights} />
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              {/* Pin button - inline with site info */}
+              <button
+                type="button"
+                onClick={handlePinToggle}
+                className={`flex-shrink-0 touch-manipulation rounded p-0.5 transition-colors hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary ${
+                  isPinned
+                    ? "text-amber-600 opacity-100 dark:text-amber-400"
+                    : revealButtonsClass
+                }`}
+                aria-label={isPinned ? t("actions.unpin") : t("actions.pin")}
+                title={isPinned ? t("actions.unpin") : t("actions.pin")}>
+                {isPinned ? (
+                  <PinIcon className="h-3 w-3 fill-current sm:h-3.5 sm:w-3.5" />
+                ) : (
+                  <PinOffIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                )}
+              </button>
+              <SiteInfo site={site} highlights={highlights} />
+            </div>
           </div>
 
           {/* 中间：操作按钮 */}
