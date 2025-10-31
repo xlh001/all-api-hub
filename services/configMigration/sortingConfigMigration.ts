@@ -83,11 +83,12 @@ export function migrateSortingConfig(
         newCriteria.push({
           ...defaultCriterion,
           priority: maxPriority + index + 1,
-          enabled: defaultCriterion.enabled
+          // Default to disabled for new criteria
+          enabled: false
         })
         modified = true
         console.log(
-          `[SortingConfigMigration] Adding new criterion: ${id} with priority ${maxPriority + index + 1}, enabled: ${defaultCriterion.enabled}`
+          `[SortingConfigMigration] Adding new criterion: ${id} with priority ${maxPriority + index + 1}, enabled: false`
         )
       }
     })
