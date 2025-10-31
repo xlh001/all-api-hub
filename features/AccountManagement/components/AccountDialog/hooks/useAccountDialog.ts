@@ -6,7 +6,7 @@ import {
   autoConfigToNewApi,
   autoDetectAccount,
   getSiteName,
-  isValidExchangeRate,
+  isValidAccount,
   validateAndSaveAccount,
   validateAndUpdateAccount
 } from "~/services/accountOperations"
@@ -380,12 +380,14 @@ export function useAccountDialog({
     onClose()
   }
 
-  const isFormValid =
-    !!siteName.trim() &&
-    !!username.trim() &&
-    !!accessToken.trim() &&
-    !!userId.trim() &&
-    isValidExchangeRate(exchangeRate)
+  const isFormValid = isValidAccount({
+    siteName,
+    username,
+    userId,
+    authType,
+    accessToken,
+    exchangeRate
+  })
 
   return {
     state: {

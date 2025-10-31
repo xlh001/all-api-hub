@@ -158,6 +158,30 @@ export async function autoDetectAccount(
   }
 }
 
+export function isValidAccount({
+  siteName,
+  username,
+  userId,
+  authType,
+  accessToken,
+  exchangeRate
+}: {
+  siteName: string
+  username: string
+  userId: string
+  authType: AuthTypeEnum
+  accessToken: string
+  exchangeRate: string
+}) {
+  return (
+    !!siteName.trim() &&
+    !!username.trim() &&
+    !!userId.trim() &&
+    isValidExchangeRate(exchangeRate) &&
+    (authType !== AuthTypeEnum.AccessToken || !!accessToken.trim())
+  )
+}
+
 // 验证并保存账号信息（用于新增）
 export async function validateAndSaveAccount(
   url: string,
@@ -173,10 +197,14 @@ export async function validateAndSaveAccount(
 ): Promise<AccountSaveResponse> {
   // 表单验证
   if (
-    !siteName.trim() ||
-    !username.trim() ||
-    !accessToken.trim() ||
-    !userId.trim()
+    !isValidAccount({
+      siteName,
+      username,
+      userId,
+      authType,
+      accessToken,
+      exchangeRate
+    })
   ) {
     return {
       success: false,
@@ -271,10 +299,14 @@ export async function validateAndUpdateAccount(
 ): Promise<AccountSaveResponse> {
   // 表单验证
   if (
-    !siteName.trim() ||
-    !username.trim() ||
-    !accessToken.trim() ||
-    !userId.trim()
+    !isValidAccount({
+      siteName,
+      username,
+      userId,
+      authType,
+      accessToken,
+      exchangeRate
+    })
   ) {
     return {
       success: false,
