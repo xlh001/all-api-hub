@@ -20,7 +20,9 @@
       "keyCopied": "密钥 {{name}} 已复制到剪贴板",
       "deleteKeySuccess": "密钥 {{name}} 删除成功",
       "importedAccounts": "已导入并迁移 {{migratedCount}} 个账号",
-      "importSuccess": "导入成功"
+      "importSuccess": "导入成功",
+      "accountPinned": "已置顶 {{accountName}}",
+      "accountUnpinned": "已取消置顶 {{accountName}}"
     },
     "error": {
       "refreshAccount": "刷新 {{accountName}} 失败",

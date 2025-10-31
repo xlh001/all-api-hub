@@ -136,6 +136,7 @@ export interface CheckInConfig {
 // 存储配置
 export interface StorageConfig {
   accounts: SiteAccount[]
+  pinnedAccountIds?: string[] // IDs of pinned accounts, in order (newest pinned first)
   last_updated: number
 }
 

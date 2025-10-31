@@ -7,7 +7,7 @@ import type { UserPreferences } from "../userPreferences"
 import { migrateSortingConfig } from "./sortingConfigMigration"
 
 // Current version of the preferences schema
-export const CURRENT_PREFERENCES_VERSION = 1
+export const CURRENT_PREFERENCES_VERSION = 2
 
 /**
  * Migration function type
@@ -37,10 +37,25 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
       sortingPriorityConfig: migratedSortingConfig,
       preferencesVersion: 1
     }
-  }
+  },
 
-  // Future migrations will be added here:
-  // 2: (prefs: UserPreferences): UserPreferences => { ... },
+  // Version 1 -> 2: Add PINNED sorting criterion
+  2: (prefs: UserPreferences): UserPreferences => {
+    console.log(
+      "[PreferencesMigration] Migrating preferences from v1 to v2 (add PINNED criterion)"
+    )
+
+    // Migrate sorting priority config to add PINNED criterion
+    const migratedSortingConfig = migrateSortingConfig(
+      prefs.sortingPriorityConfig
+    )
+
+    return {
+      ...prefs,
+      sortingPriorityConfig: migratedSortingConfig,
+      preferencesVersion: 2
+    }
+  }
 }
 
 /**
