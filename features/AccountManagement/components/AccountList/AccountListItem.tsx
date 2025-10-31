@@ -1,6 +1,4 @@
-import { PinIcon } from "lucide-react"
 import React from "react"
-import { useTranslation } from "react-i18next"
 
 import { CardItem } from "~/components/ui"
 import { useDevice } from "~/contexts/DeviceContext"
@@ -22,12 +20,9 @@ interface AccountListItemProps {
 
 const AccountListItem: React.FC<AccountListItemProps> = React.memo(
   ({ site, highlights, onCopyKey, onDeleteWithDialog }) => {
-    const { t } = useTranslation("account")
-    const { detectedAccount, isAccountPinned } = useAccountDataContext()
+    const { detectedAccount } = useAccountDataContext()
     const { handleMouseEnter, handleMouseLeave } = useAccountListItem()
     const { isTouchDevice } = useDevice()
-
-    const isPinned = isAccountPinned(site.id)
 
     // 触摸设备始终显示按钮，PC端根据hover状态显示
     const revealButtonsClass = isTouchDevice
@@ -49,17 +44,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
         <div className="flex w-full min-w-0 items-center gap-1 sm:gap-2">
           {/* 左侧：站点信息 - 可压缩 */}
           <div className="min-w-[60px] flex-1 sm:min-w-[80px]">
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              {isPinned && (
-                <span
-                  className="flex items-center text-amber-500 dark:text-amber-400"
-                  title={t("actions.pinned")}
-                  aria-label={t("actions.pinned")}>
-                  <PinIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                </span>
-              )}
-              <SiteInfo site={site} highlights={highlights} />
-            </div>
+            <SiteInfo site={site} highlights={highlights} />
           </div>
 
           {/* 中间：操作按钮 */}

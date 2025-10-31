@@ -9,6 +9,8 @@ import {
   UserIcon,
   XCircleIcon
 } from "@heroicons/react/24/outline"
+import { PinIcon } from "lucide-react"
+import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
@@ -59,12 +61,32 @@ function renderHighlightedFragments(
 
 export default function SiteInfo({ site, highlights }: SiteInfoProps) {
   const { t } = useTranslation("account")
-  const { detectedAccount } = useAccountDataContext()
+  const { t: tMessages } = useTranslation("messages")
+  const { detectedAccount, isAccountPinned, togglePinAccount } =
+    useAccountDataContext()
   const { handleRefreshAccount, refreshingAccountId, handleMarkAsCheckedIn } =
     useAccountActionsContext()
   const detectedAccountId = detectedAccount?.id
 
+  const isPinned = isAccountPinned(site.id)
+  const pinTooltipLabel = isPinned ? t("actions.unpin") : t("actions.pin")
   const isRefreshing = refreshingAccountId === site.id
+
+  const handlePinClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const success = await togglePinAccount(site.id)
+    if (success) {
+      const message = isPinned
+        ? tMessages("toast.success.accountUnpinned", {
+            accountName: site.name
+          })
+        : tMessages("toast.success.accountPinned", {
+            accountName: site.name
+          })
+      toast.success(message)
+    }
+  }
 
   const handleCheckIn = (customCheckInUrl?: string) => async () => {
     try {
@@ -176,51 +198,72 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
   }
 
   return (
-    <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
+    <div className="flex w-full min-w-0 items-start gap-2 sm:gap-3">
       <div className="min-w-0 flex-1">
-        <div className="mb-0.5 flex items-center gap-1.5">
-          {/* Health Status Indicator */}
-          <Tooltip
-            content={
-              <div className="space-y-1">
-                <p>
-                  {t("list.site.status")}:{" "}
-                  <span
-                    className={
-                      getHealthStatusDisplay(site.health?.status, t).color ||
-                      "text-gray-400"
-                    }>
-                    {getHealthStatusDisplay(site.health?.status, t).text ||
-                      t("list.site.unknown")}
-                  </span>
-                </p>
-                {site.health?.reason && (
+        <div className="mb-0.5 flex items-start gap-1.5">
+          {/* Status indicators container */}
+          <div className="flex flex-col items-center gap-0.5">
+            {/* Health Status Indicator */}
+            <Tooltip
+              content={
+                <div className="space-y-1">
                   <p>
-                    {t("list.site.reason")}: {site.health.reason}
+                    {t("list.site.status")}:{" "}
+                    <span
+                      className={
+                        getHealthStatusDisplay(site.health?.status, t).color ||
+                        "text-gray-400"
+                      }>
+                      {getHealthStatusDisplay(site.health?.status, t).text ||
+                        t("list.site.unknown")}
+                    </span>
                   </p>
-                )}
-                <p>
-                  {t("list.site.lastSync")}:{" "}
-                  {site.last_sync_time
-                    ? new Date(site.last_sync_time).toLocaleString()
-                    : t("list.site.notAvailable")}
-                </p>
-              </div>
-            }
-            position="right">
-            <button
-              className={`h-2 w-2 flex-shrink-0 rounded-full transition-all duration-200 ${
-                isRefreshing
-                  ? "animate-pulse opacity-60"
-                  : "cursor-pointer hover:scale-125"
-              } ${
-                getStatusIndicatorColor(site.health?.status) ||
-                UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
-              }`}
-              onClick={handleHealthClick}
-              aria-label={t("list.site.refreshHealthStatus")}
-            />
-          </Tooltip>
+                  {site.health?.reason && (
+                    <p>
+                      {t("list.site.reason")}: {site.health.reason}
+                    </p>
+                  )}
+                  <p>
+                    {t("list.site.lastSync")}:{" "}
+                    {site.last_sync_time
+                      ? new Date(site.last_sync_time).toLocaleString()
+                      : t("list.site.notAvailable")}
+                  </p>
+                </div>
+              }
+              position="right">
+              <button
+                className={`h-2 w-2 flex-shrink-0 rounded-full transition-all duration-200 ${
+                  isRefreshing
+                    ? "animate-pulse opacity-60"
+                    : "cursor-pointer hover:scale-125"
+                } ${
+                  getStatusIndicatorColor(site.health?.status) ||
+                  UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
+                }`}
+                onClick={handleHealthClick}
+                aria-label={t("list.site.refreshHealthStatus")}
+              />
+            </Tooltip>
+
+            {/* Pin Indicator */}
+            <Tooltip content={pinTooltipLabel} position="right">
+              <button
+                type="button"
+                onClick={handlePinClick}
+                className="flex h-2 w-2 items-center justify-center transition-transform duration-200 hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                aria-label={pinTooltipLabel}>
+                <PinIcon
+                  className={`h-2 w-2 -rotate-12 transition-colors ${
+                    isPinned
+                      ? "text-gray-600 dark:text-gray-200"
+                      : "text-gray-400 dark:text-dark-text-tertiary"
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+            </Tooltip>
+          </div>
 
           {/* Current Site Badge */}
           {site.id === detectedAccountId && (
