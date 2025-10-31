@@ -239,13 +239,13 @@ export function fetchApi<T>(
 /**
  * 通用 API 请求函数
  * @param params
- * @param _onlyData
+ * @param onlyData
  */
 export async function fetchApi<T>(
   params: FetchApiParams,
-  _onlyData?: boolean
+  onlyData?: boolean
 ): Promise<T | ApiResponse<T>> {
-  return await _fetchApi(params, false)
+  return await _fetchApi(params, onlyData || false)
 }
 /**
  * 从文本中提取金额及货币符号
