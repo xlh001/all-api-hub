@@ -1,3 +1,4 @@
+import eslint from "@eslint/js"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import reactHooks from "eslint-plugin-react-hooks"
 import { defineConfig } from "eslint/config"
@@ -5,8 +6,15 @@ import tseslint from "typescript-eslint"
 
 import autoImports from "./.wxt/eslint-auto-imports.mjs"
 
+const rules = {
+  "@typescript-eslint/no-explicit-any": "off",
+  "@typescript-eslint/no-unused-vars": "warn"
+}
+
 export default defineConfig([
   autoImports,
+  eslint.configs.recommended,
+  tseslint.configs.recommended,
   {
     ignores: [
       "node_modules/**",
@@ -15,7 +23,9 @@ export default defineConfig([
       ".plasmo/**",
       ".output/**",
       ".wxt/**",
-      "docs/**"
+      "docs/**",
+      "tailwind.config.js",
+      "public/react-devtools-backend.js"
     ]
   },
   {
@@ -39,5 +49,6 @@ export default defineConfig([
       "react-hooks/exhaustive-deps": "warn"
     }
   },
-  eslintConfigPrettier
+  eslintConfigPrettier,
+  { rules }
 ])
