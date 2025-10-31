@@ -2,6 +2,7 @@ import eslint from "@eslint/js"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import reactHooks from "eslint-plugin-react-hooks"
 import { defineConfig } from "eslint/config"
+import globals from "globals"
 import tseslint from "typescript-eslint"
 
 import autoImports from "./.wxt/eslint-auto-imports.mjs"
@@ -11,7 +12,12 @@ const rules = {
   "@typescript-eslint/no-unused-vars": "warn"
 }
 
+const globalsConfig = {
+  ...globals.node
+}
+
 export default defineConfig([
+  { languageOptions: { globals: globalsConfig } },
   autoImports,
   eslint.configs.recommended,
   tseslint.configs.recommended,
