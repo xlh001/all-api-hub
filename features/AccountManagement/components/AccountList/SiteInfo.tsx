@@ -92,8 +92,6 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
     try {
       if (customCheckInUrl) {
         await handleMarkAsCheckedIn(site)
-        // Check if we should open redeem page with check-in
-        // Default to true for backward compatibility
         const shouldOpenRedeem = site.checkIn?.openRedeemWithCheckIn ?? true
         if (shouldOpenRedeem) {
           await openCheckInAndRedeem(site)
@@ -191,81 +189,79 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
     return null
   }
 
+  const checkInIndicator = renderCheckInIcon()
+
   const handleHealthClick = async () => {
     if (!isRefreshing) {
-      await handleRefreshAccount(site, true) // Force refresh
+      await handleRefreshAccount(site, true)
     }
   }
 
   return (
     <div className="flex w-full min-w-0 items-start gap-2 sm:gap-3">
+      <div className="flex flex-shrink-0 flex-col items-center gap-0.5 sm:gap-1">
+        <Tooltip
+          content={
+            <div className="space-y-1">
+              <p>
+                {t("list.site.status")}:{" "}
+                <span
+                  className={
+                    getHealthStatusDisplay(site.health?.status, t).color ||
+                    "text-gray-400"
+                  }>
+                  {getHealthStatusDisplay(site.health?.status, t).text ||
+                    t("list.site.unknown")}
+                </span>
+              </p>
+              {site.health?.reason && (
+                <p>
+                  {t("list.site.reason")}: {site.health.reason}
+                </p>
+              )}
+              <p>
+                {t("list.site.lastSync")}:{" "}
+                {site.last_sync_time
+                  ? new Date(site.last_sync_time).toLocaleString()
+                  : t("list.site.notAvailable")}
+              </p>
+            </div>
+          }
+          position="right">
+          <button
+            className={`h-2 w-2 flex-shrink-0 rounded-full transition-all duration-200 ${
+              isRefreshing
+                ? "animate-pulse opacity-60"
+                : "cursor-pointer hover:scale-125"
+            } ${
+              getStatusIndicatorColor(site.health?.status) ||
+              UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
+            }`}
+            onClick={handleHealthClick}
+            aria-label={t("list.site.refreshHealthStatus")}
+          />
+        </Tooltip>
+
+        <Tooltip content={pinTooltipLabel} position="right">
+          <button
+            type="button"
+            onClick={handlePinClick}
+            className="flex h-2 w-2 items-center justify-center transition-transform duration-200 hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label={pinTooltipLabel}>
+            <PinIcon
+              className={`h-2 w-2 -rotate-12 transition-colors ${
+                isPinned
+                  ? "text-gray-600 dark:text-gray-200"
+                  : "text-gray-400 dark:text-dark-text-tertiary"
+              }`}
+              aria-hidden="true"
+            />
+          </button>
+        </Tooltip>
+      </div>
+
       <div className="min-w-0 flex-1">
-        <div className="mb-0.5 flex items-start gap-1.5">
-          {/* Status indicators container */}
-          <div className="flex flex-col items-center gap-0.5">
-            {/* Health Status Indicator */}
-            <Tooltip
-              content={
-                <div className="space-y-1">
-                  <p>
-                    {t("list.site.status")}:{" "}
-                    <span
-                      className={
-                        getHealthStatusDisplay(site.health?.status, t).color ||
-                        "text-gray-400"
-                      }>
-                      {getHealthStatusDisplay(site.health?.status, t).text ||
-                        t("list.site.unknown")}
-                    </span>
-                  </p>
-                  {site.health?.reason && (
-                    <p>
-                      {t("list.site.reason")}: {site.health.reason}
-                    </p>
-                  )}
-                  <p>
-                    {t("list.site.lastSync")}:{" "}
-                    {site.last_sync_time
-                      ? new Date(site.last_sync_time).toLocaleString()
-                      : t("list.site.notAvailable")}
-                  </p>
-                </div>
-              }
-              position="right">
-              <button
-                className={`h-2 w-2 flex-shrink-0 rounded-full transition-all duration-200 ${
-                  isRefreshing
-                    ? "animate-pulse opacity-60"
-                    : "cursor-pointer hover:scale-125"
-                } ${
-                  getStatusIndicatorColor(site.health?.status) ||
-                  UI_CONSTANTS.STYLES.STATUS_INDICATOR.UNKNOWN
-                }`}
-                onClick={handleHealthClick}
-                aria-label={t("list.site.refreshHealthStatus")}
-              />
-            </Tooltip>
-
-            {/* Pin Indicator */}
-            <Tooltip content={pinTooltipLabel} position="right">
-              <button
-                type="button"
-                onClick={handlePinClick}
-                className="flex h-2 w-2 items-center justify-center transition-transform duration-200 hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                aria-label={pinTooltipLabel}>
-                <PinIcon
-                  className={`h-2 w-2 -rotate-12 transition-colors ${
-                    isPinned
-                      ? "text-gray-600 dark:text-gray-200"
-                      : "text-gray-400 dark:text-dark-text-tertiary"
-                  }`}
-                  aria-hidden="true"
-                />
-              </button>
-            </Tooltip>
-          </div>
-
-          {/* Current Site Badge */}
+        <div className="mb-0.5 flex flex-wrap items-center gap-1.5 sm:gap-2">
           {site.id === detectedAccountId && (
             <Tooltip content={t("list.site.currentSiteExists")} position="top">
               <Badge variant="warning" size="sm" className="whitespace-nowrap">
@@ -274,8 +270,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
             </Tooltip>
           )}
 
-          {/* Site Name Link */}
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             <a
               href={site.baseUrl}
               target="_blank"
@@ -286,16 +281,14 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
                 {renderHighlightedFragments(highlights?.name, site.name)}
               </BodySmall>
             </a>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {/* Inline check-in placed next to site name for tighter spacing */}
-            {renderCheckInIcon()}
+            {checkInIndicator && (
+              <div className="flex items-center">{checkInIndicator}</div>
+            )}
           </div>
         </div>
 
-        {/* Username */}
-        <div className="ml-3 flex min-w-0 items-start gap-1 sm:ml-4">
+        <div className="flex min-w-0 items-start gap-1 pl-1 sm:pl-1.5">
           <UserIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
           <Caption className="truncate" title={site.username}>
             {highlights?.username && site.username
@@ -304,9 +297,8 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           </Caption>
         </div>
 
-        {/* Highlighted Base URL */}
         {highlights?.baseUrl && (
-          <div className="ml-3 mt-0.5 flex min-w-0 items-start gap-1 sm:ml-4">
+          <div className="mt-0.5 flex min-w-0 items-start gap-1 pl-1 sm:pl-1.5">
             <LinkIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.baseUrl}>
               {renderHighlightedFragments(highlights.baseUrl, site.baseUrl)}
@@ -314,9 +306,8 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           </div>
         )}
 
-        {/* Highlighted Custom Check-in URL */}
         {highlights?.customCheckInUrl && site.checkIn?.customCheckInUrl && (
-          <div className="ml-3 mt-0.5 flex min-w-0 items-start gap-1 sm:ml-4">
+          <div className="mt-0.5 flex min-w-0 items-start gap-1 pl-1 sm:pl-1.5">
             <ArrowPathIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.checkIn.customCheckInUrl}>
               {renderHighlightedFragments(
@@ -327,9 +318,8 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           </div>
         )}
 
-        {/* Highlighted Custom Redeem URL */}
         {highlights?.customRedeemUrl && site.checkIn?.customRedeemUrl && (
-          <div className="ml-3 mt-0.5 flex min-w-0 items-start gap-1 sm:ml-4">
+          <div className="mt-0.5 flex min-w-0 items-start gap-1 pl-1 sm:pl-1.5">
             <GiftIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.checkIn.customRedeemUrl}>
               {renderHighlightedFragments(
@@ -340,9 +330,8 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           </div>
         )}
 
-        {/* Notes */}
         {site.notes && (
-          <div className="ml-3 mt-0.5 flex min-w-0 items-start gap-1 sm:ml-4 sm:mt-1">
+          <div className="mt-0.5 flex min-w-0 items-start gap-1 pl-1 sm:mt-1 sm:pl-1.5">
             <PencilSquareIcon className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400 dark:text-dark-text-tertiary" />
             <Caption className="truncate" title={site.notes}>
               {site.notes}
