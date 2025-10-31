@@ -20,7 +20,9 @@
       "keyCopied": "Key {{name}} copied to clipboard",
       "deleteKeySuccess": "Key {{name}} deleted successfully",
       "importedAccounts": "Imported and migrated {{migratedCount}} account(s)",
-      "importSuccess": "Import successful"
+      "importSuccess": "Import successful",
+      "accountPinned": "{{accountName}} pinned",
+      "accountUnpinned": "{{accountName}} unpinned"
     },
     "error": {
       "refreshAccount": "Failed to refresh {{accountName}}",

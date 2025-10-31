@@ -1,6 +1,9 @@
+import { PinIcon, PinOffIcon } from "lucide-react"
 import React from "react"
+import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
-import { CardItem } from "~/components/ui"
+import { CardItem, IconButton } from "~/components/ui"
 import { useDevice } from "~/contexts/DeviceContext"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/hooks/useAccountListItem"
@@ -20,9 +23,29 @@ interface AccountListItemProps {
 
 const AccountListItem: React.FC<AccountListItemProps> = React.memo(
   ({ site, highlights, onCopyKey, onDeleteWithDialog }) => {
-    const { detectedAccount } = useAccountDataContext()
+    const { t } = useTranslation("account")
+    const { detectedAccount, isAccountPinned, togglePinAccount } =
+      useAccountDataContext()
     const { handleMouseEnter, handleMouseLeave } = useAccountListItem()
     const { isTouchDevice } = useDevice()
+
+    const isPinned = isAccountPinned(site.id)
+
+    const handlePinToggle = async (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const success = await togglePinAccount(site.id)
+      if (success) {
+        const message = isPinned
+          ? t("messages:toast.success.accountUnpinned", {
+              accountName: site.name
+            })
+          : t("messages:toast.success.accountPinned", {
+              accountName: site.name
+            })
+        toast.success(message)
+      }
+    }
 
     // 触摸设备始终显示按钮，PC端根据hover状态显示
     const revealButtonsClass = isTouchDevice
@@ -42,6 +65,23 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
         onMouseEnter={() => handleMouseEnter(site.id)}
         onMouseLeave={handleMouseLeave}>
         <div className="flex w-full min-w-0 items-center gap-1 sm:gap-2">
+          {/* Pin button */}
+          <div className="flex-shrink-0">
+            <IconButton
+              onClick={handlePinToggle}
+              variant="ghost"
+              size="xs"
+              className={`touch-manipulation ${isPinned ? "text-amber-600 opacity-100 dark:text-amber-400" : revealButtonsClass}`}
+              aria-label={isPinned ? t("actions.unpin") : t("actions.pin")}
+              title={isPinned ? t("actions.unpin") : t("actions.pin")}>
+              {isPinned ? (
+                <PinIcon className="h-4 w-4 fill-current" />
+              ) : (
+                <PinOffIcon className="h-4 w-4" />
+              )}
+            </IconButton>
+          </div>
+
           {/* 左侧：站点信息 - 可压缩 */}
           <div className="min-w-[60px] flex-1 sm:min-w-[80px]">
             <SiteInfo site={site} highlights={highlights} />

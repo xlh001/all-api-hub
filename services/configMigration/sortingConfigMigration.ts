@@ -3,7 +3,10 @@
  * Handles version-based migrations for sorting priority configurations
  */
 
-import type { SortingPriorityConfig } from "~/types/sorting"
+import {
+  SortingCriteriaType,
+  type SortingPriorityConfig
+} from "~/types/sorting"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 /**
@@ -22,7 +25,7 @@ export function needsSortingConfigMigration(
 
 /**
  * Migrate sorting config to include new criteria
- * New criteria are added at the end with enabled: false by default
+ * Pinned accounts are added with the highest priority by default
  */
 export function migrateSortingConfig(
   config: SortingPriorityConfig | undefined
@@ -45,36 +48,69 @@ export function migrateSortingConfig(
     DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => c.id)
   )
 
-  // Check if any new criteria are missing
+  let modified = false
+  const newCriteria = [...config.criteria]
+
+  if (!existingIds.has(SortingCriteriaType.PINNED)) {
+    const pinnedDefault = DEFAULT_SORTING_PRIORITY_CONFIG.criteria.find(
+      (c) => c.id === SortingCriteriaType.PINNED
+    )
+    if (pinnedDefault) {
+      newCriteria.push({
+        ...pinnedDefault,
+        enabled: true
+      })
+      modified = true
+      console.log(
+        "[SortingConfigMigration] Added PINNED criterion with default priority"
+      )
+    }
+  }
+
   const missingIds = [...allIds].filter((id) => !existingIds.has(id))
 
-  if (missingIds.length === 0) {
+  const filteredMissing = missingIds.filter(
+    (id) => id !== SortingCriteriaType.PINNED
+  )
+
+  if (filteredMissing.length > 0) {
+    const maxPriority = Math.max(...newCriteria.map((c) => c.priority), -1)
+    filteredMissing.forEach((id, index) => {
+      const defaultCriterion = DEFAULT_SORTING_PRIORITY_CONFIG.criteria.find(
+        (c) => c.id === id
+      )
+      if (defaultCriterion) {
+        newCriteria.push({
+          ...defaultCriterion,
+          priority: maxPriority + index + 1,
+          enabled: defaultCriterion.enabled
+        })
+        modified = true
+        console.log(
+          `[SortingConfigMigration] Adding new criterion: ${id} with priority ${maxPriority + index + 1}, enabled: ${defaultCriterion.enabled}`
+        )
+      }
+    })
+  }
+
+  if (!modified) {
     return config
   }
 
-  // Add missing criteria with default values
-  const newCriteria = [...config.criteria]
-  const maxPriority = Math.max(...newCriteria.map((c) => c.priority), -1)
-
-  missingIds.forEach((id, index) => {
-    const defaultCriterion = DEFAULT_SORTING_PRIORITY_CONFIG.criteria.find(
-      (c) => c.id === id
-    )
-    if (defaultCriterion) {
-      newCriteria.push({
-        ...defaultCriterion,
-        priority: maxPriority + index + 1,
-        enabled: false // Disable new criteria by default
-      })
-      console.log(
-        `[SortingConfigMigration] Adding new criterion: ${id} with priority ${maxPriority + index + 1}, enabled: false`
-      )
-    }
-  })
+  const normalizedCriteria = newCriteria
+    .sort((a, b) => {
+      if (a.id === SortingCriteriaType.PINNED) return -1
+      if (b.id === SortingCriteriaType.PINNED) return 1
+      return a.priority - b.priority
+    })
+    .map((item, index) => ({
+      ...item,
+      priority: index
+    }))
 
   const migratedConfig: SortingPriorityConfig = {
     ...config,
-    criteria: newCriteria,
+    criteria: normalizedCriteria,
     lastModified: Date.now()
   }
 
