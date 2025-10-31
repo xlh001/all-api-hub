@@ -320,47 +320,54 @@ export const handleNewApiModelSyncMessage = async (
 ) => {
   try {
     switch (request.action) {
-      case "newApiModelSync:triggerAll":
+      case "newApiModelSync:triggerAll": {
         const resultAll = await newApiModelSyncScheduler.executeSync()
         sendResponse({ success: true, data: resultAll })
         break
+      }
 
-      case "newApiModelSync:triggerSelected":
+      case "newApiModelSync:triggerSelected": {
         const resultSelected = await newApiModelSyncScheduler.executeSync(
           request.channelIds
         )
         sendResponse({ success: true, data: resultSelected })
         break
+      }
 
-      case "newApiModelSync:triggerFailedOnly":
+      case "newApiModelSync:triggerFailedOnly": {
         const resultFailed = await newApiModelSyncScheduler.executeFailedOnly()
         sendResponse({ success: true, data: resultFailed })
         break
+      }
 
-      case "newApiModelSync:getLastExecution":
+      case "newApiModelSync:getLastExecution": {
         const lastExecution = await newApiModelSyncStorage.getLastExecution()
         sendResponse({ success: true, data: lastExecution })
         break
+      }
 
-      case "newApiModelSync:getProgress":
+      case "newApiModelSync:getProgress": {
         const progress = newApiModelSyncScheduler.getProgress()
         sendResponse({ success: true, data: progress })
         break
+      }
 
       case "newApiModelSync:updateSettings":
         await newApiModelSyncScheduler.updateSettings(request.settings)
         sendResponse({ success: true })
         break
 
-      case "newApiModelSync:getPreferences":
+      case "newApiModelSync:getPreferences": {
         const prefs = await newApiModelSyncStorage.getPreferences()
         sendResponse({ success: true, data: prefs })
         break
+      }
 
-      case "newApiModelSync:listChannels":
+      case "newApiModelSync:listChannels": {
         const channels = await newApiModelSyncScheduler.listChannels()
         sendResponse({ success: true, data: channels })
         break
+      }
 
       default:
         sendResponse({ success: false, error: "Unknown action" })

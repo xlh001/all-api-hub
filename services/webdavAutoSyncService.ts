@@ -436,10 +436,11 @@ export const handleWebdavAutoSyncMessage = async (
         sendResponse({ success: true })
         break
 
-      case "webdavAutoSync:syncNow":
+      case "webdavAutoSync:syncNow": {
         const result = await webdavAutoSyncService.syncNow()
         sendResponse({ success: result.success, message: result.message })
         break
+      }
 
       case "webdavAutoSync:stop":
         webdavAutoSyncService.stopAutoSync()
@@ -451,10 +452,11 @@ export const handleWebdavAutoSyncMessage = async (
         sendResponse({ success: true })
         break
 
-      case "webdavAutoSync:getStatus":
+      case "webdavAutoSync:getStatus": {
         const status = webdavAutoSyncService.getStatus()
         sendResponse({ success: true, data: status })
         break
+      }
 
       default:
         sendResponse({ success: false, error: "未知的操作" })

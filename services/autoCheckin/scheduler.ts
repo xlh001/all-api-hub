@@ -403,10 +403,11 @@ export const handleAutoCheckinMessage = async (
         sendResponse({ success: true })
         break
 
-      case "autoCheckin:getStatus":
+      case "autoCheckin:getStatus": {
         const status = await autoCheckinStorage.getStatus()
         sendResponse({ success: true, data: status })
         break
+      }
 
       case "autoCheckin:updateSettings":
         await autoCheckinScheduler.updateSettings(request.settings)

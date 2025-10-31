@@ -95,31 +95,36 @@ function applySortingCriteria(
       if (b.id === detectedAccount?.id) return 1
       return 0
 
-    case SortingCriteriaType.HEALTH_STATUS:
+    case SortingCriteriaType.HEALTH_STATUS: {
       const healthPriority = { error: 1, warning: 2, unknown: 3, healthy: 4 }
       const healthA = healthPriority[a.health?.status] || 4
       const healthB = healthPriority[b.health?.status] || 4
       return healthA - healthB
+    }
 
-    case SortingCriteriaType.CHECK_IN_REQUIREMENT:
+    case SortingCriteriaType.CHECK_IN_REQUIREMENT: {
       const checkInA = a?.checkIn?.isCheckedInToday === false ? 0 : 1
       const checkInB = b?.checkIn?.isCheckedInToday === false ? 0 : 1
       return checkInA - checkInB
+    }
 
-    case SortingCriteriaType.CUSTOM_CHECK_IN_URL:
+    case SortingCriteriaType.CUSTOM_CHECK_IN_URL: {
       const customCheckInA = a?.checkIn?.customCheckInUrl ? 1 : 0
       const customCheckInB = b?.checkIn?.customCheckInUrl ? 1 : 0
       return customCheckInB - customCheckInA
+    }
 
-    case SortingCriteriaType.CUSTOM_REDEEM_URL:
+    case SortingCriteriaType.CUSTOM_REDEEM_URL: {
       const customRedeemA = a?.checkIn?.customRedeemUrl ? 1 : 0
       const customRedeemB = b?.checkIn?.customRedeemUrl ? 1 : 0
       return customRedeemB - customRedeemA
+    }
 
-    case SortingCriteriaType.MATCHED_OPEN_TABS:
+    case SortingCriteriaType.MATCHED_OPEN_TABS: {
       const scoreA = matchedAccountScores[a.id] || 0
       const scoreB = matchedAccountScores[b.id] || 0
-      return scoreB - scoreA // Higher score = higher priority
+      return scoreB - scoreA
+    } // Higher score = higher priority
 
     case SortingCriteriaType.USER_SORT_FIELD:
       return compareByUserSortField(

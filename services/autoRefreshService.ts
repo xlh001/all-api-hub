@@ -192,10 +192,11 @@ export const handleAutoRefreshMessage = async (
         sendResponse({ success: true })
         break
 
-      case "refreshNow":
+      case "refreshNow": {
         const result = await autoRefreshService.refreshNow()
         sendResponse({ success: true, data: result })
         break
+      }
 
       case "stopAutoRefresh":
         autoRefreshService.stopAutoRefresh()
@@ -207,10 +208,11 @@ export const handleAutoRefreshMessage = async (
         sendResponse({ success: true })
         break
 
-      case "getAutoRefreshStatus":
+      case "getAutoRefreshStatus": {
         const status = autoRefreshService.getStatus()
         sendResponse({ success: true, data: status })
         break
+      }
 
       default:
         sendResponse({ success: false, error: "未知的操作" })
