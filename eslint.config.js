@@ -17,10 +17,6 @@ const globalsConfig = {
 }
 
 export default defineConfig([
-  { languageOptions: { globals: globalsConfig } },
-  autoImports,
-  eslint.configs.recommended,
-  tseslint.configs.recommended,
   {
     ignores: [
       "node_modules/**",
@@ -34,6 +30,10 @@ export default defineConfig([
       "public/react-devtools-backend.js"
     ]
   },
+  { languageOptions: { globals: globalsConfig } },
+  autoImports,
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
 
