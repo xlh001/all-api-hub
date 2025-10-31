@@ -406,6 +406,7 @@ class WebdavAutoSyncService {
         })
     } catch (error) {
       // 静默处理错误，避免影响后台同步
+      console.error(error)
       console.warn("[WebdavAutoSync] 发送消息异常，可能前端未打开")
     }
   }

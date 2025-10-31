@@ -381,6 +381,7 @@ class UserPreferencesService {
 
   async resetSortingPriorityConfig(): Promise<boolean> {
     const prefs = await this.getPreferences()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { sortingPriorityConfig, ...rest } = prefs
     return this.savePreferences(rest as any)
   }

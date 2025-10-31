@@ -161,6 +161,7 @@ class AutoRefreshService {
           }
         })
     } catch (error) {
+      console.error(error)
       // 静默处理错误，避免影响后台刷新
       console.warn("[AutoRefresh] 发送消息异常，可能前端未打开")
     }

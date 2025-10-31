@@ -123,7 +123,7 @@ export interface PaginatedData<T> {
 }
 
 // 分页令牌响应类型
-export interface PaginatedTokenResponse extends PaginatedData<ApiToken> {}
+export type PaginatedTokenResponse = PaginatedData<ApiToken>
 
 // API 响应的通用格式
 export interface ApiResponse<T = any> {

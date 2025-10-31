@@ -43,11 +43,7 @@ import {
 /**
  * 获取用户基本信息（用于账号检测） - 使用浏览器 cookie 认证
  */
-export const fetchUserInfo = async (
-  baseUrl: string,
-  userId?: number,
-  _authType?: AuthTypeEnum
-) => {
+export const fetchUserInfo = async (baseUrl: string, userId?: number) => {
   const userData = await fetchApiData<UserInfo>({
     baseUrl,
     endpoint: "/api/user/self",

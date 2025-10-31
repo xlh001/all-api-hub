@@ -153,6 +153,7 @@ export function useAccountDialog({
               }
             }
           } catch (error) {
+            console.error(error)
             // Fallback for Firefox Android
             try {
               const tabs = await browser.tabs.query({ active: true })
@@ -197,7 +198,7 @@ export function useAccountDialog({
         return
       }
 
-      let resultData = result.data
+      const resultData = result.data
       if (resultData) {
         setUsername(resultData.username)
         setAccessToken(resultData.accessToken)
@@ -361,6 +362,7 @@ export function useAccountDialog({
         const baseUrl = `${urlObj.protocol}//${urlObj.host}`
         setUrl(baseUrl)
       } catch (error) {
+        console.error(error)
         setUrl(newUrl)
       }
     } else {

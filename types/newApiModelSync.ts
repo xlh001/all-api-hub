@@ -31,8 +31,7 @@ export interface NewApiChannelListData {
 /**
  * Channel list response from New API
  */
-export interface NewApiChannelListResponse
-  extends ApiResponse<NewApiChannelListData> {}
+export type NewApiChannelListResponse = ApiResponse<NewApiChannelListData>
 
 /**
  * Single channel execution result

@@ -9,7 +9,6 @@ import { isNotEmptyArray } from "~/utils/index"
 if (typeof (globalThis as any).browser === "undefined") {
   // Prefer chrome if present; otherwise leave undefined to fail fast where appropriate
   if (typeof (globalThis as any).chrome !== "undefined") {
-    // @ts-ignore
     ;(globalThis as any).browser = (globalThis as any).chrome
   } else {
     // Optional: provide a minimal stub or log for non-extension environments
@@ -162,6 +161,7 @@ export async function focusTab(tab: browser.tabs.Tab): Promise<void> {
       await browser.windows.update(tab.windowId, { focused: true })
     } catch (error) {
       // Firefox Android 不支持，忽略错误
+      console.error(error)
     }
   }
 

@@ -163,7 +163,10 @@ async function main() {
   })
 
   // 打开临时窗口访问指定站点
-  async function handleOpenTempWindow(request: any, sendResponse: Function) {
+  async function handleOpenTempWindow(
+    request: any,
+    sendResponse: (response?: any) => void
+  ) {
     try {
       const { url, requestId } = request
 
@@ -207,7 +210,10 @@ async function main() {
   }
 
   // 关闭临时窗口
-  async function handleCloseTempWindow(request: any, sendResponse: Function) {
+  async function handleCloseTempWindow(
+    request: any,
+    sendResponse: (response?: any) => void
+  ) {
     try {
       const { requestId } = request
       const id = tempWindows.get(requestId)
@@ -224,7 +230,10 @@ async function main() {
   }
 
   // 自动检测站点信息
-  async function handleAutoDetectSite(request: any, sendResponse: Function) {
+  async function handleAutoDetectSite(
+    request: any,
+    sendResponse: (response?: any) => void
+  ) {
     const { url, requestId } = request
 
     try {
@@ -325,6 +334,7 @@ async function main() {
         user: userResponse.data?.user
       }
     } catch (error) {
+      console.error(error)
       // 清理窗口或标签页
       const storedId = tempWindows.get(requestId)
       if (storedId) {
