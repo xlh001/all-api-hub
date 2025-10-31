@@ -244,16 +244,16 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
 
         {isPinned && (
           <Tooltip content={pinTooltipLabel} position="right">
-            <button
-              type="button"
+            <IconButton
               onClick={handlePinClick}
-              className="h-3 w-3 rounded-full transition-all duration-200"
+              variant="ghost"
+              size="none"
               aria-label={pinTooltipLabel}>
               <PinIcon
-                className={`h-3 w-3 -rotate-12 text-gray-400 transition-colors dark:text-dark-text-tertiary`}
+                className="h-3 w-3 -rotate-12 text-gray-400 transition-colors dark:text-dark-text-tertiary"
                 aria-hidden="true"
               />
-            </button>
+            </IconButton>
           </Tooltip>
         )}
       </div>
