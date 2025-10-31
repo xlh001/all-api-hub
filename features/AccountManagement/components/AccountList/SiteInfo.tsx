@@ -199,7 +199,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
 
   return (
     <div className="flex w-full min-w-0 items-center gap-2">
-      <div className="flex flex-shrink-0 flex-col items-center justify-center gap-2">
+      <div className="flex flex-shrink-0 flex-col items-center justify-center gap-2 self-stretch">
         <Tooltip
           content={
             <div className="space-y-1">
@@ -229,7 +229,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           }
           position="right">
           <button
-            className={`h-2.5 w-2.5 flex-shrink-0 rounded-full transition-all duration-200 ${
+            className={`h-2 w-2 flex-shrink-0 rounded-full transition-all duration-200 ${
               isRefreshing
                 ? "animate-pulse opacity-60"
                 : "cursor-pointer hover:scale-125"
@@ -242,22 +242,20 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           />
         </Tooltip>
 
-        <Tooltip content={pinTooltipLabel} position="right">
-          <button
-            type="button"
-            onClick={handlePinClick}
-            className="h-3 w-3 rounded-full transition-all duration-200"
-            aria-label={pinTooltipLabel}>
-            <PinIcon
-              className={`h-3 w-3 -rotate-12 transition-colors ${
-                isPinned
-                  ? "text-gray-600 dark:text-gray-200"
-                  : "text-gray-400 dark:text-dark-text-tertiary"
-              }`}
-              aria-hidden="true"
-            />
-          </button>
-        </Tooltip>
+        {isPinned && (
+          <Tooltip content={pinTooltipLabel} position="right">
+            <button
+              type="button"
+              onClick={handlePinClick}
+              className="h-3 w-3 rounded-full transition-all duration-200"
+              aria-label={pinTooltipLabel}>
+              <PinIcon
+                className={`h-3 w-3 -rotate-12 text-gray-400 transition-colors dark:text-dark-text-tertiary`}
+                aria-hidden="true"
+              />
+            </button>
+          </Tooltip>
+        )}
       </div>
 
       <div className="min-w-0 flex-1">
