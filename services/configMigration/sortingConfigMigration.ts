@@ -100,6 +100,9 @@ export function migrateSortingConfig(
 
   const normalizedCriteria = newCriteria
     .sort((a, b) => {
+      if (a.id === SortingCriteriaType.CURRENT_SITE) return -1
+      if (b.id === SortingCriteriaType.CURRENT_SITE) return 1
+
       if (a.id === SortingCriteriaType.PINNED) return -1
       if (b.id === SortingCriteriaType.PINNED) return 1
       return a.priority - b.priority
