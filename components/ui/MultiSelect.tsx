@@ -107,7 +107,10 @@ export function MultiSelect({
   }
 
   const previewLimit = 3
-  const previewOptions = useMemo(() => selectedOptions.slice(0, previewLimit), [selectedOptions])
+  const previewOptions = useMemo(
+    () => selectedOptions.slice(0, previewLimit),
+    [selectedOptions]
+  )
   const remainingPreviewCount = selectedOptions.length - previewOptions.length
 
   const toggleSelectedExpanded = () => {
@@ -126,6 +129,10 @@ export function MultiSelect({
         immediate
         value={selectedOptions}
         onChange={handleSelect}
+        virtual={{
+          options: filteredOptions,
+          disabled: () => options.length > 100
+        }}
         multiple
         disabled={disabled}>
         <div className="relative">
@@ -153,14 +160,14 @@ export function MultiSelect({
             afterLeave={() => setQuery("")}
             appear>
             <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-bg-secondary sm:text-sm">
-              {filteredOptions.length === 0 && query !== "" ? (
-                <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-dark-text-secondary">
-                  {allowCustom
-                    ? "Press Enter to add custom value"
-                    : "Nothing found."}
-                </div>
-              ) : (
-                filteredOptions.map((option) => (
+              {({ option: option }) => {
+                return filteredOptions.length === 0 && query !== "" ? (
+                  <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-dark-text-secondary">
+                    {allowCustom
+                      ? "Press Enter to add custom value"
+                      : "Nothing found."}
+                  </div>
+                ) : (
                   <Combobox.Option
                     key={option.value}
                     className={({ active }) =>
@@ -193,8 +200,8 @@ export function MultiSelect({
                       </>
                     )}
                   </Combobox.Option>
-                ))
-              )}
+                )
+              }}
             </Combobox.Options>
           </Transition>
         </div>
