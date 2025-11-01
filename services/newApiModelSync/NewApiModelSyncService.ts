@@ -1,7 +1,6 @@
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
 import { fetchApi } from "~/services/apiService/common/utils"
-import type { ApiResponse } from "~/types"
 import {
   BatchExecutionOptions,
   ExecutionItemResult,
@@ -12,8 +11,6 @@ import {
 } from "~/types/newApiModelSync"
 
 import { RateLimiter } from "./RateLimiter"
-
-type NewApiResponse<T> = ApiResponse<T> & { code?: number }
 
 /**
  * New API Model Sync Service
@@ -116,7 +113,7 @@ export class NewApiModelSyncService {
     try {
       await this.throttle()
 
-      const response = (await fetchApi<string[]>(
+      const response = await fetchApi<string[]>(
         {
           baseUrl: this.baseUrl,
           endpoint: `/api/channel/fetch_models/${channelId}`,
@@ -124,7 +121,7 @@ export class NewApiModelSyncService {
           token: this.token
         },
         false
-      )) as NewApiResponse<string[]>
+      )
 
       if (!response.success || !Array.isArray(response.data)) {
         throw new Error(response.message || "Failed to fetch models")
@@ -154,7 +151,7 @@ export class NewApiModelSyncService {
 
       await this.throttle()
 
-      const response = (await fetchApi<unknown>(
+      const response = await fetchApi<void>(
         {
           baseUrl: this.baseUrl,
           endpoint: "/api/channel/",
@@ -166,7 +163,7 @@ export class NewApiModelSyncService {
           }
         },
         false
-      )) as NewApiResponse<unknown>
+      )
 
       if (!response.success) {
         throw new Error(response.message || "Failed to update channel")
