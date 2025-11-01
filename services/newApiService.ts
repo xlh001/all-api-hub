@@ -1,6 +1,10 @@
 import { t } from "i18next"
 
-import { DEFAULT_CHANNEL_FIELDS } from "~/config/channelDefaults"
+import {
+  DEFAULT_CHANNEL_FIELDS,
+  DEFAULT_CHANNEL_MODE,
+  resolveChannelTypeForSite
+} from "~/config/channelDefaults"
 import {
   fetchAvailableModels,
   fetchUpstreamModelsNameList
@@ -36,6 +40,19 @@ interface NewApiChannelData {
   items: NewApiChannel[]
   total: number
   type_counts: Record<string, number>
+}
+
+function parseDelimitedList(value?: string | null): string[] {
+  if (!value) return []
+  return value
+    .split(/[,
+]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function normalizeList(values: string[] = []): string[] {
+  return Array.from(new Set(values.map((item) => item.trim()).filter(Boolean)))
 }
 
 /**
@@ -114,17 +131,28 @@ export async function fetchAccountAvailableModels(
   account: DisplaySiteData,
   token: ApiToken
 ): Promise<string[]> {
+  const candidateSources: string[][] = []
+
+  const tokenModelList = parseDelimitedList(token.models)
+  if (tokenModelList.length > 0) {
+    candidateSources.push(tokenModelList)
+  }
+
   const upstreamModels = await fetchUpstreamModelsNameList({
     baseUrl: account.baseUrl,
     apiKey: token.key
   })
-
   if (upstreamModels && upstreamModels.length > 0) {
-    return upstreamModels
+    candidateSources.push(upstreamModels)
   }
 
   const fallbackModels = await fetchAvailableModels(account)
-  return fallbackModels ?? []
+  if (fallbackModels && fallbackModels.length > 0) {
+    candidateSources.push(fallbackModels)
+  }
+
+  const merged = candidateSources.flat()
+  return normalizeList(merged)
 }
 
 /**
@@ -143,7 +171,8 @@ export function buildChannelName(account: DisplaySiteData, token: ApiToken): str
  */
 export async function prepareChannelFormData(
   account: DisplaySiteData,
-  token: ApiToken
+  token: ApiToken,
+  overrides: Partial<ChannelFormData> = {}
 ): Promise<ChannelFormData> {
   const availableModels = await fetchAccountAvailableModels(account, token)
 
@@ -151,17 +180,23 @@ export async function prepareChannelFormData(
     throw new Error(t("messages:newapi.noAnyModels"))
   }
 
-  return {
-    name: buildChannelName(account, token),
-    type: DEFAULT_CHANNEL_FIELDS.type,
-    key: token.key,
-    base_url: account.baseUrl,
-    models: availableModels,
-    groups: token.group ? [token.group] : [...DEFAULT_CHANNEL_FIELDS.groups],
-    priority: DEFAULT_CHANNEL_FIELDS.priority,
-    weight: DEFAULT_CHANNEL_FIELDS.weight,
-    status: DEFAULT_CHANNEL_FIELDS.status
+  const resolvedGroups = token.group
+    ? [token.group]
+    : [...DEFAULT_CHANNEL_FIELDS.groups]
+
+  const baseForm: ChannelFormData = {
+    name: overrides.name ?? buildChannelName(account, token),
+    type: overrides.type ?? resolveChannelTypeForSite(account.siteType),
+    key: overrides.key ?? token.key,
+    base_url: overrides.base_url ?? account.baseUrl,
+    models: normalizeList(overrides.models ? [...overrides.models] : availableModels),
+    groups: normalizeList(overrides.groups ? [...overrides.groups] : resolvedGroups),
+    priority: overrides.priority ?? DEFAULT_CHANNEL_FIELDS.priority,
+    weight: overrides.weight ?? DEFAULT_CHANNEL_FIELDS.weight,
+    status: overrides.status ?? DEFAULT_CHANNEL_FIELDS.status
   }
+
+  return baseForm
 }
 
 /**
@@ -169,13 +204,15 @@ export async function prepareChannelFormData(
  */
 export function buildChannelPayload(
   formData: ChannelFormData,
-  mode: ChannelMode = DEFAULT_CHANNEL_FIELDS.mode
+  mode: ChannelMode = DEFAULT_CHANNEL_MODE
 ): ChannelCreationPayload {
   const trimmedBaseUrl = formData.base_url?.trim()
-  const groups =
+  const groups = normalizeList(
     formData.groups && formData.groups.length > 0
       ? [...formData.groups]
       : [...DEFAULT_CHANNEL_FIELDS.groups]
+  )
+  const models = normalizeList(formData.models ?? [])
 
   return {
     mode,
@@ -184,7 +221,7 @@ export function buildChannelPayload(
       type: formData.type,
       key: formData.key.trim(),
       base_url: trimmedBaseUrl || undefined,
-      models: (formData.models ?? []).join(","),
+      models: models.join(","),
       groups,
       priority: formData.priority,
       weight: formData.weight,
@@ -224,13 +261,23 @@ export async function findMatchingChannel(
 }
 
 /**
+ * Additional options for importToNewApi to allow customization.
+ */
+export interface ImportToNewApiOptions {
+  formOverrides?: Partial<ChannelFormData>
+  mode?: ChannelMode
+  skipExistingCheck?: boolean
+}
+
+/**
  * 将账户导入到 New API
  * @param account 站点数据
  * @param token API 令牌
  */
 export async function importToNewApi(
   account: DisplaySiteData,
-  token: ApiToken
+  token: ApiToken,
+  options: ImportToNewApiOptions = {}
 ): Promise<ServiceResponse<void>> {
   try {
     const prefs = await userPreferences.getPreferences()
@@ -244,26 +291,35 @@ export async function importToNewApi(
 
     const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
 
-    const formData = await prepareChannelFormData(account, token)
-
-    const existingChannel = await findMatchingChannel(
-      newApiBaseUrl,
-      newApiAdminToken,
-      newApiUserId,
-      account.baseUrl,
-      formData.models
+    const formData = await prepareChannelFormData(
+      account,
+      token,
+      options.formOverrides ?? {}
     )
 
-    if (existingChannel) {
-      return {
-        success: false,
-        message: t("messages:newapi.channelExists", {
-          channelName: existingChannel.name
-        })
+    if (!options.skipExistingCheck) {
+      const existingChannel = await findMatchingChannel(
+        newApiBaseUrl,
+        newApiAdminToken,
+        newApiUserId,
+        account.baseUrl,
+        formData.models
+      )
+
+      if (existingChannel) {
+        return {
+          success: false,
+          message: t("messages:newapi.channelExists", {
+            channelName: existingChannel.name
+          })
+        }
       }
     }
 
-    const payload = buildChannelPayload(formData)
+    const payload = buildChannelPayload(
+      formData,
+      options.mode ?? DEFAULT_CHANNEL_MODE
+    )
 
     const createdChannelResponse = await createChannel(
       newApiBaseUrl,

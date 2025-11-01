@@ -119,7 +119,11 @@ export function useChannelForm({
       const hasConfig = await hasValidNewApiConfig()
       if (!hasConfig) {
         console.warn("[ChannelForm] No valid New API configuration")
-        setAvailableGroups([{ label: "default", value: "default" }])
+        const fallback = [{ label: "default", value: "default" }]
+        const preselectedGroups = (initialValues?.groups ?? initialGroups ?? []).map(
+          (value) => ({ label: value, value })
+        )
+        setAvailableGroups(mergeUniqueOptions(fallback, preselectedGroups))
         return
       }
 
@@ -145,7 +149,11 @@ export function useChannelForm({
       setAvailableGroups(groupOptions)
     } catch (error) {
       console.error("[ChannelForm] Failed to load groups:", error)
-      setAvailableGroups([{ label: "default", value: "default" }])
+      const fallback = [{ label: "default", value: "default" }]
+      const preselectedGroups = (initialValues?.groups ?? initialGroups ?? []).map(
+        (value) => ({ label: value, value })
+      )
+      setAvailableGroups(mergeUniqueOptions(fallback, preselectedGroups))
     } finally {
       setIsLoadingGroups(false)
     }

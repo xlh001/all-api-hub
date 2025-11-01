@@ -27,6 +27,20 @@ export const DEFAULT_CHANNEL_FIELDS: ChannelDefaults = {
 }
 
 /**
+ * Default channel type mapping based on detected site type.
+ * Consumers can extend this mapping if needed.
+ */
+export const CHANNEL_TYPE_BY_SITE: Record<string, ChannelType> = {
+  "new-api": ChannelType.OpenAI,
+  "one-api": ChannelType.OpenAI,
+  veloera: ChannelType.OpenAI,
+  "one-hub": ChannelType.OpenAI,
+  "done-hub": ChannelType.OpenAI,
+  voapi: ChannelType.OpenAI,
+  "super-api": ChannelType.OpenAI
+}
+
+/**
  * Channel type display names
  */
 export const CHANNEL_TYPE_NAMES: Record<ChannelType, string> = {
@@ -205,6 +219,17 @@ export const CHANNEL_MODE = {
   SINGLE: "single",
   BATCH: "batch"
 } as const
+
+/**
+ * Resolve default channel type based on detected site type or fallback to global default.
+ */
+export function resolveChannelTypeForSite(siteType?: string): ChannelType {
+  if (!siteType) {
+    return DEFAULT_CHANNEL_FIELDS.type
+  }
+  const normalized = siteType.trim().toLowerCase()
+  return CHANNEL_TYPE_BY_SITE[normalized] ?? DEFAULT_CHANNEL_FIELDS.type
+}
 
 /**
  * Get type configuration for a specific channel type
