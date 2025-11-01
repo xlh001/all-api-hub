@@ -84,3 +84,30 @@ export interface ChannelCreationPayload {
     status: number
   }
 }
+
+/**
+ * New API Channel data
+ */
+export interface NewApiChannel {
+  id: number
+  type: ChannelType
+  key: string
+  name: string
+  base_url: string
+  // models 是逗号分隔的字符串,示例: "gpt-3.5-turbo,gpt-4"
+  models: string
+  // groups 是逗号分隔的字符串,示例: "default,group1"
+  groups: string
+  status: ChannelStatus
+  weight: number
+  priority: number
+}
+
+/**
+ * All New API Channel data
+ */
+export interface NewApiChannelListData {
+  items: NewApiChannel[]
+  total: number
+  type_counts: Record<string, number>
+}

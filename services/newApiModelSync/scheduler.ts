@@ -1,9 +1,7 @@
 import { t } from "i18next"
 
-import {
-  hasValidNewApiConfig,
-  NewApiChannel
-} from "~/services/newApiService.ts"
+import { hasValidNewApiConfig } from "~/services/newApiService.ts"
+import { NewApiChannel } from "~/types"
 import { ExecutionProgress, ExecutionResult } from "~/types/newApiModelSync"
 import {
   clearAlarm,

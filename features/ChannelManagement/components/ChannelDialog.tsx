@@ -10,8 +10,7 @@ import {
 } from "~/components/ui"
 import { ChannelType, ChannelTypeOptions } from "~/constants/newApi.ts"
 import { useChannelForm } from "~/features/ChannelManagement/hooks/useChannelForm"
-import { NewApiChannel } from "~/services/newApiService.ts"
-import { CHANNEL_STATUS, ChannelFormData } from "~/types/newapi"
+import { CHANNEL_STATUS, ChannelFormData, NewApiChannel } from "~/types/newapi"
 
 export interface ChannelDialogProps {
   isOpen: boolean

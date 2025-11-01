@@ -1,13 +1,18 @@
 import { t } from "i18next"
 
-import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
+import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
 import {
   fetchAvailableModels,
   fetchUpstreamModelsNameList
 } from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
-import type { ApiToken, ChannelStatus, DisplaySiteData } from "~/types"
+import type {
+  ApiToken,
+  DisplaySiteData,
+  NewApiChannel,
+  NewApiChannelListData
+} from "~/types"
 import type {
   ChannelCreationPayload,
   ChannelFormData,
@@ -18,28 +23,6 @@ import { isArraysEqual } from "~/utils"
 import { getErrorMessage } from "~/utils/error"
 
 import { UserPreferences, userPreferences } from "./userPreferences"
-
-// 新 API 的返回类型定义
-export interface NewApiChannel {
-  id: number
-  type: ChannelType
-  key: string
-  name: string
-  base_url: string
-  // models 是逗号分隔的字符串,示例: "gpt-3.5-turbo,gpt-4"
-  models: string
-  // groups 是逗号分隔的字符串,示例: "default,group1"
-  groups: string
-  status: ChannelStatus
-  weight: number
-  priority: number
-}
-
-export interface NewApiChannelData {
-  items: NewApiChannel[]
-  total: number
-  type_counts: Record<string, number>
-}
 
 function parseDelimitedList(value?: string | null): string[] {
   if (!value) return []
@@ -65,9 +48,9 @@ export async function searchChannel(
   accessToken: string,
   userId: number | string,
   keyword: string
-): Promise<NewApiChannelData | null> {
+): Promise<NewApiChannelListData | null> {
   try {
-    return await fetchApiData<NewApiChannelData>({
+    return await fetchApiData<NewApiChannelListData>({
       baseUrl,
       endpoint: `/api/channel/search?keyword=${keyword}`,
       userId,

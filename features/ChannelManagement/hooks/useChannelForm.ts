@@ -10,10 +10,9 @@ import {
   checkValidNewApiConfig,
   createChannel,
   getCommonModelSuggestions,
-  getNewApiConfig,
-  NewApiChannel
+  getNewApiConfig
 } from "~/services/newApiService"
-import type { ChannelFormData } from "~/types/newapi"
+import type { ChannelFormData, NewApiChannel } from "~/types/newapi"
 import { mergeUniqueOptions } from "~/utils/selectOptions"
 
 export interface UseChannelFormProps {

@@ -1,7 +1,7 @@
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
 import { fetchApi } from "~/services/apiService/common/utils"
-import { NewApiChannel, NewApiChannelData } from "~/services/newApiService.ts"
+import { NewApiChannel, NewApiChannelListData } from "~/types"
 import {
   BatchExecutionOptions,
   ExecutionItemResult,
@@ -47,7 +47,7 @@ export class NewApiModelSyncService {
   /**
    * List all channels from New API
    */
-  async listChannels(): Promise<NewApiChannelData> {
+  async listChannels(): Promise<NewApiChannelListData> {
     try {
       let total = 0
       const typeCounts: Record<string, number> = {}
@@ -60,7 +60,7 @@ export class NewApiModelSyncService {
 
         await this.throttle()
 
-        const response = await fetchApi<NewApiChannelData>(
+        const response = await fetchApi<NewApiChannelListData>(
           {
             baseUrl: this.baseUrl,
             endpoint: `/api/channel/?${params.toString()}`,
