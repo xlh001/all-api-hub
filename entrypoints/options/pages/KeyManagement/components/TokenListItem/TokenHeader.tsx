@@ -12,7 +12,7 @@ import { useChannelDialog } from "~/features/ChannelManagement"
 import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 
-import { showSettingsToast } from "../../../BasicSettings/utils/toastHelpers"
+import { showResultToast } from "../../../BasicSettings/utils/toastHelpers"
 import { AccountToken } from "../../type"
 
 interface TokenHeaderProps {
@@ -35,7 +35,7 @@ function TokenActionButtons({
 
   const handleImportToNewApi = async () => {
     await openWithAccount(account, (result) => {
-      showSettingsToast(result)
+      showResultToast(result)
     })
   }
 
