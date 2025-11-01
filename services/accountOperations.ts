@@ -531,6 +531,42 @@ function generateDefaultToken(): CreateTokenRequest {
   }
 }
 
+export async function ensureAccountApiToken(
+  account: SiteAccount,
+  displaySiteData: DisplaySiteData,
+  toastId?: string
+): Promise<ApiToken> {
+  toast.loading(t("messages:accountOperations.checkingApiKeys"), {
+    id: toastId
+  })
+
+  const tokens = await fetchAccountTokens(displaySiteData)
+  let apiToken: ApiToken | undefined = tokens[0]
+
+  if (!apiToken) {
+    const newTokenData = generateDefaultToken()
+    const createApiTokenResult = await createApiToken(
+      account.site_url,
+      account.account_info.id,
+      account.account_info.access_token,
+      newTokenData
+    )
+
+    if (!createApiTokenResult) {
+      throw new Error(t("messages:accountOperations.createTokenFailed"))
+    }
+
+    const updatedTokens = await fetchAccountTokens(displaySiteData)
+    apiToken = updatedTokens.at(-1)
+  }
+
+  if (!apiToken) {
+    throw new Error(t("messages:accountOperations.tokenNotFound"))
+  }
+
+  return apiToken
+}
+
 export async function autoConfigToNewApi(
   account: SiteAccount,
   toastId?: string
@@ -547,39 +583,11 @@ export async function autoConfigToNewApi(
   let lastError: any
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      toast.loading(t("messages:accountOperations.checkingApiKeys"), {
-        id: toastId
-      })
-      // 1. Check for existing API token
-      const tokens = await fetchAccountTokens(displaySiteData)
-      let apiToken: ApiToken | undefined = tokens[0]
-
-      // 2. Create a new token if one doesn't exist
-      if (!apiToken) {
-        const newTokenData = generateDefaultToken()
-        const createApiTokenRsult = await createApiToken(
-          account.site_url,
-          account.account_info.id,
-          account.account_info.access_token,
-          newTokenData
-        )
-        if (!createApiTokenRsult) {
-          return {
-            success: false,
-            message: t("messages:accountOperations.createTokenFailed")
-          }
-        }
-        // Re-fetch tokens to get the newly created one
-        const updatedTokens = await fetchAccountTokens(displaySiteData)
-        apiToken = updatedTokens.at(-1)
-      }
-
-      if (!apiToken) {
-        return {
-          success: false,
-          message: t("messages:accountOperations.tokenNotFound")
-        }
-      }
+      const apiToken = await ensureAccountApiToken(
+        account,
+        displaySiteData,
+        toastId
+      )
 
       // 3. Import to New API as a channel
       toast.loading(t("messages:accountOperations.importingToNewApi"), {

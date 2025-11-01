@@ -1,20 +1,26 @@
 import { t } from "i18next"
 
-import { DEFAULT_CHANNEL_FIELDS, CHANNEL_MODE } from "~/config/channelDefaults"
+import { DEFAULT_CHANNEL_FIELDS } from "~/config/channelDefaults"
 import {
   fetchAvailableModels,
   fetchUpstreamModelsNameList
 } from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
-import type { ApiToken, DisplaySiteData, ChannelType } from "~/types"
+import type { ApiToken, DisplaySiteData } from "~/types"
+import type {
+  ChannelCreationPayload,
+  ChannelFormData,
+  ChannelMode
+} from "~/types/newapi"
 import type { ServiceResponse } from "~/types/serviceResponse"
-import { isArraysEqual, isNotEmptyArray } from "~/utils"
+import { isArraysEqual } from "~/utils"
+import { getErrorMessage } from "~/utils/error"
 
 import { UserPreferences, userPreferences } from "./userPreferences"
 
 // 新 API 的返回类型定义
-interface NewApiChannel {
+export interface NewApiChannel {
   id: number
   type: number
   key: string
@@ -73,7 +79,7 @@ export async function createChannel(
   baseUrl: string,
   adminToken: string,
   userId: number | string,
-  channelData: object
+  channelData: ChannelCreationPayload
 ) {
   try {
     return await fetchApi<void>({
@@ -102,6 +108,122 @@ export function hasValidNewApiConfig(
 }
 
 /**
+ * 获取账号支持的模型列表
+ */
+export async function fetchAccountAvailableModels(
+  account: DisplaySiteData,
+  token: ApiToken
+): Promise<string[]> {
+  const upstreamModels = await fetchUpstreamModelsNameList({
+    baseUrl: account.baseUrl,
+    apiKey: token.key
+  })
+
+  if (upstreamModels && upstreamModels.length > 0) {
+    return upstreamModels
+  }
+
+  const fallbackModels = await fetchAvailableModels(account)
+  return fallbackModels ?? []
+}
+
+/**
+ * 构建默认渠道名称
+ */
+export function buildChannelName(account: DisplaySiteData, token: ApiToken): string {
+  let channelName = `${account.name} | ${token.name}`.trim()
+  if (!channelName.endsWith("(auto)")) {
+    channelName += " (auto)"
+  }
+  return channelName
+}
+
+/**
+ * 构建渠道表单默认值
+ */
+export async function prepareChannelFormData(
+  account: DisplaySiteData,
+  token: ApiToken
+): Promise<ChannelFormData> {
+  const availableModels = await fetchAccountAvailableModels(account, token)
+
+  if (!availableModels.length) {
+    throw new Error(t("messages:newapi.noAnyModels"))
+  }
+
+  return {
+    name: buildChannelName(account, token),
+    type: DEFAULT_CHANNEL_FIELDS.type,
+    key: token.key,
+    base_url: account.baseUrl,
+    models: availableModels,
+    groups: token.group ? [token.group] : [...DEFAULT_CHANNEL_FIELDS.groups],
+    priority: DEFAULT_CHANNEL_FIELDS.priority,
+    weight: DEFAULT_CHANNEL_FIELDS.weight,
+    status: DEFAULT_CHANNEL_FIELDS.status
+  }
+}
+
+/**
+ * 构建渠道创建 payload
+ */
+export function buildChannelPayload(
+  formData: ChannelFormData,
+  mode: ChannelMode = DEFAULT_CHANNEL_FIELDS.mode
+): ChannelCreationPayload {
+  const trimmedBaseUrl = formData.base_url?.trim()
+  const groups =
+    formData.groups && formData.groups.length > 0
+      ? [...formData.groups]
+      : [...DEFAULT_CHANNEL_FIELDS.groups]
+
+  return {
+    mode,
+    channel: {
+      name: formData.name.trim(),
+      type: formData.type,
+      key: formData.key.trim(),
+      base_url: trimmedBaseUrl || undefined,
+      models: (formData.models ?? []).join(","),
+      groups,
+      priority: formData.priority,
+      weight: formData.weight,
+      status: formData.status
+    }
+  }
+}
+
+/**
+ * 查找是否存在匹配的渠道
+ */
+export async function findMatchingChannel(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  accountBaseUrl: string,
+  models: string[]
+): Promise<NewApiChannel | null> {
+  const searchResults = await searchChannel(
+    baseUrl,
+    adminToken,
+    userId,
+    accountBaseUrl
+  )
+
+  if (!searchResults) {
+    return null
+  }
+
+  return (
+    searchResults.items.find(
+      (channel) =>
+        channel.base_url === accountBaseUrl &&
+        isArraysEqual(channel.models.split(","), models)
+    ) ?? null
+  )
+}
+
+/**
  * 将账户导入到 New API
  * @param account 站点数据
  * @param token API 令牌
@@ -122,93 +244,46 @@ export async function importToNewApi(
 
     const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
 
-    // 搜索现有渠道
-    const searchResults = await searchChannel(
+    const formData = await prepareChannelFormData(account, token)
+
+    const existingChannel = await findMatchingChannel(
       newApiBaseUrl,
       newApiAdminToken,
       newApiUserId,
-      account.baseUrl
+      account.baseUrl,
+      formData.models
     )
 
-    if (!searchResults) {
+    if (existingChannel) {
       return {
         success: false,
-        message: t("messages:newapi.dataFetchFailed")
+        message: t("messages:newapi.channelExists", {
+          channelName: existingChannel.name
+        })
       }
     }
 
-    // 获取账户支持的模型列表
-    const availableModels =
-      (await fetchUpstreamModelsNameList({
-        baseUrl: account.baseUrl,
-        apiKey: token.key
-      })) ?? (await fetchAvailableModels(account))
-
-    // 检查是否有匹配的渠道
-    if (searchResults.total > 0) {
-      const existingChannel = searchResults.items.find(
-        (channel) =>
-          channel.base_url === account.baseUrl &&
-          isArraysEqual(channel.models.split(","), availableModels)
-      )
-      if (existingChannel) {
-        return {
-          success: false,
-          message: t("messages:newapi.channelExists", {
-            channelName: existingChannel.name
-          })
-        }
-      }
-    }
-
-    if (availableModels.length === 0) {
-      return {
-        success: false,
-        message: t("messages:newapi.noAnyModels")
-      }
-    }
-
-    let newChannelName = `${account.name} | ${token.name}`.trim()
-    if (!newChannelName.endsWith("(auto)")) {
-      newChannelName += " (auto)"
-    }
-
-    // 如果没有匹配项，则创建新渠道
-    const newChannelData = {
-      mode: CHANNEL_MODE.SINGLE,
-      channel: {
-        name: newChannelName,
-        type: DEFAULT_CHANNEL_FIELDS.type,
-        key: token.key,
-        base_url: account.baseUrl,
-        models: isNotEmptyArray(availableModels)
-          ? availableModels.join(",")
-          : "",
-        groups: token.group ? [token.group] : DEFAULT_CHANNEL_FIELDS.groups,
-        priority: DEFAULT_CHANNEL_FIELDS.priority,
-        weight: DEFAULT_CHANNEL_FIELDS.weight
-      }
-    }
+    const payload = buildChannelPayload(formData)
 
     const createdChannelResponse = await createChannel(
       newApiBaseUrl,
       newApiAdminToken,
       newApiUserId,
-      newChannelData
+      payload
     )
 
     if (createdChannelResponse.success) {
       return {
         success: true,
         message: t("messages:newapi.importSuccess", {
-          channelName: newChannelName
+          channelName: formData.name
         })
       }
-    } else {
-      return {
-        success: false,
-        message: createdChannelResponse.message
-      }
+    }
+
+    return {
+      success: false,
+      message: createdChannelResponse.message
     }
   } catch (error) {
     return {

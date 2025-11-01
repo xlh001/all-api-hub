@@ -3,7 +3,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import {
-  autoConfigToNewApi,
+  ensureAccountApiToken,
   autoDetectAccount,
   getSiteName,
   isValidAccount,
@@ -11,7 +11,17 @@ import {
   validateAndUpdateAccount
 } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
-import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
+import {
+  findMatchingChannel,
+  prepareChannelFormData
+} from "~/services/newApiService"
+import { getNewApiConfig } from "~/services/newapi/siteMeta"
+import {
+  AuthTypeEnum,
+  type CheckInConfig,
+  type DisplaySiteData,
+  type ChannelFormData
+} from "~/types"
 import { AutoDetectError } from "~/utils/autoDetectUtils"
 
 interface UseAccountDialogProps {
@@ -29,7 +39,7 @@ export function useAccountDialog({
   onClose,
   onSuccess
 }: UseAccountDialogProps) {
-  const { t } = useTranslation("accountDialog")
+  const { t } = useTranslation(["accountDialog", "messages"])
 
   const [url, setUrl] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
@@ -57,6 +67,14 @@ export function useAccountDialog({
   const [siteType, setSiteType] = useState("unknown")
   const [authType, setAuthType] = useState(AuthTypeEnum.AccessToken)
   const [isAutoConfiguring, setIsAutoConfiguring] = useState(false)
+  const [isChannelDialogOpen, setChannelDialogOpen] = useState(false)
+  const [channelFormDefaults, setChannelFormDefaults] =
+    useState<ChannelFormData | null>(null)
+  const [channelInitialModels, setChannelInitialModels] = useState<string[]>([])
+  const [channelInitialGroups, setChannelInitialGroups] = useState<string[]>([])
+  const [channelDialogContext, setChannelDialogContext] = useState<{
+    targetAccount: any
+  } | null>(null)
 
   // useRef 保存跨渲染引用
   const newAccountRef = useRef(null)
@@ -85,6 +103,11 @@ export function useAccountDialog({
     setSiteType("unknown")
     setAuthType(AuthTypeEnum.AccessToken)
     setIsAutoConfiguring(false)
+    setChannelDialogOpen(false)
+    setChannelFormDefaults(null)
+    setChannelInitialModels([])
+    setChannelInitialGroups([])
+    setChannelDialogContext(null)
   }, [mode])
 
   const loadAccountData = useCallback(
@@ -325,21 +348,57 @@ export function useAccountDialog({
         toast.error(t("messages:toast.error.findAccountDetailsFailed"), {
           id: toastId
         })
-        setIsAutoConfiguring(false)
         return
       }
 
-      // 检查 API 密钥并 导入到 New API
-      const result = await autoConfigToNewApi(siteAccount, toastId)
-      if (result.success) {
-        toast.success(result.message, { id: toastId })
-        // Call onSuccess to close the dialog after successful auto-config
-        if (onSuccess && targetAccount) {
-          onSuccess(targetAccount)
-        }
-      } else {
-        throw new Error(result.message)
+      const displaySiteData =
+        accountStorage.convertToDisplayData(siteAccount) as DisplaySiteData
+
+      const newApiConfig = await getNewApiConfig()
+      if (!newApiConfig) {
+        toast.error(t("messages:newapi.configMissing"), {
+          id: toastId
+        })
+        return
       }
+
+      const apiToken = await ensureAccountApiToken(
+        siteAccount,
+        displaySiteData,
+        toastId
+      )
+
+      const formDefaults = await prepareChannelFormData(
+        displaySiteData,
+        apiToken
+      )
+
+      const existingChannel = await findMatchingChannel(
+        newApiConfig.baseUrl,
+        newApiConfig.token,
+        newApiConfig.userId,
+        displaySiteData.baseUrl,
+        formDefaults.models
+      )
+
+      if (existingChannel) {
+        toast.error(
+          t("messages:newapi.channelExists", {
+            channelName: existingChannel.name
+          }),
+          {
+            id: toastId
+          }
+        )
+        return
+      }
+
+      setChannelFormDefaults(formDefaults)
+      setChannelInitialModels([...formDefaults.models])
+      setChannelInitialGroups([...formDefaults.groups])
+      setChannelDialogContext({ targetAccount })
+      setChannelDialogOpen(true)
+      toast.dismiss(toastId)
     } catch (error) {
       toast.error(
         t("messages.newApiConfigFailed", {
@@ -353,6 +412,21 @@ export function useAccountDialog({
     } finally {
       setIsAutoConfiguring(false)
     }
+  }
+
+  const handleChannelDialogClose = () => {
+    setChannelDialogOpen(false)
+    setChannelFormDefaults(null)
+    setChannelInitialModels([])
+    setChannelInitialGroups([])
+    setChannelDialogContext(null)
+  }
+
+  const handleChannelSubmitSuccess = () => {
+    if (channelDialogContext?.targetAccount && onSuccess) {
+      onSuccess(channelDialogContext.targetAccount)
+    }
+    handleChannelDialogClose()
   }
 
   const handleUrlChange = (newUrl: string) => {
@@ -379,6 +453,7 @@ export function useAccountDialog({
   }
 
   const handleClose = () => {
+    handleChannelDialogClose()
     onClose()
   }
 
@@ -411,7 +486,13 @@ export function useAccountDialog({
       siteType,
       authType,
       isFormValid,
-      isAutoConfiguring
+      isAutoConfiguring,
+      channelDialog: {
+        isOpen: isChannelDialogOpen,
+        initialValues: channelFormDefaults,
+        initialModels: channelInitialModels,
+        initialGroups: channelInitialGroups
+      }
     },
     setters: {
       setUrl,
@@ -434,7 +515,9 @@ export function useAccountDialog({
       handleUrlChange,
       handleSubmit,
       handleAutoConfig,
-      handleClose
+      handleClose,
+      handleChannelDialogClose,
+      handleChannelSubmitSuccess
     }
   }
 }

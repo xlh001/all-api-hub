@@ -4,12 +4,11 @@ import { useTranslation } from "react-i18next"
 import { Button, Input, Label, Modal, MultiSelect, Select } from "~/components/ui"
 import {
   getChannelTypeOptions,
-  getChannelTypeName,
   getChannelTypeConfig,
   CHANNEL_STATUS
 } from "~/config/channelDefaults"
 import { useChannelForm } from "~/features/ChannelManagement/hooks/useChannelForm"
-import type { NewApiChannel } from "~/types/newapi"
+import type { ChannelFormData, NewApiChannel } from "~/types/newapi"
 
 export interface ChannelDialogProps {
   isOpen: boolean
@@ -17,6 +16,9 @@ export interface ChannelDialogProps {
   mode?: "add" | "edit"
   channel?: NewApiChannel | null
   onSuccess?: (channel: any) => void
+  initialValues?: Partial<ChannelFormData>
+  initialModels?: string[]
+  initialGroups?: string[]
 }
 
 export function ChannelDialog({
@@ -24,7 +26,10 @@ export function ChannelDialog({
   onClose,
   mode = "add",
   channel = null,
-  onSuccess
+  onSuccess,
+  initialValues,
+  initialModels,
+  initialGroups
 }: ChannelDialogProps) {
   const { t } = useTranslation(["channelDialog", "common"])
 
@@ -44,7 +49,10 @@ export function ChannelDialog({
     channel,
     isOpen,
     onClose,
-    onSuccess
+    onSuccess,
+    initialValues,
+    initialModels,
+    initialGroups
   })
 
   const channelTypeOptions = getChannelTypeOptions()

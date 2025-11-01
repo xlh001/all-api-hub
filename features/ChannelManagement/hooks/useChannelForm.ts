@@ -6,7 +6,7 @@ import {
   DEFAULT_CHANNEL_FIELDS,
   getChannelTypeConfig
 } from "~/config/channelDefaults"
-import { createChannel } from "~/services/newApiService"
+import { buildChannelPayload, createChannel } from "~/services/newApiService"
 import {
   getNewApiConfig,
   getNewApiGroups,
@@ -17,12 +17,12 @@ import {
 import type {
   ChannelType,
   ChannelFormData,
-  ChannelCreationPayload,
   NewApiChannel,
   ChannelGroup,
   ChannelModel
 } from "~/types/newapi"
 import type { MultiSelectOption } from "~/components/ui/MultiSelect"
+import { mergeUniqueOptions } from "~/utils/selectOptions"
 
 export interface UseChannelFormProps {
   mode: "add" | "edit"
@@ -30,6 +30,9 @@ export interface UseChannelFormProps {
   isOpen: boolean
   onClose: () => void
   onSuccess?: (channel: any) => void
+  initialValues?: Partial<ChannelFormData>
+  initialModels?: string[]
+  initialGroups?: string[]
 }
 
 export function useChannelForm({
@@ -37,22 +40,32 @@ export function useChannelForm({
   channel,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  initialValues,
+  initialModels,
+  initialGroups
 }: UseChannelFormProps) {
-  const { t } = useTranslation("channelDialog")
+  const { t } = useTranslation(["channelDialog", "messages"])
+
+  const buildInitialFormData = useCallback((): ChannelFormData => ({
+    name: initialValues?.name ?? "",
+    type: initialValues?.type ?? DEFAULT_CHANNEL_FIELDS.type,
+    key: initialValues?.key ?? "",
+    base_url: initialValues?.base_url ?? "",
+    models: initialValues?.models ? [...initialValues.models] : [],
+    groups:
+      initialValues?.groups && initialValues.groups.length > 0
+        ? [...initialValues.groups]
+        : [...DEFAULT_CHANNEL_FIELDS.groups],
+    priority: initialValues?.priority ?? DEFAULT_CHANNEL_FIELDS.priority,
+    weight: initialValues?.weight ?? DEFAULT_CHANNEL_FIELDS.weight,
+    status: initialValues?.status ?? DEFAULT_CHANNEL_FIELDS.status
+  }), [initialValues])
 
   // Form state
-  const [formData, setFormData] = useState<ChannelFormData>({
-    name: "",
-    type: DEFAULT_CHANNEL_FIELDS.type,
-    key: "",
-    base_url: "",
-    models: [],
-    groups: DEFAULT_CHANNEL_FIELDS.groups,
-    priority: DEFAULT_CHANNEL_FIELDS.priority,
-    weight: DEFAULT_CHANNEL_FIELDS.weight,
-    status: DEFAULT_CHANNEL_FIELDS.status
-  })
+  const [formData, setFormData] = useState<ChannelFormData>(() =>
+    buildInitialFormData()
+  )
 
   // UI state
   const [isSaving, setIsSaving] = useState(false)
@@ -67,11 +80,16 @@ export function useChannelForm({
       loadGroups()
       loadModels()
     }
-  }, [isOpen])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialValues, initialModels, initialGroups])
 
-  // Load form data when editing
+  // Load form data when dialog opens
   useEffect(() => {
-    if (isOpen && mode === "edit" && channel) {
+    if (!isOpen) {
+      return
+    }
+
+    if (mode === "edit" && channel) {
       setFormData({
         name: channel.name,
         type: channel.type,
@@ -86,24 +104,14 @@ export function useChannelForm({
         weight: channel.weight ?? DEFAULT_CHANNEL_FIELDS.weight,
         status: channel.status ?? DEFAULT_CHANNEL_FIELDS.status
       })
-    } else if (isOpen && mode === "add") {
-      resetForm()
+    } else {
+      setFormData(buildInitialFormData())
     }
-  }, [isOpen, mode, channel])
+  }, [isOpen, mode, channel, buildInitialFormData])
 
   const resetForm = useCallback(() => {
-    setFormData({
-      name: "",
-      type: DEFAULT_CHANNEL_FIELDS.type,
-      key: "",
-      base_url: "",
-      models: [],
-      groups: DEFAULT_CHANNEL_FIELDS.groups,
-      priority: DEFAULT_CHANNEL_FIELDS.priority,
-      weight: DEFAULT_CHANNEL_FIELDS.weight,
-      status: DEFAULT_CHANNEL_FIELDS.status
-    })
-  }, [])
+    setFormData(buildInitialFormData())
+  }, [buildInitialFormData])
 
   const loadGroups = async () => {
     setIsLoadingGroups(true)
@@ -116,14 +124,23 @@ export function useChannelForm({
       }
 
       const groups = await getNewApiGroups()
-      const groupOptions = groups.map((g: ChannelGroup) => ({
+      let groupOptions = groups.map((g: ChannelGroup) => ({
         label: g.name,
         value: g.id
       }))
 
-      if (groupOptions.length === 0) {
+      const preselectedGroups = (initialValues?.groups ?? initialGroups ?? []).map(
+        (value) => ({
+          label: value,
+          value
+        })
+      )
+
+      if (!groupOptions.some((option) => option.value === "default")) {
         groupOptions.push({ label: "default", value: "default" })
       }
+
+      groupOptions = mergeUniqueOptions(groupOptions, preselectedGroups)
 
       setAvailableGroups(groupOptions)
     } catch (error) {
@@ -153,6 +170,15 @@ export function useChannelForm({
         options = suggestions.map((m) => ({ label: m, value: m }))
       }
 
+      const preselectedModels = (initialValues?.models ?? initialModels ?? []).map(
+        (value) => ({
+          label: value,
+          value
+        })
+      )
+
+      options = mergeUniqueOptions(options, preselectedModels)
+
       setAvailableModels(options)
     } catch (error) {
       console.error("[ChannelForm] Failed to load models:", error)
@@ -160,7 +186,13 @@ export function useChannelForm({
         label: m,
         value: m
       }))
-      setAvailableModels(fallback)
+      const preselectedModels = (initialValues?.models ?? initialModels ?? []).map(
+        (value) => ({
+          label: value,
+          value
+        })
+      )
+      setAvailableModels(mergeUniqueOptions(fallback, preselectedModels))
     } finally {
       setIsLoadingModels(false)
     }
@@ -214,20 +246,7 @@ export function useChannelForm({
       }
 
       // Build payload
-      const payload: ChannelCreationPayload = {
-        mode: DEFAULT_CHANNEL_FIELDS.mode,
-        channel: {
-          name: formData.name.trim(),
-          type: formData.type,
-          key: formData.key.trim(),
-          base_url: formData.base_url?.trim() || undefined,
-          models: formData.models.join(","),
-          groups: formData.groups.length > 0 ? formData.groups : DEFAULT_CHANNEL_FIELDS.groups,
-          priority: formData.priority,
-          weight: formData.weight,
-          status: formData.status
-        }
-      }
+      const payload = buildChannelPayload(formData)
 
       // Create channel
       const response = await createChannel(
@@ -238,10 +257,15 @@ export function useChannelForm({
       )
 
       if (response.success) {
-        toast.success(
-          t?.(mode === "add" ? "messages.createSuccess" : "messages.updateSuccess") ||
-            "Channel saved successfully"
-        )
+        const successMessage =
+          mode === "add"
+            ? t("messages:newapi.importSuccess", {
+                channelName: formData.name,
+                defaultValue: t("channelDialog:messages.createSuccess")
+              })
+            : t("channelDialog:messages.updateSuccess")
+
+        toast.success(successMessage)
         onSuccess?.(response)
         onClose()
         resetForm()
@@ -251,8 +275,10 @@ export function useChannelForm({
     } catch (error: any) {
       console.error("[ChannelForm] Save failed:", error)
       toast.error(
-        t?.("messages.saveFailed", { error: error.message }) ||
-          `Failed to save channel: ${error.message}`
+        t("channelDialog:messages.saveFailed", {
+          error: error.message,
+          defaultValue: `Failed to save channel: ${error.message}`
+        })
       )
     } finally {
       setIsSaving(false)
