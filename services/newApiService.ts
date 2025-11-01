@@ -484,12 +484,17 @@ export async function autoConfigToNewApi(
         attempt < 3
       ) {
         toast.error(getErrorMessage(lastError), { id: toastId })
+        toast.loading(
+          t("messages:accountOperations.retrying", { attempt: attempt + 1 }),
+          { id: toastId }
+        )
         await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
         continue
       }
-      throw error
+      break
     }
   }
+  toast.error(getErrorMessage(lastError), { id: toastId })
   return {
     success: false,
     message: lastError?.message || t("messages:errors.unknown")

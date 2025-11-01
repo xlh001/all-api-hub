@@ -71,7 +71,8 @@
     "checkingApiKeys": "正在检查 API 密钥...",
     "importingToNewApi": "正在导入到 New API...",
     "createTokenFailed": "创建 API 令牌失败",
-    "tokenNotFound": "无法创建或找到 API 令牌"
+    "tokenNotFound": "无法创建或找到 API 令牌",
+    "retrying": "出现错误，进行第{{attempt}}次重试"
   },
   "operations": {
     "account": {
