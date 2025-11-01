@@ -3,7 +3,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import type { MultiSelectOption } from "~/components/ui/MultiSelect"
-import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
+import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
 import { fetchUserGroups } from "~/services/apiService"
 import {
   buildChannelPayload,
@@ -13,12 +13,12 @@ import {
   getNewApiConfig,
   NewApiChannel
 } from "~/services/newApiService"
-import type { ChannelFormData, ChannelType } from "~/types/newapi"
+import type { ChannelFormData } from "~/types/newapi"
 import { mergeUniqueOptions } from "~/utils/selectOptions"
 
 export interface UseChannelFormProps {
   mode: "add" | "edit"
-  channel?: NewApiChannel | null
+  channel: NewApiChannel | null
   isOpen: boolean
   onClose: () => void
   onSuccess?: (channel: any) => void
@@ -37,7 +37,7 @@ export function useChannelForm({
   initialModels,
   initialGroups
 }: UseChannelFormProps) {
-  const { t } = useTranslation(["channelDialog", "messages"])
+  const { t } = useTranslation("channelDialog")
 
   const buildInitialFormData = useCallback(
     (): ChannelFormData => ({
@@ -223,23 +223,23 @@ export function useChannelForm({
     }))
   }
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
 
     // Validation
     if (!formData.name.trim()) {
-      toast.error(t?.("validation.nameRequired") || "Channel name is required")
+      toast.error(t("validation.nameRequired") || "Channel name is required")
       return
     }
 
     if (!formData.key.trim()) {
-      toast.error(t?.("validation.keyRequired") || "API key is required")
+      toast.error(t("validation.keyRequired") || "API key is required")
       return
     }
 
-    if (!formData.base_url?.trim()) {
+    if (!formData?.base_url?.trim()) {
       toast.error(
-        t?.("validation.baseUrlRequired") ||
+        t("validation.baseUrlRequired") ||
           "Base URL is required for this channel type"
       )
       return

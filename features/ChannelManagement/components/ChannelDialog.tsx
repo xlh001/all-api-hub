@@ -8,14 +8,10 @@ import {
   MultiSelect,
   Select
 } from "~/components/ui"
-import {
-  CHANNEL_STATUS,
-  getChannelTypeConfig,
-  getChannelTypeOptions
-} from "~/config/channelDefaults"
+import { ChannelType, ChannelTypeOptions } from "~/constants/newApi.ts"
 import { useChannelForm } from "~/features/ChannelManagement/hooks/useChannelForm"
-import type { ChannelFormData } from "~/types/newapi"
-import { NewApiChannel } from "~/types/newApiModelSync.ts"
+import { NewApiChannel } from "~/services/newApiService.ts"
+import { CHANNEL_STATUS, ChannelFormData } from "~/types/newapi"
 
 export interface ChannelDialogProps {
   isOpen: boolean
@@ -62,9 +58,6 @@ export function ChannelDialog({
     initialGroups
   })
 
-  const channelTypeOptions = getChannelTypeOptions()
-  const currentTypeConfig = getChannelTypeConfig(formData.type)
-
   const header = (
     <div>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
@@ -93,7 +86,6 @@ export function ChannelDialog({
         {t("common:cancel", "Cancel")}
       </Button>
       <Button
-        variant="primary"
         onClick={handleSubmit}
         disabled={!isFormValid || isSaving}
         loading={isSaving}
@@ -118,17 +110,14 @@ export function ChannelDialog({
         {/* Channel Name */}
         <div>
           <Label htmlFor="channel-name" required>
-            {t("channelDialog:fields.name.label", "Channel Name")}
+            {t("channelDialog:fields.name.label")}
           </Label>
           <Input
             id="channel-name"
             type="text"
             value={formData.name}
             onChange={(e) => updateField("name", e.target.value)}
-            placeholder={t(
-              "channelDialog:fields.name.placeholder",
-              "Enter channel name"
-            )}
+            placeholder={t("channelDialog:fields.name.placeholder")}
             disabled={isSaving}
             required
           />
@@ -137,25 +126,24 @@ export function ChannelDialog({
         {/* Channel Type */}
         <div>
           <Label htmlFor="channel-type" required>
-            {t("channelDialog:fields.type.label", "Channel Type")}
+            {t("channelDialog:fields.type.label")}
           </Label>
           <Select
             id="channel-type"
             value={formData.type}
-            onChange={(e) => handleTypeChange(Number(e.target.value))}
+            onChange={(e) =>
+              handleTypeChange(Number(e.target.value) as ChannelType)
+            }
             disabled={isSaving || mode === "edit"}
             required>
-            {channelTypeOptions.map((option) => (
+            {ChannelTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </Select>
           <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
-            {t(
-              "channelDialog:fields.type.hint",
-              "Select the API provider type"
-            )}
+            {t("channelDialog:fields.type.hint")}
           </p>
         </div>
 
@@ -169,40 +157,27 @@ export function ChannelDialog({
             type="password"
             value={formData.key}
             onChange={(e) => updateField("key", e.target.value)}
-            placeholder={
-              currentTypeConfig.keyPlaceholder ||
-              t("channelDialog:fields.key.placeholder", "Enter API key")
-            }
+            placeholder={t("channelDialog:fields.key.placeholder")}
             disabled={isSaving}
             required
           />
         </div>
 
         {/* Base URL */}
-        {(currentTypeConfig.requiresBaseUrl || formData.base_url) && (
-          <div>
-            <Label
-              htmlFor="channel-base-url"
-              required={currentTypeConfig.requiresBaseUrl}>
-              {t("channelDialog:fields.baseUrl.label", "Base URL")}
-            </Label>
-            <Input
-              id="channel-base-url"
-              type="url"
-              value={formData.base_url}
-              onChange={(e) => updateField("base_url", e.target.value)}
-              placeholder={
-                currentTypeConfig.baseUrlPlaceholder ||
-                t(
-                  "channelDialog:fields.baseUrl.placeholder",
-                  "https://api.example.com"
-                )
-              }
-              disabled={isSaving}
-              required={currentTypeConfig.requiresBaseUrl}
-            />
-          </div>
-        )}
+        <div>
+          <Label htmlFor="channel-base-url" required={true}>
+            {t("channelDialog:fields.baseUrl.label", "Base URL")}
+          </Label>
+          <Input
+            id="channel-base-url"
+            type="url"
+            value={formData.base_url}
+            onChange={(e) => updateField("base_url", e.target.value)}
+            placeholder={t("channelDialog:fields.baseUrl.placeholder")}
+            disabled={isSaving}
+            required={true}
+          />
+        </div>
 
         {/* Models */}
         <div>
@@ -213,20 +188,14 @@ export function ChannelDialog({
             onChange={(models) => updateField("models", models)}
             placeholder={
               isLoadingModels
-                ? t("channelDialog:fields.models.loading", "Loading models...")
-                : t(
-                    "channelDialog:fields.models.placeholder",
-                    "Select or type model names"
-                  )
+                ? t("channelDialog:fields.models.loading")
+                : t("channelDialog:fields.models.placeholder")
             }
             disabled={isSaving || isLoadingModels}
             allowCustom
           />
           <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
-            {t(
-              "channelDialog:fields.models.hint",
-              "Select from suggestions or type custom model names and press Enter"
-            )}
+            {t("channelDialog:fields.models.hint")}
           </p>
         </div>
 

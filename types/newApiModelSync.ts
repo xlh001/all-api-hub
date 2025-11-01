@@ -1,39 +1,4 @@
 /**
- * New API Model Sync Types
- * Types for New API model synchronization feature
- */
-
-import { ApiResponse } from "~/types"
-
-/**
- * Channel representation from New API
- */
-export interface NewApiChannel {
-  id: number
-  type: number
-  key: string
-  name: string
-  base_url: string
-  models: string // Comma-separated string
-  groups: string // Comma-separated string
-  status?: number
-  priority?: number
-  weight?: number
-  [key: string]: any // Allow other fields
-}
-
-export interface NewApiChannelListData {
-  items: NewApiChannel[]
-  total: number
-  type_counts: Record<string, number>
-}
-
-/**
- * Channel list response from New API
- */
-export type NewApiChannelListResponse = ApiResponse<NewApiChannelListData>
-
-/**
  * Single channel execution result
  */
 export interface ExecutionItemResult {

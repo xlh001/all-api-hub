@@ -1,6 +1,6 @@
 import { t } from "i18next"
 
-import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
+import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
 import {
   fetchAvailableModels,
   fetchUpstreamModelsNameList
@@ -21,11 +21,8 @@ import { UserPreferences, userPreferences } from "./userPreferences"
 
 // 新 API 的返回类型定义
 export interface NewApiChannel {
-  status: ChannelStatus
-  weight: number
-  priority: number
   id: number
-  type: number
+  type: ChannelType
   key: string
   name: string
   base_url: string
@@ -33,9 +30,12 @@ export interface NewApiChannel {
   models: string
   // groups 是逗号分隔的字符串,示例: "default,group1"
   groups: string
+  status: ChannelStatus
+  weight: number
+  priority: number
 }
 
-interface NewApiChannelData {
+export interface NewApiChannelData {
   items: NewApiChannel[]
   total: number
   type_counts: Record<string, number>
