@@ -7,7 +7,7 @@ import {
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
-import type { NewApiResponse, ServiceResponse } from "~/types/serviceResponse"
+import type { ServiceResponse } from "~/types/serviceResponse"
 import { isArraysEqual, isNotEmptyArray } from "~/utils"
 
 import { UserPreferences, userPreferences } from "./userPreferences"
@@ -75,7 +75,7 @@ export async function createChannel(
   channelData: object
 ) {
   try {
-    return await fetchApi<NewApiResponse<undefined>>({
+    return await fetchApi<void>({
       baseUrl,
       endpoint: "/api/channel",
       userId,

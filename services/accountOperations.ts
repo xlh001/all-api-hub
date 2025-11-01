@@ -26,7 +26,7 @@ import {
 } from "~/types"
 import type {
   AccountSaveResponse,
-  NewApiResponse
+  AutoConfigToNewApiResponse
 } from "~/types/serviceResponse"
 import { analyzeAutoDetectError } from "~/utils/autoDetectUtils"
 
@@ -534,7 +534,7 @@ function generateDefaultToken(): CreateTokenRequest {
 export async function autoConfigToNewApi(
   account: SiteAccount,
   toastId?: string
-): Promise<NewApiResponse<{ token?: ApiToken }>> {
+): Promise<AutoConfigToNewApiResponse<{ token?: ApiToken }>> {
   const configValidation = await validateNewApiConfig()
   if (!configValidation.valid) {
     return { success: false, message: configValidation.errors.join(", ") }

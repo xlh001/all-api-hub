@@ -239,5 +239,5 @@ export type {
   ServiceResponse,
   AccountValidationResponse,
   AccountSaveResponse,
-  NewApiResponse
+  AutoConfigToNewApiResponse
 } from "./serviceResponse"
