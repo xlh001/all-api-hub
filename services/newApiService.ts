@@ -344,6 +344,7 @@ export interface ImportToNewApiOptions {
 
 /**
  * 将账户导入到 New API
+ * @disabled 暂时不需要此功能
  * @param account 站点数据
  * @param token API 令牌
  */
@@ -436,6 +437,12 @@ async function validateNewApiConfig(): Promise<{
   }
 }
 
+/**
+ * 自动导入到New API中作为渠道
+ * @disabled 暂时不需要此功能
+ * @param account
+ * @param toastId
+ */
 export async function autoConfigToNewApi(
   account: SiteAccount,
   toastId?: string
