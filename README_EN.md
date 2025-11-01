@@ -48,7 +48,7 @@ This extension allows for convenient integrated management of AI relay station a
 ## ✨ Features
 
 - 🔍 **Smart Site Detection** - Automatically identify AI aggregation and relay sites, create access tokens, intelligently parse pricing ratios and configurations, with duplicate detection
-- 🏷️ **Site Information Management** - Multiple methods to retrieve real site names, check-in status detection, manually add any AI aggregation and relay site
+- 🏷️ **Site Information Management** - Multiple methods to retrieve real site names, check-in status detection and automatic check-in, manually add any AI aggregation and relay site
 - 👥 **Multi-Account Management** - Support multiple accounts per site, account grouping and quick switching, balance and usage logs at a glance
 - 🔑 **Token & Key Management** - Convenient API Key viewing and management, support quick copy and batch operations
 - 🤖 **Model Information** - View supported model lists and channel information, automatic New API model synchronization to stay up-to-date
