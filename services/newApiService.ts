@@ -85,7 +85,13 @@ export async function createChannel(
   channelData: ChannelCreationPayload
 ) {
   try {
-    channelData.channel.group = channelData.channel.groups.join(",")
+    const payload = {
+      ...channelData,
+      channel: {
+        ...channelData.channel,
+        group: channelData.channel.groups.join(",")
+      }
+    }
     return await fetchApi<void>({
       baseUrl,
       endpoint: "/api/channel",
@@ -93,7 +99,7 @@ export async function createChannel(
       token: adminToken,
       options: {
         method: "POST",
-        body: JSON.stringify(channelData)
+        body: JSON.stringify(payload)
       }
     })
   } catch (error) {
