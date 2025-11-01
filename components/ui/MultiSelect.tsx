@@ -130,8 +130,7 @@ export function MultiSelect({
         value={selectedOptions}
         onChange={handleSelect}
         virtual={{
-          options: filteredOptions,
-          disabled: () => options.length > 100
+          options: filteredOptions
         }}
         multiple
         disabled={disabled}>
