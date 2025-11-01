@@ -14,6 +14,7 @@ import {
   LogType,
   OpenAIAuthParams,
   PaginatedTokenResponse,
+  PaymentResponse,
   PricingResponse,
   RefreshAccountResult,
   SiteStatusInfo,
@@ -117,7 +118,39 @@ export const extractDefaultExchangeRate = (
   if (statusInfo.PaymentUSDRate && statusInfo.PaymentUSDRate > 0) {
     return statusInfo.PaymentUSDRate
   }
+
   return null
+}
+
+/**
+ * 获取支付信息
+ * @note 此为 RIX_API 独有，放common为保证fallback
+ * @param baseUrl
+ * @param userId
+ * @param accessToken
+ * @param authType
+ */
+export const fetchPaymentInfo = async ({
+  baseUrl,
+  userId,
+  token: accessToken,
+  authType
+}: AuthTypeFetchParams): Promise<PaymentResponse> => {
+  try {
+    return await fetchApi<PaymentResponse>(
+      {
+        baseUrl,
+        endpoint: "/api/user/payment",
+        userId,
+        token: accessToken,
+        authType
+      },
+      true
+    )
+  } catch (error) {
+    console.error("获取支付信息失败:", error)
+    throw error
+  }
 }
 
 /**

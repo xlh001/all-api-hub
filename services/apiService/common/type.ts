@@ -191,6 +191,34 @@ export interface LogResponseData {
   total: number
 }
 
+export interface Payment {
+  id: number
+  type: string
+  uuid: string
+  name: string
+  icon: string
+  notify_domain: string
+  fixed_fee: number
+  min_amount: number
+  max_amount: number
+  percent_fee: number
+  currency: string
+  currency_discount: number
+  config: string
+  sort: number
+  enable: boolean | null
+  enable_invoice: boolean
+  created_at: number
+}
+
+export interface PaymentResponse {
+  background: string
+  banner: string
+  message: string
+  payments: Payment[]
+  success: boolean
+}
+
 /**
  * 基础请求参数（无需认证）
  */

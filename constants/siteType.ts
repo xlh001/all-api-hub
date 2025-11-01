@@ -8,6 +8,7 @@ export const ONE_HUB = "one-hub"
 export const DONE_HUB = "done-hub"
 export const VO_API = "VoAPI"
 export const SUPER_API = "Super-API"
+export const RIX_API = "Rix-Api"
 export const UNKNOWN_SITE = "unknown"
 
 export type SiteType = (typeof SITE_TITLE_RULES)[number]["name"]
@@ -21,6 +22,7 @@ export const SITE_TITLE_RULES = [
   { name: DONE_HUB, regex: makeTitleRegex(DONE_HUB) },
   { name: VO_API, regex: makeTitleRegex(VO_API) },
   { name: SUPER_API, regex: makeTitleRegex(SUPER_API) },
+  { name: RIX_API, regex: makeTitleRegex(RIX_API) },
   { name: UNKNOWN_SITE, regex: makeTitleRegex(UNKNOWN_SITE) }
 ]
 
@@ -51,6 +53,7 @@ export const SITE_API_ROUTER: Record<string, any> = {
   },
   [ONE_HUB]: { usagePath: "/panel/log", redeemPath: "/panel/topup" },
   [DONE_HUB]: { usagePath: "/panel/log", redeemPath: "/panel/topup" },
+  [RIX_API]: { usagePath: "/log", checkInPath: "/panel", redeemPath: "/topup" },
   Default: {
     usagePath: DEFAULT_USAGE_PATH,
     checkInPath: DEFAULT_CHECKIN_PATH,
