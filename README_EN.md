@@ -9,7 +9,7 @@
 
 # All API Hub
 
-**An open-source browser extension to aggregate and manage the balance, models, and keys of all your API hub accounts, saying goodbye to tedious logins.**
+**Open-source browser extension that auto-detects and manages all AI aggregation and relay site accounts. View balances, sync models, manage keys, with cross-platform and cloud backup support**
 
 <p align="center">
 <a href="https://github.com/qixing-jk/all-api-hub/releases">

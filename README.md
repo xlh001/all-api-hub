@@ -9,7 +9,7 @@
 
 # 中转站管理器 - All API Hub
 
-**一个开源的浏览器插件，聚合管理所有中转站账号的余额、模型和密钥，告别繁琐登录。**
+**开源浏览器插件，自动识别并管理所有 AI 聚合中转站账号，查看余额、同步模型、管理密钥，支持跨平台和云端备份**
 
 <p align="center">
 <a href="https://github.com/qixing-jk/all-api-hub/releases">
