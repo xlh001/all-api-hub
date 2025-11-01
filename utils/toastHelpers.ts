@@ -12,11 +12,16 @@ export function showResultToast(...args: ToastParams): void {
   if (typeof args[0] === "boolean") {
     // 兼容旧逻辑
     const [success, successMsg, errorMsg = ""] = args
-    toast[success ? "success" : "error"](success ? successMsg : errorMsg)
+    const message = success ? successMsg : errorMsg
+    if (message) {
+      toast[success ? "success" : "error"](message)
+    }
   } else {
     // 支持对象参数
     const { success, message = "" } = args[0]
-    toast[success ? "success" : "error"](message)
+    if (message) {
+      toast[success ? "success" : "error"](message)
+    }
   }
 }
 
