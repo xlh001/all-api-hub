@@ -95,6 +95,7 @@ export const {
   fetchUpstreamModels,
   fetchUpstreamModelsNameList,
   fetchUserGroups,
+  fetchSiteUserGroups,
   createApiToken,
   fetchTokenById,
   updateApiToken,

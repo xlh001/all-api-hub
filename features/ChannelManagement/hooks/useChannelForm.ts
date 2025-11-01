@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 
 import type { MultiSelectOption } from "~/components/ui/MultiSelect"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
-import { fetchUserGroups } from "~/services/apiService"
+import { fetchSiteUserGroups } from "~/services/apiService"
 import {
   buildChannelPayload,
   checkValidNewApiConfig,
@@ -139,15 +139,15 @@ export function useChannelForm({
         return
       }
 
-      const groupsData = await fetchUserGroups({
+      const groupsData = await fetchSiteUserGroups({
         baseUrl: config.baseUrl,
         userId: config.userId,
         token: config.token
       })
 
-      let groupOptions = Object.keys(groupsData).map((key) => ({
-        label: key,
-        value: key
+      let groupOptions = groupsData.map((group) => ({
+        label: group,
+        value: group
       }))
 
       if (!groupOptions.some((option) => option.value === "default")) {
