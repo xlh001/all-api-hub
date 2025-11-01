@@ -46,8 +46,9 @@ This extension allows for convenient integrated management of AI relay station a
 - [Veloera](https://github.com/Veloera/Veloera)
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
-- [VoAPI](https://github.com/VoAPI/VoAPI)
-- [Super-API](https://github.com/SuperAI-Api/Super-API)
+- VoAPI (closed source, older version support)
+- Super-API (closed source)
+- RIX_API (closed source, basic functionality support)
 
 ## 🧬 Feature Changes
 
