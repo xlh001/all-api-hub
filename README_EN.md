@@ -30,11 +30,6 @@
 
 </div>
 
----
-
-> [!NOTE]  
-> This is an open-source project, developed based on [One API Hub](https://github.com/fxaxg/one-api-hub).
-
 ## 📖 Introduction
 
 There are too many AI-API relay sites on the market, and it's very troublesome to check information such as balance and supported model lists, requiring logging in one by one.
@@ -50,33 +45,20 @@ This extension allows for convenient integrated management of AI relay station a
 - Super-API (closed source)
 - RIX_API (closed source, basic functionality support)
 
-## 🧬 Feature Changes
-
-- 🌐 **Broader Site Support** - Added support for sites like VoAPI, Super-API, etc.
-- 🚀 **Quick Site Export** - Supports one-click export of site API configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio) and [New API](https://github.com/QuantumNous/new-api), simplifying the API management workflow.
-- ✅ **Site Check-in Status Detection** - Supports detecting whether a site supports check-in and its check-in status.
-- 🔄 **Duplicate Site Detection** - Prevent the repeated addition of the same site and quickly modify the currently added site.
-- ️🏷️ **Smart Site Name Fetching** - There are multiple ways to obtain the real site name, and the domain name method is used as the last resort.
-- ☁️ **WebDav Data Backup** - Supports backing up and restoring all accounts and settings via WebDav, ensuring data security and enabling cross-device synchronization.
-- 🔄 **New API Model Sync** -Automatically synchronize the list of models for your New API's channels, ensuring model information is always up-to-date.
-- 📝 **Manual Add** - Supports manually adding any relay site, preventing failures when automatic detection doesn't work.
-- 🌓 **Dark Mode** - Support automatic switching based on system theme
-- ⚙️ **Firefox Support** - The extension is now available for Firefox browsers.
-- 📱 **Mobile Support** - Use on mobile devices with any extension-supporting browser such as Kiwi or Firefox for mobile, supporting all features.
-
-> [!NOTE]
-> Data is compatible with [One API Hub](https://github.com/fxaxg/one-api-hub) and can be imported directly.
-
 ## ✨ Features
 
-- 🔍 **Auto-detect Relay Sites** - Automatically creates a system access token and adds it to the extension's site list.
-- 💰 **Auto-detect Top-up Ratios** - Intelligently parses site configuration information.
-- 👥 **Multi-account Management** - Add multiple accounts for each site, with support for account grouping and switching.
-- 📊 **Balance & Log Viewing** - Account balance and usage logs at a glance.
-- 🔑 **Token (Key) Management** - Convenient key viewing and management.
-- 🤖 **Model Information Viewing** - View supported model information and channels for each site.
-- ⚙️ **Data Import/Export** - Supports data backup and recovery in JSON format.
-- 🔒 **Fully Offline** - The extension works offline, protecting your privacy.
+- 🔍 **Smart Site Detection** - Automatically identify AI aggregation and relay sites, create access tokens, intelligently parse pricing ratios and configurations, with duplicate detection
+- 🏷️ **Site Information Management** - Multiple methods to retrieve real site names, check-in status detection, manually add any AI aggregation and relay site
+- 👥 **Multi-Account Management** - Support multiple accounts per site, account grouping and quick switching, balance and usage logs at a glance
+- 🔑 **Token & Key Management** - Convenient API Key viewing and management, support quick copy and batch operations
+- 🤖 **Model Information** - View supported model lists and channel information, automatic New API model synchronization to stay up-to-date
+- 🚀 **Quick Export Integration** - One-click export configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio) and [New API](https://github.com/QuantumNous/new-api), simplifying API usage workflow
+- ☁️ **Data Backup & Recovery** - Support JSON format import/export, WebDav cloud backup, cross-device data synchronization
+- 🌐 **Cross-Platform Compatible** - Support Chrome, Firefox browsers, works on mobile devices via Kiwi Browser, with automatic dark mode switching
+- 🔒 **Privacy & Security** - Fully offline operation, all data stored locally, protecting your privacy
+
+> [!NOTE]
+> Originally based on [One API Hub](https://github.com/fxaxg/one-api-hub), now significantly refactored and expanded. Data format remains compatible, supporting direct import
 
 ## 🖥️ Screenshots
 
