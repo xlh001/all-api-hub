@@ -3,8 +3,8 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import {
-  ensureAccountApiToken,
   autoDetectAccount,
+  ensureAccountApiToken,
   getSiteName,
   isValidAccount,
   validateAndSaveAccount,
@@ -13,14 +13,14 @@ import {
 import { accountStorage } from "~/services/accountStorage"
 import {
   findMatchingChannel,
-  prepareChannelFormData,
-  getNewApiConfig
+  getNewApiConfig,
+  prepareChannelFormData
 } from "~/services/newApiService"
 import {
   AuthTypeEnum,
+  type ChannelFormData,
   type CheckInConfig,
-  type DisplaySiteData,
-  type ChannelFormData
+  type DisplaySiteData
 } from "~/types"
 import { AutoDetectError } from "~/utils/autoDetectUtils"
 
@@ -39,7 +39,7 @@ export function useAccountDialog({
   onClose,
   onSuccess
 }: UseAccountDialogProps) {
-  const { t } = useTranslation(["accountDialog", "messages"])
+  const { t } = useTranslation("accountDialog")
 
   const [url, setUrl] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
@@ -351,8 +351,9 @@ export function useAccountDialog({
         return
       }
 
-      const displaySiteData =
-        accountStorage.convertToDisplayData(siteAccount) as DisplaySiteData
+      const displaySiteData = accountStorage.convertToDisplayData(
+        siteAccount
+      ) as DisplaySiteData
 
       const newApiConfig = await getNewApiConfig()
       if (!newApiConfig) {

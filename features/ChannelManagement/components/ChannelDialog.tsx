@@ -82,7 +82,7 @@ export function ChannelDialog({
         onClick={onClose}
         disabled={isSaving}
         type="button">
-        {t("common:cancel", "Cancel")}
+        {t("common:actions.cancel", "Cancel")}
       </Button>
       <Button
         onClick={handleSubmit}
