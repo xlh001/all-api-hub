@@ -61,14 +61,23 @@ export function MultiSelect({
     }
   }, [selected.length])
 
-  const selectedOptions = useMemo(
-    () =>
-      selected.map((value) => {
-        const option = options.find((opt) => opt.value === value)
-        return option || { value, label: value }
-      }),
-    [options, selected]
-  )
+  const optionMap = useMemo(() => {
+    const map = new Map<string, MultiSelectOption>()
+    for (const option of options) {
+      map.set(option.value, option)
+    }
+    return map
+  }, [options])
+
+  const selectedOptions = useMemo(() => {
+    return selected.map((value) => {
+      const existing = optionMap.get(value)
+      if (existing) {
+        return existing
+      }
+      return { value, label: value }
+    })
+  }, [selected, optionMap])
 
   const filteredOptions = useMemo(() => {
     if (query === "") {
@@ -98,7 +107,7 @@ export function MultiSelect({
   }
 
   const previewLimit = 3
-  const previewOptions = selectedOptions.slice(0, previewLimit)
+  const previewOptions = useMemo(() => selectedOptions.slice(0, previewLimit), [selectedOptions])
   const remainingPreviewCount = selectedOptions.length - previewOptions.length
 
   const toggleSelectedExpanded = () => {
