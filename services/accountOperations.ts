@@ -13,8 +13,6 @@ import {
   fetchAccountTokens
 } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
-import { importToNewApi } from "~/services/newApiService"
-import { userPreferences } from "~/services/userPreferences"
 import {
   AccountValidationResponse,
   ApiToken,
@@ -24,10 +22,7 @@ import {
   type DisplaySiteData,
   type SiteAccount
 } from "~/types"
-import type {
-  AccountSaveResponse,
-  AutoConfigToNewApiResponse
-} from "~/types/serviceResponse"
+import type { AccountSaveResponse } from "~/types/serviceResponse"
 import { analyzeAutoDetectError } from "~/utils/autoDetectUtils"
 
 import { getErrorMessage } from "../utils/error"
@@ -482,30 +477,6 @@ export function isValidExchangeRate(rate: string): boolean {
   return !isNaN(num) && num > 0 && num <= 100
 }
 
-// Helper function to validate New API configuration
-async function validateNewApiConfig(): Promise<{
-  valid: boolean
-  errors: string[]
-}> {
-  const prefs = await userPreferences.getPreferences()
-  const errors = []
-
-  if (!prefs.newApiBaseUrl) {
-    errors.push(t("messages:errors.validation.newApiBaseUrlRequired"))
-  }
-  if (!prefs.newApiAdminToken) {
-    errors.push(t("messages:errors.validation.newApiAdminTokenRequired"))
-  }
-  if (!prefs.newApiUserId) {
-    errors.push(t("messages:errors.validation.newApiUserIdRequired"))
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors
-  }
-}
-
 /**
  * 生成默认的令牌信息
  *  该函数会返回一个 CreateTokenRequest 对象，用于生成一个默认的令牌
@@ -565,64 +536,4 @@ export async function ensureAccountApiToken(
   }
 
   return apiToken
-}
-
-export async function autoConfigToNewApi(
-  account: SiteAccount,
-  toastId?: string
-): Promise<AutoConfigToNewApiResponse<{ token?: ApiToken }>> {
-  const configValidation = await validateNewApiConfig()
-  if (!configValidation.valid) {
-    return { success: false, message: configValidation.errors.join(", ") }
-  }
-
-  const displaySiteData = accountStorage.convertToDisplayData(
-    account
-  ) as DisplaySiteData
-
-  let lastError: any
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const apiToken = await ensureAccountApiToken(
-        account,
-        displaySiteData,
-        toastId
-      )
-
-      // 3. Import to New API as a channel
-      toast.loading(t("messages:accountOperations.importingToNewApi"), {
-        id: toastId
-      })
-      const importResult = await importToNewApi(displaySiteData, apiToken)
-
-      if (importResult.success) {
-        toast.success(importResult.message, { id: toastId })
-      } else {
-        throw new Error(importResult.message)
-      }
-
-      return {
-        success: importResult.success,
-        message: importResult.message,
-        data: { token: apiToken }
-      }
-    } catch (error) {
-      lastError = error
-      if (
-        error instanceof Error &&
-        (error.message.includes("network") ||
-          error.message.includes("Failed to fetch")) &&
-        attempt < 3
-      ) {
-        toast.error(getErrorMessage(lastError), { id: toastId })
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
-        continue
-      }
-      throw error
-    }
-  }
-  return {
-    success: false,
-    message: lastError?.message || t("messages:errors.unknown")
-  }
 }
