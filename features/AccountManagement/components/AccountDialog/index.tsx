@@ -1,7 +1,6 @@
 import { Modal } from "~/components/ui/Dialog/Modal"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
-import { ChannelDialog } from "~/features/ChannelManagement"
 import type { DisplaySiteData } from "~/types"
 
 import AccountForm from "./AccountForm"
@@ -42,8 +41,6 @@ export default function AccountDialog({
     onSuccess
   })
 
-  const channelDialogState = state.channelDialog
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -58,34 +55,33 @@ export default function AccountDialog({
     displayData.find((acc) => acc.id === detectedAccount?.id) ?? null
 
   return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={handlers.handleClose}
-        panelClassName="max-h-[90vh]"
-        header={<DialogHeader mode={mode} />}
-        footer={
-          <ActionButtons
-            mode={mode}
-            url={state.url}
-            isDetecting={state.isDetecting}
-            onAutoDetect={handlers.handleAutoDetect}
-            onShowManualForm={() => setters.setShowManualForm(true)}
-            onClose={handlers.handleClose}
-            isFormValid={state.isFormValid}
-            isSaving={state.isSaving}
-            isDetected={state.isDetected}
-            onAutoConfig={handlers.handleAutoConfig}
-            isAutoConfiguring={state.isAutoConfiguring || channelDialogState.isOpen}
-            // ensure submit button in footer can submit the form by linking via form id
-            formId="account-form"
-          />
-        }>
-        <div>
-          <form
-            id="account-form"
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-2">
+    <Modal
+      isOpen={isOpen}
+      onClose={handlers.handleClose}
+      panelClassName="max-h-[90vh]"
+      header={<DialogHeader mode={mode} />}
+      footer={
+        <ActionButtons
+          mode={mode}
+          url={state.url}
+          isDetecting={state.isDetecting}
+          onAutoDetect={handlers.handleAutoDetect}
+          onShowManualForm={() => setters.setShowManualForm(true)}
+          onClose={handlers.handleClose}
+          isFormValid={state.isFormValid}
+          isSaving={state.isSaving}
+          isDetected={state.isDetected}
+          onAutoConfig={handlers.handleAutoConfig}
+          isAutoConfiguring={state.isAutoConfiguring}
+          // ensure submit button in footer can submit the form by linking via form id
+          formId="account-form"
+        />
+      }>
+      <div>
+        <form
+          id="account-form"
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-2">
           {state.detectionError && (
             <AutoDetectErrorAlert
               error={state.detectionError}
@@ -110,32 +106,29 @@ export default function AccountDialog({
           />
 
           {(state.isDetected || state.showManualForm) && (
-            <>
-              <AccountForm
-                authType={state.authType}
-                siteName={state.siteName}
-                username={state.username}
-                userId={state.userId}
-                accessToken={state.accessToken}
-                exchangeRate={state.exchangeRate}
-                showAccessToken={state.showAccessToken}
-                onSiteNameChange={setters.setSiteName}
-                onUsernameChange={setters.setUsername}
-                onUserIdChange={setters.setUserId}
-                onAccessTokenChange={setters.setAccessToken}
-                onExchangeRateChange={setters.setExchangeRate}
-                onToggleShowAccessToken={() =>
-                  setters.setShowAccessToken(!state.showAccessToken)
-                }
-                notes={state.notes}
-                onNotesChange={setters.setNotes}
-                checkIn={state.checkIn}
-                onCheckInChange={setters.setCheckIn}
-                siteType={state.siteType}
-                onSiteTypeChange={setters.setSiteType}
-              />
-              {/* ActionButtons moved to Modal.footer for consistent layout */}
-            </>
+            <AccountForm
+              authType={state.authType}
+              siteName={state.siteName}
+              username={state.username}
+              userId={state.userId}
+              accessToken={state.accessToken}
+              exchangeRate={state.exchangeRate}
+              showAccessToken={state.showAccessToken}
+              onSiteNameChange={setters.setSiteName}
+              onUsernameChange={setters.setUsername}
+              onUserIdChange={setters.setUserId}
+              onAccessTokenChange={setters.setAccessToken}
+              onExchangeRateChange={setters.setExchangeRate}
+              onToggleShowAccessToken={() =>
+                setters.setShowAccessToken(!state.showAccessToken)
+              }
+              notes={state.notes}
+              onNotesChange={setters.setNotes}
+              checkIn={state.checkIn}
+              onCheckInChange={setters.setCheckIn}
+              siteType={state.siteType}
+              onSiteTypeChange={setters.setSiteType}
+            />
           )}
         </form>
       </div>
@@ -146,16 +139,5 @@ export default function AccountDialog({
         showManualForm={state.showManualForm}
       />
     </Modal>
-
-      <ChannelDialog
-        isOpen={channelDialogState.isOpen}
-        onClose={handlers.handleChannelDialogClose}
-        mode="add"
-        initialValues={channelDialogState.initialValues ?? undefined}
-        initialModels={channelDialogState.initialModels}
-        initialGroups={channelDialogState.initialGroups}
-        onSuccess={handlers.handleChannelSubmitSuccess}
-      />
-    </>
   )
-}
+  }
