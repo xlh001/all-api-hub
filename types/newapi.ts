@@ -79,6 +79,11 @@ export interface ChannelCreationPayload {
     base_url?: string
     models: string
     groups: string[]
+    /**
+     * 渠道可用用户分组
+     * 其实就是groups.join(",")而来，但现行API只认这个不认groups
+     */
+    group?: string
     priority: number
     weight: number
     status: number

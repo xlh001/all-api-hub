@@ -85,6 +85,7 @@ export async function createChannel(
   channelData: ChannelCreationPayload
 ) {
   try {
+    channelData.channel.group = channelData.channel.groups.join(",")
     return await fetchApi<void>({
       baseUrl,
       endpoint: "/api/channel",
