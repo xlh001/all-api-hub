@@ -1,12 +1,13 @@
 import { t } from "i18next"
 
+import { DEFAULT_CHANNEL_FIELDS, CHANNEL_MODE } from "~/config/channelDefaults"
 import {
   fetchAvailableModels,
   fetchUpstreamModelsNameList
 } from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
-import type { ApiToken, DisplaySiteData } from "~/types"
+import type { ApiToken, DisplaySiteData, ChannelType } from "~/types"
 import type { ServiceResponse } from "~/types/serviceResponse"
 import { isArraysEqual, isNotEmptyArray } from "~/utils"
 
@@ -174,18 +175,18 @@ export async function importToNewApi(
 
     // 如果没有匹配项，则创建新渠道
     const newChannelData = {
-      mode: "single",
+      mode: CHANNEL_MODE.SINGLE,
       channel: {
         name: newChannelName,
-        type: 1, // 默认为 OpenAI 类型
+        type: DEFAULT_CHANNEL_FIELDS.type,
         key: token.key,
         base_url: account.baseUrl,
         models: isNotEmptyArray(availableModels)
           ? availableModels.join(",")
           : "",
-        groups: token.group ? [token.group] : ["default"],
-        priority: 0,
-        weight: 0
+        groups: token.group ? [token.group] : DEFAULT_CHANNEL_FIELDS.groups,
+        priority: DEFAULT_CHANNEL_FIELDS.priority,
+        weight: DEFAULT_CHANNEL_FIELDS.weight
       }
     }
 
