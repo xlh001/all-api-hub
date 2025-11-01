@@ -5,4 +5,4 @@ export {
   ChannelDialogProvider,
   useChannelDialogContext
 } from "./context/ChannelDialogContext"
-export { useChannelDialog } from "./hooks/useChannelDialog.ts"
+export { useChannelDialog } from "./hooks/useChannelDialog"

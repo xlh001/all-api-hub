@@ -1,17 +1,17 @@
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { ensureAccountApiToken } from "~/services/accountOperations.ts"
-import { accountStorage } from "~/services/accountStorage.ts"
+import { ensureAccountApiToken } from "~/services/accountOperations"
+import { accountStorage } from "~/services/accountStorage"
 import {
   findMatchingChannel,
   getNewApiConfig,
   prepareChannelFormData
-} from "~/services/newApiService.ts"
+} from "~/services/newApiService"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
-import { getErrorMessage } from "~/utils/error.ts"
+import { getErrorMessage } from "~/utils/error"
 
-import { useChannelDialogContext } from "../context/ChannelDialogContext.tsx"
+import { useChannelDialogContext } from "../context/ChannelDialogContext"
 
 /**
  * Hook to easily trigger channel creation dialog from anywhere
