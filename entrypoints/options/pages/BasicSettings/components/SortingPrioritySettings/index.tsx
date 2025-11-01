@@ -7,7 +7,7 @@ import { BodySmall, Card, CardContent, Heading4 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { SortingCriteriaType, type SortingFieldConfig } from "~/types/sorting"
 
-import { showUpdateToast } from "../../utils/toastHelpers"
+import { showUpdateToast } from "../../../../../../utils/toastHelpers.ts"
 import { SortingPriorityDragList } from "./SortingPriorityDragList"
 
 // Maps sorting criteria IDs to their UI display text (label and description).

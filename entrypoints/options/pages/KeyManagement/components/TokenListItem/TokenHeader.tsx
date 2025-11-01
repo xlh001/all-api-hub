@@ -12,7 +12,7 @@ import { useChannelDialog } from "~/features/ChannelManagement"
 import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 
-import { showResultToast } from "../../../BasicSettings/utils/toastHelpers"
+import { showResultToast } from "../../../../../../utils/toastHelpers.ts"
 import { AccountToken } from "../../type"
 
 interface TokenHeaderProps {
