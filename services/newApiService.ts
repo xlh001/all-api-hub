@@ -1,23 +1,17 @@
 import { t } from "i18next"
 
-import {
-  DEFAULT_CHANNEL_FIELDS,
-  DEFAULT_CHANNEL_MODE,
-  resolveChannelTypeForSite
-} from "~/config/channelDefaults"
+import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
 import {
   fetchAvailableModels,
   fetchUpstreamModelsNameList
 } from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
-import type { ApiToken, DisplaySiteData } from "~/types"
+import type { ApiToken, ChannelStatus, DisplaySiteData } from "~/types"
 import type {
   ChannelCreationPayload,
   ChannelFormData,
-  ChannelMode,
-  ChannelGroup,
-  ChannelModel
+  ChannelMode
 } from "~/types/newapi"
 import type { ServiceResponse } from "~/types/serviceResponse"
 import { isArraysEqual } from "~/utils"
@@ -27,6 +21,9 @@ import { UserPreferences, userPreferences } from "./userPreferences"
 
 // 新 API 的返回类型定义
 export interface NewApiChannel {
+  status: ChannelStatus
+  weight: number
+  priority: number
   id: number
   type: number
   key: string
@@ -47,90 +44,13 @@ interface NewApiChannelData {
 function parseDelimitedList(value?: string | null): string[] {
   if (!value) return []
   return value
-    .split(/[,
-]/)
+    .split(/[,]/)
     .map((item) => item.trim())
     .filter(Boolean)
 }
 
 function normalizeList(values: string[] = []): string[] {
   return Array.from(new Set(values.map((item) => item.trim()).filter(Boolean)))
-}
-
-function mapGroupsFromResponse(data: any): ChannelGroup[] {
-  if (!data) return []
-
-  if (Array.isArray(data)) {
-    return data
-      .map((item): ChannelGroup | null => {
-        if (!item) return null
-        if (typeof item === "string") {
-          return { id: item, name: item }
-        }
-        const id = item.id || item.name
-        const name = item.name || item.id
-        if (!id || !name) {
-          return null
-        }
-        return {
-          id,
-          name
-        }
-      })
-      .filter((item): item is ChannelGroup => Boolean(item))
-  }
-
-  if (typeof data === "object") {
-    return Object.keys(data).map((key) => ({
-      id: key,
-      name: key
-    }))
-  }
-
-  return []
-}
-
-function mapModelsFromResponse(data: any): ChannelModel[] {
-  if (!data) return []
-
-  if (Array.isArray(data)) {
-    return data
-      .map((item): ChannelModel | null => {
-        if (!item) return null
-        if (typeof item === "string") {
-          return { id: item, name: item }
-        }
-        const id = item.id || item.name
-        const name = item.name || item.id
-        if (!id || !name) {
-          return null
-        }
-        return {
-          id,
-          name,
-          provider: item.provider,
-          description: item.description,
-          tags: item.tags
-        }
-      })
-      .filter((item): item is ChannelModel => Boolean(item))
-  }
-
-  if (typeof data === "object" && data !== null) {
-    return Object.entries(data).map(([key, value]) => ({
-      id: key,
-      name: key,
-      ...(typeof value === "object" && value
-        ? {
-            provider: (value as any).provider,
-            description: (value as any).description,
-            tags: (value as any).tags
-          }
-        : {})
-    }))
-  }
-
-  return []
 }
 
 /**
@@ -304,7 +224,10 @@ export async function fetchAccountAvailableModels(
 /**
  * 构建默认渠道名称
  */
-export function buildChannelName(account: DisplaySiteData, token: ApiToken): string {
+export function buildChannelName(
+  account: DisplaySiteData,
+  token: ApiToken
+): string {
   let channelName = `${account.name} | ${token.name}`.trim()
   if (!channelName.endsWith("(auto)")) {
     channelName += " (auto)"
@@ -330,19 +253,21 @@ export async function prepareChannelFormData(
     ? [token.group]
     : [...DEFAULT_CHANNEL_FIELDS.groups]
 
-  const baseForm: ChannelFormData = {
+  return {
     name: overrides.name ?? buildChannelName(account, token),
-    type: overrides.type ?? resolveChannelTypeForSite(account.siteType),
+    type: overrides.type ?? DEFAULT_CHANNEL_FIELDS.type,
     key: overrides.key ?? token.key,
     base_url: overrides.base_url ?? account.baseUrl,
-    models: normalizeList(overrides.models ? [...overrides.models] : availableModels),
-    groups: normalizeList(overrides.groups ? [...overrides.groups] : resolvedGroups),
+    models: normalizeList(
+      overrides.models ? [...overrides.models] : availableModels
+    ),
+    groups: normalizeList(
+      overrides.groups ? [...overrides.groups] : resolvedGroups
+    ),
     priority: overrides.priority ?? DEFAULT_CHANNEL_FIELDS.priority,
     weight: overrides.weight ?? DEFAULT_CHANNEL_FIELDS.weight,
     status: overrides.status ?? DEFAULT_CHANNEL_FIELDS.status
   }
-
-  return baseForm
 }
 
 /**
@@ -350,7 +275,7 @@ export async function prepareChannelFormData(
  */
 export function buildChannelPayload(
   formData: ChannelFormData,
-  mode: ChannelMode = DEFAULT_CHANNEL_MODE
+  mode: ChannelMode = DEFAULT_CHANNEL_FIELDS.mode
 ): ChannelCreationPayload {
   const trimmedBaseUrl = formData.base_url?.trim()
   const groups = normalizeList(
@@ -422,8 +347,7 @@ export interface ImportToNewApiOptions {
  */
 export async function importToNewApi(
   account: DisplaySiteData,
-  token: ApiToken,
-  options: ImportToNewApiOptions = {}
+  token: ApiToken
 ): Promise<ServiceResponse<void>> {
   try {
     const prefs = await userPreferences.getPreferences()
@@ -437,35 +361,26 @@ export async function importToNewApi(
 
     const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
 
-    const formData = await prepareChannelFormData(
-      account,
-      token,
-      options.formOverrides ?? {}
+    const formData = await prepareChannelFormData(account, token)
+
+    const existingChannel = await findMatchingChannel(
+      newApiBaseUrl,
+      newApiAdminToken,
+      newApiUserId,
+      account.baseUrl,
+      formData.models
     )
 
-    if (!options.skipExistingCheck) {
-      const existingChannel = await findMatchingChannel(
-        newApiBaseUrl,
-        newApiAdminToken,
-        newApiUserId,
-        account.baseUrl,
-        formData.models
-      )
-
-      if (existingChannel) {
-        return {
-          success: false,
-          message: t("messages:newapi.channelExists", {
-            channelName: existingChannel.name
-          })
-        }
+    if (existingChannel) {
+      return {
+        success: false,
+        message: t("messages:newapi.channelExists", {
+          channelName: existingChannel.name
+        })
       }
     }
 
-    const payload = buildChannelPayload(
-      formData,
-      options.mode ?? DEFAULT_CHANNEL_MODE
-    )
+    const payload = buildChannelPayload(formData)
 
     const createdChannelResponse = await createChannel(
       newApiBaseUrl,

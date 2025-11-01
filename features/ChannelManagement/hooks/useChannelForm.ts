@@ -1,25 +1,19 @@
 import { useCallback, useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
-import {
-  DEFAULT_CHANNEL_FIELDS,
-  getChannelTypeConfig
-} from "~/config/channelDefaults"
+import type { MultiSelectOption } from "~/components/ui/MultiSelect"
+import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
 import { fetchUserGroups } from "~/services/apiService"
 import {
   buildChannelPayload,
-  createChannel,
   checkValidNewApiConfig,
+  createChannel,
+  getCommonModelSuggestions,
   getNewApiConfig,
-  getCommonModelSuggestions
-} from "~/services/newApiService"
-import type {
-  ChannelType,
-  ChannelFormData,
   NewApiChannel
-} from "~/types/newapi"
-import type { MultiSelectOption } from "~/components/ui/MultiSelect"
+} from "~/services/newApiService"
+import type { ChannelFormData, ChannelType } from "~/types/newapi"
 import { mergeUniqueOptions } from "~/utils/selectOptions"
 
 export interface UseChannelFormProps {
@@ -45,20 +39,23 @@ export function useChannelForm({
 }: UseChannelFormProps) {
   const { t } = useTranslation(["channelDialog", "messages"])
 
-  const buildInitialFormData = useCallback((): ChannelFormData => ({
-    name: initialValues?.name ?? "",
-    type: initialValues?.type ?? DEFAULT_CHANNEL_FIELDS.type,
-    key: initialValues?.key ?? "",
-    base_url: initialValues?.base_url ?? "",
-    models: initialValues?.models ? [...initialValues.models] : [],
-    groups:
-      initialValues?.groups && initialValues.groups.length > 0
-        ? [...initialValues.groups]
-        : [...DEFAULT_CHANNEL_FIELDS.groups],
-    priority: initialValues?.priority ?? DEFAULT_CHANNEL_FIELDS.priority,
-    weight: initialValues?.weight ?? DEFAULT_CHANNEL_FIELDS.weight,
-    status: initialValues?.status ?? DEFAULT_CHANNEL_FIELDS.status
-  }), [initialValues])
+  const buildInitialFormData = useCallback(
+    (): ChannelFormData => ({
+      name: initialValues?.name ?? "",
+      type: initialValues?.type ?? DEFAULT_CHANNEL_FIELDS.type,
+      key: initialValues?.key ?? "",
+      base_url: initialValues?.base_url ?? "",
+      models: initialValues?.models ? [...initialValues.models] : [],
+      groups:
+        initialValues?.groups && initialValues.groups.length > 0
+          ? [...initialValues.groups]
+          : [...DEFAULT_CHANNEL_FIELDS.groups],
+      priority: initialValues?.priority ?? DEFAULT_CHANNEL_FIELDS.priority,
+      weight: initialValues?.weight ?? DEFAULT_CHANNEL_FIELDS.weight,
+      status: initialValues?.status ?? DEFAULT_CHANNEL_FIELDS.status
+    }),
+    [initialValues]
+  )
 
   // Form state
   const [formData, setFormData] = useState<ChannelFormData>(() =>
@@ -69,8 +66,12 @@ export function useChannelForm({
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingGroups, setIsLoadingGroups] = useState(false)
   const [isLoadingModels, setIsLoadingModels] = useState(false)
-  const [availableGroups, setAvailableGroups] = useState<MultiSelectOption[]>([])
-  const [availableModels, setAvailableModels] = useState<MultiSelectOption[]>([])
+  const [availableGroups, setAvailableGroups] = useState<MultiSelectOption[]>(
+    []
+  )
+  const [availableModels, setAvailableModels] = useState<MultiSelectOption[]>(
+    []
+  )
 
   // Load groups and model suggestions on mount
   useEffect(() => {
@@ -115,9 +116,11 @@ export function useChannelForm({
     setIsLoadingGroups(true)
     try {
       const hasConfig = await checkValidNewApiConfig()
-      const preselectedGroups = (initialValues?.groups ?? initialGroups ?? []).map(
-        (value) => ({ label: value, value })
-      )
+      const preselectedGroups = (
+        initialValues?.groups ??
+        initialGroups ??
+        []
+      ).map((value) => ({ label: value, value }))
 
       if (!hasConfig) {
         console.warn("[ChannelForm] No valid New API configuration")
@@ -128,7 +131,12 @@ export function useChannelForm({
 
       const config = await getNewApiConfig()
       if (!config) {
-        setAvailableGroups(mergeUniqueOptions([{ label: "default", value: "default" }], preselectedGroups))
+        setAvailableGroups(
+          mergeUniqueOptions(
+            [{ label: "default", value: "default" }],
+            preselectedGroups
+          )
+        )
         return
       }
 
@@ -152,9 +160,11 @@ export function useChannelForm({
     } catch (error) {
       console.error("[ChannelForm] Failed to load groups:", error)
       const fallback = [{ label: "default", value: "default" }]
-      const preselectedGroups = (initialValues?.groups ?? initialGroups ?? []).map(
-        (value) => ({ label: value, value })
-      )
+      const preselectedGroups = (
+        initialValues?.groups ??
+        initialGroups ??
+        []
+      ).map((value) => ({ label: value, value }))
       setAvailableGroups(mergeUniqueOptions(fallback, preselectedGroups))
     } finally {
       setIsLoadingGroups(false)
@@ -167,12 +177,14 @@ export function useChannelForm({
       const suggestions = getCommonModelSuggestions()
       const options = suggestions.map((m) => ({ label: m, value: m }))
 
-      const preselectedModels = (initialValues?.models ?? initialModels ?? []).map(
-        (value) => ({
-          label: value,
-          value
-        })
-      )
+      const preselectedModels = (
+        initialValues?.models ??
+        initialModels ??
+        []
+      ).map((value) => ({
+        label: value,
+        value
+      }))
 
       setAvailableModels(mergeUniqueOptions(options, preselectedModels))
     } catch (error) {
@@ -181,12 +193,14 @@ export function useChannelForm({
         label: m,
         value: m
       }))
-      const preselectedModels = (initialValues?.models ?? initialModels ?? []).map(
-        (value) => ({
-          label: value,
-          value
-        })
-      )
+      const preselectedModels = (
+        initialValues?.models ??
+        initialModels ??
+        []
+      ).map((value) => ({
+        label: value,
+        value
+      }))
       setAvailableModels(mergeUniqueOptions(fallback, preselectedModels))
     } finally {
       setIsLoadingModels(false)
@@ -201,12 +215,11 @@ export function useChannelForm({
   }
 
   const handleTypeChange = (newType: ChannelType) => {
-    const config = getChannelTypeConfig(newType)
     setFormData((prev) => ({
       ...prev,
       type: newType,
-      priority: config.defaultPriority ?? prev.priority,
-      weight: config.defaultWeight ?? prev.weight
+      priority: prev.priority,
+      weight: prev.weight
     }))
   }
 
@@ -224,10 +237,10 @@ export function useChannelForm({
       return
     }
 
-    const config = getChannelTypeConfig(formData.type)
-    if (config.requiresBaseUrl && !formData.base_url?.trim()) {
+    if (!formData.base_url?.trim()) {
       toast.error(
-        t?.("validation.baseUrlRequired") || "Base URL is required for this channel type"
+        t?.("validation.baseUrlRequired") ||
+          "Base URL is required for this channel type"
       )
       return
     }
@@ -281,10 +294,7 @@ export function useChannelForm({
   }
 
   const isFormValid = Boolean(
-    formData.name.trim() &&
-      formData.key.trim() &&
-      (!getChannelTypeConfig(formData.type).requiresBaseUrl ||
-        formData.base_url?.trim())
+    formData.name.trim() && formData.key.trim() && formData.base_url?.trim()
   )
 
   return {
