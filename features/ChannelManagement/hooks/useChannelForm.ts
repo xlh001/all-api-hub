@@ -9,7 +9,6 @@ import {
   buildChannelPayload,
   checkValidNewApiConfig,
   createChannel,
-  getCommonModelSuggestions,
   getNewApiConfig
 } from "~/services/newApiService"
 import type { ChannelFormData, NewApiChannel } from "~/types/newapi"
@@ -173,9 +172,6 @@ export function useChannelForm({
   const loadModels = async () => {
     setIsLoadingModels(true)
     try {
-      const suggestions = getCommonModelSuggestions()
-      const options = suggestions.map((m) => ({ label: m, value: m }))
-
       const preselectedModels = (
         initialValues?.models ??
         initialModels ??
@@ -185,13 +181,9 @@ export function useChannelForm({
         value
       }))
 
-      setAvailableModels(mergeUniqueOptions(options, preselectedModels))
+      setAvailableModels(preselectedModels)
     } catch (error) {
       console.error("[ChannelForm] Failed to load models:", error)
-      const fallback = getCommonModelSuggestions().map((m) => ({
-        label: m,
-        value: m
-      }))
       const preselectedModels = (
         initialValues?.models ??
         initialModels ??
@@ -200,7 +192,7 @@ export function useChannelForm({
         label: value,
         value
       }))
-      setAvailableModels(mergeUniqueOptions(fallback, preselectedModels))
+      setAvailableModels(preselectedModels)
     } finally {
       setIsLoadingModels(false)
     }

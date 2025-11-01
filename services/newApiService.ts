@@ -149,37 +149,6 @@ export async function getNewApiConfig(): Promise<{
 }
 
 /**
- * Common model names as suggestions (fallback)
- */
-export function getCommonModelSuggestions(): string[] {
-  return [
-    "gpt-4o",
-    "gpt-4o-mini",
-    "gpt-4-turbo",
-    "gpt-4",
-    "gpt-3.5-turbo",
-    "o1",
-    "o1-mini",
-    "o1-preview",
-    "o3-mini",
-    "claude-3-5-sonnet-20241022",
-    "claude-3-5-haiku-20241022",
-    "claude-3-opus-20240229",
-    "claude-3-sonnet-20240229",
-    "claude-3-haiku-20240307",
-    "gemini-2.0-flash-exp",
-    "gemini-1.5-pro",
-    "gemini-1.5-flash",
-    "deepseek-chat",
-    "deepseek-coder",
-    "grok-2",
-    "llama-3.3-70b",
-    "qwen-max",
-    "glm-4"
-  ]
-}
-
-/**
  * 获取账号支持的模型列表
  */
 export async function fetchAccountAvailableModels(
