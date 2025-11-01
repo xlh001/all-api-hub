@@ -1,17 +1,17 @@
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { accountStorage } from "~/services/accountStorage"
-import { ensureAccountApiToken } from "~/services/accountOperations"
+import { ensureAccountApiToken } from "~/services/accountOperations.ts"
+import { accountStorage } from "~/services/accountStorage.ts"
 import {
-  prepareChannelFormData,
+  findMatchingChannel,
   getNewApiConfig,
-  findMatchingChannel
-} from "~/services/newApiService"
+  prepareChannelFormData
+} from "~/services/newApiService.ts"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
-import { getErrorMessage } from "~/utils/error"
+import { getErrorMessage } from "~/utils/error.ts"
 
-import { useChannelDialogContext } from "./context/ChannelDialogContext"
+import { useChannelDialogContext } from "../context/ChannelDialogContext.tsx"
 
 /**
  * Hook to easily trigger channel creation dialog from anywhere
@@ -28,7 +28,9 @@ export function useChannelDialog() {
     token: ApiToken,
     onSuccess?: (result: any) => void
   ) => {
-    const toastId = toast.loading(t("messages:accountOperations.checkingApiKeys"))
+    const toastId = toast.loading(
+      t("messages:accountOperations.checkingApiKeys")
+    )
 
     try {
       // Get full account if needed
@@ -37,7 +39,9 @@ export function useChannelDialog() {
 
       if ("created_at" in account) {
         siteAccount = account
-        displaySiteData = accountStorage.convertToDisplayData(account) as DisplaySiteData
+        displaySiteData = accountStorage.convertToDisplayData(
+          account
+        ) as DisplaySiteData
       } else {
         displaySiteData = account
         const fetchedAccount = await accountStorage.getAccountById(account.id)
