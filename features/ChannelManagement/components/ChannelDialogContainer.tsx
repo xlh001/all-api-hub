@@ -1,5 +1,6 @@
+import { useChannelDialogContext } from "~/features/ChannelManagement"
+
 import { ChannelDialog } from "./ChannelDialog"
-import { useChannelDialogContext } from "../context/ChannelDialogContext"
 
 /**
  * Global ChannelDialog container that can be triggered from anywhere

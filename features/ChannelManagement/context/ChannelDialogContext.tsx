@@ -24,9 +24,15 @@ interface ChannelDialogContextValue {
   handleSuccess: (result: any) => void
 }
 
-const ChannelDialogContext = createContext<ChannelDialogContextValue | null>(null)
+const ChannelDialogContext = createContext<ChannelDialogContextValue | null>(
+  null
+)
 
-export function ChannelDialogProvider({ children }: { children: React.ReactNode }) {
+export function ChannelDialogProvider({
+  children
+}: {
+  children: React.ReactNode
+}) {
   const [state, setState] = useState<ChannelDialogState>({
     isOpen: false,
     mode: "add"
@@ -59,14 +65,18 @@ export function ChannelDialogProvider({ children }: { children: React.ReactNode 
     }))
   }, [])
 
+  const onSuccessRef = useRef(state.onSuccessCallback)
+
+  useEffect(() => {
+    onSuccessRef.current = state.onSuccessCallback
+  }, [state.onSuccessCallback])
+
   const handleSuccess = useCallback(
     (result: any) => {
-      if (state.onSuccessCallback) {
-        state.onSuccessCallback(result)
-      }
+      onSuccessRef.current?.(result)
       closeDialog()
     },
-    [state.onSuccessCallback, closeDialog]
+    [closeDialog]
   )
 
   return (
