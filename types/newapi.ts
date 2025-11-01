@@ -1,11 +1,4 @@
 /**
- * New API Channel Management Types
- * Extended types for channel creation and management
- */
-
-export { NewApiChannel, NewApiChannelListData } from "./newApiModelSync"
-
-/**
  * Channel Type enumeration
  * Based on New API documentation: https://www.newapi.ai/api/fei-channel-management/#_12
  */
@@ -109,22 +102,4 @@ export interface ChannelCreationPayload {
     weight: number
     status: number
   }
-}
-
-/**
- * Available groups response from New API
- */
-export interface NewApiGroupsResponse {
-  success: boolean
-  message?: string
-  data?: string[]
-}
-
-/**
- * Available models response from New API
- */
-export interface NewApiModelsResponse {
-  success: boolean
-  message?: string
-  data?: NewApiModel[]
 }

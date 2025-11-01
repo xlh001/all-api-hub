@@ -1,14 +1,21 @@
-import React from "react"
 import { useTranslation } from "react-i18next"
 
-import { Button, Input, Label, Modal, MultiSelect, Select } from "~/components/ui"
 import {
-  getChannelTypeOptions,
+  Button,
+  Input,
+  Label,
+  Modal,
+  MultiSelect,
+  Select
+} from "~/components/ui"
+import {
+  CHANNEL_STATUS,
   getChannelTypeConfig,
-  CHANNEL_STATUS
+  getChannelTypeOptions
 } from "~/config/channelDefaults"
 import { useChannelForm } from "~/features/ChannelManagement/hooks/useChannelForm"
-import type { ChannelFormData, NewApiChannel } from "~/types/newapi"
+import type { ChannelFormData } from "~/types/newapi"
+import { NewApiChannel } from "~/types/newApiModelSync.ts"
 
 export interface ChannelDialogProps {
   isOpen: boolean
@@ -145,7 +152,10 @@ export function ChannelDialog({
             ))}
           </Select>
           <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
-            {t("channelDialog:fields.type.hint", "Select the API provider type")}
+            {t(
+              "channelDialog:fields.type.hint",
+              "Select the API provider type"
+            )}
           </p>
         </div>
 
@@ -230,10 +240,7 @@ export function ChannelDialog({
             placeholder={
               isLoadingGroups
                 ? t("channelDialog:fields.groups.loading", "Loading groups...")
-                : t(
-                    "channelDialog:fields.groups.placeholder",
-                    "Select groups"
-                  )
+                : t("channelDialog:fields.groups.placeholder", "Select groups")
             }
             disabled={isSaving || isLoadingGroups}
             allowCustom
@@ -247,7 +254,7 @@ export function ChannelDialog({
         </div>
 
         {/* Advanced Settings */}
-        <details className="rounded-lg border border-gray-200 dark:border-dark-bg-tertiary p-3">
+        <details className="rounded-lg border border-gray-200 p-3 dark:border-dark-bg-tertiary">
           <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-dark-text-primary">
             {t("channelDialog:sections.advanced", "Advanced Settings")}
           </summary>
