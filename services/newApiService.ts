@@ -192,17 +192,25 @@ export async function fetchAccountAvailableModels(
     candidateSources.push(tokenModelList)
   }
 
-  const upstreamModels = await fetchUpstreamModelsNameList({
-    baseUrl: account.baseUrl,
-    apiKey: token.key
-  })
-  if (upstreamModels && upstreamModels.length > 0) {
-    candidateSources.push(upstreamModels)
+  try {
+    const upstreamModels = await fetchUpstreamModelsNameList({
+      baseUrl: account.baseUrl,
+      apiKey: token.key
+    })
+    if (upstreamModels && upstreamModels.length > 0) {
+      candidateSources.push(upstreamModels)
+    }
+  } catch (error) {
+    console.warn("Failed to fetch upstream models:", error)
   }
 
-  const fallbackModels = await fetchAvailableModels(account)
-  if (fallbackModels && fallbackModels.length > 0) {
-    candidateSources.push(fallbackModels)
+  try {
+    const fallbackModels = await fetchAvailableModels(account)
+    if (fallbackModels && fallbackModels.length > 0) {
+      candidateSources.push(fallbackModels)
+    }
+  } catch (error) {
+    console.warn("Failed to fetch fallback models:", error)
   }
 
   const merged = candidateSources.flat()
