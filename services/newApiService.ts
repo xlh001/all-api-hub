@@ -102,6 +102,36 @@ export async function createChannel(
   }
 }
 
+/**
+ * 更新新渠道
+ * @param baseUrl New API 的基础 URL
+ * @param adminToken 管理员令牌
+ * @param userId 用户 ID
+ * @param channelData 渠道数据
+ */
+export async function updateChannel(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelData: NewApiChannel
+) {
+  try {
+    return await fetchApi<void>({
+      baseUrl,
+      endpoint: "/api/channel",
+      userId,
+      token: adminToken,
+      options: {
+        method: "PUT",
+        body: JSON.stringify(channelData)
+      }
+    })
+  } catch (error) {
+    console.error("更新渠道失败:", error)
+    throw new Error("更新渠道失败，请检查网络或 New API 配置。")
+  }
+}
+
 export function hasValidNewApiConfig(
   prefs: Partial<UserPreferences>
 ): prefs is Required<
@@ -235,7 +265,7 @@ export function buildChannelPayload(
   formData: ChannelFormData,
   mode: ChannelMode = DEFAULT_CHANNEL_FIELDS.mode
 ): ChannelCreationPayload {
-  const trimmedBaseUrl = formData.base_url?.trim()
+  const trimmedBaseUrl = formData.base_url.trim()
   const groups = normalizeList(
     formData.groups && formData.groups.length > 0
       ? [...formData.groups]
@@ -249,7 +279,7 @@ export function buildChannelPayload(
       name: formData.name.trim(),
       type: formData.type,
       key: formData.key.trim(),
-      base_url: trimmedBaseUrl || undefined,
+      base_url: trimmedBaseUrl,
       models: models.join(","),
       groups,
       priority: formData.priority,

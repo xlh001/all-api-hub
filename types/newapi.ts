@@ -59,12 +59,12 @@ export interface ChannelFormData {
   name: string
   type: ChannelType
   key: string
-  base_url?: string
+  base_url: string
   models: string[]
   groups: string[]
   priority: number
   weight: number
-  status: number
+  status: ChannelStatus
 }
 
 /**
@@ -74,9 +74,9 @@ export interface ChannelCreationPayload {
   mode: ChannelMode
   channel: {
     name: string
-    type: number
+    type: ChannelType
     key: string
-    base_url?: string
+    base_url: string
     models: string
     groups: string[]
     /**

@@ -9,7 +9,8 @@ import {
   buildChannelPayload,
   checkValidNewApiConfig,
   createChannel,
-  getNewApiConfig
+  getNewApiConfig,
+  updateChannel
 } from "~/services/newApiService"
 import type { ChannelFormData, NewApiChannel } from "~/types/newapi"
 import { mergeUniqueOptions } from "~/utils/selectOptions"
@@ -247,13 +248,34 @@ export function useChannelForm({
       // Build payload
       const payload = buildChannelPayload(formData)
 
-      // Create channel
-      const response = await createChannel(
-        apiConfig.baseUrl,
-        apiConfig.token,
-        apiConfig.userId,
-        payload
-      )
+      let response
+      if (mode === "edit" && channel) {
+        const channelId = channel.id
+        if (!channelId) {
+          throw new Error("Existing channel id is missing")
+        }
+        const updatePayload: NewApiChannel = (() => {
+          return {
+            id: channelId,
+            ...formData,
+            models: formData.models.join(","),
+            groups: formData.groups.join(",")
+          }
+        })()
+        response = await updateChannel(
+          apiConfig.baseUrl,
+          apiConfig.token,
+          apiConfig.userId,
+          updatePayload
+        )
+      } else {
+        response = await createChannel(
+          apiConfig.baseUrl,
+          apiConfig.token,
+          apiConfig.userId,
+          payload
+        )
+      }
 
       if (response.success) {
         const successMessage =
