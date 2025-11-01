@@ -129,6 +129,8 @@ export const aggregateUsageData = (
 
 /**
  * 基于 apiRequest 的快捷函数：直接提取 data
+ * @waring 非必要请勿在外部使用
+ * @see fetchApi fetchApiData
  */
 const apiRequestData = async <T>(
   url: string,
@@ -154,6 +156,8 @@ const apiRequestData = async <T>(
  * @param endpoint 可选，接口名称，用于错误追踪
  * @returns ApiResponse 对象
  * 默认：返回完整响应，不提取 data
+ * @waring 非必要请勿在外部使用
+ * @see fetchApi fetchApiData
  */
 const apiRequest = async <T>(
   url: string,
@@ -185,7 +189,7 @@ export interface FetchApiParams {
 
 const _fetchApi = async <T>(
   { baseUrl, endpoint, userId, token, authType, options }: FetchApiParams,
-  isData: boolean
+  onlyData: boolean = false
 ) => {
   const url = joinUrl(baseUrl, endpoint)
   let authOptions = {}
@@ -212,7 +216,7 @@ const _fetchApi = async <T>(
   }
 
   try {
-    if (isData) {
+    if (onlyData) {
       return await apiRequestData<T>(url, fetchOptions, endpoint)
     }
     return await apiRequest<T>(url, fetchOptions, endpoint)
@@ -230,22 +234,26 @@ export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
   return (await _fetchApi(params, true)) as T
 }
 
-export function fetchApi<T>(params: FetchApiParams, onlyData: true): Promise<T>
 export function fetchApi<T>(
   params: FetchApiParams,
-  onlyData?: false
+  _normalResponseType: true
+): Promise<T>
+export function fetchApi<T>(
+  params: FetchApiParams,
+  _normalResponseType?: false
 ): Promise<ApiResponse<T>>
 
 /**
  * 通用 API 请求函数
  * @param params
- * @param onlyData
+ * @param _normalResponseType
  */
 export async function fetchApi<T>(
   params: FetchApiParams,
-  onlyData?: boolean
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _normalResponseType?: boolean
 ): Promise<T | ApiResponse<T>> {
-  return await _fetchApi(params, onlyData || false)
+  return await _fetchApi(params)
 }
 /**
  * 从文本中提取金额及货币符号
