@@ -32,9 +32,8 @@
 
 ## 📖 介绍
 
-目前市面上有太多 AI-API 中转站点，每次查看余额和支持模型列表等信息都非常麻烦，需要逐个登录查看。
-
-本插件可以便捷的对基于以下项目的AI 中转站账号进行整合管理：
+目前市面上有大量 AI 聚合中转站点，每次查看余额、模型列表和密钥等信息都需要逐个登录，非常繁琐。
+本插件可以自动识别并整合管理基于以下项目的 AI 聚合中转站账号：
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)

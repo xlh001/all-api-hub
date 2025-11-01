@@ -32,9 +32,8 @@
 
 ## 📖 Introduction
 
-There are too many AI-API relay sites on the market, and it's very troublesome to check information such as balance and supported model lists, requiring logging in one by one.
-
-This extension allows for convenient integrated management of AI relay station accounts based on the following projects:
+With numerous AI aggregation and relay sites available, checking balances, model lists, and keys requires logging into each site individually—a tedious process.
+This extension automatically detects and manages accounts from sites based on the following projects:
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)
