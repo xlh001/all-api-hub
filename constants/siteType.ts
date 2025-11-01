@@ -1,4 +1,6 @@
 // 站点名称常量
+import merge from "lodash-es/merge"
+
 export const ONE_API = "one-api"
 export const NEW_API = "new-api"
 export const VELOERA = "Veloera"
@@ -62,5 +64,5 @@ export const SITE_API_ROUTER: Record<string, any> = {
  * @returns 对应的 API 路由对象，否则返回 Default 的路由对象
  */
 export function getSiteApiRouter(key: string) {
-  return SITE_API_ROUTER[key] ?? SITE_API_ROUTER["Default"]
+  return merge({}, SITE_API_ROUTER["Default"], SITE_API_ROUTER[key])
 }
