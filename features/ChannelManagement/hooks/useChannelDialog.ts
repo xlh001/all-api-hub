@@ -8,7 +8,7 @@ import {
   getNewApiConfig,
   prepareChannelFormData
 } from "~/services/newApiService"
-import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
+import type { DisplaySiteData, SiteAccount } from "~/types"
 import { getErrorMessage } from "~/utils/error"
 
 import { useChannelDialogContext } from "../context/ChannelDialogContext"
@@ -25,7 +25,6 @@ export function useChannelDialog() {
    */
   const openWithAccount = async (
     account: DisplaySiteData | SiteAccount,
-    token: ApiToken,
     onSuccess?: (result: any) => void
   ) => {
     const toastId = toast.loading(

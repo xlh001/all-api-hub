@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { useChannelDialog } from "~/features/ChannelManagement"
 import {
   autoDetectAccount,
   getSiteName,
@@ -10,12 +11,7 @@ import {
   validateAndUpdateAccount
 } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
-import { useChannelDialog } from "~/features/ChannelManagement"
-import {
-  AuthTypeEnum,
-  type CheckInConfig,
-  type DisplaySiteData
-} from "~/types"
+import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
 import { AutoDetectError } from "~/utils/autoDetectUtils"
 
 interface UseAccountDialogProps {
@@ -63,7 +59,7 @@ export function useAccountDialog({
   const [isAutoConfiguring, setIsAutoConfiguring] = useState(false)
 
   // useRef 保存跨渲染引用
-  const newAccountRef = useRef(null)
+  const newAccountRef = useRef<any>(null)
   const targetAccountRef = useRef<any>(null)
 
   const { openWithAccount: openChannelDialog } = useChannelDialog()
@@ -310,10 +306,11 @@ export function useAccountDialog({
   const handleAutoConfig = async () => {
     setIsAutoConfiguring(true)
     try {
-      let targetAccount: any = account || newAccountRef.current
+      let targetAccount: DisplaySiteData | null | string | undefined =
+        account || newAccountRef.current
       // 如果是新增（account 不存在），就先保存
       if (!targetAccount) {
-        targetAccount = await handleSaveAccount()
+        targetAccount = (await handleSaveAccount()).accountId
         if (!targetAccount) {
           toast.error(t("messages.saveAccountFailed"))
           return
@@ -324,29 +321,22 @@ export function useAccountDialog({
 
       // 缓存目标账户
       targetAccountRef.current = targetAccount
+      let displaySiteData
 
-      // 获取账户详细信息
-      const siteAccount = await accountStorage.getAccountById(
-        targetAccount.accountId
-      )
-      if (!siteAccount) {
-        toast.error(t("messages:toast.error.findAccountDetailsFailed"))
-        return
-      }
-
-      const displaySiteData = accountStorage.convertToDisplayData(
-        siteAccount
-      ) as DisplaySiteData
-
-      // 从 token 列表获取第一个可用 token
-      const tokens = displaySiteData.tokens || []
-      if (tokens.length === 0) {
-        toast.error(t("messages:accountOperations.tokenNotFound"))
-        return
+      if (typeof targetAccount === "string") {
+        // 获取账户详细信息
+        const siteAccount = await accountStorage.getAccountById(targetAccount)
+        if (!siteAccount) {
+          toast.error(t("messages:toast.error.findAccountDetailsFailed"))
+          return
+        }
+        displaySiteData = accountStorage.convertToDisplayData(siteAccount)
+      } else {
+        displaySiteData = targetAccount
       }
 
       // 使用 useChannelDialog hook 打开对话框
-      await openChannelDialog(displaySiteData, tokens[0], (result) => {
+      await openChannelDialog(displaySiteData, () => {
         if (onSuccess && targetAccountRef.current) {
           onSuccess(targetAccountRef.current)
         }

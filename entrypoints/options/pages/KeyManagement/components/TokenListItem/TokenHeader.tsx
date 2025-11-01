@@ -34,7 +34,7 @@ function TokenActionButtons({
   const { openWithAccount } = useChannelDialog()
 
   const handleImportToNewApi = async () => {
-    await openWithAccount(account, token, (result) => {
+    await openWithAccount(account, (result) => {
       showSettingsToast(result)
     })
   }

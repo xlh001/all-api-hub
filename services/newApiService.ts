@@ -284,7 +284,7 @@ export async function findMatchingChannel(
     searchResults.items.find(
       (channel) =>
         channel.base_url === accountBaseUrl &&
-        isArraysEqual(channel.models.split(","), models)
+        isArraysEqual(parseDelimitedList(channel.models), models)
     ) ?? null
   )
 }
