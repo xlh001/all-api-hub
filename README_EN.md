@@ -52,6 +52,7 @@ This extension allows for convenient integrated management of AI relay station a
 - 👥 **Multi-Account Management** - Support multiple accounts per site, account grouping and quick switching, balance and usage logs at a glance
 - 🔑 **Token & Key Management** - Convenient API Key viewing and management, support quick copy and batch operations
 - 🤖 **Model Information** - View supported model lists and channel information, automatic New API model synchronization to stay up-to-date
+- 🔄 Automated Model Synchronization - Support New API and compatible systems, automatically sync channel model lists via API, eliminating manual updates
 - 🚀 **Quick Export Integration** - One-click export configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio) and [New API](https://github.com/QuantumNous/new-api), simplifying API usage workflow
 - ☁️ **Data Backup & Recovery** - Support JSON format import/export, WebDav cloud backup, cross-device data synchronization
 - 🌐 **Cross-Platform Compatible** - Support Chrome, Firefox browsers, works on mobile devices via Kiwi Browser, with automatic dark mode switching

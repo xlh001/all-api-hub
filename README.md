@@ -52,6 +52,7 @@
 - 👥 **多账号管理** - 每个站点支持多个账号，账号分组与快速切换，余额和使用日志一目了然
 - 🔑 **令牌与密钥** - 便捷的 API Key 查看与管理，支持快速复制和批量操作
 - 🤖 **模型信息查看** - 查看站点支持的模型列表和渠道信息，New API 模型自动同步保持最新
+- - 🔄 **New API 类系统管理** - 自动同步 New API 及其 fork 项目的渠道模型列表，免去手动更新的繁琐操作
 - 🚀 **快速导出集成** - 一键导出配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio) 和 [New API](https://github.com/QuantumNous/new-api)，简化 API 使用流程
 - ☁️ **数据备份恢复** - 支持 JSON 格式导入导出，WebDav 云端备份，跨设备数据同步
 - 🌐 **全平台兼容** - 支持 Chrome、Firefox 浏览器，可在 Kiwi Browser 等移动端使用，支持深色模式自动切换
