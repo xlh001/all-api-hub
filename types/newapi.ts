@@ -33,7 +33,7 @@ export interface ChannelGroup {
 }
 
 /**
- * Model data from New API
+ * Model data from New API or model suggestion
  */
 export interface ChannelModel {
   id: string

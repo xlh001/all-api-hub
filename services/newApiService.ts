@@ -15,7 +15,9 @@ import type { ApiToken, DisplaySiteData } from "~/types"
 import type {
   ChannelCreationPayload,
   ChannelFormData,
-  ChannelMode
+  ChannelMode,
+  ChannelGroup,
+  ChannelModel
 } from "~/types/newapi"
 import type { ServiceResponse } from "~/types/serviceResponse"
 import { isArraysEqual } from "~/utils"
@@ -53,6 +55,82 @@ function parseDelimitedList(value?: string | null): string[] {
 
 function normalizeList(values: string[] = []): string[] {
   return Array.from(new Set(values.map((item) => item.trim()).filter(Boolean)))
+}
+
+function mapGroupsFromResponse(data: any): ChannelGroup[] {
+  if (!data) return []
+
+  if (Array.isArray(data)) {
+    return data
+      .map((item): ChannelGroup | null => {
+        if (!item) return null
+        if (typeof item === "string") {
+          return { id: item, name: item }
+        }
+        const id = item.id || item.name
+        const name = item.name || item.id
+        if (!id || !name) {
+          return null
+        }
+        return {
+          id,
+          name
+        }
+      })
+      .filter((item): item is ChannelGroup => Boolean(item))
+  }
+
+  if (typeof data === "object") {
+    return Object.keys(data).map((key) => ({
+      id: key,
+      name: key
+    }))
+  }
+
+  return []
+}
+
+function mapModelsFromResponse(data: any): ChannelModel[] {
+  if (!data) return []
+
+  if (Array.isArray(data)) {
+    return data
+      .map((item): ChannelModel | null => {
+        if (!item) return null
+        if (typeof item === "string") {
+          return { id: item, name: item }
+        }
+        const id = item.id || item.name
+        const name = item.name || item.id
+        if (!id || !name) {
+          return null
+        }
+        return {
+          id,
+          name,
+          provider: item.provider,
+          description: item.description,
+          tags: item.tags
+        }
+      })
+      .filter((item): item is ChannelModel => Boolean(item))
+  }
+
+  if (typeof data === "object" && data !== null) {
+    return Object.entries(data).map(([key, value]) => ({
+      id: key,
+      name: key,
+      ...(typeof value === "object" && value
+        ? {
+            provider: (value as any).provider,
+            description: (value as any).description,
+            tags: (value as any).tags
+          }
+        : {})
+    }))
+  }
+
+  return []
 }
 
 /**
@@ -122,6 +200,74 @@ export function hasValidNewApiConfig(
 > {
   const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
   return Boolean(newApiBaseUrl && newApiAdminToken && newApiUserId)
+}
+
+/**
+ * Validate New API configuration
+ */
+export async function checkValidNewApiConfig(): Promise<boolean> {
+  try {
+    const prefs = await userPreferences.getPreferences()
+    return hasValidNewApiConfig(prefs)
+  } catch (error) {
+    console.error("[NewAPI] Error checking config:", error)
+    return false
+  }
+}
+
+/**
+ * Get New API configuration from user preferences
+ */
+export async function getNewApiConfig(): Promise<{
+  baseUrl: string
+  token: string
+  userId: string
+} | null> {
+  try {
+    const prefs = await userPreferences.getPreferences()
+    if (hasValidNewApiConfig(prefs)) {
+      return {
+        baseUrl: prefs.newApiBaseUrl,
+        token: prefs.newApiAdminToken,
+        userId: prefs.newApiUserId
+      }
+    }
+    return null
+  } catch (error) {
+    console.error("[NewAPI] Error getting config:", error)
+    return null
+  }
+}
+
+/**
+ * Common model names as suggestions (fallback)
+ */
+export function getCommonModelSuggestions(): string[] {
+  return [
+    "gpt-4o",
+    "gpt-4o-mini",
+    "gpt-4-turbo",
+    "gpt-4",
+    "gpt-3.5-turbo",
+    "o1",
+    "o1-mini",
+    "o1-preview",
+    "o3-mini",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022",
+    "claude-3-opus-20240229",
+    "claude-3-sonnet-20240229",
+    "claude-3-haiku-20240307",
+    "gemini-2.0-flash-exp",
+    "gemini-1.5-pro",
+    "gemini-1.5-flash",
+    "deepseek-chat",
+    "deepseek-coder",
+    "grok-2",
+    "llama-3.3-70b",
+    "qwen-max",
+    "glm-4"
+  ]
 }
 
 /**

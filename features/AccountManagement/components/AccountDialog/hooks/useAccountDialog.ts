@@ -13,9 +13,9 @@ import {
 import { accountStorage } from "~/services/accountStorage"
 import {
   findMatchingChannel,
-  prepareChannelFormData
+  prepareChannelFormData,
+  getNewApiConfig
 } from "~/services/newApiService"
-import { getNewApiConfig } from "~/services/newapi/siteMeta"
 import {
   AuthTypeEnum,
   type CheckInConfig,

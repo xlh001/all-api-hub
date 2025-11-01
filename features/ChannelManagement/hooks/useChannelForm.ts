@@ -6,20 +6,18 @@ import {
   DEFAULT_CHANNEL_FIELDS,
   getChannelTypeConfig
 } from "~/config/channelDefaults"
-import { buildChannelPayload, createChannel } from "~/services/newApiService"
+import { fetchUserGroups } from "~/services/apiService"
 import {
+  buildChannelPayload,
+  createChannel,
+  checkValidNewApiConfig,
   getNewApiConfig,
-  getNewApiGroups,
-  getNewApiModels,
-  getCommonModelSuggestions,
-  hasValidNewApiConfig
-} from "~/services/newapi/siteMeta"
+  getCommonModelSuggestions
+} from "~/services/newApiService"
 import type {
   ChannelType,
   ChannelFormData,
-  NewApiChannel,
-  ChannelGroup,
-  ChannelModel
+  NewApiChannel
 } from "~/types/newapi"
 import type { MultiSelectOption } from "~/components/ui/MultiSelect"
 import { mergeUniqueOptions } from "~/utils/selectOptions"
@@ -116,36 +114,40 @@ export function useChannelForm({
   const loadGroups = async () => {
     setIsLoadingGroups(true)
     try {
-      const hasConfig = await hasValidNewApiConfig()
+      const hasConfig = await checkValidNewApiConfig()
+      const preselectedGroups = (initialValues?.groups ?? initialGroups ?? []).map(
+        (value) => ({ label: value, value })
+      )
+
       if (!hasConfig) {
         console.warn("[ChannelForm] No valid New API configuration")
         const fallback = [{ label: "default", value: "default" }]
-        const preselectedGroups = (initialValues?.groups ?? initialGroups ?? []).map(
-          (value) => ({ label: value, value })
-        )
         setAvailableGroups(mergeUniqueOptions(fallback, preselectedGroups))
         return
       }
 
-      const groups = await getNewApiGroups()
-      let groupOptions = groups.map((g: ChannelGroup) => ({
-        label: g.name,
-        value: g.id
-      }))
+      const config = await getNewApiConfig()
+      if (!config) {
+        setAvailableGroups(mergeUniqueOptions([{ label: "default", value: "default" }], preselectedGroups))
+        return
+      }
 
-      const preselectedGroups = (initialValues?.groups ?? initialGroups ?? []).map(
-        (value) => ({
-          label: value,
-          value
-        })
-      )
+      const groupsData = await fetchUserGroups({
+        baseUrl: config.baseUrl,
+        userId: config.userId,
+        token: config.token
+      })
+
+      let groupOptions = Object.keys(groupsData).map((key) => ({
+        label: key,
+        value: key
+      }))
 
       if (!groupOptions.some((option) => option.value === "default")) {
         groupOptions.push({ label: "default", value: "default" })
       }
 
       groupOptions = mergeUniqueOptions(groupOptions, preselectedGroups)
-
       setAvailableGroups(groupOptions)
     } catch (error) {
       console.error("[ChannelForm] Failed to load groups:", error)
@@ -162,21 +164,8 @@ export function useChannelForm({
   const loadModels = async () => {
     setIsLoadingModels(true)
     try {
-      const hasConfig = await hasValidNewApiConfig()
-      let options: MultiSelectOption[] = []
-
-      if (hasConfig) {
-        const models = await getNewApiModels()
-        options = models.map((model: ChannelModel) => ({
-          label: model.name,
-          value: model.id
-        }))
-      }
-
-      if (options.length === 0) {
-        const suggestions = getCommonModelSuggestions()
-        options = suggestions.map((m) => ({ label: m, value: m }))
-      }
+      const suggestions = getCommonModelSuggestions()
+      const options = suggestions.map((m) => ({ label: m, value: m }))
 
       const preselectedModels = (initialValues?.models ?? initialModels ?? []).map(
         (value) => ({
@@ -185,9 +174,7 @@ export function useChannelForm({
         })
       )
 
-      options = mergeUniqueOptions(options, preselectedModels)
-
-      setAvailableModels(options)
+      setAvailableModels(mergeUniqueOptions(options, preselectedModels))
     } catch (error) {
       console.error("[ChannelForm] Failed to load models:", error)
       const fallback = getCommonModelSuggestions().map((m) => ({
