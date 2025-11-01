@@ -241,3 +241,6 @@ export type {
   AccountSaveResponse,
   AutoConfigToNewApiResponse
 } from "./serviceResponse"
+
+// New API Types
+export * from "./newapi"

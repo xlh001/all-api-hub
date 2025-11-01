@@ -1,13 +1,12 @@
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
 import { fetchApi } from "~/services/apiService/common/utils"
+import { NewApiChannel, NewApiChannelListData } from "~/types"
 import {
   BatchExecutionOptions,
   ExecutionItemResult,
   ExecutionResult,
-  ExecutionStatistics,
-  NewApiChannel,
-  NewApiChannelListData
+  ExecutionStatistics
 } from "~/types/newApiModelSync"
 
 import { RateLimiter } from "./RateLimiter"

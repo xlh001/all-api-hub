@@ -14,7 +14,7 @@ import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import type { BalanceType, CurrencyType } from "~/types"
 
-import { showUpdateToast } from "../utils/toastHelpers"
+import { showUpdateToast } from "../../../../../utils/toastHelpers.ts"
 
 export default function DisplaySettings() {
   const { t } = useTranslation("settings")

@@ -71,7 +71,8 @@
     "checkingApiKeys": "Checking API key...",
     "importingToNewApi": "Importing to New API...",
     "createTokenFailed": "Failed to create API token",
-    "tokenNotFound": "Failed to create or find an API token"
+    "tokenNotFound": "Failed to create or find an API token",
+    "retrying": "An error occurred, attempting retry #{{attempt}}"
   },
   "operations": {
     "account": {

@@ -196,7 +196,7 @@ export interface LogResponseData {
  */
 export interface BaseFetchParams {
   baseUrl: string
-  userId: number
+  userId: number | string
 }
 
 /**

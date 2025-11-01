@@ -582,6 +582,36 @@ export const fetchUserGroups = async ({
 }
 
 /**
+ * 获取站点用户分组信息
+ * @param {AuthTypeFetchParams} params
+ * @param {string} params.baseUrl
+ * @param {number} params.userId
+ * @param {string} params.token
+ * @param {AuthTypeEnum} [params.authType=AuthTypeEnum.None]
+ * @returns {Promise<Array<string>>}
+ * @throws {ApiError}
+ */
+export const fetchSiteUserGroups = async ({
+  baseUrl,
+  userId,
+  token: accessToken,
+  authType
+}: AuthTypeFetchParams): Promise<Array<string>> => {
+  try {
+    return await fetchApiData<Array<string>>({
+      baseUrl,
+      endpoint: "/api/group",
+      userId,
+      token: accessToken,
+      authType
+    })
+  } catch (error) {
+    console.error("获取站点分组信息失败:", error)
+    throw error
+  }
+}
+
+/**
  * 创建新的API令牌
  */
 export const createApiToken = async (

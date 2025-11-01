@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { useChannelDialog } from "~/features/ChannelManagement"
 import {
-  autoConfigToNewApi,
   autoDetectAccount,
   getSiteName,
   isValidAccount,
@@ -59,7 +59,10 @@ export function useAccountDialog({
   const [isAutoConfiguring, setIsAutoConfiguring] = useState(false)
 
   // useRef 保存跨渲染引用
-  const newAccountRef = useRef(null)
+  const newAccountRef = useRef<any>(null)
+  const targetAccountRef = useRef<any>(null)
+
+  const { openWithAccount: openChannelDialog } = useChannelDialog()
 
   const resetForm = useCallback(() => {
     setUrl("")
@@ -85,6 +88,7 @@ export function useAccountDialog({
     setSiteType("unknown")
     setAuthType(AuthTypeEnum.AccessToken)
     setIsAutoConfiguring(false)
+    targetAccountRef.current = null
   }, [mode])
 
   const loadAccountData = useCallback(
@@ -301,53 +305,47 @@ export function useAccountDialog({
 
   const handleAutoConfig = async () => {
     setIsAutoConfiguring(true)
-    const toastId = toast.loading(t("messages.startNewApiConfig"))
     try {
-      let targetAccount: any = account || newAccountRef.current
+      let targetAccount: DisplaySiteData | null | string | undefined =
+        account || newAccountRef.current
       // 如果是新增（account 不存在），就先保存
       if (!targetAccount) {
-        targetAccount = await handleSaveAccount()
+        targetAccount = (await handleSaveAccount()).accountId
         if (!targetAccount) {
-          toast.error(t("messages.saveAccountFailed"), {
-            id: toastId
-          })
+          toast.error(t("messages.saveAccountFailed"))
           return
         }
         // 缓存到 ref，避免重复保存
         newAccountRef.current = targetAccount
       }
 
-      // 获取账户详细信息
-      const siteAccount = await accountStorage.getAccountById(
-        targetAccount.accountId
-      )
-      if (!siteAccount) {
-        toast.error(t("messages:toast.error.findAccountDetailsFailed"), {
-          id: toastId
-        })
-        setIsAutoConfiguring(false)
-        return
+      // 缓存目标账户
+      targetAccountRef.current = targetAccount
+      let displaySiteData
+
+      if (typeof targetAccount === "string") {
+        // 获取账户详细信息
+        const siteAccount = await accountStorage.getAccountById(targetAccount)
+        if (!siteAccount) {
+          toast.error(t("messages:toast.error.findAccountDetailsFailed"))
+          return
+        }
+        displaySiteData = accountStorage.convertToDisplayData(siteAccount)
+      } else {
+        displaySiteData = targetAccount
       }
 
-      // 检查 API 密钥并 导入到 New API
-      const result = await autoConfigToNewApi(siteAccount, toastId)
-      if (result.success) {
-        toast.success(result.message, { id: toastId })
-        // Call onSuccess to close the dialog after successful auto-config
-        if (onSuccess && targetAccount) {
-          onSuccess(targetAccount)
+      // 使用 useChannelDialog hook 打开对话框
+      await openChannelDialog(displaySiteData, () => {
+        if (onSuccess && targetAccountRef.current) {
+          onSuccess(targetAccountRef.current)
         }
-      } else {
-        throw new Error(result.message)
-      }
+      })
     } catch (error) {
       toast.error(
         t("messages.newApiConfigFailed", {
           error: getErrorMessage(error)
-        }),
-        {
-          id: toastId
-        }
+        })
       )
       console.error(error)
     } finally {
@@ -379,6 +377,7 @@ export function useAccountDialog({
   }
 
   const handleClose = () => {
+    targetAccountRef.current = null
     onClose()
   }
 
