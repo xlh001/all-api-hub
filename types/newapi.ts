@@ -75,37 +75,30 @@ export interface ChannelFormData {
  */
 export interface CreateChannelPayload {
   mode: ChannelMode
-  channel: {
-    name: string
-    type: ChannelType
-    key: string
-    base_url: string
-    models: string
-    groups: string[]
-    /**
-     * 渠道可用用户分组
-     * 其实就是groups.join(",")而来，但现行API只认这个不认groups
-     */
-    group?: string
-    priority: number
-    weight: number
-    status: number
-  }
+  channel: UpdateChannelPayload
 }
 
 /**
  * Channel edition payload for New API
  */
 export interface UpdateChannelPayload {
+  /**
+   * 渠道ID
+   */
+  id: number
   type?: ChannelType
   max_input_tokens?: number
   other?: string
   models?: string
   auto_ban?: number
+  /**
+   * 渠道可用用户分组
+   * 其实就是groups.join(",")而来，但现行API只认这个不认groups
+   */
+  group?: string
   groups?: string[]
   priority?: number
   weight?: number
-  multi_key_mode?: string
   settings?: string
   name?: string
   base_url?: string
@@ -118,6 +111,12 @@ export interface UpdateChannelPayload {
   param_override?: any | null
   header_override?: any | null
   remark?: string | null
+  /**
+   * 多密钥模式下专用
+   * @see https://github.com/QuantumNous/new-api/blob/7156bf238276d2089435eacc3efb266403f27c8e/controller/channel.go#L769
+   */
+  key_mode?: string
+  multi_key_mode?: string
 }
 
 export interface ChannelInfo {
