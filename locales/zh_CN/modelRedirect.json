@@ -38,6 +38,8 @@
   "messages": {
     "regenerateSuccess": "模型映射已成功重新生成",
     "regenerateFailed": "重新生成模型映射失败：{{error}}",
+    "updateSuccess": "模型重定向设置已更新",
+    "updateFailed": "更新模型重定向设置失败",
     "noModelsSelected": "请至少选择一个标准模型",
     "featureDisabled": "模型重定向功能未启用",
     "alreadyGenerating": "映射生成正在进行中"

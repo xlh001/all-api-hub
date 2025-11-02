@@ -4,29 +4,50 @@ import { useTranslation } from "react-i18next"
 
 import { Switch } from "~/components/ui/Switch"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { sendRuntimeMessage } from "~/utils/browserApi"
+import {
+  modelRedirectController,
+  modelRedirectStorage
+} from "~/services/modelRedirect"
 
 export default function ModelRedirectSettings() {
   const { t } = useTranslation("modelRedirect")
   const { preferences, loadPreferences } = useUserPreferencesContext()
   const [isRegenerating, setIsRegenerating] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
 
   const modelRedirect = preferences?.modelRedirect
+
+  const updatePreferences = async (
+    updates: Parameters<typeof modelRedirectStorage.savePreferences>[0]
+  ) => {
+    try {
+      setIsUpdating(true)
+      const success = await modelRedirectStorage.savePreferences(updates)
+      if (!success) {
+        toast.error(t("messages.updateFailed"))
+        return
+      }
+      await loadPreferences()
+      toast.success(t("messages.updateSuccess"))
+    } catch (error) {
+      console.error("[ModelRedirectSettings] Failed to update preferences", error)
+      toast.error(t("messages.updateFailed"))
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   const handleRegenerateMapping = async () => {
     try {
       setIsRegenerating(true)
-      const response = await sendRuntimeMessage({
-        action: "modelRedirect:regenerate",
-        trigger: "manual"
-      })
+      const result = await modelRedirectController.regenerate("manual")
 
-      if (response.success) {
+      if (result.success) {
         toast.success(t("messages.regenerateSuccess"))
         await loadPreferences()
       } else {
         toast.error(
-          t("messages.regenerateFailed", { error: response.error || "Unknown" })
+          t("messages.regenerateFailed", { error: result.error || "Unknown" })
         )
       }
     } catch (error) {
@@ -60,14 +81,9 @@ export default function ModelRedirectSettings() {
           </div>
           <Switch
             checked={modelRedirect?.enabled ?? false}
+            disabled={isUpdating}
             onChange={async (enabled) => {
-              const success = await sendRuntimeMessage({
-                action: "modelRedirect:updatePreferences",
-                preferences: { enabled }
-              })
-              if (success) {
-                await loadPreferences()
-              }
+              await updatePreferences({ enabled })
             }}
           />
         </div>
@@ -85,14 +101,9 @@ export default function ModelRedirectSettings() {
               </div>
               <Switch
                 checked={modelRedirect?.autoGenerateMapping ?? false}
+                disabled={isUpdating}
                 onChange={async (autoGenerateMapping) => {
-                  const success = await sendRuntimeMessage({
-                    action: "modelRedirect:updatePreferences",
-                    preferences: { autoGenerateMapping }
-                  })
-                  if (success) {
-                    await loadPreferences()
-                  }
+                  await updatePreferences({ autoGenerateMapping })
                 }}
               />
             </div>
