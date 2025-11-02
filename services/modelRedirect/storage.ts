@@ -3,6 +3,8 @@
  * Manages persistence of model redirect configuration and mappings
  */
 
+import merge from "lodash-es/merge"
+
 import { Storage } from "@plasmohq/storage"
 
 import {

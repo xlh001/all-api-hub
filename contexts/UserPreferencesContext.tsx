@@ -1,3 +1,4 @@
+import merge from "lodash-es/merge"
 import type { ReactNode } from "react"
 import {
   createContext,
@@ -16,6 +17,7 @@ import {
 } from "~/services/userPreferences"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
+import type { ModelRedirectPreferences } from "~/types/modelRedirect"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
 import { sendRuntimeMessage } from "~/utils/browserApi"
@@ -64,6 +66,9 @@ interface UserPreferencesContextType {
   ) => Promise<boolean>
   updateNewApiModelSync: (
     updates: Partial<UserNewApiModelSyncConfig>
+  ) => Promise<boolean>
+  updateModelRedirect: (
+    updates: Partial<ModelRedirectPreferences>
   ) => Promise<boolean>
   resetToDefaults: () => Promise<boolean>
   loadPreferences: () => Promise<void>
@@ -244,27 +249,17 @@ export const UserPreferencesProvider = ({
 
   const updateAutoCheckin = useCallback(
     async (updates: Partial<AutoCheckinPreferences>) => {
-      // Merge with current values to create complete object
-      const currentPrefs = await userPreferences.getPreferences()
-      const nextAutoCheckin: AutoCheckinPreferences = {
-        ...(currentPrefs.autoCheckin || {
-          globalEnabled: false,
-          windowStart: "09:00",
-          windowEnd: "18:00"
-        }),
-        ...updates
-      }
-
       const success = await userPreferences.savePreferences({
-        autoCheckin: nextAutoCheckin
+        autoCheckin: updates
       })
 
       if (success) {
         setPreferences((prev) => {
           if (!prev) return null
+          const merged = merge({}, prev.autoCheckin ?? {}, updates)
           return {
             ...prev,
-            autoCheckin: nextAutoCheckin
+            autoCheckin: merged
           }
         })
 
@@ -281,27 +276,16 @@ export const UserPreferencesProvider = ({
 
   const updateNewApiModelSync = useCallback(
     async (updates: Partial<UserNewApiModelSyncConfig>) => {
-      const currentPrefs = await userPreferences.getPreferences()
-      const nextNewApiModelSync: UserNewApiModelSyncConfig = {
-        ...(currentPrefs.newApiModelSync || {
-          enabled: false,
-          interval: 24 * 60 * 60 * 1000,
-          concurrency: 2,
-          maxRetries: 2,
-          rateLimit: { requestsPerMinute: 20, burst: 5 }
-        }),
-        ...updates
-      }
-
       const success = await userPreferences.savePreferences({
-        newApiModelSync: nextNewApiModelSync
+        newApiModelSync: updates
       })
       if (success) {
         setPreferences((prev) => {
           if (!prev) return null
+          const merged = merge({}, prev.newApiModelSync ?? {}, updates)
           return {
             ...prev,
-            newApiModelSync: nextNewApiModelSync
+            newApiModelSync: merged
           }
         })
 
@@ -309,6 +293,26 @@ export const UserPreferencesProvider = ({
         await sendRuntimeMessage({
           action: "newApiModelSync:updateSettings",
           settings: updates
+        })
+      }
+      return success
+    },
+    []
+  )
+
+  const updateModelRedirect = useCallback(
+    async (updates: Partial<ModelRedirectPreferences>) => {
+      const success = await userPreferences.savePreferences({
+        modelRedirect: updates
+      })
+      if (success) {
+        setPreferences((prev) => {
+          if (!prev) return null
+          const merged = merge({}, prev.modelRedirect ?? {}, updates)
+          return {
+            ...prev,
+            modelRedirect: merged
+          }
         })
       }
       return success
@@ -357,6 +361,7 @@ export const UserPreferencesProvider = ({
       updateThemeMode,
       updateAutoCheckin,
       updateNewApiModelSync,
+      updateModelRedirect,
       resetToDefaults,
       loadPreferences
     }),
@@ -378,6 +383,7 @@ export const UserPreferencesProvider = ({
       updateThemeMode,
       updateAutoCheckin,
       updateNewApiModelSync,
+      updateModelRedirect,
       resetToDefaults,
       loadPreferences
     ]

@@ -4,30 +4,24 @@ import { useTranslation } from "react-i18next"
 
 import { Switch } from "~/components/ui/Switch"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import {
-  modelRedirectController,
-  modelRedirectStorage
-} from "~/services/modelRedirect"
+import { modelRedirectController } from "~/services/modelRedirect"
 
 export default function ModelRedirectSettings() {
   const { t } = useTranslation("modelRedirect")
-  const { preferences, loadPreferences } = useUserPreferencesContext()
+  const { preferences, updateModelRedirect } = useUserPreferencesContext()
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
   const modelRedirect = preferences?.modelRedirect
 
-  const updatePreferences = async (
-    updates: Parameters<typeof modelRedirectStorage.savePreferences>[0]
-  ) => {
+  const handleUpdate = async (updates: Record<string, unknown>) => {
     try {
       setIsUpdating(true)
-      const success = await modelRedirectStorage.savePreferences(updates)
+      const success = await updateModelRedirect(updates)
       if (!success) {
         toast.error(t("messages.updateFailed"))
         return
       }
-      await loadPreferences()
       toast.success(t("messages.updateSuccess"))
     } catch (error) {
       console.error("[ModelRedirectSettings] Failed to update preferences", error)
@@ -44,7 +38,6 @@ export default function ModelRedirectSettings() {
 
       if (result.success) {
         toast.success(t("messages.regenerateSuccess"))
-        await loadPreferences()
       } else {
         toast.error(
           t("messages.regenerateFailed", { error: result.error || "Unknown" })
@@ -83,7 +76,7 @@ export default function ModelRedirectSettings() {
             checked={modelRedirect?.enabled ?? false}
             disabled={isUpdating}
             onChange={async (enabled) => {
-              await updatePreferences({ enabled })
+              await handleUpdate({ enabled })
             }}
           />
         </div>
@@ -103,7 +96,7 @@ export default function ModelRedirectSettings() {
                 checked={modelRedirect?.autoGenerateMapping ?? false}
                 disabled={isUpdating}
                 onChange={async (autoGenerateMapping) => {
-                  await updatePreferences({ autoGenerateMapping })
+                  await handleUpdate({ autoGenerateMapping })
                 }}
               />
             </div>
