@@ -93,6 +93,33 @@ export interface ChannelCreationPayload {
   }
 }
 
+/**
+ * Channel edition payload for New API
+ */
+export interface UpdateChannelPayload {
+  type?: ChannelType // PUT JSON 中 type
+  max_input_tokens?: number // PUT JSON 中 max_input_tokens
+  other?: string // PUT JSON 中 other
+  models?: string // PUT JSON 中 models
+  auto_ban?: number // PUT JSON 中 auto_ban
+  groups?: string[] // PUT JSON 中 groups，GET 中 group 是逗号分隔字符串
+  priority?: number // PUT JSON 中 priority
+  weight?: number // PUT JSON 中 weight
+  multi_key_mode?: string // PUT JSON 中 multi_key_mode
+  settings?: string // PUT JSON 中 settings
+  name?: string // PUT JSON 中 name
+  base_url?: string // PUT JSON 中 base_url
+  model_mapping?: string // PUT JSON 中 model_mapping
+  status_code_mapping?: string // PUT JSON 中 status_code_mapping
+  setting?: string // PUT JSON 中 setting
+  openai_organization?: string | null // 可选，如果 PUT 支持更新
+  test_model?: string | null // 可选
+  tag?: string | null // 可选
+  param_override?: any | null // 可选
+  header_override?: any | null // 可选
+  remark?: string | null // 可选
+}
+
 export interface ChannelInfo {
   is_multi_key: boolean
   multi_key_size: number

@@ -16,7 +16,8 @@ import {
   DisplaySiteData,
   NewApiChannel,
   NewApiChannelListData,
-  SiteAccount
+  SiteAccount,
+  UpdateChannelPayload
 } from "~/types"
 import type {
   ChannelCreationPayload,
@@ -119,7 +120,7 @@ export async function updateChannel(
   baseUrl: string,
   adminToken: string,
   userId: number | string,
-  channelData: NewApiChannel
+  channelData: UpdateChannelPayload
 ) {
   try {
     return await fetchApi<void>({
