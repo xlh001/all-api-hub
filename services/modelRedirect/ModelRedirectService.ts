@@ -7,26 +7,11 @@
 import {
   ALL_PRESET_STANDARD_MODELS,
   CHANNEL_STATUS,
-  DEFAULT_MODEL_REDIRECT_PREFERENCES,
-  type ModelRedirectPreferences,
-  type NewApiChannel
+  DEFAULT_MODEL_REDIRECT_PREFERENCES
 } from "~/types"
 import { userPreferences } from "../userPreferences"
 import { hasValidNewApiConfig } from "../newApiService"
 import { NewApiModelSyncService } from "../newApiModelSync/NewApiModelSyncService"
-
-/**
- * Channel candidate for a standard model
- */
-interface ModelCandidate {
-  channelId: number
-  channelName: string
-  standardModel: string
-  actualModel: string
-  priority: number
-  weight: number
-  usedQuota: number
-}
 
 /**
  * Model Redirect Service
@@ -80,22 +65,40 @@ export class ModelRedirectService {
       )
 
       const channelList = await service.listChannels()
-      const mappings = ModelRedirectService.generateChannelMappings(
-        channelList.items,
-        standardModels,
-        modelRedirectPrefs
-      )
 
       let successCount = 0
       const errors: string[] = []
 
-      for (const [channelIdStr, mapping] of Object.entries(mappings)) {
+      for (const channel of channelList.items) {
+        // Skip disabled channels
+        if (
+          channel.status === 2 || // CHANNEL_STATUS.ManuallyDisabled
+          channel.status === 3    // CHANNEL_STATUS.AutoDisabled
+        ) {
+          continue
+        }
+
         try {
-          await service.updateChannelModelMapping(Number(channelIdStr), mapping)
-          successCount += 1
+          const actualModels = channel.models
+            ? channel.models.split(",").map((m) => m.trim()).filter(Boolean)
+            : []
+
+          const modelMapping = ModelRedirectService.generateModelMappingForChannel(
+            standardModels,
+            actualModels
+          )
+
+          if (Object.keys(modelMapping).length > 0) {
+            await service.updateChannelModelsAndMapping(
+              channel,
+              actualModels,
+              modelMapping
+            )
+            successCount += 1
+          }
         } catch (error) {
           errors.push(
-            `Channel ${channelIdStr}: ${(error as Error).message || "Unknown error"}`
+            `Channel ${channel.name} (${channel.id}): ${(error as Error).message || "Unknown error"}`
           )
         }
       }
@@ -118,84 +121,29 @@ export class ModelRedirectService {
   }
 
   /**
-   * Generate model_mapping for each channel
-   * Returns a map of channelId -> model_mapping JSON string
+   * Generate model mapping for a single channel
+   * Returns an object of standardModel -> actualModel mappings
    */
-  static generateChannelMappings(
-    channels: NewApiChannel[],
+  static generateModelMappingForChannel(
     standardModels: string[],
-    preferences?: ModelRedirectPreferences
-  ): Record<number, string> {
-    // Step 1: Gather all candidates for each standard model across all channels
-    const allCandidates: ModelCandidate[] = []
+    actualModels: string[]
+  ): Record<string, string> {
+    const mapping: Record<string, string> = {}
 
     for (const standardModel of standardModels) {
-      for (const channel of channels) {
-        // Skip disabled channels
-        if (
-          channel.status === CHANNEL_STATUS.ManuallyDisabled ||
-          channel.status === CHANNEL_STATUS.AutoDisabled
-        ) {
-          continue
-        }
+      // Skip if already present
+      if (actualModels.includes(standardModel)) {
+        continue
+      }
 
-        const actualModels = channel.models
-          ? channel.models.split(",").map((m) => m.trim()).filter(Boolean)
-          : []
-
-        // If channel already has the exact standard model, skip (no mapping needed)
-        if (actualModels.includes(standardModel)) {
-          continue
-        }
-
-        // Find best matching actual model in this channel
-        const bestMatch = this.findBestMatch(standardModel, actualModels)
-        if (bestMatch) {
-          allCandidates.push({
-            channelId: channel.id,
-            channelName: channel.name,
-            standardModel,
-            actualModel: bestMatch,
-            priority: channel.priority,
-            weight: channel.weight,
-            usedQuota: channel.used_quota || 0
-          })
-        }
+      // Find best match for this standard model
+      const bestMatch = this.findBestMatch(standardModel, actualModels)
+      if (bestMatch) {
+        mapping[standardModel] = bestMatch
       }
     }
 
-    // Step 2: For each standard model, select the best candidate using weighted scoring
-    const bestCandidates = new Map<string, ModelCandidate>()
-    
-    for (const standardModel of standardModels) {
-      const candidates = allCandidates.filter(
-        (c) => c.standardModel === standardModel
-      )
-      if (candidates.length > 0) {
-        const best = this.selectBestCandidate(candidates, preferences)
-        if (best) {
-          bestCandidates.set(standardModel, best)
-        }
-      }
-    }
-
-    // Step 3: Group by channel and build model_mapping JSON for each channel
-    const result: Record<number, string> = {}
-
-    for (const [standardModel, candidate] of bestCandidates.entries()) {
-      if (!result[candidate.channelId]) {
-        result[candidate.channelId] = "{}"
-      }
-
-      const mapping = JSON.parse(result[candidate.channelId]) as Record<
-        string,
-        string
-      >
-      mapping[standardModel] = candidate.actualModel
-      result[candidate.channelId] = JSON.stringify(mapping)
-    }
-
-    return result
+    return mapping
   }
 
   /**
@@ -310,62 +258,16 @@ export class ModelRedirectService {
   }
 
   /**
-   * Select best candidate using weighted scoring
+   * Select best candidate (for single channel context, just return the first one)
+   * In single-channel context, all candidates are from the same channel,
+   * so no need for weighted scoring
    */
   private static selectBestCandidate(
-    candidates: ModelCandidate[],
-    preferences?: ModelRedirectPreferences
+    candidates: ModelCandidate[]
   ): ModelCandidate | null {
     if (candidates.length === 0) return null
-    if (candidates.length === 1) return candidates[0]
-
-    const epsilonP = preferences?.scoring.epsilonP ?? 1
-    const usedQuotaScale = preferences?.scoring.usedQuota.scale ?? 0.25
-    const usedQuotaCap = preferences?.scoring.usedQuota.cap ?? 1.5
-
-    const totalUsedQuota = candidates.reduce((sum, c) => sum + c.usedQuota, 0)
-
-    const ranked = candidates.map((c) => ({
-      ...c,
-      weightLevel: this.toWeightLevel(c.weight),
-      usedQuotaRatio: totalUsedQuota > 0 ? c.usedQuota / totalUsedQuota : 0,
-      usedQuotaAdj:
-        totalUsedQuota > 0
-          ? Math.min(
-              usedQuotaCap,
-              c.usedQuota / totalUsedQuota / Math.max(usedQuotaScale, 1e-6)
-            )
-          : 0
-    }))
-
-    ranked.sort((a, b) => {
-      // L1: Priority (with epsilon threshold)
-      const priorityDiff = b.priority - a.priority
-      if (Math.abs(priorityDiff) > epsilonP) {
-        return priorityDiff
-      }
-
-      // L2: Weight level
-      const weightDiff = b.weightLevel - a.weightLevel
-      if (weightDiff !== 0) {
-        return weightDiff
-      }
-
-      // L3: Used quota (lower is better)
-      const quotaDiff = a.usedQuotaAdj - b.usedQuotaAdj
-      if (Math.abs(quotaDiff) > 0.0001) {
-        return quotaDiff
-      }
-
-      // Tie-breaker: lexicographic by actual model name
-      return a.actualModel.localeCompare(b.actualModel)
-    })
-
-    return ranked[0]
-  }
-
-  private static toWeightLevel(weight: number): number {
-    return Math.max(1, Math.min(5, Math.ceil(weight / 2)))
+    // Just return the first match (best match from findBestMatch)
+    return candidates[0]
   }
 
   private static isWordBoundaryMatch(source: string, target: string): boolean {

@@ -174,13 +174,25 @@ export class NewApiModelSyncService {
   }
 
   /**
-   * Update channel model_mapping only
+   * Update channel models and model_mapping together
    */
-  async updateChannelModelMapping(
-    channelId: number,
-    modelMapping: string
+  async updateChannelModelsAndMapping(
+    channel: NewApiChannel,
+    models: string[],
+    modelMapping: Record<string, string>
   ): Promise<void> {
     try {
+      const mergedModels = new Set<string>(models)
+      Object.keys(modelMapping).forEach((standardModel) => {
+        mergedModels.add(standardModel)
+      })
+
+      const updatePayload: any = {
+        ...channel,
+        models: Array.from(mergedModels).join(","),
+        model_mapping: JSON.stringify(modelMapping)
+      }
+
       await this.throttle()
 
       const response = await fetchApi<void>(
@@ -191,20 +203,20 @@ export class NewApiModelSyncService {
           token: this.token,
           options: {
             method: "PUT",
-            body: JSON.stringify({
-              id: channelId,
-              model_mapping: modelMapping
-            })
+            body: JSON.stringify(updatePayload)
           }
         },
         false
       )
 
       if (!response.success) {
-        throw new Error(response.message || "Failed to update model mapping")
+        throw new Error(response.message || "Failed to update channel mapping")
       }
     } catch (error) {
-      console.error(`[NewApiModelSync] Failed to update model mapping for channel ${channelId}:`, error)
+      console.error(
+        `[NewApiModelSync] Failed to update channel mapping for channel ${channel.id}:`,
+        error
+      )
       throw error
     }
   }
