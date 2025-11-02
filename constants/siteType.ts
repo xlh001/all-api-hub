@@ -9,6 +9,7 @@ export const DONE_HUB = "done-hub"
 export const VO_API = "VoAPI"
 export const SUPER_API = "Super-API"
 export const RIX_API = "Rix-Api"
+export const NEO_API = "neo-Api"
 export const UNKNOWN_SITE = "unknown"
 
 export type SiteType = (typeof SITE_TITLE_RULES)[number]["name"]
@@ -23,6 +24,7 @@ export const SITE_TITLE_RULES = [
   { name: VO_API, regex: makeTitleRegex(VO_API) },
   { name: SUPER_API, regex: makeTitleRegex(SUPER_API) },
   { name: RIX_API, regex: makeTitleRegex(RIX_API) },
+  { name: NEO_API, regex: makeTitleRegex(NEO_API) },
   { name: UNKNOWN_SITE, regex: makeTitleRegex(UNKNOWN_SITE) }
 ]
 
