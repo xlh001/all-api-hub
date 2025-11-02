@@ -1,10 +1,6 @@
 import { t } from "i18next"
 
-<<<<<<< HEAD
-import { modelRedirectController } from "~/services/modelRedirect"
-=======
 import { ModelRedirectService } from "~/services/modelRedirect"
->>>>>>> d3181cd (refactor(model-redirect): remove mock, dev configs and unify mapping generation)
 import { hasValidNewApiConfig } from "~/services/newApiService.ts"
 import {
   ALL_PRESET_STANDARD_MODELS,
@@ -223,16 +219,6 @@ class NewApiModelSyncScheduler {
         `[NewApiModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`
       )
 
-<<<<<<< HEAD
-      // Notify model redirect to auto-regenerate if enabled
-      try {
-        await modelRedirectController.autoRegenerateIfEnabled("sync")
-      } catch (error) {
-        console.warn(
-          "[NewApiModelSync] Failed to trigger model redirect auto-regeneration:",
-          error
-        )
-=======
       // Generate and apply model redirect mappings if enabled
       if (modelRedirectConfig.enabled && standardModels.length > 0) {
         console.log("[NewApiModelSync] Applying model redirect mappings")
@@ -261,7 +247,6 @@ class NewApiModelSyncScheduler {
         } catch (error) {
           console.error("[NewApiModelSync] Failed to apply model redirect mappings:", error)
         }
->>>>>>> d3181cd (refactor(model-redirect): remove mock, dev configs and unify mapping generation)
       }
 
       return result

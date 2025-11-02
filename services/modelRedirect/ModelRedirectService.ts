@@ -5,10 +5,15 @@
  */
 
 import {
+  ALL_PRESET_STANDARD_MODELS,
   CHANNEL_STATUS,
+  DEFAULT_MODEL_REDIRECT_PREFERENCES,
   type ModelRedirectPreferences,
   type NewApiChannel
 } from "~/types"
+import { userPreferences } from "../userPreferences"
+import { hasValidNewApiConfig } from "../newApiService"
+import { NewApiModelSyncService } from "../newApiModelSync/NewApiModelSyncService"
 import {
   compareDateTokens,
   filterMatchingModels,
@@ -29,10 +34,12 @@ interface ChannelCandidate {
 }
 
 /**
- * Weighted score for candidate selection
+ * Candidate with computed ranking metrics
  */
-interface WeightedCandidate extends ChannelCandidate {
-  score: number
+interface RankedCandidate extends ChannelCandidate {
+  weightLevel: number
+  usedQuotaRatio: number
+  usedQuotaAdj: number
 }
 
 /**
@@ -50,11 +57,8 @@ export class ModelRedirectService {
     message?: string
   }> {
     try {
-      const prefs = await import("../userPreferences").then((module) =>
-        module.userPreferences.getPreferences()
-      )
+      const prefs = await userPreferences.getPreferences()
 
-      const { hasValidNewApiConfig } = await import("../newApiService")
       if (!hasValidNewApiConfig(prefs)) {
         return {
           success: false,
@@ -63,15 +67,6 @@ export class ModelRedirectService {
           message: "New API configuration is missing"
         }
       }
-
-      const { ModelRedirectService } = await import("./ModelRedirectService")
-      const { NewApiModelSyncService } = await import(
-        "../newApiModelSync/NewApiModelSyncService"
-      )
-      const {
-        DEFAULT_MODEL_REDIRECT_PREFERENCES,
-        ALL_PRESET_STANDARD_MODELS
-      } = await import("~/types")
 
       const modelRedirectPrefs = Object.assign(
         {},
@@ -135,6 +130,7 @@ export class ModelRedirectService {
       }
     }
   }
+
   /**
    * Generate model_mapping for each channel
    * Returns a map of channelId -> model_mapping JSON string
@@ -237,66 +233,55 @@ export class ModelRedirectService {
       return null
     }
 
-    // Calculate scores
-    const scored = candidates.map((c) => {
-      const score = this.calculateScore(c, candidates, preferences)
-      return { ...c, score } as WeightedCandidate
+    const epsilonP = preferences?.scoring.epsilonP ?? 1
+    const usedQuotaScale = preferences?.scoring.usedQuota.scale ?? 0.25
+    const usedQuotaCap = preferences?.scoring.usedQuota.cap ?? 1.5
+
+    const totalUsedQuota = candidates.reduce((sum, c) => sum + c.usedQuota, 0)
+
+    const ranked: RankedCandidate[] = candidates.map((candidate) => {
+      const weightLevel = this.toWeightLevel(candidate.weight)
+      const ratio = totalUsedQuota > 0 ? candidate.usedQuota / totalUsedQuota : 0
+      const usedQuotaAdj =
+        totalUsedQuota > 0 ? Math.min(usedQuotaCap, ratio / Math.max(usedQuotaScale, 1e-6)) : 0
+
+      return {
+        ...candidate,
+        weightLevel,
+        usedQuotaRatio: ratio,
+        usedQuotaAdj
+      }
     })
 
-    // Sort by score (descending), then by date (newer first), then lexicographic
-    scored.sort((a, b) => {
-      // Higher score is better
-      if (Math.abs(b.score - a.score) > 0.001) {
-        return b.score - a.score
+    ranked.sort((a, b) => {
+      const priorityDiff = b.priority - a.priority
+      if (Math.abs(priorityDiff) > epsilonP) {
+        return priorityDiff
       }
 
-      // Tie-breaker: Newer date
+      const weightDiff = b.weightLevel - a.weightLevel
+      if (weightDiff !== 0) {
+        return weightDiff
+      }
+
+      const usedQuotaDiff = a.usedQuotaAdj - b.usedQuotaAdj
+      if (Math.abs(usedQuotaDiff) > 0.0001) {
+        return usedQuotaDiff
+      }
+
       const dateCmp = compareDateTokens(b.dateToken, a.dateToken)
       if (dateCmp !== 0) {
         return dateCmp
       }
 
-      // Final tie-breaker: Lexicographic by model name
       return a.model.localeCompare(b.model)
     })
 
-    return scored[0]
+    return ranked[0]
   }
 
-  /**
-   * Calculate weighted score for a candidate
-   * Formula: score = priority_weight + weight_weight - used_quota_penalty
-   *
-   * Importance: priority > weight > used_quota
-   */
-  private static calculateScore(
-    candidate: ChannelCandidate,
-    allCandidates: ChannelCandidate[],
-    preferences?: ModelRedirectPreferences
-  ): number {
-    const epsilonP = preferences?.scoring.epsilonP ?? 1
-    const usedQuotaScale = preferences?.scoring.usedQuota.scale ?? 0.25
-    const usedQuotaCap = preferences?.scoring.usedQuota.cap ?? 1.5
-
-    // Priority component (most important)
-    // Normalize priority relative to max, with epsilon threshold
-    const maxPriority = Math.max(...allCandidates.map((c) => c.priority))
-    const priorityWeight = maxPriority > 0 ? (candidate.priority / maxPriority) * 100 : 0
-
-    // Weight component (secondary)
-    // Normalize weight (0-10 range typically)
-    const maxWeight = Math.max(...allCandidates.map((c) => c.weight), 1)
-    const weightWeight = (candidate.weight / maxWeight) * 10
-
-    // Used quota penalty (tertiary, inverse)
-    // Lower used_quota is better
-    const totalUsedQuota = allCandidates.reduce((sum, c) => sum + c.usedQuota, 0)
-    let usedQuotaPenalty = 0
-    if (totalUsedQuota > 0) {
-      const ratio = candidate.usedQuota / totalUsedQuota
-      usedQuotaPenalty = Math.min(usedQuotaCap, ratio / usedQuotaScale)
-    }
-
-    return priorityWeight + weightWeight - usedQuotaPenalty
+  private static toWeightLevel(weight: number): number {
+    const level = Math.ceil(weight / 2)
+    return Math.max(1, Math.min(5, level))
   }
 }
