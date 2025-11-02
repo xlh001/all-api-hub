@@ -94,11 +94,7 @@ export class ModelRedirectService {
             )
 
           if (Object.keys(modelMapping).length > 0) {
-            await service.updateChannelModelsAndMapping(
-              channel,
-              actualModels,
-              modelMapping
-            )
+            await service.updateChannelModelMapping(channel, modelMapping)
             successCount += 1
           }
         } catch (error) {

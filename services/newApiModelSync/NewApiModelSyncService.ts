@@ -174,22 +174,15 @@ export class NewApiModelSyncService {
   }
 
   /**
-   * Update channel models and model_mapping together
+   * Update channel model_mapping
    */
-  async updateChannelModelsAndMapping(
+  async updateChannelModelMapping(
     channel: NewApiChannel,
-    models: string[],
     modelMapping: Record<string, string>
   ): Promise<void> {
     try {
-      const mergedModels = new Set<string>(models)
-      Object.keys(modelMapping).forEach((standardModel) => {
-        mergedModels.add(standardModel)
-      })
-
       const updatePayload: any = {
         ...channel,
-        models: Array.from(mergedModels).join(","),
         model_mapping: JSON.stringify(modelMapping)
       }
 
