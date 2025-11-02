@@ -40,9 +40,10 @@ This extension automatically detects and manages accounts from sites based on th
 - [Veloera](https://github.com/Veloera/Veloera)
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
-- VoAPI (closed source, older version support)
+- Neo-API (closed source)
 - Super-API (closed source)
-- RIX_API (closed source, basic functionality support)
+- RIX_API (closed source, basic functionality supported)
+- VoAPI (closed source, old versions supported)
 
 ## ✨ Features
 

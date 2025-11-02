@@ -55,6 +55,7 @@ footer: AGPL-3.0 Licensed | Copyright © 2025-present All API Hub
 - [Veloera](https://github.com/Veloera/Veloera)
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
-- VoAPI（闭源，老版本支持）
+- Neo-API（闭源）
 - Super-API（闭源）
 - RIX_API（闭源，基本功能支持）
+- VoAPI（闭源，老版本支持）
