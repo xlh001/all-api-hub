@@ -12,10 +12,11 @@ import {
   type ModelMappingEntry,
   type ModelRedirectPreferences
 } from "~/types"
+import { deepOverride } from "~/utils"
 import { getErrorMessage } from "~/utils/error"
 
-import { createModelRedirectService } from "./ModelRedirectService"
 import { userPreferences } from "../userPreferences"
+import { createModelRedirectService } from "./ModelRedirectService"
 
 const AUTO_REGENERATE_DELAY_MS = 2000
 
@@ -37,9 +38,11 @@ class ModelRedirectController {
   private queuedTrigger: MappingGenerationTrigger | null = null
   private debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-  async regenerate(
-    trigger: MappingGenerationTrigger
-  ): Promise<{ success: boolean; data?: Record<number, ModelMappingEntry[]>; error?: string }> {
+  async regenerate(trigger: MappingGenerationTrigger): Promise<{
+    success: boolean
+    data?: Record<number, ModelMappingEntry[]>
+    error?: string
+  }> {
     if (this.isGenerating) {
       this.queueTrigger(trigger)
       return {
@@ -130,7 +133,9 @@ class ModelRedirectController {
     }
   }
 
-  async autoRegenerateIfEnabled(trigger: MappingGenerationTrigger): Promise<boolean> {
+  async autoRegenerateIfEnabled(
+    trigger: MappingGenerationTrigger
+  ): Promise<boolean> {
     const preferences = await this.getPreferences()
     if (!preferences.enabled) {
       return false
@@ -159,7 +164,11 @@ class ModelRedirectController {
    */
   async applyMappingsToChannels(
     channelMappings: Record<number, ModelMappingEntry[]>
-  ): Promise<{ success: boolean; updatedChannels: number[]; errors: string[] }> {
+  ): Promise<{
+    success: boolean
+    updatedChannels: number[]
+    errors: string[]
+  }> {
     const updatedChannels: number[] = []
     const errors: string[] = []
 
@@ -174,7 +183,9 @@ class ModelRedirectController {
         const modelMappingJson = JSON.stringify(modelMappingObj)
 
         // Update channel via New API service
-        const { getNewApiConfig, updateChannel } = await import("../newApiService")
+        const { getNewApiConfig, updateChannel } = await import(
+          "../newApiService"
+        )
         const config = await getNewApiConfig()
         if (!config) {
           errors.push(`Channel ${channelId}: New API config not set`)
@@ -187,11 +198,16 @@ class ModelRedirectController {
         })
 
         updatedChannels.push(channelId)
-        console.log(`[ModelRedirect] Updated channel ${channelId} with ${mappings.length} mappings`)
+        console.log(
+          `[ModelRedirect] Updated channel ${channelId} with ${mappings.length} mappings`
+        )
       } catch (error) {
         const errorMsg = getErrorMessage(error)
         errors.push(`Channel ${channelId}: ${errorMsg}`)
-        console.error(`[ModelRedirect] Failed to update channel ${channelId}:`, error)
+        console.error(
+          `[ModelRedirect] Failed to update channel ${channelId}:`,
+          error
+        )
       }
     }
 
@@ -204,7 +220,7 @@ class ModelRedirectController {
 
   async getPreferences(): Promise<ModelRedirectPreferences> {
     const prefs = await userPreferences.getPreferences()
-    return merge({}, DEFAULT_MODEL_REDIRECT_PREFERENCES, prefs.modelRedirect)
+    return deepOverride(DEFAULT_MODEL_REDIRECT_PREFERENCES, prefs.modelRedirect)
   }
 
   async updatePreferences(
@@ -225,7 +241,9 @@ class ModelRedirectController {
     const standardModels =
       prefs.standardModels.length > 0
         ? Array.from(
-            new Set(prefs.standardModels.map((model) => model.trim()).filter(Boolean))
+            new Set(
+              prefs.standardModels.map((model) => model.trim()).filter(Boolean)
+            )
           )
         : [...ALL_PRESET_STANDARD_MODELS]
 

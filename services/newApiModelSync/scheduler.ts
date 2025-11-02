@@ -1,5 +1,6 @@
 import { t } from "i18next"
 
+import { modelRedirectController } from "~/services/modelRedirect"
 import { hasValidNewApiConfig } from "~/services/newApiService.ts"
 import { NewApiChannel } from "~/types"
 import { ExecutionProgress, ExecutionResult } from "~/types/newApiModelSync"
@@ -208,10 +209,12 @@ class NewApiModelSyncScheduler {
 
       // Notify model redirect to auto-regenerate if enabled
       try {
-        const { modelRedirectController } = await import("../modelRedirect")
         await modelRedirectController.autoRegenerateIfEnabled("sync")
       } catch (error) {
-        console.warn("[NewApiModelSync] Failed to trigger model redirect auto-regeneration:", error)
+        console.warn(
+          "[NewApiModelSync] Failed to trigger model redirect auto-regeneration:",
+          error
+        )
       }
 
       return result

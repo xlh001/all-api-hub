@@ -36,7 +36,7 @@ export function isArraysEqual<T>(arr1: T[], arr2: T[]) {
  */
 export function deepOverride<T extends Record<string, any>>(
   target: T,
-  ...sources: Array<Partial<T>>
+  ...sources: Array<Partial<T> | null | undefined>
 ): T {
   return mergeWith({}, target, ...sources, (_objValue: any, srcValue: any) => {
     // 数组：完全替换
