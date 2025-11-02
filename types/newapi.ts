@@ -21,10 +21,13 @@ export interface ChannelModel {
 
 /**
  * Channel status constants
+ * @see https://github.com/QuantumNous/new-api/blob/7156bf238276d2089435eacc3efb266403f27c8e/common/constants.go#L192
  */
 export const CHANNEL_STATUS = {
-  ENABLED: 1,
-  DISABLED: 2
+  Unknown: 0,
+  Enable: 1,
+  ManuallyDisabled: 2,
+  AutoDisabled: 3
 } as const
 
 export type ChannelStatus = (typeof CHANNEL_STATUS)[keyof typeof CHANNEL_STATUS]

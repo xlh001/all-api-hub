@@ -287,10 +287,10 @@ export function ChannelDialog({
                   updateField("status", parseInt(e.target.value))
                 }
                 disabled={isSaving}>
-                <option value={CHANNEL_STATUS.ENABLED}>
+                <option value={CHANNEL_STATUS.Enable}>
                   {t("channelDialog:fields.status.enabled", "Enabled")}
                 </option>
-                <option value={CHANNEL_STATUS.DISABLED}>
+                <option value={CHANNEL_STATUS.ManuallyDisabled}>
                   {t("channelDialog:fields.status.disabled", "Disabled")}
                 </option>
               </Select>
