@@ -306,18 +306,11 @@ export const UserPreferencesProvider = ({
         modelRedirect: updates
       })
       if (success) {
-        setPreferences((prev) => {
-          if (!prev) return null
-          const merged = merge({}, prev.modelRedirect ?? {}, updates)
-          return {
-            ...prev,
-            modelRedirect: merged
-          }
-        })
+        await loadPreferences()
       }
       return success
     },
-    []
+    [loadPreferences]
   )
 
   const resetToDefaults = useCallback(async () => {

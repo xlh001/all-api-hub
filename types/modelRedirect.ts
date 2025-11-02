@@ -37,7 +37,6 @@ export interface ModelRedirectDevConfig {
 export interface ModelRedirectPreferences {
   enabled: boolean
   standardModels: string[]
-  autoGenerateMapping: boolean
   scoring: ModelRedirectScoring
   dev: ModelRedirectDevConfig
   version: number
@@ -150,20 +149,6 @@ export const DEFAULT_MODEL_REDIRECT_SCORING: ModelRedirectScoring = {
 }
 
 /**
- * Default model redirect preferences
- */
-export const DEFAULT_MODEL_REDIRECT_PREFERENCES: ModelRedirectPreferences = {
-  enabled: false,
-  standardModels: [],
-  autoGenerateMapping: false,
-  scoring: DEFAULT_MODEL_REDIRECT_SCORING,
-  dev: {
-    useMockData: false
-  },
-  version: 1
-}
-
-/**
  * Preset standard models by vendor
  */
 export const PRESET_STANDARD_MODELS = {
@@ -182,3 +167,16 @@ export const PRESET_STANDARD_MODELS = {
 export const ALL_PRESET_STANDARD_MODELS = Object.values(
   PRESET_STANDARD_MODELS
 ).flat()
+
+/**
+ * Default model redirect preferences
+ */
+export const DEFAULT_MODEL_REDIRECT_PREFERENCES: ModelRedirectPreferences = {
+  enabled: false,
+  standardModels: [...ALL_PRESET_STANDARD_MODELS],
+  scoring: { ...DEFAULT_MODEL_REDIRECT_SCORING },
+  dev: {
+    useMockData: false
+  },
+  version: 1
+}

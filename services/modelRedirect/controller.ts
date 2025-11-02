@@ -3,8 +3,11 @@
  * Coordinates background interactions, including regeneration scheduling
  */
 
+import merge from "lodash-es/merge"
+
 import {
   ALL_PRESET_STANDARD_MODELS,
+  DEFAULT_MODEL_REDIRECT_PREFERENCES,
   type MappingGenerationTrigger,
   type ModelMapping,
   type ModelRedirectPreferences
@@ -12,27 +15,9 @@ import {
 import { getErrorMessage } from "~/utils/error"
 
 import { createModelRedirectService } from "./ModelRedirectService"
-import { modelRedirectStorage } from "./storage"
+import { userPreferences } from "../userPreferences"
 
 const AUTO_REGENERATE_DELAY_MS = 2000
-
-function clonePreferences(
-  prefs: ModelRedirectPreferences
-): ModelRedirectPreferences {
-  return {
-    ...prefs,
-    standardModels: [...prefs.standardModels],
-    scoring: {
-      ...prefs.scoring,
-      usedQuota: { ...prefs.scoring.usedQuota }
-    },
-    dev: { ...prefs.dev }
-  }
-}
-
-function mergeStandardModels(models: string[]): string[] {
-  return Array.from(new Set(models.map((model) => model.trim()).filter(Boolean)))
-}
 
 function triggerPriority(trigger: MappingGenerationTrigger): number {
   switch (trigger) {
@@ -63,7 +48,7 @@ class ModelRedirectController {
       }
     }
 
-    const preferences = await modelRedirectStorage.getPreferences()
+    const preferences = await this.getPreferences()
     if (!preferences.enabled) {
       return {
         success: false,
@@ -85,7 +70,6 @@ class ModelRedirectController {
     try {
       const service = createModelRedirectService(effectivePrefs)
       const mapping = await service.generateModelMapping({ trigger })
-      await modelRedirectStorage.saveMapping(mapping)
 
       await this.emitEvent("MODEL_REDIRECT_MAPPING_UPDATED", {
         trigger,
@@ -128,8 +112,8 @@ class ModelRedirectController {
   }
 
   async autoRegenerateIfEnabled(trigger: MappingGenerationTrigger): Promise<boolean> {
-    const preferences = await modelRedirectStorage.getPreferences()
-    if (!preferences.enabled || !preferences.autoGenerateMapping) {
+    const preferences = await this.getPreferences()
+    if (!preferences.enabled) {
       return false
     }
 
@@ -151,37 +135,38 @@ class ModelRedirectController {
   }
 
   async getMapping(): Promise<ModelMapping | null> {
-    return modelRedirectStorage.getMapping()
+    // Mapping is applied directly to New API, no local snapshot
+    return null
   }
 
   async getPreferences(): Promise<ModelRedirectPreferences> {
-    return modelRedirectStorage.getPreferences()
+    const prefs = await userPreferences.getPreferences()
+    return merge({}, DEFAULT_MODEL_REDIRECT_PREFERENCES, prefs.modelRedirect)
   }
 
   async updatePreferences(
     updates: Partial<ModelRedirectPreferences>
   ): Promise<boolean> {
-    return modelRedirectStorage.savePreferences(updates)
+    return userPreferences.savePreferences({ modelRedirect: updates })
   }
 
   async getSuggestions(): Promise<string[]> {
-    const preferences = await modelRedirectStorage.getPreferences()
-    const effectivePrefs = this.buildEffectivePreferences(preferences)
-    const service = createModelRedirectService(effectivePrefs)
+    const prefs = await this.getPreferences()
+    const service = createModelRedirectService(prefs)
     return service.getStandardModelSuggestions()
   }
 
   private buildEffectivePreferences(
     prefs: ModelRedirectPreferences
   ): ModelRedirectPreferences {
-    const cloned = clonePreferences(prefs)
-    const mergedStandardModels =
-      cloned.standardModels.length > 0
-        ? mergeStandardModels(cloned.standardModels)
+    const standardModels =
+      prefs.standardModels.length > 0
+        ? Array.from(
+            new Set(prefs.standardModels.map((model) => model.trim()).filter(Boolean))
+          )
         : [...ALL_PRESET_STANDARD_MODELS]
 
-    cloned.standardModels = mergedStandardModels
-    return cloned
+    return merge({}, prefs, { standardModels })
   }
 
   private queueTrigger(trigger: MappingGenerationTrigger) {
