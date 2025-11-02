@@ -1,106 +1,194 @@
 /**
  * Model Redirect Service
- * Generates and manages model redirect mappings based on channel configurations
+ * Generates model redirect mappings based on channel configurations
+ * Based on gpt-api-sync logic with enhancements for weighted channel selection
  */
 
 import {
-  ALL_PRESET_STANDARD_MODELS,
   CHANNEL_STATUS,
-  type ChannelCandidate,
-  type GenerateMappingOptions,
-  type ModelMappingEntry,
   type ModelRedirectPreferences,
   type NewApiChannel
 } from "~/types"
 import {
   compareDateTokens,
   filterMatchingModels,
-  getCanonicalModelName,
   parseDateToken
 } from "~/utils/modelName"
 
-import { getMockChannels, getMockUsedQuota } from "./mockDataProvider"
-import { NewApiModelSyncService } from "../newApiModelSync/NewApiModelSyncService"
-import { getNewApiConfig } from "../newApiService"
+/**
+ * Channel candidate for model redirect
+ */
+interface ChannelCandidate {
+  channelId: number
+  channelName: string
+  model: string
+  priority: number
+  weight: number
+  usedQuota: number
+  dateToken?: string
+}
 
-type RankedCandidate = ChannelCandidate & {
-  usedQuotaAdj: number
-  usedQuotaRatio: number
+/**
+ * Weighted score for candidate selection
+ */
+interface WeightedCandidate extends ChannelCandidate {
+  score: number
 }
 
 /**
  * Model Redirect Service
+ * Core algorithm for generating model redirect mappings
  */
 export class ModelRedirectService {
-  private preferences: ModelRedirectPreferences
-
-  constructor(preferences: ModelRedirectPreferences) {
-    this.preferences = preferences
-  }
-
   /**
-   * Get channels data based on configuration
+   * Run model redirect generation and apply mappings directly
    */
-  private async getChannelsData(): Promise<NewApiChannel[]> {
-    if (this.preferences.dev.useMockData) {
-      console.log("[ModelRedirect] Using mock data")
-      return getMockChannels() as unknown as NewApiChannel[]
+  static async applyModelRedirect(): Promise<{
+    success: boolean
+    updatedChannels: number
+    errors: string[]
+    message?: string
+  }> {
+    try {
+      const prefs = await import("../userPreferences").then((module) =>
+        module.userPreferences.getPreferences()
+      )
+
+      const { hasValidNewApiConfig } = await import("../newApiService")
+      if (!hasValidNewApiConfig(prefs)) {
+        return {
+          success: false,
+          updatedChannels: 0,
+          errors: ["New API configuration is missing"],
+          message: "New API configuration is missing"
+        }
+      }
+
+      const { ModelRedirectService } = await import("./ModelRedirectService")
+      const { NewApiModelSyncService } = await import(
+        "../newApiModelSync/NewApiModelSyncService"
+      )
+      const {
+        DEFAULT_MODEL_REDIRECT_PREFERENCES,
+        ALL_PRESET_STANDARD_MODELS
+      } = await import("~/types")
+
+      const modelRedirectPrefs = Object.assign(
+        {},
+        DEFAULT_MODEL_REDIRECT_PREFERENCES,
+        prefs.modelRedirect
+      )
+
+      if (!modelRedirectPrefs.enabled) {
+        return {
+          success: false,
+          updatedChannels: 0,
+          errors: ["Model redirect feature is disabled"],
+          message: "Model redirect feature is disabled"
+        }
+      }
+
+      const standardModels = modelRedirectPrefs.standardModels.length
+        ? modelRedirectPrefs.standardModels
+        : ALL_PRESET_STANDARD_MODELS
+
+      const service = new NewApiModelSyncService(
+        prefs.newApiBaseUrl,
+        prefs.newApiAdminToken,
+        prefs.newApiUserId
+      )
+
+      const channelList = await service.listChannels()
+      const mappings = ModelRedirectService.generateChannelMappings(
+        channelList.items,
+        standardModels,
+        modelRedirectPrefs
+      )
+
+      let successCount = 0
+      const errors: string[] = []
+
+      for (const [channelIdStr, mapping] of Object.entries(mappings)) {
+        try {
+          await service.updateChannelModelMapping(Number(channelIdStr), mapping)
+          successCount += 1
+        } catch (error) {
+          errors.push(
+            `Channel ${channelIdStr}: ${(error as Error).message || "Unknown error"}`
+          )
+        }
+      }
+
+      return {
+        success: errors.length === 0,
+        updatedChannels: successCount,
+        errors
+      }
+    } catch (error) {
+      console.error("[ModelRedirect] Failed to apply redirect:", error)
+      return {
+        success: false,
+        updatedChannels: 0,
+        errors: [
+          error instanceof Error ? error.message : "Failed to apply redirect"
+        ]
+      }
+    }
+  }
+  /**
+   * Generate model_mapping for each channel
+   * Returns a map of channelId -> model_mapping JSON string
+   *
+   * @param channels All channels from New API
+   * @param standardModels Standard model names to redirect
+   * @param preferences Scoring preferences
+   */
+  static generateChannelMappings(
+    channels: NewApiChannel[],
+    standardModels: string[],
+    preferences?: ModelRedirectPreferences
+  ): Record<number, string> {
+    const result: Record<number, string> = {}
+
+    // Build global mapping: standardModel -> best candidate
+    const globalMapping: Record<string, ChannelCandidate> = {}
+
+    for (const standardModel of standardModels) {
+      const candidates = this.gatherCandidates(standardModel, channels)
+      if (candidates.length === 0) {
+        continue
+      }
+
+      const winner = this.selectBestCandidate(candidates, preferences)
+      if (winner) {
+        globalMapping[standardModel] = winner
+      }
     }
 
-    // Fetch from New API
-    const config = await getNewApiConfig()
-    if (!config) {
-      throw new Error("New API configuration is not set")
+    // Group by channel and build model_mapping for each channel
+    for (const [standardModel, candidate] of Object.entries(globalMapping)) {
+      if (!result[candidate.channelId]) {
+        result[candidate.channelId] = JSON.stringify({})
+      }
+
+      const mapping = JSON.parse(result[candidate.channelId]) as Record<
+        string,
+        string
+      >
+      mapping[standardModel] = candidate.model
+      result[candidate.channelId] = JSON.stringify(mapping)
     }
 
-    const service = new NewApiModelSyncService(
-      config.baseUrl,
-      config.token,
-      config.userId
-    )
-
-    const result = await service.listChannels()
-    return result.items
+    return result
   }
 
   /**
-   * Get used quota for a channel
+   * Gather candidate channels for a standard model
    */
-  private async getUsedQuota(channelId: number): Promise<number> {
-    if (this.preferences.dev.useMockData) {
-      return getMockUsedQuota(channelId)
-    }
-
-    // In real implementation, this would fetch from New API
-    // For now, return 0 as we don't have a direct API for this
-    return 0
-  }
-
-  /**
-   * Parse models string to array
-   */
-  private parseModels(modelsString: string): string[] {
-    return modelsString
-      .split(",")
-      .map((m) => m.trim())
-      .filter(Boolean)
-  }
-
-  /**
-   * Convert weight to discrete level 1-5
-   */
-  private toWeightLevel(weight: number): 1 | 2 | 3 | 4 | 5 {
-    const level = Math.ceil(weight / 2)
-    return Math.max(1, Math.min(5, level)) as 1 | 2 | 3 | 4 | 5
-  }
-
-  /**
-   * Gather candidates for a standard model
-   */
-  private async gatherCandidates(
+  private static gatherCandidates(
     standardModel: string,
     channels: NewApiChannel[]
-  ): Promise<ChannelCandidate[]> {
+  ): ChannelCandidate[] {
     const candidates: ChannelCandidate[] = []
 
     for (const channel of channels) {
@@ -112,15 +200,12 @@ export class ModelRedirectService {
         continue
       }
 
-      const models = this.parseModels(channel.models)
+      const models = channel.models ? channel.models.split(",").map((m) => m.trim()) : []
       const matchingModels = filterMatchingModels(standardModel, models)
 
       if (matchingModels.length === 0) {
         continue
       }
-
-      const usedQuota = await this.getUsedQuota(channel.id)
-      const weightLevel = this.toWeightLevel(channel.weight)
 
       for (const model of matchingModels) {
         const dateToken = parseDateToken(model)
@@ -131,9 +216,7 @@ export class ModelRedirectService {
           model,
           priority: channel.priority,
           weight: channel.weight,
-          weightLevel,
-          usedQuota,
-          status: channel.status,
+          usedQuota: channel.used_quota || 0,
           dateToken
         })
       }
@@ -143,76 +226,28 @@ export class ModelRedirectService {
   }
 
   /**
-   * Calculate used quota adjustment
+   * Select best candidate using weighted scoring
+   * Priority: priority > weight > used_quota (inverse)
    */
-  private calculateUsedQuotaAdj(
-    usedQuota: number,
-    enabledCandidates: ChannelCandidate[]
-  ): number {
-    const totalUsedQuota = enabledCandidates.reduce(
-      (sum, c) => sum + c.usedQuota,
-      0
-    )
-
-    if (totalUsedQuota === 0) {
-      return 0
-    }
-
-    const ratio = usedQuota / totalUsedQuota
-    const { scale, cap } = this.preferences.scoring.usedQuota
-
-    return Math.min(cap, ratio / scale)
-  }
-
-  /**
-   * Rank candidates using layered approach
-   * L1: Priority (with epsilon threshold)
-   * L2: Weight level (discrete 1-5)
-   * L3: Used quota adjustment (light penalty)
-   * Ties: Newer date > lexicographic
-   */
-  private rankCandidates(candidates: ChannelCandidate[]): RankedCandidate[] {
+  private static selectBestCandidate(
+    candidates: ChannelCandidate[],
+    preferences?: ModelRedirectPreferences
+  ): ChannelCandidate | null {
     if (candidates.length === 0) {
-      return []
+      return null
     }
 
-    const totalUsedQuota = candidates.reduce((sum, c) => sum + c.usedQuota, 0)
-    const { scale, cap } = this.preferences.scoring.usedQuota
-    const safeScale = scale > 0 ? scale : 1
-
-    // Calculate used quota adjustments
-    const candidatesWithAdj: RankedCandidate[] = candidates.map((c) => {
-      const ratio = totalUsedQuota > 0 ? c.usedQuota / totalUsedQuota : 0
-      const usedQuotaAdj =
-        totalUsedQuota > 0 ? Math.min(cap, ratio / safeScale) : 0
-
-      return {
-        ...c,
-        usedQuotaRatio: ratio,
-        usedQuotaAdj
-      }
+    // Calculate scores
+    const scored = candidates.map((c) => {
+      const score = this.calculateScore(c, candidates, preferences)
+      return { ...c, score } as WeightedCandidate
     })
 
-    // Sort using layered ranking
-    const sorted = candidatesWithAdj.sort((a, b) => {
-      const epsilonP = this.preferences.scoring.epsilonP
-
-      // L1: Priority (near-equal threshold)
-      const priorityDiff = b.priority - a.priority
-      if (Math.abs(priorityDiff) > epsilonP) {
-        return priorityDiff
-      }
-
-      // L2: Weight level (discrete, non-overriding)
-      const weightDiff = b.weightLevel - a.weightLevel
-      if (weightDiff !== 0) {
-        return weightDiff
-      }
-
-      // L3: Used quota (lower is better)
-      const usedQuotaDiff = a.usedQuotaAdj - b.usedQuotaAdj
-      if (Math.abs(usedQuotaDiff) > 0.001) {
-        return usedQuotaDiff
+    // Sort by score (descending), then by date (newer first), then lexicographic
+    scored.sort((a, b) => {
+      // Higher score is better
+      if (Math.abs(b.score - a.score) > 0.001) {
+        return b.score - a.score
       }
 
       // Tie-breaker: Newer date
@@ -225,97 +260,43 @@ export class ModelRedirectService {
       return a.model.localeCompare(b.model)
     })
 
-    return sorted
+    return scored[0]
   }
 
   /**
-   * Build decision reason string
+   * Calculate weighted score for a candidate
+   * Formula: score = priority_weight + weight_weight - used_quota_penalty
+   *
+   * Importance: priority > weight > used_quota
    */
-  private buildReason(candidate: ChannelCandidate, rank: number): string {
-    const parts = [
-      `Rank ${rank}`,
-      `P:${candidate.priority}`,
-      `W:${candidate.weight}`,
-      `UQ:${candidate.usedQuota}`
-    ]
+  private static calculateScore(
+    candidate: ChannelCandidate,
+    allCandidates: ChannelCandidate[],
+    preferences?: ModelRedirectPreferences
+  ): number {
+    const epsilonP = preferences?.scoring.epsilonP ?? 1
+    const usedQuotaScale = preferences?.scoring.usedQuota.scale ?? 0.25
+    const usedQuotaCap = preferences?.scoring.usedQuota.cap ?? 1.5
 
-    if (candidate.dateToken) {
-      parts.push(`Date:${candidate.dateToken}`)
+    // Priority component (most important)
+    // Normalize priority relative to max, with epsilon threshold
+    const maxPriority = Math.max(...allCandidates.map((c) => c.priority))
+    const priorityWeight = maxPriority > 0 ? (candidate.priority / maxPriority) * 100 : 0
+
+    // Weight component (secondary)
+    // Normalize weight (0-10 range typically)
+    const maxWeight = Math.max(...allCandidates.map((c) => c.weight), 1)
+    const weightWeight = (candidate.weight / maxWeight) * 10
+
+    // Used quota penalty (tertiary, inverse)
+    // Lower used_quota is better
+    const totalUsedQuota = allCandidates.reduce((sum, c) => sum + c.usedQuota, 0)
+    let usedQuotaPenalty = 0
+    if (totalUsedQuota > 0) {
+      const ratio = candidate.usedQuota / totalUsedQuota
+      usedQuotaPenalty = Math.min(usedQuotaCap, ratio / usedQuotaScale)
     }
 
-    return parts.join(" | ")
+    return priorityWeight + weightWeight - usedQuotaPenalty
   }
-
-  /**
-   * Generate model mapping grouped by channel
-   * Returns a map of channelId -> array of model mappings for that channel
-   */
-  async generateModelMapping(
-    options: GenerateMappingOptions
-  ): Promise<Record<number, ModelMappingEntry[]>> {
-    console.log("[ModelRedirect] Generating mapping with trigger:", options.trigger)
-
-    const channels = await this.getChannelsData()
-    console.log(`[ModelRedirect] Found ${channels.length} channels`)
-
-    const mapping: Record<number, ModelMappingEntry[]> = {}
-
-    for (const standardModel of this.preferences.standardModels) {
-      const candidates = await this.gatherCandidates(standardModel, channels)
-      console.log(
-        `[ModelRedirect] ${standardModel}: ${candidates.length} candidates`
-      )
-
-      if (candidates.length === 0) {
-        continue
-      }
-
-      const ranked = this.rankCandidates(candidates)
-      const winner = ranked[0]
-
-      const entry: ModelMappingEntry = {
-        standardModel,
-        targetModel: winner.model,
-        channelId: winner.channelId,
-        priority: winner.priority,
-        weightLevel: winner.weightLevel,
-        usedQuotaRatio: winner.usedQuotaRatio,
-        usedQuotaAdj: winner.usedQuotaAdj,
-        reason: this.buildReason(winner, 1),
-        decidedAt: new Date().toISOString()
-      }
-
-      if (!mapping[winner.channelId]) {
-        mapping[winner.channelId] = []
-      }
-      mapping[winner.channelId].push(entry)
-    }
-
-    console.log(
-      `[ModelRedirect] Generated mapping for ${Object.keys(mapping).length} channels`
-    )
-
-    return mapping
-  }
-
-  /**
-   * Get standard model suggestions
-   * Returns all preset models + any currently configured
-   */
-  getStandardModelSuggestions(): string[] {
-    const suggestions = new Set([
-      ...ALL_PRESET_STANDARD_MODELS,
-      ...this.preferences.standardModels
-    ])
-    return Array.from(suggestions).sort()
-  }
-}
-
-/**
- * Create a model redirect service instance
- */
-export function createModelRedirectService(
-  preferences: ModelRedirectPreferences
-): ModelRedirectService {
-  return new ModelRedirectService(preferences)
 }

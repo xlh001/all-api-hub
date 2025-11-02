@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { MultiSelect } from "~/components/ui/MultiSelect"
 import { Switch } from "~/components/ui/Switch"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { modelRedirectController } from "~/services/modelRedirect"
+import { ModelRedirectService } from "~/services/modelRedirect"
 import { ALL_PRESET_STANDARD_MODELS } from "~/types/modelRedirect"
 
 export default function ModelRedirectSettings() {
@@ -41,14 +41,13 @@ export default function ModelRedirectSettings() {
   const handleRegenerateMapping = async () => {
     try {
       setIsRegenerating(true)
-      const result = await modelRedirectController.regenerate("manual")
+      const result = await ModelRedirectService.applyModelRedirect()
 
       if (result.success) {
         toast.success(t("messages.regenerateSuccess"))
       } else {
-        toast.error(
-          t("messages.regenerateFailed", { error: result.error || "Unknown" })
-        )
+        const errorMessage = result.errors?.join("; ") || "Unknown"
+        toast.error(t("messages.regenerateFailed", { error: errorMessage }))
       }
     } catch (error) {
       console.error("Failed to regenerate mapping:", error)
@@ -115,14 +114,6 @@ export default function ModelRedirectSettings() {
               </button>
             </div>
 
-            {modelRedirect?.dev?.useMockData && (
-              <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
-                <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                  {t("dev.useMockData")}:{" "}
-                  <strong>{t("dev.useMockDataDesc")}</strong>
-                </p>
-              </div>
-            )}
           </>
         )}
       </div>

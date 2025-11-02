@@ -1,8 +1,16 @@
 import { t } from "i18next"
 
+<<<<<<< HEAD
 import { modelRedirectController } from "~/services/modelRedirect"
+=======
+import { ModelRedirectService } from "~/services/modelRedirect"
+>>>>>>> d3181cd (refactor(model-redirect): remove mock, dev configs and unify mapping generation)
 import { hasValidNewApiConfig } from "~/services/newApiService.ts"
-import { NewApiChannel } from "~/types"
+import {
+  ALL_PRESET_STANDARD_MODELS,
+  DEFAULT_MODEL_REDIRECT_PREFERENCES,
+  NewApiChannel
+} from "~/types"
 import { ExecutionProgress, ExecutionResult } from "~/types/newApiModelSync"
 import {
   clearAlarm,
@@ -141,6 +149,7 @@ class NewApiModelSyncScheduler {
 
   /**
    * Execute model sync for all channels
+   * Also generates model redirect mappings if enabled
    */
   async executeSync(channelIds?: number[]): Promise<ExecutionResult> {
     console.log("[NewApiModelSync] Starting execution")
@@ -169,6 +178,13 @@ class NewApiModelSyncScheduler {
     if (channels.length === 0) {
       throw new Error("No channels to sync")
     }
+
+    // Placeholder for model redirect config, will generate after sync if enabled
+    const modelRedirectConfig = prefs.modelRedirect ?? DEFAULT_MODEL_REDIRECT_PREFERENCES
+    const standardModels =
+      modelRedirectConfig.standardModels.length > 0
+        ? modelRedirectConfig.standardModels
+        : ALL_PRESET_STANDARD_MODELS
 
     // Update progress
     this.currentProgress = {
@@ -207,6 +223,7 @@ class NewApiModelSyncScheduler {
         `[NewApiModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`
       )
 
+<<<<<<< HEAD
       // Notify model redirect to auto-regenerate if enabled
       try {
         await modelRedirectController.autoRegenerateIfEnabled("sync")
@@ -215,6 +232,36 @@ class NewApiModelSyncScheduler {
           "[NewApiModelSync] Failed to trigger model redirect auto-regeneration:",
           error
         )
+=======
+      // Generate and apply model redirect mappings if enabled
+      if (modelRedirectConfig.enabled && standardModels.length > 0) {
+        console.log("[NewApiModelSync] Applying model redirect mappings")
+        try {
+          // Re-list channels to get updated model lists
+          const updatedChannels = await service.listChannels()
+          const modelMappings = ModelRedirectService.generateChannelMappings(
+            updatedChannels.items,
+            standardModels,
+            modelRedirectConfig
+          )
+
+          // Apply mappings
+          let successCount = 0
+          let errorCount = 0
+          for (const [channelIdStr, mapping] of Object.entries(modelMappings)) {
+            try {
+              await service.updateChannelModelMapping(Number(channelIdStr), mapping)
+              successCount++
+            } catch (error) {
+              console.error(`[NewApiModelSync] Failed to apply mapping for channel ${channelIdStr}:`, error)
+              errorCount++
+            }
+          }
+          console.log(`[NewApiModelSync] Model redirect mappings applied: ${successCount} succeeded, ${errorCount} failed`)
+        } catch (error) {
+          console.error("[NewApiModelSync] Failed to apply model redirect mappings:", error)
+        }
+>>>>>>> d3181cd (refactor(model-redirect): remove mock, dev configs and unify mapping generation)
       }
 
       return result

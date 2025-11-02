@@ -25,93 +25,13 @@ export interface ModelRedirectScoring {
 }
 
 /**
- * Development/testing configuration
- */
-export interface ModelRedirectDevConfig {
-  useMockData: boolean
-}
-
-/**
  * Model redirect preferences
  */
 export interface ModelRedirectPreferences {
   enabled: boolean
   standardModels: string[]
   scoring: ModelRedirectScoring
-  dev: ModelRedirectDevConfig
   version: number
-}
-
-/**
- * Model mapping entry per channel
- */
-export interface ModelMappingEntry {
-  standardModel: string
-  targetModel: string
-  channelId: number
-  priority: number
-  weightLevel: 1 | 2 | 3 | 4 | 5
-  usedQuotaRatio: number
-  usedQuotaAdj: number
-  reason: string
-  decidedAt: string
-}
-
-/**
- * Channel candidate for model redirect
- */
-export interface ChannelCandidate {
-  channelId: number
-  channelName: string
-  model: string
-  priority: number
-  weight: number
-  weightLevel: 1 | 2 | 3 | 4 | 5
-  usedQuota: number
-  status: number
-  dateToken?: string // Extracted date from model name (yyyymmdd or yyyymm)
-}
-
-/**
- * Mapping generation trigger
- */
-export type MappingGenerationTrigger = "manual" | "sync" | "mock"
-
-/**
- * Mapping generation options
- */
-export interface GenerateMappingOptions {
-  trigger: MappingGenerationTrigger
-}
-
-/**
- * Mock channel data for testing
- */
-export interface MockChannelData {
-  id: number
-  name: string
-  models: string
-  priority: number
-  weight: number
-  status: number
-  base_url: string
-  type: number
-  key: string
-  groups: string
-}
-
-/**
- * Mock data provider response
- */
-export interface MockDataProviderResponse {
-  channels: MockChannelData[]
-}
-
-/**
- * Model name aliases by vendor
- */
-export interface ModelAliases {
-  [key: string]: string[] // Canonical name -> aliases
 }
 
 /**
@@ -153,8 +73,5 @@ export const DEFAULT_MODEL_REDIRECT_PREFERENCES: ModelRedirectPreferences = {
   enabled: false,
   standardModels: [...ALL_PRESET_STANDARD_MODELS],
   scoring: { ...DEFAULT_MODEL_REDIRECT_SCORING },
-  dev: {
-    useMockData: false
-  },
   version: 1
 }

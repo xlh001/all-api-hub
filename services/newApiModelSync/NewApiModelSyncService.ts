@@ -135,15 +135,15 @@ export class NewApiModelSyncService {
 
   /**
    * Update channel models
-   * Strategy: Only update the models field, keep other fields unchanged
+   * Strategy: Update models field (model_mapping handled separately)
    */
   async updateChannelModels(
     channel: NewApiChannel,
     models: string[]
   ): Promise<void> {
     try {
-      // Prepare the update payload - merge with existing channel data
-      const updatePayload = {
+      // Prepare the update payload
+      const updatePayload: any = {
         ...channel,
         models: models.join(",")
       }
@@ -169,6 +169,42 @@ export class NewApiModelSyncService {
       }
     } catch (error: any) {
       console.error("[NewApiModelSync] Failed to update channel:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Update channel model_mapping only
+   */
+  async updateChannelModelMapping(
+    channelId: number,
+    modelMapping: string
+  ): Promise<void> {
+    try {
+      await this.throttle()
+
+      const response = await fetchApi<void>(
+        {
+          baseUrl: this.baseUrl,
+          endpoint: "/api/channel/",
+          userId: this.userId,
+          token: this.token,
+          options: {
+            method: "PUT",
+            body: JSON.stringify({
+              id: channelId,
+              model_mapping: modelMapping
+            })
+          }
+        },
+        false
+      )
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to update model mapping")
+      }
+    } catch (error) {
+      console.error(`[NewApiModelSync] Failed to update model mapping for channel ${channelId}:`, error)
       throw error
     }
   }

@@ -13,7 +13,6 @@ import {
 } from "../services/autoRefreshService"
 import { migrateAccountsConfig } from "../services/configMigration/configMigration"
 import { getSiteType } from "../services/detectSiteType"
-import { modelRedirectController } from "../services/modelRedirect"
 import {
   handleNewApiModelSyncMessage,
   newApiModelSyncScheduler
