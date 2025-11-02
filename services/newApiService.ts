@@ -20,9 +20,9 @@ import {
   UpdateChannelPayload
 } from "~/types"
 import type {
-  ChannelCreationPayload,
   ChannelFormData,
-  ChannelMode
+  ChannelMode,
+  CreateChannelPayload
 } from "~/types/newapi"
 import type { ServiceResponse } from "~/types/serviceResponse"
 import { isArraysEqual } from "~/utils"
@@ -83,7 +83,7 @@ export async function createChannel(
   baseUrl: string,
   adminToken: string,
   userId: number | string,
-  channelData: ChannelCreationPayload
+  channelData: CreateChannelPayload
 ) {
   try {
     const payload = {
@@ -279,7 +279,7 @@ export async function prepareChannelFormData(
 export function buildChannelPayload(
   formData: ChannelFormData,
   mode: ChannelMode = DEFAULT_CHANNEL_FIELDS.mode
-): ChannelCreationPayload {
+): CreateChannelPayload {
   const trimmedBaseUrl = formData.base_url.trim()
   const groups = normalizeList(
     formData.groups && formData.groups.length > 0

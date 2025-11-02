@@ -73,7 +73,7 @@ export interface ChannelFormData {
 /**
  * Channel creation payload for New API
  */
-export interface ChannelCreationPayload {
+export interface CreateChannelPayload {
   mode: ChannelMode
   channel: {
     name: string
