@@ -4,14 +4,15 @@
  * Based on gpt-api-sync logic with enhancements for weighted channel selection
  */
 
+import { NewApiModelSyncService } from "~/services/newApiModelSync"
 import {
   ALL_PRESET_STANDARD_MODELS,
   CHANNEL_STATUS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES
 } from "~/types"
-import { userPreferences } from "../userPreferences"
+
 import { hasValidNewApiConfig } from "../newApiService"
-import { NewApiModelSyncService } from "../newApiModelSync/NewApiModelSyncService"
+import { userPreferences } from "../userPreferences"
 
 /**
  * Model Redirect Service
@@ -72,21 +73,25 @@ export class ModelRedirectService {
       for (const channel of channelList.items) {
         // Skip disabled channels
         if (
-          channel.status === 2 || // CHANNEL_STATUS.ManuallyDisabled
-          channel.status === 3    // CHANNEL_STATUS.AutoDisabled
+          channel.status === CHANNEL_STATUS.ManuallyDisabled ||
+          channel.status === CHANNEL_STATUS.AutoDisabled
         ) {
           continue
         }
 
         try {
           const actualModels = channel.models
-            ? channel.models.split(",").map((m) => m.trim()).filter(Boolean)
+            ? channel.models
+                .split(",")
+                .map((m) => m.trim())
+                .filter(Boolean)
             : []
 
-          const modelMapping = ModelRedirectService.generateModelMappingForChannel(
-            standardModels,
-            actualModels
-          )
+          const modelMapping =
+            ModelRedirectService.generateModelMappingForChannel(
+              standardModels,
+              actualModels
+            )
 
           if (Object.keys(modelMapping).length > 0) {
             await service.updateChannelModelsAndMapping(
@@ -236,7 +241,10 @@ export class ModelRedirectService {
           continue
         }
       }
-      if (standardModel.length <= 3 && model.length > standardModel.length * 3) {
+      if (
+        standardModel.length <= 3 &&
+        model.length > standardModel.length * 3
+      ) {
         if (!this.isValidShortSourceMatch(standardModel, model)) {
           continue
         }
@@ -255,19 +263,6 @@ export class ModelRedirectService {
     }
 
     return bestMatch
-  }
-
-  /**
-   * Select best candidate (for single channel context, just return the first one)
-   * In single-channel context, all candidates are from the same channel,
-   * so no need for weighted scoring
-   */
-  private static selectBestCandidate(
-    candidates: ModelCandidate[]
-  ): ModelCandidate | null {
-    if (candidates.length === 0) return null
-    // Just return the first match (best match from findBestMatch)
-    return candidates[0]
   }
 
   private static isWordBoundaryMatch(source: string, target: string): boolean {
@@ -292,7 +287,10 @@ export class ModelRedirectService {
     return /[a-z0-9]/i.test(char)
   }
 
-  private static isValidShortTargetMatch(source: string, target: string): boolean {
+  private static isValidShortTargetMatch(
+    source: string,
+    target: string
+  ): boolean {
     const lowerSource = source.toLowerCase()
     const lowerTarget = target.toLowerCase()
 
@@ -308,7 +306,10 @@ export class ModelRedirectService {
     return false
   }
 
-  private static isValidShortSourceMatch(source: string, target: string): boolean {
+  private static isValidShortSourceMatch(
+    source: string,
+    target: string
+  ): boolean {
     const lowerSource = source.toLowerCase()
     const lowerTarget = target.toLowerCase()
 
@@ -325,7 +326,10 @@ export class ModelRedirectService {
     return false
   }
 
-  private static isVersionRelatedMatch(source: string, target: string): boolean {
+  private static isVersionRelatedMatch(
+    source: string,
+    target: string
+  ): boolean {
     const sourceParts = source.split(/[-_.]/)
     const abbr: string[] = []
 
@@ -351,7 +355,10 @@ export class ModelRedirectService {
     )
   }
 
-  private static isReasonableAbbreviation(source: string, target: string): boolean {
+  private static isReasonableAbbreviation(
+    source: string,
+    target: string
+  ): boolean {
     const targetParts = target.split(/[-_.]/)
     const abbr: string[] = []
 
