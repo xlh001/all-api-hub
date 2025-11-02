@@ -14,32 +14,18 @@ import {
 import { userPreferences } from "../userPreferences"
 import { hasValidNewApiConfig } from "../newApiService"
 import { NewApiModelSyncService } from "../newApiModelSync/NewApiModelSyncService"
-import {
-  compareDateTokens,
-  filterMatchingModels,
-  parseDateToken
-} from "~/utils/modelName"
 
 /**
- * Channel candidate for model redirect
+ * Channel candidate for a standard model
  */
-interface ChannelCandidate {
+interface ModelCandidate {
   channelId: number
   channelName: string
-  model: string
+  standardModel: string
+  actualModel: string
   priority: number
   weight: number
   usedQuota: number
-  dateToken?: string
-}
-
-/**
- * Candidate with computed ranking metrics
- */
-interface RankedCandidate extends ChannelCandidate {
-  weightLevel: number
-  usedQuotaRatio: number
-  usedQuotaAdj: number
 }
 
 /**
@@ -134,44 +120,78 @@ export class ModelRedirectService {
   /**
    * Generate model_mapping for each channel
    * Returns a map of channelId -> model_mapping JSON string
-   *
-   * @param channels All channels from New API
-   * @param standardModels Standard model names to redirect
-   * @param preferences Scoring preferences
    */
   static generateChannelMappings(
     channels: NewApiChannel[],
     standardModels: string[],
     preferences?: ModelRedirectPreferences
   ): Record<number, string> {
-    const result: Record<number, string> = {}
-
-    // Build global mapping: standardModel -> best candidate
-    const globalMapping: Record<string, ChannelCandidate> = {}
+    // Step 1: Gather all candidates for each standard model across all channels
+    const allCandidates: ModelCandidate[] = []
 
     for (const standardModel of standardModels) {
-      const candidates = this.gatherCandidates(standardModel, channels)
-      if (candidates.length === 0) {
-        continue
-      }
+      for (const channel of channels) {
+        // Skip disabled channels
+        if (
+          channel.status === CHANNEL_STATUS.ManuallyDisabled ||
+          channel.status === CHANNEL_STATUS.AutoDisabled
+        ) {
+          continue
+        }
 
-      const winner = this.selectBestCandidate(candidates, preferences)
-      if (winner) {
-        globalMapping[standardModel] = winner
+        const actualModels = channel.models
+          ? channel.models.split(",").map((m) => m.trim()).filter(Boolean)
+          : []
+
+        // If channel already has the exact standard model, skip (no mapping needed)
+        if (actualModels.includes(standardModel)) {
+          continue
+        }
+
+        // Find best matching actual model in this channel
+        const bestMatch = this.findBestMatch(standardModel, actualModels)
+        if (bestMatch) {
+          allCandidates.push({
+            channelId: channel.id,
+            channelName: channel.name,
+            standardModel,
+            actualModel: bestMatch,
+            priority: channel.priority,
+            weight: channel.weight,
+            usedQuota: channel.used_quota || 0
+          })
+        }
       }
     }
 
-    // Group by channel and build model_mapping for each channel
-    for (const [standardModel, candidate] of Object.entries(globalMapping)) {
+    // Step 2: For each standard model, select the best candidate using weighted scoring
+    const bestCandidates = new Map<string, ModelCandidate>()
+    
+    for (const standardModel of standardModels) {
+      const candidates = allCandidates.filter(
+        (c) => c.standardModel === standardModel
+      )
+      if (candidates.length > 0) {
+        const best = this.selectBestCandidate(candidates, preferences)
+        if (best) {
+          bestCandidates.set(standardModel, best)
+        }
+      }
+    }
+
+    // Step 3: Group by channel and build model_mapping JSON for each channel
+    const result: Record<number, string> = {}
+
+    for (const [standardModel, candidate] of bestCandidates.entries()) {
       if (!result[candidate.channelId]) {
-        result[candidate.channelId] = JSON.stringify({})
+        result[candidate.channelId] = "{}"
       }
 
       const mapping = JSON.parse(result[candidate.channelId]) as Record<
         string,
         string
       >
-      mapping[standardModel] = candidate.model
+      mapping[standardModel] = candidate.actualModel
       result[candidate.channelId] = JSON.stringify(mapping)
     }
 
@@ -179,59 +199,125 @@ export class ModelRedirectService {
   }
 
   /**
-   * Gather candidate channels for a standard model
+   * Find best matching model from actual models for a standard model
+   * Based on gpt-api-sync's similarity matching logic
    */
-  private static gatherCandidates(
+  private static findBestMatch(
     standardModel: string,
-    channels: NewApiChannel[]
-  ): ChannelCandidate[] {
-    const candidates: ChannelCandidate[] = []
+    actualModels: string[]
+  ): string | null {
+    if (actualModels.length === 0) {
+      return null
+    }
 
-    for (const channel of channels) {
-      // Skip disabled channels
-      if (
-        channel.status === CHANNEL_STATUS.ManuallyDisabled ||
-        channel.status === CHANNEL_STATUS.AutoDisabled
-      ) {
-        continue
+    // Filter out potential downgrades (e.g., prevent gpt-4o -> gpt-4o-mini)
+    const eligibleModels = actualModels.filter((model) => {
+      const isPotentialDowngrade =
+        model.startsWith(standardModel) &&
+        model.length > standardModel.length &&
+        (model.endsWith("-mini") ||
+          model.endsWith("-nano") ||
+          model.endsWith("-lite"))
+      return !isPotentialDowngrade
+    })
+
+    if (eligibleModels.length === 0) {
+      return null
+    }
+
+    // For short model names (length <= 3), use stricter matching
+    if (standardModel.length <= 3) {
+      // 1. Exact match
+      for (const model of eligibleModels) {
+        if (model === standardModel) {
+          return model
+        }
       }
 
-      const models = channel.models ? channel.models.split(",").map((m) => m.trim()) : []
-      const matchingModels = filterMatchingModels(standardModel, models)
+      // 2. Prefix match (shortest)
+      let bestPrefix: string | null = null
+      let shortestLength = Infinity
+      for (const model of eligibleModels) {
+        if (
+          model.startsWith(standardModel + "-") ||
+          model.startsWith(standardModel + "_")
+        ) {
+          if (model.length < shortestLength) {
+            shortestLength = model.length
+            bestPrefix = model
+          }
+        }
+      }
+      if (bestPrefix) return bestPrefix
 
-      if (matchingModels.length === 0) {
-        continue
+      // 3. Word boundary match
+      let bestWordBoundary: string | null = null
+      shortestLength = Infinity
+      for (const model of eligibleModels) {
+        if (this.isWordBoundaryMatch(standardModel, model)) {
+          if (model.length < shortestLength) {
+            shortestLength = model.length
+            bestWordBoundary = model
+          }
+        }
+      }
+      if (bestWordBoundary) return bestWordBoundary
+    } else {
+      // For longer model names, use contains matching first
+      let bestContains: string | null = null
+      let shortestLength = Infinity
+      for (const model of eligibleModels) {
+        if (model.includes(standardModel)) {
+          if (model.length < shortestLength) {
+            shortestLength = model.length
+            bestContains = model
+          }
+        }
+      }
+      if (bestContains) return bestContains
+    }
+
+    // Fallback: Levenshtein distance
+    let bestMatch: string | null = null
+    let minDistance = Infinity
+
+    for (const model of eligibleModels) {
+      // Validate short target/source matches
+      if (model.length <= 3 && standardModel.length > model.length * 2) {
+        if (!this.isValidShortTargetMatch(standardModel, model)) {
+          continue
+        }
+      }
+      if (standardModel.length <= 3 && model.length > standardModel.length * 3) {
+        if (!this.isValidShortSourceMatch(standardModel, model)) {
+          continue
+        }
       }
 
-      for (const model of matchingModels) {
-        const dateToken = parseDateToken(model)
-
-        candidates.push({
-          channelId: channel.id,
-          channelName: channel.name,
-          model,
-          priority: channel.priority,
-          weight: channel.weight,
-          usedQuota: channel.used_quota || 0,
-          dateToken
-        })
+      const distance = this.calculateLevenshteinDistance(standardModel, model)
+      if (distance < minDistance) {
+        minDistance = distance
+        bestMatch = model
       }
     }
 
-    return candidates
+    // If distance is too large, reject the match
+    if (bestMatch && minDistance > standardModel.length / 2) {
+      return null
+    }
+
+    return bestMatch
   }
 
   /**
    * Select best candidate using weighted scoring
-   * Priority: priority > weight > used_quota (inverse)
    */
   private static selectBestCandidate(
-    candidates: ChannelCandidate[],
+    candidates: ModelCandidate[],
     preferences?: ModelRedirectPreferences
-  ): ChannelCandidate | null {
-    if (candidates.length === 0) {
-      return null
-    }
+  ): ModelCandidate | null {
+    if (candidates.length === 0) return null
+    if (candidates.length === 1) return candidates[0]
 
     const epsilonP = preferences?.scoring.epsilonP ?? 1
     const usedQuotaScale = preferences?.scoring.usedQuota.scale ?? 0.25
@@ -239,49 +325,189 @@ export class ModelRedirectService {
 
     const totalUsedQuota = candidates.reduce((sum, c) => sum + c.usedQuota, 0)
 
-    const ranked: RankedCandidate[] = candidates.map((candidate) => {
-      const weightLevel = this.toWeightLevel(candidate.weight)
-      const ratio = totalUsedQuota > 0 ? candidate.usedQuota / totalUsedQuota : 0
-      const usedQuotaAdj =
-        totalUsedQuota > 0 ? Math.min(usedQuotaCap, ratio / Math.max(usedQuotaScale, 1e-6)) : 0
-
-      return {
-        ...candidate,
-        weightLevel,
-        usedQuotaRatio: ratio,
-        usedQuotaAdj
-      }
-    })
+    const ranked = candidates.map((c) => ({
+      ...c,
+      weightLevel: this.toWeightLevel(c.weight),
+      usedQuotaRatio: totalUsedQuota > 0 ? c.usedQuota / totalUsedQuota : 0,
+      usedQuotaAdj:
+        totalUsedQuota > 0
+          ? Math.min(
+              usedQuotaCap,
+              c.usedQuota / totalUsedQuota / Math.max(usedQuotaScale, 1e-6)
+            )
+          : 0
+    }))
 
     ranked.sort((a, b) => {
+      // L1: Priority (with epsilon threshold)
       const priorityDiff = b.priority - a.priority
       if (Math.abs(priorityDiff) > epsilonP) {
         return priorityDiff
       }
 
+      // L2: Weight level
       const weightDiff = b.weightLevel - a.weightLevel
       if (weightDiff !== 0) {
         return weightDiff
       }
 
-      const usedQuotaDiff = a.usedQuotaAdj - b.usedQuotaAdj
-      if (Math.abs(usedQuotaDiff) > 0.0001) {
-        return usedQuotaDiff
+      // L3: Used quota (lower is better)
+      const quotaDiff = a.usedQuotaAdj - b.usedQuotaAdj
+      if (Math.abs(quotaDiff) > 0.0001) {
+        return quotaDiff
       }
 
-      const dateCmp = compareDateTokens(b.dateToken, a.dateToken)
-      if (dateCmp !== 0) {
-        return dateCmp
-      }
-
-      return a.model.localeCompare(b.model)
+      // Tie-breaker: lexicographic by actual model name
+      return a.actualModel.localeCompare(b.actualModel)
     })
 
     return ranked[0]
   }
 
   private static toWeightLevel(weight: number): number {
-    const level = Math.ceil(weight / 2)
-    return Math.max(1, Math.min(5, level))
+    return Math.max(1, Math.min(5, Math.ceil(weight / 2)))
+  }
+
+  private static isWordBoundaryMatch(source: string, target: string): boolean {
+    const lowerSource = source.toLowerCase()
+    const lowerTarget = target.toLowerCase()
+
+    let index = lowerTarget.indexOf(lowerSource)
+    while (index !== -1) {
+      const validStart =
+        index === 0 || !this.isAlphaNum(lowerTarget.charAt(index - 1))
+      const validEnd =
+        index + lowerSource.length >= lowerTarget.length ||
+        !this.isAlphaNum(lowerTarget.charAt(index + lowerSource.length))
+
+      if (validStart && validEnd) return true
+      index = lowerTarget.indexOf(lowerSource, index + 1)
+    }
+    return false
+  }
+
+  private static isAlphaNum(char: string): boolean {
+    return /[a-z0-9]/i.test(char)
+  }
+
+  private static isValidShortTargetMatch(source: string, target: string): boolean {
+    const lowerSource = source.toLowerCase()
+    const lowerTarget = target.toLowerCase()
+
+    if (this.isWordBoundaryMatch(target, source)) return true
+    if (
+      lowerSource.startsWith(lowerTarget + "-") ||
+      lowerSource.startsWith(lowerTarget + "_")
+    ) {
+      return true
+    }
+    if (this.isVersionRelatedMatch(lowerSource, lowerTarget)) return true
+
+    return false
+  }
+
+  private static isValidShortSourceMatch(source: string, target: string): boolean {
+    const lowerSource = source.toLowerCase()
+    const lowerTarget = target.toLowerCase()
+
+    if (this.isWordBoundaryMatch(source, target)) return true
+    if (
+      lowerTarget.startsWith(lowerSource + "-") ||
+      lowerTarget.startsWith(lowerSource + "_")
+    ) {
+      return true
+    }
+    if (this.isVersionRelatedMatch(target, source)) return true
+    if (this.isReasonableAbbreviation(source, target)) return true
+
+    return false
+  }
+
+  private static isVersionRelatedMatch(source: string, target: string): boolean {
+    const sourceParts = source.split(/[-_.]/)
+    const abbr: string[] = []
+
+    for (const part of sourceParts) {
+      if (part.length > 0) {
+        const firstChar = part.charAt(0)
+        if (this.isAlphaNum(firstChar)) {
+          abbr.push(firstChar)
+        }
+        for (const char of part) {
+          if (/\d/.test(char)) {
+            abbr.push(char)
+          }
+        }
+      }
+    }
+
+    const generated = abbr.join("").toLowerCase()
+    return (
+      generated === target ||
+      generated.includes(target) ||
+      target.includes(generated)
+    )
+  }
+
+  private static isReasonableAbbreviation(source: string, target: string): boolean {
+    const targetParts = target.split(/[-_.]/)
+    const abbr: string[] = []
+
+    for (const part of targetParts) {
+      if (part.length > 0 && this.isAlphaNum(part.charAt(0))) {
+        abbr.push(part.charAt(0))
+      }
+    }
+
+    const generated = abbr.join("").toLowerCase()
+    const lowerSource = source.toLowerCase()
+    return generated.includes(lowerSource) || lowerSource.includes(generated)
+  }
+
+  private static calculateLevenshteinDistance(s1: string, s2: string): number {
+    const lower1 = s1.toLowerCase()
+    const lower2 = s2.toLowerCase()
+
+    const shorter = lower1
+    const longer = lower2
+
+    if (longer.length < shorter.length) {
+      return this.rawLevenshteinDistance(shorter, longer)
+    }
+
+    let minDistance = Infinity
+    for (let i = 0; i <= longer.length - shorter.length; i++) {
+      const sub = longer.substring(i, i + shorter.length)
+      const distance = this.rawLevenshteinDistance(shorter, sub)
+      if (distance < minDistance) {
+        minDistance = distance
+      }
+      if (minDistance === 0) break
+    }
+
+    return minDistance
+  }
+
+  private static rawLevenshteinDistance(s1: string, s2: string): number {
+    const costs = new Array(s2.length + 1)
+    for (let i = 0; i <= s1.length; i++) {
+      let lastValue = i
+      for (let j = 0; j <= s2.length; j++) {
+        if (i === 0) {
+          costs[j] = j
+        } else if (j > 0) {
+          let newValue = costs[j - 1]
+          if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1
+          }
+          costs[j - 1] = lastValue
+          lastValue = newValue
+        }
+      }
+      if (i > 0) {
+        costs[s2.length] = lastValue
+      }
+    }
+    return costs[s2.length]
   }
 }
