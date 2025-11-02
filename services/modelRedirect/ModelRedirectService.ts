@@ -8,8 +8,6 @@ import {
   CHANNEL_STATUS,
   type ChannelCandidate,
   type GenerateMappingOptions,
-  type MappingMetadata,
-  type ModelMapping,
   type ModelMappingEntry,
   type ModelRedirectPreferences,
   type NewApiChannel
@@ -249,17 +247,18 @@ export class ModelRedirectService {
   }
 
   /**
-   * Generate model mapping
+   * Generate model mapping grouped by channel
+   * Returns a map of channelId -> array of model mappings for that channel
    */
   async generateModelMapping(
     options: GenerateMappingOptions
-  ): Promise<ModelMapping> {
+  ): Promise<Record<number, ModelMappingEntry[]>> {
     console.log("[ModelRedirect] Generating mapping with trigger:", options.trigger)
 
     const channels = await this.getChannelsData()
     console.log(`[ModelRedirect] Found ${channels.length} channels`)
 
-    const mapping: ModelMapping = {}
+    const mapping: Record<number, ModelMappingEntry[]> = {}
 
     for (const standardModel of this.preferences.standardModels) {
       const candidates = await this.gatherCandidates(standardModel, channels)
@@ -275,30 +274,25 @@ export class ModelRedirectService {
       const winner = ranked[0]
 
       const entry: ModelMappingEntry = {
+        standardModel,
         targetModel: winner.model,
-        channelId: winner.channelId.toString(),
-        rankFactors: {
-          priority: winner.priority,
-          weightLevel: winner.weightLevel,
-          usedQuotaRatio: winner.usedQuotaRatio,
-          usedQuotaAdj: winner.usedQuotaAdj
-        },
+        channelId: winner.channelId,
+        priority: winner.priority,
+        weightLevel: winner.weightLevel,
+        usedQuotaRatio: winner.usedQuotaRatio,
+        usedQuotaAdj: winner.usedQuotaAdj,
         reason: this.buildReason(winner, 1),
         decidedAt: new Date().toISOString()
       }
 
-      mapping[standardModel] = entry
+      if (!mapping[winner.channelId]) {
+        mapping[winner.channelId] = []
+      }
+      mapping[winner.channelId].push(entry)
     }
-
-    // Add metadata
-    const meta: MappingMetadata = {
-      updatedAt: new Date().toISOString(),
-      trigger: options.trigger
-    }
-    mapping._meta = meta
 
     console.log(
-      `[ModelRedirect] Generated mapping for ${Object.keys(mapping).length - 1} models`
+      `[ModelRedirect] Generated mapping for ${Object.keys(mapping).length} channels`
     )
 
     return mapping

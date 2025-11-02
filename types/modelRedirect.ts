@@ -43,40 +43,18 @@ export interface ModelRedirectPreferences {
 }
 
 /**
- * Rank factors for a candidate channel
+ * Model mapping entry per channel
  */
-export interface RankFactors {
+export interface ModelMappingEntry {
+  standardModel: string
+  targetModel: string
+  channelId: number
   priority: number
   weightLevel: 1 | 2 | 3 | 4 | 5
   usedQuotaRatio: number
   usedQuotaAdj: number
-}
-
-/**
- * Model mapping entry
- */
-export interface ModelMappingEntry {
-  targetModel: string
-  channelId: string
-  rankFactors: RankFactors
   reason: string
   decidedAt: string
-}
-
-/**
- * Mapping metadata
- */
-export interface MappingMetadata {
-  updatedAt: string
-  trigger: "manual" | "sync" | "mock"
-}
-
-/**
- * Model mapping storage structure
- */
-export interface ModelMapping {
-  [standardModel: string]: ModelMappingEntry
-  _meta?: MappingMetadata
 }
 
 /**

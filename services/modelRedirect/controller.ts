@@ -9,7 +9,7 @@ import {
   ALL_PRESET_STANDARD_MODELS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
   type MappingGenerationTrigger,
-  type ModelMapping,
+  type ModelMappingEntry,
   type ModelRedirectPreferences
 } from "~/types"
 import { getErrorMessage } from "~/utils/error"
@@ -39,7 +39,7 @@ class ModelRedirectController {
 
   async regenerate(
     trigger: MappingGenerationTrigger
-  ): Promise<{ success: boolean; data?: ModelMapping; error?: string }> {
+  ): Promise<{ success: boolean; data?: Record<number, ModelMappingEntry[]>; error?: string }> {
     if (this.isGenerating) {
       this.queueTrigger(trigger)
       return {
@@ -71,9 +71,28 @@ class ModelRedirectController {
       const service = createModelRedirectService(effectivePrefs)
       const mapping = await service.generateModelMapping({ trigger })
 
+      // Apply mappings to channels
+      const applyResult = await this.applyMappingsToChannels(mapping)
+
+      if (!applyResult.success) {
+        const errorMessage = `Failed to update some channels: ${applyResult.errors.join("; ")}`
+        await this.emitEvent("MODEL_REDIRECT_MAPPING_FAILED", {
+          trigger,
+          error: errorMessage,
+          updatedChannels: applyResult.updatedChannels
+        })
+
+        return {
+          success: false,
+          error: errorMessage,
+          data: mapping
+        }
+      }
+
       await this.emitEvent("MODEL_REDIRECT_MAPPING_UPDATED", {
         trigger,
-        mapping
+        mapping,
+        updatedChannels: applyResult.updatedChannels
       })
 
       return {
@@ -134,9 +153,53 @@ class ModelRedirectController {
     }, AUTO_REGENERATE_DELAY_MS)
   }
 
-  async getMapping(): Promise<ModelMapping | null> {
-    // Mapping is applied directly to New API, no local snapshot
-    return null
+  /**
+   * Apply model mappings to channels
+   * Returns the mapping result for verification
+   */
+  async applyMappingsToChannels(
+    channelMappings: Record<number, ModelMappingEntry[]>
+  ): Promise<{ success: boolean; updatedChannels: number[]; errors: string[] }> {
+    const updatedChannels: number[] = []
+    const errors: string[] = []
+
+    for (const [channelIdStr, mappings] of Object.entries(channelMappings)) {
+      const channelId = Number(channelIdStr)
+      try {
+        // Convert mappings to New API model_mapping format
+        const modelMappingObj: Record<string, string> = {}
+        for (const entry of mappings) {
+          modelMappingObj[entry.standardModel] = entry.targetModel
+        }
+        const modelMappingJson = JSON.stringify(modelMappingObj)
+
+        // Update channel via New API service
+        const { getNewApiConfig, updateChannel } = await import("../newApiService")
+        const config = await getNewApiConfig()
+        if (!config) {
+          errors.push(`Channel ${channelId}: New API config not set`)
+          continue
+        }
+
+        await updateChannel(config.baseUrl, config.token, config.userId, {
+          id: channelId,
+          model_mapping: modelMappingJson
+        })
+
+        updatedChannels.push(channelId)
+        console.log(`[ModelRedirect] Updated channel ${channelId} with ${mappings.length} mappings`)
+      } catch (error) {
+        const errorMsg = getErrorMessage(error)
+        errors.push(`Channel ${channelId}: ${errorMsg}`)
+        console.error(`[ModelRedirect] Failed to update channel ${channelId}:`, error)
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      updatedChannels,
+      errors
+    }
   }
 
   async getPreferences(): Promise<ModelRedirectPreferences> {
