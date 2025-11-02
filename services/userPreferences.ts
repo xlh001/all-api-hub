@@ -1,3 +1,5 @@
+import merge from "lodash-es/merge"
+
 import { Storage } from "@plasmohq/storage"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
@@ -79,61 +81,6 @@ const STORAGE_KEYS = {
   USER_PREFERENCES: "user_preferences"
 } as const
 
-function cloneModelRedirectPreferences(
-  config: ModelRedirectPreferences
-): ModelRedirectPreferences {
-  return {
-    ...config,
-    standardModels: [...config.standardModels],
-    scoring: {
-      ...config.scoring,
-      usedQuota: { ...config.scoring.usedQuota }
-    },
-    dev: { ...config.dev }
-  }
-}
-
-function mergeModelRedirectPreferences(
-  base: ModelRedirectPreferences,
-  updates?: Partial<ModelRedirectPreferences>
-): ModelRedirectPreferences {
-  if (!updates) {
-    return cloneModelRedirectPreferences(base)
-  }
-
-  const mergedScoring = updates.scoring
-    ? {
-        ...base.scoring,
-        ...updates.scoring,
-        usedQuota: updates.scoring.usedQuota
-          ? {
-              ...base.scoring.usedQuota,
-              ...updates.scoring.usedQuota
-            }
-          : { ...base.scoring.usedQuota }
-      }
-    : {
-        ...base.scoring,
-        usedQuota: { ...base.scoring.usedQuota }
-      }
-
-  const mergedDev = updates.dev
-    ? { ...base.dev, ...updates.dev }
-    : { ...base.dev }
-
-  const standardModels = updates.standardModels
-    ? [...updates.standardModels]
-    : [...base.standardModels]
-
-  return {
-    ...base,
-    ...updates,
-    standardModels,
-    scoring: mergedScoring,
-    dev: mergedDev
-  }
-}
-
 // 默认配置
 export const DEFAULT_PREFERENCES: UserPreferences = {
   activeTab: DATA_TYPE_CONSUMPTION,
@@ -170,9 +117,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
     windowStart: "09:00",
     windowEnd: "18:00"
   },
-  modelRedirect: cloneModelRedirectPreferences(
-    DEFAULT_MODEL_REDIRECT_PREFERENCES
-  ),
+  modelRedirect: DEFAULT_MODEL_REDIRECT_PREFERENCES,
   sortingPriorityConfig: undefined,
   themeMode: "system",
   language: undefined, // Default to undefined to trigger browser detection
@@ -219,43 +164,22 @@ class UserPreferencesService {
   /**
    * 保存用户偏好设置
    */
+
   async savePreferences(
     preferences: Partial<UserPreferences>
   ): Promise<boolean> {
     try {
       const currentPreferences = await this.getPreferences()
-      const {
-        newApiModelSync: newSyncConfig,
-        autoCheckin: autoCheckinConfig,
-        modelRedirect: modelRedirectConfig,
-        ...rest
-      } = preferences
 
-      const updatedPreferences: UserPreferences = {
-        ...currentPreferences,
-        ...rest,
-        newApiModelSync: newSyncConfig
-          ? {
-              ...(currentPreferences.newApiModelSync ??
-                DEFAULT_PREFERENCES.newApiModelSync!),
-              ...newSyncConfig
-            }
-          : currentPreferences.newApiModelSync,
-        autoCheckin: autoCheckinConfig
-          ? {
-              ...(currentPreferences.autoCheckin ??
-                DEFAULT_PREFERENCES.autoCheckin!),
-              ...autoCheckinConfig
-            }
-          : currentPreferences.autoCheckin,
-        modelRedirect: mergeModelRedirectPreferences(
-          currentPreferences.modelRedirect ??
-            DEFAULT_PREFERENCES.modelRedirect!,
-          modelRedirectConfig
-        ),
-        lastUpdated: Date.now(),
-        preferencesVersion: CURRENT_PREFERENCES_VERSION
-      }
+      const updatedPreferences: UserPreferences = merge(
+        {},
+        currentPreferences,
+        preferences,
+        {
+          lastUpdated: Date.now(),
+          preferencesVersion: CURRENT_PREFERENCES_VERSION
+        }
+      )
 
       await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, updatedPreferences)
       console.log("[UserPreferences] 偏好设置保存成功:", updatedPreferences)

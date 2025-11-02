@@ -1,8 +1,8 @@
 import { useState } from "react"
-import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
-import { Switch } from "~/components/Switch"
+import { Switch } from "~/components/ui/Switch"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 
@@ -110,7 +110,8 @@ export default function ModelRedirectSettings() {
             {modelRedirect?.dev?.useMockData && (
               <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
                 <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                  {t("dev.useMockData")}: <strong>{t("dev.useMockDataDesc")}</strong>
+                  {t("dev.useMockData")}:{" "}
+                  <strong>{t("dev.useMockDataDesc")}</strong>
                 </p>
               </div>
             )}
