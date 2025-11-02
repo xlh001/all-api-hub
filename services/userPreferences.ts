@@ -7,6 +7,10 @@ import {
 } from "~/services/configMigration/preferencesMigration"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
+import {
+  DEFAULT_MODEL_REDIRECT_PREFERENCES,
+  type ModelRedirectPreferences
+} from "~/types/modelRedirect"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
@@ -63,6 +67,9 @@ export interface UserPreferences {
   // Auto Check-in 配置
   autoCheckin?: AutoCheckinPreferences
 
+  // Model Redirect 配置
+  modelRedirect?: ModelRedirectPreferences
+
   // Configuration version for migration tracking
   preferencesVersion?: number
 }
@@ -71,6 +78,61 @@ export interface UserPreferences {
 const STORAGE_KEYS = {
   USER_PREFERENCES: "user_preferences"
 } as const
+
+function cloneModelRedirectPreferences(
+  config: ModelRedirectPreferences
+): ModelRedirectPreferences {
+  return {
+    ...config,
+    standardModels: [...config.standardModels],
+    scoring: {
+      ...config.scoring,
+      usedQuota: { ...config.scoring.usedQuota }
+    },
+    dev: { ...config.dev }
+  }
+}
+
+function mergeModelRedirectPreferences(
+  base: ModelRedirectPreferences,
+  updates?: Partial<ModelRedirectPreferences>
+): ModelRedirectPreferences {
+  if (!updates) {
+    return cloneModelRedirectPreferences(base)
+  }
+
+  const mergedScoring = updates.scoring
+    ? {
+        ...base.scoring,
+        ...updates.scoring,
+        usedQuota: updates.scoring.usedQuota
+          ? {
+              ...base.scoring.usedQuota,
+              ...updates.scoring.usedQuota
+            }
+          : { ...base.scoring.usedQuota }
+      }
+    : {
+        ...base.scoring,
+        usedQuota: { ...base.scoring.usedQuota }
+      }
+
+  const mergedDev = updates.dev
+    ? { ...base.dev, ...updates.dev }
+    : { ...base.dev }
+
+  const standardModels = updates.standardModels
+    ? [...updates.standardModels]
+    : [...base.standardModels]
+
+  return {
+    ...base,
+    ...updates,
+    standardModels,
+    scoring: mergedScoring,
+    dev: mergedDev
+  }
+}
 
 // 默认配置
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -108,6 +170,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
     windowStart: "09:00",
     windowEnd: "18:00"
   },
+  modelRedirect: cloneModelRedirectPreferences(
+    DEFAULT_MODEL_REDIRECT_PREFERENCES
+  ),
   sortingPriorityConfig: undefined,
   themeMode: "system",
   language: undefined, // Default to undefined to trigger browser detection
@@ -162,6 +227,7 @@ class UserPreferencesService {
       const {
         newApiModelSync: newSyncConfig,
         autoCheckin: autoCheckinConfig,
+        modelRedirect: modelRedirectConfig,
         ...rest
       } = preferences
 
@@ -182,6 +248,11 @@ class UserPreferencesService {
               ...autoCheckinConfig
             }
           : currentPreferences.autoCheckin,
+        modelRedirect: mergeModelRedirectPreferences(
+          currentPreferences.modelRedirect ??
+            DEFAULT_PREFERENCES.modelRedirect!,
+          modelRedirectConfig
+        ),
         lastUpdated: Date.now(),
         preferencesVersion: CURRENT_PREFERENCES_VERSION
       }

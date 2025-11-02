@@ -14,6 +14,10 @@ import {
 import { migrateAccountsConfig } from "../services/configMigration/configMigration"
 import { getSiteType } from "../services/detectSiteType"
 import {
+  modelRedirectController,
+  modelRedirectStorage
+} from "../services/modelRedirect"
+import {
   handleNewApiModelSyncMessage,
   newApiModelSyncScheduler
 } from "../services/newApiModelSync"
@@ -138,6 +142,12 @@ async function main() {
     // 处理Auto Check-in相关消息
     if (request.action && request.action.startsWith("autoCheckin:")) {
       handleAutoCheckinMessage(request, sendResponse)
+      return true
+    }
+
+    // 处理Model Redirect相关消息
+    if (request.action && request.action.startsWith("modelRedirect:")) {
+      handleModelRedirectMessage(request, sendResponse)
       return true
     }
   })
@@ -377,4 +387,55 @@ function waitForTabComplete(tabId: number): Promise<void> {
 
     checkStatus()
   })
+}
+
+/**
+ * Handle Model Redirect messages
+ */
+async function handleModelRedirectMessage(
+  request: any,
+  sendResponse: (response: any) => void
+) {
+  try {
+    switch (request.action) {
+      case "modelRedirect:regenerate": {
+        const trigger = request.trigger || "manual"
+        const result = await modelRedirectController.regenerate(trigger)
+        sendResponse(result)
+        break
+      }
+
+      case "modelRedirect:getMapping": {
+        const mapping = await modelRedirectController.getMapping()
+        sendResponse({ success: true, data: mapping })
+        break
+      }
+
+      case "modelRedirect:getSuggestions": {
+        const suggestions = await modelRedirectController.getSuggestions()
+        sendResponse({ success: true, data: suggestions })
+        break
+      }
+
+      case "modelRedirect:getPreferences": {
+        const prefs = await modelRedirectStorage.getPreferences()
+        sendResponse({ success: true, data: prefs })
+        break
+      }
+
+      case "modelRedirect:updatePreferences": {
+        const success = await modelRedirectController.updatePreferences(
+          request.preferences
+        )
+        sendResponse({ success })
+        break
+      }
+
+      default:
+        sendResponse({ success: false, error: "Unknown action" })
+    }
+  } catch (error) {
+    console.error("[ModelRedirect] Message handling failed:", error)
+    sendResponse({ success: false, error: getErrorMessage(error) })
+  }
 }

@@ -206,6 +206,14 @@ class NewApiModelSyncScheduler {
         `[NewApiModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`
       )
 
+      // Notify model redirect to auto-regenerate if enabled
+      try {
+        const { modelRedirectController } = await import("../modelRedirect")
+        await modelRedirectController.autoRegenerateIfEnabled("sync")
+      } catch (error) {
+        console.warn("[NewApiModelSync] Failed to trigger model redirect auto-regeneration:", error)
+      }
+
       return result
     } finally {
       // Clear progress
