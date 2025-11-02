@@ -1,5 +1,3 @@
-import merge from "lodash-es/merge"
-
 import { Storage } from "@plasmohq/storage"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
@@ -15,6 +13,7 @@ import {
 } from "~/types/modelRedirect"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
+import { deepOverride } from "~/utils"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 用户偏好设置类型定义
@@ -165,14 +164,13 @@ class UserPreferencesService {
    * 保存用户偏好设置
    */
 
-  async savePreferences(
-    preferences: Partial<UserPreferences>
+  async savePreferences<T extends Record<string, any>>(
+    preferences: Partial<T>
   ): Promise<boolean> {
     try {
       const currentPreferences = await this.getPreferences()
 
-      const updatedPreferences: UserPreferences = merge(
-        {},
+      const updatedPreferences: UserPreferences = deepOverride(
         currentPreferences,
         preferences,
         {

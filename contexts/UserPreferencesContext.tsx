@@ -1,4 +1,3 @@
-import merge from "lodash-es/merge"
 import type { ReactNode } from "react"
 import {
   createContext,
@@ -12,6 +11,7 @@ import {
 import { DATA_TYPE_CONSUMPTION } from "~/constants"
 import { UI_CONSTANTS } from "~/constants/ui"
 import {
+  DEFAULT_PREFERENCES,
   userPreferences,
   type UserPreferences
 } from "~/services/userPreferences"
@@ -20,6 +20,7 @@ import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 import type { ModelRedirectPreferences } from "~/types/modelRedirect"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
+import { deepOverride } from "~/utils"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
@@ -256,7 +257,10 @@ export const UserPreferencesProvider = ({
       if (success) {
         setPreferences((prev) => {
           if (!prev) return null
-          const merged = merge({}, prev.autoCheckin ?? {}, updates)
+          const merged = deepOverride(
+            prev.autoCheckin ?? DEFAULT_PREFERENCES.autoCheckin,
+            updates
+          )
           return {
             ...prev,
             autoCheckin: merged
@@ -282,7 +286,10 @@ export const UserPreferencesProvider = ({
       if (success) {
         setPreferences((prev) => {
           if (!prev) return null
-          const merged = merge({}, prev.newApiModelSync ?? {}, updates)
+          const merged = deepOverride(
+            prev.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync,
+            updates
+          )
           return {
             ...prev,
             newApiModelSync: merged
@@ -306,11 +313,21 @@ export const UserPreferencesProvider = ({
         modelRedirect: updates
       })
       if (success) {
-        await loadPreferences()
+        setPreferences((prev) => {
+          if (!prev) return null
+          const merged = deepOverride(
+            prev.modelRedirect ?? DEFAULT_PREFERENCES.modelRedirect,
+            updates
+          )
+          return {
+            ...prev,
+            modelRedirect: merged
+          }
+        })
       }
       return success
     },
-    [loadPreferences]
+    []
   )
 
   const resetToDefaults = useCallback(async () => {
