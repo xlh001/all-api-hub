@@ -336,7 +336,7 @@ export function useAccountDialog({
       }
 
       // 使用 useChannelDialog hook 打开对话框
-      await openChannelDialog(displaySiteData, () => {
+      await openChannelDialog(displaySiteData, null, () => {
         if (onSuccess && targetAccountRef.current) {
           onSuccess(targetAccountRef.current)
         }

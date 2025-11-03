@@ -2,16 +2,16 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type.ts"
+import { useChannelDialogContext } from "~/features/ChannelManagement"
+import { ensureAccountApiToken } from "~/services/accountOperations.ts"
 import { accountStorage } from "~/services/accountStorage"
 import {
   findMatchingChannel,
   getNewApiConfig,
   prepareChannelFormData
 } from "~/services/newApiService"
-import type { DisplaySiteData, SiteAccount } from "~/types"
+import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import { getErrorMessage } from "~/utils/error"
-
-import { useChannelDialogContext } from "../context/ChannelDialogContext"
 
 /**
  * Hook to easily trigger channel creation dialog from anywhere
@@ -25,7 +25,7 @@ export function useChannelDialog() {
    */
   const openWithAccount = async (
     account: DisplaySiteData | SiteAccount,
-    accoutToken: AccountToken,
+    accoutToken: AccountToken | ApiToken | null,
     onSuccess?: (result: any) => void
   ) => {
     const toastId = toast.loading(
@@ -34,14 +34,21 @@ export function useChannelDialog() {
 
     try {
       // Get full account if needed
+      let siteAccount: SiteAccount
       let displaySiteData: DisplaySiteData
 
       if ("created_at" in account) {
+        siteAccount = account
         displaySiteData = accountStorage.convertToDisplayData(
           account
         ) as DisplaySiteData
       } else {
         displaySiteData = account
+        const fetchedAccount = await accountStorage.getAccountById(account.id)
+        if (!fetchedAccount) {
+          throw new Error(t("messages:toast.error.findAccountDetailsFailed"))
+        }
+        siteAccount = fetchedAccount
       }
 
       // Get New API config
@@ -51,11 +58,19 @@ export function useChannelDialog() {
         return
       }
 
+      let apiToken = accoutToken
+
+      if (!apiToken) {
+        // Ensure API token exists
+        apiToken = await ensureAccountApiToken(
+          siteAccount,
+          displaySiteData,
+          toastId
+        )
+      }
+
       // Prepare form defaults
-      const formData = await prepareChannelFormData(
-        displaySiteData,
-        accoutToken
-      )
+      const formData = await prepareChannelFormData(displaySiteData, apiToken)
 
       // Check for existing channel
       const existingChannel = await findMatchingChannel(
