@@ -75,7 +75,7 @@ export interface ChannelFormData {
  */
 export interface CreateChannelPayload {
   mode: ChannelMode
-  channel: UpdateChannelPayload
+  channel: Omit<UpdateChannelPayload, "id">
 }
 
 /**
