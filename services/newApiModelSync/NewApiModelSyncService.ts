@@ -1,7 +1,11 @@
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
 import { fetchApi } from "~/services/apiService/common/utils"
-import { NewApiChannel, NewApiChannelListData } from "~/types"
+import {
+  NewApiChannel,
+  NewApiChannelListData,
+  UpdateChannelPayload
+} from "~/types"
 import {
   BatchExecutionOptions,
   ExecutionItemResult,
@@ -143,8 +147,8 @@ export class NewApiModelSyncService {
   ): Promise<void> {
     try {
       // Prepare the update payload
-      const updatePayload: any = {
-        ...channel,
+      const updatePayload: UpdateChannelPayload = {
+        id: channel.id,
         models: models.join(",")
       }
 
@@ -181,8 +185,8 @@ export class NewApiModelSyncService {
     modelMapping: Record<string, string>
   ): Promise<void> {
     try {
-      const updatePayload: any = {
-        ...channel,
+      const updatePayload: UpdateChannelPayload = {
+        id: channel.id,
         model_mapping: JSON.stringify(modelMapping)
       }
 
