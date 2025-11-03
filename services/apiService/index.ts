@@ -91,7 +91,7 @@ export const {
   refreshAccountData,
   validateAccountConnection,
   fetchAccountTokens,
-  fetchAvailableModels,
+  fetchAccountAvailableModels,
   fetchUpstreamModels,
   fetchUpstreamModelsNameList,
   fetchUserGroups,

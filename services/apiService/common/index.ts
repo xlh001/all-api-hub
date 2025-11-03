@@ -539,7 +539,7 @@ export const fetchAccountTokens = async (
 /**
  * 获取可用模型列表
  */
-export const fetchAvailableModels = async ({
+export const fetchAccountAvailableModels = async ({
   baseUrl,
   userId,
   token: accessToken,

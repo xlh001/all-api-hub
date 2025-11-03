@@ -6,7 +6,7 @@ import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type.ts"
 import { ensureAccountApiToken } from "~/services/accountOperations.ts"
 import { accountStorage } from "~/services/accountStorage.ts"
 import {
-  fetchAvailableModels,
+  fetchAccountAvailableModels,
   fetchUpstreamModelsNameList
 } from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common/errors"
@@ -187,8 +187,9 @@ export async function getNewApiConfig(): Promise<{
 
 /**
  * 获取账号支持的模型列表
+ * @note 优先为API密钥的模型列表，回退到账号所有可用的模型列表
  */
-export async function fetchAccountAvailableModels(
+export async function fetchAvailableModels(
   account: DisplaySiteData,
   token: ApiToken
 ): Promise<string[]> {
@@ -212,7 +213,7 @@ export async function fetchAccountAvailableModels(
   }
 
   try {
-    const fallbackModels = await fetchAvailableModels(account)
+    const fallbackModels = await fetchAccountAvailableModels(account)
     if (fallbackModels && fallbackModels.length > 0) {
       candidateSources.push(fallbackModels)
     }
@@ -246,7 +247,7 @@ export async function prepareChannelFormData(
   token: ApiToken | AccountToken,
   overrides: Partial<ChannelFormData> = {}
 ): Promise<ChannelFormData> {
-  const availableModels = await fetchAccountAvailableModels(account, token)
+  const availableModels = await fetchAvailableModels(account, token)
 
   if (!availableModels.length) {
     throw new Error(t("messages:newapi.noAnyModels"))
