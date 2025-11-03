@@ -244,8 +244,7 @@ export function buildChannelName(
  */
 export async function prepareChannelFormData(
   account: DisplaySiteData,
-  token: ApiToken | AccountToken,
-  overrides: Partial<ChannelFormData> = {}
+  token: ApiToken | AccountToken
 ): Promise<ChannelFormData> {
   const availableModels = await fetchUpstreamModelsNameList({
     baseUrl: account.baseUrl,
@@ -261,19 +260,15 @@ export async function prepareChannelFormData(
     : [...DEFAULT_CHANNEL_FIELDS.groups]
 
   return {
-    name: overrides.name ?? buildChannelName(account, token),
-    type: overrides.type ?? DEFAULT_CHANNEL_FIELDS.type,
-    key: overrides.key ?? token.key,
-    base_url: overrides.base_url ?? account.baseUrl,
-    models: normalizeList(
-      overrides.models ? [...overrides.models] : availableModels
-    ),
-    groups: normalizeList(
-      overrides.groups ? [...overrides.groups] : resolvedGroups
-    ),
-    priority: overrides.priority ?? DEFAULT_CHANNEL_FIELDS.priority,
-    weight: overrides.weight ?? DEFAULT_CHANNEL_FIELDS.weight,
-    status: overrides.status ?? DEFAULT_CHANNEL_FIELDS.status
+    name: buildChannelName(account, token),
+    type: DEFAULT_CHANNEL_FIELDS.type,
+    key: token.key,
+    base_url: account.baseUrl,
+    models: normalizeList(availableModels),
+    groups: normalizeList(resolvedGroups),
+    priority: DEFAULT_CHANNEL_FIELDS.priority,
+    weight: DEFAULT_CHANNEL_FIELDS.weight,
+    status: DEFAULT_CHANNEL_FIELDS.status
   }
 }
 
