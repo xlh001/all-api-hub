@@ -247,7 +247,10 @@ export async function prepareChannelFormData(
   token: ApiToken | AccountToken,
   overrides: Partial<ChannelFormData> = {}
 ): Promise<ChannelFormData> {
-  const availableModels = await fetchAvailableModels(account, token)
+  const availableModels = await fetchUpstreamModelsNameList({
+    baseUrl: account.baseUrl,
+    apiKey: token.key
+  })
 
   if (!availableModels.length) {
     throw new Error(t("messages:newapi.noAnyModels"))
