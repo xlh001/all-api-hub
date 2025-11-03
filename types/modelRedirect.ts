@@ -50,8 +50,8 @@ export const DEFAULT_MODEL_REDIRECT_SCORING: ModelRedirectScoring = {
  * Preset standard models by vendor
  */
 export const PRESET_STANDARD_MODELS = {
-  OpenAI: ["gpt-4o", "gpt-4o-mini", "gpt-o4-mini", "gpt-o3", "gpt-5"],
-  Anthropic: ["claude-4.5-haiku", "claude-4.5-sonnet", "claude-4.5-opus"],
+  OpenAI: ["gpt-4o", "gpt-4o-mini", "gpt-o3", "gpt-5"],
+  Anthropic: ["claude-4.5-haiku", "claude-4.5-sonnet", "claude-4.1-opus"],
   Google: ["gemini-2.5-pro", "gemini-2.5-flash"],
   Mistral: ["mistral-small", "mistral-large", "mistral-medium"],
   DeepSeek: ["deepseek-chat", "deepseek-reasoner"]
