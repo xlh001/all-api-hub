@@ -1,7 +1,11 @@
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
 import { fetchApi } from "~/services/apiService/common/utils"
-import { NewApiChannel, NewApiChannelListData } from "~/types"
+import {
+  NewApiChannel,
+  NewApiChannelListData,
+  UpdateChannelPayload
+} from "~/types"
 import {
   BatchExecutionOptions,
   ExecutionItemResult,
@@ -135,16 +139,16 @@ export class NewApiModelSyncService {
 
   /**
    * Update channel models
-   * Strategy: Only update the models field, keep other fields unchanged
+   * Strategy: Update models field (model_mapping handled separately)
    */
   async updateChannelModels(
     channel: NewApiChannel,
     models: string[]
   ): Promise<void> {
     try {
-      // Prepare the update payload - merge with existing channel data
-      const updatePayload = {
-        ...channel,
+      // Prepare the update payload
+      const updatePayload: UpdateChannelPayload = {
+        id: channel.id,
         models: models.join(",")
       }
 
@@ -169,6 +173,47 @@ export class NewApiModelSyncService {
       }
     } catch (error: any) {
       console.error("[NewApiModelSync] Failed to update channel:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Update channel model_mapping
+   */
+  async updateChannelModelMapping(
+    channel: NewApiChannel,
+    modelMapping: Record<string, string>
+  ): Promise<void> {
+    try {
+      const updatePayload: UpdateChannelPayload = {
+        id: channel.id,
+        model_mapping: JSON.stringify(modelMapping)
+      }
+
+      await this.throttle()
+
+      const response = await fetchApi<void>(
+        {
+          baseUrl: this.baseUrl,
+          endpoint: "/api/channel/",
+          userId: this.userId,
+          token: this.token,
+          options: {
+            method: "PUT",
+            body: JSON.stringify(updatePayload)
+          }
+        },
+        false
+      )
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to update channel mapping")
+      }
+    } catch (error) {
+      console.error(
+        `[NewApiModelSync] Failed to update channel mapping for channel ${channel.id}:`,
+        error
+      )
       throw error
     }
   }

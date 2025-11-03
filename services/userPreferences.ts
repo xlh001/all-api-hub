@@ -7,8 +7,13 @@ import {
 } from "~/services/configMigration/preferencesMigration"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
+import {
+  DEFAULT_MODEL_REDIRECT_PREFERENCES,
+  type ModelRedirectPreferences
+} from "~/types/modelRedirect"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
+import { deepOverride } from "~/utils"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 用户偏好设置类型定义
@@ -63,6 +68,9 @@ export interface UserPreferences {
   // Auto Check-in 配置
   autoCheckin?: AutoCheckinPreferences
 
+  // Model Redirect 配置
+  modelRedirect?: ModelRedirectPreferences
+
   // Configuration version for migration tracking
   preferencesVersion?: number
 }
@@ -108,6 +116,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
     windowStart: "09:00",
     windowEnd: "18:00"
   },
+  modelRedirect: DEFAULT_MODEL_REDIRECT_PREFERENCES,
   sortingPriorityConfig: undefined,
   themeMode: "system",
   language: undefined, // Default to undefined to trigger browser detection
@@ -154,37 +163,21 @@ class UserPreferencesService {
   /**
    * 保存用户偏好设置
    */
-  async savePreferences(
-    preferences: Partial<UserPreferences>
+
+  async savePreferences<T extends Record<string, any>>(
+    preferences: Partial<T>
   ): Promise<boolean> {
     try {
       const currentPreferences = await this.getPreferences()
-      const {
-        newApiModelSync: newSyncConfig,
-        autoCheckin: autoCheckinConfig,
-        ...rest
-      } = preferences
 
-      const updatedPreferences: UserPreferences = {
-        ...currentPreferences,
-        ...rest,
-        newApiModelSync: newSyncConfig
-          ? {
-              ...(currentPreferences.newApiModelSync ??
-                DEFAULT_PREFERENCES.newApiModelSync!),
-              ...newSyncConfig
-            }
-          : currentPreferences.newApiModelSync,
-        autoCheckin: autoCheckinConfig
-          ? {
-              ...(currentPreferences.autoCheckin ??
-                DEFAULT_PREFERENCES.autoCheckin!),
-              ...autoCheckinConfig
-            }
-          : currentPreferences.autoCheckin,
-        lastUpdated: Date.now(),
-        preferencesVersion: CURRENT_PREFERENCES_VERSION
-      }
+      const updatedPreferences: UserPreferences = deepOverride(
+        currentPreferences,
+        preferences,
+        {
+          lastUpdated: Date.now(),
+          preferencesVersion: CURRENT_PREFERENCES_VERSION
+        }
+      )
 
       await this.storage.set(STORAGE_KEYS.USER_PREFERENCES, updatedPreferences)
       console.log("[UserPreferences] 偏好设置保存成功:", updatedPreferences)

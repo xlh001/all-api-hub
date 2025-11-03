@@ -1,3 +1,5 @@
+import { isArray, mergeWith } from "lodash"
+
 export function isNotEmptyArray<T>(arr: T[] | null | undefined): arr is T[] {
   return Array.isArray(arr) && arr.length > 0
 }
@@ -27,4 +29,21 @@ export function isArraysEqual<T>(arr1: T[], arr2: T[]) {
   }
 
   return true
+}
+
+/**
+ * 深度合并配置，但数组完全替换
+ */
+export function deepOverride<T extends Record<string, any>>(
+  target: T,
+  ...sources: Array<Partial<T> | null | undefined>
+): T {
+  return mergeWith({}, target, ...sources, (_objValue: any, srcValue: any) => {
+    // 数组：完全替换
+    if (isArray(srcValue)) {
+      return srcValue
+    }
+    // 对象：继续深度合并（默认行为）
+    // 基本类型：替换（默认行为）
+  })
 }

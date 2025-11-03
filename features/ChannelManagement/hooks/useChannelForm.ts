@@ -12,7 +12,11 @@ import {
   getNewApiConfig,
   updateChannel
 } from "~/services/newApiService"
-import type { ChannelFormData, NewApiChannel } from "~/types/newapi"
+import type {
+  ChannelFormData,
+  NewApiChannel,
+  UpdateChannelPayload
+} from "~/types/newapi"
 import { mergeUniqueOptions } from "~/utils/selectOptions"
 
 export interface UseChannelFormProps {
@@ -94,10 +98,7 @@ export function useChannelForm({
         key: channel.key,
         base_url: channel.base_url || "",
         models: channel.models ? channel.models.split(",") : [],
-        groups:
-          typeof channel.groups === "string"
-            ? channel.groups.split(",")
-            : channel.groups || DEFAULT_CHANNEL_FIELDS.groups,
+        groups: channel.group.split(",") ?? DEFAULT_CHANNEL_FIELDS.groups,
         priority: channel.priority ?? DEFAULT_CHANNEL_FIELDS.priority,
         weight: channel.weight ?? DEFAULT_CHANNEL_FIELDS.weight,
         status: channel.status ?? DEFAULT_CHANNEL_FIELDS.status
@@ -254,12 +255,14 @@ export function useChannelForm({
         if (!channelId) {
           throw new Error("Existing channel id is missing")
         }
-        const updatePayload: NewApiChannel = (() => {
+        const updatePayload: UpdateChannelPayload = (() => {
           return {
             id: channelId,
             ...formData,
             models: formData.models.join(","),
-            groups: formData.groups.join(",")
+            groups: formData.groups,
+            // 实际只有这个group参数生效
+            group: formData.groups.join(",")
           }
         })()
         response = await updateChannel(

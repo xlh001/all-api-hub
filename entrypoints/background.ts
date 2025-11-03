@@ -378,3 +378,4 @@ function waitForTabComplete(tabId: number): Promise<void> {
     checkStatus()
   })
 }
+
