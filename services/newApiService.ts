@@ -2,6 +2,7 @@ import { t } from "i18next"
 import toast from "react-hot-toast"
 
 import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
+import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type.ts"
 import { ensureAccountApiToken } from "~/services/accountOperations.ts"
 import { accountStorage } from "~/services/accountStorage.ts"
 import {
@@ -242,7 +243,7 @@ export function buildChannelName(
  */
 export async function prepareChannelFormData(
   account: DisplaySiteData,
-  token: ApiToken,
+  token: ApiToken | AccountToken,
   overrides: Partial<ChannelFormData> = {}
 ): Promise<ChannelFormData> {
   const availableModels = await fetchAccountAvailableModels(account, token)

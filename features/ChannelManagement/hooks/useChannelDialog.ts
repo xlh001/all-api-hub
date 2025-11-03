@@ -1,7 +1,7 @@
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { ensureAccountApiToken } from "~/services/accountOperations"
+import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type.ts"
 import { accountStorage } from "~/services/accountStorage"
 import {
   findMatchingChannel,
@@ -25,6 +25,7 @@ export function useChannelDialog() {
    */
   const openWithAccount = async (
     account: DisplaySiteData | SiteAccount,
+    accoutToken: AccountToken,
     onSuccess?: (result: any) => void
   ) => {
     const toastId = toast.loading(
@@ -33,21 +34,14 @@ export function useChannelDialog() {
 
     try {
       // Get full account if needed
-      let siteAccount: SiteAccount
       let displaySiteData: DisplaySiteData
 
       if ("created_at" in account) {
-        siteAccount = account
         displaySiteData = accountStorage.convertToDisplayData(
           account
         ) as DisplaySiteData
       } else {
         displaySiteData = account
-        const fetchedAccount = await accountStorage.getAccountById(account.id)
-        if (!fetchedAccount) {
-          throw new Error(t("messages:toast.error.findAccountDetailsFailed"))
-        }
-        siteAccount = fetchedAccount
       }
 
       // Get New API config
@@ -57,15 +51,11 @@ export function useChannelDialog() {
         return
       }
 
-      // Ensure API token exists
-      const apiToken = await ensureAccountApiToken(
-        siteAccount,
-        displaySiteData,
-        toastId
-      )
-
       // Prepare form defaults
-      const formData = await prepareChannelFormData(displaySiteData, apiToken)
+      const formData = await prepareChannelFormData(
+        displaySiteData,
+        accoutToken
+      )
 
       // Check for existing channel
       const existingChannel = await findMatchingChannel(
