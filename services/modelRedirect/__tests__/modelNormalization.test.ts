@@ -1,14 +1,23 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { modelMetadataService } from "~/services/modelMetadata"
 import { normalizeModelName, stripVendorPrefix } from "~/utils/modelName"
+
+import { removeDateSuffix, renameModel } from "../modelNormalization"
 
 const metadataEntries = new Map<
   string,
   { standardName: string; vendorName: string }
 >([
   ["gpt4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
-  ["claude35sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
-  ["deepseekv31", { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }],
+  [
+    "claude35sonnet",
+    { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }
+  ],
+  [
+    "deepseekv31",
+    { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }
+  ],
   ["deepseekr1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
   ["gemini15flash", { standardName: "Gemini 1.5 Flash", vendorName: "Google" }]
 ])
@@ -39,12 +48,6 @@ vi.mock("~/services/modelMetadata", () => {
     modelMetadataService
   }
 })
-
-import { modelMetadataService } from "~/services/modelMetadata"
-import {
-  modelNormalizationInternals,
-  renameModel
-} from "../modelNormalization"
 
 describe("modelNormalization", () => {
   beforeEach(async () => {
@@ -121,14 +124,12 @@ describe("modelNormalization", () => {
 
     describe("Stage 5: Remove Date Suffixes", () => {
       it("should remove 8-digit date suffix", () => {
-        const result = modelNormalizationInternals.removeDateSuffix(
-          "model-20250101"
-        )
+        const result = removeDateSuffix("model-20250101")
         expect(result).toBe("model")
       })
 
       it("should not remove non-date numbers", () => {
-        const result = modelNormalizationInternals.removeDateSuffix("gpt-4o")
+        const result = removeDateSuffix("gpt-4o")
         expect(result).toBe("gpt-4o")
       })
     })
@@ -190,9 +191,9 @@ describe("modelNormalization", () => {
 
     describe("Complex scenarios", () => {
       it("should handle full pipeline: special prefix + slash + colon + date", () => {
-        expect(
-          renameModel("BigModel/openai/gpt-4o:free-20250101", false)
-        ).toBe("GPT-4o")
+        expect(renameModel("BigModel/openai/gpt-4o:free-20250101", false)).toBe(
+          "GPT-4o"
+        )
       })
 
       it("should handle channel model normalization", () => {
