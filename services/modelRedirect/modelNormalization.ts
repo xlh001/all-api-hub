@@ -1,51 +1,13 @@
 import { modelMetadataService } from "~/services/modelMetadata"
 
-const SPECIAL_PREFIXES = [
-  "BigModel/",
-  "BigModel_",
-  "Pro/",
-  "Pro_",
-  "VIP/",
-  "VIP_",
-  "Internal/",
-  "Internal_",
-  "Sandbox/",
-  "Sandbox_"
-]
-
-const OWNER_MODEL_REGEX =
-  /^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}\/[A-Za-z0-9][A-Za-z0-9_.-:]{0,62}$/
-
 const DATE_SUFFIX_REGEX = /-\d{8}$/
 
-const isStandardStandaloneName = (model: string): boolean => {
+export const isStandardStandaloneName = (model: string): boolean => {
   if (!model) return false
   return !/[/:]/.test(model)
 }
 
-const hasSpecialPrefix = (model: string): boolean => {
-  const lower = model.toLowerCase()
-  return SPECIAL_PREFIXES.some((prefix) =>
-    lower.startsWith(prefix.toLowerCase())
-  )
-}
-
-const removeSpecialPrefixes = (model: string): string => {
-  let cleaned = model
-  let updated = true
-  while (updated) {
-    updated = false
-    for (const prefix of SPECIAL_PREFIXES) {
-      if (cleaned.toLowerCase().startsWith(prefix.toLowerCase())) {
-        cleaned = cleaned.slice(prefix.length)
-        updated = true
-      }
-    }
-  }
-  return cleaned
-}
-
-const removeDateSuffix = (model: string): string => {
+export const removeDateSuffix = (model: string): string => {
   return model.replace(DATE_SUFFIX_REGEX, "")
 }
 
@@ -62,41 +24,53 @@ export const renameModel = (
     return trimmed
   }
 
-  if (
-    includeVendor &&
-    OWNER_MODEL_REGEX.test(trimmed) &&
-    !hasSpecialPrefix(trimmed)
-  ) {
-    const parts = trimmed.split("/")
-    if (
-      parts.length === 2 &&
-      parts[0] !== "BigModel" &&
-      !trimmed.startsWith("Pro/")
-    ) {
-      return trimmed
+  if (includeVendor) {
+    const slashCount = (trimmed.match(/\//g) || []).length
+
+    if (slashCount === 1 && !trimmed.includes(":")) {
+      const parts = trimmed.split("/")
+
+      if (
+        parts.length === 2 &&
+        parts[0].trim() !== "" &&
+        parts[1].trim() !== "" &&
+        parts[0] !== "BigModel" &&
+        !trimmed.startsWith("Pro/")
+      ) {
+        return trimmed
+      }
     }
   }
 
-  let cleaned = removeSpecialPrefixes(trimmed)
+  // 处理特殊前缀（如 BigModel/GLM-4.5 → GLM-4.5）
+  const specialPrefix = "BigModel/"
+  let actualModel = trimmed
+  if (actualModel.startsWith(specialPrefix)) {
+    actualModel = actualModel.slice(specialPrefix.length)
+  }
 
-  let actualModel = cleaned
+  // 提取真实模型名
   const lastSlashIndex = actualModel.lastIndexOf("/")
   if (lastSlashIndex !== -1) {
     actualModel = actualModel.slice(lastSlashIndex + 1)
   }
 
+  // 移除冒号后缀
   const colonIndex = actualModel.indexOf(":")
   if (colonIndex !== -1) {
     actualModel = actualModel.slice(0, colonIndex)
   }
 
+  // 移除日期后缀
   actualModel = removeDateSuffix(actualModel)
 
+  // 查找标准化名称
   const metadata = modelMetadataService.findStandardModelName(actualModel)
-  let vendor = metadata?.vendorName ?? ""
 
   if (metadata) {
-    const standardName = metadata.standardName
+    const { standardName, vendorName } = metadata
+
+    // 标准名称本身包含厂商前缀
     if (standardName.includes("/")) {
       if (includeVendor) {
         return standardName
@@ -107,27 +81,25 @@ export const renameModel = (
       }
       return standardName
     } else {
-      actualModel = standardName
+      // 标准名称不包含厂商前缀
+      if (includeVendor && vendorName) {
+        return `${vendorName}/${standardName}`
+      }
+      return standardName
     }
   }
 
-  if (!vendor) {
-    const fallbackVendor = modelMetadataService.findVendorByPattern(actualModel)
-    if (fallbackVendor) {
-      vendor = fallbackVendor
-    }
+  // 未找到标准化名称，使用降级逻辑
+  let vendor = ""
+  const fallbackVendor = modelMetadataService.findVendorByPattern(actualModel)
+  if (fallbackVendor) {
+    vendor = fallbackVendor
   }
 
+  // 组合最终名称
   if (includeVendor && vendor) {
     return `${vendor}/${actualModel}`
   }
 
   return actualModel
-}
-
-export const modelNormalizationInternals = {
-  removeSpecialPrefixes,
-  removeDateSuffix,
-  isStandardStandaloneName,
-  hasSpecialPrefix
 }
