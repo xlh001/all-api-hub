@@ -13,16 +13,15 @@ const metadataEntries = new Map<
   string,
   { standardName: string; vendorName: string }
 >([
+  ["gpt-4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
   ["gpt4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
-  [
-    "claude35sonnet",
-    { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }
-  ],
-  [
-    "deepseekv3.1",
-    { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }
-  ],
+  ["claude-3-5-sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
+  ["claude35sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
+  ["deepseek-v3.1", { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }],
+  ["deepseekv3.1", { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }],
+  ["deepseek-r1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
   ["deepseekr1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
+  ["gemini-1.5-flash", { standardName: "Gemini 1.5 Flash", vendorName: "Google" }],
   ["gemini15flash", { standardName: "Gemini 1.5 Flash", vendorName: "Google" }]
 ])
 

@@ -6,9 +6,13 @@ const metadataEntries = new Map<
   string,
   { standardName: string; vendorName: string }
 >([
+  ["gpt-4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
   ["gpt4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
+  ["deepseek-r1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
   ["deepseekr1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
+  ["claude-3-5-sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
   ["claude35sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
+  ["gpt-4o-mini", { standardName: "GPT-4o-mini", vendorName: "OpenAI" }],
   ["gpt4omini", { standardName: "GPT-4o-mini", vendorName: "OpenAI" }]
 ])
 

@@ -6,37 +6,48 @@
 import type { ModelAliases } from "~/types/modelRedirect"
 
 /**
- * Normalize a model name by removing separators and lowercasing
+ * Normalize a model name for comparison purposes
+ * Only removes underscores and colons, preserves hyphens for semantic structure
+ * Converts to lowercase for case-insensitive matching
  */
 export function normalizeModelName(name: string): string {
-  return name.toLowerCase().replace(/[-_:]/g, "")
+  return name.toLowerCase().replace(/[_:]/g, "")
 }
 
 /**
- * Strip vendor prefixes from model names
- * Common prefixes: openai/, anthropic/, google/, meta/, mistral/, deepseek/, qwen/
+ * Strip vendor prefixes and special wrappers from model names
+ * Removes known container prefixes (BigModel/, Pro/, etc.) and returns the last segment after '/'
  */
 export function stripVendorPrefix(name: string): string {
-  const prefixes = [
-    "openai/",
-    "anthropic/",
-    "google/",
-    "meta/",
-    "mistral/",
-    "deepseek/",
-    "qwen/",
-    "meta-llama/"
+  if (!name) return name
+
+  const specialPrefixes = [
+    "BigModel/",
+    "Pro/",
+    "VIP/",
+    "Internal/",
+    "Sandbox/"
   ]
 
-  let stripped = name
-  for (const prefix of prefixes) {
-    if (stripped.toLowerCase().startsWith(prefix.toLowerCase())) {
-      stripped = stripped.slice(prefix.length)
-      break
+  let cleaned = name.trim()
+
+  let updated = true
+  while (updated) {
+    updated = false
+    for (const prefix of specialPrefixes) {
+      if (cleaned.startsWith(prefix)) {
+        cleaned = cleaned.slice(prefix.length)
+        updated = true
+      }
     }
   }
 
-  return stripped
+  const lastSlashIndex = cleaned.lastIndexOf("/")
+  if (lastSlashIndex !== -1) {
+    cleaned = cleaned.slice(lastSlashIndex + 1)
+  }
+
+  return cleaned
 }
 
 /**
