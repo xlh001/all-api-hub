@@ -2,12 +2,12 @@ import { modelMetadataService } from "~/services/modelMetadata"
 
 const DATE_SUFFIX_REGEX = /-\d{8}$/
 
-const isStandardStandaloneName = (model: string): boolean => {
+export const isStandardStandaloneName = (model: string): boolean => {
   if (!model) return false
   return !/[/:]/.test(model)
 }
 
-const removeDateSuffix = (model: string): string => {
+export const removeDateSuffix = (model: string): string => {
   return model.replace(DATE_SUFFIX_REGEX, "")
 }
 
@@ -42,29 +42,35 @@ export const renameModel = (
     }
   }
 
+  // 处理特殊前缀（如 BigModel/GLM-4.5 → GLM-4.5）
+  const specialPrefix = "BigModel/"
   let actualModel = trimmed
-
-  if (actualModel.startsWith("BigModel/")) {
-    actualModel = actualModel.slice("BigModel/".length)
+  if (actualModel.startsWith(specialPrefix)) {
+    actualModel = actualModel.slice(specialPrefix.length)
   }
 
+  // 提取真实模型名
   const lastSlashIndex = actualModel.lastIndexOf("/")
   if (lastSlashIndex !== -1) {
     actualModel = actualModel.slice(lastSlashIndex + 1)
   }
 
+  // 移除冒号后缀
   const colonIndex = actualModel.indexOf(":")
   if (colonIndex !== -1) {
     actualModel = actualModel.slice(0, colonIndex)
   }
 
+  // 移除日期后缀
   actualModel = removeDateSuffix(actualModel)
 
+  // 查找标准化名称
   const metadata = modelMetadataService.findStandardModelName(actualModel)
 
   if (metadata) {
     const { standardName, vendorName } = metadata
 
+    // 标准名称本身包含厂商前缀
     if (standardName.includes("/")) {
       if (includeVendor) {
         return standardName
@@ -75,6 +81,7 @@ export const renameModel = (
       }
       return standardName
     } else {
+      // 标准名称不包含厂商前缀
       if (includeVendor && vendorName) {
         return `${vendorName}/${standardName}`
       }
@@ -82,20 +89,17 @@ export const renameModel = (
     }
   }
 
+  // 未找到标准化名称，使用降级逻辑
   let vendor = ""
   const fallbackVendor = modelMetadataService.findVendorByPattern(actualModel)
   if (fallbackVendor) {
     vendor = fallbackVendor
   }
 
+  // 组合最终名称
   if (includeVendor && vendor) {
     return `${vendor}/${actualModel}`
   }
 
   return actualModel
-}
-
-export const modelNormalizationInternals = {
-  isStandardStandaloneName,
-  removeDateSuffix
 }
