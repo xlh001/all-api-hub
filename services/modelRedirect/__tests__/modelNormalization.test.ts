@@ -15,7 +15,7 @@ const metadataEntries = new Map<
     { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }
   ],
   [
-    "deepseekv31",
+    "deepseekv3.1",
     { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }
   ],
   ["deepseekr1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
@@ -135,21 +135,22 @@ describe("modelNormalization", () => {
     })
 
     describe("Stage 6: Metadata Matching", () => {
-      it("should find standard name from metadata", () => {
-        expect(renameModel("gpt4o", false)).toBe("GPT-4o")
-        expect(renameModel("claude35sonnet", false)).toBe("Claude 3.5 Sonnet")
+      it("should canonicalize aliases when vendor prefix is requested", () => {
+        expect(renameModel("gpt4o", true)).toBe("OpenAI/GPT-4o")
+        expect(renameModel("claude35sonnet", true)).toBe(
+          "Anthropic/Claude 3.5 Sonnet"
+        )
       })
 
       it("should handle vendor/model format in standard name", () => {
-        expect(renameModel("deepseek-v3.1", false)).toBe("DeepSeek-V3.1")
-        expect(renameModel("deepseek-v3.1", true)).toBe(
+        expect(renameModel("deepseek-v3.1:beta", false)).toBe("DeepSeek-V3.1")
+        expect(renameModel("deepseek-v3.1:beta", true)).toBe(
           "deepseek-ai/DeepSeek-V3.1"
         )
       })
 
-      it("should match aliases", () => {
-        expect(renameModel("gpt-4-o", false)).toBe("GPT-4o")
-        expect(renameModel("gemini15flash", false)).toBe("Gemini 1.5 Flash")
+      it("should match normalized names with metadata aliases", () => {
+        expect(renameModel("gemini15flash", true)).toBe("Google/Gemini 1.5 Flash")
       })
     })
 

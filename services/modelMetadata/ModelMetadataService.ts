@@ -1,9 +1,6 @@
-import { Storage } from "@plasmohq/storage"
-
 import { normalizeModelName, stripVendorPrefix } from "~/utils/modelName"
 
 import {
-  CACHE_STORAGE_KEY,
   MODEL_METADATA_REFRESH_INTERVAL,
   MODEL_METADATA_URL
 } from "./constants"
@@ -34,15 +31,11 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
 const DATE_SUFFIX_REGEX = /-\d{8}$/
 
 class ModelMetadataService {
-  private storage: Storage
   private cache: ModelMetadataCache | null = null
   private vendorRules: VendorRule[] = []
   private metadataMap: Map<string, ModelMetadata> = new Map()
   private initPromise: Promise<void> | null = null
-
-  constructor() {
-    this.storage = new Storage()
-  }
+  private lastFetch: number = 0
 
   async initialize(): Promise<void> {
     if (this.initPromise) {
@@ -55,24 +48,14 @@ class ModelMetadataService {
 
   private async _initialize(): Promise<void> {
     try {
-      const cached = await this.storage.get<ModelMetadataCache>(
-        CACHE_STORAGE_KEY
-      )
-
-      if (
-        cached &&
-        cached.models &&
-        Date.now() - cached.lastUpdated < MODEL_METADATA_REFRESH_INTERVAL
-      ) {
-        this.cache = cached
-        this.buildMapsFromCache()
-        console.log("[ModelMetadata] Loaded from cache", {
-          models: cached.models.length,
-          lastUpdated: new Date(cached.lastUpdated)
-        })
-      } else {
-        await this.refreshMetadata()
+      const now = Date.now()
+      
+      if (this.cache && now - this.lastFetch < MODEL_METADATA_REFRESH_INTERVAL) {
+        console.log("[ModelMetadata] Using in-memory cache")
+        return
       }
+
+      await this.refreshMetadata()
     } catch (error) {
       console.error("[ModelMetadata] Failed to initialize:", error)
       this.initializeFallback()
@@ -112,7 +95,7 @@ class ModelMetadataService {
         version: "1.0"
       }
 
-      await this.storage.set(CACHE_STORAGE_KEY, this.cache)
+      this.lastFetch = Date.now()
       this.buildMapsFromCache()
 
       console.log("[ModelMetadata] Refreshed successfully", {
@@ -138,11 +121,27 @@ class ModelMetadataService {
         this.metadataMap.set(normalized, model)
       }
 
+      const shortId = model.id.includes("/")
+        ? model.id.slice(model.id.lastIndexOf("/") + 1)
+        : model.id
+      const shortNormalized = normalizeModelName(shortId)
+      if (shortNormalized) {
+        this.metadataMap.set(shortNormalized, model)
+      }
+
       if (model.aliases) {
         for (const alias of model.aliases) {
           const aliasNormalized = normalizeModelName(stripVendorPrefix(alias))
           if (aliasNormalized) {
             this.metadataMap.set(aliasNormalized, model)
+          }
+
+          const aliasShort = alias.includes("/")
+            ? alias.slice(alias.lastIndexOf("/") + 1)
+            : alias
+          const aliasShortNormalized = normalizeModelName(aliasShort)
+          if (aliasShortNormalized) {
+            this.metadataMap.set(aliasShortNormalized, model)
           }
         }
       }
@@ -256,11 +255,21 @@ class ModelMetadataService {
       version: "1.0-fallback"
     }
 
+    this.lastFetch = Date.now()
+
     this.metadataMap.clear()
     for (const model of defaultMetadata) {
       const normalized = normalizeModelName(stripVendorPrefix(model.id))
       if (normalized) {
         this.metadataMap.set(normalized, model)
+      }
+
+      const shortId = model.id.includes("/")
+        ? model.id.slice(model.id.lastIndexOf("/") + 1)
+        : model.id
+      const shortNormalized = normalizeModelName(shortId)
+      if (shortNormalized) {
+        this.metadataMap.set(shortNormalized, model)
       }
     }
 
@@ -383,11 +392,11 @@ class ModelMetadataService {
     }
   }
 
-  async clearCache(): Promise<void> {
-    await this.storage.remove(CACHE_STORAGE_KEY)
+  clearCache(): void {
     this.cache = null
     this.metadataMap.clear()
     this.vendorRules = []
+    this.lastFetch = 0
   }
 }
 

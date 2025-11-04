@@ -2,7 +2,7 @@ import { modelMetadataService } from "~/services/modelMetadata"
 
 const DATE_SUFFIX_REGEX = /-\d{8}$/
 
-export const isStandardStandaloneName = (model: string): boolean => {
+const isStandardStandaloneName = (model: string): boolean => {
   if (!model) return false
   return !/[/:]/.test(model)
 }
