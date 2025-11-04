@@ -1,11 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { MultiSelect } from "~/components/ui/MultiSelect"
 import { Switch } from "~/components/ui/Switch"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { fetchAccountAvailableModels } from "~/services/apiService/common"
 import { ModelRedirectService } from "~/services/modelRedirect"
+import { hasValidNewApiConfig } from "~/services/newApiService.ts"
+import { AuthTypeEnum } from "~/types"
 import { ALL_PRESET_STANDARD_MODELS } from "~/types/modelRedirect"
 
 export default function ModelRedirectSettings() {
@@ -16,10 +19,25 @@ export default function ModelRedirectSettings() {
 
   const modelRedirect = preferences?.modelRedirect
 
-  const modelOptions = ALL_PRESET_STANDARD_MODELS.map((model) => ({
-    value: model,
-    label: model
-  }))
+  const [modelList, setModelList] = useState(ALL_PRESET_STANDARD_MODELS)
+
+  useEffect(() => {
+    async function getModelList() {
+      if (hasValidNewApiConfig(preferences)) {
+        return await fetchAccountAvailableModels({
+          baseUrl: preferences.newApiBaseUrl,
+          userId: preferences.newApiUserId,
+          token: preferences.newApiAdminToken,
+          authType: AuthTypeEnum.AccessToken
+        })
+      }
+    }
+
+    ;(async () => {
+      const modelList = await getModelList()
+      setModelList(modelList ?? ALL_PRESET_STANDARD_MODELS)
+    })()
+  }, [])
 
   const handleUpdate = async (updates: Record<string, unknown>) => {
     try {
@@ -31,7 +49,10 @@ export default function ModelRedirectSettings() {
       }
       toast.success(t("messages.updateSuccess"))
     } catch (error) {
-      console.error("[ModelRedirectSettings] Failed to update preferences", error)
+      console.error(
+        "[ModelRedirectSettings] Failed to update preferences",
+        error
+      )
       toast.error(t("messages.updateFailed"))
     } finally {
       setIsUpdating(false)
@@ -92,7 +113,10 @@ export default function ModelRedirectSettings() {
             <div>
               <MultiSelect
                 label={t("standardModels")}
-                options={modelOptions}
+                options={modelList.map((model) => ({
+                  value: model,
+                  label: model
+                }))}
                 selected={modelRedirect?.standardModels ?? []}
                 onChange={(standardModels) => handleUpdate({ standardModels })}
                 placeholder={t("standardModelsPlaceholder")}
@@ -113,7 +137,6 @@ export default function ModelRedirectSettings() {
                 {isRegenerating ? t("regenerating") : t("regenerateButton")}
               </button>
             </div>
-
           </>
         )}
       </div>
