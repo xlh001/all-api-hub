@@ -16,9 +16,7 @@ const SPECIAL_PREFIXES = [
 const OWNER_MODEL_REGEX =
   /^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}\/[A-Za-z0-9][A-Za-z0-9_.-:]{0,62}$/
 
-const DATE_SUFFIX_COMPACT_REGEX = /(?:[-_]?)(?:19|20)\d{6,8}$/i
-const DATE_SUFFIX_SEPARATOR_REGEX =
-  /[-_](?:19|20)\d{2}(?:[-_]\d{2}){1,2}$/i
+const DATE_SUFFIX_REGEX = /-\d{8}$/
 
 const isStandardStandaloneName = (model: string): boolean => {
   if (!model) return false
@@ -48,20 +46,7 @@ const removeSpecialPrefixes = (model: string): string => {
 }
 
 const removeDateSuffix = (model: string): string => {
-  let result = model
-  let changed = true
-  while (changed) {
-    changed = false
-    if (DATE_SUFFIX_COMPACT_REGEX.test(result)) {
-      result = result.replace(DATE_SUFFIX_COMPACT_REGEX, "")
-      changed = true
-    }
-    if (DATE_SUFFIX_SEPARATOR_REGEX.test(result)) {
-      result = result.replace(DATE_SUFFIX_SEPARATOR_REGEX, "")
-      changed = true
-    }
-  }
-  return result
+  return model.replace(DATE_SUFFIX_REGEX, "")
 }
 
 export const renameModel = (

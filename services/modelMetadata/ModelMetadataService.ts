@@ -24,10 +24,14 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   baidu: "Baidu",
   tencent: "Tencent",
   yi: "Yi",
-  baichuan: "Baichuan"
+  baichuan: "Baichuan",
+  xai: "xAI",
+  alibaba: "阿里巴巴",
+  "alibaba-cn": "通义千问",
+  doubao: "豆包"
 }
 
-const DATE_SUFFIX_REGEX = /[-_]?\d{8}$/
+const DATE_SUFFIX_REGEX = /-\d{8}$/
 
 class ModelMetadataService {
   private storage: Storage
@@ -93,7 +97,7 @@ class ModelMetadataService {
       const models: ModelMetadata[] = data.map((item: any) => ({
         id: item.id || "",
         name: item.name || item.id || "",
-        provider_id: item.provider_id || "",
+        provider_id: item.provider_id || item.providerId || "",
         aliases: Array.isArray(item.aliases) ? item.aliases : []
       }))
 
@@ -152,13 +156,18 @@ class ModelMetadataService {
 
   private extractKeywords(modelId: string): string[] {
     const keywords: string[] = []
-    const lower = modelId.toLowerCase()
+    const lower = modelId.toLowerCase().trim()
 
-    const parts = lower.split(/[-_./]/)
-    for (const part of parts) {
-      if (part.length >= 3 && !/^\d+$/.test(part)) {
-        keywords.push(part)
+    const parts = lower.split("-")
+    if (parts.length > 0) {
+      const prefix = parts[0].trim()
+      if (prefix) {
+        keywords.push(prefix)
       }
+    }
+
+    if (!lower.includes("-") && lower.length <= 15) {
+      keywords.push(lower)
     }
 
     return [...new Set(keywords)]
@@ -177,12 +186,11 @@ class ModelMetadataService {
         this.capitalizeFirst(providerID)
 
       const patternStr = Array.from(keywords)
-        .sort((a, b) => b.length - a.length)
-        .slice(0, 10)
+        .map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
         .join("|")
 
       try {
-        const pattern = new RegExp(`(${patternStr})`, "i")
+        const pattern = new RegExp(`^(${patternStr})`, "i")
         rules.push({ providerID, displayName, pattern })
       } catch (error) {
         console.warn(
@@ -197,7 +205,10 @@ class ModelMetadataService {
 
   private capitalizeFirst(str: string): string {
     if (!str) return ""
-    return str.charAt(0).toUpperCase() + str.slice(1)
+    const parts = str.replace(/-/g, " ").split(/\s+/)
+    return parts
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ")
   }
 
   private initializeFallback(): void {
@@ -230,16 +241,18 @@ class ModelMetadataService {
       }
     }
 
-    if (!DATE_SUFFIX_REGEX.test(modelName)) {
-      for (const [key, metadata] of this.metadataMap) {
-        if (this.isFuzzyMatch(cleaned, key)) {
-          const vendorName =
-            PROVIDER_DISPLAY_NAMES[metadata.provider_id] ||
-            this.capitalizeFirst(metadata.provider_id)
-          return {
-            standardName: metadata.id,
-            vendorName
-          }
+    if (DATE_SUFFIX_REGEX.test(modelName)) {
+      return null
+    }
+
+    for (const [key, metadata] of this.metadataMap) {
+      if (this.isFuzzyMatch(cleaned, key)) {
+        const vendorName =
+          PROVIDER_DISPLAY_NAMES[metadata.provider_id] ||
+          this.capitalizeFirst(metadata.provider_id)
+        return {
+          standardName: metadata.id,
+          vendorName
         }
       }
     }
@@ -248,32 +261,56 @@ class ModelMetadataService {
   }
 
   private isFuzzyMatch(input: string, candidate: string): boolean {
-    if (input === candidate) return true
+    const dateSuffixRegex = /-\d{8}$/
+    const cleanedInput = input.replace(dateSuffixRegex, "")
+    const cleanedCandidate = candidate.replace(dateSuffixRegex, "")
 
-    const inputKeywords = input.split(/[-_.]/).filter((k) => k.length > 0)
-    const candidateKeywords = candidate
-      .split(/[-_.]/)
-      .filter((k) => k.length > 0)
+    if (cleanedInput === cleanedCandidate) return true
 
-    if (inputKeywords.length < 2 || candidateKeywords.length < 2) {
+    const inputParts = cleanedInput.split("-")
+    const candidateParts = cleanedCandidate.split("-")
+
+    if (inputParts.length === 0 || candidateParts.length === 0) {
       return false
     }
 
-    let matchCount = 0
-    for (const inputKw of inputKeywords) {
-      for (const candKw of candidateKeywords) {
-        if (
-          inputKw === candKw ||
-          inputKw.includes(candKw) ||
-          candKw.includes(inputKw)
-        ) {
-          matchCount++
-          break
+    if (inputParts[0] !== candidateParts[0]) {
+      return false
+    }
+
+    const isVersionNumber = (value: string) => /^\d+(\.\d+)?$/.test(value)
+
+    const toKeywordSet = (parts: string[]) => {
+      const set = new Set<string>()
+      for (const part of parts) {
+        if (!isVersionNumber(part)) {
+          set.add(part)
         }
+      }
+      return set
+    }
+
+    const inputKeywords = toKeywordSet(inputParts)
+    const candidateKeywords = toKeywordSet(candidateParts)
+
+    if (inputKeywords.size === 0 || candidateKeywords.size === 0) {
+      return false
+    }
+
+    for (const keyword of inputKeywords) {
+      if (!candidateKeywords.has(keyword)) {
+        return false
       }
     }
 
-    return matchCount >= Math.min(inputKeywords.length, candidateKeywords.length) * 0.6
+    let shared = 0
+    for (const keyword of candidateKeywords) {
+      if (inputKeywords.has(keyword)) {
+        shared++
+      }
+    }
+
+    return shared >= Math.min(inputKeywords.size, candidateKeywords.size, 2)
   }
 
   findVendorByPattern(modelName: string): string | null {
