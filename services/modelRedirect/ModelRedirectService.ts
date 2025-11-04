@@ -10,9 +10,11 @@ import {
   CHANNEL_STATUS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES
 } from "~/types"
+import { normalizeModelName, stripVendorPrefix } from "~/utils/modelName"
 
 import { hasValidNewApiConfig } from "../newApiService"
 import { userPreferences } from "../userPreferences"
+import { renameModel } from "./modelNormalization"
 
 /**
  * Model Redirect Service
@@ -124,23 +126,63 @@ export class ModelRedirectService {
   /**
    * Generate model mapping for a single channel
    * Returns an object of standardModel -> actualModel mappings
+   * Uses multi-stage extraction pipeline with deduplication
    */
   static generateModelMappingForChannel(
     standardModels: string[],
     actualModels: string[]
   ): Record<string, string> {
     const mapping: Record<string, string> = {}
+    const usedActualModels = new Set<string>()
+    const actualModelSet = new Set<string>()
 
-    for (const standardModel of standardModels) {
-      // Skip if already present
-      if (actualModels.includes(standardModel)) {
+    const normalizedActualMap = new Map<string, string[]>()
+    for (const rawActual of actualModels) {
+      const actualModel = rawActual.trim()
+      if (!actualModel) continue
+      actualModelSet.add(actualModel)
+
+      const normalized = renameModel(actualModel, false)?.trim()
+      if (!normalized) continue
+
+      const key = normalizeModelName(stripVendorPrefix(normalized))
+      if (!key) continue
+
+      if (!normalizedActualMap.has(key)) {
+        normalizedActualMap.set(key, [])
+      }
+      normalizedActualMap.get(key)!.push(actualModel)
+    }
+
+    for (const rawStandard of standardModels) {
+      const standardModel = rawStandard.trim()
+      if (!standardModel) continue
+
+      if (actualModelSet.has(standardModel)) {
         continue
       }
 
-      // Find best match for this standard model
-      const bestMatch = this.findBestMatch(standardModel, actualModels)
-      if (bestMatch) {
-        mapping[standardModel] = bestMatch
+      if (mapping[standardModel]) {
+        continue
+      }
+
+      const normalizedStandard = renameModel(standardModel, false)?.trim()
+      if (!normalizedStandard) continue
+
+      const standardKey = normalizeModelName(
+        stripVendorPrefix(normalizedStandard)
+      )
+      if (!standardKey) continue
+
+      const candidates = normalizedActualMap.get(standardKey)
+      if (!candidates || candidates.length === 0) continue
+
+      const availableCandidate = candidates.find(
+        (candidate) => !usedActualModels.has(candidate)
+      )
+      if (availableCandidate) {
+        mapping[standardModel] = availableCandidate
+        usedActualModels.add(availableCandidate)
       }
     }
 
