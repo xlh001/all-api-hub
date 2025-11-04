@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { modelMetadataService } from "~/services/modelMetadata"
-import { normalizeModelName, stripVendorPrefix } from "~/utils/modelName"
+import {
+  normalizeModelName,
+  removeDateSuffix,
+  stripVendorPrefix
+} from "~/utils/modelName"
 
-import { removeDateSuffix, renameModel } from "../modelNormalization"
+import { renameModel } from "../modelNormalization"
 
 const metadataEntries = new Map<
   string,
@@ -125,6 +129,16 @@ describe("modelNormalization", () => {
     describe("Stage 5: Remove Date Suffixes", () => {
       it("should remove 8-digit date suffix", () => {
         const result = removeDateSuffix("model-20250101")
+        expect(result).toBe("model")
+      })
+
+      it("should remove mm-yyyy suffix", () => {
+        const result = removeDateSuffix("model-07-2025")
+        expect(result).toBe("model")
+      })
+
+      it("should remove compact mmdd suffix", () => {
+        const result = removeDateSuffix("model-0722")
         expect(result).toBe("model")
       })
 

@@ -1,4 +1,8 @@
-import { normalizeModelName, stripVendorPrefix } from "~/utils/modelName"
+import {
+  normalizeModelName,
+  removeDateSuffix,
+  stripVendorPrefix
+} from "~/utils/modelName"
 
 import {
   MODEL_METADATA_REFRESH_INTERVAL,
@@ -27,8 +31,6 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   "alibaba-cn": "通义千问",
   doubao: "豆包"
 }
-
-const DATE_SUFFIX_REGEX = /-\d{8}$/
 
 class ModelMetadataService {
   private cache: ModelMetadataCache | null = null
@@ -295,7 +297,7 @@ class ModelMetadataService {
       }
     }
 
-    if (DATE_SUFFIX_REGEX.test(modelName)) {
+    if (removeDateSuffix(modelName) !== modelName) {
       return null
     }
 
@@ -315,9 +317,8 @@ class ModelMetadataService {
   }
 
   private isFuzzyMatch(input: string, candidate: string): boolean {
-    const dateSuffixRegex = /-\d{8}$/
-    const cleanedInput = input.replace(dateSuffixRegex, "")
-    const cleanedCandidate = candidate.replace(dateSuffixRegex, "")
+    const cleanedInput = removeDateSuffix(input)
+    const cleanedCandidate = removeDateSuffix(candidate)
 
     if (cleanedInput === cleanedCandidate) return true
 

@@ -1,14 +1,9 @@
 import { modelMetadataService } from "~/services/modelMetadata"
-
-const DATE_SUFFIX_REGEX = /-\d{8}$/
+import { removeDateSuffix } from "~/utils/modelName"
 
 const isStandardStandaloneName = (model: string): boolean => {
   if (!model) return false
   return !/[/:]/.test(model)
-}
-
-export const removeDateSuffix = (model: string): string => {
-  return model.replace(DATE_SUFFIX_REGEX, "")
 }
 
 export const renameModel = (
