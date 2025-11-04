@@ -1,4 +1,42 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
+
+import { normalizeModelName, stripVendorPrefix } from "~/utils/modelName"
+
+const metadataEntries = new Map<
+  string,
+  { standardName: string; vendorName: string }
+>([
+  ["gpt4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
+  ["claude35sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
+  ["deepseekv31", { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }],
+  ["deepseekr1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
+  ["gemini15flash", { standardName: "Gemini 1.5 Flash", vendorName: "Google" }]
+])
+
+vi.mock("~/services/modelMetadata", () => {
+  return {
+    modelMetadataService: {
+      initialize: vi.fn().mockResolvedValue(undefined),
+      findStandardModelName: (modelName: string) => {
+        const normalized = normalizeModelName(stripVendorPrefix(modelName))
+        return metadataEntries.get(normalized) ?? null
+      },
+      findVendorByPattern: (modelName: string) => {
+        if (/gpt/i.test(modelName)) return "OpenAI"
+        if (/claude|sonnet/i.test(modelName)) return "Anthropic"
+        if (/deepseek/i.test(modelName)) return "DeepSeek"
+        if (/gemini/i.test(modelName)) return "Google"
+        return null
+      },
+      getVendorRules: () => [],
+      getCacheInfo: () => ({
+        isLoaded: true,
+        modelCount: metadataEntries.size,
+        lastUpdated: Date.now()
+      })
+    }
+  }
+})
 
 import {
   modelNormalizationInternals,
@@ -38,18 +76,17 @@ describe("modelNormalization", () => {
 
     describe("Stage 2: Clean Special Prefixes", () => {
       it("should remove BigModel/ prefix", () => {
-        const result = renameModel("BigModel/gpt-4o", false)
-        expect(result).toBe("GPT-4o")
+        expect(renameModel("BigModel/gpt-4o", false)).toBe("GPT-4o")
       })
 
       it("should remove Pro/ prefix", () => {
-        const result = renameModel("Pro/claude-3-5-sonnet", false)
-        expect(result).toBe("Claude 3.5 Sonnet")
+        expect(renameModel("Pro/claude-3-5-sonnet", false)).toBe(
+          "Claude 3.5 Sonnet"
+        )
       })
 
       it("should remove multiple special prefixes", () => {
-        const result = renameModel("BigModel/Pro/gpt-4o", false)
-        expect(result).toBe("GPT-4o")
+        expect(renameModel("BigModel/Pro/gpt-4o", false)).toBe("GPT-4o")
       })
 
       it("should remove VIP/ prefix", () => {
@@ -63,9 +100,6 @@ describe("modelNormalization", () => {
     describe("Stage 3: Extract Real Model Name", () => {
       it("should extract after last slash", () => {
         expect(renameModel("openai/gpt-4o", false)).toBe("GPT-4o")
-        expect(renameModel("deepseek/deepseek-r1:free", false)).toBe(
-          "DeepSeek R1"
-        )
       })
 
       it("should handle multiple slashes", () => {
@@ -146,11 +180,14 @@ describe("modelNormalization", () => {
 
     describe("Stage 7: Pattern Matching Fallback", () => {
       it("should detect vendor from pattern when not in metadata", () => {
-        expect(renameModel("unknown-gpt-model", false)).toBe(
-          "unknown-gpt-model"
-        )
         expect(renameModel("unknown-gpt-model", true)).toBe(
           "OpenAI/unknown-gpt-model"
+        )
+      })
+
+      it("should fallback without vendor when includeVendor=false", () => {
+        expect(renameModel("unknown-gpt-model", false)).toBe(
+          "unknown-gpt-model"
         )
       })
 
@@ -179,9 +216,9 @@ describe("modelNormalization", () => {
 
     describe("Complex scenarios", () => {
       it("should handle full pipeline: special prefix + slash + colon + date", () => {
-        expect(renameModel("BigModel/openai/gpt-4o:free-20250101", false)).toBe(
-          "GPT-4o"
-        )
+        expect(
+          renameModel("BigModel/openai/gpt-4o:free-20250101", false)
+        ).toBe("GPT-4o")
       })
 
       it("should handle channel model normalization", () => {

@@ -4,6 +4,7 @@
  * Based on gpt-api-sync logic with enhancements for weighted channel selection
  */
 
+import { modelMetadataService } from "~/services/modelMetadata"
 import { NewApiModelSyncService } from "~/services/newApiModelSync"
 import {
   ALL_PRESET_STANDARD_MODELS,
@@ -60,6 +61,10 @@ export class ModelRedirectService {
       const standardModels = modelRedirectPrefs.standardModels.length
         ? modelRedirectPrefs.standardModels
         : ALL_PRESET_STANDARD_MODELS
+
+      await modelMetadataService.initialize().catch((error) => {
+        console.warn("[ModelRedirect] Failed to initialize metadata:", error)
+      })
 
       const service = new NewApiModelSyncService(
         prefs.newApiBaseUrl,
