@@ -90,14 +90,19 @@ class ModelMetadataService {
 
       const data = await response.json()
 
-      if (!Array.isArray(data)) {
-        throw new Error("Invalid metadata format: expected array")
+      if (!data || typeof data !== "object") {
+        throw new Error("Invalid metadata format: expected object")
       }
 
-      const models: ModelMetadata[] = data.map((item: any) => ({
+      const modelsArray = data.models || data
+      if (!Array.isArray(modelsArray)) {
+        throw new Error("Invalid metadata format: models should be array")
+      }
+
+      const models: ModelMetadata[] = modelsArray.map((item: any) => ({
         id: item.id || "",
         name: item.name || item.id || "",
-        provider_id: item.provider_id || item.providerId || "",
+        provider_id: item.providerId || item.provider_id || "",
         aliases: Array.isArray(item.aliases) ? item.aliases : []
       }))
 
@@ -212,14 +217,54 @@ class ModelMetadataService {
   }
 
   private initializeFallback(): void {
-    console.warn("[ModelMetadata] Using fallback minimal data")
+    console.warn("[ModelMetadata] Using fallback default data")
+
+    const defaultMetadata: ModelMetadata[] = [
+      { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet", provider_id: "anthropic" },
+      { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku", provider_id: "anthropic" },
+      { id: "claude-3-opus-20240229", name: "Claude 3 Opus", provider_id: "anthropic" },
+      { id: "claude-sonnet-4-5-20250929", name: "Claude 4.5 Sonnet", provider_id: "anthropic" },
+      { id: "claude-haiku-4-5-20251001", name: "Claude 4.5 Haiku", provider_id: "anthropic" },
+      { id: "gpt-4o", name: "GPT-4o", provider_id: "openai" },
+      { id: "gpt-4o-mini", name: "GPT-4o mini", provider_id: "openai" },
+      { id: "gpt-4-turbo", name: "GPT-4 Turbo", provider_id: "openai" },
+      { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", provider_id: "openai" },
+      { id: "gemini-2.0-flash-exp", name: "Gemini 2.0 Flash", provider_id: "google" },
+      { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", provider_id: "google" },
+      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", provider_id: "google" },
+      { id: "deepseek-chat", name: "DeepSeek Chat", provider_id: "deepseek" },
+      { id: "deepseek-reasoner", name: "DeepSeek Reasoner", provider_id: "deepseek" }
+    ]
+
+    const defaultRules: VendorRule[] = [
+      { providerID: "anthropic", displayName: "Anthropic", pattern: /^claude/i },
+      { providerID: "openai", displayName: "OpenAI", pattern: /^(gpt|chatgpt|o1|o3)/i },
+      { providerID: "google", displayName: "Google", pattern: /^gemini/i },
+      { providerID: "alibaba", displayName: "阿里巴巴", pattern: /^qwen/i },
+      { providerID: "alibaba-cn", displayName: "通义千问", pattern: /^(qwen|tongyi)/i },
+      { providerID: "deepseek", displayName: "DeepSeek", pattern: /^deepseek/i },
+      { providerID: "moonshot", displayName: "Moonshot", pattern: /^moonshot/i },
+      { providerID: "zhipu", displayName: "智谱", pattern: /^(glm|bigmodel)/i },
+      { providerID: "mistral", displayName: "MistralAI", pattern: /^mistral/i },
+      { providerID: "xai", displayName: "xAI", pattern: /^grok/i },
+      { providerID: "meta", displayName: "Meta", pattern: /^llama/i }
+    ]
+
     this.cache = {
-      models: [],
+      models: defaultMetadata,
       lastUpdated: Date.now(),
       version: "1.0-fallback"
     }
-    this.vendorRules = []
+
     this.metadataMap.clear()
+    for (const model of defaultMetadata) {
+      const normalized = normalizeModelName(stripVendorPrefix(model.id))
+      if (normalized) {
+        this.metadataMap.set(normalized, model)
+      }
+    }
+
+    this.vendorRules = defaultRules
   }
 
   findStandardModelName(

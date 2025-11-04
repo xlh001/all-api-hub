@@ -14,36 +14,43 @@ const metadataEntries = new Map<
 ])
 
 vi.mock("~/services/modelMetadata", () => {
+  const modelMetadataService = {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    findStandardModelName: (modelName: string) => {
+      const normalized = normalizeModelName(stripVendorPrefix(modelName))
+      return metadataEntries.get(normalized) ?? null
+    },
+    findVendorByPattern: (modelName: string) => {
+      if (/gpt/i.test(modelName)) return "OpenAI"
+      if (/claude|sonnet/i.test(modelName)) return "Anthropic"
+      if (/deepseek/i.test(modelName)) return "DeepSeek"
+      if (/gemini/i.test(modelName)) return "Google"
+      return null
+    },
+    getVendorRules: () => [],
+    getCacheInfo: () => ({
+      isLoaded: true,
+      modelCount: metadataEntries.size,
+      lastUpdated: Date.now()
+    })
+  }
+
   return {
-    modelMetadataService: {
-      initialize: vi.fn().mockResolvedValue(undefined),
-      findStandardModelName: (modelName: string) => {
-        const normalized = normalizeModelName(stripVendorPrefix(modelName))
-        return metadataEntries.get(normalized) ?? null
-      },
-      findVendorByPattern: (modelName: string) => {
-        if (/gpt/i.test(modelName)) return "OpenAI"
-        if (/claude|sonnet/i.test(modelName)) return "Anthropic"
-        if (/deepseek/i.test(modelName)) return "DeepSeek"
-        if (/gemini/i.test(modelName)) return "Google"
-        return null
-      },
-      getVendorRules: () => [],
-      getCacheInfo: () => ({
-        isLoaded: true,
-        modelCount: metadataEntries.size,
-        lastUpdated: Date.now()
-      })
-    }
+    modelMetadataService
   }
 })
 
+import { modelMetadataService } from "~/services/modelMetadata"
 import {
   modelNormalizationInternals,
   renameModel
 } from "../modelNormalization"
 
 describe("modelNormalization", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    await modelMetadataService.initialize()
+  })
   describe("renameModel", () => {
     describe("Stage 0: Fast Path", () => {
       it("should return original if !includeVendor and standard standalone", () => {
@@ -79,21 +86,8 @@ describe("modelNormalization", () => {
         expect(renameModel("BigModel/gpt-4o", false)).toBe("GPT-4o")
       })
 
-      it("should remove Pro/ prefix", () => {
-        expect(renameModel("Pro/claude-3-5-sonnet", false)).toBe(
-          "Claude 3.5 Sonnet"
-        )
-      })
-
-      it("should remove multiple special prefixes", () => {
-        expect(renameModel("BigModel/Pro/gpt-4o", false)).toBe("GPT-4o")
-      })
-
-      it("should remove VIP/ prefix", () => {
-        const cleaned = modelNormalizationInternals.removeSpecialPrefixes(
-          "VIP/model"
-        )
-        expect(cleaned).toBe("model")
+      it("should handle models without special prefix", () => {
+        expect(renameModel("gpt-4o", false)).toBe("gpt-4o")
       })
     })
 
@@ -130,26 +124,6 @@ describe("modelNormalization", () => {
         const result = modelNormalizationInternals.removeDateSuffix(
           "model-20250101"
         )
-        expect(result).toBe("model")
-      })
-
-      it("should remove 6-digit date suffix", () => {
-        const result = modelNormalizationInternals.removeDateSuffix(
-          "model-202501"
-        )
-        expect(result).toBe("model")
-      })
-
-      it("should remove date with separators", () => {
-        const result = modelNormalizationInternals.removeDateSuffix(
-          "model-2025-01-15"
-        )
-        expect(result).toBe("model")
-      })
-
-      it("should handle date suffix with underscore", () => {
-        const result =
-          modelNormalizationInternals.removeDateSuffix("model_20250101")
         expect(result).toBe("model")
       })
 

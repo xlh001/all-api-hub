@@ -1,4 +1,36 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
+
+import { normalizeModelName, stripVendorPrefix } from "~/utils/modelName"
+
+const metadataEntries = new Map<
+  string,
+  { standardName: string; vendorName: string }
+>([
+  ["gpt4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
+  ["deepseekr1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
+  ["claude35sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
+  ["gpt4omini", { standardName: "GPT-4o-mini", vendorName: "OpenAI" }]
+])
+
+vi.mock("~/services/modelMetadata", () => {
+  const modelMetadataService = {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    findStandardModelName: (modelName: string) => {
+      const normalized = normalizeModelName(stripVendorPrefix(modelName))
+      return metadataEntries.get(normalized) ?? null
+    },
+    findVendorByPattern: (modelName: string) => {
+      if (/gpt/i.test(modelName)) return "OpenAI"
+      if (/claude|sonnet/i.test(modelName)) return "Anthropic"
+      if (/deepseek/i.test(modelName)) return "DeepSeek"
+      return null
+    },
+    getVendorRules: () => [],
+    getCacheInfo: () => ({ isLoaded: true, modelCount: metadataEntries.size, lastUpdated: Date.now() })
+  }
+
+  return { modelMetadataService }
+})
 
 import { ModelRedirectService } from "../ModelRedirectService"
 
