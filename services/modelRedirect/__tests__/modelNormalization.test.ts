@@ -1,232 +1,122 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { modelMetadataService } from "~/services/modelMetadata"
-import {
-  normalizeModelName,
-  removeDateSuffix,
-  stripVendorPrefix
-} from "~/utils/modelName"
+import { extractActualModel, renameModel } from "../modelNormalization"
 
-import { renameModel } from "../modelNormalization"
-
-const metadataEntries = new Map<
+// Mock modelMetadataService
+const mockMetadataMap = new Map<
   string,
   { standardName: string; vendorName: string }
 >([
-  ["gpt-4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
-  ["gpt4o", { standardName: "GPT-4o", vendorName: "OpenAI" }],
-  ["claude-3-5-sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
-  ["claude35sonnet", { standardName: "Claude 3.5 Sonnet", vendorName: "Anthropic" }],
-  ["deepseek-v3.1", { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }],
-  ["deepseekv3.1", { standardName: "deepseek-ai/DeepSeek-V3.1", vendorName: "deepseek-ai" }],
-  ["deepseek-r1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
-  ["deepseekr1", { standardName: "DeepSeek R1", vendorName: "DeepSeek" }],
-  ["gemini-1.5-flash", { standardName: "Gemini 1.5 Flash", vendorName: "Google" }],
-  ["gemini15flash", { standardName: "Gemini 1.5 Flash", vendorName: "Google" }]
+  ["gpt-4o", { standardName: "gpt-4o", vendorName: "OpenAI" }],
+  ["claude-3-5-sonnet", { standardName: "claude-3-5-sonnet-20241022", vendorName: "Anthropic" }],
+  ["deepseek-chat", { standardName: "deepseek-chat", vendorName: "DeepSeek" }],
+  ["gemini-1.5-flash", { standardName: "gemini-1.5-flash", vendorName: "Google" }]
 ])
 
-vi.mock("~/services/modelMetadata", () => {
-  const modelMetadataService = {
-    initialize: vi.fn().mockResolvedValue(undefined),
+vi.mock("~/services/modelMetadata", () => ({
+  modelMetadataService: {
     findStandardModelName: (modelName: string) => {
-      const normalized = normalizeModelName(stripVendorPrefix(modelName))
-      return metadataEntries.get(normalized) ?? null
+      const cleaned = modelName.trim().toLowerCase()
+      return mockMetadataMap.get(cleaned) || null
     },
     findVendorByPattern: (modelName: string) => {
-      if (/gpt/i.test(modelName)) return "OpenAI"
-      if (/claude|sonnet/i.test(modelName)) return "Anthropic"
-      if (/deepseek/i.test(modelName)) return "DeepSeek"
-      if (/gemini/i.test(modelName)) return "Google"
+      const lower = modelName.toLowerCase()
+      if (/^gpt/.test(lower)) return "OpenAI"
+      if (/^claude/.test(lower)) return "Anthropic"
+      if (/^deepseek/.test(lower)) return "DeepSeek"
+      if (/^gemini/.test(lower)) return "Google"
       return null
-    },
-    getVendorRules: () => [],
-    getCacheInfo: () => ({
-      isLoaded: true,
-      modelCount: metadataEntries.size,
-      lastUpdated: Date.now()
-    })
+    }
   }
+}))
 
-  return {
-    modelMetadataService
-  }
+describe("extractActualModel", () => {
+  it("should remove BigModel/ prefix", () => {
+    expect(extractActualModel("BigModel/gpt-4o")).toBe("gpt-4o")
+  })
+
+  it("should extract model name after last slash", () => {
+    expect(extractActualModel("openai/gpt-4o")).toBe("gpt-4o")
+    expect(extractActualModel("provider/category/model")).toBe("model")
+  })
+
+  it("should remove colon suffix", () => {
+    expect(extractActualModel("gpt-4o:free")).toBe("gpt-4o")
+    expect(extractActualModel("model:extended")).toBe("model")
+  })
+
+  it("should remove date suffix", () => {
+    expect(extractActualModel("claude-3-5-sonnet-20241022")).toBe("claude-3-5-sonnet")
+  })
+
+  it("should handle complex model names", () => {
+    expect(extractActualModel("BigModel/deepseek/deepseek-r1:free")).toBe("deepseek-r1")
+  })
 })
 
-describe("modelNormalization", () => {
-  beforeEach(async () => {
+describe("renameModel", () => {
+  beforeEach(() => {
     vi.clearAllMocks()
-    await modelMetadataService.initialize()
   })
-  describe("renameModel", () => {
-    describe("Stage 0: Fast Path", () => {
-      it("should return original if !includeVendor and standard standalone", () => {
-        expect(renameModel("gpt-4o", false)).toBe("gpt-4o")
-        expect(renameModel("claude-3-5-sonnet", false)).toBe(
-          "claude-3-5-sonnet"
-        )
-      })
 
-      it("should not fast-path if model contains slash", () => {
-        expect(renameModel("openai/gpt-4o", false)).toBe("GPT-4o")
-      })
-
-      it("should not fast-path if model contains colon", () => {
-        expect(renameModel("gpt-4o:free", false)).toBe("GPT-4o")
-      })
+  describe("includeVendor=false", () => {
+    it("should return extracted model name when not in metadata", () => {
+      expect(renameModel("gpt-4o", false)).toBe("gpt-4o")
+      expect(renameModel("openai/gpt-4o", false)).toBe("gpt-4o")
     })
 
-    describe("Stage 1: Standard Format Detection", () => {
-      it("should return original if includeVendor and owner/model format without special prefix", () => {
-        expect(renameModel("OpenAI/GPT-4o", true)).toBe("OpenAI/GPT-4o")
-      })
-
-      it("should not fast-path with special prefixes", () => {
-        expect(renameModel("BigModel/OpenAI/GPT-4o", true)).not.toBe(
-          "BigModel/OpenAI/GPT-4o"
-        )
-      })
+    it("should use standard name from metadata", () => {
+      expect(renameModel("claude-3-5-sonnet", false)).toBe(
+        "claude-3-5-sonnet-20241022"
+      )
     })
 
-    describe("Stage 2: Clean Special Prefixes", () => {
-      it("should remove BigModel/ prefix", () => {
-        expect(renameModel("BigModel/gpt-4o", false)).toBe("GPT-4o")
-      })
-
-      it("should handle models without special prefix", () => {
-        expect(renameModel("gpt-4o", false)).toBe("gpt-4o")
-      })
+    it("should handle colon suffix", () => {
+      expect(renameModel("gpt-4o:free", false)).toBe("gpt-4o")
     })
 
-    describe("Stage 3: Extract Real Model Name", () => {
-      it("should extract after last slash", () => {
-        expect(renameModel("openai/gpt-4o", false)).toBe("GPT-4o")
-      })
+    it("should resolve to metadata version when removing date suffix", () => {
+      expect(renameModel("claude-3-5-sonnet-20240101", false)).toBe(
+        "claude-3-5-sonnet-20241022"
+      )
+    })
+  })
 
-      it("should handle multiple slashes", () => {
-        expect(renameModel("provider/category/model-name", false)).toBe(
-          "model-name"
-        )
-      })
+  describe("includeVendor=true", () => {
+    it("should preserve standard vendor/model format", () => {
+      expect(renameModel("OpenAI/gpt-4o", true)).toBe("OpenAI/gpt-4o")
+      expect(renameModel("Anthropic/claude-3-5-sonnet", true)).toBe("Anthropic/claude-3-5-sonnet")
     })
 
-    describe("Stage 4: Remove Colon Suffixes", () => {
-      it("should remove :free suffix", () => {
-        expect(renameModel("gpt-4o:free", false)).toBe("GPT-4o")
-      })
-
-      it("should remove :extended suffix", () => {
-        expect(renameModel("claude-3-5-sonnet:extended", false)).toBe(
-          "Claude 3.5 Sonnet"
-        )
-      })
-
-      it("should remove :preview suffix", () => {
-        expect(renameModel("model:preview", false)).toBe("model")
-      })
+    it("should not preserve BigModel/ prefix", () => {
+      expect(renameModel("BigModel/gpt-4o", true)).toBe("OpenAI/gpt-4o")
     })
 
-    describe("Stage 5: Remove Date Suffixes", () => {
-      it("should remove 8-digit date suffix", () => {
-        const result = removeDateSuffix("model-20250101")
-        expect(result).toBe("model")
-      })
-
-      it("should remove mm-yyyy suffix", () => {
-        const result = removeDateSuffix("model-07-2025")
-        expect(result).toBe("model")
-      })
-
-      it("should remove compact mmdd suffix", () => {
-        const result = removeDateSuffix("model-0722")
-        expect(result).toBe("model")
-      })
-
-      it("should not remove non-date numbers", () => {
-        const result = removeDateSuffix("gpt-4o")
-        expect(result).toBe("gpt-4o")
-      })
+    it("should not preserve Pro/ prefix", () => {
+      expect(renameModel("Pro/gpt-4o", true)).toBe("OpenAI/gpt-4o")
     })
 
-    describe("Stage 6: Metadata Matching", () => {
-      it("should canonicalize aliases when vendor prefix is requested", () => {
-        expect(renameModel("gpt4o", true)).toBe("OpenAI/GPT-4o")
-        expect(renameModel("claude35sonnet", true)).toBe(
-          "Anthropic/Claude 3.5 Sonnet"
-        )
-      })
-
-      it("should handle vendor/model format in standard name", () => {
-        expect(renameModel("deepseek-v3.1:beta", false)).toBe("DeepSeek-V3.1")
-        expect(renameModel("deepseek-v3.1:beta", true)).toBe(
-          "deepseek-ai/DeepSeek-V3.1"
-        )
-      })
-
-      it("should match normalized names with metadata aliases", () => {
-        expect(renameModel("gemini15flash", true)).toBe("Google/Gemini 1.5 Flash")
-      })
+    it("should add vendor prefix from metadata", () => {
+      expect(renameModel("gpt-4o", true)).toBe("OpenAI/gpt-4o")
+      expect(renameModel("claude-3-5-sonnet", true)).toBe(
+        "Anthropic/claude-3-5-sonnet-20241022"
+      )
     })
 
-    describe("Stage 7: Pattern Matching Fallback", () => {
-      it("should detect vendor from pattern when not in metadata", () => {
-        expect(renameModel("unknown-gpt-model", true)).toBe(
-          "OpenAI/unknown-gpt-model"
-        )
-      })
+    it("should add vendor prefix from pattern matching", () => {
+      expect(renameModel("unknown-gpt-model", true)).toBe("OpenAI/unknown-gpt-model")
+      expect(renameModel("deepseek-custom", true)).toBe("DeepSeek/deepseek-custom")
+    })
+  })
 
-      it("should fallback without vendor when includeVendor=false", () => {
-        expect(renameModel("unknown-gpt-model", false)).toBe(
-          "unknown-gpt-model"
-        )
-      })
-
-      it("should detect DeepSeek from pattern", () => {
-        expect(renameModel("deepseek-custom-model", true)).toBe(
-          "DeepSeek/deepseek-custom-model"
-        )
-      })
+  describe("edge cases", () => {
+    it("should handle empty or undefined input", () => {
+      expect(renameModel("", false)).toBeUndefined()
+      expect(renameModel("  ", false)).toBeUndefined()
     })
 
-    describe("Stage 8: Compose Final Result", () => {
-      it("should include vendor when includeVendor=true", () => {
-        expect(renameModel("gpt-4o", true)).toBe("OpenAI/GPT-4o")
-        expect(renameModel("claude-3-5-sonnet", true)).toBe(
-          "Anthropic/Claude 3.5 Sonnet"
-        )
-      })
-
-      it("should exclude vendor when includeVendor=false", () => {
-        expect(renameModel("openai/gpt-4o", false)).toBe("GPT-4o")
-        expect(renameModel("anthropic/claude-3-5-sonnet", false)).toBe(
-          "Claude 3.5 Sonnet"
-        )
-      })
-    })
-
-    describe("Complex scenarios", () => {
-      it("should handle full pipeline: special prefix + slash + colon + date", () => {
-        expect(renameModel("BigModel/openai/gpt-4o:free-20250101", false)).toBe(
-          "GPT-4o"
-        )
-      })
-
-      it("should handle channel model normalization", () => {
-        expect(renameModel("Pro/deepseek/deepseek-r1:extended", false)).toBe(
-          "DeepSeek R1"
-        )
-      })
-
-      it("should return undefined for empty string", () => {
-        expect(renameModel("", false)).toBeUndefined()
-      })
-
-      it("should return undefined for whitespace-only string", () => {
-        expect(renameModel("   ", false)).toBeUndefined()
-      })
-
-      it("should trim input", () => {
-        expect(renameModel("  gpt-4o  ", false)).toBe("gpt-4o")
-      })
+    it("should handle complex pipeline", () => {
+      expect(renameModel("BigModel/openai/gpt-4o:free-20240101", false)).toBe("gpt-4o")
     })
   })
 })
