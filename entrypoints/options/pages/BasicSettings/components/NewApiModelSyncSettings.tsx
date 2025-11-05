@@ -96,10 +96,10 @@ export default function NewApiModelSyncSettings() {
 
   return (
     <section>
-      <Heading4 className="mb-2">
-        {t("newApiModelSync:settings.title")}
-      </Heading4>
-      <BodySmall className="mb-4">{t("newApiModelSync:description")}</BodySmall>
+      <div className="mb-6 space-y-2">
+        <Heading4>{t("newApiModelSync:settings.title")}</Heading4>
+        <BodySmall>{t("newApiModelSync:description")}</BodySmall>
+      </div>
       <Card padding="none">
         <CardList>
           {/* Enable Auto-Sync */}
