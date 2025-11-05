@@ -2,7 +2,6 @@ export interface ModelMetadata {
   id: string
   name: string
   provider_id: string
-  aliases?: string[]
 }
 
 export interface ModelMetadataCache {

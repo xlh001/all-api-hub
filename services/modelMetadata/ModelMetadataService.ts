@@ -1,8 +1,5 @@
-import {
-  normalizeModelName,
-  removeDateSuffix,
-  stripVendorPrefix
-} from "~/utils/modelName"
+import { extractActualModel } from "~/services/modelRedirect/modelNormalization.ts"
+import { removeDateSuffix } from "~/utils/modelName"
 
 import {
   MODEL_METADATA_REFRESH_INTERVAL,
@@ -51,8 +48,11 @@ class ModelMetadataService {
   private async _initialize(): Promise<void> {
     try {
       const now = Date.now()
-      
-      if (this.cache && now - this.lastFetch < MODEL_METADATA_REFRESH_INTERVAL) {
+
+      if (
+        this.cache &&
+        now - this.lastFetch < MODEL_METADATA_REFRESH_INTERVAL
+      ) {
         console.log("[ModelMetadata] Using in-memory cache")
         return
       }
@@ -87,8 +87,7 @@ class ModelMetadataService {
       const models: ModelMetadata[] = modelsArray.map((item: any) => ({
         id: item.id || "",
         name: item.name || item.id || "",
-        provider_id: item.providerId || item.provider_id || "",
-        aliases: Array.isArray(item.aliases) ? item.aliases : []
+        provider_id: item.providerId || item.provider_id || ""
       }))
 
       this.cache = {
@@ -98,7 +97,8 @@ class ModelMetadataService {
       }
 
       this.lastFetch = Date.now()
-      this.buildMapsFromCache()
+      this.buildMetaDataMapFromCache()
+      this.buildVendorRules()
 
       console.log("[ModelMetadata] Refreshed successfully", {
         models: models.length
@@ -111,92 +111,70 @@ class ModelMetadataService {
     }
   }
 
-  private buildMapsFromCache(): void {
+  private buildMetaDataMapFromCache(): void {
     if (!this.cache) return
 
     this.metadataMap.clear()
-    const providerPatterns: Map<string, Set<string>> = new Map()
 
     for (const model of this.cache.models) {
-      const normalized = normalizeModelName(stripVendorPrefix(model.id))
-      if (normalized) {
-        this.metadataMap.set(normalized, model)
+      const actualModel = extractActualModel(model.id)
+      if (actualModel) {
+        this.metadataMap.set(actualModel, model)
+      }
+    }
+  }
+
+  private buildVendorRules(): void {
+    if (!this.cache) return
+
+    // 按 providerId 分组，收集模型前缀
+    const providerPrefixes: Map<string, Set<string>> = new Map()
+
+    for (const model of this.cache.models) {
+      if (!model.provider_id || !model.id) {
+        continue
       }
 
-      const shortId = model.id.includes("/")
-        ? model.id.slice(model.id.lastIndexOf("/") + 1)
-        : model.id
-      const shortNormalized = normalizeModelName(shortId)
-      if (shortNormalized) {
-        this.metadataMap.set(shortNormalized, model)
+      if (!providerPrefixes.has(model.provider_id)) {
+        providerPrefixes.set(model.provider_id, new Set())
       }
 
-      if (model.aliases) {
-        for (const alias of model.aliases) {
-          const aliasNormalized = normalizeModelName(stripVendorPrefix(alias))
-          if (aliasNormalized) {
-            this.metadataMap.set(aliasNormalized, model)
-          }
-
-          const aliasShort = alias.includes("/")
-            ? alias.slice(alias.lastIndexOf("/") + 1)
-            : alias
-          const aliasShortNormalized = normalizeModelName(aliasShort)
-          if (aliasShortNormalized) {
-            this.metadataMap.set(aliasShortNormalized, model)
-          }
+      // 提取前缀（取第一个 '-' 前的部分）
+      const parts = model.id.split("-")
+      if (parts.length > 0) {
+        const prefix = parts[0].toLowerCase().trim()
+        if (prefix) {
+          providerPrefixes.get(model.provider_id)!.add(prefix)
         }
       }
 
-      if (model.provider_id) {
-        if (!providerPatterns.has(model.provider_id)) {
-          providerPatterns.set(model.provider_id, new Set())
+      // 如果没有 '-'，使用完整ID作为前缀（某些简短模型名）
+      if (!model.id.includes("-")) {
+        const prefix = model.id.toLowerCase().trim()
+        if (prefix && prefix.length <= 15) {
+          providerPrefixes.get(model.provider_id)!.add(prefix)
         }
-        const keywords = this.extractKeywords(model.id)
-        keywords.forEach((kw) => providerPatterns.get(model.provider_id)!.add(kw))
       }
     }
 
-    this.vendorRules = this.buildVendorRules(providerPatterns)
-  }
-
-  private extractKeywords(modelId: string): string[] {
-    const keywords: string[] = []
-    const lower = modelId.toLowerCase().trim()
-
-    const parts = lower.split("-")
-    if (parts.length > 0) {
-      const prefix = parts[0].trim()
-      if (prefix) {
-        keywords.push(prefix)
-      }
-    }
-
-    if (!lower.includes("-") && lower.length <= 15) {
-      keywords.push(lower)
-    }
-
-    return [...new Set(keywords)]
-  }
-
-  private buildVendorRules(
-    providerPatterns: Map<string, Set<string>>
-  ): VendorRule[] {
+    // 生成规则
     const rules: VendorRule[] = []
 
-    for (const [providerID, keywords] of providerPatterns) {
-      if (keywords.size === 0) continue
+    for (const [providerID, prefixes] of providerPrefixes) {
+      if (prefixes.size === 0) continue
 
       const displayName =
-        PROVIDER_DISPLAY_NAMES[providerID] ||
-        this.capitalizeFirst(providerID)
+        PROVIDER_DISPLAY_NAMES[providerID] || this.capitalizeFirst(providerID)
 
-      const patternStr = Array.from(keywords)
-        .map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-        .join("|")
+      // 构建正则表达式（匹配任意前缀）
+      const prefixList = Array.from(prefixes).map((prefix) =>
+        prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      )
+
+      const patternStr = `(?i)^(${prefixList.join("|")})`
 
       try {
-        const pattern = new RegExp(`^(${patternStr})`, "i")
+        const pattern = new RegExp(patternStr, "i")
         rules.push({ providerID, displayName, pattern })
       } catch (error) {
         console.warn(
@@ -206,7 +184,7 @@ class ModelMetadataService {
       }
     }
 
-    return rules
+    this.vendorRules = rules
   }
 
   private capitalizeFirst(str: string): string {
@@ -221,30 +199,82 @@ class ModelMetadataService {
     console.warn("[ModelMetadata] Using fallback default data")
 
     const defaultMetadata: ModelMetadata[] = [
-      { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet", provider_id: "anthropic" },
-      { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku", provider_id: "anthropic" },
-      { id: "claude-3-opus-20240229", name: "Claude 3 Opus", provider_id: "anthropic" },
-      { id: "claude-sonnet-4-5-20250929", name: "Claude 4.5 Sonnet", provider_id: "anthropic" },
-      { id: "claude-haiku-4-5-20251001", name: "Claude 4.5 Haiku", provider_id: "anthropic" },
+      {
+        id: "claude-3-5-sonnet-20241022",
+        name: "Claude 3.5 Sonnet",
+        provider_id: "anthropic"
+      },
+      {
+        id: "claude-3-5-haiku-20241022",
+        name: "Claude 3.5 Haiku",
+        provider_id: "anthropic"
+      },
+      {
+        id: "claude-3-opus-20240229",
+        name: "Claude 3 Opus",
+        provider_id: "anthropic"
+      },
+      {
+        id: "claude-sonnet-4-5-20250929",
+        name: "Claude 4.5 Sonnet",
+        provider_id: "anthropic"
+      },
+      {
+        id: "claude-haiku-4-5-20251001",
+        name: "Claude 4.5 Haiku",
+        provider_id: "anthropic"
+      },
       { id: "gpt-4o", name: "GPT-4o", provider_id: "openai" },
       { id: "gpt-4o-mini", name: "GPT-4o mini", provider_id: "openai" },
       { id: "gpt-4-turbo", name: "GPT-4 Turbo", provider_id: "openai" },
       { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", provider_id: "openai" },
-      { id: "gemini-2.0-flash-exp", name: "Gemini 2.0 Flash", provider_id: "google" },
+      {
+        id: "gemini-2.0-flash-exp",
+        name: "Gemini 2.0 Flash",
+        provider_id: "google"
+      },
       { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", provider_id: "google" },
-      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", provider_id: "google" },
+      {
+        id: "gemini-1.5-flash",
+        name: "Gemini 1.5 Flash",
+        provider_id: "google"
+      },
       { id: "deepseek-chat", name: "DeepSeek Chat", provider_id: "deepseek" },
-      { id: "deepseek-reasoner", name: "DeepSeek Reasoner", provider_id: "deepseek" }
+      {
+        id: "deepseek-reasoner",
+        name: "DeepSeek Reasoner",
+        provider_id: "deepseek"
+      }
     ]
 
     const defaultRules: VendorRule[] = [
-      { providerID: "anthropic", displayName: "Anthropic", pattern: /^claude/i },
-      { providerID: "openai", displayName: "OpenAI", pattern: /^(gpt|chatgpt|o1|o3)/i },
+      {
+        providerID: "anthropic",
+        displayName: "Anthropic",
+        pattern: /^claude/i
+      },
+      {
+        providerID: "openai",
+        displayName: "OpenAI",
+        pattern: /^(gpt|chatgpt|o1|o3)/i
+      },
       { providerID: "google", displayName: "Google", pattern: /^gemini/i },
       { providerID: "alibaba", displayName: "阿里巴巴", pattern: /^qwen/i },
-      { providerID: "alibaba-cn", displayName: "通义千问", pattern: /^(qwen|tongyi)/i },
-      { providerID: "deepseek", displayName: "DeepSeek", pattern: /^deepseek/i },
-      { providerID: "moonshot", displayName: "Moonshot", pattern: /^moonshot/i },
+      {
+        providerID: "alibaba-cn",
+        displayName: "通义千问",
+        pattern: /^(qwen|tongyi)/i
+      },
+      {
+        providerID: "deepseek",
+        displayName: "DeepSeek",
+        pattern: /^deepseek/i
+      },
+      {
+        providerID: "moonshot",
+        displayName: "Moonshot",
+        pattern: /^moonshot/i
+      },
       { providerID: "zhipu", displayName: "智谱", pattern: /^(glm|bigmodel)/i },
       { providerID: "mistral", displayName: "MistralAI", pattern: /^mistral/i },
       { providerID: "xai", displayName: "xAI", pattern: /^grok/i },
@@ -261,17 +291,9 @@ class ModelMetadataService {
 
     this.metadataMap.clear()
     for (const model of defaultMetadata) {
-      const normalized = normalizeModelName(stripVendorPrefix(model.id))
-      if (normalized) {
-        this.metadataMap.set(normalized, model)
-      }
-
-      const shortId = model.id.includes("/")
-        ? model.id.slice(model.id.lastIndexOf("/") + 1)
-        : model.id
-      const shortNormalized = normalizeModelName(shortId)
-      if (shortNormalized) {
-        this.metadataMap.set(shortNormalized, model)
+      const actualModel = extractActualModel(model.id)
+      if (actualModel) {
+        this.metadataMap.set(actualModel, model)
       }
     }
 
@@ -283,9 +305,10 @@ class ModelMetadataService {
   ): { standardName: string; vendorName: string } | null {
     if (!this.cache) return null
 
-    const cleaned = normalizeModelName(stripVendorPrefix(modelName))
+    const cleaned = modelName.trim().toLowerCase()
     if (!cleaned) return null
 
+    // 精确匹配
     const metadata = this.metadataMap.get(cleaned)
     if (metadata) {
       const vendorName =
@@ -297,10 +320,13 @@ class ModelMetadataService {
       }
     }
 
+    // 但如果输入已包含日期后缀（如 claude-3-haiku-20240307），则不进行模糊匹配
+    // 因为这表示用户指定了特定的模型版本，不应该被重命名为其他版本
     if (removeDateSuffix(modelName) !== modelName) {
       return null
     }
 
+    // 模糊匹配（处理别名情况，如 claude-haiku-4-5 → claude-3.5-haiku）
     for (const [key, metadata] of this.metadataMap) {
       if (this.isFuzzyMatch(cleaned, key)) {
         const vendorName =
@@ -352,28 +378,32 @@ class ModelMetadataService {
       return false
     }
 
+    // 新增：检查输入是否有候选名没有的额外关键词
     for (const keyword of inputKeywords) {
       if (!candidateKeywords.has(keyword)) {
-        return false
+        return false // 有额外关键词，直接拒绝匹配
       }
     }
 
-    let shared = 0
+    // 然后才检查匹配数量
+    let matchCount = 0
     for (const keyword of candidateKeywords) {
       if (inputKeywords.has(keyword)) {
-        shared++
+        matchCount++
       }
     }
-
-    return shared >= Math.min(inputKeywords.size, candidateKeywords.size, 2)
+    return matchCount >= 2
   }
 
   findVendorByPattern(modelName: string): string | null {
+    const cleaned = modelName.toLowerCase().trim()
+
     for (const rule of this.vendorRules) {
-      if (rule.pattern.test(modelName)) {
+      if (rule.pattern.test(cleaned)) {
         return rule.displayName
       }
     }
+
     return null
   }
 
