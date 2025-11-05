@@ -4,7 +4,7 @@ import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import {
   CURRENT_PREFERENCES_VERSION,
   migratePreferences
-} from "~/services/configMigration/preferencesMigration"
+} from "~/services/configMigration/preferences/preferencesMigration.ts"
 import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 import {

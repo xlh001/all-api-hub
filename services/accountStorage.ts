@@ -24,7 +24,7 @@ import {
   migrateAccountConfig,
   migrateAccountsConfig,
   needsConfigMigration
-} from "./configMigration/accountDataMigration"
+} from "./configMigration/account/accountDataMigration.ts"
 import { userPreferences } from "./userPreferences"
 
 // 存储键名常量

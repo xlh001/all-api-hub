@@ -11,7 +11,7 @@ import {
   autoRefreshService,
   handleAutoRefreshMessage
 } from "../services/autoRefreshService"
-import { migrateAccountsConfig } from "../services/configMigration/accountDataMigration"
+import { migrateAccountsConfig } from "../services/configMigration/account/accountDataMigration.ts"
 import { getSiteType } from "../services/detectSiteType"
 import { modelMetadataService } from "../services/modelMetadata"
 import {
