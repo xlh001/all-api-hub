@@ -141,10 +141,13 @@ export async function updateChannel(
 }
 
 export function hasValidNewApiConfig(
-  prefs: Partial<UserPreferences>
+  prefs: Partial<UserPreferences> | null
 ): prefs is Required<
   Pick<UserPreferences, "newApiBaseUrl" | "newApiAdminToken" | "newApiUserId">
 > {
+  if (!prefs) {
+    return false
+  }
   const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
   return Boolean(newApiBaseUrl && newApiAdminToken && newApiUserId)
 }

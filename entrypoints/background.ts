@@ -13,6 +13,7 @@ import {
 } from "../services/autoRefreshService"
 import { migrateAccountsConfig } from "../services/configMigration/configMigration"
 import { getSiteType } from "../services/detectSiteType"
+import { modelMetadataService } from "../services/modelMetadata"
 import {
   handleNewApiModelSyncMessage,
   newApiModelSyncScheduler
@@ -53,6 +54,9 @@ async function main() {
 
     console.log("[Background] 初始化服务...")
     await initBackgroundI18n()
+    await modelMetadataService.initialize().catch((error) => {
+      console.warn("[Background] Model metadata initialization failed:", error)
+    })
     await autoRefreshService.initialize()
     await webdavAutoSyncService.initialize()
     await newApiModelSyncScheduler.initialize()
