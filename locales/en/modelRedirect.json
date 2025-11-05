@@ -1,8 +1,8 @@
 {
   "title": "Model Redirect",
-  "description": "Configure automatic model redirect mapping with weighted channel selection",
+  "description": "Automatic model redirect mapping, solving the problem of inability to uniformly call models due to model names",
   "enable": "Enable Model Redirect",
-  "enableDesc": "Automatically redirect standard model requests to optimal channels based on priority and weight",
+  "enableDesc": "Enable the model redirect mapping feature, which will run automatically during model synchronization and allow manual execution",
   "standardModels": "Standard Models",
   "standardModelsDesc": "Select the standard models to generate redirect mappings for",
   "standardModelsPlaceholder": "Select models...",
@@ -11,28 +11,6 @@
   "lastUpdated": "Last Updated",
   "never": "Never",
   "noMapping": "No mapping generated yet",
-  "mappingTable": {
-    "title": "Current Model Mapping",
-    "standardModel": "Standard Model",
-    "targetModel": "Target Model",
-    "channel": "Channel",
-    "reason": "Decision Factors",
-    "decidedAt": "Decided At"
-  },
-  "advanced": {
-    "title": "Advanced Scoring",
-    "epsilonP": "Priority Epsilon (εP)",
-    "epsilonPDesc": "Near-equal threshold for priority comparison (default: 1)",
-    "usedQuotaScale": "Used Quota Scale",
-    "usedQuotaScaleDesc": "Divisor for used quota penalty calculation (default: 0.25)",
-    "usedQuotaCap": "Used Quota Cap",
-    "usedQuotaCapDesc": "Maximum adjustment value for used quota penalty (default: 1.5)"
-  },
-  "dev": {
-    "title": "Development & Testing",
-    "useMockData": "Use Mock Data",
-    "useMockDataDesc": "Enable mock channel data for testing without live New API credentials"
-  },
   "messages": {
     "regenerateSuccess": "Model mapping regenerated successfully",
     "regenerateFailed": "Failed to regenerate model mapping: {{error}}",
