@@ -11,7 +11,6 @@ import {
   CHANNEL_STATUS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES
 } from "~/types"
-import { normalizeModelName, stripVendorPrefix } from "~/utils/modelName"
 
 import { hasValidNewApiConfig } from "../newApiService"
 import { userPreferences } from "../userPreferences"
@@ -147,16 +146,13 @@ export class ModelRedirectService {
       if (!actualModel) continue
       actualModelSet.add(actualModel)
 
-      const normalized = renameModel(actualModel, false)?.trim()
-      if (!normalized) continue
+      const normalizedModelName = renameModel(actualModel, false)?.trim()
+      if (!normalizedModelName) continue
 
-      const key = normalizeModelName(stripVendorPrefix(normalized))
-      if (!key) continue
-
-      if (!normalizedActualMap.has(key)) {
-        normalizedActualMap.set(key, [])
+      if (!normalizedActualMap.has(normalizedModelName)) {
+        normalizedActualMap.set(normalizedModelName, [])
       }
-      normalizedActualMap.get(key)!.push(actualModel)
+      normalizedActualMap.get(normalizedModelName)!.push(actualModel)
     }
 
     for (const rawStandard of standardModels) {
@@ -171,15 +167,13 @@ export class ModelRedirectService {
         continue
       }
 
-      const normalizedStandard = renameModel(standardModel, false)?.trim()
-      if (!normalizedStandard) continue
+      const normalizedStandardModelName = renameModel(
+        standardModel,
+        false
+      )?.trim()
+      if (!normalizedStandardModelName) continue
 
-      const standardKey = normalizeModelName(
-        stripVendorPrefix(normalizedStandard)
-      )
-      if (!standardKey) continue
-
-      const candidates = normalizedActualMap.get(standardKey)
+      const candidates = normalizedActualMap.get(normalizedStandardModelName)
       if (!candidates || candidates.length === 0) continue
 
       const availableCandidate = candidates.find(

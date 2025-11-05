@@ -1,38 +1,4 @@
 /**
- * Model Name Utilities
- * Handles model name normalization, aliasing, and comparison
- */
-
-/**
- * Normalize a model name for comparison purposes
- * Only removes underscores and colons, preserves hyphens for semantic structure
- * Converts to lowercase for case-insensitive matching
- */
-export function normalizeModelName(name: string): string {
-  return name.toLowerCase()
-}
-
-/**
- * Strip vendor prefixes and special wrappers from model names
- * Removes known container prefixes (BigModel/, Pro/, etc.) and returns the last segment after '/'
- */
-export function stripVendorPrefix(name: string): string {
-  if (!name) return name
-
-  let cleaned = name.trim()
-  const lastSlashIndex = cleaned.lastIndexOf("/")
-  if (lastSlashIndex !== -1) {
-    cleaned = cleaned.slice(lastSlashIndex + 1)
-  }
-
-  return cleaned
-}
-
-/**
- * Model aliases by vendor
- */
-
-/**
  * Remove date suffixes from model names
  * Supports various date formats:
  * - yyyymmdd: -20240101, -20250722, _20240101
