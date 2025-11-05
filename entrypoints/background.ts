@@ -11,7 +11,7 @@ import {
   autoRefreshService,
   handleAutoRefreshMessage
 } from "../services/autoRefreshService"
-import { migrateAccountsConfig } from "../services/configMigration/configMigration"
+import { migrateAccountsConfig } from "../services/configMigration/accountDataMigration"
 import { getSiteType } from "../services/detectSiteType"
 import { modelMetadataService } from "../services/modelMetadata"
 import {
@@ -382,4 +382,3 @@ function waitForTabComplete(tabId: number): Promise<void> {
     checkStatus()
   })
 }
-
