@@ -37,7 +37,7 @@ export default function ModelRedirectSettings() {
       const modelList = await getModelList()
       setModelList(modelList ?? ALL_PRESET_STANDARD_MODELS)
     })()
-  }, [])
+  }, [preferences])
 
   const handleUpdate = async (updates: Record<string, unknown>) => {
     try {
