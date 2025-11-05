@@ -247,3 +247,6 @@ export * from "./newapi"
 
 // Model Redirect Types
 export * from "./modelRedirect"
+
+// WebDAV Types
+export * from "./webdav"

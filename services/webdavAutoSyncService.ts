@@ -56,29 +56,29 @@ class WebdavAutoSyncService {
       // 获取用户偏好设置
       const preferences = await userPreferences.getPreferences()
 
-      if (!preferences.webdavAutoSync) {
+      if (!preferences.webdav.autoSync) {
         console.log("[WebdavAutoSync] 自动同步已关闭")
         return
       }
 
       // 检查WebDAV配置是否完整
       if (
-        !preferences.webdavUrl ||
-        !preferences.webdavUsername ||
-        !preferences.webdavPassword
+        !preferences.webdav.url ||
+        !preferences.webdav.username ||
+        !preferences.webdav.password
       ) {
         console.log("[WebdavAutoSync] WebDAV配置不完整，无法启动自动同步")
         return
       }
 
       // 启动定时同步
-      const intervalMs = (preferences.webdavSyncInterval || 3600) * 1000
+      const intervalMs = (preferences.webdav.syncInterval || 3600) * 1000
       this.syncTimer = setInterval(async () => {
         await this.performBackgroundSync()
       }, intervalMs)
 
       console.log(
-        `[WebdavAutoSync] 自动同步已启动，间隔: ${preferences.webdavSyncInterval || 3600}秒`
+        `[WebdavAutoSync] 自动同步已启动，间隔: ${preferences.webdav.syncInterval || 3600}秒`
       )
     } catch (error) {
       console.error("[WebdavAutoSync] 设置自动同步失败:", error)
@@ -165,7 +165,7 @@ class WebdavAutoSyncService {
     ])
 
     // 决定同步策略
-    const strategy = preferences.webdavSyncStrategy || "merge"
+    const strategy = preferences.webdav.syncStrategy || "merge"
 
     let accountsToSave: SiteAccount[]
     let preferencesToSave: UserPreferences
@@ -190,16 +190,16 @@ class WebdavAutoSyncService {
       accountsToSave = mergeResult.accounts
       preferencesToSave = mergeResult.preferences
       console.log(`[WebdavAutoSync] 合并完成: ${accountsToSave.length} 个账号`)
-    } else if (strategy === "upload_only" || !remoteData) {
-      // 仅上传或远程无数据
+    } else if (strategy === "overwrite" || !remoteData) {
+      // 覆盖策略或远程无数据
       accountsToSave = localAccountsConfig.accounts
       preferencesToSave = localPreferences
-      console.log("[WebdavAutoSync] 使用本地数据上传")
+      console.log("[WebdavAutoSync] 使用本地数据覆盖")
     } else {
-      // download_only
+      // 默认合并策略
       accountsToSave = remoteData?.accounts?.accounts || []
       preferencesToSave = remoteData?.preferences || localPreferences
-      console.log("[WebdavAutoSync] 使用远程数据下载")
+      console.log("[WebdavAutoSync] 使用远程数据")
     }
 
     // 保存合并后的数据到本地
@@ -354,12 +354,15 @@ class WebdavAutoSyncService {
    * 更新同步设置
    */
   async updateSettings(settings: {
-    webdavAutoSync?: boolean
-    webdavSyncInterval?: number
-    webdavSyncStrategy?: "merge" | "upload_only" | "download_only"
+    autoSync?: boolean
+    syncInterval?: number
+    syncStrategy?: "merge" | "overwrite"
   }) {
     try {
-      await userPreferences.updateWebdavAutoSyncSettings(settings)
+      // Update the nested webdav object
+      await userPreferences.savePreferences({
+        webdav: settings
+      })
       await this.setupAutoSync() // 重新设置定时器
       console.log("[WebdavAutoSync] 设置已更新:", settings)
     } catch (error) {
@@ -448,7 +451,22 @@ export const handleWebdavAutoSyncMessage = async (
         break
 
       case "webdavAutoSync:updateSettings":
-        await webdavAutoSyncService.updateSettings(request.settings)
+        // Transform old parameter names to new nested structure
+        let transformedSyncStrategy: "merge" | "overwrite" = "merge"
+        if (request.settings.webdavSyncStrategy === "upload_only") {
+          transformedSyncStrategy = "overwrite"
+        } else if (request.settings.webdavSyncStrategy === "download_only") {
+          transformedSyncStrategy = "merge"
+        } else if (request.settings.webdavSyncStrategy === "merge") {
+          transformedSyncStrategy = "merge"
+        }
+        
+        const transformedSettings = {
+          autoSync: request.settings.webdavAutoSync,
+          syncInterval: request.settings.webdavSyncInterval,
+          syncStrategy: transformedSyncStrategy
+        }
+        await webdavAutoSyncService.updateSettings(transformedSettings)
         sendResponse({ success: true })
         break
 

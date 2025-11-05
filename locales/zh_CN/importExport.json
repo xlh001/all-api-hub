@@ -76,8 +76,7 @@
       "strategy": "同步策略",
       "strategyDesc": "选择数据同步方式",
       "strategyMerge": "智能合并 - 根据时间戳合并本地和远程数据",
-      "strategyLocalFirst": "本地优先 - 本地数据覆盖远程数据",
-      "strategyRemoteFirst": "远程优先 - 远程数据覆盖本地数据",
+      "strategyOverwrite": "覆盖 - 远程数据覆盖本地数据",
       "lastSync": "上次同步",
       "saveSettings": "保存设置",
       "syncNow": "立即同步"

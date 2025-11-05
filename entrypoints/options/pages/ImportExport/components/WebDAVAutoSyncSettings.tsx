@@ -31,7 +31,7 @@ export default function WebDAVAutoSyncSettings() {
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false)
   const [syncInterval, setSyncInterval] = useState(3600)
   const [syncStrategy, setSyncStrategy] = useState<
-    "merge" | "upload_only" | "download_only"
+    "merge" | "overwrite"
   >("merge")
 
   // Status
@@ -56,9 +56,9 @@ export default function WebDAVAutoSyncSettings() {
     try {
       const { userPreferences } = await import("~/services/userPreferences")
       const prefs = await userPreferences.getPreferences()
-      setAutoSyncEnabled(prefs.webdavAutoSync ?? false)
-      setSyncInterval(prefs.webdavSyncInterval ?? 3600)
-      setSyncStrategy(prefs.webdavSyncStrategy ?? "merge")
+      setAutoSyncEnabled(prefs.webdav.autoSync ?? false)
+      setSyncInterval(prefs.webdav.syncInterval ?? 3600)
+      setSyncStrategy(prefs.webdav.syncStrategy ?? "merge")
     } catch (error) {
       console.error("Failed to load auto-sync settings:", error)
     }
@@ -219,17 +219,14 @@ export default function WebDAVAutoSyncSettings() {
                 value={syncStrategy}
                 onChange={(e) =>
                   setSyncStrategy(
-                    e.target.value as "merge" | "upload_only" | "download_only"
+                    e.target.value as "merge" | "overwrite"
                   )
                 }>
                 <option value="merge">
                   {t("webdav.autoSync.strategyMerge")}
                 </option>
-                <option value="upload_only">
-                  {t("webdav.autoSync.strategyUploadOnly")}
-                </option>
-                <option value="download_only">
-                  {t("webdav.autoSync.strategyDownloadOnly")}
+                <option value="overwrite">
+                  {t("webdav.autoSync.strategyOverwrite")}
                 </option>
               </Select>
             </FormField>
