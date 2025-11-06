@@ -29,11 +29,13 @@ features:
   - title: 令牌与密钥管理
     details: 便捷管理所有 API Key，支持查看、复制、刷新和批量操作。
   - title: 模型信息查看
-    details: 清晰展示站点支持的模型列表和渠道信息，支持 New API 及兼容系统的模型自动同步。
+    details: 清晰展示站点支持的模型列表和价格信息。
   - title: 签到状态监控
     details: 自动检测站点是否支持签到功能，并显示当前签到状态。
   - title: 快速导出集成
     details: 一键导出配置到 CherryStudio 和 New API，简化 API 使用流程。
+  - title: New API 类系统管理
+    details: 自动同步渠道及其 fork 项目的模型列表，并生成模型重定向，免去手动配置，最大化提升模型可用性
   - title: 数据备份恢复
     details: 支持 JSON 格式导入导出和 WebDav 云端备份，实现跨设备数据同步。
   - title: 全平台支持

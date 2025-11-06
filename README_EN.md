@@ -51,8 +51,10 @@ This extension automatically detects and manages accounts from sites based on th
 - 🏷️ **Site Information Management** - Multiple methods to retrieve real site names, check-in status detection and automatic check-in, manually add any AI aggregation and relay site
 - 👥 **Multi-Account Management** - Support multiple accounts per site, account grouping and quick switching, balance and usage logs at a glance
 - 🔑 **Token & Key Management** - Convenient API Key viewing and management, support quick copy and batch operations
-- 🤖 **Model Information** - View supported model lists and channel information, automatic New API model synchronization to stay up-to-date
-- 🔄 Automated Model Synchronization - Support New API and compatible systems, automatically sync channel model lists via API, eliminating manual updates
+- 🤖 **View Model Information** - View the list of models supported by the site and pricing information.
+- 🔄 **New API System Management**
+    - Automatically synchronize the channel model list of New API and its fork projects, continuously staying in sync with the upstream model list.
+    - Automatically generate model redirects, eliminating manual searching and individual configuration, maximizing channel resource utilization, and enhancing model availability.
 - 🚀 **Quick Export Integration** - One-click export configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio) and [New API](https://github.com/QuantumNous/new-api), simplifying API usage workflow
 - ☁️ **Data Backup & Recovery** - Support JSON format import/export, WebDav cloud backup, cross-device data synchronization
 - 🌐 **Cross-Platform Compatible** - Support Chrome, Firefox browsers, works on mobile devices via Kiwi Browser, with automatic dark mode switching
