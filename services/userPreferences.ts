@@ -22,6 +22,7 @@ import {
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
   type ModelRedirectPreferences
 } from "~/types/modelRedirect"
+import { DEFAULT_NEW_API_CONFIG, NewApiConfig } from "~/types/newApiConfig.ts"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
 import { DeepPartial } from "~/types/utils.ts"
@@ -66,9 +67,7 @@ export interface UserPreferences {
   webdav: WebDAVSettings
 
   // New API 相关配置
-  newApiBaseUrl?: string
-  newApiAdminToken?: string
-  newApiUserId?: string
+  newApi: NewApiConfig
 
   // New API Model Sync 配置
   newApiModelSync: {
@@ -109,6 +108,18 @@ export interface UserPreferences {
 
   /**
    * 以下字段已废弃，仅保留供迁移使用
+   * @deprecated Use newApi object instead
+   */
+  newApiBaseUrl?: string
+  /**
+   * @deprecated Use newApi object instead
+   */
+  newApiAdminToken?: string
+  /**
+   * @deprecated Use newApi object instead
+   */
+  newApiUserId?: string
+  /**
    * @deprecated Use accountAutoRefresh instead
    */
   autoRefresh?: boolean
@@ -170,9 +181,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showHealthStatus: true, // 默认显示健康状态
   webdav: DEFAULT_WEBDAV_SETTINGS,
   lastUpdated: Date.now(),
-  newApiBaseUrl: "",
-  newApiAdminToken: "",
-  newApiUserId: "",
+  newApi: DEFAULT_NEW_API_CONFIG,
   newApiModelSync: {
     enabled: false,
     interval: 24 * 60 * 60 * 1000, // 24小时
@@ -315,29 +324,6 @@ class UserPreferencesService {
     return this.savePreferences({
       webdav: settings
     })
-  }
-
-  /**
-   * 更新 New API 设置
-   */
-  async updateNewApiSettings(settings: {
-    newApiBaseUrl?: string
-    newApiAdminToken?: string
-    newApiUserId?: string
-  }): Promise<boolean> {
-    return this.savePreferences(settings)
-  }
-
-  async updateNewApiBaseUrl(newApiBaseUrl: string): Promise<boolean> {
-    return this.savePreferences({ newApiBaseUrl })
-  }
-
-  async updateNewApiAdminToken(newApiAdminToken: string): Promise<boolean> {
-    return this.savePreferences({ newApiAdminToken })
-  }
-
-  async updateNewApiUserId(newApiUserId: string): Promise<boolean> {
-    return this.savePreferences({ newApiUserId })
   }
 
   /**

@@ -223,30 +223,35 @@ export const UserPreferencesProvider = ({
     return success
   }, [])
 
-  const updateNewApiBaseUrl = useCallback(async (url: string) => {
-    const success = await userPreferences.updateNewApiBaseUrl(url)
+  const updateNewApiBaseUrl = useCallback(async (baseUrl: string) => {
+    const updates = {
+      newApi: { baseUrl }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) => (prev ? { ...prev, newApiBaseUrl: url } : null))
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
     }
     return success
   }, [])
 
-  const updateNewApiAdminToken = useCallback(async (token: string) => {
-    const success = await userPreferences.updateNewApiAdminToken(token)
+  const updateNewApiAdminToken = useCallback(async (adminToken: string) => {
+    const updates = {
+      newApi: { adminToken }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, newApiAdminToken: token } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
     }
     return success
   }, [])
 
   const updateNewApiUserId = useCallback(async (userId: string) => {
-    const success = await userPreferences.updateNewApiUserId(userId)
+    const updates = {
+      newApi: { userId }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, newApiUserId: userId } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
     }
     return success
   }, [])
@@ -366,9 +371,9 @@ export const UserPreferencesProvider = ({
     refreshInterval: preferences?.accountAutoRefresh?.interval ?? 360,
     minRefreshInterval: preferences?.accountAutoRefresh?.minInterval ?? 60,
     refreshOnOpen: preferences?.accountAutoRefresh?.refreshOnOpen ?? true,
-    newApiBaseUrl: preferences?.newApiBaseUrl || "",
-    newApiAdminToken: preferences?.newApiAdminToken || "",
-    newApiUserId: preferences?.newApiUserId || "",
+    newApiBaseUrl: preferences?.newApi?.baseUrl || "",
+    newApiAdminToken: preferences?.newApi?.adminToken || "",
+    newApiUserId: preferences?.newApi?.userId || "",
     themeMode: preferences?.themeMode || "system",
     updateActiveTab,
     updateDefaultTab,

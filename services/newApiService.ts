@@ -91,7 +91,7 @@ export async function createChannel(
       ...channelData,
       channel: {
         ...channelData.channel,
-        group: channelData.channel.groups.join(",")
+        group: channelData?.channel?.groups?.join(",")
       }
     }
     return await fetchApi<void>({
@@ -140,16 +140,18 @@ export async function updateChannel(
   }
 }
 
-export function hasValidNewApiConfig(
-  prefs: Partial<UserPreferences> | null
-): prefs is Required<
-  Pick<UserPreferences, "newApiBaseUrl" | "newApiAdminToken" | "newApiUserId">
-> {
+export function hasValidNewApiConfig(prefs: UserPreferences | null): boolean {
   if (!prefs) {
     return false
   }
-  const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
-  return Boolean(newApiBaseUrl && newApiAdminToken && newApiUserId)
+
+  const { newApi } = prefs
+
+  if (!newApi) {
+    return false
+  }
+
+  return Boolean(newApi.baseUrl && newApi.adminToken && newApi.userId)
 }
 
 /**
@@ -176,10 +178,11 @@ export async function getNewApiConfig(): Promise<{
   try {
     const prefs = await userPreferences.getPreferences()
     if (hasValidNewApiConfig(prefs)) {
+      const { newApi } = prefs
       return {
-        baseUrl: prefs.newApiBaseUrl,
-        token: prefs.newApiAdminToken,
-        userId: prefs.newApiUserId
+        baseUrl: newApi.baseUrl,
+        token: newApi.adminToken,
+        userId: newApi.userId
       }
     }
     return null
@@ -366,14 +369,19 @@ export async function importToNewApi(
       }
     }
 
-    const { newApiBaseUrl, newApiAdminToken, newApiUserId } = prefs
+    const { newApi } = prefs
+    const {
+      baseUrl: newApiBaseUrl,
+      adminToken: newApiAdminToken,
+      userId: newApiUserId
+    } = newApi
 
     const formData = await prepareChannelFormData(account, token)
 
     const existingChannel = await findMatchingChannel(
-      newApiBaseUrl,
-      newApiAdminToken,
-      newApiUserId,
+      newApiBaseUrl!,
+      newApiAdminToken!,
+      newApiUserId!,
       account.baseUrl,
       formData.models
     )
@@ -390,9 +398,9 @@ export async function importToNewApi(
     const payload = buildChannelPayload(formData)
 
     const createdChannelResponse = await createChannel(
-      newApiBaseUrl,
-      newApiAdminToken,
-      newApiUserId,
+      newApiBaseUrl!,
+      newApiAdminToken!,
+      newApiUserId!,
       payload
     )
 
@@ -425,13 +433,17 @@ async function validateNewApiConfig(): Promise<{
   const prefs = await userPreferences.getPreferences()
   const errors = []
 
-  if (!prefs.newApiBaseUrl) {
+  const baseUrl = prefs.newApi?.baseUrl || prefs.newApiBaseUrl
+  const adminToken = prefs.newApi?.adminToken || prefs.newApiAdminToken
+  const userId = prefs.newApi?.userId || prefs.newApiUserId
+
+  if (!baseUrl) {
     errors.push(t("messages:errors.validation.newApiBaseUrlRequired"))
   }
-  if (!prefs.newApiAdminToken) {
+  if (!adminToken) {
     errors.push(t("messages:errors.validation.newApiAdminTokenRequired"))
   }
-  if (!prefs.newApiUserId) {
+  if (!userId) {
     errors.push(t("messages:errors.validation.newApiUserIdRequired"))
   }
 

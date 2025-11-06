@@ -75,7 +75,9 @@ export interface ChannelFormData {
  */
 export interface CreateChannelPayload {
   mode: ChannelMode
-  channel: Omit<UpdateChannelPayload, "id">
+  channel: Omit<UpdateChannelPayload, "id"> & {
+    status: ChannelStatus
+  }
 }
 
 /**
@@ -111,6 +113,7 @@ export interface UpdateChannelPayload {
   param_override?: any | null
   header_override?: any | null
   remark?: string | null
+  key?: string
   /**
    * 多密钥模式下专用
    * @see https://github.com/QuantumNous/new-api/blob/7156bf238276d2089435eacc3efb266403f27c8e/controller/channel.go#L769

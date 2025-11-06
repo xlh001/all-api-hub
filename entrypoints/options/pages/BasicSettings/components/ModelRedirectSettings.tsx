@@ -26,9 +26,9 @@ export default function ModelRedirectSettings() {
     async function getModelList() {
       if (hasValidNewApiConfig(preferences)) {
         return await fetchAccountAvailableModels({
-          baseUrl: preferences.newApiBaseUrl,
-          userId: preferences.newApiUserId,
-          token: preferences.newApiAdminToken,
+          baseUrl: preferences.newApi.baseUrl,
+          userId: preferences.newApi.userId,
+          token: preferences.newApi.adminToken,
           authType: AuthTypeEnum.AccessToken
         })
       }

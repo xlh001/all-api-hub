@@ -3,14 +3,15 @@
  * Handles version-based migrations for UserPreferences configurations
  */
 
-import { migrateWebDavConfig } from "~/services/configMigration/preferences/webDavConfigMigration.ts"
 import { migrateAutoRefreshConfig } from "~/services/configMigration/preferences/autoRefreshConfigMigration.ts"
+import { migrateNewApiConfig } from "~/services/configMigration/preferences/newApiConfigMigration.ts"
+import { migrateWebDavConfig } from "~/services/configMigration/preferences/webDavConfigMigration.ts"
 
 import type { UserPreferences } from "../../userPreferences.ts"
 import { migrateSortingConfig } from "./sortingConfigMigration.ts"
 
 // Current version of the preferences schema
-export const CURRENT_PREFERENCES_VERSION = 4
+export const CURRENT_PREFERENCES_VERSION = 5
 
 /**
  * Migration function type
@@ -85,6 +86,20 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
     return {
       ...migratedPrefs,
       preferencesVersion: 4
+    }
+  },
+
+  // Version 4 -> 5: Migrate flat new-api fields to nested newApi object
+  5: (prefs: UserPreferences): UserPreferences => {
+    console.log(
+      "[PreferencesMigration] Migrating preferences from v4 to v5 (new-api config migration)"
+    )
+
+    const migratedPrefs = migrateNewApiConfig(prefs)
+
+    return {
+      ...migratedPrefs,
+      preferencesVersion: 5
     }
   }
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { extractActualModel } from "../modelNormalization"
+import { ModelRedirectService } from "../ModelRedirectService"
 
 // Mock metadata
 const mockMetadataMap = new Map<
@@ -9,7 +10,10 @@ const mockMetadataMap = new Map<
 >([
   ["gpt-4o", { standardName: "gpt-4o", vendorName: "OpenAI" }],
   ["deepseek-r1", { standardName: "deepseek-r1", vendorName: "DeepSeek" }],
-  ["claude-3-5-sonnet", { standardName: "claude-3-5-sonnet-20241022", vendorName: "Anthropic" }],
+  [
+    "claude-3-5-sonnet",
+    { standardName: "claude-3-5-sonnet-20241022", vendorName: "Anthropic" }
+  ],
   ["gpt-4o-mini", { standardName: "gpt-4o-mini", vendorName: "OpenAI" }]
 ])
 
@@ -28,15 +32,13 @@ vi.mock("~/services/modelMetadata", () => ({
       return null
     },
     getVendorRules: () => [],
-    getCacheInfo: () => ({ 
-      isLoaded: true, 
-      modelCount: mockMetadataMap.size, 
-      lastUpdated: Date.now() 
+    getCacheInfo: () => ({
+      isLoaded: true,
+      modelCount: mockMetadataMap.size,
+      lastUpdated: Date.now()
     })
   }
 }))
-
-import { ModelRedirectService } from "../ModelRedirectService"
 
 describe("ModelRedirectService.generateModelMappingForChannel", () => {
   it("should generate mapping with normalized names and deduplicate actual models", () => {
@@ -104,7 +106,11 @@ describe("ModelRedirectService.generateModelMappingForChannel", () => {
 describe("extractActualModel", () => {
   it("should correctly extract actual model names", () => {
     expect(extractActualModel("openai/gpt-4o:free")).toBe("gpt-4o")
-    expect(extractActualModel("BigModel/deepseek/deepseek-r1:free")).toBe("deepseek-r1")
-    expect(extractActualModel("claude-3-5-sonnet-20241022")).toBe("claude-3-5-sonnet")
+    expect(extractActualModel("BigModel/deepseek/deepseek-r1:free")).toBe(
+      "deepseek-r1"
+    )
+    expect(extractActualModel("claude-3-5-sonnet-20241022")).toBe(
+      "claude-3-5-sonnet"
+    )
   })
 })

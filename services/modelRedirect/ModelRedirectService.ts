@@ -65,10 +65,12 @@ export class ModelRedirectService {
         console.warn("[ModelRedirect] Failed to initialize metadata:", error)
       })
 
+      const { newApi } = prefs
+
       const service = new NewApiModelSyncService(
-        prefs.newApiBaseUrl,
-        prefs.newApiAdminToken,
-        prefs.newApiUserId
+        newApi.baseUrl!,
+        newApi.adminToken!,
+        newApi.userId!
       )
 
       const channelList = await service.listChannels()
