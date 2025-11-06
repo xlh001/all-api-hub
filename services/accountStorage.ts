@@ -834,7 +834,7 @@ class AccountStorageService {
     }
 
     const preferences = await userPreferences.getPreferences()
-    const minIntervalMs = preferences.minRefreshInterval * 1000
+    const minIntervalMs = preferences.accountAutoRefresh.minInterval * 1000
     const timeSinceLastRefresh = Date.now() - (account.last_sync_time || 0)
 
     return timeSinceLastRefresh < minIntervalMs

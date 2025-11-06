@@ -33,11 +33,32 @@ export interface UserPreferences {
   sortField: SortField // 排序字段
   sortOrder: SortOrder // 排序顺序
 
-  // 自动刷新相关配置
-  autoRefresh: boolean // 是否启用定时自动刷新
-  refreshInterval: number // 刷新间隔（秒）
-  minRefreshInterval: number // 最小刷新间隔（秒）
-  refreshOnOpen: boolean // 打开插件时自动刷新
+  // 自动刷新相关配置 (嵌套对象)
+  accountAutoRefresh: {
+    enabled: boolean // 是否启用定时自动刷新
+    interval: number // 刷新间隔（秒）
+    minInterval: number // 最小刷新间隔（秒）
+    refreshOnOpen: boolean // 打开插件时自动刷新
+  }
+
+  /**
+   * 以下字段已废弃，仅保留供迁移使用
+   * @deprecated Use accountAutoRefresh instead
+   */
+  autoRefresh?: boolean
+  /**
+   * @deprecated Use accountAutoRefresh.interval instead
+   */
+  refreshInterval?: number
+  /**
+   * @deprecated Use accountAutoRefresh.minInterval instead
+   */
+  minRefreshInterval?: number
+  /**
+   * @deprecated Use accountAutoRefresh.refreshOnOpen instead
+   */
+  refreshOnOpen?: boolean
+
   showHealthStatus: boolean // 是否显示健康状态
 
   /**
@@ -119,10 +140,12 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   currencyType: "USD",
   sortField: DATA_TYPE_BALANCE, // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
   sortOrder: "desc", // 与 UI_CONSTANTS.SORT.DEFAULT_ORDER 保持一致
-  autoRefresh: true, // 默认启用自动刷新
-  refreshInterval: 360, // 默认360秒刷新间隔
-  minRefreshInterval: 60, // 默认60秒最小刷新间隔
-  refreshOnOpen: true, // 默认打开插件时自动刷新
+  accountAutoRefresh: {
+    enabled: true, // 默认启用自动刷新
+    interval: 360, // 默认360秒刷新间隔
+    minInterval: 60, // 默认60秒最小刷新间隔
+    refreshOnOpen: true // 默认打开插件时自动刷新
+  },
   showHealthStatus: true, // 默认显示健康状态
   webdav: DEFAULT_WEBDAV_SETTINGS,
   lastUpdated: Date.now(),
@@ -249,35 +272,97 @@ class UserPreferencesService {
     refreshOnOpen?: boolean
     showHealthStatus?: boolean
   }): Promise<boolean> {
-    return this.savePreferences(settings)
+    const prefs = await this.getPreferences()
+    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+
+    const updates: Record<string, any> = {}
+
+    if (settings.autoRefresh !== undefined) {
+      updates.accountAutoRefresh = {
+        ...accountAutoRefresh,
+        enabled: settings.autoRefresh
+      }
+    }
+
+    if (settings.refreshInterval !== undefined) {
+      updates.accountAutoRefresh = {
+        ...(updates.accountAutoRefresh || accountAutoRefresh),
+        interval: settings.refreshInterval
+      }
+    }
+
+    if (settings.refreshOnOpen !== undefined) {
+      updates.accountAutoRefresh = {
+        ...(updates.accountAutoRefresh || accountAutoRefresh),
+        refreshOnOpen: settings.refreshOnOpen
+      }
+    }
+
+    if (settings.showHealthStatus !== undefined) {
+      updates.showHealthStatus = settings.showHealthStatus
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return true
+    }
+
+    return this.savePreferences(updates)
   }
 
   /**
    * 更新自动刷新开关
    */
   async updateAutoRefresh(autoRefresh: boolean): Promise<boolean> {
-    return this.savePreferences({ autoRefresh })
+    const prefs = await this.getPreferences()
+    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    return this.savePreferences({
+      accountAutoRefresh: {
+        ...accountAutoRefresh,
+        enabled: autoRefresh
+      }
+    })
   }
 
   /**
    * 更新刷新间隔
    */
   async updateRefreshInterval(refreshInterval: number): Promise<boolean> {
-    return this.savePreferences({ refreshInterval })
+    const prefs = await this.getPreferences()
+    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    return this.savePreferences({
+      accountAutoRefresh: {
+        ...accountAutoRefresh,
+        interval: refreshInterval
+      }
+    })
   }
 
   /**
    * 更新最小刷新间隔
    */
   async updateMinRefreshInterval(minRefreshInterval: number): Promise<boolean> {
-    return this.savePreferences({ minRefreshInterval })
+    const prefs = await this.getPreferences()
+    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    return this.savePreferences({
+      accountAutoRefresh: {
+        ...accountAutoRefresh,
+        minInterval: minRefreshInterval
+      }
+    })
   }
 
   /**
    * 更新打开插件时自动刷新设置
    */
   async updateRefreshOnOpen(refreshOnOpen: boolean): Promise<boolean> {
-    return this.savePreferences({ refreshOnOpen })
+    const prefs = await this.getPreferences()
+    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    return this.savePreferences({
+      accountAutoRefresh: {
+        ...accountAutoRefresh,
+        refreshOnOpen: refreshOnOpen
+      }
+    })
   }
 
   /**
