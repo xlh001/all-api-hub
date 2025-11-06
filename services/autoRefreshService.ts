@@ -116,7 +116,9 @@ class AutoRefreshService {
   /**
    * 更新刷新设置
    */
-  async updateSettings(updates: Partial<AccountAutoRefresh>) {
+  async updateSettings(updates: {
+    accountAutoRefresh: Partial<AccountAutoRefresh>
+  }) {
     try {
       await userPreferences.savePreferences(updates)
       // 重新设置定时器
