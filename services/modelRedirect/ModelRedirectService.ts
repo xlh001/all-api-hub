@@ -65,11 +65,7 @@ export class ModelRedirectService {
         console.warn("[ModelRedirect] Failed to initialize metadata:", error)
       })
 
-      const newApi = prefs.newApi || {
-        baseUrl: prefs.newApiBaseUrl,
-        adminToken: prefs.newApiAdminToken,
-        userId: prefs.newApiUserId
-      }
+      const { newApi } = prefs
 
       const service = new NewApiModelSyncService(
         newApi.baseUrl!,

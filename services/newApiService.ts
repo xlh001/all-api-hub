@@ -174,11 +174,7 @@ export async function getNewApiConfig(): Promise<{
   try {
     const prefs = await userPreferences.getPreferences()
     if (hasValidNewApiConfig(prefs)) {
-      const newApi = prefs.newApi || {
-        baseUrl: prefs.newApiBaseUrl || "",
-        adminToken: prefs.newApiAdminToken || "",
-        userId: prefs.newApiUserId || ""
-      }
+      const { newApi } = prefs
       return {
         baseUrl: newApi.baseUrl,
         token: newApi.adminToken,
@@ -369,11 +365,7 @@ export async function importToNewApi(
       }
     }
 
-    const newApi = prefs.newApi || {
-      baseUrl: prefs.newApiBaseUrl,
-      adminToken: prefs.newApiAdminToken,
-      userId: prefs.newApiUserId
-    }
+    const { newApi } = prefs
     const {
       baseUrl: newApiBaseUrl,
       adminToken: newApiAdminToken,
