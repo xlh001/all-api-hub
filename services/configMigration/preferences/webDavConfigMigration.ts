@@ -27,31 +27,31 @@ export function needWebDavConfigMigration(prefs: UserPreferences): boolean {
  * @returns {UserPreferences} - Migrated user preferences object with nested WebDAVSettings
  */
 export function migrateWebDavConfig(prefs: UserPreferences) {
-  let webdavSettings = { ...DEFAULT_WEBDAV_SETTINGS }
-
-  // Check if any old WebDAV fields exist
-  if (needWebDavConfigMigration(prefs)) {
-    // Migrate old flat fields to nested object
-    webdavSettings = {
-      url: prefs.webdavUrl ?? DEFAULT_WEBDAV_SETTINGS.url,
-      username: prefs.webdavUsername ?? DEFAULT_WEBDAV_SETTINGS.username,
-      password: prefs.webdavPassword ?? DEFAULT_WEBDAV_SETTINGS.password,
-      autoSync: prefs.webdavAutoSync ?? DEFAULT_WEBDAV_SETTINGS.autoSync,
-      syncInterval:
-        prefs.webdavSyncInterval ?? DEFAULT_WEBDAV_SETTINGS.syncInterval,
-      syncStrategy:
-        prefs.webdavSyncStrategy ?? DEFAULT_WEBDAV_SETTINGS.syncStrategy
-    }
-
-    console.log("[PreferencesMigration] Migrated WebDAV settings:", {
-      url: webdavSettings.url,
-      username: webdavSettings.username,
-      password: webdavSettings.password,
-      autoSync: webdavSettings.autoSync,
-      syncInterval: webdavSettings.syncInterval,
-      syncStrategy: webdavSettings.syncStrategy
-    })
+  // If already migrated (no old flat fields), return as-is
+  if (!needWebDavConfigMigration(prefs)) {
+    return prefs
   }
+
+  // Migrate old flat fields to nested object
+  const webdavSettings = {
+    url: prefs.webdavUrl ?? DEFAULT_WEBDAV_SETTINGS.url,
+    username: prefs.webdavUsername ?? DEFAULT_WEBDAV_SETTINGS.username,
+    password: prefs.webdavPassword ?? DEFAULT_WEBDAV_SETTINGS.password,
+    autoSync: prefs.webdavAutoSync ?? DEFAULT_WEBDAV_SETTINGS.autoSync,
+    syncInterval:
+      prefs.webdavSyncInterval ?? DEFAULT_WEBDAV_SETTINGS.syncInterval,
+    syncStrategy:
+      prefs.webdavSyncStrategy ?? DEFAULT_WEBDAV_SETTINGS.syncStrategy
+  }
+
+  console.log("[PreferencesMigration] Migrated WebDAV settings:", {
+    url: webdavSettings.url,
+    username: webdavSettings.username,
+    password: webdavSettings.password,
+    autoSync: webdavSettings.autoSync,
+    syncInterval: webdavSettings.syncInterval,
+    syncStrategy: webdavSettings.syncStrategy
+  })
 
   // Create new preferences object with nested webdav
   const {
