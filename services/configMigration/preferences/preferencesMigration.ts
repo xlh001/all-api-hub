@@ -3,11 +3,13 @@
  * Handles version-based migrations for UserPreferences configurations
  */
 
+import { migrateWebDavConfig } from "~/services/configMigration/preferences/webDavConfigMigration.ts"
+
 import type { UserPreferences } from "../../userPreferences.ts"
 import { migrateSortingConfig } from "./sortingConfigMigration.ts"
 
 // Current version of the preferences schema
-export const CURRENT_PREFERENCES_VERSION = 2
+export const CURRENT_PREFERENCES_VERSION = 3
 
 /**
  * Migration function type
@@ -54,6 +56,20 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
       ...prefs,
       sortingPriorityConfig: migratedSortingConfig,
       preferencesVersion: 2
+    }
+  },
+
+  // Version 2 -> 3: Migrate flat WebDAV fields to nested webdav object
+  3: (prefs: UserPreferences): UserPreferences => {
+    console.log(
+      "[PreferencesMigration] Migrating preferences from v2 to v3 (WebDAV settings migration)"
+    )
+
+    const migratedPrefs = migrateWebDavConfig(prefs)
+
+    return {
+      ...migratedPrefs,
+      preferencesVersion: 3
     }
   }
 }
