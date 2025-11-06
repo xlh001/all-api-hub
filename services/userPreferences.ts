@@ -76,7 +76,7 @@ export interface UserPreferences {
   newApiUserId?: string
 
   // New API Model Sync 配置
-  newApiModelSync?: {
+  newApiModelSync: {
     enabled: boolean
     // 同步间隔（毫秒）
     interval: number
@@ -98,10 +98,10 @@ export interface UserPreferences {
   sortingPriorityConfig?: SortingPriorityConfig
 
   // Auto Check-in 配置
-  autoCheckin?: AutoCheckinPreferences
+  autoCheckin: AutoCheckinPreferences
 
   // Model Redirect 配置
-  modelRedirect?: ModelRedirectPreferences
+  modelRedirect: ModelRedirectPreferences
 
   /**
    * 最后更新时间
