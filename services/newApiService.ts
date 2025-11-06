@@ -147,6 +147,10 @@ export function hasValidNewApiConfig(prefs: UserPreferences | null): boolean {
 
   const { newApi } = prefs
 
+  if (!newApi) {
+    return false
+  }
+
   return Boolean(newApi.baseUrl && newApi.adminToken && newApi.userId)
 }
 
