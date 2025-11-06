@@ -3,6 +3,8 @@
  * Converts flat new-api fields to nested object structure
  */
 
+import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig.ts"
+
 import type { UserPreferences } from "../../userPreferences.ts"
 
 /**
@@ -40,9 +42,9 @@ export function migrateNewApiConfig(prefs: UserPreferences): UserPreferences {
 
   // Migrate old flat fields to nested object
   const newApiSettings = {
-    baseUrl: prefs?.newApiBaseUrl ?? "",
-    adminToken: prefs?.newApiAdminToken ?? "",
-    userId: prefs?.newApiUserId ?? ""
+    baseUrl: prefs?.newApiBaseUrl ?? DEFAULT_NEW_API_CONFIG.baseUrl,
+    adminToken: prefs?.newApiAdminToken ?? DEFAULT_NEW_API_CONFIG.adminToken,
+    userId: prefs?.newApiUserId ?? DEFAULT_NEW_API_CONFIG.userId
   }
 
   console.log(
