@@ -27,8 +27,9 @@ export function needWebDavConfigMigration(prefs: UserPreferences): boolean {
  * @returns {UserPreferences} - Migrated user preferences object with nested WebDAVSettings
  */
 export function migrateWebDavConfig(prefs: UserPreferences) {
-  // If already migrated (no old flat fields), return as-is
-  if (!needWebDavConfigMigration(prefs)) {
+  const hasNestedWebdav = "webdav" in prefs && typeof prefs.webdav === "object"
+  // If no old flat fields and has nested webdav, return as-is
+  if (!needWebDavConfigMigration(prefs) && hasNestedWebdav) {
     return prefs
   }
 
@@ -44,14 +45,10 @@ export function migrateWebDavConfig(prefs: UserPreferences) {
       prefs.webdavSyncStrategy ?? DEFAULT_WEBDAV_SETTINGS.syncStrategy
   }
 
-  console.log("[PreferencesMigration] Migrated WebDAV settings:", {
-    url: webdavSettings.url,
-    username: webdavSettings.username,
-    password: webdavSettings.password,
-    autoSync: webdavSettings.autoSync,
-    syncInterval: webdavSettings.syncInterval,
-    syncStrategy: webdavSettings.syncStrategy
-  })
+  console.log(
+    "[PreferencesMigration] Migrated WebDAV settings:",
+    webdavSettings
+  )
 
   // Create new preferences object with nested webdav
   const {

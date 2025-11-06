@@ -4,12 +4,13 @@
  */
 
 import { migrateWebDavConfig } from "~/services/configMigration/preferences/webDavConfigMigration.ts"
+import { migrateAutoRefreshConfig } from "~/services/configMigration/preferences/autoRefreshConfigMigration.ts"
 
 import type { UserPreferences } from "../../userPreferences.ts"
 import { migrateSortingConfig } from "./sortingConfigMigration.ts"
 
 // Current version of the preferences schema
-export const CURRENT_PREFERENCES_VERSION = 3
+export const CURRENT_PREFERENCES_VERSION = 4
 
 /**
  * Migration function type
@@ -70,6 +71,20 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
     return {
       ...migratedPrefs,
       preferencesVersion: 3
+    }
+  },
+
+  // Version 3 -> 4: Migrate flat auto-refresh fields to nested accountAutoRefresh object
+  4: (prefs: UserPreferences): UserPreferences => {
+    console.log(
+      "[PreferencesMigration] Migrating preferences from v3 to v4 (auto-refresh config migration)"
+    )
+
+    const migratedPrefs = migrateAutoRefreshConfig(prefs)
+
+    return {
+      ...migratedPrefs,
+      preferencesVersion: 4
     }
   }
 }

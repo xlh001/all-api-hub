@@ -1,3 +1,5 @@
+import { AccountAutoRefresh } from "~/types/accountAutoRefresh.ts"
+
 import { getErrorMessage } from "../utils/error"
 import { accountStorage } from "./accountStorage"
 import { userPreferences } from "./userPreferences"
@@ -43,19 +45,19 @@ class AutoRefreshService {
       // 获取用户偏好设置
       const preferences = await userPreferences.getPreferences()
 
-      if (!preferences.autoRefresh) {
+      if (!preferences.accountAutoRefresh?.enabled) {
         console.log("[AutoRefresh] 自动刷新已关闭")
         return
       }
 
       // 启动定时刷新
-      const intervalMs = preferences.refreshInterval * 1000
+      const intervalMs = preferences.accountAutoRefresh.interval * 1000
       this.refreshTimer = setInterval(async () => {
         await this.performBackgroundRefresh()
       }, intervalMs)
 
       console.log(
-        `[AutoRefresh] 自动刷新已启动，间隔: ${preferences.refreshInterval}秒`
+        `[AutoRefresh] 自动刷新已启动，间隔: ${preferences.accountAutoRefresh.interval}秒`
       )
     } catch (error) {
       console.error("[AutoRefresh] 设置自动刷新失败:", error)
@@ -114,14 +116,14 @@ class AutoRefreshService {
   /**
    * 更新刷新设置
    */
-  async updateSettings(settings: {
-    autoRefresh?: boolean
-    refreshInterval?: number
+  async updateSettings(updates: {
+    accountAutoRefresh: Partial<AccountAutoRefresh>
   }) {
     try {
-      await userPreferences.updateAutoRefreshSettings(settings)
-      await this.setupAutoRefresh() // 重新设置定时器
-      console.log("[AutoRefresh] 设置已更新:", settings)
+      await userPreferences.savePreferences(updates)
+      // 重新设置定时器
+      await this.setupAutoRefresh()
+      console.log("[AutoRefresh] 设置已更新:", updates)
     } catch (error) {
       console.error("[AutoRefresh] 更新设置失败:", error)
     }

@@ -1,5 +1,7 @@
 import { isArray, mergeWith } from "lodash"
 
+import { DeepPartial } from "~/types/utils.ts"
+
 export function isNotEmptyArray<T>(arr: T[] | null | undefined): arr is T[] {
   return Array.isArray(arr) && arr.length > 0
 }
@@ -36,7 +38,7 @@ export function isArraysEqual<T>(arr1: T[], arr2: T[]) {
  */
 export function deepOverride<T extends Record<string, any>>(
   target: T,
-  ...sources: Array<Partial<T> | null | undefined>
+  ...sources: Array<DeepPartial<T> | null | undefined>
 ): T {
   return mergeWith({}, target, ...sources, (_objValue: any, srcValue: any) => {
     // 数组：完全替换

@@ -4,7 +4,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState
 } from "react"
 
@@ -28,7 +27,7 @@ type UserNewApiModelSyncConfig = NonNullable<UserPreferences["newApiModelSync"]>
 
 // 1. 定义 Context 的值类型
 interface UserPreferencesContextType {
-  preferences: UserPreferences | null
+  preferences: UserPreferences
   isLoading: boolean
   activeTab: BalanceType
   currencyType: CurrencyType
@@ -165,49 +164,61 @@ export const UserPreferencesProvider = ({
   )
 
   const updateAutoRefresh = useCallback(async (enabled: boolean) => {
-    const success = await userPreferences.updateAutoRefresh(enabled)
+    const updates = {
+      accountAutoRefresh: { enabled: enabled }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, autoRefresh: enabled } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
       sendRuntimeMessage({
         action: "updateAutoRefreshSettings",
-        settings: { autoRefresh: enabled }
+        settings: updates
       })
     }
     return success
   }, [])
 
   const updateRefreshInterval = useCallback(async (interval: number) => {
-    const success = await userPreferences.updateRefreshInterval(interval)
+    const updates = {
+      accountAutoRefresh: { interval: interval }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, refreshInterval: interval } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
       sendRuntimeMessage({
         action: "updateAutoRefreshSettings",
-        settings: { refreshInterval: interval }
+        settings: updates
       })
     }
     return success
   }, [])
 
-  const updateMinRefreshInterval = useCallback(async (interval: number) => {
-    const success = await userPreferences.updateMinRefreshInterval(interval)
+  const updateMinRefreshInterval = useCallback(async (minInterval: number) => {
+    const updates = {
+      accountAutoRefresh: { minInterval: minInterval }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, minRefreshInterval: interval } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
+      sendRuntimeMessage({
+        action: "updateAutoRefreshSettings",
+        settings: updates
+      })
     }
     return success
   }, [])
 
-  const updateRefreshOnOpen = useCallback(async (enabled: boolean) => {
-    const success = await userPreferences.updateRefreshOnOpen(enabled)
+  const updateRefreshOnOpen = useCallback(async (refreshOnOpen: boolean) => {
+    const updates = {
+      accountAutoRefresh: { refreshOnOpen: refreshOnOpen }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, refreshOnOpen: enabled } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
+      sendRuntimeMessage({
+        action: "updateAutoRefreshSettings",
+        settings: updates
+      })
     }
     return success
   }, [])
@@ -338,69 +349,45 @@ export const UserPreferencesProvider = ({
     return success
   }, [loadPreferences])
 
-  const value = useMemo(
-    () => ({
-      preferences,
-      isLoading,
-      activeTab: preferences?.activeTab || DATA_TYPE_CONSUMPTION,
-      currencyType: preferences?.currencyType || "USD",
-      sortField: preferences?.sortField || UI_CONSTANTS.SORT.DEFAULT_FIELD,
-      sortOrder: preferences?.sortOrder || UI_CONSTANTS.SORT.DEFAULT_ORDER,
-      sortingPriorityConfig:
-        preferences?.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG,
-      autoRefresh: preferences?.autoRefresh ?? true,
-      refreshInterval: preferences?.refreshInterval ?? 360,
-      minRefreshInterval: preferences?.minRefreshInterval ?? 60,
-      refreshOnOpen: preferences?.refreshOnOpen ?? true,
-      newApiBaseUrl: preferences?.newApiBaseUrl || "",
-      newApiAdminToken: preferences?.newApiAdminToken || "",
-      newApiUserId: preferences?.newApiUserId || "",
-      themeMode: preferences?.themeMode || "system",
-      updateActiveTab,
-      updateDefaultTab,
-      updateCurrencyType,
-      updateSortConfig,
-      updateSortingPriorityConfig,
-      updateAutoRefresh,
-      updateRefreshInterval,
-      updateMinRefreshInterval,
-      updateRefreshOnOpen,
-      updateNewApiBaseUrl,
-      updateNewApiAdminToken,
-      updateNewApiUserId,
-      updateThemeMode,
-      updateAutoCheckin,
-      updateNewApiModelSync,
-      updateModelRedirect,
-      resetToDefaults,
-      loadPreferences
-    }),
-    [
-      preferences,
-      isLoading,
-      updateActiveTab,
-      updateDefaultTab,
-      updateCurrencyType,
-      updateSortConfig,
-      updateSortingPriorityConfig,
-      updateAutoRefresh,
-      updateRefreshInterval,
-      updateMinRefreshInterval,
-      updateRefreshOnOpen,
-      updateNewApiBaseUrl,
-      updateNewApiAdminToken,
-      updateNewApiUserId,
-      updateThemeMode,
-      updateAutoCheckin,
-      updateNewApiModelSync,
-      updateModelRedirect,
-      resetToDefaults,
-      loadPreferences
-    ]
-  )
-
-  if (isLoading) {
+  if (isLoading || !preferences) {
     return null
+  }
+
+  const value = {
+    preferences,
+    isLoading,
+    activeTab: preferences?.activeTab || DATA_TYPE_CONSUMPTION,
+    currencyType: preferences?.currencyType || "USD",
+    sortField: preferences?.sortField || UI_CONSTANTS.SORT.DEFAULT_FIELD,
+    sortOrder: preferences?.sortOrder || UI_CONSTANTS.SORT.DEFAULT_ORDER,
+    sortingPriorityConfig:
+      preferences?.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG,
+    autoRefresh: preferences?.accountAutoRefresh?.enabled ?? true,
+    refreshInterval: preferences?.accountAutoRefresh?.interval ?? 360,
+    minRefreshInterval: preferences?.accountAutoRefresh?.minInterval ?? 60,
+    refreshOnOpen: preferences?.accountAutoRefresh?.refreshOnOpen ?? true,
+    newApiBaseUrl: preferences?.newApiBaseUrl || "",
+    newApiAdminToken: preferences?.newApiAdminToken || "",
+    newApiUserId: preferences?.newApiUserId || "",
+    themeMode: preferences?.themeMode || "system",
+    updateActiveTab,
+    updateDefaultTab,
+    updateCurrencyType,
+    updateSortConfig,
+    updateSortingPriorityConfig,
+    updateAutoRefresh,
+    updateRefreshInterval,
+    updateMinRefreshInterval,
+    updateRefreshOnOpen,
+    updateNewApiBaseUrl,
+    updateNewApiAdminToken,
+    updateNewApiUserId,
+    updateThemeMode,
+    updateAutoCheckin,
+    updateNewApiModelSync,
+    updateModelRedirect,
+    resetToDefaults,
+    loadPreferences
   }
 
   return (
@@ -413,25 +400,9 @@ export const UserPreferencesProvider = ({
 // 4. 创建自定义 Hook
 export const useUserPreferencesContext = () => {
   const context = useContext(UserPreferencesContext)
-  if (
-    context === undefined ||
-    !context.updateActiveTab ||
-    !context.updateCurrencyType ||
-    !context.updateSortConfig ||
-    !context.updateAutoRefresh ||
-    !context.updateRefreshInterval ||
-    !context.updateMinRefreshInterval ||
-    !context.updateRefreshOnOpen ||
-    !context.updateNewApiBaseUrl ||
-    !context.updateNewApiAdminToken ||
-    !context.updateNewApiUserId ||
-    !context.updateThemeMode ||
-    !context.updateAutoCheckin ||
-    !context.updateNewApiModelSync ||
-    !context.resetToDefaults
-  ) {
+  if (!context) {
     throw new Error(
-      "useUserPreferencesContext 必须在 UserPreferencesProvider 中使用，并且必须提供所有必需的函数"
+      "useUserPreferencesContext 必须在 UserPreferencesProvider 中使用"
     )
   }
   return context

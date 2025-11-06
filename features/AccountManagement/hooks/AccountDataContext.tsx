@@ -80,7 +80,7 @@ export const AccountDataProvider = ({
     sortOrder: initialSortOrder,
     updateSortConfig,
     sortingPriorityConfig,
-    preferences
+    refreshOnOpen
   } = useUserPreferencesContext()
   const [accounts, setAccounts] = useState<SiteAccount[]>([])
   const [displayData, setDisplayData] = useState<DisplaySiteData[]>([])
@@ -201,7 +201,7 @@ export const AccountDataProvider = ({
       }
 
       // 检查是否启用了打开插件时自动刷新
-      if (preferences?.refreshOnOpen) {
+      if (refreshOnOpen) {
         hasRefreshedOnOpen.current = true // 标记已执行
         console.log("[Popup] 打开插件时自动刷新已启用，开始刷新")
         try {
@@ -244,7 +244,8 @@ export const AccountDataProvider = ({
     }
 
     handleRefreshOnOpen()
-  }, [handleRefresh, preferences?.refreshOnOpen, t])
+  }, [handleRefresh, refreshOnOpen, t])
+
   useEffect(() => {
     loadAccountData()
   }, [loadAccountData, refreshKey])
