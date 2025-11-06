@@ -25,21 +25,91 @@ import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // 用户偏好设置类型定义
 export interface UserPreferences {
+  themeMode: ThemeMode
+  /**
+   * language preference
+   */
+  language?: string
+
   // BalanceSection 相关配置
-  activeTab: BalanceType // 金额标签页状态
-  currencyType: CurrencyType // 金额单位
+  /**
+   * 金额标签页状态
+   */
+  activeTab: BalanceType
+  /**
+   * 金额单位
+   */
+  currencyType: CurrencyType
 
   // AccountList 相关配置
-  sortField: SortField // 排序字段
-  sortOrder: SortOrder // 排序顺序
+  /**
+   * 用户自定义排序字段
+   */
+  sortField: SortField
+  /**
+   * 用户自定义排序顺序
+   */
+  sortOrder: SortOrder
 
-  // 自动刷新相关配置 (嵌套对象)
+  // 自动刷新相关配置
   accountAutoRefresh: {
-    enabled: boolean // 是否启用定时自动刷新
-    interval: number // 刷新间隔（秒）
-    minInterval: number // 最小刷新间隔（秒）
-    refreshOnOpen: boolean // 打开插件时自动刷新
+    // 是否启用定时自动刷新
+    enabled: boolean
+    // 刷新间隔（秒）
+    interval: number
+    // 最小刷新间隔（秒）
+    minInterval: number
+    // 打开插件时自动刷新
+    refreshOnOpen: boolean
   }
+
+  // 是否显示健康状态
+  showHealthStatus: boolean
+
+  // WebDAV 备份/同步配置
+  webdav: WebDAVSettings
+
+  // New API 相关配置
+  newApiBaseUrl?: string
+  newApiAdminToken?: string
+  newApiUserId?: string
+
+  // New API Model Sync 配置
+  newApiModelSync?: {
+    enabled: boolean
+    // 同步间隔（毫秒）
+    interval: number
+    // 并发数量（单通道并发任务数）
+    concurrency: number
+    // 最大重试次数
+    maxRetries: number
+    rateLimit: {
+      // 每分钟请求次数限制
+      requestsPerMinute: number
+      // 瞬时突发请求数
+      burst: number
+    }
+  }
+
+  /**
+   * 自定义排序
+   */
+  sortingPriorityConfig?: SortingPriorityConfig
+
+  // Auto Check-in 配置
+  autoCheckin?: AutoCheckinPreferences
+
+  // Model Redirect 配置
+  modelRedirect?: ModelRedirectPreferences
+
+  /**
+   * 最后更新时间
+   */
+  lastUpdated: number
+  /**
+   * Configuration version for migration tracking
+   */
+  preferencesVersion?: number
 
   /**
    * 以下字段已废弃，仅保留供迁移使用
@@ -58,75 +128,35 @@ export interface UserPreferences {
    * @deprecated Use accountAutoRefresh.refreshOnOpen instead
    */
   refreshOnOpen?: boolean
-
-  showHealthStatus: boolean // 是否显示健康状态
-
   /**
-   * 请使用 webdav.url
-   * @deprecated
+   * 远程备份文件完整URL（例如：https://dav.example.com/backups/all-api-hub.json）
+   * @deprecated 请使用 webdav.url
    */
-  webdavUrl?: string // 远程备份文件完整URL（例如：https://dav.example.com/backups/all-api-hub.json）
+  webdavUrl?: string
   /**
-   * 请使用 webdav.username
-   * @deprecated
+   * WebDAV用户名
+   * @deprecated 请使用 webdav.username
    */
-  webdavUsername?: string // 用户名
+  webdavUsername?: string
   /**
-   * 请使用 webdav.password
-   * @deprecated
+   * @deprecated 请使用 webdav.password
    */
   webdavPassword?: string // 密码
   /**
-   * 请使用 webdav.autoSync
-   * @deprecated
+   * 是否启用自动同步
+   * @deprecated 请使用 webdav.autoSync
    */
-  webdavAutoSync?: boolean // 是否启用自动同步
+  webdavAutoSync?: boolean //
   /**
-   * 请使用 webdav.syncInterval
-   * @deprecated
+   * 自动同步间隔（秒）
+   * @deprecated 请使用 webdav.syncInterval
    */
-  webdavSyncInterval?: number // 同步间隔（秒）
+  webdavSyncInterval?: number //
   /**
-   * 请使用 webdav.syncStrategy
-   * @deprecated
+   *  同步策略
+   * @deprecated 请使用 webdav.syncStrategy
    */
-  webdavSyncStrategy?: "merge" | "upload_only" | "download_only" // 同步策略
-
-  // WebDAV 备份/同步配置
-  webdav: WebDAVSettings // WebDAV配置对象
-
-  // 其他配置可在此扩展
-  lastUpdated: number // 最后更新时间
-
-  // New API 相关配置
-  newApiBaseUrl?: string
-  newApiAdminToken?: string
-  newApiUserId?: string
-
-  // New API Model Sync 配置
-  newApiModelSync?: {
-    enabled: boolean
-    interval: number // 同步间隔（毫秒）
-    concurrency: number // 并发数量（单通道并发任务数）
-    maxRetries: number // 最大重试次数
-    rateLimit: {
-      requestsPerMinute: number // 每分钟请求次数限制
-      burst: number // 瞬时突发请求数
-    }
-  }
-
-  sortingPriorityConfig?: SortingPriorityConfig
-  themeMode: ThemeMode
-  language?: string // Added language preference
-
-  // Auto Check-in 配置
-  autoCheckin?: AutoCheckinPreferences
-
-  // Model Redirect 配置
-  modelRedirect?: ModelRedirectPreferences
-
-  // Configuration version for migration tracking
-  preferencesVersion?: number
+  webdavSyncStrategy?: "merge" | "upload_only" | "download_only"
 }
 
 // 存储键名常量
@@ -273,7 +303,8 @@ class UserPreferencesService {
     showHealthStatus?: boolean
   }): Promise<boolean> {
     const prefs = await this.getPreferences()
-    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    const accountAutoRefresh =
+      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
 
     const updates: Record<string, any> = {}
 
@@ -314,7 +345,8 @@ class UserPreferencesService {
    */
   async updateAutoRefresh(autoRefresh: boolean): Promise<boolean> {
     const prefs = await this.getPreferences()
-    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    const accountAutoRefresh =
+      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
     return this.savePreferences({
       accountAutoRefresh: {
         ...accountAutoRefresh,
@@ -328,7 +360,8 @@ class UserPreferencesService {
    */
   async updateRefreshInterval(refreshInterval: number): Promise<boolean> {
     const prefs = await this.getPreferences()
-    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    const accountAutoRefresh =
+      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
     return this.savePreferences({
       accountAutoRefresh: {
         ...accountAutoRefresh,
@@ -342,7 +375,8 @@ class UserPreferencesService {
    */
   async updateMinRefreshInterval(minRefreshInterval: number): Promise<boolean> {
     const prefs = await this.getPreferences()
-    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    const accountAutoRefresh =
+      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
     return this.savePreferences({
       accountAutoRefresh: {
         ...accountAutoRefresh,
@@ -356,7 +390,8 @@ class UserPreferencesService {
    */
   async updateRefreshOnOpen(refreshOnOpen: boolean): Promise<boolean> {
     const prefs = await this.getPreferences()
-    const accountAutoRefresh = prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
+    const accountAutoRefresh =
+      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
     return this.savePreferences({
       accountAutoRefresh: {
         ...accountAutoRefresh,
