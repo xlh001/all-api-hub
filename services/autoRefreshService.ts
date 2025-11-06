@@ -1,3 +1,5 @@
+import { AccountAutoRefresh } from "~/types/accountAutoRefresh.ts"
+
 import { getErrorMessage } from "../utils/error"
 import { accountStorage } from "./accountStorage"
 import { userPreferences } from "./userPreferences"
@@ -114,14 +116,12 @@ class AutoRefreshService {
   /**
    * 更新刷新设置
    */
-  async updateSettings(settings: {
-    autoRefresh?: boolean
-    refreshInterval?: number
-  }) {
+  async updateSettings(updates: Partial<AccountAutoRefresh>) {
     try {
-      await userPreferences.updateAutoRefreshSettings(settings)
-      await this.setupAutoRefresh() // 重新设置定时器
-      console.log("[AutoRefresh] 设置已更新:", settings)
+      await userPreferences.savePreferences(updates)
+      // 重新设置定时器
+      await this.setupAutoRefresh()
+      console.log("[AutoRefresh] 设置已更新:", updates)
     } catch (error) {
       console.error("[AutoRefresh] 更新设置失败:", error)
     }

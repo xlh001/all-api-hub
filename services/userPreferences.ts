@@ -13,6 +13,7 @@ import {
   SortOrder,
   WebDAVSettings
 } from "~/types"
+import { AccountAutoRefresh } from "~/types/accountAutoRefresh.ts"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 import {
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
@@ -53,16 +54,7 @@ export interface UserPreferences {
   sortOrder: SortOrder
 
   // 自动刷新相关配置
-  accountAutoRefresh: {
-    // 是否启用定时自动刷新
-    enabled: boolean
-    // 刷新间隔（秒）
-    interval: number
-    // 最小刷新间隔（秒）
-    minInterval: number
-    // 打开插件时自动刷新
-    refreshOnOpen: boolean
-  }
+  accountAutoRefresh: AccountAutoRefresh
 
   // 是否显示健康状态
   showHealthStatus: boolean
