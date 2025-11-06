@@ -3,7 +3,7 @@
  * Handles version-based migrations for UserPreferences configurations
  */
 
-import { DEFAULT_WEBDAV_SETTINGS } from "~/types/webdav"
+import { migrateWebDavConfig } from "~/services/configMigration/preferences/webDavConfigMigration.ts"
 
 import type { UserPreferences } from "../../userPreferences.ts"
 import { migrateSortingConfig } from "./sortingConfigMigration.ts"
@@ -65,54 +65,10 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
       "[PreferencesMigration] Migrating preferences from v2 to v3 (WebDAV settings migration)"
     )
 
-    // Check if any old WebDAV fields exist
-    const hasOldWebdavFields =
-      "webdavUrl" in prefs ||
-      "webdavUsername" in prefs ||
-      "webdavPassword" in prefs ||
-      "webdavAutoSync" in prefs ||
-      "webdavSyncInterval" in prefs ||
-      "webdavSyncStrategy" in prefs
-
-    let webdavSettings = { ...DEFAULT_WEBDAV_SETTINGS }
-
-    if (hasOldWebdavFields) {
-      // Migrate old flat fields to nested object
-      webdavSettings = {
-        url: prefs.webdavUrl ?? DEFAULT_WEBDAV_SETTINGS.url,
-        username: prefs.webdavUsername ?? DEFAULT_WEBDAV_SETTINGS.username,
-        password: prefs.webdavPassword ?? DEFAULT_WEBDAV_SETTINGS.password,
-        autoSync: prefs.webdavAutoSync ?? DEFAULT_WEBDAV_SETTINGS.autoSync,
-        syncInterval:
-          prefs.webdavSyncInterval ?? DEFAULT_WEBDAV_SETTINGS.syncInterval,
-        syncStrategy:
-          prefs.webdavSyncStrategy ?? DEFAULT_WEBDAV_SETTINGS.syncStrategy
-      }
-
-      console.log("[PreferencesMigration] Migrated WebDAV settings:", {
-        url: webdavSettings.url,
-        username: webdavSettings.username,
-        password: webdavSettings.password,
-        autoSync: webdavSettings.autoSync,
-        syncInterval: webdavSettings.syncInterval,
-        syncStrategy: webdavSettings.syncStrategy
-      })
-    }
-
-    // Create new preferences object with nested webdav
-    const {
-      webdavUrl,
-      webdavUsername,
-      webdavPassword,
-      webdavAutoSync,
-      webdavSyncInterval,
-      webdavSyncStrategy,
-      ...restOfPrefs
-    } = prefs
+    const migratedPrefs = migrateWebDavConfig(prefs)
 
     return {
-      ...restOfPrefs,
-      webdav: webdavSettings,
+      ...migratedPrefs,
       preferencesVersion: 3
     }
   }
