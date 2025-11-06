@@ -37,15 +37,24 @@ class NewApiModelSyncScheduler {
       throw new Error(t("messages:newapi.configMissing"))
     }
 
-    const { newApiBaseUrl, newApiAdminToken, newApiUserId } = userPrefs
+    const newApi = userPrefs.newApi || {
+      baseUrl: userPrefs.newApiBaseUrl,
+      adminToken: userPrefs.newApiAdminToken,
+      userId: userPrefs.newApiUserId
+    }
+    const {
+      baseUrl: newApiBaseUrl,
+      adminToken: newApiAdminToken,
+      userId: newApiUserId
+    } = newApi
 
     const config =
       userPrefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
 
     return new NewApiModelSyncService(
-      newApiBaseUrl,
-      newApiAdminToken,
-      newApiUserId,
+      newApiBaseUrl!,
+      newApiAdminToken!,
+      newApiUserId!,
       config.rateLimit
     )
   }

@@ -1,5 +1,5 @@
-import type { ChannelGroup, ChannelModel } from "~/types/newapi"
 import type { MultiSelectOption } from "~/components/ui/MultiSelect"
+import type { ChannelGroup, ChannelModel } from "~/types/newapi"
 
 export interface SelectOption {
   label: string

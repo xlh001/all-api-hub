@@ -66,9 +66,11 @@ export interface UserPreferences {
   webdav: WebDAVSettings
 
   // New API 相关配置
-  newApiBaseUrl?: string
-  newApiAdminToken?: string
-  newApiUserId?: string
+  newApi: {
+    baseUrl: string
+    adminToken: string
+    userId: string
+  }
 
   // New API Model Sync 配置
   newApiModelSync: {
@@ -109,6 +111,18 @@ export interface UserPreferences {
 
   /**
    * 以下字段已废弃，仅保留供迁移使用
+   * @deprecated Use newApi object instead
+   */
+  newApiBaseUrl?: string
+  /**
+   * @deprecated Use newApi object instead
+   */
+  newApiAdminToken?: string
+  /**
+   * @deprecated Use newApi object instead
+   */
+  newApiUserId?: string
+  /**
    * @deprecated Use accountAutoRefresh instead
    */
   autoRefresh?: boolean
@@ -170,9 +184,11 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showHealthStatus: true, // 默认显示健康状态
   webdav: DEFAULT_WEBDAV_SETTINGS,
   lastUpdated: Date.now(),
-  newApiBaseUrl: "",
-  newApiAdminToken: "",
-  newApiUserId: "",
+  newApi: {
+    baseUrl: "",
+    adminToken: "",
+    userId: ""
+  },
   newApiModelSync: {
     enabled: false,
     interval: 24 * 60 * 60 * 1000, // 24小时
@@ -321,23 +337,31 @@ class UserPreferencesService {
    * 更新 New API 设置
    */
   async updateNewApiSettings(settings: {
-    newApiBaseUrl?: string
-    newApiAdminToken?: string
-    newApiUserId?: string
+    baseUrl?: string
+    adminToken?: string
+    userId?: string
   }): Promise<boolean> {
-    return this.savePreferences(settings)
+    return this.savePreferences({
+      newApi: settings
+    })
   }
 
-  async updateNewApiBaseUrl(newApiBaseUrl: string): Promise<boolean> {
-    return this.savePreferences({ newApiBaseUrl })
+  async updateNewApiBaseUrl(baseUrl: string): Promise<boolean> {
+    return this.savePreferences({
+      newApi: { baseUrl }
+    })
   }
 
-  async updateNewApiAdminToken(newApiAdminToken: string): Promise<boolean> {
-    return this.savePreferences({ newApiAdminToken })
+  async updateNewApiAdminToken(adminToken: string): Promise<boolean> {
+    return this.savePreferences({
+      newApi: { adminToken }
+    })
   }
 
-  async updateNewApiUserId(newApiUserId: string): Promise<boolean> {
-    return this.savePreferences({ newApiUserId })
+  async updateNewApiUserId(userId: string): Promise<boolean> {
+    return this.savePreferences({
+      newApi: { userId }
+    })
   }
 
   /**

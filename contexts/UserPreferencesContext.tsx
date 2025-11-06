@@ -226,7 +226,14 @@ export const UserPreferencesProvider = ({
   const updateNewApiBaseUrl = useCallback(async (url: string) => {
     const success = await userPreferences.updateNewApiBaseUrl(url)
     if (success) {
-      setPreferences((prev) => (prev ? { ...prev, newApiBaseUrl: url } : null))
+      setPreferences((prev) =>
+        prev
+          ? {
+              ...prev,
+              newApi: { ...prev.newApi, baseUrl: url }
+            }
+          : null
+      )
     }
     return success
   }, [])
@@ -235,7 +242,12 @@ export const UserPreferencesProvider = ({
     const success = await userPreferences.updateNewApiAdminToken(token)
     if (success) {
       setPreferences((prev) =>
-        prev ? { ...prev, newApiAdminToken: token } : null
+        prev
+          ? {
+              ...prev,
+              newApi: { ...prev.newApi, adminToken: token }
+            }
+          : null
       )
     }
     return success
@@ -245,7 +257,12 @@ export const UserPreferencesProvider = ({
     const success = await userPreferences.updateNewApiUserId(userId)
     if (success) {
       setPreferences((prev) =>
-        prev ? { ...prev, newApiUserId: userId } : null
+        prev
+          ? {
+              ...prev,
+              newApi: { ...prev.newApi, userId: userId }
+            }
+          : null
       )
     }
     return success
@@ -366,9 +383,9 @@ export const UserPreferencesProvider = ({
     refreshInterval: preferences?.accountAutoRefresh?.interval ?? 360,
     minRefreshInterval: preferences?.accountAutoRefresh?.minInterval ?? 60,
     refreshOnOpen: preferences?.accountAutoRefresh?.refreshOnOpen ?? true,
-    newApiBaseUrl: preferences?.newApiBaseUrl || "",
-    newApiAdminToken: preferences?.newApiAdminToken || "",
-    newApiUserId: preferences?.newApiUserId || "",
+    newApiBaseUrl: preferences?.newApi?.baseUrl || "",
+    newApiAdminToken: preferences?.newApi?.adminToken || "",
+    newApiUserId: preferences?.newApi?.userId || "",
     themeMode: preferences?.themeMode || "system",
     updateActiveTab,
     updateDefaultTab,
