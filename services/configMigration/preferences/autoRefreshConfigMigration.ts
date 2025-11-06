@@ -3,37 +3,63 @@
  * Converts flat auto-refresh fields to nested object structure
  */
 
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh.ts"
+
 import type { UserPreferences } from "../../userPreferences.ts"
 
+/**
+ * Checks if the given user preferences object contains any of the old flat auto-refresh fields.
+ * If any of the old fields are present, it means that the user preferences object needs to be migrated
+ * to use the new nested accountAutoRefresh object.
+ *
+ * @param {UserPreferences} prefs - User preferences object to check
+ * @returns {boolean} - True if the user preferences object needs to be migrated, false otherwise
+ */
+export function needAutoRefreshConfigMigration(
+  prefs: UserPreferences
+): boolean {
+  return (
+    "autoRefresh" in prefs ||
+    "refreshInterval" in prefs ||
+    "minRefreshInterval" in prefs ||
+    "refreshOnOpen" in prefs
+  )
+}
+
+/**
+ * Migrate old flat auto-refresh fields to nested object structure
+ *
+ * @param {UserPreferences} prefs - User preferences object to migrate
+ * @returns {UserPreferences} - Migrated user preferences object with nested accountAutoRefresh object
+ */
 export function migrateAutoRefreshConfig(
   prefs: UserPreferences
 ): UserPreferences {
-  // If already using new structure and no old fields, no migration needed
-  if (prefs.accountAutoRefresh && !prefs.autoRefresh && !prefs.refreshInterval && !prefs.minRefreshInterval && !prefs.refreshOnOpen) {
+  // If already migrated (no old flat fields), return as-is
+  if (needAutoRefreshConfigMigration(prefs)) {
     return prefs
   }
 
-  // Get values from old fields or use existing nested values as fallback
-  const enabled = prefs.autoRefresh ?? prefs.accountAutoRefresh?.enabled ?? true
-  const interval = prefs.refreshInterval ?? prefs.accountAutoRefresh?.interval ?? 360
-  const minInterval = prefs.minRefreshInterval ?? prefs.accountAutoRefresh?.minInterval ?? 60
-  const refreshOnOpen = prefs.refreshOnOpen ?? prefs.accountAutoRefresh?.refreshOnOpen ?? true
-
-  // Create new structure and keep old fields for backward compatibility
-  const migratedPrefs: UserPreferences = {
-    ...prefs,
-    accountAutoRefresh: {
-      enabled,
-      interval,
-      minInterval,
-      refreshOnOpen
-    },
-    // Keep old fields for backward compatibility with code that might still access them
-    autoRefresh: enabled,
-    refreshInterval: interval,
-    minRefreshInterval: minInterval,
-    refreshOnOpen: refreshOnOpen
+  // Migrate old flat fields to nested object
+  const accountAutoRefreshSettings = {
+    enabled: prefs?.autoRefresh ?? DEFAULT_ACCOUNT_AUTO_REFRESH.enabled,
+    interval: prefs.refreshInterval ?? DEFAULT_ACCOUNT_AUTO_REFRESH.interval,
+    minInterval:
+      prefs.minRefreshInterval ?? DEFAULT_ACCOUNT_AUTO_REFRESH.minInterval,
+    refreshOnOpen:
+      prefs.refreshOnOpen ?? DEFAULT_ACCOUNT_AUTO_REFRESH.refreshOnOpen
   }
 
-  return migratedPrefs
+  const {
+    autoRefresh,
+    refreshInterval,
+    minRefreshInterval,
+    refreshOnOpen,
+    ...restOfPrefs
+  } = prefs
+
+  return {
+    ...restOfPrefs,
+    accountAutoRefresh: accountAutoRefreshSettings
+  }
 }

@@ -13,7 +13,10 @@ import {
   SortOrder,
   WebDAVSettings
 } from "~/types"
-import { AccountAutoRefresh } from "~/types/accountAutoRefresh.ts"
+import {
+  AccountAutoRefresh,
+  DEFAULT_ACCOUNT_AUTO_REFRESH
+} from "~/types/accountAutoRefresh.ts"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 import {
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
@@ -163,12 +166,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   currencyType: "USD",
   sortField: DATA_TYPE_BALANCE, // 与 UI_CONSTANTS.SORT.DEFAULT_FIELD 保持一致
   sortOrder: "desc", // 与 UI_CONSTANTS.SORT.DEFAULT_ORDER 保持一致
-  accountAutoRefresh: {
-    enabled: true, // 默认启用自动刷新
-    interval: 360, // 默认360秒刷新间隔
-    minInterval: 60, // 默认60秒最小刷新间隔
-    refreshOnOpen: true // 默认打开插件时自动刷新
-  },
+  accountAutoRefresh: DEFAULT_ACCOUNT_AUTO_REFRESH,
   showHealthStatus: true, // 默认显示健康状态
   webdav: DEFAULT_WEBDAV_SETTINGS,
   lastUpdated: Date.now(),
