@@ -22,6 +22,7 @@ import {
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
   type ModelRedirectPreferences
 } from "~/types/modelRedirect"
+import { DEFAULT_NEW_API_CONFIG, NewApiConfig } from "~/types/newApiConfig.ts"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
 import { DeepPartial } from "~/types/utils.ts"
@@ -66,11 +67,7 @@ export interface UserPreferences {
   webdav: WebDAVSettings
 
   // New API 相关配置
-  newApi: {
-    baseUrl: string
-    adminToken: string
-    userId: string
-  }
+  newApi: NewApiConfig
 
   // New API Model Sync 配置
   newApiModelSync: {
@@ -184,11 +181,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showHealthStatus: true, // 默认显示健康状态
   webdav: DEFAULT_WEBDAV_SETTINGS,
   lastUpdated: Date.now(),
-  newApi: {
-    baseUrl: "",
-    adminToken: "",
-    userId: ""
-  },
+  newApi: DEFAULT_NEW_API_CONFIG,
   newApiModelSync: {
     enabled: false,
     interval: 24 * 60 * 60 * 1000, // 24小时
@@ -330,37 +323,6 @@ class UserPreferencesService {
   }): Promise<boolean> {
     return this.savePreferences({
       webdav: settings
-    })
-  }
-
-  /**
-   * 更新 New API 设置
-   */
-  async updateNewApiSettings(settings: {
-    baseUrl?: string
-    adminToken?: string
-    userId?: string
-  }): Promise<boolean> {
-    return this.savePreferences({
-      newApi: settings
-    })
-  }
-
-  async updateNewApiBaseUrl(baseUrl: string): Promise<boolean> {
-    return this.savePreferences({
-      newApi: { baseUrl }
-    })
-  }
-
-  async updateNewApiAdminToken(adminToken: string): Promise<boolean> {
-    return this.savePreferences({
-      newApi: { adminToken }
-    })
-  }
-
-  async updateNewApiUserId(userId: string): Promise<boolean> {
-    return this.savePreferences({
-      newApi: { userId }
     })
   }
 

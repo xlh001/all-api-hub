@@ -25,16 +25,10 @@ export default function ModelRedirectSettings() {
   useEffect(() => {
     async function getModelList() {
       if (hasValidNewApiConfig(preferences)) {
-        const baseUrl = (preferences.newApi?.baseUrl ||
-          preferences.newApiBaseUrl) as string
-        const userId = (preferences.newApi?.userId ||
-          preferences.newApiUserId) as string
-        const token = (preferences.newApi?.adminToken ||
-          preferences.newApiAdminToken) as string
         return await fetchAccountAvailableModels({
-          baseUrl,
-          userId,
-          token,
+          baseUrl: preferences.newApi.baseUrl,
+          userId: preferences.newApi.userId,
+          token: preferences.newApi.adminToken,
           authType: AuthTypeEnum.AccessToken
         })
       }

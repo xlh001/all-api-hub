@@ -223,47 +223,35 @@ export const UserPreferencesProvider = ({
     return success
   }, [])
 
-  const updateNewApiBaseUrl = useCallback(async (url: string) => {
-    const success = await userPreferences.updateNewApiBaseUrl(url)
+  const updateNewApiBaseUrl = useCallback(async (baseUrl: string) => {
+    const updates = {
+      newApi: { baseUrl }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev
-          ? {
-              ...prev,
-              newApi: { ...prev.newApi, baseUrl: url }
-            }
-          : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
     }
     return success
   }, [])
 
-  const updateNewApiAdminToken = useCallback(async (token: string) => {
-    const success = await userPreferences.updateNewApiAdminToken(token)
+  const updateNewApiAdminToken = useCallback(async (adminToken: string) => {
+    const updates = {
+      newApi: { adminToken }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev
-          ? {
-              ...prev,
-              newApi: { ...prev.newApi, adminToken: token }
-            }
-          : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
     }
     return success
   }, [])
 
   const updateNewApiUserId = useCallback(async (userId: string) => {
-    const success = await userPreferences.updateNewApiUserId(userId)
+    const updates = {
+      newApi: { userId }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev
-          ? {
-              ...prev,
-              newApi: { ...prev.newApi, userId: userId }
-            }
-          : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
     }
     return success
   }, [])

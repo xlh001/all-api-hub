@@ -140,18 +140,12 @@ export async function updateChannel(
   }
 }
 
-export function hasValidNewApiConfig(
-  prefs: Partial<UserPreferences> | null
-): boolean {
+export function hasValidNewApiConfig(prefs: UserPreferences | null): boolean {
   if (!prefs) {
     return false
   }
 
-  const newApi = prefs.newApi || {
-    baseUrl: prefs.newApiBaseUrl,
-    adminToken: prefs.newApiAdminToken,
-    userId: prefs.newApiUserId
-  }
+  const { newApi } = prefs
 
   return Boolean(newApi.baseUrl && newApi.adminToken && newApi.userId)
 }
