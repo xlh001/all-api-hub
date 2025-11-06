@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.6.0](https://github.com/qixing-jk/all-api-hub/compare/v2.5.0...v2.6.0) (2025-11-05)
+
+
+### Features
+
+* **channel-dialog:** improve New API channel import UI with key toggle and bulk model selection ([#122](https://github.com/qixing-jk/all-api-hub/issues/122)) ([f6aa1a7](https://github.com/qixing-jk/all-api-hub/commit/f6aa1a7f0c6f5a6b245813cfd30296df4bec005a))
+* **model-redirect:** implement multi-stage normalization pipeline for model mapping ([201b1ef](https://github.com/qixing-jk/all-api-hub/commit/201b1efd07cc8c39d4f66f442de9fe61cdffc701))
+* **model:** refactor model normalization and metadata service ([e70b36a](https://github.com/qixing-jk/all-api-hub/commit/e70b36a2398bd6237f8d2305c63e21ea958ab75e))
+* **options:** dynamically load models for redirection ([f50f552](https://github.com/qixing-jk/all-api-hub/commit/f50f55281ae910874911f0f53265e54c3f619325))
+* **refactor:** remove unused model name normalization utilities ([f9f88fb](https://github.com/qixing-jk/all-api-hub/commit/f9f88fb7ef8350a0226f05e97499969380151ed2))
+
+
+### Bug Fixes
+
+* **model normalization:** align with Veloera backend and preserve hyphens ([44775b7](https://github.com/qixing-jk/all-api-hub/commit/44775b733f260d8ee4ac88365d6fb05a2a73ab3a))
+* **model-metadata:** Avoid browser storage quota, improve matching ([54aa24c](https://github.com/qixing-jk/all-api-hub/commit/54aa24c32739d911227ce4a8300c6fcc5a951719))
+* **model-normalization:** align rename logic and tests to Go metadata rules ([ce86f55](https://github.com/qixing-jk/all-api-hub/commit/ce86f5596fe5349ec3b8734048d2997a1c1de2e2))
+* **model-normalization:** rewrite normalization logic for Go-compat ([3855d42](https://github.com/qixing-jk/all-api-hub/commit/3855d42b3f723907b759a0fef4a8cdfce26ab13f))
+* **options:** refetch model list on preference change ([6fb7760](https://github.com/qixing-jk/all-api-hub/commit/6fb7760a51e09f19cbc3576d1d416679cca6b36b))
+* prevent stale field overwrite in PUT requests ([6661239](https://github.com/qixing-jk/all-api-hub/commit/66612396d2cff16259b52fd3c6743f7f5a5b7fad))
+* **types:** correct `CreateChannelPayload` channel type to exclude `id` ([2342f38](https://github.com/qixing-jk/all-api-hub/commit/2342f38278c9c4456de6fcaf2c944355b149d438))
+* unify and extend date suffix removal for flexible model name normalization ([1538c4e](https://github.com/qixing-jk/all-api-hub/commit/1538c4ee5d4a3796fd2d12c2029f1eafecbf3d4e))
+
 ## [2.5.0](https://github.com/qixing-jk/all-api-hub/compare/v2.4.1...v2.5.0) (2025-11-03)
 
 
