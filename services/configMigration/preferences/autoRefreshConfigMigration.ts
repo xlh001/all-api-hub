@@ -53,6 +53,11 @@ export function migrateAutoRefreshConfig(
       prefs.refreshOnOpen ?? DEFAULT_ACCOUNT_AUTO_REFRESH.refreshOnOpen
   }
 
+  console.log(
+    "[PreferencesMigration] Migrated accountAutoRefresh settings:",
+    accountAutoRefreshSettings
+  )
+
   const {
     autoRefresh,
     refreshInterval,

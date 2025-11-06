@@ -45,14 +45,10 @@ export function migrateWebDavConfig(prefs: UserPreferences) {
       prefs.webdavSyncStrategy ?? DEFAULT_WEBDAV_SETTINGS.syncStrategy
   }
 
-  console.log("[PreferencesMigration] Migrated WebDAV settings:", {
-    url: webdavSettings.url,
-    username: webdavSettings.username,
-    password: webdavSettings.password,
-    autoSync: webdavSettings.autoSync,
-    syncInterval: webdavSettings.syncInterval,
-    syncStrategy: webdavSettings.syncStrategy
-  })
+  console.log(
+    "[PreferencesMigration] Migrated WebDAV settings:",
+    webdavSettings
+  )
 
   // Create new preferences object with nested webdav
   const {
