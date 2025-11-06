@@ -171,7 +171,7 @@ class ModelMetadataService {
         prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
       )
 
-      const patternStr = `(?i)^(${prefixList.join("|")})`
+      const patternStr = `^(${prefixList.join("|")})`
 
       try {
         const pattern = new RegExp(patternStr, "i")
