@@ -20,6 +20,7 @@ import {
 } from "~/types/modelRedirect"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
+import { DeepPartial } from "~/types/utils.ts"
 import { deepOverride } from "~/utils"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
@@ -245,8 +246,8 @@ class UserPreferencesService {
    * 保存用户偏好设置
    */
 
-  async savePreferences<T extends Record<string, any>>(
-    preferences: Partial<T>
+  async savePreferences(
+    preferences: DeepPartial<UserPreferences>
   ): Promise<boolean> {
     try {
       const currentPreferences = await this.getPreferences()
@@ -291,113 +292,6 @@ class UserPreferencesService {
     sortOrder: SortOrder
   ): Promise<boolean> {
     return this.savePreferences({ sortField, sortOrder })
-  }
-
-  /**
-   * 更新自动刷新设置
-   */
-  async updateAutoRefreshSettings(settings: {
-    autoRefresh?: boolean
-    refreshInterval?: number
-    refreshOnOpen?: boolean
-    showHealthStatus?: boolean
-  }): Promise<boolean> {
-    const prefs = await this.getPreferences()
-    const accountAutoRefresh =
-      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
-
-    const updates: Record<string, any> = {}
-
-    if (settings.autoRefresh !== undefined) {
-      updates.accountAutoRefresh = {
-        ...accountAutoRefresh,
-        enabled: settings.autoRefresh
-      }
-    }
-
-    if (settings.refreshInterval !== undefined) {
-      updates.accountAutoRefresh = {
-        ...(updates.accountAutoRefresh || accountAutoRefresh),
-        interval: settings.refreshInterval
-      }
-    }
-
-    if (settings.refreshOnOpen !== undefined) {
-      updates.accountAutoRefresh = {
-        ...(updates.accountAutoRefresh || accountAutoRefresh),
-        refreshOnOpen: settings.refreshOnOpen
-      }
-    }
-
-    if (settings.showHealthStatus !== undefined) {
-      updates.showHealthStatus = settings.showHealthStatus
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return true
-    }
-
-    return this.savePreferences(updates)
-  }
-
-  /**
-   * 更新自动刷新开关
-   */
-  async updateAutoRefresh(autoRefresh: boolean): Promise<boolean> {
-    const prefs = await this.getPreferences()
-    const accountAutoRefresh =
-      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
-    return this.savePreferences({
-      accountAutoRefresh: {
-        ...accountAutoRefresh,
-        enabled: autoRefresh
-      }
-    })
-  }
-
-  /**
-   * 更新刷新间隔
-   */
-  async updateRefreshInterval(refreshInterval: number): Promise<boolean> {
-    const prefs = await this.getPreferences()
-    const accountAutoRefresh =
-      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
-    return this.savePreferences({
-      accountAutoRefresh: {
-        ...accountAutoRefresh,
-        interval: refreshInterval
-      }
-    })
-  }
-
-  /**
-   * 更新最小刷新间隔
-   */
-  async updateMinRefreshInterval(minRefreshInterval: number): Promise<boolean> {
-    const prefs = await this.getPreferences()
-    const accountAutoRefresh =
-      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
-    return this.savePreferences({
-      accountAutoRefresh: {
-        ...accountAutoRefresh,
-        minInterval: minRefreshInterval
-      }
-    })
-  }
-
-  /**
-   * 更新打开插件时自动刷新设置
-   */
-  async updateRefreshOnOpen(refreshOnOpen: boolean): Promise<boolean> {
-    const prefs = await this.getPreferences()
-    const accountAutoRefresh =
-      prefs.accountAutoRefresh || DEFAULT_PREFERENCES.accountAutoRefresh
-    return this.savePreferences({
-      accountAutoRefresh: {
-        ...accountAutoRefresh,
-        refreshOnOpen: refreshOnOpen
-      }
-    })
   }
 
   /**

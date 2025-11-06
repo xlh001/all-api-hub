@@ -165,11 +165,12 @@ export const UserPreferencesProvider = ({
   )
 
   const updateAutoRefresh = useCallback(async (enabled: boolean) => {
-    const success = await userPreferences.updateAutoRefresh(enabled)
+    const updates = {
+      accountAutoRefresh: { enabled: enabled }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, autoRefresh: enabled } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
       sendRuntimeMessage({
         action: "updateAutoRefreshSettings",
         settings: { autoRefresh: enabled }
@@ -179,11 +180,12 @@ export const UserPreferencesProvider = ({
   }, [])
 
   const updateRefreshInterval = useCallback(async (interval: number) => {
-    const success = await userPreferences.updateRefreshInterval(interval)
+    const updates = {
+      accountAutoRefresh: { interval: interval }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, refreshInterval: interval } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
       sendRuntimeMessage({
         action: "updateAutoRefreshSettings",
         settings: { refreshInterval: interval }
@@ -192,22 +194,24 @@ export const UserPreferencesProvider = ({
     return success
   }, [])
 
-  const updateMinRefreshInterval = useCallback(async (interval: number) => {
-    const success = await userPreferences.updateMinRefreshInterval(interval)
+  const updateMinRefreshInterval = useCallback(async (minInterval: number) => {
+    const updates = {
+      accountAutoRefresh: { minInterval: minInterval }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, minRefreshInterval: interval } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
     }
     return success
   }, [])
 
-  const updateRefreshOnOpen = useCallback(async (enabled: boolean) => {
-    const success = await userPreferences.updateRefreshOnOpen(enabled)
+  const updateRefreshOnOpen = useCallback(async (refreshOnOpen: boolean) => {
+    const updates = {
+      accountAutoRefresh: { refreshOnOpen: refreshOnOpen }
+    }
+    const success = await userPreferences.savePreferences(updates)
     if (success) {
-      setPreferences((prev) =>
-        prev ? { ...prev, refreshOnOpen: enabled } : null
-      )
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
     }
     return success
   }, [])
