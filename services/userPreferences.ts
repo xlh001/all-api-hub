@@ -5,7 +5,14 @@ import {
   CURRENT_PREFERENCES_VERSION,
   migratePreferences
 } from "~/services/configMigration/preferences/preferencesMigration.ts"
-import type { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
+import {
+  BalanceType,
+  CurrencyType,
+  DEFAULT_WEBDAV_SETTINGS,
+  SortField,
+  SortOrder,
+  WebDAVSettings
+} from "~/types"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 import {
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
@@ -13,7 +20,6 @@ import {
 } from "~/types/modelRedirect"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
-import type { WebDAVSettings, DEFAULT_WEBDAV_SETTINGS } from "~/types/webdav"
 import { deepOverride } from "~/utils"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
@@ -33,6 +39,37 @@ export interface UserPreferences {
   minRefreshInterval: number // 最小刷新间隔（秒）
   refreshOnOpen: boolean // 打开插件时自动刷新
   showHealthStatus: boolean // 是否显示健康状态
+
+  /**
+   * 请使用 webdav.url
+   * @deprecated
+   */
+  webdavUrl?: string // 远程备份文件完整URL（例如：https://dav.example.com/backups/all-api-hub.json）
+  /**
+   * 请使用 webdav.username
+   * @deprecated
+   */
+  webdavUsername?: string // 用户名
+  /**
+   * 请使用 webdav.password
+   * @deprecated
+   */
+  webdavPassword?: string // 密码
+  /**
+   * 请使用 webdav.autoSync
+   * @deprecated
+   */
+  webdavAutoSync?: boolean // 是否启用自动同步
+  /**
+   * 请使用 webdav.syncInterval
+   * @deprecated
+   */
+  webdavSyncInterval?: number // 同步间隔（秒）
+  /**
+   * 请使用 webdav.syncStrategy
+   * @deprecated
+   */
+  webdavSyncStrategy?: "merge" | "upload_only" | "download_only" // 同步策略
 
   // WebDAV 备份/同步配置
   webdav: WebDAVSettings // WebDAV配置对象
@@ -269,7 +306,7 @@ class UserPreferencesService {
   async updateWebdavAutoSyncSettings(settings: {
     autoSync?: boolean
     syncInterval?: number
-    syncStrategy?: "merge" | "overwrite"
+    syncStrategy?: WebDAVSettings["syncStrategy"]
   }): Promise<boolean> {
     return this.savePreferences({
       webdav: settings

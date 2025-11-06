@@ -25,13 +25,6 @@ function ensureFilename(url: string, version: string = CONFIG_VERSION) {
   }
 }
 
-export function resolveTargetUrl(
-  url: string,
-  version: string = CONFIG_VERSION
-) {
-  return ensureFilename(url, version)
-}
-
 function getBackupDirUrl(targetUrl: string) {
   // derive the .../all-api-hub-backup/ directory from final target URL
   const marker = `${BACKUP_FOLDER_NAME}/`
@@ -85,19 +78,13 @@ async function ensureBackupDirectory(
   return true
 }
 
-async function getConfig(): Promise<WebDAVConfig> {
+async function getWebDavConfig(): Promise<WebDAVConfig> {
   const prefs = await userPreferences.getPreferences()
-  const { url, username, password } = prefs.webdav
-  return { url, username, password }
-}
-
-export async function getWebdavConfig(custom?: Partial<WebDAVConfig>) {
-  const cfg = await getConfig()
-  return { ...cfg, ...custom }
+  return prefs.webdav
 }
 
 export async function testWebdavConnection(custom?: Partial<WebDAVConfig>) {
-  const cfg = { ...(await getConfig()), ...custom }
+  const cfg = { ...(await getWebDavConfig()), ...custom }
   if (!cfg.url || !cfg.username || !cfg.password) {
     throw new Error(t("messages:webdav.configIncomplete"))
   }
@@ -116,57 +103,8 @@ export async function testWebdavConnection(custom?: Partial<WebDAVConfig>) {
   throw new Error(t("messages:webdav.connectionFailed", { status: res.status }))
 }
 
-export interface RemoteBackupFetchResult {
-  exists: boolean
-  content?: string
-  etag?: string | null
-  lastModified?: string | null
-  url: string
-}
-
-export async function fetchRemoteBackup(
-  custom?: Partial<WebDAVConfig>
-): Promise<RemoteBackupFetchResult> {
-  const cfg = await getWebdavConfig(custom)
-  if (!cfg.url || !cfg.username || !cfg.password) {
-    throw new Error(t("messages:webdav.configIncomplete"))
-  }
-  const targetUrl = ensureFilename(cfg.url)
-
-  const res = await fetch(targetUrl, {
-    method: "GET",
-    headers: {
-      Authorization: buildAuthHeader(cfg.username, cfg.password),
-      Accept: "application/json"
-    }
-  })
-
-  if (res.status === 200) {
-    const content = await res.text()
-    return {
-      exists: true,
-      content,
-      etag: res.headers.get("ETag"),
-      lastModified: res.headers.get("Last-Modified"),
-      url: targetUrl
-    }
-  }
-
-  if (res.status === 404) {
-    return {
-      exists: false,
-      url: targetUrl
-    }
-  }
-
-  if (res.status === 401 || res.status === 403)
-    throw new Error(t("messages:webdav.authFailed"))
-
-  throw new Error(t("messages:webdav.downloadFailed", { status: res.status }))
-}
-
 export async function downloadBackup(custom?: Partial<WebDAVConfig>) {
-  const cfg = { ...(await getConfig()), ...custom }
+  const cfg = { ...(await getWebDavConfig()), ...custom }
   if (!cfg.url || !cfg.username || !cfg.password) {
     throw new Error(t("messages:webdav.configIncomplete"))
   }
@@ -180,8 +118,7 @@ export async function downloadBackup(custom?: Partial<WebDAVConfig>) {
     }
   })
   if (res.status === 200) {
-    const text = await res.text()
-    return text
+    return await res.text()
   }
   if (res.status === 404) throw new Error(t("messages:webdav.fileNotFound"))
   if (res.status === 401 || res.status === 403)
@@ -193,7 +130,7 @@ export async function uploadBackup(
   content: string,
   custom?: Partial<WebDAVConfig>
 ) {
-  const cfg = { ...(await getConfig()), ...custom }
+  const cfg = { ...(await getWebDavConfig()), ...custom }
   if (!cfg.url || !cfg.username || !cfg.password) {
     throw new Error(t("messages:webdav.configIncomplete"))
   }

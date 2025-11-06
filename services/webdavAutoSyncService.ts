@@ -1,6 +1,6 @@
 import { t } from "i18next"
 
-import type { SiteAccount } from "~/types"
+import type { SiteAccount, WebDAVSettings } from "~/types"
 
 import { getErrorMessage } from "../utils/error"
 import { accountStorage } from "./accountStorage"
@@ -190,7 +190,7 @@ class WebdavAutoSyncService {
       accountsToSave = mergeResult.accounts
       preferencesToSave = mergeResult.preferences
       console.log(`[WebdavAutoSync] 合并完成: ${accountsToSave.length} 个账号`)
-    } else if (strategy === "overwrite" || !remoteData) {
+    } else if (strategy === "upload_only" || !remoteData) {
       // 覆盖策略或远程无数据
       accountsToSave = localAccountsConfig.accounts
       preferencesToSave = localPreferences
@@ -356,7 +356,7 @@ class WebdavAutoSyncService {
   async updateSettings(settings: {
     autoSync?: boolean
     syncInterval?: number
-    syncStrategy?: "merge" | "overwrite"
+    syncStrategy?: WebDAVSettings["syncStrategy"]
   }) {
     try {
       // Update the nested webdav object
@@ -450,25 +450,11 @@ export const handleWebdavAutoSyncMessage = async (
         sendResponse({ success: true })
         break
 
-      case "webdavAutoSync:updateSettings":
-        // Transform old parameter names to new nested structure
-        let transformedSyncStrategy: "merge" | "overwrite" = "merge"
-        if (request.settings.webdavSyncStrategy === "upload_only") {
-          transformedSyncStrategy = "overwrite"
-        } else if (request.settings.webdavSyncStrategy === "download_only") {
-          transformedSyncStrategy = "merge"
-        } else if (request.settings.webdavSyncStrategy === "merge") {
-          transformedSyncStrategy = "merge"
-        }
-        
-        const transformedSettings = {
-          autoSync: request.settings.webdavAutoSync,
-          syncInterval: request.settings.webdavSyncInterval,
-          syncStrategy: transformedSyncStrategy
-        }
-        await webdavAutoSyncService.updateSettings(transformedSettings)
+      case "webdavAutoSync:updateSettings": {
+        await webdavAutoSyncService.updateSettings(request.settings)
         sendResponse({ success: true })
         break
+      }
 
       case "webdavAutoSync:getStatus": {
         const status = webdavAutoSyncService.getStatus()

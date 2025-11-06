@@ -3,9 +3,10 @@
  * Handles version-based migrations for UserPreferences configurations
  */
 
+import { DEFAULT_WEBDAV_SETTINGS } from "~/types/webdav"
+
 import type { UserPreferences } from "../../userPreferences.ts"
 import { migrateSortingConfig } from "./sortingConfigMigration.ts"
-import { DEFAULT_WEBDAV_SETTINGS } from "~/types/webdav"
 
 // Current version of the preferences schema
 export const CURRENT_PREFERENCES_VERSION = 3
@@ -65,13 +66,13 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
     )
 
     // Check if any old WebDAV fields exist
-    const hasOldWebdavFields = 
-      'webdavUrl' in prefs ||
-      'webdavUsername' in prefs ||
-      'webdavPassword' in prefs ||
-      'webdavAutoSync' in prefs ||
-      'webdavSyncInterval' in prefs ||
-      'webdavSyncStrategy' in prefs
+    const hasOldWebdavFields =
+      "webdavUrl" in prefs ||
+      "webdavUsername" in prefs ||
+      "webdavPassword" in prefs ||
+      "webdavAutoSync" in prefs ||
+      "webdavSyncInterval" in prefs ||
+      "webdavSyncStrategy" in prefs
 
     let webdavSettings = { ...DEFAULT_WEBDAV_SETTINGS }
 
@@ -82,14 +83,16 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
         username: prefs.webdavUsername ?? DEFAULT_WEBDAV_SETTINGS.username,
         password: prefs.webdavPassword ?? DEFAULT_WEBDAV_SETTINGS.password,
         autoSync: prefs.webdavAutoSync ?? DEFAULT_WEBDAV_SETTINGS.autoSync,
-        syncInterval: prefs.webdavSyncInterval ?? DEFAULT_WEBDAV_SETTINGS.syncInterval,
-        syncStrategy: prefs.webdavSyncStrategy === "download_only" ? "merge" : (prefs.webdavSyncStrategy === "upload_only" ? "overwrite" : "merge")
+        syncInterval:
+          prefs.webdavSyncInterval ?? DEFAULT_WEBDAV_SETTINGS.syncInterval,
+        syncStrategy:
+          prefs.webdavSyncStrategy ?? DEFAULT_WEBDAV_SETTINGS.syncStrategy
       }
 
       console.log("[PreferencesMigration] Migrated WebDAV settings:", {
-        url: webdavSettings.url ? "***" : "empty",
-        username: webdavSettings.username ? "***" : "empty",
-        password: webdavSettings.password ? "***" : "empty",
+        url: webdavSettings.url,
+        username: webdavSettings.username,
+        password: webdavSettings.password,
         autoSync: webdavSettings.autoSync,
         syncInterval: webdavSettings.syncInterval,
         syncStrategy: webdavSettings.syncStrategy
@@ -97,14 +100,14 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
     }
 
     // Create new preferences object with nested webdav
-    const { 
-      webdavUrl, 
-      webdavUsername, 
-      webdavPassword, 
-      webdavAutoSync, 
-      webdavSyncInterval, 
+    const {
+      webdavUrl,
+      webdavUsername,
+      webdavPassword,
+      webdavAutoSync,
+      webdavSyncInterval,
       webdavSyncStrategy,
-      ...restOfPrefs 
+      ...restOfPrefs
     } = prefs
 
     return {

@@ -76,7 +76,8 @@
       "strategy": "Sync strategy",
       "strategyDesc": "Choose how data should be synchronized",
       "strategyMerge": "Smart merge - merge local and remote data based on timestamps",
-      "strategyOverwrite": "Overwrite - remote data overwrites local data",
+      "strategyLocalFirst": "Local first - local data overrides remote data",
+      "strategyRemoteFirst": "Remote first - remote data overwrites local data",
       "lastSync": "Last sync",
       "saveSettings": "Save Settings",
       "syncNow": "Sync Now"

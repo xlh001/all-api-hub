@@ -8,7 +8,7 @@ export interface WebDAVSettings {
   password: string
   autoSync: boolean
   syncInterval: number // seconds
-  syncStrategy: "merge" | "overwrite"
+  syncStrategy: "merge" | "upload_only" | "download_only"
 }
 
 export interface WebDAVConfig {
