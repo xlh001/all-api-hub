@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@wxt-dev/storage': 1.2.0
-
 importers:
 
   .:
@@ -183,9 +180,6 @@ importers:
       vitest:
         specifier: ^4.0.3
         version: 4.0.3(@types/debug@4.1.12)(@types/node@20.11.5)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.5)(typescript@5.9.3))(yaml@2.8.1)
-      vitest-webextension-mock:
-        specifier: ^0.0.7
-        version: 0.0.7(vitest@4.0.3(@types/debug@4.1.12)(@types/node@20.11.5)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.5)(typescript@5.9.3))(yaml@2.8.1))
       web-ext:
         specifier: ^9.0.0
         version: 9.0.0
@@ -196,7 +190,7 @@ importers:
         specifier: ^3.6.20
         version: 3.6.20
       wxt:
-        specifier: ^0.20.6
+        specifier: ^0.20.11
         version: 0.20.11(@types/node@20.11.5)(jiti@2.6.1)(rollup@4.52.4)(yaml@2.8.1)
 
 packages:
@@ -4150,9 +4144,6 @@ packages:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
 
-  magic-string@0.30.17:
-    resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -6206,11 +6197,6 @@ packages:
         optional: true
       yaml:
         optional: true
-
-  vitest-webextension-mock@0.0.7:
-    resolution: {integrity: sha512-03rpQRxX0lI9sEJPvNjSD2FtG2yeAKSJaMxFeWhRirtlgF+OEmGFQLhhZJPSHuRqGiBQ9CkGPfRg4og1Gc19Pw==}
-    peerDependencies:
-      vitest: '*'
 
   vitest@4.0.3:
     resolution: {integrity: sha512-IUSop8jgaT7w0g1yOM/35qVtKjr/8Va4PrjzH1OUb0YH4c3OXB2lCZDkMAB6glA8T5w8S164oJGsbcmAecr4sA==}
@@ -11022,10 +11008,6 @@ snapshots:
 
   lz-string@1.5.0: {}
 
-  magic-string@0.30.17:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.4
-
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -13433,7 +13415,7 @@ snapshots:
       estree-walker: 3.0.3
       fast-glob: 3.3.3
       local-pkg: 1.1.1
-      magic-string: 0.30.17
+      magic-string: 0.30.21
       mlly: 1.7.4
       pathe: 2.0.3
       picomatch: 4.0.3
@@ -13613,10 +13595,6 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.6.1
       yaml: 2.8.1
-
-  vitest-webextension-mock@0.0.7(vitest@4.0.3(@types/debug@4.1.12)(@types/node@20.11.5)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.5)(typescript@5.9.3))(yaml@2.8.1)):
-    dependencies:
-      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@20.11.5)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.5)(typescript@5.9.3))(yaml@2.8.1)
 
   vitest@4.0.3(@types/debug@4.1.12)(@types/node@20.11.5)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.5)(typescript@5.9.3))(yaml@2.8.1):
     dependencies:
