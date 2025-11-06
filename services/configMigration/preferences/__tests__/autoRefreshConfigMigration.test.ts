@@ -1,65 +1,38 @@
-import { describe, it, expect } from "vitest"
-import { migrateAutoRefreshConfig } from "../autoRefreshConfigMigration"
+import { describe, expect, it } from "vitest"
+
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh.ts"
+
 import type { UserPreferences } from "../../../userPreferences"
+import { migrateAutoRefreshConfig } from "../autoRefreshConfigMigration"
 
 describe("autoRefreshConfigMigration", () => {
-  it("should migrate flat auto-refresh fields to nested structure", () => {
-    const oldPrefs: UserPreferences = {
-      activeTab: "consumption",
-      currencyType: "USD",
-      sortField: "balance",
-      sortOrder: "desc",
+  it("migrates flat auto-refresh fields to nested structure", () => {
+    const oldPrefs = {
       autoRefresh: true,
       refreshInterval: 300,
       minRefreshInterval: 45,
       refreshOnOpen: false,
-      showHealthStatus: true,
-      webdav: {
-        url: "",
-        username: "",
-        password: "",
-        autoSync: false,
-        syncInterval: 3600,
-        syncStrategy: "merge"
-      },
-      lastUpdated: Date.now(),
-      newApiBaseUrl: "",
-      newApiAdminToken: "",
-      newApiUserId: "",
-      newApiModelSync: {
-        enabled: false,
-        interval: 86400000,
-        concurrency: 2,
-        maxRetries: 2,
-        rateLimit: { requestsPerMinute: 20, burst: 5 }
-      },
-      autoCheckin: { globalEnabled: false, windowStart: "09:00", windowEnd: "18:00" },
-      themeMode: "system",
-      language: "en",
       preferencesVersion: 3
-    }
+    } as UserPreferences
 
     const migratedPrefs = migrateAutoRefreshConfig(oldPrefs)
 
-    expect(migratedPrefs.accountAutoRefresh).toBeDefined()
-    expect(migratedPrefs.accountAutoRefresh.enabled).toBe(true)
-    expect(migratedPrefs.accountAutoRefresh.interval).toBe(300)
-    expect(migratedPrefs.accountAutoRefresh.minInterval).toBe(45)
-    expect(migratedPrefs.accountAutoRefresh.refreshOnOpen).toBe(false)
+    expect(migratedPrefs.accountAutoRefresh).toEqual({
+      enabled: oldPrefs.autoRefresh,
+      interval: oldPrefs.refreshInterval,
+      minInterval: oldPrefs.minRefreshInterval,
+      refreshOnOpen: oldPrefs.refreshOnOpen
+    })
 
-    // Check backward compatibility fields
-    expect(migratedPrefs.autoRefresh).toBe(true)
-    expect(migratedPrefs.refreshInterval).toBe(300)
-    expect(migratedPrefs.minRefreshInterval).toBe(45)
-    expect(migratedPrefs.refreshOnOpen).toBe(false)
+    // Old fields removed
+    expect(migratedPrefs).not.toHaveProperty("autoRefresh")
+    expect(migratedPrefs).not.toHaveProperty("refreshInterval")
+    expect(migratedPrefs).not.toHaveProperty("minRefreshInterval")
+    expect(migratedPrefs).not.toHaveProperty("refreshOnOpen")
   })
 
-  it("should prioritize old fields over new ones during migration", () => {
-    const mixedPrefs: UserPreferences = {
-      activeTab: "consumption",
-      currencyType: "USD",
-      sortField: "balance",
-      sortOrder: "desc",
+  it("prioritizes old fields over new ones", () => {
+    const mixedPrefs = {
       autoRefresh: false,
       refreshInterval: 180,
       minRefreshInterval: 30,
@@ -70,126 +43,43 @@ describe("autoRefreshConfigMigration", () => {
         minInterval: 60,
         refreshOnOpen: false
       },
-      showHealthStatus: true,
-      webdav: {
-        url: "",
-        username: "",
-        password: "",
-        autoSync: false,
-        syncInterval: 3600,
-        syncStrategy: "merge"
-      },
-      lastUpdated: Date.now(),
-      newApiBaseUrl: "",
-      newApiAdminToken: "",
-      newApiUserId: "",
-      newApiModelSync: {
-        enabled: false,
-        interval: 86400000,
-        concurrency: 2,
-        maxRetries: 2,
-        rateLimit: { requestsPerMinute: 20, burst: 5 }
-      },
-      autoCheckin: { globalEnabled: false, windowStart: "09:00", windowEnd: "18:00" },
-      themeMode: "system",
-      language: "en",
-      preferencesVersion: 3
-    }
-
-    const migratedPrefs = migrateAutoRefreshConfig(mixedPrefs)
-
-    // Old fields should take priority
-    expect(migratedPrefs.accountAutoRefresh.enabled).toBe(false)
-    expect(migratedPrefs.accountAutoRefresh.interval).toBe(180)
-    expect(migratedPrefs.accountAutoRefresh.minInterval).toBe(30)
-    expect(migratedPrefs.accountAutoRefresh.refreshOnOpen).toBe(true)
-  })
-
-  it("should use defaults when no old or new fields exist", () => {
-    const emptyPrefs: Partial<UserPreferences> = {
-      activeTab: "consumption",
-      currencyType: "USD",
-      sortField: "balance",
-      sortOrder: "desc",
-      showHealthStatus: true,
-      webdav: {
-        url: "",
-        username: "",
-        password: "",
-        autoSync: false,
-        syncInterval: 3600,
-        syncStrategy: "merge"
-      },
-      lastUpdated: Date.now(),
-      newApiBaseUrl: "",
-      newApiAdminToken: "",
-      newApiUserId: "",
-      newApiModelSync: {
-        enabled: false,
-        interval: 86400000,
-        concurrency: 2,
-        maxRetries: 2,
-        rateLimit: { requestsPerMinute: 20, burst: 5 }
-      },
-      autoCheckin: { globalEnabled: false, windowStart: "09:00", windowEnd: "18:00" },
-      themeMode: "system",
-      language: "en",
       preferencesVersion: 3
     } as UserPreferences
 
-    const migratedPrefs = migrateAutoRefreshConfig(emptyPrefs)
+    const migratedPrefs = migrateAutoRefreshConfig(mixedPrefs)
 
-    // Should use defaults
-    expect(migratedPrefs.accountAutoRefresh.enabled).toBe(true)
-    expect(migratedPrefs.accountAutoRefresh.interval).toBe(360)
-    expect(migratedPrefs.accountAutoRefresh.minInterval).toBe(60)
-    expect(migratedPrefs.accountAutoRefresh.refreshOnOpen).toBe(true)
+    expect(migratedPrefs.accountAutoRefresh).toEqual({
+      enabled: mixedPrefs.autoRefresh,
+      interval: mixedPrefs.refreshInterval,
+      minInterval: mixedPrefs.minRefreshInterval,
+      refreshOnOpen: mixedPrefs.refreshOnOpen
+    })
   })
 
-  it("should not migrate if already using new structure", () => {
-    const newPrefs: UserPreferences = {
-      activeTab: "consumption",
-      currencyType: "USD",
-      sortField: "balance",
-      sortOrder: "desc",
+  it("uses defaults when no old or new fields exist", () => {
+    const emptyPrefs = { preferencesVersion: 3 } as UserPreferences
+    const migratedPrefs = migrateAutoRefreshConfig(emptyPrefs)
+
+    expect(migratedPrefs.accountAutoRefresh).toEqual(
+      DEFAULT_ACCOUNT_AUTO_REFRESH
+    )
+  })
+
+  it("does not migrate if already using new structure", () => {
+    const newPrefs = {
       accountAutoRefresh: {
-        enabled: true,
-        interval: 360,
-        minInterval: 60,
-        refreshOnOpen: true
-      },
-      showHealthStatus: true,
-      webdav: {
-        url: "",
-        username: "",
-        password: "",
-        autoSync: false,
-        syncInterval: 3600,
-        syncStrategy: "merge"
-      },
-      lastUpdated: Date.now(),
-      newApiBaseUrl: "",
-      newApiAdminToken: "",
-      newApiUserId: "",
-      newApiModelSync: {
         enabled: false,
-        interval: 86400000,
-        concurrency: 2,
-        maxRetries: 2,
-        rateLimit: { requestsPerMinute: 20, burst: 5 }
+        interval: 361,
+        minInterval: 61,
+        refreshOnOpen: false
       },
-      autoCheckin: { globalEnabled: false, windowStart: "09:00", windowEnd: "18:00" },
-      themeMode: "system",
-      language: "en",
       preferencesVersion: 3
-    }
+    } as UserPreferences
 
     const migratedPrefs = migrateAutoRefreshConfig(newPrefs)
 
-    // Should remain the same
-    expect(migratedPrefs.accountAutoRefresh.enabled).toBe(true)
-    expect(migratedPrefs.accountAutoRefresh.interval).toBe(360)
-    expect(migratedPrefs.accountAutoRefresh.minInterval).toBe(60)
-    expect(migratedPrefs.accountAutoRefresh.refreshOnOpen).toBe(true)
+    expect(migratedPrefs.accountAutoRefresh).toEqual(
+      newPrefs.accountAutoRefresh
+    )
   })
 })
