@@ -91,7 +91,7 @@ export async function createChannel(
       ...channelData,
       channel: {
         ...channelData.channel,
-        group: channelData.channel.groups.join(",")
+        group: channelData?.channel?.groups?.join(",")
       }
     }
     return await fetchApi<void>({
