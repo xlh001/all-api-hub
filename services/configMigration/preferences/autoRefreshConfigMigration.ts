@@ -35,8 +35,11 @@ export function needAutoRefreshConfigMigration(
 export function migrateAutoRefreshConfig(
   prefs: UserPreferences
 ): UserPreferences {
-  // If already migrated (no old flat fields), return as-is
-  if (needAutoRefreshConfigMigration(prefs)) {
+  const hasNestedAccountAutoRefresh =
+    "accountAutoRefresh" in prefs &&
+    typeof prefs.accountAutoRefresh === "object"
+  // If no old flat fields and has nested accountAutoRefresh, return as-is
+  if (!needAutoRefreshConfigMigration(prefs) && hasNestedAccountAutoRefresh) {
     return prefs
   }
 
