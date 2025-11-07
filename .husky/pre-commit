@@ -1,6 +1,6 @@
 echo "🔍 Running lint-staged..."
 
-pnpm lint-staged || {
+npx lint-staged || {
   echo "❌ Lint-staged checks failed"
   exit 1
 }
