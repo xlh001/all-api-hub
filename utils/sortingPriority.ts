@@ -123,9 +123,24 @@ function applySortingCriteria(
     }
 
     case SortingCriteriaType.CHECK_IN_REQUIREMENT: {
-      const checkInA = a?.checkIn?.isCheckedInToday === false ? 0 : 1
-      const checkInB = b?.checkIn?.isCheckedInToday === false ? 0 : 1
-      return checkInA - checkInB
+      function isNotCheckedIn(item: any): boolean {
+        const checkIn = item?.checkIn
+        if (!checkIn) return false
+
+        const supportsCheckIn =
+          checkIn.enableDetection === true ||
+          (typeof checkIn.customCheckInUrl === "string" &&
+            checkIn.customCheckInUrl.trim() !== "")
+
+        // 只在支持签到且未签到的情况下返回 true
+        return supportsCheckIn && checkIn.isCheckedInToday === false
+      }
+
+      const aNotCheckedIn = isNotCheckedIn(a) ? 1 : 0
+      const bNotCheckedIn = isNotCheckedIn(b) ? 1 : 0
+
+      // 未签到的排前面
+      return bNotCheckedIn - aNotCheckedIn
     }
 
     case SortingCriteriaType.CUSTOM_CHECK_IN_URL: {
