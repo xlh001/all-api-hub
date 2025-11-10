@@ -13,6 +13,11 @@ import {
 import { accountStorage } from "~/services/accountStorage"
 import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
 import { AutoDetectError } from "~/utils/autoDetectUtils"
+import {
+  getActiveTabs,
+  onTabActivated,
+  onTabUpdated
+} from "~/utils/browserApi.ts"
 
 interface UseAccountDialogProps {
   mode: "add" | "edit"
@@ -123,6 +128,55 @@ export function useAccountDialog({
     [t]
   )
 
+  const checkCurrentTab = useCallback(async () => {
+    if (mode === "edit" && account) {
+      return
+    }
+    try {
+      const tabs = await browser.tabs.query({
+        active: true,
+        currentWindow: true
+      })
+      const tab = tabs[0]
+      if (tab.url) {
+        try {
+          const urlObj = new URL(tab.url)
+          const baseUrl = `${urlObj.protocol}//${urlObj.host}`
+          if (!baseUrl.startsWith("http")) {
+            return
+          }
+          setCurrentTabUrl(baseUrl)
+          setSiteName(await getSiteName(tab))
+        } catch (error) {
+          console.log(
+            t("messages.urlParseError", {
+              error: (error as Error).message
+            })
+          )
+          setCurrentTabUrl(null)
+          setSiteName("")
+        }
+      }
+    } catch (error) {
+      console.error(error)
+      // Fallback for Firefox Android
+      try {
+        const tabs = await browser.tabs.query({ active: true })
+        const tab = tabs[0]
+        if (tab.url) {
+          const urlObj = new URL(tab.url)
+          const baseUrl = `${urlObj.protocol}//${urlObj.host}`
+          if (baseUrl.startsWith("http")) {
+            setCurrentTabUrl(baseUrl)
+            setSiteName(await getSiteName(tab))
+          }
+        }
+      } catch (fallbackError) {
+        console.log("Failed to get current tab:", fallbackError)
+      }
+    }
+  }, [account, mode, t])
+
   useEffect(() => {
     if (isOpen) {
       resetForm()
@@ -130,54 +184,34 @@ export function useAccountDialog({
         loadAccountData(account.id)
       } else {
         // Get current tab URL for add mode
-        ;(async () => {
-          try {
-            const tabs = await browser.tabs.query({
-              active: true,
-              currentWindow: true
-            })
-            const tab = tabs[0]
-            if (tab.url) {
-              try {
-                const urlObj = new URL(tab.url)
-                const baseUrl = `${urlObj.protocol}//${urlObj.host}`
-                if (!baseUrl.startsWith("http")) {
-                  return
-                }
-                setCurrentTabUrl(baseUrl)
-                setSiteName(await getSiteName(tab))
-              } catch (error) {
-                console.log(
-                  t("messages.urlParseError", {
-                    error: (error as Error).message
-                  })
-                )
-                setCurrentTabUrl(null)
-                setSiteName("")
-              }
-            }
-          } catch (error) {
-            console.error(error)
-            // Fallback for Firefox Android
-            try {
-              const tabs = await browser.tabs.query({ active: true })
-              const tab = tabs[0]
-              if (tab.url) {
-                const urlObj = new URL(tab.url)
-                const baseUrl = `${urlObj.protocol}//${urlObj.host}`
-                if (baseUrl.startsWith("http")) {
-                  setCurrentTabUrl(baseUrl)
-                  setSiteName(await getSiteName(tab))
-                }
-              }
-            } catch (fallbackError) {
-              console.log("Failed to get current tab:", fallbackError)
-            }
-          }
-        })()
+        checkCurrentTab()
       }
     }
-  }, [isOpen, mode, account, resetForm, loadAccountData, t])
+  }, [isOpen, mode, account, resetForm, loadAccountData, t, checkCurrentTab])
+
+  useEffect(() => {
+    // 打开 popup 时立即检测一次
+    checkCurrentTab()
+
+    // Tab 激活变化时检测
+    const cleanupActivated = onTabActivated(() => {
+      checkCurrentTab()
+    })
+
+    // Tab URL 或状态更新时检测（只对当前 tab）
+    const cleanupUpdated = onTabUpdated(async (tabId) => {
+      const tabs = await getActiveTabs()
+      if (tabs[0]?.id === tabId) {
+        checkCurrentTab()
+      }
+    })
+
+    // 清理监听器
+    return () => {
+      cleanupActivated()
+      cleanupUpdated()
+    }
+  }, [checkCurrentTab])
 
   const handleUseCurrentTabUrl = () => {
     if (currentTabUrl) {
