@@ -114,3 +114,82 @@ describe("extractActualModel", () => {
     )
   })
 })
+
+describe("Model mapping merge logic", () => {
+  it("should demonstrate incremental merge behavior with new keys overriding old keys", () => {
+    // Simulate existing mapping from channel
+    const existingMapping: Record<string, string> = {
+      "gpt-4o": "old-provider/gpt-4o",
+      "claude-3-5-sonnet": "old-provider/claude-3-5-sonnet",
+      "custom-model": "custom-provider/model"
+    }
+
+    // Simulate newly generated mapping
+    const newMapping: Record<string, string> = {
+      "gpt-4o": "new-provider/gpt-4o", // This should override the old value
+      "deepseek-r1": "new-provider/deepseek-r1" // This should be added
+    }
+
+    // Merge logic: spread existing first, then new (new overrides old for same keys)
+    const mergedMapping = {
+      ...existingMapping,
+      ...newMapping
+    }
+
+    // Assertions
+    expect(mergedMapping).toEqual({
+      "gpt-4o": "new-provider/gpt-4o", // Updated from old value
+      "claude-3-5-sonnet": "old-provider/claude-3-5-sonnet", // Preserved from old
+      "custom-model": "custom-provider/model", // Preserved from old
+      "deepseek-r1": "new-provider/deepseek-r1" // Added from new
+    })
+
+    // Verify that old keys are preserved
+    expect(mergedMapping["claude-3-5-sonnet"]).toBe(
+      "old-provider/claude-3-5-sonnet"
+    )
+    expect(mergedMapping["custom-model"]).toBe("custom-provider/model")
+
+    // Verify that new values override old values for same keys
+    expect(mergedMapping["gpt-4o"]).toBe("new-provider/gpt-4o")
+    expect(mergedMapping["gpt-4o"]).not.toBe("old-provider/gpt-4o")
+
+    // Verify that new keys are added
+    expect(mergedMapping["deepseek-r1"]).toBe("new-provider/deepseek-r1")
+
+    // Verify total key count
+    expect(Object.keys(mergedMapping)).toHaveLength(4)
+  })
+
+  it("should preserve all old keys when new mapping is empty", () => {
+    const existingMapping: Record<string, string> = {
+      "model-1": "provider-1/model-1",
+      "model-2": "provider-2/model-2"
+    }
+    const newMapping: Record<string, string> = {}
+
+    const mergedMapping = {
+      ...existingMapping,
+      ...newMapping
+    }
+
+    expect(mergedMapping).toEqual(existingMapping)
+    expect(Object.keys(mergedMapping)).toHaveLength(2)
+  })
+
+  it("should add all new keys when existing mapping is empty", () => {
+    const existingMapping: Record<string, string> = {}
+    const newMapping: Record<string, string> = {
+      "model-1": "provider-1/model-1",
+      "model-2": "provider-2/model-2"
+    }
+
+    const mergedMapping = {
+      ...existingMapping,
+      ...newMapping
+    }
+
+    expect(mergedMapping).toEqual(newMapping)
+    expect(Object.keys(mergedMapping)).toHaveLength(2)
+  })
+})

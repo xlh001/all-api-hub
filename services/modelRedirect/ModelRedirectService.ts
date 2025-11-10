@@ -9,7 +9,8 @@ import { NewApiModelSyncService } from "~/services/newApiModelSync"
 import {
   ALL_PRESET_STANDARD_MODELS,
   CHANNEL_STATUS,
-  DEFAULT_MODEL_REDIRECT_PREFERENCES
+  DEFAULT_MODEL_REDIRECT_PREFERENCES,
+  NewApiChannel
 } from "~/types"
 
 import { hasValidNewApiConfig } from "../newApiService"
@@ -21,6 +22,41 @@ import { renameModel } from "./modelNormalization"
  * Core algorithm for generating model redirect mappings
  */
 export class ModelRedirectService {
+  /**
+   * Apply model mapping to a channel with incremental merge
+   * Merges new mapping with existing mapping (new keys override old keys)
+   */
+  static async applyModelMappingToChannel(
+    channel: NewApiChannel,
+    newMapping: Record<string, string>,
+    service: NewApiModelSyncService
+  ): Promise<void> {
+    if (Object.keys(newMapping).length === 0) {
+      return
+    }
+
+    // Parse existing model_mapping from channel
+    let existingMapping: Record<string, string> = {}
+    if (channel.model_mapping) {
+      try {
+        existingMapping = JSON.parse(channel.model_mapping)
+      } catch (parseError) {
+        console.warn(
+          `[ModelRedirect] Failed to parse existing model_mapping for channel ${channel.id}:`,
+          parseError
+        )
+      }
+    }
+
+    // Merge mappings: new mapping overrides existing keys
+    const mergedMapping = {
+      ...existingMapping,
+      ...newMapping
+    }
+
+    await service.updateChannelModelMapping(channel, mergedMapping)
+  }
+
   /**
    * Run model redirect generation and apply mappings directly
    */
@@ -95,16 +131,19 @@ export class ModelRedirectService {
                 .filter(Boolean)
             : []
 
-          const modelMapping =
+          const newMapping =
             ModelRedirectService.generateModelMappingForChannel(
               standardModels,
               actualModels
             )
 
-          if (Object.keys(modelMapping).length > 0) {
-            await service.updateChannelModelMapping(channel, modelMapping)
-            successCount += 1
-          }
+          // Use unified method for incremental merge and apply
+          await ModelRedirectService.applyModelMappingToChannel(
+            channel,
+            newMapping,
+            service
+          )
+          successCount += 1
         } catch (error) {
           errors.push(
             `Channel ${channel.name} (${channel.id}): ${(error as Error).message || "Unknown error"}`

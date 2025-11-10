@@ -223,22 +223,22 @@ class NewApiModelSyncScheduler {
                 } else {
                   const actualModels = payload.lastResult.newModels || []
 
-                  const modelMapping =
+                  const newMapping =
                     ModelRedirectService.generateModelMappingForChannel(
                       standardModels,
                       actualModels
                     )
 
-                  if (Object.keys(modelMapping).length > 0) {
-                    await service.updateChannelModelMapping(
-                      channel,
-                      modelMapping
-                    )
-                    mappingSuccessCount++
-                    console.log(
-                      `[NewApiModelSync] Applied ${Object.keys(modelMapping).length} model redirects to channel ${channel.name}`
-                    )
-                  }
+                  // Use unified method for incremental merge and apply
+                  await ModelRedirectService.applyModelMappingToChannel(
+                    channel,
+                    newMapping,
+                    service
+                  )
+                  mappingSuccessCount++
+                  console.log(
+                    `[NewApiModelSync] Applied ${Object.keys(newMapping).length} model redirects to channel ${channel.name}`
+                  )
                 }
               } catch (error) {
                 console.error(
