@@ -325,7 +325,7 @@ export class NewApiModelSyncService {
         results[currentIndex] = result
         completed++
 
-        onProgress?.({
+        await onProgress?.({
           completed,
           total,
           lastResult: result

@@ -66,7 +66,7 @@ export interface BatchExecutionOptions {
     completed: number
     total: number
     lastResult: ExecutionItemResult
-  }) => void
+  }) => void | Promise<void>
 }
 
 /**
