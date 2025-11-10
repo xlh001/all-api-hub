@@ -33,3 +33,9 @@ body {
   --tw-bg-opacity: 1;
   background-color: rgb(15 23 42 / var(--tw-bg-opacity, 1)) /* #0f172a */;
 }
+
+/* 禁用 Edge / IE 的密码显示按钮 */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
