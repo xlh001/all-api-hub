@@ -1,3 +1,5 @@
+import { union } from "lodash-es"
+
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
 import { fetchApi } from "~/services/apiService/common/utils"
@@ -185,8 +187,14 @@ export class NewApiModelSyncService {
     modelMapping: Record<string, string>
   ): Promise<void> {
     try {
+      const updateModels = union(
+        channel.models.split(","),
+        Object.keys(modelMapping)
+      ).join(",")
+
       const updatePayload: UpdateChannelPayload = {
         id: channel.id,
+        models: updateModels,
         model_mapping: JSON.stringify(modelMapping)
       }
 
