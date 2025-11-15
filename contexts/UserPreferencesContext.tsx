@@ -88,18 +88,6 @@ const UserPreferencesContext = createContext<
   UserPreferencesContextType | undefined
 >(undefined)
 
-const clonePreferenceValue = <T,>(value: T): T => {
-  if (value === null || value === undefined) {
-    return value
-  }
-
-  if (typeof value !== "object") {
-    return value
-  }
-
-  return JSON.parse(JSON.stringify(value))
-}
-
 // 3. 创建 Provider 组件
 export const UserPreferencesProvider = ({
   children
@@ -396,9 +384,8 @@ export const UserPreferencesProvider = ({
   const resetAutoRefreshConfig = useCallback(async () => {
     const success = await userPreferences.resetAutoRefreshConfig()
     if (success) {
-      const defaults = clonePreferenceValue(
-        DEFAULT_PREFERENCES.accountAutoRefresh
-      )
+      const defaults = DEFAULT_PREFERENCES.accountAutoRefresh
+
       setPreferences((prev) =>
         prev
           ? deepOverride(prev, {
@@ -418,7 +405,7 @@ export const UserPreferencesProvider = ({
   const resetNewApiConfig = useCallback(async () => {
     const success = await userPreferences.resetNewApiConfig()
     if (success) {
-      const defaults = clonePreferenceValue(DEFAULT_PREFERENCES.newApi)
+      const defaults = DEFAULT_PREFERENCES.newApi
       setPreferences((prev) =>
         prev
           ? deepOverride(prev, {
@@ -434,7 +421,7 @@ export const UserPreferencesProvider = ({
   const resetNewApiModelSyncConfig = useCallback(async () => {
     const success = await userPreferences.resetNewApiModelSyncConfig()
     if (success) {
-      const defaults = clonePreferenceValue(DEFAULT_PREFERENCES.newApiModelSync)
+      const defaults = DEFAULT_PREFERENCES.newApiModelSync
       setPreferences((prev) =>
         prev
           ? deepOverride(prev, {
@@ -456,7 +443,7 @@ export const UserPreferencesProvider = ({
   const resetAutoCheckinConfig = useCallback(async () => {
     const success = await userPreferences.resetAutoCheckinConfig()
     if (success) {
-      const defaults = clonePreferenceValue(DEFAULT_PREFERENCES.autoCheckin)
+      const defaults = DEFAULT_PREFERENCES.autoCheckin
       setPreferences((prev) =>
         prev
           ? deepOverride(prev, {
@@ -478,7 +465,7 @@ export const UserPreferencesProvider = ({
   const resetModelRedirectConfig = useCallback(async () => {
     const success = await userPreferences.resetModelRedirectConfig()
     if (success) {
-      const defaults = clonePreferenceValue(DEFAULT_PREFERENCES.modelRedirect)
+      const defaults = DEFAULT_PREFERENCES.modelRedirect
       setPreferences((prev) =>
         prev
           ? deepOverride(prev, {
@@ -494,7 +481,7 @@ export const UserPreferencesProvider = ({
   const resetWebdavConfig = useCallback(async () => {
     const success = await userPreferences.resetWebdavConfig()
     if (success) {
-      const defaults = clonePreferenceValue(DEFAULT_PREFERENCES.webdav)
+      const defaults = DEFAULT_PREFERENCES.webdav
       setPreferences((prev) =>
         prev
           ? deepOverride(prev, {
