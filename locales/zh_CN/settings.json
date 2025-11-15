@@ -114,6 +114,10 @@
   "messages": {
     "updateSuccess": "{{name}}更新成功",
     "updateFailed": "{{name}}更新失败",
-    "saveSettingsFailed": "保存设置失败"
+    "saveSettingsFailed": "保存设置失败",
+    "resetSuccess": "{{name}}已重置为默认设置",
+    "resetFailed": "重置{{name}}失败",
+    "confirmReset": "确认重置",
+    "resetConfirmDesc": "确定要将{{name}}重置为默认设置吗？此操作无法撤销。"
   }
 }

@@ -3,13 +3,12 @@ import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { SettingSection } from "~/components/SettingSection"
 import {
-  BodySmall,
   Button,
   Card,
   CardItem,
   CardList,
-  Heading4,
   Input,
   Switch
 } from "~/components/ui"
@@ -23,8 +22,11 @@ type UserNewApiModelSyncConfig = NonNullable<
 
 export default function NewApiModelSyncSettings() {
   const { t } = useTranslation(["newApiModelSync", "settings"])
-  const { preferences: userPrefs, updateNewApiModelSync } =
-    useUserPreferencesContext()
+  const {
+    preferences: userPrefs,
+    updateNewApiModelSync,
+    resetNewApiModelSyncConfig
+  } = useUserPreferencesContext()
   const [isSaving, setIsSaving] = useState(false)
 
   // Convert from UserPreferences.newApiModelSync to NewApiModelSyncPreferences format
@@ -95,11 +97,17 @@ export default function NewApiModelSyncSettings() {
   }
 
   return (
-    <section>
-      <div className="mb-6 space-y-2">
-        <Heading4>{t("newApiModelSync:settings.title")}</Heading4>
-        <BodySmall>{t("newApiModelSync:description")}</BodySmall>
-      </div>
+    <SettingSection
+      id="new-api-model-sync"
+      title={t("newApiModelSync:settings.title")}
+      description={t("newApiModelSync:description")}
+      onReset={async () => {
+        const result = await resetNewApiModelSyncConfig()
+        if (result) {
+          setIsSaving(false)
+        }
+        return result
+      }}>
       <Card padding="none">
         <CardList>
           {/* Enable Auto-Sync */}
@@ -267,6 +275,6 @@ export default function NewApiModelSyncSettings() {
           />
         </CardList>
       </Card>
-    </section>
+    </SettingSection>
   )
 }

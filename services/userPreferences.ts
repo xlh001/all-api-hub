@@ -415,6 +415,80 @@ class UserPreferencesService {
   async setLanguage(language: string): Promise<boolean> {
     return this.savePreferences({ language })
   }
+
+  /**
+   * 重置显示设置（货币单位和默认标签页）
+   */
+  async resetDisplaySettings(): Promise<boolean> {
+    return this.savePreferences({
+      activeTab: DEFAULT_PREFERENCES.activeTab,
+      currencyType: DEFAULT_PREFERENCES.currencyType
+    })
+  }
+
+  /**
+   * 重置自动刷新设置
+   */
+  async resetAutoRefreshConfig(): Promise<boolean> {
+    return this.savePreferences({
+      accountAutoRefresh: DEFAULT_PREFERENCES.accountAutoRefresh
+    })
+  }
+
+  /**
+   * 重置 New API 配置
+   */
+  async resetNewApiConfig(): Promise<boolean> {
+    return this.savePreferences({
+      newApi: DEFAULT_PREFERENCES.newApi
+    })
+  }
+
+  /**
+   * 重置 New API Model Sync 配置
+   */
+  async resetNewApiModelSyncConfig(): Promise<boolean> {
+    return this.savePreferences({
+      newApiModelSync: DEFAULT_PREFERENCES.newApiModelSync
+    })
+  }
+
+  /**
+   * 重置自动签到配置
+   */
+  async resetAutoCheckinConfig(): Promise<boolean> {
+    return this.savePreferences({
+      autoCheckin: DEFAULT_PREFERENCES.autoCheckin
+    })
+  }
+
+  /**
+   * 重置模型重定向配置
+   */
+  async resetModelRedirectConfig(): Promise<boolean> {
+    return this.savePreferences({
+      modelRedirect: DEFAULT_PREFERENCES.modelRedirect
+    })
+  }
+
+  /**
+   * 重置 WebDAV 配置
+   */
+  async resetWebdavConfig(): Promise<boolean> {
+    return this.savePreferences({
+      webdav: DEFAULT_PREFERENCES.webdav
+    })
+  }
+
+  /**
+   * 重置主题和语言设置
+   */
+  async resetThemeAndLanguage(): Promise<boolean> {
+    return this.savePreferences({
+      themeMode: DEFAULT_PREFERENCES.themeMode,
+      language: DEFAULT_PREFERENCES.language
+    })
+  }
 }
 
 // 创建单例实例

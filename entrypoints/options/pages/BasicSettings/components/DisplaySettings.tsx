@@ -1,14 +1,8 @@
 import { EyeIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import {
-  BodySmall,
-  Card,
-  CardItem,
-  CardList,
-  Heading3,
-  ToggleButton
-} from "~/components/ui"
+import { SettingSection } from "~/components/SettingSection"
+import { Card, CardItem, CardList, ToggleButton } from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -18,8 +12,13 @@ import { showUpdateToast } from "../../../../../utils/toastHelpers.ts"
 
 export default function DisplaySettings() {
   const { t } = useTranslation("settings")
-  const { currencyType, activeTab, updateCurrencyType, updateDefaultTab } =
-    useUserPreferencesContext()
+  const {
+    currencyType,
+    activeTab,
+    updateCurrencyType,
+    updateDefaultTab,
+    resetDisplaySettings
+  } = useUserPreferencesContext()
 
   const handleCurrencyChange = async (currency: CurrencyType) => {
     if (currency === currencyType) return
@@ -34,12 +33,11 @@ export default function DisplaySettings() {
   }
 
   return (
-    <section className="space-y-6" id="general-display">
-      <div className="space-y-1.5">
-        <Heading3>{t("display.title")}</Heading3>
-        <BodySmall>{t("display.description")}</BodySmall>
-      </div>
-
+    <SettingSection
+      id="general-display"
+      title={t("display.title")}
+      description={t("display.description")}
+      onReset={resetDisplaySettings}>
       <Card padding="none">
         <CardList>
           <CardItem
@@ -97,6 +95,6 @@ export default function DisplaySettings() {
           />
         </CardList>
       </Card>
-    </section>
+    </SettingSection>
   )
 }

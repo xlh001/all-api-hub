@@ -114,6 +114,10 @@
   "messages": {
     "updateSuccess": "{{name}} Update successful",
     "updateFailed": "{{name}} Update failed",
-    "saveSettingsFailed": "Failed to save settings"
+    "saveSettingsFailed": "Failed to save settings",
+    "resetSuccess": "{{name}} has been reset to default settings",
+    "resetFailed": "Failed to reset {{name}}",
+    "confirmReset": "Confirm Reset",
+    "resetConfirmDesc": "Are you sure you want to reset {{name}} to default settings? This operation cannot be undone."
   }
 }

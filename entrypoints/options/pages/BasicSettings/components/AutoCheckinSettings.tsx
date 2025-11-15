@@ -2,12 +2,12 @@ import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { SettingSection } from "~/components/SettingSection"
 import {
-  BodySmall,
+  Button,
   Card,
   CardItem,
   CardList,
-  Heading4,
   Input,
   Switch
 } from "~/components/ui"
@@ -17,8 +17,11 @@ import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 
 export default function AutoCheckinSettings() {
   const { t } = useTranslation(["autoCheckin", "settings"])
-  const { preferences: userPrefs, updateAutoCheckin } =
-    useUserPreferencesContext()
+  const {
+    preferences: userPrefs,
+    updateAutoCheckin,
+    resetAutoCheckinConfig
+  } = useUserPreferencesContext()
   const [isSaving, setIsSaving] = useState(false)
 
   const preferences = userPrefs?.autoCheckin ?? DEFAULT_PREFERENCES.autoCheckin!
@@ -63,9 +66,17 @@ export default function AutoCheckinSettings() {
   }
 
   return (
-    <section>
-      <Heading4 className="mb-2">{t("autoCheckin:settings.title")}</Heading4>
-      <BodySmall className="mb-4">{t("autoCheckin:description")}</BodySmall>
+    <SettingSection
+      id="auto-checkin"
+      title={t("autoCheckin:settings.title")}
+      description={t("autoCheckin:description")}
+      onReset={async () => {
+        const result = await resetAutoCheckinConfig()
+        if (result) {
+          setIsSaving(false)
+        }
+        return result
+      }}>
       <Card padding="none">
         <CardList>
           {/* Enable Auto Check-in */}
@@ -136,9 +147,11 @@ export default function AutoCheckinSettings() {
             title={t("autoCheckin:settings.viewExecution")}
             description={t("autoCheckin:settings.viewExecutionDesc")}
             rightContent={
-              <button
+              <Button
                 onClick={handleNavigateToExecution}
-                className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600">
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2">
                 <span>{t("autoCheckin:settings.viewExecutionButton")}</span>
                 <svg
                   className="h-4 w-4"
@@ -152,11 +165,11 @@ export default function AutoCheckinSettings() {
                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                   />
                 </svg>
-              </button>
+              </Button>
             }
           />
         </CardList>
       </Card>
-    </section>
+    </SettingSection>
   )
 }
