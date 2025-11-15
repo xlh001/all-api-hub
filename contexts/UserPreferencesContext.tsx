@@ -359,6 +359,31 @@ export const UserPreferencesProvider = ({
     const success = await userPreferences.resetToDefaults()
     if (success) {
       await loadPreferences()
+
+      // Notify all background services about the reset
+      const defaults = DEFAULT_PREFERENCES
+
+      // Notify auto-refresh service
+      sendRuntimeMessage({
+        action: "updateAutoRefreshSettings",
+        settings: { accountAutoRefresh: defaults.accountAutoRefresh }
+      })
+
+      // Notify auto-checkin service
+      if (defaults.autoCheckin) {
+        void sendRuntimeMessage({
+          action: "autoCheckin:updateSettings",
+          settings: defaults.autoCheckin
+        })
+      }
+
+      // Notify New API model sync service
+      if (defaults.newApiModelSync) {
+        void sendRuntimeMessage({
+          action: "newApiModelSync:updateSettings",
+          settings: defaults.newApiModelSync
+        })
+      }
     }
     return success
   }, [loadPreferences])
