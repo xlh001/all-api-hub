@@ -50,8 +50,8 @@
     "importWarning4": "导入的账号数据包含敏感信息，请确保文件来源可信"
   },
   "webdav": {
-    "title": "WebDAV 备份与同步（手动）",
-    "configDesc": "配置 WebDAV 并手动上传/下载备份文件",
+    "title": "WebDAV 备份与同步",
+    "configDesc": "配置 WebDAV 并上传/下载备份文件",
     "webdavUrl": "Webdav 地址",
     "webdavUrlExample": "例如：https://dav.example.com/{{filename}} 完整文件 URL或Webdav 根目录 URL",
     "username": "用户名",
