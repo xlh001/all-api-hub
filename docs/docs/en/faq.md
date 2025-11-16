@@ -79,7 +79,7 @@ Different channels update at different speeds:
 | **GitHub Releases** | ⚡ Fastest                 | [Download](https://github.com/qixing-jk/all-api-hub/releases) |
 | **Chrome Web Store** | 🐌 Slow (3–5 days review) | [Install](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) |
 | **Edge Add-ons** | 🐌 Slow (2–3 days review) | [Install](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) |
-| **Firefox Add-ons** | ⚡ Fast (few hours review) | [Install](https://addons.mozilla.org/firefox/addon/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub/) |
+| **Firefox Add-ons** | ⚡ Fast (few hours review) | [Install](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) |
 
 ::: tip Recommendation
 If a bug has already been fixed, grab the latest GitHub release and install it manually.

@@ -82,7 +82,7 @@ AnyRouter は API を変更しているため、一部の機能が正常に動�
 | **GitHub Releases** | ⚡ 最速         | [ダウンロード](https://github.com/qixing-jk/all-api-hub/releases) |
 | **Chrome Web Store** | 🐌 遅い（3-5日間の審査） | [インストール](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) |
 | **Edge Add-ons** | 🐌 遅い（2-3日間の審査） | [インストール](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) |
-| **Firefox Add-ons** | ⚡ 速い（数時間の審査）  | [インストール](https://addons.mozilla.org/firefox/addon/中转站管理器-all-api-hub/) |
+| **Firefox Add-ons** | ⚡ 速い（数時間の審査）  | [インストール](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) |
 
 ::: tip ヒント
 修正済みのバグに遭遇した場合は、GitHub Releases から最新バージョンをダウンロードして手動でインストールすることをお勧めします。

@@ -103,7 +103,7 @@ This extension automatically detects and manages accounts from sites based on th
 [🔗 Go to download](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
 
 ### FireFox App Store (Recommended)
-[🔗 Go to download](https://addons.mozilla.org/firefox/addon/%E4%B8%AD%E8%BD%AC%E7%AB%99%E7%AE%A1%E7%90%86%E5%99%A8-all-api-hub/)
+[🔗 Go to download](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24})
 
 ### Manual Installation
 
