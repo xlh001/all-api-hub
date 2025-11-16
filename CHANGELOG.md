@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.8.0](https://github.com/qixing-jk/all-api-hub/compare/v2.7.1...v2.8.0) (2025-11-16)
+
+
+### Features
+
+* **account:** implement fallback for partial account updates ([211acd5](https://github.com/qixing-jk/all-api-hub/commit/211acd5a343b86b28c37f8e9e3219666f5f6ed1a)), closes [#146](https://github.com/qixing-jk/all-api-hub/issues/146)
+* allow saving account when data fetch fails during manual addition ([a618a6b](https://github.com/qixing-jk/all-api-hub/commit/a618a6b83bf86ec7e3d33c2f8bcce73505e251dc))
+* **settings:** add SettingSection and per-section resets ([d567e98](https://github.com/qixing-jk/all-api-hub/commit/d567e9851e941c5eac4cdf0f9913f38c00c42746))
+* **settings:** unify update/reset interfaces and introduce SettingSection for per-section reset ([4d7d37d](https://github.com/qixing-jk/all-api-hub/commit/4d7d37d20735e9cdc5b08dd69fc78fbb3b167806))
+
 ## [2.7.1](https://github.com/qixing-jk/all-api-hub/compare/v2.7.0...v2.7.1) (2025-11-11)
 
 
