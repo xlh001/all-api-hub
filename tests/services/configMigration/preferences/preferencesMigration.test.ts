@@ -1,18 +1,17 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_WEBDAV_SETTINGS } from "~/types"
-import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh.ts"
-import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig.ts"
-import { SortingCriteriaType } from "~/types/sorting.ts"
-import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
-
-import type { UserPreferences } from "../../../userPreferences"
 import {
   CURRENT_PREFERENCES_VERSION,
   getPreferencesVersion,
   migratePreferences,
   needsPreferencesMigration
-} from "../preferencesMigration"
+} from "~/services/configMigration/preferences/preferencesMigration"
+import type { UserPreferences } from "~/services/userPreferences"
+import { DEFAULT_WEBDAV_SETTINGS } from "~/types"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh.ts"
+import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig.ts"
+import { SortingCriteriaType } from "~/types/sorting.ts"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
 
 // Helper function to create a minimal v0 preferences object
 function createV0Preferences(

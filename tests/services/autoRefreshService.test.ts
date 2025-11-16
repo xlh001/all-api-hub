@@ -1,27 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
-
-import { accountStorage } from "../accountStorage"
+import { accountStorage } from "~/services/accountStorage"
 import {
   autoRefreshService,
   handleAutoRefreshMessage
-} from "../autoRefreshService"
-import type { UserPreferences } from "../userPreferences"
-import { userPreferences } from "../userPreferences"
+} from "~/services/autoRefreshService"
+import type { UserPreferences } from "~/services/userPreferences"
+import { userPreferences } from "~/services/userPreferences"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 
 // Mock dependencies
 vi.mock("~/utils/error", () => ({
   getErrorMessage: vi.fn((error) => `${String(error)}`)
 }))
 
-vi.mock("../accountStorage", () => ({
+vi.mock("~/services/accountStorage", () => ({
   accountStorage: {
     refreshAllAccounts: vi.fn()
   }
 }))
 
-vi.mock("../userPreferences", () => ({
+vi.mock("~/services/userPreferences", () => ({
   userPreferences: {
     getPreferences: vi.fn(),
     savePreferences: vi.fn()

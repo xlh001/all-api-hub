@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_WEBDAV_SETTINGS } from "~/types"
-
-import type { UserPreferences } from "../../../userPreferences"
 import {
   migrateWebDavConfig,
   needWebDavConfigMigration
-} from "../webDavConfigMigration"
+} from "~/services/configMigration/preferences/webDavConfigMigration"
+import type { UserPreferences } from "~/services/userPreferences"
+import { DEFAULT_WEBDAV_SETTINGS } from "~/types"
 
 describe("webDavConfigMigration", () => {
   describe("needWebDavConfigMigration", () => {

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 
 import type { CurrencyType } from "~/types"
-
 import {
   createSortComparator,
   formatTokenCount,
@@ -10,7 +9,7 @@ import {
   getOppositeCurrency,
   normalizeToDate,
   normalizeToMs
-} from "../formatters"
+} from "~/utils/formatters"
 
 describe("formatters utilities", () => {
   describe("formatTokenCount", () => {

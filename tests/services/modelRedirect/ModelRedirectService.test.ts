@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { extractActualModel } from "../modelNormalization"
-import { ModelRedirectService } from "../ModelRedirectService"
+import { extractActualModel } from "~/services/modelRedirect/modelNormalization"
+import { ModelRedirectService } from "~/services/modelRedirect/ModelRedirectService"
 
 // Mock metadata
 const mockMetadataMap = new Map<

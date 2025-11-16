@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest"
 
+import { migrateCheckInConfig } from "~/services/configMigration/account/checkInMigration"
 import type { SiteAccount } from "~/types"
-
-import { migrateCheckInConfig } from "../checkInMigration"
 
 describe("checkInMigration", () => {
   // Helper to create a minimal SiteAccount fixture

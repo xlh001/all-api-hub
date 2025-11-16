@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest"
 
-import type { SiteAccount } from "~/types"
-
 import {
   CURRENT_CONFIG_VERSION,
   getConfigVersion,
   migrateAccountConfig,
   migrateAccountsConfig,
   needsConfigMigration
-} from "../accountDataMigration"
+} from "~/services/configMigration/account/accountDataMigration"
+import type { SiteAccount } from "~/types"
 
 describe("accountDataMigration", () => {
   // Helper to create a minimal SiteAccount fixture

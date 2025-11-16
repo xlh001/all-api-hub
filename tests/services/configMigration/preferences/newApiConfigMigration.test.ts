@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import type { UserPreferences } from "../../../userPreferences"
-import { migrateNewApiConfig } from "../newApiConfigMigration"
+import { migrateNewApiConfig } from "~/services/configMigration/preferences/newApiConfigMigration"
+import type { UserPreferences } from "~/services/userPreferences"
 
 describe("newApiConfigMigration", () => {
   it("migrates flat new-api fields to nested structure", () => {

@@ -7,11 +7,10 @@ import {
   SortingCriteriaType,
   type SortingPriorityConfig
 } from "~/types/sorting"
-
 import {
   createDynamicSortComparator,
   DEFAULT_SORTING_PRIORITY_CONFIG
-} from "../sortingPriority"
+} from "~/utils/sortingPriority"
 
 describe("createDynamicSortComparator", () => {
   // Helper to create a minimal DisplaySiteData fixture

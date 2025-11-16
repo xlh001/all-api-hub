@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { modelMetadataService } from "~/services/modelMetadata"
-
-import { extractActualModel, renameModel } from "../modelNormalization"
+import {
+  extractActualModel,
+  renameModel
+} from "~/services/modelRedirect/modelNormalization"
 
 // Mock the modelMetadataService with controlled responses
 vi.mock("~/services/modelMetadata", () => ({

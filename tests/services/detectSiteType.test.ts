@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest"
 
 import { SITE_TITLE_RULES, UNKNOWN_SITE } from "~/constants/siteType"
 import { fetchSiteOriginalTitle, getSiteType } from "~/services/detectSiteType"
-
-import { server } from "../msw/server"
+import { server } from "~/tests/msw/server"
 
 describe("detectSiteType", () => {
   beforeEach(() => {

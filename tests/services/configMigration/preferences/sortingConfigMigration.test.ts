@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { SortingCriteriaType } from "~/types/sorting.ts"
-import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
-
 import {
   migrateSortingConfig,
   needsSortingConfigMigration
-} from "../sortingConfigMigration"
+} from "~/services/configMigration/preferences/sortingConfigMigration"
+import { SortingCriteriaType } from "~/types/sorting.ts"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
 
 describe("sortingConfigMigration", () => {
   describe("needsSortingConfigMigration", () => {

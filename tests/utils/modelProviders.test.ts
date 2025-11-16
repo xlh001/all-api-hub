@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 
-import type { ProviderConfig } from "~/utils/modelProviders"
 import {
   filterModelsByProvider,
   getAllProviders,

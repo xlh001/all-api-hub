@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { removeDateSuffix } from "../modelName"
+import { removeDateSuffix } from "~/utils/modelName"
 
 describe("removeDateSuffix", () => {
   describe("yyyymmdd format (8-digit date)", () => {
