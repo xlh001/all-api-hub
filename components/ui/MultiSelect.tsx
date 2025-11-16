@@ -46,7 +46,11 @@ export function MultiSelect({
   const [isSelectedExpanded, setIsSelectedExpanded] = useState(
     selected.length <= 5
   )
+  const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">(
+    "bottom"
+  )
   const hasUserToggledRef = useRef(false)
+  const comboboxRef = useRef<HTMLDivElement>(null)
   const uid = useId()
 
   useEffect(() => {
@@ -60,6 +64,33 @@ export function MultiSelect({
       setIsSelectedExpanded(selected.length <= 5)
     }
   }, [selected.length])
+
+  // 检查下拉菜单位置，防止溢出屏幕
+  useEffect(() => {
+    const checkPosition = () => {
+      if (comboboxRef.current) {
+        const rect = comboboxRef.current.getBoundingClientRect()
+        const spaceBelow = window.innerHeight - rect.bottom
+        const spaceAbove = rect.top
+
+        // 如果下方空间不足 250px 且上方空间更大，则向上展开
+        if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+          setDropdownPosition("top")
+        } else {
+          setDropdownPosition("bottom")
+        }
+      }
+    }
+
+    checkPosition()
+    window.addEventListener("scroll", checkPosition, true)
+    window.addEventListener("resize", checkPosition)
+
+    return () => {
+      window.removeEventListener("scroll", checkPosition, true)
+      window.removeEventListener("resize", checkPosition)
+    }
+  }, [])
 
   const optionMap = useMemo(() => {
     const map = new Map<string, MultiSelectOption>()
@@ -134,7 +165,7 @@ export function MultiSelect({
         }}
         multiple
         disabled={disabled}>
-        <div className="relative">
+        <div className="relative" ref={comboboxRef}>
           <div className="relative w-full">
             <Combobox.Input
               className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary"
@@ -158,7 +189,13 @@ export function MultiSelect({
             leaveTo="opacity-0"
             afterLeave={() => setQuery("")}
             appear>
-            <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-bg-secondary sm:text-sm">
+            <Combobox.Options
+              className={cn(
+                "absolute z-10 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-bg-secondary sm:text-sm",
+                dropdownPosition === "top"
+                  ? "bottom-full mb-1"
+                  : "top-full mt-1"
+              )}>
               {({ option: option }) => {
                 return filteredOptions.length === 0 && query !== "" ? (
                   <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-dark-text-secondary">
@@ -184,7 +221,8 @@ export function MultiSelect({
                           className={cn(
                             "block truncate",
                             selected ? "font-medium" : "font-normal"
-                          )}>
+                          )}
+                          title={option.label}>
                           {option.label}
                         </span>
                         {selected ? (
@@ -217,7 +255,7 @@ export function MultiSelect({
             <span className="flex min-w-0 items-center gap-2">
               <ChevronDownIcon
                 className={cn(
-                  "h-4 w-4 text-gray-500 transition-transform dark:text-dark-text-secondary",
+                  "h-4 w-4 flex-shrink-0 text-gray-500 transition-transform dark:text-dark-text-secondary",
                   isSelectedExpanded ? "rotate-180" : ""
                 )}
               />
@@ -226,16 +264,17 @@ export function MultiSelect({
               </span>
             </span>
             {!isSelectedExpanded && (
-              <span className="ml-3 flex flex-wrap items-center gap-1 text-xs text-gray-500 dark:text-dark-text-secondary">
+              <span className="ml-3 flex items-center gap-1 overflow-hidden text-xs text-gray-500 dark:text-dark-text-secondary">
                 {previewOptions.map((option) => (
                   <span
                     key={`preview-${option.value}`}
-                    className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600 dark:bg-dark-bg-tertiary dark:text-dark-text-tertiary">
+                    className="max-w-[100px] flex-shrink-0 truncate rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600 dark:bg-dark-bg-tertiary dark:text-dark-text-tertiary"
+                    title={option.label}>
                     {option.label}
                   </span>
                 ))}
                 {remainingPreviewCount > 0 && (
-                  <span className="text-xs text-gray-400 dark:text-dark-text-tertiary">
+                  <span className="flex-shrink-0 text-xs text-gray-400 dark:text-dark-text-tertiary">
                     +{remainingPreviewCount}
                   </span>
                 )}
@@ -244,17 +283,21 @@ export function MultiSelect({
           </button>
 
           {isSelectedExpanded && (
-            <div id={`${uid}-selected-items`} className="flex flex-wrap gap-2">
+            <div
+              id={`${uid}-selected-items`}
+              className="flex max-h-40 flex-wrap gap-2 overflow-y-auto p-1">
               {selectedOptions.map((option) => (
                 <span
                   key={option.value}
-                  className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                  {option.label}
+                  className="inline-flex max-w-full items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                  title={option.label}>
+                  <span className="max-w-[200px] truncate">{option.label}</span>
                   {!disabled && (
                     <button
                       type="button"
                       onClick={() => handleRemove(option.value)}
-                      className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:bg-blue-500 focus:text-white focus:outline-none dark:hover:bg-blue-800">
+                      className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:bg-blue-500 focus:text-white focus:outline-none dark:hover:bg-blue-800"
+                      aria-label={`Remove ${option.label}`}>
                       <XMarkIcon className="h-3 w-3" />
                     </button>
                   )}
