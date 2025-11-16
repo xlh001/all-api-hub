@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest"
+import { t } from "i18next"
+import { describe, expect, it, vi } from "vitest"
 
 import type { CurrencyType } from "~/types"
 import {
   createSortComparator,
+  formatFullTime,
+  formatKeyTime,
+  formatRelativeTime,
   formatTokenCount,
   generateId,
   getCurrencySymbol,
@@ -10,6 +14,10 @@ import {
   normalizeToDate,
   normalizeToMs
 } from "~/utils/formatters"
+
+vi.mock("i18next", () => ({
+  t: vi.fn((key: string) => `__mocked__${key}`)
+}))
 
 describe("formatters utilities", () => {
   describe("formatTokenCount", () => {
@@ -147,6 +155,58 @@ describe("formatters utilities", () => {
       const sorted = [...items].sort(comparator)
       expect(sorted[0].name).toBe("Alice")
       expect(sorted[2].name).toBe("Charlie")
+    })
+  })
+
+  describe("formatKeyTime", () => {
+    it("should return translation string when timestamp is non-positive", () => {
+      const result = formatKeyTime(0)
+      expect(result).toBe("__mocked__keyManagement:keyDetails.neverExpires")
+      expect(vi.mocked(t)).toHaveBeenCalledWith(
+        "keyManagement:keyDetails.neverExpires"
+      )
+    })
+
+    it("should format timestamp using zh-CN locale when positive", () => {
+      const timestamp = new Date(2024, 0, 1).getTime()
+      const localeSpy = vi
+        .spyOn(Date.prototype, "toLocaleDateString")
+        .mockReturnValue("2024-01-01")
+
+      const result = formatKeyTime(timestamp)
+
+      expect(result).toBe("2024-01-01")
+      expect(localeSpy).toHaveBeenCalledWith("zh-CN")
+
+      localeSpy.mockRestore()
+    })
+  })
+
+  describe("formatRelativeTime", () => {
+    it("should return empty string when date is undefined", () => {
+      expect(formatRelativeTime(undefined)).toBe("")
+    })
+
+    it("should format human-readable relative strings", () => {
+      vi.useFakeTimers()
+      const now = new Date(2024, 0, 1, 12, 0, 0)
+      vi.setSystemTime(now)
+      const anHourAgo = new Date(2024, 0, 1, 11, 0, 0)
+
+      expect(formatRelativeTime(anHourAgo)).toBe("an hour ago")
+
+      vi.useRealTimers()
+    })
+  })
+
+  describe("formatFullTime", () => {
+    it("should return empty string when date is undefined", () => {
+      expect(formatFullTime(undefined)).toBe("")
+    })
+
+    it("should format date into YYYY/MM/DD HH:mm:ss", () => {
+      const date = new Date(2024, 0, 3, 9, 5, 7)
+      expect(formatFullTime(date)).toBe("2024/01/03 09:05:07")
     })
   })
 })
