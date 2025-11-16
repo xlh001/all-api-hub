@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { useChannelDialog } from "~/features/ChannelManagement"
 import {
   autoDetectAccount,
@@ -20,7 +21,7 @@ import {
 } from "~/utils/browserApi.ts"
 
 interface UseAccountDialogProps {
-  mode: "add" | "edit"
+  mode: DialogMode
   account?: DisplaySiteData | null
   isOpen: boolean
   onClose: () => void
@@ -48,7 +49,9 @@ export function useAccountDialog({
   const [detectionError, setDetectionError] = useState<AutoDetectError | null>(
     null
   )
-  const [showManualForm, setShowManualForm] = useState(mode === "edit")
+  const [showManualForm, setShowManualForm] = useState(
+    mode === DIALOG_MODES.EDIT
+  )
   const [exchangeRate, setExchangeRate] = useState("")
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
@@ -78,7 +81,7 @@ export function useAccountDialog({
     setUserId("")
     setShowAccessToken(false)
     setDetectionError(null)
-    setShowManualForm(mode === "edit")
+    setShowManualForm(mode === DIALOG_MODES.EDIT)
     setExchangeRate("")
     setCurrentTabUrl(null)
     setNotes("")
@@ -129,7 +132,7 @@ export function useAccountDialog({
   )
 
   const checkCurrentTab = useCallback(async () => {
-    if (mode === "edit" && account) {
+    if (mode === DIALOG_MODES.EDIT && account) {
       return
     }
     try {
@@ -180,7 +183,7 @@ export function useAccountDialog({
   useEffect(() => {
     if (isOpen) {
       resetForm()
-      if (mode === "edit" && account) {
+      if (mode === DIALOG_MODES.EDIT && account) {
         loadAccountData(account.id)
       } else {
         // Get current tab URL for add mode
@@ -253,7 +256,7 @@ export function useAccountDialog({
 
         if (resultData.exchangeRate) {
           setExchangeRate(resultData.exchangeRate.toString())
-        } else if (mode === "add") {
+        } else if (mode === DIALOG_MODES.ADD) {
           setExchangeRate("")
         }
 
@@ -263,7 +266,7 @@ export function useAccountDialog({
 
         setIsDetected(true)
         setSiteName(resultData.siteName)
-        if (mode === "edit") {
+        if (mode === DIALOG_MODES.EDIT) {
           toast.success(t("messages.autoDetectSuccess"))
         }
       }
@@ -287,7 +290,7 @@ export function useAccountDialog({
     setIsSaving(true)
     try {
       const result =
-        mode === "add"
+        mode === DIALOG_MODES.ADD
           ? await validateAndSaveAccount(
               url.trim(),
               siteName.trim(),
@@ -318,7 +321,9 @@ export function useAccountDialog({
         toast.success(
           result.message ??
             t(
-              mode === "add" ? "messages.addSuccess" : "messages.updateSuccess",
+              mode === DIALOG_MODES.ADD
+                ? "messages.addSuccess"
+                : "messages.updateSuccess",
               {
                 name: siteName
               }
@@ -403,7 +408,7 @@ export function useAccountDialog({
       }
     } else {
       setUrl("")
-      if (mode === "add") {
+      if (mode === DIALOG_MODES.ADD) {
         setSiteName("")
       }
     }

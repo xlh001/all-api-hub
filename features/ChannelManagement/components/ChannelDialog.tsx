@@ -11,6 +11,7 @@ import {
   MultiSelect,
   Select
 } from "~/components/ui"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelType, ChannelTypeOptions } from "~/constants/newApi.ts"
 import { useChannelForm } from "~/features/ChannelManagement/hooks/useChannelForm"
 import { CHANNEL_STATUS, ChannelFormData, NewApiChannel } from "~/types/newapi"
@@ -18,7 +19,7 @@ import { CHANNEL_STATUS, ChannelFormData, NewApiChannel } from "~/types/newapi"
 export interface ChannelDialogProps {
   isOpen: boolean
   onClose: () => void
-  mode?: "add" | "edit"
+  mode?: DialogMode
   channel?: NewApiChannel | null
   onSuccess?: (channel: any) => void
   initialValues?: Partial<ChannelFormData>
@@ -29,7 +30,7 @@ export interface ChannelDialogProps {
 export function ChannelDialog({
   isOpen,
   onClose,
-  mode = "add",
+  mode = DIALOG_MODES.ADD,
   channel = null,
   onSuccess,
   initialValues,
@@ -83,12 +84,12 @@ export function ChannelDialog({
   const header = (
     <div>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
-        {mode === "add"
+        {mode === DIALOG_MODES.ADD
           ? t("channelDialog:title.add", "Add Channel")
           : t("channelDialog:title.edit", "Edit Channel")}
       </h3>
       <p className="mt-1 text-sm text-gray-500 dark:text-dark-text-secondary">
-        {mode === "add"
+        {mode === DIALOG_MODES.ADD
           ? t(
               "channelDialog:description.add",
               "Create a new channel for your API aggregator"
@@ -112,7 +113,7 @@ export function ChannelDialog({
         disabled={!isFormValid || isSaving}
         loading={isSaving}
         type="submit">
-        {mode === "add"
+        {mode === DIALOG_MODES.ADD
           ? t("channelDialog:actions.create", "Create Channel")
           : t("channelDialog:actions.update", "Update Channel")}
       </Button>
@@ -156,7 +157,7 @@ export function ChannelDialog({
             onChange={(e) =>
               handleTypeChange(Number(e.target.value) as ChannelType)
             }
-            disabled={isSaving || mode === "edit"}
+            disabled={isSaving || mode === DIALOG_MODES.EDIT}
             required>
             {ChannelTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>

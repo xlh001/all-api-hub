@@ -1,8 +1,10 @@
 import { SparklesIcon, UsersIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+
 interface InfoPanelProps {
-  mode: "add" | "edit"
+  mode: DialogMode
   isDetected?: boolean
   showManualForm?: boolean
 }
@@ -13,7 +15,7 @@ export default function InfoPanel({
   showManualForm
 }: InfoPanelProps) {
   const { t } = useTranslation("accountDialog")
-  const isAddMode = mode === "add"
+  const isAddMode = mode === DIALOG_MODES.ADD
 
   const getTitle = () => {
     if (isAddMode) {

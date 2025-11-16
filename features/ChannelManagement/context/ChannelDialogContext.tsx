@@ -7,11 +7,12 @@ import React, {
   useState
 } from "react"
 
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import type { ChannelFormData } from "~/types"
 
 interface ChannelDialogState {
   isOpen: boolean
-  mode: "add" | "edit"
+  mode: DialogMode
   initialValues?: Partial<ChannelFormData>
   initialModels?: string[]
   initialGroups?: string[]
@@ -21,7 +22,7 @@ interface ChannelDialogState {
 interface ChannelDialogContextValue {
   state: ChannelDialogState
   openDialog: (config: {
-    mode?: "add" | "edit"
+    mode?: DialogMode
     initialValues?: Partial<ChannelFormData>
     initialModels?: string[]
     initialGroups?: string[]
@@ -42,12 +43,12 @@ export function ChannelDialogProvider({
 }) {
   const [state, setState] = useState<ChannelDialogState>({
     isOpen: false,
-    mode: "add"
+    mode: DIALOG_MODES.ADD
   })
 
   const openDialog = useCallback(
     (config: {
-      mode?: "add" | "edit"
+      mode?: DialogMode
       initialValues?: Partial<ChannelFormData>
       initialModels?: string[]
       initialGroups?: string[]
@@ -55,7 +56,7 @@ export function ChannelDialogProvider({
     }) => {
       setState({
         isOpen: true,
-        mode: config.mode ?? "add",
+        mode: config.mode ?? DIALOG_MODES.ADD,
         initialValues: config.initialValues,
         initialModels: config.initialModels,
         initialGroups: config.initialGroups,

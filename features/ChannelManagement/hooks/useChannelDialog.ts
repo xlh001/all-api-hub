@@ -1,6 +1,7 @@
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type.ts"
 import { useChannelDialogContext } from "~/features/ChannelManagement"
 import { ensureAccountApiToken } from "~/services/accountOperations.ts"
@@ -95,7 +96,7 @@ export function useChannelDialog() {
 
       // Open dialog
       openDialog({
-        mode: "add",
+        mode: DIALOG_MODES.ADD,
         initialValues: formData,
         initialModels: formData.models,
         initialGroups: formData.groups,
@@ -120,7 +121,7 @@ export function useChannelDialog() {
    * Open dialog with custom initial values
    */
   const openWithCustom = (config: {
-    mode?: "add" | "edit"
+    mode?: DialogMode
     initialValues?: any
     initialModels?: string[]
     initialGroups?: string[]

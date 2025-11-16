@@ -1,4 +1,5 @@
 import { Modal } from "~/components/ui/Dialog/Modal"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import type { DisplaySiteData } from "~/types"
@@ -14,7 +15,7 @@ import SiteInfoInput from "./SiteInfoInput"
 interface AccountDialogProps {
   isOpen: boolean
   onClose: () => void
-  mode: "add" | "edit"
+  mode: DialogMode
   account?: DisplaySiteData | null
   onSuccess: (data: any) => void
   onError: (error: any) => void
@@ -96,7 +97,7 @@ export default function AccountDialog({
             onClearUrl={() => setters.setUrl("")}
             authType={state.authType}
             onAuthTypeChange={setters.setAuthType}
-            {...(mode === "add" && {
+            {...(mode === DIALOG_MODES.ADD && {
               currentTabUrl: state.currentTabUrl,
               isCurrentSiteAdded: !!detectedAccount,
               detectedAccount: detectedDisplayAccount,

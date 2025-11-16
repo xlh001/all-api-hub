@@ -10,11 +10,10 @@ import {
 } from "react"
 import ReactDOM from "react-dom/client"
 
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import AccountDialog from "~/features/AccountManagement/components/AccountDialog"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { DisplaySiteData } from "~/types"
-
-type DialogMode = "add" | "edit"
 
 interface DialogOptions {
   mode: DialogMode
@@ -47,7 +46,7 @@ export const DialogStateProvider = ({ children }: { children: ReactNode }) => {
   const { loadAccountData } = useAccountDataContext()
   const [dialogState, setDialogState] = useState<DialogState>({
     isOpen: false,
-    mode: "add",
+    mode: DIALOG_MODES.ADD,
     account: null
   })
 
@@ -83,17 +82,20 @@ export const DialogStateProvider = ({ children }: { children: ReactNode }) => {
   }
 
   // For backward compatibility
-  const isAddAccountOpen = dialogState.isOpen && dialogState.mode === "add"
-  const isEditAccountOpen = dialogState.isOpen && dialogState.mode === "edit"
+  const isAddAccountOpen =
+    dialogState.isOpen && dialogState.mode === DIALOG_MODES.ADD
+  const isEditAccountOpen =
+    dialogState.isOpen && dialogState.mode === DIALOG_MODES.EDIT
   const editingAccount = dialogState.account
 
   const openAddAccount = useCallback(
-    () => openAccountDialog({ mode: "add" }),
+    () => openAccountDialog({ mode: DIALOG_MODES.ADD }),
     [openAccountDialog]
   )
   const closeAddAccount = useCallback(handleClose, [loadAccountData])
   const openEditAccount = useCallback(
-    (account: DisplaySiteData) => openAccountDialog({ mode: "edit", account }),
+    (account: DisplaySiteData) =>
+      openAccountDialog({ mode: DIALOG_MODES.EDIT, account }),
     [openAccountDialog]
   )
   const closeEditAccount = useCallback(handleClose, [loadAccountData])

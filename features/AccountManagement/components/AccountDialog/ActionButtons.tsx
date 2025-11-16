@@ -6,8 +6,10 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+
 interface ActionButtonsProps {
-  mode: "add" | "edit"
+  mode: DialogMode
   url: string
   isDetecting: boolean
   isSaving: boolean
@@ -36,7 +38,7 @@ export default function ActionButtons({
   formId
 }: ActionButtonsProps) {
   const { t } = useTranslation(["accountDialog", "common"])
-  const isAddMode = mode === "add"
+  const isAddMode = mode === DIALOG_MODES.ADD
 
   if (isAddMode && !isDetected && !isFormValid) {
     return (
@@ -78,7 +80,7 @@ export default function ActionButtons({
         {t("common:actions.cancel")}
       </button>
 
-      {mode === "edit" && !isDetected && (
+      {mode === DIALOG_MODES.EDIT && !isDetected && (
         <button
           type="button"
           onClick={onAutoDetect}

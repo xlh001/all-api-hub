@@ -3,6 +3,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import type { MultiSelectOption } from "~/components/ui/MultiSelect"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
 import { fetchSiteUserGroups } from "~/services/apiService"
 import {
@@ -20,7 +21,7 @@ import type {
 import { mergeUniqueOptions } from "~/utils/selectOptions"
 
 export interface UseChannelFormProps {
-  mode: "add" | "edit"
+  mode: DialogMode
   channel: NewApiChannel | null
   isOpen: boolean
   onClose: () => void
@@ -91,7 +92,7 @@ export function useChannelForm({
       return
     }
 
-    if (mode === "edit" && channel) {
+    if (mode === DIALOG_MODES.EDIT && channel) {
       setFormData({
         name: channel.name,
         type: channel.type,
@@ -250,7 +251,7 @@ export function useChannelForm({
       const payload = buildChannelPayload(formData)
 
       let response
-      if (mode === "edit" && channel) {
+      if (mode === DIALOG_MODES.EDIT && channel) {
         const channelId = channel.id
         if (!channelId) {
           throw new Error("Existing channel id is missing")
@@ -282,7 +283,7 @@ export function useChannelForm({
 
       if (response.success) {
         const successMessage =
-          mode === "add"
+          mode === DIALOG_MODES.ADD
             ? t("messages:newapi.importSuccess", {
                 channelName: formData.name,
                 defaultValue: t("channelDialog:messages.createSuccess")
