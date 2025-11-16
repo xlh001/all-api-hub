@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react"
+import { act } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -67,6 +68,20 @@ describe("useMediaQuery", () => {
       "change",
       expect.any(Function)
     )
+  })
+
+  it("updates when media query match changes", async () => {
+    const { result } = renderHook(() => useMediaQuery("(max-width: 1px)"))
+    expect(result.current).toBe(false)
+
+    const changeHandler = addEventListenerMock.mock.calls[0][1]
+
+    // Wrap the state update in act to ensure React processes it
+    await act(async () => {
+      changeHandler({ matches: true } as MediaQueryListEvent)
+    })
+
+    expect(result.current).toBe(true)
   })
 
   describe("predefined breakpoint hooks", () => {

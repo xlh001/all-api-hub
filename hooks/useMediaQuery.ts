@@ -11,10 +11,8 @@ export function useMediaQuery(query: string): boolean {
   useEffect(() => {
     const media = window.matchMedia(query)
 
-    // 初始化状态
-    if (media.matches !== matches) {
-      setMatches(media.matches)
-    }
+    // 设置初始状态
+    setMatches(media.matches)
 
     // 监听变化
     const listener = (e: MediaQueryListEvent) => {
@@ -35,7 +33,7 @@ export function useMediaQuery(query: string): boolean {
         media.removeListener(listener)
       }
     }
-  }, [matches, query])
+  }, [query]) // 只依赖 query
 
   return matches
 }
