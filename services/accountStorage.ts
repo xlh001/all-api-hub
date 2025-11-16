@@ -13,6 +13,7 @@ import {
   type SiteAccount,
   type StorageConfig
 } from "~/types"
+import { DeepPartial } from "~/types/utils.ts"
 
 import { getErrorMessage } from "../utils/error" // 存储键名常量
 import {
@@ -201,7 +202,7 @@ class AccountStorageService {
    */
   async updateAccount(
     id: string,
-    updates: Partial<Omit<SiteAccount, "id" | "created_at">>
+    updates: DeepPartial<SiteAccount>
   ): Promise<boolean> {
     try {
       const accounts = await this.getAllAccounts()

@@ -126,5 +126,8 @@
   "content": {
     "userInfoNotFound": "User information not found, please ensure you are logged in",
     "waitUserInfoTimeout": "Waiting for user information timeout, please ensure you are logged in"
+  },
+  "warnings": {
+    "accountUpdatedWithoutDataRefresh": "Account configuration saved, but failed to refresh latest data"
   }
 }

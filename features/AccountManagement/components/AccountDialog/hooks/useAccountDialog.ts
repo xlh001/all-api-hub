@@ -316,9 +316,13 @@ export function useAccountDialog({
 
       if (result.success) {
         toast.success(
-          t(mode === "add" ? "messages.addSuccess" : "messages.updateSuccess", {
-            name: siteName
-          })
+          result.message ??
+            t(
+              mode === "add" ? "messages.addSuccess" : "messages.updateSuccess",
+              {
+                name: siteName
+              }
+            )
         )
         return result
       } else {

@@ -126,5 +126,8 @@
   "content": {
     "userInfoNotFound": "未找到用户信息，请确保已登录",
     "waitUserInfoTimeout": "等待用户信息超时，请确保已登录"
+  },
+  "warnings": {
+    "accountUpdatedWithoutDataRefresh": "账号配置已保存，但刷新最新数据失败"
   }
 }

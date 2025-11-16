@@ -374,18 +374,50 @@ export async function validateAndUpdateAccount(
       accountId
     }
   } catch (error) {
-    const errorMessage = getErrorMessage(error)
-    console.error(
-      t("messages:errors.validation.updateAccountFailed", {
-        error: errorMessage
-      }),
-      error
+    // FALLBACK: 即使获取数据失败也要保存配置
+    console.warn("Data fetch failed, saving configuration only:", error)
+
+    // Build partial update preserving quota/usage data
+    const partialUpdateData = {
+      site_name: siteName.trim(),
+      site_url: url.trim(),
+      site_type: siteType,
+      authType: authType,
+      exchange_rate:
+        parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
+      notes: notes,
+      checkIn: checkInConfig,
+      health: {
+        status: SiteHealthStatus.Warning,
+        reason: getErrorMessage(error)
+      },
+      account_info: {
+        id: parsedUserId,
+        access_token: accessToken.trim(),
+        username: username.trim()
+      },
+      last_sync_time: Date.now()
+    }
+
+    // Try to save partial update
+    const success = await accountStorage.updateAccount(
+      accountId,
+      partialUpdateData
     )
+
+    if (!success) {
+      return {
+        success: false,
+        message: t("messages:errors.validation.updateAccountFailed", {
+          error: ""
+        })
+      }
+    }
+
     return {
-      success: false,
-      message: t("messages:errors.validation.updateAccountFailed", {
-        error: errorMessage
-      })
+      success: true,
+      message: t("messages:warnings.accountUpdatedWithoutDataRefresh"),
+      accountId
     }
   }
 }
