@@ -7,18 +7,17 @@ describe("newApi", () => {
   describe("getChannelTypeName", () => {
     it("returns name for valid channel type", () => {
       const name = getChannelTypeName(ChannelType.OpenAI)
-      expect(name).toBeTruthy()
-      expect(typeof name).toBe("string")
+      expect(name).toBe("OpenAI")
     })
 
     it("returns unknown for invalid channel type", () => {
       const name = getChannelTypeName(999 as ChannelType)
-      expect(name).toBeTruthy()
+      expect(name).toBe("Unknown")
     })
 
     it("handles Unknown channel type", () => {
       const name = getChannelTypeName(ChannelType.Unknown)
-      expect(name).toBeTruthy()
+      expect(name).toBe("Unknown")
     })
   })
 })
