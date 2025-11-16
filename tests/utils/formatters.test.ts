@@ -3,14 +3,22 @@ import { describe, expect, it, vi } from "vitest"
 
 import type { CurrencyType } from "~/types"
 import {
+  calculateTotalBalance,
+  calculateTotalConsumption,
   createSortComparator,
   formatFullTime,
   formatKeyTime,
+  formatQuota,
   formatRelativeTime,
+  formatTimestamp,
   formatTokenCount,
+  formatUsedQuota,
   generateId,
+  getCurrencyDisplayName,
   getCurrencySymbol,
+  getGroupBadgeStyle,
   getOppositeCurrency,
+  getStatusBadgeStyle,
   normalizeToDate,
   normalizeToMs
 } from "~/utils/formatters"
@@ -207,6 +215,149 @@ describe("formatters utilities", () => {
     it("should format date into YYYY/MM/DD HH:mm:ss", () => {
       const date = new Date(2024, 0, 3, 9, 5, 7)
       expect(formatFullTime(date)).toBe("2024/01/03 09:05:07")
+    })
+  })
+
+  describe("calculateTotalConsumption", () => {
+    it("should calculate USD and CNY amounts from stats and accounts", () => {
+      const stats = {
+        today_total_consumption: 12345
+      } as any
+
+      const accounts = [
+        {
+          account_info: {
+            today_quota_consumption: 10000
+          },
+          exchange_rate: 7
+        },
+        {
+          account_info: {
+            today_quota_consumption: 20000
+          },
+          exchange_rate: 7.5
+        }
+      ]
+
+      const result = calculateTotalConsumption(stats, accounts)
+
+      expect(result.USD).toBeGreaterThan(0)
+      expect(result.CNY).toBeGreaterThan(0)
+      expect(result.CNY).toBeGreaterThanOrEqual(result.USD)
+    })
+  })
+
+  describe("calculateTotalBalance", () => {
+    it("should sum balances across sites and round to 2 decimals", () => {
+      const data = [
+        { balance: { USD: 1.234, CNY: 7.89 } },
+        { balance: { USD: 2.345, CNY: 8.11 } }
+      ] as any
+
+      const result = calculateTotalBalance(data)
+
+      expect(result.USD).toBeCloseTo(3.58, 2)
+      expect(result.CNY).toBeCloseTo(16.0, 1)
+    })
+  })
+
+  describe("getCurrencyDisplayName", () => {
+    it("should use correct translation keys for USD and CNY", () => {
+      expect(getCurrencyDisplayName("USD")).toBe(
+        "__mocked__common:currency.usd"
+      )
+      expect(getCurrencyDisplayName("CNY")).toBe(
+        "__mocked__common:currency.cny"
+      )
+    })
+  })
+
+  describe("formatTimestamp", () => {
+    it("should return translation when timestamp is non-positive", () => {
+      const result = formatTimestamp(0)
+      expect(result).toBe("__mocked__common:time.neverExpires")
+      expect(vi.mocked(t)).toHaveBeenCalledWith("common:time.neverExpires")
+    })
+
+    it("should format timestamp using zh-CN locale when positive", () => {
+      const timestamp = new Date(2024, 0, 1).getTime()
+      const localeSpy = vi
+        .spyOn(Date.prototype, "toLocaleDateString")
+        .mockReturnValue("2024-01-01")
+
+      const result = formatTimestamp(timestamp)
+
+      expect(result).toBe("2024-01-01")
+      expect(localeSpy).toHaveBeenCalledWith("zh-CN")
+
+      localeSpy.mockRestore()
+    })
+  })
+
+  describe("formatQuota and formatUsedQuota", () => {
+    it("should return unlimited label when quota is unlimited or negative", () => {
+      const tokenUnlimited = {
+        unlimited_quota: true,
+        remain_quota: 1000
+      } as any
+      const tokenNegative = {
+        unlimited_quota: false,
+        remain_quota: -1
+      } as any
+
+      expect(formatQuota(tokenUnlimited)).toBe(
+        "__mocked__common:quota.unlimited"
+      )
+      expect(formatQuota(tokenNegative)).toBe(
+        "__mocked__common:quota.unlimited"
+      )
+    })
+
+    it("should format remaining and used quota with $ and 2 decimals", () => {
+      const token = {
+        unlimited_quota: false,
+        remain_quota: 12345,
+        used_quota: 6789
+      } as any
+
+      const quota = formatQuota(token)
+      const used = formatUsedQuota(token)
+
+      expect(quota.startsWith("$")).toBe(true)
+      expect(used.startsWith("$")).toBe(true)
+      expect(quota).toMatch(/\$\d+\.\d{2}/)
+      expect(used).toMatch(/\$\d+\.\d{2}/)
+    })
+  })
+
+  describe("getGroupBadgeStyle", () => {
+    it("should return a non-empty class string for given group", () => {
+      const style = getGroupBadgeStyle("vip")
+      expect(typeof style).toBe("string")
+      expect(style.length).toBeGreaterThan(0)
+    })
+
+    it("should fall back to default group for empty string", () => {
+      const style = getGroupBadgeStyle("")
+      const defaultStyle = getGroupBadgeStyle("default")
+      expect(style).toBe(defaultStyle)
+    })
+  })
+
+  describe("getStatusBadgeStyle", () => {
+    it("should return green style for status 1", () => {
+      expect(getStatusBadgeStyle(1)).toBe(
+        "bg-green-100 text-green-800 border-green-200"
+      )
+    })
+
+    it("should return red style for non-1 status", () => {
+      expect(getStatusBadgeStyle(0)).toBe(
+        "bg-red-100 text-red-800 border-red-200"
+      )
+      expect(getStatusBadgeStyle(2)).toBe(
+        "bg-red-100 text-red-800 border-red-200"
+      )
     })
   })
 })

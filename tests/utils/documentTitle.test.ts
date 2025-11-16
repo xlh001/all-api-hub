@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { setDocumentTitle } from "~/utils/documentTitle"
+import * as documentTitleModule from "~/utils/documentTitle"
+import i18n from "~/utils/i18n"
 
 vi.mock("~/utils/i18n", () => ({
   default: {
@@ -12,18 +13,54 @@ vi.mock("~/utils/i18n", () => ({
 describe("documentTitle", () => {
   describe("setDocumentTitle", () => {
     it("sets title for options page", () => {
-      setDocumentTitle("options")
+      documentTitleModule.setDocumentTitle("options")
       expect(document.title).toBe("ui:pageTitle.options")
     })
 
     it("sets title for popup page", () => {
-      setDocumentTitle("popup")
+      documentTitleModule.setDocumentTitle("popup")
       expect(document.title).toBe("ui:pageTitle.popup")
     })
 
     it("sets title for sidepanel page", () => {
-      setDocumentTitle("sidepanel")
+      documentTitleModule.setDocumentTitle("sidepanel")
       expect(document.title).toBe("ui:pageTitle.sidepanel")
+    })
+
+    it("catches errors from i18n.t without throwing", () => {
+      const originalTitle = document.title
+      const tSpy = vi.mocked(i18n.t as unknown as (key: string) => string)
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+
+      tSpy.mockImplementation(() => {
+        throw new Error("boom")
+      })
+
+      // Should not throw and should log the error
+      documentTitleModule.setDocumentTitle("options")
+
+      expect(errorSpy).toHaveBeenCalled()
+      expect(document.title).toBe(originalTitle)
+
+      errorSpy.mockRestore()
+    })
+  })
+
+  describe("initializeDocumentTitle", () => {
+    it("sets title initially and registers languageChanged listener", () => {
+      const onSpy = vi.mocked(i18n.on)
+
+      documentTitleModule.initializeDocumentTitle("options")
+
+      expect(onSpy).toHaveBeenCalledWith(
+        "languageChanged",
+        expect.any(Function)
+      )
+
+      const handler = onSpy.mock.calls[0][1] as () => void
+
+      // handler should be callable without throwing
+      handler()
     })
   })
 })
