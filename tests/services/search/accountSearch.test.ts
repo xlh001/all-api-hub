@@ -18,7 +18,13 @@ const mockAccounts: DisplaySiteData[] = [
     health: { status: SiteHealthStatus.Healthy },
     last_sync_time: Date.now(),
     siteType: "one-api",
-    authType: AuthTypeEnum.AccessToken
+    authType: AuthTypeEnum.AccessToken,
+    checkIn: {
+      enableDetection: true,
+      isCheckedInToday: false,
+      customCheckInUrl: "https://checkin.openai.com/api",
+      customRedeemUrl: "https://redeem.openai.com/api"
+    }
   },
   {
     id: "2",
@@ -34,7 +40,13 @@ const mockAccounts: DisplaySiteData[] = [
     health: { status: SiteHealthStatus.Healthy },
     last_sync_time: Date.now(),
     siteType: "one-api",
-    authType: AuthTypeEnum.AccessToken
+    authType: AuthTypeEnum.AccessToken,
+    checkIn: {
+      enableDetection: false,
+      isCheckedInToday: false,
+      customCheckInUrl: "",
+      customRedeemUrl: ""
+    }
   }
 ]
 
@@ -75,6 +87,18 @@ describe("accountSearch", () => {
       expect(results).toHaveLength(1)
       expect(results[0].account.username).toBe("user1")
       expect(results[0].matchedFields).toContain("username")
+    })
+
+    it("finds customCheckInUrl match", () => {
+      const results = searchAccounts(mockAccounts, "checkin.openai.com")
+      expect(results).toHaveLength(1)
+      expect(results[0].matchedFields).toContain("customCheckInUrl")
+    })
+
+    it("finds customRedeemUrl match", () => {
+      const results = searchAccounts(mockAccounts, "redeem.openai.com")
+      expect(results).toHaveLength(1)
+      expect(results[0].matchedFields).toContain("customRedeemUrl")
     })
 
     it("handles multiple keywords", () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RateLimiter } from "~/services/newApiModelSync/RateLimiter"
 
@@ -55,7 +55,7 @@ describe("RateLimiter", () => {
 
       const promise = limiter.acquire()
       vi.advanceTimersByTime(1000)
-      await promise
+      await expect(promise).resolves.toBeUndefined()
 
       expect(limiter.getTokens()).toBeLessThan(1)
     })

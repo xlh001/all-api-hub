@@ -48,6 +48,19 @@ describe("accountOperations", () => {
       ).toBe(false)
     })
 
+    it("rejects empty userId", () => {
+      expect(
+        isValidAccount({
+          siteName: "Test",
+          username: "user",
+          userId: "",
+          authType: AuthTypeEnum.AccessToken,
+          accessToken: "token",
+          exchangeRate: "7.0"
+        })
+      ).toBe(false)
+    })
+
     it("rejects invalid exchange rate", () => {
       expect(
         isValidAccount({
