@@ -44,7 +44,7 @@ export interface SiteAccount {
    * emoji
    * @deprecated not used anymore
    */
-  emoji: string
+  emoji?: string
   site_name: string // 站点名称
   site_url: string // 站点 url
   health: HealthStatus
@@ -180,7 +180,7 @@ export interface DisplaySiteData {
   /**
    * @deprecated not used anymore
    */
-  icon: string
+  icon?: string
   name: string
   username: string
   balance: CurrencyAmount

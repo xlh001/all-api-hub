@@ -11,7 +11,6 @@ describe("checkInMigration", () => {
   ): SiteAccount =>
     ({
       id: "test-account-1",
-      emoji: "🧪",
       site_name: "Test Site",
       site_url: "https://test.com",
       health: { status: SiteHealthStatus.Healthy },
@@ -212,15 +211,13 @@ describe("checkInMigration", () => {
         supports_check_in: true,
         can_check_in: false,
         notes: "Test notes",
-        site_name: "Custom Site",
-        emoji: "🚀"
+        site_name: "Custom Site"
       })
 
       const migrated = migrateCheckInConfig(account)
 
       // Check that non-migration properties are preserved
       expect(migrated.id).toBe(account.id)
-      expect(migrated.emoji).toBe(account.emoji)
       expect(migrated.site_name).toBe(account.site_name)
       expect(migrated.notes).toBe(account.notes)
       expect(migrated.account_info).toEqual(account.account_info)

@@ -30,8 +30,7 @@ const mockAccount: SiteAccount = {
   },
   last_sync_time: Date.now(),
   created_at: Date.now(),
-  updated_at: Date.now(),
-  emoji: ""
+  updated_at: Date.now()
 }
 
 describe("veloeraProvider", () => {

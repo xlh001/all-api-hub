@@ -228,7 +228,6 @@ export async function validateAndSaveAccount(
     )
 
     const accountData: Omit<SiteAccount, "id" | "created_at" | "updated_at"> = {
-      emoji: "", // 不再使用 emoji
       site_name: siteName.trim(),
       site_url: url.trim(),
       health: { status: SiteHealthStatus.Healthy }, // 成功获取数据说明状态正常
@@ -273,7 +272,6 @@ export async function validateAndSaveAccount(
       SiteAccount,
       "id" | "created_at" | "updated_at"
     > = {
-      emoji: "",
       site_name: siteName.trim(),
       site_url: url.trim(),
       site_type: siteType,

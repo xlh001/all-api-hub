@@ -17,7 +17,6 @@ describe("accountDataMigration", () => {
   ): SiteAccount =>
     ({
       id: "test-account-1",
-      emoji: "🧪",
       site_name: "Test Site",
       site_url: "https://test.com",
       health: { status: SiteHealthStatus.Healthy },
@@ -147,7 +146,6 @@ describe("accountDataMigration", () => {
 
       // Check that non-migration properties are preserved
       expect(migrated.id).toBe(oldAccount.id)
-      expect(migrated.emoji).toBe(oldAccount.emoji)
       expect(migrated.site_name).toBe(oldAccount.site_name)
       expect(migrated.notes).toBe(oldAccount.notes)
       expect(migrated.account_info).toEqual(oldAccount.account_info)

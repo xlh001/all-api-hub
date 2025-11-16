@@ -43,7 +43,6 @@ describe("createDynamicSortComparator", () => {
     overrides: Partial<SiteAccount> = {}
   ): SiteAccount => ({
     id: "detected-account",
-    emoji: "🎯",
     site_name: "Detected Site",
     site_url: "https://detected.com",
     health: { status: SiteHealthStatus.Healthy },
