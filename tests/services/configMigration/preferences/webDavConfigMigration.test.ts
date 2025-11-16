@@ -20,7 +20,7 @@ const createPreferences = (
     ...base,
     ...overrides,
     webdav: {
-      ...base.webdav,
+      ...(base.webdav ?? DEFAULT_WEBDAV_SETTINGS),
       ...overrides?.webdav
     },
     accountAutoRefresh: {

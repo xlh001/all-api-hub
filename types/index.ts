@@ -40,7 +40,11 @@ export interface AccountInfo {
 // 站点账号完整信息
 export interface SiteAccount {
   id: string // 此项 id
-  emoji: string // 此项 emoji
+  /**
+   * emoji
+   * @deprecated not used anymore
+   */
+  emoji?: string
   site_name: string // 站点名称
   site_url: string // 站点 url
   health: HealthStatus
@@ -173,7 +177,10 @@ export type TokenUsage = { upload: number; download: number }
 // 展示用的站点数据 (兼容当前 UI)
 export interface DisplaySiteData {
   id: string
-  icon: string
+  /**
+   * @deprecated not used anymore
+   */
+  icon?: string
   name: string
   username: string
   balance: CurrencyAmount

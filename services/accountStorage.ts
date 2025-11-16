@@ -628,7 +628,6 @@ class AccountStorageService {
   ): DisplaySiteData | DisplaySiteData[] {
     const transform = (account: SiteAccount): DisplaySiteData => ({
       id: account.id,
-      icon: account.emoji,
       name: account.site_name,
       username: account.account_info.username,
       balance: {
@@ -898,13 +897,6 @@ export const AccountStorageUtils = {
     }
 
     return errors
-  },
-
-  /**
-   * 生成默认 emoji（已禁用）
-   */
-  getRandomEmoji(): string {
-    return "" // 不再使用 emoji
   },
 
   /**

@@ -215,7 +215,6 @@ function createMockNewApiChannelListData(channels?: any[]) {
 function createMockSiteAccount(overrides?: Partial<SiteAccount>): SiteAccount {
   return {
     id: "account-1",
-    emoji: "🔑",
     site_name: "Test Site",
     site_url: "https://api.example.com",
     health: { status: SiteHealthStatus.Healthy },
