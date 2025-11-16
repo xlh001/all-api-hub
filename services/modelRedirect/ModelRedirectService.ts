@@ -13,7 +13,7 @@ import {
   NewApiChannel
 } from "~/types"
 
-import { hasValidNewApiConfig } from "../newApiService"
+import { hasValidNewApiConfig } from "../newApiService/newApiService.ts"
 import { userPreferences } from "../userPreferences"
 import { renameModel } from "./modelNormalization"
 

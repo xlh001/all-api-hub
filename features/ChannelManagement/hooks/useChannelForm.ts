@@ -12,7 +12,7 @@ import {
   createChannel,
   getNewApiConfig,
   updateChannel
-} from "~/services/newApiService"
+} from "~/services/newApiService/newApiService.ts"
 import type {
   ChannelFormData,
   NewApiChannel,

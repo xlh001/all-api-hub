@@ -1,7 +1,7 @@
 import { t } from "i18next"
 
 import { ModelRedirectService } from "~/services/modelRedirect"
-import { hasValidNewApiConfig } from "~/services/newApiService.ts"
+import { hasValidNewApiConfig } from "~/services/newApiService/newApiService.ts"
 import {
   ALL_PRESET_STANDARD_MODELS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES,

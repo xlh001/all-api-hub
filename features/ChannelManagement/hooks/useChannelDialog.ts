@@ -10,7 +10,7 @@ import {
   findMatchingChannel,
   getNewApiConfig,
   prepareChannelFormData
-} from "~/services/newApiService"
+} from "~/services/newApiService/newApiService.ts"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import { getErrorMessage } from "~/utils/error"
 

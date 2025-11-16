@@ -9,8 +9,8 @@ import {
   fetchAccountAvailableModels,
   fetchUpstreamModelsNameList
 } from "~/services/apiService"
-import { ApiError } from "~/services/apiService/common/errors"
-import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
+import { ApiError } from "~/services/apiService/common/errors.ts"
+import { fetchApi, fetchApiData } from "~/services/apiService/common/utils.ts"
 import {
   ApiToken,
   AutoConfigToNewApiResponse,
@@ -24,12 +24,12 @@ import type {
   ChannelFormData,
   ChannelMode,
   CreateChannelPayload
-} from "~/types/newapi"
-import type { ServiceResponse } from "~/types/serviceResponse"
+} from "~/types/newapi.ts"
+import type { ServiceResponse } from "~/types/serviceResponse.ts"
 import { isArraysEqual } from "~/utils"
-import { getErrorMessage } from "~/utils/error"
+import { getErrorMessage } from "~/utils/error.ts"
 
-import { UserPreferences, userPreferences } from "./userPreferences"
+import { UserPreferences, userPreferences } from "../userPreferences.ts"
 
 function parseDelimitedList(value?: string | null): string[] {
   if (!value) return []

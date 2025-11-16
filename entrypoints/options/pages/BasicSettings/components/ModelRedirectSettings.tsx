@@ -9,7 +9,7 @@ import { Switch } from "~/components/ui/Switch"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { fetchAccountAvailableModels } from "~/services/apiService/common"
 import { ModelRedirectService } from "~/services/modelRedirect"
-import { hasValidNewApiConfig } from "~/services/newApiService.ts"
+import { hasValidNewApiConfig } from "~/services/newApiService/newApiService.ts"
 import { AuthTypeEnum } from "~/types"
 import { ALL_PRESET_STANDARD_MODELS } from "~/types/modelRedirect"
 

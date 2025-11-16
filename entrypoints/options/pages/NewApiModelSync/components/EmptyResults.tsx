@@ -7,7 +7,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { EmptyState } from "~/components/ui"
-import { hasValidNewApiConfig } from "~/services/newApiService"
+import { hasValidNewApiConfig } from "~/services/newApiService/newApiService.ts"
 import { userPreferences } from "~/services/userPreferences"
 
 interface EmptyResultsProps {
