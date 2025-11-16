@@ -39,7 +39,7 @@ describe("useMediaQuery", () => {
   })
 
   it("returns true when media query matches", () => {
-    matchMediaMock.mockReturnValueOnce({
+    matchMediaMock.mockReturnValue({
       matches: true,
       media: "(max-width: 1px)",
       addEventListener: addEventListenerMock,
@@ -50,6 +50,14 @@ describe("useMediaQuery", () => {
     })
     const { result } = renderHook(() => useMediaQuery("(max-width: 1px)"))
     expect(result.current).toBe(true)
+  })
+
+  it("registers event listener on mount", () => {
+    renderHook(() => useMediaQuery("(max-width: 1px)"))
+    expect(addEventListenerMock).toHaveBeenCalledWith(
+      "change",
+      expect.any(Function)
+    )
   })
 
   it("cleans up event listeners on unmount", () => {

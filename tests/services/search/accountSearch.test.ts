@@ -10,7 +10,7 @@ const mockAccounts: DisplaySiteData[] = [
     username: "user1",
     baseUrl: "https://api.openai.com",
     token: "sk-test123",
-    userId: "123",
+    userId: 123,
     balance: { USD: 10, CNY: 70 },
     todayConsumption: { USD: 1, CNY: 7 },
     todayIncome: { USD: 0, CNY: 0 },
@@ -24,7 +24,8 @@ const mockAccounts: DisplaySiteData[] = [
       isCheckedInToday: false,
       customCheckInUrl: "https://checkin.openai.com/api",
       customRedeemUrl: "https://redeem.openai.com/api"
-    }
+    },
+    icon: ""
   },
   {
     id: "2",
@@ -32,7 +33,7 @@ const mockAccounts: DisplaySiteData[] = [
     username: "user2",
     baseUrl: "https://api.anthropic.com",
     token: "sk-ant-test456",
-    userId: "456",
+    userId: 456,
     balance: { USD: 20, CNY: 140 },
     todayConsumption: { USD: 2, CNY: 14 },
     todayIncome: { USD: 0, CNY: 0 },
@@ -46,7 +47,8 @@ const mockAccounts: DisplaySiteData[] = [
       isCheckedInToday: false,
       customCheckInUrl: "",
       customRedeemUrl: ""
-    }
+    },
+    icon: ""
   }
 ]
 
