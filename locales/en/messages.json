@@ -128,6 +128,7 @@
     "waitUserInfoTimeout": "Waiting for user information timeout, please ensure you are logged in"
   },
   "warnings": {
-    "accountUpdatedWithoutDataRefresh": "Account configuration saved, but failed to refresh latest data"
+    "accountUpdatedWithoutDataRefresh": "Account configuration saved, but failed to refresh latest data",
+    "accountSavedWithoutDataRefresh": "Account saved successfully, but failed to fetch account data. You can refresh the data later from the account list."
   }
 }

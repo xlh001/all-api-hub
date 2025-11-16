@@ -264,16 +264,63 @@ export async function validateAndSaveAccount(
       accountId
     }
   } catch (error) {
-    console.error(
-      t("messages:errors.operation.saveFailed", { error: "" }),
-      error
-    )
-    const errorMessage = getErrorMessage(error)
-    return {
-      success: false,
-      message: t("messages:errors.operation.saveFailed", {
-        error: errorMessage
+    // FALLBACK: 即使获取数据失败也要保存配置
+    console.warn("Data fetch failed, saving configuration only:", error)
+
+    // Build partial account data without quota/usage data
+    const partialAccountData: Omit<
+      SiteAccount,
+      "id" | "created_at" | "updated_at"
+    > = {
+      emoji: "",
+      site_name: siteName.trim(),
+      site_url: url.trim(),
+      site_type: siteType,
+      authType: authType,
+      exchange_rate:
+        parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
+      notes: notes || "",
+      checkIn: checkInConfig,
+      health: {
+        status: SiteHealthStatus.Warning,
+        reason: getErrorMessage(error)
+      },
+      account_info: {
+        id: parsedUserId,
+        access_token: accessToken.trim(),
+        username: username.trim(),
+        quota: 0,
+        today_prompt_tokens: 0,
+        today_completion_tokens: 0,
+        today_quota_consumption: 0,
+        today_requests_count: 0,
+        today_income: 0
+      },
+      last_sync_time: Date.now()
+    }
+
+    // Try to save partial account data
+    try {
+      const accountId = await accountStorage.addAccount(partialAccountData)
+      console.log("Account saved without data refresh:", {
+        id: accountId,
+        siteName
       })
+
+      return {
+        success: true,
+        message: t("messages:warnings.accountSavedWithoutDataRefresh"),
+        accountId
+      }
+    } catch (saveError) {
+      console.error("Failed to save account:", saveError)
+      const errorMessage = getErrorMessage(saveError)
+      return {
+        success: false,
+        message: t("messages:errors.operation.saveFailed", {
+          error: errorMessage
+        })
+      }
     }
   }
 }

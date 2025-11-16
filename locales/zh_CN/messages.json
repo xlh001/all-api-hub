@@ -128,6 +128,7 @@
     "waitUserInfoTimeout": "等待用户信息超时，请确保已登录"
   },
   "warnings": {
-    "accountUpdatedWithoutDataRefresh": "账号配置已保存，但刷新最新数据失败"
+    "accountUpdatedWithoutDataRefresh": "账号配置已保存，但刷新最新数据失败",
+    "accountSavedWithoutDataRefresh": "账号保存成功，但获取账号数据失败。您可以稍后从账号列表刷新数据。"
   }
 }
