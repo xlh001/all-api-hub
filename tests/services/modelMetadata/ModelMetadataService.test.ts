@@ -12,11 +12,12 @@ describe("ModelMetadataService", () => {
 
   it("initializes without errors", async () => {
     const { modelMetadataService } = await import("~/services/modelMetadata")
-    await expect(modelMetadataService.initialize()).resolves.not.toThrow()
+    await modelMetadataService.initialize()
   })
 
   it("handles getCacheInfo calls", async () => {
     const { modelMetadataService } = await import("~/services/modelMetadata")
+    await modelMetadataService.initialize()
     const info = modelMetadataService.getCacheInfo()
     expect(info).toBeDefined()
     expect(typeof info).toBe("object")
