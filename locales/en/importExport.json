@@ -50,8 +50,8 @@
     "importWarning4": "Imported account data contains sensitive information, please ensure the file source is trustworthy"
   },
   "webdav": {
-    "title": "WebDAV Backup and Sync (Manual)",
-    "configDesc": "Configure WebDAV and manually upload/download backup files",
+    "title": "WebDAV Backup and Sync",
+    "configDesc": "Configure WebDAV and upload/download backup files",
     "webdavUrl": "Webdav URL",
     "webdavUrlExample": "For example: https://dav.example.com/{{filename}} full file URL or Webdav root directory URL",
     "username": "Username",

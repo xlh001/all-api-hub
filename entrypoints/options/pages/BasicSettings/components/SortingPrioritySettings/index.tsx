@@ -3,7 +3,8 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Card, CardContent, Heading4 } from "~/components/ui"
+import { SettingSection } from "~/components/SettingSection"
+import { Card, CardContent } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { SortingCriteriaType, type SortingFieldConfig } from "~/types/sorting"
 
@@ -54,6 +55,7 @@ export default function SortingPrioritySettings() {
   const {
     sortingPriorityConfig: initialConfig,
     updateSortingPriorityConfig,
+    resetSortingPriorityConfig,
     isLoading
   } = useUserPreferencesContext()
   const [items, setItems] = useState<SortingFieldConfig[]>([])
@@ -129,9 +131,11 @@ export default function SortingPrioritySettings() {
   }))
 
   return (
-    <section className="space-y-3">
-      <Heading4>{t("sorting.title")}</Heading4>
-      <BodySmall>{t("sorting.description", { defaultValue: "" })}</BodySmall>
+    <SettingSection
+      id="sorting-priority"
+      title={t("sorting.title")}
+      description={t("sorting.description", { defaultValue: "" })}
+      onReset={resetSortingPriorityConfig}>
       <Card>
         <CardContent>
           <SortingPriorityDragList
@@ -141,6 +145,6 @@ export default function SortingPrioritySettings() {
           />
         </CardContent>
       </Card>
-    </section>
+    </SettingSection>
   )
 }

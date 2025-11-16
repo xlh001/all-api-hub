@@ -71,6 +71,15 @@ interface UserPreferencesContextType {
     updates: Partial<ModelRedirectPreferences>
   ) => Promise<boolean>
   resetToDefaults: () => Promise<boolean>
+  resetDisplaySettings: () => Promise<boolean>
+  resetAutoRefreshConfig: () => Promise<boolean>
+  resetNewApiConfig: () => Promise<boolean>
+  resetNewApiModelSyncConfig: () => Promise<boolean>
+  resetAutoCheckinConfig: () => Promise<boolean>
+  resetModelRedirectConfig: () => Promise<boolean>
+  resetWebdavConfig: () => Promise<boolean>
+  resetThemeAndLanguage: () => Promise<boolean>
+  resetSortingPriorityConfig: () => Promise<boolean>
   loadPreferences: () => Promise<void>
 }
 
@@ -350,9 +359,199 @@ export const UserPreferencesProvider = ({
     const success = await userPreferences.resetToDefaults()
     if (success) {
       await loadPreferences()
+
+      // Notify all background services about the reset
+      const defaults = DEFAULT_PREFERENCES
+
+      // Notify auto-refresh service
+      sendRuntimeMessage({
+        action: "updateAutoRefreshSettings",
+        settings: { accountAutoRefresh: defaults.accountAutoRefresh }
+      })
+
+      // Notify auto-checkin service
+      if (defaults.autoCheckin) {
+        void sendRuntimeMessage({
+          action: "autoCheckin:updateSettings",
+          settings: defaults.autoCheckin
+        })
+      }
+
+      // Notify New API model sync service
+      if (defaults.newApiModelSync) {
+        void sendRuntimeMessage({
+          action: "newApiModelSync:updateSettings",
+          settings: defaults.newApiModelSync
+        })
+      }
     }
     return success
   }, [loadPreferences])
+
+  const resetDisplaySettings = useCallback(async () => {
+    const success = await userPreferences.resetDisplaySettings()
+    if (success) {
+      const now = Date.now()
+      setPreferences((prev) =>
+        prev
+          ? {
+              ...prev,
+              activeTab: DEFAULT_PREFERENCES.activeTab,
+              currencyType: DEFAULT_PREFERENCES.currencyType,
+              lastUpdated: now
+            }
+          : prev
+      )
+    }
+    return success
+  }, [])
+
+  const resetAutoRefreshConfig = useCallback(async () => {
+    const success = await userPreferences.resetAutoRefreshConfig()
+    if (success) {
+      const defaults = DEFAULT_PREFERENCES.accountAutoRefresh
+
+      setPreferences((prev) =>
+        prev
+          ? deepOverride(prev, {
+              accountAutoRefresh: defaults,
+              lastUpdated: Date.now()
+            })
+          : prev
+      )
+      sendRuntimeMessage({
+        action: "updateAutoRefreshSettings",
+        settings: { accountAutoRefresh: defaults }
+      })
+    }
+    return success
+  }, [])
+
+  const resetNewApiConfig = useCallback(async () => {
+    const success = await userPreferences.resetNewApiConfig()
+    if (success) {
+      const defaults = DEFAULT_PREFERENCES.newApi
+      setPreferences((prev) =>
+        prev
+          ? deepOverride(prev, {
+              newApi: defaults,
+              lastUpdated: Date.now()
+            })
+          : prev
+      )
+    }
+    return success
+  }, [])
+
+  const resetNewApiModelSyncConfig = useCallback(async () => {
+    const success = await userPreferences.resetNewApiModelSyncConfig()
+    if (success) {
+      const defaults = DEFAULT_PREFERENCES.newApiModelSync
+      setPreferences((prev) =>
+        prev
+          ? deepOverride(prev, {
+              newApiModelSync: defaults,
+              lastUpdated: Date.now()
+            })
+          : prev
+      )
+      if (defaults) {
+        void sendRuntimeMessage({
+          action: "newApiModelSync:updateSettings",
+          settings: defaults
+        })
+      }
+    }
+    return success
+  }, [])
+
+  const resetAutoCheckinConfig = useCallback(async () => {
+    const success = await userPreferences.resetAutoCheckinConfig()
+    if (success) {
+      const defaults = DEFAULT_PREFERENCES.autoCheckin
+      setPreferences((prev) =>
+        prev
+          ? deepOverride(prev, {
+              autoCheckin: defaults,
+              lastUpdated: Date.now()
+            })
+          : prev
+      )
+      if (defaults) {
+        void sendRuntimeMessage({
+          action: "autoCheckin:updateSettings",
+          settings: defaults
+        })
+      }
+    }
+    return success
+  }, [])
+
+  const resetModelRedirectConfig = useCallback(async () => {
+    const success = await userPreferences.resetModelRedirectConfig()
+    if (success) {
+      const defaults = DEFAULT_PREFERENCES.modelRedirect
+      setPreferences((prev) =>
+        prev
+          ? deepOverride(prev, {
+              modelRedirect: defaults,
+              lastUpdated: Date.now()
+            })
+          : prev
+      )
+    }
+    return success
+  }, [])
+
+  const resetWebdavConfig = useCallback(async () => {
+    const success = await userPreferences.resetWebdavConfig()
+    if (success) {
+      const defaults = DEFAULT_PREFERENCES.webdav
+      setPreferences((prev) =>
+        prev
+          ? deepOverride(prev, {
+              webdav: defaults,
+              lastUpdated: Date.now()
+            })
+          : prev
+      )
+    }
+    return success
+  }, [])
+
+  const resetThemeAndLanguage = useCallback(async () => {
+    const success = await userPreferences.resetThemeAndLanguage()
+    if (success) {
+      const now = Date.now()
+      setPreferences((prev) =>
+        prev
+          ? {
+              ...prev,
+              themeMode: DEFAULT_PREFERENCES.themeMode,
+              language: DEFAULT_PREFERENCES.language,
+              lastUpdated: now
+            }
+          : prev
+      )
+    }
+    return success
+  }, [])
+
+  const resetSortingPriorityConfig = useCallback(async () => {
+    const success = await userPreferences.resetSortingPriorityConfig()
+    if (success) {
+      setPreferences((prev) =>
+        prev
+          ? {
+              ...prev,
+              sortingPriorityConfig: undefined,
+              lastUpdated: Date.now()
+            }
+          : prev
+      )
+    }
+    return success
+  }, [])
 
   if (isLoading || !preferences) {
     return null
@@ -392,6 +591,15 @@ export const UserPreferencesProvider = ({
     updateNewApiModelSync,
     updateModelRedirect,
     resetToDefaults,
+    resetDisplaySettings,
+    resetAutoRefreshConfig,
+    resetNewApiConfig,
+    resetNewApiModelSyncConfig,
+    resetAutoCheckinConfig,
+    resetModelRedirectConfig,
+    resetWebdavConfig,
+    resetThemeAndLanguage,
+    resetSortingPriorityConfig,
     loadPreferences
   }
 

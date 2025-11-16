@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Card, CardContent, Heading4 } from "~/components/ui"
+import { SettingSection } from "~/components/SettingSection"
+import { Button, Card, CardContent } from "~/components/ui"
 import { MultiSelect } from "~/components/ui/MultiSelect"
 import { Switch } from "~/components/ui/Switch"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -14,7 +15,8 @@ import { ALL_PRESET_STANDARD_MODELS } from "~/types/modelRedirect"
 
 export default function ModelRedirectSettings() {
   const { t } = useTranslation("modelRedirect")
-  const { preferences, updateModelRedirect } = useUserPreferencesContext()
+  const { preferences, updateModelRedirect, resetModelRedirectConfig } =
+    useUserPreferencesContext()
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
@@ -80,11 +82,11 @@ export default function ModelRedirectSettings() {
   }
 
   return (
-    <section>
-      <div className="mb-6 space-y-2">
-        <Heading4>{t("title")}</Heading4>
-        <BodySmall>{t("description")}</BodySmall>
-      </div>
+    <SettingSection
+      id="model-redirect"
+      title={t("title")}
+      description={t("description")}
+      onReset={resetModelRedirectConfig}>
       <Card>
         <CardContent>
           <div className="flex items-start justify-between">
@@ -128,18 +130,19 @@ export default function ModelRedirectSettings() {
               </div>
 
               <div>
-                <button
+                <Button
                   type="button"
                   disabled={isRegenerating}
+                  loading={isRegenerating}
                   onClick={handleRegenerateMapping}
-                  className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600">
+                  variant="default">
                   {isRegenerating ? t("regenerating") : t("regenerateButton")}
-                </button>
+                </Button>
               </div>
             </>
           )}
         </CardContent>
       </Card>
-    </section>
+    </SettingSection>
   )
 }

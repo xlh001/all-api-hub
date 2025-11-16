@@ -2,15 +2,8 @@ import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import {
-  BodySmall,
-  Card,
-  CardItem,
-  CardList,
-  Heading4,
-  Input,
-  Switch
-} from "~/components/ui"
+import { SettingSection } from "~/components/SettingSection"
+import { Card, CardItem, CardList, Input, Switch } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../../../../../utils/toastHelpers.ts"
@@ -25,7 +18,8 @@ export default function RefreshSettings() {
     updateAutoRefresh,
     updateRefreshOnOpen,
     updateRefreshInterval,
-    updateMinRefreshInterval
+    updateMinRefreshInterval,
+    resetAutoRefreshConfig
   } = useUserPreferencesContext()
 
   const [intervalInput, setIntervalInput] = useState(refreshInterval.toString())
@@ -84,11 +78,11 @@ export default function RefreshSettings() {
   }
 
   return (
-    <section>
-      <Heading4 className="mb-2">{t("refresh.title")}</Heading4>
-      <BodySmall className="mb-4">
-        {t("refresh.description", { defaultValue: "" })}
-      </BodySmall>
+    <SettingSection
+      id="auto-refresh"
+      title={t("refresh.title")}
+      description={t("refresh.description", { defaultValue: "" })}
+      onReset={resetAutoRefreshConfig}>
       <Card padding="none">
         <CardList>
           <CardItem
@@ -169,6 +163,6 @@ export default function RefreshSettings() {
           />
         </CardList>
       </Card>
-    </section>
+    </SettingSection>
   )
 }

@@ -15,6 +15,7 @@
     "import": "Import",
     "more": "More",
     "clear": "Clear",
+    "reset": "Reset",
     "openSidePanel": "Open in SidePanel"
   },
   "status": {

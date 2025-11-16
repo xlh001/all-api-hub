@@ -2,15 +2,8 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import {
-  BodySmall,
-  Card,
-  CardItem,
-  CardList,
-  Heading4,
-  IconButton,
-  Input
-} from "~/components/ui"
+import { SettingSection } from "~/components/SettingSection"
+import { Card, CardItem, CardList, IconButton, Input } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../../../../../utils/toastHelpers.ts"
@@ -23,7 +16,8 @@ export default function NewApiSettings() {
     newApiUserId,
     updateNewApiBaseUrl,
     updateNewApiAdminToken,
-    updateNewApiUserId
+    updateNewApiUserId,
+    resetNewApiConfig
   } = useUserPreferencesContext()
 
   const [localBaseUrl, setLocalBaseUrl] = useState(newApiBaseUrl)
@@ -62,13 +56,11 @@ export default function NewApiSettings() {
   }
 
   return (
-    <section>
-      <Heading4 className="mb-2 flex items-center">
-        {t("newApi.title")}
-      </Heading4>
-      <BodySmall className="mb-4">
-        {t("newApi.description", { defaultValue: "" })}
-      </BodySmall>
+    <SettingSection
+      id="new-api"
+      title={t("newApi.title")}
+      description={t("newApi.description", { defaultValue: "" })}
+      onReset={resetNewApiConfig}>
       <Card padding="none">
         <CardList>
           <CardItem
@@ -129,6 +121,6 @@ export default function NewApiSettings() {
           />
         </CardList>
       </Card>
-    </section>
+    </SettingSection>
   )
 }
