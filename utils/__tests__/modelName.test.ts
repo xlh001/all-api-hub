@@ -184,5 +184,15 @@ describe("removeDateSuffix", () => {
         "gemini-1.5-pro-001"
       )
     })
+
+    it("should handle mm-dd or mm_dd date", () => {
+      expect(removeDateSuffix("gemini-2.5-flash-preview-05-20")).toBe(
+        "gemini-2.5-flash-preview"
+      )
+
+      expect(removeDateSuffix("gemini-2.5-flash-preview-05_20")).toBe(
+        "gemini-2.5-flash-preview"
+      )
+    })
   })
 })

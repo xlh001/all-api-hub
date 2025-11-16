@@ -19,7 +19,9 @@ export function removeDateSuffix(modelName: string): string {
     /[-_](?:19|20)\d{6}$/i,
     /[-_](?:19|20)\d{4}$/i,
     // mmdd
-    /[-_]\d{4}$/i
+    /[-_]\d{4}$/i,
+    // mm-dd or mm_dd
+    /[-_]\d{2}[-_]\d{2}$/i
   ]
 
   for (const pattern of patterns) {
