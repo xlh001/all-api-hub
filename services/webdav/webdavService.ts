@@ -1,7 +1,7 @@
 import { t } from "i18next"
 
-import { userPreferences } from "~/services/userPreferences"
-import type { WebDAVConfig } from "~/types/webdav"
+import { userPreferences } from "~/services/userPreferences.ts"
+import type { WebDAVConfig } from "~/types/webdav.ts"
 
 function buildAuthHeader(username: string, password: string) {
   const token = btoa(`${username}:${password}`)

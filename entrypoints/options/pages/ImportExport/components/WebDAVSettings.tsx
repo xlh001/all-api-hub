@@ -24,7 +24,7 @@ import {
   downloadBackup,
   testWebdavConnection,
   uploadBackup
-} from "~/services/webdavService"
+} from "~/services/webdav/webdavService.ts"
 
 export default function WebDAVSettings() {
   const { t } = useTranslation("importExport")

@@ -2,14 +2,14 @@ import { t } from "i18next"
 
 import type { SiteAccount, WebDAVSettings } from "~/types"
 
-import { getErrorMessage } from "../utils/error"
-import { accountStorage } from "./accountStorage"
-import { userPreferences, type UserPreferences } from "./userPreferences"
+import { getErrorMessage } from "../../utils/error.ts"
+import { accountStorage } from "../accountStorage.ts"
+import { userPreferences, type UserPreferences } from "../userPreferences.ts"
 import {
   downloadBackup,
   testWebdavConnection,
   uploadBackup
-} from "./webdavService"
+} from "./webdavService.ts"
 
 /**
  * WebDAV 自动同步服务

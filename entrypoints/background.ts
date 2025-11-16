@@ -22,7 +22,7 @@ import { userPreferences } from "../services/userPreferences"
 import {
   handleWebdavAutoSyncMessage,
   webdavAutoSyncService
-} from "../services/webdavAutoSyncService"
+} from "../services/webdav/webdavAutoSyncService.ts"
 import {
   createTab,
   createWindow,
