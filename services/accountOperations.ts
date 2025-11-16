@@ -5,6 +5,7 @@
 import { t } from "i18next"
 import toast from "react-hot-toast"
 
+import { SITE_TITLE_RULES, UNKNOWN_SITE } from "~/constants/siteType.ts"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { accountStorage } from "~/services/accountStorage"
 import {
@@ -504,23 +505,11 @@ export function extractDomainPrefix(hostname: string): string {
   return withoutWww.charAt(0).toUpperCase() + withoutWww.slice(1)
 }
 
-// 就是各个站点的system_name
-const defaultSiteNameList = [
-  "One API",
-  "New API",
-  "Veloera",
-  "One Hub",
-  "Done Hub",
-  // 闭源未知，只能已进行猜测
-  "VoAPI",
-  "Super API",
-  "Super-API"
-]
-
-function IsNotDefaultSiteName(siteName: string) {
-  return !defaultSiteNameList.includes(siteName)
+function IsNotDefaultSiteName(siteName: string): boolean {
+  return !SITE_TITLE_RULES.some(
+    (rule) => rule.name !== UNKNOWN_SITE && rule.regex.test(siteName)
+  )
 }
-
 export async function getSiteName(
   input: browser.tabs.Tab | string
 ): Promise<string> {
