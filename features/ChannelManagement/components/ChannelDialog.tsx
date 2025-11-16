@@ -14,7 +14,12 @@ import {
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelType, ChannelTypeOptions } from "~/constants/newApi.ts"
 import { useChannelForm } from "~/features/ChannelManagement/hooks/useChannelForm"
-import { CHANNEL_STATUS, ChannelFormData, NewApiChannel } from "~/types/newapi"
+import {
+  CHANNEL_STATUS,
+  type ChannelFormData,
+  type ChannelStatus,
+  type NewApiChannel
+} from "~/types/newapi"
 
 export interface ChannelDialogProps {
   isOpen: boolean
@@ -365,7 +370,7 @@ export function ChannelDialog({
                 onChange={(e) =>
                   updateField(
                     "status",
-                    parseInt(e.target.value) as CHANNEL_STATUS
+                    parseInt(e.target.value) as ChannelStatus
                   )
                 }
                 disabled={isSaving}>

@@ -41,8 +41,7 @@ function createV0Preferences(
     },
     modelRedirect: {
       enabled: false,
-      redirects: [],
-      allowUserCustomization: false
+      standardModels: []
     },
     sortingPriorityConfig: undefined,
     lastUpdated: Date.now(),
@@ -338,9 +337,9 @@ describe("preferencesMigration", () => {
         },
         modelRedirect: {
           enabled: false,
-          redirects: [],
-          allowUserCustomization: false
+          standardModels: []
         },
+        webdav: DEFAULT_WEBDAV_SETTINGS,
         lastUpdated: Date.now(),
         preferencesVersion: 2,
         // Legacy fields that need migration from v2->v3 (WebDAV)

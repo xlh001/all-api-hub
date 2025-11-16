@@ -1,3 +1,4 @@
+import React from "react"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -374,7 +375,7 @@ describe("modelProviders utils", () => {
 
   describe("PROVIDER_CONFIGS structure", () => {
     it("should have valid config for each provider", () => {
-      Object.entries(PROVIDER_CONFIGS).forEach(([key, config]) => {
+      Object.entries(PROVIDER_CONFIGS).forEach(([, config]) => {
         expect(config).toHaveProperty("name")
         expect(config).toHaveProperty("icon")
         expect(config).toHaveProperty("patterns")
@@ -388,13 +389,11 @@ describe("modelProviders utils", () => {
         expect(typeof config.color).toBe("string")
         expect(typeof config.bgColor).toBe("string")
 
-        // Verify icon is defined
+        // Verify icon is defined and renderable
         expect(config.icon).toBeDefined()
-        if (key === "Unknown") {
-          // Unknown provider has a function that returns null
-          if (typeof config.icon === "function") {
-            expect(config.icon()).toBeNull()
-          }
+        if (typeof config.icon === "function") {
+          const element = React.createElement(config.icon)
+          expect(element).toBeTruthy()
         }
       })
     })

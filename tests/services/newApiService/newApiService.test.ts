@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
+import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 import type { ChannelFormData, CreateChannelPayload } from "~/types/newapi"
 
 // ============================================================================
@@ -9,7 +10,7 @@ import type { ChannelFormData, CreateChannelPayload } from "~/types/newapi"
 
 // Mock i18next
 vi.mock("i18next", () => ({
-  t: vi.fn((key: string, options?: any) => {
+  t: vi.fn((key: string) => {
     // Always return the key so tests can check for it
     return key
   })
@@ -92,13 +93,13 @@ function createMockDisplaySiteData(
     todayConsumption: { USD: 10, CNY: 0 },
     todayIncome: { USD: 0, CNY: 0 },
     todayTokens: { upload: 1000, download: 2000 },
-    health: { status: "healthy" },
+    health: { status: SiteHealthStatus.Healthy },
     last_sync_time: Date.now(),
     siteType: "openai",
     baseUrl: "https://api.example.com",
     token: "test-token-123",
     userId: 1,
-    authType: "access_token",
+    authType: AuthTypeEnum.AccessToken,
     checkIn: { enableDetection: false },
     ...overrides
   }
@@ -217,7 +218,7 @@ function createMockSiteAccount(overrides?: Partial<SiteAccount>): SiteAccount {
     emoji: "🔑",
     site_name: "Test Site",
     site_url: "https://api.example.com",
-    health: { status: "healthy" },
+    health: { status: SiteHealthStatus.Healthy },
     site_type: "openai",
     exchange_rate: 7.0,
     account_info: {
@@ -234,7 +235,7 @@ function createMockSiteAccount(overrides?: Partial<SiteAccount>): SiteAccount {
     last_sync_time: Date.now(),
     updated_at: Date.now(),
     created_at: Date.now() - 86400000,
-    authType: "access_token",
+    authType: AuthTypeEnum.AccessToken,
     checkIn: { enableDetection: false },
     ...overrides
   }
@@ -899,7 +900,9 @@ describe("newApiService", () => {
       const result = buildChannelPayload(formData)
 
       expect(result.channel.models).toBe("gpt-4,gpt-3.5-turbo,claude-3")
-      expect(result.channel.groups).toEqual(["group1", "group2"])
+      expect(result.channel.groups).toBeDefined()
+      const groups = result.channel.groups!
+      expect(groups).toEqual(["group1", "group2"])
     })
 
     it("should use default groups when empty", async () => {
@@ -920,7 +923,9 @@ describe("newApiService", () => {
 
       const result = buildChannelPayload(formData)
 
-      expect(result.channel.groups).toEqual(["default"])
+      expect(result.channel.groups).toBeDefined()
+      const groups = result.channel.groups!
+      expect(groups).toEqual(["default"])
     })
 
     it("should normalize and deduplicate groups", async () => {
@@ -941,9 +946,11 @@ describe("newApiService", () => {
 
       const result = buildChannelPayload(formData)
 
-      expect(result.channel.groups).toContain("group1")
-      expect(result.channel.groups).toContain("group2")
-      expect(result.channel.groups.length).toBe(2)
+      expect(result.channel.groups).toBeDefined()
+      const groups = result.channel.groups!
+      expect(groups).toContain("group1")
+      expect(groups).toContain("group2")
+      expect(groups.length).toBe(2)
     })
 
     it("should use specified mode or default", async () => {

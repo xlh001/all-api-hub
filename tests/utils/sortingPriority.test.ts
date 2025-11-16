@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import type { DisplaySiteData, SiteAccount } from "~/types"
-import { SiteHealthStatus } from "~/types"
+import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 import {
   SortingCriteriaType,
   type SortingPriorityConfig
@@ -30,7 +30,7 @@ describe("createDynamicSortComparator", () => {
     baseUrl: "https://test.com",
     token: "test-token",
     userId: 1,
-    authType: "access_token" as const,
+    authType: AuthTypeEnum.AccessToken,
     checkIn: {
       enableDetection: false,
       isCheckedInToday: false
@@ -63,7 +63,7 @@ describe("createDynamicSortComparator", () => {
     last_sync_time: Date.now(),
     updated_at: Date.now(),
     created_at: Date.now(),
-    authType: "access_token" as const,
+    authType: AuthTypeEnum.AccessToken,
     checkIn: { enableDetection: false },
     ...overrides
   })
@@ -72,7 +72,6 @@ describe("createDynamicSortComparator", () => {
     it("should pin accounts that are in the pinnedAccountIds list", () => {
       const account1 = createDisplaySiteData({ id: "account-1" })
       const account2 = createDisplaySiteData({ id: "account-2" })
-      const account3 = createDisplaySiteData({ id: "account-3" })
 
       const config = DEFAULT_SORTING_PRIORITY_CONFIG
       const pinnedAccountIds = ["account-2"]

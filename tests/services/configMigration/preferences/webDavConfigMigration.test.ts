@@ -4,92 +4,131 @@ import {
   migrateWebDavConfig,
   needWebDavConfigMigration
 } from "~/services/configMigration/preferences/webDavConfigMigration"
-import type { UserPreferences } from "~/services/userPreferences"
+import {
+  DEFAULT_PREFERENCES,
+  type UserPreferences
+} from "~/services/userPreferences"
 import { DEFAULT_WEBDAV_SETTINGS } from "~/types"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
+import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig"
+
+const createPreferences = (
+  overrides?: Partial<UserPreferences>
+): UserPreferences => {
+  const base = structuredClone(DEFAULT_PREFERENCES)
+  return {
+    ...base,
+    ...overrides,
+    webdav: {
+      ...base.webdav,
+      ...overrides?.webdav
+    },
+    accountAutoRefresh: {
+      ...DEFAULT_ACCOUNT_AUTO_REFRESH,
+      ...overrides?.accountAutoRefresh
+    },
+    newApi: {
+      ...DEFAULT_NEW_API_CONFIG,
+      ...overrides?.newApi
+    },
+    newApiModelSync: {
+      ...base.newApiModelSync,
+      ...overrides?.newApiModelSync
+    },
+    autoCheckin: {
+      ...base.autoCheckin,
+      ...overrides?.autoCheckin
+    },
+    modelRedirect: {
+      ...base.modelRedirect,
+      ...overrides?.modelRedirect
+    }
+  }
+}
 
 describe("webDavConfigMigration", () => {
   describe("needWebDavConfigMigration", () => {
     it("returns false when no flat WebDAV fields exist", () => {
-      const prefs = {
+      const prefs = createPreferences({
         themeMode: "dark",
         activeTab: "balance",
         currencyType: "USD"
-      } as UserPreferences
+      })
 
       const result = needWebDavConfigMigration(prefs)
       expect(result).toBe(false)
     })
 
     it("returns true when webdavUrl field exists", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdavUrl: "https://example.com/webdav",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = needWebDavConfigMigration(prefs)
       expect(result).toBe(true)
     })
 
     it("returns true when webdavUsername field exists", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdavUsername: "user",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = needWebDavConfigMigration(prefs)
       expect(result).toBe(true)
     })
 
     it("returns true when webdavPassword field exists", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdavPassword: "password",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = needWebDavConfigMigration(prefs)
       expect(result).toBe(true)
     })
 
     it("returns true when webdavAutoSync field exists", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdavAutoSync: true,
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = needWebDavConfigMigration(prefs)
       expect(result).toBe(true)
     })
 
     it("returns true when webdavSyncInterval field exists", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdavSyncInterval: 3600,
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = needWebDavConfigMigration(prefs)
       expect(result).toBe(true)
     })
 
     it("returns true when webdavSyncStrategy field exists", () => {
-      const prefs = {
-        webdavSyncStrategy: "merge" as const,
+      const prefs = createPreferences({
+        webdavSyncStrategy: "merge",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = needWebDavConfigMigration(prefs)
       expect(result).toBe(true)
     })
 
     it("returns true when any flat WebDAV field exists", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdavUrl: "https://example.com",
         webdavUsername: "user",
         webdavPassword: "pass",
         webdavAutoSync: true,
         webdavSyncInterval: 3600,
-        webdavSyncStrategy: "merge" as const,
+        webdavSyncStrategy: "merge",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = needWebDavConfigMigration(prefs)
       expect(result).toBe(true)
@@ -98,15 +137,15 @@ describe("webDavConfigMigration", () => {
 
   describe("migrateWebDavConfig", () => {
     it("migrates flat WebDAV fields to nested structure", () => {
-      const oldPrefs = {
+      const oldPrefs = createPreferences({
         webdavUrl: "https://example.com/webdav",
         webdavUsername: "testuser",
         webdavPassword: "testpass",
         webdavAutoSync: true,
         webdavSyncInterval: 1800,
-        webdavSyncStrategy: "upload_only" as const,
+        webdavSyncStrategy: "upload_only",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = migrateWebDavConfig(oldPrefs)
 
@@ -189,23 +228,23 @@ describe("webDavConfigMigration", () => {
     })
 
     it("migrates even if nested webdav already exists when flat fields present", () => {
-      const mixedPrefs = {
+      const mixedPrefs = createPreferences({
         webdav: {
           url: "https://old.com",
           username: "olduser",
           password: "oldpass",
           autoSync: false,
           syncInterval: 7200,
-          syncStrategy: "download_only" as const
+          syncStrategy: "download_only"
         },
         webdavUrl: "https://new.com",
         webdavUsername: "newuser",
         webdavPassword: "newpass",
         webdavAutoSync: true,
         webdavSyncInterval: 3600,
-        webdavSyncStrategy: "merge" as const,
+        webdavSyncStrategy: "merge",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = migrateWebDavConfig(mixedPrefs)
 
@@ -257,12 +296,12 @@ describe("webDavConfigMigration", () => {
     })
 
     it("handles empty string values gracefully", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdavUrl: "",
         webdavUsername: "",
         webdavPassword: "",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = migrateWebDavConfig(prefs)
 
@@ -277,11 +316,11 @@ describe("webDavConfigMigration", () => {
     })
 
     it("handles undefined webdav field existing in prefs", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdav: undefined,
         webdavUrl: "https://example.com",
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = migrateWebDavConfig(prefs)
 
@@ -290,7 +329,7 @@ describe("webDavConfigMigration", () => {
     })
 
     it("preserves other nested objects during migration", () => {
-      const prefs = {
+      const prefs = createPreferences({
         webdavUrl: "https://example.com",
         newApi: {
           baseUrl: "https://api.example.com",
@@ -304,7 +343,7 @@ describe("webDavConfigMigration", () => {
           refreshOnOpen: false
         },
         themeMode: "dark"
-      } as UserPreferences
+      })
 
       const result = migrateWebDavConfig(prefs)
 

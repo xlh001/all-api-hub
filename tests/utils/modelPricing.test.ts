@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import type { ModelPricing } from "~/services/apiService/common/type"
 import {
@@ -54,7 +54,7 @@ describe("modelPricing utils", () => {
         completion_ratio: 2,
         model_price: 0,
         enable_groups: ["default", "vip"],
-        endpoint_types: ["chat"]
+        supported_endpoint_types: ["chat"]
       }
 
       it("should calculate prices for default group", () => {
@@ -177,7 +177,7 @@ describe("modelPricing utils", () => {
           completion_ratio: 1,
           model_price: 0.02,
           enable_groups: ["default"],
-          endpoint_types: ["image"]
+          supported_endpoint_types: ["image"]
         }
 
         const result = calculateModelPrice(
@@ -202,7 +202,7 @@ describe("modelPricing utils", () => {
           completion_ratio: 1,
           model_price: 0.02,
           enable_groups: ["default"],
-          endpoint_types: ["image"]
+          supported_endpoint_types: []
         }
 
         const result = calculateModelPrice(
@@ -224,7 +224,7 @@ describe("modelPricing utils", () => {
           completion_ratio: 1,
           model_price: { input: 10, output: 20 },
           enable_groups: ["default"],
-          endpoint_types: ["chat"]
+          supported_endpoint_types: ["chat"]
         }
 
         const result = calculateModelPrice(
@@ -247,7 +247,7 @@ describe("modelPricing utils", () => {
           completion_ratio: 1,
           model_price: { input: 10, output: 20 },
           enable_groups: ["default"],
-          endpoint_types: ["chat"]
+          supported_endpoint_types: []
         }
 
         const result = calculateModelPrice(
@@ -270,7 +270,7 @@ describe("modelPricing utils", () => {
           completion_ratio: 1,
           model_price: 0,
           enable_groups: ["default"],
-          endpoint_types: ["chat"]
+          supported_endpoint_types: []
         }
 
         const result = calculateModelPrice(
@@ -432,7 +432,7 @@ describe("modelPricing utils", () => {
       completion_ratio: 1,
       model_price: 0,
       enable_groups: ["default", "vip", "premium"],
-      endpoint_types: ["chat"]
+      supported_endpoint_types: ["chat"]
     }
 
     it("should return true for enabled group", () => {

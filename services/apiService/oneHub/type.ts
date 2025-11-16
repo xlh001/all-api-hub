@@ -71,13 +71,6 @@ export interface OneHubModelPricingItem {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface OneHubVendor {
-  id: number
-  name: string
-  icon?: string
-}
-
 export interface OneHubUserGroupMap {
   [key: string]: {
     id: number

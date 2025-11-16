@@ -8,38 +8,40 @@ import {
   needsConfigMigration
 } from "~/services/configMigration/account/accountDataMigration"
 import type { SiteAccount } from "~/types"
+import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 
 describe("accountDataMigration", () => {
   // Helper to create a minimal SiteAccount fixture
   const createSiteAccount = (
     overrides: Partial<SiteAccount> = {}
-  ): SiteAccount => ({
-    id: "test-account-1",
-    emoji: "🧪",
-    site_name: "Test Site",
-    site_url: "https://test.com",
-    health: { status: "healthy" },
-    site_type: "test-site",
-    exchange_rate: 7.0,
-    account_info: {
-      id: 1,
-      access_token: "test-token",
-      username: "test-user",
-      quota: 1000,
-      today_prompt_tokens: 0,
-      today_completion_tokens: 0,
-      today_quota_consumption: 0,
-      today_requests_count: 0,
-      today_income: 0
-    },
-    last_sync_time: Date.now(),
-    updated_at: Date.now(),
-    created_at: Date.now(),
-    authType: "access_token" as const,
-    // Note: checkIn is intentionally omitted to simulate old accounts
-    // It can be provided in overrides when needed
-    ...overrides
-  })
+  ): SiteAccount =>
+    ({
+      id: "test-account-1",
+      emoji: "🧪",
+      site_name: "Test Site",
+      site_url: "https://test.com",
+      health: { status: SiteHealthStatus.Healthy },
+      site_type: "test-site",
+      exchange_rate: 7.0,
+      account_info: {
+        id: 1,
+        access_token: "test-token",
+        username: "test-user",
+        quota: 1000,
+        today_prompt_tokens: 0,
+        today_completion_tokens: 0,
+        today_quota_consumption: 0,
+        today_requests_count: 0,
+        today_income: 0
+      },
+      last_sync_time: Date.now(),
+      updated_at: Date.now(),
+      created_at: Date.now(),
+      authType: AuthTypeEnum.AccessToken,
+      // Note: checkIn is intentionally omitted to simulate old accounts
+      // It can be provided in overrides when needed
+      ...overrides
+    }) as SiteAccount
 
   describe("getConfigVersion", () => {
     it("returns 0 when configVersion is undefined", () => {

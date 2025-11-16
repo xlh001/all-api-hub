@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { modelMetadataService } from "~/services/modelMetadata"
 import {
@@ -245,7 +245,7 @@ describe("renameModel", () => {
     it("should handle metadata hit with vendorName undefined (includeVendor: true)", () => {
       vi.mocked(modelMetadataService.findStandardModelName).mockReturnValue({
         standardName: "gpt-4o",
-        vendorName: undefined
+        vendorName: ""
       })
 
       expect(renameModel("gpt-4o", true)).toBe("gpt-4o")
@@ -255,7 +255,7 @@ describe("renameModel", () => {
     it("should handle metadata hit with vendorName undefined (includeVendor: false)", () => {
       vi.mocked(modelMetadataService.findStandardModelName).mockReturnValue({
         standardName: "gpt-4o",
-        vendorName: undefined
+        vendorName: ""
       })
 
       expect(renameModel("gpt-4o", false)).toBe("gpt-4o")
