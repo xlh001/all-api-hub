@@ -412,24 +412,44 @@ function waitForTabComplete(tabId: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error(t("messages:background.pageLoadTimeout")))
-    }, 10000) // 10秒超时
+    }, 20000) // 20秒超时
 
-    const checkStatus = () => {
-      browser.tabs
-        .get(tabId)
-        .then((tab) => {
-          if (tab.status === "complete") {
+    const checkStatus = async () => {
+      try {
+        const tab = await browser.tabs.get(tabId)
+
+        if (tab.status === "complete") {
+          // 页面加载完成，注入脚本检测 CF 页面标志
+          const results = await browser.scripting.executeScript({
+            target: { tabId },
+            func: () => {
+              // 判断页面标题是否包含 Cloudflare 盾页面标志
+              if (
+                document.title.includes("Just a moment") ||
+                document.querySelector("#cf-content")
+              ) {
+                return false // 仍在盾页面
+              }
+              return true // 已通过
+            }
+          })
+
+          const passed = results[0]?.result
+          if (passed) {
             clearTimeout(timeout)
-            // 再等待一秒确保页面完全加载
-            setTimeout(resolve, 1000)
+            setTimeout(resolve, 500) // 再等待半秒，确保页面 JS 执行完
           } else {
-            setTimeout(checkStatus, 100)
+            // 盾页面未通过，继续轮询
+            setTimeout(checkStatus, 500)
           }
-        })
-        .catch((error) => {
-          clearTimeout(timeout)
-          reject(error)
-        })
+        } else {
+          // 页面未完全加载，继续轮询
+          setTimeout(checkStatus, 100)
+        }
+      } catch (error) {
+        clearTimeout(timeout)
+        reject(error)
+      }
     }
 
     checkStatus()

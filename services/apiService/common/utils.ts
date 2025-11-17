@@ -6,6 +6,7 @@ import type {
   TodayUsageData
 } from "~/services/apiService/common/type"
 import { AuthTypeEnum } from "~/types"
+import { tempWindowFetch, type TempWindowFetchParams } from "~/utils/browserApi"
 import { joinUrl } from "~/utils/url"
 
 /**
@@ -217,15 +218,20 @@ const _fetchApi = async <T>(
     ...options
   }
 
-  try {
+  const context: TempWindowFallbackContext = {
+    baseUrl,
+    url,
+    endpoint,
+    fetchOptions,
+    onlyData
+  }
+
+  return await executeWithTempWindowFallback(context, async () => {
     if (onlyData) {
       return await apiRequestData<T>(url, fetchOptions, endpoint)
     }
     return await apiRequest<T>(url, fetchOptions, endpoint)
-  } catch (error) {
-    console.error(`请求 ${endpoint} 失败:`, error)
-    throw error
-  }
+  })
 }
 
 /**
@@ -256,6 +262,191 @@ export async function fetchApi<T>(
   _normalResponseType?: boolean
 ): Promise<T | ApiResponse<T>> {
   return await _fetchApi(params)
+}
+
+const TEMP_WINDOW_FALLBACK_STATUS = new Set([401, 403, 429])
+
+interface TempWindowFallbackContext {
+  baseUrl: string
+  url: string
+  endpoint?: string
+  fetchOptions: RequestInit
+  onlyData: boolean
+}
+
+async function executeWithTempWindowFallback<T>(
+  context: TempWindowFallbackContext,
+  primaryRequest: () => Promise<T | ApiResponse<T>>
+): Promise<T | ApiResponse<T>> {
+  try {
+    return await primaryRequest()
+  } catch (error) {
+    if (!shouldUseTempWindowFallback(error, context)) {
+      throw error
+    }
+
+    return await fetchViaTempWindow<T>(context)
+  }
+}
+
+function shouldUseTempWindowFallback(
+  error: unknown,
+  context: TempWindowFallbackContext
+): boolean {
+  if (!(error instanceof ApiError)) {
+    return false
+  }
+
+  if (!error.statusCode || !TEMP_WINDOW_FALLBACK_STATUS.has(error.statusCode)) {
+    return false
+  }
+
+  if (!isHttpUrl(context.baseUrl)) {
+    return false
+  }
+
+  return Boolean(prepareTempWindowFetchOptions(context.fetchOptions))
+}
+
+async function fetchViaTempWindow<T>(
+  context: TempWindowFallbackContext
+): Promise<T | ApiResponse<T>> {
+  const fetchOptions = prepareTempWindowFetchOptions(context.fetchOptions)
+
+  if (!fetchOptions) {
+    throw new ApiError(
+      "Temp window fetch fallback is not supported for current request",
+      undefined,
+      context.endpoint
+    )
+  }
+
+  const requestPayload: TempWindowFetchParams = {
+    originUrl: context.baseUrl,
+    fetchUrl: context.url,
+    fetchOptions,
+    responseType: "json",
+    requestId: `temp-fetch-${Date.now()}`
+  }
+
+  console.log("[API Service] Using temp window fetch fallback for", context.url)
+
+  const response = await tempWindowFetch(requestPayload)
+
+  if (!response.success) {
+    throw new ApiError(
+      response.error || "Temp window fetch failed",
+      response.status,
+      context.endpoint
+    )
+  }
+
+  const responseBody = response.data
+
+  if (context.onlyData) {
+    return extractDataFromApiResponseBody<T>(responseBody, context.endpoint)
+  }
+
+  return responseBody as ApiResponse<T>
+}
+
+function prepareTempWindowFetchOptions(
+  fetchOptions: RequestInit
+): Record<string, any> | null {
+  const normalized: Record<string, any> = {}
+
+  if (fetchOptions.method) {
+    normalized.method = fetchOptions.method
+  }
+
+  if (fetchOptions.headers) {
+    const plainHeaders = toPlainHeaders(fetchOptions.headers)
+    // 移除空的 Cookie 头，确保页面环境自行携带 cookie
+    if (plainHeaders.Cookie === "") {
+      delete plainHeaders.Cookie
+    }
+    normalized.headers = plainHeaders
+  }
+
+  const serializedBody = serializeBody(fetchOptions.body)
+  if (serializedBody === null) {
+    return null
+  }
+
+  if (serializedBody !== undefined) {
+    normalized.body = serializedBody
+  }
+
+  return normalized
+}
+
+function toPlainHeaders(headers: HeadersInit): Record<string, string> {
+  if (headers instanceof Headers) {
+    const result: Record<string, string> = {}
+    headers.forEach((value, key) => {
+      result[key] = value
+    })
+    return result
+  }
+
+  if (Array.isArray(headers)) {
+    return headers.reduce(
+      (acc, [key, value]) => {
+        acc[key] = value
+        return acc
+      },
+      {} as Record<string, string>
+    )
+  }
+
+  const result: Record<string, string> = {}
+  Object.entries(headers).forEach(([key, value]) => {
+    if (value != null) {
+      result[key] = String(value)
+    }
+  })
+  return result
+}
+
+function serializeBody(
+  body: BodyInit | null | undefined
+): string | undefined | null {
+  if (body == null) {
+    return undefined
+  }
+
+  if (typeof body === "string") {
+    return body
+  }
+
+  if (body instanceof URLSearchParams) {
+    return body.toString()
+  }
+
+  return null
+}
+
+function isHttpUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+  } catch (error) {
+    console.warn("Invalid URL for temp window fallback:", url, error)
+    return false
+  }
+}
+
+function extractDataFromApiResponseBody<T>(body: any, endpoint?: string): T {
+  if (!body || typeof body !== "object") {
+    throw new ApiError("响应数据格式错误", undefined, endpoint)
+  }
+
+  if (body.success === false || body.data === undefined) {
+    const message = body.message || "响应数据格式错误"
+    throw new ApiError(message, undefined, endpoint)
+  }
+
+  return body.data as T
 }
 /**
  * 从文本中提取金额及货币符号
