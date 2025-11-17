@@ -6,7 +6,11 @@ import type {
   TodayUsageData
 } from "~/services/apiService/common/type"
 import { AuthTypeEnum } from "~/types"
-import { tempWindowFetch, type TempWindowFetchParams } from "~/utils/browserApi"
+import {
+  tempWindowFetch,
+  type TempWindowFetchParams,
+  type TempWindowResponseType
+} from "~/utils/browserApi"
 import { joinUrl } from "~/utils/url"
 
 /**
@@ -137,12 +141,22 @@ export const aggregateUsageData = (
  */
 const apiRequestData = async <T>(
   url: string,
-  options?: RequestInit,
-  endpoint?: string
+  options: RequestInit | undefined,
+  endpoint: string | undefined,
+  responseType: TempWindowResponseType
 ): Promise<T> => {
-  const res = await apiRequest<T>(url, options, endpoint)
+  if (responseType !== "json") {
+    throw new ApiError("仅支持 JSON 响应数据", undefined, endpoint)
+  }
 
-  if (res.success === false || res.data === undefined) {
+  const res = (await apiRequest<T>(
+    url,
+    options,
+    endpoint,
+    responseType
+  )) as ApiResponse<T>
+
+  if (!res.success || res.data === undefined) {
     if (res.message) {
       throw new ApiError(res.message, undefined, endpoint)
     }
@@ -157,6 +171,7 @@ const apiRequestData = async <T>(
  * @param url 请求 URL
  * @param options 请求配置
  * @param endpoint 可选，接口名称，用于错误追踪
+ * @param responseType
  * @returns ApiResponse 对象
  * 默认：返回完整响应，不提取 data
  * @waring 非必要请勿在外部使用
@@ -164,9 +179,10 @@ const apiRequestData = async <T>(
  */
 const apiRequest = async <T>(
   url: string,
-  options?: RequestInit,
-  endpoint?: string
-): Promise<ApiResponse<T>> => {
+  options: RequestInit | undefined,
+  endpoint: string | undefined,
+  responseType: TempWindowResponseType
+): Promise<ApiResponse<T> | T> => {
   const response = await fetch(url, options)
 
   if (!response.ok) {
@@ -177,7 +193,7 @@ const apiRequest = async <T>(
     )
   }
 
-  return response.json()
+  return await parseResponseByType<T>(response, responseType)
 }
 
 // 通用请求函数
@@ -188,10 +204,19 @@ export interface FetchApiParams {
   token?: string
   authType?: AuthTypeEnum // 认证方式，默认 token
   options?: RequestInit // 可额外自定义 fetch 参数
+  responseType?: TempWindowResponseType // 默认 json，可自定义响应处理
 }
 
 const _fetchApi = async <T>(
-  { baseUrl, endpoint, userId, token, authType, options }: FetchApiParams,
+  {
+    baseUrl,
+    endpoint,
+    userId,
+    token,
+    authType,
+    options,
+    responseType = "json"
+  }: FetchApiParams,
   onlyData: boolean = false
 ) => {
   const url = joinUrl(baseUrl, endpoint)
@@ -223,14 +248,26 @@ const _fetchApi = async <T>(
     url,
     endpoint,
     fetchOptions,
-    onlyData
+    onlyData,
+    responseType
   }
 
   return await executeWithTempWindowFallback(context, async () => {
     if (onlyData) {
-      return await apiRequestData<T>(url, fetchOptions, endpoint)
+      return await apiRequestData<T>(url, fetchOptions, endpoint, responseType)
     }
-    return await apiRequest<T>(url, fetchOptions, endpoint)
+    const response = await apiRequest<T>(
+      url,
+      fetchOptions,
+      endpoint,
+      responseType
+    )
+
+    if (responseType === "json") {
+      return response as ApiResponse<T>
+    }
+
+    return response as T
   })
 }
 
@@ -239,7 +276,14 @@ const _fetchApi = async <T>(
  * @param params
  */
 export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
-  return (await _fetchApi(params, true)) as T
+  if (params.responseType && params.responseType !== "json") {
+    throw new ApiError(
+      "fetchApiData 仅支持 JSON 响应",
+      undefined,
+      params.endpoint
+    )
+  }
+  return (await _fetchApi({ ...params, responseType: "json" }, true)) as T
 }
 
 export function fetchApi<T>(
@@ -272,6 +316,7 @@ interface TempWindowFallbackContext {
   endpoint?: string
   fetchOptions: RequestInit
   onlyData: boolean
+  responseType: TempWindowResponseType
 }
 
 async function executeWithTempWindowFallback<T>(
@@ -311,7 +356,7 @@ function shouldUseTempWindowFallback(
 async function fetchViaTempWindow<T>(
   context: TempWindowFallbackContext
 ): Promise<T | ApiResponse<T>> {
-  const { fetchOptions } = context
+  const { fetchOptions, responseType } = context
 
   if (!fetchOptions) {
     throw new ApiError(
@@ -325,7 +370,7 @@ async function fetchViaTempWindow<T>(
     originUrl: context.baseUrl,
     fetchUrl: context.url,
     fetchOptions,
-    responseType: "json",
+    responseType,
     requestId: `temp-fetch-${Date.now()}`
   }
 
@@ -343,11 +388,31 @@ async function fetchViaTempWindow<T>(
 
   const responseBody = response.data
 
-  if (context.onlyData) {
-    return extractDataFromApiResponseBody<T>(responseBody, context.endpoint)
+  if (responseType === "json") {
+    if (context.onlyData) {
+      return extractDataFromApiResponseBody<T>(responseBody, context.endpoint)
+    }
+    return responseBody as ApiResponse<T>
   }
 
-  return responseBody as ApiResponse<T>
+  return responseBody as T
+}
+
+async function parseResponseByType<T>(
+  response: Response,
+  responseType: TempWindowResponseType
+): Promise<ApiResponse<T> | T> {
+  switch (responseType) {
+    case "text":
+      return (await response.text()) as T
+    case "arrayBuffer":
+      return (await response.arrayBuffer()) as T
+    case "blob":
+      return (await response.blob()) as T
+    case "json":
+    default:
+      return (await response.json()) as ApiResponse<T>
+  }
 }
 
 function isHttpUrl(url: string): boolean {

@@ -11,7 +11,8 @@ export const fetchSiteOriginalTitle = async (url: string) => {
       authType: AuthTypeEnum.None,
       options: {
         cache: "no-store"
-      }
+      },
+      responseType: "text"
     },
     true
   )
