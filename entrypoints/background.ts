@@ -472,6 +472,7 @@ async function main() {
     requestId: string,
     options: { forceClose?: boolean } = {}
   ) {
+    // 延迟释放，提高并发时的复用率
     setTimeout(async () => {
       const context = tempRequestContextMap.get(requestId)
       tempRequestContextMap.delete(requestId)
@@ -510,10 +511,6 @@ async function main() {
     }
 
     for (const context of pool) {
-      // if (context.busy) {
-      //   continue
-      // }
-
       if (await isContextAlive(context)) {
         return context
       }
