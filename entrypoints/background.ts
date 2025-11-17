@@ -666,22 +666,20 @@ function waitForTabComplete(tabId: number): Promise<void> {
         const tab = await browser.tabs.get(tabId)
 
         if (tab.status === "complete") {
-          // 页面加载完成，注入脚本检测 CF 页面标志
-          const results = await browser.scripting.executeScript({
-            target: { tabId },
-            func: () => {
-              // 判断页面标题是否包含 Cloudflare 盾页面标志
-              if (
-                document.title.includes("Just a moment") ||
-                document.querySelector("#cf-content")
-              ) {
-                return false // 仍在盾页面
-              }
-              return true // 已通过
-            }
-          })
+          let passed = false
+          try {
+            const response = await browser.tabs.sendMessage(tabId, {
+              action: "checkCloudflareGuard"
+            })
+            passed = Boolean(response?.success && response.passed)
+          } catch (error) {
+            console.warn(
+              "[Background] CF check via content script failed",
+              error
+            )
+          }
 
-          const passed = results[0]?.result
+          console.log(`[Background] Tab ${tabId} CF check result:`, passed)
           if (passed) {
             clearTimeout(timeout)
             setTimeout(resolve, 500) // 再等待半秒，确保页面 JS 执行完

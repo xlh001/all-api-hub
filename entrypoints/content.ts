@@ -68,6 +68,19 @@ function main() {
       return true
     }
 
+    if (request.action === "checkCloudflareGuard") {
+      try {
+        const passed =
+          !document.title.includes("Just a moment") &&
+          !document.querySelector("#cf-content")
+
+        sendResponse({ success: true, passed })
+      } catch (error) {
+        sendResponse({ success: false, error: getErrorMessage(error) })
+      }
+      return true
+    }
+
     if (request.action === "waitAndGetUserInfo") {
       // 新增：等待页面完全加载后获取用户信息
       waitForUserInfo()
