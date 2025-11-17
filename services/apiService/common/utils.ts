@@ -6,6 +6,11 @@ import type {
   TodayUsageData
 } from "~/services/apiService/common/type"
 import { AuthTypeEnum } from "~/types"
+import {
+  tempWindowFetch,
+  type TempWindowFetchParams,
+  type TempWindowResponseType
+} from "~/utils/browserApi"
 import { joinUrl } from "~/utils/url"
 
 /**
@@ -136,12 +141,22 @@ export const aggregateUsageData = (
  */
 const apiRequestData = async <T>(
   url: string,
-  options?: RequestInit,
-  endpoint?: string
+  options: RequestInit | undefined,
+  endpoint: string | undefined,
+  responseType: TempWindowResponseType
 ): Promise<T> => {
-  const res = await apiRequest<T>(url, options, endpoint)
+  if (responseType !== "json") {
+    throw new ApiError("仅支持 JSON 响应数据", undefined, endpoint)
+  }
 
-  if (res.success === false || res.data === undefined) {
+  const res = (await apiRequest<T>(
+    url,
+    options,
+    endpoint,
+    responseType
+  )) as ApiResponse<T>
+
+  if (!res.success || res.data === undefined) {
     if (res.message) {
       throw new ApiError(res.message, undefined, endpoint)
     }
@@ -156,6 +171,7 @@ const apiRequestData = async <T>(
  * @param url 请求 URL
  * @param options 请求配置
  * @param endpoint 可选，接口名称，用于错误追踪
+ * @param responseType
  * @returns ApiResponse 对象
  * 默认：返回完整响应，不提取 data
  * @waring 非必要请勿在外部使用
@@ -163,9 +179,10 @@ const apiRequestData = async <T>(
  */
 const apiRequest = async <T>(
   url: string,
-  options?: RequestInit,
-  endpoint?: string
-): Promise<ApiResponse<T>> => {
+  options: RequestInit | undefined,
+  endpoint: string | undefined,
+  responseType: TempWindowResponseType
+): Promise<ApiResponse<T> | T> => {
   const response = await fetch(url, options)
 
   if (!response.ok) {
@@ -176,7 +193,7 @@ const apiRequest = async <T>(
     )
   }
 
-  return response.json()
+  return await parseResponseByType<T>(response, responseType)
 }
 
 // 通用请求函数
@@ -187,10 +204,19 @@ export interface FetchApiParams {
   token?: string
   authType?: AuthTypeEnum // 认证方式，默认 token
   options?: RequestInit // 可额外自定义 fetch 参数
+  responseType?: TempWindowResponseType // 默认 json，可自定义响应处理
 }
 
 const _fetchApi = async <T>(
-  { baseUrl, endpoint, userId, token, authType, options }: FetchApiParams,
+  {
+    baseUrl,
+    endpoint,
+    userId,
+    token,
+    authType,
+    options,
+    responseType = "json"
+  }: FetchApiParams,
   onlyData: boolean = false
 ) => {
   const url = joinUrl(baseUrl, endpoint)
@@ -217,15 +243,32 @@ const _fetchApi = async <T>(
     ...options
   }
 
-  try {
-    if (onlyData) {
-      return await apiRequestData<T>(url, fetchOptions, endpoint)
-    }
-    return await apiRequest<T>(url, fetchOptions, endpoint)
-  } catch (error) {
-    console.error(`请求 ${endpoint} 失败:`, error)
-    throw error
+  const context: TempWindowFallbackContext = {
+    baseUrl,
+    url,
+    endpoint,
+    fetchOptions,
+    onlyData,
+    responseType
   }
+
+  return await executeWithTempWindowFallback(context, async () => {
+    if (onlyData) {
+      return await apiRequestData<T>(url, fetchOptions, endpoint, responseType)
+    }
+    const response = await apiRequest<T>(
+      url,
+      fetchOptions,
+      endpoint,
+      responseType
+    )
+
+    if (responseType === "json") {
+      return response as ApiResponse<T>
+    }
+
+    return response as T
+  })
 }
 
 /**
@@ -233,7 +276,14 @@ const _fetchApi = async <T>(
  * @param params
  */
 export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
-  return (await _fetchApi(params, true)) as T
+  if (params.responseType && params.responseType !== "json") {
+    throw new ApiError(
+      "fetchApiData 仅支持 JSON 响应",
+      undefined,
+      params.endpoint
+    )
+  }
+  return (await _fetchApi({ ...params, responseType: "json" }, true)) as T
 }
 
 export function fetchApi<T>(
@@ -256,6 +306,136 @@ export async function fetchApi<T>(
   _normalResponseType?: boolean
 ): Promise<T | ApiResponse<T>> {
   return await _fetchApi(params)
+}
+
+const TEMP_WINDOW_FALLBACK_STATUS = new Set([401, 403, 429])
+
+interface TempWindowFallbackContext {
+  baseUrl: string
+  url: string
+  endpoint?: string
+  fetchOptions: RequestInit
+  onlyData: boolean
+  responseType: TempWindowResponseType
+}
+
+async function executeWithTempWindowFallback<T>(
+  context: TempWindowFallbackContext,
+  primaryRequest: () => Promise<T | ApiResponse<T>>
+): Promise<T | ApiResponse<T>> {
+  try {
+    return await primaryRequest()
+  } catch (error) {
+    if (!shouldUseTempWindowFallback(error, context)) {
+      throw error
+    }
+
+    return await fetchViaTempWindow<T>(context)
+  }
+}
+
+function shouldUseTempWindowFallback(
+  error: unknown,
+  context: TempWindowFallbackContext
+): boolean {
+  if (!(error instanceof ApiError)) {
+    return false
+  }
+
+  if (!error.statusCode || !TEMP_WINDOW_FALLBACK_STATUS.has(error.statusCode)) {
+    return false
+  }
+
+  if (!isHttpUrl(context.baseUrl)) {
+    return false
+  }
+
+  return Boolean(context.fetchOptions)
+}
+
+async function fetchViaTempWindow<T>(
+  context: TempWindowFallbackContext
+): Promise<T | ApiResponse<T>> {
+  const { fetchOptions, responseType } = context
+
+  if (!fetchOptions) {
+    throw new ApiError(
+      "Temp window fetch fallback is not supported for current request",
+      undefined,
+      context.endpoint
+    )
+  }
+
+  const requestPayload: TempWindowFetchParams = {
+    originUrl: context.baseUrl,
+    fetchUrl: context.url,
+    fetchOptions,
+    responseType,
+    requestId: `temp-fetch-${Date.now()}`
+  }
+
+  console.log("[API Service] Using temp window fetch fallback for", context.url)
+
+  const response = await tempWindowFetch(requestPayload)
+
+  if (!response.success) {
+    throw new ApiError(
+      response.error || "Temp window fetch failed",
+      response.status,
+      context.endpoint
+    )
+  }
+
+  const responseBody = response.data
+
+  if (responseType === "json") {
+    if (context.onlyData) {
+      return extractDataFromApiResponseBody<T>(responseBody, context.endpoint)
+    }
+    return responseBody as ApiResponse<T>
+  }
+
+  return responseBody as T
+}
+
+async function parseResponseByType<T>(
+  response: Response,
+  responseType: TempWindowResponseType
+): Promise<ApiResponse<T> | T> {
+  switch (responseType) {
+    case "text":
+      return (await response.text()) as T
+    case "arrayBuffer":
+      return (await response.arrayBuffer()) as T
+    case "blob":
+      return (await response.blob()) as T
+    case "json":
+    default:
+      return (await response.json()) as ApiResponse<T>
+  }
+}
+
+function isHttpUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+  } catch (error) {
+    console.warn("Invalid URL for temp window fallback:", url, error)
+    return false
+  }
+}
+
+function extractDataFromApiResponseBody<T>(body: any, endpoint?: string): T {
+  if (!body || typeof body !== "object") {
+    throw new ApiError("响应数据格式错误", undefined, endpoint)
+  }
+
+  if (body.success === false || body.data === undefined) {
+    const message = body.message || "响应数据格式错误"
+    throw new ApiError(message, undefined, endpoint)
+  }
+
+  return body.data as T
 }
 /**
  * 从文本中提取金额及货币符号

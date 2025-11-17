@@ -1,10 +1,21 @@
 import { SITE_TITLE_RULES, UNKNOWN_SITE } from "~/constants/siteType"
-import { ApiResponse } from "~/types"
-import { joinUrl } from "~/utils/url.ts"
+import { ApiError } from "~/services/apiService/common/errors"
+import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
+import { AuthTypeEnum } from "~/types"
 
 export const fetchSiteOriginalTitle = async (url: string) => {
-  const response = await fetch(url, { cache: "no-store" })
-  const html = await response.text()
+  const html = await fetchApi<string>(
+    {
+      baseUrl: url,
+      endpoint: "/",
+      authType: AuthTypeEnum.None,
+      options: {
+        cache: "no-store"
+      },
+      responseType: "text"
+    },
+    true
+  )
   const match = html.match(/<title>(.*?)<\/title>/i)
   const title = match ? match[1] : "未找到"
   console.log("原始 document title:", title)
@@ -12,15 +23,21 @@ export const fetchSiteOriginalTitle = async (url: string) => {
 }
 
 async function getSiteUserIdType(url: string) {
-  const response = await fetch(joinUrl(url, "/api/user/self"), {
-    cache: "no-store"
-  })
-  if (!response.ok) {
-    const data: ApiResponse = await response.json()
-    if (data.message) {
-      const parts = data.message.split(" ")
+  try {
+    await fetchApiData<unknown>({
+      baseUrl: url,
+      endpoint: "/api/user/self",
+      authType: AuthTypeEnum.Cookie,
+      options: {
+        cache: "no-store"
+      }
+    })
+  } catch (error) {
+    if (error instanceof ApiError && error.message) {
+      const parts = error.message.split(" ")
       return parts.length > 0 ? parts[parts.length - 1] : ""
     }
+    throw error
   }
   return ""
 }

@@ -179,6 +179,33 @@ export async function sendRuntimeMessage(message: any): Promise<any> {
   return await browser.runtime.sendMessage(message)
 }
 
+export type TempWindowResponseType = "json" | "text" | "arrayBuffer" | "blob"
+
+export interface TempWindowFetchParams {
+  originUrl: string
+  fetchUrl: string
+  fetchOptions?: Record<string, any>
+  responseType?: TempWindowResponseType
+  requestId?: string
+}
+
+export interface TempWindowFetchResult {
+  success: boolean
+  status?: number
+  headers?: Record<string, string>
+  data?: any
+  error?: string
+}
+
+export async function tempWindowFetch(
+  params: TempWindowFetchParams
+): Promise<TempWindowFetchResult> {
+  return await sendRuntimeMessage({
+    action: "tempWindowFetch",
+    ...params
+  })
+}
+
 /**
  * 发送消息到 background
  * 通用的消息发送函数
