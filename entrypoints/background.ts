@@ -529,45 +529,59 @@ async function main() {
     let tabId: number | undefined
     let type: "window" | "tab" = "window"
 
-    if (hasWindowsAPI()) {
-      const window = await createWindow({
-        url,
-        type: "popup",
-        width: 800,
-        height: 600,
-        focused: false
-      })
+    try {
+      if (hasWindowsAPI()) {
+        const window = await createWindow({
+          url,
+          type: "popup",
+          width: 800,
+          height: 600,
+          focused: false
+        })
 
-      if (!window?.id) {
+        if (!window?.id) {
+          throw new Error(t("messages:background.cannotCreateWindowOrTab"))
+        }
+
+        contextId = window.id
+        const tabs = await browser.tabs.query({
+          windowId: window.id,
+          active: true
+        })
+        tabId = tabs[0]?.id
+      } else {
+        const tab = await createTab(url, false)
+        contextId = tab?.id
+        tabId = tab?.id
+        type = "tab"
+      }
+
+      if (!contextId || !tabId) {
         throw new Error(t("messages:background.cannotCreateWindowOrTab"))
       }
 
-      contextId = window.id
-      const tabs = await browser.tabs.query({
-        windowId: window.id,
-        active: true
-      })
-      tabId = tabs[0]?.id
-    } else {
-      const tab = await createTab(url, false)
-      contextId = tab?.id
-      tabId = tab?.id
-      type = "tab"
-    }
+      await waitForTabComplete(tabId)
 
-    if (!contextId || !tabId) {
-      throw new Error(t("messages:background.cannotCreateWindowOrTab"))
-    }
-
-    await waitForTabComplete(tabId)
-
-    return {
-      id: contextId,
-      tabId,
-      origin,
-      type,
-      busy: false,
-      lastUsed: Date.now()
+      return {
+        id: contextId,
+        tabId,
+        origin,
+        type,
+        busy: false,
+        lastUsed: Date.now()
+      }
+    } catch (error) {
+      if (contextId) {
+        try {
+          await removeTabOrWindow(contextId)
+        } catch (cleanupError) {
+          console.warn(
+            "[Background] Failed to cleanup temp context after creation error",
+            cleanupError
+          )
+        }
+      }
+      throw error
     }
   }
 
