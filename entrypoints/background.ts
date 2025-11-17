@@ -41,8 +41,26 @@ export default defineBackground(() => {
 })
 
 async function main() {
-  // 管理临时窗口的 Map
+  // 手动打开的临时窗口/标签页
   const tempWindows = new Map<string, number>()
+
+  type TempContext = {
+    id: number
+    tabId: number
+    origin: string
+    type: "window" | "tab"
+    busy: boolean
+    lastUsed: number
+    releaseTimer?: ReturnType<typeof setTimeout>
+  }
+
+  const tempRequestContextMap = new Map<string, TempContext>()
+  const tempContextById = new Map<number, TempContext>()
+  const tempContextByTabId = new Map<number, TempContext>()
+  const tempContextsByOrigin = new Map<string, TempContext[]>()
+  const originLocks = new Map<string, Promise<void>>()
+
+  const TEMP_CONTEXT_IDLE_TIMEOUT = 5000
 
   let servicesInitialized = false
 
@@ -159,6 +177,18 @@ async function main() {
         break
       }
     }
+
+    const context = tempContextById.get(windowId)
+    if (context && context.type === "window") {
+      withOriginLock(context.origin, () =>
+        destroyContext(context, { skipBrowserRemoval: true })
+      ).catch((error) => {
+        console.error(
+          "[Background] Failed to cleanup removed window context",
+          error
+        )
+      })
+    }
   })
 
   // 手机: 监听标签页关闭
@@ -168,6 +198,18 @@ async function main() {
         tempWindows.delete(requestId)
         break
       }
+    }
+
+    const context = tempContextByTabId.get(tabId)
+    if (context && context.type === "tab") {
+      withOriginLock(context.origin, () =>
+        destroyContext(context, { skipBrowserRemoval: true })
+      ).catch((error) => {
+        console.error(
+          "[Background] Failed to cleanup removed tab context",
+          error
+        )
+      })
     }
   })
 
@@ -218,6 +260,46 @@ async function main() {
     }
   }
 
+  async function withOriginLock<T>(
+    origin: string,
+    task: () => Promise<T>
+  ): Promise<T> {
+    const previous = originLocks.get(origin) ?? Promise.resolve()
+    let release: () => void
+    const pending = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    originLocks.set(origin, pending)
+    await previous.catch(() => {})
+
+    try {
+      return await task()
+    } finally {
+      release!()
+      if (originLocks.get(origin) === pending) {
+        originLocks.delete(origin)
+      }
+    }
+  }
+
+  async function destroyOriginPool(origin: string, pool?: TempContext[]) {
+    const contexts = pool ?? tempContextsByOrigin.get(origin)
+    if (!contexts || contexts.length === 0) {
+      return
+    }
+
+    await Promise.all(
+      contexts.map((ctx) =>
+        destroyContext(ctx).catch((error) => {
+          console.error(
+            "[Background] Failed to destroy context from pool",
+            error
+          )
+        })
+      )
+    )
+  }
+
   // 关闭临时窗口
   async function handleCloseTempWindow(
     request: any,
@@ -230,9 +312,20 @@ async function main() {
       if (id) {
         await removeTabOrWindow(id)
         tempWindows.delete(requestId)
+        sendResponse({ success: true })
+        return
       }
 
-      sendResponse({ success: true })
+      if (requestId && tempRequestContextMap.has(requestId)) {
+        await releaseTempContext(requestId, { forceClose: true })
+        sendResponse({ success: true })
+        return
+      }
+
+      sendResponse({
+        success: false,
+        error: t("messages:background.windowNotFound")
+      })
     } catch (error) {
       sendResponse({ success: false, error: getErrorMessage(error) })
     }
@@ -297,14 +390,15 @@ async function main() {
     const tempRequestId = requestId || `temp-fetch-${Date.now()}`
 
     try {
-      const { tabId } = await createTempContext(originUrl, tempRequestId)
+      const context = await acquireTempContext(originUrl, tempRequestId)
+      const { tabId } = context
       const response = await browser.tabs.sendMessage(tabId, {
         action: "performTempWindowFetch",
         fetchUrl,
         fetchOptions: fetchOptions ?? {},
         responseType
       })
-      await cleanupTempContext(tempRequestId)
+      await releaseTempContext(tempRequestId)
 
       if (!response) {
         throw new Error("No response from temp window fetch")
@@ -312,7 +406,7 @@ async function main() {
 
       sendResponse(response)
     } catch (error) {
-      await cleanupTempContext(tempRequestId)
+      await releaseTempContext(tempRequestId, { forceClose: true })
       sendResponse({ success: false, error: getErrorMessage(error) })
     }
   }
@@ -324,7 +418,8 @@ async function main() {
    */
   async function getSiteDataFromTab(url: string, requestId: string) {
     try {
-      const { tabId } = await createTempContext(url, requestId)
+      const context = await acquireTempContext(url, requestId)
+      const { tabId } = context
 
       // 3. 通过 content script 获取用户信息
       const userResponse = await browser.tabs.sendMessage(tabId, {
@@ -332,7 +427,7 @@ async function main() {
         url: url
       })
 
-      await cleanupTempContext(requestId)
+      await releaseTempContext(requestId)
 
       // 5. 检查响应并返回结果
       if (!userResponse || !userResponse.success) {
@@ -346,18 +441,97 @@ async function main() {
       }
     } catch (error) {
       console.error(error)
-      await cleanupTempContext(requestId)
+      await releaseTempContext(requestId, { forceClose: true })
       return null
     }
   }
 
-  async function createTempContext(url: string, requestId: string) {
+  async function acquireTempContext(url: string, requestId: string) {
+    const origin = normalizeOrigin(url)
+
+    return await withOriginLock(origin, async () => {
+      let context = await getReusableContext(origin)
+      if (!context) {
+        context = await createTempContextInstance(url, origin)
+        registerContext(origin, context)
+      }
+
+      context.busy = true
+      context.lastUsed = Date.now()
+      if (context.releaseTimer) {
+        clearTimeout(context.releaseTimer)
+        context.releaseTimer = undefined
+      }
+
+      tempRequestContextMap.set(requestId, context)
+      return context
+    })
+  }
+
+  async function releaseTempContext(
+    requestId: string,
+    options: { forceClose?: boolean } = {}
+  ) {
+    setTimeout(async () => {
+      const context = tempRequestContextMap.get(requestId)
+      tempRequestContextMap.delete(requestId)
+
+      if (!context) {
+        return
+      }
+
+      await withOriginLock(context.origin, async () => {
+        if (!tempContextById.has(context.id)) {
+          return
+        }
+
+        if (options.forceClose) {
+          await destroyContext(context)
+          return
+        }
+
+        context.busy = false
+        context.lastUsed = Date.now()
+
+        const pool = tempContextsByOrigin.get(context.origin)
+        if (pool && pool.every((ctx) => !ctx.busy)) {
+          await destroyOriginPool(context.origin, pool)
+        } else {
+          scheduleContextCleanup(context)
+        }
+      })
+    }, 2000)
+  }
+
+  async function getReusableContext(origin: string) {
+    const pool = tempContextsByOrigin.get(origin)
+    if (!pool || pool.length === 0) {
+      return null
+    }
+
+    for (const context of pool) {
+      // if (context.busy) {
+      //   continue
+      // }
+
+      if (await isContextAlive(context)) {
+        return context
+      }
+
+      await destroyContext(context, { skipBrowserRemoval: true })
+    }
+
+    return null
+  }
+
+  async function createTempContextInstance(url: string, origin: string) {
     let contextId: number | undefined
     let tabId: number | undefined
+    let type: "window" | "tab" = "window"
 
     if (hasWindowsAPI()) {
       const window = await createWindow({
-        url: url,
+        url,
         type: "popup",
         width: 800,
         height: 600,
@@ -369,7 +543,6 @@ async function main() {
       }
 
       contextId = window.id
-
       const tabs = await browser.tabs.query({
         windowId: window.id,
         active: true
@@ -379,30 +552,104 @@ async function main() {
       const tab = await createTab(url, false)
       contextId = tab?.id
       tabId = tab?.id
+      type = "tab"
     }
 
     if (!contextId || !tabId) {
       throw new Error(t("messages:background.cannotCreateWindowOrTab"))
     }
 
-    tempWindows.set(requestId, contextId)
     await waitForTabComplete(tabId)
 
-    return { contextId, tabId }
+    return {
+      id: contextId,
+      tabId,
+      origin,
+      type,
+      busy: false,
+      lastUsed: Date.now()
+    }
   }
 
-  async function cleanupTempContext(requestId: string) {
-    const storedId = tempWindows.get(requestId)
-    if (!storedId) {
+  function registerContext(origin: string, context: TempContext) {
+    tempContextById.set(context.id, context)
+    tempContextByTabId.set(context.tabId, context)
+
+    const pool = tempContextsByOrigin.get(origin) ?? []
+    pool.push(context)
+    tempContextsByOrigin.set(origin, pool)
+  }
+
+  function scheduleContextCleanup(context: TempContext) {
+    if (context.releaseTimer) {
+      clearTimeout(context.releaseTimer)
+    }
+
+    context.releaseTimer = setTimeout(() => {
+      if (!context.busy) {
+        destroyContext(context).catch((error) => {
+          console.error(
+            "[Background] Failed to destroy idle temp context",
+            error
+          )
+        })
+      }
+    }, TEMP_CONTEXT_IDLE_TIMEOUT)
+  }
+
+  async function destroyContext(
+    context: TempContext,
+    options: { skipBrowserRemoval?: boolean } = {}
+  ) {
+    if (!tempContextById.has(context.id)) {
       return
     }
 
+    if (context.releaseTimer) {
+      clearTimeout(context.releaseTimer)
+      context.releaseTimer = undefined
+    }
+
+    tempContextById.delete(context.id)
+    tempContextByTabId.delete(context.tabId)
+
+    const pool = tempContextsByOrigin.get(context.origin)
+    if (pool) {
+      tempContextsByOrigin.set(
+        context.origin,
+        pool.filter((item) => item !== context)
+      )
+    }
+
+    for (const [requestId, ctx] of tempRequestContextMap.entries()) {
+      if (ctx === context) {
+        tempRequestContextMap.delete(requestId)
+      }
+    }
+
+    if (!options.skipBrowserRemoval) {
+      try {
+        await removeTabOrWindow(context.id)
+      } catch (error) {
+        console.warn("[Background] Failed to remove temp context", error)
+      }
+    }
+  }
+
+  async function isContextAlive(context: TempContext) {
     try {
-      await removeTabOrWindow(storedId)
-    } catch (cleanupError) {
-      console.log("清理失败:", cleanupError)
-    } finally {
-      tempWindows.delete(requestId)
+      await browser.tabs.get(context.tabId)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  function normalizeOrigin(url: string) {
+    try {
+      return new URL(url).origin
+    } catch {
+      return url
     }
   }
 }
