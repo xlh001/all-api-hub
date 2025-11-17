@@ -112,6 +112,11 @@ async function main() {
       return true
     }
 
+    if (request.action === "tempWindowFetch") {
+      handleTempWindowFetch(request, sendResponse)
+      return true
+    }
+
     // 处理自动刷新相关消息
     if (
       (request.action && request.action.startsWith("autoRefresh")) ||
@@ -265,57 +270,61 @@ async function main() {
     }
   }
 
+  async function handleTempWindowFetch(
+    request: any,
+    sendResponse: (response?: any) => void
+  ) {
+    const {
+      originUrl,
+      fetchUrl,
+      fetchOptions,
+      responseType = "json",
+      requestId
+    } = request
+
+    if (!originUrl || !fetchUrl) {
+      sendResponse({
+        success: false,
+        error:
+          t(
+            "messages:background.invalidFetchRequest",
+            "Invalid fetch request"
+          ) || "Invalid fetch request"
+      })
+      return
+    }
+
+    const tempRequestId = requestId || `temp-fetch-${Date.now()}`
+
+    try {
+      const { tabId } = await createTempContext(originUrl, tempRequestId)
+      const response = await browser.tabs.sendMessage(tabId, {
+        action: "performTempWindowFetch",
+        fetchUrl,
+        fetchOptions: fetchOptions ?? {},
+        responseType
+      })
+      await cleanupTempContext(tempRequestId)
+
+      if (!response) {
+        throw new Error("No response from temp window fetch")
+      }
+
+      sendResponse(response)
+    } catch (error) {
+      await cleanupTempContext(tempRequestId)
+      sendResponse({ success: false, error: getErrorMessage(error) })
+    }
+  }
+
   /**
    * 通过打开临时标签页获取站点用户信息
    * @param url
    * @param requestId
    */
   async function getSiteDataFromTab(url: string, requestId: string) {
-    let id: number | undefined
-    let tabId: number | undefined
-
     try {
-      // 1. 打开临时窗口或标签页
-      if (hasWindowsAPI()) {
-        const window = await createWindow({
-          url: url,
-          type: "popup",
-          width: 800,
-          height: 600,
-          focused: false
-        })
-
-        if (!window?.id) {
-          throw new Error(t("messages:background.cannotCreateWindowOrTab"))
-        }
-
-        id = window.id
-
-        // 获取新窗口中的活动标签页
-        const tabs = await browser.tabs.query({
-          windowId: window.id,
-          active: true
-        })
-        tabId = tabs[0]?.id
-
-        if (!tabId) {
-          throw new Error(t("messages:background.cannotCreateWindowOrTab"))
-        }
-      } else {
-        // 手机: 使用标签页
-        const tab = await createTab(url, false)
-        if (!tab?.id) {
-          throw new Error(t("messages:background.cannotCreateWindowOrTab"))
-        }
-        id = tab.id
-        tabId = tab.id
-      }
-
-      // 记录ID
-      tempWindows.set(requestId, id)
-
-      // 2. 等待页面加载完成
-      await waitForTabComplete(tabId)
+      const { tabId } = await createTempContext(url, requestId)
 
       // 3. 通过 content script 获取用户信息
       const userResponse = await browser.tabs.sendMessage(tabId, {
@@ -323,9 +332,7 @@ async function main() {
         url: url
       })
 
-      // 4. 关闭临时窗口或标签页
-      await removeTabOrWindow(id)
-      tempWindows.delete(requestId)
+      await cleanupTempContext(requestId)
 
       // 5. 检查响应并返回结果
       if (!userResponse || !userResponse.success) {
@@ -339,17 +346,63 @@ async function main() {
       }
     } catch (error) {
       console.error(error)
-      // 清理窗口或标签页
-      const storedId = tempWindows.get(requestId)
-      if (storedId) {
-        try {
-          await removeTabOrWindow(storedId)
-          tempWindows.delete(requestId)
-        } catch (cleanupError) {
-          console.log("清理失败:", cleanupError)
-        }
-      }
+      await cleanupTempContext(requestId)
       return null
+    }
+  }
+
+  async function createTempContext(url: string, requestId: string) {
+    let contextId: number | undefined
+    let tabId: number | undefined
+
+    if (hasWindowsAPI()) {
+      const window = await createWindow({
+        url: url,
+        type: "popup",
+        width: 800,
+        height: 600,
+        focused: false
+      })
+
+      if (!window?.id) {
+        throw new Error(t("messages:background.cannotCreateWindowOrTab"))
+      }
+
+      contextId = window.id
+
+      const tabs = await browser.tabs.query({
+        windowId: window.id,
+        active: true
+      })
+      tabId = tabs[0]?.id
+    } else {
+      const tab = await createTab(url, false)
+      contextId = tab?.id
+      tabId = tab?.id
+    }
+
+    if (!contextId || !tabId) {
+      throw new Error(t("messages:background.cannotCreateWindowOrTab"))
+    }
+
+    tempWindows.set(requestId, contextId)
+    await waitForTabComplete(tabId)
+
+    return { contextId, tabId }
+  }
+
+  async function cleanupTempContext(requestId: string) {
+    const storedId = tempWindows.get(requestId)
+    if (!storedId) {
+      return
+    }
+
+    try {
+      await removeTabOrWindow(storedId)
+    } catch (cleanupError) {
+      console.log("清理失败:", cleanupError)
+    } finally {
+      tempWindows.delete(requestId)
     }
   }
 }
