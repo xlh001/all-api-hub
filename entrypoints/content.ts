@@ -209,12 +209,17 @@ async function parseResponseData(
     case "blob":
       return await response.blob()
     case "json":
-    default:
+    default: {
+      const text = await response.text()
       try {
-        return await response.json()
+        return JSON.parse(text)
       } catch (error) {
-        console.warn("[Content] Failed to parse JSON response", error)
-        return null
+        console.warn(
+          "[Content] Failed to parse JSON response, fallback to text",
+          error
+        )
+        return text
       }
+    }
   }
 }

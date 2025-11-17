@@ -305,13 +305,13 @@ function shouldUseTempWindowFallback(
     return false
   }
 
-  return Boolean(prepareTempWindowFetchOptions(context.fetchOptions))
+  return Boolean(context.fetchOptions)
 }
 
 async function fetchViaTempWindow<T>(
   context: TempWindowFallbackContext
 ): Promise<T | ApiResponse<T>> {
-  const fetchOptions = prepareTempWindowFetchOptions(context.fetchOptions)
+  const { fetchOptions } = context
 
   if (!fetchOptions) {
     throw new ApiError(
@@ -348,82 +348,6 @@ async function fetchViaTempWindow<T>(
   }
 
   return responseBody as ApiResponse<T>
-}
-
-function prepareTempWindowFetchOptions(
-  fetchOptions: RequestInit
-): Record<string, any> | null {
-  const normalized: Record<string, any> = {}
-
-  if (fetchOptions.method) {
-    normalized.method = fetchOptions.method
-  }
-
-  if (fetchOptions.headers) {
-    const plainHeaders = toPlainHeaders(fetchOptions.headers)
-    // 移除空的 Cookie 头，确保页面环境自行携带 cookie
-    if (plainHeaders.Cookie === "") {
-      delete plainHeaders.Cookie
-    }
-    normalized.headers = plainHeaders
-  }
-
-  const serializedBody = serializeBody(fetchOptions.body)
-  if (serializedBody === null) {
-    return null
-  }
-
-  if (serializedBody !== undefined) {
-    normalized.body = serializedBody
-  }
-
-  return normalized
-}
-
-function toPlainHeaders(headers: HeadersInit): Record<string, string> {
-  if (headers instanceof Headers) {
-    const result: Record<string, string> = {}
-    headers.forEach((value, key) => {
-      result[key] = value
-    })
-    return result
-  }
-
-  if (Array.isArray(headers)) {
-    return headers.reduce(
-      (acc, [key, value]) => {
-        acc[key] = value
-        return acc
-      },
-      {} as Record<string, string>
-    )
-  }
-
-  const result: Record<string, string> = {}
-  Object.entries(headers).forEach(([key, value]) => {
-    if (value != null) {
-      result[key] = String(value)
-    }
-  })
-  return result
-}
-
-function serializeBody(
-  body: BodyInit | null | undefined
-): string | undefined | null {
-  if (body == null) {
-    return undefined
-  }
-
-  if (typeof body === "string") {
-    return body
-  }
-
-  if (body instanceof URLSearchParams) {
-    return body.toString()
-  }
-
-  return null
 }
 
 function isHttpUrl(url: string): boolean {
