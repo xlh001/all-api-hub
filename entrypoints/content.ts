@@ -90,6 +90,8 @@ function main() {
           }
 
           const normalizedOptions = normalizeFetchOptions(fetchOptions)
+          // 确保携带 cookie
+          normalizedOptions.credentials = "include"
           const response = await fetch(fetchUrl, normalizedOptions)
 
           const headers: Record<string, string> = {}
