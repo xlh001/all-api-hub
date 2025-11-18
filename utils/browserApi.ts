@@ -214,6 +214,52 @@ export async function sendMessage(message: any): Promise<any> {
   return await browser.runtime.sendMessage(message)
 }
 
+export interface SendMessageRetryOptions {
+  maxAttempts?: number
+  delayMs?: number
+}
+
+const RECOVERABLE_MESSAGE_SNIPPETS = [
+  "Receiving end does not exist",
+  "Could not establish connection"
+]
+
+function isRecoverableSendMessageError(error: any): boolean {
+  const message = (error?.message || String(error || "")).toLowerCase()
+  return RECOVERABLE_MESSAGE_SNIPPETS.some((snippet) =>
+    message.includes(snippet.toLowerCase())
+  )
+}
+
+export async function sendMessageWithRetry<T = any>(
+  message: any,
+  options?: SendMessageRetryOptions
+): Promise<T> {
+  const maxAttempts = options?.maxAttempts ?? 2
+  const delayMs = options?.delayMs ?? 300
+
+  let lastError: unknown
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return (await sendMessage(message)) as T
+    } catch (error) {
+      lastError = error
+      const shouldRetry =
+        attempt < maxAttempts - 1 && isRecoverableSendMessageError(error)
+
+      if (!shouldRetry) {
+        throw error
+      }
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, delayMs * Math.max(1, attempt + 1))
+      )
+    }
+  }
+
+  throw lastError ?? new Error("Failed to send message")
+}
+
 /**
  * 获取扩展资源 URL
  */
