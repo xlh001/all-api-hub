@@ -175,8 +175,11 @@ export async function focusTab(tab: browser.tabs.Tab): Promise<void> {
  * 发送消息到 runtime
  * 统一的消息发送接口
  */
-export async function sendRuntimeMessage(message: any): Promise<any> {
-  return await browser.runtime.sendMessage(message)
+export async function sendRuntimeMessage(
+  message: any,
+  options?: SendMessageRetryOptions
+): Promise<any> {
+  return await sendMessageWithRetry(message, options)
 }
 
 export type TempWindowResponseType = "json" | "text" | "arrayBuffer" | "blob"
@@ -206,14 +209,6 @@ export async function tempWindowFetch(
   })
 }
 
-/**
- * 发送消息到 background
- * 通用的消息发送函数
- */
-export async function sendMessage(message: any): Promise<any> {
-  return await browser.runtime.sendMessage(message)
-}
-
 export interface SendMessageRetryOptions {
   maxAttempts?: number
   delayMs?: number
@@ -241,7 +236,7 @@ export async function sendMessageWithRetry<T = any>(
   let lastError: unknown
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      return (await sendMessage(message)) as T
+      return (await browser.runtime.sendMessage(message)) as T
     } catch (error) {
       lastError = error
       const shouldRetry =
