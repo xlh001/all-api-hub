@@ -86,6 +86,13 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
     apply: "serve",
 
     async configureServer(server) {
+      const { mode } = server.config
+      // 只在 development 模式运行
+      if (mode !== "development") {
+        console.log("⏭️  React DevTools skipped (not in development mode)")
+        return
+      }
+
       if (config.autoStart && !devtoolsProcess) {
         devtoolsProcess = spawn("npx", ["react-devtools"], {
           stdio: "inherit",
