@@ -3,6 +3,12 @@ name: pr-build-preview
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to build'
+        required: true
+        type: number
 
 permissions:
   contents: read
@@ -13,8 +19,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Get PR details (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        id: pr_details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ inputs.pr_number }}
+            });
+            core.setOutput('ref', pr.head.ref);
+            core.setOutput('sha', pr.head.sha);
+            core.setOutput('number', pr.number);
+
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && steps.pr_details.outputs.ref || github.head_ref }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -52,16 +75,20 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pr-build-${{ github.event.pull_request.number }}-${{ github.run_attempt }}
+          name: pr-build-${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || github.event.pull_request.number }}-${{ github.run_attempt }}
           path: .output/*.zip
 
       - name: Comment build info on PR
         uses: actions/github-script@v7
         env:
           ARTIFACT_LIST: ${{ steps.collect_artifacts.outputs.files }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || github.event.pull_request.number }}
+          COMMIT_SHA: ${{ github.event_name == 'workflow_dispatch' && steps.pr_details.outputs.sha || github.event.pull_request.head.sha }}
         with:
           script: |
             const marker = "<!-- pr-build-artifact -->";
+            const prNumber = parseInt(process.env.PR_NUMBER);
+            const commitSha = process.env.COMMIT_SHA;
             const artifactList = (process.env.ARTIFACT_LIST || "See workflow run for details.")
               .split("\n")
               .filter(Boolean)
@@ -70,7 +97,7 @@ jobs:
 
             const body = [
               marker,
-              `**Preview build ready** for commit \`${context.payload.pull_request.head.sha.slice(0, 7)}\`.`,
+              `**Preview build ready** for commit \`${commitSha.slice(0, 7)}\`.`,
               "",
               "Artifacts:",
               artifactList,
@@ -83,7 +110,7 @@ jobs:
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: prNumber,
               per_page: 100,
             });
 
@@ -100,7 +127,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: prNumber,
                 body,
               });
             }
