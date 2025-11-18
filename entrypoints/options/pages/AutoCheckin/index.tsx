@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 
 import { Heading3 } from "~/components/ui"
 import type { AutoCheckinStatus } from "~/types/autoCheckin"
+import { sendRuntimeMessage } from "~/utils/browserApi"
 
 import ActionBar from "./components/ActionBar"
 import EmptyResults from "./components/EmptyResults"
@@ -23,7 +24,7 @@ export default function AutoCheckin() {
   const loadStatus = useCallback(async () => {
     try {
       setIsLoading(true)
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "autoCheckin:getStatus"
       })
 
@@ -46,7 +47,7 @@ export default function AutoCheckin() {
       setIsRunning(true)
       toast.loading(t("messages.loading.running"))
 
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "autoCheckin:runNow"
       })
 

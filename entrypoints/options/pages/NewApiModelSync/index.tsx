@@ -11,6 +11,7 @@ import type {
   ExecutionProgress,
   ExecutionResult
 } from "~/types/newApiModelSync"
+import { sendRuntimeMessage } from "~/utils/browserApi"
 
 import ActionBar from "./components/ActionBar"
 import EmptyResults from "./components/EmptyResults"
@@ -51,7 +52,7 @@ export default function NewApiModelSync() {
   const loadLastExecution = useCallback(async () => {
     try {
       setIsLoading(true)
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "newApiModelSync:getLastExecution"
       })
 
@@ -67,7 +68,7 @@ export default function NewApiModelSync() {
 
   const loadProgress = useCallback(async () => {
     try {
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "newApiModelSync:getProgress"
       })
 
@@ -83,7 +84,7 @@ export default function NewApiModelSync() {
     try {
       setIsChannelsLoading(true)
       setChannelsError(null)
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "newApiModelSync:listChannels"
       })
 
@@ -156,7 +157,7 @@ export default function NewApiModelSync() {
 
   const handleRunAll = async () => {
     try {
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "newApiModelSync:triggerAll"
       })
 
@@ -186,7 +187,7 @@ export default function NewApiModelSync() {
     }
 
     try {
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "newApiModelSync:triggerSelected",
         channelIds: Array.from(selectedSet)
       })
@@ -214,7 +215,7 @@ export default function NewApiModelSync() {
 
   const handleRetryFailed = async () => {
     try {
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "newApiModelSync:triggerFailedOnly"
       })
 
@@ -242,7 +243,7 @@ export default function NewApiModelSync() {
   const handleRunSingle = async (channelId: number) => {
     setRunningChannelId(channelId)
     try {
-      const response = await browser.runtime.sendMessage({
+      const response = await sendRuntimeMessage({
         action: "newApiModelSync:triggerSelected",
         channelIds: [channelId]
       })

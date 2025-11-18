@@ -22,7 +22,7 @@ import {
   Switch
 } from "~/components/ui"
 import { WebDAVSettings } from "~/types"
-import { sendMessage } from "~/utils/browserApi"
+import { sendRuntimeMessage } from "~/utils/browserApi"
 import { formatTimestamp } from "~/utils/formatters"
 
 export default function WebDAVAutoSyncSettings() {
@@ -66,7 +66,7 @@ export default function WebDAVAutoSyncSettings() {
 
   const loadStatus = async () => {
     try {
-      const response = await sendMessage({
+      const response = await sendRuntimeMessage({
         action: "webdavAutoSync:getStatus"
       })
       if (response.success && response.data) {
@@ -83,7 +83,7 @@ export default function WebDAVAutoSyncSettings() {
   const handleSaveSettings = async () => {
     setSavingSettings(true)
     try {
-      const response = await sendMessage({
+      const response = await sendRuntimeMessage({
         action: "webdavAutoSync:updateSettings",
         settings: {
           autoSync: autoSyncEnabled,
@@ -109,7 +109,7 @@ export default function WebDAVAutoSyncSettings() {
   const handleSyncNow = async () => {
     setSyncing(true)
     try {
-      const response = await sendMessage({
+      const response = await sendRuntimeMessage({
         action: "webdavAutoSync:syncNow"
       })
 

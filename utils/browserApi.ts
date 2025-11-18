@@ -175,8 +175,11 @@ export async function focusTab(tab: browser.tabs.Tab): Promise<void> {
  * 发送消息到 runtime
  * 统一的消息发送接口
  */
-export async function sendRuntimeMessage(message: any): Promise<any> {
-  return await browser.runtime.sendMessage(message)
+export async function sendRuntimeMessage(
+  message: any,
+  options?: SendMessageRetryOptions
+): Promise<any> {
+  return await sendMessageWithRetry(message, options)
 }
 
 export type TempWindowResponseType = "json" | "text" | "arrayBuffer" | "blob"
@@ -206,12 +209,46 @@ export async function tempWindowFetch(
   })
 }
 
-/**
- * 发送消息到 background
- * 通用的消息发送函数
- */
-export async function sendMessage(message: any): Promise<any> {
-  return await browser.runtime.sendMessage(message)
+export interface SendMessageRetryOptions {
+  maxAttempts?: number
+  delayMs?: number
+}
+
+const RECOVERABLE_MESSAGE_SNIPPETS = [
+  "Receiving end does not exist",
+  "Could not establish connection"
+]
+
+function isRecoverableSendMessageError(error: any): boolean {
+  const message = (error?.message || String(error || "")).toLowerCase()
+  return RECOVERABLE_MESSAGE_SNIPPETS.some((snippet) =>
+    message.includes(snippet.toLowerCase())
+  )
+}
+
+export async function sendMessageWithRetry(
+  message: any,
+  options?: SendMessageRetryOptions
+) {
+  const maxAttempts = Math.max(1, options?.maxAttempts ?? 3)
+  const delayMs = options?.delayMs ?? 500
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await browser.runtime.sendMessage(message)
+    } catch (error) {
+      const shouldRetry =
+        attempt < maxAttempts - 1 && isRecoverableSendMessageError(error)
+
+      if (!shouldRetry) {
+        throw error
+      }
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, delayMs * Math.pow(2, attempt))
+      )
+    }
+  }
 }
 
 /**
