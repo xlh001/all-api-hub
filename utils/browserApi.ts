@@ -230,7 +230,7 @@ export async function sendMessageWithRetry(
   message: any,
   options?: SendMessageRetryOptions
 ) {
-  const maxAttempts = options?.maxAttempts ?? 2
+  const maxAttempts = Math.max(1, options?.maxAttempts ?? 2)
   const delayMs = options?.delayMs ?? 300
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
