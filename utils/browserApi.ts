@@ -226,19 +226,17 @@ function isRecoverableSendMessageError(error: any): boolean {
   )
 }
 
-export async function sendMessageWithRetry<T = any>(
+export async function sendMessageWithRetry(
   message: any,
   options?: SendMessageRetryOptions
-): Promise<T> {
+) {
   const maxAttempts = options?.maxAttempts ?? 2
   const delayMs = options?.delayMs ?? 300
 
-  let lastError: unknown
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      return (await browser.runtime.sendMessage(message)) as T
+      return await browser.runtime.sendMessage(message)
     } catch (error) {
-      lastError = error
       const shouldRetry =
         attempt < maxAttempts - 1 && isRecoverableSendMessageError(error)
 
@@ -247,12 +245,10 @@ export async function sendMessageWithRetry<T = any>(
       }
 
       await new Promise((resolve) =>
-        setTimeout(resolve, delayMs * Math.max(1, attempt + 1))
+        setTimeout(resolve, delayMs * Math.pow(2, attempt))
       )
     }
   }
-
-  throw lastError ?? new Error("Failed to send message")
 }
 
 /**
