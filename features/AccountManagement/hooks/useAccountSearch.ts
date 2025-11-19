@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import {
   searchAccounts,
@@ -205,9 +205,24 @@ function generateHighlights(
   })
 }
 
-export function useAccountSearch(accounts: DisplaySiteData[]) {
-  const [query, setQuery] = useState("")
-  const [debouncedQuery, setDebouncedQuery] = useState("")
+export function useAccountSearch(
+  accounts: DisplaySiteData[],
+  initialQuery?: string
+) {
+  const normalizedInitialQuery = initialQuery ?? ""
+  const [query, setQuery] = useState(() => normalizedInitialQuery)
+  const [debouncedQuery, setDebouncedQuery] = useState(
+    () => normalizedInitialQuery
+  )
+  const lastAppliedInitialQuery = useRef(normalizedInitialQuery)
+
+  useEffect(() => {
+    if (lastAppliedInitialQuery.current !== normalizedInitialQuery) {
+      setQuery(normalizedInitialQuery)
+      setDebouncedQuery(normalizedInitialQuery)
+      lastAppliedInitialQuery.current = normalizedInitialQuery
+    }
+  }, [normalizedInitialQuery])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -250,6 +265,7 @@ export function useAccountSearch(accounts: DisplaySiteData[]) {
   const clearSearch = useCallback(() => {
     setQuery("")
     setDebouncedQuery("")
+    lastAppliedInitialQuery.current = ""
   }, [])
 
   return {

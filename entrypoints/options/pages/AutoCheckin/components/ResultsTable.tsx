@@ -1,6 +1,7 @@
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import AccountLinkButton from "~/components/AccountLinkButton.tsx"
 import { Card } from "~/components/ui"
 import type { CheckinAccountResult } from "~/types/autoCheckin"
 
@@ -78,7 +79,10 @@ export default function ResultsTable({ results }: ResultsTableProps) {
                 key={result.accountId}
                 className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {result.accountName}
+                  <AccountLinkButton
+                    accountId={result.accountId}
+                    accountName={result.accountName}
+                  />
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm">
                   {getStatusBadge(result.status)}

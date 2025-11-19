@@ -29,7 +29,11 @@ import DelAccountDialog from "../DelAccountDialog"
 import AccountListItem from "./AccountListItem"
 import AccountSearchInput from "./AccountSearchInput"
 
-export default function AccountList() {
+interface AccountListProps {
+  initialSearchQuery?: string
+}
+
+export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const { t } = useTranslation(["account", "common"])
   const { sortedData, displayData, handleSort, sortField, sortOrder } =
     useAccountDataContext()
@@ -42,7 +46,7 @@ export default function AccountList() {
     useState<DisplaySiteData | null>(null)
 
   const { query, setQuery, clearSearch, searchResults, inSearchMode } =
-    useAccountSearch(displayData)
+    useAccountSearch(displayData, initialSearchQuery)
 
   const handleDeleteWithDialog = (site: DisplaySiteData) => {
     setDeleteDialogAccount(site)
