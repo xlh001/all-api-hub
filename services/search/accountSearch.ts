@@ -214,10 +214,10 @@ export function searchAccounts(
       }
 
       // Match against accessToken (lowest weight, not added to matchedFields for UI)
-      const tokenScore_token = scoreTokenMatch(account.token, token)
-      if (tokenScore_token > 0) {
-        tokenScore += tokenScore_token
-        // Note: We don't add "token" to matchedFields as it should not be displayed/highlighted
+      const accessTokenScore = scoreTokenMatch(account.token, token)
+      if (accessTokenScore > 0) {
+        tokenScore += accessTokenScore
+        // Note: We don't add "accessToken" to matchedFields as it should not be displayed/highlighted
       }
 
       // Only consider this token matched if it scored anything
