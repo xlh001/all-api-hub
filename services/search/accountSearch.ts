@@ -106,6 +106,21 @@ function scoreTokenMatch(token: string, query: string): number {
   return 0
 }
 
+function scoreAccountIdMatch(accountId: string, query: string): number {
+  if (!accountId) {
+    return 0
+  }
+
+  const normalizedId = normalizeString(accountId)
+  const normalizedQuery = normalizeString(query)
+
+  if (normalizedId.includes(normalizedQuery)) {
+    return 1 // Lowest priority, same as token matching
+  }
+
+  return 0
+}
+
 export interface SearchResult {
   account: DisplaySiteData
   score: number
@@ -182,13 +197,6 @@ export function searchAccounts(
         }
       }
 
-      // Match against accessToken (lowest weight, not added to matchedFields for UI)
-      const tokenScore_token = scoreTokenMatch(account.token, token)
-      if (tokenScore_token > 0) {
-        tokenScore += tokenScore_token
-        // Note: We don't add "token" to matchedFields as it should not be displayed/highlighted
-      }
-
       // Match against username
       const usernameScore = scoreNameMatch(
         normalizeString(account.username),
@@ -197,6 +205,19 @@ export function searchAccounts(
       if (usernameScore > 0) {
         tokenScore += usernameScore
         tokenMatchedFields.add("username")
+      }
+
+      const accountIdScore = scoreAccountIdMatch(account.id, token)
+      if (accountIdScore > 0) {
+        tokenScore += accountIdScore
+        // accountId is internal-only, no highlight needed
+      }
+
+      // Match against accessToken (lowest weight, not added to matchedFields for UI)
+      const tokenScore_token = scoreTokenMatch(account.token, token)
+      if (tokenScore_token > 0) {
+        tokenScore += tokenScore_token
+        // Note: We don't add "token" to matchedFields as it should not be displayed/highlighted
       }
 
       // Only consider this token matched if it scored anything
