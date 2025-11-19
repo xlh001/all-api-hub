@@ -6,7 +6,7 @@ import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 
-function AccountManagementContent() {
+function AccountManagementContent({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation("account")
   const { openAddAccount } = useDialogStateContext()
 
@@ -26,16 +26,24 @@ function AccountManagementContent() {
 
       {/* Account List */}
       <div className="flex flex-col bg-white dark:bg-dark-bg-secondary">
-        <AccountList />
+        <AccountList initialSearchQuery={searchQuery} />
       </div>
     </div>
   )
 }
 
-function AccountManagement({ refreshKey }: { refreshKey?: number }) {
+interface AccountManagementProps {
+  refreshKey?: number
+  routeParams?: Record<string, string>
+}
+
+function AccountManagement({
+  refreshKey,
+  routeParams
+}: AccountManagementProps) {
   return (
     <AccountManagementProvider refreshKey={refreshKey}>
-      <AccountManagementContent />
+      <AccountManagementContent searchQuery={routeParams?.search} />
     </AccountManagementProvider>
   )
 }

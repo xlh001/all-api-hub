@@ -15,6 +15,47 @@ export function closeIfPopup() {
   }
 }
 
+const isOnOptionsPage = () => {
+  if (typeof window === "undefined") {
+    return false
+  }
+
+  try {
+    const currentUrl = new URL(window.location.href)
+    const optionsUrl = new URL(OPTIONS_PAGE_URL)
+    return (
+      currentUrl.origin === optionsUrl.origin &&
+      currentUrl.pathname === optionsUrl.pathname
+    )
+  } catch (error) {
+    console.error("Failed to detect options page:", error)
+    return false
+  }
+}
+
+const navigateWithinOptionsPage = (hash: string) => {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  if (window.location.hash === hash) {
+    window.dispatchEvent(new Event("hashchange"))
+    return
+  }
+
+  window.location.hash = hash
+}
+
+const getAccountHash = (params?: { search?: string }) => {
+  if (!params?.search) {
+    return "#account"
+  }
+
+  const searchParams = new URLSearchParams()
+  searchParams.set("search", params.search)
+  return `#account?${searchParams.toString()}`
+}
+
 /**
  * Creates a new tab with the specified URL
  * @param url - The URL to open in the new tab
@@ -111,8 +152,15 @@ const withPopupClose = <T extends any[]>(
 }
 
 // 重构后的函数 - 去掉 closeIfPopup
-const _openFullManagerPage = () => {
-  openOrFocusOptionsPage("#account")
+const _openFullManagerPage = (params?: { search?: string }) => {
+  const targetHash = getAccountHash(params)
+
+  if (isOnOptionsPage()) {
+    navigateWithinOptionsPage(targetHash)
+    return
+  }
+
+  openOrFocusOptionsPage(targetHash)
 }
 
 const _openSettingsPage = () => {
@@ -164,7 +212,12 @@ const _openRedeemPage = async (account: DisplaySiteData) => {
 }
 
 // 导出带自动关闭的版本
-export const openFullAccountManagerPage = withPopupClose(_openFullManagerPage)
+export const openFullAccountManagerPage = withPopupClose(() =>
+  _openFullManagerPage()
+)
+export const openAccountManagerWithSearch = withPopupClose((search: string) =>
+  _openFullManagerPage({ search })
+)
 export const openSettingsPage = withPopupClose(_openSettingsPage)
 export const openSidePanelPage = withPopupClose(_openSidePanel)
 export const openKeysPage = withPopupClose(_openKeysPage)
