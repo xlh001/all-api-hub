@@ -2,7 +2,7 @@ import React from "react"
 
 import { cn } from "~/lib/utils.ts"
 
-import { Button, type ButtonProps } from "./Button"
+import { Button, type ButtonProps } from "./button"
 
 export interface EmptyStateProps {
   icon: React.ReactNode
