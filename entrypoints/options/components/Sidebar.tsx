@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next"
 import { Button, Heading3, IconButton, Separator } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext.tsx"
 import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils"
 
 import { menuItems } from "../constants"
 

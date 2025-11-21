@@ -1,6 +1,6 @@
 import React from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
 import { Button, type ButtonProps } from "./Button"
 
@@ -28,11 +28,11 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center text-gray-300 dark:text-gray-600">
           {icon}
         </div>
-        <p className="mb-4 text-sm text-gray-500 dark:text-dark-text-secondary">
+        <p className="dark:text-dark-text-secondary mb-4 text-sm text-gray-500">
           {title}
         </p>
         {description && (
-          <p className="mb-4 text-sm text-gray-400 dark:text-dark-text-tertiary">
+          <p className="dark:text-dark-text-tertiary mb-4 text-sm text-gray-400">
             {description}
           </p>
         )}

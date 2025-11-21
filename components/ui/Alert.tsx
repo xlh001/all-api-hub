@@ -2,7 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { AlertCircle, AlertTriangle, CheckCircle, Info } from "lucide-react"
 import React from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
 const alertVariants = cva(
   "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4",
@@ -73,7 +73,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         {getIcon()}
         <div className="ml-0">
           {title && (
-            <h5 className="mb-1 font-medium leading-none tracking-tight">
+            <h5 className="mb-1 leading-none font-medium tracking-tight">
               {title}
             </h5>
           )}
@@ -94,7 +94,7 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    className={cn("mb-1 leading-none font-medium tracking-tight", className)}
     {...props}
   />
 ))

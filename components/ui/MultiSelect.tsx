@@ -14,7 +14,7 @@ import React, {
   useState
 } from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
 export interface MultiSelectOption {
   value: string

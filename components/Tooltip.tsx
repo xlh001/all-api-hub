@@ -1,7 +1,7 @@
 import { useId, type ReactElement, type ReactNode } from "react"
 import { Tooltip as ReactTooltip } from "react-tooltip"
 
-import { cn } from "~/utils/cn.ts"
+import { cn } from "~/lib/utils.ts"
 
 interface TooltipProps {
   content: ReactNode

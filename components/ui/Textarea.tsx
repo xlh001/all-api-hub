@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority"
 import React from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
 const textareaVariants = cva(
   "flex min-h-[80px] w-full rounded-md border border-gray-300 dark:border-dark-bg-tertiary bg-white dark:bg-dark-bg-secondary px-3 py-2 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-vertical",
@@ -77,7 +77,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </p>
         )}
         {showCount && maxLength && (
-          <div className="absolute bottom-2 right-2 text-xs text-gray-400 dark:text-gray-500">
+          <div className="absolute right-2 bottom-2 text-xs text-gray-400 dark:text-gray-500">
             {currentLength}/{maxLength}
           </div>
         )}
