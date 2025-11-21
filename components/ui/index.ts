@@ -18,7 +18,18 @@ export { CardList } from "./CardList"
 export { Label, labelVariants } from "./label"
 export { Alert, AlertTitle, AlertDescription } from "./Alert"
 export { Badge, badgeVariants } from "./badge"
-export { Select, selectVariants } from "./select"
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue
+} from "./select"
 export {
   MultiSelect,
   type MultiSelectOption,

@@ -16,6 +16,7 @@ interface BasicInfoSectionProps {
   handleInputChange: (
     field: keyof FormData
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+  handleSelectChange: (field: keyof FormData) => (value: string) => void
   handleSwitchChange: (field: keyof FormData) => (checked: boolean) => void
 }
 
@@ -25,6 +26,7 @@ export function BasicInfoSection({
   isEditMode,
   availableAccounts,
   handleInputChange,
+  handleSelectChange,
   handleSwitchChange
 }: BasicInfoSectionProps) {
   const { t } = useTranslation("keyManagement")
@@ -33,7 +35,7 @@ export function BasicInfoSection({
     <FormSection title={t("dialog.basicInfo")}>
       <AccountSelection
         accountId={formData.accountId}
-        handleInputChange={handleInputChange}
+        handleSelectChange={handleSelectChange("accountId")}
         isEditMode={isEditMode}
         availableAccounts={availableAccounts}
         error={errors.accountId}
