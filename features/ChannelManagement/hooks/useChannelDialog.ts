@@ -12,6 +12,7 @@ import {
   prepareChannelFormData
 } from "~/services/newApiService/newApiService.ts"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
+import type { NewApiChannel } from "~/types/newapi"
 import { getErrorMessage } from "~/utils/error"
 
 /**
@@ -122,6 +123,7 @@ export function useChannelDialog() {
    */
   const openWithCustom = (config: {
     mode?: DialogMode
+    channel?: NewApiChannel | null
     initialValues?: any
     initialModels?: string[]
     initialGroups?: string[]

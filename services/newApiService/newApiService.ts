@@ -140,6 +140,31 @@ export async function updateChannel(
   }
 }
 
+/**
+ * 删除渠道
+ */
+export async function deleteChannel(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelId: number
+) {
+  try {
+    return await fetchApi<void>({
+      baseUrl,
+      endpoint: `/api/channel/${channelId}`,
+      userId,
+      token: adminToken,
+      options: {
+        method: "DELETE"
+      }
+    })
+  } catch (error) {
+    console.error("删除渠道失败:", error)
+    throw new Error("删除渠道失败，请检查网络或 New API 配置。")
+  }
+}
+
 export function hasValidNewApiConfig(prefs: UserPreferences | null): boolean {
   if (!prefs) {
     return false

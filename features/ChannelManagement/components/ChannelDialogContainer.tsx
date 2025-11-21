@@ -13,6 +13,7 @@ export function ChannelDialogContainer() {
       isOpen={state.isOpen}
       onClose={closeDialog}
       mode={state.mode}
+      channel={state.channel ?? null}
       initialValues={state.initialValues}
       initialModels={state.initialModels}
       initialGroups={state.initialGroups}
