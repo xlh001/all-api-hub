@@ -7,10 +7,10 @@ import { NewAPI } from "@lobehub/icons"
 import { MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
 
+import { useChannelDialog } from "~/components/ChannelDialog"
 import { CCSwitchIcon } from "~/components/icons/CCSwitchIcon"
 import { CherryIcon } from "~/components/icons/CherryIcon"
 import { IconButton } from "~/components/ui"
-import { useChannelDialog } from "~/features/ChannelManagement"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
 import { formatKeyTime, formatQuota, formatUsedQuota } from "~/utils/formatters"
@@ -57,8 +57,8 @@ export function TokenDetails({
   }
 
   return (
-    <div className="border-t border-gray-100 bg-gray-50/30 px-3 pb-3 dark:border-dark-bg-tertiary dark:bg-dark-bg-primary">
-      <div className="mb-3 flex items-center space-x-1 pt-3 text-xs text-gray-500 dark:text-dark-text-secondary">
+    <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-primary border-t border-gray-100 bg-gray-50/30 px-3 pb-3">
+      <div className="dark:text-dark-text-secondary mb-3 flex items-center space-x-1 pt-3 text-xs text-gray-500">
         <ClockIcon className="h-3 w-3" />
         <span>
           {t("dialog.copyKey.expireTime", {
@@ -68,16 +68,16 @@ export function TokenDetails({
       </div>
 
       <div className="mb-3 grid grid-cols-2 gap-2">
-        <div className="rounded border border-gray-100 bg-white p-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
-          <div className="mb-0.5 text-xs text-gray-500 dark:text-dark-text-secondary">
+        <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary rounded border border-gray-100 bg-white p-2">
+          <div className="dark:text-dark-text-secondary mb-0.5 text-xs text-gray-500">
             {t("dialog.copyKey.usedQuota")}
           </div>
-          <div className="text-sm font-semibold text-gray-900 dark:text-dark-text-primary">
+          <div className="dark:text-dark-text-primary text-sm font-semibold text-gray-900">
             {formatUsedQuota(token)}
           </div>
         </div>
-        <div className="rounded border border-gray-100 bg-white p-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
-          <div className="mb-0.5 text-xs text-gray-500 dark:text-dark-text-secondary">
+        <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary rounded border border-gray-100 bg-white p-2">
+          <div className="dark:text-dark-text-secondary mb-0.5 text-xs text-gray-500">
             {t("dialog.copyKey.remainingQuota")}
           </div>
           <div
@@ -86,16 +86,16 @@ export function TokenDetails({
                 ? "text-green-600"
                 : token.remain_quota < 1000000
                   ? "text-orange-600"
-                  : "text-gray-900 dark:text-dark-text-primary"
+                  : "dark:text-dark-text-primary text-gray-900"
             }`}>
             {formatQuota(token)}
           </div>
         </div>
       </div>
 
-      <div className="rounded border border-gray-100 bg-white p-2 dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary">
+      <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary rounded border border-gray-100 bg-white p-2">
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-dark-text-secondary">
+          <span className="dark:text-dark-text-secondary text-xs font-medium tracking-wide text-gray-500 uppercase">
             {t("dialog.copyKey.apiKey")}
           </span>
           <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
@@ -111,7 +111,7 @@ export function TokenDetails({
               {copiedKey === token.key ? (
                 <CheckIcon className="h-4 w-4 text-green-500" />
               ) : (
-                <DocumentDuplicateIcon className="h-4 w-4 text-gray-500 dark:text-dark-text-tertiary" />
+                <DocumentDuplicateIcon className="dark:text-dark-text-tertiary h-4 w-4 text-gray-500" />
               )}
             </IconButton>
             <IconButton
@@ -139,14 +139,14 @@ export function TokenDetails({
             </IconButton>
           </div>
         </div>
-        <div className="break-all rounded border border-gray-200 bg-gray-50 px-2 py-1 font-mono text-xs text-gray-700 dark:border-dark-bg-tertiary dark:bg-dark-bg-primary dark:text-dark-text-secondary">
-          <span className="text-gray-900 dark:text-dark-text-primary">
+        <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-primary dark:text-dark-text-secondary rounded border border-gray-200 bg-gray-50 px-2 py-1 font-mono text-xs break-all text-gray-700">
+          <span className="dark:text-dark-text-primary text-gray-900">
             {token.key.substring(0, 16)}
           </span>
           <span className="text-gray-400 dark:text-gray-600">
             {"•".repeat(6)}
           </span>
-          <span className="text-gray-900 dark:text-dark-text-primary">
+          <span className="dark:text-dark-text-primary text-gray-900">
             {token.key.substring(token.key.length - 6)}
           </span>
         </div>

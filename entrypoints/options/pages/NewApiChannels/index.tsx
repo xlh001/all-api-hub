@@ -36,6 +36,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { useChannelDialog } from "~/components/ChannelDialog"
 import { Input } from "~/components/ui"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/Alert"
 import {
@@ -83,7 +84,6 @@ import {
 } from "~/components/ui/table"
 import { ChannelTypeNames } from "~/constants/newApi"
 import { PageHeader } from "~/entrypoints/options/components/PageHeader"
-import { useChannelDialog } from "~/features/ChannelManagement"
 import { cn } from "~/lib/utils"
 import {
   deleteChannel,

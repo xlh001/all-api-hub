@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import { useChannelDialog } from "~/components/ChannelDialog"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
-import { useChannelDialog } from "~/features/ChannelManagement"
 import {
   autoDetectAccount,
   getSiteName,
