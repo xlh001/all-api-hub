@@ -1,8 +1,9 @@
+import { CalendarCheck2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { Heading3 } from "~/components/ui"
+import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import type { AutoCheckinStatus } from "~/types/autoCheckin"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 
@@ -108,12 +109,12 @@ export default function AutoCheckin() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <Heading3 className="mb-2">{t("execution.title")}</Heading3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {t("description")}
-        </p>
-      </div>
+      <PageHeader
+        icon={CalendarCheck2}
+        title={t("execution.title")}
+        description={t("description")}
+        spacing="compact"
+      />
 
       {status && (
         <div className="mb-6">

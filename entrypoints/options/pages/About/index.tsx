@@ -1,14 +1,12 @@
-import {
-  CodeBracketIcon,
-  GlobeAltIcon,
-  InformationCircleIcon
-} from "@heroicons/react/24/outline"
+import { CodeBracketIcon, GlobeAltIcon } from "@heroicons/react/24/outline"
+import { Info } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import FeatureList from "~/components/FeatureList"
 import LinkCard from "~/components/LinkCard"
-import { BodySmall, Heading2, Heading4 } from "~/components/ui"
+import { Heading4 } from "~/components/ui"
 import { FEATURES, FUTURE_FEATURES } from "~/constants/about"
+import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import packageJson from "~/package.json"
 import { isNotEmptyArray } from "~/utils"
 import { getHomepage, getPkgVersion, getRepository } from "~/utils/packageMeta"
@@ -57,14 +55,7 @@ export default function About() {
 
   return (
     <div className="p-6">
-      {/* 页面标题 */}
-      <div className="mb-8">
-        <div className="mb-2 flex items-center space-x-3">
-          <InformationCircleIcon className="h-6 w-6 text-blue-600" />
-          <Heading2>{t("title")}</Heading2>
-        </div>
-        <BodySmall>{t("intro")}</BodySmall>
-      </div>
+      <PageHeader icon={Info} title={t("title")} description={t("intro")} />
 
       <div className="space-y-6">
         {/* 插件信息 */}

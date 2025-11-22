@@ -36,7 +36,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { Heading3, Input } from "~/components/ui"
+import { Input } from "~/components/ui"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/Alert"
 import {
   AlertDialog,
@@ -82,6 +82,7 @@ import {
   TableRow
 } from "~/components/ui/table"
 import { ChannelTypeNames } from "~/constants/newApi"
+import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import { useChannelDialog } from "~/features/ChannelManagement"
 import { cn } from "~/lib/utils"
 import {
@@ -524,13 +525,11 @@ export default function NewApiChannelsPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="space-y-1">
-        <Heading3 className="flex items-center gap-2 text-2xl">
-          <Layers className="text-primary h-6 w-6" />
-          {t("title")}
-        </Heading3>
-        <p className="text-muted-foreground text-sm">{t("description")}</p>
-      </div>
+      <PageHeader
+        icon={Layers}
+        title={t("title")}
+        description={t("description")}
+      />
 
       {configMissing && (
         <Alert variant="warning">

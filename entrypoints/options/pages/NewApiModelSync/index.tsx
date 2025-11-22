@@ -1,10 +1,12 @@
 import { Tab } from "@headlessui/react"
-import { ArrowPathIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { RefreshCcw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { Button, EmptyState, Heading3, Input } from "~/components/ui"
+import { Button, EmptyState, Input } from "~/components/ui"
+import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import type { NewApiChannel } from "~/types"
 import type {
   ExecutionItemResult,
@@ -483,7 +485,7 @@ export default function NewApiModelSync() {
                   onClick={() => void loadChannels()}
                   variant="ghost"
                   disabled={isChannelsLoading}
-                  leftIcon={<ArrowPathIcon className="h-4 w-4" />}>
+                  leftIcon={<RefreshCcw className="h-4 w-4" />}>
                   {t("execution.actions.refresh")}
                 </Button>
               </div>
@@ -532,12 +534,12 @@ export default function NewApiModelSync() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <Heading3 className="mb-2">{t("execution.title")}</Heading3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {t("description")}
-        </p>
-      </div>
+      <PageHeader
+        icon={RefreshCcw}
+        title={t("execution.title")}
+        description={t("description")}
+        spacing="compact"
+      />
 
       {progress?.isRunning && (
         <div className="mb-6">
