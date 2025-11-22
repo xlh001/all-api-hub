@@ -38,11 +38,7 @@ export function TokenForm({
     setFormData((prev) => ({ ...prev, [field]: checked }))
   }
 
-  const handleModelSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const values = Array.from(
-      e.target.selectedOptions,
-      (option) => option.value
-    )
+  const handleModelLimitsChange = (values: string[]) => {
     setFormData((prev) => ({ ...prev, modelLimits: values }))
   }
 
@@ -66,7 +62,7 @@ export function TokenForm({
         availableModels={availableModels}
         handleInputChange={handleInputChange}
         handleSelectChange={handleSelectChange}
-        handleModelSelectChange={handleModelSelectChange}
+        handleModelLimitsChange={handleModelLimitsChange}
       />
     </div>
   )

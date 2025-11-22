@@ -19,7 +19,7 @@ interface AdvancedSettingsSectionProps {
     field: keyof FormData
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
   handleSelectChange: (field: keyof FormData) => (value: string) => void
-  handleModelSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  handleModelLimitsChange: (values: string[]) => void
 }
 
 export function AdvancedSettingsSection({
@@ -30,7 +30,7 @@ export function AdvancedSettingsSection({
   availableModels,
   handleInputChange,
   handleSelectChange,
-  handleModelSelectChange
+  handleModelLimitsChange
 }: AdvancedSettingsSectionProps) {
   const { t } = useTranslation("keyManagement")
 
@@ -47,7 +47,7 @@ export function AdvancedSettingsSection({
           modelLimits={formData.modelLimits}
           availableModels={availableModels}
           setFormData={setFormData}
-          handleModelSelectChange={handleModelSelectChange}
+          handleModelLimitsChange={handleModelLimitsChange}
         />
       )}
       <IpLimitsInput

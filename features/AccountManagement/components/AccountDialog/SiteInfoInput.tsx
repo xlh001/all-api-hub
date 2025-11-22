@@ -8,7 +8,16 @@ import {
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
-import { Button, IconButton, Input } from "~/components/ui"
+import {
+  Button,
+  IconButton,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "~/components/ui"
 import { AuthTypeEnum, type DisplaySiteData } from "~/types"
 
 interface SiteInfoInputProps {
@@ -86,15 +95,22 @@ export default function SiteInfoInput({
           />
         </div>
         <Tooltip content={t("siteInfo.cookieWarning")}>
-          <select
-            id="auth-type"
+          <Select
             value={authType}
-            onChange={(e) => onAuthTypeChange(e.target.value as AuthTypeEnum)}
-            className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary block rounded-lg border border-gray-200 bg-white py-3 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none dark:placeholder-gray-500"
+            onValueChange={(value) => onAuthTypeChange(value as AuthTypeEnum)}
             disabled={isDetected}>
-            <option value={AuthTypeEnum.AccessToken}>Access Token</option>
-            <option value={AuthTypeEnum.Cookie}>Cookie</option>
-          </select>
+            <SelectTrigger
+              id="auth-type"
+              className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary w-full">
+              <SelectValue placeholder="Auth Type" />
+            </SelectTrigger>
+            <SelectContent align="end" className="min-w-48">
+              <SelectItem value={AuthTypeEnum.AccessToken}>
+                Access Token
+              </SelectItem>
+              <SelectItem value={AuthTypeEnum.Cookie}>Cookie</SelectItem>
+            </SelectContent>
+          </Select>
         </Tooltip>
       </div>
       <div className="flex flex-col justify-between gap-y-2 text-xs">
