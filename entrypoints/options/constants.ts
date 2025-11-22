@@ -8,6 +8,7 @@ import {
   KeyIcon,
   UserIcon
 } from "@heroicons/react/24/outline"
+import { Layers } from "lucide-react"
 
 import About from "./pages/About"
 import AccountManagement from "./pages/AccountManagement"
@@ -16,6 +17,7 @@ import BasicSettings from "./pages/BasicSettings"
 import ImportExport from "./pages/ImportExport"
 import KeyManagement from "./pages/KeyManagement"
 import ModelList from "./pages/ModelList"
+import NewApiChannels from "./pages/NewApiChannels"
 import NewApiModelSync from "./pages/NewApiModelSync"
 
 // 菜单项类型定义
@@ -57,6 +59,12 @@ export const menuItems: MenuItem[] = [
     name: "密钥管理",
     icon: KeyIcon,
     component: KeyManagement
+  },
+  {
+    id: "newApiChannels",
+    name: "渠道管理",
+    icon: Layers,
+    component: NewApiChannels
   },
   {
     id: "newApiModelSync",

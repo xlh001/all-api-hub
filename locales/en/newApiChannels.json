@@ -1,0 +1,77 @@
+{
+  "title": "New API Channels",
+  "description": "Search, edit, delete, and manually sync channels connected to your New API instance.",
+  "alerts": {
+    "configMissing": {
+      "title": "Missing configuration",
+      "description": "Please configure your New API credentials in settings before managing channels."
+    },
+    "loadError": {
+      "title": "Unable to load channels",
+      "description": "{{error}}"
+    }
+  },
+  "toolbar": {
+    "searchPlaceholder": "Search by name, URL or group",
+    "clearSearch": "Clear search",
+    "status": "Status",
+    "statusSubtitle": "Filter by status",
+    "columns": "Columns",
+    "toggleColumns": "Toggle columns",
+    "deleteSelected": "Delete selected",
+    "syncSelected": "Sync selected",
+    "refresh": "Refresh",
+    "addChannel": "Add channel"
+  },
+  "filter": {
+    "statusLabel": "Filter by status"
+  },
+  "statusLabels": {
+    "unknown": "Unknown",
+    "enabled": "Enabled",
+    "manualPause": "Manual Pause",
+    "autoDisabled": "Auto Disabled"
+  },
+  "table": {
+    "columns": {
+      "channel": "Channel",
+      "type": "Type",
+      "models": "Models",
+      "groups": "Groups",
+      "status": "Status",
+      "priority": "Priority",
+      "weight": "Weight"
+    },
+    "actionsLabel": "Actions",
+    "loading": "Loading channels...",
+    "empty": "No channels found. Try adjusting your filters.",
+    "noEntries": "No entries",
+    "rowsPerPage": "Rows per page",
+    "entriesSuffix": "channels",
+    "paginationSummary": "{{start}} - {{end}} of {{total}} channels",
+    "rowActions": {
+      "edit": "Edit",
+      "sync": "Sync models",
+      "syncing": "Syncing...",
+      "delete": "Delete"
+    }
+  },
+  "dialog": {
+    "deleteTitle": "Delete channel?",
+    "deleteTitlePlural": "Delete channels?",
+    "deleteDescription": "This action cannot be undone. The selected configuration will be removed permanently.",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
+  "toasts": {
+    "channelSaved": "Channel saved",
+    "channelUpdated": "Channel updated",
+    "configMissing": "New API configuration is missing",
+    "channelDeleted": "Channel deleted",
+    "channelsDeleted": "{{count}} channels deleted",
+    "syncCompleted": "Model sync completed ({{success}}/{{total}})",
+    "syncFailed": "Model sync failed: {{error}}",
+    "loadFailed": "Failed to load channels: {{error}}",
+    "genericError": "Request failed: {{error}}"
+  }
+}

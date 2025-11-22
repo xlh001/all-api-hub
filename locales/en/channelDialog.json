@@ -4,8 +4,8 @@
     "edit": "Edit Channel"
   },
   "description": {
-    "add": "Configure a new forwarding channel for your New API deployment.",
-    "edit": "Update channel settings and routing information."
+    "add": "Configure a new forwarding channel for your New API deployment",
+    "edit": "Update channel settings and routing information"
   },
   "actions": {
     "create": "Create Channel",
@@ -17,14 +17,14 @@
     "deselectAll": "Deselect All"
   },
   "messages": {
-    "createSuccess": "Channel created successfully.",
-    "updateSuccess": "Channel updated successfully.",
+    "createSuccess": "Channel created successfully",
+    "updateSuccess": "Channel updated successfully",
     "saveFailed": "Failed to save channel: {{error}}"
   },
   "validation": {
-    "nameRequired": "Channel name is required.",
-    "keyRequired": "API key is required.",
-    "baseUrlRequired": "Base URL is required for this channel type."
+    "nameRequired": "Channel name is required",
+    "keyRequired": "API key is required",
+    "baseUrlRequired": "Base URL is required for this channel type"
   },
   "fields": {
     "name": {
@@ -34,7 +34,7 @@
     "type": {
       "label": "Channel Type",
       "placeholder": "Select channel type",
-      "hint": "Choose the upstream provider that this channel will forward to."
+      "hint": "Choose the upstream provider that this channel will forward to"
     },
     "key": {
       "label": "API Key",
@@ -47,22 +47,22 @@
     "models": {
       "label": "Available Models",
       "placeholder": "Select or type model names",
-      "loading": "Loading models...",
-      "hint": "Type to search or press Enter to add a custom model name."
+      "loading": "Loading models..",
+      "hint": "Type to search or press Enter to add a custom model name"
     },
     "groups": {
       "label": "Channel Groups",
       "placeholder": "Select groups",
-      "loading": "Loading groups...",
-      "hint": "Groups are sourced from your configured New API site."
+      "loading": "Loading groups..",
+      "hint": "Groups are sourced from your configured New API site"
     },
     "priority": {
       "label": "Priority",
-      "hint": "Channels with lower priority numbers are used before others."
+      "hint": "Channels with lower priority numbers are used before others"
     },
     "weight": {
       "label": "Weight",
-      "hint": "Controls load balancing within the same priority (0 = equal distribution)."
+      "hint": "Controls load balancing within the same priority (0 = equal distribution)"
     },
     "status": {
       "label": "Status",

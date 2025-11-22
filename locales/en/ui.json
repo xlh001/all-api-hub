@@ -17,6 +17,7 @@
     "account": "Account Management",
     "models": "Model List",
     "autoCheckin": "Auto Check-in",
+    "newApiChannels": "New API Channels Management",
     "newApiModelSync": "New API Model Sync",
     "keys": "Key Management",
     "importExport": "Import/Export",
