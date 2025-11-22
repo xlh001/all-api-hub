@@ -142,7 +142,7 @@ export default function WebDAVSettings() {
             }}
             disabled={saving}
             loading={saving}
-            variant="secondary"
+            variant="default"
             size="sm"
             bleed>
             {saving ? t("common:status.saving") : t("webdav.saveConfig")}

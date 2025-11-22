@@ -269,7 +269,7 @@ export default function WebDAVAutoSyncSettings() {
             onClick={handleSaveSettings}
             disabled={savingSettings}
             loading={savingSettings}
-            variant="secondary"
+            variant="default"
             size="sm"
             className="flex-1">
             {savingSettings
