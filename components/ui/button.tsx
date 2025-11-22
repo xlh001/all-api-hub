@@ -21,6 +21,8 @@ const buttonVariants = cva(
           "bg-[var(--button-secondary-bg)] text-[var(--button-secondary-foreground)] shadow-sm hover:bg-[var(--button-secondary-bg-hover)] focus-visible:ring-[var(--button-secondary-ring)] focus-visible:ring-opacity-40",
         success:
           "bg-[var(--button-success-bg)] text-[var(--button-success-foreground)] shadow-sm hover:bg-[var(--button-success-bg-hover)] focus-visible:ring-[var(--button-success-ring)] focus-visible:ring-opacity-40",
+        warning:
+          "bg-[var(--button-warning-bg)] text-[var(--button-warning-foreground)] shadow-sm hover:bg-[var(--button-warning-bg-hover)] focus-visible:ring-[var(--button-warning-ring)] focus-visible:ring-opacity-40",
         ghost:
           "text-[var(--button-ghost-foreground)] hover:bg-[var(--button-ghost-hover-bg)] hover:text-[var(--button-ghost-hover-foreground)]",
         link: "text-[var(--button-link-foreground)] underline-offset-4 hover:text-[var(--button-link-hover-foreground)] hover:underline focus-visible:ring-[var(--button-link-ring)] focus-visible:ring-opacity-40"
@@ -78,7 +80,8 @@ function Button({
     (variant === "default" ||
     variant === "destructive" ||
     variant === "secondary" ||
-    variant === "success"
+    variant === "success" ||
+    variant === "warning"
       ? "white"
       : "primary")
   const resolvedSpinnerSize = spinnerSizeProp ?? "sm"

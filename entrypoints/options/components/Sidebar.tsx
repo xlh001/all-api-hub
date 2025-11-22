@@ -120,7 +120,7 @@ function Sidebar({
                 aria-label={collapseButtonLabel}
                 variant="outline"
                 size="icon"
-                className="dark:border-dark-bg-tertiary dark:text-dark-text-secondary hidden h-8 w-8 rounded-full border-gray-200 text-gray-600 md:inline-flex"
+                className="hidden h-8 w-8 rounded-full md:inline-flex"
                 onClick={handleCollapseButtonClick}>
                 {shouldShowCollapsedState ? (
                   <ChevronDoubleRightIcon className="h-4 w-4" />

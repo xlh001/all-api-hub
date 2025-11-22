@@ -123,9 +123,8 @@ export default function SiteInfoInput({
             <Button
               type="button"
               onClick={handleEditClick}
-              variant="ghost"
+              variant="warning"
               size="sm"
-              className="font-medium text-yellow-800 dark:text-yellow-200"
               leftIcon={<PencilIcon className="h-3 w-3" />}>
               {t("siteInfo.editNow")}
             </Button>

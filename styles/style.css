@@ -52,6 +52,10 @@
   --button-success-bg-hover: var(--color-semantic-success-500);
   --button-success-foreground: oklch(0.985 0 0);
   --button-success-ring: var(--color-semantic-success-600);
+  --button-warning-bg: var(--color-semantic-warning-600);
+  --button-warning-bg-hover: var(--color-semantic-warning-500);
+  --button-warning-foreground: oklch(0.985 0 0);
+  --button-warning-ring: var(--color-semantic-warning-600);
   --button-outline-bg: var(--background);
   --button-outline-border: var(--border);
   --button-outline-hover-bg: color-mix(in oklab, var(--accent) 70%, white 30%);
@@ -151,6 +155,10 @@
   --button-success-bg-hover: var(--color-semantic-success-500);
   --button-success-foreground: oklch(0.985 0 0);
   --button-success-ring: var(--color-semantic-success-500);
+  --button-warning-bg: var(--color-semantic-warning-600);
+  --button-warning-bg-hover: var(--color-semantic-warning-500);
+  --button-warning-foreground: oklch(0.985 0 0);
+  --button-warning-ring: var(--color-semantic-warning-500);
   --button-outline-bg: color-mix(
     in oklab,
     var(--background) 80%,
