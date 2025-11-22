@@ -44,7 +44,6 @@ export function Controls({
             <SelectValue placeholder={t("pleaseSelectAccount")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="empty">{t("pleaseSelectAccount")}</SelectItem>
             {displayData.map((account) => (
               <SelectItem key={account.id} value={account.id}>
                 {account.name}

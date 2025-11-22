@@ -30,7 +30,6 @@ export function AccountSelector({
           <SelectValue placeholder={t("pleaseSelectAccount")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="empty">{t("pleaseSelectAccount")}</SelectItem>
           {accounts.map((account) => (
             <SelectItem key={account.id} value={account.id}>
               {account.name}
