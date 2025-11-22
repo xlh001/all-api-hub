@@ -436,9 +436,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ===== 深色模式支持 ===== */
-@custom-variant dark (&:where(.dark, .dark *));
-
 /* 隐藏滚动条，但仍可滚动 */
 .scrollbar-hide {
   -ms-overflow-style: none; /* IE 10+ */
