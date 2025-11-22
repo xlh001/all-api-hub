@@ -1,4 +1,5 @@
 import { Tab } from "@headlessui/react"
+import { Settings } from "lucide-react"
 import {
   Fragment,
   useCallback,
@@ -17,6 +18,7 @@ import {
   SelectValue
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import {
   navigateToAnchor,
   parseTabFromUrl,
@@ -30,7 +32,6 @@ import DataBackupTab from "./components/DataBackupTab"
 import GeneralTab from "./components/GeneralTab"
 import LoadingSkeleton from "./components/LoadingSkeleton"
 import NewApiTab from "./components/NewApiTab"
-import SettingsHeader from "./components/SettingsHeader"
 
 type TabId =
   | "general"
@@ -147,7 +148,11 @@ export default function BasicSettings() {
 
   return (
     <div className="p-4 sm:p-6">
-      <SettingsHeader />
+      <PageHeader
+        icon={Settings}
+        title={t("title")}
+        description={t("description")}
+      />
 
       <Tab.Group selectedIndex={selectedTabIndex} onChange={handleTabChange}>
         <div className="mb-6">

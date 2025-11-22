@@ -6,14 +6,14 @@ import {
 import { NewAPI } from "@lobehub/icons"
 import { useTranslation } from "react-i18next"
 
+import { useChannelDialog } from "~/components/ChannelDialog"
 import { CCSwitchIcon } from "~/components/icons/CCSwitchIcon"
 import { CherryIcon } from "~/components/icons/CherryIcon"
 import { Badge, Heading6, IconButton } from "~/components/ui"
-import { useChannelDialog } from "~/features/ChannelManagement"
 import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
+import { showResultToast } from "~/utils/toastHelpers.ts"
 
-import { showResultToast } from "../../../../../../utils/toastHelpers.ts"
 import { AccountToken } from "../../type"
 
 interface TokenHeaderProps {

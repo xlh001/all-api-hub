@@ -7,12 +7,14 @@ import React, {
   useState
 } from "react"
 
-import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes.ts"
 import type { ChannelFormData } from "~/types"
+import type { NewApiChannel } from "~/types/newapi.ts"
 
 interface ChannelDialogState {
   isOpen: boolean
   mode: DialogMode
+  channel?: NewApiChannel | null
   initialValues?: Partial<ChannelFormData>
   initialModels?: string[]
   initialGroups?: string[]
@@ -23,6 +25,7 @@ interface ChannelDialogContextValue {
   state: ChannelDialogState
   openDialog: (config: {
     mode?: DialogMode
+    channel?: NewApiChannel | null
     initialValues?: Partial<ChannelFormData>
     initialModels?: string[]
     initialGroups?: string[]
@@ -43,12 +46,14 @@ export function ChannelDialogProvider({
 }) {
   const [state, setState] = useState<ChannelDialogState>({
     isOpen: false,
-    mode: DIALOG_MODES.ADD
+    mode: DIALOG_MODES.ADD,
+    channel: null
   })
 
   const openDialog = useCallback(
     (config: {
       mode?: DialogMode
+      channel?: NewApiChannel | null
       initialValues?: Partial<ChannelFormData>
       initialModels?: string[]
       initialGroups?: string[]
@@ -57,6 +62,7 @@ export function ChannelDialogProvider({
       setState({
         isOpen: true,
         mode: config.mode ?? DIALOG_MODES.ADD,
+        channel: config.channel ?? null,
         initialValues: config.initialValues,
         initialModels: config.initialModels,
         initialGroups: config.initialGroups,

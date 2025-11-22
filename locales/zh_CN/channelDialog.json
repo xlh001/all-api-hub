@@ -4,8 +4,8 @@
     "edit": "编辑渠道"
   },
   "description": {
-    "add": "为您的 New API 部署配置新的转发渠道。",
-    "edit": "更新渠道设置和路由信息。"
+    "add": "为您的 New API 部署配置新的转发渠道",
+    "edit": "更新渠道设置和路由信息"
   },
   "actions": {
     "create": "创建渠道",
@@ -17,14 +17,14 @@
     "deselectAll": "全不选"
   },
   "messages": {
-    "createSuccess": "渠道创建成功。",
-    "updateSuccess": "渠道更新成功。",
+    "createSuccess": "渠道创建成功",
+    "updateSuccess": "渠道更新成功",
     "saveFailed": "保存渠道失败：{{error}}"
   },
   "validation": {
-    "nameRequired": "渠道名称必填。",
-    "keyRequired": "API 密钥必填。",
-    "baseUrlRequired": "此渠道类型需要填写基础 URL。"
+    "nameRequired": "渠道名称必填",
+    "keyRequired": "API 密钥必填",
+    "baseUrlRequired": "此渠道类型需要填写基础 URL"
   },
   "fields": {
     "name": {
@@ -34,7 +34,7 @@
     "type": {
       "label": "渠道类型",
       "placeholder": "选择渠道类型",
-      "hint": "选择此渠道将转发到的上游提供商。"
+      "hint": "选择此渠道将转发到的上游提供商"
     },
     "key": {
       "label": "API 密钥",
@@ -48,21 +48,21 @@
       "label": "可用模型",
       "placeholder": "选择或输入模型名称",
       "loading": "加载模型中...",
-      "hint": "输入搜索或按 Enter 添加自定义模型名称。"
+      "hint": "输入搜索或按 Enter 添加自定义模型名称"
     },
     "groups": {
       "label": "渠道分组",
       "placeholder": "选择分组",
       "loading": "加载分组中...",
-      "hint": "分组来源于您配置的 New API 站点。"
+      "hint": "分组来源于您配置的 New API 站点"
     },
     "priority": {
       "label": "优先级",
-      "hint": "优先级数字越小的渠道优先使用。"
+      "hint": "优先级数字越小的渠道优先使用"
     },
     "weight": {
       "label": "权重",
-      "hint": "控制相同优先级内的负载均衡（0 = 平均分配）。"
+      "hint": "控制相同优先级内的负载均衡（0 = 平均分配）"
     },
     "status": {
       "label": "状态",

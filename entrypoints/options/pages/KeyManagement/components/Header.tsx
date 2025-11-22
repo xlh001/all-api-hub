@@ -1,7 +1,8 @@
-import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
+import { KeyRound, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-import { BodySmall, Button, Heading2 } from "~/components/ui"
+import { Button } from "~/components/ui"
+import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 
 interface HeaderProps {
   selectedAccount: string
@@ -21,28 +22,28 @@ export function Header({
   const { t } = useTranslation("keyManagement")
   return (
     <div className="mb-8">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <KeyIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          <Heading2>{t("title")}</Heading2>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button
-            onClick={onAddToken}
-            disabled={isAddTokenDisabled}
-            size="sm"
-            variant="success"
-            leftIcon={<PlusIcon className="h-4 w-4" />}>
-            {t("dialog.addToken")}
-          </Button>
-          <Button onClick={onRefresh} disabled={isLoading} size="sm">
-            {isLoading && selectedAccount
-              ? t("common:status.refreshing")
-              : t("refreshTokenList")}
-          </Button>
-        </div>
-      </div>
-      <BodySmall>{t("description")}</BodySmall>
+      <PageHeader
+        icon={KeyRound}
+        title={t("title")}
+        description={t("description")}
+        actions={
+          <>
+            <Button
+              onClick={onAddToken}
+              disabled={isAddTokenDisabled}
+              size="sm"
+              variant="success"
+              leftIcon={<Plus className="h-4 w-4" />}>
+              {t("dialog.addToken")}
+            </Button>
+            <Button onClick={onRefresh} disabled={isLoading} size="sm">
+              {isLoading && selectedAccount
+                ? t("common:status.refreshing")
+                : t("refreshTokenList")}
+            </Button>
+          </>
+        }
+      />
     </div>
   )
 }

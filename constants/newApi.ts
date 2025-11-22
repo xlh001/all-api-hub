@@ -74,6 +74,10 @@ export const DEFAULT_CHANNEL_FIELDS: ChannelDefaults = {
   type: ChannelType.OpenAI
 }
 
+/**
+ * Mapping of ChannelType enum to human-readable names
+ * @see https://github.com/QuantumNous/new-api/blob/0952973887e7588e28d08da7d4cab2530de857c5/constant/channel.go#L3
+ */
 export const ChannelTypeNames: Record<ChannelType, string> = {
   [ChannelType.Unknown]: "Unknown",
   [ChannelType.OpenAI]: "OpenAI",

@@ -2,6 +2,7 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
+import { useChannelForm } from "~/components/ChannelDialog/hooks/useChannelForm.ts"
 import {
   Button,
   IconButton,
@@ -15,15 +16,14 @@ import {
   SelectTrigger,
   SelectValue
 } from "~/components/ui"
-import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes.ts"
 import { ChannelType, ChannelTypeOptions } from "~/constants/newApi.ts"
-import { useChannelForm } from "~/features/ChannelManagement/hooks/useChannelForm"
 import {
   CHANNEL_STATUS,
   type ChannelFormData,
   type ChannelStatus,
   type NewApiChannel
-} from "~/types/newapi"
+} from "~/types/newapi.ts"
 
 export interface ChannelDialogProps {
   isOpen: boolean
@@ -59,7 +59,9 @@ export function ChannelDialog({
     isLoadingGroups,
     isLoadingModels,
     availableGroups,
-    availableModels
+    availableModels,
+    isKeyFieldRequired,
+    isBaseUrlRequired
   } = useChannelForm({
     mode,
     channel,
@@ -194,7 +196,7 @@ export function ChannelDialog({
 
         {/* API Key */}
         <div>
-          <Label htmlFor="channel-key" required>
+          <Label htmlFor="channel-key" required={isKeyFieldRequired}>
             {t("channelDialog:fields.key.label", "API Key")}
           </Label>
           <Input
@@ -204,7 +206,7 @@ export function ChannelDialog({
             onChange={(e) => updateField("key", e.target.value)}
             placeholder={t("channelDialog:fields.key.placeholder")}
             disabled={isSaving}
-            required
+            required={isKeyFieldRequired}
             rightIcon={
               <IconButton
                 variant="ghost"
@@ -229,7 +231,7 @@ export function ChannelDialog({
 
         {/* Base URL */}
         <div>
-          <Label htmlFor="channel-base-url" required={true}>
+          <Label htmlFor="channel-base-url" required={isBaseUrlRequired}>
             {t("channelDialog:fields.baseUrl.label", "Base URL")}
           </Label>
           <Input
@@ -239,7 +241,7 @@ export function ChannelDialog({
             onChange={(e) => updateField("base_url", e.target.value)}
             placeholder={t("channelDialog:fields.baseUrl.placeholder")}
             disabled={isSaving}
-            required={true}
+            required={isBaseUrlRequired}
           />
         </div>
 

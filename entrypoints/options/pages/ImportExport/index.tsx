@@ -1,10 +1,11 @@
+import { ArrowLeftRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { Alert } from "~/components/ui"
+import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 
 import ExportSection from "./components/ExportSection"
 import ImportSection from "./components/ImportSection"
-import PageHeader from "./components/PageHeader"
 import WebDAVAutoSyncSettings from "./components/WebDAVAutoSyncSettings"
 import WebDAVSettings from "./components/WebDAVSettings"
 import { useImportExport } from "./hooks/useImportExport"
@@ -26,7 +27,11 @@ export default function ImportExport() {
 
   return (
     <div className="space-y-6 p-6">
-      <PageHeader />
+      <PageHeader
+        icon={ArrowLeftRight}
+        title={t("title")}
+        description={t("description")}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
         <ExportSection

@@ -1,12 +1,14 @@
 import { Tab } from "@headlessui/react"
+import { Cpu } from "lucide-react"
 import { useEffect, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 
+import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import { getAllProviders } from "~/utils/modelProviders"
 
 import { AccountSelector } from "./components/AccountSelector"
 import { ControlPanel } from "./components/ControlPanel"
 import { Footer } from "./components/Footer"
-import { Header } from "./components/Header"
 import { ModelDisplay } from "./components/ModelDisplay"
 import { ProviderTabs } from "./components/ProviderTabs"
 import { StatusIndicator } from "./components/StatusIndicator"
@@ -17,6 +19,7 @@ export default function ModelList({
 }: {
   routeParams?: Record<string, string>
 }) {
+  const { t } = useTranslation("modelList")
   const {
     // Account data
     accounts,
@@ -82,7 +85,11 @@ export default function ModelList({
 
   return (
     <div className="p-6">
-      <Header />
+      <PageHeader
+        icon={Cpu}
+        title={t("title")}
+        description={t("description")}
+      />
       <AccountSelector
         selectedAccount={selectedAccount}
         setSelectedAccount={setSelectedAccount}

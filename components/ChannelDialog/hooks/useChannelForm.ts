@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import type { MultiSelectOption } from "~/components/ui/MultiSelect"
-import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import type { MultiSelectOption } from "~/components/ui/MultiSelect.tsx"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes.ts"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
 import { fetchSiteUserGroups } from "~/services/apiService"
 import {
@@ -17,8 +17,8 @@ import type {
   ChannelFormData,
   NewApiChannel,
   UpdateChannelPayload
-} from "~/types/newapi"
-import { mergeUniqueOptions } from "~/utils/selectOptions"
+} from "~/types/newapi.ts"
+import { mergeUniqueOptions } from "~/utils/selectOptions.ts"
 
 export interface UseChannelFormProps {
   mode: DialogMode
@@ -217,6 +217,12 @@ export function useChannelForm({
     }))
   }
 
+  const isKeyFieldRequired = mode === DIALOG_MODES.ADD
+
+  const isBaseUrlRequired =
+    formData.type === ChannelType.VolcEngine ||
+    formData.type === ChannelType.SunoAPI
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -226,12 +232,12 @@ export function useChannelForm({
       return
     }
 
-    if (!formData.key.trim()) {
+    if (isKeyFieldRequired && !formData.key.trim()) {
       toast.error(t("validation.keyRequired") || "API key is required")
       return
     }
 
-    if (!formData?.base_url?.trim()) {
+    if (isBaseUrlRequired && !formData?.base_url?.trim()) {
       toast.error(
         t("validation.baseUrlRequired") ||
           "Base URL is required for this channel type"
@@ -282,15 +288,6 @@ export function useChannelForm({
       }
 
       if (response.success) {
-        const successMessage =
-          mode === DIALOG_MODES.ADD
-            ? t("messages:newapi.importSuccess", {
-                channelName: formData.name,
-                defaultValue: t("channelDialog:messages.createSuccess")
-              })
-            : t("channelDialog:messages.updateSuccess")
-
-        toast.success(successMessage)
         onSuccess?.(response)
         onClose()
         resetForm()
@@ -311,7 +308,9 @@ export function useChannelForm({
   }
 
   const isFormValid = Boolean(
-    formData.name.trim() && formData.key.trim() && formData.base_url?.trim()
+    formData.name.trim() &&
+      (!isKeyFieldRequired || formData.key.trim()) &&
+      (!isBaseUrlRequired || formData?.base_url?.trim())
   )
 
   return {
@@ -325,6 +324,8 @@ export function useChannelForm({
     isLoadingModels,
     availableGroups,
     availableModels,
-    resetForm
+    resetForm,
+    isKeyFieldRequired,
+    isBaseUrlRequired
   }
 }

@@ -1,18 +1,19 @@
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import { useChannelDialogContext } from "~/components/ChannelDialog/context/ChannelDialogContext"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes.ts"
 import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type.ts"
-import { useChannelDialogContext } from "~/features/ChannelManagement"
 import { ensureAccountApiToken } from "~/services/accountOperations.ts"
-import { accountStorage } from "~/services/accountStorage"
+import { accountStorage } from "~/services/accountStorage.ts"
 import {
   findMatchingChannel,
   getNewApiConfig,
   prepareChannelFormData
 } from "~/services/newApiService/newApiService.ts"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
-import { getErrorMessage } from "~/utils/error"
+import type { NewApiChannel } from "~/types/newapi.ts"
+import { getErrorMessage } from "~/utils/error.ts"
 
 /**
  * Hook to easily trigger channel creation dialog from anywhere
@@ -122,6 +123,7 @@ export function useChannelDialog() {
    */
   const openWithCustom = (config: {
     mode?: DialogMode
+    channel?: NewApiChannel | null
     initialValues?: any
     initialModels?: string[]
     initialGroups?: string[]
