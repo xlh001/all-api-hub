@@ -499,14 +499,19 @@ export default function NewApiChannelsPage() {
   const uniqueStatusValues = useMemo(() => {
     if (!statusColumn) return []
     const facetedValues = statusColumn.getFacetedUniqueValues()
-    return Array.from(facetedValues.keys()).sort(
-      (a, b) => Number(a) - Number(b)
-    )
+    return Array.from(facetedValues.keys())
+      .map((key) => String(key))
+      .sort((a, b) => Number(a) - Number(b))
   }, [statusColumn])
 
   const statusCounts = useMemo(() => {
     if (!statusColumn) return new Map<string, number>()
-    return statusColumn.getFacetedUniqueValues()
+    const facetedValues = statusColumn.getFacetedUniqueValues()
+    const map = new Map<string, number>()
+    facetedValues.forEach((count, key) => {
+      map.set(String(key), count)
+    })
+    return map
   }, [statusColumn])
 
   const selectedStatuses = useMemo(() => {
