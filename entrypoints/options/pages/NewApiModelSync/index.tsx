@@ -482,8 +482,8 @@ export default function NewApiModelSync() {
                 <Button
                   onClick={() => void loadChannels()}
                   variant="ghost"
-                  disabled={isChannelsLoading}>
-                  <ArrowPathIcon className="mr-2 h-4 w-4" />
+                  disabled={isChannelsLoading}
+                  leftIcon={<ArrowPathIcon className="h-4 w-4" />}>
                   {t("execution.actions.refresh")}
                 </Button>
               </div>

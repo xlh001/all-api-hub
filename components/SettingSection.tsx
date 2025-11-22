@@ -76,8 +76,8 @@ export function SettingSection({
               onClick={handleResetClick}
               variant="outline"
               size="sm"
-              className="shrink-0">
-              <ArrowPathIcon className="mr-2 h-4 w-4" />
+              className="shrink-0"
+              leftIcon={<ArrowPathIcon className="h-4 w-4" />}>
               {resetButtonLabel || t("common:actions.reset")}
             </Button>
           )}

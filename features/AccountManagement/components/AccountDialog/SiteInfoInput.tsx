@@ -109,9 +109,9 @@ export default function SiteInfoInput({
               onClick={handleEditClick}
               variant="ghost"
               size="sm"
-              className="flex items-center font-medium text-yellow-800 dark:text-yellow-200">
-              <PencilIcon className="mr-1 h-3 w-3" />
-              <span>{t("siteInfo.editNow")}</span>
+              className="font-medium text-yellow-800 dark:text-yellow-200"
+              leftIcon={<PencilIcon className="h-3 w-3" />}>
+              {t("siteInfo.editNow")}
             </Button>
           </div>
         )}

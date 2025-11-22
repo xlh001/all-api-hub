@@ -39,24 +39,24 @@ export default function DataBackupTab() {
               <Button
                 onClick={handleNavigateToImportExport}
                 variant="secondary"
-                className="flex items-center justify-center gap-2">
-                <ArrowsRightLeftIcon className="h-5 w-5" />
-                <span>{t("dataBackup.importExport.openPage")}</span>
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                className="justify-center"
+                leftIcon={<ArrowsRightLeftIcon className="h-5 w-5" />}
+                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}>
+                {t("dataBackup.importExport.openPage")}
               </Button>
               <Button
                 onClick={() => handleNavigateToSection("import")}
                 variant="default"
-                className="flex items-center justify-center gap-2">
-                <span>{t("dataBackup.importExport.openImport")}</span>
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                className="justify-center"
+                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}>
+                {t("dataBackup.importExport.openImport")}
               </Button>
               <Button
                 onClick={() => handleNavigateToSection("export")}
                 variant="default"
-                className="flex items-center justify-center gap-2">
-                <span>{t("dataBackup.importExport.openExport")}</span>
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                className="justify-center"
+                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}>
+                {t("dataBackup.importExport.openExport")}
               </Button>
             </div>
             <Alert variant="info">

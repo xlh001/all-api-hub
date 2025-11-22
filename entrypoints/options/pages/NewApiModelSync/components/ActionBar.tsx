@@ -26,8 +26,11 @@ export default function ActionBar({
 
   return (
     <div className="flex flex-wrap gap-3">
-      <Button onClick={onRunAll} variant="default" disabled={isRunning}>
-        <ArrowPathIcon className="mr-2 h-4 w-4" />
+      <Button
+        onClick={onRunAll}
+        variant="default"
+        disabled={isRunning}
+        leftIcon={<ArrowPathIcon className="h-4 w-4" />}>
         {t("execution.actions.runAll")}
       </Button>
       <Button
@@ -42,8 +45,11 @@ export default function ActionBar({
         disabled={isRunning || failedCount === 0}>
         {t("execution.actions.retryFailed")}
       </Button>
-      <Button onClick={onRefresh} variant="ghost" disabled={isRunning}>
-        <ArrowPathIcon className="mr-2 h-4 w-4" />
+      <Button
+        onClick={onRefresh}
+        variant="ghost"
+        disabled={isRunning}
+        leftIcon={<ArrowPathIcon className="h-4 w-4" />}>
         {t("execution.actions.refresh")}
       </Button>
     </div>
