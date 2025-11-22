@@ -217,6 +217,8 @@ export function useChannelForm({
     }))
   }
 
+  const isKeyFieldRequired = mode === DIALOG_MODES.ADD
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -226,7 +228,7 @@ export function useChannelForm({
       return
     }
 
-    if (!formData.key.trim()) {
+    if (isKeyFieldRequired && !formData.key.trim()) {
       toast.error(t("validation.keyRequired") || "API key is required")
       return
     }
@@ -282,15 +284,6 @@ export function useChannelForm({
       }
 
       if (response.success) {
-        const successMessage =
-          mode === DIALOG_MODES.ADD
-            ? t("messages:newapi.importSuccess", {
-                channelName: formData.name,
-                defaultValue: t("channelDialog:messages.createSuccess")
-              })
-            : t("channelDialog:messages.updateSuccess")
-
-        toast.success(successMessage)
         onSuccess?.(response)
         onClose()
         resetForm()
@@ -311,7 +304,9 @@ export function useChannelForm({
   }
 
   const isFormValid = Boolean(
-    formData.name.trim() && formData.key.trim() && formData.base_url?.trim()
+    formData.name.trim() &&
+      (!isKeyFieldRequired || formData.key.trim()) &&
+      formData.base_url?.trim()
   )
 
   return {

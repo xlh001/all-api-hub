@@ -48,6 +48,7 @@ export function ChannelDialog({
 }: ChannelDialogProps) {
   const { t } = useTranslation(["channelDialog", "common"])
   const [showKey, setShowKey] = useState(false)
+  const isKeyFieldRequired = mode === DIALOG_MODES.ADD
 
   const {
     formData,
@@ -194,7 +195,7 @@ export function ChannelDialog({
 
         {/* API Key */}
         <div>
-          <Label htmlFor="channel-key" required>
+          <Label htmlFor="channel-key" required={isKeyFieldRequired}>
             {t("channelDialog:fields.key.label", "API Key")}
           </Label>
           <Input
@@ -204,7 +205,7 @@ export function ChannelDialog({
             onChange={(e) => updateField("key", e.target.value)}
             placeholder={t("channelDialog:fields.key.placeholder")}
             disabled={isSaving}
-            required
+            required={isKeyFieldRequired}
             rightIcon={
               <IconButton
                 variant="ghost"
