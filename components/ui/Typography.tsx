@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority"
 import React, { JSX } from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
 const typographyVariants = cva("", {
   variants: {

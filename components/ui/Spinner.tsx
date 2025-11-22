@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority"
 import React from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
 const spinnerVariants = cva(
   "animate-spin rounded-full border-2 border-solid border-current border-r-transparent",
@@ -14,10 +14,10 @@ const spinnerVariants = cva(
         xl: "h-12 w-12"
       },
       variant: {
-        default: "text-blue-600",
-        white: "text-white",
-        gray: "text-gray-400",
-        primary: "text-gray-900 dark:text-dark-text-primary"
+        default: "text-[var(--spinner-default-color)]",
+        white: "text-[var(--spinner-white-color)]",
+        gray: "text-[var(--spinner-gray-color)]",
+        primary: "text-[var(--spinner-primary-color)]"
       }
     },
     defaultVariants: {

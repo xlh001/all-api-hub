@@ -19,6 +19,10 @@ import {
   FormField,
   Input,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Switch
 } from "~/components/ui"
 import { WebDAVSettings } from "~/types"
@@ -216,21 +220,26 @@ export default function WebDAVAutoSyncSettings() {
               label={t("webdav.autoSync.strategy")}
               description={t("webdav.autoSync.strategyDesc")}>
               <Select
-                value={syncStrategy}
-                onChange={(e) =>
-                  setSyncStrategy(
-                    e.target.value as WebDAVSettings["syncStrategy"]
-                  )
+                value={syncStrategy ?? ""}
+                onValueChange={(value) =>
+                  setSyncStrategy(value as WebDAVSettings["syncStrategy"])
                 }>
-                <option value="merge">
-                  {t("webdav.autoSync.strategyMerge")}
-                </option>
-                <option value="upload_only">
-                  {t("webdav.autoSync.strategyLocalFirst")}
-                </option>
-                <option value="download_only">
-                  {t("webdav.autoSync.strategyRemoteFirst")}
-                </option>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("webdav.autoSync.strategy") ?? ""}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="merge">
+                    {t("webdav.autoSync.strategyMerge")}
+                  </SelectItem>
+                  <SelectItem value="upload_only">
+                    {t("webdav.autoSync.strategyLocalFirst")}
+                  </SelectItem>
+                  <SelectItem value="download_only">
+                    {t("webdav.autoSync.strategyRemoteFirst")}
+                  </SelectItem>
+                </SelectContent>
               </Select>
             </FormField>
           </>
@@ -260,7 +269,7 @@ export default function WebDAVAutoSyncSettings() {
             onClick={handleSaveSettings}
             disabled={savingSettings}
             loading={savingSettings}
-            variant="secondary"
+            variant="default"
             size="sm"
             className="flex-1">
             {savingSettings

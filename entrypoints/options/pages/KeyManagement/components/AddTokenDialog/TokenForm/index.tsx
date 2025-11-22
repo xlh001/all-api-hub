@@ -30,15 +30,15 @@ export function TokenForm({
       setFormData((prev) => ({ ...prev, [field]: e.target.value }))
     }
 
+  const handleSelectChange = (field: keyof FormData) => (value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
   const handleSwitchChange = (field: keyof FormData) => (checked: boolean) => {
     setFormData((prev) => ({ ...prev, [field]: checked }))
   }
 
-  const handleModelSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const values = Array.from(
-      e.target.selectedOptions,
-      (option) => option.value
-    )
+  const handleModelLimitsChange = (values: string[]) => {
     setFormData((prev) => ({ ...prev, modelLimits: values }))
   }
 
@@ -51,6 +51,7 @@ export function TokenForm({
         isEditMode={isEditMode}
         availableAccounts={availableAccounts}
         handleInputChange={handleInputChange}
+        handleSelectChange={handleSelectChange}
         handleSwitchChange={handleSwitchChange}
       />
       <AdvancedSettingsSection
@@ -60,7 +61,8 @@ export function TokenForm({
         groups={groups}
         availableModels={availableModels}
         handleInputChange={handleInputChange}
-        handleModelSelectChange={handleModelSelectChange}
+        handleSelectChange={handleSelectChange}
+        handleModelLimitsChange={handleModelLimitsChange}
       />
     </div>
   )

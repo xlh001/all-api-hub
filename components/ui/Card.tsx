@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority"
 import React from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
 import { BodySmall, Heading3 } from "./Typography"
 
@@ -68,7 +68,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
         ref={ref}
         className={cn(
           "flex flex-col space-y-1.5",
-          bordered && "border-b border-gray-200 dark:border-dark-bg-tertiary",
+          bordered && "dark:border-dark-bg-tertiary border-b border-gray-200",
           paddingClasses[padding],
           className
         )}
@@ -98,7 +98,7 @@ const CardDescription = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <BodySmall
     ref={ref}
-    className={cn("text-gray-600 dark:text-dark-text-secondary", className)}
+    className={cn("dark:text-dark-text-secondary text-gray-600", className)}
     {...props}>
     {children}
   </BodySmall>
@@ -167,7 +167,7 @@ const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
         ref={ref}
         className={cn(
           "flex items-center justify-end space-x-3",
-          bordered && "border-t border-gray-200 dark:border-dark-bg-tertiary",
+          bordered && "dark:border-dark-bg-tertiary border-t border-gray-200",
           paddingClasses[padding],
           className
         )}

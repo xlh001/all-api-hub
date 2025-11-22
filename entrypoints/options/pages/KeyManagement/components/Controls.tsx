@@ -1,7 +1,15 @@
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { Heading3, Input, Select } from "~/components/ui"
+import {
+  Heading3,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "~/components/ui"
 import type { DisplaySiteData } from "~/types"
 
 interface ControlsProps {
@@ -30,15 +38,18 @@ export function Controls({
       <div className="mb-2">
         <Heading3 className="mb-1">{t("selectAccount")}</Heading3>
         <Select
-          value={selectedAccount}
-          onChange={(e) => setSelectedAccount(e.target.value)}
-          className="w-full sm:w-80">
-          <option value="">{t("pleaseSelectAccount")}</option>
-          {displayData.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
+          value={selectedAccount ?? ""}
+          onValueChange={setSelectedAccount}>
+          <SelectTrigger className="w-full sm:w-80">
+            <SelectValue placeholder={t("pleaseSelectAccount")} />
+          </SelectTrigger>
+          <SelectContent>
+            {displayData.map((account) => (
+              <SelectItem key={account.id} value={account.id}>
+                {account.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </div>
 
@@ -56,7 +67,7 @@ export function Controls({
       </div>
 
       {selectedAccount && (
-        <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-dark-text-secondary">
+        <div className="dark:text-dark-text-secondary flex items-center space-x-6 text-sm text-gray-500">
           <span>{t("totalKeys", { count: tokens.length })}</span>
           <span>
             {t("enabledCount", {

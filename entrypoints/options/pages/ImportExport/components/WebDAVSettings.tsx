@@ -142,9 +142,9 @@ export default function WebDAVSettings() {
             }}
             disabled={saving}
             loading={saving}
-            variant="secondary"
+            variant="default"
             size="sm"
-            className="w-full bg-gray-700 text-white hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-800">
+            bleed>
             {saving ? t("common:status.saving") : t("webdav.saveConfig")}
           </Button>
 
@@ -175,7 +175,7 @@ export default function WebDAVSettings() {
             loading={testing}
             variant="secondary"
             size="sm"
-            className="w-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700">
+            bleed>
             {testing ? t("common:status.testing") : t("webdav.testConnection")}
           </Button>
 
@@ -211,7 +211,7 @@ export default function WebDAVSettings() {
             loading={uploading}
             variant="success"
             size="sm"
-            className="w-full">
+            bleed>
             {uploading
               ? t("common:status.uploading")
               : t("webdav.uploadBackup")}
@@ -273,7 +273,7 @@ export default function WebDAVSettings() {
             loading={downloading}
             variant="default"
             size="sm"
-            className="w-full">
+            bleed>
             {downloading
               ? t("common:status.processing")
               : t("webdav.downloadImport")}

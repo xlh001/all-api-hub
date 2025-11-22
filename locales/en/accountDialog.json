@@ -27,7 +27,12 @@
     "alreadyAdded": "Current site already added",
     "editNow": "Edit Now",
     "cookieWarning": "Cookie authentication uses your current login account, cannot be used for multiple accounts on the same site, do not use unless necessary",
-    "unknown": "Unable to get"
+    "unknown": "Unable to get",
+    "authMethodPlaceholder": "Authentication method",
+    "authType": {
+      "cookieAuth": "Cookie Authentication",
+      "accessToken": "Access Token Authentication"
+    }
   },
   "infoPanel": {
     "confirmation": "Account Information Confirmation",

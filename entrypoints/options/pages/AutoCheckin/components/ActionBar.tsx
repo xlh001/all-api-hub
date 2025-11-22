@@ -21,16 +21,14 @@ export default function ActionBar({
       <Button
         onClick={onRunNow}
         disabled={isRunning}
-        className="flex items-center gap-2">
-        <PlayIcon className="h-4 w-4" />
-        <span>{t("execution.runNow")}</span>
+        leftIcon={<PlayIcon className="h-4 w-4" />}>
+        {t("execution.runNow")}
       </Button>
       <Button
         onClick={onRefresh}
         variant="secondary"
-        className="flex items-center gap-2">
-        <ArrowPathIcon className="h-4 w-4" />
-        <span>{t("execution.refresh")}</span>
+        leftIcon={<ArrowPathIcon className="h-4 w-4" />}>
+        {t("execution.refresh")}
       </Button>
     </div>
   )

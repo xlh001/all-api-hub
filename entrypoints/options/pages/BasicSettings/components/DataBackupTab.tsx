@@ -13,14 +13,7 @@ export default function DataBackupTab() {
   const { t } = useTranslation("settings")
 
   const handleNavigateToImportExport = () => {
-    const url = browser.runtime.getURL("options.html#importExport")
-    window.location.href = url
-  }
-
-  const handleNavigateToSection = (section: "import" | "export") => {
-    const hash = section === "import" ? "import-section" : "export-section"
-    const url = browser.runtime.getURL(`options.html#importExport#${hash}`)
-    window.location.href = url
+    window.location.href = browser.runtime.getURL("options.html#importExport")
   }
 
   return (
@@ -38,25 +31,11 @@ export default function DataBackupTab() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button
                 onClick={handleNavigateToImportExport}
-                variant="secondary"
-                className="flex items-center justify-center gap-2">
-                <ArrowsRightLeftIcon className="h-5 w-5" />
-                <span>{t("dataBackup.importExport.openPage")}</span>
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={() => handleNavigateToSection("import")}
                 variant="default"
-                className="flex items-center justify-center gap-2">
-                <span>{t("dataBackup.importExport.openImport")}</span>
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={() => handleNavigateToSection("export")}
-                variant="default"
-                className="flex items-center justify-center gap-2">
-                <span>{t("dataBackup.importExport.openExport")}</span>
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                className="justify-center"
+                leftIcon={<ArrowsRightLeftIcon className="h-5 w-5" />}
+                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}>
+                {t("dataBackup.importExport.openPage")}
               </Button>
             </div>
             <Alert variant="info">

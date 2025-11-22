@@ -31,9 +31,9 @@ export function Header({
             onClick={onAddToken}
             disabled={isAddTokenDisabled}
             size="sm"
-            variant="success">
-            <PlusIcon className="h-4 w-4" />
-            <span className="ml-1">{t("dialog.addToken")}</span>
+            variant="success"
+            leftIcon={<PlusIcon className="h-4 w-4" />}>
+            {t("dialog.addToken")}
           </Button>
           <Button onClick={onRefresh} disabled={isLoading} size="sm">
             {isLoading && selectedAccount

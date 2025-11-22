@@ -1,4 +1,8 @@
-import { ArrowPathIcon, CpuChipIcon } from "@heroicons/react/24/outline"
+import {
+  ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
+  CpuChipIcon
+} from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 import { Alert, Button, EmptyState, Spinner } from "~/components/ui"
@@ -33,7 +37,7 @@ export function StatusIndicator({
     return (
       <div className="py-12 text-center">
         <Spinner size="lg" className="mx-auto mb-4" />
-        <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+        <p className="dark:text-dark-text-secondary text-sm text-gray-500">
           {t("status.loading")}
         </p>
       </div>
@@ -54,20 +58,7 @@ export function StatusIndicator({
               onClick={() =>
                 window.open(`${currentAccount.baseUrl}/pricing`, "_blank")
               }
-              rightIcon={
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-2M17 3l4 4m-5 0l5-5"
-                  />
-                </svg>
-              }>
+              rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}>
               {t("status.goToSitePricing")}
             </Button>
             <Button

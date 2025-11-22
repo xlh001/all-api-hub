@@ -9,6 +9,13 @@ import {
 } from "react"
 import { useTranslation } from "react-i18next"
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import {
   navigateToAnchor,
@@ -148,29 +155,31 @@ export default function BasicSettings() {
             <label className="sr-only" htmlFor="settings-tab-select">
               {t("tabs.select")}
             </label>
-            <select
-              id="settings-tab-select"
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-dark-bg-tertiary dark:text-dark-text-primary"
+            <Select
               value={selectedTabId}
-              onChange={(event) => {
-                const tabId = event.target.value as TabId
+              onValueChange={(tabId) => {
                 const index = getTabIndexFromId(tabId)
                 handleTabChange(index)
               }}>
-              {TAB_CONFIGS.map((config) => (
-                <option key={config.id} value={config.id}>
-                  {t(`tabs.${config.id}`)}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="settings-tab-select" className="w-full">
+                <SelectValue placeholder={t("tabs.select")} />
+              </SelectTrigger>
+              <SelectContent>
+                {TAB_CONFIGS.map((config) => (
+                  <SelectItem key={config.id} value={config.id}>
+                    {t(`tabs.${config.id}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <Tab.List className="-mb-px hidden flex-wrap items-center gap-2 border-b border-gray-200 dark:border-dark-bg-tertiary md:flex">
+          <Tab.List className="dark:border-dark-bg-tertiary -mb-px hidden flex-wrap items-center gap-2 border-b border-gray-200 md:flex">
             {tabs.map((tab) => (
               <Tab key={tab.id} as={Fragment}>
                 {({ selected }) => (
                   <button
-                    className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors focus:outline-none ${
+                    className={`border-b-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors focus:outline-none ${
                       selected
                         ? "border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400"
                         : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"

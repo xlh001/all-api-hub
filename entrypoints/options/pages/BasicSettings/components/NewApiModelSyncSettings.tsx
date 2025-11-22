@@ -373,9 +373,9 @@ export default function NewApiModelSyncSettings() {
                 onClick={handleNavigateToExecution}
                 variant="default"
                 size="sm"
-                className="flex items-center gap-2">
+                className="flex items-center gap-2"
+                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}>
                 <span>{t("newApiModelSync:settings.viewExecutionButton")}</span>
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
               </Button>
             }
           />

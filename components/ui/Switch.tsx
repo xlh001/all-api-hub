@@ -2,7 +2,7 @@ import { Switch as HeadlessSwitch } from "@headlessui/react"
 import { cva, type VariantProps } from "class-variance-authority"
 import React from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
 const switchVariants = cva(
   "relative inline-flex items-center rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",

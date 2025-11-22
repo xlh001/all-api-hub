@@ -18,7 +18,8 @@ interface AdvancedSettingsSectionProps {
   handleInputChange: (
     field: keyof FormData
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
-  handleModelSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  handleSelectChange: (field: keyof FormData) => (value: string) => void
+  handleModelLimitsChange: (values: string[]) => void
 }
 
 export function AdvancedSettingsSection({
@@ -28,7 +29,8 @@ export function AdvancedSettingsSection({
   groups,
   availableModels,
   handleInputChange,
-  handleModelSelectChange
+  handleSelectChange,
+  handleModelLimitsChange
 }: AdvancedSettingsSectionProps) {
   const { t } = useTranslation("keyManagement")
 
@@ -36,7 +38,7 @@ export function AdvancedSettingsSection({
     <FormSection title={t("dialog.advancedSettings")}>
       <GroupSelection
         group={formData.group}
-        handleInputChange={handleInputChange}
+        handleSelectChange={handleSelectChange("group")}
         groups={groups}
       />
       {isNotEmptyArray(availableModels) && (
@@ -45,7 +47,7 @@ export function AdvancedSettingsSection({
           modelLimits={formData.modelLimits}
           availableModels={availableModels}
           setFormData={setFormData}
-          handleModelSelectChange={handleModelSelectChange}
+          handleModelLimitsChange={handleModelLimitsChange}
         />
       )}
       <IpLimitsInput

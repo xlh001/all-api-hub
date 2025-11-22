@@ -9,7 +9,11 @@ import {
   Label,
   Modal,
   MultiSelect,
-  Select
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "~/components/ui"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelType, ChannelTypeOptions } from "~/constants/newApi.ts"
@@ -88,12 +92,12 @@ export function ChannelDialog({
 
   const header = (
     <div>
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
+      <h3 className="dark:text-dark-text-primary text-lg font-semibold text-gray-900">
         {mode === DIALOG_MODES.ADD
           ? t("channelDialog:title.add", "Add Channel")
           : t("channelDialog:title.edit", "Edit Channel")}
       </h3>
-      <p className="mt-1 text-sm text-gray-500 dark:text-dark-text-secondary">
+      <p className="dark:text-dark-text-secondary mt-1 text-sm text-gray-500">
         {mode === DIALOG_MODES.ADD
           ? t(
               "channelDialog:description.add",
@@ -157,20 +161,33 @@ export function ChannelDialog({
             {t("channelDialog:fields.type.label")}
           </Label>
           <Select
-            id="channel-type"
-            value={formData.type}
-            onChange={(e) =>
-              handleTypeChange(Number(e.target.value) as ChannelType)
+            value={
+              formData.type === undefined || formData.type === null
+                ? ""
+                : String(formData.type)
+            }
+            onValueChange={(value) =>
+              handleTypeChange(Number(value) as ChannelType)
             }
             disabled={isSaving || mode === DIALOG_MODES.EDIT}
             required>
-            {ChannelTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+            <SelectTrigger id="channel-type">
+              <SelectValue
+                placeholder={t(
+                  "channelDialog:fields.type.placeholder",
+                  "Select a type"
+                )}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {ChannelTypeOptions.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
-          <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
+          <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
             {t("channelDialog:fields.type.hint")}
           </p>
         </div>
@@ -277,7 +294,7 @@ export function ChannelDialog({
             disabled={isSaving || isLoadingModels}
             allowCustom
           />
-          <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
+          <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
             {t("channelDialog:fields.models.hint")}
           </p>
         </div>
@@ -297,7 +314,7 @@ export function ChannelDialog({
             disabled={isSaving || isLoadingGroups}
             allowCustom
           />
-          <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
+          <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
             {t(
               "channelDialog:fields.groups.hint",
               "Groups from your New API configuration"
@@ -306,8 +323,8 @@ export function ChannelDialog({
         </div>
 
         {/* Advanced Settings */}
-        <details className="rounded-lg border border-gray-200 p-3 dark:border-dark-bg-tertiary">
-          <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-dark-text-primary">
+        <details className="dark:border-dark-bg-tertiary rounded-lg border border-gray-200 p-3">
+          <summary className="dark:text-dark-text-primary cursor-pointer text-sm font-medium text-gray-700">
             {t("channelDialog:sections.advanced", "Advanced Settings")}
           </summary>
           <div className="mt-3 space-y-4">
@@ -327,7 +344,7 @@ export function ChannelDialog({
                 disabled={isSaving}
                 min="0"
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
+              <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
                 {t(
                   "channelDialog:fields.priority.hint",
                   "Higher priority channels are used first"
@@ -351,7 +368,7 @@ export function ChannelDialog({
                 disabled={isSaving}
                 min="0"
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-dark-text-secondary">
+              <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
                 {t(
                   "channelDialog:fields.weight.hint",
                   "Weight for load balancing (0 = equal distribution)"
@@ -365,21 +382,26 @@ export function ChannelDialog({
                 {t("channelDialog:fields.status.label", "Status")}
               </Label>
               <Select
-                id="channel-status"
-                value={formData.status}
-                onChange={(e) =>
-                  updateField(
-                    "status",
-                    parseInt(e.target.value) as ChannelStatus
-                  )
+                value={
+                  formData.status === undefined || formData.status === null
+                    ? ""
+                    : String(formData.status)
+                }
+                onValueChange={(value) =>
+                  updateField("status", Number(value) as ChannelStatus)
                 }
                 disabled={isSaving}>
-                <option value={CHANNEL_STATUS.Enable}>
-                  {t("channelDialog:fields.status.enabled", "Enabled")}
-                </option>
-                <option value={CHANNEL_STATUS.ManuallyDisabled}>
-                  {t("channelDialog:fields.status.disabled", "Disabled")}
-                </option>
+                <SelectTrigger id="channel-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={String(CHANNEL_STATUS.Enable)}>
+                    {t("channelDialog:fields.status.enabled", "Enabled")}
+                  </SelectItem>
+                  <SelectItem value={String(CHANNEL_STATUS.ManuallyDisabled)}>
+                    {t("channelDialog:fields.status.disabled", "Disabled")}
+                  </SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </div>

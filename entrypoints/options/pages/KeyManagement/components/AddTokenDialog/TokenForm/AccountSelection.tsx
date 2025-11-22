@@ -1,8 +1,13 @@
 import { useTranslation } from "react-i18next"
 
-import { FormField, Select } from "~/components/ui"
-
-import type { FormData } from "../hooks/useTokenForm"
+import {
+  FormField,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "~/components/ui"
 
 export interface Account {
   id: string
@@ -11,17 +16,17 @@ export interface Account {
 
 interface AccountSelectionProps {
   accountId: string
-  handleInputChange: (
-    field: keyof FormData
-  ) => (e: React.ChangeEvent<HTMLSelectElement>) => void
+  handleSelectChange: (value: string) => void
   isEditMode: boolean
   availableAccounts: Account[]
   error?: string
 }
 
+const UNSELECTED_VALUE = "__unselected__"
+
 export function AccountSelection({
   accountId,
-  handleInputChange,
+  handleSelectChange,
   isEditMode,
   availableAccounts,
   error
@@ -35,16 +40,24 @@ export function AccountSelection({
       error={error}
       description={isEditMode ? t("dialog.editModeNoChange") : undefined}>
       <Select
-        id="accountSelect"
-        value={accountId}
-        onChange={handleInputChange("accountId")}
+        value={accountId ? accountId : UNSELECTED_VALUE}
+        onValueChange={(value) =>
+          handleSelectChange(value === UNSELECTED_VALUE ? "" : value)
+        }
         disabled={isEditMode}>
-        <option value="">{t("pleaseSelectAccount")}</option>
-        {availableAccounts.map((account) => (
-          <option key={account.id} value={account.id}>
-            {account.name}
-          </option>
-        ))}
+        <SelectTrigger id="accountSelect" className="w-full">
+          <SelectValue placeholder={t("pleaseSelectAccount")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={UNSELECTED_VALUE}>
+            {t("pleaseSelectAccount")}
+          </SelectItem>
+          {availableAccounts.map((account) => (
+            <SelectItem key={account.id} value={account.id}>
+              {account.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
     </FormField>
   )

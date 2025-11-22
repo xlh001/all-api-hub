@@ -1,8 +1,8 @@
 import React from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
-import { Label } from "./Label"
+import { Label } from "./label"
 
 export interface FormFieldProps {
   label?: string

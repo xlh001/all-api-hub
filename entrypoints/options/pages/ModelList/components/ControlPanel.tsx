@@ -16,6 +16,10 @@ import {
   Input,
   Label,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Switch
 } from "~/components/ui"
 
@@ -85,14 +89,19 @@ export function ControlPanel({
 
           <FormField label={t("userGroup")} className="w-full lg:w-64">
             <Select
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value)}>
-              <option value="all">{t("allGroups")}</option>
-              {availableGroups.map((group) => (
-                <option key={group} value={group}>
-                  {group} ({pricingData?.group_ratio?.[group] || 1}x)
-                </option>
-              ))}
+              value={selectedGroup ?? ""}
+              onValueChange={setSelectedGroup}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("allGroups")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allGroups")}</SelectItem>
+                {availableGroups.map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {group} ({pricingData?.group_ratio?.[group] || 1}x)
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </FormField>
 
@@ -108,11 +117,11 @@ export function ControlPanel({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-gray-100 pt-4 dark:border-dark-bg-tertiary lg:flex-row lg:items-center lg:justify-between">
+        <div className="dark:border-dark-bg-tertiary flex flex-col gap-4 border-t border-gray-100 pt-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <div className="flex items-center space-x-2">
-              <AdjustmentsHorizontalIcon className="h-4 w-4 text-gray-400 dark:text-dark-text-tertiary" />
-              <span className="font-medium text-gray-700 dark:text-dark-text-secondary">
+              <AdjustmentsHorizontalIcon className="dark:text-dark-text-tertiary h-4 w-4 text-gray-400" />
+              <span className="dark:text-dark-text-secondary font-medium text-gray-700">
                 {t("displayOptions")}
               </span>
             </div>
@@ -154,11 +163,11 @@ export function ControlPanel({
           </div>
 
           <div className="flex items-center space-x-4 text-sm">
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-dark-text-secondary">
+            <div className="dark:text-dark-text-secondary flex items-center space-x-2 text-gray-600">
               <CpuChipIcon className="h-4 w-4" />
               <span>{t("totalModels", { count: totalModels })}</span>
             </div>
-            <div className="h-4 w-px bg-gray-300 dark:bg-dark-bg-tertiary"></div>
+            <div className="dark:bg-dark-bg-tertiary h-4 w-px bg-gray-300"></div>
             <div className="text-blue-600 dark:text-blue-400">
               <span>{t("showing", { count: filteredModels.length })}</span>
             </div>

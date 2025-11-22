@@ -1,6 +1,6 @@
 // Core UI Components
-export { Button, buttonVariants } from "./Button"
-export { Input, inputVariants } from "./Input"
+export { Button, buttonVariants } from "./button"
+export { Input, inputVariants } from "./input.tsx"
 export {
   Card,
   CardHeader,
@@ -15,10 +15,21 @@ export {
 } from "./Card"
 export { CardItem, cardItemVariants } from "./CardItem"
 export { CardList } from "./CardList"
-export { Label, labelVariants } from "./Label"
+export { Label, labelVariants } from "./label"
 export { Alert, AlertTitle, AlertDescription } from "./Alert"
-export { Badge, badgeVariants } from "./Badge"
-export { Select, selectVariants } from "./Select"
+export { Badge, badgeVariants } from "./badge"
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue
+} from "./select"
 export {
   MultiSelect,
   type MultiSelectOption,

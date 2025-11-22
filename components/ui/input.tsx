@@ -1,10 +1,10 @@
 import { cva, type VariantProps } from "class-variance-authority"
 import React from "react"
 
-import { cn } from "~/utils/cn"
+import { cn } from "~/lib/utils.ts"
 
-const selectVariants = cva(
-  "flex w-full rounded-md border border-gray-300 dark:border-dark-bg-tertiary bg-white dark:bg-dark-bg-secondary px-3 py-2 text-sm text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-colors appearance-none",
+const inputVariants = cva(
+  "w-full rounded-md border border-gray-300 dark:border-dark-bg-tertiary bg-white dark:bg-dark-bg-secondary px-3 py-2 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
   {
     variants: {
       variant: {
@@ -27,31 +27,21 @@ const selectVariants = cva(
   }
 )
 
-export interface SelectProps
-  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size">,
-    VariantProps<typeof selectVariants> {
+export interface InputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
+    VariantProps<typeof inputVariants> {
   leftIcon?: React.ReactNode
+  rightIcon?: React.ReactNode
   error?: string
   success?: string
-  placeholder?: string
 }
 
-const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
-    {
-      className,
-      variant,
-      size,
-      leftIcon,
-      error,
-      success,
-      placeholder,
-      children,
-      ...props
-    },
+    { className, variant, size, leftIcon, rightIcon, error, success, ...props },
     ref
   ) => {
-    const selectVariant = error ? "error" : success ? "success" : variant
+    const inputVariant = error ? "error" : success ? "success" : variant
 
     return (
       <div className="relative">
@@ -60,22 +50,22 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             <span className="text-gray-400 dark:text-gray-500">{leftIcon}</span>
           </div>
         )}
-        <select
+        <input
           className={cn(
-            selectVariants({ variant: selectVariant, size, className }),
+            inputVariants({ variant: inputVariant, size, className }),
             leftIcon && "pl-10",
-            "pr-10"
+            rightIcon && "pr-10"
           )}
           ref={ref}
           {...props}
-          title={props.title || props["aria-label"] || placeholder}>
-          {placeholder && (
-            <option value="" disabled>
-              {placeholder}
-            </option>
-          )}
-          {children}
-        </select>
+        />
+        {rightIcon && (
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+            <span className="text-gray-400 dark:text-gray-500">
+              {rightIcon}
+            </span>
+          </div>
+        )}
         {(error || success) && (
           <p
             className={cn(
@@ -91,6 +81,6 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     )
   }
 )
-Select.displayName = "Select"
+Input.displayName = "Input"
 
-export { Select, selectVariants }
+export { Input, inputVariants }

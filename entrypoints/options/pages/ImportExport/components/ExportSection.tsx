@@ -85,8 +85,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
                 disabled={isExporting}
                 variant="secondary"
                 size="sm"
-                loading={isExporting}
-                className="bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700">
+                loading={isExporting}>
                 {isExporting
                   ? t("common:status.exporting")
                   : t("common:actions.export")}
