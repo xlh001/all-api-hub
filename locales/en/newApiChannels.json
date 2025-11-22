@@ -69,6 +69,7 @@
     "configMissing": "New API configuration is missing",
     "channelDeleted": "Channel deleted",
     "channelsDeleted": "{{count}} channels deleted",
+    "someDeletesFailed": "Failed to delete {{count}} channel(s): {{error}}",
     "syncCompleted": "Model sync completed ({{success}}/{{total}})",
     "syncFailed": "Model sync failed: {{error}}",
     "loadFailed": "Failed to load channels: {{error}}",

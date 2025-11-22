@@ -264,20 +264,47 @@ export default function NewApiChannelsPage() {
       if (!config) {
         throw new Error(t("toasts.configMissing"))
       }
-      await Promise.all(
+
+      const results = await Promise.allSettled(
         pendingDeleteIds.map((id) =>
           deleteChannel(config.baseUrl, config.token, config.userId, id)
         )
       )
-      toast.success(
-        pendingDeleteIds.length === 1
-          ? t("toasts.channelDeleted")
-          : t("toasts.channelsDeleted", { count: pendingDeleteIds.length })
-      )
-      setChannels((prev) =>
-        prev.filter((channel) => !pendingDeleteIds.includes(channel.id))
-      )
-      setRowSelection({})
+
+      const successIds: number[] = []
+      const failedResults: PromiseRejectedResult[] = []
+
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          successIds.push(pendingDeleteIds[index])
+        } else {
+          failedResults.push(result)
+        }
+      })
+
+      if (successIds.length > 0) {
+        setChannels((prev) =>
+          prev.filter((channel) => !successIds.includes(channel.id))
+        )
+        setRowSelection({})
+        toast.success(
+          successIds.length === 1
+            ? t("toasts.channelDeleted")
+            : t("toasts.channelsDeleted", { count: successIds.length })
+        )
+      }
+
+      if (failedResults.length > 0) {
+        const firstError = failedResults[0].reason
+        toast.error(
+          failedResults.length === 1
+            ? getErrorMessage(firstError)
+            : t("toasts.someDeletesFailed", {
+                count: failedResults.length,
+                error: getErrorMessage(firstError)
+              })
+        )
+      }
     } catch (err) {
       toast.error(getErrorMessage(err))
     } finally {
