@@ -27,7 +27,12 @@
     "alreadyAdded": "当前站点已添加",
     "editNow": "立即编辑",
     "cookieWarning": "Cookie 认证使用您的当前登录账号，无法站点多账号，非必要请勿使用",
-    "unknown": "无法获取"
+    "unknown": "无法获取",
+    "authMethodPlaceholder": "认证方式",
+    "authType": {
+      "cookieAuth": "Cookie 认证",
+      "accessToken": "访问令牌认证"
+    }
   },
   "infoPanel": {
     "confirmation": "账号信息确认",

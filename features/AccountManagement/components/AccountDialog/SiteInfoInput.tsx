@@ -102,13 +102,15 @@ export default function SiteInfoInput({
             <SelectTrigger
               id="auth-type"
               className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary w-full">
-              <SelectValue placeholder="Auth Type" />
+              <SelectValue placeholder={t("siteInfo.authMethodPlaceholder")} />
             </SelectTrigger>
             <SelectContent align="end" className="min-w-48">
               <SelectItem value={AuthTypeEnum.AccessToken}>
-                Access Token
+                {t("siteInfo.authType.accessToken")}
               </SelectItem>
-              <SelectItem value={AuthTypeEnum.Cookie}>Cookie</SelectItem>
+              <SelectItem value={AuthTypeEnum.Cookie}>
+                {t("siteInfo.authType.cookieAuth")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </Tooltip>
