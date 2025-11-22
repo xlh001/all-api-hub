@@ -1,6 +1,6 @@
 // Core UI Components
 export { Button, buttonVariants } from "./button"
-export { Input, inputVariants } from "./Input"
+export { Input, inputVariants } from "./input.tsx"
 export {
   Card,
   CardHeader,
