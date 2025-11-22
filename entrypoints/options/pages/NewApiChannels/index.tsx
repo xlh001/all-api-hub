@@ -14,6 +14,7 @@ import {
   useReactTable,
   VisibilityState,
   type Cell,
+  type CellContext,
   type HeaderGroup
 } from "@tanstack/react-table"
 import {
@@ -386,10 +387,18 @@ export default function NewApiChannelsPage() {
       },
       {
         accessorKey: "models",
+        accessorFn: (row: ChannelRow) =>
+          row.models?.split(",").filter(Boolean).length ?? 0,
         header: t("table.columns.models"),
-        cell: ({ row }: { row: Row<ChannelRow> }) => {
-          const models = row.original.models?.split(",").filter(Boolean) ?? []
-          return <span className="text-sm font-medium">{models.length}</span>
+        cell: ({ row, getValue }: CellContext<ChannelRow, unknown>) => {
+          const modelCount = Number(getValue())
+          return (
+            <span className="text-sm font-medium">
+              {modelCount ??
+                row.original.models?.split(",").filter(Boolean).length ??
+                0}
+            </span>
+          )
         },
         size: 90
       },
