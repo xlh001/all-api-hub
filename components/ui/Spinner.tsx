@@ -14,10 +14,10 @@ const spinnerVariants = cva(
         xl: "h-12 w-12"
       },
       variant: {
-        default: "text-blue-600",
-        white: "text-white",
-        gray: "text-gray-400",
-        primary: "text-gray-900 dark:text-dark-text-primary"
+        default: "text-[var(--spinner-default-color)]",
+        white: "text-[var(--spinner-white-color)]",
+        gray: "text-[var(--spinner-gray-color)]",
+        primary: "text-[var(--spinner-primary-color)]"
       }
     },
     defaultVariants: {

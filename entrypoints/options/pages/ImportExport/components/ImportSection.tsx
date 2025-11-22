@@ -103,7 +103,7 @@ const ImportSection = ({
             disabled={isImporting || !validation?.valid}
             loading={isImporting}
             variant="default"
-            className="w-full">
+            bleed>
             {isImporting
               ? t("common:status.importing")
               : t("common:actions.import")}

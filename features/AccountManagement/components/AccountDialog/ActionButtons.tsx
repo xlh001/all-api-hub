@@ -6,6 +6,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
+import { Button } from "~/components/ui"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 
 interface ActionButtonsProps {
@@ -43,108 +44,95 @@ export default function ActionButtons({
   if (isAddMode && !isDetected && !isFormValid) {
     return (
       <div className="flex space-x-3">
-        <button
+        <Button
           type="button"
           onClick={onAutoDetect}
           disabled={!url.trim() || isDetecting}
-          className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-linear-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-blue-600 hover:to-indigo-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-          {isDetecting ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              <span>{t("accountDialog:mode.detecting")}</span>
-            </>
-          ) : (
-            <>
-              <SparklesIcon className="h-4 w-4" />
-              <span>{t("accountDialog:mode.autoDetect")}</span>
-            </>
-          )}
-        </button>
-        <button
+          loading={isDetecting}
+          bleed
+          className="flex-1"
+          variant="default"
+          leftIcon={
+            !isDetecting ? <SparklesIcon className="h-4 w-4" /> : undefined
+          }>
+          {isDetecting
+            ? t("accountDialog:mode.detecting")
+            : t("accountDialog:mode.autoDetect")}
+        </Button>
+        <Button
           type="button"
           onClick={onShowManualForm}
-          className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-secondary dark:hover:bg-dark-bg-tertiary flex flex-1 items-center justify-center space-x-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          <PencilIcon className="h-4 w-4" />
-          <span>{t("accountDialog:mode.manualAdd")}</span>
-        </button>
+          bleed
+          className="flex-1"
+          variant="outline"
+          leftIcon={<PencilIcon className="h-4 w-4" />}>
+          {t("accountDialog:mode.manualAdd")}
+        </Button>
       </div>
     )
   }
 
   return (
     <div className="flex space-x-3 pt-2">
-      <button
-        type="button"
-        onClick={onClose}
-        className="dark:bg-dark-bg-tertiary dark:text-dark-text-secondary rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:outline-none dark:hover:bg-gray-700">
+      <Button type="button" onClick={onClose} variant="secondary">
         {t("common:actions.cancel")}
-      </button>
+      </Button>
 
       {mode === DIALOG_MODES.EDIT && !isDetected && (
-        <button
+        <Button
           type="button"
           onClick={onAutoDetect}
           disabled={!url.trim() || isDetecting}
-          className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-linear-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-blue-600 hover:to-indigo-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-          {isDetecting ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              <span>{t("accountDialog:mode.detecting")}</span>
-            </>
-          ) : (
-            <>
-              <SparklesIcon className="h-4 w-4" />
-              <span>{t("accountDialog:mode.reDetect")}</span>
-            </>
-          )}
-        </button>
+          loading={isDetecting}
+          bleed
+          className="flex-1"
+          variant="default"
+          leftIcon={
+            !isDetecting ? <SparklesIcon className="h-4 w-4" /> : undefined
+          }>
+          {isDetecting
+            ? t("accountDialog:mode.detecting")
+            : t("accountDialog:mode.reDetect")}
+        </Button>
       )}
 
       {isAddMode && (
-        <button
+        <Button
           type="button"
           onClick={onAutoConfig}
           disabled={isAutoConfiguring || isSaving}
-          className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-linear-to-r from-purple-500 to-pink-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-purple-600 hover:to-pink-700 focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          loading={isAutoConfiguring}
+          bleed
+          className="flex-1"
           aria-label={t("accountDialog:actions.autoConfigAriaLabel")}
-          title={t("accountDialog:actions.autoConfigTitle")}>
-          {isAutoConfiguring ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              <span>{t("accountDialog:actions.configuring")}</span>
-            </>
-          ) : (
-            <>
-              <BoltIcon className="h-4 w-4" />
-              <span>{t("accountDialog:actions.configToNewApi")}</span>
-            </>
-          )}
-        </button>
+          title={t("accountDialog:actions.autoConfigTitle")}
+          variant="default"
+          leftIcon={
+            !isAutoConfiguring ? <BoltIcon className="h-4 w-4" /> : undefined
+          }>
+          {isAutoConfiguring
+            ? t("accountDialog:actions.configuring")
+            : t("accountDialog:actions.configToNewApi")}
+        </Button>
       )}
 
-      <button
+      <Button
         type="submit"
         {...(formId ? { form: formId } : {})}
         disabled={!isFormValid || isSaving || isAutoConfiguring}
-        className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-linear-to-r from-green-500 to-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-green-600 hover:to-emerald-700 focus:ring-2 focus:ring-green-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-        {isSaving ? (
-          <>
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            <span>{t("common:status.saving")}</span>
-          </>
-        ) : (
-          <>
-            <CheckIcon className="h-4 w-4" />
-            <span>
-              {isAddMode
-                ? isDetected
-                  ? t("accountDialog:actions.confirmAdd")
-                  : t("accountDialog:actions.saveAccount")
-                : t("accountDialog:actions.saveChanges")}
-            </span>
-          </>
-        )}
-      </button>
+        loading={isSaving}
+        bleed
+        className="flex-1"
+        variant={isAddMode ? "success" : "default"}
+        leftIcon={!isSaving ? <CheckIcon className="h-4 w-4" /> : undefined}>
+        {isSaving
+          ? t("common:status.saving")
+          : isAddMode
+            ? isDetected
+              ? t("accountDialog:actions.confirmAdd")
+              : t("accountDialog:actions.saveAccount")
+            : t("accountDialog:actions.saveChanges")}
+      </Button>
     </div>
   )
 }

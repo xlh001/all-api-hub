@@ -12,17 +12,18 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+          "bg-[var(--button-primary-bg)] text-[var(--button-primary-foreground)] shadow hover:bg-[var(--button-primary-bg-hover)] focus-visible:ring-[var(--button-primary-ring)] focus-visible:ring-opacity-40",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 focus-visible:ring-destructive/30",
+          "bg-[var(--button-destructive-bg)] text-[var(--button-destructive-foreground)] shadow-sm hover:bg-[var(--button-destructive-bg-hover)] focus-visible:ring-[var(--button-destructive-ring)] focus-visible:ring-opacity-40",
         outline:
-          "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+          "border border-[var(--button-outline-border)] bg-[var(--button-outline-bg)] shadow-xs text-[var(--button-outline-foreground)] hover:bg-[var(--button-outline-hover-bg)] focus-visible:ring-[var(--button-outline-ring)] focus-visible:ring-opacity-40",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+          "bg-[var(--button-secondary-bg)] text-[var(--button-secondary-foreground)] shadow-sm hover:bg-[var(--button-secondary-bg-hover)] focus-visible:ring-[var(--button-secondary-ring)] focus-visible:ring-opacity-40",
         success:
-          "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500 focus-visible:ring-emerald-500/40",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline"
+          "bg-[var(--button-success-bg)] text-[var(--button-success-foreground)] shadow-sm hover:bg-[var(--button-success-bg-hover)] focus-visible:ring-[var(--button-success-ring)] focus-visible:ring-opacity-40",
+        ghost:
+          "text-[var(--button-ghost-foreground)] hover:bg-[var(--button-ghost-hover-bg)] hover:text-[var(--button-ghost-hover-foreground)]",
+        link: "text-[var(--button-link-foreground)] underline-offset-4 hover:text-[var(--button-link-hover-foreground)] hover:underline focus-visible:ring-[var(--button-link-ring)] focus-visible:ring-opacity-40"
       },
       size: {
         default: "h-9 px-4 py-2",
