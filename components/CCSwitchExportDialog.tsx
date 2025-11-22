@@ -2,7 +2,17 @@ import { FormEvent, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { CCSwitchIcon } from "~/components/icons/CCSwitchIcon"
-import { Button, Input, Label, Modal, Select } from "~/components/ui"
+import {
+  Button,
+  Input,
+  Label,
+  Modal,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "~/components/ui"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import {
   CCSWITCH_APPS,
@@ -72,10 +82,10 @@ export function CCSwitchExportDialog({
         <div className="flex items-center gap-2">
           <CCSwitchIcon size="lg" />
           <div>
-            <div className="text-base font-semibold text-gray-900 dark:text-dark-text-primary">
+            <div className="dark:text-dark-text-primary text-base font-semibold text-gray-900">
               {t("ui:dialog.ccswitch.title")}
             </div>
-            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+            <p className="dark:text-dark-text-secondary text-sm text-gray-500">
               {t("ui:dialog.ccswitch.description")}
             </p>
           </div>
@@ -136,15 +146,18 @@ export function CCSwitchExportDialog({
             {t("ui:dialog.ccswitch.fields.app")}
           </Label>
           <Select
-            id="ccswitch-app"
-            className="mt-1"
-            value={app}
-            onChange={(event) => setApp(event.target.value as CCSwitchApp)}>
-            {CCSWITCH_APPS.map((value) => (
-              <option key={value} value={value}>
-                {t(`ui:dialog.ccswitch.appOptions.${value}`)}
-              </option>
-            ))}
+            value={app ?? ""}
+            onValueChange={(value) => setApp(value as CCSwitchApp)}>
+            <SelectTrigger id="ccswitch-app" className="mt-1">
+              <SelectValue placeholder={t("ui:dialog.ccswitch.fields.app")} />
+            </SelectTrigger>
+            <SelectContent>
+              {CCSWITCH_APPS.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {t(`ui:dialog.ccswitch.appOptions.${value}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
 

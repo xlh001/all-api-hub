@@ -18,6 +18,7 @@ interface AdvancedSettingsSectionProps {
   handleInputChange: (
     field: keyof FormData
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+  handleSelectChange: (field: keyof FormData) => (value: string) => void
   handleModelSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
 }
 
@@ -28,6 +29,7 @@ export function AdvancedSettingsSection({
   groups,
   availableModels,
   handleInputChange,
+  handleSelectChange,
   handleModelSelectChange
 }: AdvancedSettingsSectionProps) {
   const { t } = useTranslation("keyManagement")
@@ -36,7 +38,7 @@ export function AdvancedSettingsSection({
     <FormSection title={t("dialog.advancedSettings")}>
       <GroupSelection
         group={formData.group}
-        handleInputChange={handleInputChange}
+        handleSelectChange={handleSelectChange("group")}
         groups={groups}
       />
       {isNotEmptyArray(availableModels) && (

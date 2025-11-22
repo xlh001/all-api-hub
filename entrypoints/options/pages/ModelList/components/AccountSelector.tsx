@@ -1,6 +1,13 @@
 import { useTranslation } from "react-i18next"
 
-import { Heading3, Select } from "~/components/ui"
+import {
+  Heading3,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "~/components/ui"
 import type { DisplaySiteData } from "~/types"
 
 interface AccountSelectorProps {
@@ -18,16 +25,18 @@ export function AccountSelector({
   return (
     <div className="mb-6">
       <Heading3 className="mb-3">{t("selectAccount")}</Heading3>
-      <Select
-        value={selectedAccount}
-        onChange={(e) => setSelectedAccount(e.target.value)}
-        className="w-full sm:w-80">
-        <option value="">{t("pleaseSelectAccount")}</option>
-        {accounts.map((account) => (
-          <option key={account.id} value={account.id}>
-            {account.name}
-          </option>
-        ))}
+      <Select value={selectedAccount ?? ""} onValueChange={setSelectedAccount}>
+        <SelectTrigger className="w-full sm:w-80">
+          <SelectValue placeholder={t("pleaseSelectAccount")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="empty">{t("pleaseSelectAccount")}</SelectItem>
+          {accounts.map((account) => (
+            <SelectItem key={account.id} value={account.id}>
+              {account.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
     </div>
   )

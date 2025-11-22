@@ -1,36 +1,43 @@
 import { useTranslation } from "react-i18next"
 
-import { FormField, Select } from "~/components/ui"
+import {
+  FormField,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "~/components/ui"
 import type { UserGroupInfo } from "~/services/apiService/common/type"
-
-import type { FormData } from "../hooks/useTokenForm"
 
 interface GroupSelectionProps {
   group: string
-  handleInputChange: (
-    field: keyof FormData
-  ) => (e: React.ChangeEvent<HTMLSelectElement>) => void
+  handleSelectChange: (value: string) => void
   groups: Record<string, UserGroupInfo>
 }
 
 export function GroupSelection({
   group,
-  handleInputChange,
+  handleSelectChange,
   groups
 }: GroupSelectionProps) {
   const { t } = useTranslation("keyManagement")
 
   return (
     <FormField label={t("dialog.groupLabel")} htmlFor="groupSelect">
-      <Select
-        id="groupSelect"
-        value={group}
-        onChange={handleInputChange("group")}>
-        {Object.entries(groups).map(([key, group]) => (
-          <option key={key} value={key}>
-            {group.desc} ({t("dialog.groupRate")}: {group.ratio})
-          </option>
-        ))}
+      <Select value={group ?? ""} onValueChange={handleSelectChange}>
+        <SelectTrigger id="groupSelect" className="w-full">
+          <SelectValue
+            placeholder={t("dialog.groupPlaceholder") ?? t("dialog.groupLabel")}
+          />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(groups).map(([key, groupInfo]) => (
+            <SelectItem key={key} value={key}>
+              {groupInfo.desc} ({t("dialog.groupRate")}: {groupInfo.ratio})
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
     </FormField>
   )

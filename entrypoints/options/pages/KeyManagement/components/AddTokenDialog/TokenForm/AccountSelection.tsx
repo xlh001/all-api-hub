@@ -9,8 +9,6 @@ import {
   SelectValue
 } from "~/components/ui"
 
-import type { FormData } from "../hooks/useTokenForm"
-
 export interface Account {
   id: string
   name: string
@@ -23,6 +21,8 @@ interface AccountSelectionProps {
   availableAccounts: Account[]
   error?: string
 }
+
+const UNSELECTED_VALUE = "__unselected__"
 
 export function AccountSelection({
   accountId,
@@ -40,14 +40,18 @@ export function AccountSelection({
       error={error}
       description={isEditMode ? t("dialog.editModeNoChange") : undefined}>
       <Select
-        value={accountId ?? ""}
-        onValueChange={handleSelectChange}
+        value={accountId ? accountId : UNSELECTED_VALUE}
+        onValueChange={(value) =>
+          handleSelectChange(value === UNSELECTED_VALUE ? "" : value)
+        }
         disabled={isEditMode}>
         <SelectTrigger id="accountSelect" className="w-full">
           <SelectValue placeholder={t("pleaseSelectAccount")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">{t("pleaseSelectAccount")}</SelectItem>
+          <SelectItem value={UNSELECTED_VALUE}>
+            {t("pleaseSelectAccount")}
+          </SelectItem>
           {availableAccounts.map((account) => (
             <SelectItem key={account.id} value={account.id}>
               {account.name}
