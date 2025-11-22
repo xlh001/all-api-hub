@@ -324,6 +324,8 @@ export function useChannelForm({
     isLoadingModels,
     availableGroups,
     availableModels,
-    resetForm
+    resetForm,
+    isKeyFieldRequired,
+    isBaseUrlRequired
   }
 }

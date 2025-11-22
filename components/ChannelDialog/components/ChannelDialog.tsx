@@ -48,7 +48,6 @@ export function ChannelDialog({
 }: ChannelDialogProps) {
   const { t } = useTranslation(["channelDialog", "common"])
   const [showKey, setShowKey] = useState(false)
-  const isKeyFieldRequired = mode === DIALOG_MODES.ADD
 
   const {
     formData,
@@ -60,7 +59,9 @@ export function ChannelDialog({
     isLoadingGroups,
     isLoadingModels,
     availableGroups,
-    availableModels
+    availableModels,
+    isKeyFieldRequired,
+    isBaseUrlRequired
   } = useChannelForm({
     mode,
     channel,
@@ -129,10 +130,6 @@ export function ChannelDialog({
       </Button>
     </div>
   )
-
-  const isBaseUrlRequired =
-    formData.type === ChannelType.VolcEngine ||
-    formData.type === ChannelType.SunoAPI
 
   return (
     <Modal
