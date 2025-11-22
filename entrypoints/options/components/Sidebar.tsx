@@ -165,14 +165,14 @@ function Sidebar({
                         shouldShowCollapsedState && "justify-center px-0",
                         isActive
                           ? "bg-blue-600 text-white dark:bg-blue-500"
-                          : "dark:text-dark-text-secondary dark:hover:bg-dark-bg-tertiary text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          : "dark:text-dark-text-secondary text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-white/10 dark:hover:text-white"
                       )}>
                       <Icon
                         className={cn(
                           "h-5 w-5 shrink-0",
                           isActive
                             ? "text-white"
-                            : "dark:text-dark-text-tertiary text-gray-400 group-hover:text-gray-600"
+                            : "dark:text-dark-text-tertiary text-gray-400 group-hover:text-gray-600 dark:group-hover:text-white"
                         )}
                       />
 
