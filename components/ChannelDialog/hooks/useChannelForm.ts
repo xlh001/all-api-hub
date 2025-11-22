@@ -219,6 +219,10 @@ export function useChannelForm({
 
   const isKeyFieldRequired = mode === DIALOG_MODES.ADD
 
+  const isBaseUrlRequired =
+    formData.type === ChannelType.VolcEngine ||
+    formData.type === ChannelType.SunoAPI
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -233,7 +237,7 @@ export function useChannelForm({
       return
     }
 
-    if (!formData?.base_url?.trim()) {
+    if (isBaseUrlRequired && !formData?.base_url?.trim()) {
       toast.error(
         t("validation.baseUrlRequired") ||
           "Base URL is required for this channel type"
@@ -306,7 +310,7 @@ export function useChannelForm({
   const isFormValid = Boolean(
     formData.name.trim() &&
       (!isKeyFieldRequired || formData.key.trim()) &&
-      formData.base_url?.trim()
+      (!isBaseUrlRequired || formData?.base_url?.trim())
   )
 
   return {

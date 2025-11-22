@@ -130,6 +130,10 @@ export function ChannelDialog({
     </div>
   )
 
+  const isBaseUrlRequired =
+    formData.type === ChannelType.VolcEngine ||
+    formData.type === ChannelType.SunoAPI
+
   return (
     <Modal
       isOpen={isOpen}
@@ -230,7 +234,7 @@ export function ChannelDialog({
 
         {/* Base URL */}
         <div>
-          <Label htmlFor="channel-base-url" required={true}>
+          <Label htmlFor="channel-base-url" required={isBaseUrlRequired}>
             {t("channelDialog:fields.baseUrl.label", "Base URL")}
           </Label>
           <Input
@@ -240,7 +244,7 @@ export function ChannelDialog({
             onChange={(e) => updateField("base_url", e.target.value)}
             placeholder={t("channelDialog:fields.baseUrl.placeholder")}
             disabled={isSaving}
-            required={true}
+            required={isBaseUrlRequired}
           />
         </div>
 
