@@ -8,8 +8,8 @@ import { useTranslation } from "react-i18next"
 
 import { Button, Heading3, IconButton, Separator } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext.tsx"
-import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
 import { cn } from "~/lib/utils"
+import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
 
 import { menuItems } from "../constants"
 
@@ -148,8 +148,9 @@ function Sidebar({
                 }
 
                 if (
-                  item.id === "newApiModelSync" &&
-                  !hasValidNewApiConfig(preferences ?? null)
+                  !hasValidNewApiConfig(preferences ?? null) &&
+                  (item.id === "newApiModelSync" ||
+                    item.id === "newApiChannels")
                 ) {
                   return null
                 }
