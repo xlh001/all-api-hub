@@ -53,9 +53,10 @@ This extension automatically detects and manages accounts from sites based on th
 - 🔑 **Token & Key Management** - Convenient API Key viewing and management, support quick copy and batch operations
 - 🤖 **View Model Information** - View the list of models supported by the site and pricing information.
 - 🔄 **New API System Management**
-    - Automatically synchronize the channel model list of New API and its fork projects, continuously staying in sync with the upstream model list.
-    - Automatically generate model redirects, eliminating manual searching and individual configuration, maximizing channel resource utilization, and enhancing model availability.
-- 🚀 **Quick Export Integration** - One-click export configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio) and [New API](https://github.com/QuantumNous/new-api), simplifying API usage workflow
+    - Manual triggers, per-channel filtering through model whitelists, and continuous sync with upstream suppliers.
+    - Automatic model redirect generation plus the [New API Channel Management](docs/docs/en/new-api-channel-management.md) beta UI for in-extension channel maintenance.
+- 🚀 **Quick Export Integration** - One-click export configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), and [New API](https://github.com/QuantumNous/new-api), simplifying API usage workflow
+- 🛡️ **Cloudflare Bypass Helper** - Automatically falls back to an isolated window to pass five-second shields so that protected sites can still be recognized and added.
 - ☁️ **Data Backup & Recovery** - Support JSON format import/export, WebDav cloud backup, cross-device data synchronization
 - 🌐 **Cross-Platform Compatible** - Support Chrome, Firefox browsers, works on mobile devices via Kiwi Browser, with automatic dark mode switching
 - 🔒 **Privacy & Security** - Fully offline operation, all data stored locally, protecting your privacy
@@ -92,17 +93,26 @@ This extension automatically detects and manages accounts from sites based on th
 <figcaption style="text-align:center;">Import/Export</figcaption>
 </figure>
 
+## 🧑‍🚀 Quick Start Guide for New Users
+
+1.  **Install Plugin**: Get the latest version from the Chrome/Edge/Firefox store or GitHub Release. After enabling the extension, pin it to your browser toolbar.
+2.  **Log In to Site and Auto-Identify**: First, log in to your target relay station in your browser, open the plugin, select "Add Account," enter the site address, and click "Auto-Identify." If you encounter a Cloudflare 5-second shield, a pop-up will automatically appear to assist in bypassing it; if the site is heavily customized, switch to Cookie mode to provide additional information.
+3.  **Organize Accounts**: Use account grouping, sorting, and quick jump features to quickly locate target sites; enable check-in detection, daily income statistics, and health status notifications in the account details.
+4.  **Configure New API Integration (if you have your own New API site)**: In "Basic Settings → New API Integration Settings," fill in the administrator URL, Token, and User ID. Go to the dedicated page to manually synchronize, filter models by whitelist, or adjust redirects in Channel Management Beta.
+5.  **Export to Downstream Applications**: In the key list, use "One-Click Export" to synchronize channels to CherryStudio, New API, or CC Switch, automatically including the model list and rate parameters.
+6.  **Backup and Collaboration**: Utilize JSON import/export or WebDAV auto-backup to share configurations across multiple devices, ensuring data security and reliability.
+
 ## 🚀 Installation
 
-### Chrome App Store (Recommended)
+### Chrome App Store
 
 [🔗 Go to download](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo)
 
-### Edge App Store (Recommended)
+### Edge App Store
 
 [🔗 Go to download](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
 
-### FireFox App Store (Recommended)
+### FireFox App Store
 [🔗 Go to download](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24})
 
 ### Manual Installation

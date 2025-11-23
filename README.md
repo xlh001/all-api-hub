@@ -53,9 +53,10 @@
 - 🔑 **令牌与密钥** - 便捷的 API Key 查看与管理，支持快速复制和批量操作
 - 🤖 **模型信息查看** - 查看站点支持的模型列表和价格信息
 - 🔄 **New API 类系统管理**
-    - 自动同步 New API 及其 fork 项目的渠道模型列表，持续与上游模型列表保持同步
-    - 自动生成模型重定向，免去手动搜索与逐个配置，最大化利用渠道资源，提升模型可用性
-- 🚀 **快速导出集成** - 一键导出配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio) 和 [New API](https://github.com/QuantumNous/new-api)，简化 API 使用流程
+    - 支持手动触发模型同步、按模型白名单筛选同步内容，持续与上游保持一致
+    - 提供 [New API 渠道管理](docs/docs/new-api-channel-management.md) Beta 界面，直接在插件内维护渠道与重定向
+- 🚀 **快速导出集成** - 一键导出配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch) 和 [New API](https://github.com/QuantumNous/new-api)，简化 API 使用流程
+- 🛡️ **无惧 Cloudflare 防护** - 遇到站点启用五秒盾时自动回退到独立窗口过盾，大幅提升站点识别与添加成功率
 - ☁️ **数据备份恢复** - 支持 JSON 格式导入导出，WebDav 云端备份，跨设备数据同步
 - 🌐 **全平台兼容** - 支持 Chrome、Firefox 浏览器，可在 Kiwi Browser 等移动端使用，支持深色模式自动切换
 - 🔒 **隐私与安全** - 完全离线运行，所有数据本地存储，保护您的隐私安全
@@ -94,15 +95,24 @@
 <figcaption style="text-align:center;">导入导出</figcaption>
 </figure>
 
+## 🧑‍🚀 新手快速上手
+
+1. **安装插件**：通过 Chrome/Edge/Firefox 商店或 GitHub Release 获取最新版本，启用扩展后固定在浏览器工具栏。
+2. **登录站点并自动识别**：先在浏览器登录目标中转站，打开插件选择“新增账号”，输入站点地址并点击“自动识别”。遇到 Cloudflare 五秒盾时会自动弹窗协助过盾；若站点魔改请切换到 Cookie 模式补充信息。
+3. **整理账户**：使用账号分组、排序和快速跳转快速定位目标站点；可在账号详情中启用签到检测、今日收入统计与健康状态提示。
+4. **配置 New API 集成（如有自己的New API站点）**：在“基础设置 → New API 集成设置”填入管理员 URL、Token 与用户 ID，进入专门页面即可手动同步、按白名单筛选模型或在渠道管理 Beta 中调整重定向。
+5. **导出到下游应用**：在密钥列表里使用“一键导出”将渠道同步到 CherryStudio、New API 或 CC Switch，自动带上模型列表与速率参数。
+6. **备份与协作**：通过 JSON 导入导出或 WebDAV 自动备份，在多设备之间共享配置，确保数据安全可靠。
+
 ## 🚀 安装使用
 
-### Chrome 应用商店（推荐）
+### Chrome 应用商店
 [🔗 前往下载](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo)
 
-### Edge 应用商店（推荐）
+### Edge 应用商店
 [🔗 前往下载](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa)
 
-### FireFox 应用商店（推荐）
+### FireFox 应用商店
 [🔗 前往下载](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24})
 
 ### 手动安装

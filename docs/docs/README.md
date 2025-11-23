@@ -35,15 +35,19 @@ features:
   - title: 快速导出集成
     details: 一键导出配置到 CherryStudio 和 New API，简化 API 使用流程。
   - title: New API 类系统管理
-    details: 自动同步渠道及其 fork 项目的模型列表，并生成模型重定向，免去手动配置，最大化提升模型可用性
+    details: 支持手动执行、模型白名单过滤和自动重定向生成，提供专门的渠道管理界面
   - title: 数据备份恢复
     details: 支持 JSON 格式导入导出和 WebDav 云端备份，实现跨设备数据同步。
   - title: 全平台支持
     details: 兼容 Chrome、Firefox 浏览器，支持 Kiwi Browser 等移动端浏览器，适配深色模式。
   - title: 隐私与安全
     details: 完全离线运行，所有数据本地存储，无需联网即可使用全部核心功能。
+  - title: Cloudflare 过盾助手
+    details: 遇到五秒盾自动弹窗过盾，确保站点可被识别和记录。
+  - title: 快速导出
+    details: 一键导出站点配置到 CherryStudio、New API 与 CC Switch。
 
-footer: AGPL-3.0 Licensed | Copyright © 2025-present All API Hub
+footer: AGPL-3.0 Licensed | Copyright 2025-present All API Hub
 ---
 
 ## 介绍

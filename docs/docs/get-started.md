@@ -59,19 +59,27 @@
 - 充值金额比例
 :::
 
+> 若目标站点启用了 Cloudflare 五秒盾，插件会自动弹出独立窗口帮助过盾；通过后即可继续识别流程。
+> 如IP质量不佳或其他原因，则需要在超时前手动在弹出的窗口中完成过盾。
 
-### 3.2 手动添加
+### 3.2 Cloudflare 过盾助手概览
+
+- 识别到 Cloudflare 五秒盾时，插件会自动拉起一个临时窗口帮助完成校验；若挑战需要人工干预，请在弹窗内点击验证即可。
+- 校验通过后会自动回到原始流程，继续获取 Access Token 和站点信息。
+- 更多细节可参考 [Cloudflare 防护与临时窗口降级](#_5-8-cloudflare-防护与临时窗口降级)。
+
+### 3.3 手动添加
 
 ::: info 提示
 当自动识别未成功后，可进行手动输入添加站点账号，需要先获取以下信息。（每个站点可能 UI 有所差异，请自行寻找）
 :::
 ![用户信息](./static/image/site-user-info.png)
 
-如果目标站点为魔改版本（如 AnyRouter），请在添加账号时手动切换到 **Cookie 模式**，再执行自动识别或手动填写。详情可查看 [常见问题](./faq.md#anyrouter-网站报错怎么办)。
+如果目标站点为魔改版本（如 AnyRouter），请在添加账号时手动切换到 **Cookie 模式**，再执行自动识别或手动填写。遇到严格防护的站点时，也可以结合 Cloudflare 过盾助手配合使用。详情可查看 [常见问题](./faq.md#anyrouter-网站报错怎么办)。
 
 ## 4. 快速导出站点
 
-本插件支持将已添加的站点 API 配置一键导出到 [CherryStudio](https://github.com/CherryHQ/cherry-studio) 和 [New API](https://github.com/QuantumNous/new-api)，从而简化在这些平台中添加上游供应商的流程。
+本插件支持将已添加的站点 API 配置一键导出到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch) 和 [New API](https://github.com/QuantumNous/new-api)，从而简化在这些平台中添加上游供应商的流程。
 
 ### 4.1 配置
 
@@ -80,10 +88,10 @@
 ### 4.2 导出流程
 
 1. **导航至密钥管理**：在插件的 **密钥管理** 页面，找到您想要导出的站点对应的 API 密钥。
-2. **点击导出**：在密钥操作菜单中，选择 **“导出到 CherryStudio”** 或 **“导出到 New API”**。
+2. **点击导出**：在密钥操作菜单中，选择 **“导出到 CherryStudio / CC Switch / New API”**。
 3. **自动处理**：
    * **对于 New API**：插件会自动检测目标平台是否已存在相同 `Base URL` 的渠道，避免重复添加。如果不存在，则会创建一个新渠道，并自动填充站点名称、`Base URL`、API 密钥以及可用模型列表。
-   * **对于 CherryStudio**：插件会将站点和密钥信息直接发送到您本地的 CherryStudio 程序中。
+   * **对于 CherryStudio / CC Switch**：插件会根据目标应用的协议，将站点和密钥直接发送到本地程序或剪贴板，省去逐项粘贴。
 
 通过此功能，您可以轻松地将 API 供应商配置导入到其他平台，无需手动复制粘贴，提高了工作效率。
 
@@ -121,6 +129,15 @@
 ### 5.6 New API 模型列表同步
 
 关于 New API 模型列表同步功能的详细文档，请参阅 [New API 模型列表同步](./new-api-model-sync.md)。
+
+### 5.7 New API 渠道管理（Beta）
+
+在插件内直接创建/编辑/删除渠道，搭配模型白名单和单通道同步调试，可大幅减少往返 New API 后台的频次。参见 [New API 渠道管理](./new-api-channel-management.md) 了解详细操作与注意事项。
+
+### 5.8 Cloudflare 防护与临时窗口降级
+
+- 识别或 API 调用被 Cloudflare 拦截（常见状态码 401/403/429）时，会自动切换到临时窗口重试，保持目标域 Cookie，一般无需手动操作。
+- 如遇需要人机验证的场景，请在弹出的协助窗口中完成挑战；若频繁失败可尝试更换网络或降低请求频率。
 
 ## 6. 常见问题与支持
 
