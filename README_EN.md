@@ -66,37 +66,48 @@ This extension automatically detects and manages accounts from sites based on th
 
 ## 🖥️ Screenshots
 
-<div style="display: flex; justify-content: center; gap: 20px; box-sizing: border-box; flex-wrap: wrap;">
-  <figure>
-    <img src="docs/docs/static/image/en/current-site-check.png" alt="current-site-check" style="width:49%;height:auto;">
-    <img src="docs/docs/static/image/en/try-add-existing-site.png" alt="try-add-existing-site" style="width:49%;height:auto;">
-    <figcaption style="text-align:center;">Duplicate Site Detection</figcaption>
-  </figure>
-</div>
-<figure>
-<img src="docs/docs/static/image/en/account-manage.png" alt="account-manage" style="height:auto;">
-<figcaption style="text-align:center;">Account Management</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/en/model-list.png" alt="model-list" style="height:auto;">
-<figcaption style="text-align:center;">Model list</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/en/api-key-list.png" alt="api-key-list" style="height:auto;">
-<figcaption style="text-align:center;">Key list</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/en/new-api-channel-sync.png" alt="new-api-channel-sync" style="height:auto;">
-<figcaption style="text-align:center;">New API Model Synchronization</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/en/new-api-channel-manage.png" alt="new-api-channel-manage" style="height:auto;">
-<figcaption style="text-align:center;">New API Channel Management</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/en/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
-<figcaption style="text-align:center;">Import/Export</figcaption>
-</figure>
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/docs/static/image/en/current-site-check.png" alt="current-site-check" style="width:100%; height:auto;"/>
+      <div>Duplicate Site Detection (1)</div>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/docs/static/image/en/try-add-existing-site.png" alt="try-add-existing-site" style="width:100%; height:auto;"/>
+      <div>Duplicate Site Detection (2)</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/docs/static/image/en/account-manage.png" alt="account-manage" style="width:100%; height:auto;"/>
+      <div>Account Management Overview</div>
+    </td>
+    <td align="center">
+      <img src="docs/docs/static/image/en/model-list.png" alt="model-list" style="width:100%; height:auto;"/>
+      <div>Model List & Pricing</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/docs/static/image/en/api-key-list.png" alt="api-key-list" style="width:100%; height:auto;"/>
+      <div>Key List & Export</div>
+    </td>
+    <td align="center">
+      <img src="docs/docs/static/image/en/new-api-channel-sync.png" alt="new-api-channel-sync" style="width:100%; height:auto;"/>
+      <div>New API Model Sync</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/docs/static/image/en/new-api-channel-manage.png" alt="new-api-channel-manage" style="width:100%; height:auto;"/>
+      <div>New API Channel Management</div>
+    </td>
+    <td align="center">
+      <img src="docs/docs/static/image/en/import-and-export-setting.png" alt="import-and-export-setting" style="width:100%; height:auto;"/>
+      <div>Import / Export Settings</div>
+    </td>
+  </tr>
+</table>
 
 ## 🧑‍🚀 Quick Start Guide for New Users
 

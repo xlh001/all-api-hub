@@ -67,37 +67,48 @@
 
 ## 🖥️ 截图展示
 
-
-<div style="display: flex; justify-content: center; gap: 20px; box-sizing: border-box; flex-wrap: wrap;">
-  <figure>
-    <img src="docs/docs/static/image/current-site-check.png" alt="current-site-check" style="width:49%;height:auto;">
-    <img src="docs/docs/static/image/try-add-existing-site.png" alt="try-add-existing-site" style="width:49%;height:auto;">
-    <figcaption style="text-align:center;">站点重复检测</figcaption>
-  </figure>
-</div>
-<figure>
-<img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="height:auto;">
-<figcaption style="text-align:center;">账户管理</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/model-list.png" alt="model-list" style="height:auto;">
-<figcaption style="text-align:center;">模型列表</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="height:auto;">
-<figcaption style="text-align:center;">密钥列表</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/new-api-channel-sync.png" alt="new-api-channel-sync" style="height:auto;">
-<figcaption style="text-align:center;">New API 模型同步</figcaption>
-<figure>
-<img src="docs/docs/static/image/new-api-channel-manage.png" alt="new-api-channel-manage" style="height:auto;">
-<figcaption style="text-align:center;">New API 渠道管理</figcaption>
-</figure>
-<figure>
-<img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
-<figcaption style="text-align:center;">导入导出</figcaption>
-</figure>
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/docs/static/image/current-site-check.png" alt="current-site-check" style="width:100%; height:auto;"/>
+      <div>站点重复检测（一）</div>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/docs/static/image/try-add-existing-site.png" alt="try-add-existing-site" style="width:100%; height:auto;"/>
+      <div>站点重复检测（二）</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="width:100%; height:auto;"/>
+      <div>账户管理总览</div>
+    </td>
+    <td align="center">
+      <img src="docs/docs/static/image/model-list.png" alt="model-list" style="width:100%; height:auto;"/>
+      <div>模型列表与价格</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/docs/static/image/api-key-list.png" alt="api-key-list" style="width:100%; height:auto;"/>
+      <div>密钥列表与导出</div>
+    </td>
+    <td align="center">
+      <img src="docs/docs/static/image/new-api-channel-sync.png" alt="new-api-channel-sync" style="width:100%; height:auto;"/>
+      <div>New API 模型同步</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/docs/static/image/new-api-channel-manage.png" alt="new-api-channel-manage" style="width:100%; height:auto;"/>
+      <div>New API 渠道管理</div>
+    </td>
+    <td align="center">
+      <img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="width:100%; height:auto;"/>
+      <div>导入导出配置</div>
+    </td>
+  </tr>
+</table>
 
 ## 🧑‍🚀 新手快速上手
 
