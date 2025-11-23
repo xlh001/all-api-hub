@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.13.0](https://github.com/qixing-jk/all-api-hub/compare/v2.12.1...v2.13.0) (2025-11-23)
+
+
+### Features
+
+* **account:** add i18n support for auth type selection ([118647c](https://github.com/qixing-jk/all-api-hub/commit/118647c1c4682f2214bcbdc254a6a91ade9ea45e))
+* add new API channels management feature ([69acdc3](https://github.com/qixing-jk/all-api-hub/commit/69acdc3f73872f0bbe51337b6ac0a4d0f32d247b))
+* add partial deletion failure handling for API channels ([e6dd264](https://github.com/qixing-jk/all-api-hub/commit/e6dd2644432a13bad77d546307abc3534e4fdba8))
+* add warning button variant ([2a567d1](https://github.com/qixing-jk/all-api-hub/commit/2a567d1412ab572f7d69482f6d0541447a28e27c))
+* **channel-mgmt:** add channel deletion support & pass channel data ([13e2755](https://github.com/qixing-jk/all-api-hub/commit/13e27552ac169c5886508a4c01e5e2a87305b87d))
+* **channel:** make API key optional for edit mode ([0c5badc](https://github.com/qixing-jk/all-api-hub/commit/0c5badc8022e7cd6faf1a812764b2295a3237b6e))
+* **options:** introduce reusable PageHeader component ([54d8f94](https://github.com/qixing-jk/all-api-hub/commit/54d8f947110e88d42c4e9bebc73baece063ac8c6))
+* **select:** update styling for better dark mode support & consistency ([38120f1](https://github.com/qixing-jk/all-api-hub/commit/38120f148d2824960dc4ca989d0777a7f37044b8))
+* **settings:** simplify data backup navigation UI ([f3140b1](https://github.com/qixing-jk/all-api-hub/commit/f3140b1133489ba55f48dc5ef133d3ef59e98df9))
+* **shadcn:** support shadcn/ui component ([5badc9c](https://github.com/qixing-jk/all-api-hub/commit/5badc9c20f1418c17557d82a9c7d3f88a598fa6b))
+* **sidebar:** hide new API channels when config is invalid ([ad11feb](https://github.com/qixing-jk/all-api-hub/commit/ad11feb5d7f942aa96ac3f0ddcc67336fa369e9d))
+* sync conditional base URL validation ([0121ec8](https://github.com/qixing-jk/all-api-hub/commit/0121ec8c843b1ed81bec61f3a45598b752ff6c22))
+* **ui:** add radix-ui components and tanstack table ([2b0cae0](https://github.com/qixing-jk/all-api-hub/commit/2b0cae031d0799ac9cc1cf88414c49e0c254e83e))
+* **ui:** add table, pagination, dropdown menu, alert dialog, checkbox and popover components ([48d91fd](https://github.com/qixing-jk/all-api-hub/commit/48d91fdb77f7d940af41a018e604e972a2fea437))
+* **ui:** refactor components with Radix UI primitives ([2f959df](https://github.com/qixing-jk/all-api-hub/commit/2f959dfea0e3fb255e98425aecb20007c0d50370))
+* **ui:** update button variants and styling in import/export components ([26f3620](https://github.com/qixing-jk/all-api-hub/commit/26f3620ed8391b60feaa96bc0c47077c4c7dd960))
+
+
+### Bug Fixes
+
+* correct model count display and sorting in channels table ([e90e14b](https://github.com/qixing-jk/all-api-hub/commit/e90e14b371c6b9c9c5fcaa22db504dd491e49d97))
+* **locales:** correct table column labels in newApiChannels.json ([309681b](https://github.com/qixing-jk/all-api-hub/commit/309681ba6c8c7c52577fbd7c4d6e9c387d64ddb6))
+* **options:** apply overflow-hidden to account management container ([ffab493](https://github.com/qixing-jk/all-api-hub/commit/ffab493fb8300f72e308f73faa070e665c05e5ac))
+* resolve type mismatch in status filtering logic ([386959b](https://github.com/qixing-jk/all-api-hub/commit/386959ba7c04f9598c3ef6468f1fd5d7e7ab8dd0))
+* **select:** remove redundant empty select item from account selectors ([8bef7be](https://github.com/qixing-jk/all-api-hub/commit/8bef7be0e5a298c4f22b6d7f919113f784aad0de))
+* **select:** remove unused "use client" directive ([8e0ae8a](https://github.com/qixing-jk/all-api-hub/commit/8e0ae8a6ad421f76c735fe39bf9dd626a3f91a3d))
+* **sidebar:** correct dark mode hover styles for inactive items ([e18270f](https://github.com/qixing-jk/all-api-hub/commit/e18270fb62bd890d5542c15b8731eedd44e9f211))
+* **styles:** remove duplicate dark variant definition ([fcc1d75](https://github.com/qixing-jk/all-api-hub/commit/fcc1d7517af0156d14394bc6c675d0891bec0702))
+
 ## [2.12.1](https://github.com/qixing-jk/all-api-hub/compare/v2.12.0...v2.12.1) (2025-11-22)
 
 
