@@ -55,9 +55,9 @@ This extension automatically detects and manages accounts from sites based on th
 - 🔄 **New API System Management**
     - Manual triggers, per-channel filtering through model whitelists, and continuous sync with upstream suppliers.
     - Automatic model redirect generation plus the [New API Channel Management](docs/docs/en/new-api-channel-management.md) beta UI for in-extension channel maintenance.
-- 🚀 **Quick Export Integration** - One-click export configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), and [New API](https://github.com/QuantumNous/new-api), simplifying API usage workflow
-- 🛡️ **Cloudflare Bypass Helper** - Automatically falls back to an isolated window to pass five-second shields so that protected sites can still be recognized and added.
-- ☁️ **Data Backup & Recovery** - Support JSON format import/export, WebDav cloud backup, cross-device data synchronization
+- 🚀 **Quick Export Integration** - One-click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), and [New API](https://github.com/QuantumNous/new-api), see [Quick Export Site Configuration](docs/docs/en/quick-export.md) for details.
+- 🛡️ **Fearless Cloudflare Protection** - Automatically handles Cloudflare's 5-second challenge with a pop-up when a site enables it, see [Cloudflare Bypass Assistant](docs/docs/en/cloudflare-helper.md) for details.
+- ☁️ **Data Backup and Recovery** - Supports JSON, [WebDAV backup and automatic synchronization](docs/docs/en/webdav-sync.md), as well as [data import/export](docs/docs/en/data-management.md).
 - 🌐 **Cross-Platform Compatible** - Support Chrome, Firefox browsers, works on mobile devices via Kiwi Browser, with automatic dark mode switching
 - 🔒 **Privacy & Security** - Fully offline operation, all data stored locally, protecting your privacy
 

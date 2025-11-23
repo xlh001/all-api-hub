@@ -136,10 +136,21 @@
 
 ### 5.8 Cloudflare 防护与临时窗口降级
 
-- 识别或 API 调用被 Cloudflare 拦截（常见状态码 401/403/429）时，会自动切换到临时窗口重试，保持目标域 Cookie，一般无需手动操作。
+- 识别或 API 调用被 Cloudflare 拦截（常见状态码 401/403/429）时，会自动切换到临时窗口重试，保持目标域 Cookie，一般无需手动操作；原理详见 [Cloudflare 过盾助手](./cloudflare-helper.md)。
 - 如遇需要人机验证的场景，请在弹出的协助窗口中完成挑战；若频繁失败可尝试更换网络或降低请求频率。
 
-## 6. 常见问题与支持
+## 6. 深入文档
+
+- [Cloudflare 过盾助手](./cloudflare-helper.md)
+- [快速导出站点配置](./quick-export.md)
+- [自动刷新与实时数据](./auto-refresh.md)
+- [自动签到与签到监控](./auto-checkin.md)
+- [WebDAV 备份与自动同步](./webdav-sync.md)
+- [数据导入导出](./data-management.md)
+- [New API 模型列表同步](./new-api-model-sync.md)
+- [New API 渠道管理](./new-api-channel-management.md)
+
+## 7. 常见问题与支持
 
 - 查看更详细的 [常见问题](./faq.md)，了解认证方式、AnyRouter 适配、功能使用技巧等。
 - 如果遇到问题或需要新功能，欢迎前往 [GitHub Issues](https://github.com/qixing-jk/all-api-hub/issues) 进行反馈。
