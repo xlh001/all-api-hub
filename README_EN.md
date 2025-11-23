@@ -111,12 +111,13 @@ This extension automatically detects and manages accounts from sites based on th
 
 ## 🧑‍🚀 Quick Start Guide for New Users
 
-1.  **Install Plugin**: Get the latest version from the Chrome/Edge/Firefox store or GitHub Release. After enabling the extension, pin it to your browser toolbar.
-2.  **Log In to Site and Auto-Identify**: First, log in to your target relay station in your browser, open the plugin, select "Add Account," enter the site address, and click "Auto-Identify." If you encounter a Cloudflare 5-second shield, a pop-up will automatically appear to assist in bypassing it; if the site is heavily customized, switch to Cookie mode to provide additional information.
-3.  **Organize Accounts**: Use account grouping, sorting, and quick jump features to quickly locate target sites; enable check-in detection, daily income statistics, and health status notifications in the account details.
-4.  **Configure New API Integration (if you have your own New API site)**: In "Basic Settings → New API Integration Settings," fill in the administrator URL, Token, and User ID. Go to the dedicated page to manually synchronize, filter models by whitelist, or adjust redirects in Channel Management Beta.
-5.  **Export to Downstream Applications**: In the key list, use "One-Click Export" to synchronize channels to CherryStudio, New API, or CC Switch, automatically including the model list and rate parameters.
-6.  **Backup and Collaboration**: Utilize JSON import/export or WebDAV auto-backup to share configurations across multiple devices, ensuring data security and reliability.
+1. **Install and log in to target sites**: Grab the latest build from Chrome/Edge/Firefox stores or GitHub Release, enable the extension, pin it, and sign in to the relay stations you want to manage in your browser first.
+2. **Auto-recognize new accounts**: Open the extension → click “Add Account” → enter the site URL and choose “Auto-Identify.” If Cloudflare’s 5-second challenge triggers, a helper window opens automatically; for heavily customized sites, switch to Cookie mode or fill in token data manually.
+3. **Organize & sync account data**: Review balances, models, and keys on each card, then use grouping/sorting/quick jump for navigation. For fresh data, go to “Basic Settings → Auto Refresh” to enable scheduled refresh, health state, and check-in detection.
+4. **Manage check-in & site utilities**: Enable check-in monitoring, recharge links, or today’s revenue hints in account details. Pair with duplicate-site detection to avoid re-adding, and adjust detection strategies when prompted for special sites.
+5. **Configure New API integration (optional)**: If you run your own New API, fill Administrator URL/Token/User ID under “Basic Settings → New API Integration,” then use “New API Model Sync” + “Channel Management (Beta)” to keep channels and model whitelists aligned.
+6. **Quick export to downstream systems (optional)**: From “Key Management,” click “Export” to sync channels into CherryStudio, CC Switch, or New API.
+7. **Backup & collaborate**: Use “Basic Settings → Data Management” to import/export JSON, or configure automatic sync under “WebDAV Backup” to keep multiple devices in sync and data safe.
 
 ## 🚀 Installation
 
