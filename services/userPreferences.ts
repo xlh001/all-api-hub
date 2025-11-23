@@ -19,7 +19,10 @@ import {
   AccountAutoRefresh,
   DEFAULT_ACCOUNT_AUTO_REFRESH
 } from "~/types/accountAutoRefresh.ts"
-import type { AutoCheckinPreferences } from "~/types/autoCheckin"
+import {
+  AUTO_CHECKIN_SCHEDULE_MODE,
+  AutoCheckinPreferences
+} from "~/types/autoCheckin"
 import {
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
   type ModelRedirectPreferences
@@ -203,7 +206,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
     globalEnabled: false,
     windowStart: "09:00",
     windowEnd: "18:00",
-    scheduleMode: "random",
+    scheduleMode: AUTO_CHECKIN_SCHEDULE_MODE.RANDOM,
     deterministicTime: "09:00",
     retryStrategy: {
       enabled: false,

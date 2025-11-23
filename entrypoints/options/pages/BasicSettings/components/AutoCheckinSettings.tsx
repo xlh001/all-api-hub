@@ -14,7 +14,11 @@ import {
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
-import type { AutoCheckinPreferences } from "~/types/autoCheckin"
+import {
+  AUTO_CHECKIN_SCHEDULE_MODE,
+  AutoCheckinPreferences,
+  AutoCheckinScheduleMode
+} from "~/types/autoCheckin"
 
 export default function AutoCheckinSettings() {
   const { t } = useTranslation(["autoCheckin", "settings"])
@@ -35,11 +39,11 @@ export default function AutoCheckinSettings() {
   const scheduleModes = useMemo(
     () => [
       {
-        value: "random",
+        value: AUTO_CHECKIN_SCHEDULE_MODE.RANDOM,
         label: t("autoCheckin:settings.scheduleModeRandom")
       },
       {
-        value: "deterministic",
+        value: AUTO_CHECKIN_SCHEDULE_MODE.DETERMINISTIC,
         label: t("autoCheckin:settings.scheduleModeDeterministic")
       }
     ],
@@ -197,7 +201,7 @@ export default function AutoCheckinSettings() {
                     type="button"
                     onClick={() =>
                       savePreferences({
-                        scheduleMode: mode.value as "random" | "deterministic"
+                        scheduleMode: mode.value as AutoCheckinScheduleMode
                       })
                     }
                     disabled={isSaving}
@@ -214,7 +218,8 @@ export default function AutoCheckinSettings() {
           />
 
           {/* Deterministic Time */}
-          {preferences.scheduleMode === "deterministic" && (
+          {preferences.scheduleMode ===
+            AUTO_CHECKIN_SCHEDULE_MODE.DETERMINISTIC && (
             <CardItem
               title={t("autoCheckin:settings.deterministicTimeTitle")}
               description={t("autoCheckin:settings.deterministicTimeDesc")}

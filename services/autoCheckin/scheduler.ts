@@ -8,6 +8,7 @@ import {
 import type { SiteAccount } from "~/types"
 import {
   AUTO_CHECKIN_RUN_RESULT,
+  AUTO_CHECKIN_SCHEDULE_MODE,
   AUTO_CHECKIN_SKIP_REASON,
   AutoCheckinAccountSnapshot,
   AutoCheckinAttemptsTracker,
@@ -205,6 +206,16 @@ class AutoCheckinScheduler {
     return retryTime
   }
 
+  /**
+   * Computes the next trigger time for auto-checkin based on the given configuration and status.
+   * If retry is enabled and the last run was not successful, it will return the retry time.
+   * If deterministic schedule mode is enabled and the current time is within the window, it will return the deterministic trigger time.
+   * If none of the above conditions are met, it will return a random trigger time within the configured window.
+   *
+   * @param config - The auto-checkin configuration.
+   * @param status - The auto-checkin status.
+   * @returns A Date object representing the next trigger time, or null if the configuration is invalid.
+   */
   private computeNextTriggerTime(
     config: AutoCheckinPreferences,
     status: AutoCheckinStatus | null
@@ -216,7 +227,7 @@ class AutoCheckinScheduler {
       return retryTime
     }
 
-    if (config.scheduleMode === "deterministic") {
+    if (config.scheduleMode === AUTO_CHECKIN_SCHEDULE_MODE.DETERMINISTIC) {
       const deterministic = this.calculateDeterministicTrigger(config, now)
       if (deterministic) {
         return deterministic
