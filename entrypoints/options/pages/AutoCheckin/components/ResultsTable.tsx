@@ -1,4 +1,8 @@
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline"
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon
+} from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 import AccountLinkButton from "~/components/AccountLinkButton.tsx"
@@ -35,6 +39,13 @@ export default function ResultsTable({ results }: ResultsTableProps) {
             {t("execution.status.failed")}
           </span>
         )
+      case "skipped":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
+            <ExclamationTriangleIcon className="h-3 w-3" />
+            {t("execution.status.skipped")}
+          </span>
+        )
       default:
         return (
           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
@@ -59,16 +70,16 @@ export default function ResultsTable({ results }: ResultsTableProps) {
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 {t("execution.table.accountName")}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 {t("execution.table.status")}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 {t("execution.table.message")}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 {t("execution.table.time")}
               </th>
             </tr>
@@ -78,19 +89,19 @@ export default function ResultsTable({ results }: ResultsTableProps) {
               <tr
                 key={result.accountId}
                 className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100">
                   <AccountLinkButton
                     accountId={result.accountId}
                     accountName={result.accountName}
                   />
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm">
+                <td className="px-6 py-4 text-sm whitespace-nowrap">
                   {getStatusBadge(result.status)}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   {result.message}
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-400">
                   {formatTimestamp(result.timestamp)}
                 </td>
               </tr>

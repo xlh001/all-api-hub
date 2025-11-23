@@ -202,7 +202,14 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   autoCheckin: {
     globalEnabled: false,
     windowStart: "09:00",
-    windowEnd: "18:00"
+    windowEnd: "18:00",
+    scheduleMode: "random",
+    deterministicTime: "09:00",
+    retryStrategy: {
+      enabled: false,
+      intervalMinutes: 30,
+      maxAttemptsPerDay: 3
+    }
   },
   modelRedirect: DEFAULT_MODEL_REDIRECT_PREFERENCES,
   sortingPriorityConfig: undefined,

@@ -7,6 +7,7 @@ import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import type { AutoCheckinStatus } from "~/types/autoCheckin"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 
+import AccountSnapshotTable from "./components/AccountSnapshotTable"
 import ActionBar from "./components/ActionBar"
 import EmptyResults from "./components/EmptyResults"
 import FilterBar, { type FilterStatus } from "./components/FilterBar"
@@ -86,6 +87,7 @@ export default function AutoCheckin() {
     )
       return false
     if (filterStatus === "failed" && result.status !== "failed") return false
+    if (filterStatus === "skipped" && result.status !== "skipped") return false
 
     // Search by keyword
     if (searchKeyword) {
@@ -147,6 +149,25 @@ export default function AutoCheckin() {
       ) : (
         <ResultsTable results={filteredResults} />
       )}
+
+      {status?.accountsSnapshot &&
+        (status.accountsSnapshot.length > 0 ? (
+          <div className="mt-6 space-y-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {t("snapshot.title")}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t("snapshot.description")}
+              </p>
+            </div>
+            <AccountSnapshotTable snapshots={status.accountsSnapshot} />
+          </div>
+        ) : (
+          <div className="mt-6">
+            <EmptyResults hasHistory={false} />
+          </div>
+        ))}
     </div>
   )
 }

@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next"
 import { Input } from "~/components/ui"
 import type { CheckinAccountResult } from "~/types/autoCheckin"
 
-export type FilterStatus = "all" | "success" | "failed"
+export type FilterStatus = "all" | "success" | "failed" | "skipped"
 
 interface FilterBarProps {
   accountResults: CheckinAccountResult[]
@@ -34,6 +34,9 @@ export default function FilterBar({
     (r) => r.status === "success" || r.status === "already_checked"
   ).length
   const failedCount = accountResults.filter((r) => r.status === "failed").length
+  const skippedCount = accountResults.filter(
+    (r) => r.status === "skipped"
+  ).length
 
   const renderFilterButton = (
     value: FilterStatus,
@@ -83,6 +86,12 @@ export default function FilterBar({
           "bg-red-600",
           <XCircleIcon className="h-4 w-4" />,
           failedCount
+        )}
+        {renderFilterButton(
+          "skipped",
+          "bg-yellow-600",
+          <ListBulletIcon className="h-4 w-4" />,
+          skippedCount
         )}
       </div>
       <div className="relative flex-1 md:max-w-xs">
