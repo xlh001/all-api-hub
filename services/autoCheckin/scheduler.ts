@@ -17,7 +17,8 @@ import {
   AutoCheckinSkipReason,
   AutoCheckinStatus,
   CHECKIN_RESULT_STATUS,
-  CheckinAccountResult
+  type CheckinAccountResult,
+  type CheckinResultStatus
 } from "~/types/autoCheckin"
 import {
   clearAlarm,
@@ -301,6 +302,62 @@ class AutoCheckinScheduler {
     }))
   }
 
+  private async runAccountCheckin(account: SiteAccount): Promise<{
+    result: CheckinAccountResult
+    successful: boolean
+  }> {
+    const buildResult = (
+      status: CheckinResultStatus,
+      message: string
+    ): CheckinAccountResult => ({
+      accountId: account.id,
+      accountName: account.site_name,
+      status,
+      message,
+      timestamp: Date.now()
+    })
+
+    try {
+      const provider = resolveAutoCheckinProvider(account)
+      if (!provider) {
+        const message = "No auto check-in provider available"
+        console.warn(`[AutoCheckin] ${account.site_name}: ${message}`)
+        return {
+          result: buildResult(CHECKIN_RESULT_STATUS.FAILED, message),
+          successful: false
+        }
+      }
+
+      const providerResult = await provider.checkIn(account)
+      const result = buildResult(providerResult.status, providerResult.message)
+
+      if (
+        providerResult.status === CHECKIN_RESULT_STATUS.SUCCESS ||
+        providerResult.status === CHECKIN_RESULT_STATUS.ALREADY_CHECKED
+      ) {
+        await accountStorage.markAccountAsCheckedIn(account.id)
+        console.log(
+          `[AutoCheckin] ${account.site_name}: ${providerResult.status} - ${providerResult.message}`
+        )
+        return { result, successful: true }
+      }
+
+      console.error(
+        `[AutoCheckin] ${account.site_name}: failed - ${providerResult.message}`
+      )
+      return { result, successful: false }
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
+      console.error(
+        `[AutoCheckin] ${account.site_name}: error - ${errorMessage}`
+      )
+      return {
+        result: buildResult(CHECKIN_RESULT_STATUS.FAILED, errorMessage),
+        successful: false
+      }
+    }
+  }
+
   /**
    * Initialize the scheduler
    */
@@ -518,73 +575,20 @@ class AutoCheckinScheduler {
         return
       }
 
-      // Execute check-ins sequentially
+      // Execute check-ins concurrently
       let successCount = 0
       let failedCount = 0
 
-      // Iterate over runnable accounts
-      for (const account of runnableAccounts) {
-        try {
-          const provider = resolveAutoCheckinProvider(account)
-          if (!provider) {
-            failedCount++
-            const message = "No auto check-in provider available"
-            console.warn(`[AutoCheckin] ${account.site_name}: ${message}`)
-            results[account.id] = {
-              accountId: account.id,
-              accountName: account.site_name,
-              status: CHECKIN_RESULT_STATUS.FAILED,
-              message,
-              timestamp: Date.now()
-            }
-            continue
-          }
+      const checkinOutcomes = await Promise.all(
+        runnableAccounts.map((account) => this.runAccountCheckin(account))
+      )
 
-          // Small delay to avoid rate limiting
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000 + Math.random() * 2000)
-          )
-
-          const result = await provider.checkIn(account)
-
-          results[account.id] = {
-            accountId: account.id,
-            accountName: account.site_name,
-            status: result.status,
-            message: result.message,
-            timestamp: Date.now()
-          }
-
-          // Update account status if successful or already checked
-          if (
-            result.status === CHECKIN_RESULT_STATUS.SUCCESS ||
-            result.status === CHECKIN_RESULT_STATUS.ALREADY_CHECKED
-          ) {
-            await accountStorage.markAccountAsCheckedIn(account.id)
-            successCount++
-            console.log(
-              `[AutoCheckin] ${account.site_name}: ${result.status} - ${result.message}`
-            )
-          } else {
-            failedCount++
-            console.error(
-              `[AutoCheckin] ${account.site_name}: failed - ${result.message}`
-            )
-          }
-        } catch (error) {
+      for (const outcome of checkinOutcomes) {
+        results[outcome.result.accountId] = outcome.result
+        if (outcome.successful) {
+          successCount++
+        } else {
           failedCount++
-          const errorMessage = getErrorMessage(error)
-          console.error(
-            `[AutoCheckin] ${account.site_name}: error - ${errorMessage}`
-          )
-
-          results[account.id] = {
-            accountId: account.id,
-            accountName: account.site_name,
-            status: CHECKIN_RESULT_STATUS.FAILED,
-            message: errorMessage,
-            timestamp: Date.now()
-          }
         }
       }
 
