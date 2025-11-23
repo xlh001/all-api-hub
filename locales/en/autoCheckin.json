@@ -113,6 +113,7 @@
       "runFailed": "Failed to run auto check-in: {{error}}",
       "invalidTimeWindow": "Invalid time window. Start and end cannot be the same.",
       "invalidDeterministicTime": "Please provide a valid deterministic time in HH:mm format.",
+      "deterministicTimeOutsideWindow": "The deterministic time must fall within the configured window.",
       "invalidNumber": "Please enter a valid positive number."
     },
     "success": {

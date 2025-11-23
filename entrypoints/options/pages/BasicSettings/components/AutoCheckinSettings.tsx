@@ -101,6 +101,28 @@ export default function AutoCheckinSettings() {
     )
   }
 
+  const isTimeWithinWindow = (
+    time: string,
+    start: string,
+    end: string
+  ): boolean => {
+    const [timeH, timeM] = time.split(":").map(Number)
+    const [startH, startM] = start.split(":").map(Number)
+    const [endH, endM] = end.split(":").map(Number)
+
+    const toMinutes = (h: number, m: number) => h * 60 + m
+    const timeMinutes = toMinutes(timeH, timeM)
+    const startMinutes = toMinutes(startH, startM)
+    const endMinutes = toMinutes(endH, endM)
+
+    if (endMinutes > startMinutes) {
+      return timeMinutes >= startMinutes && timeMinutes <= endMinutes
+    }
+
+    // Window crosses midnight
+    return timeMinutes >= startMinutes || timeMinutes <= endMinutes
+  }
+
   const saveRetryPreferences = async (
     updates: Partial<AutoCheckinPreferences["retryStrategy"]>
   ) => {
@@ -234,6 +256,20 @@ export default function AutoCheckinSettings() {
                     if (!validateTimeFormat(newTime)) {
                       toast.error(
                         t("autoCheckin:messages.error.invalidDeterministicTime")
+                      )
+                      return
+                    }
+                    if (
+                      !isTimeWithinWindow(
+                        newTime,
+                        preferences.windowStart,
+                        preferences.windowEnd
+                      )
+                    ) {
+                      toast.error(
+                        t(
+                          "autoCheckin:messages.error.deterministicTimeOutsideWindow"
+                        )
                       )
                       return
                     }

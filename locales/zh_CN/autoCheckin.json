@@ -113,6 +113,7 @@
       "runFailed": "执行自动签到失败：{{error}}",
       "invalidTimeWindow": "无效的时间窗口，开始时间和结束时间不能相同。",
       "invalidDeterministicTime": "请输入合法的 HH:mm 格式时间。",
+      "deterministicTimeOutsideWindow": "固定时间必须位于配置的时间窗口内。",
       "invalidNumber": "请输入有效的正数。"
     },
     "success": {
