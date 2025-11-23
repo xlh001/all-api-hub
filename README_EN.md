@@ -88,6 +88,11 @@ This extension automatically detects and manages accounts from sites based on th
 <figure>
 <img src="docs/docs/static/image/en/new-api-channel-sync.png" alt="new-api-channel-sync" style="height:auto;">
 <figcaption style="text-align:center;">New API Model Synchronization</figcaption>
+</figure>
+<figure>
+<img src="docs/docs/static/image/en/new-api-channel-manage.png" alt="new-api-channel-manage" style="height:auto;">
+<figcaption style="text-align:center;">New API Channel Management</figcaption>
+</figure>
 <figure>
 <img src="docs/docs/static/image/en/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
 <figcaption style="text-align:center;">Import/Export</figcaption>

@@ -91,6 +91,10 @@
 <img src="docs/docs/static/image/new-api-channel-sync.png" alt="new-api-channel-sync" style="height:auto;">
 <figcaption style="text-align:center;">New API 模型同步</figcaption>
 <figure>
+<img src="docs/docs/static/image/new-api-channel-manage.png" alt="new-api-channel-manage" style="height:auto;">
+<figcaption style="text-align:center;">New API 渠道管理</figcaption>
+</figure>
+<figure>
 <img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="height:auto;">
 <figcaption style="text-align:center;">导入导出</figcaption>
 </figure>
