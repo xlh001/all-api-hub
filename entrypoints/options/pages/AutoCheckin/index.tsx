@@ -163,24 +163,19 @@ export default function AutoCheckin() {
         <ResultsTable results={filteredResults} />
       )}
 
-      {status?.accountsSnapshot &&
-        (status.accountsSnapshot.length > 0 ? (
-          <div className="mt-6 space-y-3">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {t("snapshot.title")}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t("snapshot.description")}
-              </p>
-            </div>
-            <AccountSnapshotTable snapshots={status.accountsSnapshot} />
+      {status?.accountsSnapshot && status.accountsSnapshot.length > 0 && (
+        <div className="mt-6 space-y-3">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {t("snapshot.title")}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t("snapshot.description")}
+            </p>
           </div>
-        ) : (
-          <div className="mt-6">
-            <EmptyResults hasHistory={false} />
-          </div>
-        ))}
+          <AccountSnapshotTable snapshots={status.accountsSnapshot} />
+        </div>
+      )}
     </div>
   )
 }
