@@ -56,7 +56,7 @@
     "exchangeRate": "充值金额比例 (CNY/USD)",
     "exchangeRatePlaceholder": "请输入充值比例",
     "exchangeRateDesc": "表示充值 1 美元需要多少人民币。系统会尝试自动获取，如未获取到请手动填写",
-    "validRateError": "请输入有效的汇率 (0.1 - 100)",
+    "validRateError": "请输入有效的汇率，大于 0",
     "checkInStatus": "签到状态检测（需站点已开启签到）",
     "customCheckInUrl": "自定义签到 URL (可选)",
     "customCheckInDesc": "如果设置，将禁用自动签到状态检测。用于具有自定义签到端点的站点",

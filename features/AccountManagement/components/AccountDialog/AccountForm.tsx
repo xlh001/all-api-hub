@@ -169,9 +169,8 @@ export default function AccountForm({
         required>
         <Input
           type="number"
-          step="0.01"
-          min="0.1"
-          max="100"
+          step="any"
+          min="0"
           value={exchangeRate}
           onChange={(e) => onExchangeRateChange(e.target.value)}
           placeholder={t("form.exchangeRatePlaceholder")}

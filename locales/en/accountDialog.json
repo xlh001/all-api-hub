@@ -56,7 +56,7 @@
     "exchangeRate": "Recharge Amount Ratio (CNY/USD)",
     "exchangeRatePlaceholder": "Please enter exchange rate",
     "exchangeRateDesc": "Indicates how much RMB is needed to recharge 1 USD. The system will try to get it automatically, please fill in manually if not obtained",
-    "validRateError": "Please enter a valid exchange rate (0.1 - 100)",
+    "validRateError": "Please enter a valid exchange rate, greater than 0",
     "checkInStatus": "Check-in Status Detection (site must have check-in enabled)",
     "customCheckInUrl": "Custom Check-in URL (optional)",
     "customCheckInDesc": "If set, automatic check-in status detection will be disabled. Used for sites with custom check-in endpoints",

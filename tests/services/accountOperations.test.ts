@@ -105,13 +105,13 @@ describe("accountOperations", () => {
     it("accepts valid rates", () => {
       expect(isValidExchangeRate("7.0")).toBe(true)
       expect(isValidExchangeRate("1")).toBe(true)
-      expect(isValidExchangeRate("100")).toBe(true)
+      expect(isValidExchangeRate("0.11111111111111111111")).toBe(true)
+      expect(isValidExchangeRate("1000000000000000000000")).toBe(true)
     })
 
     it("rejects invalid rates", () => {
       expect(isValidExchangeRate("0")).toBe(false)
       expect(isValidExchangeRate("-1")).toBe(false)
-      expect(isValidExchangeRate("101")).toBe(false)
       expect(isValidExchangeRate("abc")).toBe(false)
     })
   })

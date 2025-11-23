@@ -537,10 +537,15 @@ export async function getSiteName(
   return extractDomainPrefix(urlObj.hostname)
 }
 
-// 验证充值比例是否有效
+/**
+ * Checks if a given exchange rate is valid.
+ * @param {string} rate - The exchange rate to check.
+ * @returns {boolean} True if the exchange rate is valid, false otherwise.
+ * A valid exchange rate is a number greater than 0.
+ */
 export function isValidExchangeRate(rate: string): boolean {
   const num = parseFloat(rate)
-  return !isNaN(num) && num > 0 && num <= 100
+  return !isNaN(num) && num > 0
 }
 
 /**
