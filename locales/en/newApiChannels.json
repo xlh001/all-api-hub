@@ -34,10 +34,10 @@
   },
   "table": {
     "columns": {
-      "channel": "Channel",
+      "name": "Channel",
       "type": "Type",
       "models": "Models",
-      "groups": "Groups",
+      "group": "Available Groups",
       "status": "Status",
       "priority": "Priority",
       "weight": "Weight"
