@@ -1,7 +1,12 @@
 import { useTranslation } from "react-i18next"
 
 import { Card, CardContent } from "~/components/ui"
-import type { AutoCheckinStatus } from "~/types/autoCheckin"
+import {
+  AUTO_CHECKIN_RUN_RESULT,
+  CHECKIN_RESULT_STATUS,
+  type AutoCheckinRunResult,
+  type AutoCheckinStatus
+} from "~/types/autoCheckin"
 
 interface StatusCardProps {
   status: AutoCheckinStatus
@@ -22,15 +27,13 @@ export default function StatusCard({ status }: StatusCardProps) {
     }
   }
 
-  const getResultBadgeColor = (
-    result?: "success" | "partial" | "failed"
-  ): string => {
+  const getResultBadgeColor = (result?: AutoCheckinRunResult): string => {
     switch (result) {
-      case "success":
+      case AUTO_CHECKIN_RUN_RESULT.SUCCESS:
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-      case "partial":
+      case AUTO_CHECKIN_RUN_RESULT.PARTIAL:
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-      case "failed":
+      case AUTO_CHECKIN_RUN_RESULT.FAILED:
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
@@ -41,10 +44,12 @@ export default function StatusCard({ status }: StatusCardProps) {
     ? Object.values(status.perAccount)
     : []
   const derivedSuccess = accountResults.filter(
-    (r) => r.status === "success" || r.status === "already_checked"
+    (r) =>
+      r.status === CHECKIN_RESULT_STATUS.SUCCESS ||
+      r.status === CHECKIN_RESULT_STATUS.ALREADY_CHECKED
   ).length
   const derivedFailed = accountResults.filter(
-    (r) => r.status === "failed"
+    (r) => r.status === CHECKIN_RESULT_STATUS.FAILED
   ).length
   const derivedSkipped = accountResults.length - derivedSuccess - derivedFailed
 

@@ -6,21 +6,33 @@
 /**
  * Check-in result status
  */
+export const CHECKIN_RESULT_STATUS = {
+  SUCCESS: "success",
+  ALREADY_CHECKED: "already_checked",
+  FAILED: "failed",
+  SKIPPED: "skipped"
+} as const
 export type CheckinResultStatus =
-  | "success"
-  | "already_checked"
-  | "failed"
-  | "skipped"
+  (typeof CHECKIN_RESULT_STATUS)[keyof typeof CHECKIN_RESULT_STATUS]
+export const CHECKIN_RESULT_STATUSES = Object.values(
+  CHECKIN_RESULT_STATUS
+) as CheckinResultStatus[]
 
 /**
  * Reasons why an account was skipped during auto check-in
  */
+export const AUTO_CHECKIN_SKIP_REASON = {
+  DETECTION_DISABLED: "detection_disabled",
+  AUTO_CHECKIN_DISABLED: "auto_checkin_disabled",
+  ALREADY_CHECKED_TODAY: "already_checked_today",
+  NO_PROVIDER: "no_provider",
+  PROVIDER_NOT_READY: "provider_not_ready"
+} as const
 export type AutoCheckinSkipReason =
-  | "detection_disabled"
-  | "auto_checkin_disabled"
-  | "already_checked_today"
-  | "no_provider"
-  | "provider_not_ready"
+  (typeof AUTO_CHECKIN_SKIP_REASON)[keyof typeof AUTO_CHECKIN_SKIP_REASON]
+export const AUTO_CHECKIN_SKIP_REASONS = Object.values(
+  AUTO_CHECKIN_SKIP_REASON
+) as AutoCheckinSkipReason[]
 
 /**
  * Single account check-in result
@@ -37,7 +49,16 @@ export interface CheckinAccountResult {
 /**
  * Overall auto check-in execution result
  */
-export type AutoCheckinRunResult = "success" | "partial" | "failed"
+export const AUTO_CHECKIN_RUN_RESULT = {
+  SUCCESS: "success",
+  PARTIAL: "partial",
+  FAILED: "failed"
+} as const
+export type AutoCheckinRunResult =
+  (typeof AUTO_CHECKIN_RUN_RESULT)[keyof typeof AUTO_CHECKIN_RUN_RESULT]
+export const AUTO_CHECKIN_RUN_RESULTS = Object.values(
+  AUTO_CHECKIN_RUN_RESULT
+) as AutoCheckinRunResult[]
 
 /**
  * Auto check-in run summary
@@ -92,7 +113,15 @@ export interface AutoCheckinStatus {
 /**
  * Auto check-in preferences (stored in UserPreferences)
  */
-export type AutoCheckinScheduleMode = "random" | "deterministic"
+export const AUTO_CHECKIN_SCHEDULE_MODE = {
+  RANDOM: "random",
+  DETERMINISTIC: "deterministic"
+} as const
+export type AutoCheckinScheduleMode =
+  (typeof AUTO_CHECKIN_SCHEDULE_MODE)[keyof typeof AUTO_CHECKIN_SCHEDULE_MODE]
+export const AUTO_CHECKIN_SCHEDULE_MODES = Object.values(
+  AUTO_CHECKIN_SCHEDULE_MODE
+) as AutoCheckinScheduleMode[]
 
 export interface AutoCheckinRetryStrategy {
   enabled: boolean

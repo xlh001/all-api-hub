@@ -7,7 +7,10 @@ import { useTranslation } from "react-i18next"
 
 import AccountLinkButton from "~/components/AccountLinkButton.tsx"
 import { Card } from "~/components/ui"
-import type { CheckinAccountResult } from "~/types/autoCheckin"
+import {
+  CHECKIN_RESULT_STATUS,
+  CheckinAccountResult
+} from "~/types/autoCheckin"
 
 interface ResultsTableProps {
   results: CheckinAccountResult[]
@@ -18,28 +21,28 @@ export default function ResultsTable({ results }: ResultsTableProps) {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "success":
+      case CHECKIN_RESULT_STATUS.SUCCESS:
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
             <CheckCircleIcon className="h-3 w-3" />
             {t("execution.status.success")}
           </span>
         )
-      case "already_checked":
+      case CHECKIN_RESULT_STATUS.ALREADY_CHECKED:
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
             <CheckCircleIcon className="h-3 w-3" />
             {t("execution.status.alreadyChecked")}
           </span>
         )
-      case "failed":
+      case CHECKIN_RESULT_STATUS.FAILED:
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
             <XCircleIcon className="h-3 w-3" />
             {t("execution.status.failed")}
           </span>
         )
-      case "skipped":
+      case CHECKIN_RESULT_STATUS.SKIPPED:
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
             <ExclamationTriangleIcon className="h-3 w-3" />

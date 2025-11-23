@@ -6,7 +6,9 @@ import {
   userPreferences
 } from "~/services/userPreferences"
 import type { SiteAccount } from "~/types"
-import type {
+import {
+  AUTO_CHECKIN_RUN_RESULT,
+  AUTO_CHECKIN_SKIP_REASON,
   AutoCheckinAccountSnapshot,
   AutoCheckinAttemptsTracker,
   AutoCheckinPreferences,
@@ -14,6 +16,7 @@ import type {
   AutoCheckinRunSummary,
   AutoCheckinSkipReason,
   AutoCheckinStatus,
+  CHECKIN_RESULT_STATUS,
   CheckinAccountResult
 } from "~/types/autoCheckin"
 import {
@@ -264,15 +267,15 @@ class AutoCheckinScheduler {
     let skipReason: AutoCheckinSkipReason | undefined
 
     if (!detectionEnabled) {
-      skipReason = "detection_disabled"
+      skipReason = AUTO_CHECKIN_SKIP_REASON.DETECTION_DISABLED
     } else if (!autoCheckinEnabled) {
-      skipReason = "auto_checkin_disabled"
+      skipReason = AUTO_CHECKIN_SKIP_REASON.AUTO_CHECKIN_DISABLED
     } else if (isCheckedInToday) {
-      skipReason = "already_checked_today"
+      skipReason = AUTO_CHECKIN_SKIP_REASON.ALREADY_CHECKED_TODAY
     } else if (!provider) {
-      skipReason = "no_provider"
+      skipReason = AUTO_CHECKIN_SKIP_REASON.NO_PROVIDER
     } else if (!providerAvailable) {
-      skipReason = "provider_not_ready"
+      skipReason = AUTO_CHECKIN_SKIP_REASON.PROVIDER_NOT_READY
     }
 
     return {
@@ -476,7 +479,7 @@ class AutoCheckinScheduler {
           results[snapshot.accountId] = {
             accountId: snapshot.accountId,
             accountName: snapshot.accountName,
-            status: "skipped",
+            status: CHECKIN_RESULT_STATUS.SKIPPED,
             message: this.getSkipReasonMessage(snapshot.skipReason),
             reasonCode: snapshot.skipReason,
             timestamp
@@ -501,7 +504,7 @@ class AutoCheckinScheduler {
 
         await autoCheckinStorage.saveStatus({
           lastRunAt: new Date().toISOString(),
-          lastRunResult: "success",
+          lastRunResult: AUTO_CHECKIN_RUN_RESULT.SUCCESS,
           perAccount: results,
           nextScheduledAt: undefined,
           summary,
@@ -530,7 +533,7 @@ class AutoCheckinScheduler {
             results[account.id] = {
               accountId: account.id,
               accountName: account.site_name,
-              status: "failed",
+              status: CHECKIN_RESULT_STATUS.FAILED,
               message,
               timestamp: Date.now()
             }
@@ -554,8 +557,8 @@ class AutoCheckinScheduler {
 
           // Update account status if successful or already checked
           if (
-            result.status === "success" ||
-            result.status === "already_checked"
+            result.status === CHECKIN_RESULT_STATUS.SUCCESS ||
+            result.status === CHECKIN_RESULT_STATUS.ALREADY_CHECKED
           ) {
             await accountStorage.markAccountAsCheckedIn(account.id)
             successCount++
@@ -578,7 +581,7 @@ class AutoCheckinScheduler {
           results[account.id] = {
             accountId: account.id,
             accountName: account.site_name,
-            status: "failed",
+            status: CHECKIN_RESULT_STATUS.FAILED,
             message: errorMessage,
             timestamp: Date.now()
           }
@@ -586,11 +589,11 @@ class AutoCheckinScheduler {
       }
 
       // Determine overall result
-      let overallResult: AutoCheckinRunResult = "success"
+      let overallResult: AutoCheckinRunResult = AUTO_CHECKIN_RUN_RESULT.SUCCESS
       if (failedCount > 0 && successCount > 0) {
-        overallResult = "partial"
+        overallResult = AUTO_CHECKIN_RUN_RESULT.PARTIAL
       } else if (failedCount > 0) {
-        overallResult = "failed"
+        overallResult = AUTO_CHECKIN_RUN_RESULT.FAILED
       }
 
       const skippedCount = accountSnapshots.length - runnableAccounts.length
@@ -633,7 +636,7 @@ class AutoCheckinScheduler {
       console.error("[AutoCheckin] Execution failed:", error)
       await autoCheckinStorage.saveStatus({
         lastRunAt: new Date().toISOString(),
-        lastRunResult: "failed",
+        lastRunResult: AUTO_CHECKIN_RUN_RESULT.FAILED,
         perAccount: {},
         nextScheduledAt: undefined,
         attempts: updatedAttempts,

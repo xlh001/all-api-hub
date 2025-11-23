@@ -9,7 +9,10 @@ import { useTranslation } from "react-i18next"
 
 import AccountLinkButton from "~/components/AccountLinkButton"
 import { Card } from "~/components/ui"
-import type { AutoCheckinAccountSnapshot } from "~/types/autoCheckin"
+import {
+  CHECKIN_RESULT_STATUS,
+  type AutoCheckinAccountSnapshot
+} from "~/types/autoCheckin"
 
 interface AccountSnapshotTableProps {
   snapshots: AutoCheckinAccountSnapshot[]
@@ -45,22 +48,22 @@ export default function AccountSnapshotTable({
   const renderStatusBadge = (snapshot: AutoCheckinAccountSnapshot) => {
     if (snapshot.lastResult) {
       switch (snapshot.lastResult.status) {
-        case "success":
-        case "already_checked":
+        case CHECKIN_RESULT_STATUS.SUCCESS:
+        case CHECKIN_RESULT_STATUS.ALREADY_CHECKED:
           return (
             <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
               <CheckCircleIcon className="h-3.5 w-3.5" />
               {t("execution.status.success")}
             </span>
           )
-        case "failed":
+        case CHECKIN_RESULT_STATUS.FAILED:
           return (
             <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
               <XCircleIcon className="h-3.5 w-3.5" />
               {t("execution.status.failed")}
             </span>
           )
-        case "skipped":
+        case CHECKIN_RESULT_STATUS.SKIPPED:
           return (
             <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
               <ExclamationTriangleIcon className="h-3.5 w-3.5" />
