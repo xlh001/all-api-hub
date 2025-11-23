@@ -9,6 +9,16 @@ Thank you for considering contributing to All API Hub! This guide will help you 
 - Node.js 20 LTS or higher
 - pnpm 10 or higher
 
+## Tech Stack
+
+All API Hub is built with the same stack highlighted in the in-app About page to ensure the docs match what you see in the UI:
+
+- **Framework**: [WXT](https://wxt.dev) drives the multi-browser extension tooling and build pipeline
+- **UI Layer**: [React](https://react.dev) powers the options UI and popup surfaces
+- **Language**: [TypeScript](https://www.typescriptlang.org) keeps the codebase type-safe end-to-end
+- **Styling**: [Tailwind CSS](https://tailwindcss.com) provides utility-first styling with theme tokens
+- **Components**: [Headless UI](https://headlessui.com) supplies accessible primitives layered with our design system
+
 ### Getting Started
 
 1. **Fork and clone the repository**

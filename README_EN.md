@@ -145,14 +145,11 @@ Please refer to the [CONTRIBUTING](CONTRIBUTING.md) for more information.
 
 ## 🏗️ Tech Stack
 
-- **Framework**: [WXT](https://wxt.dev)
-- **UI Library**: [React](https://reactjs.org)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com)
-- **Components**: [Headless UI](https://headlessui.com)
-- **Icons**: [Heroicons](https://heroicons.com)
-- **State Management**: React Context API
-- **Type Checking**: [TypeScript](https://typescriptlang.org)
-
+- **Framework**: [WXT](https://wxt.dev) powers the multi-browser extension tooling and build pipeline
+- **UI Layer**: [React](https://react.dev) drives the options UI and popup experiences
+- **Language**: [TypeScript](https://www.typescriptlang.org) keeps the entire codebase type-safe
+- **Styling**: [Tailwind CSS](https://tailwindcss.com) supplies utility-first theming primitives
+- **Components**: [Headless UI](https://headlessui.com) provides unstyled accessible primitives for our design system
 
 ## 🙏 Acknowledgements
 

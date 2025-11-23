@@ -144,13 +144,11 @@
 
 ## 🏗️ 技术栈
 
-- **框架**: [WXT](https://wxt.dev)
-- **UI 库**: [React](https://reactjs.org)
-- **样式**: [Tailwind CSS](https://tailwindcss.com)
-- **组件**: [Headless UI](https://headlessui.com)
-- **图标**: [Heroicons](https://heroicons.com)
-- **状态管理**: React Context API
-- **类型检查**: [TypeScript](https://typescriptlang.org)
+- **框架**: [WXT](https://wxt.dev) 负责多浏览器扩展工具链与构建流程
+- **UI 层**: [React](https://react.dev) 构建插件选项页与弹窗界面
+- **语言**: [TypeScript](https://www.typescriptlang.org) 提供端到端的类型安全
+- **样式**: [Tailwind CSS](https://tailwindcss.com) 以原子化工具类驱动主题样式
+- **组件**: [Headless UI](https://headlessui.com) 提供无样式可访问组件与设计系统基石
 
 
 ## 🙏 致谢
