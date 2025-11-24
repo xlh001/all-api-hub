@@ -3,6 +3,7 @@ import {
   CheckIcon,
   ChevronDownIcon,
   ChevronUpDownIcon,
+  DocumentDuplicateIcon,
   XMarkIcon
 } from "@heroicons/react/20/solid"
 import React, {
@@ -13,6 +14,8 @@ import React, {
   useRef,
   useState
 } from "react"
+import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "~/lib/utils.ts"
 
@@ -42,6 +45,7 @@ export function MultiSelect({
   allowCustom = false,
   className
 }: MultiSelectProps) {
+  const { t } = useTranslation("ui")
   const [query, setQuery] = useState("")
   const [isSelectedExpanded, setIsSelectedExpanded] = useState(
     selected.length <= 5
@@ -167,6 +171,20 @@ export function MultiSelect({
     setIsSelectedExpanded((prev) => !prev)
   }
 
+  const handleCopySelected = async () => {
+    if (typeof navigator === "undefined") return
+    const text = selectedOptions.map((option) => option.value).join(",")
+    if (!text) return
+
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success(t("multiSelect.copySuccess"))
+    } catch (error) {
+      console.error("Failed to copy selected values", error)
+      toast.error(t("multiSelect.copyError"))
+    }
+  }
+
   return (
     <div className={cn("w-full", className)}>
       {label && (
@@ -264,41 +282,51 @@ export function MultiSelect({
 
       {selectedOptions.length > 0 && (
         <div className="mt-2 space-y-2">
-          <button
-            type="button"
-            className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary/60 dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary flex w-full items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            onClick={toggleSelectedExpanded}
-            aria-expanded={isSelectedExpanded}
-            aria-controls={`${uid}-selected-items`}>
-            <span className="flex min-w-0 items-center gap-2">
-              <ChevronDownIcon
-                className={cn(
-                  "dark:text-dark-text-secondary h-4 w-4 shrink-0 text-gray-500 transition-transform",
-                  isSelectedExpanded ? "rotate-180" : ""
-                )}
-              />
-              <span className="truncate">
-                Selected ({selectedOptions.length})
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary/60 dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary flex w-full flex-1 items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              onClick={toggleSelectedExpanded}
+              aria-expanded={isSelectedExpanded}
+              aria-controls={`${uid}-selected-items`}>
+              <span className="flex min-w-0 items-center gap-2">
+                <ChevronDownIcon
+                  className={cn(
+                    "dark:text-dark-text-secondary h-4 w-4 shrink-0 text-gray-500 transition-transform",
+                    isSelectedExpanded ? "rotate-180" : ""
+                  )}
+                />
+                <span className="truncate">
+                  Selected ({selectedOptions.length})
+                </span>
               </span>
-            </span>
-            {!isSelectedExpanded && (
-              <span className="dark:text-dark-text-secondary ml-3 flex items-center gap-1 overflow-hidden text-xs text-gray-500">
-                {previewOptions.map((option) => (
-                  <span
-                    key={`preview-${option.value}`}
-                    className="dark:bg-dark-bg-tertiary dark:text-dark-text-tertiary max-w-[100px] shrink-0 truncate rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600"
-                    title={option.label}>
-                    {option.label}
-                  </span>
-                ))}
-                {remainingPreviewCount > 0 && (
-                  <span className="dark:text-dark-text-tertiary shrink-0 text-xs text-gray-400">
-                    +{remainingPreviewCount}
-                  </span>
-                )}
-              </span>
-            )}
-          </button>
+              {!isSelectedExpanded && (
+                <span className="dark:text-dark-text-secondary ml-3 flex items-center gap-1 overflow-hidden text-xs text-gray-500">
+                  {previewOptions.map((option) => (
+                    <span
+                      key={`preview-${option.value}`}
+                      className="dark:bg-dark-bg-tertiary dark:text-dark-text-tertiary max-w-[100px] shrink-0 truncate rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600"
+                      title={option.label}>
+                      {option.label}
+                    </span>
+                  ))}
+                  {remainingPreviewCount > 0 && (
+                    <span className="dark:text-dark-text-tertiary shrink-0 text-xs text-gray-400">
+                      +{remainingPreviewCount}
+                    </span>
+                  )}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleCopySelected}
+              className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary/60 dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary inline-flex items-center justify-center rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              title="Copy selected values"
+              aria-label="Copy selected values">
+              <DocumentDuplicateIcon className="h-4 w-4" />
+            </button>
+          </div>
 
           {isSelectedExpanded && (
             <div

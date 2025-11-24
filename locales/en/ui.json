@@ -105,5 +105,9 @@
     "tokenBased": "Token-based billing",
     "perCall": "Per-call billing",
     "notProvided": "Not provided"
+  },
+  "multiSelect": {
+    "copySuccess": "Selected values copied",
+    "copyError": "Copy failed, please try again"
   }
 }

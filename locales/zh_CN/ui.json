@@ -105,5 +105,9 @@
     "tokenBased": "按量计费",
     "perCall": "按次计费",
     "notProvided": "未提供"
+  },
+  "multiSelect": {
+    "copySuccess": "已复制已选择的内容",
+    "copyError": "复制失败，请重试"
   }
 }
