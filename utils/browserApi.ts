@@ -3,9 +3,9 @@
  * 提供跨浏览器兼容的 API 封装和常用 fallback 逻辑
  */
 
-// 确保 browser 全局对象可用
 import { isNotEmptyArray } from "~/utils/index"
 
+// 确保 browser 全局对象可用
 if (typeof (globalThis as any).browser === "undefined") {
   // Prefer chrome if present; otherwise leave undefined to fail fast where appropriate
   if (typeof (globalThis as any).chrome !== "undefined") {
@@ -452,4 +452,11 @@ export function onAlarm(
   return () => {
     browser.alarms.onAlarm.removeListener(callback)
   }
+}
+
+/**
+ * 获取当前扩展的 manifest 版本
+ */
+export function getManifestVersion(): number {
+  return browser.runtime.getManifest().manifest_version
 }

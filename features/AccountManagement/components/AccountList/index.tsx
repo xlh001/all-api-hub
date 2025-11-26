@@ -17,11 +17,11 @@ import {
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
-import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import {
   useAccountSearch,
   type SearchResultWithHighlight
 } from "~/features/AccountManagement/hooks/useAccountSearch"
+import { useAddAccountHandler } from "~/hooks/useAddAccountHandler.ts"
 import type { DisplaySiteData, SortField } from "~/types"
 
 import CopyKeyDialog from "../CopyKeyDialog"
@@ -37,7 +37,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const { t } = useTranslation(["account", "common"])
   const { sortedData, displayData, handleSort, sortField, sortOrder } =
     useAccountDataContext()
-  const { openAddAccount } = useDialogStateContext()
+  const { handleAddAccountClick } = useAddAccountHandler()
   const { handleDeleteAccount } = useAccountActionsContext()
 
   const [deleteDialogAccount, setDeleteDialogAccount] =
@@ -81,7 +81,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
         title={t("account:emptyState")}
         action={{
           label: t("account:addFirstAccount"),
-          onClick: openAddAccount,
+          onClick: handleAddAccountClick,
           variant: "default",
           icon: <PlusIcon className="h-4 w-4" />
         }}

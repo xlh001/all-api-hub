@@ -9,6 +9,10 @@ export function isFirefoxByUA(): boolean {
   )
 }
 
+export function isFirefox() {
+  return browser.runtime.getURL("").startsWith("moz-extension://")
+}
+
 /**
  * Determines if the current device is a mobile device.
  *
