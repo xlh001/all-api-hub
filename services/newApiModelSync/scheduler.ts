@@ -265,13 +265,16 @@ class NewApiModelSyncScheduler {
       // Save execution result
       await newApiModelSyncStorage.saveLastExecution(result)
 
-      // Cache upstream model options for allow-list selection
-      const collectedModels = collectModelsFromExecution(result)
-      if (collectedModels.length > 0 && !channelIds) {
-        await newApiModelSyncStorage.saveChannelUpstreamModelOptions(
-          collectedModels
-        )
+      // Cache upstream model options for allow-list selection, only if full sync
+      if (!channelIds) {
+        const collectedModels = collectModelsFromExecution(result)
+        if (collectedModels.length > 0) {
+          await newApiModelSyncStorage.saveChannelUpstreamModelOptions(
+            collectedModels
+          )
+        }
       }
+
       console.log(
         `[NewApiModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`
       )
