@@ -9,6 +9,12 @@ on:
         description: "Release tag or commit hash to build. Leave empty to auto-detect latest."
         required: false
         default: ""
+  schedule: # 保证商店版一直能审核到最新版本
+    # 每周一凌晨 2:00 UTC 自动运行 ''0 2 * * 1
+    # 或者每天凌晨 2:00 UTC: '0 2 * * *'
+    # 或者每月 1 号凌晨 2:00 UTC: '0 2 1 * *'
+    - cron: '0 2 * * *'
+
 
 permissions:
   contents: write # 上传构建产物到 Release 需要写权限
