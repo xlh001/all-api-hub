@@ -32,6 +32,7 @@ export interface MultiSelectProps {
   label?: string
   disabled?: boolean
   allowCustom?: boolean
+  parseCommaStrings?: boolean
   className?: string
 }
 
@@ -43,6 +44,7 @@ export function MultiSelect({
   label,
   disabled = false,
   allowCustom = false,
+  parseCommaStrings = true,
   className
 }: MultiSelectProps) {
   const { t } = useTranslation("ui")
@@ -152,8 +154,24 @@ export function MultiSelect({
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && allowCustom && query.trim()) {
       e.preventDefault()
-      if (!selected.includes(query.trim())) {
-        onChange([...selected, query.trim()])
+
+      if (parseCommaStrings && query.includes(",")) {
+        // Parse comma-separated values
+        const newValues = query
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v.length > 0)
+          .filter((v) => !selected.includes(v))
+
+        if (newValues.length > 0) {
+          onChange([...selected, ...newValues])
+        }
+      } else {
+        // Single value
+        const trimmedQuery = query.trim()
+        if (!selected.includes(trimmedQuery)) {
+          onChange([...selected, trimmedQuery])
+        }
       }
       setQuery("")
     }
