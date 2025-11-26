@@ -163,7 +163,7 @@ class NewApiModelSyncScheduler {
     const prefs = await userPreferences.getPreferences()
     const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
     const concurrency = Math.max(1, config.concurrency)
-    const maxRetries = config.maxRetries
+    const { maxRetries } = config
 
     // List channels
     const newApiChannelListResponse = await service.listChannels()
@@ -267,7 +267,7 @@ class NewApiModelSyncScheduler {
 
       // Cache upstream model options for allow-list selection
       const collectedModels = collectModelsFromExecution(result)
-      if (collectedModels.length > 0) {
+      if (collectedModels.length > 0 && !channelIds) {
         await newApiModelSyncStorage.saveChannelUpstreamModelOptions(
           collectedModels
         )
