@@ -19,12 +19,19 @@ import {
   Input
 } from "~/components/ui"
 import { accountStorage } from "~/services/accountStorage"
+import { channelConfigStorage } from "~/services/channelConfigStorage"
 import { userPreferences } from "~/services/userPreferences"
 import {
   downloadBackup,
   testWebdavConnection,
   uploadBackup
 } from "~/services/webdav/webdavService.ts"
+
+import {
+  BACKUP_VERSION,
+  importFromBackupObject,
+  type BackupFullV2
+} from "../utils"
 
 export default function WebDAVSettings() {
   const { t } = useTranslation("importExport")
@@ -184,15 +191,18 @@ export default function WebDAVSettings() {
             onClick={async () => {
               setUploading(true)
               try {
-                const [accountData, preferencesData] = await Promise.all([
-                  accountStorage.exportData(),
-                  userPreferences.exportPreferences()
-                ])
-                const exportData = {
-                  version: "1.0",
+                const [accountData, preferencesData, channelConfigs] =
+                  await Promise.all([
+                    accountStorage.exportData(),
+                    userPreferences.exportPreferences(),
+                    channelConfigStorage.exportConfigs()
+                  ])
+                const exportData: BackupFullV2 = {
+                  version: BACKUP_VERSION,
                   timestamp: Date.now(),
                   accounts: accountData,
-                  preferences: preferencesData
+                  preferences: preferencesData,
+                  channelConfigs
                 }
                 await uploadBackup(JSON.stringify(exportData, null, 2), {
                   url: webdavUrl,
@@ -228,43 +238,15 @@ export default function WebDAVSettings() {
                   password: webdavPassword
                 })
                 const data = JSON.parse(content)
-
-                let importSuccess = false
-                if (data.accounts || !data.type) {
-                  const accountsToImport =
-                    data.accounts?.accounts || data.data?.accounts
-
-                  const { migratedCount } = await accountStorage.importData({
-                    accounts: accountsToImport
-                  })
-
-                  importSuccess = true
-                  if (migratedCount > 0) {
-                    toast.success(
-                      t("messages:toast.success.importedAccounts", {
-                        migratedCount
-                      })
-                    )
-                  } else {
-                    toast.success(t("import.importSuccess"))
-                  }
+                const result = await importFromBackupObject(data)
+                if (result.allImported) {
+                  toast.success(t("importExport:import.importSuccess"))
                 }
-                if (data.preferences || data.type === "preferences") {
-                  const preferencesData = data.preferences || data.data
-                  if (preferencesData) {
-                    const success =
-                      await userPreferences.importPreferences(preferencesData)
-                    if (success) {
-                      importSuccess = true
-                      toast.success(t("import.importSuccess"))
-                    }
-                  }
-                }
-                if (!importSuccess)
-                  throw new Error(t("import.noImportableDataFound"))
               } catch (e: any) {
                 console.error(e)
-                toast.error(e?.message || t("import.downloadImportFailed"))
+                toast.error(
+                  e?.message || t("importExport:import.downloadImportFailed")
+                )
               } finally {
                 setDownloading(false)
               }
