@@ -259,7 +259,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap items-center">
           {site.id === detectedAccountId && (
             <Tooltip content={t("list.site.currentSiteExists")} position="top">
               <Badge variant="warning" size="sm" className="whitespace-nowrap">
