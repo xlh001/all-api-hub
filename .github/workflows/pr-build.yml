@@ -34,10 +34,15 @@ jobs:
             core.setOutput('sha', pr.head.sha);
             core.setOutput('number', pr.number);
 
-      - name: Checkout code
+      - name: Checkout code (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && steps.pr_details.outputs.ref || github.head_ref }}
+          ref: refs/pull/${{ inputs.pr_number }}/merge
+
+      - name: Checkout code (pull_request)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
