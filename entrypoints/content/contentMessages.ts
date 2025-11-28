@@ -1,30 +1,18 @@
 import { t } from "i18next"
 
 import { fetchUserInfo } from "~/services/apiService"
+import { getErrorMessage } from "~/utils/error"
 
-import { getErrorMessage } from "../utils/error"
-
-export default defineContentScript({
-  matches: ["<all_urls>"],
-  main() {
-    main()
-  }
-})
-
-function main() {
-  console.log("Hello content script!", { id: browser.runtime.id })
-  // 监听来自 popup 和 background 的消息
+export function setupContentMessageHandlers() {
   browser.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === "getLocalStorage") {
       try {
         const { key } = request
 
         if (key) {
-          // 读取特定键
           const value = localStorage.getItem(key)
           sendResponse({ success: true, data: { [key]: value } })
         } else {
-          // 读取所有 localStorage 数据
           const localStorage = window.localStorage
           const data: Record<string, any> = {}
 
@@ -40,13 +28,12 @@ function main() {
       } catch (error) {
         sendResponse({ success: false, error: getErrorMessage(error) })
       }
-      return true // 保持消息通道开放
+      return true
     }
 
     if (request.action === "getUserFromLocalStorage") {
       ;(async () => {
         try {
-          // 所有异步逻辑
           const userStr = localStorage.getItem("user")
           const user = userStr
             ? JSON.parse(userStr)
@@ -82,7 +69,6 @@ function main() {
     }
 
     if (request.action === "waitAndGetUserInfo") {
-      // 新增：等待页面完全加载后获取用户信息
       waitForUserInfo()
         .then((userInfo) => {
           sendResponse({ success: true, data: userInfo })
@@ -103,7 +89,6 @@ function main() {
           }
 
           const normalizedOptions = normalizeFetchOptions(fetchOptions)
-          // 确保携带 cookie
           normalizedOptions.credentials = "include"
           const response = await fetch(fetchUrl, normalizedOptions)
 
@@ -143,7 +128,6 @@ function main() {
   })
 }
 
-// 等待用户信息可用
 async function waitForUserInfo(
   maxWaitTime = 5000
 ): Promise<{ userId: string; user: any }> {
@@ -159,11 +143,9 @@ async function waitForUserInfo(
         }
       }
     } catch (error) {
-      // 继续等待
       console.error(error)
     }
 
-    // 等待 100ms 后重试
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
 
@@ -219,10 +201,15 @@ async function parseResponseData(
   switch (responseType) {
     case "text":
       return await response.text()
-    case "arrayBuffer":
-      return await response.arrayBuffer()
-    case "blob":
-      return await response.blob()
+    case "arrayBuffer": {
+      const buffer = await response.arrayBuffer()
+      return Array.from(new Uint8Array(buffer))
+    }
+    case "blob": {
+      const blob = await response.blob()
+      const blobBuffer = await blob.arrayBuffer()
+      return { data: Array.from(new Uint8Array(blobBuffer)), type: blob.type }
+    }
     case "json":
     default: {
       const text = await response.text()
