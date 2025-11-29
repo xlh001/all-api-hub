@@ -9,14 +9,10 @@ import {
   type RedemptionPromptAction
 } from "../components/RedemptionPromptToast.tsx"
 
-function ensureRedemptionToastRoot() {}
-
 export function showAccountSelectToast(
   accounts: DisplaySiteData[],
   options?: { title?: string; message?: string }
 ): Promise<DisplaySiteData | null> {
-  ensureRedemptionToastRoot()
-
   return new Promise((resolve) => {
     let resolved = false
 
@@ -52,8 +48,6 @@ export function showAccountSelectToast(
 export function showRedemptionPromptToast(
   message: string
 ): Promise<RedemptionPromptAction> {
-  ensureRedemptionToastRoot()
-
   return new Promise((resolve) => {
     let resolved = false
 
@@ -76,7 +70,6 @@ export function showRedemptionPromptToast(
 }
 
 export function showRedeemResultToast(success: boolean, message: string) {
-  ensureRedemptionToastRoot()
   if (!message) return
 
   if (success) {
