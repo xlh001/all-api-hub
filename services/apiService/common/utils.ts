@@ -6,11 +6,13 @@ import type {
   TodayUsageData
 } from "~/services/apiService/common/type"
 import { AuthTypeEnum } from "~/types"
+import { isFirefox } from "~/utils/browser.ts"
 import {
   tempWindowFetch,
   type TempWindowFetchParams,
   type TempWindowResponseType
 } from "~/utils/browserApi"
+import { addExtensionHeader } from "~/utils/cookieHelper"
 import { joinUrl } from "~/utils/url"
 
 /**
@@ -83,8 +85,20 @@ const createBaseRequest = (
 const createCookieAuthRequest = (
   userId: number | string | undefined,
   options: RequestInit = {}
-): RequestInit =>
-  createBaseRequest(createRequestHeaders(userId), "include", options)
+): RequestInit => {
+  const baseRequest = createBaseRequest(
+    createRequestHeaders(userId),
+    "include",
+    options
+  )
+
+  // Firefox：为 Cookie 认证请求添加扩展标识头
+  if (isFirefox()) {
+    baseRequest.headers = addExtensionHeader(baseRequest.headers)
+  }
+
+  return baseRequest
+}
 
 /**
  * 创建带 Bearer token 认证的请求
@@ -377,6 +391,8 @@ async function fetchViaTempWindow<T>(
   console.log("[API Service] Using temp window fetch fallback for", context.url)
 
   const response = await tempWindowFetch(requestPayload)
+
+  console.log("[API Service] Temp window fetch response:", response)
 
   if (!response.success) {
     throw new ApiError(
