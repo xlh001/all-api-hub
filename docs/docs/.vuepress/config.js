@@ -41,6 +41,7 @@ export default defineUserConfig({
               { text: '快速导出站点', link: '/quick-export' },
               { text: '自动刷新', link: '/auto-refresh' },
               { text: '自动签到', link: '/auto-checkin' },
+              { text: '兑换助手', link: '/redemption-assist' },
               { text: 'WebDAV 同步', link: '/webdav-sync' },
               { text: '数据导入导出', link: '/data-management' },
               { text: 'New API 模型同步', link: '/new-api-model-sync' },
