@@ -34,6 +34,13 @@ const typographyVariants = cva("", {
       medium: "font-medium",
       semibold: "font-semibold",
       bold: "font-bold"
+    },
+    size: {
+      xs: "text-xs",
+      sm: "text-sm",
+      base: "text-base",
+      lg: "text-lg",
+      xl: "text-xl"
     }
   },
   defaultVariants: {
@@ -50,7 +57,7 @@ export interface TypographyProps
 }
 
 const Typography = React.forwardRef<HTMLElement, TypographyProps>(
-  ({ className, variant, align, weight, as, ...props }, ref) => {
+  ({ className, variant, align, weight, size, as, ...props }, ref) => {
     // Determine the HTML element based on variant or as prop
     const getElement = () => {
       if (as) return as
@@ -81,7 +88,7 @@ const Typography = React.forwardRef<HTMLElement, TypographyProps>(
       <Component
         ref={ref}
         className={cn(
-          typographyVariants({ variant, align, weight, className })
+          typographyVariants({ variant, align, weight, size, className })
         )}
         {...props}
       />

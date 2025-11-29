@@ -1,7 +1,16 @@
 import React from "react"
 import { useTranslation } from "react-i18next"
 
-import { Button } from "~/components/ui"
+import {
+  Body,
+  Button,
+  Caption,
+  Card,
+  CardContent,
+  CardHeader,
+  Heading3,
+  Link
+} from "~/components/ui"
 
 export type RedemptionPromptAction = "auto" | "cancel"
 
@@ -26,19 +35,40 @@ export const RedemptionPromptToast: React.FC<RedemptionPromptToastProps> = ({
     onAction("auto")
   }
 
+  const handleOpenSettings = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    try {
+      await browser.runtime.sendMessage({
+        action: "openSettings:checkinRedeem"
+      })
+    } catch (error) {
+      console.error("[RedemptionAssist] Failed to open settings page:", error)
+    }
+  }
+
   return (
-    <div
-      data-all-api-hub="redemption-assist-toast"
-      className="border-border bg-background text-foreground pointer-events-auto flex w-full flex-col gap-3 rounded-lg border px-3 py-2 text-xs sm:px-4 sm:py-3 sm:text-sm">
-      <div className="text-sm leading-snug whitespace-pre-line">{message}</div>
-      <div className="mt-2 flex justify-end gap-2">
-        <Button variant="secondary" onClick={handleCancel}>
-          {t("common:actions.cancel")}
-        </Button>
-        <Button onClick={handleAutoRedeem}>
-          {t("redemptionAssist:actions.autoRedeem")}
-        </Button>
-      </div>
-    </div>
+    <Card data-all-api-hub="redemption-assist-toast">
+      <CardHeader padding="sm">
+        <Heading3>{t("redemptionAssist:messages.promptTitle")}</Heading3>
+      </CardHeader>
+      <CardContent padding="sm">
+        <Body>{message}</Body>
+        <div className="flex flex-wrap items-center gap-1">
+          <Caption>{t("redemptionAssist:messages.promptSource")}</Caption>
+          <Link size="xs" href="#" onClick={handleOpenSettings}>
+            {t("redemptionAssist:messages.promptSettingsLink")}
+          </Link>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={handleCancel}>
+            {t("common:actions.cancel")}
+          </Button>
+          <Button onClick={handleAutoRedeem}>
+            {t("redemptionAssist:actions.autoRedeem")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

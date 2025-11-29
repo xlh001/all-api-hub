@@ -44,6 +44,7 @@ import {
   removeTabOrWindow
 } from "../utils/browserApi"
 import { getErrorMessage } from "../utils/error"
+import { openOrFocusOptionsPage } from "../utils/navigation"
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id })
@@ -199,6 +200,12 @@ async function main() {
 
     if (request.action === "tempWindowFetch") {
       handleTempWindowFetch(request, sendResponse)
+      return true
+    }
+
+    if (request.action === "openSettings:checkinRedeem") {
+      openOrFocusOptionsPage("?tab=checkinRedeem#basic")
+      sendResponse({ success: true })
       return true
     }
 
