@@ -31,8 +31,15 @@ const tempContextById = new Map<number, TempContext>()
 const tempContextByTabId = new Map<number, TempContext>()
 const tempContextsByOrigin = new Map<string, TempContext[]>()
 const originLocks = new Map<string, Promise<void>>()
+// 正在销毁上下文池的 origin，用于防止获取/复用与销毁操作并发冲突
 const destroyingOrigins = new Set<string>()
 
+/**
+ * 设置临时窗口/标签页相关的浏览器事件监听器。
+ *
+ * - 监听 window/tab 关闭事件
+ * - 清理对应的临时上下文和映射
+ */
 export function setupTempWindowListeners() {
   // 监听窗口/标签页关闭事件，清理记录
   onWindowRemoved(handleTempWindowRemoved)
@@ -41,6 +48,9 @@ export function setupTempWindowListeners() {
   onTabRemoved(handleTempTabRemoved)
 }
 
+/**
+ * 处理临时窗口关闭事件，移除 tempWindows 记录并销毁对应的 window 上下文。
+ */
 function handleTempWindowRemoved(windowId: number) {
   for (const [requestId, storedId] of tempWindows.entries()) {
     if (storedId === windowId) {
@@ -62,6 +72,9 @@ function handleTempWindowRemoved(windowId: number) {
   }
 }
 
+/**
+ * 处理临时标签页关闭事件，移除 tempWindows 记录并销毁对应的 tab 上下文。
+ */
 function handleTempTabRemoved(tabId: number) {
   for (const [requestId, storedId] of tempWindows.entries()) {
     if (storedId === tabId) {
@@ -80,7 +93,9 @@ function handleTempTabRemoved(tabId: number) {
   }
 }
 
-// 打开临时窗口访问指定站点
+/**
+ * 根据请求参数打开临时窗口或标签页，并记录 requestId 与 window/tabId 的映射。
+ */
 export async function handleOpenTempWindow(
   request: any,
   sendResponse: (response?: any) => void
@@ -127,6 +142,9 @@ export async function handleOpenTempWindow(
   }
 }
 
+/**
+ * 关闭指定 requestId 关联的临时窗口/标签页，或释放临时上下文。
+ */
 export async function handleCloseTempWindow(
   request: any,
   sendResponse: (response?: any) => void
@@ -157,7 +175,9 @@ export async function handleCloseTempWindow(
   }
 }
 
-// 自动检测站点信息
+/**
+ * 自动检测站点类型与用户信息，通过临时上下文访问目标站点。
+ */
 export async function handleAutoDetectSite(
   request: any,
   sendResponse: (response?: any) => void
@@ -179,7 +199,7 @@ export async function handleAutoDetectSite(
     }
     console.log("自动检测结果:", result)
 
-    // 5. 返回结果
+    // 返回结果
     sendResponse({
       success: true,
       data: result
@@ -189,6 +209,9 @@ export async function handleAutoDetectSite(
   }
 }
 
+/**
+ * 在临时上下文中执行跨域 fetch 请求，用于绕过需要真实浏览器环境的接口访问。
+ */
 export async function handleTempWindowFetch(
   request: any,
   sendResponse: (response?: any) => void
@@ -245,7 +268,7 @@ async function getSiteDataFromTab(url: string, requestId: string) {
     const context = await acquireTempContext(url, requestId)
     const { tabId } = context
 
-    // 3. 通过 content script 获取用户信息
+    // 通过 content script 获取用户信息
     const userResponse = await browser.tabs.sendMessage(tabId, {
       action: "getUserFromLocalStorage",
       url: url
@@ -253,7 +276,7 @@ async function getSiteDataFromTab(url: string, requestId: string) {
 
     await releaseTempContext(requestId)
 
-    // 5. 检查响应并返回结果
+    // 检查响应并返回结果
     if (!userResponse || !userResponse.success) {
       console.log("获取用户信息失败:", userResponse?.error)
       return null
@@ -270,6 +293,9 @@ async function getSiteDataFromTab(url: string, requestId: string) {
   }
 }
 
+/**
+ * 为相同 origin 串行执行异步任务，避免并发读写同一上下文池导致竞态。
+ */
 async function withOriginLock<T>(
   origin: string,
   task: () => Promise<T>
@@ -292,6 +318,9 @@ async function withOriginLock<T>(
   }
 }
 
+/**
+ * 销毁指定 origin 的所有上下文（窗口/标签页），用于池整体回收。
+ */
 async function destroyOriginPool(origin: string, pool?: TempContext[]) {
   const contexts = pool ?? tempContextsByOrigin.get(origin)
   if (!contexts || contexts.length === 0) {
@@ -307,6 +336,12 @@ async function destroyOriginPool(origin: string, pool?: TempContext[]) {
   )
 }
 
+/**
+ * 获取或创建某个 origin 的临时上下文：
+ * - 在 withOriginLock 下保证同一 origin 串行
+ * - 如有可复用上下文则复用，否则创建新的窗口/标签页
+ * - 使用 destroyingOrigins 防止与销毁流程并发冲突
+ */
 async function acquireTempContext(url: string, requestId: string) {
   const origin = normalizeOrigin(url)
 
@@ -341,6 +376,11 @@ async function acquireTempContext(url: string, requestId: string) {
   })
 }
 
+/**
+ * 释放与 requestId 关联的临时上下文：
+ * - 支持强制关闭（forceClose）直接销毁窗口/标签页
+ * - 否则标记为非 busy，并在空闲一段时间后按池粒度销毁。
+ */
 async function releaseTempContext(
   requestId: string,
   options: { forceClose?: boolean } = {}
@@ -385,12 +425,21 @@ async function releaseTempContext(
   }, 2000)
 }
 
+/**
+ * 从指定 origin 的上下文池中获取一个仍然存活的上下文：
+ * - 不根据 busy 过滤，依赖 withOriginLock 保证同一 origin 串行
+ * - 对已失效的上下文进行销毁并从池中移除。
+ */
 async function getReusableContext(origin: string) {
   const pool = tempContextsByOrigin.get(origin)
   if (!pool || pool.length === 0) {
     return null
   }
 
+  // 注意：这里不检查 context.busy。
+  // 同一 origin 的并发通过 withOriginLock 串行化：
+  // - 后续请求会等待上一个请求释放再进入 acquireTempContext
+  // - 然后复用同一个上下文，而不是在 busy=true 时跳过并创建新的窗口/标签页
   for (const context of pool) {
     if (await isContextAlive(context)) {
       return context
@@ -402,6 +451,9 @@ async function getReusableContext(origin: string) {
   return null
 }
 
+/**
+ * 创建新的临时窗口/标签页上下文，并等待页面加载及 Cloudflare 校验通过。
+ */
 async function createTempContextInstance(url: string, origin: string) {
   let contextId: number | undefined
   let tabId: number | undefined
@@ -463,6 +515,9 @@ async function createTempContextInstance(url: string, origin: string) {
   }
 }
 
+/**
+ * 将新创建的上下文注册到各种索引映射与 origin 池中。
+ */
 function registerContext(origin: string, context: TempContext) {
   tempContextById.set(context.id, context)
   tempContextByTabId.set(context.tabId, context)
@@ -472,6 +527,9 @@ function registerContext(origin: string, context: TempContext) {
   tempContextsByOrigin.set(origin, pool)
 }
 
+/**
+ * 为上下文安排空闲销毁定时器，长时间未使用的窗口/标签页会被自动关闭。
+ */
 function scheduleContextCleanup(context: TempContext) {
   if (context.releaseTimer) {
     clearTimeout(context.releaseTimer)
@@ -486,6 +544,11 @@ function scheduleContextCleanup(context: TempContext) {
   }, TEMP_CONTEXT_IDLE_TIMEOUT)
 }
 
+/**
+ * 销毁单个上下文：
+ * - 从各种索引与池中移除
+ * - 可选地关闭对应的窗口/标签页。
+ */
 async function destroyContext(
   context: TempContext,
   options: { skipBrowserRemoval?: boolean } = {}
@@ -525,6 +588,9 @@ async function destroyContext(
   }
 }
 
+/**
+ * 检查上下文对应的标签页是否仍然存在，用于过滤已失效的上下文。
+ */
 async function isContextAlive(context: TempContext) {
   try {
     await browser.tabs.get(context.tabId)
@@ -534,6 +600,9 @@ async function isContextAlive(context: TempContext) {
   }
 }
 
+/**
+ * 规范化 URL，返回 origin（协议 + 域名 + 端口）。
+ */
 function normalizeOrigin(url: string) {
   try {
     return new URL(url).origin
@@ -542,7 +611,9 @@ function normalizeOrigin(url: string) {
   }
 }
 
-// 等待标签页加载完成
+/**
+ * 等待标签页加载完成并通过 Cloudflare 盾校验，超时或错误时抛出异常。
+ */
 function waitForTabComplete(tabId: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
