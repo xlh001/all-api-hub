@@ -43,7 +43,7 @@ export default function ActionButtons({
 
   if (isAddMode && !isDetected && !isFormValid) {
     return (
-      <div className="flex space-x-3">
+      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           onClick={onAutoDetect}
@@ -73,7 +73,7 @@ export default function ActionButtons({
   }
 
   return (
-    <div className="flex space-x-3 pt-2">
+    <div className="flex flex-wrap gap-2">
       <Button type="button" onClick={onClose} variant="secondary">
         {t("common:actions.cancel")}
       </Button>
@@ -86,7 +86,7 @@ export default function ActionButtons({
           loading={isDetecting}
           bleed
           className="flex-1"
-          variant="default"
+          variant="warning"
           leftIcon={
             !isDetecting ? <SparklesIcon className="h-4 w-4" /> : undefined
           }>
