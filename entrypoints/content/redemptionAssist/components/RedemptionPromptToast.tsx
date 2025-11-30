@@ -11,6 +11,7 @@ import {
   Heading3,
   Link
 } from "~/components/ui"
+import { sendRuntimeMessage } from "~/utils/browserApi"
 
 export type RedemptionPromptAction = "auto" | "cancel"
 
@@ -39,7 +40,7 @@ export const RedemptionPromptToast: React.FC<RedemptionPromptToastProps> = ({
     e.stopPropagation()
     e.preventDefault()
     try {
-      await browser.runtime.sendMessage({
+      await sendRuntimeMessage({
         action: "openSettings:checkinRedeem"
       })
     } catch (error) {

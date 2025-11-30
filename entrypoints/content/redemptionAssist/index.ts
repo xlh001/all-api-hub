@@ -1,12 +1,13 @@
 import { t } from "i18next"
 
-import { extractRedemptionCodesFromText } from "~/utils/redemptionAssist.ts"
+import { sendRuntimeMessage } from "~/utils/browserApi"
+import { extractRedemptionCodesFromText } from "~/utils/redemptionAssist"
 
 import {
   showAccountSelectToast,
   showRedeemResultToast,
   showRedemptionPromptToast
-} from "./utils/redemptionToasts.ts"
+} from "./utils/redemptionToasts"
 
 export const REDEMPTION_TOAST_HOST_TAG = "all-api-hub-redemption-toast"
 
@@ -142,7 +143,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
     const url = window.location.href
 
     console.log("[RedemptionAssist][Content] Detected code:", code, url)
-    const shouldResp: any = await browser.runtime.sendMessage({
+    const shouldResp: any = await sendRuntimeMessage({
       action: "redemptionAssist:shouldPrompt",
       url,
       code
@@ -162,7 +163,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
     const action = await showRedemptionPromptToast(confirmMessage)
     if (action !== "auto") return
 
-    const redeemResp: any = await browser.runtime.sendMessage({
+    const redeemResp: any = await sendRuntimeMessage({
       action: "redemptionAssist:autoRedeemByUrl",
       url,
       code
@@ -188,7 +189,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
         return
       }
 
-      const manualResp: any = await browser.runtime.sendMessage({
+      const manualResp: any = await sendRuntimeMessage({
         action: "redemptionAssist:autoRedeem",
         accountId: selected.id,
         code
@@ -210,7 +211,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
         return
       }
 
-      const manualResp: any = await browser.runtime.sendMessage({
+      const manualResp: any = await sendRuntimeMessage({
         action: "redemptionAssist:autoRedeem",
         accountId: selected.id,
         code
