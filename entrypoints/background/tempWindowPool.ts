@@ -31,6 +31,7 @@ const tempContextById = new Map<number, TempContext>()
 const tempContextByTabId = new Map<number, TempContext>()
 const tempContextsByOrigin = new Map<string, TempContext[]>()
 const originLocks = new Map<string, Promise<void>>()
+const destroyingOrigins = new Set<string>()
 
 export function setupTempWindowListeners() {
   // 监听窗口/标签页关闭事件，清理记录
@@ -310,10 +311,22 @@ async function acquireTempContext(url: string, requestId: string) {
   const origin = normalizeOrigin(url)
 
   return await withOriginLock(origin, async () => {
+    // If this origin's pool is in the middle of being destroyed, do not
+    // attempt to reuse or create a new context for it.
+    if (destroyingOrigins.has(origin)) {
+      throw new Error("Temp context pool is being destroyed for this origin")
+    }
+
     let context = await getReusableContext(origin)
     if (!context) {
       context = await createTempContextInstance(url, origin)
       registerContext(origin, context)
+    }
+
+    // It's possible that during async operations the context or its pool was
+    // marked for destruction. Perform a final validity check before using it.
+    if (destroyingOrigins.has(origin) || !tempContextById.has(context.id)) {
+      throw new Error("Acquired temp context is no longer valid")
     }
 
     context.busy = true
@@ -356,7 +369,15 @@ async function releaseTempContext(
 
       const pool = tempContextsByOrigin.get(context.origin)
       if (pool && pool.every((ctx) => !ctx.busy)) {
-        await destroyOriginPool(context.origin, pool)
+        // Mark this origin as destroying while we tear down the pool. Any
+        // concurrent acquire attempts for this origin will be rejected by
+        // acquireTempContext until destruction finishes.
+        destroyingOrigins.add(context.origin)
+        try {
+          await destroyOriginPool(context.origin, pool)
+        } finally {
+          destroyingOrigins.delete(context.origin)
+        }
       } else {
         scheduleContextCleanup(context)
       }
