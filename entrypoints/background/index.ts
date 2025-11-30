@@ -1,3 +1,5 @@
+import { setupRuntimeMessageListeners } from "~/entrypoints/background/runtimeMessages.ts"
+import { setupTempWindowListeners } from "~/entrypoints/background/tempWindowPool.ts"
 import { accountStorage } from "~/services/accountStorage"
 import { migrateAccountsConfig } from "~/services/configMigration/account/accountDataMigration"
 import { userPreferences } from "~/services/userPreferences"
@@ -8,11 +10,16 @@ import {
   setupWebRequestInterceptor
 } from "~/utils/cookieHelper"
 
-import { initializeRuntimeMessages } from "./runtimeMessages"
 import { initializeServices } from "./servicesInit"
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id })
+
+  /**
+   * 设置各种事件监听器
+   */
+  setupRuntimeMessageListeners()
+  setupTempWindowListeners()
 
   /**
    * 监听插件安装/更新事件
@@ -108,6 +115,4 @@ async function main() {
       })
     }
   })
-
-  initializeRuntimeMessages()
 }
