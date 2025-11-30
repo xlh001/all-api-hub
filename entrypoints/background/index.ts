@@ -1,38 +1,16 @@
 import { t } from "i18next"
 
-import { accountStorage } from "~/services/accountStorage.ts"
-import { modelMetadataService } from "~/services/modelMetadata"
-import {
-  handleNewApiModelSyncMessage,
-  newApiModelSyncScheduler
-} from "~/services/newApiModelSync"
+import { accountStorage } from "~/services/accountStorage"
+import { handleAutoCheckinMessage } from "~/services/autoCheckin/scheduler"
+import { handleAutoRefreshMessage } from "~/services/autoRefreshService"
+import { handleChannelConfigMessage } from "~/services/channelConfigStorage"
+import { migrateAccountsConfig } from "~/services/configMigration/account/accountDataMigration"
+import { getSiteType } from "~/services/detectSiteType"
+import { handleNewApiModelSyncMessage } from "~/services/newApiModelSync"
+import { handleRedemptionAssistMessage } from "~/services/redemptionAssist"
+import { userPreferences } from "~/services/userPreferences"
+import { handleWebdavAutoSyncMessage } from "~/services/webdav/webdavAutoSyncService"
 import { type SiteAccount } from "~/types"
-import { initBackgroundI18n } from "~/utils/background-i18n.ts"
-import {
-  registerWebRequestInterceptor,
-  setupWebRequestInterceptor
-} from "~/utils/cookieHelper.ts"
-
-import {
-  autoCheckinScheduler,
-  handleAutoCheckinMessage
-} from "../../services/autoCheckin/scheduler.ts"
-import {
-  autoRefreshService,
-  handleAutoRefreshMessage
-} from "../../services/autoRefreshService.ts"
-import { handleChannelConfigMessage } from "../../services/channelConfigStorage.ts"
-import { migrateAccountsConfig } from "../../services/configMigration/account/accountDataMigration.ts"
-import { getSiteType } from "../../services/detectSiteType.ts"
-import {
-  handleRedemptionAssistMessage,
-  redemptionAssistService
-} from "../../services/redemptionAssist.ts"
-import { userPreferences } from "../../services/userPreferences.ts"
-import {
-  handleWebdavAutoSyncMessage,
-  webdavAutoSyncService
-} from "../../services/webdav/webdavAutoSyncService.ts"
 import {
   createTab,
   createWindow,
@@ -42,55 +20,17 @@ import {
   onTabRemoved,
   onWindowRemoved,
   removeTabOrWindow
-} from "../../utils/browserApi.ts"
-import { getErrorMessage } from "../../utils/error.ts"
-import { openOrFocusOptionsPage } from "../../utils/navigation.ts"
+} from "~/utils/browserApi"
+import {
+  registerWebRequestInterceptor,
+  setupWebRequestInterceptor
+} from "~/utils/cookieHelper"
+import { getErrorMessage } from "~/utils/error"
+import { openOrFocusOptionsPage } from "~/utils/navigation"
+
+import { initializeServices } from "./servicesInit"
 
 const TEMP_CONTEXT_IDLE_TIMEOUT = 5000
-
-let servicesInitialized = false
-let initializingPromise: Promise<void> | null = null
-
-/**
- * 初始化各项服务
- */
-async function initializeServices() {
-  console.log(
-    "[Background] Checking services initialization status...",
-    servicesInitialized
-  )
-
-  // 若已初始化，跳过
-  if (servicesInitialized) {
-    console.log("[Background] 服务已初始化，跳过")
-    return
-  }
-
-  // 正在初始化则等待已有 Promise
-  if (initializingPromise) {
-    await initializingPromise
-    return
-  }
-
-  // 标记为正在初始化（防止并发）
-  initializingPromise = (async () => {
-    console.log("[Background] 初始化服务...")
-    await initBackgroundI18n()
-    await modelMetadataService.initialize().catch((error) => {
-      console.warn("[Background] Model metadata initialization failed:", error)
-    })
-    await autoRefreshService.initialize()
-    await webdavAutoSyncService.initialize()
-    await newApiModelSyncScheduler.initialize()
-    await autoCheckinScheduler.initialize()
-    await redemptionAssistService.initialize()
-
-    servicesInitialized = true
-    initializingPromise = null
-  })()
-
-  await initializingPromise
-}
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id })
@@ -99,31 +39,34 @@ export default defineBackground(() => {
    * 监听插件安装/更新事件
    * 进行配置迁移和服务初始化
    */
-  onInstalled(async (details) => {
+  onInstalled((details) => {
     console.log(
       "[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务"
     )
-    await initializeServices()
 
-    if (details.reason === "install" || details.reason === "update") {
-      console.log(`Extension ${details.reason}: triggering config migration`)
+    void (async () => {
+      await initializeServices()
 
-      // Migrate user preferences
-      await userPreferences.getPreferences()
-      console.log("[Background] User preferences migration completed")
+      if (details.reason === "install" || details.reason === "update") {
+        console.log(`Extension ${details.reason}: triggering config migration`)
 
-      // Load all accounts and migrate
-      const accounts = await accountStorage.getAllAccounts()
-      const { accounts: migrated, migratedCount } =
-        migrateAccountsConfig(accounts)
+        // Migrate user preferences
+        await userPreferences.getPreferences()
+        console.log("[Background] User preferences migration completed")
 
-      if (migratedCount > 0) {
-        // Save migrated accounts back
-        const config = await accountStorage.exportData()
-        await accountStorage.importData({ ...config, accounts: migrated })
-        console.log(`Migration complete: ${migratedCount} accounts updated`)
+        // Load all accounts and migrate
+        const accounts = await accountStorage.getAllAccounts()
+        const { accounts: migrated, migratedCount } =
+          migrateAccountsConfig(accounts)
+
+        if (migratedCount > 0) {
+          // Save migrated accounts back
+          const config = await accountStorage.exportData()
+          await accountStorage.importData({ ...config, accounts: migrated })
+          console.log(`Migration complete: ${migratedCount} accounts updated`)
+        }
       }
-    }
+    })()
   })
 
   main()
