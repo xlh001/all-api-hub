@@ -129,7 +129,9 @@
   "background": {
     "cannotCreateWindow": "Unable to create window",
     "cannotCreateWindowOrTab": "Unable to create window or get tab",
-    "pageLoadTimeout": "Page load timeout"
+    "pageLoadTimeout": "Page load timeout",
+    "windowNotFound": "Window or tab not found",
+    "invalidFetchRequest": "Invalid fetch request"
   },
   "content": {
     "userInfoNotFound": "User information not found, please ensure you are logged in",
