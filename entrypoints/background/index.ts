@@ -1,6 +1,6 @@
 import { t } from "i18next"
 
-import { accountStorage } from "~/services/accountStorage"
+import { accountStorage } from "~/services/accountStorage.ts"
 import { modelMetadataService } from "~/services/modelMetadata"
 import {
   handleNewApiModelSyncMessage,
@@ -11,28 +11,28 @@ import { initBackgroundI18n } from "~/utils/background-i18n.ts"
 import {
   registerWebRequestInterceptor,
   setupWebRequestInterceptor
-} from "~/utils/cookieHelper"
+} from "~/utils/cookieHelper.ts"
 
 import {
   autoCheckinScheduler,
   handleAutoCheckinMessage
-} from "../services/autoCheckin/scheduler"
+} from "../../services/autoCheckin/scheduler.ts"
 import {
   autoRefreshService,
   handleAutoRefreshMessage
-} from "../services/autoRefreshService"
-import { handleChannelConfigMessage } from "../services/channelConfigStorage"
-import { migrateAccountsConfig } from "../services/configMigration/account/accountDataMigration.ts"
-import { getSiteType } from "../services/detectSiteType"
+} from "../../services/autoRefreshService.ts"
+import { handleChannelConfigMessage } from "../../services/channelConfigStorage.ts"
+import { migrateAccountsConfig } from "../../services/configMigration/account/accountDataMigration.ts"
+import { getSiteType } from "../../services/detectSiteType.ts"
 import {
   handleRedemptionAssistMessage,
   redemptionAssistService
-} from "../services/redemptionAssist"
-import { userPreferences } from "../services/userPreferences"
+} from "../../services/redemptionAssist.ts"
+import { userPreferences } from "../../services/userPreferences.ts"
 import {
   handleWebdavAutoSyncMessage,
   webdavAutoSyncService
-} from "../services/webdav/webdavAutoSyncService.ts"
+} from "../../services/webdav/webdavAutoSyncService.ts"
 import {
   createTab,
   createWindow,
@@ -42,9 +42,9 @@ import {
   onTabRemoved,
   onWindowRemoved,
   removeTabOrWindow
-} from "../utils/browserApi"
-import { getErrorMessage } from "../utils/error"
-import { openOrFocusOptionsPage } from "../utils/navigation"
+} from "../../utils/browserApi.ts"
+import { getErrorMessage } from "../../utils/error.ts"
+import { openOrFocusOptionsPage } from "../../utils/navigation.ts"
 
 const TEMP_CONTEXT_IDLE_TIMEOUT = 5000
 
