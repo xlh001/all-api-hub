@@ -46,8 +46,86 @@ import {
 import { getErrorMessage } from "../utils/error"
 import { openOrFocusOptionsPage } from "../utils/navigation"
 
+const TEMP_CONTEXT_IDLE_TIMEOUT = 5000
+
+let servicesInitialized = false
+let initializingPromise: Promise<void> | null = null
+
+/**
+ * 初始化各项服务
+ */
+async function initializeServices() {
+  console.log(
+    "[Background] Checking services initialization status...",
+    servicesInitialized
+  )
+
+  // 若已初始化，跳过
+  if (servicesInitialized) {
+    console.log("[Background] 服务已初始化，跳过")
+    return
+  }
+
+  // 正在初始化则等待已有 Promise
+  if (initializingPromise) {
+    await initializingPromise
+    return
+  }
+
+  // 标记为正在初始化（防止并发）
+  initializingPromise = (async () => {
+    console.log("[Background] 初始化服务...")
+    await initBackgroundI18n()
+    await modelMetadataService.initialize().catch((error) => {
+      console.warn("[Background] Model metadata initialization failed:", error)
+    })
+    await autoRefreshService.initialize()
+    await webdavAutoSyncService.initialize()
+    await newApiModelSyncScheduler.initialize()
+    await autoCheckinScheduler.initialize()
+    await redemptionAssistService.initialize()
+
+    servicesInitialized = true
+    initializingPromise = null
+  })()
+
+  await initializingPromise
+}
+
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id })
+
+  /**
+   * 监听插件安装/更新事件
+   * 进行配置迁移和服务初始化
+   */
+  onInstalled(async (details) => {
+    console.log(
+      "[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务"
+    )
+    await initializeServices()
+
+    if (details.reason === "install" || details.reason === "update") {
+      console.log(`Extension ${details.reason}: triggering config migration`)
+
+      // Migrate user preferences
+      await userPreferences.getPreferences()
+      console.log("[Background] User preferences migration completed")
+
+      // Load all accounts and migrate
+      const accounts = await accountStorage.getAllAccounts()
+      const { accounts: migrated, migratedCount } =
+        migrateAccountsConfig(accounts)
+
+      if (migratedCount > 0) {
+        // Save migrated accounts back
+        const config = await accountStorage.exportData()
+        await accountStorage.importData({ ...config, accounts: migrated })
+        console.log(`Migration complete: ${migratedCount} accounts updated`)
+      }
+    }
+  })
+
   main()
 })
 
@@ -70,30 +148,6 @@ async function main() {
   const tempContextByTabId = new Map<number, TempContext>()
   const tempContextsByOrigin = new Map<string, TempContext[]>()
   const originLocks = new Map<string, Promise<void>>()
-
-  const TEMP_CONTEXT_IDLE_TIMEOUT = 5000
-
-  let servicesInitialized = false
-
-  async function initializeServices() {
-    if (servicesInitialized) {
-      console.log("[Background] 服务已初始化，跳过")
-      return
-    }
-
-    console.log("[Background] 初始化服务...")
-    await initBackgroundI18n()
-    await modelMetadataService.initialize().catch((error) => {
-      console.warn("[Background] Model metadata initialization failed:", error)
-    })
-    await autoRefreshService.initialize()
-    await webdavAutoSyncService.initialize()
-    await newApiModelSyncScheduler.initialize()
-    await autoCheckinScheduler.initialize()
-    await redemptionAssistService.initialize()
-
-    servicesInitialized = true
-  }
 
   await initializeServices()
 
@@ -150,34 +204,6 @@ async function main() {
       updateCookieInterceptor().catch((error) => {
         console.error("[Background] 更新 cookie 拦截器失败：", error)
       })
-    }
-  })
-
-  // 插件安装时初始化自动刷新服务和WebDAV自动同步服务
-  onInstalled(async (details) => {
-    console.log(
-      "[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务"
-    )
-    await initializeServices()
-
-    if (details.reason === "install" || details.reason === "update") {
-      console.log(`Extension ${details.reason}: triggering config migration`)
-
-      // Migrate user preferences
-      await userPreferences.getPreferences()
-      console.log("[Background] User preferences migration completed")
-
-      // Load all accounts and migrate
-      const accounts = await accountStorage.getAllAccounts()
-      const { accounts: migrated, migratedCount } =
-        migrateAccountsConfig(accounts)
-
-      if (migratedCount > 0) {
-        // Save migrated accounts back
-        const config = await accountStorage.exportData()
-        await accountStorage.importData({ ...config, accounts: migrated })
-        console.log(`Migration complete: ${migratedCount} accounts updated`)
-      }
     }
   })
 
