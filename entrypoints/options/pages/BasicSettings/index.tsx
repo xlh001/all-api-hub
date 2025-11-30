@@ -19,6 +19,7 @@ import {
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { PageHeader } from "~/entrypoints/options/components/PageHeader"
+import { OPTIONAL_PERMISSIONS } from "~/services/permissions/permissionManager"
 import {
   navigateToAnchor,
   parseTabFromUrl,
@@ -32,6 +33,7 @@ import DataBackupTab from "./components/DataBackupTab"
 import GeneralTab from "./components/GeneralTab"
 import LoadingSkeleton from "./components/LoadingSkeleton"
 import NewApiTab from "./components/NewApiTab"
+import PermissionsTab from "./components/PermissionsTab"
 
 type TabId =
   | "general"
@@ -40,20 +42,29 @@ type TabId =
   | "checkinRedeem"
   | "dataBackup"
   | "newApi"
+  | "permissions"
 
 interface TabConfig {
   id: TabId
   component: ComponentType
 }
 
-const TAB_CONFIGS: TabConfig[] = [
+const hasOptionalPermissions = OPTIONAL_PERMISSIONS.length > 0
+
+const PERMISSIONS_TAB_CONFIG: TabConfig = {
+  id: "permissions",
+  component: PermissionsTab
+}
+
+const TAB_CONFIGS = [
   { id: "general", component: GeneralTab },
   { id: "accountManagement", component: AccountManagementTab },
   { id: "autoRefresh", component: AutoRefreshTab },
   { id: "checkinRedeem", component: CheckinRedeemTab },
-  { id: "dataBackup", component: DataBackupTab },
-  { id: "newApi", component: NewApiTab }
-]
+  { id: "newApi", component: NewApiTab },
+  ...(hasOptionalPermissions ? [PERMISSIONS_TAB_CONFIG] : []),
+  { id: "dataBackup", component: DataBackupTab }
+] satisfies TabConfig[]
 
 const ANCHOR_TO_TAB: Record<string, TabId> = {
   "general-display": "general",
@@ -72,7 +83,8 @@ const ANCHOR_TO_TAB: Record<string, TabId> = {
   "import-export-entry": "dataBackup",
   "new-api": "newApi",
   "new-api-model-sync": "newApi",
-  "dangerous-zone": "newApi"
+  "dangerous-zone": "newApi",
+  ...(hasOptionalPermissions ? { permissions: "permissions" } : {})
 }
 
 export default function BasicSettings() {

@@ -5,6 +5,8 @@
 
 import { isNotEmptyArray } from "~/utils/index"
 
+import i18n from "./i18n"
+
 // 确保 browser 全局对象可用
 if (typeof (globalThis as any).browser === "undefined") {
   // Prefer chrome if present; otherwise leave undefined to fail fast where appropriate
@@ -457,6 +459,72 @@ export function onAlarm(
 /**
  * 获取当前扩展的 manifest 版本
  */
+export function getManifest(): browser._manifest.WebExtensionManifest {
+  try {
+    return browser.runtime.getManifest()
+  } catch (error) {
+    console.warn(
+      "[browserApi] Failed to read manifest, falling back to minimal manifest",
+      error
+    )
+
+    return {
+      manifest_version: 3,
+      name: i18n.t("ui:app.name"),
+      version: "0.0.0",
+      optional_permissions: []
+    }
+  }
+}
+
 export function getManifestVersion(): number {
-  return browser.runtime.getManifest().manifest_version
+  return getManifest().manifest_version
+}
+
+// Permissions helpers
+export async function containsPermissions(
+  permissions: browser.permissions.Permissions
+): Promise<boolean> {
+  try {
+    return await browser.permissions.contains(permissions)
+  } catch (error) {
+    console.error("permissions.contains failed", permissions, error)
+    return false
+  }
+}
+
+export async function requestPermissions(
+  permissions: browser.permissions.Permissions
+): Promise<boolean> {
+  try {
+    return await browser.permissions.request(permissions)
+  } catch (error) {
+    console.error("permissions.request failed", permissions, error)
+    return false
+  }
+}
+
+export async function removePermissions(
+  permissions: browser.permissions.Permissions
+): Promise<boolean> {
+  try {
+    return await browser.permissions.remove(permissions)
+  } catch (error) {
+    console.error("permissions.remove failed", permissions, error)
+    return false
+  }
+}
+
+export function onPermissionsAdded(
+  callback: (permissions: browser.permissions.Permissions) => void
+): () => void {
+  browser.permissions.onAdded.addListener(callback)
+  return () => browser.permissions.onAdded.removeListener(callback)
+}
+
+export function onPermissionsRemoved(
+  callback: (permissions: browser.permissions.Permissions) => void
+): () => void {
+  browser.permissions.onRemoved.addListener(callback)
+  return () => browser.permissions.onRemoved.removeListener(callback)
 }
