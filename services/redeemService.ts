@@ -1,5 +1,6 @@
 import { t } from "i18next"
 
+import { UI_CONSTANTS } from "~/constants/ui.ts"
 import { accountStorage } from "~/services/accountStorage"
 import { redeemCode } from "~/services/apiService"
 import type { DisplaySiteData } from "~/types"
@@ -40,7 +41,9 @@ export class RedeemService {
 
       const amountStr =
         typeof creditedAmount === "number"
-          ? (creditedAmount / 100000).toFixed(2)
+          ? (
+              creditedAmount / UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+            ).toFixed(2)
           : ""
 
       const message = t("redemptionAssist:messages.redeemSuccess", {
