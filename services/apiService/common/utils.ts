@@ -7,7 +7,7 @@ import type {
 } from "~/services/apiService/common/type"
 import {
   COOKIE_INTERCEPTOR_PERMISSIONS,
-  hasPermissions
+  hasCookieInterceptorPermissions
 } from "~/services/permissions/permissionManager"
 import {
   DEFAULT_PREFERENCES,
@@ -16,6 +16,7 @@ import {
 } from "~/services/userPreferences"
 import { AuthTypeEnum } from "~/types"
 import {
+  isExtensionBackground,
   isExtensionPopup,
   isExtensionSidePanel,
   isFirefox,
@@ -465,10 +466,8 @@ async function shouldUseTempWindowFallback(
     return false
   }
 
-  const hasCookiePermissions = await hasPermissions(
-    COOKIE_INTERCEPTOR_PERMISSIONS
-  )
-  if (!hasCookiePermissions) {
+  const hasCookiePermissions = await hasCookieInterceptorPermissions()
+  if (!hasCookiePermissions && isFirefox()) {
     logSkipTempWindowFallback(
       "Cookie interceptor permissions not granted; skipping temp window fallback.",
       context,
@@ -479,8 +478,7 @@ async function shouldUseTempWindowFallback(
     return false
   }
 
-  const isBackground =
-    typeof window === "undefined" || typeof document === "undefined"
+  const isBackground = isExtensionBackground()
 
   let inPopup = false
   let inSidePanel = false

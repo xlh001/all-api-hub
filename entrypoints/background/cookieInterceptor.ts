@@ -1,19 +1,20 @@
 import { accountStorage } from "~/services/accountStorage"
 import { hasCookieInterceptorPermissions } from "~/services/permissions/permissionManager"
 import { type SiteAccount } from "~/types"
+import { isFirefox } from "~/utils/browser.ts"
 import {
   registerWebRequestInterceptor,
   setupWebRequestInterceptor
 } from "~/utils/cookieHelper"
 
-async function checkCookieInterceptorPermissions(): Promise<boolean> {
+export async function checkCookieInterceptorRequirement(): Promise<boolean> {
   const granted = await hasCookieInterceptorPermissions()
   if (!granted) {
     console.warn(
       "[Background] Required optional permissions (cookies/webRequest) are missing; skip cookie interception"
     )
   }
-  return granted
+  return granted && isFirefox()
 }
 
 // 辅助函数：从账号列表提取 站点的 URL 模式
@@ -40,7 +41,7 @@ function extractAccountUrlPatterns(accounts: SiteAccount[]): string[] {
 // 初始化 Cookie 拦截器
 export async function initializeCookieInterceptors(): Promise<void> {
   try {
-    if (!(await checkCookieInterceptorPermissions())) {
+    if (!(await checkCookieInterceptorRequirement())) {
       return
     }
     const accounts = await accountStorage.getAllAccounts()
@@ -54,7 +55,7 @@ export async function initializeCookieInterceptors(): Promise<void> {
 // 更新 Cookie 拦截器（配置变更时调用）
 async function updateCookieInterceptor(): Promise<void> {
   try {
-    if (!(await checkCookieInterceptorPermissions())) {
+    if (!(await checkCookieInterceptorRequirement())) {
       return
     }
     const accounts = await accountStorage.getAllAccounts()

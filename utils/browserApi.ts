@@ -1,11 +1,10 @@
+import { handleTempWindowFetch } from "~/entrypoints/background/tempWindowPool.ts"
 /**
  * Browser API 工具函数
  * 提供跨浏览器兼容的 API 封装和常用 fallback 逻辑
  */
-
+import { isExtensionBackground } from "~/utils/browser.ts"
 import { isNotEmptyArray } from "~/utils/index"
-
-import i18n from "./i18n"
 
 // 确保 browser 全局对象可用
 if (typeof (globalThis as any).browser === "undefined") {
@@ -205,6 +204,18 @@ export interface TempWindowFetchResult {
 export async function tempWindowFetch(
   params: TempWindowFetchParams
 ): Promise<TempWindowFetchResult> {
+  if (isExtensionBackground()) {
+    return await new Promise<TempWindowFetchResult>((resolve) => {
+      void handleTempWindowFetch(params, (response) => {
+        resolve(
+          (response ?? {
+            success: false,
+            error: "Empty tempWindowFetch response"
+          }) as TempWindowFetchResult
+        )
+      })
+    })
+  }
   return await sendRuntimeMessage({
     action: "tempWindowFetch",
     ...params
@@ -472,7 +483,7 @@ export function getManifest(): browser._manifest.WebExtensionManifest {
 
     return {
       manifest_version: 3,
-      name: i18n.t("ui:app.name"),
+      name: "All API Hub",
       version: "0.0.0",
       optional_permissions: []
     }
