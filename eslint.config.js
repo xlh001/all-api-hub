@@ -14,6 +14,7 @@ const rules = {
 
 const globalsConfig = {
   ...globals.node,
+  ...globals.browser,
 }
 
 export default defineConfig([
@@ -55,6 +56,6 @@ export default defineConfig([
       "react-hooks/exhaustive-deps": "error",
     },
   },
-  eslintConfigPrettier,
   { rules },
+  eslintConfigPrettier,
 ])
