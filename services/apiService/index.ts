@@ -26,6 +26,7 @@ function getApiFunc<T extends keyof typeof commonAPI>(
     // 使用类型断言避免索引类型错误
     return (overrideModule as any)[funcName] as (typeof commonAPI)[T]
   }
+  // eslint-disable-next-line import/namespace
   return commonAPI[funcName] as (typeof commonAPI)[T]
 }
 
@@ -65,6 +66,7 @@ const exportedAPI = {} as {
 
 // 遍历 commonAPI 并包装每个函数
 for (const key in commonAPI) {
+  // eslint-disable-next-line import/namespace
   const func = commonAPI[key as keyof typeof commonAPI]
   if (typeof func === "function") {
     ;(exportedAPI as any)[key] = createWrappedFunction(

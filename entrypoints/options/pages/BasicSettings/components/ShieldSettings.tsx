@@ -14,9 +14,9 @@ import {
   Switch,
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { isFirefox } from "~/utils/browser.ts"
+import { isFirefox } from "~/utils/browser"
 import { openSettingsTab } from "~/utils/navigation"
-import { canUseTempWindowFetch } from "~/utils/tempWindowFetch.ts"
+import { canUseTempWindowFetch } from "~/utils/tempWindowFetch"
 
 export default function ShieldSettings() {
   const { t } = useTranslation("settings")

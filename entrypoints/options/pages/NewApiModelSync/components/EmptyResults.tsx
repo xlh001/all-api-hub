@@ -7,9 +7,9 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { EmptyState } from "~/components/ui"
-import { hasValidNewApiConfig } from "~/services/newApiService/newApiService.ts"
+import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
 import { userPreferences } from "~/services/userPreferences"
-import { navigateWithinOptionsPage } from "~/utils/navigation.ts"
+import { navigateWithinOptionsPage } from "~/utils/navigation"
 
 interface EmptyResultsProps {
   hasHistory: boolean

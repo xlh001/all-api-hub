@@ -6,8 +6,8 @@
 import {
   SortingCriteriaType,
   type SortingPriorityConfig,
-} from "~/types/sorting.ts"
-import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
+} from "~/types/sorting"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 /**
  * Check if a sorting config needs migration

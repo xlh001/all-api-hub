@@ -12,7 +12,7 @@ import {
 import { Modal } from "~/components/ui/Dialog/Modal"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
-import { showResetToast } from "../../../../../utils/toastHelpers.ts"
+import { showResetToast } from "../../../../../utils/toastHelpers"
 
 export default function DangerousZone() {
   const { t } = useTranslation("settings")

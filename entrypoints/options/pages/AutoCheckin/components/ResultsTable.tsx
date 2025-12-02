@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import AccountLinkButton from "~/components/AccountLinkButton.tsx"
+import AccountLinkButton from "~/components/AccountLinkButton"
 import { Button, Card } from "~/components/ui"
 import {
   CHECKIN_RESULT_STATUS,

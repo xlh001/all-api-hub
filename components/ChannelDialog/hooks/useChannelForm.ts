@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import type { MultiSelectOption } from "~/components/ui/MultiSelect.tsx"
-import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes.ts"
-import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
+import type { MultiSelectOption } from "~/components/ui/MultiSelect"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi"
 import { fetchSiteUserGroups } from "~/services/apiService"
 import {
   buildChannelPayload,
@@ -12,13 +12,13 @@ import {
   createChannel,
   getNewApiConfig,
   updateChannel,
-} from "~/services/newApiService/newApiService.ts"
+} from "~/services/newApiService/newApiService"
 import type {
   ChannelFormData,
   NewApiChannel,
   UpdateChannelPayload,
-} from "~/types/newapi.ts"
-import { mergeUniqueOptions } from "~/utils/selectOptions.ts"
+} from "~/types/newapi"
+import { mergeUniqueOptions } from "~/utils/selectOptions"
 
 export interface UseChannelFormProps {
   mode: DialogMode

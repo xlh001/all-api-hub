@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { migrateAutoRefreshConfig } from "~/services/configMigration/preferences/autoRefreshConfigMigration"
 import type { UserPreferences } from "~/services/userPreferences"
-import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh.ts"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 
 describe("autoRefreshConfigMigration", () => {
   it("migrates flat auto-refresh fields to nested structure", () => {

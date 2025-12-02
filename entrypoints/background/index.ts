@@ -1,5 +1,5 @@
-import { setupRuntimeMessageListeners } from "~/entrypoints/background/runtimeMessages.ts"
-import { setupTempWindowListeners } from "~/entrypoints/background/tempWindowPool.ts"
+import { setupRuntimeMessageListeners } from "~/entrypoints/background/runtimeMessages"
+import { setupTempWindowListeners } from "~/entrypoints/background/tempWindowPool"
 import { accountStorage } from "~/services/accountStorage"
 import { migrateAccountsConfig } from "~/services/configMigration/account/accountDataMigration"
 import { OPTIONAL_PERMISSIONS } from "~/services/permissions/permissionManager"

@@ -241,24 +241,3 @@ export enum AuthTypeEnum {
   Cookie = "cookie",
   None = "none",
 }
-
-// Current version constant
-export const CURRENT_CONFIG_VERSION = 1
-
-// Service Response Types
-export * from "./serviceResponse"
-export type {
-  ServiceResponse,
-  AccountValidationResponse,
-  AccountSaveResponse,
-  AutoConfigToNewApiResponse,
-} from "./serviceResponse"
-
-// New API Types
-export * from "./newapi"
-
-// Model Redirect Types
-export * from "./modelRedirect"
-
-// WebDAV Types
-export * from "./webdav"

@@ -1,7 +1,7 @@
 import { accountStorage } from "~/services/accountStorage"
 import { hasCookieInterceptorPermissions } from "~/services/permissions/permissionManager"
 import { type SiteAccount } from "~/types"
-import { isFirefox } from "~/utils/browser.ts"
+import { isFirefox } from "~/utils/browser"
 import {
   registerWebRequestInterceptor,
   setupWebRequestInterceptor,

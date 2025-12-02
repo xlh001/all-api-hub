@@ -8,7 +8,7 @@ import { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Input } from "~/components/ui"
-import { ExecutionStatistics } from "~/types/newApiModelSync.ts"
+import { ExecutionStatistics } from "~/types/newApiModelSync"
 
 export type FilterStatus = "all" | "success" | "failed"
 

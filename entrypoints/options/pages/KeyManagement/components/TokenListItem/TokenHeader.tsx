@@ -11,10 +11,10 @@ import { CCSwitchIcon } from "~/components/icons/CCSwitchIcon"
 import { CherryIcon } from "~/components/icons/CherryIcon"
 import { CliProxyIcon } from "~/components/icons/CliProxyIcon"
 import { Badge, Heading6, IconButton } from "~/components/ui"
-import { importToCliProxy } from "~/services/cliProxyService.ts"
+import { importToCliProxy } from "~/services/cliProxyService"
 import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
-import { showResultToast } from "~/utils/toastHelpers.ts"
+import { showResultToast } from "~/utils/toastHelpers"
 
 import { AccountToken } from "../../type"
 

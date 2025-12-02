@@ -2,7 +2,7 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { useChannelForm } from "~/components/ChannelDialog/hooks/useChannelForm.ts"
+import { useChannelForm } from "~/components/ChannelDialog/hooks/useChannelForm"
 import {
   Button,
   IconButton,
@@ -16,14 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui"
-import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes.ts"
-import { ChannelType, ChannelTypeOptions } from "~/constants/newApi.ts"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import { ChannelType, ChannelTypeOptions } from "~/constants/newApi"
 import {
   CHANNEL_STATUS,
   type ChannelFormData,
   type ChannelStatus,
   type NewApiChannel,
-} from "~/types/newapi.ts"
+} from "~/types/newapi"
 
 export interface ChannelDialogProps {
   isOpen: boolean

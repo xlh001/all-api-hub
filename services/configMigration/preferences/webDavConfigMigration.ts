@@ -1,5 +1,5 @@
-import { UserPreferences } from "~/services/userPreferences.ts"
-import { DEFAULT_WEBDAV_SETTINGS } from "~/types"
+import { UserPreferences } from "~/services/userPreferences"
+import { DEFAULT_WEBDAV_SETTINGS } from "~/types/webdav"
 
 /**
  * Checks if the given user preferences object contains any of the old flat WebDAV fields.

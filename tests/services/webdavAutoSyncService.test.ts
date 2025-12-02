@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { webdavAutoSyncService } from "~/services/webdav/webdavAutoSyncService"
 
 // Basic getErrorMessage passthrough to avoid noisy output
-vi.mock("~/utils/error.ts", () => ({
+vi.mock("~/utils/error", () => ({
   getErrorMessage: (e: unknown) => String(e),
 }))
 
@@ -12,7 +12,7 @@ const mockTestConnection = vi.fn()
 const mockDownloadBackup = vi.fn()
 const mockUploadBackup = vi.fn()
 
-vi.mock("~/services/webdav/webdavService.ts", () => ({
+vi.mock("~/services/webdav/webdavService", () => ({
   testWebdavConnection: (...args: any[]) => mockTestConnection(...args),
   downloadBackup: (...args: any[]) => mockDownloadBackup(...args),
   uploadBackup: (...args: any[]) => mockUploadBackup(...args),

@@ -93,7 +93,7 @@ import {
   deleteChannel,
   getNewApiConfig,
 } from "~/services/newApiService/newApiService"
-import type { ChannelModelFilterRule } from "~/types/channelModelFilters.ts"
+import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type { NewApiChannel } from "~/types/newapi"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"

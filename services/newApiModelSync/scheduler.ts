@@ -1,12 +1,12 @@
 import { t } from "i18next"
 
 import { ModelRedirectService } from "~/services/modelRedirect"
-import { hasValidNewApiConfig } from "~/services/newApiService/newApiService.ts"
+import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
 import {
   ALL_PRESET_STANDARD_MODELS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
-  NewApiChannel,
-} from "~/types"
+} from "~/types/modelRedirect"
+import { NewApiChannel } from "~/types/newapi"
 import { ExecutionProgress, ExecutionResult } from "~/types/newApiModelSync"
 import {
   clearAlarm,

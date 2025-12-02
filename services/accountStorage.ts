@@ -14,7 +14,7 @@ import {
   type DisplaySiteData,
   type SiteAccount,
 } from "~/types"
-import { DeepPartial } from "~/types/utils.ts"
+import { DeepPartial } from "~/types/utils"
 
 import { getErrorMessage } from "../utils/error" // 存储键名常量
 import {
@@ -27,7 +27,7 @@ import {
   migrateAccountConfig,
   migrateAccountsConfig,
   needsConfigMigration,
-} from "./configMigration/account/accountDataMigration.ts"
+} from "./configMigration/account/accountDataMigration"
 import { getSiteType } from "./detectSiteType"
 import { userPreferences } from "./userPreferences"
 

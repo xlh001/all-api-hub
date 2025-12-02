@@ -3,9 +3,9 @@
  * Converts flat auto-refresh fields to nested object structure
  */
 
-import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh.ts"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 
-import type { UserPreferences } from "../../userPreferences.ts"
+import type { UserPreferences } from "../../userPreferences"
 
 /**
  * Checks if the given user preferences object contains any of the old flat auto-refresh fields.

@@ -7,9 +7,9 @@ import React, {
   useState,
 } from "react"
 
-import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes.ts"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import type { ChannelFormData } from "~/types"
-import type { NewApiChannel } from "~/types/newapi.ts"
+import type { NewApiChannel } from "~/types/newapi"
 
 interface ChannelDialogState {
   isOpen: boolean

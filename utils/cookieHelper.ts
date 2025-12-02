@@ -2,7 +2,7 @@
  * Firefox Cookie 助手（WebRequest 方案）
  * 使用 WebRequest 拦截器自动注入 Cookie
  */
-import { checkCookieInterceptorRequirement } from "~/entrypoints/background/cookieInterceptor.ts"
+import { checkCookieInterceptorRequirement } from "~/entrypoints/background/cookieInterceptor"
 import { isFirefox } from "~/utils/browser"
 
 // Cookie 缓存

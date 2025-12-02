@@ -1,6 +1,6 @@
 import React from "react"
 
-import { cn } from "~/lib/utils.ts"
+import { cn } from "~/lib/utils"
 
 import { Button, type ButtonProps } from "./button"
 

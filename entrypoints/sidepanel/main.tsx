@@ -5,7 +5,7 @@ import "../../utils/i18n" // Import the i18n configuration
 
 import { setDocumentTitle } from "~/utils/documentTitle"
 
-import App from "./App.tsx"
+import App from "./App"
 
 // Set the document title immediately
 setDocumentTitle("sidepanel")

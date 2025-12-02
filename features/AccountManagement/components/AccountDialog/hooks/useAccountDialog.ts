@@ -14,11 +14,7 @@ import {
 import { accountStorage } from "~/services/accountStorage"
 import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
 import { AutoDetectError } from "~/utils/autoDetectUtils"
-import {
-  getActiveTabs,
-  onTabActivated,
-  onTabUpdated,
-} from "~/utils/browserApi.ts"
+import { getActiveTabs, onTabActivated, onTabUpdated } from "~/utils/browserApi"
 
 interface UseAccountDialogProps {
   mode: DialogMode

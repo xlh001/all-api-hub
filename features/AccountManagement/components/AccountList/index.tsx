@@ -21,7 +21,7 @@ import {
   useAccountSearch,
   type SearchResultWithHighlight,
 } from "~/features/AccountManagement/hooks/useAccountSearch"
-import { useAddAccountHandler } from "~/hooks/useAddAccountHandler.ts"
+import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
 import type { DisplaySiteData, SortField } from "~/types"
 
 import CopyKeyDialog from "../CopyKeyDialog"

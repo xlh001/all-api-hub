@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { navigateWithinOptionsPage } from "~/utils/navigation.ts"
+import { navigateWithinOptionsPage } from "~/utils/navigation"
 
 import { menuItems } from "../constants"
 

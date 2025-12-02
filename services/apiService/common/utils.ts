@@ -11,12 +11,12 @@ import {
   addExtensionHeader,
   AUTH_MODE,
   AuthMode,
-} from "~/utils/cookieHelper.ts"
+} from "~/utils/cookieHelper"
 import {
   executeWithTempWindowFallback,
   TempWindowFallbackContext,
   TempWindowResponseType,
-} from "~/utils/tempWindowFetch.ts"
+} from "~/utils/tempWindowFetch"
 import { joinUrl } from "~/utils/url"
 
 /**

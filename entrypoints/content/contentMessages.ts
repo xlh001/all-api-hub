@@ -4,7 +4,7 @@ import { fetchUserInfo } from "~/services/apiService"
 import {
   EXTENSION_HEADER_NAME,
   EXTENSION_HEADER_VALUE,
-} from "~/utils/cookieHelper.ts"
+} from "~/utils/cookieHelper"
 import { getErrorMessage } from "~/utils/error"
 
 export function setupContentMessageHandlers() {

@@ -7,7 +7,7 @@ import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button, Heading3, IconButton, Separator } from "~/components/ui"
-import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext.tsx"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { cn } from "~/lib/utils"
 import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
 

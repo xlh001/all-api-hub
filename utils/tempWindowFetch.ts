@@ -1,27 +1,27 @@
-import { handleTempWindowFetch } from "~/entrypoints/background/tempWindowPool.ts"
-import { ApiError } from "~/services/apiService/common/errors.ts"
-import type { ApiResponse } from "~/services/apiService/common/type.ts"
+import { handleTempWindowFetch } from "~/entrypoints/background/tempWindowPool"
+import { ApiError } from "~/services/apiService/common/errors"
+import type { ApiResponse } from "~/services/apiService/common/type"
 import {
   extractDataFromApiResponseBody,
   isHttpUrl,
-} from "~/services/apiService/common/utils.ts"
+} from "~/services/apiService/common/utils"
 import {
   COOKIE_INTERCEPTOR_PERMISSIONS,
   hasCookieInterceptorPermissions,
-} from "~/services/permissions/permissionManager.ts"
+} from "~/services/permissions/permissionManager"
 import {
   DEFAULT_PREFERENCES,
   TempWindowFallbackPreferences,
   userPreferences,
-} from "~/services/userPreferences.ts"
+} from "~/services/userPreferences"
 import {
   isExtensionBackground,
   isExtensionPopup,
   isExtensionSidePanel,
   isFirefox,
   OPTIONS_PAGE_URL,
-} from "~/utils/browser.ts"
-import { sendRuntimeMessage } from "~/utils/browserApi.ts"
+} from "~/utils/browser"
+import { sendRuntimeMessage } from "~/utils/browserApi"
 
 export type TempWindowResponseType = "json" | "text" | "arrayBuffer" | "blob"
 

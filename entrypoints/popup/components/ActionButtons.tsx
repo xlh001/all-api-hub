@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import Tooltip from "~/components/Tooltip"
 import { Button, IconButton } from "~/components/ui"
 import { COLORS } from "~/constants/designTokens"
-import { useAddAccountHandler } from "~/hooks/useAddAccountHandler.ts"
+import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
 import { openKeysPage, openModelsPage } from "~/utils/navigation"
 
 export default function ActionButtons() {

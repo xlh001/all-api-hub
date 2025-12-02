@@ -3,9 +3,9 @@
  * Converts flat new-api fields to nested object structure
  */
 
-import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig.ts"
+import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig"
 
-import type { UserPreferences } from "../../userPreferences.ts"
+import type { UserPreferences } from "../../userPreferences"
 
 /**
  * Checks if the given user preferences object contains any of the old flat new-api fields.

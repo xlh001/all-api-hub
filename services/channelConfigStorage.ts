@@ -11,7 +11,7 @@ import {
 import type {
   ChannelModelFilterInput,
   ChannelModelFilterRule,
-} from "~/types/channelModelFilters.ts"
+} from "~/types/channelModelFilters"
 import { getErrorMessage } from "~/utils/error"
 
 const STORAGE_KEYS = {

@@ -9,7 +9,7 @@ import {
   UpdateChannelPayload,
 } from "~/types"
 import type { ChannelConfigMap } from "~/types/channelConfig"
-import type { ChannelModelFilterRule } from "~/types/channelModelFilters.ts"
+import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import {
   BatchExecutionOptions,
   ExecutionItemResult,

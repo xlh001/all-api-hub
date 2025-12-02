@@ -2,7 +2,7 @@ import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 import { useCallback } from "react"
 
 import { Button } from "~/components/ui"
-import { openAccountManagerWithSearch } from "~/utils/navigation.ts"
+import { openAccountManagerWithSearch } from "~/utils/navigation"
 
 interface AccountLinkButtonProps {
   accountId: string

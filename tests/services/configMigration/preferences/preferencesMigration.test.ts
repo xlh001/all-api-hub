@@ -7,11 +7,11 @@ import {
   needsPreferencesMigration,
 } from "~/services/configMigration/preferences/preferencesMigration"
 import type { UserPreferences } from "~/services/userPreferences"
-import { DEFAULT_WEBDAV_SETTINGS, WEBDAV_SYNC_STRATEGIES } from "~/types"
-import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh.ts"
-import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig.ts"
-import { SortingCriteriaType } from "~/types/sorting.ts"
-import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
+import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig"
+import { SortingCriteriaType } from "~/types/sorting"
+import { DEFAULT_WEBDAV_SETTINGS, WEBDAV_SYNC_STRATEGIES } from "~/types/webdav"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // Helper function to create a minimal v0 preferences object
 function createV0Preferences(

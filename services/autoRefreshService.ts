@@ -1,4 +1,4 @@
-import { AccountAutoRefresh } from "~/types/accountAutoRefresh.ts"
+import { AccountAutoRefresh } from "~/types/accountAutoRefresh"
 
 import { getErrorMessage } from "../utils/error"
 import { accountStorage } from "./accountStorage"

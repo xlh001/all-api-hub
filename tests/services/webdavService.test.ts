@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { userPreferences } from "~/services/userPreferences.ts"
+import { userPreferences } from "~/services/userPreferences"
 import {
   downloadBackup,
   testWebdavConnection,
@@ -15,7 +15,7 @@ vi.mock("i18next", () => ({
       : key,
 }))
 
-vi.mock("~/services/userPreferences.ts", () => ({
+vi.mock("~/services/userPreferences", () => ({
   userPreferences: {
     getPreferences: vi.fn(),
   },

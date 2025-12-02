@@ -1,4 +1,4 @@
-import type { ChannelModelFilterRule } from "./channelModelFilters.ts"
+import type { ChannelModelFilterRule } from "./channelModelFilters"
 
 export interface ChannelModelFilterSettings {
   rules: ChannelModelFilterRule[]

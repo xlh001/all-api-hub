@@ -20,7 +20,7 @@ import type { ModelMetadata } from "~/services/modelMetadata/types"
 import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
 import type { NewApiModelSyncPreferences } from "~/types/newApiModelSync"
 import { sendRuntimeMessage } from "~/utils/browserApi"
-import { navigateWithinOptionsPage } from "~/utils/navigation.ts"
+import { navigateWithinOptionsPage } from "~/utils/navigation"
 
 type UserNewApiModelSyncConfig = NonNullable<
   typeof DEFAULT_PREFERENCES.newApiModelSync

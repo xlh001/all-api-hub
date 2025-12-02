@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { SettingSection } from "~/components/SettingSection"
 import { Card, CardItem, CardList, IconButton, Input } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { showUpdateToast } from "~/utils/toastHelpers.ts"
+import { showUpdateToast } from "~/utils/toastHelpers"
 
 export default function CliProxySettings() {
   const { t } = useTranslation("settings")

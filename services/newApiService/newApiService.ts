@@ -1,16 +1,16 @@
 import { t } from "i18next"
 import toast from "react-hot-toast"
 
-import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi.ts"
-import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type.ts"
-import { ensureAccountApiToken } from "~/services/accountOperations.ts"
-import { accountStorage } from "~/services/accountStorage.ts"
+import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi"
+import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type"
+import { ensureAccountApiToken } from "~/services/accountOperations"
+import { accountStorage } from "~/services/accountStorage"
 import {
   fetchAccountAvailableModels,
   fetchUpstreamModelsNameList,
 } from "~/services/apiService"
-import { ApiError } from "~/services/apiService/common/errors.ts"
-import { fetchApi, fetchApiData } from "~/services/apiService/common/utils.ts"
+import { ApiError } from "~/services/apiService/common/errors"
+import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
 import {
   ApiToken,
   AutoConfigToNewApiResponse,
@@ -24,12 +24,12 @@ import type {
   ChannelFormData,
   ChannelMode,
   CreateChannelPayload,
-} from "~/types/newapi.ts"
-import type { ServiceResponse } from "~/types/serviceResponse.ts"
+} from "~/types/newapi"
+import type { ServiceResponse } from "~/types/serviceResponse"
 import { isArraysEqual } from "~/utils"
-import { getErrorMessage } from "~/utils/error.ts"
+import { getErrorMessage } from "~/utils/error"
 
-import { UserPreferences, userPreferences } from "../userPreferences.ts"
+import { UserPreferences, userPreferences } from "../userPreferences"
 
 function parseDelimitedList(value?: string | null): string[] {
   if (!value) return []

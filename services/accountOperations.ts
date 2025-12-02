@@ -5,13 +5,18 @@
 import { t } from "i18next"
 import toast from "react-hot-toast"
 
-import { SITE_TITLE_RULES, UNKNOWN_SITE } from "~/constants/siteType.ts"
+import { SITE_TITLE_RULES, UNKNOWN_SITE } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { accountStorage } from "~/services/accountStorage"
 import {
   createApiToken,
   extractDefaultExchangeRate,
+  fetchAccountData,
   fetchAccountTokens,
+  fetchSiteStatus,
+  fetchSupportCheckIn,
+  fetchUserInfo,
+  getOrCreateAccessToken,
 } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import {
@@ -27,13 +32,6 @@ import type { AccountSaveResponse } from "~/types/serviceResponse"
 import { analyzeAutoDetectError } from "~/utils/autoDetectUtils"
 
 import { getErrorMessage } from "../utils/error"
-import {
-  fetchAccountData,
-  fetchSiteStatus,
-  fetchSupportCheckIn,
-  fetchUserInfo,
-  getOrCreateAccessToken,
-} from "./apiService"
 import { autoDetectSmart } from "./autoDetectService"
 
 /**

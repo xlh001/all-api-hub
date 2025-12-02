@@ -1,6 +1,6 @@
 import { t } from "i18next"
 
-import { UI_CONSTANTS } from "~/constants/ui.ts"
+import { UI_CONSTANTS } from "~/constants/ui"
 import { accountStorage } from "~/services/accountStorage"
 import { redeemCode } from "~/services/apiService"
 import type { DisplaySiteData } from "~/types"

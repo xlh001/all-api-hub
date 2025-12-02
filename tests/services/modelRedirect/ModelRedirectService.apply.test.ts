@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { modelMetadataService } from "~/services/modelMetadata"
 import { ModelRedirectService } from "~/services/modelRedirect/ModelRedirectService"
-import { hasValidNewApiConfig } from "~/services/newApiService/newApiService.ts"
+import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
 import { userPreferences } from "~/services/userPreferences"
-import { CHANNEL_STATUS, DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types"
+import { DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/modelRedirect"
+import { CHANNEL_STATUS } from "~/types/newapi"
 
 vi.mock("~/services/modelMetadata", () => ({
   modelMetadataService: {
@@ -34,7 +35,7 @@ vi.mock("~/services/newApiModelSync", () => {
   }
 })
 
-vi.mock("~/services/newApiService/newApiService.ts", () => ({
+vi.mock("~/services/newApiService/newApiService", () => ({
   hasValidNewApiConfig: vi.fn(),
 }))
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 
-import "~/utils/i18n.ts"
+import "~/utils/i18n"
 import "~/styles/style.css"
 
 import { userPreferences } from "~/services/userPreferences"

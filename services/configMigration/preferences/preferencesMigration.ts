@@ -3,12 +3,12 @@
  * Handles version-based migrations for UserPreferences configurations
  */
 
-import { migrateAutoRefreshConfig } from "~/services/configMigration/preferences/autoRefreshConfigMigration.ts"
-import { migrateNewApiConfig } from "~/services/configMigration/preferences/newApiConfigMigration.ts"
-import { migrateWebDavConfig } from "~/services/configMigration/preferences/webDavConfigMigration.ts"
+import { migrateAutoRefreshConfig } from "~/services/configMigration/preferences/autoRefreshConfigMigration"
+import { migrateNewApiConfig } from "~/services/configMigration/preferences/newApiConfigMigration"
+import { migrateWebDavConfig } from "~/services/configMigration/preferences/webDavConfigMigration"
 
-import type { UserPreferences } from "../../userPreferences.ts"
-import { migrateSortingConfig } from "./sortingConfigMigration.ts"
+import type { UserPreferences } from "../../userPreferences"
+import { migrateSortingConfig } from "./sortingConfigMigration"
 
 // Current version of the preferences schema
 export const CURRENT_PREFERENCES_VERSION = 5

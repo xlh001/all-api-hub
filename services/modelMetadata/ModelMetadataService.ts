@@ -1,4 +1,4 @@
-import { extractActualModel } from "~/services/modelRedirect/modelNormalization.ts"
+import { extractActualModel } from "~/services/modelRedirect/modelNormalization"
 import { removeDateSuffix } from "~/utils/modelName"
 
 import {

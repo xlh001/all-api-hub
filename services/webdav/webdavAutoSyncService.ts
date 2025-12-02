@@ -4,20 +4,20 @@ import {
   BACKUP_VERSION,
   normalizeBackupForMerge,
   type BackupFullV2,
-} from "~/entrypoints/options/pages/ImportExport/utils.ts"
-import type { SiteAccount, WebDAVSettings } from "~/types"
-import { WEBDAV_SYNC_STRATEGIES } from "~/types"
+} from "~/entrypoints/options/pages/ImportExport/utils"
+import { SiteAccount } from "~/types"
 import type { ChannelConfigMap } from "~/types/channelConfig"
-import { getErrorMessage } from "~/utils/error.ts"
+import { WEBDAV_SYNC_STRATEGIES, WebDAVSettings } from "~/types/webdav"
+import { getErrorMessage } from "~/utils/error"
 
-import { accountStorage } from "../accountStorage.ts"
-import { channelConfigStorage } from "../channelConfigStorage.ts"
-import { userPreferences, type UserPreferences } from "../userPreferences.ts"
+import { accountStorage } from "../accountStorage"
+import { channelConfigStorage } from "../channelConfigStorage"
+import { userPreferences, type UserPreferences } from "../userPreferences"
 import {
   downloadBackup,
   testWebdavConnection,
   uploadBackup,
-} from "./webdavService.ts"
+} from "./webdavService"
 
 /**
  * WebDAV 自动同步服务

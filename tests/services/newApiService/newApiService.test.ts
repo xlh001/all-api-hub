@@ -260,7 +260,7 @@ describe("newApiService", () => {
   describe("searchChannel", () => {
     it("should return channel list data on success", async () => {
       const { searchChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const mockChannelData = createMockNewApiChannelListData([
         createMockNewApiChannel({ id: 1, name: "Channel 1" }),
@@ -287,7 +287,7 @@ describe("newApiService", () => {
 
     it("should return null when ApiError is thrown", async () => {
       const { searchChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const error = new MockApiError("API request failed")
 
@@ -305,7 +305,7 @@ describe("newApiService", () => {
 
     it("should return null when other error is thrown", async () => {
       const { searchChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const error = new Error("Network error")
 
@@ -329,7 +329,7 @@ describe("newApiService", () => {
   describe("createChannel", () => {
     it("should create channel successfully", async () => {
       const { createChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const payload: CreateChannelPayload = {
         mode: "single",
@@ -370,7 +370,7 @@ describe("newApiService", () => {
 
     it("should throw error when creation fails", async () => {
       const { createChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const payload: CreateChannelPayload = {
         mode: "single",
@@ -401,7 +401,7 @@ describe("newApiService", () => {
 
     it("should join groups in payload", async () => {
       const { createChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const payload: CreateChannelPayload = {
         mode: "single",
@@ -440,7 +440,7 @@ describe("newApiService", () => {
   describe("updateChannel", () => {
     it("should update channel successfully", async () => {
       const { updateChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const updateData = { id: 1, name: "Updated Name" }
 
@@ -468,7 +468,7 @@ describe("newApiService", () => {
 
     it("should throw error when update fails", async () => {
       const { updateChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
 
       mockFetchApi.mockRejectedValueOnce(new Error("API error"))
@@ -489,7 +489,7 @@ describe("newApiService", () => {
   describe("hasValidNewApiConfig", () => {
     it("should return true with valid config", async () => {
       const { hasValidNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const prefs = createMockUserPreferencesWithNewApi()
 
@@ -498,7 +498,7 @@ describe("newApiService", () => {
 
     it("should return false when prefs is null", async () => {
       const { hasValidNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
 
       expect(hasValidNewApiConfig(null)).toBe(false)
@@ -506,7 +506,7 @@ describe("newApiService", () => {
 
     it("should return false when newApi is missing", async () => {
       const { hasValidNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const prefs = createMockUserPreferencesWithNewApi()
       delete prefs.newApi
@@ -516,7 +516,7 @@ describe("newApiService", () => {
 
     it("should return false when required fields are missing", async () => {
       const { hasValidNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
 
       const cases = [
@@ -544,7 +544,7 @@ describe("newApiService", () => {
   describe("checkValidNewApiConfig", () => {
     it("should return true with valid config", async () => {
       const { checkValidNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       mockGetPreferences.mockResolvedValueOnce(
         createMockUserPreferencesWithNewApi(),
@@ -557,7 +557,7 @@ describe("newApiService", () => {
 
     it("should return false with invalid config", async () => {
       const { checkValidNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       mockGetPreferences.mockResolvedValueOnce(
         createMockUserPreferencesWithNewApi({
@@ -572,7 +572,7 @@ describe("newApiService", () => {
 
     it("should return false when getPreferences throws error", async () => {
       const { checkValidNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       mockGetPreferences.mockRejectedValueOnce(new Error("Storage error"))
 
@@ -589,7 +589,7 @@ describe("newApiService", () => {
   describe("getNewApiConfig", () => {
     it("should return config when valid", async () => {
       const { getNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       mockGetPreferences.mockResolvedValueOnce(
         createMockUserPreferencesWithNewApi(),
@@ -606,7 +606,7 @@ describe("newApiService", () => {
 
     it("should return null when config is invalid", async () => {
       const { getNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       mockGetPreferences.mockResolvedValueOnce(null)
 
@@ -617,7 +617,7 @@ describe("newApiService", () => {
 
     it("should return null when getPreferences throws error", async () => {
       const { getNewApiConfig } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       mockGetPreferences.mockRejectedValueOnce(new Error("Storage error"))
 
@@ -634,7 +634,7 @@ describe("newApiService", () => {
   describe("fetchAvailableModels", () => {
     it("should return token models when available", async () => {
       const { fetchAvailableModels } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "gpt-4,gpt-3.5-turbo" })
@@ -647,7 +647,7 @@ describe("newApiService", () => {
 
     it("should fallback to upstream models when token models empty", async () => {
       const { fetchAvailableModels } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "" })
@@ -665,7 +665,7 @@ describe("newApiService", () => {
 
     it("should fallback to account available models", async () => {
       const { fetchAvailableModels } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "" })
@@ -680,7 +680,7 @@ describe("newApiService", () => {
 
     it("should merge and deduplicate models from multiple sources", async () => {
       const { fetchAvailableModels } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "gpt-4,gpt-3.5-turbo" })
@@ -705,7 +705,7 @@ describe("newApiService", () => {
 
     it("should handle errors swallowing and continue", async () => {
       const { fetchAvailableModels } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "" })
@@ -724,7 +724,7 @@ describe("newApiService", () => {
 
     it("should normalize models list", async () => {
       const { fetchAvailableModels } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({
@@ -745,7 +745,7 @@ describe("newApiService", () => {
   describe("buildChannelName", () => {
     it("should build channel name with auto suffix", async () => {
       const { buildChannelName } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData({ name: "My Site" })
       const token = createMockApiToken({ name: "My Token" })
@@ -757,7 +757,7 @@ describe("newApiService", () => {
 
     it("should not add duplicate auto suffix", async () => {
       const { buildChannelName } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData({ name: "My Site" })
       const token = createMockApiToken({ name: "My Token (auto)" })
@@ -770,7 +770,7 @@ describe("newApiService", () => {
 
     it("should trim whitespace", async () => {
       const { buildChannelName } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken()
@@ -789,7 +789,7 @@ describe("newApiService", () => {
   describe("prepareChannelFormData", () => {
     it("should prepare form data successfully", async () => {
       const { prepareChannelFormData } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ group: "custom-group" })
@@ -810,7 +810,7 @@ describe("newApiService", () => {
 
     it("should throw error when no models available", async () => {
       const { prepareChannelFormData } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken()
@@ -822,7 +822,7 @@ describe("newApiService", () => {
 
     it("should use default groups when token has no group", async () => {
       const { prepareChannelFormData } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ group: undefined })
@@ -836,7 +836,7 @@ describe("newApiService", () => {
 
     it("should set default values", async () => {
       const { prepareChannelFormData } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken()
@@ -859,7 +859,7 @@ describe("newApiService", () => {
   describe("buildChannelPayload", () => {
     it("should build payload with trimmed values", async () => {
       const { buildChannelPayload } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const formData: ChannelFormData = {
         name: "  Test Channel  ",
@@ -882,7 +882,7 @@ describe("newApiService", () => {
 
     it("should join models as comma-separated string", async () => {
       const { buildChannelPayload } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const formData: ChannelFormData = {
         name: "Test",
@@ -906,7 +906,7 @@ describe("newApiService", () => {
 
     it("should use default groups when empty", async () => {
       const { buildChannelPayload } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const formData: ChannelFormData = {
         name: "Test",
@@ -929,7 +929,7 @@ describe("newApiService", () => {
 
     it("should normalize and deduplicate groups", async () => {
       const { buildChannelPayload } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const formData: ChannelFormData = {
         name: "Test",
@@ -954,7 +954,7 @@ describe("newApiService", () => {
 
     it("should use specified mode or default", async () => {
       const { buildChannelPayload } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const formData: ChannelFormData = {
         name: "Test",
@@ -983,7 +983,7 @@ describe("newApiService", () => {
   describe("findMatchingChannel", () => {
     it("should find matching channel by base_url and models", async () => {
       const { findMatchingChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const matchingChannel = createMockNewApiChannel({
         base_url: "https://api.example.com",
@@ -1007,7 +1007,7 @@ describe("newApiService", () => {
 
     it("should return null when no matching channel found", async () => {
       const { findMatchingChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const differentChannel = createMockNewApiChannel({
         base_url: "https://different.example.com",
@@ -1030,7 +1030,7 @@ describe("newApiService", () => {
 
     it("should return null when search returns null", async () => {
       const { findMatchingChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
 
       mockFetchApiData.mockResolvedValueOnce(null)
@@ -1048,7 +1048,7 @@ describe("newApiService", () => {
 
     it("should compare models correctly", async () => {
       const { findMatchingChannel } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const channel1 = createMockNewApiChannel({
         base_url: "https://api.example.com",
@@ -1083,7 +1083,7 @@ describe("newApiService", () => {
   describe("importToNewApi", () => {
     it("should return config missing message when config invalid", async () => {
       const { importToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken()
@@ -1098,7 +1098,7 @@ describe("newApiService", () => {
 
     it("should return channel exists message when channel already exists", async () => {
       const { importToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "gpt-4" })
@@ -1126,7 +1126,7 @@ describe("newApiService", () => {
 
     it("should import successfully when all conditions met", async () => {
       const { importToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "gpt-4" })
@@ -1148,7 +1148,7 @@ describe("newApiService", () => {
 
     it("should return create failure message when creation fails", async () => {
       const { importToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "gpt-4" })
@@ -1173,7 +1173,7 @@ describe("newApiService", () => {
 
     it("should handle thrown errors during import", async () => {
       const { importToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken()
@@ -1202,7 +1202,7 @@ describe("newApiService", () => {
 
     it("should return config validation error when config invalid", async () => {
       const { autoConfigToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockSiteAccount()
 
@@ -1220,7 +1220,7 @@ describe("newApiService", () => {
 
     it("should succeed on first attempt when all goes well", async () => {
       const { autoConfigToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockSiteAccount()
       const token = createMockApiToken({ models: "gpt-4" })
@@ -1245,7 +1245,7 @@ describe("newApiService", () => {
 
     it("should retry on network error and eventually succeed", async () => {
       const { autoConfigToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockSiteAccount()
       const token = createMockApiToken({ models: "gpt-4" })
@@ -1281,7 +1281,7 @@ describe("newApiService", () => {
 
     it("should retry up to 3 times and fail after", async () => {
       const { autoConfigToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockSiteAccount()
       const displayData = createMockDisplaySiteData()
@@ -1308,7 +1308,7 @@ describe("newApiService", () => {
 
     it("should not retry on non-network errors", async () => {
       const { autoConfigToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockSiteAccount()
       const displayData = createMockDisplaySiteData()
@@ -1331,7 +1331,7 @@ describe("newApiService", () => {
 
     it("should update toast with retry message", async () => {
       const { autoConfigToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockSiteAccount()
       const token = createMockApiToken({ models: "gpt-4" })
@@ -1363,7 +1363,7 @@ describe("newApiService", () => {
 
     it("should return aggregated error message on final failure", async () => {
       const { autoConfigToNewApi } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockSiteAccount()
       const displayData = createMockDisplaySiteData()
@@ -1396,7 +1396,7 @@ describe("newApiService", () => {
   describe("parseDelimitedList (via fetchAvailableModels)", () => {
     it("should parse comma-delimited string", async () => {
       const { fetchAvailableModels } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({
@@ -1412,7 +1412,7 @@ describe("newApiService", () => {
 
     it("should handle empty models string", async () => {
       const { fetchAvailableModels } = await import(
-        "~/services/newApiService/newApiService.ts"
+        "~/services/newApiService/newApiService"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "" })

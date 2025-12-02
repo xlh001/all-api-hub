@@ -8,9 +8,9 @@ import {
   DEFAULT_PREFERENCES,
   type UserPreferences,
 } from "~/services/userPreferences"
-import { DEFAULT_WEBDAV_SETTINGS, WEBDAV_SYNC_STRATEGIES } from "~/types"
 import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig"
+import { DEFAULT_WEBDAV_SETTINGS, WEBDAV_SYNC_STRATEGIES } from "~/types/webdav"
 
 const createPreferences = (
   overrides?: Partial<UserPreferences>,
@@ -166,7 +166,7 @@ describe("webDavConfigMigration", () => {
         webdavPassword: "testpass",
         webdavAutoSync: true,
         webdavSyncInterval: 1800,
-        webdavSyncStrategy: WEBDAV_SYNC_STRATEGIES.MERGE as const,
+        webdavSyncStrategy: WEBDAV_SYNC_STRATEGIES.MERGE,
         themeMode: "dark",
       } as UserPreferences
 

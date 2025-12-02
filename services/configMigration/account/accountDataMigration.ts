@@ -5,7 +5,7 @@
 
 import type { SiteAccount } from "~/types"
 
-import { migrateCheckInConfig } from "./checkInMigration.ts"
+import { migrateCheckInConfig } from "./checkInMigration"
 
 // Current version of the configuration schema
 export const CURRENT_CONFIG_VERSION = 1

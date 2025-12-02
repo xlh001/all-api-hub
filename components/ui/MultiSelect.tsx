@@ -17,7 +17,7 @@ import React, {
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { cn } from "~/lib/utils.ts"
+import { cn } from "~/lib/utils"
 
 export interface MultiSelectOption {
   value: string

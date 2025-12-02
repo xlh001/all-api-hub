@@ -25,7 +25,7 @@ import {
   downloadBackup,
   testWebdavConnection,
   uploadBackup,
-} from "~/services/webdav/webdavService.ts"
+} from "~/services/webdav/webdavService"
 
 import {
   BACKUP_VERSION,

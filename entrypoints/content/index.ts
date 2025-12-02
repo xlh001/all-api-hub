@@ -13,7 +13,7 @@ import { ContentScriptContext } from "wxt/utils/content-script-context"
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root"
 import { defineContentScript } from "wxt/utils/define-content-script"
 
-import { ContentReactRoot } from "./redemptionAssist/components/ContentReactRoot.tsx"
+import { ContentReactRoot } from "./redemptionAssist/components/ContentReactRoot"
 
 let redemptionToastRoot: Root | null = null
 

@@ -6,20 +6,12 @@ import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import {
   CURRENT_PREFERENCES_VERSION,
   migratePreferences,
-} from "~/services/configMigration/preferences/preferencesMigration.ts"
-import {
-  BalanceType,
-  CurrencyType,
-  DEFAULT_WEBDAV_SETTINGS,
-  SortField,
-  SortOrder,
-  WebDAVSettings,
-  type WebDAVSyncStrategy,
-} from "~/types"
+} from "~/services/configMigration/preferences/preferencesMigration"
+import { BalanceType, CurrencyType, SortField, SortOrder } from "~/types"
 import {
   AccountAutoRefresh,
   DEFAULT_ACCOUNT_AUTO_REFRESH,
-} from "~/types/accountAutoRefresh.ts"
+} from "~/types/accountAutoRefresh"
 import {
   AUTO_CHECKIN_SCHEDULE_MODE,
   AutoCheckinPreferences,
@@ -27,15 +19,20 @@ import {
 import {
   DEFAULT_CLI_PROXY_CONFIG,
   type CliProxyConfig,
-} from "~/types/cliProxyConfig.ts"
+} from "~/types/cliProxyConfig"
 import {
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
   type ModelRedirectPreferences,
 } from "~/types/modelRedirect"
-import { DEFAULT_NEW_API_CONFIG, NewApiConfig } from "~/types/newApiConfig.ts"
+import { DEFAULT_NEW_API_CONFIG, NewApiConfig } from "~/types/newApiConfig"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
-import { DeepPartial } from "~/types/utils.ts"
+import { DeepPartial } from "~/types/utils"
+import {
+  DEFAULT_WEBDAV_SETTINGS,
+  WebDAVSettings,
+  WebDAVSyncStrategy,
+} from "~/types/webdav"
 import { deepOverride } from "~/utils"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 

@@ -8,12 +8,11 @@ import { modelMetadataService } from "~/services/modelMetadata"
 import { NewApiModelSyncService } from "~/services/newApiModelSync"
 import {
   ALL_PRESET_STANDARD_MODELS,
-  CHANNEL_STATUS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
-  NewApiChannel,
-} from "~/types"
+} from "~/types/modelRedirect"
+import { CHANNEL_STATUS, NewApiChannel } from "~/types/newapi"
 
-import { hasValidNewApiConfig } from "../newApiService/newApiService.ts"
+import { hasValidNewApiConfig } from "../newApiService/newApiService"
 import { userPreferences } from "../userPreferences"
 import { renameModel } from "./modelNormalization"
 

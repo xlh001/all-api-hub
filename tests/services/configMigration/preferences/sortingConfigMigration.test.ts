@@ -4,8 +4,8 @@ import {
   migrateSortingConfig,
   needsSortingConfigMigration,
 } from "~/services/configMigration/preferences/sortingConfigMigration"
-import { SortingCriteriaType } from "~/types/sorting.ts"
-import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority.ts"
+import { SortingCriteriaType } from "~/types/sorting"
+import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 describe("sortingConfigMigration", () => {
   describe("needsSortingConfigMigration", () => {

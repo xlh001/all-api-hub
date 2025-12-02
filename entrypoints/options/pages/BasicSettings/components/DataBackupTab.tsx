@@ -5,7 +5,7 @@ import {
 import { useTranslation } from "react-i18next"
 
 import { Alert, Button, Card, CardContent, Heading4 } from "~/components/ui"
-import { navigateWithinOptionsPage } from "~/utils/navigation.ts"
+import { navigateWithinOptionsPage } from "~/utils/navigation"
 
 import WebDAVAutoSyncSettings from "../../ImportExport/components/WebDAVAutoSyncSettings"
 import WebDAVSettings from "../../ImportExport/components/WebDAVSettings"

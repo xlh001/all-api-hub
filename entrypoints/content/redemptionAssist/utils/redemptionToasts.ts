@@ -3,12 +3,12 @@ import toast from "react-hot-toast/headless"
 
 import type { DisplaySiteData } from "~/types"
 
-import { RedemptionAccountSelectToast } from "../components/RedemptionAccountSelectToast.tsx"
-import { RedemptionLoadingToast } from "../components/RedemptionLoadingToast.tsx"
+import { RedemptionAccountSelectToast } from "../components/RedemptionAccountSelectToast"
+import { RedemptionLoadingToast } from "../components/RedemptionLoadingToast"
 import {
   RedemptionPromptToast,
   type RedemptionPromptAction,
-} from "../components/RedemptionPromptToast.tsx"
+} from "../components/RedemptionPromptToast"
 
 export function showRedeemLoadingToast(message: string) {
   return toast.custom(
