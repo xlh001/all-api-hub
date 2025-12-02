@@ -330,7 +330,6 @@ class AutoCheckinScheduler {
     const autoCheckinEnabled = account.checkIn?.autoCheckInEnabled !== false
     const provider = resolveAutoCheckinProvider(account)
     const providerAvailable = provider ? provider.canCheckIn(account) : false
-    const isCheckedInToday = account.checkIn?.isCheckedInToday === true
 
     let skipReason: AutoCheckinSkipReason | undefined
 
@@ -338,8 +337,6 @@ class AutoCheckinScheduler {
       skipReason = AUTO_CHECKIN_SKIP_REASON.DETECTION_DISABLED
     } else if (!autoCheckinEnabled) {
       skipReason = AUTO_CHECKIN_SKIP_REASON.AUTO_CHECKIN_DISABLED
-    } else if (isCheckedInToday) {
-      skipReason = AUTO_CHECKIN_SKIP_REASON.ALREADY_CHECKED_TODAY
     } else if (!provider) {
       skipReason = AUTO_CHECKIN_SKIP_REASON.NO_PROVIDER
     } else if (!providerAvailable) {
