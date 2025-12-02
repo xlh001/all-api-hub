@@ -11,5 +11,5 @@ export interface CliProxyConfig {
 
 export const DEFAULT_CLI_PROXY_CONFIG: CliProxyConfig = {
   baseUrl: "",
-  managementKey: ""
+  managementKey: "",
 }

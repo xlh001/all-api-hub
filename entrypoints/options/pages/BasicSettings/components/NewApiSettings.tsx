@@ -17,7 +17,7 @@ export default function NewApiSettings() {
     updateNewApiBaseUrl,
     updateNewApiAdminToken,
     updateNewApiUserId,
-    resetNewApiConfig
+    resetNewApiConfig,
   } = useUserPreferencesContext()
 
   const [localBaseUrl, setLocalBaseUrl] = useState(newApiBaseUrl)
@@ -60,7 +60,8 @@ export default function NewApiSettings() {
       id="new-api"
       title={t("newApi.title")}
       description={t("newApi.description", { defaultValue: "" })}
-      onReset={resetNewApiConfig}>
+      onReset={resetNewApiConfig}
+    >
       <Card padding="none">
         <CardList>
           <CardItem
@@ -94,7 +95,8 @@ export default function NewApiSettings() {
                       onClick={() => setShowAdminToken(!showAdminToken)}
                       aria-label={
                         showAdminToken ? "Hide password" : "Show password"
-                      }>
+                      }
+                    >
                       {showAdminToken ? (
                         <EyeSlashIcon className="h-4 w-4" />
                       ) : (

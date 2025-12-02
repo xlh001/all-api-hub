@@ -7,7 +7,7 @@ export enum SiteHealthStatus {
   Healthy = "healthy",
   Warning = "warning",
   Error = "error",
-  Unknown = "unknown"
+  Unknown = "unknown",
 }
 
 // Log item from API
@@ -239,7 +239,7 @@ export type BalanceType =
 export enum AuthTypeEnum {
   AccessToken = "access_token",
   Cookie = "cookie",
-  None = "none"
+  None = "none",
 }
 
 // Current version constant
@@ -251,7 +251,7 @@ export type {
   ServiceResponse,
   AccountValidationResponse,
   AccountSaveResponse,
-  AutoConfigToNewApiResponse
+  AutoConfigToNewApiResponse,
 } from "./serviceResponse"
 
 // New API Types

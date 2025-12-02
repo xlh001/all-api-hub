@@ -11,20 +11,20 @@ const spinnerVariants = cva(
         sm: "h-4 w-4",
         default: "h-6 w-6",
         lg: "h-8 w-8",
-        xl: "h-12 w-12"
+        xl: "h-12 w-12",
       },
       variant: {
         default: "text-[var(--spinner-default-color)]",
         white: "text-[var(--spinner-white-color)]",
         gray: "text-[var(--spinner-gray-color)]",
-        primary: "text-[var(--spinner-primary-color)]"
-      }
+        primary: "text-[var(--spinner-primary-color)]",
+      },
     },
     defaultVariants: {
       size: "default",
-      variant: "default"
-    }
-  }
+      variant: "default",
+    },
+  },
 )
 
 export interface SpinnerProps
@@ -36,7 +36,7 @@ export interface SpinnerProps
 const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
   (
     { className, size, variant, "aria-label": ariaLabel = "Loading", ...props },
-    ref
+    ref,
   ) => {
     return (
       <div
@@ -44,11 +44,12 @@ const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
         className={cn(spinnerVariants({ size, variant, className }))}
         role="status"
         aria-label={ariaLabel}
-        {...props}>
+        {...props}
+      >
         <span className="sr-only">{ariaLabel}</span>
       </div>
     )
-  }
+  },
 )
 Spinner.displayName = "Spinner"
 

@@ -9,7 +9,7 @@ describe("NewApiModelSyncService - allowed model filtering", () => {
       "dummy-token",
       "1",
       undefined,
-      allowed
+      allowed,
     )
 
   const callFilter = (service: NewApiModelSyncService, models: string[]) =>
@@ -22,7 +22,7 @@ describe("NewApiModelSyncService - allowed model filtering", () => {
       "  gpt-4o  ",
       "gpt-4o",
       "claude-3",
-      "  "
+      "  ",
     ])
 
     expect(result).toEqual(["gpt-4o", "claude-3"])
@@ -35,7 +35,7 @@ describe("NewApiModelSyncService - allowed model filtering", () => {
       " gpt-4o  ",
       "gpt-4o-mini",
       "claude-3",
-      "unknown-model"
+      "unknown-model",
     ])
 
     expect(result).toEqual(["gpt-4o", "claude-3"])

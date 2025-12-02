@@ -18,13 +18,13 @@ const alertVariants = cva(
           "bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700",
         warning:
           "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700",
-        info: "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-700"
-      }
+        info: "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-700",
+      },
     },
     defaultVariants: {
-      variant: "default"
-    }
-  }
+      variant: "default",
+    },
+  },
 )
 
 export interface AlertProps
@@ -46,7 +46,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const getIcon = () => {
       if (!showIcon) return null
@@ -70,7 +70,8 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         ref={ref}
         role="alert"
         className={cn(alertVariants({ variant }), className)}
-        {...props}>
+        {...props}
+      >
         {getIcon()}
         <div className="ml-0 space-y-1.5">
           {title && (
@@ -83,7 +84,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         </div>
       </div>
     )
-  }
+  },
 )
 Alert.displayName = "Alert"
 

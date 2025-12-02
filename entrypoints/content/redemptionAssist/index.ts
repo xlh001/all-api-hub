@@ -8,7 +8,7 @@ import {
   showAccountSelectToast,
   showRedeemLoadingToast,
   showRedeemResultToast,
-  showRedemptionPromptToast
+  showRedemptionPromptToast,
 } from "./utils/redemptionToasts"
 
 export const REDEMPTION_TOAST_HOST_TAG = "all-api-hub-redemption-toast"
@@ -114,7 +114,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
     const shouldResp: any = await sendRuntimeMessage({
       action: "redemptionAssist:shouldPrompt",
       url,
-      code
+      code,
     })
 
     if (!shouldResp?.success || !shouldResp.shouldPrompt) {
@@ -125,7 +125,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
 
     const codePreview = maskCode(code)
     const confirmMessage = t("redemptionAssist:messages.promptConfirm", {
-      code: codePreview
+      code: codePreview,
     })
 
     const action = await showRedemptionPromptToast(confirmMessage)
@@ -147,7 +147,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
       const redeemResp: any = await sendRuntimeMessage({
         action: "redemptionAssist:autoRedeemByUrl",
         url,
-        code
+        code,
       })
 
       const result = redeemResp?.data
@@ -163,8 +163,8 @@ async function scanForRedemptionCodes(sourceText?: string) {
         dismissLoadingToast()
         const selected = await showAccountSelectToast(result.candidates, {
           title: t("redemptionAssist:accountSelect.titleMultiple", {
-            defaultValue: "检测到多个可用账号，请选择一个用于兑换"
-          })
+            defaultValue: "检测到多个可用账号，请选择一个用于兑换",
+          }),
         })
 
         if (!selected) {
@@ -174,7 +174,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
         const manualResult = await performManualRedeem(
           selected.id,
           code,
-          loadingMessage
+          loadingMessage,
         )
         if (manualResult?.message) {
           showRedeemResultToast(!!manualResult.success, manualResult.message)
@@ -185,7 +185,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
       if (result?.code === "NO_ACCOUNTS" && result.allAccounts?.length) {
         dismissLoadingToast()
         const selected = await showAccountSelectToast(result.allAccounts, {
-          title: t("redemptionAssist:accountSelect.titleFallback")
+          title: t("redemptionAssist:accountSelect.titleFallback"),
         })
 
         if (!selected) {
@@ -195,7 +195,7 @@ async function scanForRedemptionCodes(sourceText?: string) {
         const manualResult = await performManualRedeem(
           selected.id,
           code,
-          loadingMessage
+          loadingMessage,
         )
         if (manualResult?.message) {
           showRedeemResultToast(!!manualResult.success, manualResult.message)
@@ -223,14 +223,14 @@ function maskCode(code: string): string {
 async function performManualRedeem(
   accountId: string,
   code: string,
-  loadingMessage: string
+  loadingMessage: string,
 ) {
   const toastId = showRedeemLoadingToast(loadingMessage)
   try {
     const manualResp: any = await sendRuntimeMessage({
       action: "redemptionAssist:autoRedeem",
       accountId,
-      code
+      code,
     })
     return manualResp?.data
   } finally {

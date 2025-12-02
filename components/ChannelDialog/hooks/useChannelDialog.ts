@@ -9,7 +9,7 @@ import { accountStorage } from "~/services/accountStorage.ts"
 import {
   findMatchingChannel,
   getNewApiConfig,
-  prepareChannelFormData
+  prepareChannelFormData,
 } from "~/services/newApiService/newApiService.ts"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import type { NewApiChannel } from "~/types/newapi.ts"
@@ -28,10 +28,10 @@ export function useChannelDialog() {
   const openWithAccount = async (
     account: DisplaySiteData | SiteAccount,
     accoutToken: AccountToken | ApiToken | null,
-    onSuccess?: (result: any) => void
+    onSuccess?: (result: any) => void,
   ) => {
     const toastId = toast.loading(
-      t("messages:accountOperations.checkingApiKeys")
+      t("messages:accountOperations.checkingApiKeys"),
     )
 
     try {
@@ -42,7 +42,7 @@ export function useChannelDialog() {
       if ("created_at" in account) {
         siteAccount = account
         displaySiteData = accountStorage.convertToDisplayData(
-          account
+          account,
         ) as DisplaySiteData
       } else {
         displaySiteData = account
@@ -67,7 +67,7 @@ export function useChannelDialog() {
         apiToken = await ensureAccountApiToken(
           siteAccount,
           displaySiteData,
-          toastId
+          toastId,
         )
       }
 
@@ -80,15 +80,15 @@ export function useChannelDialog() {
         newApiConfig.token,
         newApiConfig.userId,
         displaySiteData.baseUrl,
-        formData.models
+        formData.models,
       )
 
       if (existingChannel) {
         toast.error(
           t("messages:newapi.channelExists", {
-            channelName: existingChannel.name
+            channelName: existingChannel.name,
           }),
-          { id: toastId }
+          { id: toastId },
         )
         return
       }
@@ -105,14 +105,14 @@ export function useChannelDialog() {
           if (onSuccess) {
             onSuccess(result)
           }
-        }
+        },
       })
     } catch (error) {
       toast.error(
         t("messages:errors.operation.failed", {
-          error: getErrorMessage(error)
+          error: getErrorMessage(error),
         }),
-        { id: toastId }
+        { id: toastId },
       )
       console.error("[useChannelDialog] Failed to prepare channel data:", error)
     }
@@ -134,6 +134,6 @@ export function useChannelDialog() {
 
   return {
     openWithAccount,
-    openWithCustom
+    openWithCustom,
   }
 }

@@ -14,7 +14,7 @@ export default function CliProxySettings() {
     cliProxyManagementKey,
     updateCliProxyBaseUrl,
     updateCliProxyManagementKey,
-    resetCliProxyConfig
+    resetCliProxyConfig,
   } = useUserPreferencesContext()
 
   const [localBaseUrl, setLocalBaseUrl] = useState(cliProxyBaseUrl)
@@ -46,7 +46,8 @@ export default function CliProxySettings() {
       id="cli-proxy"
       title={t("cliProxy.title")}
       description={t("cliProxy.description", { defaultValue: "" })}
-      onReset={resetCliProxyConfig}>
+      onReset={resetCliProxyConfig}
+    >
       <Card padding="none">
         <CardList>
           <CardItem
@@ -78,7 +79,8 @@ export default function CliProxySettings() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowKey(!showKey)}
-                      aria-label={showKey ? "Hide key" : "Show key"}>
+                      aria-label={showKey ? "Hide key" : "Show key"}
+                    >
                       {showKey ? (
                         <EyeSlashIcon className="h-4 w-4" />
                       ) : (

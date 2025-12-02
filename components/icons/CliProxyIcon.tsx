@@ -5,7 +5,7 @@ type CliProxyIconSize = "sm" | "md" | "lg"
 const SIZE_MAP: Record<CliProxyIconSize, number> = {
   sm: 16,
   md: 24,
-  lg: 32
+  lg: 32,
 }
 
 interface CliProxyIconProps {

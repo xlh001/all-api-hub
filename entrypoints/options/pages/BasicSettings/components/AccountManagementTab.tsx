@@ -29,7 +29,8 @@ export default function AccountManagementTab() {
               onClick={handleNavigate}
               variant="default"
               className="flex items-center gap-2 self-start"
-              leftIcon={<UsersIcon className="h-5 w-5" />}>
+              leftIcon={<UsersIcon className="h-5 w-5" />}
+            >
               <span>{t("accountManagement.openPage")}</span>
             </Button>
           </CardContent>

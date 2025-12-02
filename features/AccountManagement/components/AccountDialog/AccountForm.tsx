@@ -5,7 +5,7 @@ import {
   EyeSlashIcon,
   GlobeAltIcon,
   KeyIcon,
-  UserIcon
+  UserIcon,
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Textarea
+  Textarea,
 } from "~/components/ui"
 import { SITE_TITLE_RULES } from "~/constants/siteType"
 import { isValidExchangeRate } from "~/services/accountOperations"
@@ -65,7 +65,7 @@ export default function AccountForm({
   siteType,
   onSiteTypeChange,
   checkIn,
-  onCheckInChange
+  onCheckInChange,
 }: AccountFormProps) {
   const { t } = useTranslation("accountDialog")
 
@@ -89,7 +89,8 @@ export default function AccountForm({
           <SelectTrigger
             className="w-full"
             aria-label={t("form.siteType")}
-            title={t("form.siteType")}>
+            title={t("form.siteType")}
+          >
             <div className="flex items-center gap-2">
               <GlobeAltIcon className="text-muted-foreground h-5 w-5" />
               <SelectValue placeholder={t("form.siteType")} />
@@ -144,7 +145,8 @@ export default function AccountForm({
                 onClick={onToggleShowAccessToken}
                 variant="ghost"
                 size="sm"
-                aria-label={t("form.toggleAccessTokenVisibility")}>
+                aria-label={t("form.toggleAccessTokenVisibility")}
+              >
                 {showAccessToken ? (
                   <EyeSlashIcon className="h-4 w-4" />
                 ) : (
@@ -166,7 +168,8 @@ export default function AccountForm({
             ? t("form.validRateError")
             : undefined
         }
-        required>
+        required
+      >
         <Input
           type="number"
           step="any"
@@ -193,7 +196,8 @@ export default function AccountForm({
       <div className="flex w-full items-center justify-between">
         <label
           htmlFor="supports-check-in"
-          className="dark:text-dark-text-secondary text-sm font-medium text-gray-700">
+          className="dark:text-dark-text-secondary text-sm font-medium text-gray-700"
+        >
           {t("form.checkInStatus")}
         </label>
         <Switch
@@ -205,13 +209,14 @@ export default function AccountForm({
               autoCheckInEnabled:
                 enableDetection && checkIn.autoCheckInEnabled !== false
                   ? checkIn.autoCheckInEnabled ?? true
-                  : checkIn.autoCheckInEnabled
+                  : checkIn.autoCheckInEnabled,
             })
           }
           id="supports-check-in"
           className={`${
             checkIn.enableDetection ? "bg-green-600" : "bg-gray-200"
-          } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none`}>
+          } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none`}
+        >
           <span
             className={`${
               checkIn.enableDetection ? "translate-x-6" : "translate-x-1"
@@ -223,7 +228,8 @@ export default function AccountForm({
       {/* Custom Check-in URL */}
       <FormField
         label={t("form.customCheckInUrl")}
-        description={t("form.customCheckInDesc")}>
+        description={t("form.customCheckInDesc")}
+      >
         <Input
           type="url"
           id="custom-checkin-url"
@@ -241,7 +247,8 @@ export default function AccountForm({
         <div className="flex w-full items-center justify-between">
           <label
             htmlFor="open-redeem-with-checkin"
-            className="dark:text-dark-text-secondary text-sm font-medium text-gray-700">
+            className="dark:text-dark-text-secondary text-sm font-medium text-gray-700"
+          >
             {t("form.openRedeemWithCheckIn")}
           </label>
           <Switch
@@ -254,7 +261,8 @@ export default function AccountForm({
               checkIn.openRedeemWithCheckIn ?? true
                 ? "bg-green-600"
                 : "bg-gray-200"
-            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none`}>
+            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none`}
+          >
             <span
               className={`${
                 checkIn.openRedeemWithCheckIn ?? true
@@ -272,7 +280,8 @@ export default function AccountForm({
           <div className="flex-1">
             <label
               htmlFor="auto-checkin-enabled"
-              className="dark:text-dark-text-secondary text-sm font-medium text-gray-700">
+              className="dark:text-dark-text-secondary text-sm font-medium text-gray-700"
+            >
               {t("form.autoCheckInEnabled")}
             </label>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -289,7 +298,8 @@ export default function AccountForm({
               checkIn.autoCheckInEnabled !== false
                 ? "bg-green-600"
                 : "bg-gray-200"
-            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none`}>
+            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none`}
+          >
             <span
               className={`${
                 checkIn.autoCheckInEnabled !== false
@@ -304,7 +314,8 @@ export default function AccountForm({
       {/* Custom Redeem Url */}
       <FormField
         label={t("form.customRedeemUrl")}
-        description={t("form.customRedeemUrlDesc")}>
+        description={t("form.customRedeemUrlDesc")}
+      >
         <Input
           type="text"
           id="custom-redeem-url"

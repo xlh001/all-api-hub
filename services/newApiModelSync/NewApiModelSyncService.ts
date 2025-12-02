@@ -6,7 +6,7 @@ import { fetchApi } from "~/services/apiService/common/utils"
 import {
   NewApiChannel,
   NewApiChannelListData,
-  UpdateChannelPayload
+  UpdateChannelPayload,
 } from "~/types"
 import type { ChannelConfigMap } from "~/types/channelConfig"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters.ts"
@@ -14,7 +14,7 @@ import {
   BatchExecutionOptions,
   ExecutionItemResult,
   ExecutionResult,
-  ExecutionStatistics
+  ExecutionStatistics,
 } from "~/types/newApiModelSync"
 
 import { RateLimiter } from "./RateLimiter"
@@ -37,7 +37,7 @@ export class NewApiModelSyncService {
     userId?: string,
     rateLimitConfig?: { requestsPerMinute: number; burst: number },
     allowedModels?: string[],
-    channelConfigs?: ChannelConfigMap | null
+    channelConfigs?: ChannelConfigMap | null,
   ) {
     this.baseUrl = baseUrl
     this.token = token
@@ -45,12 +45,12 @@ export class NewApiModelSyncService {
     if (rateLimitConfig) {
       this.rateLimiter = new RateLimiter(
         rateLimitConfig.requestsPerMinute,
-        rateLimitConfig.burst
+        rateLimitConfig.burst,
       )
     }
     if (allowedModels && allowedModels.length > 0) {
       this.allowedModelSet = new Set(
-        allowedModels.map((model) => model.trim()).filter(Boolean)
+        allowedModels.map((model) => model.trim()).filter(Boolean),
       )
     }
     if (channelConfigs) {
@@ -79,7 +79,7 @@ export class NewApiModelSyncService {
       const items = await fetchAllItems<NewApiChannel>(async (page) => {
         const params = new URLSearchParams({
           p: page.toString(),
-          page_size: "100"
+          page_size: "100",
         })
 
         await this.throttle()
@@ -89,16 +89,16 @@ export class NewApiModelSyncService {
             baseUrl: this.baseUrl,
             endpoint: `/api/channel/?${params.toString()}`,
             userId: this.userId,
-            token: this.token
+            token: this.token,
           },
-          false
+          false,
         )
 
         if (!response.success || !response.data) {
           throw new ApiError(
             response.message || "Failed to fetch channels",
             undefined,
-            "/api/channel/"
+            "/api/channel/",
           )
         }
 
@@ -114,14 +114,14 @@ export class NewApiModelSyncService {
 
         return {
           items: data.items || [],
-          total: data.total || 0
+          total: data.total || 0,
         }
       })
 
       return {
         items,
         total,
-        type_counts: typeCounts
+        type_counts: typeCounts,
       }
     } catch (error) {
       console.error("[NewApiModelSync] Failed to list channels:", error)
@@ -141,9 +141,9 @@ export class NewApiModelSyncService {
           baseUrl: this.baseUrl,
           endpoint: `/api/channel/fetch_models/${channelId}`,
           userId: this.userId,
-          token: this.token
+          token: this.token,
         },
-        false
+        false,
       )
 
       if (!response.success || !Array.isArray(response.data)) {
@@ -163,13 +163,13 @@ export class NewApiModelSyncService {
    */
   async updateChannelModels(
     channel: NewApiChannel,
-    models: string[]
+    models: string[],
   ): Promise<void> {
     try {
       // Prepare the update payload
       const updatePayload: UpdateChannelPayload = {
         id: channel.id,
-        models: models.join(",")
+        models: models.join(","),
       }
 
       await this.throttle()
@@ -182,10 +182,10 @@ export class NewApiModelSyncService {
           token: this.token,
           options: {
             method: "PUT",
-            body: JSON.stringify(updatePayload)
-          }
+            body: JSON.stringify(updatePayload),
+          },
         },
-        false
+        false,
       )
 
       if (!response.success) {
@@ -202,18 +202,18 @@ export class NewApiModelSyncService {
    */
   async updateChannelModelMapping(
     channel: NewApiChannel,
-    modelMapping: Record<string, string>
+    modelMapping: Record<string, string>,
   ): Promise<void> {
     try {
       const updateModels = union(
         channel.models.split(","),
-        Object.keys(modelMapping)
+        Object.keys(modelMapping),
       ).join(",")
 
       const updatePayload: UpdateChannelPayload = {
         id: channel.id,
         models: updateModels,
-        model_mapping: JSON.stringify(modelMapping)
+        model_mapping: JSON.stringify(modelMapping),
       }
 
       await this.throttle()
@@ -226,10 +226,10 @@ export class NewApiModelSyncService {
           token: this.token,
           options: {
             method: "PUT",
-            body: JSON.stringify(updatePayload)
-          }
+            body: JSON.stringify(updatePayload),
+          },
         },
-        false
+        false,
       )
 
       if (!response.success) {
@@ -238,7 +238,7 @@ export class NewApiModelSyncService {
     } catch (error) {
       console.error(
         `[NewApiModelSync] Failed to update channel mapping for channel ${channel.id}:`,
-        error
+        error,
       )
       throw error
     }
@@ -249,7 +249,7 @@ export class NewApiModelSyncService {
    */
   async runForChannel(
     channel: NewApiChannel,
-    maxRetries: number = 2
+    maxRetries: number = 2,
   ): Promise<ExecutionItemResult> {
     let attempts = 0
     let lastError: any = null
@@ -267,7 +267,7 @@ export class NewApiModelSyncService {
         const allowListedModels = this.filterAllowedModels(fetchedModels)
         const channelScopedModels = this.applyChannelFilters(
           channel.id,
-          allowListedModels
+          allowListedModels,
         )
 
         if (this.haveModelsChanged(oldModels, channelScopedModels)) {
@@ -283,13 +283,13 @@ export class NewApiModelSyncService {
           finishedAt: Date.now(),
           oldModels,
           newModels: channelScopedModels,
-          message: "Success"
+          message: "Success",
         }
       } catch (error: any) {
         lastError = error
         console.error(
           `[NewApiModelSync] Unexpected error for channel ${channel.id}:`,
-          error
+          error,
         )
 
         attempts += 1
@@ -310,7 +310,7 @@ export class NewApiModelSyncService {
       message: lastError?.message || "Unknown error",
       attempts,
       finishedAt: Date.now(),
-      oldModels
+      oldModels,
     }
   }
 
@@ -319,7 +319,7 @@ export class NewApiModelSyncService {
    */
   async runBatch(
     channels: NewApiChannel[],
-    options: BatchExecutionOptions
+    options: BatchExecutionOptions,
   ): Promise<ExecutionResult> {
     const { concurrency, maxRetries, onProgress } = options
     const startedAt = Date.now()
@@ -345,7 +345,7 @@ export class NewApiModelSyncService {
         } catch (error: any) {
           console.error(
             `[NewApiModelSync] Unexpected error for channel ${channel.id}:`,
-            error
+            error,
           )
           result = {
             channelId: channel.id,
@@ -353,7 +353,7 @@ export class NewApiModelSyncService {
             ok: false,
             message: error?.message || "Unexpected error",
             attempts: maxRetries + 1,
-            finishedAt: Date.now()
+            finishedAt: Date.now(),
           }
         }
 
@@ -363,7 +363,7 @@ export class NewApiModelSyncService {
         await onProgress?.({
           completed,
           total,
-          lastResult: result
+          lastResult: result,
         })
       }
     }
@@ -384,12 +384,12 @@ export class NewApiModelSyncService {
       failureCount,
       durationMs: endedAt - startedAt,
       startedAt,
-      endedAt
+      endedAt,
     }
 
     return {
       items,
-      statistics
+      statistics,
     }
   }
 
@@ -401,7 +401,7 @@ export class NewApiModelSyncService {
   private filterAllowedModels(models: string[]): string[] {
     if (!this.allowedModelSet || this.allowedModelSet.size === 0) {
       return Array.from(
-        new Set(models.map((model) => model.trim()).filter(Boolean))
+        new Set(models.map((model) => model.trim()).filter(Boolean)),
       )
     }
 
@@ -441,7 +441,7 @@ export class NewApiModelSyncService {
    */
   private applyChannelFilters(channelId: number, models: string[]): string[] {
     const normalized = Array.from(
-      new Set(models.map((model) => model.trim()).filter(Boolean))
+      new Set(models.map((model) => model.trim()).filter(Boolean)),
     )
     if (!normalized.length) {
       return normalized
@@ -461,7 +461,7 @@ export class NewApiModelSyncService {
 
     if (includeRules.length > 0) {
       result = result.filter((model) =>
-        includeRules.some((rule) => this.matchesFilter(rule, model))
+        includeRules.some((rule) => this.matchesFilter(rule, model)),
       )
     }
 
@@ -471,7 +471,8 @@ export class NewApiModelSyncService {
 
     if (excludeRules.length > 0) {
       result = result.filter(
-        (model) => !excludeRules.some((rule) => this.matchesFilter(rule, model))
+        (model) =>
+          !excludeRules.some((rule) => this.matchesFilter(rule, model)),
       )
     }
 
@@ -497,7 +498,7 @@ export class NewApiModelSyncService {
     } catch (error) {
       console.warn(
         `[NewApiModelSync] Invalid channel filter pattern for channel rule ${rule.id}:`,
-        error
+        error,
       )
       return false
     }

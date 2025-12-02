@@ -9,7 +9,7 @@ import { openOrFocusOptionsPage } from "~/utils/navigation"
 
 import {
   initializeCookieInterceptors,
-  setupCookieInterceptorListeners
+  setupCookieInterceptorListeners,
 } from "./cookieInterceptor"
 import { initializeServices } from "./servicesInit"
 
@@ -29,7 +29,7 @@ export default defineBackground(() => {
    */
   onInstalled((details) => {
     console.log(
-      "[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务"
+      "[Background] 插件安装/更新，初始化自动刷新服务和WebDAV自动同步服务",
     )
 
     void (async () => {
@@ -56,11 +56,11 @@ export default defineBackground(() => {
 
         if (details.reason === "install" && OPTIONAL_PERMISSIONS.length > 0) {
           console.log(
-            "[Background] First install detected, opening permissions onboarding"
+            "[Background] First install detected, opening permissions onboarding",
           )
           openOrFocusOptionsPage("#basic", {
             tab: "permissions",
-            onboarding: "permissions"
+            onboarding: "permissions",
           })
         }
       }

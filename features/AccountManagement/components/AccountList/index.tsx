@@ -2,7 +2,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   InboxIcon,
-  PlusIcon
+  PlusIcon,
 } from "@heroicons/react/24/outline"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -12,14 +12,14 @@ import {
   CardContent,
   CardList,
   EmptyState,
-  IconButton
+  IconButton,
 } from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import {
   useAccountSearch,
-  type SearchResultWithHighlight
+  type SearchResultWithHighlight,
 } from "~/features/AccountManagement/hooks/useAccountSearch"
 import { useAddAccountHandler } from "~/hooks/useAddAccountHandler.ts"
 import type { DisplaySiteData, SortField } from "~/types"
@@ -65,7 +65,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     if (inSearchMode) {
       return searchResults.map((result) => ({
         account: result.account,
-        highlights: result.highlights
+        highlights: result.highlights,
       }))
     }
 
@@ -83,7 +83,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
           label: t("account:addFirstAccount"),
           onClick: handleAddAccountClick,
           variant: "default",
-          icon: <PlusIcon className="h-4 w-4" />
+          icon: <PlusIcon className="h-4 w-4" />,
         }}
       />
     )
@@ -96,7 +96,8 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
       size="none"
       disabled={inSearchMode}
       aria-label={`${t("account:list.sort")} ${label}`}
-      className="space-x-0.5 text-[10px] font-medium sm:space-x-1 sm:text-xs">
+      className="space-x-0.5 text-[10px] font-medium sm:space-x-1 sm:text-xs"
+    >
       <span>{label}</span>
       {sortField === field &&
         (sortOrder === "asc" ? (
@@ -136,7 +137,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
                 <div className="flex items-center">
                   {renderSortButton(
                     DATA_TYPE_BALANCE,
-                    t("account:list.header.balance")
+                    t("account:list.header.balance"),
                   )}
                 </div>
                 <div className="dark:text-dark-text-tertiary text-[10px] text-gray-400 sm:text-xs">
@@ -145,7 +146,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
                 <div className="dark:text-dark-text-tertiary flex items-center text-[9px] text-gray-400 sm:text-[10px]">
                   {renderSortButton(
                     DATA_TYPE_CONSUMPTION,
-                    t("account:list.header.todayConsumption")
+                    t("account:list.header.todayConsumption"),
                   )}
                 </div>
               </div>

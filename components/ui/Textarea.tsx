@@ -12,19 +12,19 @@ const textareaVariants = cva(
         error:
           "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500",
         success:
-          "border-green-300 dark:border-green-600 focus:ring-green-500 focus:border-green-500"
+          "border-green-300 dark:border-green-600 focus:ring-green-500 focus:border-green-500",
       },
       size: {
         default: "min-h-[80px]",
         sm: "min-h-[60px] px-2 py-1 text-xs",
-        lg: "min-h-[120px] px-4 py-3"
-      }
+        lg: "min-h-[120px] px-4 py-3",
+      },
     },
     defaultVariants: {
       variant: "default",
-      size: "default"
-    }
-  }
+      size: "default",
+    },
+  },
 )
 
 export interface TextareaProps
@@ -49,7 +49,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       value,
       ...props
     },
-    ref
+    ref,
   ) => {
     const textareaVariant = error ? "error" : success ? "success" : variant
     const currentLength = typeof value === "string" ? value.length : 0
@@ -58,7 +58,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <div className="relative">
         <textarea
           className={cn(
-            textareaVariants({ variant: textareaVariant, size, className })
+            textareaVariants({ variant: textareaVariant, size, className }),
           )}
           ref={ref}
           value={value}
@@ -71,8 +71,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
               "mt-1 text-xs",
               error
                 ? "text-red-600 dark:text-red-400"
-                : "text-green-600 dark:text-green-400"
-            )}>
+                : "text-green-600 dark:text-green-400",
+            )}
+          >
             {error || success}
           </p>
         )}
@@ -83,7 +84,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         )}
       </div>
     )
-  }
+  },
 )
 Textarea.displayName = "Textarea"
 

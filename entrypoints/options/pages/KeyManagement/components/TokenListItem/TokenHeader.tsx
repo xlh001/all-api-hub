@@ -1,7 +1,7 @@
 import {
   DocumentDuplicateIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
 } from "@heroicons/react/24/outline"
 import { NewAPI } from "@lobehub/icons"
 import { useTranslation } from "react-i18next"
@@ -33,7 +33,7 @@ function TokenActionButtons({
   handleEditToken,
   handleDeleteToken,
   account,
-  onOpenCCSwitchDialog
+  onOpenCCSwitchDialog,
 }: TokenHeaderProps) {
   const { t } = useTranslation("keyManagement")
   const { openWithAccount } = useChannelDialog()
@@ -55,14 +55,16 @@ function TokenActionButtons({
         aria-label={t("common:actions.copyKey")}
         size="sm"
         variant="ghost"
-        onClick={() => copyKey(token.key, token.name)}>
+        onClick={() => copyKey(token.key, token.name)}
+      >
         <DocumentDuplicateIcon className="dark:text-dark-text-tertiary h-4 w-4 text-gray-500" />
       </IconButton>
       <IconButton
         aria-label={t("actions.useInCherry")}
         size="sm"
         variant="ghost"
-        onClick={() => OpenInCherryStudio(account, token)}>
+        onClick={() => OpenInCherryStudio(account, token)}
+      >
         <CherryIcon className="text-purple-500 dark:text-purple-400" />
       </IconButton>
       {onOpenCCSwitchDialog && (
@@ -70,7 +72,8 @@ function TokenActionButtons({
           aria-label={t("actions.exportToCCSwitch")}
           size="sm"
           variant="ghost"
-          onClick={onOpenCCSwitchDialog}>
+          onClick={onOpenCCSwitchDialog}
+        >
           <CCSwitchIcon />
         </IconButton>
       )}
@@ -78,28 +81,32 @@ function TokenActionButtons({
         aria-label={t("actions.importToCliProxy")}
         size="sm"
         variant="ghost"
-        onClick={handleImportToCliProxy}>
+        onClick={handleImportToCliProxy}
+      >
         <CliProxyIcon size="sm" />
       </IconButton>
       <IconButton
         aria-label={t("actions.importToNewApi")}
         size="sm"
         variant="ghost"
-        onClick={handleImportToNewApi}>
+        onClick={handleImportToNewApi}
+      >
         <NewAPI.Color className="h-4 w-4" />
       </IconButton>
       <IconButton
         aria-label={t("actions.editKey")}
         size="sm"
         variant="outline"
-        onClick={() => handleEditToken(token)}>
+        onClick={() => handleEditToken(token)}
+      >
         <PencilIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
       </IconButton>
       <IconButton
         aria-label={t("actions.deleteKey")}
         size="sm"
         variant="destructive"
-        onClick={() => handleDeleteToken(token)}>
+        onClick={() => handleDeleteToken(token)}
+      >
         <TrashIcon className="h-4 w-4" />
       </IconButton>
     </div>
@@ -112,7 +119,7 @@ export function TokenHeader({
   handleEditToken,
   handleDeleteToken,
   account,
-  onOpenCCSwitchDialog
+  onOpenCCSwitchDialog,
 }: TokenHeaderProps) {
   const { t } = useTranslation("keyManagement")
   return (
@@ -124,7 +131,8 @@ export function TokenHeader({
         </Heading6>
         <Badge
           variant={token.status === 1 ? "success" : "destructive"}
-          size="sm">
+          size="sm"
+        >
           {token.status === 1 ? t("actions.enable") : t("actions.disable")}
         </Badge>
         <Badge variant="outline" size="sm">

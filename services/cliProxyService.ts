@@ -44,7 +44,7 @@ async function getCliProxyConfig() {
 
   return {
     baseUrl: cliProxy.baseUrl.trim(),
-    managementKey: cliProxy.managementKey.trim()
+    managementKey: cliProxy.managementKey.trim(),
   }
 }
 
@@ -55,8 +55,8 @@ async function fetchProviders(baseUrl: string, managementKey: string) {
     method: "GET",
     headers: {
       Authorization: `Bearer ${managementKey}`,
-      Accept: "application/json"
-    }
+      Accept: "application/json",
+    },
   })
 
   if (!res.ok) {
@@ -80,7 +80,7 @@ async function fetchProviders(baseUrl: string, managementKey: string) {
 async function putProviders(
   baseUrl: string,
   managementKey: string,
-  providers: OpenAICompatibilityProvider[]
+  providers: OpenAICompatibilityProvider[],
 ) {
   const url = joinUrl(baseUrl, "/openai-compatibility")
 
@@ -88,9 +88,9 @@ async function putProviders(
     method: "PUT",
     headers: {
       Authorization: `Bearer ${managementKey}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(providers)
+    body: JSON.stringify(providers),
   })
 
   if (!res.ok) {
@@ -102,7 +102,7 @@ async function patchProviderByIndex(
   baseUrl: string,
   managementKey: string,
   index: number,
-  value: OpenAICompatibilityProvider
+  value: OpenAICompatibilityProvider,
 ) {
   const url = joinUrl(baseUrl, "/openai-compatibility")
 
@@ -110,9 +110,9 @@ async function patchProviderByIndex(
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${managementKey}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ index, value })
+    body: JSON.stringify({ index, value }),
   })
 
   if (!res.ok) {
@@ -122,7 +122,7 @@ async function patchProviderByIndex(
 
 export async function importToCliProxy(
   account: DisplaySiteData,
-  token: ApiToken
+  token: ApiToken,
 ): Promise<ServiceResponse<void>> {
   try {
     const config = await getCliProxyConfig()
@@ -130,7 +130,7 @@ export async function importToCliProxy(
     if (!config) {
       return {
         success: false,
-        message: t("messages:cliproxy.configMissing")
+        message: t("messages:cliproxy.configMissing"),
       }
     }
 
@@ -143,11 +143,11 @@ export async function importToCliProxy(
 
     const apiKeyEntry: OpenAICompatibilityProviderApiKeyEntry = {
       "api-key": token.key,
-      "proxy-url": ""
+      "proxy-url": "",
     }
 
     const existingIndex = providers.findIndex(
-      (p) => p["base-url"] === providerBaseUrl || p.name === providerName
+      (p) => p["base-url"] === providerBaseUrl || p.name === providerName,
     )
 
     if (existingIndex >= 0) {
@@ -155,28 +155,28 @@ export async function importToCliProxy(
       const existingEntries = existing["api-key-entries"] || []
 
       const filtered = existingEntries.filter(
-        (entry) => entry["api-key"] !== token.key
+        (entry) => entry["api-key"] !== token.key,
       )
 
       const updatedProvider: OpenAICompatibilityProvider = {
         ...existing,
         name: existing.name || providerName,
         "base-url": providerBaseUrl,
-        "api-key-entries": [...filtered, apiKeyEntry]
+        "api-key-entries": [...filtered, apiKeyEntry],
       }
 
       await patchProviderByIndex(
         baseUrl,
         managementKey,
         existingIndex,
-        updatedProvider
+        updatedProvider,
       )
 
       return {
         success: true,
         message: t("messages:cliproxy.updateSuccess", {
-          name: updatedProvider.name
-        })
+          name: updatedProvider.name,
+        }),
       }
     }
 
@@ -185,7 +185,7 @@ export async function importToCliProxy(
       "base-url": providerBaseUrl,
       "api-key-entries": [apiKeyEntry],
       models: [],
-      headers: {}
+      headers: {},
     }
 
     const nextProviders = [...providers, newProvider]
@@ -195,8 +195,8 @@ export async function importToCliProxy(
     return {
       success: true,
       message: t("messages:cliproxy.importSuccess", {
-        name: newProvider.name
-      })
+        name: newProvider.name,
+      }),
     }
   } catch (error: any) {
     console.error("[CLIProxy] Import failed", error)
@@ -205,8 +205,8 @@ export async function importToCliProxy(
       message:
         error?.message ||
         t("messages:cliproxy.importFailed", {
-          defaultValue: "Failed to import provider to CLIProxyAPI"
-        })
+          defaultValue: "Failed to import provider to CLIProxyAPI",
+        }),
     }
   }
 }

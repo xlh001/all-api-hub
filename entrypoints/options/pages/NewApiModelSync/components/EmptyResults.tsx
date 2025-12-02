@@ -1,7 +1,7 @@
 import {
   ArrowPathIcon,
   ExclamationTriangleIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -40,7 +40,7 @@ export default function EmptyResults({ hasHistory }: EmptyResultsProps) {
             onClick: () => {
               navigateWithinOptionsPage("#basic")
             },
-            label: t("execution.empty.goToSettings")
+            label: t("execution.empty.goToSettings"),
           }}
         />
       )

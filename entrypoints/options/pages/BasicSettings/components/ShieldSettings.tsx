@@ -11,7 +11,7 @@ import {
   CardList,
   Checkbox,
   Muted,
-  Switch
+  Switch,
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { isFirefox } from "~/utils/browser.ts"
@@ -54,12 +54,14 @@ export default function ShieldSettings() {
     <SettingSection
       id="shield-settings"
       title={t("refresh.shieldTitle")}
-      description={t("refresh.shieldDescription")}>
+      description={t("refresh.shieldDescription")}
+    >
       {!canUseTempWindowFallback && (
         <Alert
           variant="warning"
           title={t("refresh.shieldPermissionWarningTitle")}
-          description={t("refresh.shieldPermissionWarningDesc")}>
+          description={t("refresh.shieldPermissionWarningDesc")}
+        >
           <div className="mt-3 flex flex-wrap gap-2">
             <Button size="sm" onClick={handleOpenPermissionsTab}>
               {t("refresh.shieldPermissionAction")}
@@ -67,7 +69,8 @@ export default function ShieldSettings() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => void refreshPermissionStatus()}>
+              onClick={() => void refreshPermissionStatus()}
+            >
               {t("permissions.actions.refresh")}
             </Button>
           </div>
@@ -104,7 +107,7 @@ export default function ShieldSettings() {
                       }
                       onCheckedChange={(checked) =>
                         updateTempWindowFallback({
-                          useInPopup: Boolean(checked)
+                          useInPopup: Boolean(checked),
                         })
                       }
                     />
@@ -119,7 +122,7 @@ export default function ShieldSettings() {
                       disabled={disableShieldUI || !shieldEnabled}
                       onCheckedChange={(checked) =>
                         updateTempWindowFallback({
-                          useInSidePanel: Boolean(checked)
+                          useInSidePanel: Boolean(checked),
                         })
                       }
                     />
@@ -134,7 +137,7 @@ export default function ShieldSettings() {
                       disabled={disableShieldUI || !shieldEnabled}
                       onCheckedChange={(checked) =>
                         updateTempWindowFallback({
-                          useInOptions: Boolean(checked)
+                          useInOptions: Boolean(checked),
                         })
                       }
                     />
@@ -149,7 +152,7 @@ export default function ShieldSettings() {
                       disabled={disableShieldUI || !shieldEnabled}
                       onCheckedChange={(checked) =>
                         updateTempWindowFallback({
-                          useForAutoRefresh: Boolean(checked)
+                          useForAutoRefresh: Boolean(checked),
                         })
                       }
                     />
@@ -164,7 +167,7 @@ export default function ShieldSettings() {
                       disabled={disableShieldUI || !shieldEnabled}
                       onCheckedChange={(checked) =>
                         updateTempWindowFallback({
-                          useForManualRefresh: Boolean(checked)
+                          useForManualRefresh: Boolean(checked),
                         })
                       }
                     />

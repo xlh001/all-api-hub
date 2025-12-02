@@ -71,7 +71,7 @@ export function useHashNavigation() {
   // 切换菜单项
   const handleMenuItemChange = (
     itemId: string,
-    params?: Record<string, string>
+    params?: Record<string, string>,
   ) => {
     setActiveMenuItem(itemId)
     setRouteParams(params || {})

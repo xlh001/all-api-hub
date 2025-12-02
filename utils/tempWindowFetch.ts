@@ -3,23 +3,23 @@ import { ApiError } from "~/services/apiService/common/errors.ts"
 import type { ApiResponse } from "~/services/apiService/common/type.ts"
 import {
   extractDataFromApiResponseBody,
-  isHttpUrl
+  isHttpUrl,
 } from "~/services/apiService/common/utils.ts"
 import {
   COOKIE_INTERCEPTOR_PERMISSIONS,
-  hasCookieInterceptorPermissions
+  hasCookieInterceptorPermissions,
 } from "~/services/permissions/permissionManager.ts"
 import {
   DEFAULT_PREFERENCES,
   TempWindowFallbackPreferences,
-  userPreferences
+  userPreferences,
 } from "~/services/userPreferences.ts"
 import {
   isExtensionBackground,
   isExtensionPopup,
   isExtensionSidePanel,
   isFirefox,
-  OPTIONS_PAGE_URL
+  OPTIONS_PAGE_URL,
 } from "~/utils/browser.ts"
 import { sendRuntimeMessage } from "~/utils/browserApi.ts"
 
@@ -50,7 +50,7 @@ export async function canUseTempWindowFetch() {
 }
 
 export async function tempWindowFetch(
-  params: TempWindowFetchParams
+  params: TempWindowFetchParams,
 ): Promise<TempWindowFetch> {
   if (isExtensionBackground()) {
     return await new Promise<TempWindowFetch>((resolve) => {
@@ -58,15 +58,15 @@ export async function tempWindowFetch(
         resolve(
           (response ?? {
             success: false,
-            error: "Empty tempWindowFetch response"
-          }) as TempWindowFetch
+            error: "Empty tempWindowFetch response",
+          }) as TempWindowFetch,
         )
       })
     })
   }
   return await sendRuntimeMessage({
     action: "tempWindowFetch",
-    ...params
+    ...params,
   })
 }
 const TEMP_WINDOW_FALLBACK_STATUS = new Set([401, 403, 429])
@@ -83,7 +83,7 @@ export interface TempWindowFallbackContext {
 function logSkipTempWindowFallback(
   message: string,
   context: TempWindowFallbackContext,
-  extra?: Record<string, unknown>
+  extra?: Record<string, unknown>,
 ): void {
   try {
     const location = context.endpoint
@@ -104,7 +104,7 @@ function logSkipTempWindowFallback(
 
 export async function executeWithTempWindowFallback<T>(
   context: TempWindowFallbackContext,
-  primaryRequest: () => Promise<T | ApiResponse<T>>
+  primaryRequest: () => Promise<T | ApiResponse<T>>,
 ): Promise<T | ApiResponse<T>> {
   try {
     return await primaryRequest()
@@ -119,13 +119,13 @@ export async function executeWithTempWindowFallback<T>(
 
 async function shouldUseTempWindowFallback(
   error: unknown,
-  context: TempWindowFallbackContext
+  context: TempWindowFallbackContext,
 ): Promise<boolean> {
   if (!(error instanceof ApiError)) {
     logSkipTempWindowFallback(
       "Error is not an ApiError instance; treating as normal network/other error.",
       context,
-      { error }
+      { error },
     )
     return false
   }
@@ -135,8 +135,8 @@ async function shouldUseTempWindowFallback(
       "HTTP status is not in the fallback set (only 401/403/429 trigger shield).",
       context,
       {
-        statusCode: error.statusCode
-      }
+        statusCode: error.statusCode,
+      },
     )
     return false
   }
@@ -146,8 +146,8 @@ async function shouldUseTempWindowFallback(
       "Base URL is not HTTP/HTTPS; temp window fallback only supports http(s).",
       context,
       {
-        baseUrl: context.baseUrl
-      }
+        baseUrl: context.baseUrl,
+      },
     )
     return false
   }
@@ -155,7 +155,7 @@ async function shouldUseTempWindowFallback(
   if (!context.fetchOptions) {
     logSkipTempWindowFallback(
       "Missing fetch options; cannot safely re-issue request via temp window.",
-      context
+      context,
     )
     return false
   }
@@ -164,7 +164,7 @@ async function shouldUseTempWindowFallback(
     if (typeof window !== "undefined" && isFirefox() && isExtensionPopup()) {
       logSkipTempWindowFallback(
         "Running in Firefox popup; temp window fallback is forcibly disabled to avoid closing the popup.",
-        context
+        context,
       )
       return false
     }
@@ -188,8 +188,8 @@ async function shouldUseTempWindowFallback(
       "Temp window shield is disabled or preferences are missing.",
       context,
       {
-        enabled: prefsFallback?.enabled ?? null
-      }
+        enabled: prefsFallback?.enabled ?? null,
+      },
     )
     return false
   }
@@ -199,8 +199,8 @@ async function shouldUseTempWindowFallback(
       "Cookie interceptor permissions not granted; skipping temp window fallback.",
       context,
       {
-        permissions: COOKIE_INTERCEPTOR_PERMISSIONS
-      }
+        permissions: COOKIE_INTERCEPTOR_PERMISSIONS,
+      },
     )
     return false
   }
@@ -234,21 +234,21 @@ async function shouldUseTempWindowFallback(
   if (inPopup && !prefsFallback.useInPopup) {
     logSkipTempWindowFallback(
       "Popup context is disabled by user shield preferences.",
-      context
+      context,
     )
     return false
   }
   if (inSidePanel && !prefsFallback.useInSidePanel) {
     logSkipTempWindowFallback(
       "Side panel context is disabled by user shield preferences.",
-      context
+      context,
     )
     return false
   }
   if (inOptions && !prefsFallback.useInOptions) {
     logSkipTempWindowFallback(
       "Options page context is disabled by user shield preferences.",
-      context
+      context,
     )
     return false
   }
@@ -256,14 +256,14 @@ async function shouldUseTempWindowFallback(
   if (isAutoRefreshContext && !prefsFallback.useForAutoRefresh) {
     logSkipTempWindowFallback(
       "Auto-refresh context is disabled by user shield preferences.",
-      context
+      context,
     )
     return false
   }
   if (isManualRefreshContext && !prefsFallback.useForManualRefresh) {
     logSkipTempWindowFallback(
       "Manual refresh context is disabled by user shield preferences.",
-      context
+      context,
     )
     return false
   }
@@ -272,7 +272,7 @@ async function shouldUseTempWindowFallback(
 }
 
 async function fetchViaTempWindow<T>(
-  context: TempWindowFallbackContext
+  context: TempWindowFallbackContext,
 ): Promise<T | ApiResponse<T>> {
   const { fetchOptions, responseType } = context
 
@@ -280,7 +280,7 @@ async function fetchViaTempWindow<T>(
     throw new ApiError(
       "Temp window fetch fallback is not supported for current request",
       undefined,
-      context.endpoint
+      context.endpoint,
     )
   }
 
@@ -289,7 +289,7 @@ async function fetchViaTempWindow<T>(
     fetchUrl: context.url,
     fetchOptions,
     responseType,
-    requestId: `temp-fetch-${Date.now()}`
+    requestId: `temp-fetch-${Date.now()}`,
   }
 
   console.log("[API Service] Using temp window fetch fallback for", context.url)
@@ -302,7 +302,7 @@ async function fetchViaTempWindow<T>(
     throw new ApiError(
       response.error || "Temp window fetch failed",
       response.status,
-      context.endpoint
+      context.endpoint,
     )
   }
 

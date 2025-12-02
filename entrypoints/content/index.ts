@@ -1,6 +1,6 @@
 import {
   REDEMPTION_TOAST_HOST_TAG,
-  setupRedemptionAssistContent
+  setupRedemptionAssistContent,
 } from "~/entrypoints/content/redemptionAssist"
 
 import { setupContentMessageHandlers } from "./contentMessages"
@@ -39,7 +39,7 @@ async function mountRedemptionToastUi(ctx: ContentScriptContext) {
       if (redemptionToastRoot === root) {
         redemptionToastRoot = null
       }
-    }
+    },
   })
 
   ui.mount()
@@ -51,7 +51,7 @@ export default defineContentScript({
   async main(ctx) {
     await mountRedemptionToastUi(ctx)
     mainLogic()
-  }
+  },
 })
 
 function mainLogic() {

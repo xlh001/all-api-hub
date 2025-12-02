@@ -4,7 +4,7 @@ import {
   ChevronDownIcon,
   ChevronUpDownIcon,
   DocumentDuplicateIcon,
-  XMarkIcon
+  XMarkIcon,
 } from "@heroicons/react/20/solid"
 import React, {
   Fragment,
@@ -12,7 +12,7 @@ import React, {
   useId,
   useMemo,
   useRef,
-  useState
+  useState,
 } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -45,15 +45,15 @@ export function MultiSelect({
   disabled = false,
   allowCustom = false,
   parseCommaStrings = true,
-  className
+  className,
 }: MultiSelectProps) {
   const { t } = useTranslation("ui")
   const [query, setQuery] = useState("")
   const [isSelectedExpanded, setIsSelectedExpanded] = useState(
-    selected.length <= 5
+    selected.length <= 5,
   )
   const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">(
-    "bottom"
+    "bottom",
   )
   const hasUserToggledRef = useRef(false)
   const comboboxRef = useRef<HTMLDivElement>(null)
@@ -180,7 +180,7 @@ export function MultiSelect({
   const previewLimit = 3
   const previewOptions = useMemo(
     () => selectedOptions.slice(0, previewLimit),
-    [selectedOptions]
+    [selectedOptions],
   )
   const remainingPreviewCount = selectedOptions.length - previewOptions.length
 
@@ -215,10 +215,11 @@ export function MultiSelect({
         value={selectedOptions}
         onChange={handleSelect}
         virtual={{
-          options: filteredOptions
+          options: filteredOptions,
         }}
         multiple
-        disabled={disabled}>
+        disabled={disabled}
+      >
         <div className="relative" ref={comboboxRef}>
           <div className="relative w-full">
             <Combobox.Input
@@ -242,14 +243,16 @@ export function MultiSelect({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
             afterLeave={() => setQuery("")}
-            appear>
+            appear
+          >
             <Combobox.Options
               className={cn(
                 "ring-opacity-5 dark:bg-dark-bg-secondary absolute z-10 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black focus:outline-none sm:text-sm",
                 dropdownPosition === "top"
                   ? "bottom-full mb-1"
-                  : "top-full mt-1"
-              )}>
+                  : "top-full mt-1",
+              )}
+            >
               {({ option: option }) => {
                 return filteredOptions.length === 0 && query !== "" ? (
                   <div className="dark:text-dark-text-secondary relative cursor-default px-4 py-2 text-gray-700 select-none">
@@ -265,26 +268,29 @@ export function MultiSelect({
                         "relative cursor-default py-2 pr-4 pl-10 select-none",
                         active
                           ? "bg-blue-600 text-white"
-                          : "dark:text-dark-text-primary text-gray-900"
+                          : "dark:text-dark-text-primary text-gray-900",
                       )
                     }
-                    value={option}>
+                    value={option}
+                  >
                     {({ selected, active }) => (
                       <>
                         <span
                           className={cn(
                             "block truncate",
-                            selected ? "font-medium" : "font-normal"
+                            selected ? "font-medium" : "font-normal",
                           )}
-                          title={option.label}>
+                          title={option.label}
+                        >
                           {option.label}
                         </span>
                         {selected ? (
                           <span
                             className={cn(
                               "absolute inset-y-0 left-0 flex items-center pl-3",
-                              active ? "text-white" : "text-blue-600"
-                            )}>
+                              active ? "text-white" : "text-blue-600",
+                            )}
+                          >
                             <CheckIcon className="h-5 w-5" aria-hidden="true" />
                           </span>
                         ) : null}
@@ -306,12 +312,13 @@ export function MultiSelect({
               className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary/60 dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary flex w-full flex-1 items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               onClick={toggleSelectedExpanded}
               aria-expanded={isSelectedExpanded}
-              aria-controls={`${uid}-selected-items`}>
+              aria-controls={`${uid}-selected-items`}
+            >
               <span className="flex min-w-0 items-center gap-2">
                 <ChevronDownIcon
                   className={cn(
                     "dark:text-dark-text-secondary h-4 w-4 shrink-0 text-gray-500 transition-transform",
-                    isSelectedExpanded ? "rotate-180" : ""
+                    isSelectedExpanded ? "rotate-180" : "",
                   )}
                 />
                 <span className="truncate">
@@ -324,7 +331,8 @@ export function MultiSelect({
                     <span
                       key={`preview-${option.value}`}
                       className="dark:bg-dark-bg-tertiary dark:text-dark-text-tertiary max-w-[100px] shrink-0 truncate rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600"
-                      title={option.label}>
+                      title={option.label}
+                    >
                       {option.label}
                     </span>
                   ))}
@@ -341,7 +349,8 @@ export function MultiSelect({
               onClick={handleCopySelected}
               className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary/60 dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary inline-flex items-center justify-center rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               title="Copy selected values"
-              aria-label="Copy selected values">
+              aria-label="Copy selected values"
+            >
               <DocumentDuplicateIcon className="h-4 w-4" />
             </button>
           </div>
@@ -349,19 +358,22 @@ export function MultiSelect({
           {isSelectedExpanded && (
             <div
               id={`${uid}-selected-items`}
-              className="flex max-h-40 flex-wrap gap-2 overflow-y-auto p-1">
+              className="flex max-h-40 flex-wrap gap-2 overflow-y-auto p-1"
+            >
               {selectedOptions.map((option) => (
                 <span
                   key={option.value}
                   className="inline-flex max-w-full items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                  title={option.label}>
+                  title={option.label}
+                >
                   <span className="max-w-[200px] truncate">{option.label}</span>
                   {!disabled && (
                     <button
                       type="button"
                       onClick={() => handleRemove(option.value)}
                       className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:bg-blue-500 focus:text-white focus:outline-none dark:hover:bg-blue-800"
-                      aria-label={`Remove ${option.label}`}>
+                      aria-label={`Remove ${option.label}`}
+                    >
                       <XMarkIcon className="h-3 w-3" />
                     </button>
                   )}

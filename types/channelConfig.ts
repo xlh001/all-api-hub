@@ -21,9 +21,9 @@ export function createDefaultChannelConfig(channelId: number): ChannelConfig {
     channelId,
     modelFilterSettings: {
       rules: [],
-      updatedAt: timestamp
+      updatedAt: timestamp,
     },
     createdAt: timestamp,
-    updatedAt: timestamp
+    updatedAt: timestamp,
   }
 }

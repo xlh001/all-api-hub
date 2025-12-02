@@ -7,7 +7,7 @@ import { ensureAccountApiToken } from "~/services/accountOperations.ts"
 import { accountStorage } from "~/services/accountStorage.ts"
 import {
   fetchAccountAvailableModels,
-  fetchUpstreamModelsNameList
+  fetchUpstreamModelsNameList,
 } from "~/services/apiService"
 import { ApiError } from "~/services/apiService/common/errors.ts"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils.ts"
@@ -18,12 +18,12 @@ import {
   NewApiChannel,
   NewApiChannelListData,
   SiteAccount,
-  UpdateChannelPayload
+  UpdateChannelPayload,
 } from "~/types"
 import type {
   ChannelFormData,
   ChannelMode,
-  CreateChannelPayload
+  CreateChannelPayload,
 } from "~/types/newapi.ts"
 import type { ServiceResponse } from "~/types/serviceResponse.ts"
 import { isArraysEqual } from "~/utils"
@@ -54,14 +54,14 @@ export async function searchChannel(
   baseUrl: string,
   accessToken: string,
   userId: number | string,
-  keyword: string
+  keyword: string,
 ): Promise<NewApiChannelListData | null> {
   try {
     return await fetchApiData<NewApiChannelListData>({
       baseUrl,
       endpoint: `/api/channel/search?keyword=${keyword}`,
       userId,
-      token: accessToken
+      token: accessToken,
     })
   } catch (error) {
     if (error instanceof ApiError) {
@@ -84,15 +84,15 @@ export async function createChannel(
   baseUrl: string,
   adminToken: string,
   userId: number | string,
-  channelData: CreateChannelPayload
+  channelData: CreateChannelPayload,
 ) {
   try {
     const payload = {
       ...channelData,
       channel: {
         ...channelData.channel,
-        group: channelData?.channel?.groups?.join(",")
-      }
+        group: channelData?.channel?.groups?.join(","),
+      },
     }
     return await fetchApi<void>({
       baseUrl,
@@ -101,8 +101,8 @@ export async function createChannel(
       token: adminToken,
       options: {
         method: "POST",
-        body: JSON.stringify(payload)
-      }
+        body: JSON.stringify(payload),
+      },
     })
   } catch (error) {
     console.error("创建渠道失败:", error)
@@ -121,7 +121,7 @@ export async function updateChannel(
   baseUrl: string,
   adminToken: string,
   userId: number | string,
-  channelData: UpdateChannelPayload
+  channelData: UpdateChannelPayload,
 ) {
   try {
     return await fetchApi<void>({
@@ -131,8 +131,8 @@ export async function updateChannel(
       token: adminToken,
       options: {
         method: "PUT",
-        body: JSON.stringify(channelData)
-      }
+        body: JSON.stringify(channelData),
+      },
     })
   } catch (error) {
     console.error("更新渠道失败:", error)
@@ -147,7 +147,7 @@ export async function deleteChannel(
   baseUrl: string,
   adminToken: string,
   userId: number | string,
-  channelId: number
+  channelId: number,
 ) {
   try {
     return await fetchApi<void>({
@@ -156,8 +156,8 @@ export async function deleteChannel(
       userId,
       token: adminToken,
       options: {
-        method: "DELETE"
-      }
+        method: "DELETE",
+      },
     })
   } catch (error) {
     console.error("删除渠道失败:", error)
@@ -207,7 +207,7 @@ export async function getNewApiConfig(): Promise<{
       return {
         baseUrl: newApi.baseUrl,
         token: newApi.adminToken,
-        userId: newApi.userId
+        userId: newApi.userId,
       }
     }
     return null
@@ -223,7 +223,7 @@ export async function getNewApiConfig(): Promise<{
  */
 export async function fetchAvailableModels(
   account: DisplaySiteData,
-  token: ApiToken
+  token: ApiToken,
 ): Promise<string[]> {
   const candidateSources: string[][] = []
 
@@ -235,7 +235,7 @@ export async function fetchAvailableModels(
   try {
     const upstreamModels = await fetchUpstreamModelsNameList({
       baseUrl: account.baseUrl,
-      apiKey: token.key
+      apiKey: token.key,
     })
     if (upstreamModels && upstreamModels.length > 0) {
       candidateSources.push(upstreamModels)
@@ -262,7 +262,7 @@ export async function fetchAvailableModels(
  */
 export function buildChannelName(
   account: DisplaySiteData,
-  token: ApiToken
+  token: ApiToken,
 ): string {
   let channelName = `${account.name} | ${token.name}`.trim()
   if (!channelName.endsWith("(auto)")) {
@@ -276,11 +276,11 @@ export function buildChannelName(
  */
 export async function prepareChannelFormData(
   account: DisplaySiteData,
-  token: ApiToken | AccountToken
+  token: ApiToken | AccountToken,
 ): Promise<ChannelFormData> {
   const availableModels = await fetchUpstreamModelsNameList({
     baseUrl: account.baseUrl,
-    apiKey: token.key
+    apiKey: token.key,
   })
 
   if (!availableModels.length) {
@@ -300,7 +300,7 @@ export async function prepareChannelFormData(
     groups: normalizeList(resolvedGroups),
     priority: DEFAULT_CHANNEL_FIELDS.priority,
     weight: DEFAULT_CHANNEL_FIELDS.weight,
-    status: DEFAULT_CHANNEL_FIELDS.status
+    status: DEFAULT_CHANNEL_FIELDS.status,
   }
 }
 
@@ -309,13 +309,13 @@ export async function prepareChannelFormData(
  */
 export function buildChannelPayload(
   formData: ChannelFormData,
-  mode: ChannelMode = DEFAULT_CHANNEL_FIELDS.mode
+  mode: ChannelMode = DEFAULT_CHANNEL_FIELDS.mode,
 ): CreateChannelPayload {
   const trimmedBaseUrl = formData.base_url.trim()
   const groups = normalizeList(
     formData.groups && formData.groups.length > 0
       ? [...formData.groups]
-      : [...DEFAULT_CHANNEL_FIELDS.groups]
+      : [...DEFAULT_CHANNEL_FIELDS.groups],
   )
   const models = normalizeList(formData.models ?? [])
 
@@ -330,8 +330,8 @@ export function buildChannelPayload(
       groups,
       priority: formData.priority,
       weight: formData.weight,
-      status: formData.status
-    }
+      status: formData.status,
+    },
   }
 }
 
@@ -343,13 +343,13 @@ export async function findMatchingChannel(
   adminToken: string,
   userId: number | string,
   accountBaseUrl: string,
-  models: string[]
+  models: string[],
 ): Promise<NewApiChannel | null> {
   const searchResults = await searchChannel(
     baseUrl,
     adminToken,
     userId,
-    accountBaseUrl
+    accountBaseUrl,
   )
 
   if (!searchResults) {
@@ -360,7 +360,7 @@ export async function findMatchingChannel(
     searchResults.items.find(
       (channel) =>
         channel.base_url === accountBaseUrl &&
-        isArraysEqual(parseDelimitedList(channel.models), models)
+        isArraysEqual(parseDelimitedList(channel.models), models),
     ) ?? null
   )
 }
@@ -382,7 +382,7 @@ export interface ImportToNewApiOptions {
  */
 export async function importToNewApi(
   account: DisplaySiteData,
-  token: ApiToken
+  token: ApiToken,
 ): Promise<ServiceResponse<void>> {
   try {
     const prefs = await userPreferences.getPreferences()
@@ -390,7 +390,7 @@ export async function importToNewApi(
     if (!hasValidNewApiConfig(prefs)) {
       return {
         success: false,
-        message: t("messages:newapi.configMissing")
+        message: t("messages:newapi.configMissing"),
       }
     }
 
@@ -398,7 +398,7 @@ export async function importToNewApi(
     const {
       baseUrl: newApiBaseUrl,
       adminToken: newApiAdminToken,
-      userId: newApiUserId
+      userId: newApiUserId,
     } = newApi
 
     const formData = await prepareChannelFormData(account, token)
@@ -408,15 +408,15 @@ export async function importToNewApi(
       newApiAdminToken!,
       newApiUserId!,
       account.baseUrl,
-      formData.models
+      formData.models,
     )
 
     if (existingChannel) {
       return {
         success: false,
         message: t("messages:newapi.channelExists", {
-          channelName: existingChannel.name
-        })
+          channelName: existingChannel.name,
+        }),
       }
     }
 
@@ -426,26 +426,26 @@ export async function importToNewApi(
       newApiBaseUrl!,
       newApiAdminToken!,
       newApiUserId!,
-      payload
+      payload,
     )
 
     if (createdChannelResponse.success) {
       return {
         success: true,
         message: t("messages:newapi.importSuccess", {
-          channelName: formData.name
-        })
+          channelName: formData.name,
+        }),
       }
     }
 
     return {
       success: false,
-      message: createdChannelResponse.message
+      message: createdChannelResponse.message,
     }
   } catch (error) {
     return {
       success: false,
-      message: getErrorMessage(error) || t("messages:newapi.importFailed")
+      message: getErrorMessage(error) || t("messages:newapi.importFailed"),
     }
   }
 }
@@ -474,7 +474,7 @@ async function validateNewApiConfig(): Promise<{
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   }
 }
 
@@ -486,7 +486,7 @@ async function validateNewApiConfig(): Promise<{
  */
 export async function autoConfigToNewApi(
   account: SiteAccount,
-  toastId?: string
+  toastId?: string,
 ): Promise<AutoConfigToNewApiResponse<{ token?: ApiToken }>> {
   const configValidation = await validateNewApiConfig()
   if (!configValidation.valid) {
@@ -494,7 +494,7 @@ export async function autoConfigToNewApi(
   }
 
   const displaySiteData = accountStorage.convertToDisplayData(
-    account
+    account,
   ) as DisplaySiteData
 
   let lastError: any
@@ -503,12 +503,12 @@ export async function autoConfigToNewApi(
       const apiToken = await ensureAccountApiToken(
         account,
         displaySiteData,
-        toastId
+        toastId,
       )
 
       // 3. Import to New API as a channel
       toast.loading(t("messages:accountOperations.importingToNewApi"), {
-        id: toastId
+        id: toastId,
       })
       const importResult = await importToNewApi(displaySiteData, apiToken)
 
@@ -521,7 +521,7 @@ export async function autoConfigToNewApi(
       return {
         success: importResult.success,
         message: importResult.message,
-        data: { token: apiToken }
+        data: { token: apiToken },
       }
     } catch (error) {
       lastError = error
@@ -534,7 +534,7 @@ export async function autoConfigToNewApi(
         toast.error(getErrorMessage(lastError), { id: toastId })
         toast.loading(
           t("messages:accountOperations.retrying", { attempt: attempt + 1 }),
-          { id: toastId }
+          { id: toastId },
         )
         await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
         continue
@@ -545,6 +545,6 @@ export async function autoConfigToNewApi(
   toast.error(getErrorMessage(lastError), { id: toastId })
   return {
     success: false,
-    message: lastError?.message || t("messages:errors.unknown")
+    message: lastError?.message || t("messages:errors.unknown"),
   }
 }

@@ -12,7 +12,7 @@ import {
   Input,
   MultiSelect,
   Switch,
-  type MultiSelectOption
+  type MultiSelectOption,
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { modelMetadataService } from "~/services/modelMetadata"
@@ -41,7 +41,7 @@ export default function NewApiModelSyncSettings() {
   const {
     preferences: userPrefs,
     updateNewApiModelSync,
-    resetNewApiModelSyncConfig
+    resetNewApiModelSyncConfig,
   } = useUserPreferencesContext()
   const [isSaving, setIsSaving] = useState(false)
   const [channelUpstreamModelOptions, setChannelUpstreamModelOptions] =
@@ -58,7 +58,7 @@ export default function NewApiModelSyncSettings() {
         concurrency: rawPrefs.concurrency,
         maxRetries: rawPrefs.maxRetries,
         rateLimit: rawPrefs.rateLimit,
-        allowedModels: rawPrefs.allowedModels ?? []
+        allowedModels: rawPrefs.allowedModels ?? [],
       }
     : {
         enableSync: DEFAULT_PREFERENCES.newApiModelSync?.enabled ?? false,
@@ -68,9 +68,9 @@ export default function NewApiModelSyncSettings() {
         maxRetries: DEFAULT_PREFERENCES.newApiModelSync?.maxRetries ?? 2,
         rateLimit: DEFAULT_PREFERENCES.newApiModelSync?.rateLimit ?? {
           requestsPerMinute: 20,
-          burst: 5
+          burst: 5,
         },
-        allowedModels: DEFAULT_PREFERENCES.newApiModelSync?.allowedModels ?? []
+        allowedModels: DEFAULT_PREFERENCES.newApiModelSync?.allowedModels ?? [],
       }
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function NewApiModelSyncSettings() {
         setOptionsError(null)
 
         const response = await sendRuntimeMessage({
-          action: "newApiModelSync:getChannelUpstreamModelOptions"
+          action: "newApiModelSync:getChannelUpstreamModelOptions",
         })
 
         if (
@@ -121,7 +121,7 @@ export default function NewApiModelSyncSettings() {
   }, [])
 
   const savePreferences = async (
-    updates: Partial<NewApiModelSyncPreferences>
+    updates: Partial<NewApiModelSyncPreferences>,
   ) => {
     try {
       setIsSaving(true)
@@ -178,7 +178,8 @@ export default function NewApiModelSyncSettings() {
           setIsSaving(false)
         }
         return result
-      }}>
+      }}
+    >
       <Card padding="none">
         <CardList>
           {/* Enable Auto-Sync */}
@@ -209,7 +210,7 @@ export default function NewApiModelSyncSettings() {
                     const hours = parseFloat(e.target.value)
                     if (hours > 0) {
                       savePreferences({
-                        intervalMs: hours * 60 * 60 * 1000
+                        intervalMs: hours * 60 * 60 * 1000,
                       })
                     }
                   }}
@@ -291,8 +292,8 @@ export default function NewApiModelSyncSettings() {
                     savePreferences({
                       rateLimit: {
                         ...preferences.rateLimit,
-                        requestsPerMinute: value
-                      }
+                        requestsPerMinute: value,
+                      },
                     })
                   }
                 }}
@@ -318,8 +319,8 @@ export default function NewApiModelSyncSettings() {
                     savePreferences({
                       rateLimit: {
                         ...preferences.rateLimit,
-                        burst: value
-                      }
+                        burst: value,
+                      },
                     })
                   }
                 }}
@@ -332,14 +333,15 @@ export default function NewApiModelSyncSettings() {
           {/* Allowed Models */}
           <CardItem
             title={t("newApiModelSync:settings.allowedModels")}
-            description={t("newApiModelSync:settings.allowedModelsDesc")}>
+            description={t("newApiModelSync:settings.allowedModelsDesc")}
+          >
             <div className="w-full space-y-2">
               <MultiSelect
                 allowCustom
                 options={channelUpstreamModelOptions}
                 selected={preferences.allowedModels}
                 placeholder={t(
-                  "newApiModelSync:settings.allowedModelsPlaceholder"
+                  "newApiModelSync:settings.allowedModelsPlaceholder",
                 )}
                 onChange={(values) => {
                   void savePreferences({ allowedModels: values })
@@ -353,7 +355,7 @@ export default function NewApiModelSyncSettings() {
               ) : optionsError ? (
                 <p className="text-xs text-red-500">
                   {t("newApiModelSync:settings.allowedModelsLoadFailed", {
-                    error: optionsError
+                    error: optionsError,
                   })}
                 </p>
               ) : (
@@ -374,7 +376,8 @@ export default function NewApiModelSyncSettings() {
                 variant="default"
                 size="sm"
                 className="flex items-center gap-2"
-                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}>
+                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}
+              >
                 <span>{t("newApiModelSync:settings.viewExecutionButton")}</span>
               </Button>
             }
@@ -394,7 +397,7 @@ export default function NewApiModelSyncSettings() {
 function buildModelOptions(metadata: ModelMetadata[]): MultiSelectOption[] {
   const options = metadata.map((model) => ({
     label: model.id,
-    value: model.id
+    value: model.id,
   }))
   return options.sort((a, b) => a.label.localeCompare(b.label))
 }
@@ -405,7 +408,7 @@ function buildOptionsFromIds(modelIds: string[]): MultiSelectOption[] {
     .filter(Boolean)
     .map((model) => ({
       label: model,
-      value: model
+      value: model,
     }))
 
   return options.sort((a, b) => a.label.localeCompare(b.label))

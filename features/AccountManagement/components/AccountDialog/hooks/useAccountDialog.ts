@@ -9,7 +9,7 @@ import {
   getSiteName,
   isValidAccount,
   validateAndSaveAccount,
-  validateAndUpdateAccount
+  validateAndUpdateAccount,
 } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
 import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
@@ -17,7 +17,7 @@ import { AutoDetectError } from "~/utils/autoDetectUtils"
 import {
   getActiveTabs,
   onTabActivated,
-  onTabUpdated
+  onTabUpdated,
 } from "~/utils/browserApi.ts"
 
 interface UseAccountDialogProps {
@@ -33,7 +33,7 @@ export function useAccountDialog({
   account,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
 }: UseAccountDialogProps) {
   const { t } = useTranslation("accountDialog")
 
@@ -47,10 +47,10 @@ export function useAccountDialog({
   const [isSaving, setIsSaving] = useState(false)
   const [showAccessToken, setShowAccessToken] = useState(false)
   const [detectionError, setDetectionError] = useState<AutoDetectError | null>(
-    null
+    null,
   )
   const [showManualForm, setShowManualForm] = useState(
-    mode === DIALOG_MODES.EDIT
+    mode === DIALOG_MODES.EDIT,
   )
   const [exchangeRate, setExchangeRate] = useState("")
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
@@ -60,7 +60,7 @@ export function useAccountDialog({
     isCheckedInToday: false,
     customCheckInUrl: "",
     customRedeemUrl: "",
-    openRedeemWithCheckIn: true
+    openRedeemWithCheckIn: true,
   })
   const [siteType, setSiteType] = useState("unknown")
   const [authType, setAuthType] = useState(AuthTypeEnum.AccessToken)
@@ -91,7 +91,7 @@ export function useAccountDialog({
       isCheckedInToday: false,
       customCheckInUrl: "",
       customRedeemUrl: "",
-      openRedeemWithCheckIn: true
+      openRedeemWithCheckIn: true,
     })
     setSiteType("unknown")
     setAuthType(AuthTypeEnum.AccessToken)
@@ -118,7 +118,7 @@ export function useAccountDialog({
             customCheckInUrl: siteAccount.checkIn?.customCheckInUrl ?? "",
             customRedeemUrl: siteAccount.checkIn?.customRedeemUrl ?? "",
             openRedeemWithCheckIn:
-              siteAccount.checkIn?.openRedeemWithCheckIn ?? true
+              siteAccount.checkIn?.openRedeemWithCheckIn ?? true,
           })
           setSiteType(siteAccount.site_type || "")
           setAuthType(siteAccount.authType || AuthTypeEnum.AccessToken)
@@ -128,7 +128,7 @@ export function useAccountDialog({
         toast.error(t("messages.loadFailed"))
       }
     },
-    [t]
+    [t],
   )
 
   const checkCurrentTab = useCallback(async () => {
@@ -138,7 +138,7 @@ export function useAccountDialog({
     try {
       const tabs = await browser.tabs.query({
         active: true,
-        currentWindow: true
+        currentWindow: true,
       })
       const tab = tabs[0]
       if (tab.url) {
@@ -153,8 +153,8 @@ export function useAccountDialog({
         } catch (error) {
           console.log(
             t("messages.urlParseError", {
-              error: (error as Error).message
-            })
+              error: (error as Error).message,
+            }),
           )
           setCurrentTabUrl(null)
           setSiteName("")
@@ -251,7 +251,7 @@ export function useAccountDialog({
           customCheckInUrl: resultData.checkIn?.customCheckInUrl ?? "",
           customRedeemUrl: resultData.checkIn?.customRedeemUrl ?? "",
           openRedeemWithCheckIn:
-            resultData.checkIn?.openRedeemWithCheckIn ?? true
+            resultData.checkIn?.openRedeemWithCheckIn ?? true,
         })
 
         if (resultData.exchangeRate) {
@@ -276,9 +276,9 @@ export function useAccountDialog({
       setDetectionError({
         type: "unknown" as any,
         message: t("messages.autoDetectFailed", {
-          error: errorMessage
+          error: errorMessage,
         }),
-        helpDocUrl: "#"
+        helpDocUrl: "#",
       })
       setShowManualForm(true)
     } finally {
@@ -301,7 +301,7 @@ export function useAccountDialog({
               notes.trim(),
               checkIn,
               siteType,
-              authType
+              authType,
             )
           : await validateAndUpdateAccount(
               account!.id,
@@ -314,7 +314,7 @@ export function useAccountDialog({
               notes.trim(),
               checkIn,
               siteType,
-              authType
+              authType,
             )
 
       if (result.success) {
@@ -325,16 +325,16 @@ export function useAccountDialog({
                 ? "messages.addSuccess"
                 : "messages.updateSuccess",
               {
-                name: siteName
-              }
-            )
+                name: siteName,
+              },
+            ),
         )
         return result
       } else {
         toast.error(
           t("messages.operationFailed", {
-            error: result.message || t("messages.saveFailed")
-          })
+            error: result.message || t("messages.saveFailed"),
+          }),
         )
         throw new Error(result.message || t("messages.saveFailed"))
       }
@@ -387,8 +387,8 @@ export function useAccountDialog({
     } catch (error) {
       toast.error(
         t("messages.newApiConfigFailed", {
-          error: getErrorMessage(error)
-        })
+          error: getErrorMessage(error),
+        }),
       )
       console.error(error)
     } finally {
@@ -430,7 +430,7 @@ export function useAccountDialog({
     userId,
     authType,
     accessToken,
-    exchangeRate
+    exchangeRate,
   })
 
   return {
@@ -453,7 +453,7 @@ export function useAccountDialog({
       siteType,
       authType,
       isFormValid,
-      isAutoConfiguring
+      isAutoConfiguring,
     },
     setters: {
       setUrl,
@@ -467,7 +467,7 @@ export function useAccountDialog({
       setNotes,
       setCheckIn,
       setSiteType,
-      setAuthType
+      setAuthType,
     },
     handlers: {
       handleUseCurrentTabUrl,
@@ -476,8 +476,8 @@ export function useAccountDialog({
       handleUrlChange,
       handleSubmit,
       handleAutoConfig,
-      handleClose
-    }
+      handleClose,
+    },
   }
 }
 

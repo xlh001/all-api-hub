@@ -3,7 +3,7 @@ import { useDialogStateContext } from "~/features/AccountManagement/hooks/Dialog
 import {
   isDesktopByUA,
   isExtensionSidePanel,
-  isFirefox
+  isFirefox,
 } from "~/utils/browser.ts"
 
 export function useAddAccountHandler() {

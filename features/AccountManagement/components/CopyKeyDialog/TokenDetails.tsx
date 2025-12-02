@@ -1,7 +1,7 @@
 import {
   CheckIcon,
   ClockIcon,
-  DocumentDuplicateIcon
+  DocumentDuplicateIcon,
 } from "@heroicons/react/24/outline"
 import { NewAPI } from "@lobehub/icons"
 import { MouseEvent } from "react"
@@ -31,7 +31,7 @@ export function TokenDetails({
   copiedKey,
   onCopyKey,
   account,
-  onOpenCCSwitchDialog
+  onOpenCCSwitchDialog,
 }: TokenDetailsProps) {
   const { t } = useTranslation("ui")
   const { openWithAccount } = useChannelDialog()
@@ -70,7 +70,7 @@ export function TokenDetails({
         <ClockIcon className="h-3 w-3" />
         <span>
           {t("dialog.copyKey.expireTime", {
-            time: formatKeyTime(token.expired_time)
+            time: formatKeyTime(token.expired_time),
           })}
         </span>
       </div>
@@ -95,7 +95,8 @@ export function TokenDetails({
                 : token.remain_quota < 1000000
                   ? "text-orange-600"
                   : "dark:text-dark-text-primary text-gray-900"
-            }`}>
+            }`}
+          >
             {formatQuota(token)}
           </div>
         </div>
@@ -115,7 +116,8 @@ export function TokenDetails({
               }
               variant="ghost"
               size="sm"
-              onClick={handleCopy}>
+              onClick={handleCopy}
+            >
               {copiedKey === token.key ? (
                 <CheckIcon className="h-4 w-4 text-green-500" />
               ) : (
@@ -126,7 +128,8 @@ export function TokenDetails({
               aria-label={t("dialog.copyKey.useInCherry")}
               variant="ghost"
               size="sm"
-              onClick={handleUseInCherry}>
+              onClick={handleUseInCherry}
+            >
               <CherryIcon className="h-4 w-4 text-purple-500 dark:text-purple-400" />
             </IconButton>
             {onOpenCCSwitchDialog && (
@@ -134,7 +137,8 @@ export function TokenDetails({
                 aria-label={t("dialog.copyKey.exportToCCSwitch")}
                 variant="ghost"
                 size="sm"
-                onClick={handleExportToCCSwitch}>
+                onClick={handleExportToCCSwitch}
+              >
                 <CCSwitchIcon />
               </IconButton>
             )}
@@ -142,14 +146,16 @@ export function TokenDetails({
               aria-label={t("keyManagement:actions.importToCliProxy")}
               variant="ghost"
               size="sm"
-              onClick={handleImportToCliProxy}>
+              onClick={handleImportToCliProxy}
+            >
               <CliProxyIcon size="sm" />
             </IconButton>
             <IconButton
               aria-label={t("keyManagement:actions.importToNewApi")}
               variant="ghost"
               size="sm"
-              onClick={handleImportToNewApi}>
+              onClick={handleImportToNewApi}
+            >
               <NewAPI.Color className="h-4 w-4" />
             </IconButton>
           </div>

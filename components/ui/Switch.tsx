@@ -10,24 +10,24 @@ const switchVariants = cva(
     variants: {
       checked: {
         true: "bg-blue-600",
-        false: "bg-gray-200 dark:bg-dark-bg-tertiary"
+        false: "bg-gray-200 dark:bg-dark-bg-tertiary",
       },
       size: {
         sm: "h-5 w-9",
         default: "h-6 w-11",
-        lg: "h-7 w-14"
+        lg: "h-7 w-14",
       },
       disabled: {
         true: "opacity-50 cursor-not-allowed",
-        false: ""
-      }
+        false: "",
+      },
     },
     defaultVariants: {
       size: "default",
       checked: false,
-      disabled: false
-    }
-  }
+      disabled: false,
+    },
+  },
 )
 
 const thumbVariants = cva(
@@ -37,50 +37,50 @@ const thumbVariants = cva(
       size: {
         sm: "h-4 w-4",
         default: "h-4 w-4",
-        lg: "h-5 w-5"
+        lg: "h-5 w-5",
       },
       checked: {
         true: "",
-        false: ""
-      }
+        false: "",
+      },
     },
     compoundVariants: [
       {
         size: "sm",
         checked: true,
-        className: "translate-x-4"
+        className: "translate-x-4",
       },
       {
         size: "default",
         checked: true,
-        className: "translate-x-6"
+        className: "translate-x-6",
       },
       {
         size: "lg",
         checked: true,
-        className: "translate-x-8"
+        className: "translate-x-8",
       },
       {
         size: "sm",
         checked: false,
-        className: "translate-x-1"
+        className: "translate-x-1",
       },
       {
         size: "default",
         checked: false,
-        className: "translate-x-1"
+        className: "translate-x-1",
       },
       {
         size: "lg",
         checked: false,
-        className: "translate-x-1"
-      }
+        className: "translate-x-1",
+      },
     ],
     defaultVariants: {
       size: "default",
-      checked: false
-    }
-  }
+      checked: false,
+    },
+  },
 )
 
 export interface SwitchProps
@@ -108,7 +108,8 @@ export const Switch: React.FC<SwitchProps> = ({
       onChange={onChange}
       disabled={disabled}
       className={cn(switchVariants({ checked, size, disabled, className }))}
-      {...props}>
+      {...props}
+    >
       <span className="sr-only">Toggle</span>
       <span className={cn(thumbVariants({ checked, size }))} />
     </HeadlessSwitch>

@@ -3,19 +3,19 @@ import { ApiError } from "~/services/apiService/common/errors"
 import type {
   ApiResponse,
   LogItem,
-  TodayUsageData
+  TodayUsageData,
 } from "~/services/apiService/common/type"
 import { AuthTypeEnum } from "~/types"
 import {
   addAuthMethodHeader,
   addExtensionHeader,
   AUTH_MODE,
-  AuthMode
+  AuthMode,
 } from "~/utils/cookieHelper.ts"
 import {
   executeWithTempWindowFallback,
   TempWindowFallbackContext,
-  TempWindowResponseType
+  TempWindowResponseType,
 } from "~/utils/tempWindowFetch.ts"
 import { joinUrl } from "~/utils/url"
 
@@ -25,11 +25,11 @@ import { joinUrl } from "~/utils/url"
 const createRequestHeaders = async (
   authMode: AuthMode,
   userId?: number | string,
-  accessToken?: string
+  accessToken?: string,
 ): Promise<Record<string, string>> => {
   const baseHeaders = {
     "Content-Type": REQUEST_CONFIG.HEADERS.CONTENT_TYPE,
-    Pragma: REQUEST_CONFIG.HEADERS.PRAGMA
+    Pragma: REQUEST_CONFIG.HEADERS.PRAGMA,
   }
 
   const userHeaders: Record<string, string> = userId
@@ -39,7 +39,7 @@ const createRequestHeaders = async (
         "voapi-user": userId.toString(),
         "User-id": userId.toString(),
         "Rix-Api-User": userId.toString(),
-        "neo-api-user": userId.toString()
+        "neo-api-user": userId.toString(),
       }
     : {}
 
@@ -64,24 +64,24 @@ const createRequestHeaders = async (
 const createBaseRequest = (
   headers: HeadersInit,
   credentials: RequestCredentials,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): RequestInit => {
   const method = (options.method ?? "GET").toUpperCase()
 
   const defaultHeaders: HeadersInit = {
     ...headers,
     // 非 GET 请求自动加 Content-Type
-    ...(method !== "GET" ? { "Content-Type": "application/json" } : {})
+    ...(method !== "GET" ? { "Content-Type": "application/json" } : {}),
   }
 
   return {
     method,
     headers: {
       ...defaultHeaders,
-      ...(options.headers || {}) // 用户自定义 headers 可覆盖默认值
+      ...(options.headers || {}), // 用户自定义 headers 可覆盖默认值
     },
     credentials,
-    ...options
+    ...options,
   }
 }
 
@@ -90,12 +90,12 @@ const createBaseRequest = (
  */
 const createCookieAuthRequest = async (
   userId: number | string | undefined,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<RequestInit> => {
   return createBaseRequest(
     await createRequestHeaders(AUTH_MODE.COOKIE_AUTH_MODE, userId, undefined),
     "include",
-    options
+    options,
   )
 }
 
@@ -105,12 +105,12 @@ const createCookieAuthRequest = async (
 const createTokenAuthRequest = async (
   userId: number | string | undefined,
   accessToken: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<RequestInit> =>
   createBaseRequest(
     await createRequestHeaders(AUTH_MODE.TOKEN_AUTH_MODE, userId, accessToken),
     "omit",
-    options
+    options,
   )
 
 /**
@@ -134,20 +134,20 @@ export const getTodayTimestampRange = (): { start: number; end: number } => {
  * 聚合使用量数据
  */
 export const aggregateUsageData = (
-  items: LogItem[]
+  items: LogItem[],
 ): Omit<TodayUsageData, "today_requests_count"> => {
   return items.reduce(
     (acc, item) => ({
       today_quota_consumption: acc.today_quota_consumption + (item.quota || 0),
       today_prompt_tokens: acc.today_prompt_tokens + (item.prompt_tokens || 0),
       today_completion_tokens:
-        acc.today_completion_tokens + (item.completion_tokens || 0)
+        acc.today_completion_tokens + (item.completion_tokens || 0),
     }),
     {
       today_quota_consumption: 0,
       today_prompt_tokens: 0,
-      today_completion_tokens: 0
-    }
+      today_completion_tokens: 0,
+    },
   )
 }
 
@@ -160,7 +160,7 @@ const apiRequestData = async <T>(
   url: string,
   options: RequestInit | undefined,
   endpoint: string | undefined,
-  responseType: TempWindowResponseType
+  responseType: TempWindowResponseType,
 ): Promise<T> => {
   if (responseType !== "json") {
     throw new ApiError("仅支持 JSON 响应数据", undefined, endpoint)
@@ -170,7 +170,7 @@ const apiRequestData = async <T>(
     url,
     options,
     endpoint,
-    responseType
+    responseType,
   )) as ApiResponse<T>
 
   if (!res.success || res.data === undefined) {
@@ -198,7 +198,7 @@ const apiRequest = async <T>(
   url: string,
   options: RequestInit | undefined,
   endpoint: string | undefined,
-  responseType: TempWindowResponseType
+  responseType: TempWindowResponseType,
 ): Promise<ApiResponse<T> | T> => {
   const response = await fetch(url, options)
 
@@ -206,7 +206,7 @@ const apiRequest = async <T>(
     throw new ApiError(
       `请求失败: ${response.status}`,
       response.status,
-      endpoint
+      endpoint,
     )
   }
 
@@ -232,9 +232,9 @@ const _fetchApi = async <T>(
     token,
     authType,
     options,
-    responseType = "json"
+    responseType = "json",
   }: FetchApiParams,
-  onlyData: boolean = false
+  onlyData: boolean = false,
 ) => {
   const url = joinUrl(baseUrl, endpoint)
   let authOptions = {}
@@ -257,7 +257,7 @@ const _fetchApi = async <T>(
 
   const fetchOptions = {
     ...authOptions,
-    ...options
+    ...options,
   }
 
   const context: TempWindowFallbackContext = {
@@ -266,7 +266,7 @@ const _fetchApi = async <T>(
     endpoint,
     fetchOptions,
     onlyData,
-    responseType
+    responseType,
   }
 
   return await executeWithTempWindowFallback(context, async () => {
@@ -277,7 +277,7 @@ const _fetchApi = async <T>(
       url,
       fetchOptions,
       endpoint,
-      responseType
+      responseType,
     )
 
     if (responseType === "json") {
@@ -297,7 +297,7 @@ export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
     throw new ApiError(
       "fetchApiData 仅支持 JSON 响应",
       undefined,
-      params.endpoint
+      params.endpoint,
     )
   }
   return (await _fetchApi({ ...params, responseType: "json" }, true)) as T
@@ -305,11 +305,11 @@ export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
 
 export function fetchApi<T>(
   params: FetchApiParams,
-  _normalResponseType: true
+  _normalResponseType: true,
 ): Promise<T>
 export function fetchApi<T>(
   params: FetchApiParams,
-  _normalResponseType?: false
+  _normalResponseType?: false,
 ): Promise<ApiResponse<T>>
 
 /**
@@ -320,14 +320,14 @@ export function fetchApi<T>(
 export async function fetchApi<T>(
   params: FetchApiParams,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _normalResponseType?: boolean
+  _normalResponseType?: boolean,
 ): Promise<T | ApiResponse<T>> {
   return await _fetchApi(params)
 }
 
 async function parseResponseByType<T>(
   response: Response,
-  responseType: TempWindowResponseType
+  responseType: TempWindowResponseType,
 ): Promise<ApiResponse<T> | T> {
   switch (responseType) {
     case "text":
@@ -354,7 +354,7 @@ export function isHttpUrl(url: string): boolean {
 
 export function extractDataFromApiResponseBody<T>(
   body: any,
-  endpoint?: string
+  endpoint?: string,
 ): T {
   if (!body || typeof body !== "object") {
     throw new ApiError("响应数据格式错误", undefined, endpoint)
@@ -374,7 +374,7 @@ export function extractDataFromApiResponseBody<T>(
  */
 export function extractAmount(
   text: string,
-  exchangeRate: number
+  exchangeRate: number,
 ): { currencySymbol: string; amount: number } | null {
   // \p{Sc} 支持所有 Unicode 货币符号
   const regex = /([\p{Sc}])\s*([\d,]+(?:\.\d+)?)/u

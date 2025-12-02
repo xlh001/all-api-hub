@@ -31,7 +31,7 @@ export async function getActiveTabs(): Promise<browser.tabs.Tab[]> {
     // Firefox Android fallback
     console.debug(
       "getActiveTabs: currentWindow not supported, falling back to active-only",
-      error
+      error,
     )
   }
 
@@ -41,7 +41,7 @@ export async function getActiveTabs(): Promise<browser.tabs.Tab[]> {
   } catch (error) {
     console.warn(
       "getActiveTabs: active query failed, returning empty array",
-      error
+      error,
     )
     return []
   }
@@ -84,7 +84,7 @@ export async function getAllTabs(): Promise<browser.tabs.Tab[]> {
  */
 export async function createTab(
   url: string,
-  active = true
+  active = true,
 ): Promise<browser.tabs.Tab | undefined> {
   return await browser.tabs.create({ url, active })
 }
@@ -94,7 +94,7 @@ export async function createTab(
  */
 export async function updateTab(
   tabId: number,
-  updateInfo: browser.tabs._UpdateUpdateProperties
+  updateInfo: browser.tabs._UpdateUpdateProperties,
 ): Promise<browser.tabs.Tab | undefined> {
   return await browser.tabs.update(tabId, updateInfo)
 }
@@ -103,7 +103,7 @@ export async function updateTab(
  * 查询标签页
  */
 export async function queryTabs(
-  queryInfo: browser.tabs._QueryQueryInfo
+  queryInfo: browser.tabs._QueryQueryInfo,
 ): Promise<browser.tabs.Tab[]> {
   return await browser.tabs.query(queryInfo)
 }
@@ -121,7 +121,7 @@ export async function removeTabOrWindow(id: number): Promise<void> {
       // 如果不是窗口 ID，尝试作为标签页 ID
       console.debug(
         `removeTabOrWindow: Failed to remove as window (id=${id}), trying as tab`,
-        error
+        error,
       )
     }
   }
@@ -135,7 +135,7 @@ export async function removeTabOrWindow(id: number): Promise<void> {
  * 返回窗口对象，如果不支持则返回 null
  */
 export async function createWindow(
-  createData: browser.windows._CreateCreateData
+  createData: browser.windows._CreateCreateData,
 ): Promise<browser.windows.Window | null> {
   if (hasWindowsAPI()) {
     return await browser.windows.create(createData)
@@ -177,7 +177,7 @@ export async function focusTab(tab: browser.tabs.Tab): Promise<void> {
  */
 export async function sendRuntimeMessage(
   message: any,
-  options?: SendMessageRetryOptions
+  options?: SendMessageRetryOptions,
 ): Promise<any> {
   return await sendMessageWithRetry(message, options)
 }
@@ -189,19 +189,19 @@ export interface SendMessageRetryOptions {
 
 const RECOVERABLE_MESSAGE_SNIPPETS = [
   "Receiving end does not exist",
-  "Could not establish connection"
+  "Could not establish connection",
 ]
 
 function isRecoverableSendMessageError(error: any): boolean {
   const message = (error?.message || String(error || "")).toLowerCase()
   return RECOVERABLE_MESSAGE_SNIPPETS.some((snippet) =>
-    message.includes(snippet.toLowerCase())
+    message.includes(snippet.toLowerCase()),
   )
 }
 
 export async function sendMessageWithRetry(
   message: any,
-  options?: SendMessageRetryOptions
+  options?: SendMessageRetryOptions,
 ) {
   const maxAttempts = Math.max(1, options?.maxAttempts ?? 3)
   const delayMs = options?.delayMs ?? 500
@@ -218,7 +218,7 @@ export async function sendMessageWithRetry(
       }
 
       await new Promise((resolve) =>
-        setTimeout(resolve, delayMs * Math.pow(2, attempt))
+        setTimeout(resolve, delayMs * Math.pow(2, attempt)),
       )
     }
   }
@@ -241,8 +241,8 @@ export function onRuntimeMessage(
   callback: (
     message: any,
     sender: browser.runtime.MessageSender,
-    sendResponse: (response?: any) => void
-  ) => void
+    sendResponse: (response?: any) => void,
+  ) => void,
 ): () => void {
   browser.runtime.onMessage.addListener(callback)
   return () => {
@@ -255,7 +255,7 @@ export function onRuntimeMessage(
  * 返回清理函数
  */
 export function onTabActivated(
-  callback: (activeInfo: browser.tabs._OnActivatedActiveInfo) => void
+  callback: (activeInfo: browser.tabs._OnActivatedActiveInfo) => void,
 ): () => void {
   browser.tabs.onActivated.addListener(callback)
   return () => {
@@ -271,8 +271,8 @@ export function onTabUpdated(
   callback: (
     tabId: number,
     changeInfo: browser.tabs._OnUpdatedChangeInfo,
-    tab: browser.tabs.Tab
-  ) => void
+    tab: browser.tabs.Tab,
+  ) => void,
 ): () => void {
   browser.tabs.onUpdated.addListener(callback)
   return () => {
@@ -287,8 +287,8 @@ export function onTabUpdated(
 export function onTabRemoved(
   callback: (
     tabId: number,
-    removeInfo: browser.tabs._OnRemovedRemoveInfo
-  ) => void
+    removeInfo: browser.tabs._OnRemovedRemoveInfo,
+  ) => void,
 ): () => void {
   browser.tabs.onRemoved.addListener(callback)
   return () => {
@@ -301,7 +301,7 @@ export function onTabRemoved(
  * 返回清理函数
  */
 export function onWindowRemoved(
-  callback: (windowId: number) => void
+  callback: (windowId: number) => void,
 ): () => void {
   if (hasWindowsAPI()) {
     browser.windows.onRemoved.addListener(callback)
@@ -326,7 +326,7 @@ export function onStartup(callback: () => void): () => void {
  * 监听扩展安装/更新事件
  */
 export function onInstalled(
-  callback: (details: browser.runtime._OnInstalledDetails) => void
+  callback: (details: browser.runtime._OnInstalledDetails) => void,
 ): () => void {
   browser.runtime.onInstalled.addListener(callback)
   return () => {
@@ -344,7 +344,7 @@ export const openSidePanel = async () => {
   if (typeof chrome !== "undefined" && chrome.sidePanel) {
     const [tab] = await chrome.tabs.query({
       active: true,
-      currentWindow: true
+      currentWindow: true,
     })
     return chrome.sidePanel.open({ windowId: tab.windowId })
   }
@@ -368,7 +368,7 @@ export async function createAlarm(
     periodInMinutes?: number
     delayInMinutes?: number
     when?: number
-  }
+  },
 ): Promise<void> {
   if (!hasAlarmsAPI()) {
     console.warn("Alarms API not supported")
@@ -392,7 +392,7 @@ export async function clearAlarm(name: string): Promise<boolean> {
  * 获取定时任务
  */
 export async function getAlarm(
-  name: string
+  name: string,
 ): Promise<browser.alarms.Alarm | undefined> {
   if (!hasAlarmsAPI()) {
     console.warn("Alarms API not supported")
@@ -417,7 +417,7 @@ export async function getAllAlarms(): Promise<browser.alarms.Alarm[]> {
  * 返回清理函数
  */
 export function onAlarm(
-  callback: (alarm: browser.alarms.Alarm) => void
+  callback: (alarm: browser.alarms.Alarm) => void,
 ): () => void {
   if (!hasAlarmsAPI()) {
     console.warn("Alarms API not supported")
@@ -438,14 +438,14 @@ export function getManifest(): browser._manifest.WebExtensionManifest {
   } catch (error) {
     console.warn(
       "[browserApi] Failed to read manifest, falling back to minimal manifest",
-      error
+      error,
     )
 
     return {
       manifest_version: 3,
       name: "All API Hub",
       version: "0.0.0",
-      optional_permissions: []
+      optional_permissions: [],
     }
   }
 }
@@ -456,7 +456,7 @@ export function getManifestVersion(): number {
 
 // Permissions helpers
 export async function containsPermissions(
-  permissions: browser.permissions.Permissions
+  permissions: browser.permissions.Permissions,
 ): Promise<boolean> {
   try {
     return await browser.permissions.contains(permissions)
@@ -467,7 +467,7 @@ export async function containsPermissions(
 }
 
 export async function requestPermissions(
-  permissions: browser.permissions.Permissions
+  permissions: browser.permissions.Permissions,
 ): Promise<boolean> {
   try {
     return await browser.permissions.request(permissions)
@@ -478,7 +478,7 @@ export async function requestPermissions(
 }
 
 export async function removePermissions(
-  permissions: browser.permissions.Permissions
+  permissions: browser.permissions.Permissions,
 ): Promise<boolean> {
   try {
     return await browser.permissions.remove(permissions)
@@ -489,14 +489,14 @@ export async function removePermissions(
 }
 
 export function onPermissionsAdded(
-  callback: (permissions: browser.permissions.Permissions) => void
+  callback: (permissions: browser.permissions.Permissions) => void,
 ): () => void {
   browser.permissions.onAdded.addListener(callback)
   return () => browser.permissions.onAdded.removeListener(callback)
 }
 
 export function onPermissionsRemoved(
-  callback: (permissions: browser.permissions.Permissions) => void
+  callback: (permissions: browser.permissions.Permissions) => void,
 ): () => void {
   browser.permissions.onRemoved.addListener(callback)
   return () => browser.permissions.onRemoved.removeListener(callback)

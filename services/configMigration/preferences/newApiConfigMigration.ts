@@ -44,12 +44,12 @@ export function migrateNewApiConfig(prefs: UserPreferences): UserPreferences {
   const newApiSettings = {
     baseUrl: prefs?.newApiBaseUrl ?? DEFAULT_NEW_API_CONFIG.baseUrl,
     adminToken: prefs?.newApiAdminToken ?? DEFAULT_NEW_API_CONFIG.adminToken,
-    userId: prefs?.newApiUserId ?? DEFAULT_NEW_API_CONFIG.userId
+    userId: prefs?.newApiUserId ?? DEFAULT_NEW_API_CONFIG.userId,
   }
 
   console.log(
     "[PreferencesMigration] Migrated newApi settings:",
-    newApiSettings
+    newApiSettings,
   )
 
   const { newApiBaseUrl, newApiAdminToken, newApiUserId, ...restOfPrefs } =
@@ -57,6 +57,6 @@ export function migrateNewApiConfig(prefs: UserPreferences): UserPreferences {
 
   return {
     ...restOfPrefs,
-    newApi: newApiSettings
+    newApi: newApiSettings,
   }
 }

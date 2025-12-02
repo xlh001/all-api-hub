@@ -7,15 +7,15 @@ import { RedemptionAccountSelectToast } from "../components/RedemptionAccountSel
 import { RedemptionLoadingToast } from "../components/RedemptionLoadingToast.tsx"
 import {
   RedemptionPromptToast,
-  type RedemptionPromptAction
+  type RedemptionPromptAction,
 } from "../components/RedemptionPromptToast.tsx"
 
 export function showRedeemLoadingToast(message: string) {
   return toast.custom(
     () => React.createElement(RedemptionLoadingToast, { message }),
     {
-      duration: Infinity
-    }
+      duration: Infinity,
+    },
   )
 }
 
@@ -25,14 +25,14 @@ export function dismissToast(toastId?: string) {
 
 export function showAccountSelectToast(
   accounts: DisplaySiteData[],
-  options?: { title?: string; message?: string }
+  options?: { title?: string; message?: string },
 ): Promise<DisplaySiteData | null> {
   return new Promise((resolve) => {
     let resolved = false
 
     const handleResolve = (
       account: DisplaySiteData | null,
-      toastId: string
+      toastId: string,
     ) => {
       if (resolved) return
       resolved = true
@@ -48,19 +48,19 @@ export function showAccountSelectToast(
           message: options?.message,
           accounts,
           onSelect: (account: DisplaySiteData | null) =>
-            handleResolve(account, toastId)
+            handleResolve(account, toastId),
         })
       },
       {
         // Keep the account select toast on screen until user confirms or cancels
-        duration: Infinity
-      }
+        duration: Infinity,
+      },
     )
   })
 }
 
 export function showRedemptionPromptToast(
-  message: string
+  message: string,
 ): Promise<RedemptionPromptAction> {
   return new Promise((resolve) => {
     let resolved = false
@@ -77,7 +77,7 @@ export function showRedemptionPromptToast(
       return React.createElement(RedemptionPromptToast, {
         message,
         onAction: (action: RedemptionPromptAction) =>
-          handleResolve(action, toastId)
+          handleResolve(action, toastId),
       })
     })
   })
