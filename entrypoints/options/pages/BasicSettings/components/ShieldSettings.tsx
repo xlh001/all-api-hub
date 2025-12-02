@@ -14,23 +14,21 @@ import {
   Switch
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { hasCookieInterceptorPermissions } from "~/services/permissions/permissionManager"
 import { isFirefox } from "~/utils/browser.ts"
 import { openSettingsTab } from "~/utils/navigation"
+import { canUseTempWindowFetch } from "~/utils/tempWindowFetch.ts"
 
 export default function ShieldSettings() {
   const { t } = useTranslation("settings")
   const { tempWindowFallback, updateTempWindowFallback } =
     useUserPreferencesContext()
 
-  const [hasCookiePermissions, setHasCookiePermissions] = useState<
-    boolean | null
-  >(null)
+  const [canUseTempWindowFallback, setCanUseTempWindowFallback] =
+    useState<boolean>(false)
 
   const refreshPermissionStatus = useCallback(async () => {
-    setHasCookiePermissions(null)
-    const granted = await hasCookieInterceptorPermissions()
-    setHasCookiePermissions(granted)
+    const granted = await canUseTempWindowFetch()
+    setCanUseTempWindowFallback(granted)
   }, [])
 
   useEffect(() => {
@@ -46,9 +44,7 @@ export default function ShieldSettings() {
   const shieldAutoRefresh = tempWindowFallback.useForAutoRefresh
   const shieldManualRefresh = tempWindowFallback.useForManualRefresh
 
-  const permissionsPending = hasCookiePermissions === null
-  const hasPrerequisitePermissions = hasCookiePermissions === true
-  const disableShieldUI = !hasPrerequisitePermissions || permissionsPending
+  const disableShieldUI = !canUseTempWindowFallback
 
   const handleOpenPermissionsTab = useCallback(() => {
     void openSettingsTab("permissions")
@@ -59,7 +55,7 @@ export default function ShieldSettings() {
       id="shield-settings"
       title={t("refresh.shieldTitle")}
       description={t("refresh.shieldDescription")}>
-      {!hasPrerequisitePermissions && !permissionsPending && (
+      {!canUseTempWindowFallback && (
         <Alert
           variant="warning"
           title={t("refresh.shieldPermissionWarningTitle")}
