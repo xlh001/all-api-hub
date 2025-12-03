@@ -33,6 +33,7 @@ interface CommonTagFilterProps {
    * optional "All" chip.
    */
   maxVisible?: number
+  maxVisibleLines?: number
   /** Whether to render an "All" chip that represents no active selection. */
   includeAllOption?: boolean
   /** Label for the "All" chip. If omitted, a localized "Total" label is used. */
@@ -78,9 +79,15 @@ export function TagFilter(props: TagFilterProps) {
     allLabel,
     allCount,
     disabled = false,
+    maxVisibleLines,
   } = props
 
   const { t } = useTranslation(["common"])
+
+  const [lineVisibleCount, setLineVisibleCount] = React.useState<number | null>(
+    null,
+  )
+  const containerRef = React.useRef<HTMLDivElement | null>(null)
 
   // Normalize current selection into a set for quick lookup.
   const selectedValues: string[] =
@@ -88,17 +95,105 @@ export function TagFilter(props: TagFilterProps) {
   const selectedSet = new Set(selectedValues)
   const hasSelection = selectedSet.size > 0
 
+  const useLineBasedLimit =
+    typeof maxVisibleLines === "number" && maxVisibleLines > 0
+
   const normalizedMaxVisible = Math.max(1, maxVisible)
 
   // Split options into inline and overflow parts.
   let visibleOptions = options
   let overflowOptions: TagFilterOption[] = []
 
-  if (options.length > normalizedMaxVisible) {
+  if (useLineBasedLimit) {
+    if (
+      lineVisibleCount !== null &&
+      lineVisibleCount >= 0 &&
+      lineVisibleCount < options.length
+    ) {
+      visibleOptions = options.slice(0, lineVisibleCount)
+      overflowOptions = options.slice(lineVisibleCount)
+    } else {
+      visibleOptions = options
+      overflowOptions = []
+    }
+  } else if (options.length > normalizedMaxVisible) {
     const visibleCount = Math.max(1, normalizedMaxVisible - 1)
     visibleOptions = options.slice(0, visibleCount)
     overflowOptions = options.slice(visibleCount)
   }
+
+  React.useLayoutEffect(() => {
+    if (!useLineBasedLimit) {
+      setLineVisibleCount(null)
+      return
+    }
+
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const maxLines = Math.max(1, maxVisibleLines as number)
+
+    const measure = () => {
+      const container = containerRef.current
+      if (!container) {
+        return
+      }
+
+      const chipNodes = container.querySelectorAll<HTMLElement>(
+        '[data-tag-filter-chip="true"]',
+      )
+
+      if (chipNodes.length === 0) {
+        setLineVisibleCount(null)
+        return
+      }
+
+      const lineTops: number[] = []
+      let visibleCountByLines = chipNodes.length
+
+      for (let i = 0; i < chipNodes.length; i += 1) {
+        const top = chipNodes[i].offsetTop
+        const existingIndex = lineTops.findIndex(
+          (value) => Math.abs(value - top) < 1,
+        )
+        if (existingIndex === -1) {
+          lineTops.push(top)
+        }
+        const lineIndex = lineTops.length
+        if (lineIndex > maxLines) {
+          visibleCountByLines = i
+          break
+        }
+      }
+
+      if (visibleCountByLines === chipNodes.length) {
+        setLineVisibleCount(null)
+      } else {
+        setLineVisibleCount(visibleCountByLines)
+      }
+    }
+
+    measure()
+
+    let frame: number | null = null
+
+    const handleResize = () => {
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame)
+      }
+      frame = window.requestAnimationFrame(measure)
+    }
+
+    window.addEventListener("resize", handleResize)
+
+    return () => {
+      window.removeEventListener("resize", handleResize)
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame)
+      }
+    }
+  }, [useLineBasedLimit, maxVisibleLines, options])
 
   const overflowSelectedCount = overflowOptions.reduce(
     (count, option) => (selectedSet.has(option.value) ? count + 1 : count),
@@ -155,6 +250,7 @@ export function TagFilter(props: TagFilterProps) {
         shape="pill"
         isActive={isActive}
         disabled={disabled}
+        data-tag-filter-chip="true"
         className={cn(
           "border px-3 py-1 text-xs shadow-xs sm:text-[13px]",
           chipBaseClasses,
@@ -184,7 +280,10 @@ export function TagFilter(props: TagFilterProps) {
   const moreLabel = t("common:actions.more")
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div
+      ref={containerRef}
+      className={cn("flex flex-wrap items-center gap-2", className)}
+    >
       {includeAllOption && (
         <ToggleButton
           type="button"
