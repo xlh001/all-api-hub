@@ -108,6 +108,11 @@
   },
   "multiSelect": {
     "copySuccess": "Selected values copied",
-    "copyError": "Copy failed, please try again"
+    "copyError": "Copy failed, please try again",
+    "emptyWithQueryAllowCustom": "Press Enter to add \"{{value}}\"",
+    "noOptionsAllowCustom": "No options available. Type to create one",
+    "noOptions": "No options available",
+    "clearInput": "Clear input",
+    "clearSelected": "Clear all selected values"
   }
 }

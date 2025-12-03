@@ -177,6 +177,28 @@ export function isValidAccount({
 }
 
 // 验证并保存账号信息（用于新增）
+type TagsInput = string[] | string | undefined
+
+function normalizeTagsInput(tags: TagsInput): string[] | undefined {
+  if (!tags) {
+    return undefined
+  }
+
+  if (Array.isArray(tags)) {
+    const cleaned = tags
+      .map((tag) => (typeof tag === "string" ? tag.trim() : ""))
+      .filter((tag) => tag.length > 0)
+    return cleaned.length > 0 ? cleaned : undefined
+  }
+
+  if (typeof tags === "string") {
+    const trimmed = tags.trim()
+    return trimmed ? [trimmed] : undefined
+  }
+
+  return undefined
+}
+
 export async function validateAndSaveAccount(
   url: string,
   siteName: string,
@@ -185,6 +207,7 @@ export async function validateAndSaveAccount(
   userId: string,
   exchangeRate: string,
   notes: string,
+  tags: TagsInput,
   checkInConfig: CheckInConfig,
   siteType: string,
   authType: AuthTypeEnum,
@@ -225,6 +248,8 @@ export async function validateAndSaveAccount(
       authType,
     )
 
+    const normalizedTags = normalizeTagsInput(tags)
+
     const accountData: Omit<SiteAccount, "id" | "created_at" | "updated_at"> = {
       site_name: siteName.trim(),
       site_url: url.trim(),
@@ -234,6 +259,7 @@ export async function validateAndSaveAccount(
       exchange_rate:
         parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT, // 使用用户输入的汇率
       notes: notes || "",
+      tags: normalizedTags,
       checkIn: freshAccountData.checkIn,
       account_info: {
         id: parsedUserId,
@@ -266,6 +292,8 @@ export async function validateAndSaveAccount(
     console.warn("Data fetch failed, saving configuration only:", error)
 
     // Build partial account data without quota/usage data
+    const normalizedTags = normalizeTagsInput(tags)
+
     const partialAccountData: Omit<
       SiteAccount,
       "id" | "created_at" | "updated_at"
@@ -277,6 +305,7 @@ export async function validateAndSaveAccount(
       exchange_rate:
         parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
       notes: notes || "",
+      tags: normalizedTags,
       checkIn: checkInConfig,
       health: {
         status: SiteHealthStatus.Warning,
@@ -332,6 +361,7 @@ export async function validateAndUpdateAccount(
   userId: string,
   exchangeRate: string,
   notes: string,
+  tags: TagsInput,
   checkInConfig: CheckInConfig,
   siteType: string,
   authType: AuthTypeEnum,
@@ -372,6 +402,8 @@ export async function validateAndUpdateAccount(
       authType,
     )
 
+    const normalizedTags = normalizeTagsInput(tags)
+
     const updateData: Partial<Omit<SiteAccount, "id" | "created_at">> = {
       site_name: siteName.trim(),
       site_url: url.trim(),
@@ -381,6 +413,7 @@ export async function validateAndUpdateAccount(
       exchange_rate:
         parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT, // 使用用户输入的汇率
       notes: notes,
+      tags: normalizedTags,
       checkIn: freshAccountData.checkIn,
       account_info: {
         id: parsedUserId,
@@ -422,6 +455,8 @@ export async function validateAndUpdateAccount(
     console.warn("Data fetch failed, saving configuration only:", error)
 
     // Build partial update preserving quota/usage data
+    const normalizedTags = normalizeTagsInput(tags)
+
     const partialUpdateData = {
       site_name: siteName.trim(),
       site_url: url.trim(),
@@ -430,6 +465,7 @@ export async function validateAndUpdateAccount(
       exchange_rate:
         parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
       notes: notes,
+      tags: normalizedTags,
       checkIn: checkInConfig,
       health: {
         status: SiteHealthStatus.Warning,
