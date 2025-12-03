@@ -1,5 +1,9 @@
 import { handleTempWindowFetch } from "~/entrypoints/background/tempWindowPool"
-import { ApiError } from "~/services/apiService/common/errors"
+import {
+  API_ERROR_CODES,
+  ApiError,
+  type ApiErrorCode,
+} from "~/services/apiService/common/errors"
 import type { ApiResponse } from "~/services/apiService/common/type"
 import {
   extractDataFromApiResponseBody,
@@ -70,6 +74,12 @@ export async function tempWindowFetch(
   })
 }
 const TEMP_WINDOW_FALLBACK_STATUS = new Set([401, 403, 429])
+const TEMP_WINDOW_FALLBACK_CODES = new Set<ApiErrorCode>([
+  API_ERROR_CODES.HTTP_401,
+  API_ERROR_CODES.HTTP_403,
+  API_ERROR_CODES.HTTP_429,
+  API_ERROR_CODES.CONTENT_TYPE_MISMATCH,
+])
 
 export interface TempWindowFallbackContext {
   baseUrl: string
@@ -129,13 +139,18 @@ async function shouldUseTempWindowFallback(
     )
     return false
   }
+  const hasCodeFallback =
+    !!error.code && TEMP_WINDOW_FALLBACK_CODES.has(error.code)
+  const hasStatusFallback =
+    !!error.statusCode && TEMP_WINDOW_FALLBACK_STATUS.has(error.statusCode)
 
-  if (!error.statusCode || !TEMP_WINDOW_FALLBACK_STATUS.has(error.statusCode)) {
+  if (!hasCodeFallback && !hasStatusFallback) {
     logSkipTempWindowFallback(
-      "HTTP status is not in the fallback set (only 401/403/429 trigger shield).",
+      "Error does not match any temp window fallback codes or statuses.",
       context,
       {
         statusCode: error.statusCode,
+        code: error.code ?? null,
       },
     )
     return false

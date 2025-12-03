@@ -1,5 +1,9 @@
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
-import { ApiError } from "~/services/apiService/common/errors"
+import {
+  API_ERROR_CODES,
+  ApiError,
+  type ApiErrorCode,
+} from "~/services/apiService/common/errors"
 import type {
   ApiResponse,
   LogItem,
@@ -203,11 +207,34 @@ const apiRequest = async <T>(
   const response = await fetch(url, options)
 
   if (!response.ok) {
+    let errorCode: ApiErrorCode = API_ERROR_CODES.HTTP_OTHER
+
+    if (response.status === 401) {
+      errorCode = API_ERROR_CODES.HTTP_401
+    } else if (response.status === 403) {
+      errorCode = API_ERROR_CODES.HTTP_403
+    } else if (response.status === 429) {
+      errorCode = API_ERROR_CODES.HTTP_429
+    }
+
     throw new ApiError(
       `请求失败: ${response.status}`,
       response.status,
       endpoint,
+      errorCode,
     )
+  }
+  if (responseType === "json") {
+    const contentType = response.headers.get("content-type") || ""
+
+    if (contentType && !/\bjson\b/i.test(contentType)) {
+      throw new ApiError(
+        `响应 content type mismatch: expected JSON but got ${contentType}`,
+        response.status,
+        endpoint,
+        API_ERROR_CODES.CONTENT_TYPE_MISMATCH,
+      )
+    }
   }
 
   return await parseResponseByType<T>(response, responseType)
