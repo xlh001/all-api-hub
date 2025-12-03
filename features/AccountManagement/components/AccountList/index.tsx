@@ -13,7 +13,7 @@ import {
   CardList,
   EmptyState,
   IconButton,
-  MultiSelect,
+  TagFilter,
 } from "~/components/ui"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
@@ -40,8 +40,15 @@ interface AccountListProps {
 
 export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const { t } = useTranslation(["account", "common"])
-  const { sortedData, displayData, handleSort, sortField, sortOrder } =
-    useAccountDataContext()
+  const {
+    sortedData,
+    displayData,
+    handleSort,
+    sortField,
+    sortOrder,
+    availableTags,
+    tagCounts,
+  } = useAccountDataContext()
   const { handleAddAccountClick } = useAddAccountHandler()
   const { handleDeleteAccount } = useAccountActionsContext()
 
@@ -62,17 +69,17 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     setCopyKeyDialogAccount(site)
   }
 
-  const availableTags = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          displayData.flatMap((item) =>
-            item.tags && item.tags.length ? item.tags : [],
-          ),
-        ),
-      ),
-    [displayData],
-  )
+  const tagFilterOptions = useMemo(() => {
+    if (availableTags.length === 0) {
+      return []
+    }
+
+    return availableTags.map((tag) => ({
+      value: tag,
+      label: tag,
+      count: tagCounts[tag] ?? 0,
+    }))
+  }, [availableTags, tagCounts])
 
   const baseResults = useMemo<
     Array<{
@@ -96,7 +103,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     }
     return baseResults.filter(({ account }) => {
       const tags = account.tags || []
-      return selectedTags.every((tag) => tags.includes(tag))
+      return selectedTags.some((tag) => tags.includes(tag))
     })
   }, [baseResults, selectedTags])
 
@@ -167,17 +174,13 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
         {/* Tag Filter */}
         <div className="dark:border-dark-bg-tertiary border-b border-gray-200 px-3 py-2 sm:px-5">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
-                {t("account:filter.tagsLabel")}
-              </span>
-            </div>
-            <MultiSelect
-              options={availableTags.map((tag) => ({ value: tag, label: tag }))}
-              selected={selectedTags}
+            <TagFilter
+              options={tagFilterOptions}
+              value={selectedTags}
               onChange={setSelectedTags}
-              placeholder={t("account:filter.tagsPlaceholder") ?? ""}
-              allowCustom={false}
+              maxVisible={6}
+              allLabel={t("account:filter.tagsAllLabel")}
+              allCount={displayData.length}
             />
             {showFilteredSummary && (
               <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
