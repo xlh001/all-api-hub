@@ -31,7 +31,6 @@ import {
   Loader2,
   Plus,
   RefreshCcw,
-  Settings2,
   Trash2,
 } from "lucide-react"
 import { nanoid } from "nanoid"
@@ -40,7 +39,8 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { useChannelDialog } from "~/components/ChannelDialog"
-import { Input, Modal, Switch, Textarea } from "~/components/ui"
+import ChannelFiltersEditor from "~/components/ChannelFiltersEditor"
+import { Input, Modal } from "~/components/ui"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/Alert"
 import {
   AlertDialog,
@@ -1065,11 +1065,12 @@ function RowActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuItem onClick={onEdit}>{labels.edit}</DropdownMenuItem>
-        <DropdownMenuItem onClick={onSync} disabled={isSyncing}>
-          {isSyncing ? labels.syncing : labels.sync}
-        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onFilters}>
           {labels.filters}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onSync} disabled={isSyncing}>
+          {isSyncing ? labels.syncing : labels.sync}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -1100,11 +1101,15 @@ function ChannelFilterDialog({
   const [filters, setFilters] = useState<EditableFilter[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [jsonText, setJsonText] = useState("")
+  const [viewMode, setViewMode] = useState<"visual" | "json">("visual")
 
   const resetState = useCallback(() => {
     setFilters([])
     setIsLoading(false)
     setIsSaving(false)
+    setJsonText("")
+    setViewMode("visual")
   }, [])
 
   const loadFilters = useCallback(async () => {
@@ -1113,6 +1118,11 @@ function ChannelFilterDialog({
     try {
       const loadedFilters = await fetchChannelFilters(channel.id)
       setFilters(loadedFilters)
+      try {
+        setJsonText(JSON.stringify(loadedFilters, null, 2))
+      } catch {
+        setJsonText("")
+      }
     } catch (error) {
       toast.error(
         t("filters.messages.loadFailed", { error: getErrorMessage(error) }),
@@ -1175,8 +1185,8 @@ function ChannelFilterDialog({
     setFilters((prev) => prev.filter((filter) => filter.id !== filterId))
   }
 
-  const validateFilters = () => {
-    for (const filter of filters) {
+  const validateFilters = (rules: EditableFilter[]) => {
+    for (const filter of rules) {
       if (!filter.name.trim()) {
         return t("filters.messages.validationName")
       }
@@ -1196,21 +1206,105 @@ function ChannelFilterDialog({
     return null
   }
 
+  const parseJsonFilters = (rawJson: string): EditableFilter[] => {
+    const trimmed = rawJson.trim()
+    if (!trimmed) {
+      return []
+    }
+
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(trimmed)
+    } catch (error) {
+      throw new Error(getErrorMessage(error))
+    }
+
+    if (!Array.isArray(parsed)) {
+      throw new Error("JSON must be an array of filter rules")
+    }
+
+    const now = Date.now()
+
+    return parsed.map((item, index) => {
+      if (!item || typeof item !== "object") {
+        throw new Error(`Filter at index ${index} is not an object`)
+      }
+
+      const anyItem = item as any
+      const name = typeof anyItem.name === "string" ? anyItem.name.trim() : ""
+      const pattern =
+        typeof anyItem.pattern === "string" ? anyItem.pattern.trim() : ""
+
+      if (!name) {
+        throw new Error(`Filter at index ${index} is missing a name`)
+      }
+
+      if (!pattern) {
+        throw new Error(`Filter at index ${index} is missing a pattern`)
+      }
+
+      return {
+        id:
+          typeof anyItem.id === "string" && anyItem.id.trim()
+            ? anyItem.id.trim()
+            : nanoid(),
+        name,
+        description:
+          typeof anyItem.description === "string"
+            ? anyItem.description
+            : anyItem.description ?? "",
+        pattern,
+        isRegex: Boolean(anyItem.isRegex),
+        action: anyItem.action === "exclude" ? "exclude" : "include",
+        enabled: anyItem.enabled !== false,
+        createdAt:
+          typeof anyItem.createdAt === "number" && anyItem.createdAt > 0
+            ? anyItem.createdAt
+            : now,
+        updatedAt:
+          typeof anyItem.updatedAt === "number" && anyItem.updatedAt > 0
+            ? anyItem.updatedAt
+            : now,
+      }
+    })
+  }
+
   const handleSave = async () => {
-    const validationError = validateFilters()
+    let rulesToSave: EditableFilter[]
+
+    if (viewMode === "json") {
+      try {
+        rulesToSave = parseJsonFilters(jsonText)
+      } catch (error) {
+        toast.error(
+          t("filters.messages.jsonInvalid", { error: getErrorMessage(error) }),
+        )
+        return
+      }
+    } else {
+      rulesToSave = filters
+    }
+
+    const validationError = validateFilters(rulesToSave)
     if (validationError) {
       toast.error(validationError)
       return
     }
     setIsSaving(true)
     try {
-      const payload = filters.map((filter) => ({
+      const payload = rulesToSave.map((filter) => ({
         ...filter,
         name: filter.name.trim(),
         description: filter.description?.trim() || undefined,
         pattern: filter.pattern.trim(),
       }))
       await saveChannelFilters(channel.id, payload)
+      setFilters(rulesToSave)
+      try {
+        setJsonText(JSON.stringify(rulesToSave, null, 2))
+      } catch {
+        // ignore serialization errors
+      }
       toast.success(t("filters.messages.saved"))
       onClose()
     } catch (error) {
@@ -1220,162 +1314,6 @@ function ChannelFilterDialog({
     } finally {
       setIsSaving(false)
     }
-  }
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="text-muted-foreground flex min-h-[160px] items-center justify-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {t("filters.loading")}
-        </div>
-      )
-    }
-
-    if (!filters.length) {
-      return (
-        <div className="text-center">
-          <div className="bg-muted mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-            <Settings2 className="text-muted-foreground h-5 w-5" />
-          </div>
-          <p className="text-base font-semibold">{t("filters.empty.title")}</p>
-          <p className="text-muted-foreground mb-6 text-sm">
-            {t("filters.empty.description")}
-          </p>
-          <Button onClick={handleAddFilter}>{t("filters.addRule")}</Button>
-        </div>
-      )
-    }
-
-    return (
-      <div className="space-y-4">
-        {filters.map((filter) => (
-          <div
-            key={filter.id}
-            className="border-border space-y-5 rounded-lg border p-5"
-          >
-            <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] md:items-end">
-              <div className="space-y-2">
-                <Label>{t("filters.labels.name")}</Label>
-                <Input
-                  value={filter.name}
-                  onChange={(event) =>
-                    handleFieldChange(filter.id, "name", event.target.value)
-                  }
-                  placeholder={t("filters.placeholders.name") ?? ""}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("filters.labels.enabled")}</Label>
-                <div className="border-input flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-                  <span className="text-muted-foreground">
-                    {filter.enabled
-                      ? t("common:status.enabled", "Enabled")
-                      : t("common:status.disabled", "Disabled")}
-                  </span>
-                  <Switch
-                    id={`filter-enabled-${filter.id}`}
-                    checked={filter.enabled}
-                    onChange={(value: boolean) =>
-                      handleFieldChange(filter.id, "enabled", value)
-                    }
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => handleRemoveFilter(filter.id)}
-                  aria-label={t("filters.labels.delete") ?? "Delete"}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.45fr)]">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <Label>{t("filters.labels.pattern")}</Label>
-                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                    <span>{t("filters.labels.regex")}</span>
-                    <Switch
-                      size={"sm"}
-                      id={`filter-regex-${filter.id}`}
-                      checked={filter.isRegex}
-                      onChange={(value: boolean) =>
-                        handleFieldChange(filter.id, "isRegex", value)
-                      }
-                    />
-                  </div>
-                </div>
-                <Input
-                  value={filter.pattern}
-                  onChange={(event) =>
-                    handleFieldChange(filter.id, "pattern", event.target.value)
-                  }
-                  placeholder={t("filters.placeholders.pattern") ?? ""}
-                />
-                <p className="text-muted-foreground text-xs">
-                  {filter.isRegex
-                    ? t("filters.hints.regex")
-                    : t("filters.hints.substring")}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("filters.labels.action")}</Label>
-                <Select
-                  value={filter.action}
-                  onValueChange={(value: "include" | "exclude") =>
-                    handleFieldChange(filter.id, "action", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="include">
-                      {t("filters.actionOptions.include")}
-                    </SelectItem>
-                    <SelectItem value="exclude">
-                      {t("filters.actionOptions.exclude")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("filters.labels.description")}</Label>
-              <Textarea
-                value={filter.description ?? ""}
-                onChange={(event) =>
-                  handleFieldChange(
-                    filter.id,
-                    "description",
-                    event.target.value,
-                  )
-                }
-                placeholder={t("filters.placeholders.description") ?? ""}
-                rows={3}
-              />
-            </div>
-          </div>
-        ))}
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleAddFilter}
-          leftIcon={<Plus className="h-4 w-4" />}
-        >
-          {t("filters.addRule")}
-        </Button>
-      </div>
-    )
   }
 
   return (
@@ -1408,7 +1346,39 @@ function ChannelFilterDialog({
         </div>
       }
     >
-      {renderContent()}
+      <ChannelFiltersEditor
+        filters={filters}
+        viewMode={viewMode}
+        jsonText={jsonText}
+        isLoading={isLoading}
+        onAddFilter={handleAddFilter}
+        onRemoveFilter={handleRemoveFilter}
+        onFieldChange={handleFieldChange}
+        onClickViewVisual={() => {
+          if (viewMode === "visual") return
+          try {
+            const parsed = jsonText.trim() ? parseJsonFilters(jsonText) : []
+            setFilters(parsed)
+            setViewMode("visual")
+          } catch (error) {
+            toast.error(
+              t("filters.messages.jsonInvalid", {
+                error: getErrorMessage(error),
+              }),
+            )
+          }
+        }}
+        onClickViewJson={() => {
+          if (viewMode === "json") return
+          try {
+            setJsonText(JSON.stringify(filters, null, 2))
+          } catch {
+            setJsonText("")
+          }
+          setViewMode("json")
+        }}
+        onChangeJsonText={setJsonText}
+      />
     </Modal>
   )
 }
