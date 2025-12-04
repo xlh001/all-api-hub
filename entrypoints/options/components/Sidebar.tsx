@@ -26,6 +26,12 @@ const DESKTOP_WIDTH = 256
 const COLLAPSED_WIDTH = 64
 const MOBILE_WIDTH = 256
 
+const SEPARATOR_BEFORE_IDS = new Set([
+  "models",
+  "newApiChannels",
+  "importExport",
+])
+
 function Sidebar({
   activeMenuItem,
   onMenuItemClick,
@@ -159,8 +165,14 @@ function Sidebar({
                   return null
                 }
 
+                const shouldShowSeparatorBefore =
+                  SEPARATOR_BEFORE_IDS.has(item.id) && !shouldShowCollapsedState
+
                 return (
                   <li key={item.id}>
+                    {shouldShowSeparatorBefore && (
+                      <Separator className="mx-3 my-1" />
+                    )}
                     <button
                       onClick={() => onMenuItemClick(item.id)}
                       title={shouldShowCollapsedState ? label : undefined}
