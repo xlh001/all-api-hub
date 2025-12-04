@@ -55,7 +55,7 @@
 - 🔄 **New API 类系统管理**
     - 支持手动触发模型同步、按模型白名单筛选同步内容，持续与上游保持一致
     - 提供 [New API 渠道管理](docs/docs/new-api-channel-management.md) Beta 界面，直接在插件内维护渠道与重定向
-- 🚀 **快速导出集成** - 一键导出配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch) 和 [New API](https://github.com/QuantumNous/new-api)，详见 [快速导出站点配置](docs/docs/quick-export.md)
+- 🚀 **快速导出集成** - 一键导出配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch)、[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) 和 [New API](https://github.com/QuantumNous/new-api)，详见 [快速导出站点配置](docs/docs/quick-export.md)
 - 🛡️ **无惧 Cloudflare 防护** - 遇到站点启用五秒盾时自动弹窗过盾，详见 [Cloudflare 过盾助手](docs/docs/cloudflare-helper.md)
 - ☁️ **数据备份恢复** - 支持 JSON、[WebDAV 备份与自动同步](docs/docs/webdav-sync.md) 以及 [数据导入导出](docs/docs/data-management.md)
 - 🌐 **全平台兼容** - 支持 Chrome、Firefox 浏览器，可在 Kiwi Browser 等移动端使用，支持深色模式自动切换

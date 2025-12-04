@@ -55,7 +55,7 @@ This extension automatically detects and manages accounts from sites based on th
 - 🔄 **New API System Management**
     - Manual triggers, per-channel filtering through model whitelists, and continuous sync with upstream suppliers.
     - Automatic model redirect generation plus the [New API Channel Management](docs/docs/en/new-api-channel-management.md) beta UI for in-extension channel maintenance.
-- 🚀 **Quick Export Integration** - One-click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), and [New API](https://github.com/QuantumNous/new-api), see [Quick Export Site Configuration](docs/docs/en/quick-export.md) for details.
+- 🚀 **Quick Export Integration** - One-click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) and [New API](https://github.com/QuantumNous/new-api), see [Quick Export Site Configuration](docs/docs/en/quick-export.md) for details.
 - 🛡️ **Fearless Cloudflare Protection** - Automatically handles Cloudflare's 5-second challenge with a pop-up when a site enables it, see [Cloudflare Bypass Assistant](docs/docs/en/cloudflare-helper.md) for details.
 - ☁️ **Data Backup and Recovery** - Supports JSON, [WebDAV backup and automatic synchronization](docs/docs/en/webdav-sync.md), as well as [data import/export](docs/docs/en/data-management.md).
 - 🌐 **Cross-Platform Compatible** - Support Chrome, Firefox browsers, works on mobile devices via Kiwi Browser, with automatic dark mode switching
