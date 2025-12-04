@@ -164,7 +164,7 @@
     "permissionListTitle": "What these permissions do",
     "permissionListDescription": "These permissions are required for firewall-bypass flows so data refresh jobs keep working on protected sites.",
     "toasts": {
-      "success": "All recommended permissions granted.",
+      "success": "All recommended permissions granted",
       "error": "Permission request was dismissed"
     }
   },

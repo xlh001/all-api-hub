@@ -66,7 +66,7 @@
     },
     "ccswitch": {
       "title": "Export to CC Switch",
-      "description": "Send this provider configuration directly to CC Switch via deep link.",
+      "description": "Send this provider configuration directly to CC Switch via deep link",
       "fields": {
         "name": "Provider name",
         "homepage": "Homepage URL",

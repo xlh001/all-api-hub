@@ -1,10 +1,10 @@
 {
-  "description": "Assist with redeeming 32-character codes on supported check-in and redeem pages.",
+  "description": "Assist with redeeming 32-character codes on supported check-in and redeem pages",
   "settings": {
     "title": "Redemption Assist",
     "enable": "Enable redemption assist",
-    "enableDesc": "Automatically detect redemption codes on supported pages and show a redeem prompt.",
-    "description": "Configure how the extension detects and assists with redeeming codes on supported pages."
+    "enableDesc": "Automatically detect redemption codes on supported pages and show a redeem prompt",
+    "description": "Configure how the extension detects and assists with redeeming codes on supported pages"
   },
   "messages": {
     "redeemSuccess": "Redeemed successfully. Credited amount: {{amount}}",
@@ -12,14 +12,14 @@
     "redeemLoading": "Trying to redeem…",
     "promptConfirm": "Detected a possible redemption code {{code}} on this page. Try auto redeem for this site?",
     "promptTitle": "Redemption Assist",
-    "promptSource": "This prompt is provided by the All API Hub extension.",
+    "promptSource": "This prompt is provided by the All API Hub extension",
     "promptSettingsLink": "Open Redemption Assist settings",
     "noAccountForUrl": "No matching account found for this site. Please add the site as an account in All API Hub, then try again.",
     "success": {
-      "settingsSaved": "Redemption assist settings have been saved."
+      "settingsSaved": "Redemption assist settings have been saved"
     },
     "error": {
-      "saveFailed": "Failed to save redemption assist settings."
+      "saveFailed": "Failed to save redemption assist settings"
     }
   },
   "actions": {
