@@ -3,7 +3,7 @@ home: true
 title: ホーム
 heroImage: https://github.com/qixing-jk/all-api-hub/blob/main/assets/icon.png?raw=true
 heroText: All API Hub - AIアグリゲーション中継ステーションマネージャー
-tagline: オープンソースのブラウザプラグイン。サードパーティのAIアグリゲーション中継ステーションと自己構築のNew APIを一元管理：アカウントの自動認識、残高確認、モデル同期、キー管理、クロスプラットフォームおよびクラウドバックアップをサポート。
+tagline: "オープンソースのブラウザプラグイン。サードパーティのAIアグリゲーション中継ステーションと自己構築のNew APIを一元管理：アカウントの自動認識、残高確認、モデル同期、キー管理、クロスプラットフォームおよびクラウドバックアップをサポート"
 actions:
   - text: 使用開始
     link: /get-started.html # 実際のドキュメントパス（例：/guide/）に変更することをお勧めします
