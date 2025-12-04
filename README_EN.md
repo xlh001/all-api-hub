@@ -53,8 +53,8 @@ This extension automatically detects and manages accounts from sites based on th
 - 🔑 **Token & Key Management** - Convenient API Key viewing and management, support quick copy and batch operations
 - 🤖 **View Model Information** - View the list of models supported by the site and pricing information.
 - 🔄 **New API System Management**
-    - Manual triggers, per-channel filtering through model whitelists, and continuous sync with upstream suppliers.
-    - Automatic model redirect generation plus the [New API Channel Management](docs/docs/en/new-api-channel-management.md) beta UI for in-extension channel maintenance.
+    - Supports manually triggering model synchronization, regular expression filtering of model lists, and viewing synchronization logs. See [New API Model Sync](docs/docs/en/new-api-model-sync.md) for details.
+    - Provides a [New API Channel Management](docs/docs/new-api-channel-management.md) interface to manage channels and related settings directly within the plugin.
 - 🚀 **Quick Export Integration** - One-click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) and [New API](https://github.com/QuantumNous/new-api), see [Quick Export Site Configuration](docs/docs/en/quick-export.md) for details.
 - 🛡️ **Fearless Cloudflare Protection** - Automatically handles Cloudflare's 5-second challenge with a pop-up when a site enables it, see [Cloudflare Bypass Assistant](docs/docs/en/cloudflare-helper.md) for details.
 - ☁️ **Data Backup and Recovery** - Supports JSON, [WebDAV backup and automatic synchronization](docs/docs/en/webdav-sync.md), as well as [data import/export](docs/docs/en/data-management.md).
