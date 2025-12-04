@@ -55,7 +55,11 @@ export default function About() {
 
   return (
     <div className="p-6">
-      <PageHeader icon={Info} title={t("title")} description={t("intro")} />
+      <PageHeader
+        icon={Info}
+        title={t("title")}
+        description={t("ui:app.description")}
+      />
 
       <div className="space-y-6">
         {/* 插件信息 */}

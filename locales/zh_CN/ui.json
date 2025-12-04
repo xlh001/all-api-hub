@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "All API Hub",
-    "description": "统一管理第三方 New API 中转站与自建 New API：账号余额、渠道管理与模型同步一站式搞定。"
+    "description": "统一管理第三方中转站与自建 New API 的账号与余额"
   },
   "pageTitle": {
     "options": "中转站管理器 - All API Hub | 设置",
