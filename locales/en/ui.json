@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "All API Hub",
-    "description": "Manage all AI redistribution stations with one click"
+    "description": "Manage third-party New API-compatible relays and your own New API: accounts, balances, channels, and model sync in one place."
   },
   "pageTitle": {
     "options": "All API Hub | Settings",

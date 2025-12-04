@@ -1,6 +1,6 @@
 {
   "title": "About",
-  "intro": "AI redistribution station account management plugin, helping users easily manage accounts of multiple AI API redistribution stations",
+  "intro": "All API Hub is a browser extension for managing both third-party New API-compatible relay sites and your own New API instance. It centralizes account and balance monitoring, smart sorting, and site detection, and provides automation features such as auto-refresh and temp-window firewall bypass. For self-hosted New API, it also offers channel management and model list synchronization, and integrates with CLIProxyAPI, WebDAV backup, and import/export tools.",
   "version": "Version:",
   "projectLinks": "Project Links",
   "githubRepo": "GitHub Repository",

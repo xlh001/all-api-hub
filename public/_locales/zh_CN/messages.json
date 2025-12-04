@@ -3,7 +3,7 @@
     "message": "All API Hub"
   },
   "manifest_description": {
-    "message": "一键管理所有AI中转站"
+    "message": "统一管理第三方 New API 中转站与自建 New API：账号余额、渠道管理与模型同步一站式搞定。"
   },
   "manifest_commands_sidebar_action": {
     "message": "在侧边栏中打开 All API Hub"

@@ -3,7 +3,7 @@
     "message": "All API Hub"
   },
   "manifest_description": {
-    "message": "Manage all AI redistribution stations with one click"
+    "message": "Manage third-party New API-compatible relays and your own New API: accounts, balances, channels, and model sync in one place."
   },
   "manifest_commands_sidebar_action": {
     "message": "Open All API Hub in sidebar"
