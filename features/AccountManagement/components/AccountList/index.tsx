@@ -23,6 +23,7 @@ import {
   type SearchResultWithHighlight,
 } from "~/features/AccountManagement/hooks/useAccountSearch"
 import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
+import { useIsDesktop, useIsSmallScreen } from "~/hooks/useMediaQuery"
 import type { DisplaySiteData, SortField } from "~/types"
 import {
   calculateTotalBalanceForSites,
@@ -40,6 +41,8 @@ interface AccountListProps {
 
 export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const { t } = useTranslation(["account", "common"])
+  const isSmallScreen = useIsSmallScreen()
+  const isDesktop = useIsDesktop()
   const {
     sortedData,
     displayData,
@@ -125,6 +128,8 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const hasAccounts = displayData.length > 0
   const showFilteredSummary = inSearchMode || selectedTags.length > 0
 
+  const maxTagFilterLines = isSmallScreen ? 2 : isDesktop ? 3 : 2
+
   if (!hasAccounts) {
     return (
       <EmptyState
@@ -178,7 +183,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
               options={tagFilterOptions}
               value={selectedTags}
               onChange={setSelectedTags}
-              maxVisible={6}
+              maxVisibleLines={maxTagFilterLines}
               allLabel={t("account:filter.tagsAllLabel")}
               allCount={displayData.length}
             />

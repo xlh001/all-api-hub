@@ -144,15 +144,18 @@ export function TagFilter(props: TagFilterProps) {
         '[data-tag-filter-chip="true"]',
       )
 
-      if (chipNodes.length === 0) {
+      const totalChips = chipNodes.length
+
+      if (totalChips === 0) {
         setLineVisibleCount(null)
         return
       }
 
       const lineTops: number[] = []
-      let visibleCountByLines = chipNodes.length
+      let visibleCountByLines = totalChips
+      let hasOverflow = false
 
-      for (let i = 0; i < chipNodes.length; i += 1) {
+      for (let i = 0; i < totalChips; i += 1) {
         const top = chipNodes[i].offsetTop
         const existingIndex = lineTops.findIndex(
           (value) => Math.abs(value - top) < 1,
@@ -163,15 +166,19 @@ export function TagFilter(props: TagFilterProps) {
         const lineIndex = lineTops.length
         if (lineIndex > maxLines) {
           visibleCountByLines = i
+          hasOverflow = true
           break
         }
       }
 
-      if (visibleCountByLines === chipNodes.length) {
-        setLineVisibleCount(null)
-      } else {
-        setLineVisibleCount(visibleCountByLines)
+      if (!hasOverflow) {
+        if (totalChips === options.length) {
+          setLineVisibleCount(null)
+        }
+        return
       }
+
+      setLineVisibleCount(visibleCountByLines)
     }
 
     measure()
