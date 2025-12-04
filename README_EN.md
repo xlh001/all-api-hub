@@ -9,7 +9,7 @@
 
 # All API Hub
 
-**Open-source browser extension that auto-detects and manages all AI aggregation and relay site accounts. View balances, sync models, manage keys, with cross-platform and cloud backup support**
+**Open-source browser extension for both third-party New API-compatible relays and your own New API instance: auto-detect accounts, view balances, sync models, manage keys, with cross-platform and cloud backup support**
 
 <p align="center">
 <a href="https://github.com/qixing-jk/all-api-hub/releases">
@@ -47,19 +47,41 @@ This extension automatically detects and manages accounts from sites based on th
 
 ## ✨ Features
 
-- 🔍 **Smart Site Detection** - Automatically identify AI aggregation and relay sites, create access tokens, intelligently parse pricing ratios and configurations, with duplicate detection
-- 🏷️ **Site Information Management** - Multiple methods to retrieve real site names, check-in status detection and automatic check-in, manually add any AI aggregation and relay site
-- 👥 **Multi-Account Management** - Support multiple accounts per site, account grouping and quick switching, balance and usage logs at a glance
-- 🔑 **Token & Key Management** - Convenient API Key viewing and management, support quick copy and batch operations
-- 🤖 **View Model Information** - View the list of models supported by the site and pricing information.
-- 🔄 **New API System Management**
-    - Supports manually triggering model synchronization, regular expression filtering of model lists, and viewing synchronization logs. See [New API Model Sync](docs/docs/en/new-api-model-sync.md) for details.
-    - Provides a [New API Channel Management](docs/docs/new-api-channel-management.md) interface to manage channels and related settings directly within the plugin.
-- 🚀 **Quick Export Integration** - One-click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) and [New API](https://github.com/QuantumNous/new-api), see [Quick Export Site Configuration](docs/docs/en/quick-export.md) for details.
-- 🛡️ **Fearless Cloudflare Protection** - Automatically handles Cloudflare's 5-second challenge with a pop-up when a site enables it, see [Cloudflare Bypass Assistant](docs/docs/en/cloudflare-helper.md) for details.
-- ☁️ **Data Backup and Recovery** - Supports JSON, [WebDAV backup and automatic synchronization](docs/docs/en/webdav-sync.md), as well as [data import/export](docs/docs/en/data-management.md).
-- 🌐 **Cross-Platform Compatible** - Support Chrome, Firefox browsers, works on mobile devices via Kiwi Browser, with automatic dark mode switching
-- 🔒 **Privacy & Security** - Fully offline operation, all data stored locally, protecting your privacy
+- 🔍 **Smart Site Detection**  
+  Automatically detects AI aggregation / relay sites based on common New API‑series projects, creates access tokens, parses pricing and configuration, and prevents duplicates.
+
+- 🏷️ **Rich Site Information Management**  
+  Retrieves real site names in multiple ways, tracks check‑in capability and health, and lets you add any compatible relay site manually.
+
+- 👥 **Multi‑Account Dashboard**  
+  Manage multiple accounts per site with grouping, pinning, and smart sorting. Balances, usage stats, and health state are all visible at a glance.
+
+- 🔑 **Token & Key Management**  
+  Conveniently inspect, copy, and manage API keys, with support for bulk operations and one‑click export to downstream tools.
+
+- 🤖 **Model Information & Pricing**  
+  View the models supported by each site together with pricing and key configuration details.
+
+- 🔄 **New API Management (Own Instance)**  
+  For your own New API instance, provide dedicated tools to synchronize model lists, filter via regex, review sync logs, and manage channels directly from the extension UI. See [New API Model Sync](docs/docs/en/new-api-model-sync.md) and [New API Channel Management](docs/docs/en/new-api-channel-management.md) for details.
+
+- 📆 **Automatic check‑in so you don’t forget**  
+  Detects which relay sites support daily check‑in and keeps track of who still needs it. Once enabled, you can handle check‑ins from a single place so you don’t lose free quota just because you forgot to visit each dashboard.
+
+- 🚀 **Quick Export Integration**  
+  One‑click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) and [New API](https://github.com/QuantumNous/new-api). See [Quick Export Site Configuration](docs/docs/en/quick-export.md) for details.
+
+- 🛡️ **Cloudflare Bypass Assistant**  
+  Uses a temporary window and optional cookie / webRequest permissions to reliably pass Cloudflare‑style 5‑second shields so data refresh and detection continue to work. See [Cloudflare Bypass Assistant](docs/docs/en/cloudflare-helper.md) for details.
+
+- ☁️ **Data Backup and Recovery**  
+  Export/import JSON, and configure [WebDAV backup and automatic synchronization](docs/docs/en/webdav-sync.md) and [data import/export](docs/docs/en/data-management.md) to keep configurations safe and synchronized across devices.
+
+- 🌐 **Cross‑Platform Compatible**  
+  Works on Chrome, Edge, Firefox and Chromium‑based mobile browsers like Kiwi, with automatic dark‑mode support.
+
+- 🔒 **Privacy‑First Local Storage**  
+  Runs fully offline by default; all data is stored locally in your browser. WebDAV and external APIs are only used when explicitly configured.
 
 > [!NOTE]
 > Originally based on [One API Hub](https://github.com/fxaxg/one-api-hub), now significantly refactored and expanded. Data format remains compatible, supporting direct import

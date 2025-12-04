@@ -9,7 +9,7 @@
 
 # 中转站管理器 - All API Hub
 
-**开源浏览器插件，自动识别并管理所有 AI 聚合中转站账号，查看余额、同步模型、管理密钥，支持跨平台和云端备份**
+**开源浏览器插件，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、查看余额、同步模型、管理密钥，并支持跨平台与云端备份。**
 
 <p align="center">
 <a href="https://github.com/qixing-jk/all-api-hub/releases">
@@ -47,19 +47,41 @@
 
 ## ✨ 功能特性
 
-- 🔍 **智能站点识别** - 自动识别 AI 聚合中转站点并创建访问 token，智能解析充值比例和站点配置，支持重复检测防止误添加
-- 🏷️ **站点信息管理** - 多方式获取真实站点名称，支持签到状态检测和自动签到，可手动添加任意 AI 聚合中转站点
-- 👥 **多账号管理** - 每个站点支持多个账号，账号分组与快速切换，余额和使用日志一目了然
-- 🔑 **令牌与密钥** - 便捷的 API Key 查看与管理，支持快速复制和批量操作
-- 🤖 **模型信息查看** - 查看站点支持的模型列表和价格信息
-- 🔄 **New API 类系统管理**
-    - 支持手动触发模型同步、正则筛选模型列表，并查看同步日志，详见 [New API 模型同步](docs/docs/new-api-model-sync.md)
-    - 提供 [New API 渠道管理](docs/docs/new-api-channel-management.md) 界面，直接在插件内管理渠道和相关设置
-- 🚀 **快速导出集成** - 一键导出配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch)、[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) 和 [New API](https://github.com/QuantumNous/new-api)，详见 [快速导出站点配置](docs/docs/quick-export.md)
-- 🛡️ **无惧 Cloudflare 防护** - 遇到站点启用五秒盾时自动弹窗过盾，详见 [Cloudflare 过盾助手](docs/docs/cloudflare-helper.md)
-- ☁️ **数据备份恢复** - 支持 JSON、[WebDAV 备份与自动同步](docs/docs/webdav-sync.md) 以及 [数据导入导出](docs/docs/data-management.md)
-- 🌐 **全平台兼容** - 支持 Chrome、Firefox 浏览器，可在 Kiwi Browser 等移动端使用，支持深色模式自动切换
-- 🔒 **隐私与安全** - 完全离线运行，所有数据本地存储，保护您的隐私安全
+- 🔍 **智能站点识别**  
+  自动识别基于常见 New API 系列项目的 AI 聚合中转站点，创建访问 Token，智能解析充值比例与站点配置，并支持重复检测防止误添加。
+
+- 🏷️ **站点信息管理**  
+  多种方式获取真实站点名称，支持检测签到能力与站点健康状态，也可以手动添加任意兼容的中转站点。
+
+- 👥 **多账号总览面板**  
+  每个站点支持多个账号，提供账号分组、置顶和智能排序，一眼查看余额、使用情况与健康状态。
+
+- 🔑 **令牌与密钥管理**  
+  便捷查看、复制和管理 API Key，支持批量操作，并可一键导出到下游工具。
+
+- 🤖 **模型信息与价格**  
+  清晰展示各站点支持的模型列表和价格信息，以及相关配置细节。
+
+- 🔄 **自建 New API 管理**  
+  面向自建 New API 实例提供专门工具：支持模型列表同步、正则白名单过滤、同步日志查看，并在插件内直接管理渠道配置，详见 [New API 模型同步](docs/docs/new-api-model-sync.md) 与 [New API 渠道管理](docs/docs/new-api-channel-management.md)。
+
+- 📆 **自动签到，不再白白浪费额度**  
+  自动识别哪些站点支持每日签到，标记当天尚未签到的账号，让你在一个面板里按顺序完成多站点签到，减少因为“忘记点一下”而损失的免费额度。
+
+- 🚀 **快速导出集成**  
+  一键导出站点与渠道配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch)、[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) 和 [New API](https://github.com/QuantumNous/new-api)，详见 [快速导出站点配置](docs/docs/quick-export.md)。
+
+- 🛡️ **Cloudflare 过盾助手**  
+  通过临时窗口与可选的 Cookie / WebRequest 权限自动处理 Cloudflare 五秒盾等防护，确保站点可以稳定识别和刷新数据，详见 [Cloudflare 过盾助手](docs/docs/cloudflare-helper.md)。
+
+- ☁️ **数据备份与恢复**  
+  支持 JSON 导入导出，以及 [WebDAV 备份与自动同步](docs/docs/webdav-sync.md) 和 [数据导入导出](docs/docs/data-management.md)，在多设备间同步配置并保障数据安全。
+
+- 🌐 **全平台支持**  
+  兼容 Chrome、Edge、Firefox 等浏览器，并支持 Kiwi Browser 等移动端浏览器，适配深色模式。
+
+- 🔒 **隐私优先的本地存储**  
+  默认完全离线运行，所有数据存储在本地浏览器中；WebDAV 与外部 API 仅在你显式配置后才会使用。
 
 > [!NOTE]
 > 最初基于 [One API Hub](https://github.com/fxaxg/one-api-hub) 开发，现已大幅重构扩展。数据格式保持兼容，支持直接导入

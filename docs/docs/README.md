@@ -3,7 +3,7 @@ home: true
 title: 首页
 heroImage: https://github.com/qixing-jk/all-api-hub/blob/main/assets/icon.png?raw=true
 heroText: All API Hub - AI 聚合中转站管理器
-tagline: 开源浏览器插件，自动识别并管理所有 AI 聚合中转站账号，查看余额、同步模型、管理密钥，支持跨平台和云端备份
+tagline: 开源浏览器插件，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、查看余额、同步模型、管理密钥，并支持跨平台与云端备份。
 actions:
   - text: 开始使用
     link: /get-started.html # 建议修改为您的实际文档路径，例如 /guide/
@@ -31,11 +31,11 @@ features:
   - title: 模型信息查看
     details: 清晰展示站点支持的模型列表和价格信息。
   - title: 签到状态监控
-    details: 自动检测站点是否支持签到功能，并显示当前签到状态。
+    details: 自动检测哪些站点支持签到，并标记当天尚未签到的账号，让你在一个面板里按顺序完成多站点签到，减少因为忘记签到而浪费的免费额度。
   - title: 快速导出集成
     details: 一键导出配置到 CherryStudio 和 New API，简化 API 使用流程。
   - title: New API 类系统管理
-    details: 支持手动执行、模型白名单过滤和自动重定向生成，提供专门的渠道管理界面
+    details: 支持对自建 New API 实例进行渠道管理和模型列表同步，并提供专门的渠道管理界面。
   - title: 数据备份恢复
     details: 支持 JSON 格式导入导出和 WebDav 云端备份，实现跨设备数据同步。
   - title: 全平台支持
