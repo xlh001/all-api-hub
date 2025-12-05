@@ -1,13 +1,6 @@
 import { useTranslation } from "react-i18next"
 
-import {
-  FormField,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui"
+import { FormField, SearchableSelect } from "~/components/ui"
 
 export interface Account {
   id: string
@@ -21,8 +14,6 @@ interface AccountSelectionProps {
   availableAccounts: Account[]
   error?: string
 }
-
-const UNSELECTED_VALUE = "__unselected__"
 
 export function AccountSelection({
   accountId,
@@ -40,27 +31,19 @@ export function AccountSelection({
       error={error}
       description={isEditMode ? t("dialog.editModeNoChange") : undefined}
     >
-      <Select
-        value={accountId ? accountId : UNSELECTED_VALUE}
-        onValueChange={(value) =>
-          handleSelectChange(value === UNSELECTED_VALUE ? "" : value)
-        }
+      <SearchableSelect
+        options={[
+          { value: "", label: t("pleaseSelectAccount") },
+          ...availableAccounts.map((account) => ({
+            value: account.id,
+            label: account.name,
+          })),
+        ]}
+        value={accountId || ""}
+        onChange={handleSelectChange}
+        placeholder={t("pleaseSelectAccount")}
         disabled={isEditMode}
-      >
-        <SelectTrigger id="accountSelect" className="w-full">
-          <SelectValue placeholder={t("pleaseSelectAccount")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={UNSELECTED_VALUE}>
-            {t("pleaseSelectAccount")}
-          </SelectItem>
-          {availableAccounts.map((account) => (
-            <SelectItem key={account.id} value={account.id}>
-              {account.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      />
     </FormField>
   )
 }

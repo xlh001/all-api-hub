@@ -1,15 +1,7 @@
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import {
-  Heading3,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui"
+import { Heading3, Input, SearchableSelect } from "~/components/ui"
 import type { DisplaySiteData } from "~/types"
 
 interface ControlsProps {
@@ -37,21 +29,15 @@ export function Controls({
     <div className="mb-6 space-y-4">
       <div className="mb-2">
         <Heading3 className="mb-1">{t("selectAccount")}</Heading3>
-        <Select
+        <SearchableSelect
+          options={displayData.map((account) => ({
+            value: account.id,
+            label: account.name,
+          }))}
           value={selectedAccount ?? ""}
-          onValueChange={setSelectedAccount}
-        >
-          <SelectTrigger className="w-full sm:w-80">
-            <SelectValue placeholder={t("pleaseSelectAccount")} />
-          </SelectTrigger>
-          <SelectContent>
-            {displayData.map((account) => (
-              <SelectItem key={account.id} value={account.id}>
-                {account.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={setSelectedAccount}
+          placeholder={t("pleaseSelectAccount")}
+        />
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
