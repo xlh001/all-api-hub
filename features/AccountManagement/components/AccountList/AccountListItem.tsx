@@ -4,7 +4,6 @@ import { CardItem } from "~/components/ui"
 import { useDevice } from "~/contexts/DeviceContext"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import { useAccountListItem } from "~/features/AccountManagement/components/AccountList/hooks/useAccountListItem"
-import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import type { SearchResultWithHighlight } from "~/features/AccountManagement/hooks/useAccountSearch"
 import type { DisplaySiteData } from "~/types"
 
@@ -20,7 +19,6 @@ interface AccountListItemProps {
 
 const AccountListItem: React.FC<AccountListItemProps> = React.memo(
   ({ site, highlights, onCopyKey, onDeleteWithDialog }) => {
-    const { detectedAccount } = useAccountDataContext()
     const { handleMouseEnter, handleMouseLeave } = useAccountListItem()
     const { isTouchDevice } = useDevice()
 
@@ -29,16 +27,10 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
       ? ""
       : "opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto"
 
-    const isDetected = site.id === detectedAccount?.id
-
     return (
       <CardItem
         padding="none"
-        className={`group touch-manipulation transition-all ${
-          isDetected
-            ? "border-l-4 border-l-blue-500 bg-blue-50 dark:border-l-blue-400 dark:bg-blue-900/50"
-            : ""
-        }`}
+        className="group touch-manipulation transition-all"
         onMouseEnter={() => handleMouseEnter(site.id)}
         onMouseLeave={handleMouseLeave}
       >
