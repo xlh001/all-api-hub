@@ -45,7 +45,11 @@ export default defineUserConfig({
               { text: 'WebDAV 同步', link: '/webdav-sync' },
               { text: '数据导入导出', link: '/data-management' },
               { text: 'New API 模型同步', link: '/new-api-model-sync' },
-              { text: 'New API 渠道管理', link: '/new-api-channel-management' }
+              { text: 'New API 渠道管理', link: '/new-api-channel-management' },
+              { text: 'CLIProxyAPI 集成', link: '/cliproxyapi-integration' },
+              { text: '模型重定向', link: '/model-redirect' },
+              { text: '排序优先级设置', link: '/sorting-priority' },
+              { text: '权限管理', link: '/permissions' }
             ]
           }
         ],
@@ -68,7 +72,11 @@ export default defineUserConfig({
               { text: 'WebDAV Sync', link: '/en/webdav-sync' },
               { text: 'Data Management', link: '/en/data-management' },
               { text: 'New API Model Sync', link: '/en/new-api-model-sync' },
-              { text: 'New API Channel Mgmt', link: '/en/new-api-channel-management' }
+              { text: 'New API Channel Mgmt', link: '/en/new-api-channel-management' },
+              { text: 'CLIProxyAPI Integration', link: '/en/cliproxyapi-integration' },
+              { text: 'Model Redirect', link: '/en/model-redirect' },
+              { text: 'Sorting Priority', link: '/en/sorting-priority' },
+              { text: 'Permissions', link: '/en/permissions' }
             ]
           }
         ],
@@ -91,7 +99,11 @@ export default defineUserConfig({
               { text: 'WebDAV 同期', link: '/ja/webdav-sync' },
               { text: 'データ管理', link: '/ja/data-management' },
               { text: 'New API モデル同期', link: '/ja/new-api-model-sync' },
-              { text: 'New API チャネル管理', link: '/ja/new-api-channel-management' }
+              { text: 'New API チャネル管理', link: '/ja/new-api-channel-management' },
+              { text: 'CLIProxyAPI 連携', link: '/ja/cliproxyapi-integration' },
+              { text: 'モデルリダイレクト', link: '/ja/model-redirect' },
+              { text: '並び順優先度設定', link: '/ja/sorting-priority' },
+              { text: '権限管理', link: '/ja/permissions' }
             ]
           }
         ],
