@@ -131,15 +131,17 @@ export default function ModelList({
         accounts={accounts}
       />
 
-      <StatusIndicator
-        selectedAccount={selectedAccount as string}
-        isLoading={isLoading}
-        dataFormatError={dataFormatError}
-        currentAccount={currentAccount}
-        loadPricingData={() => loadPricingData(selectedAccount as string)}
-      />
+      {selectedAccount && !hasModelData && (
+        <StatusIndicator
+          selectedAccount={selectedAccount as string}
+          isLoading={isLoading}
+          dataFormatError={dataFormatError}
+          currentAccount={currentAccount}
+          loadPricingData={() => loadPricingData(selectedAccount as string)}
+        />
+      )}
 
-      {selectedAccount && !isLoading && hasModelData && (
+      {selectedAccount && hasModelData && (
         <>
           {selectedAccount === "all" && accountSummaryItems.length > 0 && (
             <AccountSummaryBar

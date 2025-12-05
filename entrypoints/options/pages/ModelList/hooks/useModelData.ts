@@ -5,6 +5,10 @@ import { useTranslation } from "react-i18next"
 
 import { fetchModelPricing } from "~/services/apiService"
 import type { PricingResponse } from "~/services/apiService/common/type"
+import {
+  MODEL_PRICING_CACHE_TTL_MS,
+  modelPricingCache,
+} from "~/services/modelPricingCache"
 import type { DisplaySiteData } from "~/types"
 
 type SelectedAccountValue = string | "all"
@@ -71,12 +75,19 @@ function useSingleAccountModelData({
   const query = useQuery<PricingResponse, Error>({
     queryKey,
     enabled: !!currentAccount,
-    staleTime: 10 * 60 * 1000,
+    staleTime: MODEL_PRICING_CACHE_TTL_MS,
     refetchOnWindowFocus: false,
     retry: 1,
     queryFn: async () => {
       if (!currentAccount) {
         throw new Error("No account selected")
+      }
+
+      const accountId = currentAccount.id
+
+      const cached = await modelPricingCache.get(accountId)
+      if (cached && Array.isArray(cached.data)) {
+        return cached
       }
 
       const data = await fetchModelPricing(currentAccount)
@@ -86,6 +97,8 @@ function useSingleAccountModelData({
         ;(error as { code?: string }).code = "INVALID_FORMAT"
         throw error
       }
+
+      await modelPricingCache.set(accountId, data)
 
       return data
     },
@@ -110,6 +123,7 @@ function useSingleAccountModelData({
   const loadPricingData = useCallback(
     async (_accountId: string) => {
       if (!currentAccount) return
+      await modelPricingCache.invalidate(currentAccount.id)
       await query.refetch()
     },
     [currentAccount, query],
@@ -142,10 +156,15 @@ function useAllAccountsModelData(
     queries: safeDisplayData.map((account) => ({
       queryKey: ["model-pricing", account.id, account.baseUrl, account.userId],
       enabled: safeDisplayData.length > 0,
-      staleTime: 10 * 60 * 1000,
+      staleTime: MODEL_PRICING_CACHE_TTL_MS,
       refetchOnWindowFocus: false,
       retry: 1,
       queryFn: async () => {
+        const cached = await modelPricingCache.get(account.id)
+        if (cached && Array.isArray(cached.data)) {
+          return cached
+        }
+
         const data = await fetchModelPricing(account)
 
         if (!Array.isArray(data.data)) {
@@ -153,6 +172,8 @@ function useAllAccountsModelData(
           ;(error as { code?: string }).code = "INVALID_FORMAT"
           throw error
         }
+
+        await modelPricingCache.set(account.id, data)
 
         return data
       },
@@ -180,8 +201,16 @@ function useAllAccountsModelData(
   })
 
   const loadPricingData = useCallback(async () => {
-    await Promise.all(queries.map((query) => query.refetch()))
-  }, [queries])
+    await Promise.all(
+      safeDisplayData.map(async (account, index) => {
+        await modelPricingCache.invalidate(account.id)
+        const query = queries[index]
+        if (query) {
+          await query.refetch()
+        }
+      }),
+    )
+  }, [queries, safeDisplayData])
 
   const accountQueryStates: AccountQueryState[] = useMemo(
     () =>
