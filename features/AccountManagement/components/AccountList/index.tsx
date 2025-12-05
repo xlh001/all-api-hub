@@ -135,6 +135,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     handleReorder,
     availableTags,
     tagCounts,
+    isManualSortFeatureEnabled,
   } = useAccountDataContext()
   const { handleAddAccountClick } = useAddAccountHandler()
   const { handleDeleteAccount } = useAccountActionsContext()
@@ -215,7 +216,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
 
   const hasAccounts = displayData.length > 0
   const showFilteredSummary = inSearchMode || selectedTags.length > 0
-  const dragDisabled = inSearchMode
+  const dragDisabled = inSearchMode || !isManualSortFeatureEnabled
   const handleLabel = t("account:list.dragHandle")
 
   const sortedIds = useMemo(
@@ -360,7 +361,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
             icon={<InboxIcon className="h-12 w-12" />}
             title={t("account:search.noResults")}
           />
-        ) : (
+        ) : isManualSortFeatureEnabled ? (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -385,6 +386,22 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
               </CardList>
             </SortableContext>
           </DndContext>
+        ) : (
+          <CardList>
+            {displayedResults.map((item) => (
+              <div
+                key={item.account.id}
+                className="px-3 py-2.5 sm:px-4 sm:py-3"
+              >
+                <AccountListItem
+                  site={item.account}
+                  highlights={item.highlights}
+                  onDeleteWithDialog={handleDeleteWithDialog}
+                  onCopyKey={handleCopyKeyWithDialog}
+                />
+              </div>
+            ))}
+          </CardList>
         )}
       </CardContent>
 

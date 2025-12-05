@@ -45,7 +45,8 @@ export default function AccountActionButtons({
   const { t } = useTranslation("account")
   const { refreshingAccountId, handleRefreshAccount } =
     useAccountActionsContext()
-  const { isAccountPinned, togglePinAccount } = useAccountDataContext()
+  const { isAccountPinned, togglePinAccount, isPinFeatureEnabled } =
+    useAccountDataContext()
   const { openEditAccount } = useDialogStateContext()
   const [isCheckingTokens, setIsCheckingTokens] = useState(false)
 
@@ -239,11 +240,13 @@ export default function AccountActionButtons({
           <hr className="dark:border-dark-bg-tertiary my-1 border-gray-200" />
 
           {/* Pin/Unpin */}
-          <AccountActionMenuItem
-            onClick={handleTogglePin}
-            icon={PinToggleIcon}
-            label={pinLabel}
-          />
+          {isPinFeatureEnabled && (
+            <AccountActionMenuItem
+              onClick={handleTogglePin}
+              icon={PinToggleIcon}
+              label={pinLabel}
+            />
+          )}
 
           <AccountActionMenuItem
             onClick={handleRefreshLocal}

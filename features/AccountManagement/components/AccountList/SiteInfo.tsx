@@ -64,8 +64,12 @@ function renderHighlightedFragments(
 export default function SiteInfo({ site, highlights }: SiteInfoProps) {
   const { t } = useTranslation("account")
   const { t: tMessages } = useTranslation("messages")
-  const { detectedAccount, isAccountPinned, togglePinAccount } =
-    useAccountDataContext()
+  const {
+    detectedAccount,
+    isAccountPinned,
+    togglePinAccount,
+    isPinFeatureEnabled,
+  } = useAccountDataContext()
   const { handleRefreshAccount, refreshingAccountId, handleMarkAsCheckedIn } =
     useAccountActionsContext()
   const detectedAccountId = detectedAccount?.id
@@ -255,7 +259,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           />
         </Tooltip>
 
-        {isPinned && (
+        {isPinFeatureEnabled && isPinned && (
           <Tooltip content={pinTooltipLabel} position="right">
             <IconButton
               onClick={handlePinClick}

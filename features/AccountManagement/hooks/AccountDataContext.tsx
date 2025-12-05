@@ -23,6 +23,7 @@ import type {
   SortField,
   SortOrder,
 } from "~/types"
+import { SortingCriteriaType } from "~/types/sorting"
 import {
   getActiveTabs,
   getAllTabs,
@@ -62,6 +63,8 @@ interface AccountDataContextType {
   handleSort: (field: SortField) => void
   sortField: SortField
   sortOrder: SortOrder
+  isPinFeatureEnabled: boolean
+  isManualSortFeatureEnabled: boolean
 }
 
 // 2. 创建 Context
@@ -110,6 +113,24 @@ export const AccountDataProvider = ({
   )
   const [isDetecting, setIsDetecting] = useState(true)
   const [pinnedAccountIds, setPinnedAccountIds] = useState<string[]>([])
+
+  const isPinFeatureEnabled = useMemo(
+    () =>
+      sortingPriorityConfig.criteria.some(
+        (item) =>
+          item.id === SortingCriteriaType.PINNED && item.enabled === true,
+      ),
+    [sortingPriorityConfig],
+  )
+
+  const isManualSortFeatureEnabled = useMemo(
+    () =>
+      sortingPriorityConfig.criteria.some(
+        (item) =>
+          item.id === SortingCriteriaType.MANUAL_ORDER && item.enabled === true,
+      ),
+    [sortingPriorityConfig],
+  )
 
   const checkCurrentTab = useCallback(async () => {
     setIsDetecting(true)
@@ -501,6 +522,8 @@ export const AccountDataProvider = ({
       handleSort,
       sortField,
       sortOrder,
+      isPinFeatureEnabled,
+      isManualSortFeatureEnabled,
     }),
     [
       accounts,
@@ -528,6 +551,8 @@ export const AccountDataProvider = ({
       handleSort,
       sortField,
       sortOrder,
+      isPinFeatureEnabled,
+      isManualSortFeatureEnabled,
     ],
   )
 
