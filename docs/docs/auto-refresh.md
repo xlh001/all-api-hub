@@ -58,3 +58,4 @@
 - [Cloudflare 过盾助手](./cloudflare-helper.md)
 - [自动签到](./auto-checkin.md)
 - [WebDAV 备份与自动同步](./webdav-sync.md)
+- [权限管理（可选权限）](./permissions.md)

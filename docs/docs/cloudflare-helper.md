@@ -36,3 +36,4 @@
 - [Cloudflare 防护与临时窗口降级（快速上手）](./get-started.md#_5-8-cloudflare-防护与临时窗口降级)
 - [快速导出站点](./quick-export.md)
 - [New API 渠道管理](./new-api-channel-management.md)
+- [权限管理（可选权限）](./permissions.md)

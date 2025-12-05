@@ -149,6 +149,10 @@
 - [数据导入导出](./data-management.md)
 - [New API 模型列表同步](./new-api-model-sync.md)
 - [New API 渠道管理](./new-api-channel-management.md)
+- [CLIProxyAPI 集成](./cliproxyapi-integration.md)
+- [模型重定向](./model-redirect.md)
+- [排序优先级设置](./sorting-priority.md)
+- [权限管理（可选权限）](./permissions.md)
 
 ## 7. 常见问题与支持
 
