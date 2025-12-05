@@ -91,6 +91,7 @@ const createAccount = (overrides: Partial<SiteAccount> = {}): SiteAccount => {
     updated_at: overrides.updated_at ?? Date.now(),
     created_at: overrides.created_at ?? Date.now(),
     notes: overrides.notes,
+    tags: overrides.tags,
     can_check_in: overrides.can_check_in,
     supports_check_in: overrides.supports_check_in,
     authType: overrides.authType ?? AuthTypeEnum.AccessToken,
@@ -205,6 +206,24 @@ describe("accountStorage core behaviors", () => {
     ])
 
     expect(await accountStorage.getPinnedList()).toEqual(["valid-1", "valid-2"])
+  })
+
+  it("updateAccount should allow clearing tags array", async () => {
+    const account = createAccount({
+      id: "with-tags",
+      tags: ["group-a", "group-b"],
+    })
+    seedStorage([account])
+
+    const success = await accountStorage.updateAccount("with-tags", {
+      tags: [],
+    })
+    expect(success).toBe(true)
+
+    const config = storageData.get(STORAGE_KEY)
+    const updated = config?.accounts.find((acc) => acc.id === "with-tags")
+
+    expect(updated?.tags).toEqual([])
   })
 
   it("markAccountAsCheckedIn should persist today's check-in state", async () => {
