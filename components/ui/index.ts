@@ -36,6 +36,11 @@ export {
   type MultiSelectProps,
 } from "./MultiSelect"
 export {
+  SearchableSelect,
+  type SearchableSelectOption,
+  type SearchableSelectProps,
+} from "./SearchableSelect"
+export {
   TagFilter,
   type TagFilterOption,
   type TagFilterProps,

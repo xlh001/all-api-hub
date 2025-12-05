@@ -1,0 +1,159 @@
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react"
+import * as React from "react"
+import { useTranslation } from "react-i18next"
+
+import { cn } from "~/lib/utils"
+
+import { Button } from "./button"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "./command"
+import { Popover, PopoverContent, PopoverTrigger } from "./popover"
+
+/**
+ * Option type for the `SearchableSelect` component.
+ *
+ * Each option has a string `value` and human‑readable `label`.
+ */
+export interface SearchableSelectOption {
+  value: string
+  label: string
+  disabled?: boolean
+}
+
+/**
+ * Props for the `SearchableSelect` component.
+ *
+ * This component renders a single‑select combobox built on top of
+ * the existing `Button`, `Popover`, and `Command` primitives.
+ * It is intended as a drop‑in replacement for simple `Select`
+ * usages where search is required.
+ */
+export interface SearchableSelectProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onChange"> {
+  /**
+   * Available options to choose from.
+   */
+  options: SearchableSelectOption[]
+
+  /**
+   * Current selected value. Use an empty string when nothing is selected.
+   */
+  value: string
+
+  /**
+   * Callback fired when the selected value changes.
+   */
+  onChange: (value: string) => void
+
+  /**
+   * Placeholder text shown when no option is selected.
+   */
+  placeholder?: string
+
+  /**
+   * Custom placeholder for the search input inside the popover.
+   * Falls back to the i18n key `ui:searchableSelect.searchPlaceholder`.
+   */
+  searchPlaceholder?: string
+
+  /**
+   * Custom message shown when no options match the current search.
+   * Falls back to the i18n key `ui:searchableSelect.empty`.
+   */
+  emptyMessage?: string
+}
+
+/**
+ * `SearchableSelect` – a searchable single‑select combobox.
+ *
+ * This component is designed to replace simple `Select` usages on
+ * pages like Model List and Key Management, while keeping styling
+ * consistent with the existing design system.
+ */
+export function SearchableSelect({
+  options,
+  value,
+  onChange,
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
+  className,
+  disabled,
+  ...buttonProps
+}: SearchableSelectProps) {
+  const { t } = useTranslation("ui")
+  const [open, setOpen] = React.useState(false)
+
+  const selectedOption = React.useMemo(
+    () => options.find((option) => option.value === value),
+    [options, value],
+  )
+
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ?? t("searchableSelect.searchPlaceholder")
+
+  const resolvedEmptyMessage = emptyMessage ?? t("searchableSelect.empty")
+
+  const isDisabled = disabled ?? false
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          data-slot="searchable-select-trigger"
+          className={cn(
+            "dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80 flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm whitespace-nowrap text-gray-900 shadow-xs transition-colors outline-none hover:bg-gray-50 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-500 aria-invalid:focus-visible:ring-red-500/40 data-placeholder:text-gray-400 dark:aria-invalid:border-red-400 dark:aria-invalid:focus-visible:ring-red-400/40 dark:data-placeholder:text-gray-500",
+            !selectedOption && "text-muted-foreground",
+            className,
+          )}
+          disabled={isDisabled}
+          {...buttonProps}
+          rightIcon={
+            <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
+          }
+        >
+          {selectedOption ? selectedOption.label : placeholder}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popper-anchor-width)] p-0">
+        <Command>
+          <CommandInput placeholder={resolvedSearchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  disabled={option.disabled}
+                  onSelect={() => {
+                    if (option.disabled) return
+                    onChange(option.value)
+                    setOpen(false)
+                  }}
+                >
+                  <CheckIcon
+                    className={cn(
+                      "mr-2 size-4",
+                      value === option.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  <span className="truncate">{option.label}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}

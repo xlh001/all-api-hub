@@ -114,5 +114,9 @@
     "noOptions": "暂无可选项",
     "clearInput": "清空输入",
     "clearSelected": "清空所有已选项"
+  },
+  "searchableSelect": {
+    "searchPlaceholder": "搜索...",
+    "empty": "未找到匹配项"
   }
 }
