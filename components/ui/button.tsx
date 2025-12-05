@@ -57,6 +57,7 @@ function Button({
   leftIcon,
   rightIcon,
   children,
+  spinnerProps,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
@@ -65,8 +66,25 @@ function Button({
     loading?: boolean
     leftIcon?: React.ReactNode
     rightIcon?: React.ReactNode
+    spinnerProps?: React.ComponentProps<typeof Spinner>
   }) {
   const Comp = asChild ? Slot : "button"
+
+  const {
+    size: spinnerSizeProp,
+    variant: spinnerVariantProp,
+    ...restSpinnerProps
+  } = spinnerProps ?? {}
+  const resolvedSpinnerVariant =
+    spinnerVariantProp ??
+    (variant === "default" ||
+    variant === "destructive" ||
+    variant === "secondary" ||
+    variant === "success" ||
+    variant === "warning"
+      ? "white"
+      : "primary")
+  const resolvedSpinnerSize = spinnerSizeProp ?? "sm"
 
   return (
     <Comp
@@ -75,8 +93,12 @@ function Button({
       {...props}
     >
       {loading && (
-        <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <Spinner />
+        <span className="pointer-events-none">
+          <Spinner
+            size={resolvedSpinnerSize}
+            variant={resolvedSpinnerVariant}
+            {...restSpinnerProps}
+          />
         </span>
       )}
       <>
