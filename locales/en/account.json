@@ -94,5 +94,15 @@
     "title": "Filtered totals",
     "balance": "Balance",
     "consumption": "Today's consumption"
+  },
+  "newcomerSupport": {
+    "title": "Welcome to All API Hub",
+    "description": "You can star the project and browse the guides to learn how to manage your relay and New API accounts",
+    "hint": "Feel free to look around the website and docs before adding any accounts",
+    "actions": {
+      "star": "View on GitHub",
+      "docs": "Open getting started",
+      "about": "Visit website"
+    }
   }
 }

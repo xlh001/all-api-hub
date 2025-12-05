@@ -80,6 +80,8 @@ const getAccountHash = () => "#account"
 
 const getBasicSettingsHash = () => "#basic"
 
+const getAboutHash = () => "#about"
+
 /**
  * Creates a new tab with the specified URL
  * @param url - The URL to open in the new tab
@@ -212,6 +214,11 @@ const _openSettingsTab = (tabId: string) => {
   navigateToBasicSettings(tabId)
 }
 
+const _openAboutPage = () => {
+  const targetHash = getAboutHash()
+  openOrFocusOptionsPage(targetHash)
+}
+
 const _openKeysPage = async (accountId?: string) => {
   const baseUrl = getExtensionURL("options.html")
   const url = new URL(baseUrl)
@@ -276,6 +283,7 @@ export const openAccountManagerWithSearch = withPopupClose((search: string) =>
 export const openSettingsPage = withPopupClose(_openSettingsPage)
 export const openSettingsTab = withPopupClose(_openSettingsTab)
 export const openSidePanelPage = withPopupClose(_openSidePanel)
+export const openAboutPage = withPopupClose(_openAboutPage)
 export const openKeysPage = withPopupClose(_openKeysPage)
 export const openModelsPage = withPopupClose(_openModelsPage)
 export const openUsagePage = withPopupClose(_openUsagePage)

@@ -32,6 +32,7 @@ import {
 
 import CopyKeyDialog from "../CopyKeyDialog"
 import DelAccountDialog from "../DelAccountDialog"
+import { NewcomerSupportCard } from "../NewcomerSupportCard"
 import AccountListItem from "./AccountListItem"
 import AccountSearchInput from "./AccountSearchInput"
 
@@ -132,16 +133,19 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
 
   if (!hasAccounts) {
     return (
-      <EmptyState
-        icon={<InboxIcon className="h-12 w-12" />}
-        title={t("account:emptyState")}
-        action={{
-          label: t("account:addFirstAccount"),
-          onClick: handleAddAccountClick,
-          variant: "default",
-          icon: <PlusIcon className="h-4 w-4" />,
-        }}
-      />
+      <div className="space-y-2">
+        <NewcomerSupportCard />
+        <EmptyState
+          icon={<InboxIcon className="h-12 w-12" />}
+          title={t("account:emptyState")}
+          action={{
+            label: t("account:addFirstAccount"),
+            onClick: handleAddAccountClick,
+            variant: "default",
+            icon: <PlusIcon className="h-4 w-4" />,
+          }}
+        />
+      </div>
     )
   }
 

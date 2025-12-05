@@ -94,5 +94,15 @@
     "title": "筛选统计",
     "balance": "余额",
     "consumption": "今日消耗"
+  },
+  "newcomerSupport": {
+    "title": "欢迎使用 All API Hub",
+    "description": "可以先为项目点个 Star，也可以先看看文档，了解如何管理中转站和 New API 账号",
+    "hint": "在添加账号之前，也可以先随意看看文档和项目信息",
+    "actions": {
+      "star": "在 GitHub 上查看",
+      "docs": "打开新手指引",
+      "about": "访问项目主页"
+    }
   }
 }
