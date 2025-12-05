@@ -5,6 +5,13 @@ import { defineUserConfig } from "vuepress"
 export default defineUserConfig({
   base: "/",
 
+  head: [
+    ["link", { rel: "icon", type: "image/png", sizes: "16x16", href: "/16.png" }],
+    ["link", { rel: "icon", type: "image/png", sizes: "32x32", href: "/32.png" }],
+    ["link", { rel: "icon", type: "image/png", sizes: "48x48", href: "/48.png" }],
+    ["link", { rel: "apple-touch-icon", sizes: "128x128", href: "/128.png" }],
+  ],
+
   locales: {
     '/': {
       lang: 'zh-CN',
