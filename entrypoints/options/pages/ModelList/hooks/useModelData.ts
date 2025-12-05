@@ -1,5 +1,5 @@
 import { useQueries, useQuery } from "@tanstack/react-query"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -102,14 +102,21 @@ function useSingleAccountModelData({
 
       return data
     },
-    onSuccess: () => {
+  })
+
+  useEffect(() => {
+    if (query.isSuccess) {
       setDataFormatError(false)
       toast.success(t("status.dataLoaded"))
-    },
-    onError: (error) => {
-      const typedError = error as { code?: string }
+      return
+    }
 
-      if (typedError.code === "INVALID_FORMAT") {
+    if (query.isError) {
+      const typedError = (query.error ?? undefined) as
+        | { code?: string }
+        | undefined
+
+      if (typedError?.code === "INVALID_FORMAT") {
         setDataFormatError(true)
         toast.error(t("status.formatNotStandard"))
         return
@@ -117,8 +124,8 @@ function useSingleAccountModelData({
 
       setDataFormatError(false)
       toast.error(t("status.loadFailed"))
-    },
-  })
+    }
+  }, [query.data, query.isSuccess, query.isError, query.error, t])
 
   const loadPricingData = useCallback(
     async (_accountId: string) => {
