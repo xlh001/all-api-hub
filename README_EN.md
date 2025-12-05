@@ -150,13 +150,13 @@ This extension automatically detects and manages accounts from sites based on th
 
 ## 🧑‍🚀 Quick Start Guide for New Users
 
-1. **Install and log in to target sites**: Grab the latest build from Chrome/Edge/Firefox stores or GitHub Release, enable the extension, pin it, and sign in to the relay stations you want to manage in your browser first.
-2. **Auto-recognize new accounts**: Open the extension → click “Add Account” → enter the site URL and choose “Auto-Identify.” If Cloudflare’s 5-second challenge triggers, a helper window opens automatically; for heavily customized sites, switch to Cookie mode or fill in token data manually.
-3. **Organize & sync account data**: Review balances, models, and keys on each card, then use grouping/sorting/quick jump for navigation. For fresh data, go to “Basic Settings → Auto Refresh” to enable scheduled refresh, health state, and check-in detection.
-4. **Manage check-in & site utilities**: Enable check-in monitoring, recharge links, or today’s revenue hints in account details. Pair with duplicate-site detection to avoid re-adding, and adjust detection strategies when prompted for special sites.
-5. **Configure New API integration (optional)**: If you run your own New API, fill Administrator URL/Token/User ID under “Basic Settings → New API Integration,” then use “New API Model Sync” + “Channel Management (Beta)” to keep channels and model whitelists aligned.
-6. **Quick export to downstream systems (optional)**: From “Key Management,” click “Export” to sync channels into CherryStudio, CC Switch, or New API.
-7. **Backup & collaborate**: Use “Basic Settings → Data Management” to import/export JSON, or configure automatic sync under “WebDAV Backup” to keep multiple devices in sync and data safe.
+1. **Install and pin the extension**: Install All API Hub from the Chrome/Edge/Firefox store or GitHub Release, then pin the icon to your toolbar so it’s easy to open.
+2. **Sign in to your relay sites**: In normal browser tabs, open each relay site you use (New API, one-api, etc.) and log in as usual. The extension reuses these sessions when adding accounts.
+3. **Add your first account**: Click the All API Hub icon → click “Add Account” → paste the site URL and choose “Auto-Identify.” If a Cloudflare 5‑second challenge appears, finish it in the helper window and the detection continues automatically.
+4. **View everything in one place**: In the popup or on the “Account Management” page, you’ll see balances, models, and keys for each site. Use search, grouping, and sorting to quickly find the account you care about.
+5. **Export to your favorite tools (optional)**: On the **Key Management** page, use **Export** to send channels and keys into CherryStudio, CC Switch, CLIProxyAPI, or New API instead of copying values by hand.
+6. **Connect your own New API (optional)**: If you host New API yourself, go to **Settings → New API**, fill in the Admin URL / Token / User ID, then use the **New API Model Sync** and **Channel Management (Beta)** pages to keep channels and model lists in sync.
+7. **Back up and sync across devices (optional)**: Use **Settings → Data & Backup** to export a JSON backup, or configure WebDAV automatic sync so your configuration follows you to other browsers and machines.
 
 ## 🛠️ Development Guide
 
