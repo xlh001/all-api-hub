@@ -297,7 +297,7 @@ all-api-hub/
 
 If you have questions or need help:
 
-- Check the [documentation](https://qixing-jk.github.io/all-api-hub/)
+- Check the [documentation](https://all-api-hub.qixing1217.top/)
 - Review [existing issues](https://github.com/qixing-jk/all-api-hub/issues)
 - Open a new issue with your question
 
