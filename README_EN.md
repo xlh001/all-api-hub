@@ -26,7 +26,7 @@
 </a>
 </p>
 
-**[Documentation](https://qixing-jk.github.io/all-api-hub/en) | [FAQ](https://qixing-jk.github.io/all-api-hub/en/faq.html)**
+**[Documentation](https://all-api-hub.qixing1217.top/en) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html)**
 
 </div>
 
@@ -63,19 +63,19 @@ This extension automatically detects and manages accounts from sites based on th
   View the models supported by each site together with pricing and key configuration details.
 
 - 🔄 **New API Management (Own Instance)**  
-  For your own New API instance, provide dedicated tools to synchronize model lists, filter via regex, review sync logs, and manage channels directly from the extension UI. See [New API Model Sync](docs/docs/en/new-api-model-sync.md) and [New API Channel Management](docs/docs/en/new-api-channel-management.md) for details.
+  For your own New API instance, provide dedicated tools to synchronize model lists, filter via regex, review sync logs, and manage channels directly from the extension UI. See [New API Model Sync](https://all-api-hub.qixing1217.top/en/new-api-model-sync.html) and [New API Channel Management](https://all-api-hub.qixing1217.top/en/new-api-channel-management.html) for details.
 
 - 📆 **Automatic check‑in so you don’t forget**  
   Detects which relay sites support daily check‑in and keeps track of who still needs it. Once enabled, you can handle check‑ins from a single place so you don’t lose free quota just because you forgot to visit each dashboard.
 
 - 🚀 **Quick Export Integration**  
-  One‑click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) and [New API](https://github.com/QuantumNous/new-api). See [Quick Export Site Configuration](docs/docs/en/quick-export.md) for details.
+  One‑click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) and [New API](https://github.com/QuantumNous/new-api). See [Quick Export Site Configuration](https://all-api-hub.qixing1217.top/en/quick-export.html) for details.
 
 - 🛡️ **Cloudflare Bypass Assistant**  
-  Uses a temporary window and optional cookie / webRequest permissions to reliably pass Cloudflare‑style 5‑second shields so data refresh and detection continue to work. See [Cloudflare Bypass Assistant](docs/docs/en/cloudflare-helper.md) for details.
+  Uses a temporary window and optional cookie / webRequest permissions to reliably pass Cloudflare‑style 5‑second shields so data refresh and detection continue to work. See [Cloudflare Bypass Assistant](https://all-api-hub.qixing1217.top/en/cloudflare-helper.html) for details.
 
 - ☁️ **Data Backup and Recovery**  
-  Export/import JSON, and configure [WebDAV backup and automatic synchronization](docs/docs/en/webdav-sync.md) and [data import/export](docs/docs/en/data-management.md) to keep configurations safe and synchronized across devices.
+  Export/import JSON, and configure [WebDAV backup and automatic synchronization](https://all-api-hub.qixing1217.top/en/webdav-sync.html) and [data import/export](https://all-api-hub.qixing1217.top/en/data-management.html) to keep configurations safe and synchronized across devices.
 
 - 🌐 **Cross‑Platform Compatible**  
   Works on Chrome, Edge, Firefox and Chromium‑based mobile browsers like Kiwi, with automatic dark‑mode support.
@@ -157,6 +157,8 @@ This extension automatically detects and manages accounts from sites based on th
 5. **Export to your favorite tools (optional)**: On the **Key Management** page, use **Export** to send channels and keys into CherryStudio, CC Switch, CLIProxyAPI, or New API instead of copying values by hand.
 6. **Connect your own New API (optional)**: If you host New API yourself, go to **Settings → New API**, fill in the Admin URL / Token / User ID, then use the **New API Model Sync** and **Channel Management (Beta)** pages to keep channels and model lists in sync.
 7. **Back up and sync across devices (optional)**: Use **Settings → Data & Backup** to export a JSON backup, or configure WebDAV automatic sync so your configuration follows you to other browsers and machines.
+
+For a more detailed walkthrough and advanced setup, see the [Getting Started guide](https://all-api-hub.qixing1217.top/en/get-started.html).
 
 ## 🛠️ Development Guide
 

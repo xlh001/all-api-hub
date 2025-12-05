@@ -26,7 +26,7 @@
 </a>
 </p>
 
-**[文档教程](https://qixing-jk.github.io/all-api-hub/) | [常见问题](https://qixing-jk.github.io/all-api-hub/faq.html)**
+**[文档教程](https://all-api-hub.qixing1217.top/) | [常见问题](https://all-api-hub.qixing1217.top/faq.html)**
 
 </div>
 
@@ -63,19 +63,19 @@
   清晰展示各站点支持的模型列表和价格信息，以及相关配置细节。
 
 - 🔄 **自建 New API 管理**  
-  面向自建 New API 实例提供专门工具：支持模型列表同步、正则白名单过滤、同步日志查看，并在插件内直接管理渠道配置，详见 [New API 模型同步](docs/docs/new-api-model-sync.md) 与 [New API 渠道管理](docs/docs/new-api-channel-management.md)。
+  面向自建 New API 实例提供专门工具：支持模型列表同步、正则白名单过滤、同步日志查看，并在插件内直接管理渠道配置，详见 [New API 模型同步](https://all-api-hub.qixing1217.top/new-api-model-sync.html) 与 [New API 渠道管理](https://all-api-hub.qixing1217.top/new-api-channel-management.html)。
 
 - 📆 **自动签到，不再白白浪费额度**  
   自动识别哪些站点支持每日签到，标记当天尚未签到的账号，让你在一个面板里按顺序完成多站点签到，减少因为“忘记点一下”而损失的免费额度。
 
 - 🚀 **快速导出集成**  
-  一键导出站点与渠道配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch)、[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) 和 [New API](https://github.com/QuantumNous/new-api)，详见 [快速导出站点配置](docs/docs/quick-export.md)。
+  一键导出站点与渠道配置到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch)、[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) 和 [New API](https://github.com/QuantumNous/new-api)，详见 [快速导出站点配置](https://all-api-hub.qixing1217.top/quick-export.html)。
 
 - 🛡️ **Cloudflare 过盾助手**  
-  通过临时窗口与可选的 Cookie / WebRequest 权限自动处理 Cloudflare 五秒盾等防护，确保站点可以稳定识别和刷新数据，详见 [Cloudflare 过盾助手](docs/docs/cloudflare-helper.md)。
+  通过临时窗口与可选的 Cookie / WebRequest 权限自动处理 Cloudflare 五秒盾等防护，确保站点可以稳定识别和刷新数据，详见 [Cloudflare 过盾助手](https://all-api-hub.qixing1217.top/cloudflare-helper.html)。
 
 - ☁️ **数据备份与恢复**  
-  支持 JSON 导入导出，以及 [WebDAV 备份与自动同步](docs/docs/webdav-sync.md) 和 [数据导入导出](docs/docs/data-management.md)，在多设备间同步配置并保障数据安全。
+  支持 JSON 导入导出，以及 [WebDAV 备份与自动同步](https://all-api-hub.qixing1217.top/webdav-sync.html) 和 [数据导入导出](https://all-api-hub.qixing1217.top/data-management.html)，在多设备间同步配置并保障数据安全。
 
 - 🌐 **全平台支持**  
   兼容 Chrome、Edge、Firefox 等浏览器，并支持 Kiwi Browser 等移动端浏览器，适配深色模式。
@@ -158,6 +158,8 @@
 5. **快速导出到常用软件（可选）**：在“密钥管理”页面，为目标站点找到对应密钥，使用“导出”功能，一键推送到 CherryStudio、CC Switch、CLIProxyAPI 或 New API，而不必逐项复制粘贴。
 6. **连接自建 New API（可选）**：如果你有自建 New API，前往“基础设置 → New API 集成设置”填写管理员 URL、Token、用户 ID，然后在“模型同步”和“渠道管理（Beta）”页面维护渠道和模型白名单。
 7. **备份配置并在多设备间同步（可选）**：在“基础设置 → 数据与备份”的“导入与导出”区域导出 JSON 备份，或在页面下方配置 WebDAV 自动同步，在多台设备之间共享同一份配置。
+
+更多详细步骤和进阶配置，请参阅文档站的[快速上手指南](https://all-api-hub.qixing1217.top/get-started.html)。
 
 ## 🛠️ 开发指南
 
