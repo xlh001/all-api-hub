@@ -27,6 +27,7 @@ interface ModelItemProps {
   onGroupClick?: (group: string) => void // 新增：点击分组时的回调函数
   availableGroups?: string[] // 新增：用户的所有可用分组列表
   isAllGroupsMode?: boolean // 新增：是否为"所有分组"模式
+  accountName?: string
 }
 
 export default function ModelItem({
@@ -40,6 +41,7 @@ export default function ModelItem({
   onGroupClick,
   availableGroups = [],
   isAllGroupsMode = false,
+  accountName,
 }: ModelItemProps) {
   const { t } = useTranslation("modelList")
   const [isExpanded, setIsExpanded] = useState(false)
@@ -74,6 +76,7 @@ export default function ModelItem({
             model={model}
             isAvailableForUser={isAvailableForUser}
             handleCopyModelName={handleCopyModelName}
+            accountName={accountName}
           />
           <ModelItemExpandButton
             isExpanded={isExpanded}

@@ -20,11 +20,21 @@ export interface AccountPricingContext {
   pricing: PricingResponse
 }
 
+export type AccountErrorType = "invalid-format" | "load-failed"
+
+export interface AccountQueryState {
+  account: DisplaySiteData
+  hasData: boolean
+  hasError: boolean
+  errorType?: AccountErrorType
+}
+
 interface UseModelDataReturn {
   pricingData: PricingResponse | null
   pricingContexts: AccountPricingContext[]
   isLoading: boolean
   dataFormatError: boolean
+  accountQueryStates: AccountQueryState[]
   loadPricingData: (accountId: string) => Promise<void>
 }
 
@@ -118,6 +128,7 @@ function useSingleAccountModelData({
     pricingContexts,
     isLoading: query.isFetching,
     dataFormatError,
+    accountQueryStates: [],
     loadPricingData,
   }
 }
@@ -172,11 +183,37 @@ function useAllAccountsModelData(
     await Promise.all(queries.map((query) => query.refetch()))
   }, [queries])
 
+  const accountQueryStates: AccountQueryState[] = useMemo(
+    () =>
+      safeDisplayData.map((account, index) => {
+        const query = queries[index]
+        const error = query?.error as { code?: string } | null | undefined
+        const hasData = !!query?.data
+        const hasError = !!query?.error
+
+        let errorType: AccountErrorType | undefined
+        if (error?.code === "INVALID_FORMAT") {
+          errorType = "invalid-format"
+        } else if (hasError) {
+          errorType = "load-failed"
+        }
+
+        return {
+          account,
+          hasData,
+          hasError,
+          errorType,
+        }
+      }),
+    [queries, safeDisplayData],
+  )
+
   return {
     pricingData: null,
     pricingContexts,
     isLoading,
     dataFormatError,
+    accountQueryStates,
     loadPricingData,
   }
 }

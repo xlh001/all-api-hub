@@ -18,6 +18,7 @@ interface UseFilteredModelsProps {
   selectedGroup: string
   searchTerm: string
   selectedProvider: ProviderType | "all"
+  accountFilterAccountId?: string | null
 }
 
 export function useFilteredModels({
@@ -27,6 +28,7 @@ export function useFilteredModels({
   selectedGroup,
   searchTerm,
   selectedProvider,
+  accountFilterAccountId,
 }: UseFilteredModelsProps) {
   const modelsWithPricing = useMemo(() => {
     if (pricingContexts && pricingContexts.length > 0) {
@@ -122,6 +124,12 @@ export function useFilteredModels({
       )
     }
 
+    if (accountFilterAccountId) {
+      filtered = filtered.filter(
+        (item) => item.account?.id === accountFilterAccountId,
+      )
+    }
+
     return filtered
   }, [
     modelsWithPricing,
@@ -129,6 +137,7 @@ export function useFilteredModels({
     searchTerm,
     pricingData,
     pricingContexts,
+    accountFilterAccountId,
   ])
 
   const filteredModels = useMemo(() => {

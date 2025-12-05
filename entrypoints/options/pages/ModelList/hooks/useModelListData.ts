@@ -35,6 +35,7 @@ export function useModelListData() {
     selectedGroup: state.selectedGroup,
     searchTerm: state.searchTerm,
     selectedProvider: state.selectedProvider,
+    accountFilterAccountId: state.allAccountsFilterAccountId,
   })
 
   // Return unified state

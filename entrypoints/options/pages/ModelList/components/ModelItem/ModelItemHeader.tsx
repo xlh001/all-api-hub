@@ -11,12 +11,14 @@ interface ModelItemHeaderProps {
   model: ModelPricing
   isAvailableForUser: boolean
   handleCopyModelName: () => void
+  accountName?: string
 }
 
 export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
   model,
   isAvailableForUser,
   handleCopyModelName,
+  accountName,
 }) => {
   const { t } = useTranslation("modelList")
   const providerConfig = getProviderConfig(model.model_name)
@@ -62,7 +64,7 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
         </IconButton>
 
         {/* 标签 */}
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:gap-2">
           {/* 计费模式标签 */}
           <Badge
             variant={getBillingVariant(model.quota_type)}
@@ -80,6 +82,13 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
           >
             {isAvailableForUser ? t("available") : t("unavailable")}
           </Badge>
+
+          {/* 账号标签 */}
+          {accountName && (
+            <Badge variant="outline" size="default">
+              {accountName}
+            </Badge>
+          )}
         </div>
       </div>
     </div>

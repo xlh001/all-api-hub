@@ -19,6 +19,12 @@
   "copyAllNames": "复制所有模型名称",
   "totalModels": "总计 {{count}} 个模型",
   "showing": "显示 {{count}} 个",
+  "accountSummary": {
+    "title": "账号概览",
+    "models": "{{count}} 个模型",
+    "loadFailed": "加载失败",
+    "incompatible": "格式不兼容"
+  },
   "noMatchingModels": "没有找到匹配的模型",
   "pleaseSelectFirst": "请先选择一个账号查看模型列表",
   "allProviders": "所有厂商 ({{count}})",

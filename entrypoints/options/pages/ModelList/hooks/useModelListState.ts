@@ -13,6 +13,9 @@ export function useModelListState() {
     ProviderType | "all"
   >("all") // 当前选中的模型提供商
   const [selectedGroup, setSelectedGroup] = useState<string>("default") // 当前选中的用户分组
+  const [allAccountsFilterAccountId, setAllAccountsFilterAccountId] = useState<
+    string | null
+  >(null) // 在"所有账号"模式下用于临时筛选特定账号
 
   // 显示选项
   const [showRealPrice, setShowRealPrice] = useState(false) // 是否显示真实价格
@@ -28,6 +31,8 @@ export function useModelListState() {
     setSelectedProvider,
     selectedGroup,
     setSelectedGroup,
+    allAccountsFilterAccountId,
+    setAllAccountsFilterAccountId,
     showRealPrice,
     setShowRealPrice,
     showRatioColumn,

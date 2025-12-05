@@ -19,6 +19,12 @@
   "copyAllNames": "Copy All Model Names",
   "totalModels": "Total {{count}} models",
   "showing": "Showing {{count}}",
+  "accountSummary": {
+    "title": "Accounts overview",
+    "models": "{{count}} models",
+    "loadFailed": "load failed",
+    "incompatible": "format incompatible"
+  },
   "noMatchingModels": "No matching models found",
   "pleaseSelectFirst": "Please select an account first to view model list",
   "allProviders": "All Providers ({{count}})",

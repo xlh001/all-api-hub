@@ -7,6 +7,7 @@ import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import { getAllProviders } from "~/utils/modelProviders"
 
 import { AccountSelector } from "./components/AccountSelector"
+import { AccountSummaryBar } from "./components/AccountSummaryBar"
 import { ControlPanel } from "./components/ControlPanel"
 import { Footer } from "./components/Footer"
 import { ModelDisplay } from "./components/ModelDisplay"
@@ -57,6 +58,9 @@ export default function ModelList({
     // Operations
     loadPricingData,
     getProviderFilteredCount,
+    accountQueryStates,
+    allAccountsFilterAccountId,
+    setAllAccountsFilterAccountId,
   } = useModelListData()
 
   const providers = getAllProviders()
@@ -84,10 +88,35 @@ export default function ModelList({
     setSelectedGroup(group)
   }
 
+  const handleAccountSummaryClick = (accountId: string) => {
+    if (allAccountsFilterAccountId === accountId) {
+      setAllAccountsFilterAccountId(null)
+    } else {
+      setAllAccountsFilterAccountId(accountId)
+    }
+  }
+
   const hasModelData =
     selectedAccount === "all"
       ? pricingContexts && pricingContexts.length > 0
       : !!pricingData
+
+  const accountSummaryItems = useMemo(() => {
+    const countMap = new Map<string, number>()
+
+    filteredModels.forEach((item: any) => {
+      const account = item.account
+      if (!account) return
+      countMap.set(account.id, (countMap.get(account.id) ?? 0) + 1)
+    })
+
+    return (accountQueryStates ?? []).map((state) => ({
+      accountId: state.account.id,
+      name: state.account.name,
+      count: countMap.get(state.account.id) ?? 0,
+      errorType: state.errorType,
+    }))
+  }, [filteredModels, accountQueryStates])
 
   return (
     <div className="p-6">
@@ -112,6 +141,13 @@ export default function ModelList({
 
       {selectedAccount && !isLoading && hasModelData && (
         <>
+          {selectedAccount === "all" && accountSummaryItems.length > 0 && (
+            <AccountSummaryBar
+              items={accountSummaryItems}
+              activeAccountId={allAccountsFilterAccountId}
+              onAccountClick={handleAccountSummaryClick}
+            />
+          )}
           <ControlPanel
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}

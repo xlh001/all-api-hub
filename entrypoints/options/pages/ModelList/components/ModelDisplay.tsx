@@ -70,6 +70,7 @@ export function ModelDisplay({
               onGroupClick={handleGroupClick}
               availableGroups={availableGroups}
               isAllGroupsMode={selectedGroup === "all"}
+              accountName={accountForModel?.name}
             />
           )
         }}
