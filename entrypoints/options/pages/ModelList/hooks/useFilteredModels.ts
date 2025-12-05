@@ -9,8 +9,11 @@ import {
   type ProviderType,
 } from "~/utils/modelProviders"
 
+import type { AccountPricingContext } from "./useModelData"
+
 interface UseFilteredModelsProps {
   pricingData: PricingResponse | null
+  pricingContexts: AccountPricingContext[]
   currentAccount: DisplaySiteData | undefined
   selectedGroup: string
   searchTerm: string
@@ -19,19 +22,48 @@ interface UseFilteredModelsProps {
 
 export function useFilteredModels({
   pricingData,
+  pricingContexts,
   currentAccount,
   selectedGroup,
   searchTerm,
   selectedProvider,
 }: UseFilteredModelsProps) {
   const modelsWithPricing = useMemo(() => {
+    if (pricingContexts && pricingContexts.length > 0) {
+      return pricingContexts.flatMap(({ account, pricing }) => {
+        if (!pricing || !Array.isArray(pricing.data)) {
+          return []
+        }
+
+        const exchangeRate =
+          account.balance?.USD > 0
+            ? account.balance.CNY / account.balance.USD
+            : UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
+
+        return pricing.data.map((model) => {
+          const calculatedPrice = calculateModelPrice(
+            model,
+            pricing.group_ratio || {},
+            exchangeRate,
+            selectedGroup === "all" ? "default" : selectedGroup,
+          )
+
+          return {
+            model,
+            calculatedPrice,
+            account,
+          }
+        })
+      })
+    }
+
     if (!pricingData || !currentAccount || !Array.isArray(pricingData.data)) {
       return []
     }
 
     return pricingData.data.map((model) => {
       const exchangeRate =
-        currentAccount?.balance?.USD > 0
+        currentAccount.balance?.USD > 0
           ? currentAccount.balance.CNY / currentAccount.balance.USD
           : UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
 
@@ -45,18 +77,35 @@ export function useFilteredModels({
       return {
         model,
         calculatedPrice,
+        account: currentAccount,
       }
     })
-  }, [pricingData, currentAccount, selectedGroup])
+  }, [pricingContexts, pricingData, currentAccount, selectedGroup])
 
   const baseFilteredModels = useMemo(() => {
     let filtered = modelsWithPricing
 
     if (selectedGroup !== "all") {
-      const availableGroupsList = pricingData?.group_ratio
-        ? Object.keys(pricingData.group_ratio).filter((key) => key !== "")
-        : []
-      if (availableGroupsList.includes(selectedGroup)) {
+      const groupSet = new Set<string>()
+
+      if (pricingContexts && pricingContexts.length > 0) {
+        pricingContexts.forEach((context) => {
+          const ratio = context.pricing.group_ratio || {}
+          Object.keys(ratio).forEach((key) => {
+            if (key) {
+              groupSet.add(key)
+            }
+          })
+        })
+      } else if (pricingData?.group_ratio) {
+        Object.keys(pricingData.group_ratio).forEach((key) => {
+          if (key) {
+            groupSet.add(key)
+          }
+        })
+      }
+
+      if (groupSet.has(selectedGroup)) {
         filtered = filtered.filter((item) =>
           item.model.enable_groups.includes(selectedGroup),
         )
@@ -74,7 +123,13 @@ export function useFilteredModels({
     }
 
     return filtered
-  }, [modelsWithPricing, selectedGroup, searchTerm, pricingData])
+  }, [
+    modelsWithPricing,
+    selectedGroup,
+    searchTerm,
+    pricingData,
+    pricingContexts,
+  ])
 
   const filteredModels = useMemo(() => {
     if (selectedProvider === "all") {
@@ -93,11 +148,27 @@ export function useFilteredModels({
   }
 
   const availableGroups = useMemo(() => {
-    if (!pricingData || !pricingData.group_ratio) {
-      return []
+    const groupSet = new Set<string>()
+
+    if (pricingContexts && pricingContexts.length > 0) {
+      pricingContexts.forEach((context) => {
+        const ratio = context.pricing.group_ratio || {}
+        Object.keys(ratio).forEach((key) => {
+          if (key) {
+            groupSet.add(key)
+          }
+        })
+      })
+    } else if (pricingData?.group_ratio) {
+      Object.keys(pricingData.group_ratio).forEach((key) => {
+        if (key) {
+          groupSet.add(key)
+        }
+      })
     }
-    return Object.keys(pricingData.group_ratio).filter((key) => key !== "")
-  }, [pricingData])
+
+    return Array.from(groupSet)
+  }, [pricingContexts, pricingData])
 
   return {
     filteredModels,

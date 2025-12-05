@@ -2,9 +2,12 @@ import { useState } from "react"
 
 import type { ProviderType } from "~/utils/modelProviders"
 
+type SelectedAccountValue = string | "all"
+
 export function useModelListState() {
   // 状态管理
-  const [selectedAccount, setSelectedAccount] = useState<string>("") // 当前选中的账号ID
+  const [selectedAccount, setSelectedAccount] =
+    useState<SelectedAccountValue>("") // 当前选中的账号ID
   const [searchTerm, setSearchTerm] = useState("") // 搜索关键词
   const [selectedProvider, setSelectedProvider] = useState<
     ProviderType | "all"

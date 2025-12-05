@@ -50,25 +50,29 @@ export function ModelDisplay({
             </div>
           ),
         }}
-        itemContent={(index, item) => (
-          <ModelItem
-            key={`${item.model.model_name}-${index}`}
-            model={item.model}
-            calculatedPrice={item.calculatedPrice}
-            exchangeRate={
-              currentAccount && currentAccount?.balance?.USD > 0
-                ? currentAccount.balance.CNY / currentAccount.balance.USD
-                : UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
-            }
-            showRealPrice={showRealPrice}
-            showRatioColumn={showRatioColumn}
-            showEndpointTypes={showEndpointTypes}
-            userGroup={selectedGroup === "all" ? "default" : selectedGroup}
-            onGroupClick={handleGroupClick}
-            availableGroups={availableGroups}
-            isAllGroupsMode={selectedGroup === "all"}
-          />
-        )}
+        itemContent={(index, item) => {
+          const accountForModel = item.account || currentAccount
+          const exchangeRate =
+            accountForModel && accountForModel.balance?.USD > 0
+              ? accountForModel.balance.CNY / accountForModel.balance.USD
+              : UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
+
+          return (
+            <ModelItem
+              key={`${item.model.model_name}-${index}`}
+              model={item.model}
+              calculatedPrice={item.calculatedPrice}
+              exchangeRate={exchangeRate}
+              showRealPrice={showRealPrice}
+              showRatioColumn={showRatioColumn}
+              showEndpointTypes={showEndpointTypes}
+              userGroup={selectedGroup === "all" ? "default" : selectedGroup}
+              onGroupClick={handleGroupClick}
+              availableGroups={availableGroups}
+              isAllGroupsMode={selectedGroup === "all"}
+            />
+          )
+        }}
       />
     </div>
   )

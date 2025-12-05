@@ -45,6 +45,7 @@ export default function ModelList({
 
     // Data state
     pricingData,
+    pricingContexts,
     isLoading,
     dataFormatError,
 
@@ -83,6 +84,11 @@ export default function ModelList({
     setSelectedGroup(group)
   }
 
+  const hasModelData =
+    selectedAccount === "all"
+      ? pricingContexts && pricingContexts.length > 0
+      : !!pricingData
+
   return (
     <div className="p-6">
       <PageHeader
@@ -97,14 +103,14 @@ export default function ModelList({
       />
 
       <StatusIndicator
-        selectedAccount={selectedAccount}
+        selectedAccount={selectedAccount as string}
         isLoading={isLoading}
         dataFormatError={dataFormatError}
         currentAccount={currentAccount}
-        loadPricingData={() => loadPricingData(selectedAccount)}
+        loadPricingData={() => loadPricingData(selectedAccount as string)}
       />
 
-      {selectedAccount && !isLoading && pricingData && (
+      {selectedAccount && !isLoading && hasModelData && (
         <>
           <ControlPanel
             searchTerm={searchTerm}
