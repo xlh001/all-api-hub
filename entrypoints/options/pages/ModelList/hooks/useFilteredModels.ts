@@ -123,13 +123,6 @@ export function useFilteredModels({
           false,
       )
     }
-
-    if (accountFilterAccountId) {
-      filtered = filtered.filter(
-        (item) => item.account?.id === accountFilterAccountId,
-      )
-    }
-
     return filtered
   }, [
     modelsWithPricing,
@@ -137,18 +130,27 @@ export function useFilteredModels({
     searchTerm,
     pricingData,
     pricingContexts,
-    accountFilterAccountId,
   ])
+
+  const accountFilteredBaseModels = useMemo(() => {
+    if (!accountFilterAccountId) {
+      return baseFilteredModels
+    }
+
+    return baseFilteredModels.filter(
+      (item) => item.account?.id === accountFilterAccountId,
+    )
+  }, [baseFilteredModels, accountFilterAccountId])
 
   const filteredModels = useMemo(() => {
     if (selectedProvider === "all") {
-      return baseFilteredModels
+      return accountFilteredBaseModels
     }
-    return baseFilteredModels.filter(
+    return accountFilteredBaseModels.filter(
       (item) =>
         filterModelsByProvider([item.model], selectedProvider).length > 0,
     )
-  }, [baseFilteredModels, selectedProvider])
+  }, [accountFilteredBaseModels, selectedProvider])
 
   const getProviderFilteredCount = (provider: ProviderType) => {
     return baseFilteredModels.filter(

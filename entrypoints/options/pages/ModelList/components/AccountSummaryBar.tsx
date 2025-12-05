@@ -39,7 +39,7 @@ export function AccountSummaryBar({
                 key={item.accountId}
                 variant={
                   activeAccountId && activeAccountId === item.accountId
-                    ? "default"
+                    ? "info"
                     : "secondary"
                 }
                 size="default"

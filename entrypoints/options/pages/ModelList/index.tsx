@@ -104,7 +104,7 @@ export default function ModelList({
   const accountSummaryItems = useMemo(() => {
     const countMap = new Map<string, number>()
 
-    filteredModels.forEach((item: any) => {
+    baseFilteredModels.forEach((item: any) => {
       const account = item.account
       if (!account) return
       countMap.set(account.id, (countMap.get(account.id) ?? 0) + 1)
@@ -116,7 +116,7 @@ export default function ModelList({
       count: countMap.get(state.account.id) ?? 0,
       errorType: state.errorType,
     }))
-  }, [filteredModels, accountQueryStates])
+  }, [baseFilteredModels, accountQueryStates])
 
   return (
     <div className="p-6">
