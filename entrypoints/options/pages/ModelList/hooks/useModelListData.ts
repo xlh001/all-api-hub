@@ -30,10 +30,12 @@ export function useModelListData() {
   // Filtering
   const filteredData = useFilteredModels({
     pricingData: modelData.pricingData,
+    pricingContexts: modelData.pricingContexts,
     currentAccount,
     selectedGroup: state.selectedGroup,
     searchTerm: state.searchTerm,
     selectedProvider: state.selectedProvider,
+    accountFilterAccountId: state.allAccountsFilterAccountId,
   })
 
   // Return unified state

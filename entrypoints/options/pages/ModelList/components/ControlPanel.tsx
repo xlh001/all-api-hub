@@ -15,11 +15,7 @@ import {
   FormField,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  SearchableSelect,
   Switch,
 } from "~/components/ui"
 
@@ -88,22 +84,18 @@ export function ControlPanel({
           </FormField>
 
           <FormField label={t("userGroup")} className="w-full lg:w-64">
-            <Select
+            <SearchableSelect
+              options={[
+                { value: "all", label: t("allGroups") },
+                ...availableGroups.map((group) => ({
+                  value: group,
+                  label: `${group} (${pricingData?.group_ratio?.[group] || 1}x)`,
+                })),
+              ]}
               value={selectedGroup ?? ""}
-              onValueChange={setSelectedGroup}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("allGroups")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allGroups")}</SelectItem>
-                {availableGroups.map((group) => (
-                  <SelectItem key={group} value={group}>
-                    {group} ({pricingData?.group_ratio?.[group] || 1}x)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={setSelectedGroup}
+              placeholder={t("allGroups")}
+            />
           </FormField>
 
           <div className="w-full lg:flex lg:w-auto lg:items-end">

@@ -4,6 +4,7 @@ import { Bars3Icon } from "@heroicons/react/24/outline"
 
 import { IconButton } from "~/components/ui"
 import type { SearchResultWithHighlight } from "~/features/AccountManagement/hooks/useAccountSearch"
+import { cn } from "~/lib/utils"
 import type { DisplaySiteData } from "~/types"
 
 import AccountListItem from "./AccountListItem"
@@ -16,6 +17,7 @@ interface SortableAccountListItemProps {
   isDragDisabled: boolean
   handleLabel: string
   showHandle: boolean
+  className?: string
 }
 
 function SortableAccountListItem({
@@ -26,6 +28,7 @@ function SortableAccountListItem({
   isDragDisabled,
   handleLabel,
   showHandle,
+  className,
 }: SortableAccountListItemProps) {
   const {
     attributes,
@@ -45,44 +48,32 @@ function SortableAccountListItem({
     transition,
   }
 
-  if (!showHandle) {
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className={isDragging ? "relative z-10" : undefined}
-      >
-        <div className="px-3 py-2.5 sm:px-4 sm:py-3">
-          <AccountListItem
-            site={site}
-            highlights={highlights}
-            onDeleteWithDialog={onDeleteWithDialog}
-            onCopyKey={onCopyKey}
-          />
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={isDragging ? "relative z-10" : undefined}
     >
-      <div className="flex items-center gap-2 px-3 py-2.5 transition-all sm:px-4 sm:py-3">
-        <IconButton
-          ref={setActivatorNodeRef}
-          variant="ghost"
-          size="xs"
-          aria-label={handleLabel}
-          disabled={isDragDisabled}
-          className="shrink-0 text-gray-400 hover:text-gray-700 focus-visible:ring-2 focus-visible:ring-offset-2"
-          {...listeners}
-          {...attributes}
-        >
-          <Bars3Icon className="h-4 w-4" />
-        </IconButton>
+      <div
+        className={cn(
+          "flex items-center gap-2 px-3 py-2.5 transition-all sm:px-4 sm:py-3",
+          className,
+        )}
+      >
+        {showHandle && (
+          <IconButton
+            ref={setActivatorNodeRef}
+            variant="ghost"
+            size="xs"
+            aria-label={handleLabel}
+            disabled={isDragDisabled}
+            className="shrink-0 text-gray-400 hover:text-gray-700 focus-visible:ring-2 focus-visible:ring-offset-2"
+            {...listeners}
+            {...attributes}
+          >
+            <Bars3Icon className="h-4 w-4" />
+          </IconButton>
+        )}
         <div className="min-w-0 flex-1">
           <AccountListItem
             site={site}

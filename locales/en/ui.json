@@ -114,5 +114,9 @@
     "noOptions": "No options available",
     "clearInput": "Clear input",
     "clearSelected": "Clear all selected values"
+  },
+  "searchableSelect": {
+    "searchPlaceholder": "Search...",
+    "empty": "No results found"
   }
 }

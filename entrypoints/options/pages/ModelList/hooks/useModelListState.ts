@@ -2,14 +2,20 @@ import { useState } from "react"
 
 import type { ProviderType } from "~/utils/modelProviders"
 
+type SelectedAccountValue = string | "all"
+
 export function useModelListState() {
   // 状态管理
-  const [selectedAccount, setSelectedAccount] = useState<string>("") // 当前选中的账号ID
+  const [selectedAccount, setSelectedAccount] =
+    useState<SelectedAccountValue>("") // 当前选中的账号ID
   const [searchTerm, setSearchTerm] = useState("") // 搜索关键词
   const [selectedProvider, setSelectedProvider] = useState<
     ProviderType | "all"
   >("all") // 当前选中的模型提供商
   const [selectedGroup, setSelectedGroup] = useState<string>("default") // 当前选中的用户分组
+  const [allAccountsFilterAccountId, setAllAccountsFilterAccountId] = useState<
+    string | null
+  >(null) // 在"所有账号"模式下用于临时筛选特定账号
 
   // 显示选项
   const [showRealPrice, setShowRealPrice] = useState(false) // 是否显示真实价格
@@ -25,6 +31,8 @@ export function useModelListState() {
     setSelectedProvider,
     selectedGroup,
     setSelectedGroup,
+    allAccountsFilterAccountId,
+    setAllAccountsFilterAccountId,
     showRealPrice,
     setShowRealPrice,
     showRatioColumn,

@@ -38,6 +38,7 @@ import {
 } from "~/features/AccountManagement/hooks/useAccountSearch"
 import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
 import { useIsDesktop, useIsSmallScreen } from "~/hooks/useMediaQuery"
+import { cn } from "~/lib/utils"
 import type { DisplaySiteData, SortField } from "~/types"
 import {
   calculateTotalBalanceForSites,
@@ -47,7 +48,6 @@ import {
 import CopyKeyDialog from "../CopyKeyDialog"
 import DelAccountDialog from "../DelAccountDialog"
 import { NewcomerSupportCard } from "../NewcomerSupportCard"
-import AccountListItem from "./AccountListItem"
 import AccountSearchInput from "./AccountSearchInput"
 import SortableAccountListItem from "./SortableAccountListItem"
 
@@ -72,6 +72,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   } = useAccountDataContext()
   const { handleAddAccountClick } = useAddAccountHandler()
   const { handleDeleteAccount } = useAccountActionsContext()
+  const { detectedAccount } = useAccountDataContext()
 
   const [deleteDialogAccount, setDeleteDialogAccount] =
     useState<DisplaySiteData | null>(null)
@@ -209,32 +210,23 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     </IconButton>
   )
 
-  const listContent = isManualSortFeatureEnabled ? (
+  const listContent = (
     <CardList>
       {displayedResults.map((item) => (
         <SortableAccountListItem
           key={item.account.id}
           site={item.account}
+          className={cn(
+            detectedAccount?.id === item.account.id &&
+              "rounded-lg border-l-4 border-l-blue-500 bg-blue-50 dark:border-l-blue-400 dark:bg-blue-900/50",
+          )}
           highlights={item.highlights}
           onDeleteWithDialog={handleDeleteWithDialog}
           onCopyKey={handleCopyKeyWithDialog}
           isDragDisabled={dragDisabled}
           handleLabel={handleLabel}
-          showHandle={true}
+          showHandle={isManualSortFeatureEnabled}
         />
-      ))}
-    </CardList>
-  ) : (
-    <CardList>
-      {displayedResults.map((item) => (
-        <div key={item.account.id} className="px-3 py-2.5 sm:px-4 sm:py-3">
-          <AccountListItem
-            site={item.account}
-            highlights={item.highlights}
-            onDeleteWithDialog={handleDeleteWithDialog}
-            onCopyKey={handleCopyKeyWithDialog}
-          />
-        </div>
       ))}
     </CardList>
   )
