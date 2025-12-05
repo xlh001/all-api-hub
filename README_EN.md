@@ -140,6 +140,14 @@ This extension automatically detects and manages accounts from sites based on th
 | Firefox Add-ons | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | ![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat) |
 | GitHub Release | [Release Download](https://github.com/qixing-jk/all-api-hub/releases) | ![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat) |
 
+### Manual Installation
+
+1. Download the latest release package.
+2. Open Chrome and navigate to `chrome://extensions/`.
+3. Enable "Developer mode".
+4. Click "Load unpacked".
+5. Select the unzipped extension folder.
+
 ## 🧑‍🚀 Quick Start Guide for New Users
 
 1. **Install and log in to target sites**: Grab the latest build from Chrome/Edge/Firefox stores or GitHub Release, enable the extension, pin it, and sign in to the relay stations you want to manage in your browser first.
@@ -149,14 +157,6 @@ This extension automatically detects and manages accounts from sites based on th
 5. **Configure New API integration (optional)**: If you run your own New API, fill Administrator URL/Token/User ID under “Basic Settings → New API Integration,” then use “New API Model Sync” + “Channel Management (Beta)” to keep channels and model whitelists aligned.
 6. **Quick export to downstream systems (optional)**: From “Key Management,” click “Export” to sync channels into CherryStudio, CC Switch, or New API.
 7. **Backup & collaborate**: Use “Basic Settings → Data Management” to import/export JSON, or configure automatic sync under “WebDAV Backup” to keep multiple devices in sync and data safe.
-
-### Manual Installation
-
-1. Download the latest release package.
-2. Open Chrome and navigate to `chrome://extensions/`.
-3. Enable "Developer mode".
-4. Click "Load unpacked".
-5. Select the unzipped extension folder.
 
 ## 🛠️ Development Guide
 
