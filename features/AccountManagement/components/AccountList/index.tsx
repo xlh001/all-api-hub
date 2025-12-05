@@ -10,12 +10,9 @@ import {
 import {
   arrayMove,
   SortableContext,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
 import {
-  Bars3Icon,
   ChevronDownIcon,
   ChevronUpIcon,
   InboxIcon,
@@ -52,71 +49,7 @@ import DelAccountDialog from "../DelAccountDialog"
 import { NewcomerSupportCard } from "../NewcomerSupportCard"
 import AccountListItem from "./AccountListItem"
 import AccountSearchInput from "./AccountSearchInput"
-
-function SortableAccountListItem({
-  site,
-  highlights,
-  onCopyKey,
-  onDeleteWithDialog,
-  isDragDisabled,
-  handleLabel,
-}: {
-  site: DisplaySiteData
-  highlights?: SearchResultWithHighlight["highlights"]
-  onCopyKey: (site: DisplaySiteData) => void
-  onDeleteWithDialog: (site: DisplaySiteData) => void
-  isDragDisabled: boolean
-  handleLabel: string
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: site.id,
-    disabled: isDragDisabled,
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={isDragging ? "relative z-10" : undefined}
-    >
-      <div className="flex items-center gap-2 px-3 py-2.5 transition-all sm:px-4 sm:py-3">
-        <IconButton
-          ref={setActivatorNodeRef}
-          variant="ghost"
-          size="xs"
-          aria-label={handleLabel}
-          disabled={isDragDisabled}
-          className="shrink-0 text-gray-400 hover:text-gray-700 focus-visible:ring-2 focus-visible:ring-offset-2"
-          {...listeners}
-          {...attributes}
-        >
-          <Bars3Icon className="h-4 w-4" />
-        </IconButton>
-        <div className="min-w-0 flex-1">
-          <AccountListItem
-            site={site}
-            highlights={highlights}
-            onDeleteWithDialog={onDeleteWithDialog}
-            onCopyKey={onCopyKey}
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
+import SortableAccountListItem from "./SortableAccountListItem"
 
 interface AccountListProps {
   initialSearchQuery?: string
@@ -276,6 +209,36 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     </IconButton>
   )
 
+  const listContent = isManualSortFeatureEnabled ? (
+    <CardList>
+      {displayedResults.map((item) => (
+        <SortableAccountListItem
+          key={item.account.id}
+          site={item.account}
+          highlights={item.highlights}
+          onDeleteWithDialog={handleDeleteWithDialog}
+          onCopyKey={handleCopyKeyWithDialog}
+          isDragDisabled={dragDisabled}
+          handleLabel={handleLabel}
+          showHandle={true}
+        />
+      ))}
+    </CardList>
+  ) : (
+    <CardList>
+      {displayedResults.map((item) => (
+        <div key={item.account.id} className="px-3 py-2.5 sm:px-4 sm:py-3">
+          <AccountListItem
+            site={item.account}
+            highlights={item.highlights}
+            onDeleteWithDialog={handleDeleteWithDialog}
+            onCopyKey={handleCopyKeyWithDialog}
+          />
+        </div>
+      ))}
+    </CardList>
+  )
+
   return (
     <Card padding="none" className="flex flex-col overflow-hidden">
       <CardContent padding={"none"} spacing={"none"}>
@@ -371,37 +334,11 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
               items={sortedIds}
               strategy={verticalListSortingStrategy}
             >
-              <CardList>
-                {displayedResults.map((item) => (
-                  <SortableAccountListItem
-                    key={item.account.id}
-                    site={item.account}
-                    highlights={item.highlights}
-                    onDeleteWithDialog={handleDeleteWithDialog}
-                    onCopyKey={handleCopyKeyWithDialog}
-                    isDragDisabled={dragDisabled}
-                    handleLabel={handleLabel}
-                  />
-                ))}
-              </CardList>
+              {listContent}
             </SortableContext>
           </DndContext>
         ) : (
-          <CardList>
-            {displayedResults.map((item) => (
-              <div
-                key={item.account.id}
-                className="px-3 py-2.5 sm:px-4 sm:py-3"
-              >
-                <AccountListItem
-                  site={item.account}
-                  highlights={item.highlights}
-                  onDeleteWithDialog={handleDeleteWithDialog}
-                  onCopyKey={handleCopyKeyWithDialog}
-                />
-              </div>
-            ))}
-          </CardList>
+          listContent
         )}
       </CardContent>
 
