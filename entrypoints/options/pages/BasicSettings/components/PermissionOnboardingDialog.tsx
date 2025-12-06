@@ -18,7 +18,7 @@ import {
 } from "~/services/permissions/permissionManager"
 import { showResultToast } from "~/utils/toastHelpers"
 
-import PermissionList from "./PermissionList"
+import { PermissionList } from "./PermissionList"
 
 const GITHUB_URL = "https://github.com/qixing-jk/all-api-hub"
 
@@ -34,7 +34,10 @@ interface PermissionOnboardingDialogProps {
 }
 
 /**
- *
+ * Onboarding modal that explains optional permissions and lets users grant them.
+ * @param props Component props container.
+ * @param props.open Controls dialog visibility.
+ * @param props.onClose Callback executed when modal requests closure.
  */
 export function PermissionOnboardingDialog({
   open,
