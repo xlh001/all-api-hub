@@ -46,7 +46,6 @@ class RedemptionAssistService {
 
   /**
    * Update runtime flags without persisting.
-   *
    * @param settings Runtime-only toggle overrides.
    */
   updateRuntimeSettings(settings: { enabled?: boolean }) {
@@ -78,7 +77,6 @@ class RedemptionAssistService {
 
   /**
    * Normalize and extract hostname; returns null if URL is invalid.
-   *
    * @param url Candidate URL.
    * @returns Lowercased hostname or null on parse failure.
    */
@@ -94,7 +92,6 @@ class RedemptionAssistService {
   /**
    * Decide whether to show redemption prompt for a given URL/code pair.
    * Returns a reason when skipping prompt (disabled/invalid_code).
-   *
    * @param params url, code, optional tabId for telemetry.
    * @returns shouldPrompt flag and optional skip reason.
    */
@@ -120,7 +117,6 @@ class RedemptionAssistService {
 
   /**
    * Redeem a code for a specific account directly.
-   *
    * @param accountId Target account id.
    * @param code Redemption code.
    */

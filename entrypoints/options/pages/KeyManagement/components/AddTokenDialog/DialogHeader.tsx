@@ -6,6 +6,9 @@ interface DialogHeaderProps {
   isEditMode: boolean
 }
 
+/**
+ *
+ */
 export function DialogHeader({ isEditMode }: DialogHeaderProps) {
   const { t } = useTranslation("keyManagement")
 

@@ -28,7 +28,6 @@ interface OpenAICompatibilityListResponse {
 
 /**
  * Compute upstream OpenAI-compatible base URL for a provider.
- *
  * @param account Display account info.
  * @returns Base URL ending with /v1 for OpenAI compatibility.
  */
@@ -39,7 +38,6 @@ function getProviderBaseUrl(account: DisplaySiteData): string {
 
 /**
  * Build human-readable provider name for CLI Proxy.
- *
  * @param account Display account info.
  */
 function buildProviderName(account: DisplaySiteData): string {
@@ -48,7 +46,6 @@ function buildProviderName(account: DisplaySiteData): string {
 
 /**
  * Read CLI Proxy config from user preferences.
- *
  * @returns Base URL and management key, or null if not configured.
  */
 async function getCliProxyConfig() {
@@ -148,7 +145,6 @@ async function patchProviderByIndex(
 
 /**
  * Import an account/token into CLI Proxy as an OpenAI-compatible provider.
- *
  * @param account Display site data (source).
  * @param token API token to register.
  * @returns ServiceResponse with success flag and message.

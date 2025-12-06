@@ -11,9 +11,8 @@ import type { UserPreferences } from "../../userPreferences"
  * Checks if the given user preferences object contains any of the old flat auto-refresh fields.
  * If any of the old fields are present, it means that the user preferences object needs to be migrated
  * to use the new nested accountAutoRefresh object.
- *
- * @param {UserPreferences} prefs - User preferences object to check
- * @returns {boolean} - True if the user preferences object needs to be migrated, false otherwise
+ * @param prefs - User preferences object to check
+ * @returns - True if the user preferences object needs to be migrated, false otherwise
  */
 export function needAutoRefreshConfigMigration(
   prefs: UserPreferences,
@@ -28,9 +27,8 @@ export function needAutoRefreshConfigMigration(
 
 /**
  * Migrate old flat auto-refresh fields to nested object structure
- *
- * @param {UserPreferences} prefs - User preferences object to migrate
- * @returns {UserPreferences} - Migrated user preferences object with nested accountAutoRefresh object
+ * @param prefs - User preferences object to migrate
+ * @returns - Migrated user preferences object with nested accountAutoRefresh object
  */
 export function migrateAutoRefreshConfig(
   prefs: UserPreferences,

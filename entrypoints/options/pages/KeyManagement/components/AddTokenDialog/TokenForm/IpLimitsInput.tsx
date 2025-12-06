@@ -12,6 +12,9 @@ interface IpLimitsInputProps {
   error?: string
 }
 
+/**
+ *
+ */
 export function IpLimitsInput({
   allowIps,
   handleInputChange,

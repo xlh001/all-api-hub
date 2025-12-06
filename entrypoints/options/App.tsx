@@ -8,6 +8,9 @@ import { menuItems } from "./constants"
 import { useHashNavigation } from "./hooks/useHashNavigation"
 import BasicSettings from "./pages/BasicSettings"
 
+/**
+ *
+ */
 function OptionsPage() {
   const { activeMenuItem, routeParams, handleMenuItemChange, refreshKey } =
     useHashNavigation()
@@ -62,6 +65,9 @@ function OptionsPage() {
   )
 }
 
+/**
+ *
+ */
 function App() {
   return (
     <AppLayout>

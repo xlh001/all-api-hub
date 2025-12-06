@@ -18,6 +18,9 @@ import { isFirefox } from "~/utils/browser"
 import { openSettingsTab } from "~/utils/navigation"
 import { canUseTempWindowFetch } from "~/utils/tempWindowFetch"
 
+/**
+ *
+ */
 export default function ShieldSettings() {
   const { t } = useTranslation("settings")
   const { tempWindowFallback, updateTempWindowFallback } =

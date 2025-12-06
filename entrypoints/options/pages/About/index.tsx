@@ -16,6 +16,9 @@ import PluginIntroCard from "./components/PluginIntroCard"
 import PrivacyNotice from "./components/PrivacyNotice"
 import TechStackGrid from "./components/TechStackGrid"
 
+/**
+ *
+ */
 export default function About() {
   const { t } = useTranslation("about")
   const version = packageJson.version

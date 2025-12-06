@@ -15,6 +15,9 @@ interface ProviderTabsProps {
   children: ReactNode
 }
 
+/**
+ *
+ */
 export function ProviderTabs({
   providers,
   selectedProvider,

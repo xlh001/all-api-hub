@@ -15,6 +15,9 @@ import { ProviderTabs } from "./components/ProviderTabs"
 import { StatusIndicator } from "./components/StatusIndicator"
 import { useModelListData } from "./hooks/useModelListData"
 
+/**
+ *
+ */
 export default function ModelList({
   routeParams,
 }: {

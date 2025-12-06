@@ -38,11 +38,13 @@ type UserNewApiModelSyncConfig = NonNullable<
  * retries and rate limits, selecting allowed models (loaded from model metadata), and navigating
  * to the sync execution view. It loads model metadata on mount, persists preference changes via
  * the user preferences context, and shows success/error toasts for save operations.
- *
  * @returns The settings section React element for configuring New API Model Sync.
  */
 type EditableFilter = ChannelModelFilterRule
 
+/**
+ *
+ */
 export default function NewApiModelSyncSettings() {
   const { t } = useTranslation([
     "newApiModelSync",
@@ -655,6 +657,9 @@ export default function NewApiModelSyncSettings() {
   )
 }
 
+/**
+ *
+ */
 function parseJsonGlobalChannelModelFilters(rawJson: string): EditableFilter[] {
   const trimmed = rawJson.trim()
   if (!trimmed) {
@@ -720,7 +725,6 @@ function parseJsonGlobalChannelModelFilters(rawJson: string): EditableFilter[] {
 
 /**
  * Builds sorted multi-select options from an array of model metadata.
- *
  * @param metadata - Array of model metadata objects to convert into select options
  * @returns An array of MultiSelectOption objects with `label` and `value` set to each model's `id`, sorted by `label`
  */
@@ -732,6 +736,9 @@ function buildModelOptions(metadata: ModelMetadata[]): MultiSelectOption[] {
   return options.sort((a, b) => a.label.localeCompare(b.label))
 }
 
+/**
+ *
+ */
 function buildOptionsFromIds(modelIds: string[]): MultiSelectOption[] {
   const options = modelIds
     .map((model) => model.trim())

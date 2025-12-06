@@ -27,6 +27,9 @@ interface TokenHeaderProps {
   onOpenCCSwitchDialog?: () => void
 }
 
+/**
+ *
+ */
 function TokenActionButtons({
   token,
   copyKey,
@@ -113,6 +116,9 @@ function TokenActionButtons({
   )
 }
 
+/**
+ *
+ */
 export function TokenHeader({
   token,
   copyKey,

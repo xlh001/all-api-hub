@@ -12,6 +12,9 @@ interface CCSwitchIconProps {
   size?: CCSwitchIconSize
 }
 
+/**
+ *
+ */
 export function CCSwitchIcon({ size = "sm" }: CCSwitchIconProps) {
   const dimension = SIZE_MAP[size]
 

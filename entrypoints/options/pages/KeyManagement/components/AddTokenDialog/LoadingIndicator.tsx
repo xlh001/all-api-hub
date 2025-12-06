@@ -1,3 +1,6 @@
+/**
+ *
+ */
 export function LoadingIndicator() {
   return (
     <div className="space-y-4">

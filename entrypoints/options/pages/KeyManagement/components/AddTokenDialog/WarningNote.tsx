@@ -2,6 +2,9 @@ import { useTranslation } from "react-i18next"
 
 import { Alert } from "~/components/ui"
 
+/**
+ *
+ */
 export function WarningNote() {
   const { t } = useTranslation("keyManagement")
 

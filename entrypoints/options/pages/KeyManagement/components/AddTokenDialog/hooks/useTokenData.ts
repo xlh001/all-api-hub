@@ -11,6 +11,9 @@ import type { DisplaySiteData } from "~/types"
 
 import type { FormData } from "./useTokenForm"
 
+/**
+ *
+ */
 export function useTokenData(
   isOpen: boolean,
   currentAccount: DisplaySiteData | undefined,

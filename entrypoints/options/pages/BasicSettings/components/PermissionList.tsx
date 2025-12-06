@@ -24,6 +24,9 @@ interface PermissionListProps {
   items: PermissionListItem[]
 }
 
+/**
+ *
+ */
 export function PermissionList({ items }: PermissionListProps) {
   return (
     <CardList>

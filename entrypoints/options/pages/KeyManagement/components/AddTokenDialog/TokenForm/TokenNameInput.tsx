@@ -12,6 +12,9 @@ interface TokenNameInputProps {
   error?: string
 }
 
+/**
+ *
+ */
 export function TokenNameInput({
   name,
   handleInputChange,

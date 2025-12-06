@@ -39,6 +39,9 @@ interface SiteInfoProps {
   highlights?: SearchResultWithHighlight["highlights"]
 }
 
+/**
+ *
+ */
 function renderHighlightedFragments(
   fragments: HighlightFragment[] | undefined,
   fallback: string,
@@ -61,6 +64,9 @@ function renderHighlightedFragments(
   )
 }
 
+/**
+ *
+ */
 export default function SiteInfo({ site, highlights }: SiteInfoProps) {
   const { t } = useTranslation("account")
   const { t: tMessages } = useTranslation("messages")

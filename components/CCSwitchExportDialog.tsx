@@ -29,6 +29,9 @@ interface CCSwitchExportDialogProps {
 
 const DEFAULT_APP: CCSwitchApp = "claude"
 
+/**
+ *
+ */
 export function CCSwitchExportDialog({
   isOpen,
   onClose,

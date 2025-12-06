@@ -11,9 +11,8 @@ import type { UserPreferences } from "../../userPreferences"
  * Checks if the given user preferences object contains any of the old flat new-api fields.
  * If any of the old fields are present, it means that the user preferences object needs to be migrated
  * to use the new nested newApi object.
- *
- * @param {UserPreferences} prefs - User preferences object to check
- * @returns {boolean} - True if the user preferences object needs to be migrated, false otherwise
+ * @param prefs - User preferences object to check
+ * @returns - True if the user preferences object needs to be migrated, false otherwise
  */
 export function needNewApiConfigMigration(prefs: UserPreferences): boolean {
   return (
@@ -25,9 +24,8 @@ export function needNewApiConfigMigration(prefs: UserPreferences): boolean {
 
 /**
  * Migrate old flat new-api fields to nested object structure
- *
- * @param {UserPreferences} prefs - User preferences object to migrate
- * @returns {UserPreferences} - Migrated user preferences object with nested newApi object
+ * @param prefs - User preferences object to migrate
+ * @returns - Migrated user preferences object with nested newApi object
  */
 export function migrateNewApiConfig(prefs: UserPreferences): UserPreferences {
   const hasNestedNewApi =

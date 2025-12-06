@@ -19,6 +19,9 @@ interface TokenListItemProps {
   onOpenCCSwitchDialog: (token: AccountToken, account: DisplaySiteData) => void
 }
 
+/**
+ *
+ */
 export function TokenListItem({
   token,
   visibleKeys,

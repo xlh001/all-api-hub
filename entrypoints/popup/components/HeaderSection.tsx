@@ -21,6 +21,9 @@ import {
 
 import CompactThemeToggle from "./ThemeToggle"
 
+/**
+ *
+ */
 export default function HeaderSection() {
   const { t } = useTranslation(["ui", "account", "common"])
   const { isRefreshing, handleRefresh } = useAccountDataContext()

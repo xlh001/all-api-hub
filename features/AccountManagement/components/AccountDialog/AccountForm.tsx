@@ -52,6 +52,9 @@ interface AccountFormProps {
   onCheckInChange: (value: CheckInConfig) => void
 }
 
+/**
+ *
+ */
 export default function AccountForm({
   authType,
   siteName,

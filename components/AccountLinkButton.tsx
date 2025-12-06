@@ -12,10 +12,10 @@ interface AccountLinkButtonProps {
 
 /**
  * A button that links to the account manager page with the given account ID.
- * @param {AccountLinkButtonProps} props - The properties of the button.
- * @param {string} props.accountId - The ID of the account to link to.
- * @param {string} props.accountName - The name of the account to display.
- * @param {string} [props.className] - The CSS class name to apply to the button.
+ * @param props - The properties of the button.
+ * @param props.accountId - The ID of the account to link to.
+ * @param props.accountName - The name of the account to display.
+ * @param [props.className] - The CSS class name to apply to the button.
  */
 export default function AccountLinkButton({
   accountId,

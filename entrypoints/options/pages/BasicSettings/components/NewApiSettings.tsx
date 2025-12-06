@@ -8,6 +8,9 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showUpdateToast } from "../../../../../utils/toastHelpers"
 
+/**
+ *
+ */
 export default function NewApiSettings() {
   const { t } = useTranslation("settings")
   const {

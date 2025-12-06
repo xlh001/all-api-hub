@@ -26,6 +26,9 @@ export const fetchSiteOriginalTitle = async (url: string) => {
   return title
 }
 
+/**
+ *
+ */
 async function getSiteUserIdType(url: string) {
   try {
     await fetchApiData<unknown>({

@@ -29,6 +29,9 @@ import { getErrorMessage } from "~/utils/error"
 
 import { UserPreferences, userPreferences } from "../userPreferences"
 
+/**
+ *
+ */
 function parseDelimitedList(value?: string | null): string[] {
   if (!value) return []
   return value
@@ -37,6 +40,9 @@ function parseDelimitedList(value?: string | null): string[] {
     .filter(Boolean)
 }
 
+/**
+ *
+ */
 function normalizeList(values: string[] = []): string[] {
   return Array.from(new Set(values.map((item) => item.trim()).filter(Boolean)))
 }
@@ -163,6 +169,9 @@ export async function deleteChannel(
   }
 }
 
+/**
+ *
+ */
 export function hasValidNewApiConfig(prefs: UserPreferences | null): boolean {
   if (!prefs) {
     return false
@@ -449,6 +458,9 @@ export async function importToNewApi(
 }
 
 // Helper function to validate New API configuration
+/**
+ *
+ */
 async function validateNewApiConfig(): Promise<{
   valid: boolean
   errors: string[]

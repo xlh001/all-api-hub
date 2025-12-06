@@ -13,6 +13,9 @@ interface ActionBarProps {
   onRefresh: () => void
 }
 
+/**
+ *
+ */
 export default function ActionBar({
   isRunning,
   selectedCount,

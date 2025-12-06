@@ -38,6 +38,9 @@ const ChannelDialogContext = createContext<ChannelDialogContextValue | null>(
   null,
 )
 
+/**
+ *
+ */
 export function ChannelDialogProvider({
   children,
 }: {
@@ -101,6 +104,9 @@ export function ChannelDialogProvider({
   )
 }
 
+/**
+ *
+ */
 export function useChannelDialogContext() {
   const context = useContext(ChannelDialogContext)
   if (!context) {

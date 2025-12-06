@@ -259,6 +259,9 @@ export function addExtensionHeader(
   return headersObj
 }
 
+/**
+ *
+ */
 export async function addAuthMethodHeader(
   headers: HeadersInit = {},
   mode: AuthMode,

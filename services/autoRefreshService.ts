@@ -99,7 +99,6 @@ class AutoRefreshService {
 
   /**
    * Trigger a one-off immediate refresh (bypasses interval scheduling).
-   *
    * @returns Counts of succeeded/failed account refreshes.
    */
   async refreshNow(): Promise<{ success: number; failed: number }> {
@@ -131,7 +130,6 @@ class AutoRefreshService {
 
   /**
    * Persist new refresh settings and reconfigure the timer accordingly.
-   *
    * @param updates Partial accountAutoRefresh config.
    */
   async updateSettings(updates: {
@@ -149,7 +147,6 @@ class AutoRefreshService {
 
   /**
    * Get current runtime status (used by UI to display state).
-   *
    * @returns Whether timer is running and service initialized.
    */
   getStatus() {
@@ -208,7 +205,6 @@ export const autoRefreshService = new AutoRefreshService()
 /**
  * Message handler for auto-refresh related actions.
  * Keeps background-only logic centralized; responds with success/error payloads.
- *
  * @param request Incoming message with action and payload.
  * @param sendResponse Callback to reply to sender.
  */

@@ -54,6 +54,9 @@ const getSortingCriteriaUiText = (
   },
 })
 
+/**
+ *
+ */
 export default function SortingPrioritySettings() {
   const { t } = useTranslation("settings")
   const {

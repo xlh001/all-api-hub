@@ -22,6 +22,9 @@ interface ResultsTableProps {
   onOpenManualSignIn?: (accountId: string) => void | Promise<void>
 }
 
+/**
+ *
+ */
 export default function ResultsTable({
   results,
   retryingAccountId,

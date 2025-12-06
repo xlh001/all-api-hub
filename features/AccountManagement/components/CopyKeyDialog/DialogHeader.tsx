@@ -8,6 +8,9 @@ interface DialogHeaderProps {
   account: DisplaySiteData | null
 }
 
+/**
+ *
+ */
 export function DialogHeader({ account }: DialogHeaderProps) {
   const { t } = useTranslation("ui")
 

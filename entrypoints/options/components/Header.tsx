@@ -11,6 +11,9 @@ interface HeaderProps {
   isMobileSidebarOpen?: boolean
 }
 
+/**
+ *
+ */
 function Header({
   onTitleClick,
   onMenuToggle,

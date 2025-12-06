@@ -11,6 +11,9 @@ import {
 } from "../components/RedemptionPromptToast"
 import { ensureRedemptionToastUi } from "../uiRoot"
 
+/**
+ *
+ */
 export async function showRedeemLoadingToast(message: string) {
   await ensureRedemptionToastUi()
   return toast.custom(
@@ -21,10 +24,16 @@ export async function showRedeemLoadingToast(message: string) {
   )
 }
 
+/**
+ *
+ */
 export function dismissToast(toastId?: string) {
   toast.dismiss(toastId)
 }
 
+/**
+ *
+ */
 export async function showAccountSelectToast(
   accounts: DisplaySiteData[],
   options?: { title?: string; message?: string },
@@ -63,6 +72,9 @@ export async function showAccountSelectToast(
   })
 }
 
+/**
+ *
+ */
 export async function showRedemptionPromptToast(
   message: string,
 ): Promise<RedemptionPromptAction> {
@@ -89,6 +101,9 @@ export async function showRedemptionPromptToast(
   })
 }
 
+/**
+ *
+ */
 export async function showRedeemResultToast(success: boolean, message: string) {
   if (!message) return
 

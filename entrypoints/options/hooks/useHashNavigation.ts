@@ -5,6 +5,9 @@ import { navigateWithinOptionsPage } from "~/utils/navigation"
 import { menuItems } from "../constants"
 
 // 解析URL hash和参数
+/**
+ *
+ */
 function parseHash() {
   const hash = window.location.hash.slice(1) // 去掉 #
 
@@ -32,11 +35,17 @@ function parseHash() {
 }
 
 // 更新URL hash
+/**
+ *
+ */
 function updateHash(page: string, params?: Record<string, string>) {
   const hash = `#${page}`
   navigateWithinOptionsPage(hash, params)
 }
 
+/**
+ *
+ */
 export function useHashNavigation() {
   const [activeMenuItem, setActiveMenuItem] = useState("basic")
   const [routeParams, setRouteParams] = useState<Record<string, string>>({})

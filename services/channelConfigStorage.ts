@@ -106,6 +106,9 @@ type IncomingChannelFilter = ChannelModelFilterInput & {
   updatedAt?: number
 }
 
+/**
+ *
+ */
 function normalizeFilters(
   filters: IncomingChannelFilter[],
 ): ChannelModelFilterRule[] {
@@ -154,6 +157,9 @@ function normalizeFilters(
   })
 }
 
+/**
+ *
+ */
 export async function handleChannelConfigMessage(
   request: any,
   sendResponse: (response: any) => void,
@@ -201,6 +207,9 @@ export async function handleChannelConfigMessage(
   }
 }
 
+/**
+ *
+ */
 function sanitizeChannelConfigMap(rawConfigs: unknown): ChannelConfigMap {
   if (!rawConfigs || typeof rawConfigs !== "object") {
     return {}
@@ -218,6 +227,9 @@ function sanitizeChannelConfigMap(rawConfigs: unknown): ChannelConfigMap {
   }, {})
 }
 
+/**
+ *
+ */
 function sanitizeChannelConfig(
   value: unknown,
   channelId: number,
@@ -250,6 +262,9 @@ function sanitizeChannelConfig(
   }
 }
 
+/**
+ *
+ */
 function sanitizeModelFilterSettings(
   rawSettings:
     | (Partial<ChannelModelFilterSettings> & { rules?: unknown })
@@ -287,6 +302,9 @@ function sanitizeModelFilterSettings(
   }
 }
 
+/**
+ *
+ */
 function sanitizeFilter(
   filter: unknown,
   fallbackTimestamp: number,

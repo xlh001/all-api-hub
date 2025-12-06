@@ -12,6 +12,9 @@ interface ExpirationTimeInputProps {
   error?: string
 }
 
+/**
+ *
+ */
 export function ExpirationTimeInput({
   expiredTime,
   handleInputChange,

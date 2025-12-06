@@ -8,6 +8,9 @@ interface StatisticsCardProps {
   statistics: ExecutionStatistics
 }
 
+/**
+ *
+ */
 export default function StatisticsCard({ statistics }: StatisticsCardProps) {
   const { t } = useTranslation("newApiModelSync")
 

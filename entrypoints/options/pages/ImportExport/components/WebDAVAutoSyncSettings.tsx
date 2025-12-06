@@ -29,6 +29,9 @@ import { WEBDAV_SYNC_STRATEGIES, WebDAVSettings } from "~/types/webdav"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { formatTimestamp } from "~/utils/formatters"
 
+/**
+ *
+ */
 export default function WebDAVAutoSyncSettings() {
   const { t } = useTranslation("importExport")
 

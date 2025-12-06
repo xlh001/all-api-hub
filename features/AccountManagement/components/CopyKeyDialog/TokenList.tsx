@@ -16,6 +16,9 @@ interface TokenListProps {
   onOpenCCSwitchDialog?: (token: ApiToken, account: DisplaySiteData) => void
 }
 
+/**
+ *
+ */
 export function TokenList({
   tokens,
   expandedTokens,

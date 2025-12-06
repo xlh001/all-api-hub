@@ -7,6 +7,9 @@ import {
   setupWebRequestInterceptor,
 } from "~/utils/cookieHelper"
 
+/**
+ *
+ */
 export async function checkCookieInterceptorRequirement(): Promise<boolean> {
   // 仅 Firefox 使用这个功能
   if (isFirefox()) {
@@ -25,6 +28,9 @@ export async function checkCookieInterceptorRequirement(): Promise<boolean> {
 }
 
 // 辅助函数：从账号列表提取 站点的 URL 模式
+/**
+ *
+ */
 function extractAccountUrlPatterns(accounts: SiteAccount[]): string[] {
   const patterns = accounts
     .map((acc) => {
@@ -46,6 +52,9 @@ function extractAccountUrlPatterns(accounts: SiteAccount[]): string[] {
 }
 
 // 初始化 Cookie 拦截器
+/**
+ *
+ */
 export async function initializeCookieInterceptors(): Promise<void> {
   try {
     if (!(await checkCookieInterceptorRequirement())) {
@@ -60,6 +69,9 @@ export async function initializeCookieInterceptors(): Promise<void> {
 }
 
 // 更新 Cookie 拦截器（配置变更时调用）
+/**
+ *
+ */
 async function updateCookieInterceptor(): Promise<void> {
   try {
     if (!(await checkCookieInterceptorRequirement())) {
@@ -73,6 +85,9 @@ async function updateCookieInterceptor(): Promise<void> {
   }
 }
 
+/**
+ *
+ */
 function handleStorageChanged(
   changes: Record<string, unknown>,
   areaName: string,
@@ -85,6 +100,9 @@ function handleStorageChanged(
   }
 }
 
+/**
+ *
+ */
 export function setupCookieInterceptorListeners() {
   browser.storage.onChanged.addListener(handleStorageChanged as any)
   chrome.permissions.onAdded.addListener(updateCookieInterceptor)

@@ -27,6 +27,9 @@ interface TokenInfo {
   normalized: string
 }
 
+/**
+ *
+ */
 function normalizeForMatching(value: string): string {
   if (!value) {
     return ""
@@ -54,10 +57,16 @@ function normalizeForMatching(value: string): string {
   return normalized
 }
 
+/**
+ *
+ */
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
+/**
+ *
+ */
 function createHighlightFragments(
   text: string,
   tokens: TokenInfo[],
@@ -107,6 +116,9 @@ function createHighlightFragments(
   return fragments.length > 0 ? fragments : [{ text, highlighted: false }]
 }
 
+/**
+ *
+ */
 function generateHighlights(
   results: SearchResult[],
   query: string,
@@ -221,6 +233,9 @@ function generateHighlights(
   })
 }
 
+/**
+ *
+ */
 export function useAccountSearch(
   accounts: DisplaySiteData[],
   initialQuery?: string,

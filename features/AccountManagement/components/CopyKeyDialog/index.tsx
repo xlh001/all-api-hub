@@ -17,6 +17,9 @@ interface CopyKeyDialogProps {
   account: DisplaySiteData
 }
 
+/**
+ *
+ */
 export default function CopyKeyDialog({
   isOpen,
   onClose,

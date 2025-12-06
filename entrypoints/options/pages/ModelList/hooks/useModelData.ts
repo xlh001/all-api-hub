@@ -42,6 +42,9 @@ interface UseModelDataReturn {
   loadPricingData: (accountId: string) => Promise<void>
 }
 
+/**
+ *
+ */
 function useSingleAccountModelData({
   selectedAccount,
   accounts,
@@ -154,6 +157,9 @@ function useSingleAccountModelData({
   }
 }
 
+/**
+ *
+ */
 function useAllAccountsModelData(
   accounts: DisplaySiteData[],
 ): UseModelDataReturn {
@@ -254,6 +260,9 @@ function useAllAccountsModelData(
   }
 }
 
+/**
+ *
+ */
 export function useModelData({
   selectedAccount,
   accounts,

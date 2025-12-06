@@ -12,6 +12,9 @@ interface CliProxyIconProps {
   size?: CliProxyIconSize
 }
 
+/**
+ *
+ */
 export function CliProxyIcon({ size = "sm" }: CliProxyIconProps) {
   const dimension = SIZE_MAP[size]
 

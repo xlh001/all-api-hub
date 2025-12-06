@@ -38,7 +38,6 @@ class NewApiModelSyncScheduler {
 
   /**
    * Build a NewApiModelSyncService instance using persisted preferences and channel configs.
-   *
    * @throws Error when New API config is missing.
    */
   private async createService(): Promise<NewApiModelSyncService> {
@@ -170,7 +169,6 @@ class NewApiModelSyncScheduler {
   /**
    * Execute model sync for all channels (or a filtered subset).
    * Also generates model redirect mappings immediately after successful channel syncs.
-   *
    * @param channelIds Optional subset of channel IDs to sync; defaults to all.
    * @returns ExecutionResult with per-channel outcomes and statistics.
    */
@@ -317,7 +315,6 @@ class NewApiModelSyncScheduler {
 
   /**
    * Execute sync for failed channels only
-   *
    * @returns ExecutionResult for retry batch.
    * @throws Error when no previous execution or no failed channels.
    */
@@ -340,7 +337,6 @@ class NewApiModelSyncScheduler {
 
   /**
    * Get current execution progress
-   *
    * @returns Latest progress snapshot or null when idle.
    */
   getProgress(): ExecutionProgress | null {
@@ -349,7 +345,6 @@ class NewApiModelSyncScheduler {
 
   /**
    * Update sync settings and reschedule alarm
-   *
    * @param settings Partial override of sync prefs (interval, concurrency, filters, rate limit).
    */
   async updateSettings(settings: {

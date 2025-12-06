@@ -9,6 +9,9 @@ interface InfoPanelProps {
   showManualForm?: boolean
 }
 
+/**
+ *
+ */
 export default function InfoPanel({
   mode,
   isDetected,

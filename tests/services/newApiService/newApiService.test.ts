@@ -81,6 +81,9 @@ vi.mock("~/services/userPreferences", () => ({
 // FIXTURES
 // ============================================================================
 
+/**
+ *
+ */
 function createMockDisplaySiteData(
   overrides?: Partial<DisplaySiteData>,
 ): DisplaySiteData {
@@ -105,6 +108,9 @@ function createMockDisplaySiteData(
   }
 }
 
+/**
+ *
+ */
 function createMockApiToken(overrides?: Partial<ApiToken>): ApiToken {
   return {
     id: 1,
@@ -122,6 +128,9 @@ function createMockApiToken(overrides?: Partial<ApiToken>): ApiToken {
   }
 }
 
+/**
+ *
+ */
 function createMockUserPreferencesWithNewApi(overrides?: any) {
   return {
     themeMode: "auto" as const,
@@ -162,6 +171,9 @@ function createMockUserPreferencesWithNewApi(overrides?: any) {
   }
 }
 
+/**
+ *
+ */
 function createMockNewApiChannel(overrides?: any) {
   return {
     id: 1,
@@ -204,6 +216,9 @@ function createMockNewApiChannel(overrides?: any) {
   }
 }
 
+/**
+ *
+ */
 function createMockNewApiChannelListData(channels?: any[]) {
   return {
     items: channels || [createMockNewApiChannel()],
@@ -212,6 +227,9 @@ function createMockNewApiChannelListData(channels?: any[]) {
   }
 }
 
+/**
+ *
+ */
 function createMockSiteAccount(overrides?: Partial<SiteAccount>): SiteAccount {
   return {
     id: "account-1",

@@ -8,6 +8,9 @@ import DangerousZone from "~/entrypoints/options/pages/BasicSettings/components/
 import ThemeToggle from "../../../components/ThemeToggle"
 import DisplaySettings from "./DisplaySettings"
 
+/**
+ *
+ */
 export default function GeneralTab() {
   const { t } = useTranslation("settings")
 

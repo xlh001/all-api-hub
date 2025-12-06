@@ -29,6 +29,9 @@ export function resolveAutoCheckinProvider(
   return provider ?? null
 }
 
+/**
+ *
+ */
 export function isAutoCheckinSupportedForSite(siteType: string): boolean {
   return !!providers[siteType]
 }

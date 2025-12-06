@@ -1,6 +1,9 @@
 import { modelMetadataService } from "~/services/modelMetadata"
 import { removeDateSuffix } from "~/utils/modelName"
 
+/**
+ *
+ */
 export function extractActualModel(modelName: string) {
   let actualModel = modelName
 

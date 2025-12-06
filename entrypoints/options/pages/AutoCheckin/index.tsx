@@ -19,6 +19,9 @@ import LoadingSkeleton from "./components/LoadingSkeleton"
 import ResultsTable from "./components/ResultsTable"
 import StatusCard from "./components/StatusCard"
 
+/**
+ *
+ */
 export default function AutoCheckin() {
   const { t } = useTranslation("autoCheckin")
   const [status, setStatus] = useState<AutoCheckinStatus | null>(null)

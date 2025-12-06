@@ -34,7 +34,6 @@ export class NewApiModelSyncService {
 
   /**
    * Create a model sync service bound to a specific New API instance.
-   *
    * @param baseUrl New API base URL.
    * @param token Admin token for channel operations.
    * @param userId Optional user id for header injection.
@@ -76,7 +75,6 @@ export class NewApiModelSyncService {
 
   /**
    * Update in-memory channel configs to be used by per-channel filters.
-   *
    * @param configs Cached channel configuration map; null clears cache.
    */
   setChannelConfigs(configs: ChannelConfigMap | null) {
@@ -99,7 +97,6 @@ export class NewApiModelSyncService {
    */
   /**
    * Fetch all channels from New API with pagination aggregation.
-   *
    * @returns Channel list data including totals and type counts.
    */
   async listChannels(): Promise<NewApiChannelListData> {
@@ -163,7 +160,6 @@ export class NewApiModelSyncService {
 
   /**
    * Fetch raw model list for a given channel.
-   *
    * @param channelId Target channel id.
    * @returns Model identifiers returned by upstream.
    */
@@ -194,7 +190,6 @@ export class NewApiModelSyncService {
 
   /**
    * Persist models field for a channel (model_mapping handled separately).
-   *
    * @param channel Channel to update.
    * @param models Canonical model list to write.
    */
@@ -236,7 +231,6 @@ export class NewApiModelSyncService {
 
   /**
    * Persist model_mapping while ensuring models contains all mapped keys.
-   *
    * @param channel Channel to update.
    * @param modelMapping Standard→actual mapping to write.
    */
@@ -286,7 +280,6 @@ export class NewApiModelSyncService {
 
   /**
    * Execute sync for a single channel with retry/backoff.
-   *
    * @param channel Channel to sync.
    * @param maxRetries Max retry attempts (default 2) with exponential backoff.
    * @returns Outcome including old/new models and status.
@@ -366,7 +359,6 @@ export class NewApiModelSyncService {
 
   /**
    * Run sync across multiple channels with concurrency control.
-   *
    * @param channels Channels to process.
    * @param options Concurrency, retry limit, and progress callback.
    * @returns Aggregate execution result and statistics.
@@ -450,7 +442,6 @@ export class NewApiModelSyncService {
 
   /**
    * Apply optional allow-list and dedupe/trim models.
-   *
    * @param models Models fetched upstream.
    * @returns Normalized models limited by allow-list when present.
    */
@@ -542,7 +533,6 @@ export class NewApiModelSyncService {
   /**
    * Applies the per-channel include/exclude filters defined in channel configs
    * to the provided models.
-   *
    * @param channelId Channel id for looking up config rules.
    * @param models Models after global filtering.
    */
@@ -556,7 +546,6 @@ export class NewApiModelSyncService {
    * Evaluates a model name against a filter rule. Regex patterns are compiled
    * with `new RegExp(pattern, "i")`, enforcing case-insensitive matching and
    * avoiding custom flags for predictability across browsers.
-   *
    * @param rule Filter rule.
    * @param model Model name to test.
    * @returns Whether the model matches the rule.

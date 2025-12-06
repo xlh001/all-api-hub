@@ -12,6 +12,9 @@ interface SortingCriteriaItemProps {
   onToggleEnabled?: (id: string, enabled: boolean) => void
 }
 
+/**
+ *
+ */
 export function SortingCriteriaItem({
   item,
   onToggleEnabled,

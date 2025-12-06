@@ -1,5 +1,8 @@
 import { Card } from "~/components/ui"
 
+/**
+ *
+ */
 export default function LoadingSkeleton() {
   return (
     <div className="p-6">

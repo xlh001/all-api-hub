@@ -30,7 +30,6 @@ import { joinUrl } from "~/utils/url"
  * - Adds extension + auth method headers (via cookieHelper).
  * - Injects multiple compatible user-id headers so different backends can read the user context.
  * - Adds Bearer token when provided.
- *
  * @param authMode Auth strategy used to add auth headers.
  * @param userId Optional user identifier injected under several header keys.
  * @param accessToken Optional bearer token for token auth flows.
@@ -71,7 +70,6 @@ const createRequestHeaders = async (
 
 /**
  * Build a base RequestInit with defaults.
- *
  * @param headers Default headers to seed the request with.
  * @param credentials Fetch credentials policy (include/omit for cookies).
  * @param options Caller-provided overrides (method, body, headers, etc.).
@@ -103,7 +101,6 @@ const createBaseRequest = (
 
 /**
  * Create a RequestInit configured for cookie-based auth.
- *
  * @param userId Optional user id to embed in headers.
  * @param options Additional fetch options to merge.
  */
@@ -120,7 +117,6 @@ const createCookieAuthRequest = async (
 
 /**
  * Create a RequestInit configured for bearer-token auth.
- *
  * @param userId Optional user id to embed in headers.
  * @param accessToken Bearer token for Authorization header.
  * @param options Additional fetch options to merge.
@@ -138,7 +134,6 @@ const createTokenAuthRequest = async (
 
 /**
  * Compute today's start/end unix timestamps (seconds).
- *
  * @returns Object with start and end seconds for the current day.
  */
 export const getTodayTimestampRange = (): { start: number; end: number } => {
@@ -157,7 +152,6 @@ export const getTodayTimestampRange = (): { start: number; end: number } => {
 
 /**
  * Aggregate usage data over log items (quota + tokens).
- *
  * @param items Log records to sum.
  * @returns Totals for quota and token counts.
  */
@@ -271,7 +265,6 @@ export interface FetchApiParams {
 /**
  * Core fetch helper that wires authentication, temp-window fallback, and
  * response parsing for all upstream API calls.
- *
  * @param params Fetch configuration (baseUrl, endpoint, auth, etc.).
  * @param onlyData When true, returns the `data` field directly (JSON only).
  * @returns ApiResponse<T>, raw payload, or data field based on flags.
@@ -376,7 +369,6 @@ export async function fetchApi<T>(
 
 /**
  * Parse a fetch Response into the expected shape based on responseType.
- *
  * @param response Raw fetch response.
  * @param responseType Desired output type (json/text/blob/arrayBuffer).
  * @returns Parsed payload typed to caller expectation.
@@ -400,7 +392,6 @@ async function parseResponseByType<T>(
 
 /**
  * Validate whether a string is an HTTP(S) URL.
- *
  * @param url Candidate URL string.
  * @returns true when protocol is http/https; false on invalid or other schemes.
  */
@@ -439,7 +430,6 @@ export function extractDataFromApiResponseBody<T>(
 
 /**
  * Extract currency symbol and numeric amount from a free-form string.
- *
  * @param text Input text containing currency and amount.
  * @param exchangeRate CNY per USD exchange rate for ¥ normalization.
  * @returns Symbol and USD amount when detected; otherwise null.

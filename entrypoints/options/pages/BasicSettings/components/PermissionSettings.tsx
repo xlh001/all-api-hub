@@ -31,6 +31,9 @@ const buildState = <T,>(value: T) =>
     T
   >
 
+/**
+ *
+ */
 export default function PermissionSettings() {
   const { t } = useTranslation("settings")
   const [state, setState] = useState<PermissionState>(() => ({

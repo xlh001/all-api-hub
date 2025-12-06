@@ -13,6 +13,9 @@ import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
 import { AuthTypeEnum } from "~/types"
 import { ALL_PRESET_STANDARD_MODELS } from "~/types/modelRedirect"
 
+/**
+ *
+ */
 export default function ModelRedirectSettings() {
   const { t } = useTranslation("modelRedirect")
   const { preferences, updateModelRedirect, resetModelRedirectConfig } =
@@ -25,6 +28,9 @@ export default function ModelRedirectSettings() {
   const [modelList, setModelList] = useState(ALL_PRESET_STANDARD_MODELS)
 
   useEffect(() => {
+    /**
+     *
+     */
     async function getModelList() {
       if (hasValidNewApiConfig(preferences)) {
         return await fetchAccountAvailableModels({

@@ -13,6 +13,9 @@ interface ReactDevToolsOptions {
 
 let devtoolsProcess: ChildProcess | null = null
 
+/**
+ *
+ */
 export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
   const env = process.env
 
@@ -32,17 +35,26 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
   const publicDir = path.resolve(process.cwd(), "public")
   const backendPath = path.join(publicDir, "react-devtools-backend.js")
 
+  /**
+   *
+   */
   function boolEnv(envValue: string | undefined, defaultValue: boolean) {
     if (envValue === "true") return true
     if (envValue === "false") return false
     return defaultValue
   }
 
+  /**
+   *
+   */
   function numEnv(envValue: string | undefined, defaultValue: number) {
     return envValue ? Number(envValue) : defaultValue
   }
 
   // ======== 辅助函数 ========
+  /**
+   *
+   */
   async function waitForDevTools(): Promise<boolean> {
     const start = Date.now()
     while (Date.now() - start < config.maxWait) {
@@ -57,6 +69,9 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
     return false
   }
 
+  /**
+   *
+   */
   async function isCacheExpired(filePath: string): Promise<boolean> {
     try {
       const stats = await fs.stat(filePath)
@@ -66,6 +81,9 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
     }
   }
 
+  /**
+   *
+   */
   async function fetchBackend() {
     try {
       const content = await fetch(`http://localhost:${config.port}`).then((r) =>

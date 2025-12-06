@@ -25,6 +25,9 @@ interface AddTokenDialogProps {
   editingToken?: AccountToken | null
 }
 
+/**
+ *
+ */
 export default function AddTokenDialog(props: AddTokenDialogProps) {
   const { isOpen, onClose, availableAccounts, editingToken } = props
   const { t } = useTranslation("keyManagement")

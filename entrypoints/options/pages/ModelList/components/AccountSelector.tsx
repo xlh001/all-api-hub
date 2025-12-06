@@ -9,6 +9,9 @@ interface AccountSelectorProps {
   accounts: DisplaySiteData[]
 }
 
+/**
+ *
+ */
 export function AccountSelector({
   selectedAccount,
   setSelectedAccount,

@@ -92,6 +92,9 @@ const ANCHOR_TO_TAB: Record<string, TabId> = {
   ...(hasOptionalPermissions ? { permissions: "permissions" } : {}),
 }
 
+/**
+ *
+ */
 export default function BasicSettings() {
   const { t } = useTranslation("settings")
   const { isLoading } = useUserPreferencesContext()

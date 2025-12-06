@@ -136,6 +136,9 @@ export function parseBackupSummary(
   }
 }
 
+/**
+ *
+ */
 async function importV1Backup(data: RawBackupData): Promise<ImportResult> {
   let accountsImported = false
   let preferencesImported = false
@@ -244,6 +247,9 @@ export function normalizeBackupForMerge(
   return normalizeV1BackupForMerge(data, localPreferences)
 }
 
+/**
+ *
+ */
 function normalizeV2BackupForMerge(
   data: BackupFullV2,
   localPreferences: any,
@@ -274,6 +280,9 @@ function normalizeV2BackupForMerge(
   }
 }
 
+/**
+ *
+ */
 function normalizeV1BackupForMerge(
   data: RawBackupData,
   localPreferences: any,
@@ -309,6 +318,9 @@ function normalizeV1BackupForMerge(
   }
 }
 
+/**
+ *
+ */
 async function importV2Backup(data: BackupV2): Promise<ImportResult> {
   let accountsImported = false
   let preferencesImported = false

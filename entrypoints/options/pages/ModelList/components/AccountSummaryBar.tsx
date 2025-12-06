@@ -15,6 +15,9 @@ interface AccountSummaryBarProps {
   onAccountClick?: (accountId: string) => void
 }
 
+/**
+ *
+ */
 export function AccountSummaryBar({
   items,
   activeAccountId,

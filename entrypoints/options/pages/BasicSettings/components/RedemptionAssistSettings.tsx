@@ -7,6 +7,9 @@ import { Card, CardItem, CardList, Switch } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
 
+/**
+ *
+ */
 export default function RedemptionAssistSettings() {
   const { t } = useTranslation(["redemptionAssist", "settings"])
   const {

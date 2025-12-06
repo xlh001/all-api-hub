@@ -73,7 +73,6 @@ const ERROR_KEYWORDS: Record<string, string[]> = {
  *
  * Scans known keyword buckets to infer the most likely failure type and
  * returns localized UI copy plus optional next-action metadata.
- *
  * @param error Unknown error object thrown during auto-detection.
  * @returns Structured error info for UI display and guidance.
  */
@@ -154,7 +153,6 @@ export interface AutoDetectErrorProps {
  *
  * Tries to normalize to `{protocol}//{host}/login`; falls back to the
  * original URL if parsing fails.
- *
  * @param siteUrl Base site URL provided by the caller.
  * @returns Login page URL to open in a new tab.
  */
@@ -171,7 +169,6 @@ export function getLoginUrl(siteUrl: string): string {
 
 /**
  * Open a new browser tab pointing to the site's login page.
- *
  * @param siteUrl Base site URL used to derive the login page.
  */
 export async function openLoginTab(siteUrl: string): Promise<void> {

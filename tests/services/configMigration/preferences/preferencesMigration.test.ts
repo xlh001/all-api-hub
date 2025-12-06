@@ -14,6 +14,9 @@ import { DEFAULT_WEBDAV_SETTINGS, WEBDAV_SYNC_STRATEGIES } from "~/types/webdav"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
 // Helper function to create a minimal v0 preferences object
+/**
+ *
+ */
 function createV0Preferences(
   overrides?: Partial<UserPreferences>,
 ): UserPreferences {

@@ -3,6 +3,9 @@ import { t } from "i18next"
 import { userPreferences } from "~/services/userPreferences"
 import type { WebDAVConfig } from "~/types/webdav"
 
+/**
+ *
+ */
 function buildAuthHeader(username: string, password: string) {
   const token = btoa(`${username}:${password}`)
   return `Basic ${token}`
@@ -12,6 +15,9 @@ const CONFIG_VERSION = "1-0"
 export const PROGRAM_NAME = "all-api-hub"
 const BACKUP_FOLDER_NAME = `${PROGRAM_NAME}-backup`
 
+/**
+ *
+ */
 function ensureFilename(url: string, version: string = CONFIG_VERSION) {
   try {
     // If it's clearly a directory or missing extension, append default filename
@@ -25,6 +31,9 @@ function ensureFilename(url: string, version: string = CONFIG_VERSION) {
   }
 }
 
+/**
+ *
+ */
 function getBackupDirUrl(targetUrl: string) {
   // derive the .../all-api-hub-backup/ directory from final target URL
   const marker = `${BACKUP_FOLDER_NAME}/`
@@ -37,6 +46,9 @@ function getBackupDirUrl(targetUrl: string) {
   return targetUrl.slice(0, idx + marker.length - 1) // include trailing slash
 }
 
+/**
+ *
+ */
 async function ensureBackupDirectory(
   targetUrl: string,
   username: string,
@@ -78,6 +90,9 @@ async function ensureBackupDirectory(
   return true
 }
 
+/**
+ *
+ */
 async function getWebDavConfig(): Promise<WebDAVConfig> {
   const prefs = await userPreferences.getPreferences()
   return prefs.webdav

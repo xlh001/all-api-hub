@@ -37,6 +37,9 @@ export interface ActionButtonsProps {
   onDeleteAccount: (site: DisplaySiteData) => void
 }
 
+/**
+ *
+ */
 export default function AccountActionButtons({
   site,
   onCopyKey,

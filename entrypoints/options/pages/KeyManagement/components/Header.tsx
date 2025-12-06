@@ -12,6 +12,9 @@ interface HeaderProps {
   isAddTokenDisabled: boolean
 }
 
+/**
+ *
+ */
 export function Header({
   onAddToken,
   onRefresh,

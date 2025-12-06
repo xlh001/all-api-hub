@@ -8,6 +8,9 @@ interface DialogHeaderProps {
   mode: DialogMode
 }
 
+/**
+ *
+ */
 export default function DialogHeader({ mode }: DialogHeaderProps) {
   const { t } = useTranslation("accountDialog")
   const isAddMode = mode === DIALOG_MODES.ADD

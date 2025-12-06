@@ -18,6 +18,9 @@ interface AccountSnapshotTableProps {
   snapshots: AutoCheckinAccountSnapshot[]
 }
 
+/**
+ *
+ */
 export default function AccountSnapshotTable({
   snapshots,
 }: AccountSnapshotTableProps) {

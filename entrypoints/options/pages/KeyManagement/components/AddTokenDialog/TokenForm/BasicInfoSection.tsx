@@ -20,6 +20,9 @@ interface BasicInfoSectionProps {
   handleSwitchChange: (field: keyof FormData) => (checked: boolean) => void
 }
 
+/**
+ *
+ */
 export function BasicInfoSection({
   formData,
   errors,

@@ -12,6 +12,9 @@ interface StatusCardProps {
   status: AutoCheckinStatus
 }
 
+/**
+ *
+ */
 export default function StatusCard({ status }: StatusCardProps) {
   const { t } = useTranslation("autoCheckin")
 

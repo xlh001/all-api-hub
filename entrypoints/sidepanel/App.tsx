@@ -1,5 +1,8 @@
 import Popup from "../popup/App"
 
+/**
+ *
+ */
 function SidePanel() {
   return <Popup />
 }

@@ -9,6 +9,9 @@ vi.mock("@plasmohq/storage", () => {
   const get = vi.fn()
   const remove = vi.fn()
 
+  /**
+   *
+   */
   function Storage(this: any) {
     this.set = set
     this.get = get

@@ -154,6 +154,9 @@ export async function autoDetectAccount(
   }
 }
 
+/**
+ *
+ */
 export function isValidAccount({
   siteName,
   username,
@@ -183,7 +186,6 @@ type TagsInput = string[] | string | undefined
 /**
  * Normalizes a tags input originating from various form widgets into a clean
  * string array, trimming whitespace and discarding empty values.
- *
  * @param tags - Array, single string, or undefined tags payload from UI.
  * @returns An array of sanitized tag strings or undefined when no tags remain.
  */
@@ -211,7 +213,6 @@ function normalizeTagsInput(tags: TagsInput): string[] | undefined {
  *
  * Validates user-supplied account form data, fetches the freshest remote
  * account metrics, and persists the resulting record via accountStorage.
- *
  * @param url - Target site URL entered by the user.
  * @param siteName - Display name for the account.
  * @param username - Username retrieved from the remote site.
@@ -383,7 +384,6 @@ export async function validateAndSaveAccount(
  * Re-validates edited account data, refreshes remote metrics, and applies a
  * partial update to the existing account record. Falls back to a config-only
  * update when live data fetching fails.
- *
  * @param accountId - Identifier of the stored account to update.
  * @param url - Updated site URL.
  * @param siteName - Updated display name.
@@ -549,6 +549,9 @@ export async function validateAndUpdateAccount(
 }
 
 // 提取域名的主要部分（一级域名前缀）
+/**
+ *
+ */
 export function extractDomainPrefix(hostname: string): string {
   if (!hostname) return ""
 
@@ -583,11 +586,17 @@ export function extractDomainPrefix(hostname: string): string {
   return withoutWww.charAt(0).toUpperCase() + withoutWww.slice(1)
 }
 
+/**
+ *
+ */
 function IsNotDefaultSiteName(siteName: string): boolean {
   return !SITE_TITLE_RULES.some(
     (rule) => rule.name !== UNKNOWN_SITE && rule.regex.test(siteName),
   )
 }
+/**
+ *
+ */
 export async function getSiteName(
   input: browser.tabs.Tab | string,
 ): Promise<string> {
@@ -619,8 +628,8 @@ export async function getSiteName(
 
 /**
  * Checks if a given exchange rate is valid.
- * @param {string} rate - The exchange rate to check.
- * @returns {boolean} True if the exchange rate is valid, false otherwise.
+ * @param rate - The exchange rate to check.
+ * @returns True if the exchange rate is valid, false otherwise.
  * A valid exchange rate is a number greater than 0.
  */
 export function isValidExchangeRate(rate: string): boolean {
@@ -657,7 +666,6 @@ function generateDefaultToken(): CreateTokenRequest {
  * Ensures that an API token exists for the supplied account by checking the
  * remote token inventory and lazily issuing a default token when none exist.
  * Provides toast updates for the long-running request to improve UX feedback.
- *
  * @param account - The underlying account record (includes credentials).
  * @param displaySiteData - Derived display data used by token APIs.
  * @param toastId - Optional toast identifier to reuse existing notifications.

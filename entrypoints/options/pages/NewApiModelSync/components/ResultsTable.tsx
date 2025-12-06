@@ -25,6 +25,9 @@ interface ResultsTableProps {
   }>
 }
 
+/**
+ *
+ */
 export default function ResultsTable({
   items,
   selectedIds,

@@ -24,6 +24,9 @@ export function collectModelsFromExecution(
   return Array.from(collected).sort((a, b) => a.localeCompare(b))
 }
 
+/**
+ *
+ */
 function addModelsFromItem(item: ExecutionItemResult, collected: Set<string>) {
   const sourceModels = item.newModels?.length
     ? item.newModels

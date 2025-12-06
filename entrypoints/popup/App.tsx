@@ -9,6 +9,9 @@ import ActionButtons from "./components/ActionButtons"
 import BalanceSection from "./components/BalanceSection"
 import HeaderSection from "./components/HeaderSection"
 
+/**
+ *
+ */
 function PopupContent() {
   const { isLoading } = useUserPreferencesContext()
   const inSidePanel = isExtensionSidePanel()
@@ -42,6 +45,9 @@ function PopupContent() {
   )
 }
 
+/**
+ *
+ */
 function App() {
   return (
     <AppLayout>

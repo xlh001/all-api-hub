@@ -14,6 +14,9 @@ import {
   handleTempWindowFetch,
 } from "./tempWindowPool"
 
+/**
+ *
+ */
 export function setupRuntimeMessageListeners() {
   // 处理来自 popup 的消息
   onRuntimeMessage((request, sender, sendResponse) => {

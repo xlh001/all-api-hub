@@ -9,6 +9,9 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import type { BalanceType, CurrencyType } from "~/types"
 import { showUpdateToast } from "~/utils/toastHelpers"
 
+/**
+ *
+ */
 export default function DisplaySettings() {
   const { t } = useTranslation("settings")
   const {

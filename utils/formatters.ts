@@ -34,7 +34,6 @@ export function normalizeToMs(
 /**
  * 自动修正时间输入为毫秒级时间戳
  * 支持输入秒级/毫秒级时间戳、Date 对象、字符串
- *
  * @param input - 时间输入，可以是 number | string | Date | null | undefined
  * @returns number | null  返回标准毫秒时间戳，无法识别时返回 null
  */

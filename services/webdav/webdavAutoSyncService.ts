@@ -322,7 +322,6 @@ class WebdavAutoSyncService {
   /**
    * Merge local and remote data based on timestamps (latest wins).
    * Also reconciles channel configs and deduplicates pinned ids.
-   *
    * @returns Merged accounts, preferences, and channel configs.
    */
   private mergeData(
@@ -443,7 +442,6 @@ class WebdavAutoSyncService {
 
   /**
    * 立即执行一次同步
-   *
    * @returns Result with success flag and optional message.
    */
   async syncNow(): Promise<{ success: boolean; message?: string }> {
@@ -513,7 +511,6 @@ class WebdavAutoSyncService {
 
   /**
    * 获取当前状态
-   *
    * @returns Snapshot of initialization, running, and last-sync info.
    */
   getStatus() {
@@ -575,7 +572,6 @@ export const webdavAutoSyncService = new WebdavAutoSyncService()
 
 /**
  * Message handler for WebDAV auto-sync actions (setup, syncNow, stop, update).
- *
  * @param request Incoming message with action + payload.
  * @param sendResponse Callback to respond to sender.
  */

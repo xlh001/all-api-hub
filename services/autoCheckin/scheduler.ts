@@ -211,7 +211,6 @@ class AutoCheckinScheduler {
    * If retry is enabled and the last run was not successful, it will return the retry time.
    * If deterministic schedule mode is enabled and the current time is within the window, it will return the deterministic trigger time.
    * If none of the above conditions are met, it will return a random trigger time within the configured window.
-   *
    * @param config - The auto-checkin configuration.
    * @param status - The auto-checkin status.
    * @returns A Date object representing the next trigger time, or null if the configuration is invalid.
@@ -724,7 +723,6 @@ class AutoCheckinScheduler {
 
   /**
    * Update settings and reschedule alarm
-   *
    * @param settings Partial auto-checkin config plus retryStrategy overrides.
    */
   async updateSettings(
@@ -840,7 +838,6 @@ export const autoCheckinScheduler = new AutoCheckinScheduler()
 /**
  * Message handler for Auto Check-in actions (run, retry, get status/settings).
  * Keeps background-only logic centralized for content scripts/options UI calls.
- *
  * @param request Incoming message with action/payload.
  * @param sendResponse Callback to reply to sender.
  */

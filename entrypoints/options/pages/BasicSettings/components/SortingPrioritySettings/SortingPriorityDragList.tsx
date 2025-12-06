@@ -28,6 +28,9 @@ interface SortingPriorityDragListProps {
   onToggleEnabled?: (id: string, enabled: boolean) => void
 }
 
+/**
+ *
+ */
 export function SortingPriorityDragList({
   items,
   onDragEnd,

@@ -55,6 +55,9 @@ interface AccountListProps {
   initialSearchQuery?: string
 }
 
+/**
+ *
+ */
 export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const { t } = useTranslation(["account", "common"])
   const isSmallScreen = useIsSmallScreen()

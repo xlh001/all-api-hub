@@ -28,6 +28,9 @@ const TAB_INDEX = {
   manual: 1,
 } as const
 
+/**
+ *
+ */
 export default function NewApiModelSync() {
   const { t } = useTranslation("newApiModelSync")
   const hasInitializedTab = useRef(false)

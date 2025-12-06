@@ -13,6 +13,9 @@ const siteOverrideMap = {
 type SiteOverrideMap = typeof siteOverrideMap
 
 // 获取对应站点的 API 函数
+/**
+ *
+ */
 function getApiFunc<T extends keyof typeof commonAPI>(
   funcName: T,
   currentSite: SiteType = "default",
@@ -31,6 +34,9 @@ function getApiFunc<T extends keyof typeof commonAPI>(
 }
 
 // 创建包装函数的辅助函数
+/**
+ *
+ */
 function createWrappedFunction<T extends (...args: any[]) => any>(
   funcName: keyof typeof commonAPI,
 ): T {

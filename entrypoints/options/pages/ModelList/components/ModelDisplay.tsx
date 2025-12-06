@@ -19,6 +19,9 @@ interface ModelDisplayProps {
   availableGroups: string[]
 }
 
+/**
+ *
+ */
 export function ModelDisplay({
   models,
   currentAccount,

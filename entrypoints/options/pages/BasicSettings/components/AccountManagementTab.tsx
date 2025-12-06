@@ -6,6 +6,9 @@ import { navigateWithinOptionsPage } from "~/utils/navigation"
 
 import SortingPrioritySettings from "./SortingPrioritySettings"
 
+/**
+ *
+ */
 export default function AccountManagementTab() {
   const { t } = useTranslation("settings")
 

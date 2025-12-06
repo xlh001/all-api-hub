@@ -13,6 +13,9 @@ interface ModelLimitsProps {
   handleModelLimitsChange: (values: string[]) => void
 }
 
+/**
+ *
+ */
 export function ModelLimits({
   modelLimitsEnabled,
   modelLimits,

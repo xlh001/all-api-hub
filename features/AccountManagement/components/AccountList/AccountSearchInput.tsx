@@ -9,6 +9,9 @@ interface AccountSearchInputProps {
   onClear: () => void
 }
 
+/**
+ *
+ */
 export default function AccountSearchInput({
   value,
   onChange,

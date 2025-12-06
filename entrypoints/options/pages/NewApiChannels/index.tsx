@@ -239,6 +239,9 @@ const statusFilterFn: FilterFn<ChannelRow> = (
   return filterValue.includes(String(row.getValue(columnId)))
 }
 
+/**
+ *
+ */
 export default function NewApiChannelsPage() {
   const { t } = useTranslation("newApiChannels")
   const [channels, setChannels] = useState<ChannelRow[]>([])
@@ -1028,6 +1031,9 @@ export default function NewApiChannelsPage() {
   )
 }
 
+/**
+ *
+ */
 function StatusBadge({ status }: { status: number }) {
   const { t } = useTranslation("newApiChannels")
   const config = STATUS_VARIANTS[status] ?? STATUS_VARIANTS[0]
@@ -1041,6 +1047,9 @@ function StatusBadge({ status }: { status: number }) {
   )
 }
 
+/**
+ *
+ */
 function RowActions({
   onEdit,
   onDelete,
@@ -1092,6 +1101,9 @@ interface ChannelFilterDialogProps {
 
 type EditableFilter = ChannelModelFilterRule
 
+/**
+ *
+ */
 function ChannelFilterDialog({
   channel,
   open,

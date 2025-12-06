@@ -10,6 +10,9 @@ const languageOptions = [
   { code: "zh_CN", label: "中文" },
 ]
 
+/**
+ *
+ */
 export function LanguageSwitcher() {
   const { i18n } = useTranslation()
 

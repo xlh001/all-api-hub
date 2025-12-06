@@ -7,6 +7,9 @@ import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 
+/**
+ *
+ */
 function AccountManagementContent({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation("account")
   const { openAddAccount } = useDialogStateContext()
@@ -33,6 +36,9 @@ interface AccountManagementProps {
   routeParams?: Record<string, string>
 }
 
+/**
+ *
+ */
 function AccountManagement({
   refreshKey,
   routeParams,

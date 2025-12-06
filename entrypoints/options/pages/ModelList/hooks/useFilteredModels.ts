@@ -21,6 +21,9 @@ interface UseFilteredModelsProps {
   accountFilterAccountId?: string | null
 }
 
+/**
+ *
+ */
 export function useFilteredModels({
   pricingData,
   pricingContexts,

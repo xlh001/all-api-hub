@@ -30,6 +30,9 @@ interface ModelItemProps {
   accountName?: string
 }
 
+/**
+ *
+ */
 export default function ModelItem({
   model,
   calculatedPrice,

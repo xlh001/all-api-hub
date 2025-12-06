@@ -17,6 +17,9 @@ interface DelAccountDialogProps {
   onDeleted: () => void
 }
 
+/**
+ *
+ */
 export default function DelAccountDialog({
   isOpen,
   onClose,

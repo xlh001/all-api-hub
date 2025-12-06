@@ -6,6 +6,9 @@ interface EmptyResultsProps {
   hasHistory: boolean
 }
 
+/**
+ *
+ */
 export default function EmptyResults({ hasHistory }: EmptyResultsProps) {
   const { t } = useTranslation("autoCheckin")
 

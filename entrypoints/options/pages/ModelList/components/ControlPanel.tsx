@@ -38,6 +38,9 @@ interface ControlPanelProps {
   filteredModels: any[]
 }
 
+/**
+ *
+ */
 export function ControlPanel({
   searchTerm,
   setSearchTerm,

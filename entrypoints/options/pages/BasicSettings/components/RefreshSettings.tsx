@@ -7,6 +7,9 @@ import { Card, CardItem, CardList, Input, Switch } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { showUpdateToast } from "~/utils/toastHelpers"
 
+/**
+ *
+ */
 export default function RefreshSettings() {
   const { t } = useTranslation("settings")
   const {

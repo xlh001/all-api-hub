@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest"
 import { TagFilter } from "~/components/ui"
 import { fireEvent, render, screen } from "~/tests/test-utils/render"
 
+/**
+ *
+ */
 function renderMultipleMode() {
   const Wrapper = () => {
     const [value, setValue] = React.useState<string[]>([])
@@ -24,6 +27,9 @@ function renderMultipleMode() {
   return render(<Wrapper />)
 }
 
+/**
+ *
+ */
 function renderSingleMode() {
   const Wrapper = () => {
     const [value, setValue] = React.useState<string | null>(null)

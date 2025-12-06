@@ -10,10 +10,16 @@ let ctxRef: ContentScriptContext | null = null
 let redemptionToastRoot: Root | null = null
 let mountingPromise: Promise<void> | null = null
 
+/**
+ *
+ */
 export function setContentScriptContext(ctx: ContentScriptContext) {
   ctxRef = ctx
 }
 
+/**
+ *
+ */
 export async function ensureRedemptionToastUi(): Promise<void> {
   if (redemptionToastRoot) return
   if (!ctxRef) {

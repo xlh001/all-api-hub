@@ -21,6 +21,9 @@ import {
 } from "~/types/autoCheckin"
 import { navigateWithinOptionsPage } from "~/utils/navigation"
 
+/**
+ *
+ */
 export default function AutoCheckinSettings() {
   const { t } = useTranslation(["autoCheckin", "settings"])
   const {

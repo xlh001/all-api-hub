@@ -667,7 +667,6 @@ class AccountStorageService {
    * The UI expects currency values in both USD/CNY, token counts, and display
    * helpers like tags and health summaries. This adapter ensures we never leak
    * the raw storage format into presentation logic.
-   *
    * @param input Single account or array of accounts.
    * @returns Display-ready representation preserving existing metadata.
    */
@@ -890,7 +889,6 @@ class AccountStorageService {
     /**
      * Determines whether an account refresh should be skipped based on the
      * global refresh preferences and the timestamp of the last sync.
-     *
      * @param account - The account whose refresh cadence is being evaluated.
      * @param force - When true, bypasses the interval guardrail entirely.
      * @returns True when the refresh interval has not elapsed and force isn’t set.
@@ -909,7 +907,6 @@ class AccountStorageService {
   /**
    * Normalizes a URL into its protocol + host origin to ensure consistent
    * comparisons across the storage layer.
-   *
    * @param url - Raw URL string that may contain paths or query strings.
    * @returns The normalized origin string or null when parsing fails.
    */
@@ -928,7 +925,6 @@ class AccountStorageService {
   /**
    * Enriches an account with derived metadata (site type + check-in support)
    * when those values are missing or still set to legacy defaults.
-   *
    * @param account - The account record that may require metadata upgrades.
    * @returns The latest account representation after any metadata refresh.
    */

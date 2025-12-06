@@ -363,6 +363,9 @@ describe("export handlers", () => {
   })
 
   // We import lazily to avoid circular evaluation during module mocks
+  /**
+   *
+   */
   async function loadHandlers() {
     const mod = await import("~/entrypoints/options/pages/ImportExport/utils")
     return {

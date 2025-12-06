@@ -32,6 +32,9 @@ const SEPARATOR_BEFORE_IDS = new Set([
   "importExport",
 ])
 
+/**
+ *
+ */
 function Sidebar({
   activeMenuItem,
   onMenuItemClick,

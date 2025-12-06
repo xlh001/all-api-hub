@@ -15,6 +15,9 @@ interface AppLayoutProps {
   children: ReactNode
 }
 
+/**
+ *
+ */
 export function AppLayout({ children }: AppLayoutProps) {
   return (
     <DeviceProvider>

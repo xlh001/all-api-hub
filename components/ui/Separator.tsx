@@ -7,6 +7,9 @@ interface SeparatorProps extends HTMLAttributes<HTMLDivElement> {
   decorative?: boolean
 }
 
+/**
+ *
+ */
 export function Separator({
   className,
   orientation = "horizontal",

@@ -13,10 +13,16 @@ import {
 
 export const REDEMPTION_TOAST_HOST_TAG = "all-api-hub-redemption-toast"
 
+/**
+ *
+ */
 export function setupRedemptionAssistContent() {
   setupRedemptionAssistDetection()
 }
 
+/**
+ *
+ */
 function setupRedemptionAssistDetection() {
   const CLICK_SCAN_INTERVAL_MS = 2000
   let lastClickScan = 0
@@ -73,6 +79,9 @@ function setupRedemptionAssistDetection() {
   document.addEventListener("cut", handleClipboardEvent, true)
 }
 
+/**
+ *
+ */
 function isEventFromRedemptionAssistUI(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   // Events from inside the Shadow DOM toaster are retargeted to the shadow host
@@ -85,6 +94,9 @@ const SCAN_DEDUP_INTERVAL_MS = 1000
 let lastScanText = ""
 let lastScanAt = 0
 
+/**
+ *
+ */
 async function scheduleRedemptionScan(sourceText: string) {
   const text = (sourceText ?? "").trim()
   if (!text) return
@@ -100,6 +112,9 @@ async function scheduleRedemptionScan(sourceText: string) {
   await scanForRedemptionCodes(text)
 }
 
+/**
+ *
+ */
 async function scanForRedemptionCodes(sourceText?: string) {
   try {
     const text = (sourceText ?? "").trim()
@@ -220,12 +235,18 @@ async function scanForRedemptionCodes(sourceText?: string) {
   }
 }
 
+/**
+ *
+ */
 function maskCode(code: string): string {
   const trimmed = code.trim()
   if (trimmed.length <= 8) return trimmed
   return `${trimmed.slice(0, 4)}****${trimmed.slice(-4)}`
 }
 
+/**
+ *
+ */
 async function performManualRedeem(
   accountId: string,
   code: string,

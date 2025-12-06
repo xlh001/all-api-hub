@@ -36,6 +36,9 @@ export interface ChannelDialogProps {
   initialGroups?: string[]
 }
 
+/**
+ *
+ */
 export function ChannelDialog({
   isOpen,
   onClose,

@@ -14,6 +14,9 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
 import { showResetToast } from "../../../../../utils/toastHelpers"
 
+/**
+ *
+ */
 export default function DangerousZone() {
   const { t } = useTranslation("settings")
   const { resetToDefaults } = useUserPreferencesContext()

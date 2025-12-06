@@ -14,6 +14,9 @@ export interface ChannelConfig {
 
 export type ChannelConfigMap = Record<number, ChannelConfig>
 
+/**
+ *
+ */
 export function createDefaultChannelConfig(channelId: number): ChannelConfig {
   const timestamp = Date.now()
 

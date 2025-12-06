@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next"
 
 import { BodySmall, Heading2 } from "~/components/ui"
 
+/**
+ *
+ */
 export function Header() {
   const { t } = useTranslation("modelList")
   return (

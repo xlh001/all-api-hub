@@ -10,6 +10,9 @@ interface TokenDetailsProps {
   token: ApiToken
 }
 
+/**
+ *
+ */
 export function TokenDetails({ token }: TokenDetailsProps) {
   const { t } = useTranslation("keyManagement")
   return (

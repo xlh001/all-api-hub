@@ -23,6 +23,9 @@ const sizeMap: Record<Size, string> = {
   lg: "max-w-2xl",
 }
 
+/**
+ *
+ */
 export function Modal({
   isOpen,
   onClose,

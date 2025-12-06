@@ -7,6 +7,9 @@ import {
 } from "~/utils/cookieHelper"
 import { getErrorMessage } from "~/utils/error"
 
+/**
+ *
+ */
 export function setupContentMessageHandlers() {
   browser.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === "getLocalStorage") {
@@ -94,7 +97,8 @@ export function setupContentMessageHandlers() {
 
           const normalizedOptions = normalizeFetchOptions(fetchOptions)
           normalizedOptions.credentials = "include"
-          /** 添加扩展标识头
+          /**
+           * 添加扩展标识头
            * 用于区分是来自扩展的请求，方便服务器做特殊处理
            * @see handleWebRequest
            */
@@ -142,6 +146,9 @@ export function setupContentMessageHandlers() {
   })
 }
 
+/**
+ *
+ */
 async function waitForUserInfo(
   maxWaitTime = 5000,
 ): Promise<{ userId: string; user: any }> {
@@ -168,6 +175,9 @@ async function waitForUserInfo(
 
 type TempWindowResponseType = "json" | "text" | "arrayBuffer" | "blob"
 
+/**
+ *
+ */
 function normalizeFetchOptions(options: RequestInit = {}): RequestInit {
   const normalized: RequestInit = { ...options }
 
@@ -178,6 +188,9 @@ function normalizeFetchOptions(options: RequestInit = {}): RequestInit {
   return normalized
 }
 
+/**
+ *
+ */
 function sanitizeHeaders(headers: HeadersInit): Record<string, string> {
   if (headers instanceof Headers) {
     const result: Record<string, string> = {}
@@ -208,6 +221,9 @@ function sanitizeHeaders(headers: HeadersInit): Record<string, string> {
   )
 }
 
+/**
+ *
+ */
 async function parseResponseData(
   response: Response,
   responseType: TempWindowResponseType,

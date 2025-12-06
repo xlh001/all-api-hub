@@ -45,7 +45,6 @@ class ModelMetadataService {
 
   /**
    * Initialize metadata (idempotent). Reuses in-flight init promise.
-   *
    * @returns Promise that resolves when initialization completes or reuses the in-flight promise.
    */
   async initialize(): Promise<void> {
@@ -223,7 +222,6 @@ class ModelMetadataService {
 
   /**
    * Capitalize hyphen/space-delimited provider id for display.
-   *
    * @param str Provider id.
    * @returns Capitalized display string.
    */

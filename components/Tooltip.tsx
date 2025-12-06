@@ -24,6 +24,9 @@ interface TooltipProps {
   wrapperClassName?: string
 }
 
+/**
+ *
+ */
 export default function Tooltip({
   content,
   children,

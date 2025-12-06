@@ -37,6 +37,9 @@ export interface MultiSelectProps {
   clearable?: boolean
 }
 
+/**
+ *
+ */
 export function MultiSelect({
   options,
   selected,

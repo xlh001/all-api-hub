@@ -44,7 +44,6 @@ import {
 
 /**
  * Fetch basic user info for account detection using cookie auth.
- *
  * @param baseUrl Site base URL.
  * @param userId Optional user id; required when backend needs explicit user context.
  * @returns Minimal user profile plus access token if present.
@@ -67,7 +66,6 @@ export const fetchUserInfo = async (baseUrl: string, userId?: number) => {
 
 /**
  * Create an access token using cookie auth for the given user.
- *
  * @param baseUrl Site base URL.
  * @param userId Target user id (cookie-authenticated).
  * @returns Newly created access token string.
@@ -86,7 +84,6 @@ export const createAccessToken = async (
 
 /**
  * Fetch site status (includes pricing/exchange data).
- *
  * @param baseUrl Site base URL.
  * @param authType Auth mode; defaults to none for public endpoints.
  * @returns Site status info or null when unavailable.
@@ -109,7 +106,6 @@ export const fetchSiteStatus = async (
 
 /**
  * Extract default exchange rate (USD) from status info with fallback order.
- *
  * @param statusInfo Site status response.
  * @returns Preferred numeric rate or null if absent.
  */
@@ -140,7 +136,6 @@ export const extractDefaultExchangeRate = (
 
 /**
  * Fetch payment info (RIX_API specific; kept in common for fallback).
- *
  * @param baseUrl Site base URL.
  * @param userId User id for the request.
  * @param accessToken Token for auth.
@@ -172,7 +167,6 @@ export const fetchPaymentInfo = async ({
 
 /**
  * Get existing access token or create one via cookie-auth fallback.
- *
  * @param baseUrl Site base URL.
  * @param userId Target user id.
  * @returns Username + access token (newly created if missing).
@@ -201,7 +195,6 @@ export const getOrCreateAccessToken = async (
 
 /**
  * Fetch account quota/balance.
- *
  * @param baseUrl Site base URL.
  * @param userId Target user id.
  * @param accessToken Access token for the user.
@@ -227,7 +220,6 @@ export const fetchAccountQuota = async (
 
 /**
  * Fetch check-in capability for the user.
- *
  * @param baseUrl Site base URL.
  * @param userId Target user id.
  * @param accessToken Access token for the user.
@@ -268,7 +260,6 @@ export const fetchCheckInStatus = async (
 
 /**
  * Check if site supports check-in based on status info.
- *
  * @param baseUrl Site base URL.
  * @returns Whether check-in is enabled (undefined when unknown).
  */
@@ -281,7 +272,6 @@ export const fetchSupportCheckIn = async (
 
 /**
  * Fetch paginated logs and aggregate results.
- *
  * @param authParams Auth context (baseUrl, userId, token, authType).
  * @param logTypes Log categories to fetch.
  * @param dataAggregator Reducer to merge items into accumulator.
@@ -359,7 +349,6 @@ const fetchPaginatedLogs = async <T>(
 
 /**
  * Fetch today's usage (quota + token counts + request count).
- *
  * @param authParams Auth context (baseUrl, userId, token, authType).
  * @returns Usage totals for the current day.
  */
@@ -395,7 +384,6 @@ export const fetchTodayUsage = async (
 
 /**
  * Fetch today's income (recharge/system logs).
- *
  * @param authParams Auth context (baseUrl, userId, token, authType).
  * @returns Total income amount for today.
  */
@@ -445,7 +433,6 @@ export const fetchTodayIncome = async (
 
 /**
  * Fetch full account snapshot (quota, usage, income, check-in).
- *
  * @param baseUrl Site base URL.
  * @param userId Target user id.
  * @param token Access token for the user.
@@ -489,7 +476,6 @@ export const fetchAccountData = async (
 
 /**
  * Refresh a single account's data and return health status.
- *
  * @param baseUrl Site base URL.
  * @param userId Target user id.
  * @param accessToken Access token.
@@ -531,7 +517,6 @@ export const refreshAccountData = async (
 
 /**
  * Validate account connectivity by fetching quota.
- *
  * @param baseUrl Site base URL.
  * @param userId Target user id.
  * @param accessToken Access token.
@@ -559,7 +544,6 @@ export const validateAccountConnection = async (
  * Some upstreams return a simple array, while others wrap the data in a
  * paginated envelope. This helper hides those differences and always returns
  * a flat array so the UI can treat both responses identically.
- *
  * @param param0 Auth payload (baseUrl/userId/token/authType).
  * @param page Pagination index (defaults to first page).
  * @param size Page size in records (defaults to 100, matching upstream default).
@@ -613,7 +597,6 @@ export const fetchAccountTokens = async (
  * This hits `/api/user/models`, which typically returns a flat array of model
  * IDs that should be displayed to the user when configuring per-account model
  * visibility.
- *
  * @param params Auth context (baseUrl/userId/token/authType).
  * @returns Array of model identifiers allowed for the account.
  */
@@ -639,7 +622,6 @@ export const fetchAccountAvailableModels = async ({
 
 /**
  * Fetch upstream model metadata using an OpenAI-compatible API key.
- *
  * @param baseUrl Site base URL.
  * @param apiKey API key used for upstream call.
  * @returns Full upstream model payload, including metadata per model.
@@ -681,7 +663,6 @@ export const fetchUpstreamModelsNameList = async ({
  *
  * The upstream returns a record keyed by group name with metadata describing
  * entitlements. Consumers use this to render per-account permissions.
- *
  * @param params Auth context (baseUrl/userId/token/authType).
  * @returns Mapping of group names to metadata.
  */
@@ -711,7 +692,6 @@ export const fetchUserGroups = async ({
  * Unlike {@link fetchUserGroups}, this endpoint returns every group identifier
  * (not just those tied to the current user) and is primarily used for admin
  * UI when editing assignments.
- *
  * @param params Auth payload (baseUrl/userId/token/authType).
  * @returns Array of group IDs available on the site.
  * @throws ApiError when the upstream response fails.
@@ -738,7 +718,6 @@ export const fetchSiteUserGroups = async ({
 
 /**
  * Create a new API token for the specified account.
- *
  * @param baseUrl Site base URL.
  * @param userId User whose token should be created (requires cookie/token auth).
  * @param accessToken Auth token for the account owner.
@@ -785,7 +764,6 @@ export const createApiToken = async (
 
 /**
  * Fetch a single API token by its identifier.
- *
  * @param baseUrl Site base URL.
  * @param userId Token owner ID.
  * @param accessToken Access token for authentication.
@@ -816,7 +794,6 @@ export const fetchTokenById = async (
 
 /**
  * Update an existing API token in place.
- *
  * @param baseUrl Site base URL.
  * @param userId Owner of the token.
  * @param accessToken Auth token for the owner.
@@ -864,7 +841,6 @@ export const updateApiToken = async (
 
 /**
  * Delete an API token permanently.
- *
  * @param baseUrl Site base URL.
  * @param userId Token owner.
  * @param accessToken Auth token for the owner.
@@ -913,7 +889,6 @@ export const deleteApiToken = async (
  * The `/api/pricing` endpoint returns a rich `PricingResponse` payload; unlike
  * other helpers we use `fetchApi` directly because the upstream is already in
  * the desired shape and may include additional metadata beyond `data`.
- *
  * @param params Auth context (baseUrl/userId/token/authType).
  * @returns Pricing response as provided by upstream.
  */
@@ -988,7 +963,6 @@ export const redeemCode = async (
  * - API errors without HTTP codes (schema issues, etc.) render as `Unknown`.
  * - Network-level `TypeError`s become `Error` to highlight connectivity issues.
  * - Any other error falls back to `Unknown` to avoid misleading the user.
- *
  * @param error Arbitrary runtime error thrown during refresh.
  * @returns Health status object suitable for persistence + UI display.
  */

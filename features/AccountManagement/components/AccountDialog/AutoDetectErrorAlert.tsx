@@ -5,6 +5,9 @@ import { Alert, Button } from "~/components/ui"
 import type { AutoDetectErrorProps } from "~/utils/autoDetectUtils"
 import { openLoginTab } from "~/utils/autoDetectUtils"
 
+/**
+ *
+ */
 export default function AutoDetectErrorAlert({
   error,
   siteUrl,

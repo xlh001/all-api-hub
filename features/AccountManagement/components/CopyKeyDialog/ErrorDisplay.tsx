@@ -7,6 +7,9 @@ interface ErrorDisplayProps {
   onRetry: () => void
 }
 
+/**
+ *
+ */
 export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
   const { t } = useTranslation("ui")
 

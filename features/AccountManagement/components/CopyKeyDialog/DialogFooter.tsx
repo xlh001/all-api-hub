@@ -8,6 +8,9 @@ interface DialogFooterProps {
   onClose: () => void
 }
 
+/**
+ *
+ */
 export function DialogFooter({ tokenCount, onClose }: DialogFooterProps) {
   const { t } = useTranslation(["ui", "common"])
 

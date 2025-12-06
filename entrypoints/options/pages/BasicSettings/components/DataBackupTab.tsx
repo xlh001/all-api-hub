@@ -10,6 +10,9 @@ import { navigateWithinOptionsPage } from "~/utils/navigation"
 import WebDAVAutoSyncSettings from "../../ImportExport/components/WebDAVAutoSyncSettings"
 import WebDAVSettings from "../../ImportExport/components/WebDAVSettings"
 
+/**
+ *
+ */
 export default function DataBackupTab() {
   const { t } = useTranslation("settings")
 

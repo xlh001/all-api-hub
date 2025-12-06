@@ -29,6 +29,9 @@ interface ChannelFiltersEditorProps {
   onChangeJsonText: (value: string) => void
 }
 
+/**
+ *
+ */
 export default function ChannelFiltersEditor({
   filters,
   viewMode,

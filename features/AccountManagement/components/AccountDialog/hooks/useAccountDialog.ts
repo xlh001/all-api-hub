@@ -24,6 +24,9 @@ interface UseAccountDialogProps {
   onSuccess?: (data: any) => void
 }
 
+/**
+ *
+ */
 export function useAccountDialog({
   mode,
   account,
@@ -485,6 +488,9 @@ export function useAccountDialog({
 }
 
 // Helper function to get error message
+/**
+ *
+ */
 function getErrorMessage(error: any): string {
   if (error instanceof Error) {
     return error.message

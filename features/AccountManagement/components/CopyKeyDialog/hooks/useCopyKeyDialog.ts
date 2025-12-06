@@ -5,6 +5,9 @@ import { useTranslation } from "react-i18next"
 import { fetchAccountTokens } from "~/services/apiService"
 import type { ApiToken, DisplaySiteData } from "~/types"
 
+/**
+ *
+ */
 function getErrorMessage(error: any): string {
   if (error instanceof Error) {
     return error.message
@@ -15,6 +18,9 @@ function getErrorMessage(error: any): string {
   return JSON.stringify(error)
 }
 
+/**
+ *
+ */
 export function useCopyKeyDialog(isOpen: boolean, account: DisplaySiteData) {
   const { t } = useTranslation(["ui", "messages"])
   const [tokens, setTokens] = useState<ApiToken[]>([])

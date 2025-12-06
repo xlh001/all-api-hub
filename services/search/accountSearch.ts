@@ -62,6 +62,9 @@ function scoreNameMatch(normalized: string, query: string): number {
   return 0
 }
 
+/**
+ *
+ */
 function scoreTagMatch(tags: string[] | undefined, query: string): number {
   if (!tags || tags.length === 0) {
     return 0
@@ -130,6 +133,9 @@ function scoreTokenMatch(token: string, query: string): number {
   return 0
 }
 
+/**
+ *
+ */
 function scoreAccountIdMatch(accountId: string, query: string): number {
   if (!accountId) {
     return 0

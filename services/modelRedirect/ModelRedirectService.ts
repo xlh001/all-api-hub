@@ -24,7 +24,6 @@ export class ModelRedirectService {
   /**
    * Apply model mapping to a channel with incremental merge
    * Merges new mapping with existing mapping (new keys override old keys)
-   *
    * @param channel Target New API channel.
    * @param newMapping Mapping of standard model -> upstream model.
    * @param service NewApiModelSyncService instance used to update channel.
@@ -62,7 +61,6 @@ export class ModelRedirectService {
 
   /**
    * Run model redirect generation and apply mappings directly
-   *
    * @returns Summary with success flag, count of updated channels, errors, and optional message.
    */
   static async applyModelRedirect(): Promise<{
@@ -177,7 +175,6 @@ export class ModelRedirectService {
    * Generate model mapping for a single channel
    * Returns an object of standardModel -> actualModel mappings
    * Uses multi-stage extraction pipeline with deduplication
-   *
    * @param standardModels List of canonical standard model ids.
    * @param actualModels Models exposed by the channel (raw).
    * @returns Mapping of standard model id to best-matching actual model.

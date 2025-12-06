@@ -21,6 +21,9 @@ interface AccountDialogProps {
   onError: (error: any) => void
 }
 
+/**
+ *
+ */
 export default function AccountDialog({
   isOpen,
   onClose,

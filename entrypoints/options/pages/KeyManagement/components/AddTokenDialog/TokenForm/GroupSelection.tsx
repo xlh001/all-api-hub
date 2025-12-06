@@ -9,6 +9,9 @@ interface GroupSelectionProps {
   groups: Record<string, UserGroupInfo>
 }
 
+/**
+ *
+ */
 export function GroupSelection({
   group,
   handleSelectChange,

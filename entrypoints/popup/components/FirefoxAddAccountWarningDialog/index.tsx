@@ -10,6 +10,9 @@ interface FirefoxWarningDialogProps {
   onConfirm: () => void
 }
 
+/**
+ *
+ */
 export default function FirefoxAddAccountWarningDialog({
   isOpen,
   onClose,

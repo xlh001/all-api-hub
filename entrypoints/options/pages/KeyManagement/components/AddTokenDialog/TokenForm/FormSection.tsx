@@ -5,6 +5,9 @@ interface FormSectionProps {
   children: React.ReactNode
 }
 
+/**
+ *
+ */
 export function FormSection({ title, children }: FormSectionProps) {
   return (
     <div className="space-y-4">

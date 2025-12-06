@@ -1,6 +1,9 @@
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
 
+/**
+ *
+ */
 function AccountManagement() {
   return (
     <AccountManagementProvider>

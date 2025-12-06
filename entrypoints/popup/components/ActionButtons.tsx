@@ -7,6 +7,9 @@ import { COLORS } from "~/constants/designTokens"
 import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
 import { openKeysPage, openModelsPage } from "~/utils/navigation"
 
+/**
+ *
+ */
 export default function ActionButtons() {
   const { t } = useTranslation(["account", "ui"])
   const { handleAddAccountClick } = useAddAccountHandler()

@@ -33,6 +33,9 @@ interface PermissionOnboardingDialogProps {
   onClose: () => void
 }
 
+/**
+ *
+ */
 export function PermissionOnboardingDialog({
   open,
   onClose,

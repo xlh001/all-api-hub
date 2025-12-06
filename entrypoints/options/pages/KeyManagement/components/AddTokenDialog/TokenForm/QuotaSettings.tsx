@@ -15,6 +15,9 @@ interface QuotaSettingsProps {
   error?: string
 }
 
+/**
+ *
+ */
 export function QuotaSettings({
   unlimitedQuota,
   quota,

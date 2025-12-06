@@ -23,6 +23,9 @@ interface TokenListProps {
   displayData: DisplaySiteData[]
 }
 
+/**
+ *
+ */
 function LoadingSkeleton() {
   return (
     <div className="space-y-3">
@@ -37,6 +40,9 @@ function LoadingSkeleton() {
   )
 }
 
+/**
+ *
+ */
 function TokenEmptyState({
   tokens,
   handleAddToken,
@@ -84,6 +90,9 @@ function TokenEmptyState({
   )
 }
 
+/**
+ *
+ */
 export function TokenList({
   isLoading,
   tokens,

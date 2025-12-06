@@ -12,6 +12,9 @@ interface KeyDisplayProps {
   toggleKeyVisibility: (id: number) => void
 }
 
+/**
+ *
+ */
 export function KeyDisplay({
   tokenKey,
   tokenId,

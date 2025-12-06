@@ -30,6 +30,9 @@ interface FilterBarProps {
   onKeywordChange: (keyword: string) => void
 }
 
+/**
+ *
+ */
 export default function FilterBar({
   accountResults,
   status,

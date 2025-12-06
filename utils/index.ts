@@ -13,9 +13,9 @@ export function isNotEmptyArray<T>(arr: T[] | null | undefined): arr is T[] {
 /**
  * Checks if two arrays are equal by comparing the frequency of each element.
  * @template T
- * @param {T[]} arr1 The first array to compare.
- * @param {T[]} arr2 The second array to compare.
- * @returns {boolean} If the two arrays are equal.
+ * @param arr1 The first array to compare.
+ * @param arr2 The second array to compare.
+ * @returns If the two arrays are equal.
  */
 export function isArraysEqual<T>(arr1: T[], arr2: T[]) {
   if (arr1.length !== arr2.length) return false

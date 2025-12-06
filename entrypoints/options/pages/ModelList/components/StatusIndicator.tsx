@@ -16,6 +16,9 @@ interface StatusIndicatorProps {
   loadPricingData: () => void
 }
 
+/**
+ *
+ */
 export function StatusIndicator({
   selectedAccount,
   isLoading,

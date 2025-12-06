@@ -35,6 +35,9 @@ interface SiteInfoInputProps {
   onEditAccount?: (account: DisplaySiteData) => void
 }
 
+/**
+ *
+ */
 export default function SiteInfoInput({
   url,
   onUrlChange,

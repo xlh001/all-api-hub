@@ -8,6 +8,9 @@ interface ProgressCardProps {
   progress: ExecutionProgress
 }
 
+/**
+ *
+ */
 export default function ProgressCard({ progress }: ProgressCardProps) {
   const { t } = useTranslation("newApiModelSync")
 

@@ -14,6 +14,9 @@ export default defineContentScript({
   },
 })
 
+/**
+ *
+ */
 function mainLogic() {
   console.log("Hello content script!", { id: browser.runtime.id })
 

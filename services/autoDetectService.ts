@@ -39,7 +39,6 @@ export interface UserDataResult {
  */
 /**
  * Detect available browser APIs to choose a compatible auto-detect strategy.
- *
  * @returns Capability flags indicating windows/tabs/runtime availability.
  */
 export function detectPlatformCapabilities() {
@@ -57,7 +56,6 @@ export function detectPlatformCapabilities() {
  */
 /**
  * Merge user data (if any) with detected site type into a unified result.
- *
  * @param userData User info resolved from upstream source; null when missing.
  * @param url Current site URL for site type detection.
  * @returns Successful result with user + siteType, or failure with message.
@@ -93,7 +91,6 @@ async function combineUserDataAndSiteType(
 
 /**
  * Fetch user data via upstream API (cookie-based).
- *
  * @param url Base site URL used for API calls.
  * @returns UserDataResult when ID present; otherwise null.
  */
@@ -136,7 +133,6 @@ export async function autoDetectDirect(url: string): Promise<AutoDetectResult> {
  *
  * Creates a runtime request to content/background to read localStorage; if that
  * fails, attempts API-based fetch using cookies.
- *
  * @param url Target site URL.
  * @returns User data or null when both methods fail.
  */
@@ -194,7 +190,6 @@ export async function autoDetectViaBackground(
 
 /**
  * Fetch user data from the active tab using content script, with API fallback.
- *
  * @param url Target site URL.
  * @returns User data or null when not available.
  */
