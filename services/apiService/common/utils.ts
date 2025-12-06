@@ -24,7 +24,17 @@ import {
 import { joinUrl } from "~/utils/url"
 
 /**
- * 创建请求头
+ * Build request headers for New API calls.
+ *
+ * Behavior:
+ * - Adds extension + auth method headers (via cookieHelper).
+ * - Injects multiple compatible user-id headers so different backends can read the user context.
+ * - Adds Bearer token when provided.
+ *
+ * @param authMode Auth strategy used to add auth headers.
+ * @param userId Optional user identifier injected under several header keys.
+ * @param accessToken Optional bearer token for token auth flows.
+ * @returns Headers object ready for fetch.
  */
 const createRequestHeaders = async (
   authMode: AuthMode,
@@ -36,6 +46,7 @@ const createRequestHeaders = async (
     Pragma: REQUEST_CONFIG.HEADERS.PRAGMA,
   }
 
+  // Some deployments expect different header names; keep a fan-out map for compatibility.
   const userHeaders: Record<string, string> = userId
     ? {
         "New-API-User": userId.toString(),
@@ -59,11 +70,12 @@ const createRequestHeaders = async (
 }
 
 /**
- * 创建基本请求配置
- * @param headers 请求头
- * @param credentials 请求凭证信息
- * @param options 可选，请求配置
- * @returns RequestInit - 基本请求配置
+ * Build a base RequestInit with defaults.
+ *
+ * @param headers Default headers to seed the request with.
+ * @param credentials Fetch credentials policy (include/omit for cookies).
+ * @param options Caller-provided overrides (method, body, headers, etc.).
+ * @returns RequestInit merged with sensible defaults.
  */
 const createBaseRequest = (
   headers: HeadersInit,
@@ -90,7 +102,10 @@ const createBaseRequest = (
 }
 
 /**
- * 创建带 cookie 认证的请求
+ * Create a RequestInit configured for cookie-based auth.
+ *
+ * @param userId Optional user id to embed in headers.
+ * @param options Additional fetch options to merge.
  */
 const createCookieAuthRequest = async (
   userId: number | string | undefined,
@@ -104,7 +119,11 @@ const createCookieAuthRequest = async (
 }
 
 /**
- * 创建带 Bearer token 认证的请求
+ * Create a RequestInit configured for bearer-token auth.
+ *
+ * @param userId Optional user id to embed in headers.
+ * @param accessToken Bearer token for Authorization header.
+ * @param options Additional fetch options to merge.
  */
 const createTokenAuthRequest = async (
   userId: number | string | undefined,
@@ -118,7 +137,9 @@ const createTokenAuthRequest = async (
   )
 
 /**
- * 计算今日时间戳范围
+ * Compute today's start/end unix timestamps (seconds).
+ *
+ * @returns Object with start and end seconds for the current day.
  */
 export const getTodayTimestampRange = (): { start: number; end: number } => {
   const today = new Date()
@@ -135,7 +156,10 @@ export const getTodayTimestampRange = (): { start: number; end: number } => {
 }
 
 /**
- * 聚合使用量数据
+ * Aggregate usage data over log items (quota + tokens).
+ *
+ * @param items Log records to sum.
+ * @returns Totals for quota and token counts.
  */
 export const aggregateUsageData = (
   items: LogItem[],
@@ -156,9 +180,8 @@ export const aggregateUsageData = (
 }
 
 /**
- * 基于 apiRequest 的快捷函数：直接提取 data
- * @waring 非必要请勿在外部使用
- * @see fetchApi fetchApiData
+ * Internal helper: call apiRequest and return data field.
+ * Warning: For internal use; fetchApiData is the public entry.
  */
 const apiRequestData = async <T>(
   url: string,
@@ -188,15 +211,9 @@ const apiRequestData = async <T>(
 }
 
 /**
- * 通用 API 请求函数
- * @param url 请求 URL
- * @param options 请求配置
- * @param endpoint 可选，接口名称，用于错误追踪
- * @param responseType
- * @returns ApiResponse 对象
- * 默认：返回完整响应，不提取 data
- * @waring 非必要请勿在外部使用
- * @see fetchApi fetchApiData
+ * Low-level API request helper.
+ * - Returns ApiResponse<T> for JSON, raw parsed value otherwise.
+ * - Raises ApiError on HTTP failure or content-type mismatch for JSON.
  */
 const apiRequest = async <T>(
   url: string,
@@ -251,6 +268,14 @@ export interface FetchApiParams {
   responseType?: TempWindowResponseType // 默认 json，可自定义响应处理
 }
 
+/**
+ * Core fetch helper that wires authentication, temp-window fallback, and
+ * response parsing for all upstream API calls.
+ *
+ * @param params Fetch configuration (baseUrl, endpoint, auth, etc.).
+ * @param onlyData When true, returns the `data` field directly (JSON only).
+ * @returns ApiResponse<T>, raw payload, or data field based on flags.
+ */
 const _fetchApi = async <T>(
   {
     baseUrl,
@@ -316,8 +341,7 @@ const _fetchApi = async <T>(
 }
 
 /**
- * 通用 API 请求函数，直接返回 data
- * @param params
+ * Public helper: fetch API and return data (JSON only).
  */
 export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
   if (params.responseType && params.responseType !== "json") {
@@ -330,6 +354,9 @@ export const fetchApiData = async <T>(params: FetchApiParams): Promise<T> => {
   return (await _fetchApi({ ...params, responseType: "json" }, true)) as T
 }
 
+/**
+ * Public helper: fetch API; returns ApiResponse<T> for JSON or raw for others.
+ */
 export function fetchApi<T>(
   params: FetchApiParams,
   _normalResponseType: true,
@@ -339,11 +366,6 @@ export function fetchApi<T>(
   _normalResponseType?: false,
 ): Promise<ApiResponse<T>>
 
-/**
- * 通用 API 请求函数
- * @param params
- * @param _normalResponseType
- */
 export async function fetchApi<T>(
   params: FetchApiParams,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -352,6 +374,13 @@ export async function fetchApi<T>(
   return await _fetchApi(params)
 }
 
+/**
+ * Parse a fetch Response into the expected shape based on responseType.
+ *
+ * @param response Raw fetch response.
+ * @param responseType Desired output type (json/text/blob/arrayBuffer).
+ * @returns Parsed payload typed to caller expectation.
+ */
 async function parseResponseByType<T>(
   response: Response,
   responseType: TempWindowResponseType,
@@ -369,6 +398,12 @@ async function parseResponseByType<T>(
   }
 }
 
+/**
+ * Validate whether a string is an HTTP(S) URL.
+ *
+ * @param url Candidate URL string.
+ * @returns true when protocol is http/https; false on invalid or other schemes.
+ */
 export function isHttpUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
@@ -379,6 +414,13 @@ export function isHttpUrl(url: string): boolean {
   }
 }
 
+/**
+ * Extract the `data` field from a JSON API response, throwing on invalid shape.
+ *
+ * @param body Parsed JSON body from upstream.
+ * @param endpoint Optional endpoint for richer error context.
+ * @returns Extracted `data` payload cast to T.
+ */
 export function extractDataFromApiResponseBody<T>(
   body: any,
   endpoint?: string,
@@ -394,10 +436,13 @@ export function extractDataFromApiResponseBody<T>(
 
   return body.data as T
 }
+
 /**
- * 从文本中提取金额及货币符号
- * @param {string} text - 输入文本
- * @param exchangeRate - （CNY per USD）
+ * Extract currency symbol and numeric amount from a free-form string.
+ *
+ * @param text Input text containing currency and amount.
+ * @param exchangeRate CNY per USD exchange rate for ¥ normalization.
+ * @returns Symbol and USD amount when detected; otherwise null.
  */
 export function extractAmount(
   text: string,

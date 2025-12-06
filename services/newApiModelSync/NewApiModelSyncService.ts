@@ -32,6 +32,17 @@ export class NewApiModelSyncService {
   private channelConfigs: ChannelConfigMap | null = null
   private globalChannelModelFilters: ChannelModelFilterRule[] | null = null
 
+  /**
+   * Create a model sync service bound to a specific New API instance.
+   *
+   * @param baseUrl New API base URL.
+   * @param token Admin token for channel operations.
+   * @param userId Optional user id for header injection.
+   * @param rateLimitConfig Optional RPM/burst limits for upstream calls.
+   * @param allowedModels Optional allow-list to constrain synced models.
+   * @param channelConfigs Optional per-channel filter/settings cache.
+   * @param globalChannelModelFilters Optional global include/exclude rules.
+   */
   constructor(
     baseUrl: string,
     token: string,
@@ -63,10 +74,18 @@ export class NewApiModelSyncService {
     }
   }
 
+  /**
+   * Update in-memory channel configs to be used by per-channel filters.
+   *
+   * @param configs Cached channel configuration map; null clears cache.
+   */
   setChannelConfigs(configs: ChannelConfigMap | null) {
     this.channelConfigs = configs
   }
 
+  /**
+   * Respect optional rate limiter before issuing upstream requests.
+   */
   private async throttle() {
     if (this.rateLimiter) {
       await this.rateLimiter.acquire()
@@ -75,6 +94,13 @@ export class NewApiModelSyncService {
 
   /**
    * List all channels from New API
+   *
+   * Aggregates totals/type_counts across paginated results.
+   */
+  /**
+   * Fetch all channels from New API with pagination aggregation.
+   *
+   * @returns Channel list data including totals and type counts.
    */
   async listChannels(): Promise<NewApiChannelListData> {
     try {
@@ -112,6 +138,7 @@ export class NewApiModelSyncService {
           total = data.total || data.items.length || 0
           Object.assign(typeCounts, data.type_counts || {})
         } else if (data.type_counts) {
+          // Later pages omit total; accumulate type_counts manually
           for (const [key, value] of Object.entries(data.type_counts)) {
             typeCounts[key] = (typeCounts[key] || 0) + value
           }
@@ -135,7 +162,10 @@ export class NewApiModelSyncService {
   }
 
   /**
-   * Fetch models for a specific channel
+   * Fetch raw model list for a given channel.
+   *
+   * @param channelId Target channel id.
+   * @returns Model identifiers returned by upstream.
    */
   async fetchChannelModels(channelId: number): Promise<string[]> {
     try {
@@ -163,8 +193,10 @@ export class NewApiModelSyncService {
   }
 
   /**
-   * Update channel models
-   * Strategy: Update models field (model_mapping handled separately)
+   * Persist models field for a channel (model_mapping handled separately).
+   *
+   * @param channel Channel to update.
+   * @param models Canonical model list to write.
    */
   async updateChannelModels(
     channel: NewApiChannel,
@@ -203,7 +235,10 @@ export class NewApiModelSyncService {
   }
 
   /**
-   * Update channel model_mapping
+   * Persist model_mapping while ensuring models contains all mapped keys.
+   *
+   * @param channel Channel to update.
+   * @param modelMapping Standard→actual mapping to write.
    */
   async updateChannelModelMapping(
     channel: NewApiChannel,
@@ -250,7 +285,11 @@ export class NewApiModelSyncService {
   }
 
   /**
-   * Execute sync for a single channel with retry logic
+   * Execute sync for a single channel with retry/backoff.
+   *
+   * @param channel Channel to sync.
+   * @param maxRetries Max retry attempts (default 2) with exponential backoff.
+   * @returns Outcome including old/new models and status.
    */
   async runForChannel(
     channel: NewApiChannel,
@@ -280,6 +319,7 @@ export class NewApiModelSyncService {
         )
 
         if (this.haveModelsChanged(oldModels, channelScopedModels)) {
+          // Only push an update when model sets differ to avoid unnecessary writes
           await this.updateChannelModels(channel, channelScopedModels)
           channel.models = channelScopedModels.join(",")
         }
@@ -306,6 +346,7 @@ export class NewApiModelSyncService {
           break
         }
 
+        // Exponential backoff: 1s, 2s, 4s, ...
         const backoffMs = Math.pow(2, attempts - 1) * 1000
         await new Promise((resolve) => setTimeout(resolve, backoffMs))
       }
@@ -324,7 +365,11 @@ export class NewApiModelSyncService {
   }
 
   /**
-   * Execute sync for multiple channels with concurrency control
+   * Run sync across multiple channels with concurrency control.
+   *
+   * @param channels Channels to process.
+   * @param options Concurrency, retry limit, and progress callback.
+   * @returns Aggregate execution result and statistics.
    */
   async runBatch(
     channels: NewApiChannel[],
@@ -344,7 +389,7 @@ export class NewApiModelSyncService {
         if (currentIndex >= total) {
           return
         }
-        nextIndex++
+        nextIndex++ // single shared index for lightweight work stealing
 
         const channel = channels[currentIndex]
         let result: ExecutionItemResult
@@ -377,6 +422,7 @@ export class NewApiModelSyncService {
       }
     }
 
+    // Cap workers to total channels to avoid spinning idle workers
     const workerCount = Math.max(1, Math.min(concurrency, total))
     const workers = Array.from({ length: workerCount }, () => worker())
     await Promise.all(workers)
@@ -403,9 +449,10 @@ export class NewApiModelSyncService {
   }
 
   /**
-   * Apply the optional allow-list to the fetched model set.
-   * Always trims/normalizes input and removes duplicates so channel updates
-   * receive a clean, deterministic list.
+   * Apply optional allow-list and dedupe/trim models.
+   *
+   * @param models Models fetched upstream.
+   * @returns Normalized models limited by allow-list when present.
    */
   private filterAllowedModels(models: string[]): string[] {
     if (!this.allowedModelSet || this.allowedModelSet.size === 0) {
@@ -421,6 +468,9 @@ export class NewApiModelSyncService {
     return Array.from(new Set(filtered))
   }
 
+  /**
+   * Compare two model lists ignoring order to detect changes.
+   */
   private haveModelsChanged(previous: string[], next: string[]): boolean {
     if (previous.length !== next.length) {
       return true
@@ -492,6 +542,9 @@ export class NewApiModelSyncService {
   /**
    * Applies the per-channel include/exclude filters defined in channel configs
    * to the provided models.
+   *
+   * @param channelId Channel id for looking up config rules.
+   * @param models Models after global filtering.
    */
   private applyChannelFilters(channelId: number, models: string[]): string[] {
     const rules =
@@ -503,6 +556,10 @@ export class NewApiModelSyncService {
    * Evaluates a model name against a filter rule. Regex patterns are compiled
    * with `new RegExp(pattern, "i")`, enforcing case-insensitive matching and
    * avoiding custom flags for predictability across browsers.
+   *
+   * @param rule Filter rule.
+   * @param model Model name to test.
+   * @returns Whether the model matches the rule.
    */
   private matchesFilter(rule: ChannelModelFilterRule, model: string): boolean {
     const pattern = rule.pattern?.trim()

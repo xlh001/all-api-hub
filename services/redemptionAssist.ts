@@ -12,10 +12,22 @@ interface RedemptionAssistRuntimeSettings {
   enabled: boolean
 }
 
+/**
+ * Provides code redemption assistance in background/context scripts.
+ * Responsibilities:
+ * - Tracks runtime enable flag from preferences.
+ * - Determines whether to prompt based on URL/hostname and code validity.
+ * - Delegates actual redeem actions to redeemService.
+ */
 class RedemptionAssistService {
   private initialized = false
   private settings: RedemptionAssistRuntimeSettings = { enabled: true }
 
+  /**
+   * Initialize from stored preferences (idempotent).
+   *
+   * Safe to call multiple times; loads enable flag from user preferences.
+   */
   async initialize() {
     if (this.initialized) {
       return
@@ -32,6 +44,11 @@ class RedemptionAssistService {
     console.log("[RedemptionAssist] Service initialized", this.settings)
   }
 
+  /**
+   * Update runtime flags without persisting.
+   *
+   * @param settings Runtime-only toggle overrides.
+   */
   updateRuntimeSettings(settings: { enabled?: boolean }) {
     if (typeof settings.enabled === "boolean") {
       this.settings.enabled = settings.enabled
@@ -39,12 +56,18 @@ class RedemptionAssistService {
     }
   }
 
+  /**
+   * Ensure preferences are loaded before decision flows.
+   */
   private async ensureInitialized() {
     if (!this.initialized) {
       await this.initialize()
     }
   }
 
+  /**
+   * Fetch accounts and convert to display data used by search/filter utilities.
+   */
   private async getDisplayAccounts(): Promise<DisplaySiteData[]> {
     const siteAccounts = await accountStorage.getAllAccounts()
     const displayAccounts = accountStorage.convertToDisplayData(
@@ -53,6 +76,12 @@ class RedemptionAssistService {
     return displayAccounts
   }
 
+  /**
+   * Normalize and extract hostname; returns null if URL is invalid.
+   *
+   * @param url Candidate URL.
+   * @returns Lowercased hostname or null on parse failure.
+   */
   private getHostname(url: string): string | null {
     try {
       const u = new URL(url)
@@ -62,6 +91,13 @@ class RedemptionAssistService {
     }
   }
 
+  /**
+   * Decide whether to show redemption prompt for a given URL/code pair.
+   * Returns a reason when skipping prompt (disabled/invalid_code).
+   *
+   * @param params url, code, optional tabId for telemetry.
+   * @returns shouldPrompt flag and optional skip reason.
+   */
   async shouldPrompt(params: {
     url: string
     code: string
@@ -82,11 +118,27 @@ class RedemptionAssistService {
     return { shouldPrompt: true }
   }
 
+  /**
+   * Redeem a code for a specific account directly.
+   *
+   * @param accountId Target account id.
+   * @param code Redemption code.
+   */
   async autoRedeem(accountId: string, code: string) {
     // Delegate to redeemService which handles i18n and error messages
     return redeemService.redeemCodeForAccount(accountId, code)
   }
 
+  /**
+   * Attempt redemption by inferring account from URL + code.
+   * Flow:
+   * 1) Parse hostname; fail fast if invalid.
+   * 2) Use account search to find candidates by hostname.
+   * 3) Filter candidates whose customCheckInUrl matches the same domain.
+   *    - Single match: auto redeem.
+   *    - Multiple: ask frontend to choose.
+   *    - None: return all accounts for manual search.
+   */
   async autoRedeemByUrl(url: string, code: string) {
     await this.ensureInitialized()
     const hostname = this.getHostname(url)
@@ -150,6 +202,10 @@ class RedemptionAssistService {
 
 export const redemptionAssistService = new RedemptionAssistService()
 
+/**
+ * Message handler for redemption assist actions.
+ * Centralizes background decision logic and delegates responses to callers.
+ */
 export const handleRedemptionAssistMessage = async (
   request: any,
   sender: browser.runtime.MessageSender,

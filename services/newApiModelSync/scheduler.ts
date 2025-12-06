@@ -25,14 +25,22 @@ import { NewApiModelSyncService } from "./NewApiModelSyncService"
 import { newApiModelSyncStorage } from "./storage"
 
 /**
- * Scheduler service for New API Model Sync
- * Handles periodic execution using chrome.alarms
+ * Scheduler for New API Model Sync.
+ * Responsibilities:
+ * - Sets up alarms to run sync on a fixed cadence (when alarms API is available).
+ * - Orchestrates execution with user preferences (interval, concurrency, retries).
+ * - Applies model redirect mappings immediately after successful channel syncs.
  */
 class NewApiModelSyncScheduler {
   private static readonly ALARM_NAME = "newApiModelSync"
   private isInitialized = false
   private currentProgress: ExecutionProgress | null = null
 
+  /**
+   * Build a NewApiModelSyncService instance using persisted preferences and channel configs.
+   *
+   * @throws Error when New API config is missing.
+   */
   private async createService(): Promise<NewApiModelSyncService> {
     const userPrefs = await userPreferences.getPreferences()
 
@@ -63,7 +71,8 @@ class NewApiModelSyncScheduler {
   }
 
   /**
-   * Initialize the scheduler
+   * Initialize the scheduler (idempotent).
+   * Registers alarm listeners and schedules the first alarm if supported.
    */
   async initialize() {
     if (this.isInitialized) {
@@ -101,7 +110,10 @@ class NewApiModelSyncScheduler {
   }
 
   /**
-   * Setup or update the alarm based on current preferences
+   * Setup or update the alarm based on current preferences.
+   * Clears existing alarm first to avoid duplicates, then recreates if enabled.
+   *
+   * Respects newApiModelSync.enabled/interval; no-op if alarms API unavailable.
    */
   async setupAlarm() {
     // Check if alarms API is supported
@@ -115,7 +127,7 @@ class NewApiModelSyncScheduler {
     const prefs = await userPreferences.getPreferences()
     const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
 
-    // Clear existing alarm
+    // Clear existing alarm before re-creating with new interval
     await clearAlarm(NewApiModelSyncScheduler.ALARM_NAME)
 
     if (!config.enabled) {
@@ -156,8 +168,11 @@ class NewApiModelSyncScheduler {
   }
 
   /**
-   * Execute model sync for all channels
-   * Also generates model redirect mappings if enabled
+   * Execute model sync for all channels (or a filtered subset).
+   * Also generates model redirect mappings immediately after successful channel syncs.
+   *
+   * @param channelIds Optional subset of channel IDs to sync; defaults to all.
+   * @returns ExecutionResult with per-channel outcomes and statistics.
    */
   async executeSync(channelIds?: number[]): Promise<ExecutionResult> {
     console.log("[NewApiModelSync] Starting execution")
@@ -302,6 +317,9 @@ class NewApiModelSyncScheduler {
 
   /**
    * Execute sync for failed channels only
+   *
+   * @returns ExecutionResult for retry batch.
+   * @throws Error when no previous execution or no failed channels.
    */
   async executeFailedOnly(): Promise<ExecutionResult> {
     const lastExecution = await newApiModelSyncStorage.getLastExecution()
@@ -322,6 +340,8 @@ class NewApiModelSyncScheduler {
 
   /**
    * Get current execution progress
+   *
+   * @returns Latest progress snapshot or null when idle.
    */
   getProgress(): ExecutionProgress | null {
     return this.currentProgress
@@ -329,6 +349,8 @@ class NewApiModelSyncScheduler {
 
   /**
    * Update sync settings and reschedule alarm
+   *
+   * @param settings Partial override of sync prefs (interval, concurrency, filters, rate limit).
    */
   async updateSettings(settings: {
     enableSync?: boolean
@@ -383,7 +405,8 @@ class NewApiModelSyncScheduler {
   }
 
   /**
-   * Notify frontend about progress
+   * Notify frontend about progress.
+   * Swallows missing-receiver errors because UI may not be open.
    */
   private notifyProgress() {
     try {
@@ -405,7 +428,8 @@ class NewApiModelSyncScheduler {
 export const newApiModelSyncScheduler = new NewApiModelSyncScheduler()
 
 /**
- * Message handler for New API Model Sync
+ * Message handler for New API Model Sync actions (trigger, retry failed, prefs).
+ * Centralizes background-only control plane for sync operations.
  */
 export const handleNewApiModelSyncMessage = async (
   request: any,

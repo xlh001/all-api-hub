@@ -54,7 +54,7 @@ class AccountStorageService {
   }
 
   /**
-   * 获取所有账号信息
+   * Get all accounts (migrates legacy configs if needed).
    */
   async getAllAccounts(): Promise<SiteAccount[]> {
     try {
@@ -62,6 +62,7 @@ class AccountStorageService {
       const { accounts, migratedCount } = migrateAccountsConfig(config.accounts)
 
       if (migratedCount > 0) {
+        // If any account schemas were upgraded, persist the normalized set immediately
         console.log(
           `[AccountStorage] ${migratedCount} accounts migrated, saving updated accounts...`,
         )
@@ -76,7 +77,7 @@ class AccountStorageService {
   }
 
   /**
-   * 根据 ID 获取单个账号信息
+   * Get single account by id (auto-migrates if outdated).
    */
   async getAccountById(id: string): Promise<SiteAccount | null> {
     try {
@@ -100,7 +101,7 @@ class AccountStorageService {
   }
 
   /**
-   * 根据 baseUrl 和 userId 获取单个账号信息
+   * Get account by baseUrl + userId (auto-migrates if outdated).
    */
   async getAccountByBaseUrlAndUserId(
     baseUrl: string,
@@ -146,7 +147,7 @@ class AccountStorageService {
   }
 
   /**
-   * 检查给定 URL 是否已存在
+   * Check whether a given URL (origin) already exists.
    */
   async checkUrlExists(url: string): Promise<SiteAccount | null> {
     if (!url) return null
@@ -158,7 +159,7 @@ class AccountStorageService {
         accounts.find((account) => {
           try {
             const accountUrl = new URL(account.site_url)
-            return accountUrl.origin === currentUrl.origin
+            return accountUrl.origin === currentUrl.origin // compare origins only; ignore path/query differences
           } catch {
             return false
           }
@@ -171,7 +172,7 @@ class AccountStorageService {
   }
 
   /**
-   * 添加新账号
+   * Add a new account; generates id/timestamps and saves.
    */
   async addAccount(
     accountData: Omit<SiteAccount, "id" | "created_at" | "updated_at">,
@@ -202,7 +203,7 @@ class AccountStorageService {
   }
 
   /**
-   * 更新账号信息
+   * Update an account by id (partial), refreshes updated_at.
    */
   async updateAccount(
     id: string,
@@ -221,6 +222,7 @@ class AccountStorageService {
         updated_at: Date.now(),
       } as DeepPartial<SiteAccount>)
 
+      // Persist the updated list atomically to keep pinned/ordered ids consistent
       await this.saveAccounts(accounts)
       return true
     } catch (error) {
@@ -230,7 +232,7 @@ class AccountStorageService {
   }
 
   /**
-   * 删除账号
+   * Delete an account; also unpins and removes from ordered list.
    */
   async deleteAccount(id: string): Promise<boolean> {
     try {
@@ -264,7 +266,7 @@ class AccountStorageService {
   }
 
   /**
-   * 获取置顶账号ID列表
+   * Get pinned account ids.
    */
   async getPinnedList(): Promise<string[]> {
     try {
@@ -277,7 +279,7 @@ class AccountStorageService {
   }
 
   /**
-   * 获取自定义排序列表
+   * Get ordered account ids.
    */
   async getOrderedList(): Promise<string[]> {
     try {
@@ -290,7 +292,7 @@ class AccountStorageService {
   }
 
   /**
-   * 设置置顶账号ID列表
+   * Set pinned ids (filters to existing accounts, de-dupes).
    */
   async setPinnedList(ids: string[]): Promise<boolean> {
     try {
@@ -310,7 +312,7 @@ class AccountStorageService {
   }
 
   /**
-   * 设置自定义排序列表
+   * Set ordered ids (filters to existing accounts, de-dupes).
    */
   async setOrderedList(ids: string[]): Promise<boolean> {
     try {
@@ -330,7 +332,7 @@ class AccountStorageService {
   }
 
   /**
-   * 置顶账号
+   * Pin account (moves to front).
    */
   async pinAccount(id: string): Promise<boolean> {
     try {
@@ -350,7 +352,7 @@ class AccountStorageService {
   }
 
   /**
-   * 取消置顶账号
+   * Unpin account (no-op if already removed).
    */
   async unpinAccount(id: string): Promise<boolean> {
     try {
@@ -370,7 +372,7 @@ class AccountStorageService {
   }
 
   /**
-   * 检查账号是否已置顶
+   * Check if account is pinned.
    */
   async isPinned(id: string): Promise<boolean> {
     try {
@@ -383,7 +385,7 @@ class AccountStorageService {
   }
 
   /**
-   * 更新账号同步时间
+   * Update account last_sync_time to now.
    */
   async updateSyncTime(id: string): Promise<boolean> {
     return this.updateAccount(id, {
@@ -392,7 +394,7 @@ class AccountStorageService {
   }
 
   /**
-   * 标记账号为已签到
+   * Mark account as checked-in for today (sets date + flag).
    */
   async markAccountAsCheckedIn(id: string): Promise<boolean> {
     try {
@@ -420,7 +422,7 @@ class AccountStorageService {
   }
 
   /**
-   * 重置过期的签到状态（针对自定义签到URL的账号）
+   * Reset expired check-in flags for accounts with custom check-in URLs.
    */
   async resetExpiredCheckIns(): Promise<void> {
     try {
@@ -451,7 +453,7 @@ class AccountStorageService {
   }
 
   /**
-   * 刷新单个账号数据
+   * Refresh a single account (API calls, check-in resets, health/status updates).
    */
   async refreshAccount(id: string, force: boolean = false) {
     try {
@@ -571,7 +573,7 @@ class AccountStorageService {
   }
 
   /**
-   * 刷新所有账号数据
+   * Refresh all accounts concurrently; summarizes results.
    */
   async refreshAllAccounts(force: boolean = false) {
     const accounts = await this.getAllAccounts()
@@ -613,7 +615,7 @@ class AccountStorageService {
   }
 
   /**
-   * 计算账号统计信息
+   * Compute aggregate account stats (quota, usage, income).
    */
   async getAccountStats(): Promise<AccountStats> {
     try {
@@ -659,12 +661,18 @@ class AccountStorageService {
     }
   }
 
+  /**
+   * Convert persistence-layer SiteAccount data into the shape consumed by the UI.
+   *
+   * The UI expects currency values in both USD/CNY, token counts, and display
+   * helpers like tags and health summaries. This adapter ensures we never leak
+   * the raw storage format into presentation logic.
+   *
+   * @param input Single account or array of accounts.
+   * @returns Display-ready representation preserving existing metadata.
+   */
   convertToDisplayData(input: SiteAccount): DisplaySiteData
   convertToDisplayData(input: SiteAccount[]): DisplaySiteData[]
-
-  /**
-   * 转换为展示用的数据格式 (兼容当前 UI)
-   */
   convertToDisplayData(
     input: SiteAccount | SiteAccount[],
   ): DisplaySiteData | DisplaySiteData[] {
@@ -744,7 +752,9 @@ class AccountStorageService {
   }
 
   /**
-   * 清空所有数据
+   * Clear every stored account + metadata blob.
+   *
+   * Primarily used by troubleshooting tools when the user wants a clean slate.
    */
   async clearAllData(): Promise<boolean> {
     try {
@@ -757,14 +767,17 @@ class AccountStorageService {
   }
 
   /**
-   * 导出数据
+   * Export the current storage configuration, preserving ordering + pinned info.
    */
   async exportData(): Promise<AccountStorageConfig> {
     return this.getStorageConfig()
   }
 
   /**
-   * 导入数据
+   * Import a full config dump (accounts + optional pinned ids).
+   *
+   * Accounts are migrated before persisting to ensure compatibility. In case of
+   * failure we restore the earlier snapshot to avoid partial imports.
    */
   async importData(data: {
     accounts?: SiteAccount[]
@@ -813,10 +826,8 @@ class AccountStorageService {
     }
   }
 
-  // 私有方法
-
   /**
-   * 获取存储配置
+   * Read the persisted storage config (with DEFAULT fallback on first run).
    */
   private async getStorageConfig(): Promise<AccountStorageConfig> {
     try {
@@ -831,7 +842,10 @@ class AccountStorageService {
   }
 
   /**
-   * 保存账号数据
+   * Save the full account list while also pruning stale pinned/ordered ids.
+   *
+   * This keeps derived collections in sync so the UI never references missing
+   * accounts after deletions or imports.
    */
   private async saveAccounts(accounts: SiteAccount[]): Promise<void> {
     console.log("[AccountStorage] 开始保存账号数据，数量:", accounts.length)
@@ -869,13 +883,18 @@ class AccountStorageService {
     return `account_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
   }
 
-  /**
-   * 检查是否应跳过刷新
-   */
   private async shouldSkipRefresh(
     account: SiteAccount,
     force: boolean = false,
   ): Promise<boolean> {
+    /**
+     * Determines whether an account refresh should be skipped based on the
+     * global refresh preferences and the timestamp of the last sync.
+     *
+     * @param account - The account whose refresh cadence is being evaluated.
+     * @param force - When true, bypasses the interval guardrail entirely.
+     * @returns True when the refresh interval has not elapsed and force isn’t set.
+     */
     if (force) {
       return false // 强制刷新，不跳过
     }
@@ -887,6 +906,13 @@ class AccountStorageService {
     return timeSinceLastRefresh < minIntervalMs
   }
 
+  /**
+   * Normalizes a URL into its protocol + host origin to ensure consistent
+   * comparisons across the storage layer.
+   *
+   * @param url - Raw URL string that may contain paths or query strings.
+   * @returns The normalized origin string or null when parsing fails.
+   */
   private normalizeBaseUrl(url?: string): string | null {
     if (!url) {
       return null
@@ -899,6 +925,13 @@ class AccountStorageService {
     }
   }
 
+  /**
+   * Enriches an account with derived metadata (site type + check-in support)
+   * when those values are missing or still set to legacy defaults.
+   *
+   * @param account - The account record that may require metadata upgrades.
+   * @returns The latest account representation after any metadata refresh.
+   */
   private async refreshSiteMetadataIfNeeded(
     account: SiteAccount,
   ): Promise<SiteAccount> {
@@ -920,6 +953,7 @@ class AccountStorageService {
     const updates: DeepPartial<SiteAccount> = {}
 
     if (needsSiteType) {
+      // Remote inference fills in UNKNOWN_SITE entries after migrations
       try {
         const detectedType = await getSiteType(normalizedUrl)
         if (detectedType && detectedType !== UNKNOWN_SITE) {
@@ -934,6 +968,7 @@ class AccountStorageService {
     }
 
     if (needsCheckInDetection) {
+      // Probe the API to confirm whether automatic check-in is available
       try {
         const support = await fetchSupportCheckIn(normalizedUrl)
         if (typeof support === "boolean") {

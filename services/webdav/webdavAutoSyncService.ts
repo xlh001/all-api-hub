@@ -20,8 +20,12 @@ import {
 } from "./webdavService"
 
 /**
- * WebDAV 自动同步服务
- * 负责管理后台定时同步功能
+ * Manages WebDAV auto-sync in the background.
+ * Responsibilities:
+ * - Reads WebDAV preferences to decide if/when to sync.
+ * - Maintains a single interval timer with an isSyncing guard to avoid overlap.
+ * - Merges or uploads backups according to user-selected strategy.
+ * - Notifies frontends about sync status/results.
  */
 class WebdavAutoSyncService {
   private syncTimer: ReturnType<typeof setInterval> | null = null
@@ -32,7 +36,10 @@ class WebdavAutoSyncService {
   private lastSyncError: string | null = null
 
   /**
-   * 初始化自动同步服务
+   * Initialize auto-sync (idempotent).
+   * Loads preferences and starts timer when enabled.
+   *
+   * Safe to call multiple times; returns early if already initialized.
    */
   async initialize() {
     if (this.isInitialized) {
@@ -50,11 +57,15 @@ class WebdavAutoSyncService {
   }
 
   /**
-   * 根据用户设置启动或停止自动同步
+   * Start or stop auto-sync based on current preferences.
+   * Always clears existing timer to prevent duplicate schedules.
+   *
+   * Reads WebDAV creds and interval from user preferences; skips when config
+   * is incomplete or disabled.
    */
   async setupAutoSync() {
     try {
-      // 清除现有定时器
+      // 清除现有定时器，避免重复的并发任务
       if (this.syncTimer) {
         clearInterval(this.syncTimer)
         this.syncTimer = null
@@ -69,7 +80,7 @@ class WebdavAutoSyncService {
         return
       }
 
-      // 检查WebDAV配置是否完整
+      // 检查WebDAV配置是否完整；缺失凭据时跳过自动同步
       if (
         !preferences.webdav.url ||
         !preferences.webdav.username ||
@@ -79,7 +90,7 @@ class WebdavAutoSyncService {
         return
       }
 
-      // 启动定时同步
+      // 启动定时同步；保存定时器引用以便后续清理
       const intervalMs = (preferences.webdav.syncInterval || 3600) * 1000
       this.syncTimer = setInterval(async () => {
         await this.performBackgroundSync()
@@ -94,7 +105,10 @@ class WebdavAutoSyncService {
   }
 
   /**
-   * 执行后台同步
+   * Execute a background sync run.
+   * Uses isSyncing flag to skip overlapping executions.
+   *
+   * Updates lastSyncTime/status and notifies frontend listeners.
    */
   private async performBackgroundSync() {
     if (this.isSyncing) {
@@ -141,6 +155,8 @@ class WebdavAutoSyncService {
    *    - 默认：优先使用远程数据，否则回退到本地。
    * 4. 将合并后的账号和偏好设置写回本地存储，并上传新的备份（始终使用
    *    BACKUP_VERSION 与扁平结构，包含 channelConfigs 快照）。
+   *
+   * Throws when connection fails or merge/upload errors occur.
    */
   async syncWithWebdav() {
     const preferences = await userPreferences.getPreferences()
@@ -304,8 +320,10 @@ class WebdavAutoSyncService {
   }
 
   /**
-   * 合并本地和远程数据
-   * 基于时间戳，保留最新的数据
+   * Merge local and remote data based on timestamps (latest wins).
+   * Also reconciles channel configs and deduplicates pinned ids.
+   *
+   * @returns Merged accounts, preferences, and channel configs.
    */
   private mergeData(
     local: {
@@ -339,7 +357,7 @@ class WebdavAutoSyncService {
       accountMap.set(account.id, account)
     })
 
-    // 然后处理远程账号
+    // 然后处理远程账号（按 updated_at 选择较新版本）
     remote.accounts.forEach((remoteAccount) => {
       const localAccount = accountMap.get(remoteAccount.id)
 
@@ -425,6 +443,8 @@ class WebdavAutoSyncService {
 
   /**
    * 立即执行一次同步
+   *
+   * @returns Result with success flag and optional message.
    */
   async syncNow(): Promise<{ success: boolean; message?: string }> {
     if (this.isSyncing) {
@@ -458,6 +478,8 @@ class WebdavAutoSyncService {
 
   /**
    * 停止自动同步
+   *
+   * Clears any active interval timer; idempotent.
    */
   stopAutoSync() {
     if (this.syncTimer) {
@@ -469,6 +491,8 @@ class WebdavAutoSyncService {
 
   /**
    * 更新同步设置
+   *
+   * Persists partial webdav settings and reconfigures scheduler.
    */
   async updateSettings(settings: {
     autoSync?: boolean
@@ -489,6 +513,8 @@ class WebdavAutoSyncService {
 
   /**
    * 获取当前状态
+   *
+   * @returns Snapshot of initialization, running, and last-sync info.
    */
   getStatus() {
     return {
@@ -502,7 +528,10 @@ class WebdavAutoSyncService {
   }
 
   /**
-   * 通知前端
+   * Notify frontends about sync status updates.
+   * Silently ignores missing receivers (popup/options may be closed).
+   *
+   * Best-effort; errors are logged and swallowed to avoid breaking sync loop.
    */
   private notifyFrontend(type: string, data: any) {
     try {
@@ -544,7 +573,12 @@ class WebdavAutoSyncService {
 // 创建单例实例
 export const webdavAutoSyncService = new WebdavAutoSyncService()
 
-// 消息处理器
+/**
+ * Message handler for WebDAV auto-sync actions (setup, syncNow, stop, update).
+ *
+ * @param request Incoming message with action + payload.
+ * @param sendResponse Callback to respond to sender.
+ */
 export const handleWebdavAutoSyncMessage = async (
   request: any,
   sendResponse: (response: any) => void,
