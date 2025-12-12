@@ -42,8 +42,14 @@
     },
     "tempWindowFallbackReminder": {
       "title": "启用临时窗口模式以完成网络请求",
-      "descriptionDisabled": "{{accountName}} 的网络请求需要打开临时窗口来通过防护，确保请求成功完成，请在 设置 > 数据刷新 中启用",
-      "descriptionPermission": "{{accountName}} 需要 Cookie 拦截权限才能打开临时窗口，确保请求成功完成，请在 设置 > 权限 中授予",
+      "titleTempWindowOnly": "启用临时窗口模式以完成网络请求",
+      "titleWithCookieInterceptor": "启用过盾流程以完成网络请求",
+      "descriptionDisabled": "{{accountName}} 的网络请求需要弹出临时窗口来通过防护，确保请求成功完成，请在 设置 > 数据刷新 中启用",
+      "descriptionDisabledTempWindowOnly": "{{accountName}} 的网络请求需要弹出临时窗口来通过防护，确保请求成功完成，请在 设置 > 数据刷新 中启用",
+      "descriptionDisabledWithCookieInterceptor": "{{accountName}} 在 Firefox 中需要启用过盾流程。扩展会弹出临时窗口来获取 Cookie，并由 Cookie 拦截器在发送请求时自动附加这些 Cookie，请在 设置 > 数据刷新 中启用",
+      "descriptionPermission": "{{accountName}} 需要 Cookie 拦截权限，临时窗口才能弹出并让请求成功完成，请在 设置 > 权限 中授予",
+      "descriptionPermissionTempWindowOnly": "{{accountName}} 需要弹出临时窗口的权限才能完成请求，请在 设置 > 权限 中授予",
+      "descriptionPermissionWithCookieInterceptor": "{{accountName}} 在 Firefox 中需要 Cookie 拦截权限。扩展需要弹出临时窗口获取 Cookie，并在发送请求时自动附加认证信息，请在 设置 > 权限 中授予",
       "neverRemindCheckbox": "不再提醒",
       "actions": {
         "openSettings": "打开设置",
