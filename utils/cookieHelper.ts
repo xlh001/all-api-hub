@@ -3,7 +3,7 @@
  * 使用 WebRequest 拦截器自动注入 Cookie
  */
 import { checkCookieInterceptorRequirement } from "~/entrypoints/background/cookieInterceptor"
-import { isFirefox } from "~/utils/browser"
+import { isProtectionBypassFirefoxEnv } from "~/utils/protectionBypass"
 
 // Cookie 缓存
 interface CookieCache {
@@ -194,7 +194,7 @@ export async function handleWebRequest(
  * @param urlPatterns URL 白名单模式列表
  */
 export function registerWebRequestInterceptor(urlPatterns: string[]): void {
-  if (!isFirefox()) {
+  if (!isProtectionBypassFirefoxEnv()) {
     console.log("[Cookie Helper] 非 Firefox 环境，跳过拦截器注册")
     return
   }
@@ -236,7 +236,7 @@ export function registerWebRequestInterceptor(urlPatterns: string[]): void {
  * @param urlPatterns 初始 URL 白名单
  */
 export function setupWebRequestInterceptor(urlPatterns: string[] = []): void {
-  if (!isFirefox()) {
+  if (!isProtectionBypassFirefoxEnv()) {
     console.log("[Cookie Helper] 非 Firefox 环境，跳过初始化")
     return
   }
@@ -250,7 +250,7 @@ export function setupWebRequestInterceptor(urlPatterns: string[] = []): void {
 export function addExtensionHeader(
   headers: HeadersInit = {},
 ): Record<string, string> {
-  if (!isFirefox()) {
+  if (!isProtectionBypassFirefoxEnv()) {
     return headers as Record<string, string>
   }
 

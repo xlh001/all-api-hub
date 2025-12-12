@@ -1,7 +1,7 @@
 import { accountStorage } from "~/services/accountStorage"
 import { hasCookieInterceptorPermissions } from "~/services/permissions/permissionManager"
 import { type SiteAccount } from "~/types"
-import { isFirefox } from "~/utils/browser"
+import { isProtectionBypassFirefoxEnv } from "~/utils/protectionBypass"
 import {
   registerWebRequestInterceptor,
   setupWebRequestInterceptor,
@@ -13,7 +13,7 @@ import {
  */
 export async function checkCookieInterceptorRequirement(): Promise<boolean> {
   // 仅 Firefox 使用这个功能
-  if (isFirefox()) {
+  if (isProtectionBypassFirefoxEnv()) {
     // 检查权限
     const granted = await hasCookieInterceptorPermissions()
     if (!granted) {

@@ -22,9 +22,9 @@ import {
   isExtensionBackground,
   isExtensionPopup,
   isExtensionSidePanel,
-  isFirefox,
   OPTIONS_PAGE_URL,
 } from "~/utils/browser"
+import { isProtectionBypassFirefoxEnv } from "~/utils/protectionBypass"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 
 export type TempWindowResponseType = "json" | "text" | "arrayBuffer" | "blob"
@@ -50,7 +50,7 @@ export interface TempWindowFetch {
  * Firefox requires cookie interceptor permissions; other browsers always allow.
  */
 export async function canUseTempWindowFetch() {
-  if (isFirefox()) {
+  if (isProtectionBypassFirefoxEnv()) {
     return await hasCookieInterceptorPermissions()
   } else {
     return true
@@ -219,7 +219,11 @@ async function shouldUseTempWindowFallback(
   }
 
   try {
-    if (typeof window !== "undefined" && isFirefox() && isExtensionPopup()) {
+    if (
+      typeof window !== "undefined" &&
+      isProtectionBypassFirefoxEnv() &&
+      isExtensionPopup()
+    ) {
       logSkipTempWindowFallback(
         "Running in Firefox popup; temp window fallback is forcibly disabled to avoid closing the popup.",
         context,

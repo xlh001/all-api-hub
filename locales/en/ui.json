@@ -42,8 +42,14 @@
     },
     "tempWindowFallbackReminder": {
       "title": "Enable temporary window mode for requests",
+      "titleTempWindowOnly": "Enable temporary window mode for requests",
+      "titleWithCookieInterceptor": "Enable protection bypass for requests",
       "descriptionDisabled": "{{accountName}} needs a temporary window to pass protection so requests can complete successfully. Enable it in Settings > Data Refresh",
+      "descriptionDisabledTempWindowOnly": "{{accountName}} needs a temporary window to pass protection so requests can complete successfully. Enable it in Settings > Data Refresh",
+      "descriptionDisabledWithCookieInterceptor": "{{accountName}} needs the protection-bypass flow on Firefox (temporary window + Cookie Interceptor) so requests can complete successfully. Enable it in Settings > Data Refresh",
       "descriptionPermission": "{{accountName}} needs Cookie Interceptor permission to open the temporary window so requests can complete successfully. Grant it in Settings > Permissions",
+      "descriptionPermissionTempWindowOnly": "{{accountName}} needs permission to open a temporary window so requests can complete successfully. Grant it in Settings > Permissions",
+      "descriptionPermissionWithCookieInterceptor": "{{accountName}} needs Cookie Interceptor permissions on Firefox so the temporary window can obtain cookies and requests can attach them. Grant it in Settings > Permissions",
       "neverRemindCheckbox": "Never remind me",
       "actions": {
         "openSettings": "Open settings",

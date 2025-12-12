@@ -14,8 +14,12 @@ import {
   Switch,
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { isFirefox } from "~/utils/browser"
 import { openSettingsTab } from "~/utils/navigation"
+import {
+  getProtectionBypassUiVariant,
+  isProtectionBypassFirefoxEnv,
+  ProtectionBypassUiVariants,
+} from "~/utils/protectionBypass"
 import { canUseTempWindowFetch } from "~/utils/tempWindowFetch"
 
 /**
@@ -39,7 +43,20 @@ export default function ShieldSettings() {
     void refreshPermissionStatus()
   }, [refreshPermissionStatus])
 
-  const isFirefoxEnv = isFirefox()
+  const isFirefoxEnv = isProtectionBypassFirefoxEnv()
+  const protectionBypassUiVariant = getProtectionBypassUiVariant()
+
+  const shieldDescription =
+    protectionBypassUiVariant ===
+    ProtectionBypassUiVariants.TempWindowWithCookieInterceptor
+      ? t("refresh.shieldDescriptionWithCookieInterceptor")
+      : t("refresh.shieldDescriptionTempWindowOnly")
+
+  const shieldEnabledDescription =
+    protectionBypassUiVariant ===
+    ProtectionBypassUiVariants.TempWindowWithCookieInterceptor
+      ? t("refresh.shieldEnabledDescWithCookieInterceptor")
+      : t("refresh.shieldEnabledDescTempWindowOnly")
 
   const shieldEnabled = tempWindowFallback.enabled
   const shieldPopup = tempWindowFallback.useInPopup
@@ -58,7 +75,7 @@ export default function ShieldSettings() {
     <SettingSection
       id="shield-settings"
       title={t("refresh.shieldTitle")}
-      description={t("refresh.shieldDescription")}
+      description={shieldDescription}
     >
       {!canUseTempWindowFallback && (
         <Alert
@@ -85,7 +102,7 @@ export default function ShieldSettings() {
         <CardList>
           <CardItem
             title={t("refresh.shieldEnabled")}
-            description={t("refresh.shieldEnabledDesc")}
+            description={shieldEnabledDescription}
             rightContent={
               <Switch
                 checked={shieldEnabled}

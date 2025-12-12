@@ -5,6 +5,10 @@ import { Button, Heading4, Modal } from "~/components/ui"
 import type { TempWindowFallbackIssue } from "~/features/AccountManagement/utils/tempWindowFallbackReminder"
 import { TEMP_WINDOW_HEALTH_STATUS_CODES } from "~/types"
 import { openSettingsTab } from "~/utils/navigation"
+import {
+  getProtectionBypassUiVariant,
+  ProtectionBypassUiVariants,
+} from "~/utils/protectionBypass"
 
 export interface TempWindowFallbackReminderDialogProps {
   isOpen: boolean
@@ -25,19 +29,46 @@ export function TempWindowFallbackReminderDialog({
 }: TempWindowFallbackReminderDialogProps) {
   const { t } = useTranslation(["ui", "common"])
 
-  const title = t("ui:dialog.tempWindowFallbackReminder.title")
+  const protectionBypassUiVariant = getProtectionBypassUiVariant()
+  const isCookieInterceptorVariant =
+    protectionBypassUiVariant ===
+    ProtectionBypassUiVariants.TempWindowWithCookieInterceptor
+
+  const title = isCookieInterceptorVariant
+    ? t("ui:dialog.tempWindowFallbackReminder.titleWithCookieInterceptor")
+    : t("ui:dialog.tempWindowFallbackReminder.titleTempWindowOnly")
 
   const description = useMemo(() => {
     if (issue.code === TEMP_WINDOW_HEALTH_STATUS_CODES.PERMISSION_REQUIRED) {
-      return t("ui:dialog.tempWindowFallbackReminder.descriptionPermission", {
-        accountName: issue.accountName,
-      })
+      return isCookieInterceptorVariant
+        ? t(
+            "ui:dialog.tempWindowFallbackReminder.descriptionPermissionWithCookieInterceptor",
+            {
+              accountName: issue.accountName,
+            },
+          )
+        : t(
+            "ui:dialog.tempWindowFallbackReminder.descriptionPermissionTempWindowOnly",
+            {
+              accountName: issue.accountName,
+            },
+          )
     }
 
-    return t("ui:dialog.tempWindowFallbackReminder.descriptionDisabled", {
-      accountName: issue.accountName,
-    })
-  }, [issue.accountName, issue.code, t])
+    return isCookieInterceptorVariant
+      ? t(
+          "ui:dialog.tempWindowFallbackReminder.descriptionDisabledWithCookieInterceptor",
+          {
+            accountName: issue.accountName,
+          },
+        )
+      : t(
+          "ui:dialog.tempWindowFallbackReminder.descriptionDisabledTempWindowOnly",
+          {
+            accountName: issue.accountName,
+          },
+        )
+  }, [isCookieInterceptorVariant, issue.accountName, issue.code, t])
 
   const handleNotNow = useCallback(async () => {
     onClose()
