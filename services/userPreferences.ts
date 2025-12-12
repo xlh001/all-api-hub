@@ -46,6 +46,10 @@ export interface TempWindowFallbackPreferences {
   useForManualRefresh: boolean
 }
 
+export interface TempWindowFallbackReminderPreferences {
+  dismissed: boolean
+}
+
 // 用户偏好设置类型定义
 export interface UserPreferences {
   themeMode: ThemeMode
@@ -131,6 +135,12 @@ export interface UserPreferences {
    * 临时窗口过盾相关设置
    */
   tempWindowFallback?: TempWindowFallbackPreferences
+
+  /**
+   * Reminders related to temp-window fallback configuration.
+   * When dismissed, the UI will stop showing opt-in reminder dialogs.
+   */
+  tempWindowFallbackReminder?: TempWindowFallbackReminderPreferences
 
   /**
    * 最后更新时间
@@ -266,6 +276,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
     useInOptions: true,
     useForAutoRefresh: true,
     useForManualRefresh: true,
+  },
+  tempWindowFallbackReminder: {
+    dismissed: false,
   },
 }
 
