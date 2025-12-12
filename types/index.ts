@@ -22,7 +22,19 @@ export interface LogItem {
 export interface HealthStatus {
   status: SiteHealthStatus
   reason?: string
+  /**
+   * Optional machine-readable reason code for the current health state.
+   * Used by the UI to provide actionable shortcuts (e.g., jump to settings).
+   */
+  code?: HealthStatusCode
 }
+
+/**
+ * Subset of health status codes that the UI can act on (e.g., open Settings).
+ */
+export type HealthStatusCode =
+  | "TEMP_WINDOW_DISABLED"
+  | "TEMP_WINDOW_PERMISSION_REQUIRED"
 
 // 账号基础信息
 export interface AccountInfo {

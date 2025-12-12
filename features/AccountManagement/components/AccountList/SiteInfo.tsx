@@ -15,7 +15,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
-import { Badge, BodySmall, Caption, IconButton } from "~/components/ui"
+import { Badge, BodySmall, Button, Caption, IconButton } from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -27,11 +27,12 @@ import {
   getHealthStatusDisplay,
   getStatusIndicatorColor,
 } from "~/features/AccountManagement/utils/healthStatusUtils"
-import type { DisplaySiteData } from "~/types"
+import { SiteHealthStatus, type DisplaySiteData } from "~/types"
 import {
   openCheckInAndRedeem,
   openCheckInPage,
   openCustomCheckInPage,
+  openSettingsTab,
 } from "~/utils/navigation"
 
 interface SiteInfoProps {
@@ -84,6 +85,24 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
   const isPinned = isAccountPinned(site.id)
   const pinTooltipLabel = isPinned ? t("actions.unpin") : t("actions.pin")
   const isRefreshing = refreshingAccountId === site.id
+
+  const canOpenHealthSettings = site.health?.status === SiteHealthStatus.Warning
+
+  /**
+   * Map actionable health codes to the corresponding settings tab.
+   */
+  const getHealthSettingsTab = () => {
+    if (!canOpenHealthSettings) {
+      return null
+    }
+    if (site.health?.code === "TEMP_WINDOW_DISABLED") {
+      return "refresh"
+    }
+    if (site.health?.code === "TEMP_WINDOW_PERMISSION_REQUIRED") {
+      return "permissions"
+    }
+    return null
+  }
 
   const handlePinClick = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -239,7 +258,23 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
               </p>
               {site.health?.reason && (
                 <p>
-                  {t("list.site.reason")}: {site.health.reason}
+                  {t("list.site.reason")}:{" "}
+                  {getHealthSettingsTab() ? (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 text-left"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        void openSettingsTab(getHealthSettingsTab()!)
+                      }}
+                    >
+                      {site.health.reason}
+                    </Button>
+                  ) : (
+                    site.health.reason
+                  )}
                 </p>
               )}
               <p>

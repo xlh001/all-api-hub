@@ -53,6 +53,10 @@ export interface RefreshAccountResult {
 export interface HealthCheckResult {
   status: SiteHealthStatus
   message: string
+  /**
+   * Optional machine-readable reason code for actionable UI.
+   */
+  code?: "TEMP_WINDOW_DISABLED" | "TEMP_WINDOW_PERMISSION_REQUIRED"
 }
 
 export interface SiteStatusInfo {

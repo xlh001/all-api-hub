@@ -1000,12 +1000,14 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
       return {
         status: SiteHealthStatus.Warning,
         message: i18next.t("account:healthStatus.tempWindowDisabled"),
+        code: "TEMP_WINDOW_DISABLED",
       }
     }
     if (error.code === API_ERROR_CODES.TEMP_WINDOW_PERMISSION_REQUIRED) {
       return {
         status: SiteHealthStatus.Warning,
         message: i18next.t("account:healthStatus.tempWindowPermissionRequired"),
+        code: "TEMP_WINDOW_PERMISSION_REQUIRED",
       }
     }
 
