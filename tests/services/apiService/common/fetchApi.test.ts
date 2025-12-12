@@ -4,6 +4,38 @@ import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApiData } from "~/services/apiService/common/utils"
 import { AuthTypeEnum } from "~/types"
 
+const { mockHasCookieInterceptorPermissions, mockGetPreferences } = vi.hoisted(
+  () => ({
+    mockHasCookieInterceptorPermissions: vi.fn(),
+    mockGetPreferences: vi.fn(),
+  }),
+)
+
+vi.mock("~/services/permissions/permissionManager", () => ({
+  COOKIE_INTERCEPTOR_PERMISSIONS: [
+    "cookies",
+    "webRequest",
+    "webRequestBlocking",
+  ],
+  hasCookieInterceptorPermissions: mockHasCookieInterceptorPermissions,
+}))
+
+vi.mock("~/services/userPreferences", () => ({
+  DEFAULT_PREFERENCES: {
+    tempWindowFallback: {
+      enabled: false,
+      useInPopup: true,
+      useInSidePanel: true,
+      useInOptions: true,
+      useForAutoRefresh: true,
+      useForManualRefresh: true,
+    },
+  },
+  userPreferences: {
+    getPreferences: mockGetPreferences,
+  },
+}))
+
 const BASE_URL = "https://example.com/base/"
 const ENDPOINT = "/api/test"
 
@@ -23,6 +55,18 @@ declare const global: any
 describe("apiService common fetchApi helpers", () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+
+    mockHasCookieInterceptorPermissions.mockResolvedValue(true)
+    mockGetPreferences.mockResolvedValue({
+      tempWindowFallback: {
+        enabled: false,
+        useInPopup: true,
+        useInSidePanel: true,
+        useInOptions: true,
+        useForAutoRefresh: true,
+        useForManualRefresh: true,
+      },
+    })
   })
 
   afterEach(() => {
@@ -94,5 +138,24 @@ describe("apiService common fetchApi helpers", () => {
         authType: AuthTypeEnum.AccessToken,
       } as any),
     ).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it("fetchApiData should tag eligible errors when temp-window fallback is disabled", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({}),
+    }) as any
+
+    await expect(
+      fetchApiData({
+        baseUrl: BASE_URL,
+        endpoint: ENDPOINT,
+        authType: AuthTypeEnum.AccessToken,
+      } as any),
+    ).rejects.toMatchObject({
+      code: "TEMP_WINDOW_DISABLED",
+      originalCode: "HTTP_403",
+    })
   })
 })

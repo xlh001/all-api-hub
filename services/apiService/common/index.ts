@@ -3,7 +3,7 @@ import i18next from "i18next"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { accountStorage } from "~/services/accountStorage"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
-import { ApiError } from "~/services/apiService/common/errors"
+import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import {
   AccessTokenInfo,
   AccountData,
@@ -994,6 +994,21 @@ export const redeemCode = async (
  */
 export const determineHealthStatus = (error: any): HealthCheckResult => {
   if (error instanceof ApiError) {
+    // Temp-window fallback was eligible, but blocked by user config or permissions.
+    // Surface a direct reminder so the health tooltip can guide the user.
+    if (error.code === API_ERROR_CODES.TEMP_WINDOW_DISABLED) {
+      return {
+        status: SiteHealthStatus.Warning,
+        message: i18next.t("account:healthStatus.tempWindowDisabled"),
+      }
+    }
+    if (error.code === API_ERROR_CODES.TEMP_WINDOW_PERMISSION_REQUIRED) {
+      return {
+        status: SiteHealthStatus.Warning,
+        message: i18next.t("account:healthStatus.tempWindowPermissionRequired"),
+      }
+    }
+
     // HTTP响应码不为200的情况
     if (error.statusCode) {
       return {
