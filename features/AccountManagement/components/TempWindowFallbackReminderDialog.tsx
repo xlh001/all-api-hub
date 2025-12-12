@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import { Button, Heading4, Modal } from "~/components/ui"
 import type { TempWindowFallbackIssue } from "~/features/AccountManagement/utils/tempWindowFallbackReminder"
+import { TEMP_WINDOW_HEALTH_STATUS_CODES } from "~/types"
 import { openSettingsTab } from "~/utils/navigation"
 
 export interface TempWindowFallbackReminderDialogProps {
@@ -27,7 +28,7 @@ export function TempWindowFallbackReminderDialog({
   const title = t("ui:dialog.tempWindowFallbackReminder.title")
 
   const description = useMemo(() => {
-    if (issue.code === "TEMP_WINDOW_PERMISSION_REQUIRED") {
+    if (issue.code === TEMP_WINDOW_HEALTH_STATUS_CODES.PERMISSION_REQUIRED) {
       return t("ui:dialog.tempWindowFallbackReminder.descriptionPermission", {
         accountName: issue.accountName,
       })

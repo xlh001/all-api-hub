@@ -4,6 +4,7 @@ import { accountStorage, AccountStorageUtils } from "~/services/accountStorage"
 import {
   AuthTypeEnum,
   SiteHealthStatus,
+  TEMP_WINDOW_HEALTH_STATUS_CODES,
   type AccountStorageConfig,
   type SiteAccount,
 } from "~/types"
@@ -509,14 +510,16 @@ describe("accountStorage core behaviors", () => {
         status: SiteHealthStatus.Warning,
         message:
           "Temp-window protection bypass is disabled. Enable it in Settings > Data Refresh",
-        code: "TEMP_WINDOW_DISABLED",
+        code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
       },
     })
 
     await accountStorage.refreshAccount("temp-window", true)
 
     const updatedAccount = await accountStorage.getAccountById("temp-window")
-    expect(updatedAccount?.health?.code).toBe("TEMP_WINDOW_DISABLED")
+    expect(updatedAccount?.health?.code).toBe(
+      TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
+    )
 
     mockRefreshAccountData.mockResolvedValueOnce({
       success: true,

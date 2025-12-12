@@ -28,7 +28,11 @@ import {
   getStatusIndicatorColor,
 } from "~/features/AccountManagement/utils/healthStatusUtils"
 import { getTempWindowFallbackSettingsTab } from "~/features/AccountManagement/utils/tempWindowFallbackReminder"
-import { SiteHealthStatus, type DisplaySiteData } from "~/types"
+import {
+  SiteHealthStatus,
+  TEMP_WINDOW_HEALTH_STATUS_CODES,
+  type DisplaySiteData,
+} from "~/types"
 import {
   openCheckInAndRedeem,
   openCheckInPage,
@@ -90,8 +94,8 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
   const healthCode = site.health?.code
   const canOpenHealthSettings =
     site.health?.status === SiteHealthStatus.Warning &&
-    (healthCode === "TEMP_WINDOW_DISABLED" ||
-      healthCode === "TEMP_WINDOW_PERMISSION_REQUIRED")
+    (healthCode === TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED ||
+      healthCode === TEMP_WINDOW_HEALTH_STATUS_CODES.PERMISSION_REQUIRED)
   const healthSettingsTab =
     canOpenHealthSettings && healthCode
       ? getTempWindowFallbackSettingsTab(healthCode)

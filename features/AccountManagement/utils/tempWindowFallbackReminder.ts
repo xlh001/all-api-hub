@@ -1,4 +1,8 @@
-import type { DisplaySiteData, HealthStatusCode } from "~/types"
+import {
+  DisplaySiteData,
+  HealthStatusCode,
+  TEMP_WINDOW_HEALTH_STATUS_CODES,
+} from "~/types"
 
 export type TempWindowFallbackSettingsTab = "refresh" | "permissions"
 
@@ -15,7 +19,7 @@ export interface TempWindowFallbackIssue {
 export function getTempWindowFallbackSettingsTab(
   code: HealthStatusCode,
 ): TempWindowFallbackSettingsTab {
-  if (code === "TEMP_WINDOW_PERMISSION_REQUIRED") {
+  if (code === TEMP_WINDOW_HEALTH_STATUS_CODES.PERMISSION_REQUIRED) {
     return "permissions"
   }
   return "refresh"
@@ -32,7 +36,10 @@ export function getTempWindowFallbackIssue(
 ): TempWindowFallbackIssue | null {
   for (const site of sites) {
     const code = site.health?.code
-    if (code !== "TEMP_WINDOW_DISABLED" && code !== "TEMP_WINDOW_PERMISSION_REQUIRED") {
+    if (
+      code !== TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED &&
+      code !== TEMP_WINDOW_HEALTH_STATUS_CODES.PERMISSION_REQUIRED
+    ) {
       continue
     }
 

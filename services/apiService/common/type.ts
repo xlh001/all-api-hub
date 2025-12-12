@@ -6,6 +6,7 @@ import {
   AuthTypeEnum,
   CheckInConfig,
   SiteHealthStatus,
+  TempWindowHealthStatusCode,
 } from "~/types"
 import type { PerCallPrice } from "~/utils/modelPricing"
 
@@ -56,7 +57,7 @@ export interface HealthCheckResult {
   /**
    * Optional machine-readable reason code for actionable UI.
    */
-  code?: "TEMP_WINDOW_DISABLED" | "TEMP_WINDOW_PERMISSION_REQUIRED"
+  code?: TempWindowHealthStatusCode
 }
 
 export interface SiteStatusInfo {

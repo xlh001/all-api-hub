@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchApiData } from "~/services/apiService/common/utils"
-import { AuthTypeEnum } from "~/types"
+import { AuthTypeEnum, TEMP_WINDOW_HEALTH_STATUS_CODES } from "~/types"
 
 const { mockHasCookieInterceptorPermissions, mockGetPreferences } = vi.hoisted(
   () => ({
@@ -154,7 +154,7 @@ describe("apiService common fetchApi helpers", () => {
         authType: AuthTypeEnum.AccessToken,
       } as any),
     ).rejects.toMatchObject({
-      code: "TEMP_WINDOW_DISABLED",
+      code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
       originalCode: "HTTP_403",
     })
   })

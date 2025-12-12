@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest"
 
 import { getTempWindowFallbackIssue } from "~/features/AccountManagement/utils/tempWindowFallbackReminder"
-import { SiteHealthStatus, type DisplaySiteData } from "~/types"
+import {
+  SiteHealthStatus,
+  TEMP_WINDOW_HEALTH_STATUS_CODES,
+  type DisplaySiteData,
+} from "~/types"
 
+/**
+ *
+ */
 function makeSite(overrides: Partial<DisplaySiteData>): DisplaySiteData {
   return {
     id: "acc-1",
@@ -30,7 +37,11 @@ describe("tempWindowFallbackReminder", () => {
   it("returns null when there is no relevant health code", () => {
     const issue = getTempWindowFallbackIssue([
       makeSite({
-        health: { status: SiteHealthStatus.Warning, reason: "other", code: undefined },
+        health: {
+          status: SiteHealthStatus.Warning,
+          reason: "other",
+          code: undefined,
+        },
       }),
     ])
 
@@ -45,7 +56,7 @@ describe("tempWindowFallbackReminder", () => {
         health: {
           status: SiteHealthStatus.Warning,
           reason: "disabled",
-          code: "TEMP_WINDOW_DISABLED",
+          code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
         },
       }),
     ])
@@ -63,7 +74,7 @@ describe("tempWindowFallbackReminder", () => {
         health: {
           status: SiteHealthStatus.Warning,
           reason: "perm",
-          code: "TEMP_WINDOW_PERMISSION_REQUIRED",
+          code: TEMP_WINDOW_HEALTH_STATUS_CODES.PERMISSION_REQUIRED,
         },
       }),
     ])
