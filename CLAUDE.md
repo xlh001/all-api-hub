@@ -144,33 +144,116 @@ This creates a zip file in the `.output` directory ready for submission to the r
 
 This is a WXT project with the standard multi-entrypoint structure for browser extensions.
 
-- **Entry points (`entrypoints/`)**:
-  - `popup/`: UI that appears when the extension icon is clicked.
-  - `options/`: Extension options and configuration pages.
-  - `sidepanel/`: Side panel surfaces.
-  - `content/`: Content scripts that run in web pages (for example, the redemption assist UI).
-  - Built bundles are emitted under `.output/{browser}-mv3[-dev]` and then loaded into the browser.
+### Entry Points (`entrypoints/`)
+- `popup/`: Main UI that appears when the extension icon is clicked
+- `options/`: Extension settings and configuration pages
+- `sidepanel/`: Chrome/Edge side panel interface
+- `content/`: Content scripts injected into web pages (e.g., redemption assist UI)
+- `background/`: Background service worker for extension lifecycle management
+- Built bundles are emitted under `.output/{browser}-mv3[-dev]`
 
-- **State & context**:
-  - Global UI/device/theme preferences are managed via React contexts in `contexts/` (for example, `DeviceContext`, `ThemeContext`, `UserPreferencesContext`).
-  - Feature-specific state is usually co-located with components and hooks; there is currently no Zustand store.
+### State Management & Contexts (`contexts/`)
+Global UI state managed via React Context API:
+- `DeviceContext`: Device detection (desktop/mobile) and responsive behavior
+- `ThemeContext`: Theme management (light/dark mode)
+- `UserPreferencesContext`: User settings and preferences
 
-- **UI & features**:
-  - Reusable React components live in `components/`, including:
-    - Feature folders like `ChannelDialog/`, `RedemptionDialog/`
-    - Shared primitives under `components/ui/`
-  - Higher-level feature logic is grouped in `features/`.
-  - `hooks/` contains custom React hooks for shared logic.
+Feature-specific state is co-located with components and hooks. No Zustand or Redux store is used.
 
-- **Data and services**:
-  - `services/`: Logic for interacting with external APIs, managing data, and handling browser storage.
-  - `types/`: Shared TypeScript type definitions.
-  - `constants/`: Application-wide constants and design tokens.
+### Services Layer (`services/`)
+Core business logic and data persistence:
+- `accountStorage.ts`: CRUD operations for AI aggregator accounts using @plasmohq/storage
+- `accountOperations.ts`: Higher-level account management operations
+- `autoDetectService.ts`: Automatic site detection and account discovery
+- `detectSiteType.ts`: Site type identification (one-api, new-api, etc.)
+- `apiService.ts`: API communication with various aggregator platforms
+- `configMigration/`: Schema migration logic for backward compatibility
+- `userPreferences.ts`: User preference storage and management
+- `webdavService.ts`: WebDAV sync integration
+- `channelConfigStorage.ts`: New API channel configuration management
 
-  - `utils/`: Cross-cutting utility functions.
+### Data Models (`types/`)
+TypeScript type definitions:
+- `index.ts`: Core types including `SiteAccount`, `AccountInfo`, `HealthStatus`
+- `newapi.ts`: New API specific types for model sync and channel management
+- `channelConfig.ts`: Channel configuration schema
+- Domain-specific types for WebDAV, redemption, check-in, etc.
 
-  - `tests/`: Test setup, MSW handlers, and test utilities.
+### UI Components (`components/`)
+- Feature components: `ChannelDialog/`, `RedemptionDialog/`, `SiteCard/`, etc.
+- Shared primitives: `components/ui/` (buttons, inputs, modals from Radix UI)
+- Feature modules: `features/` for higher-level feature logic
+
+### Utilities & Hooks
+- `hooks/`: Custom React hooks for shared logic
+- `utils/`: Pure utility functions (error handling, formatting, etc.)
+- `constants/`: Application-wide constants and design tokens
+
+### Testing Infrastructure (`tests/`)
+- `setup.ts`: Vitest configuration and global test setup
+- MSW handlers for API mocking
+- Test utilities and custom matchers
+
+## Data Flow & Key Patterns
+
+### Account Data Flow
+1. User navigates to an AI aggregator site (e.g., one-api, new-api)
+2. `autoDetectService` detects the site type and creates an access token
+3. `accountStorage` persists account data using @plasmohq/storage (local storage)
+4. `accountOperations` manages higher-level operations (refresh, validate, check-in)
+5. UI components consume account data via React Context or direct service calls
+
+### Configuration Migration
+The extension uses a versioned configuration system (`configVersion` field in `SiteAccount`):
+- `configMigration/account/`: Handles backward compatibility for account schema changes
+- Migrations run automatically on account load via `migrateAccountsConfig()`
+- Example: Legacy `can_check_in` → `checkIn` object structure
+
+### Browser Storage Pattern
+Uses `@plasmohq/storage` (wrapper around chrome.storage.local):
+```typescript
+const storage = new Storage({ area: "local" })
+await storage.get(key)
+await storage.set(key, value)
+```
+
+### Multi-Browser Support
+- WXT handles browser-specific differences automatically
+- Firefox-specific manifest configuration in `wxt.config.ts` (sidebar actions, optional permissions)
+- Conditional permission requests for Firefox's `webRequest` API
+
+## Development Guidelines
+
+### Running Tests for Specific Files
+```bash
+# Run tests for a specific file pattern
+pnpm test accounts
+
+# Run a single test file
+pnpm test services/accountStorage.test.ts
+```
+
+### Browser-Specific Testing
+- Chrome/Edge: Load unpacked extension from `.output/chrome-mv3-dev`
+- Firefox: Load temporary add-on from `.output/firefox-mv3-dev`
+- Use `pnpm dev:mobile:firefox` for Android debugging with adb
+
+### Adding New Service Modules
+1. Create service file in `services/` with clear single responsibility
+2. Define TypeScript types in `types/`
+3. Add tests in `tests/` directory
+4. Export service instance for singleton pattern if needed
+
+### Working with Account Data
+- Always use `accountStorage` service for account CRUD operations
+- Account IDs are UUIDs (strings), not integers
+- Use `configVersion` field to track schema changes
+- Implement migration logic in `services/configMigration/` for breaking changes
 
 ## Important Notes
 
-- When technical behavior or library usage is uncertain, prefer checking the official documentation for WXT, React, Tailwind CSS, Headless UI, Radix UI, etc., or the upstream projects linked in the README, rather than guessing APIs.
+- WXT auto-generates manifest and handles browser differences; check `wxt.config.ts` for customizations
+- @plasmohq/storage is the preferred storage API over raw chrome.storage
+- All external API calls should go through services layer, not directly from components
+- Icon assets are auto-generated from `assets/icon.png` via `@wxt-dev/auto-icons`
+- Localization files are in `locales/` and use i18next for internationalization
