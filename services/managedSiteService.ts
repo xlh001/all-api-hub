@@ -1,18 +1,18 @@
 import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import type { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type"
+import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import type {
   ChannelFormData,
   ChannelMode,
   CreateChannelPayload,
-  NewApiChannel,
-  NewApiChannelListData,
+  ManagedSiteChannel,
+  ManagedSiteChannelListData,
   UpdateChannelPayload,
-} from "~/types/newapi"
+} from "~/types/managedSite"
 
-import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
+import * as newApiService from "./newApiService/newApiService"
 import { userPreferences } from "./userPreferences"
 import type { UserPreferences } from "./userPreferences"
-import * as newApiService from "./newApiService/newApiService"
 import * as veloeraService from "./veloeraService/veloeraService"
 
 export type ManagedSiteMessagesKey = "newapi" | "veloera"
@@ -32,7 +32,7 @@ export interface ManagedSiteService {
     accessToken: string,
     userId: number | string,
     keyword: string,
-  ): Promise<NewApiChannelListData | null>
+  ): Promise<ManagedSiteChannelListData | null>
 
   createChannel(
     baseUrl: string,
@@ -58,7 +58,10 @@ export interface ManagedSiteService {
   checkValidConfig(): Promise<boolean>
   getConfig(): Promise<ManagedSiteConfig | null>
 
-  fetchAvailableModels(account: DisplaySiteData, token: ApiToken): Promise<string[]>
+  fetchAvailableModels(
+    account: DisplaySiteData,
+    token: ApiToken,
+  ): Promise<string[]>
 
   buildChannelName(account: DisplaySiteData, token: ApiToken): string
 
@@ -78,7 +81,7 @@ export interface ManagedSiteService {
     userId: number | string,
     accountBaseUrl: string,
     models: string[],
-  ): Promise<NewApiChannel | null>
+  ): Promise<ManagedSiteChannel | null>
 
   autoConfigToManagedSite(
     account: SiteAccount,
@@ -86,11 +89,21 @@ export interface ManagedSiteService {
   ): Promise<unknown>
 }
 
-function mapSiteTypeToMessagesKey(siteType: ManagedSiteType): ManagedSiteMessagesKey {
+/**
+ *
+ */
+function mapSiteTypeToMessagesKey(
+  siteType: ManagedSiteType,
+): ManagedSiteMessagesKey {
   return siteType === VELOERA ? "veloera" : "newapi"
 }
 
-export function hasValidManagedSiteConfig(prefs: UserPreferences | null): boolean {
+/**
+ *
+ */
+export function hasValidManagedSiteConfig(
+  prefs: UserPreferences | null,
+): boolean {
   if (!prefs) {
     return false
   }
@@ -99,19 +112,30 @@ export function hasValidManagedSiteConfig(prefs: UserPreferences | null): boolea
   const managedConfig = siteType === VELOERA ? prefs.veloera : prefs.newApi
 
   return Boolean(
-    managedConfig?.baseUrl && managedConfig?.adminToken && managedConfig?.userId,
+    managedConfig?.baseUrl &&
+      managedConfig?.adminToken &&
+      managedConfig?.userId,
   )
 }
 
+/**
+ *
+ */
 export async function getManagedSiteType(): Promise<ManagedSiteType> {
   const prefs = await userPreferences.getPreferences()
   return prefs.managedSiteType || NEW_API
 }
 
+/**
+ *
+ */
 export async function getManagedSiteMessagesKey(): Promise<ManagedSiteMessagesKey> {
   return mapSiteTypeToMessagesKey(await getManagedSiteType())
 }
 
+/**
+ *
+ */
 export async function getManagedSiteService(): Promise<ManagedSiteService> {
   const siteType = await getManagedSiteType()
 

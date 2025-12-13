@@ -1,13 +1,13 @@
 import { t } from "i18next"
 
-import { ModelRedirectService } from "~/services/modelRedirect"
 import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
+import { ModelRedirectService } from "~/services/modelRedirect"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
+import type { ManagedSiteChannel } from "~/types/managedSite"
 import {
   ALL_PRESET_STANDARD_MODELS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
 } from "~/types/modelRedirect"
-import { NewApiChannel } from "~/types/newapi"
 import { ExecutionProgress, ExecutionResult } from "~/types/newApiModelSync"
 import {
   clearAlarm,
@@ -45,9 +45,14 @@ class NewApiModelSyncScheduler {
 
     const siteType: ManagedSiteType = userPrefs.managedSiteType || NEW_API
     const messagesKey = siteType === VELOERA ? "veloera" : "newapi"
-    const managedConfig = siteType === VELOERA ? userPrefs.veloera : userPrefs.newApi
+    const managedConfig =
+      siteType === VELOERA ? userPrefs.veloera : userPrefs.newApi
 
-    if (!managedConfig?.baseUrl || !managedConfig?.adminToken || !managedConfig?.userId) {
+    if (
+      !managedConfig?.baseUrl ||
+      !managedConfig?.adminToken ||
+      !managedConfig?.userId
+    ) {
       throw new Error(t(`messages:${messagesKey}.configMissing`))
     }
 
@@ -186,10 +191,10 @@ class NewApiModelSyncScheduler {
 
     // List channels
     const newApiChannelListResponse = await service.listChannels()
-    const allChannels = newApiChannelListResponse.items
+    const allChannels = newApiChannelListResponse.items as ManagedSiteChannel[]
 
     // Filter channels if specific IDs provided
-    let channels: NewApiChannel[]
+    let channels: ManagedSiteChannel[]
     if (channelIds && channelIds.length > 0) {
       channels = allChannels.filter((c) => channelIds.includes(c.id))
     } else {

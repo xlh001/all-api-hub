@@ -4,15 +4,16 @@
  * Based on gpt-api-sync logic with enhancements for weighted channel selection
  */
 
+import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import { modelMetadataService } from "~/services/modelMetadata"
 import { NewApiModelSyncService } from "~/services/newApiModelSync"
+import { CHANNEL_STATUS } from "~/types/managedSite"
+import type { ManagedSiteChannel } from "~/types/managedSite"
 import {
   ALL_PRESET_STANDARD_MODELS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
 } from "~/types/modelRedirect"
-import { CHANNEL_STATUS, NewApiChannel } from "~/types/newapi"
 
-import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import { hasValidManagedSiteConfig } from "../managedSiteService"
 import { userPreferences } from "../userPreferences"
 import { renameModel } from "./modelNormalization"
@@ -30,7 +31,7 @@ export class ModelRedirectService {
    * @param service NewApiModelSyncService instance used to update channel.
    */
   static async applyModelMappingToChannel(
-    channel: NewApiChannel,
+    channel: ManagedSiteChannel,
     newMapping: Record<string, string>,
     service: NewApiModelSyncService,
   ): Promise<void> {

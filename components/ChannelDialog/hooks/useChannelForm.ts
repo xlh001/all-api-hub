@@ -4,22 +4,22 @@ import { useTranslation } from "react-i18next"
 
 import type { MultiSelectOption } from "~/components/ui/MultiSelect"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
-import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi"
+import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
 import { fetchSiteUserGroups } from "~/services/apiService"
 import { getManagedSiteService } from "~/services/managedSiteService"
 import type {
   ChannelFormData,
-  NewApiChannel,
+  ManagedSiteChannel,
   UpdateChannelPayload,
-} from "~/types/newapi"
+} from "~/types/managedSite"
 import { mergeUniqueOptions } from "~/utils/selectOptions"
 
 export interface UseChannelFormProps {
   mode: DialogMode
-  channel: NewApiChannel | null
+  channel: ManagedSiteChannel | null
   isOpen: boolean
   onClose: () => void
-  onSuccess?: (channel: any) => void
+  onSuccess?: (response: any) => void
   initialValues?: Partial<ChannelFormData>
   initialModels?: string[]
   initialGroups?: string[]

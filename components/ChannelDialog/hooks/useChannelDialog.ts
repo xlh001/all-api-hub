@@ -8,7 +8,7 @@ import { ensureAccountApiToken } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
 import { getManagedSiteService } from "~/services/managedSiteService"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
-import type { NewApiChannel } from "~/types/newapi"
+import type { ManagedSiteChannel } from "~/types/managedSite"
 import { getErrorMessage } from "~/utils/error"
 
 /**
@@ -120,15 +120,15 @@ export function useChannelDialog() {
   /**
    * Open dialog with custom initial values
    */
-  const openWithCustom = (config: {
+  const openWithCustom = async (options: {
     mode?: DialogMode
-    channel?: NewApiChannel | null
+    channel?: ManagedSiteChannel
     initialValues?: any
     initialModels?: string[]
     initialGroups?: string[]
-    onSuccess?: (result: any) => void
+    onSuccess?: (channel: any) => void
   }) => {
-    openDialog(config)
+    openDialog(options)
   }
 
   return {

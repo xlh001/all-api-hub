@@ -85,17 +85,17 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table"
-import { ChannelTypeNames } from "~/constants/newApi"
+import { ChannelTypeNames } from "~/constants/managedSite"
 import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import { cn } from "~/lib/utils"
 import { channelConfigStorage } from "~/services/channelConfigStorage"
 import { getManagedSiteService } from "~/services/managedSiteService"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
-import type { NewApiChannel } from "~/types/newapi"
+import type { ManagedSiteChannel } from "~/types/managedSite"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 
-type ChannelRow = NewApiChannel
+type ChannelRow = ManagedSiteChannel
 type CheckboxState = boolean | "indeterminate"
 type RowActionsLabels = {
   edit: string
@@ -246,9 +246,9 @@ export default function NewApiChannelsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [configMissing, setConfigMissing] = useState(false)
-  const [configMissingMessage, setConfigMissingMessage] = useState<string | null>(
-    null,
-  )
+  const [configMissingMessage, setConfigMissingMessage] = useState<
+    string | null
+  >(null)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     base_url: false,
@@ -280,7 +280,9 @@ export default function NewApiChannelsPage() {
       const config = await service.getConfig()
       if (!config) {
         setConfigMissing(true)
-        setConfigMissingMessage(t(`messages:${service.messagesKey}.configMissing`))
+        setConfigMissingMessage(
+          t(`messages:${service.messagesKey}.configMissing`),
+        )
         setChannels([])
         return
       }
@@ -365,7 +367,12 @@ export default function NewApiChannelsPage() {
 
       const results = await Promise.allSettled(
         pendingDeleteIds.map((id) =>
-          service.deleteChannel(config.baseUrl, config.token, config.userId, id),
+          service.deleteChannel(
+            config.baseUrl,
+            config.token,
+            config.userId,
+            id,
+          ),
         ),
       )
 

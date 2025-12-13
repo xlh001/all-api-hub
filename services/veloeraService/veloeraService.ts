@@ -1,7 +1,7 @@
 import { t } from "i18next"
 import toast from "react-hot-toast"
 
-import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi"
+import { DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
 import { VELOERA } from "~/constants/siteType"
 import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type"
 import { ensureAccountApiToken } from "~/services/accountOperations"
@@ -19,10 +19,10 @@ import type {
   ChannelFormData,
   ChannelMode,
   CreateChannelPayload,
-  NewApiChannel,
-  NewApiChannelListData,
+  ManagedSiteChannel,
+  ManagedSiteChannelListData,
   UpdateChannelPayload,
-} from "~/types/newapi"
+} from "~/types/managedSite"
 import type {
   AutoConfigToNewApiResponse,
   ServiceResponse,
@@ -58,7 +58,7 @@ export async function searchChannel(
   accessToken: string,
   userId: number | string,
   keyword: string,
-): Promise<NewApiChannelListData | null> {
+): Promise<ManagedSiteChannelListData | null> {
   return await searchChannelApi(baseUrl, accessToken, userId, keyword, VELOERA)
 }
 
@@ -107,13 +107,7 @@ export async function deleteChannel(
   userId: number | string,
   channelId: number,
 ) {
-  return await deleteChannelApi(
-    baseUrl,
-    adminToken,
-    userId,
-    channelId,
-    VELOERA,
-  )
+  return await deleteChannelApi(baseUrl, adminToken, userId, channelId, VELOERA)
 }
 
 /**
@@ -213,7 +207,10 @@ export async function fetchAvailableModels(
 /**
  * Builds a default channel name.
  */
-export function buildChannelName(account: DisplaySiteData, token: ApiToken): string {
+export function buildChannelName(
+  account: DisplaySiteData,
+  token: ApiToken,
+): string {
   let channelName = `${account.name} | ${token.name}`.trim()
   if (!channelName.endsWith("(auto)")) {
     channelName += " (auto)"
@@ -294,7 +291,7 @@ export async function findMatchingChannel(
   userId: number | string,
   accountBaseUrl: string,
   models: string[],
-): Promise<NewApiChannel | null> {
+): Promise<ManagedSiteChannel | null> {
   const searchResults = await searchChannel(
     baseUrl,
     adminToken,
@@ -308,7 +305,7 @@ export async function findMatchingChannel(
 
   return (
     searchResults.items.find(
-      (channel) =>
+      (channel: ManagedSiteChannel) =>
         channel.base_url === accountBaseUrl &&
         isArraysEqual(parseDelimitedList(channel.models), models),
     ) ?? null
@@ -485,7 +482,7 @@ export async function autoConfigToVeloera(
   toast.error(getErrorMessage(lastError), { id: toastId })
   return {
     success: false,
-    message: (lastError as Error | undefined)?.message ||
-      t("messages:errors.unknown"),
+    message:
+      (lastError as Error | undefined)?.message || t("messages:errors.unknown"),
   }
 }

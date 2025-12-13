@@ -42,9 +42,9 @@ import {
 } from "~/types"
 import type {
   CreateChannelPayload,
-  NewApiChannelListData,
+  ManagedSiteChannelListData,
   UpdateChannelPayload,
-} from "~/types/newapi"
+} from "~/types/managedSite"
 
 // ============= 核心 API 函数 =============
 
@@ -62,9 +62,9 @@ export async function searchChannel(
   accessToken: string,
   userId: number | string,
   keyword: string,
-): Promise<NewApiChannelListData | null> {
+): Promise<ManagedSiteChannelListData | null> {
   try {
-    return await fetchApiData<NewApiChannelListData>({
+    return await fetchApiData<ManagedSiteChannelListData>({
       baseUrl,
       endpoint: `/api/channel/search?keyword=${keyword}`,
       userId,

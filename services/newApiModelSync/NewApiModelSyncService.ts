@@ -6,10 +6,10 @@ import { fetchApi } from "~/services/apiService/common/utils"
 import type { ChannelConfigMap } from "~/types/channelConfig"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import {
-  NewApiChannel,
-  NewApiChannelListData,
-  UpdateChannelPayload,
-} from "~/types/newapi"
+  type ManagedSiteChannel,
+  type ManagedSiteChannelListData,
+  type UpdateChannelPayload,
+} from "~/types/managedSite"
 import {
   BatchExecutionOptions,
   ExecutionItemResult,
@@ -101,12 +101,12 @@ export class NewApiModelSyncService {
    * Fetch all channels from New API with pagination aggregation.
    * @returns Channel list data including totals and type counts.
    */
-  async listChannels(): Promise<NewApiChannelListData> {
+  async listChannels(): Promise<ManagedSiteChannelListData> {
     try {
       let total = 0
       const typeCounts: Record<string, number> = {}
 
-      const items = await fetchAllItems<NewApiChannel>(async (page) => {
+      const items = await fetchAllItems<ManagedSiteChannel>(async (page) => {
         const params = new URLSearchParams({
           p: page.toString(),
           page_size: "100",
@@ -114,7 +114,7 @@ export class NewApiModelSyncService {
 
         await this.throttle()
 
-        const response = await fetchApi<NewApiChannelListData>(
+        const response = await fetchApi<ManagedSiteChannelListData>(
           {
             baseUrl: this.baseUrl,
             endpoint: `/api/channel/?${params.toString()}`,
@@ -153,7 +153,7 @@ export class NewApiModelSyncService {
         items,
         total,
         type_counts: typeCounts,
-      }
+      } as ManagedSiteChannelListData
     } catch (error) {
       console.error("[NewApiModelSync] Failed to list channels:", error)
       throw error
@@ -196,7 +196,7 @@ export class NewApiModelSyncService {
    * @param models Canonical model list to write.
    */
   async updateChannelModels(
-    channel: NewApiChannel,
+    channel: ManagedSiteChannel,
     models: string[],
   ): Promise<void> {
     try {
@@ -237,7 +237,7 @@ export class NewApiModelSyncService {
    * @param modelMapping Standard→actual mapping to write.
    */
   async updateChannelModelMapping(
-    channel: NewApiChannel,
+    channel: ManagedSiteChannel,
     modelMapping: Record<string, string>,
   ): Promise<void> {
     try {
@@ -287,7 +287,7 @@ export class NewApiModelSyncService {
    * @returns Outcome including old/new models and status.
    */
   async runForChannel(
-    channel: NewApiChannel,
+    channel: ManagedSiteChannel,
     maxRetries: number = 2,
   ): Promise<ExecutionItemResult> {
     let attempts = 0
@@ -366,7 +366,7 @@ export class NewApiModelSyncService {
    * @returns Aggregate execution result and statistics.
    */
   async runBatch(
-    channels: NewApiChannel[],
+    channels: ManagedSiteChannel[],
     options: BatchExecutionOptions,
   ): Promise<ExecutionResult> {
     const { concurrency, maxRetries, onProgress } = options

@@ -1,8 +1,8 @@
 import type { Row } from "@tanstack/react-table"
 
-import type { NewApiChannel } from "~/types/newapi"
+import type { ManagedSiteChannel } from "~/types/managedSite"
 
-export type ChannelRow = NewApiChannel
+export type ChannelRow = ManagedSiteChannel
 export type CheckboxState = boolean | "indeterminate"
 
 export type RowActionsLabels = {
