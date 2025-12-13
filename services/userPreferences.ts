@@ -30,6 +30,10 @@ import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
 import { DeepPartial } from "~/types/utils"
 import {
+  DEFAULT_VELOERA_CONFIG,
+  VeloeraConfig,
+} from "~/types/veloeraConfig"
+import {
   DEFAULT_WEBDAV_SETTINGS,
   WebDAVSettings,
   WebDAVSyncStrategy,
@@ -89,6 +93,12 @@ export interface UserPreferences {
 
   // New API 相关配置
   newApi: NewApiConfig
+
+  // Veloera 相关配置
+  veloera: VeloeraConfig
+
+  // 管理站点类型 (用户可以选择管理 New API 或 Veloera)
+  managedSiteType: "new-api" | "veloera"
 
   // CLIProxyAPI 管理接口配置
   cliProxy?: CliProxyConfig
@@ -236,6 +246,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   webdav: DEFAULT_WEBDAV_SETTINGS,
   lastUpdated: Date.now(),
   newApi: DEFAULT_NEW_API_CONFIG,
+  veloera: DEFAULT_VELOERA_CONFIG,
+  managedSiteType: "new-api",
   cliProxy: DEFAULT_CLI_PROXY_CONFIG,
   newApiModelSync: {
     enabled: false,
@@ -522,6 +534,50 @@ class UserPreferencesService {
     return this.savePreferences({
       newApi: DEFAULT_PREFERENCES.newApi,
     })
+  }
+
+  /**
+   * Update Veloera config.
+   */
+  async updateVeloeraConfig(
+    config: Partial<VeloeraConfig>,
+  ): Promise<boolean> {
+    return this.savePreferences({
+      veloera: config,
+    })
+  }
+
+  /**
+   * Reset Veloera config.
+   */
+  async resetVeloeraConfig(): Promise<boolean> {
+    return this.savePreferences({
+      veloera: DEFAULT_PREFERENCES.veloera,
+    })
+  }
+
+  /**
+   * Update managed site type (new-api or veloera).
+   */
+  async updateManagedSiteType(
+    siteType: "new-api" | "veloera",
+  ): Promise<boolean> {
+    return this.savePreferences({
+      managedSiteType: siteType,
+    })
+  }
+
+  /**
+   * Get managed site configuration based on current managedSiteType.
+   */
+  async getManagedSiteConfig(): Promise<{
+    siteType: "new-api" | "veloera"
+    config: NewApiConfig | VeloeraConfig
+  }> {
+    const prefs = await this.getPreferences()
+    const siteType = prefs.managedSiteType || "new-api"
+    const config = siteType === "veloera" ? prefs.veloera : prefs.newApi
+    return { siteType, config }
   }
 
   /**

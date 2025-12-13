@@ -109,6 +109,21 @@
     "tokenDesc": "Token for accessing New API admin functions",
     "userIdDesc": "User identification ID for New API"
   },
+  "veloera": {
+    "title": "Veloera Integration Settings",
+    "description": "Configure integration settings for connecting to Veloera compatible services",
+    "urlDesc": "Set the base URL for Veloera integration",
+    "tokenDesc": "Token for accessing Veloera admin functions",
+    "userIdDesc": "User identification ID for Veloera"
+  },
+  "managedSite": {
+    "title": "Managed Site Configuration",
+    "description": "Select which API aggregator platform you want to manage. This determines which configuration will be used for channel management and model syncing.",
+    "siteTypeLabel": "Managed Site Type",
+    "siteTypeDesc": "Choose between New API or Veloera for advanced management features",
+    "newApi": "New API",
+    "veloera": "Veloera"
+  },
   "cliProxy": {
     "title": "CLIProxyAPI Settings",
     "description": "Configure connection to CLIProxyAPI Management API",

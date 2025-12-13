@@ -43,6 +43,10 @@ interface UserPreferencesContextType {
   newApiBaseUrl: string
   newApiAdminToken: string
   newApiUserId: string
+  veloeraBaseUrl: string
+  veloeraAdminToken: string
+  veloeraUserId: string
+  managedSiteType: "new-api" | "veloera"
   cliProxyBaseUrl: string
   cliProxyManagementKey: string
   themeMode: ThemeMode
@@ -66,6 +70,10 @@ interface UserPreferencesContextType {
   updateNewApiBaseUrl: (url: string) => Promise<boolean>
   updateNewApiAdminToken: (token: string) => Promise<boolean>
   updateNewApiUserId: (userId: string) => Promise<boolean>
+  updateVeloeraBaseUrl: (url: string) => Promise<boolean>
+  updateVeloeraAdminToken: (token: string) => Promise<boolean>
+  updateVeloeraUserId: (userId: string) => Promise<boolean>
+  updateManagedSiteType: (siteType: "new-api" | "veloera") => Promise<boolean>
   updateCliProxyBaseUrl: (url: string) => Promise<boolean>
   updateCliProxyManagementKey: (key: string) => Promise<boolean>
   updateThemeMode: (themeMode: ThemeMode) => Promise<boolean>
@@ -89,6 +97,7 @@ interface UserPreferencesContextType {
   resetDisplaySettings: () => Promise<boolean>
   resetAutoRefreshConfig: () => Promise<boolean>
   resetNewApiConfig: () => Promise<boolean>
+  resetVeloeraConfig: () => Promise<boolean>
   resetNewApiModelSyncConfig: () => Promise<boolean>
   resetCliProxyConfig: () => Promise<boolean>
   resetAutoCheckinConfig: () => Promise<boolean>
@@ -353,6 +362,52 @@ export const UserPreferencesProvider = ({
     return success
   }, [])
 
+  const updateVeloeraBaseUrl = useCallback(async (baseUrl: string) => {
+    const updates = {
+      veloera: { baseUrl },
+    }
+    const success = await userPreferences.savePreferences(updates)
+    if (success) {
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
+    }
+    return success
+  }, [])
+
+  const updateVeloeraAdminToken = useCallback(async (adminToken: string) => {
+    const updates = {
+      veloera: { adminToken },
+    }
+    const success = await userPreferences.savePreferences(updates)
+    if (success) {
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
+    }
+    return success
+  }, [])
+
+  const updateVeloeraUserId = useCallback(async (userId: string) => {
+    const updates = {
+      veloera: { userId },
+    }
+    const success = await userPreferences.savePreferences(updates)
+    if (success) {
+      setPreferences((prev) => (prev ? deepOverride(prev, updates) : null))
+    }
+    return success
+  }, [])
+
+  const updateManagedSiteType = useCallback(
+    async (siteType: "new-api" | "veloera") => {
+      const success = await userPreferences.updateManagedSiteType(siteType)
+      if (success) {
+        setPreferences((prev) =>
+          prev ? { ...prev, managedSiteType: siteType } : null,
+        )
+      }
+      return success
+    },
+    [],
+  )
+
   const updateThemeMode = useCallback(async (themeMode: ThemeMode) => {
     const success = await userPreferences.savePreferences({ themeMode })
     if (success) {
@@ -595,6 +650,22 @@ export const UserPreferencesProvider = ({
     return success
   }, [])
 
+  const resetVeloeraConfig = useCallback(async () => {
+    const success = await userPreferences.resetVeloeraConfig()
+    if (success) {
+      const defaults = DEFAULT_PREFERENCES.veloera
+      setPreferences((prev) =>
+        prev
+          ? deepOverride(prev, {
+              veloera: defaults,
+              lastUpdated: Date.now(),
+            })
+          : prev,
+      )
+    }
+    return success
+  }, [])
+
   const resetNewApiModelSyncConfig = useCallback(async () => {
     const success = await userPreferences.resetNewApiModelSyncConfig()
     if (success) {
@@ -763,6 +834,10 @@ export const UserPreferencesProvider = ({
     newApiBaseUrl: preferences?.newApi?.baseUrl || "",
     newApiAdminToken: preferences?.newApi?.adminToken || "",
     newApiUserId: preferences?.newApi?.userId || "",
+    veloeraBaseUrl: preferences?.veloera?.baseUrl || "",
+    veloeraAdminToken: preferences?.veloera?.adminToken || "",
+    veloeraUserId: preferences?.veloera?.userId || "",
+    managedSiteType: preferences?.managedSiteType || "new-api",
     cliProxyBaseUrl: preferences?.cliProxy?.baseUrl || "",
     cliProxyManagementKey: preferences?.cliProxy?.managementKey || "",
     themeMode: preferences?.themeMode || "system",
@@ -785,6 +860,10 @@ export const UserPreferencesProvider = ({
     updateNewApiBaseUrl,
     updateNewApiAdminToken,
     updateNewApiUserId,
+    updateVeloeraBaseUrl,
+    updateVeloeraAdminToken,
+    updateVeloeraUserId,
+    updateManagedSiteType,
     updateCliProxyBaseUrl,
     updateCliProxyManagementKey,
     updateThemeMode,
@@ -798,6 +877,7 @@ export const UserPreferencesProvider = ({
     resetDisplaySettings,
     resetAutoRefreshConfig,
     resetNewApiConfig,
+    resetVeloeraConfig,
     resetNewApiModelSyncConfig,
     resetCliProxyConfig,
     resetAutoCheckinConfig,
