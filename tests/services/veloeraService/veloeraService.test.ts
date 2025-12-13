@@ -50,7 +50,9 @@ vi.mock("~/services/userPreferences", () => ({
 /**
  * Creates a minimal UserPreferences-like object wired with Veloera configuration.
  */
-function createMockUserPreferencesWithVeloera(overrides?: Record<string, unknown>) {
+function createMockUserPreferencesWithVeloera(
+  overrides?: Record<string, unknown>,
+) {
   return {
     veloera: {
       baseUrl: "https://veloera.example.com",
@@ -72,9 +74,13 @@ describe("veloeraService", () => {
         "~/services/veloeraService/veloeraService"
       )
 
-      expect(hasValidVeloeraConfig(createMockUserPreferencesWithVeloera())).toBe(
-        true,
-      )
+      expect(
+        hasValidVeloeraConfig(
+          createMockUserPreferencesWithVeloera() as unknown as Parameters<
+            typeof hasValidVeloeraConfig
+          >[0],
+        ),
+      ).toBe(true)
     })
 
     it("returns false when prefs is null", async () => {
@@ -114,7 +120,9 @@ describe("veloeraService", () => {
         "~/services/veloeraService/veloeraService"
       )
 
-      mockGetPreferences.mockResolvedValueOnce(createMockUserPreferencesWithVeloera())
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithVeloera(),
+      )
 
       const result = await getVeloeraConfig()
       expect(result).toEqual({
@@ -143,12 +151,8 @@ describe("veloeraService", () => {
   describe("searchChannel/createChannel/updateChannel/deleteChannel", () => {
     it("passes VELOERA site hint to apiService wrappers", async () => {
       const { VELOERA } = await import("~/constants/siteType")
-      const {
-        searchChannel,
-        createChannel,
-        updateChannel,
-        deleteChannel,
-      } = await import("~/services/veloeraService/veloeraService")
+      const { searchChannel, createChannel, updateChannel, deleteChannel } =
+        await import("~/services/veloeraService/veloeraService")
 
       mockSearchChannel.mockResolvedValueOnce(null)
       await searchChannel("https://veloera.example.com", "token", "1", "k")
@@ -192,16 +196,13 @@ describe("veloeraService", () => {
       mockUpdateChannel.mockResolvedValueOnce({ success: true, message: "ok" })
       const updatePayload: UpdateChannelPayload = {
         id: 1,
-        name: "n",
-        type: 1,
+        name: "Updated Channel",
         key: "k",
         base_url: "https://upstream.example.com",
         models: "gpt-4",
         group: "default",
         groups: ["default"],
         priority: 0,
-        weight: 0,
-        status: 1,
       }
       await updateChannel(
         "https://veloera.example.com",

@@ -1,5 +1,6 @@
 import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import type { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type"
+import type { ApiResponse } from "~/services/apiService/common/type"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import type {
   ChannelFormData,
@@ -39,21 +40,21 @@ export interface ManagedSiteService {
     adminToken: string,
     userId: number | string,
     channelData: CreateChannelPayload,
-  ): Promise<unknown>
+  ): Promise<ApiResponse<unknown>>
 
   updateChannel(
     baseUrl: string,
     adminToken: string,
     userId: number | string,
     channelData: UpdateChannelPayload,
-  ): Promise<unknown>
+  ): Promise<ApiResponse<unknown>>
 
   deleteChannel(
     baseUrl: string,
     adminToken: string,
     userId: number | string,
     channelId: number,
-  ): Promise<unknown>
+  ): Promise<ApiResponse<unknown>>
 
   checkValidConfig(): Promise<boolean>
   getConfig(): Promise<ManagedSiteConfig | null>

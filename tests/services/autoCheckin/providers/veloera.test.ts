@@ -59,6 +59,7 @@ describe("veloeraProvider", () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
       vi.mocked(fetchApi).mockResolvedValueOnce({
         success: true,
+        data: null,
         message: "Success",
       })
 
@@ -70,6 +71,7 @@ describe("veloeraProvider", () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
       vi.mocked(fetchApi).mockResolvedValueOnce({
         success: true,
+        data: null,
         message: "已签到",
       })
 

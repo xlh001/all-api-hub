@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 
 import { Button, EmptyState, Input } from "~/components/ui"
 import { PageHeader } from "~/entrypoints/options/components/PageHeader"
-import type { NewApiChannel } from "~/types"
+import type { ManagedSiteChannel } from "~/types/managedSite"
 import type {
   ExecutionItemResult,
   ExecutionProgress,
@@ -51,7 +51,7 @@ export default function NewApiModelSync() {
   const [isLoading, setIsLoading] = useState(true)
   const [runningChannelId, setRunningChannelId] = useState<number | null>(null)
   const [selectedTab, setSelectedTab] = useState<number>(TAB_INDEX.history)
-  const [channels, setChannels] = useState<NewApiChannel[]>([])
+  const [channels, setChannels] = useState<ManagedSiteChannel[]>([])
   const [isChannelsLoading, setIsChannelsLoading] = useState(false)
   const [channelsError, setChannelsError] = useState<string | null>(null)
   const [manualSearchKeyword, setManualSearchKeyword] = useState("")

@@ -240,7 +240,7 @@ const statusFilterFn: FilterFn<ChannelRow> = (
  * Main management page for New API channels including table, filters, and dialogs.
  * Fetches channel data, exposes filtering tools, and handles CRUD operations.
  */
-export default function NewApiChannelsPage() {
+export default function ManagedSiteChannels() {
   const { t } = useTranslation(["newApiChannels", "messages"])
   const [channels, setChannels] = useState<ChannelRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -1406,5 +1406,3 @@ function ChannelFilterDialog({
     </Modal>
   )
 }
-
-export { NewApiChannelsPage as Component }

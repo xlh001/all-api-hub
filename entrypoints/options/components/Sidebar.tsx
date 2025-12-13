@@ -28,7 +28,7 @@ const MOBILE_WIDTH = 256
 
 const SEPARATOR_BEFORE_IDS = new Set([
   "models",
-  "newApiChannels",
+  "managedSiteChannels",
   "importExport",
 ])
 
@@ -171,7 +171,7 @@ function Sidebar({
                 if (
                   !hasValidManagedSiteConfig(preferences ?? null) &&
                   (item.id === "newApiModelSync" ||
-                    item.id === "newApiChannels")
+                    item.id === "managedSiteChannels")
                 ) {
                   return null
                 }

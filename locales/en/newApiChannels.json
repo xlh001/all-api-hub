@@ -1,10 +1,10 @@
 {
-  "title": "New API Channels",
-  "description": "Search, edit, delete, and manually sync channels connected to your New API instance.",
+  "title": "Channels",
+  "description": "Search, edit, delete, and manually sync channels connected to your managed site.",
   "alerts": {
     "configMissing": {
       "title": "Missing configuration",
-      "description": "Please configure your New API credentials in settings before managing channels."
+      "description": "Please configure your managed site credentials in settings before managing channels."
     },
     "loadError": {
       "title": "Unable to load channels",
@@ -70,7 +70,7 @@
   "toasts": {
     "channelSaved": "Channel saved",
     "channelUpdated": "Channel updated",
-    "configMissing": "New API configuration is missing",
+    "configMissing": "Managed site configuration is missing",
     "channelDeleted": "Channel deleted",
     "channelsDeleted": "{{count}} channels deleted",
     "someDeletesFailed": "Failed to delete {{count}} channel(s): {{error}}",

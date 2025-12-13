@@ -16,8 +16,8 @@ import AutoCheckin from "./pages/AutoCheckin"
 import BasicSettings from "./pages/BasicSettings"
 import ImportExport from "./pages/ImportExport"
 import KeyManagement from "./pages/KeyManagement"
+import managedSiteChannels from "./pages/ManagedSiteChannels"
 import ModelList from "./pages/ModelList"
-import NewApiChannels from "./pages/NewApiChannels"
 import NewApiModelSync from "./pages/NewApiModelSync"
 
 // 菜单项类型定义
@@ -61,10 +61,10 @@ export const menuItems: MenuItem[] = [
     component: KeyManagement,
   },
   {
-    id: "newApiChannels",
+    id: "managedSiteChannels",
     name: "渠道管理",
     icon: Layers,
-    component: NewApiChannels,
+    component: managedSiteChannels,
   },
   {
     id: "newApiModelSync",
