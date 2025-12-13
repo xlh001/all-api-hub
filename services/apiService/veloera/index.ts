@@ -1,11 +1,15 @@
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
-import { fetchApiData } from "~/services/apiService/common/utils"
+import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
 import type {
+  CreateChannelPayload,
   ManagedSiteChannel,
   ManagedSiteChannelListData,
+  UpdateChannelPayload,
 } from "~/types/managedSite"
+
+const VELOERA_CHANNEL_ENDPOINT = "/api/channel"
 
 type VeloeraChannelInfo = {
   is_multi_key?: boolean
@@ -96,6 +100,76 @@ const normalizeChannel = (raw: VeloeraChannelRaw): ManagedSiteChannel => {
 }
 
 /**
+ * Create a channel for a Veloera-managed site.
+ *
+ * Veloera expects a flat channel payload (not wrapped by `{ mode, channel }`).
+ * We convert `CreateChannelPayload` into a Veloera-compatible request body.
+ */
+export async function createChannel(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelData: CreateChannelPayload,
+) {
+  try {
+    const { groups, ...channel } = channelData.channel
+    const payload = {
+      ...channel,
+      group: (groups ?? []).join(","),
+    }
+
+    return await fetchApi<void>({
+      baseUrl,
+      endpoint: VELOERA_CHANNEL_ENDPOINT,
+      userId,
+      token: adminToken,
+      options: {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    })
+  } catch (error) {
+    console.error("[Veloera] Failed to create channel:", error)
+    throw new Error("创建渠道失败，请检查网络或 Veloera 配置")
+  }
+}
+
+/**
+ * Update a channel for a Veloera-managed site.
+ *
+ * Veloera expects the update payload to be flat and typically uses `group` instead
+ * of `groups`. We ensure `group` is populated and omit the `groups` array.
+ */
+export async function updateChannel(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelData: UpdateChannelPayload,
+) {
+  try {
+    const { groups, ...rest } = channelData
+    const payload = {
+      ...rest,
+      group: rest.group ?? (groups ?? []).join(","),
+    }
+
+    return await fetchApi<void>({
+      baseUrl,
+      endpoint: VELOERA_CHANNEL_ENDPOINT,
+      userId,
+      token: adminToken,
+      options: {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      },
+    })
+  } catch (error) {
+    console.error("[Veloera] Failed to update channel:", error)
+    throw new Error("更新渠道失败，请检查网络或 Veloera 配置")
+  }
+}
+
+/**
  * List all channels from a Veloera-managed site.
  *
  * Veloera returns a bare channel array inside `data` for `/api/channel/`.
@@ -154,4 +228,53 @@ export async function listAllChannels(
     total: allItems.length,
     type_counts: typeCounts,
   } as ManagedSiteChannelListData
+}
+
+/**
+ * Search channels by keyword for a Veloera-managed site.
+ *
+ * Veloera implementations often return a bare array (no `total`/`type_counts`).
+ * This adapter normalizes that payload to New API compatible `ManagedSiteChannelListData`.
+ */
+export async function searchChannel(
+  baseUrl: string,
+  accessToken: string,
+  userId: number | string,
+  keyword: string,
+): Promise<ManagedSiteChannelListData | null> {
+  try {
+    const endpoint = `/api/channel/search?keyword=${encodeURIComponent(keyword)}`
+    const data = await fetchApiData<unknown>({
+      baseUrl,
+      endpoint,
+      userId,
+      token: accessToken,
+    })
+
+    const rawItems: VeloeraChannelRaw[] | null = Array.isArray(data)
+      ? (data as VeloeraChannelRaw[])
+      : Array.isArray((data as { items?: unknown } | null)?.items)
+        ? (((data as { items: unknown[] }).items ?? []) as VeloeraChannelRaw[])
+        : null
+
+    if (!rawItems) {
+      throw new ApiError("Failed to search channels", undefined, endpoint)
+    }
+
+    const items = rawItems.map(normalizeChannel)
+    const typeCounts: Record<string, number> = {}
+    for (const channel of items) {
+      const key = String(channel.type)
+      typeCounts[key] = (typeCounts[key] || 0) + 1
+    }
+
+    return {
+      items,
+      total: items.length,
+      type_counts: typeCounts,
+    } as ManagedSiteChannelListData
+  } catch (error) {
+    console.error("[Veloera] Failed to search channels:", error)
+    return null
+  }
 }
