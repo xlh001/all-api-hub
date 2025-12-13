@@ -1,5 +1,5 @@
 {
-  "title": "Channels",
+  "title": "Channels management",
   "description": "Search, edit, delete, and manually sync channels connected to your managed site.",
   "alerts": {
     "configMissing": {

@@ -46,7 +46,7 @@ export default function NewApiModelSyncSettings() {
   const { t } = useTranslation([
     "newApiModelSync",
     "settings",
-    "newApiChannels",
+    "managedSiteChannels",
     "common",
   ])
   const {
@@ -262,18 +262,18 @@ export default function NewApiModelSyncSettings() {
       const pattern = filter.pattern.trim()
 
       if (!name) {
-        return t("newApiChannels:filters.messages.validationName")
+        return t("managedSiteChannels:filters.messages.validationName")
       }
 
       if (!pattern) {
-        return t("newApiChannels:filters.messages.validationPattern")
+        return t("managedSiteChannels:filters.messages.validationPattern")
       }
 
       if (filter.isRegex) {
         try {
           new RegExp(pattern)
         } catch (error) {
-          return t("newApiChannels:filters.messages.validationRegex", {
+          return t("managedSiteChannels:filters.messages.validationRegex", {
             error: getErrorMessage(error),
           })
         }
@@ -291,7 +291,7 @@ export default function NewApiModelSyncSettings() {
         rulesToSave = parseJsonGlobalChannelModelFilters(jsonText)
       } catch (error) {
         toast.error(
-          t("newApiChannels:filters.messages.jsonInvalid", {
+          t("managedSiteChannels:filters.messages.jsonInvalid", {
             error: getErrorMessage(error),
           }),
         )
@@ -319,11 +319,11 @@ export default function NewApiModelSyncSettings() {
 
       await savePreferences({ globalChannelModelFilters: payload })
       setglobalChannelModelFiltersDraft(rulesToSave)
-      toast.success(t("newApiChannels:filters.messages.saved"))
+      toast.success(t("managedSiteChannels:filters.messages.saved"))
       setIsglobalChannelModelFiltersDialogOpen(false)
     } catch (error) {
       toast.error(
-        t("newApiChannels:filters.messages.saveFailed", {
+        t("managedSiteChannels:filters.messages.saveFailed", {
           error: getErrorMessage(error),
         }),
       )
@@ -600,14 +600,14 @@ export default function NewApiModelSyncSettings() {
               onClick={handleCloseglobalChannelModelFilters}
               disabled={isSavingglobalChannelModelFilters}
             >
-              {t("newApiChannels:filters.actions.cancel")}
+              {t("managedSiteChannels:filters.actions.cancel")}
             </Button>
             <Button
               onClick={handleSaveglobalChannelModelFilters}
               disabled={isSavingglobalChannelModelFilters}
               loading={isSavingglobalChannelModelFilters}
             >
-              {t("newApiChannels:filters.actions.save")}
+              {t("managedSiteChannels:filters.actions.save")}
             </Button>
           </div>
         }
@@ -630,7 +630,7 @@ export default function NewApiModelSyncSettings() {
               setViewMode("visual")
             } catch (error) {
               toast.error(
-                t("newApiChannels:filters.messages.jsonInvalid", {
+                t("managedSiteChannels:filters.messages.jsonInvalid", {
                   error: getErrorMessage(error),
                 }),
               )

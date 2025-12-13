@@ -241,7 +241,7 @@ const statusFilterFn: FilterFn<ChannelRow> = (
  * Fetches channel data, exposes filtering tools, and handles CRUD operations.
  */
 export default function ManagedSiteChannels() {
-  const { t } = useTranslation(["newApiChannels", "messages"])
+  const { t } = useTranslation(["managedSiteChannels", "messages"])
   const [channels, setChannels] = useState<ChannelRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -1047,7 +1047,7 @@ export default function ManagedSiteChannels() {
  * Renders the status badge for a channel row based on numeric status code.
  */
 function StatusBadge({ status }: { status: number }) {
-  const { t } = useTranslation("newApiChannels")
+  const { t } = useTranslation("managedSiteChannels")
   const config = STATUS_VARIANTS[status] ?? STATUS_VARIANTS[0]
   return (
     <Badge
@@ -1121,7 +1121,7 @@ function ChannelFilterDialog({
   open,
   onClose,
 }: ChannelFilterDialogProps) {
-  const { t } = useTranslation("newApiChannels")
+  const { t } = useTranslation("managedSiteChannels")
   const [filters, setFilters] = useState<EditableFilter[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
