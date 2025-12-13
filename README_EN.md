@@ -7,7 +7,7 @@
 <div align="center">
   <img src="assets/icon.png" alt="All API Hub Logo" width="128" height="128">
 
-# All API Hub
+# All API Hub – AI Relay & New API Manager
 
 **Open-source browser extension for both third-party New API-compatible relays and your own New API instance: auto-detect accounts, view balances, sync models, manage keys, with cross-platform and cloud backup support**
 

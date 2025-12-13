@@ -7,7 +7,7 @@
 <div align="center">
   <img src="assets/icon.png" alt="All API Hub Logo" width="128" height="128">
 
-# 中转站管理器 - All API Hub
+# All API Hub – AI 中转站 & New API 管理器
 
 **开源浏览器插件，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、查看余额、同步模型、管理密钥，并支持跨平台与云端备份。**
 
