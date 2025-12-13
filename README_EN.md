@@ -32,8 +32,9 @@
 
 ## 📖 Introduction
 
-With numerous AI aggregation and relay sites available, checking balances, model lists, and keys requires logging into each site individually—a tedious process.
-This extension automatically detects and manages accounts from sites based on the following projects:
+Nowadays, within the AI ecosystem, there's a growing number of aggregated relay stations and custom dashboards built upon the New API series. Simultaneously managing the balances, model lists, and API keys across these various platforms often proves to be both fragmented and time-consuming.
+
+All API Hub, a browser plugin, can automatically recognize accounts on these platforms, allowing users to view balances, manage models and keys, and perform automatic check-ins with a single click. Furthermore, it offers tools such as model synchronization and channel management for self-built New API instances. It currently supports relay station accounts from projects such as:
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)
