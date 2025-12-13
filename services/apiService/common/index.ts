@@ -40,8 +40,142 @@ import {
   TEMP_WINDOW_HEALTH_STATUS_CODES,
   type ApiToken,
 } from "~/types"
+import type {
+  CreateChannelPayload,
+  NewApiChannelListData,
+  UpdateChannelPayload,
+} from "~/types/newapi"
 
 // ============= 核心 API 函数 =============
+
+// ============= New API Channel API 函数 =============
+
+/**
+ * 搜索指定关键词的渠道。
+ * @param baseUrl New API 的基础 URL。
+ * @param accessToken 管理员令牌。
+ * @param userId 用户 ID。
+ * @param keyword 搜索关键词。
+ */
+export async function searchChannel(
+  baseUrl: string,
+  accessToken: string,
+  userId: number | string,
+  keyword: string,
+): Promise<NewApiChannelListData | null> {
+  try {
+    return await fetchApiData<NewApiChannelListData>({
+      baseUrl,
+      endpoint: `/api/channel/search?keyword=${keyword}`,
+      userId,
+      token: accessToken,
+    })
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`API 请求失败: ${error.message}`)
+    } else {
+      console.error("搜索渠道失败:", error)
+    }
+    return null
+  }
+}
+
+/**
+ * 创建新渠道。
+ * @param baseUrl New API 的基础 URL。
+ * @param adminToken 管理员令牌。
+ * @param userId 用户 ID。
+ * @param channelData 渠道数据。
+ */
+export async function createChannel(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelData: CreateChannelPayload,
+) {
+  try {
+    const payload = {
+      ...channelData,
+      channel: {
+        ...channelData.channel,
+        group: channelData?.channel?.groups?.join(","),
+      },
+    }
+
+    return await fetchApi<void>({
+      baseUrl,
+      endpoint: "/api/channel",
+      userId,
+      token: adminToken,
+      options: {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    })
+  } catch (error) {
+    console.error("创建渠道失败:", error)
+    throw new Error("创建渠道失败，请检查网络或 New API 配置。")
+  }
+}
+
+/**
+ * 更新新渠道。
+ * @param baseUrl New API 的基础 URL。
+ * @param adminToken 管理员令牌。
+ * @param userId 用户 ID。
+ * @param channelData 渠道数据。
+ */
+export async function updateChannel(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelData: UpdateChannelPayload,
+) {
+  try {
+    return await fetchApi<void>({
+      baseUrl,
+      endpoint: "/api/channel",
+      userId,
+      token: adminToken,
+      options: {
+        method: "PUT",
+        body: JSON.stringify(channelData),
+      },
+    })
+  } catch (error) {
+    console.error("更新渠道失败:", error)
+    throw new Error("更新渠道失败，请检查网络或 New API 配置。")
+  }
+}
+
+/**
+ * 删除渠道。
+ * @param baseUrl New API 的基础 URL。
+ * @param adminToken 管理员令牌。
+ * @param userId 用户 ID。
+ * @param channelId 渠道 ID。
+ */
+export async function deleteChannel(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelId: number,
+) {
+  try {
+    return await fetchApi<void>({
+      baseUrl,
+      endpoint: `/api/channel/${channelId}`,
+      userId,
+      token: adminToken,
+      options: {
+        method: "DELETE",
+      },
+    })
+  } catch (error) {
+    console.error("删除渠道失败:", error)
+    throw new Error("删除渠道失败，请检查网络或 New API 配置。")
+  }
+}
 
 /**
  * Fetch basic user info for account detection using cookie auth.

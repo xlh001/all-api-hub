@@ -6,11 +6,13 @@ import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type"
 import { ensureAccountApiToken } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
 import {
+  createChannel as createChannelApi,
+  deleteChannel as deleteChannelApi,
   fetchAccountAvailableModels,
+  searchChannel as searchChannelApi,
+  updateChannel as updateChannelApi,
   fetchUpstreamModelsNameList,
 } from "~/services/apiService"
-import { ApiError } from "~/services/apiService/common/errors"
-import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
 import { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import type {
   ChannelFormData,
@@ -60,21 +62,7 @@ export async function searchChannel(
   userId: number | string,
   keyword: string,
 ): Promise<NewApiChannelListData | null> {
-  try {
-    return await fetchApiData<NewApiChannelListData>({
-      baseUrl,
-      endpoint: `/api/channel/search?keyword=${keyword}`,
-      userId,
-      token: accessToken,
-    })
-  } catch (error) {
-    if (error instanceof ApiError) {
-      console.error(`API 请求失败: ${error.message}`)
-    } else {
-      console.error("搜索渠道失败:", error)
-    }
-    return null
-  }
+  return await searchChannelApi(baseUrl, accessToken, userId, keyword)
 }
 
 /**
@@ -90,28 +78,7 @@ export async function createChannel(
   userId: number | string,
   channelData: CreateChannelPayload,
 ) {
-  try {
-    const payload = {
-      ...channelData,
-      channel: {
-        ...channelData.channel,
-        group: channelData?.channel?.groups?.join(","),
-      },
-    }
-    return await fetchApi<void>({
-      baseUrl,
-      endpoint: "/api/channel",
-      userId,
-      token: adminToken,
-      options: {
-        method: "POST",
-        body: JSON.stringify(payload),
-      },
-    })
-  } catch (error) {
-    console.error("创建渠道失败:", error)
-    throw new Error("创建渠道失败，请检查网络或 New API 配置。")
-  }
+  return await createChannelApi(baseUrl, adminToken, userId, channelData)
 }
 
 /**
@@ -127,21 +94,7 @@ export async function updateChannel(
   userId: number | string,
   channelData: UpdateChannelPayload,
 ) {
-  try {
-    return await fetchApi<void>({
-      baseUrl,
-      endpoint: "/api/channel",
-      userId,
-      token: adminToken,
-      options: {
-        method: "PUT",
-        body: JSON.stringify(channelData),
-      },
-    })
-  } catch (error) {
-    console.error("更新渠道失败:", error)
-    throw new Error("更新渠道失败，请检查网络或 New API 配置。")
-  }
+  return await updateChannelApi(baseUrl, adminToken, userId, channelData)
 }
 
 /**
@@ -153,20 +106,7 @@ export async function deleteChannel(
   userId: number | string,
   channelId: number,
 ) {
-  try {
-    return await fetchApi<void>({
-      baseUrl,
-      endpoint: `/api/channel/${channelId}`,
-      userId,
-      token: adminToken,
-      options: {
-        method: "DELETE",
-      },
-    })
-  } catch (error) {
-    console.error("删除渠道失败:", error)
-    throw new Error("删除渠道失败，请检查网络或 New API 配置。")
-  }
+  return await deleteChannelApi(baseUrl, adminToken, userId, channelId)
 }
 
 /**
