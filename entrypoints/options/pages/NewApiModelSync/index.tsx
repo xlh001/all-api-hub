@@ -62,7 +62,7 @@ export default function NewApiModelSync() {
     try {
       setIsLoading(true)
       const response = await sendRuntimeMessage({
-        action: "newApiModelSync:getLastExecution",
+        action: "modelSync:getLastExecution",
       })
 
       if (response.success) {
@@ -78,7 +78,7 @@ export default function NewApiModelSync() {
   const loadProgress = useCallback(async () => {
     try {
       const response = await sendRuntimeMessage({
-        action: "newApiModelSync:getProgress",
+        action: "modelSync:getProgress",
       })
 
       if (response.success) {
@@ -94,7 +94,7 @@ export default function NewApiModelSync() {
       setIsChannelsLoading(true)
       setChannelsError(null)
       const response = await sendRuntimeMessage({
-        action: "newApiModelSync:listChannels",
+        action: "modelSync:listChannels",
       })
 
       if (response.success) {
@@ -175,7 +175,7 @@ export default function NewApiModelSync() {
   const handleRunAll = async () => {
     try {
       const response = await sendRuntimeMessage({
-        action: "newApiModelSync:triggerAll",
+        action: "modelSync:triggerAll",
       })
 
       if (response.success) {
@@ -205,7 +205,7 @@ export default function NewApiModelSync() {
 
     try {
       const response = await sendRuntimeMessage({
-        action: "newApiModelSync:triggerSelected",
+        action: "modelSync:triggerSelected",
         channelIds: Array.from(selectedSet),
       })
 
@@ -233,7 +233,7 @@ export default function NewApiModelSync() {
   const handleRetryFailed = async () => {
     try {
       const response = await sendRuntimeMessage({
-        action: "newApiModelSync:triggerFailedOnly",
+        action: "modelSync:triggerFailedOnly",
       })
 
       if (response.success) {
@@ -261,7 +261,7 @@ export default function NewApiModelSync() {
     setRunningChannelId(channelId)
     try {
       const response = await sendRuntimeMessage({
-        action: "newApiModelSync:triggerSelected",
+        action: "modelSync:triggerSelected",
         channelIds: [channelId],
       })
 

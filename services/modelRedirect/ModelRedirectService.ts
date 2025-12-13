@@ -1,4 +1,5 @@
 ;
+
 /**
  * Model Redirect Service
  * Generates model redirect mappings based on channel configurations
@@ -7,7 +8,7 @@
 
 import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType";
 import { modelMetadataService } from "~/services/modelMetadata";
-import { ModelSyncService } from "~/services/newApiModelSync";
+import { ModelSyncService } from "~/services/modelSync";
 import type { ManagedSiteChannel } from "~/types/managedSite";
 import { CHANNEL_STATUS } from "~/types/managedSite";
 import { ALL_PRESET_STANDARD_MODELS, DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/modelRedirect";
@@ -17,6 +18,22 @@ import { ALL_PRESET_STANDARD_MODELS, DEFAULT_MODEL_REDIRECT_PREFERENCES } from "
 import { hasValidManagedSiteConfig } from "../managedSiteService";
 import { userPreferences } from "../userPreferences";
 import { renameModel } from "./modelNormalization";
+
+
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**

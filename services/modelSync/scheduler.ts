@@ -24,7 +24,6 @@ import { collectModelsFromExecution } from "./modelCollection"
 import { ModelSyncService } from "./modelSyncService"
 import { newApiModelSyncStorage } from "./storage"
 
-
 /**
  * Scheduler for New API Model Sync.
  * Responsibilities:
@@ -119,7 +118,7 @@ class NewApiModelSyncScheduler {
    * Setup or update the alarm based on current preferences.
    * Clears existing alarm first to avoid duplicates, then recreates if enabled.
    *
-   * Respects newApiModelSync.enabled/interval; no-op if alarms API unavailable.
+   * Respects modelSync.enabled/interval; no-op if alarms API unavailable.
    */
   async setupAlarm() {
     // Check if alarms API is supported
@@ -448,13 +447,13 @@ export const handleNewApiModelSyncMessage = async (
 ) => {
   try {
     switch (request.action) {
-      case "newApiModelSync:triggerAll": {
+      case "modelSync:triggerAll": {
         const resultAll = await newApiModelSyncScheduler.executeSync()
         sendResponse({ success: true, data: resultAll })
         break
       }
 
-      case "newApiModelSync:triggerSelected": {
+      case "modelSync:triggerSelected": {
         const resultSelected = await newApiModelSyncScheduler.executeSync(
           request.channelIds,
         )
@@ -462,43 +461,43 @@ export const handleNewApiModelSyncMessage = async (
         break
       }
 
-      case "newApiModelSync:triggerFailedOnly": {
+      case "modelSync:triggerFailedOnly": {
         const resultFailed = await newApiModelSyncScheduler.executeFailedOnly()
         sendResponse({ success: true, data: resultFailed })
         break
       }
 
-      case "newApiModelSync:getLastExecution": {
+      case "modelSync:getLastExecution": {
         const lastExecution = await newApiModelSyncStorage.getLastExecution()
         sendResponse({ success: true, data: lastExecution })
         break
       }
 
-      case "newApiModelSync:getProgress": {
+      case "modelSync:getProgress": {
         const progress = newApiModelSyncScheduler.getProgress()
         sendResponse({ success: true, data: progress })
         break
       }
 
-      case "newApiModelSync:updateSettings":
+      case "modelSync:updateSettings":
         await newApiModelSyncScheduler.updateSettings(request.settings)
         sendResponse({ success: true })
         break
 
-      case "newApiModelSync:getPreferences": {
+      case "modelSync:getPreferences": {
         const prefs = await newApiModelSyncStorage.getPreferences()
         sendResponse({ success: true, data: prefs })
         break
       }
 
-      case "newApiModelSync:getChannelUpstreamModelOptions": {
+      case "modelSync:getChannelUpstreamModelOptions": {
         const upstreamOptions =
           await newApiModelSyncStorage.getChannelUpstreamModelOptions()
         sendResponse({ success: true, data: upstreamOptions })
         break
       }
 
-      case "newApiModelSync:listChannels": {
+      case "modelSync:listChannels": {
         const channels = await newApiModelSyncScheduler.listChannels()
         sendResponse({ success: true, data: channels })
         break

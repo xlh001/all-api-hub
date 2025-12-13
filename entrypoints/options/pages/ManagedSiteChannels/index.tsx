@@ -289,7 +289,7 @@ export default function ManagedSiteChannels() {
       setConfigMissing(false)
       setConfigMissingMessage(null)
       const response = await sendRuntimeMessage({
-        action: "newApiModelSync:listChannels",
+        action: "modelSync:listChannels",
       })
       if (!response?.success) {
         throw new Error(response?.error || "Failed to load channels")
@@ -429,7 +429,7 @@ export default function ManagedSiteChannels() {
       })
       try {
         const response = await sendRuntimeMessage({
-          action: "newApiModelSync:triggerSelected",
+          action: "modelSync:triggerSelected",
           channelIds,
         })
         if (!response?.success) {

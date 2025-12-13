@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { collectModelsFromExecution } from "~/services/newApiModelSync/modelCollection"
+import { collectModelsFromExecution } from "~/services/modelSync/modelCollection"
 import type { ExecutionResult } from "~/types/newApiModelSync"
 
 describe("collectModelsFromExecution", () => {

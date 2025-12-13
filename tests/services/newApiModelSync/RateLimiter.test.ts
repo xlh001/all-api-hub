@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { RateLimiter } from "~/services/newApiModelSync/RateLimiter"
+import { RateLimiter } from "~/services/modelSync/RateLimiter"
 
 describe("RateLimiter", () => {
   beforeEach(() => {

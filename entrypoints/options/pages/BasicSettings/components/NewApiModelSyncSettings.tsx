@@ -60,7 +60,7 @@ export default function NewApiModelSyncSettings() {
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [optionsError, setOptionsError] = useState<string | null>(null)
 
-  // Convert from UserPreferences.newApiModelSync to NewApiModelSyncPreferences format
+  // Convert from UserPreferences.modelSync to NewApiModelSyncPreferences format
   const rawPrefs = userPrefs?.newApiModelSync
   const preferences: NewApiModelSyncPreferences = rawPrefs
     ? {
@@ -108,7 +108,7 @@ export default function NewApiModelSyncSettings() {
         setOptionsError(null)
 
         const response = await sendRuntimeMessage({
-          action: "newApiModelSync:getChannelUpstreamModelOptions",
+          action: "modelSync:getChannelUpstreamModelOptions",
         })
 
         if (
@@ -153,7 +153,7 @@ export default function NewApiModelSyncSettings() {
     try {
       setIsSaving(true)
 
-      // Convert to UserPreferences.newApiModelSync format
+      // Convert to UserPreferences.modelSync format
       const userPrefsUpdate: Partial<UserNewApiModelSyncConfig> = {}
       if (updates.enableSync !== undefined) {
         userPrefsUpdate.enabled = updates.enableSync
@@ -334,7 +334,7 @@ export default function NewApiModelSyncSettings() {
 
   const handleNavigateToExecution = () => {
     // Navigate to the NewApiModelSync page
-    navigateWithinOptionsPage("#newApiModelSync")
+    navigateWithinOptionsPage("#modelSync")
   }
 
   return (

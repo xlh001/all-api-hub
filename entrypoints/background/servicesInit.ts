@@ -1,7 +1,7 @@
 import { autoCheckinScheduler } from "~/services/autoCheckin/scheduler"
 import { autoRefreshService } from "~/services/autoRefreshService"
 import { modelMetadataService } from "~/services/modelMetadata"
-import { newApiModelSyncScheduler } from "~/services/newApiModelSync"
+import { newApiModelSyncScheduler } from "~/services/modelSync"
 import { redemptionAssistService } from "~/services/redemptionAssist"
 import { webdavAutoSyncService } from "~/services/webdav/webdavAutoSyncService"
 import { initBackgroundI18n } from "~/utils/background-i18n"

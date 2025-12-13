@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { modelMetadataService } from "~/services/modelMetadata"
 import { ModelRedirectService } from "~/services/modelRedirect/ModelRedirectService"
-import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { userPreferences } from "~/services/userPreferences"
 import { DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/modelRedirect"
 import { CHANNEL_STATUS } from "~/types/newapi"
@@ -24,7 +24,7 @@ vi.mock("~/services/modelMetadata", () => ({
 const listChannelsMock = vi.fn()
 const updateChannelModelMappingMock = vi.fn()
 
-vi.mock("~/services/newApiModelSync", () => {
+vi.mock("~/services/modelSync", () => {
   const NewApiModelSyncServiceMock = vi.fn().mockImplementation(() => ({
     listChannels: listChannelsMock,
     updateChannelModelMapping: updateChannelModelMappingMock,

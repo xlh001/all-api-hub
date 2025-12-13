@@ -473,7 +473,7 @@ export const UserPreferencesProvider = ({
 
         // Notify background to update alarm
         await sendRuntimeMessage({
-          action: "newApiModelSync:updateSettings",
+          action: "modelSync:updateSettings",
           settings: updates,
         })
       }
@@ -594,7 +594,7 @@ export const UserPreferencesProvider = ({
       // Notify New API model sync service
       if (defaults.newApiModelSync) {
         void sendRuntimeMessage({
-          action: "newApiModelSync:updateSettings",
+          action: "modelSync:updateSettings",
           settings: defaults.newApiModelSync,
         })
       }
@@ -687,7 +687,7 @@ export const UserPreferencesProvider = ({
       )
       if (defaults) {
         void sendRuntimeMessage({
-          action: "newApiModelSync:updateSettings",
+          action: "modelSync:updateSettings",
           settings: defaults,
         })
       }
