@@ -1,14 +1,16 @@
 import { union } from "lodash-es"
 
-import { ApiError } from "~/services/apiService/common/errors"
-import { fetchAllItems } from "~/services/apiService/common/pagination"
-import { fetchApi } from "~/services/apiService/common/utils"
+import { 
+  fetchChannelModels as fetchChannelModelsApi,
+  listAllChannels,
+  updateChannelModelMapping as updateChannelModelMappingApi,
+  updateChannelModels as updateChannelModelsApi,
+} from "~/services/apiService/common"
 import type { ChannelConfigMap } from "~/types/channelConfig"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import {
   type ManagedSiteChannel,
   type ManagedSiteChannelListData,
-  type UpdateChannelPayload,
 } from "~/types/managedSite"
 import {
   BatchExecutionOptions,
@@ -103,57 +105,11 @@ export class NewApiModelSyncService {
    */
   async listChannels(): Promise<ManagedSiteChannelListData> {
     try {
-      let total = 0
-      const typeCounts: Record<string, number> = {}
-
-      const items = await fetchAllItems<ManagedSiteChannel>(async (page) => {
-        const params = new URLSearchParams({
-          p: page.toString(),
-          page_size: "100",
-        })
-
-        await this.throttle()
-
-        const response = await fetchApi<ManagedSiteChannelListData>(
-          {
-            baseUrl: this.baseUrl,
-            endpoint: `/api/channel/?${params.toString()}`,
-            userId: this.userId,
-            token: this.token,
-          },
-          false,
-        )
-
-        if (!response.success || !response.data) {
-          throw new ApiError(
-            response.message || "Failed to fetch channels",
-            undefined,
-            "/api/channel/",
-          )
-        }
-
-        const data = response.data
-        if (page === 1) {
-          total = data.total || data.items.length || 0
-          Object.assign(typeCounts, data.type_counts || {})
-        } else if (data.type_counts) {
-          // Later pages omit total; accumulate type_counts manually
-          for (const [key, value] of Object.entries(data.type_counts)) {
-            typeCounts[key] = (typeCounts[key] || 0) + value
-          }
-        }
-
-        return {
-          items: data.items || [],
-          total: data.total || 0,
-        }
+      return await listAllChannels(this.baseUrl, this.token, this.userId, {
+        beforeRequest: async () => {
+          await this.throttle()
+        },
       })
-
-      return {
-        items,
-        total,
-        type_counts: typeCounts,
-      } as ManagedSiteChannelListData
     } catch (error) {
       console.error("[NewApiModelSync] Failed to list channels:", error)
       throw error
@@ -169,21 +125,12 @@ export class NewApiModelSyncService {
     try {
       await this.throttle()
 
-      const response = await fetchApi<string[]>(
-        {
-          baseUrl: this.baseUrl,
-          endpoint: `/api/channel/fetch_models/${channelId}`,
-          userId: this.userId,
-          token: this.token,
-        },
-        false,
+      return await fetchChannelModelsApi(
+        this.baseUrl,
+        this.token,
+        this.userId,
+        channelId,
       )
-
-      if (!response.success || !Array.isArray(response.data)) {
-        throw new Error(response.message || "Failed to fetch models")
-      }
-
-      return response.data
     } catch (error: any) {
       console.error("[NewApiModelSync] Failed to fetch models:", error)
       throw error
@@ -200,31 +147,15 @@ export class NewApiModelSyncService {
     models: string[],
   ): Promise<void> {
     try {
-      // Prepare the update payload
-      const updatePayload: UpdateChannelPayload = {
-        id: channel.id,
-        models: models.join(","),
-      }
-
       await this.throttle()
 
-      const response = await fetchApi<void>(
-        {
-          baseUrl: this.baseUrl,
-          endpoint: "/api/channel/",
-          userId: this.userId,
-          token: this.token,
-          options: {
-            method: "PUT",
-            body: JSON.stringify(updatePayload),
-          },
-        },
-        false,
+      await updateChannelModelsApi(
+        this.baseUrl,
+        this.token,
+        this.userId,
+        channel.id,
+        models.join(","),
       )
-
-      if (!response.success) {
-        throw new Error(response.message || "Failed to update channel")
-      }
     } catch (error: any) {
       console.error("[NewApiModelSync] Failed to update channel:", error)
       throw error
@@ -245,32 +176,16 @@ export class NewApiModelSyncService {
         channel.models.split(","),
         Object.keys(modelMapping),
       ).join(",")
-
-      const updatePayload: UpdateChannelPayload = {
-        id: channel.id,
-        models: updateModels,
-        model_mapping: JSON.stringify(modelMapping),
-      }
-
       await this.throttle()
 
-      const response = await fetchApi<void>(
-        {
-          baseUrl: this.baseUrl,
-          endpoint: "/api/channel/",
-          userId: this.userId,
-          token: this.token,
-          options: {
-            method: "PUT",
-            body: JSON.stringify(updatePayload),
-          },
-        },
-        false,
+      await updateChannelModelMappingApi(
+        this.baseUrl,
+        this.token,
+        this.userId,
+        channel.id,
+        updateModels,
+        JSON.stringify(modelMapping),
       )
-
-      if (!response.success) {
-        throw new Error(response.message || "Failed to update channel mapping")
-      }
     } catch (error) {
       console.error(
         `[NewApiModelSync] Failed to update channel mapping for channel ${channel.id}:`,
