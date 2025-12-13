@@ -250,6 +250,26 @@ pnpm test services/accountStorage.test.ts
 - Use `configVersion` field to track schema changes
 - Implement migration logic in `services/configMigration/` for breaking changes
 
+### UI text content
+- must i18n
+- not hard-coded and fallback in code
+- need to add i18n content in all locales
+
+### UI
+- Use components/ui to create new UI, do not use Tailwind classnames to create new  UI from scratch
+- Use ReUI or directly shadcn and its MCP or magic MCP to create and edit basic UI
+
+### General Guidelines
+- Use any package you need to implement any feature or for your purpose
+- Should use DeepWiki MCP to learn about libraries and unknown projects
+
+### string-based identifiers or configuration values in code
+- Avoid magic strings.
+- Use `as const` to define constant maps.
+- Derive types from the constant map (no manual unions).
+- Always reference constants, not raw strings.
+- Use PascalCase for constant map names.
+
 ## Important Notes
 
 - WXT auto-generates manifest and handles browser differences; check `wxt.config.ts` for customizations
