@@ -1,14 +1,21 @@
-import { DONE_HUB, NEW_API, ONE_HUB, VELOERA, type SiteType } from "~/constants/siteType"
+import {
+  DONE_HUB,
+  NEW_API,
+  ONE_HUB,
+  VELOERA,
+  type SiteType,
+} from "~/constants/siteType"
 
 import * as commonAPI from "./common"
 import * as oneHubAPI from "./oneHub"
+import * as veloeraAPI from "./veloera"
 
 // 映射表,只放需要覆盖的站点
 const siteOverrideMap = {
   [ONE_HUB]: oneHubAPI,
   [DONE_HUB]: oneHubAPI,
+  [VELOERA]: veloeraAPI,
   [NEW_API]: commonAPI,
-  [VELOERA]: commonAPI,
 } as const
 
 // 添加类型定义

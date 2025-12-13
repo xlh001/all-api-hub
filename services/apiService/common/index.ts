@@ -198,10 +198,14 @@ export async function deleteChannel(
   options?: {
     pageSize?: number
     beforeRequest?: () => Promise<void>
+    endpoint?: string
+    pageStart?: number
   },
  ): Promise<ManagedSiteChannelListData> {
   const pageSize = options?.pageSize ?? REQUEST_CONFIG.DEFAULT_PAGE_SIZE
   const beforeRequest = options?.beforeRequest
+  const endpoint = options?.endpoint ?? "/api/channel/"
+  const pageStart = options?.pageStart ?? 1
 
   let total = 0
   const typeCounts: Record<string, number> = {}
@@ -217,7 +221,7 @@ export async function deleteChannel(
     const response = await fetchApi<ManagedSiteChannelListData>(
       {
         baseUrl,
-        endpoint: `/api/channel/?${params.toString()}`,
+        endpoint: `${endpoint}?${params.toString()}`,
         userId,
         token: adminToken,
       },
@@ -228,12 +232,12 @@ export async function deleteChannel(
       throw new ApiError(
         response.message || "Failed to fetch channels",
         undefined,
-        "/api/channel/",
+        endpoint,
       )
     }
 
-    const data = response.data
-    if (page === 1) {
+    const {data} = response
+    if (page === pageStart) {
       total = data.total || data.items.length || 0
       Object.assign(typeCounts, data.type_counts || {})
     } else if (data.type_counts) {
@@ -246,7 +250,7 @@ export async function deleteChannel(
       items: data.items || [],
       total: total || 0,
     }
-  }, { pageSize })
+  }, { pageSize, startPage: pageStart })
 
   return {
     items,
