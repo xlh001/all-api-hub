@@ -1,6 +1,6 @@
 {
-  "title": "New API 模型列表同步",
-  "description": "自动同步您New API站点所有渠道的模型列表，确保与上游保持一致",
+  "title": "模型列表同步",
+  "description": "自动同步您管理站点中所有渠道的模型列表，确保与上游保持一致",
   "settings": {
     "title": "模型列表同步设置",
     "enable": "启用自动同步",
@@ -97,7 +97,7 @@
       "noDataDesc": "点击\"执行全部\"开始同步所有渠道",
       "noResults": "没有匹配的结果",
       "noResultsDesc": "尝试修改筛选条件或搜索关键字",
-      "configWarningDesc": "请先配置 New API 的基础 URL、管理员令牌和用户 ID，然后再执行模型列表同步",
+      "configWarningDesc": "请先配置管理站点的基础 URL、管理员令牌和用户 ID，然后再执行模型列表同步",
       "goToSettings": "前往设置"
     }
   },
@@ -107,7 +107,7 @@
       "settingsSaved": "设置保存成功"
     },
     "error": {
-      "configMissing": "请先完成 New API 配置",
+      "configMissing": "请先完成管理站点配置",
       "noChannels": "未获取到任何渠道",
       "noFailedChannels": "没有失败渠道可重试",
       "noSelection": "请至少选择一个渠道",
