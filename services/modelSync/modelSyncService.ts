@@ -20,8 +20,7 @@ import {
   ExecutionStatistics,
 } from "~/types/newApiModelSync"
 
-import { RateLimiter } from "./RateLimiter"
-
+import { RateLimiter } from "./rateLimiter"
 
 /**
  * New API Model Sync Service
@@ -110,11 +109,17 @@ export class ModelSyncService {
    */
   async listChannels(): Promise<ManagedSiteChannelListData> {
     try {
-      return await listAllChannels(this.baseUrl, this.token, this.userId, {
-        beforeRequest: async () => {
-          await this.throttle()
+      return await listAllChannels(
+        this.baseUrl,
+        this.token,
+        this.userId,
+        {
+          beforeRequest: async () => {
+            await this.throttle()
+          },
         },
-      }, this.siteType)
+        this.siteType,
+      )
     } catch (error) {
       console.error("[NewApiModelSync] Failed to list channels:", error)
       throw error
