@@ -21,8 +21,9 @@ import { getErrorMessage } from "~/utils/error"
 import { channelConfigStorage } from "../channelConfigStorage"
 import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
 import { collectModelsFromExecution } from "./modelCollection"
-import { NewApiModelSyncService } from "./NewApiModelSyncService"
+import { ModelSyncService } from "./modelSyncService"
 import { newApiModelSyncStorage } from "./storage"
+
 
 /**
  * Scheduler for New API Model Sync.
@@ -37,10 +38,10 @@ class NewApiModelSyncScheduler {
   private currentProgress: ExecutionProgress | null = null
 
   /**
-   * Build a NewApiModelSyncService instance using persisted preferences and channel configs.
+   * Build a ModelSyncService instance using persisted preferences and channel configs.
    * @throws {Error} When New API config is missing.
    */
-  private async createService(): Promise<NewApiModelSyncService> {
+  private async createService(): Promise<ModelSyncService> {
     const userPrefs = await userPreferences.getPreferences()
 
     const siteType: ManagedSiteType = userPrefs.managedSiteType || NEW_API
@@ -63,7 +64,7 @@ class NewApiModelSyncScheduler {
 
     const channelConfigs = await channelConfigStorage.getAllConfigs()
 
-    return new NewApiModelSyncService(
+    return new ModelSyncService(
       baseUrl,
       adminToken,
       userId,

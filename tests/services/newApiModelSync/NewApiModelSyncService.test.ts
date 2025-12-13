@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { VELOERA } from "~/constants/siteType"
 import { listAllChannels } from "~/services/apiService"
-import { NewApiModelSyncService } from "~/services/newApiModelSync/NewApiModelSyncService"
+import { ModelSyncService } from "~/services/newApiModelSync/modelSyncService"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 
 vi.mock("~/services/apiService", () => ({
@@ -12,9 +12,9 @@ vi.mock("~/services/apiService", () => ({
   updateChannelModelMapping: vi.fn(),
 }))
 
-describe("NewApiModelSyncService - allowed model filtering", () => {
+describe("ModelSyncService - allowed model filtering", () => {
   const createService = (allowed?: string[]) =>
-    new NewApiModelSyncService(
+    new ModelSyncService(
       "https://example.com",
       "dummy-token",
       "1",
@@ -22,7 +22,7 @@ describe("NewApiModelSyncService - allowed model filtering", () => {
       allowed,
     )
 
-  const callFilter = (service: NewApiModelSyncService, models: string[]) =>
+  const callFilter = (service: ModelSyncService, models: string[]) =>
     (service as any).filterAllowedModels(models) as string[]
 
   it("returns trimmed unique models when no allow-list exists", () => {
@@ -60,7 +60,7 @@ describe("NewApiModelSyncService - allowed model filtering", () => {
   })
 })
 
-describe("NewApiModelSyncService - siteType routing", () => {
+describe("ModelSyncService - siteType routing", () => {
   it("forwards ManagedSiteType hint to apiService listAllChannels", async () => {
     ;(listAllChannels as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
       {
@@ -70,7 +70,7 @@ describe("NewApiModelSyncService - siteType routing", () => {
       },
     )
 
-    const service = new NewApiModelSyncService(
+    const service = new ModelSyncService(
       "https://example.com",
       "token",
       "1",
@@ -91,7 +91,7 @@ describe("NewApiModelSyncService - siteType routing", () => {
   })
 })
 
-describe("NewApiModelSyncService - global and channel filters", () => {
+describe("ModelSyncService - global and channel filters", () => {
   const baseModels = ["gpt-4o", "gpt-4o-mini", "claude-3", "local-debug-model"]
 
   const makeRule = (
@@ -112,7 +112,7 @@ describe("NewApiModelSyncService - global and channel filters", () => {
     rules: ChannelModelFilterRule[] | null | undefined,
     models: string[],
   ): string[] => {
-    const service = new NewApiModelSyncService("https://example.com", "token")
+    const service = new ModelSyncService("https://example.com", "token")
     return (service as any).applyFilters(rules, models)
   }
 

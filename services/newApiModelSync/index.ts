@@ -1,4 +1,4 @@
-export { NewApiModelSyncService } from "./NewApiModelSyncService"
+export { ModelSyncService } from "./modelSyncService"
 export { newApiModelSyncStorage } from "./storage"
 export {
   newApiModelSyncScheduler,

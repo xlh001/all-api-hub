@@ -22,11 +22,12 @@ import {
 
 import { RateLimiter } from "./RateLimiter"
 
+
 /**
  * New API Model Sync Service
  * Handles channel operations for model synchronization
  */
-export class NewApiModelSyncService {
+export class ModelSyncService {
   private baseUrl: string
   private token: string
   private userId?: string

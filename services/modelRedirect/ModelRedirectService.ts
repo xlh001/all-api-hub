@@ -1,22 +1,23 @@
+;
 /**
  * Model Redirect Service
  * Generates model redirect mappings based on channel configurations
  * Based on gpt-api-sync logic with enhancements for weighted channel selection
  */
 
-import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
-import { modelMetadataService } from "~/services/modelMetadata"
-import { NewApiModelSyncService } from "~/services/newApiModelSync"
-import { CHANNEL_STATUS } from "~/types/managedSite"
-import type { ManagedSiteChannel } from "~/types/managedSite"
-import {
-  ALL_PRESET_STANDARD_MODELS,
-  DEFAULT_MODEL_REDIRECT_PREFERENCES,
-} from "~/types/modelRedirect"
+import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType";
+import { modelMetadataService } from "~/services/modelMetadata";
+import { ModelSyncService } from "~/services/newApiModelSync";
+import type { ManagedSiteChannel } from "~/types/managedSite";
+import { CHANNEL_STATUS } from "~/types/managedSite";
+import { ALL_PRESET_STANDARD_MODELS, DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/modelRedirect";
 
-import { hasValidManagedSiteConfig } from "../managedSiteService"
-import { userPreferences } from "../userPreferences"
-import { renameModel } from "./modelNormalization"
+
+
+import { hasValidManagedSiteConfig } from "../managedSiteService";
+import { userPreferences } from "../userPreferences";
+import { renameModel } from "./modelNormalization";
+
 
 /**
  * Model Redirect Service
@@ -28,12 +29,12 @@ export class ModelRedirectService {
    * Merges new mapping with existing mapping (new keys override old keys)
    * @param channel Target New API channel.
    * @param newMapping Mapping of standard model -> upstream model.
-   * @param service NewApiModelSyncService instance used to update channel.
+   * @param service ModelSyncService instance used to update channel.
    */
   static async applyModelMappingToChannel(
     channel: ManagedSiteChannel,
     newMapping: Record<string, string>,
-    service: NewApiModelSyncService,
+    service: ModelSyncService,
   ): Promise<void> {
     if (Object.keys(newMapping).length === 0) {
       return
@@ -109,7 +110,7 @@ export class ModelRedirectService {
       const siteType: ManagedSiteType = prefs.managedSiteType || NEW_API
       const managedConfig = siteType === VELOERA ? prefs.veloera : prefs.newApi
 
-      const service = new NewApiModelSyncService(
+      const service = new ModelSyncService(
         managedConfig.baseUrl!,
         managedConfig.adminToken!,
         managedConfig.userId!,
