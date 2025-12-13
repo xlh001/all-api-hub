@@ -2,10 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RateLimiter } from "~/services/modelSync/rateLimiter"
 
-
-
-
-
 describe("RateLimiter", () => {
   beforeEach(() => {
     vi.useFakeTimers()
