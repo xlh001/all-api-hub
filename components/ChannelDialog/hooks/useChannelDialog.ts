@@ -6,11 +6,7 @@ import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type"
 import { ensureAccountApiToken } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
-import {
-  findMatchingChannel,
-  getNewApiConfig,
-  prepareChannelFormData,
-} from "~/services/newApiService/newApiService"
+import { getManagedSiteService } from "~/services/managedSiteService"
 import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import type { NewApiChannel } from "~/types/newapi"
 import { getErrorMessage } from "~/utils/error"
@@ -53,10 +49,12 @@ export function useChannelDialog() {
         siteAccount = fetchedAccount
       }
 
-      // Get New API config
-      const newApiConfig = await getNewApiConfig()
-      if (!newApiConfig) {
-        toast.error(t("messages:newapi.configMissing"), { id: toastId })
+      const service = await getManagedSiteService()
+      const managedConfig = await service.getConfig()
+      if (!managedConfig) {
+        toast.error(t(`messages:${service.messagesKey}.configMissing`), {
+          id: toastId,
+        })
         return
       }
 
@@ -71,21 +69,22 @@ export function useChannelDialog() {
         )
       }
 
-      // Prepare form defaults
-      const formData = await prepareChannelFormData(displaySiteData, apiToken)
+      const formData = await service.prepareChannelFormData(
+        displaySiteData,
+        apiToken,
+      )
 
-      // Check for existing channel
-      const existingChannel = await findMatchingChannel(
-        newApiConfig.baseUrl,
-        newApiConfig.token,
-        newApiConfig.userId,
+      const existingChannel = await service.findMatchingChannel(
+        managedConfig.baseUrl,
+        managedConfig.token,
+        managedConfig.userId,
         displaySiteData.baseUrl,
         formData.models,
       )
 
       if (existingChannel) {
         toast.error(
-          t("messages:newapi.channelExists", {
+          t(`messages:${service.messagesKey}.channelExists`, {
             channelName: existingChannel.name,
           }),
           { id: toastId },

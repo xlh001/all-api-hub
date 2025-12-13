@@ -7,7 +7,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { EmptyState } from "~/components/ui"
-import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
+import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { userPreferences } from "~/services/userPreferences"
 import { navigateWithinOptionsPage } from "~/utils/navigation"
 
@@ -28,7 +28,7 @@ export default function EmptyResults(props: EmptyResultsProps) {
   useEffect(() => {
     const checkConfig = async () => {
       const prefs = await userPreferences.getPreferences()
-      setHasValidConfig(hasValidNewApiConfig(prefs))
+      setHasValidConfig(hasValidManagedSiteConfig(prefs))
     }
     void checkConfig()
   }, [])

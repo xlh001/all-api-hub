@@ -1,7 +1,7 @@
 import { t } from "i18next"
 
 import { ModelRedirectService } from "~/services/modelRedirect"
-import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
+import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import {
   ALL_PRESET_STANDARD_MODELS,
@@ -43,15 +43,15 @@ class NewApiModelSyncScheduler {
   private async createService(): Promise<NewApiModelSyncService> {
     const userPrefs = await userPreferences.getPreferences()
 
-    if (!hasValidNewApiConfig(userPrefs)) {
-      throw new Error(t("messages:newapi.configMissing"))
+    const siteType: ManagedSiteType = userPrefs.managedSiteType || NEW_API
+    const messagesKey = siteType === VELOERA ? "veloera" : "newapi"
+    const managedConfig = siteType === VELOERA ? userPrefs.veloera : userPrefs.newApi
+
+    if (!managedConfig?.baseUrl || !managedConfig?.adminToken || !managedConfig?.userId) {
+      throw new Error(t(`messages:${messagesKey}.configMissing`))
     }
 
-    const {
-      baseUrl: newApiBaseUrl,
-      adminToken: newApiAdminToken,
-      userId: newApiUserId,
-    } = userPrefs.newApi
+    const { baseUrl, adminToken, userId } = managedConfig
 
     const config =
       userPrefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
@@ -59,9 +59,9 @@ class NewApiModelSyncScheduler {
     const channelConfigs = await channelConfigStorage.getAllConfigs()
 
     return new NewApiModelSyncService(
-      newApiBaseUrl!,
-      newApiAdminToken!,
-      newApiUserId!,
+      baseUrl,
+      adminToken,
+      userId,
       config.rateLimit,
       config.allowedModels,
       channelConfigs,

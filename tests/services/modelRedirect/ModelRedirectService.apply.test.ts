@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { modelMetadataService } from "~/services/modelMetadata"
 import { ModelRedirectService } from "~/services/modelRedirect/ModelRedirectService"
-import { hasValidNewApiConfig } from "~/services/newApiService/newApiService"
+import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { userPreferences } from "~/services/userPreferences"
 import { DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/modelRedirect"
 import { CHANNEL_STATUS } from "~/types/newapi"
@@ -35,8 +35,8 @@ vi.mock("~/services/newApiModelSync", () => {
   }
 })
 
-vi.mock("~/services/newApiService/newApiService", () => ({
-  hasValidNewApiConfig: vi.fn(),
+vi.mock("~/services/managedSiteService", () => ({
+  hasValidManagedSiteConfig: vi.fn(),
 }))
 
 vi.mock("~/services/userPreferences", () => ({
@@ -45,7 +45,7 @@ vi.mock("~/services/userPreferences", () => ({
   },
 }))
 
-const mockedHasValidConfig = hasValidNewApiConfig as unknown as ReturnType<
+const mockedHasValidConfig = hasValidManagedSiteConfig as unknown as ReturnType<
   typeof vi.fn
 >
 const mockedUserPreferences = userPreferences as unknown as {
@@ -134,14 +134,15 @@ describe("ModelRedirectService.applyModelRedirect", () => {
   })
 
   it("should return error when New API config is invalid", async () => {
-    mockedHasValidConfig.mockReturnValue(false)
-    mockedUserPreferences.getPreferences.mockResolvedValue({} as any)
+    mockedHasValidConfig.mockReturnValueOnce(false)
+
+    mockedUserPreferences.getPreferences.mockResolvedValueOnce(null)
 
     const result = await ModelRedirectService.applyModelRedirect()
 
     expect(result.success).toBe(false)
     expect(result.updatedChannels).toBe(0)
-    expect(result.errors[0]).toContain("New API configuration is missing")
+    expect(result.errors[0]).toContain("Managed site configuration is missing")
   })
 
   it("should return error when feature is disabled in preferences", async () => {

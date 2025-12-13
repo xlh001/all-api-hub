@@ -12,7 +12,8 @@ import {
 } from "~/types/modelRedirect"
 import { CHANNEL_STATUS, NewApiChannel } from "~/types/newapi"
 
-import { hasValidNewApiConfig } from "../newApiService/newApiService"
+import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
+import { hasValidManagedSiteConfig } from "../managedSiteService"
 import { userPreferences } from "../userPreferences"
 import { renameModel } from "./modelNormalization"
 
@@ -72,12 +73,12 @@ export class ModelRedirectService {
     try {
       const prefs = await userPreferences.getPreferences()
 
-      if (!hasValidNewApiConfig(prefs)) {
+      if (!hasValidManagedSiteConfig(prefs)) {
         return {
           success: false,
           updatedChannels: 0,
-          errors: ["New API configuration is missing"],
-          message: "New API configuration is missing",
+          errors: ["Managed site configuration is missing"],
+          message: "Managed site configuration is missing",
         }
       }
 
@@ -104,12 +105,13 @@ export class ModelRedirectService {
         console.warn("[ModelRedirect] Failed to initialize metadata:", error)
       })
 
-      const { newApi } = prefs
+      const siteType: ManagedSiteType = prefs.managedSiteType || NEW_API
+      const managedConfig = siteType === VELOERA ? prefs.veloera : prefs.newApi
 
       const service = new NewApiModelSyncService(
-        newApi.baseUrl!,
-        newApi.adminToken!,
-        newApi.userId!,
+        managedConfig.baseUrl!,
+        managedConfig.adminToken!,
+        managedConfig.userId!,
       )
 
       const channelList = await service.listChannels()

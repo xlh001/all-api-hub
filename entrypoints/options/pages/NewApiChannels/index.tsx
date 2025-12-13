@@ -89,10 +89,7 @@ import { ChannelTypeNames } from "~/constants/newApi"
 import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import { cn } from "~/lib/utils"
 import { channelConfigStorage } from "~/services/channelConfigStorage"
-import {
-  deleteChannel,
-  getNewApiConfig,
-} from "~/services/newApiService/newApiService"
+import { getManagedSiteService } from "~/services/managedSiteService"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type { NewApiChannel } from "~/types/newapi"
 import { sendRuntimeMessage } from "~/utils/browserApi"
@@ -244,11 +241,14 @@ const statusFilterFn: FilterFn<ChannelRow> = (
  * Fetches channel data, exposes filtering tools, and handles CRUD operations.
  */
 export default function NewApiChannelsPage() {
-  const { t } = useTranslation("newApiChannels")
+  const { t } = useTranslation(["newApiChannels", "messages"])
   const [channels, setChannels] = useState<ChannelRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [configMissing, setConfigMissing] = useState(false)
+  const [configMissingMessage, setConfigMissingMessage] = useState<string | null>(
+    null,
+  )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     base_url: false,
@@ -276,13 +276,16 @@ export default function NewApiChannelsPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const config = await getNewApiConfig()
+      const service = await getManagedSiteService()
+      const config = await service.getConfig()
       if (!config) {
         setConfigMissing(true)
+        setConfigMissingMessage(t(`messages:${service.messagesKey}.configMissing`))
         setChannels([])
         return
       }
       setConfigMissing(false)
+      setConfigMissingMessage(null)
       const response = await sendRuntimeMessage({
         action: "newApiModelSync:listChannels",
       })
@@ -354,14 +357,15 @@ export default function NewApiChannelsPage() {
     if (!pendingDeleteIds.length) return
     setIsDeleting(true)
     try {
-      const config = await getNewApiConfig()
+      const service = await getManagedSiteService()
+      const config = await service.getConfig()
       if (!config) {
-        throw new Error(t("toasts.configMissing"))
+        throw new Error(t(`messages:${service.messagesKey}.configMissing`))
       }
 
       const results = await Promise.allSettled(
         pendingDeleteIds.map((id) =>
-          deleteChannel(config.baseUrl, config.token, config.userId, id),
+          service.deleteChannel(config.baseUrl, config.token, config.userId, id),
         ),
       )
 
@@ -683,7 +687,7 @@ export default function NewApiChannelsPage() {
         <Alert variant="warning">
           <AlertTitle>{t("alerts.configMissing.title")}</AlertTitle>
           <AlertDescription>
-            {t("alerts.configMissing.description")}
+            {configMissingMessage ?? t("alerts.configMissing.description")}
           </AlertDescription>
         </Alert>
       )}
