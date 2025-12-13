@@ -2,6 +2,7 @@ import { t } from "i18next"
 import toast from "react-hot-toast"
 
 import { DEFAULT_CHANNEL_FIELDS } from "~/constants/newApi"
+import { NEW_API } from "~/constants/siteType"
 import { AccountToken } from "~/entrypoints/options/pages/KeyManagement/type"
 import { ensureAccountApiToken } from "~/services/accountOperations"
 import { accountStorage } from "~/services/accountStorage"
@@ -9,9 +10,9 @@ import {
   createChannel as createChannelApi,
   deleteChannel as deleteChannelApi,
   fetchAccountAvailableModels,
+  fetchUpstreamModelsNameList,
   searchChannel as searchChannelApi,
   updateChannel as updateChannelApi,
-  fetchUpstreamModelsNameList,
 } from "~/services/apiService"
 import { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import type {
@@ -62,7 +63,7 @@ export async function searchChannel(
   userId: number | string,
   keyword: string,
 ): Promise<NewApiChannelListData | null> {
-  return await searchChannelApi(baseUrl, accessToken, userId, keyword)
+  return await searchChannelApi(baseUrl, accessToken, userId, keyword, NEW_API)
 }
 
 /**
@@ -78,7 +79,13 @@ export async function createChannel(
   userId: number | string,
   channelData: CreateChannelPayload,
 ) {
-  return await createChannelApi(baseUrl, adminToken, userId, channelData)
+  return await createChannelApi(
+    baseUrl,
+    adminToken,
+    userId,
+    channelData,
+    NEW_API,
+  )
 }
 
 /**
@@ -94,7 +101,13 @@ export async function updateChannel(
   userId: number | string,
   channelData: UpdateChannelPayload,
 ) {
-  return await updateChannelApi(baseUrl, adminToken, userId, channelData)
+  return await updateChannelApi(
+    baseUrl,
+    adminToken,
+    userId,
+    channelData,
+    NEW_API,
+  )
 }
 
 /**
@@ -106,7 +119,7 @@ export async function deleteChannel(
   userId: number | string,
   channelId: number,
 ) {
-  return await deleteChannelApi(baseUrl, adminToken, userId, channelId)
+  return await deleteChannelApi(baseUrl, adminToken, userId, channelId, NEW_API)
 }
 
 /**
