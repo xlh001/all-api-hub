@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui"
+import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { showUpdateToast } from "~/utils/toastHelpers"
 
@@ -23,7 +24,7 @@ export default function ManagedSiteSelector() {
   const { managedSiteType, updateManagedSiteType } = useUserPreferencesContext()
 
   const handleManagedSiteTypeChange = async (value: string) => {
-    const siteType = value as "new-api" | "veloera"
+    const siteType = value as ManagedSiteType
     if (siteType === managedSiteType) return
 
     const success = await updateManagedSiteType(siteType)
@@ -53,10 +54,10 @@ export default function ManagedSiteSelector() {
                   <SelectValue placeholder={t("managedSite.siteTypeLabel")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="new-api">
+                  <SelectItem value={NEW_API}>
                     {t("managedSite.newApi")}
                   </SelectItem>
-                  <SelectItem value="veloera">
+                  <SelectItem value={VELOERA}>
                     {t("managedSite.veloera")}
                   </SelectItem>
                 </SelectContent>

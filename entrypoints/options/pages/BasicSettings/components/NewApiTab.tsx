@@ -1,4 +1,5 @@
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { NEW_API } from "~/constants/siteType"
 
 import ManagedSiteSelector from "./ManagedSiteSelector"
 import ModelRedirectSettings from "./ModelRedirectSettings"
@@ -19,7 +20,7 @@ export default function NewApiTab() {
         <ManagedSiteSelector />
       </section>
 
-      {managedSiteType === "new-api" ? (
+      {managedSiteType === NEW_API ? (
         <section id="new-api">
           <NewApiSettings />
         </section>

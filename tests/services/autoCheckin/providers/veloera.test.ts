@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
+import { VELOERA } from "~/constants/siteType"
 import { veloeraProvider } from "~/services/autoCheckin/providers/veloera"
 import { AuthTypeEnum, SiteHealthStatus, type SiteAccount } from "~/types"
 
@@ -11,7 +12,7 @@ const mockAccount: SiteAccount = {
   id: "test-id",
   site_name: "Test",
   site_url: "https://test.com",
-  site_type: "veloera",
+  site_type: VELOERA,
   authType: AuthTypeEnum.AccessToken,
   exchange_rate: 7.0,
   notes: "",

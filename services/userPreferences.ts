@@ -3,6 +3,7 @@ import { isEqual } from "lodash-es"
 import { Storage } from "@plasmohq/storage"
 
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
+import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import {
   CURRENT_PREFERENCES_VERSION,
   migratePreferences,
@@ -98,7 +99,7 @@ export interface UserPreferences {
   veloera: VeloeraConfig
 
   // 管理站点类型 (用户可以选择管理 New API 或 Veloera)
-  managedSiteType: "new-api" | "veloera"
+  managedSiteType: ManagedSiteType
 
   // CLIProxyAPI 管理接口配置
   cliProxy?: CliProxyConfig
@@ -247,7 +248,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   lastUpdated: Date.now(),
   newApi: DEFAULT_NEW_API_CONFIG,
   veloera: DEFAULT_VELOERA_CONFIG,
-  managedSiteType: "new-api",
+  managedSiteType: NEW_API,
   cliProxy: DEFAULT_CLI_PROXY_CONFIG,
   newApiModelSync: {
     enabled: false,
@@ -560,7 +561,7 @@ class UserPreferencesService {
    * Update managed site type (new-api or veloera).
    */
   async updateManagedSiteType(
-    siteType: "new-api" | "veloera",
+    siteType: ManagedSiteType,
   ): Promise<boolean> {
     return this.savePreferences({
       managedSiteType: siteType,
@@ -571,12 +572,12 @@ class UserPreferencesService {
    * Get managed site configuration based on current managedSiteType.
    */
   async getManagedSiteConfig(): Promise<{
-    siteType: "new-api" | "veloera"
+    siteType: ManagedSiteType
     config: NewApiConfig | VeloeraConfig
   }> {
     const prefs = await this.getPreferences()
-    const siteType = prefs.managedSiteType || "new-api"
-    const config = siteType === "veloera" ? prefs.veloera : prefs.newApi
+    const siteType = prefs.managedSiteType || NEW_API
+    const config = siteType === VELOERA ? prefs.veloera : prefs.newApi
     return { siteType, config }
   }
 

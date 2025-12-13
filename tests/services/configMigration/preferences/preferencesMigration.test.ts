@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { NEW_API } from "~/constants/siteType"
 import {
   CURRENT_PREFERENCES_VERSION,
   getPreferencesVersion,
@@ -328,7 +329,7 @@ describe("preferencesMigration", () => {
         showHealthStatus: true,
         newApi: DEFAULT_NEW_API_CONFIG,
         veloera: DEFAULT_VELOERA_CONFIG,
-        managedSiteType: "new-api",
+        managedSiteType: NEW_API,
         newApiModelSync: {
           enabled: false,
           interval: 24 * 60 * 60 * 1000,

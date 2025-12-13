@@ -8,6 +8,7 @@ import {
 } from "react"
 
 import { DATA_TYPE_CONSUMPTION } from "~/constants"
+import { NEW_API, type ManagedSiteType } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
 import {
   DEFAULT_PREFERENCES,
@@ -24,6 +25,10 @@ import type { ThemeMode } from "~/types/theme"
 import { deepOverride } from "~/utils"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
+
+
+
+
 
 type UserNewApiModelSyncConfig = NonNullable<UserPreferences["newApiModelSync"]>
 
@@ -46,7 +51,7 @@ interface UserPreferencesContextType {
   veloeraBaseUrl: string
   veloeraAdminToken: string
   veloeraUserId: string
-  managedSiteType: "new-api" | "veloera"
+  managedSiteType: ManagedSiteType
   cliProxyBaseUrl: string
   cliProxyManagementKey: string
   themeMode: ThemeMode
@@ -73,7 +78,9 @@ interface UserPreferencesContextType {
   updateVeloeraBaseUrl: (url: string) => Promise<boolean>
   updateVeloeraAdminToken: (token: string) => Promise<boolean>
   updateVeloeraUserId: (userId: string) => Promise<boolean>
-  updateManagedSiteType: (siteType: "new-api" | "veloera") => Promise<boolean>
+  updateManagedSiteType: (
+    siteType: ManagedSiteType,
+  ) => Promise<boolean>
   updateCliProxyBaseUrl: (url: string) => Promise<boolean>
   updateCliProxyManagementKey: (key: string) => Promise<boolean>
   updateThemeMode: (themeMode: ThemeMode) => Promise<boolean>
@@ -396,7 +403,7 @@ export const UserPreferencesProvider = ({
   }, [])
 
   const updateManagedSiteType = useCallback(
-    async (siteType: "new-api" | "veloera") => {
+    async (siteType: ManagedSiteType) => {
       const success = await userPreferences.updateManagedSiteType(siteType)
       if (success) {
         setPreferences((prev) =>
@@ -837,7 +844,7 @@ export const UserPreferencesProvider = ({
     veloeraBaseUrl: preferences?.veloera?.baseUrl || "",
     veloeraAdminToken: preferences?.veloera?.adminToken || "",
     veloeraUserId: preferences?.veloera?.userId || "",
-    managedSiteType: preferences?.managedSiteType || "new-api",
+    managedSiteType: preferences?.managedSiteType || NEW_API,
     cliProxyBaseUrl: preferences?.cliProxy?.baseUrl || "",
     cliProxyManagementKey: preferences?.cliProxy?.managementKey || "",
     themeMode: preferences?.themeMode || "system",
