@@ -1,11 +1,12 @@
 import { union } from "lodash-es"
 
-import { 
+import { NEW_API, type ManagedSiteType } from "~/constants/siteType"
+import {
   fetchChannelModels as fetchChannelModelsApi,
   listAllChannels,
   updateChannelModelMapping as updateChannelModelMappingApi,
   updateChannelModels as updateChannelModelsApi,
-} from "~/services/apiService/common"
+} from "~/services/apiService"
 import type { ChannelConfigMap } from "~/types/channelConfig"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import {
@@ -29,6 +30,7 @@ export class NewApiModelSyncService {
   private baseUrl: string
   private token: string
   private userId?: string
+  private siteType: ManagedSiteType
   private rateLimiter: RateLimiter | null = null
   private allowedModelSet: Set<string> | null = null
   private channelConfigs: ChannelConfigMap | null = null
@@ -54,10 +56,12 @@ export class NewApiModelSyncService {
     allowedModels?: string[],
     channelConfigs?: ChannelConfigMap | null,
     globalChannelModelFilters?: ChannelModelFilterRule[] | null,
+    siteType: ManagedSiteType = NEW_API,
   ) {
     this.baseUrl = baseUrl
     this.token = token
     this.userId = userId
+    this.siteType = siteType
     if (rateLimitConfig) {
       this.rateLimiter = new RateLimiter(
         rateLimitConfig.requestsPerMinute,
@@ -109,7 +113,7 @@ export class NewApiModelSyncService {
         beforeRequest: async () => {
           await this.throttle()
         },
-      })
+      }, this.siteType)
     } catch (error) {
       console.error("[NewApiModelSync] Failed to list channels:", error)
       throw error
@@ -130,6 +134,7 @@ export class NewApiModelSyncService {
         this.token,
         this.userId,
         channelId,
+        this.siteType,
       )
     } catch (error: any) {
       console.error("[NewApiModelSync] Failed to fetch models:", error)
@@ -155,6 +160,7 @@ export class NewApiModelSyncService {
         this.userId,
         channel.id,
         models.join(","),
+        this.siteType,
       )
     } catch (error: any) {
       console.error("[NewApiModelSync] Failed to update channel:", error)
@@ -185,6 +191,7 @@ export class NewApiModelSyncService {
         channel.id,
         updateModels,
         JSON.stringify(modelMapping),
+        this.siteType,
       )
     } catch (error) {
       console.error(

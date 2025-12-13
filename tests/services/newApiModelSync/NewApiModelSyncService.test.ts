@@ -2,6 +2,16 @@ import { describe, expect, it } from "vitest"
 
 import { NewApiModelSyncService } from "~/services/newApiModelSync/NewApiModelSyncService"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
+import { VELOERA } from "~/constants/siteType"
+
+import { listAllChannels } from "~/services/apiService"
+
+vi.mock("~/services/apiService", () => ({
+  listAllChannels: vi.fn(),
+  fetchChannelModels: vi.fn(),
+  updateChannelModels: vi.fn(),
+  updateChannelModelMapping: vi.fn(),
+}))
 
 describe("NewApiModelSyncService - allowed model filtering", () => {
   const createService = (allowed?: string[]) =>
@@ -48,6 +58,35 @@ describe("NewApiModelSyncService - allowed model filtering", () => {
     const result = callFilter(service, ["gpt-4o", " gpt-4o  ", "gpt-4o"])
 
     expect(result).toEqual(["gpt-4o"])
+  })
+})
+
+describe("NewApiModelSyncService - siteType routing", () => {
+  it("forwards ManagedSiteType hint to apiService listAllChannels", async () => {
+    ;(listAllChannels as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      items: [],
+      total: 0,
+      type_counts: {},
+    })
+
+    const service = new NewApiModelSyncService(
+      "https://example.com",
+      "token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      VELOERA,
+    )
+
+    await service.listChannels()
+
+    expect(listAllChannels).toHaveBeenCalled()
+    const lastArg = (listAllChannels as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0]
+      .at(-1)
+    expect(lastArg).toBe(VELOERA)
   })
 })
 

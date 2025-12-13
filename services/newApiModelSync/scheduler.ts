@@ -71,6 +71,7 @@ class NewApiModelSyncScheduler {
       config.allowedModels,
       channelConfigs,
       config.globalChannelModelFilters,
+      siteType,
     )
   }
 

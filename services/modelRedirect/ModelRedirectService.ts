@@ -113,6 +113,11 @@ export class ModelRedirectService {
         managedConfig.baseUrl!,
         managedConfig.adminToken!,
         managedConfig.userId!,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        siteType,
       )
 
       const channelList = await service.listChannels()
