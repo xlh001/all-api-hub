@@ -34,7 +34,7 @@ import { newApiModelSyncStorage } from "./storage"
  * - Orchestrates execution with user preferences (interval, concurrency, retries).
  * - Applies model redirect mappings immediately after successful channel syncs.
  */
-class NewApiModelSyncScheduler {
+class ModelSyncScheduler {
   private static readonly ALARM_NAME = "newApiModelSync"
   private isInitialized = false
   private currentProgress: ExecutionProgress | null = null
@@ -92,7 +92,7 @@ class NewApiModelSyncScheduler {
       // Set up alarm listener using browserApi (if supported)
       if (hasAlarmsAPI()) {
         onAlarm((alarm) => {
-          if (alarm.name === NewApiModelSyncScheduler.ALARM_NAME) {
+          if (alarm.name === ModelSyncScheduler.ALARM_NAME) {
             this.executeSync().catch((error) => {
               console.error(
                 "[ManagedSiteModelSync] Scheduled execution failed:",
@@ -139,7 +139,7 @@ class NewApiModelSyncScheduler {
     const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
 
     // Clear existing alarm before re-creating with new interval
-    await clearAlarm(NewApiModelSyncScheduler.ALARM_NAME)
+    await clearAlarm(ModelSyncScheduler.ALARM_NAME)
 
     if (!config.enabled) {
       console.log("[ManagedSiteModelSync] Auto-sync disabled, alarm cleared")
@@ -150,13 +150,13 @@ class NewApiModelSyncScheduler {
     const intervalInMinutes = Math.max(intervalMs / 1000 / 60, 1)
 
     try {
-      await createAlarm(NewApiModelSyncScheduler.ALARM_NAME, {
+      await createAlarm(ModelSyncScheduler.ALARM_NAME, {
         delayInMinutes: intervalInMinutes, // Initial delay
         periodInMinutes: intervalInMinutes, // Repeat interval
       })
 
       // Verify alarm was created
-      const alarm = await getAlarm(NewApiModelSyncScheduler.ALARM_NAME)
+      const alarm = await getAlarm(ModelSyncScheduler.ALARM_NAME)
       if (alarm) {
         console.log(`[NewApiModelSync] Alarm set successfully:`, {
           name: alarm.name,
@@ -441,7 +441,7 @@ class NewApiModelSyncScheduler {
 }
 
 // Create singleton instance
-export const newApiModelSyncScheduler = new NewApiModelSyncScheduler()
+export const modelSyncScheduler = new ModelSyncScheduler()
 
 /**
  * Message handler for New API Model Sync actions (trigger, retry failed, prefs).
@@ -454,13 +454,13 @@ export const handleNewApiModelSyncMessage = async (
   try {
     switch (request.action) {
       case "modelSync:triggerAll": {
-        const resultAll = await newApiModelSyncScheduler.executeSync()
+        const resultAll = await modelSyncScheduler.executeSync()
         sendResponse({ success: true, data: resultAll })
         break
       }
 
       case "modelSync:triggerSelected": {
-        const resultSelected = await newApiModelSyncScheduler.executeSync(
+        const resultSelected = await modelSyncScheduler.executeSync(
           request.channelIds,
         )
         sendResponse({ success: true, data: resultSelected })
@@ -468,7 +468,7 @@ export const handleNewApiModelSyncMessage = async (
       }
 
       case "modelSync:triggerFailedOnly": {
-        const resultFailed = await newApiModelSyncScheduler.executeFailedOnly()
+        const resultFailed = await modelSyncScheduler.executeFailedOnly()
         sendResponse({ success: true, data: resultFailed })
         break
       }
@@ -480,13 +480,13 @@ export const handleNewApiModelSyncMessage = async (
       }
 
       case "modelSync:getProgress": {
-        const progress = newApiModelSyncScheduler.getProgress()
+        const progress = modelSyncScheduler.getProgress()
         sendResponse({ success: true, data: progress })
         break
       }
 
       case "modelSync:updateSettings":
-        await newApiModelSyncScheduler.updateSettings(request.settings)
+        await modelSyncScheduler.updateSettings(request.settings)
         sendResponse({ success: true })
         break
 
@@ -504,7 +504,7 @@ export const handleNewApiModelSyncMessage = async (
       }
 
       case "modelSync:listChannels": {
-        const channels = await newApiModelSyncScheduler.listChannels()
+        const channels = await modelSyncScheduler.listChannels()
         sendResponse({ success: true, data: channels })
         break
       }
