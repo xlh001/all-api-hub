@@ -42,7 +42,7 @@ type EditableFilter = ChannelModelFilterRule
  * the user preferences context, and shows success/error toasts for save operations.
  * @returns The settings section React element for configuring New API Model Sync.
  */
-export default function NewApiModelSyncSettings() {
+export default function ManagedSiteModelSyncSettings() {
   const { t } = useTranslation([
     "newApiModelSync",
     "settings",

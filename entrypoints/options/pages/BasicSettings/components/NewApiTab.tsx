@@ -1,9 +1,9 @@
-import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { NEW_API } from "~/constants/siteType"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 
+import ManagedSiteModelSyncSettings from "./managedSiteModelSyncSettings"
 import ManagedSiteSelector from "./ManagedSiteSelector"
 import ModelRedirectSettings from "./ModelRedirectSettings"
-import NewApiModelSyncSettings from "./NewApiModelSyncSettings"
 import NewApiSettings from "./NewApiSettings"
 import VeloeraSettings from "./VeloeraSettings"
 
@@ -31,7 +31,7 @@ export default function NewApiTab() {
       )}
 
       <section id="new-api-model-sync">
-        <NewApiModelSyncSettings />
+        <ManagedSiteModelSyncSettings />
       </section>
 
       <section id="model-redirect">
