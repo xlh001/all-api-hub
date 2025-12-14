@@ -48,7 +48,9 @@ class NewApiModelSyncStorage {
    * key (one-time migration) to stop legacy identifiers leaking into persisted
    * IDs while staying backward compatible.
    */
-  private async getWithMigration<T>(spec: StorageKeyMigrationSpec): Promise<T | undefined> {
+  private async getWithMigration<T>(
+    spec: StorageKeyMigrationSpec,
+  ): Promise<T | undefined> {
     const stored = (await this.storage.get(spec.canonical)) as T | undefined
     if (stored !== undefined) {
       return stored
@@ -77,7 +79,7 @@ class NewApiModelSyncStorage {
     try {
       const prefs = await userPreferences.getPreferences()
       const config =
-        prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+        prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
       return {
         enableSync: config.enabled,
         intervalMs: config.interval,
@@ -104,7 +106,7 @@ class NewApiModelSyncStorage {
     try {
       const prefs = await userPreferences.getPreferences()
       const current =
-        prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+        prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
 
       const updated = {
         enabled:
@@ -136,7 +138,7 @@ class NewApiModelSyncStorage {
             : [...(current.globalChannelModelFilters ?? [])],
       }
 
-      await userPreferences.savePreferences({ newApiModelSync: updated })
+      await userPreferences.savePreferences({ managedSiteModelSync: updated })
       console.log("[ManagedSiteModelSync] Preferences saved:", updated)
       return true
     } catch (error) {
@@ -169,7 +171,10 @@ class NewApiModelSyncStorage {
    */
   async saveLastExecution(result: ExecutionResult): Promise<boolean> {
     try {
-      await this.storage.set(STORAGE_KEY_MIGRATIONS.LAST_EXECUTION.canonical, result)
+      await this.storage.set(
+        STORAGE_KEY_MIGRATIONS.LAST_EXECUTION.canonical,
+        result,
+      )
       console.log("[ManagedSiteModelSync] Execution result saved")
       return true
     } catch (error) {
@@ -255,7 +260,7 @@ class NewApiModelSyncStorage {
    * Get default preferences
    */
   private getDefaultPreferences(): NewApiModelSyncPreferences {
-    const defaultConfig = DEFAULT_PREFERENCES.newApiModelSync!
+    const defaultConfig = DEFAULT_PREFERENCES.managedSiteModelSync!
     return {
       enableSync: defaultConfig.enabled,
       intervalMs: defaultConfig.interval,

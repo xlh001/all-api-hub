@@ -34,6 +34,7 @@ function createV0Preferences(
     newApi: DEFAULT_NEW_API_CONFIG,
     veloera: DEFAULT_VELOERA_CONFIG,
     managedSiteType: NEW_API,
+    // Legacy field preserved for v6->v7 migration
     newApiModelSync: {
       enabled: false,
       interval: 24 * 60 * 60 * 1000,
@@ -120,6 +121,16 @@ describe("preferencesMigration", () => {
     it("does not modify preferences at current version", () => {
       const prefs = createV0Preferences({
         preferencesVersion: CURRENT_PREFERENCES_VERSION,
+        managedSiteModelSync: {
+          enabled: false,
+          interval: 24 * 60 * 60 * 1000,
+          concurrency: 2,
+          maxRetries: 2,
+          rateLimit: { requestsPerMinute: 20, burst: 5 },
+          allowedModels: [],
+          globalChannelModelFilters: [],
+        },
+        newApiModelSync: undefined,
         sortingPriorityConfig: DEFAULT_SORTING_PRIORITY_CONFIG,
       })
 
@@ -138,6 +149,8 @@ describe("preferencesMigration", () => {
 
       expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
       expect(result.sortingPriorityConfig).toBeDefined()
+      expect(result.managedSiteModelSync).toBeDefined()
+      expect((result as any).newApiModelSync).toBeUndefined()
     })
 
     it("processes v1 preferences with sorting config migration", () => {

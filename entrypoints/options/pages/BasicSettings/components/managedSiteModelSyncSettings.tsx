@@ -29,7 +29,7 @@ import { getErrorMessage } from "~/utils/error"
 import { navigateWithinOptionsPage } from "~/utils/navigation"
 
 type UserNewApiModelSyncConfig = NonNullable<
-  typeof DEFAULT_PREFERENCES.newApiModelSync
+  typeof DEFAULT_PREFERENCES.managedSiteModelSync
 >
 
 type EditableFilter = ChannelModelFilterRule
@@ -61,8 +61,8 @@ export default function ManagedSiteModelSyncSettings() {
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [optionsError, setOptionsError] = useState<string | null>(null)
 
-  // Convert from UserPreferences.modelSync to NewApiModelSyncPreferences format
-  const rawPrefs = userPrefs?.newApiModelSync
+  // Convert from persisted user prefs to NewApiModelSyncPreferences format
+  const rawPrefs = userPrefs?.managedSiteModelSync ?? userPrefs?.newApiModelSync
   const preferences: NewApiModelSyncPreferences = rawPrefs
     ? {
         enableSync: rawPrefs.enabled,
@@ -74,18 +74,21 @@ export default function ManagedSiteModelSyncSettings() {
         globalChannelModelFilters: rawPrefs.globalChannelModelFilters ?? [],
       }
     : {
-        enableSync: DEFAULT_PREFERENCES.newApiModelSync?.enabled ?? false,
+        enableSync: DEFAULT_PREFERENCES.managedSiteModelSync?.enabled ?? false,
         intervalMs:
-          DEFAULT_PREFERENCES.newApiModelSync?.interval ?? 24 * 60 * 60 * 1000,
-        concurrency: DEFAULT_PREFERENCES.newApiModelSync?.concurrency ?? 2,
-        maxRetries: DEFAULT_PREFERENCES.newApiModelSync?.maxRetries ?? 2,
-        rateLimit: DEFAULT_PREFERENCES.newApiModelSync?.rateLimit ?? {
+          DEFAULT_PREFERENCES.managedSiteModelSync?.interval ??
+          24 * 60 * 60 * 1000,
+        concurrency: DEFAULT_PREFERENCES.managedSiteModelSync?.concurrency ?? 2,
+        maxRetries: DEFAULT_PREFERENCES.managedSiteModelSync?.maxRetries ?? 2,
+        rateLimit: DEFAULT_PREFERENCES.managedSiteModelSync?.rateLimit ?? {
           requestsPerMinute: 20,
           burst: 5,
         },
-        allowedModels: DEFAULT_PREFERENCES.newApiModelSync?.allowedModels ?? [],
+        allowedModels:
+          DEFAULT_PREFERENCES.managedSiteModelSync?.allowedModels ?? [],
         globalChannelModelFilters:
-          DEFAULT_PREFERENCES.newApiModelSync?.globalChannelModelFilters ?? [],
+          DEFAULT_PREFERENCES.managedSiteModelSync?.globalChannelModelFilters ??
+          [],
       }
 
   const [

@@ -11,7 +11,7 @@ import type { UserPreferences } from "../../userPreferences"
 import { migrateSortingConfig } from "./sortingConfigMigration"
 
 // Current version of the preferences schema
-export const CURRENT_PREFERENCES_VERSION = 6
+export const CURRENT_PREFERENCES_VERSION = 7
 
 /**
  * Migration function type
@@ -116,6 +116,38 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
       ...prefs,
       sortingPriorityConfig: migratedSortingConfig,
       preferencesVersion: 6,
+    }
+  },
+
+  // Version 6 -> 7: Rename model sync config field newApiModelSync -> managedSiteModelSync
+  7: (prefs: UserPreferences): UserPreferences => {
+    console.log(
+      "[PreferencesMigration] Migrating preferences from v6 to v7 (managed-site model sync rename)",
+    )
+
+    const legacyConfig = (prefs as any).newApiModelSync
+    const currentConfig = (prefs as any).managedSiteModelSync
+
+    if (currentConfig) {
+      const { newApiModelSync: _legacy, ...rest } = prefs as any
+      return {
+        ...rest,
+        preferencesVersion: 7,
+      }
+    }
+
+    if (!legacyConfig) {
+      return {
+        ...prefs,
+        preferencesVersion: 7,
+      }
+    }
+
+    const { newApiModelSync: _legacy, ...rest } = prefs as any
+    return {
+      ...rest,
+      managedSiteModelSync: legacyConfig,
+      preferencesVersion: 7,
     }
   },
 }

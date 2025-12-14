@@ -62,7 +62,8 @@ class ModelSyncScheduler {
     const { baseUrl, adminToken, userId } = managedConfig
 
     const config =
-      userPrefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+      userPrefs.managedSiteModelSync ??
+      DEFAULT_PREFERENCES.managedSiteModelSync!
 
     const channelConfigs = await channelConfigStorage.getAllConfigs()
 
@@ -136,7 +137,8 @@ class ModelSyncScheduler {
     }
 
     const prefs = await userPreferences.getPreferences()
-    const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+    const config =
+      prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
 
     // Clear existing alarm before re-creating with new interval
     await clearAlarm(ModelSyncScheduler.ALARM_NAME)
@@ -192,7 +194,8 @@ class ModelSyncScheduler {
 
     // Get preferences from userPreferences
     const prefs = await userPreferences.getPreferences()
-    const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+    const config =
+      prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
     const concurrency = Math.max(1, config.concurrency)
     const { maxRetries } = config
 
@@ -383,7 +386,7 @@ class ModelSyncScheduler {
     // Get current config and update
     const prefs = await userPreferences.getPreferences()
     const current =
-      prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+      prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
 
     const updated = {
       enabled:
@@ -415,7 +418,7 @@ class ModelSyncScheduler {
           : current.globalChannelModelFilters,
     }
 
-    await userPreferences.savePreferences({ newApiModelSync: updated })
+    await userPreferences.savePreferences({ managedSiteModelSync: updated })
     await this.setupAlarm()
     console.log("[ManagedSiteModelSync] Settings updated:", updated)
   }
