@@ -30,11 +30,11 @@ export default function ManagedSiteTab() {
         </section>
       )}
 
-      <section id="new-api-model-sync">
+      <section id="managed-site-model-sync">
         <ManagedSiteModelSyncSettings />
       </section>
 
-      <section id="model-redirect">
+      <section id="managed-site-model-redirect">
         <ModelRedirectSettings />
       </section>
     </div>
