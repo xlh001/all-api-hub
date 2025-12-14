@@ -20,6 +20,7 @@
     "managedSiteChannels": "Channels Management",
     "newApiChannels": "Channels Management",
     "newApiModelSync": "Model sync",
+    "managedSiteModelSync": "Model sync",
     "keys": "Key Management",
     "importExport": "Import/Export",
     "collapseSidebar": "Collapse sidebar",

@@ -18,6 +18,7 @@ import {
   type MultiSelectOption,
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { modelMetadataService } from "~/services/modelMetadata"
 import type { ModelMetadata } from "~/services/modelMetadata/types"
 import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
@@ -334,7 +335,7 @@ export default function ManagedSiteModelSyncSettings() {
 
   const handleNavigateToExecution = () => {
     // Navigate to the NewApiModelSync page
-    navigateWithinOptionsPage("#modelSync")
+    navigateWithinOptionsPage(`#${MENU_ITEM_IDS.MANAGED_SITE_MODEL_SYNC}`)
   }
 
   return (

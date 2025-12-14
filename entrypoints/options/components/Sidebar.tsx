@@ -11,6 +11,8 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { cn } from "~/lib/utils"
 import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+
 import { menuItems } from "../constants"
 
 interface SidebarProps {
@@ -26,10 +28,10 @@ const DESKTOP_WIDTH = 256
 const COLLAPSED_WIDTH = 64
 const MOBILE_WIDTH = 256
 
-const SEPARATOR_BEFORE_IDS = new Set([
-  "models",
-  "managedSiteChannels",
-  "importExport",
+const SEPARATOR_BEFORE_IDS = new Set<string>([
+  MENU_ITEM_IDS.MODELS,
+  MENU_ITEM_IDS.MANAGED_SITE_CHANNELS,
+  MENU_ITEM_IDS.IMPORT_EXPORT,
 ])
 
 /**
@@ -162,7 +164,7 @@ function Sidebar({
                 const label = t(`navigation.${item.id}`)
 
                 if (
-                  item.id === "autoCheckin" &&
+                  item.id === MENU_ITEM_IDS.AUTO_CHECKIN &&
                   !preferences?.autoCheckin?.globalEnabled
                 ) {
                   return null
@@ -170,8 +172,8 @@ function Sidebar({
 
                 if (
                   !hasValidManagedSiteConfig(preferences ?? null) &&
-                  (item.id === "managedSiteModelSync" ||
-                    item.id === "managedSiteChannels")
+                  (item.id === MENU_ITEM_IDS.MANAGED_SITE_MODEL_SYNC ||
+                    item.id === MENU_ITEM_IDS.MANAGED_SITE_CHANNELS)
                 ) {
                   return null
                 }

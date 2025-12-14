@@ -4,8 +4,9 @@ import { handleChannelConfigMessage } from "~/services/channelConfigStorage"
 import { handleNewApiModelSyncMessage } from "~/services/modelSync"
 import { handleRedemptionAssistMessage } from "~/services/redemptionAssist"
 import { handleWebdavAutoSyncMessage } from "~/services/webdav/webdavAutoSyncService"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { onRuntimeMessage } from "~/utils/browserApi"
-import { openOrFocusOptionsPage } from "~/utils/navigation"
+import { openOrFocusOptionsMenuItem } from "~/utils/navigation"
 
 import {
   handleAutoDetectSite,
@@ -42,7 +43,7 @@ export function setupRuntimeMessageListeners() {
     }
 
     if (request.action === "openSettings:checkinRedeem") {
-      openOrFocusOptionsPage("?tab=checkinRedeem#basic")
+      openOrFocusOptionsMenuItem(MENU_ITEM_IDS.BASIC, { tab: "checkinRedeem" })
       sendResponse({ success: true })
       return true
     }

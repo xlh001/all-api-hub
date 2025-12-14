@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { EmptyState } from "~/components/ui"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { userPreferences } from "~/services/userPreferences"
 import { navigateWithinOptionsPage } from "~/utils/navigation"
@@ -44,7 +45,7 @@ export default function EmptyResults(props: EmptyResultsProps) {
           }
           action={{
             onClick: () => {
-              navigateWithinOptionsPage("#basic")
+              navigateWithinOptionsPage(`#${MENU_ITEM_IDS.BASIC}`)
             },
             label: t("execution.empty.goToSettings"),
           }}
