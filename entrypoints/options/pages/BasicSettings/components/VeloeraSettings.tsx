@@ -43,19 +43,19 @@ export default function VeloeraSettings() {
   const handleVeloeraBaseUrlChange = async (url: string) => {
     if (url === veloeraBaseUrl) return
     const success = await updateVeloeraBaseUrl(url)
-    showUpdateToast(success, "Veloera Base URL")
+    showUpdateToast(success, t("veloera.fields.baseUrlLabel"))
   }
 
   const handleVeloeraAdminTokenChange = async (token: string) => {
     if (token === veloeraAdminToken) return
     const success = await updateVeloeraAdminToken(token)
-    showUpdateToast(success, "Admin Token")
+    showUpdateToast(success, t("veloera.fields.adminTokenLabel"))
   }
 
   const handleVeloeraUserIdChange = async (id: string) => {
     if (id === veloeraUserId) return
     const success = await updateVeloeraUserId(id)
-    showUpdateToast(success, "User ID")
+    showUpdateToast(success, t("veloera.fields.userIdLabel"))
   }
 
   return (
@@ -68,7 +68,7 @@ export default function VeloeraSettings() {
       <Card padding="none">
         <CardList>
           <CardItem
-            title={"Veloera Base URL"}
+            title={t("veloera.fields.baseUrlLabel")}
             description={t("veloera.urlDesc")}
             rightContent={
               <Input
@@ -76,13 +76,13 @@ export default function VeloeraSettings() {
                 value={localBaseUrl}
                 onChange={(e) => setLocalBaseUrl(e.target.value)}
                 onBlur={(e) => handleVeloeraBaseUrlChange(e.target.value)}
-                placeholder="https://api.example.com"
+                placeholder={t("veloera.fields.baseUrlPlaceholder")}
               />
             }
           />
 
           <CardItem
-            title={"Admin Token"}
+            title={t("veloera.fields.adminTokenLabel")}
             description={t("veloera.tokenDesc")}
             rightContent={
               <div className="relative">
@@ -97,7 +97,9 @@ export default function VeloeraSettings() {
                       size="sm"
                       onClick={() => setShowAdminToken(!showAdminToken)}
                       aria-label={
-                        showAdminToken ? "Hide password" : "Show password"
+                        showAdminToken
+                          ? t("veloera.fields.hideToken")
+                          : t("veloera.fields.showToken")
                       }
                     >
                       {showAdminToken ? (
@@ -113,7 +115,7 @@ export default function VeloeraSettings() {
           />
 
           <CardItem
-            title={"User ID"}
+            title={t("veloera.fields.userIdLabel")}
             description={t("veloera.userIdDesc")}
             rightContent={
               <Input

@@ -122,7 +122,15 @@
     "description": "Configure integration settings for connecting to Veloera compatible services",
     "urlDesc": "Set the base URL for Veloera integration",
     "tokenDesc": "Token for accessing Veloera admin functions",
-    "userIdDesc": "User identification ID for Veloera"
+    "userIdDesc": "User identification ID for Veloera",
+    "fields": {
+      "baseUrlLabel": "Base URL",
+      "baseUrlPlaceholder": "https://api.example.com",
+      "adminTokenLabel": "Admin token",
+      "userIdLabel": "User ID",
+      "showToken": "Show token",
+      "hideToken": "Hide token"
+    }
   },
   "managedSite": {
     "title": "Managed Site Configuration",

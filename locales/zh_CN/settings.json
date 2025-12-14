@@ -122,7 +122,15 @@
     "description": "配置用于连接 Veloera 兼容服务的集成设置。",
     "urlDesc": "设置用于 Veloera 集成的基础 URL",
     "tokenDesc": "用于访问 Veloera 管理员功能的令牌",
-    "userIdDesc": "用于 Veloera 的用户识别 ID"
+    "userIdDesc": "用于 Veloera 的用户识别 ID",
+    "fields": {
+      "baseUrlLabel": "基础 URL",
+      "baseUrlPlaceholder": "https://api.example.com",
+      "adminTokenLabel": "管理员令牌",
+      "userIdLabel": "用户 ID",
+      "showToken": "显示令牌",
+      "hideToken": "隐藏令牌"
+    }
   },
   "managedSite": {
     "title": "管理站点配置",
