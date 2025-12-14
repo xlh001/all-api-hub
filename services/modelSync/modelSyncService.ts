@@ -18,9 +18,10 @@ import {
   ExecutionItemResult,
   ExecutionResult,
   ExecutionStatistics,
-} from "~/types/newApiModelSync"
+} from "~/types/managedSiteModelSync"
 
 import { RateLimiter } from "./rateLimiter"
+
 
 /**
  * New API Model Sync Service

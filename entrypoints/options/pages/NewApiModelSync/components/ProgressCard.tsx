@@ -2,7 +2,7 @@ import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 import { Card, CardContent } from "~/components/ui"
-import type { ExecutionProgress } from "~/types/newApiModelSync"
+import type { ExecutionProgress } from "~/types/managedSiteModelSync"
 
 interface ProgressCardProps {
   progress: ExecutionProgress

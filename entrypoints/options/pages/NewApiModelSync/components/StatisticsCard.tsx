@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import { Card, CardContent } from "~/components/ui"
-import type { ExecutionStatistics } from "~/types/newApiModelSync"
+import type { ExecutionStatistics } from "~/types/managedSiteModelSync"
 import { formatFullTime } from "~/utils/formatters"
 
 interface StatisticsCardProps {

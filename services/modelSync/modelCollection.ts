@@ -1,7 +1,7 @@
 import type {
   ExecutionItemResult,
   ExecutionResult,
-} from "~/types/newApiModelSync"
+} from "~/types/managedSiteModelSync"
 
 /**
  * Collects every model mentioned in an execution result so it can be cached and

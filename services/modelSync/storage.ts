@@ -3,7 +3,7 @@ import { Storage } from "@plasmohq/storage"
 import type {
   ExecutionResult,
   NewApiModelSyncPreferences,
-} from "~/types/newApiModelSync"
+} from "~/types/managedSiteModelSync"
 
 import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
 

@@ -12,7 +12,7 @@ import type {
   ExecutionItemResult,
   ExecutionProgress,
   ExecutionResult,
-} from "~/types/newApiModelSync"
+} from "~/types/managedSiteModelSync"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 
 import ActionBar from "./components/ActionBar"

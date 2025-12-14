@@ -7,7 +7,7 @@ import dayjs from "dayjs"
 import { useTranslation } from "react-i18next"
 
 import { Badge, Button, Card } from "~/components/ui"
-import type { ExecutionItemResult } from "~/types/newApiModelSync"
+import type { ExecutionItemResult } from "~/types/managedSiteModelSync"
 
 interface ResultsTableProps {
   items: ExecutionItemResult[]
