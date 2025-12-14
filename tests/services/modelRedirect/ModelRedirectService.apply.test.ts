@@ -4,7 +4,7 @@ import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { modelMetadataService } from "~/services/modelMetadata"
 import { ModelRedirectService } from "~/services/modelRedirect/ModelRedirectService"
 import { userPreferences } from "~/services/userPreferences"
-import { DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/modelRedirect"
+import { DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/managedSiteModelRedirect"
 import { CHANNEL_STATUS } from "~/types/newapi"
 
 vi.mock("~/services/modelMetadata", () => ({

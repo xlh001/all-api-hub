@@ -1,39 +1,22 @@
-;
-
 /**
  * Model Redirect Service
  * Generates model redirect mappings based on channel configurations
  * Based on gpt-api-sync logic with enhancements for weighted channel selection
  */
 
-import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType";
-import { modelMetadataService } from "~/services/modelMetadata";
-import { ModelSyncService } from "~/services/modelSync";
-import type { ManagedSiteChannel } from "~/types/managedSite";
-import { CHANNEL_STATUS } from "~/types/managedSite";
-import { ALL_PRESET_STANDARD_MODELS, DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/modelRedirect";
+import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
+import { modelMetadataService } from "~/services/modelMetadata"
+import { ModelSyncService } from "~/services/modelSync"
+import type { ManagedSiteChannel } from "~/types/managedSite"
+import { CHANNEL_STATUS } from "~/types/managedSite"
+import {
+  ALL_PRESET_STANDARD_MODELS,
+  DEFAULT_MODEL_REDIRECT_PREFERENCES,
+} from "~/types/managedSiteModelRedirect"
 
-
-
-import { hasValidManagedSiteConfig } from "../managedSiteService";
-import { userPreferences } from "../userPreferences";
-import { renameModel } from "./modelNormalization";
-
-
-;
-
-
-
-
-
-
-
-
-
-
-
-
-
+import { hasValidManagedSiteConfig } from "../managedSiteService"
+import { userPreferences } from "../userPreferences"
+import { renameModel } from "./modelNormalization"
 
 
 /**

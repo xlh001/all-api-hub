@@ -5,13 +5,13 @@ import { ModelRedirectService } from "~/services/modelRedirect"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type { ManagedSiteChannel } from "~/types/managedSite"
 import {
+  ALL_PRESET_STANDARD_MODELS,
+  DEFAULT_MODEL_REDIRECT_PREFERENCES,
+} from "~/types/managedSiteModelRedirect"
+import {
   ExecutionProgress,
   ExecutionResult,
 } from "~/types/managedSiteModelSync"
-import {
-  ALL_PRESET_STANDARD_MODELS,
-  DEFAULT_MODEL_REDIRECT_PREFERENCES,
-} from "~/types/modelRedirect"
 import {
   clearAlarm,
   createAlarm,

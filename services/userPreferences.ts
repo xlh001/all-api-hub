@@ -25,15 +25,12 @@ import {
 import {
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
   type ModelRedirectPreferences,
-} from "~/types/modelRedirect"
+} from "~/types/managedSiteModelRedirect"
 import { DEFAULT_NEW_API_CONFIG, NewApiConfig } from "~/types/newApiConfig"
 import type { SortingPriorityConfig } from "~/types/sorting"
 import type { ThemeMode } from "~/types/theme"
 import { DeepPartial } from "~/types/utils"
-import {
-  DEFAULT_VELOERA_CONFIG,
-  VeloeraConfig,
-} from "~/types/veloeraConfig"
+import { DEFAULT_VELOERA_CONFIG, VeloeraConfig } from "~/types/veloeraConfig"
 import {
   DEFAULT_WEBDAV_SETTINGS,
   WebDAVSettings,
@@ -540,9 +537,7 @@ class UserPreferencesService {
   /**
    * Update Veloera config.
    */
-  async updateVeloeraConfig(
-    config: Partial<VeloeraConfig>,
-  ): Promise<boolean> {
+  async updateVeloeraConfig(config: Partial<VeloeraConfig>): Promise<boolean> {
     return this.savePreferences({
       veloera: config,
     })
@@ -560,9 +555,7 @@ class UserPreferencesService {
   /**
    * Update managed site type (new-api or veloera).
    */
-  async updateManagedSiteType(
-    siteType: ManagedSiteType,
-  ): Promise<boolean> {
+  async updateManagedSiteType(siteType: ManagedSiteType): Promise<boolean> {
     return this.savePreferences({
       managedSiteType: siteType,
     })

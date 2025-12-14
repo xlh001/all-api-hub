@@ -9,10 +9,14 @@ import { Switch } from "~/components/ui/Switch"
 import { VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { fetchAccountAvailableModels } from "~/services/apiService/common"
-import { ModelRedirectService } from "~/services/modelRedirect"
 import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
+import { ModelRedirectService } from "~/services/modelRedirect"
 import { AuthTypeEnum } from "~/types"
-import { ALL_PRESET_STANDARD_MODELS } from "~/types/modelRedirect"
+import { ALL_PRESET_STANDARD_MODELS } from "~/types/managedSiteModelRedirect"
+
+
+
+
 
 /**
  * Configures model redirect feature: enable toggle, model list, regeneration.
