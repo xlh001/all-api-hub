@@ -35,7 +35,7 @@ import { newApiModelSyncStorage } from "./storage"
  * - Applies model redirect mappings immediately after successful channel syncs.
  */
 class ModelSyncScheduler {
-  private static readonly ALARM_NAME = "newApiModelSync"
+  private static readonly ALARM_NAME = "managedSiteModelSync"
   private isInitialized = false
   private currentProgress: ExecutionProgress | null = null
 
@@ -158,7 +158,7 @@ class ModelSyncScheduler {
       // Verify alarm was created
       const alarm = await getAlarm(ModelSyncScheduler.ALARM_NAME)
       if (alarm) {
-        console.log(`[NewApiModelSync] Alarm set successfully:`, {
+        console.log(`[ManagedSiteModelSync] Alarm set successfully:`, {
           name: alarm.name,
           scheduledTime: alarm.scheduledTime
             ? new Date(alarm.scheduledTime)
