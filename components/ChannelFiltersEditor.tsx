@@ -150,7 +150,7 @@ export default function ChannelFiltersEditor(props: ChannelFiltersEditorProps) {
                       size="icon"
                       variant="ghost"
                       onClick={() => onRemoveFilter(filter.id)}
-                      aria-label={t("filters.labels.delete") ?? "Delete"}
+                      aria-label={t("filters.labels.delete")}
                       className="text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -179,7 +179,7 @@ export default function ChannelFiltersEditor(props: ChannelFiltersEditorProps) {
                       onChange={(event) =>
                         onFieldChange(filter.id, "pattern", event.target.value)
                       }
-                      placeholder={t("filters.placeholders.pattern") ?? ""}
+                      placeholder={t("filters.placeholders.pattern")}
                     />
                     <p className="text-muted-foreground text-xs">
                       {filter.isRegex
@@ -221,7 +221,7 @@ export default function ChannelFiltersEditor(props: ChannelFiltersEditorProps) {
                         event.target.value,
                       )
                     }
-                    placeholder={t("filters.placeholders.description") ?? ""}
+                    placeholder={t("filters.placeholders.description")}
                     rows={2}
                   />
                 </div>
@@ -244,7 +244,7 @@ export default function ChannelFiltersEditor(props: ChannelFiltersEditorProps) {
           <Textarea
             value={jsonText}
             onChange={(event) => onChangeJsonText(event.target.value)}
-            placeholder={t("filters.jsonEditor.placeholder") ?? ""}
+            placeholder={t("filters.jsonEditor.placeholder")}
             rows={10}
           />
           <p className="text-muted-foreground text-xs">

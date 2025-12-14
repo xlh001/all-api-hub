@@ -991,7 +991,7 @@ export default function ManagedSiteChannels() {
             variant="outline"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            aria-label={t("table.paginationPrev", "Previous page")}
+            aria-label={t("table.paginationPrev")}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -1000,7 +1000,7 @@ export default function ManagedSiteChannels() {
             variant="outline"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            aria-label={t("table.paginationNext", "Next page")}
+            aria-label={t("table.paginationNext")}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

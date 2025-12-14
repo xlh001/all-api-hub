@@ -234,7 +234,7 @@ export default function WebDAVAutoSyncSettings() {
               >
                 <SelectTrigger>
                   <SelectValue
-                    placeholder={t("webdav.autoSync.strategy") ?? ""}
+                    placeholder={t("webdav.autoSync.strategy")}
                   />
                 </SelectTrigger>
                 <SelectContent>
