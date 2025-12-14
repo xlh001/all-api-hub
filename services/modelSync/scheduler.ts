@@ -1,4 +1,5 @@
 import { t } from "i18next"
+
 import { ModelRedirectService } from "~/services/modelRedirect"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type { ManagedSiteChannel } from "~/types/managedSite"
@@ -18,7 +19,10 @@ import {
   onAlarm,
 } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
-import { getManagedSiteAdminConfig, getManagedSiteContext } from "~/utils/managedSite"
+import {
+  getManagedSiteAdminConfig,
+  getManagedSiteContext,
+} from "~/utils/managedSite"
 
 import { channelConfigStorage } from "../channelConfigStorage"
 import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
@@ -187,6 +191,7 @@ class ModelSyncScheduler {
 
     // Get preferences from userPreferences
     const prefs = await userPreferences.getPreferences()
+    const { messagesKey } = await getManagedSiteContext(prefs)
     const config =
       prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
     const concurrency = Math.max(1, config.concurrency)
@@ -205,7 +210,7 @@ class ModelSyncScheduler {
     }
 
     if (channels.length === 0) {
-      throw new Error("No channels to sync")
+      throw new Error(t(`messages:${messagesKey}.noChannelsToSync`))
     }
 
     // Placeholder for model redirect config, will generate after sync if enabled
