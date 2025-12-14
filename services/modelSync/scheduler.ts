@@ -200,8 +200,8 @@ class ModelSyncScheduler {
     const { maxRetries } = config
 
     // List channels
-    const newApiChannelListResponse = await service.listChannels()
-    const allChannels = newApiChannelListResponse.items as ManagedSiteChannel[]
+    const channelListResponse = await service.listChannels()
+    const allChannels = channelListResponse.items as ManagedSiteChannel[]
 
     // Filter channels if specific IDs provided
     let channels: ManagedSiteChannel[]
@@ -254,7 +254,7 @@ class ModelSyncScheduler {
                 )
                 if (!channel) {
                   console.warn(
-                    `[NewApiModelSync] Channel ${payload.lastResult.channelId} not found`,
+                    `[ManagedSiteModelSync] Channel ${payload.lastResult.channelId} not found`,
                   )
                 } else {
                   const actualModels = payload.lastResult.newModels || []
@@ -273,12 +273,12 @@ class ModelSyncScheduler {
                   )
                   mappingSuccessCount++
                   console.log(
-                    `[NewApiModelSync] Applied ${Object.keys(newMapping).length} model redirects to channel ${channel.name}`,
+                    `[ManagedSiteModelSync] Applied ${Object.keys(newMapping).length} model redirects to channel ${channel.name}`,
                   )
                 }
               } catch (error) {
                 console.error(
-                  `[NewApiModelSync] Failed to apply mapping for channel ${payload.lastResult.channelName}:`,
+                  `[ManagedSiteModelSync] Failed to apply mapping for channel ${payload.lastResult.channelName}:`,
                   error,
                 )
                 mappingErrorCount++
@@ -310,13 +310,13 @@ class ModelSyncScheduler {
       }
 
       console.log(
-        `[NewApiModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`,
+        `[ManagedSiteModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`,
       )
 
       // Log model redirect mapping results
       if (modelRedirectConfig.enabled && standardModels.length > 0) {
         console.log(
-          `[NewApiModelSync] Model redirect mappings applied: ${mappingSuccessCount} succeeded, ${mappingErrorCount} failed`,
+          `[ManagedSiteModelSync] Model redirect mappings applied: ${mappingSuccessCount} succeeded, ${mappingErrorCount} failed`,
         )
       }
 

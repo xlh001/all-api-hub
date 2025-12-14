@@ -26,7 +26,7 @@ import { deepOverride } from "~/utils"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
-type UserNewApiModelSyncConfig = NonNullable<
+type UserManagedSiteModelSyncConfig = NonNullable<
   UserPreferences["managedSiteModelSync"]
 >
 
@@ -84,7 +84,7 @@ interface UserPreferencesContextType {
     updates: Partial<AutoCheckinPreferences>,
   ) => Promise<boolean>
   updateNewApiModelSync: (
-    updates: Partial<UserNewApiModelSyncConfig>,
+    updates: Partial<UserManagedSiteModelSyncConfig>,
   ) => Promise<boolean>
   updateModelRedirect: (
     updates: Partial<ModelRedirectPreferences>,
@@ -450,7 +450,7 @@ export const UserPreferencesProvider = ({
   )
 
   const updateNewApiModelSync = useCallback(
-    async (updates: Partial<UserNewApiModelSyncConfig>) => {
+    async (updates: Partial<UserManagedSiteModelSyncConfig>) => {
       const success = await userPreferences.savePreferences({
         managedSiteModelSync: updates,
       })

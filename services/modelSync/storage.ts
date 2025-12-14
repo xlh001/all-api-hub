@@ -2,7 +2,7 @@ import { Storage } from "@plasmohq/storage"
 
 import type {
   ExecutionResult,
-  NewApiModelSyncPreferences,
+  ManagedSiteModelSyncPreferences,
 } from "~/types/managedSiteModelSync"
 
 import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
@@ -75,7 +75,7 @@ class NewApiModelSyncStorage {
   /**
    * Get sync preferences from userPreferences
    */
-  async getPreferences(): Promise<NewApiModelSyncPreferences> {
+  async getPreferences(): Promise<ManagedSiteModelSyncPreferences> {
     try {
       const prefs = await userPreferences.getPreferences()
       const config =
@@ -101,7 +101,7 @@ class NewApiModelSyncStorage {
    * Save sync preferences to userPreferences
    */
   async savePreferences(
-    preferences: Partial<NewApiModelSyncPreferences>,
+    preferences: Partial<ManagedSiteModelSyncPreferences>,
   ): Promise<boolean> {
     try {
       const prefs = await userPreferences.getPreferences()
@@ -259,7 +259,7 @@ class NewApiModelSyncStorage {
   /**
    * Get default preferences
    */
-  private getDefaultPreferences(): NewApiModelSyncPreferences {
+  private getDefaultPreferences(): ManagedSiteModelSyncPreferences {
     const defaultConfig = DEFAULT_PREFERENCES.managedSiteModelSync!
     return {
       enableSync: defaultConfig.enabled,
