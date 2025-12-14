@@ -33,7 +33,7 @@ import CliProxyTab from "./components/CliProxyTab"
 import DataBackupTab from "./components/DataBackupTab"
 import GeneralTab from "./components/GeneralTab"
 import LoadingSkeleton from "./components/LoadingSkeleton"
-import NewApiTab from "./components/NewApiTab"
+import ManagedSiteTab from "./components/managedSiteTab"
 import PermissionOnboardingDialog from "./components/PermissionOnboardingDialog"
 import PermissionsTab from "./components/PermissionsTab"
 
@@ -64,7 +64,7 @@ const TAB_CONFIGS = [
   { id: "accountManagement", component: AccountManagementTab },
   { id: "refresh", component: AutoRefreshTab },
   { id: "checkinRedeem", component: CheckinRedeemTab },
-  { id: "newApi", component: NewApiTab },
+  { id: "newApi", component: ManagedSiteTab },
   { id: "cliProxy", component: CliProxyTab },
   ...(hasOptionalPermissions ? [PERMISSIONS_TAB_CONFIG] : []),
   { id: "dataBackup", component: DataBackupTab },

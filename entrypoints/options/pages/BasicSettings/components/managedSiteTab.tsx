@@ -11,7 +11,7 @@ import VeloeraSettings from "./VeloeraSettings"
  * Basic Settings tab aggregating managed site selector, New API/Veloera settings,
  * model sync, and model redirect.
  */
-export default function NewApiTab() {
+export default function ManagedSiteTab() {
   const { managedSiteType } = useUserPreferencesContext()
 
   return (
