@@ -10,6 +10,7 @@ import { useChannelDialog } from "~/components/ChannelDialog"
 import { CCSwitchIcon } from "~/components/icons/CCSwitchIcon"
 import { CherryIcon } from "~/components/icons/CherryIcon"
 import { CliProxyIcon } from "~/components/icons/CliProxyIcon"
+import { VeloeraIcon } from "~/components/icons/VeloeraIcon"
 import { Badge, Heading6, IconButton } from "~/components/ui"
 import { VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -129,7 +130,11 @@ function TokenActionButtons({
         variant="ghost"
         onClick={handleImportToNewApi}
       >
-        <NewAPI className="h-4 w-4 text-blue-500" />
+        {managedSiteType === VELOERA ? (
+          <VeloeraIcon size="sm" />
+        ) : (
+          <NewAPI className="h-4 w-4 text-blue-500" />
+        )}
       </IconButton>
       <IconButton
         aria-label={t("actions.editKey")}
