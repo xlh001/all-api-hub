@@ -4,10 +4,6 @@ import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 import type { ChannelFormData, CreateChannelPayload } from "~/types/newapi"
 
-
-
-
-
 // ============================================================================
 // MOCKS
 // ============================================================================
@@ -56,14 +52,26 @@ const mockSearchChannel = vi.fn()
 const mockCreateChannel = vi.fn()
 const mockUpdateChannel = vi.fn()
 const mockDeleteChannel = vi.fn()
-vi.mock("~/services/apiService", () => ({
-  fetchAccountAvailableModels: mockFetchAccountAvailableModels,
-  fetchUpstreamModelsNameList: mockFetchUpstreamModelsNameList,
-  searchChannel: mockSearchChannel,
-  createChannel: mockCreateChannel,
-  updateChannel: mockUpdateChannel,
-  deleteChannel: mockDeleteChannel,
-}))
+vi.mock("~/services/apiService/common", async () => {
+  const actual = await vi.importActual<
+    typeof import("~/services/apiService/common")
+  >("~/services/apiService/common")
+
+  mockSearchChannel.mockImplementation(actual.searchChannel)
+  mockCreateChannel.mockImplementation(actual.createChannel)
+  mockUpdateChannel.mockImplementation(actual.updateChannel)
+  mockDeleteChannel.mockImplementation(actual.deleteChannel)
+
+  return {
+    ...actual,
+    fetchAccountAvailableModels: mockFetchAccountAvailableModels,
+    fetchUpstreamModelsNameList: mockFetchUpstreamModelsNameList,
+    searchChannel: mockSearchChannel,
+    createChannel: mockCreateChannel,
+    updateChannel: mockUpdateChannel,
+    deleteChannel: mockDeleteChannel,
+  }
+})
 
 // Mock account storage
 const mockAccountStorageConvertToDisplayData = vi.fn()
