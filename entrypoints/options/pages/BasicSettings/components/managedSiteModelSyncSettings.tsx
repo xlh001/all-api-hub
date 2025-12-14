@@ -186,7 +186,7 @@ export default function ManagedSiteModelSyncSettings() {
       } else if (!updates.globalChannelModelFilters) {
         // Avoid double toast when saving from the global filters dialog,
         // which already shows a dedicated success message.
-        toast.success(t("newApiModelSync:messages.success.settingsSaved"))
+        toast.success(t("managedSiteModelSync:messages.success.settingsSaved"))
       }
     } catch (error) {
       console.error("Failed to save preferences:", error)
@@ -341,8 +341,8 @@ export default function ManagedSiteModelSyncSettings() {
   return (
     <SettingSection
       id="new-api-model-sync"
-      title={t("newApiModelSync:settings.title")}
-      description={t("newApiModelSync:description")}
+      title={t("managedSiteModelSync:settings.title")}
+      description={t("managedSiteModelSync:description")}
       onReset={async () => {
         const result = await resetNewApiModelSyncConfig()
         if (result) {
@@ -355,8 +355,8 @@ export default function ManagedSiteModelSyncSettings() {
         <CardList>
           {/* Enable Auto-Sync */}
           <CardItem
-            title={t("newApiModelSync:settings.enable")}
-            description={t("newApiModelSync:settings.enableDesc")}
+            title={t("managedSiteModelSync:settings.enable")}
+            description={t("managedSiteModelSync:settings.enableDesc")}
             rightContent={
               <Switch
                 checked={preferences.enableSync}
@@ -368,8 +368,8 @@ export default function ManagedSiteModelSyncSettings() {
 
           {/* Sync Interval */}
           <CardItem
-            title={t("newApiModelSync:settings.interval")}
-            description={t("newApiModelSync:settings.intervalDesc")}
+            title={t("managedSiteModelSync:settings.interval")}
+            description={t("managedSiteModelSync:settings.intervalDesc")}
             rightContent={
               <div className="flex items-center gap-2">
                 <Input
@@ -389,7 +389,7 @@ export default function ManagedSiteModelSyncSettings() {
                   className="w-24"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {t("newApiModelSync:settings.intervalUnit")}
+                  {t("managedSiteModelSync:settings.intervalUnit")}
                 </span>
               </div>
             }
@@ -397,8 +397,8 @@ export default function ManagedSiteModelSyncSettings() {
 
           {/* Concurrency */}
           <CardItem
-            title={t("newApiModelSync:settings.concurrency")}
-            description={t("newApiModelSync:settings.concurrencyDesc")}
+            title={t("managedSiteModelSync:settings.concurrency")}
+            description={t("managedSiteModelSync:settings.concurrencyDesc")}
             rightContent={
               <Input
                 type="number"
@@ -423,8 +423,8 @@ export default function ManagedSiteModelSyncSettings() {
 
           {/* Max Retries */}
           <CardItem
-            title={t("newApiModelSync:settings.maxRetries")}
-            description={t("newApiModelSync:settings.maxRetriesDesc")}
+            title={t("managedSiteModelSync:settings.maxRetries")}
+            description={t("managedSiteModelSync:settings.maxRetriesDesc")}
             rightContent={
               <Input
                 type="number"
@@ -449,8 +449,10 @@ export default function ManagedSiteModelSyncSettings() {
 
           {/* Rate Limit - Requests per Minute */}
           <CardItem
-            title={t("newApiModelSync:settings.requestsPerMinute")}
-            description={t("newApiModelSync:settings.requestsPerMinuteDesc")}
+            title={t("managedSiteModelSync:settings.requestsPerMinute")}
+            description={t(
+              "managedSiteModelSync:settings.requestsPerMinuteDesc",
+            )}
             rightContent={
               <Input
                 type="number"
@@ -476,8 +478,8 @@ export default function ManagedSiteModelSyncSettings() {
 
           {/* Rate Limit - Burst */}
           <CardItem
-            title={t("newApiModelSync:settings.burst")}
-            description={t("newApiModelSync:settings.burstDesc")}
+            title={t("managedSiteModelSync:settings.burst")}
+            description={t("managedSiteModelSync:settings.burstDesc")}
             rightContent={
               <Input
                 type="number"
@@ -503,8 +505,8 @@ export default function ManagedSiteModelSyncSettings() {
 
           {/* Allowed Models */}
           <CardItem
-            title={t("newApiModelSync:settings.allowedModels")}
-            description={t("newApiModelSync:settings.allowedModelsDesc")}
+            title={t("managedSiteModelSync:settings.allowedModels")}
+            description={t("managedSiteModelSync:settings.allowedModelsDesc")}
           >
             <div className="w-full space-y-2">
               <MultiSelect
@@ -512,7 +514,7 @@ export default function ManagedSiteModelSyncSettings() {
                 options={channelUpstreamModelOptions}
                 selected={preferences.allowedModels}
                 placeholder={t(
-                  "newApiModelSync:settings.allowedModelsPlaceholder",
+                  "managedSiteModelSync:settings.allowedModelsPlaceholder",
                 )}
                 onChange={(values) => {
                   void savePreferences({ allowedModels: values })
@@ -521,17 +523,17 @@ export default function ManagedSiteModelSyncSettings() {
               />
               {optionsLoading ? (
                 <p className="text-xs text-gray-500">
-                  {t("newApiModelSync:settings.allowedModelsLoading")}
+                  {t("managedSiteModelSync:settings.allowedModelsLoading")}
                 </p>
               ) : optionsError ? (
                 <p className="text-xs text-red-500">
-                  {t("newApiModelSync:settings.allowedModelsLoadFailed", {
+                  {t("managedSiteModelSync:settings.allowedModelsLoadFailed", {
                     error: optionsError,
                   })}
                 </p>
               ) : (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {t("newApiModelSync:settings.allowedModelsHint")}
+                  {t("managedSiteModelSync:settings.allowedModelsHint")}
                 </p>
               )}
             </div>
@@ -539,9 +541,9 @@ export default function ManagedSiteModelSyncSettings() {
 
           {/* Global Filters */}
           <CardItem
-            title={t("newApiModelSync:settings.globalChannelModelFilters")}
+            title={t("managedSiteModelSync:settings.globalChannelModelFilters")}
             description={t(
-              "newApiModelSync:settings.globalChannelModelFiltersDesc",
+              "managedSiteModelSync:settings.globalChannelModelFiltersDesc",
             )}
             rightContent={
               <Button
@@ -550,15 +552,17 @@ export default function ManagedSiteModelSyncSettings() {
                 onClick={handleOpenglobalChannelModelFilters}
                 disabled={isSaving}
               >
-                {t("newApiModelSync:settings.globalChannelModelFiltersButton")}
+                {t(
+                  "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+                )}
               </Button>
             }
           />
 
           {/* View Execution Button */}
           <CardItem
-            title={t("newApiModelSync:settings.viewExecution")}
-            description={t("newApiModelSync:settings.viewExecutionDesc")}
+            title={t("managedSiteModelSync:settings.viewExecution")}
+            description={t("managedSiteModelSync:settings.viewExecutionDesc")}
             rightContent={
               <Button
                 onClick={handleNavigateToExecution}
@@ -567,7 +571,9 @@ export default function ManagedSiteModelSyncSettings() {
                 className="flex items-center gap-2"
                 rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}
               >
-                <span>{t("newApiModelSync:settings.viewExecutionButton")}</span>
+                <span>
+                  {t("managedSiteModelSync:settings.viewExecutionButton")}
+                </span>
               </Button>
             }
           />
@@ -583,12 +589,12 @@ export default function ManagedSiteModelSyncSettings() {
           <div>
             <p className="text-base font-semibold">
               {t(
-                "newApiModelSync:settings.globalChannelModelFiltersDialogTitle",
+                "managedSiteModelSync:settings.globalChannelModelFiltersDialogTitle",
               )}
             </p>
             <p className="text-muted-foreground text-sm">
               {t(
-                "newApiModelSync:settings.globalChannelModelFiltersDialogSubtitle",
+                "managedSiteModelSync:settings.globalChannelModelFiltersDialogSubtitle",
               )}
             </p>
           </div>
