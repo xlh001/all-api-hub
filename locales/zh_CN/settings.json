@@ -7,7 +7,7 @@
     "refresh": "数据刷新",
     "checkinRedeem": "签到与兑换",
     "dataBackup": "数据与备份",
-    "managedSite": "管理站点",
+    "managedSite": "自建站点管理",
     "cliProxy": "CLIProxyAPI",
     "more": "更多",
     "permissions": "权限管理",
@@ -133,9 +133,9 @@
     }
   },
   "managedSite": {
-    "title": "管理站点配置",
-    "description": "选择您要管理的 API 聚合平台。这将决定用于通道管理和模型同步的配置。",
-    "siteTypeLabel": "管理站点类型",
+    "title": "自建站点配置",
+    "description": "选择您要管理的 API 聚合平台站点。这将决定用于渠道管理和模型同步的配置。",
+    "siteTypeLabel": "站点类型",
     "siteTypeDesc": "选择用于渠道管理和模型同步的平台",
     "newApi": "New API",
     "veloera": "Veloera"
