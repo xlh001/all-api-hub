@@ -1,6 +1,5 @@
 import { t } from "i18next"
 
-import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import { ModelRedirectService } from "~/services/modelRedirect"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type { ManagedSiteChannel } from "~/types/managedSite"
@@ -20,12 +19,16 @@ import {
   onAlarm,
 } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
+import {
+  getManagedSiteAdminConfig,
+  getManagedSiteContext,
+} from "~/utils/managedSite"
 
 import { channelConfigStorage } from "../channelConfigStorage"
 import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
 import { collectModelsFromExecution } from "./modelCollection"
 import { ModelSyncService } from "./modelSyncService"
-import { newApiModelSyncStorage } from "./storage"
+import { managedSiteModelSyncStorage } from "./storage"
 
 /**
  * Scheduler for New API Model Sync.
@@ -46,23 +49,18 @@ class ModelSyncScheduler {
   private async createService(): Promise<ModelSyncService> {
     const userPrefs = await userPreferences.getPreferences()
 
-    const siteType: ManagedSiteType = userPrefs.managedSiteType || NEW_API
-    const messagesKey = siteType === VELOERA ? "veloera" : "newapi"
-    const managedConfig =
-      siteType === VELOERA ? userPrefs.veloera : userPrefs.newApi
+    const { siteType, messagesKey } = getManagedSiteContext(userPrefs)
+    const managedConfig = getManagedSiteAdminConfig(userPrefs)
 
-    if (
-      !managedConfig?.baseUrl ||
-      !managedConfig?.adminToken ||
-      !managedConfig?.userId
-    ) {
+    if (!managedConfig) {
       throw new Error(t(`messages:${messagesKey}.configMissing`))
     }
 
     const { baseUrl, adminToken, userId } = managedConfig
 
     const config =
-      userPrefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+      userPrefs.managedSiteModelSync ??
+      DEFAULT_PREFERENCES.managedSiteModelSync!
 
     const channelConfigs = await channelConfigStorage.getAllConfigs()
 
@@ -136,7 +134,8 @@ class ModelSyncScheduler {
     }
 
     const prefs = await userPreferences.getPreferences()
-    const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+    const config =
+      prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
 
     // Clear existing alarm before re-creating with new interval
     await clearAlarm(ModelSyncScheduler.ALARM_NAME)
@@ -192,13 +191,15 @@ class ModelSyncScheduler {
 
     // Get preferences from userPreferences
     const prefs = await userPreferences.getPreferences()
-    const config = prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+    const { messagesKey } = getManagedSiteContext(prefs)
+    const config =
+      prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
     const concurrency = Math.max(1, config.concurrency)
     const { maxRetries } = config
 
     // List channels
-    const newApiChannelListResponse = await service.listChannels()
-    const allChannels = newApiChannelListResponse.items as ManagedSiteChannel[]
+    const channelListResponse = await service.listChannels()
+    const allChannels = channelListResponse.items
 
     // Filter channels if specific IDs provided
     let channels: ManagedSiteChannel[]
@@ -209,7 +210,7 @@ class ModelSyncScheduler {
     }
 
     if (channels.length === 0) {
-      throw new Error("No channels to sync")
+      throw new Error(t(`messages:${messagesKey}.noChannelsToSync`))
     }
 
     // Placeholder for model redirect config, will generate after sync if enabled
@@ -251,7 +252,7 @@ class ModelSyncScheduler {
                 )
                 if (!channel) {
                   console.warn(
-                    `[NewApiModelSync] Channel ${payload.lastResult.channelId} not found`,
+                    `[ManagedSiteModelSync] Channel ${payload.lastResult.channelId} not found`,
                   )
                 } else {
                   const actualModels = payload.lastResult.newModels || []
@@ -270,12 +271,12 @@ class ModelSyncScheduler {
                   )
                   mappingSuccessCount++
                   console.log(
-                    `[NewApiModelSync] Applied ${Object.keys(newMapping).length} model redirects to channel ${channel.name}`,
+                    `[ManagedSiteModelSync] Applied ${Object.keys(newMapping).length} model redirects to channel ${channel.name}`,
                   )
                 }
               } catch (error) {
                 console.error(
-                  `[NewApiModelSync] Failed to apply mapping for channel ${payload.lastResult.channelName}:`,
+                  `[ManagedSiteModelSync] Failed to apply mapping for channel ${payload.lastResult.channelName}:`,
                   error,
                 )
                 mappingErrorCount++
@@ -294,26 +295,26 @@ class ModelSyncScheduler {
       })
 
       // Save execution result
-      await newApiModelSyncStorage.saveLastExecution(result)
+      await managedSiteModelSyncStorage.saveLastExecution(result)
 
       // Cache upstream model options for allow-list selection, only if full sync
       if (!channelIds) {
         const collectedModels = collectModelsFromExecution(result)
         if (collectedModels.length > 0) {
-          await newApiModelSyncStorage.saveChannelUpstreamModelOptions(
+          await managedSiteModelSyncStorage.saveChannelUpstreamModelOptions(
             collectedModels,
           )
         }
       }
 
       console.log(
-        `[NewApiModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`,
+        `[ManagedSiteModelSync] Execution completed: ${result.statistics.successCount}/${result.statistics.total} succeeded`,
       )
 
       // Log model redirect mapping results
       if (modelRedirectConfig.enabled && standardModels.length > 0) {
         console.log(
-          `[NewApiModelSync] Model redirect mappings applied: ${mappingSuccessCount} succeeded, ${mappingErrorCount} failed`,
+          `[ManagedSiteModelSync] Model redirect mappings applied: ${mappingSuccessCount} succeeded, ${mappingErrorCount} failed`,
         )
       }
 
@@ -331,7 +332,7 @@ class ModelSyncScheduler {
    * @throws {Error} When no previous execution exists or no failed channels are found.
    */
   async executeFailedOnly(): Promise<ExecutionResult> {
-    const lastExecution = await newApiModelSyncStorage.getLastExecution()
+    const lastExecution = await managedSiteModelSyncStorage.getLastExecution()
     if (!lastExecution) {
       throw new Error("No previous execution found")
     }
@@ -383,7 +384,7 @@ class ModelSyncScheduler {
     // Get current config and update
     const prefs = await userPreferences.getPreferences()
     const current =
-      prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+      prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
 
     const updated = {
       enabled:
@@ -415,7 +416,7 @@ class ModelSyncScheduler {
           : current.globalChannelModelFilters,
     }
 
-    await userPreferences.savePreferences({ newApiModelSync: updated })
+    await userPreferences.savePreferences({ managedSiteModelSync: updated })
     await this.setupAlarm()
     console.log("[ManagedSiteModelSync] Settings updated:", updated)
   }
@@ -428,7 +429,7 @@ class ModelSyncScheduler {
     try {
       browser.runtime
         .sendMessage({
-          type: "NEW_API_MODEL_SYNC_PROGRESS",
+          type: "MANAGED_SITE_MODEL_SYNC_PROGRESS",
           payload: this.currentProgress,
         })
         .catch(() => {
@@ -447,7 +448,7 @@ export const modelSyncScheduler = new ModelSyncScheduler()
  * Message handler for New API Model Sync actions (trigger, retry failed, prefs).
  * Centralizes background-only control plane for sync operations.
  */
-export const handleNewApiModelSyncMessage = async (
+export const handleManagedSiteModelSyncMessage = async (
   request: any,
   sendResponse: (response: any) => void,
 ) => {
@@ -474,7 +475,8 @@ export const handleNewApiModelSyncMessage = async (
       }
 
       case "modelSync:getLastExecution": {
-        const lastExecution = await newApiModelSyncStorage.getLastExecution()
+        const lastExecution =
+          await managedSiteModelSyncStorage.getLastExecution()
         sendResponse({ success: true, data: lastExecution })
         break
       }
@@ -491,14 +493,14 @@ export const handleNewApiModelSyncMessage = async (
         break
 
       case "modelSync:getPreferences": {
-        const prefs = await newApiModelSyncStorage.getPreferences()
+        const prefs = await managedSiteModelSyncStorage.getPreferences()
         sendResponse({ success: true, data: prefs })
         break
       }
 
       case "modelSync:getChannelUpstreamModelOptions": {
         const upstreamOptions =
-          await newApiModelSyncStorage.getChannelUpstreamModelOptions()
+          await managedSiteModelSyncStorage.getChannelUpstreamModelOptions()
         sendResponse({ success: true, data: upstreamOptions })
         break
       }

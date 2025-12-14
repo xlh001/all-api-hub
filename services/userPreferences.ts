@@ -102,7 +102,7 @@ export interface UserPreferences {
   cliProxy?: CliProxyConfig
 
   // New API Model Sync 配置
-  newApiModelSync: {
+  managedSiteModelSync?: {
     enabled: boolean
     // 同步间隔（毫秒）
     interval: number
@@ -164,6 +164,18 @@ export interface UserPreferences {
    * Legacy base URL field preserved for migration from older configurations.
    * @deprecated Use newApi object instead
    */
+  newApiModelSync?: {
+    enabled: boolean
+    interval: number
+    concurrency: number
+    maxRetries: number
+    rateLimit: {
+      requestsPerMinute: number
+      burst: number
+    }
+    allowedModels: string[]
+    globalChannelModelFilters: ChannelModelFilterRule[]
+  }
   newApiBaseUrl?: string
   /**
    * Legacy admin token field used before the nested newApi config existed.
@@ -247,7 +259,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   veloera: DEFAULT_VELOERA_CONFIG,
   managedSiteType: NEW_API,
   cliProxy: DEFAULT_CLI_PROXY_CONFIG,
-  newApiModelSync: {
+  managedSiteModelSync: {
     enabled: false,
     interval: 24 * 60 * 60 * 1000, // 24小时
     concurrency: 2, // 降低并发数，避免触发速率限制
@@ -578,8 +590,12 @@ class UserPreferencesService {
    * Reset New API Model Sync config.
    */
   async resetNewApiModelSyncConfig(): Promise<boolean> {
+    return this.resetManagedSiteModelSyncConfig()
+  }
+
+  async resetManagedSiteModelSyncConfig(): Promise<boolean> {
     return this.savePreferences({
-      newApiModelSync: DEFAULT_PREFERENCES.newApiModelSync,
+      managedSiteModelSync: DEFAULT_PREFERENCES.managedSiteModelSync,
     })
   }
 

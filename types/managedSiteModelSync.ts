@@ -47,7 +47,7 @@ export interface ExecutionFilter {
 /**
  * New API Model Sync Preferences
  */
-export interface NewApiModelSyncPreferences {
+export interface ManagedSiteModelSyncPreferences {
   enableSync: boolean
   intervalMs: number
   concurrency: number

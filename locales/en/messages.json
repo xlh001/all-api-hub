@@ -56,6 +56,7 @@
       "saveFailed": "Save failed: {{error}}",
       "updateFailed": "Update failed: {{error}}",
       "deleteFailed": "Delete failed: {{error}}",
+      "failed": "Operation failed: {{error}}",
       "noResponseMessage": "Delete operation did not return a successful response"
     },
     "unknown": "Unknown error"
@@ -98,6 +99,7 @@
     "configMissing": "Please configure New API address, admin token, and user ID in basic settings first",
     "dataFetchFailed": "Failed to fetch New API data, please check if the configuration is correct",
     "noAnyModels": "No models available",
+    "noChannelsToSync": "No channels to sync",
     "channelExists": "Channel {{channelName}} already exists, no need to import again",
     "importSuccess": "Successfully imported new channel {{channelName}}",
     "importFailed": "Import failed, an unknown error occurred"
@@ -106,6 +108,7 @@
     "configMissing": "Please configure Veloera address, admin token, and user ID in basic settings first",
     "dataFetchFailed": "Failed to fetch Veloera data, please check if the configuration is correct",
     "noAnyModels": "No models available",
+    "noChannelsToSync": "No channels to sync",
     "channelExists": "Channel {{channelName}} already exists, no need to import again",
     "importSuccess": "Successfully imported new channel {{channelName}}",
     "importFailed": "Import failed, an unknown error occurred"

@@ -58,13 +58,17 @@ vi.mock("~/services/autoCheckin/storage", () => ({
   },
 }))
 
-vi.mock("~/utils/browserApi", () => ({
-  clearAlarm: vi.fn(),
-  createAlarm: vi.fn(),
-  getAlarm: vi.fn(),
-  hasAlarmsAPI: vi.fn(),
-  onAlarm: vi.fn(),
-}))
+vi.mock("~/utils/browserApi", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("~/utils/browserApi")>()
+  return {
+    ...actual,
+    clearAlarm: vi.fn(),
+    createAlarm: vi.fn(),
+    getAlarm: vi.fn(),
+    hasAlarmsAPI: vi.fn(),
+    onAlarm: vi.fn(),
+  }
+})
 
 vi.mock("~/utils/error", () => ({
   getErrorMessage: vi.fn((e: unknown) => String(e)),

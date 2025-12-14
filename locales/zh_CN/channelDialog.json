@@ -4,7 +4,7 @@
     "edit": "编辑渠道"
   },
   "description": {
-    "add": "为您的 New API 部署配置新的转发渠道",
+    "add": "为您管理的站点配置新的转发渠道",
     "edit": "更新渠道设置和路由信息"
   },
   "actions": {
@@ -55,7 +55,7 @@
       "label": "渠道分组",
       "placeholder": "选择分组",
       "loading": "加载分组中...",
-      "hint": "分组来源于您配置的 New API 站点"
+      "hint": "分组来源于您管理的站点"
     },
     "priority": {
       "label": "优先级",

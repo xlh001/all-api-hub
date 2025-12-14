@@ -31,9 +31,11 @@ const createPreferences = (
       ...DEFAULT_NEW_API_CONFIG,
       ...overrides?.newApi,
     },
-    newApiModelSync: {
-      ...base.newApiModelSync,
-      ...overrides?.newApiModelSync,
+    managedSiteModelSync: {
+      ...(base.managedSiteModelSync as NonNullable<
+        UserPreferences["managedSiteModelSync"]
+      >),
+      ...((overrides as any)?.managedSiteModelSync ?? {}),
     },
     autoCheckin: {
       ...base.autoCheckin,

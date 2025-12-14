@@ -10,13 +10,15 @@ import type {
   ManagedSiteChannelListData,
   UpdateChannelPayload,
 } from "~/types/managedSite"
+import type { ManagedSiteMessagesKey } from "~/utils/managedSite"
+import {
+  getManagedSiteAdminConfig,
+  getManagedSiteContext,
+} from "~/utils/managedSite"
 
 import * as newApiService from "./newApiService/newApiService"
-import { userPreferences } from "./userPreferences"
-import type { UserPreferences } from "./userPreferences"
+import { userPreferences, type UserPreferences } from "./userPreferences"
 import * as veloeraService from "./veloeraService/veloeraService"
-
-export type ManagedSiteMessagesKey = "newapi" | "veloera"
 
 export interface ManagedSiteConfig {
   baseUrl: string
@@ -93,15 +95,6 @@ export interface ManagedSiteService {
 /**
  *
  */
-function mapSiteTypeToMessagesKey(
-  siteType: ManagedSiteType,
-): ManagedSiteMessagesKey {
-  return siteType === VELOERA ? "veloera" : "newapi"
-}
-
-/**
- *
- */
 export function hasValidManagedSiteConfig(
   prefs: UserPreferences | null,
 ): boolean {
@@ -109,41 +102,20 @@ export function hasValidManagedSiteConfig(
     return false
   }
 
-  const siteType: ManagedSiteType = prefs.managedSiteType || NEW_API
-  const managedConfig = siteType === VELOERA ? prefs.veloera : prefs.newApi
-
-  return Boolean(
-    managedConfig?.baseUrl &&
-      managedConfig?.adminToken &&
-      managedConfig?.userId,
-  )
-}
-
-/**
- *
- */
-export async function getManagedSiteType(): Promise<ManagedSiteType> {
-  const prefs = await userPreferences.getPreferences()
-  return prefs.managedSiteType || NEW_API
-}
-
-/**
- *
- */
-export async function getManagedSiteMessagesKey(): Promise<ManagedSiteMessagesKey> {
-  return mapSiteTypeToMessagesKey(await getManagedSiteType())
+  return Boolean(getManagedSiteAdminConfig(prefs))
 }
 
 /**
  *
  */
 export async function getManagedSiteService(): Promise<ManagedSiteService> {
-  const siteType = await getManagedSiteType()
+  const prefs = await userPreferences.getPreferences()
+  const { siteType, messagesKey } = getManagedSiteContext(prefs)
 
   if (siteType === VELOERA) {
     return {
       siteType,
-      messagesKey: "veloera",
+      messagesKey,
       searchChannel: veloeraService.searchChannel,
       createChannel: veloeraService.createChannel,
       updateChannel: veloeraService.updateChannel,
@@ -161,7 +133,7 @@ export async function getManagedSiteService(): Promise<ManagedSiteService> {
 
   return {
     siteType: NEW_API,
-    messagesKey: "newapi",
+    messagesKey,
     searchChannel: newApiService.searchChannel,
     createChannel: newApiService.createChannel,
     updateChannel: newApiService.updateChannel,

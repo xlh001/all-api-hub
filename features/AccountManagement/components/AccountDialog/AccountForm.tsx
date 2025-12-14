@@ -379,13 +379,13 @@ export default function AccountForm({
       {/* 标签 */}
       <FormField
         label={t("form.tags")}
-        description={t("form.tagsDescription") ?? undefined}
+        description={t("form.tagsDescription")}
       >
         <MultiSelect
           options={tagOptions}
           selected={tags}
           onChange={onTagsChange}
-          placeholder={t("form.tagsPlaceholder") ?? ""}
+          placeholder={t("form.tagsPlaceholder")}
           allowCustom
         />
       </FormField>

@@ -6,17 +6,13 @@ import { SettingSection } from "~/components/SettingSection"
 import { Button, Card, CardContent } from "~/components/ui"
 import { MultiSelect } from "~/components/ui/MultiSelect"
 import { Switch } from "~/components/ui/Switch"
-import { VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { fetchAccountAvailableModels } from "~/services/apiService/common"
 import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { ModelRedirectService } from "~/services/modelRedirect"
 import { AuthTypeEnum } from "~/types"
 import { ALL_PRESET_STANDARD_MODELS } from "~/types/managedSiteModelRedirect"
-
-
-
-
+import { getManagedSiteAdminConfig } from "~/utils/managedSite"
 
 /**
  * Configures model redirect feature: enable toggle, model list, regeneration.
@@ -46,10 +42,10 @@ export default function ModelRedirectSettings() {
         return
       }
 
-      const managedConfig =
-        preferences.managedSiteType === VELOERA
-          ? preferences.veloera
-          : preferences.newApi
+      const managedConfig = getManagedSiteAdminConfig(preferences)
+      if (!managedConfig) {
+        return
+      }
 
       return await fetchAccountAvailableModels({
         baseUrl: managedConfig.baseUrl,
@@ -106,7 +102,7 @@ export default function ModelRedirectSettings() {
 
   return (
     <SettingSection
-      id="model-redirect"
+      id="managed-site-model-redirect"
       title={t("title")}
       description={t("description")}
       onReset={resetModelRedirectConfig}

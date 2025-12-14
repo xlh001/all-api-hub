@@ -23,25 +23,25 @@ import { modelMetadataService } from "~/services/modelMetadata"
 import type { ModelMetadata } from "~/services/modelMetadata/types"
 import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
-import type { NewApiModelSyncPreferences } from "~/types/managedSiteModelSync"
+import type { ManagedSiteModelSyncPreferences } from "~/types/managedSiteModelSync"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 import { navigateWithinOptionsPage } from "~/utils/navigation"
 
-type UserNewApiModelSyncConfig = NonNullable<
-  typeof DEFAULT_PREFERENCES.newApiModelSync
+type UserManagedSiteModelSyncConfig = NonNullable<
+  typeof DEFAULT_PREFERENCES.managedSiteModelSync
 >
 
 type EditableFilter = ChannelModelFilterRule
 
 /**
- * Render the New API Model Sync settings UI and manage its local state and interactions.
+ * Render the Managed Site Model Sync settings UI and manage its local state and interactions.
  *
  * This component displays controls for enabling auto-sync, adjusting interval, concurrency,
  * retries and rate limits, selecting allowed models (loaded from model metadata), and navigating
  * to the sync execution view. It loads model metadata on mount, persists preference changes via
  * the user preferences context, and shows success/error toasts for save operations.
- * @returns The settings section React element for configuring New API Model Sync.
+ * @returns The settings section React element for configuring Managed Site Model Sync.
  */
 export default function ManagedSiteModelSyncSettings() {
   const { t } = useTranslation([
@@ -61,9 +61,9 @@ export default function ManagedSiteModelSyncSettings() {
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [optionsError, setOptionsError] = useState<string | null>(null)
 
-  // Convert from UserPreferences.modelSync to NewApiModelSyncPreferences format
-  const rawPrefs = userPrefs?.newApiModelSync
-  const preferences: NewApiModelSyncPreferences = rawPrefs
+  // Convert from persisted user prefs to ManagedSiteModelSyncPreferences format
+  const rawPrefs = userPrefs?.managedSiteModelSync ?? userPrefs?.newApiModelSync
+  const preferences: ManagedSiteModelSyncPreferences = rawPrefs
     ? {
         enableSync: rawPrefs.enabled,
         intervalMs: rawPrefs.interval,
@@ -74,29 +74,32 @@ export default function ManagedSiteModelSyncSettings() {
         globalChannelModelFilters: rawPrefs.globalChannelModelFilters ?? [],
       }
     : {
-        enableSync: DEFAULT_PREFERENCES.newApiModelSync?.enabled ?? false,
+        enableSync: DEFAULT_PREFERENCES.managedSiteModelSync?.enabled ?? false,
         intervalMs:
-          DEFAULT_PREFERENCES.newApiModelSync?.interval ?? 24 * 60 * 60 * 1000,
-        concurrency: DEFAULT_PREFERENCES.newApiModelSync?.concurrency ?? 2,
-        maxRetries: DEFAULT_PREFERENCES.newApiModelSync?.maxRetries ?? 2,
-        rateLimit: DEFAULT_PREFERENCES.newApiModelSync?.rateLimit ?? {
+          DEFAULT_PREFERENCES.managedSiteModelSync?.interval ??
+          24 * 60 * 60 * 1000,
+        concurrency: DEFAULT_PREFERENCES.managedSiteModelSync?.concurrency ?? 2,
+        maxRetries: DEFAULT_PREFERENCES.managedSiteModelSync?.maxRetries ?? 2,
+        rateLimit: DEFAULT_PREFERENCES.managedSiteModelSync?.rateLimit ?? {
           requestsPerMinute: 20,
           burst: 5,
         },
-        allowedModels: DEFAULT_PREFERENCES.newApiModelSync?.allowedModels ?? [],
+        allowedModels:
+          DEFAULT_PREFERENCES.managedSiteModelSync?.allowedModels ?? [],
         globalChannelModelFilters:
-          DEFAULT_PREFERENCES.newApiModelSync?.globalChannelModelFilters ?? [],
+          DEFAULT_PREFERENCES.managedSiteModelSync?.globalChannelModelFilters ??
+          [],
       }
 
   const [
-    isglobalChannelModelFiltersDialogOpen,
-    setIsglobalChannelModelFiltersDialogOpen,
+    isGlobalChannelModelFiltersDialogOpen,
+    setIsGlobalChannelModelFiltersDialogOpen,
   ] = useState(false)
-  const [globalChannelModelFiltersDraft, setglobalChannelModelFiltersDraft] =
+  const [globalChannelModelFiltersDraft, setGlobalChannelModelFiltersDraft] =
     useState<EditableFilter[]>([])
   const [
-    isSavingglobalChannelModelFilters,
-    setIsSavingglobalChannelModelFilters,
+    isSavingGlobalChannelModelFilters,
+    setIsSavingGlobalChannelModelFilters,
   ] = useState(false)
   const [jsonText, setJsonText] = useState("")
   const [viewMode, setViewMode] = useState<"visual" | "json">("visual")
@@ -149,13 +152,13 @@ export default function ManagedSiteModelSyncSettings() {
   }, [])
 
   const savePreferences = async (
-    updates: Partial<NewApiModelSyncPreferences>,
+    updates: Partial<ManagedSiteModelSyncPreferences>,
   ) => {
     try {
       setIsSaving(true)
 
       // Convert to UserPreferences.modelSync format
-      const userPrefsUpdate: Partial<UserNewApiModelSyncConfig> = {}
+      const userPrefsUpdate: Partial<UserManagedSiteModelSyncConfig> = {}
       if (updates.enableSync !== undefined) {
         userPrefsUpdate.enabled = updates.enableSync
       }
@@ -196,23 +199,23 @@ export default function ManagedSiteModelSyncSettings() {
     }
   }
 
-  const handleOpenglobalChannelModelFilters = () => {
+  const handleOpenGlobalChannelModelFilters = () => {
     const currentFilters = preferences.globalChannelModelFilters ?? []
-    setglobalChannelModelFiltersDraft(currentFilters)
+    setGlobalChannelModelFiltersDraft(currentFilters)
     try {
       setJsonText(JSON.stringify(currentFilters, null, 2))
     } catch {
       setJsonText("")
     }
     setViewMode("visual")
-    setIsglobalChannelModelFiltersDialogOpen(true)
+    setIsGlobalChannelModelFiltersDialogOpen(true)
   }
 
-  const handleCloseglobalChannelModelFilters = () => {
-    if (isSavingglobalChannelModelFilters) {
+  const handleCloseGlobalChannelModelFilters = () => {
+    if (isSavingGlobalChannelModelFilters) {
       return
     }
-    setIsglobalChannelModelFiltersDialogOpen(false)
+    setIsGlobalChannelModelFiltersDialogOpen(false)
   }
 
   const handleGlobalFilterFieldChange = (
@@ -220,7 +223,7 @@ export default function ManagedSiteModelSyncSettings() {
     field: keyof EditableFilter,
     value: any,
   ) => {
-    setglobalChannelModelFiltersDraft((prev) =>
+    setGlobalChannelModelFiltersDraft((prev) =>
       prev.map((filter) =>
         filter.id === id
           ? {
@@ -246,16 +249,16 @@ export default function ManagedSiteModelSyncSettings() {
       updatedAt: now,
       description: "",
     }
-    setglobalChannelModelFiltersDraft((prev) => [...prev, newFilter])
+    setGlobalChannelModelFiltersDraft((prev) => [...prev, newFilter])
   }
 
   const handleRemoveGlobalFilter = (id: string) => {
-    setglobalChannelModelFiltersDraft((prev) =>
+    setGlobalChannelModelFiltersDraft((prev) =>
       prev.filter((filter) => filter.id !== id),
     )
   }
 
-  const validateglobalChannelModelFilters = (
+  const validateGlobalChannelModelFilters = (
     rules: EditableFilter[],
   ): string | undefined => {
     for (const filter of rules) {
@@ -284,7 +287,7 @@ export default function ManagedSiteModelSyncSettings() {
     return undefined
   }
 
-  const handleSaveglobalChannelModelFilters = async () => {
+  const handleSaveGlobalChannelModelFilters = async () => {
     let rulesToSave: EditableFilter[]
 
     if (viewMode === "json") {
@@ -302,13 +305,13 @@ export default function ManagedSiteModelSyncSettings() {
       rulesToSave = globalChannelModelFiltersDraft
     }
 
-    const validationError = validateglobalChannelModelFilters(rulesToSave)
+    const validationError = validateGlobalChannelModelFilters(rulesToSave)
     if (validationError) {
       toast.error(validationError)
       return
     }
 
-    setIsSavingglobalChannelModelFilters(true)
+    setIsSavingGlobalChannelModelFilters(true)
 
     try {
       const payload = rulesToSave.map((filter) => ({
@@ -319,9 +322,9 @@ export default function ManagedSiteModelSyncSettings() {
       }))
 
       await savePreferences({ globalChannelModelFilters: payload })
-      setglobalChannelModelFiltersDraft(rulesToSave)
+      setGlobalChannelModelFiltersDraft(rulesToSave)
       toast.success(t("managedSiteChannels:filters.messages.saved"))
-      setIsglobalChannelModelFiltersDialogOpen(false)
+      setIsGlobalChannelModelFiltersDialogOpen(false)
     } catch (error) {
       toast.error(
         t("managedSiteChannels:filters.messages.saveFailed", {
@@ -329,7 +332,7 @@ export default function ManagedSiteModelSyncSettings() {
         }),
       )
     } finally {
-      setIsSavingglobalChannelModelFilters(false)
+      setIsSavingGlobalChannelModelFilters(false)
     }
   }
 
@@ -340,7 +343,7 @@ export default function ManagedSiteModelSyncSettings() {
 
   return (
     <SettingSection
-      id="new-api-model-sync"
+      id="managed-site-model-sync"
       title={t("managedSiteModelSync:settings.title")}
       description={t("managedSiteModelSync:description")}
       onReset={async () => {
@@ -549,7 +552,7 @@ export default function ManagedSiteModelSyncSettings() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleOpenglobalChannelModelFilters}
+                onClick={handleOpenGlobalChannelModelFilters}
                 disabled={isSaving}
               >
                 {t(
@@ -581,8 +584,8 @@ export default function ManagedSiteModelSyncSettings() {
       </Card>
 
       <Modal
-        isOpen={isglobalChannelModelFiltersDialogOpen}
-        onClose={handleCloseglobalChannelModelFilters}
+        isOpen={isGlobalChannelModelFiltersDialogOpen}
+        onClose={handleCloseGlobalChannelModelFilters}
         size="lg"
         panelClassName="max-h-[85vh]"
         header={
@@ -604,15 +607,15 @@ export default function ManagedSiteModelSyncSettings() {
             <Button
               type="button"
               variant="secondary"
-              onClick={handleCloseglobalChannelModelFilters}
-              disabled={isSavingglobalChannelModelFilters}
+              onClick={handleCloseGlobalChannelModelFilters}
+              disabled={isSavingGlobalChannelModelFilters}
             >
               {t("managedSiteChannels:filters.actions.cancel")}
             </Button>
             <Button
-              onClick={handleSaveglobalChannelModelFilters}
-              disabled={isSavingglobalChannelModelFilters}
-              loading={isSavingglobalChannelModelFilters}
+              onClick={handleSaveGlobalChannelModelFilters}
+              disabled={isSavingGlobalChannelModelFilters}
+              loading={isSavingGlobalChannelModelFilters}
             >
               {t("managedSiteChannels:filters.actions.save")}
             </Button>
@@ -633,7 +636,7 @@ export default function ManagedSiteModelSyncSettings() {
               const parsed = jsonText.trim()
                 ? parseJsonGlobalChannelModelFilters(jsonText)
                 : []
-              setglobalChannelModelFiltersDraft(parsed)
+              setGlobalChannelModelFiltersDraft(parsed)
               setViewMode("visual")
             } catch (error) {
               toast.error(

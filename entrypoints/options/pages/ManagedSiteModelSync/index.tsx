@@ -23,6 +23,7 @@ import ProgressCard from "./components/ProgressCard"
 import ResultsTable from "./components/ResultsTable"
 import StatisticsCard from "./components/StatisticsCard"
 
+
 const TAB_INDEX = {
   history: 0,
   manual: 1,
@@ -122,7 +123,7 @@ export default function ManagedSiteModelSync() {
 
     // Listen for progress updates
     const handleMessage = (message: any) => {
-      if (message.type === "NEW_API_MODEL_SYNC_PROGRESS") {
+      if (message.type === "MANAGED_SITE_MODEL_SYNC_PROGRESS") {
         setProgress(message.payload)
 
         // If sync completed, reload execution results

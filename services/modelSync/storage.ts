@@ -2,7 +2,7 @@ import { Storage } from "@plasmohq/storage"
 
 import type {
   ExecutionResult,
-  NewApiModelSyncPreferences,
+  ManagedSiteModelSyncPreferences,
 } from "~/types/managedSiteModelSync"
 
 import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
@@ -10,15 +10,29 @@ import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
 /**
  * Storage keys for New API Model Sync
  */
-const STORAGE_KEYS = {
-  LAST_EXECUTION: "newApiModelSync_lastExecution",
-  CHANNEL_UPSTREAM_MODELS_CACHE: "newApiModelSync_channelUpstreamModelsCache",
-} as const
+type StorageKeyMigrationSpec = {
+  canonical: string
+  legacy: readonly string[]
+  removeLegacyAfterMigration?: boolean
+}
+
+const STORAGE_KEY_MIGRATIONS = {
+  LAST_EXECUTION: {
+    canonical: "managedSiteModelSync_lastExecution",
+    legacy: ["newApiModelSync_lastExecution"],
+    removeLegacyAfterMigration: true,
+  },
+  CHANNEL_UPSTREAM_MODELS_CACHE: {
+    canonical: "managedSiteModelSync_channelUpstreamModelsCache",
+    legacy: ["newApiModelSync_channelUpstreamModelsCache"],
+    removeLegacyAfterMigration: true,
+  },
+} as const satisfies Record<string, StorageKeyMigrationSpec>
 
 /**
  * Storage service for New API Model Sync
  */
-class NewApiModelSyncStorage {
+class ManagedSiteModelSyncStorage {
   private storage: Storage
 
   constructor() {
@@ -28,13 +42,44 @@ class NewApiModelSyncStorage {
   }
 
   /**
+   * Read a value from canonical storage key first, falling back to legacy key.
+   *
+   * When a legacy value is found, it will be written through to the canonical
+   * key (one-time migration) to stop legacy identifiers leaking into persisted
+   * IDs while staying backward compatible.
+   */
+  private async getWithMigration<T>(
+    spec: StorageKeyMigrationSpec,
+  ): Promise<T | undefined> {
+    const stored = (await this.storage.get(spec.canonical)) as T | undefined
+    if (stored !== undefined) {
+      return stored
+    }
+
+    for (const legacyKey of spec.legacy) {
+      const legacyStored = (await this.storage.get(legacyKey)) as T | undefined
+      if (legacyStored === undefined) {
+        continue
+      }
+
+      await this.storage.set(spec.canonical, legacyStored)
+      if (spec.removeLegacyAfterMigration) {
+        await this.storage.remove(legacyKey)
+      }
+      return legacyStored
+    }
+
+    return undefined
+  }
+
+  /**
    * Get sync preferences from userPreferences
    */
-  async getPreferences(): Promise<NewApiModelSyncPreferences> {
+  async getPreferences(): Promise<ManagedSiteModelSyncPreferences> {
     try {
       const prefs = await userPreferences.getPreferences()
       const config =
-        prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+        prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
       return {
         enableSync: config.enabled,
         intervalMs: config.interval,
@@ -56,12 +101,12 @@ class NewApiModelSyncStorage {
    * Save sync preferences to userPreferences
    */
   async savePreferences(
-    preferences: Partial<NewApiModelSyncPreferences>,
+    preferences: Partial<ManagedSiteModelSyncPreferences>,
   ): Promise<boolean> {
     try {
       const prefs = await userPreferences.getPreferences()
       const current =
-        prefs.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync!
+        prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
 
       const updated = {
         enabled:
@@ -93,7 +138,7 @@ class NewApiModelSyncStorage {
             : [...(current.globalChannelModelFilters ?? [])],
       }
 
-      await userPreferences.savePreferences({ newApiModelSync: updated })
+      await userPreferences.savePreferences({ managedSiteModelSync: updated })
       console.log("[ManagedSiteModelSync] Preferences saved:", updated)
       return true
     } catch (error) {
@@ -107,9 +152,9 @@ class NewApiModelSyncStorage {
    */
   async getLastExecution(): Promise<ExecutionResult | null> {
     try {
-      const stored = (await this.storage.get(STORAGE_KEYS.LAST_EXECUTION)) as
-        | ExecutionResult
-        | undefined
+      const stored = await this.getWithMigration<ExecutionResult>(
+        STORAGE_KEY_MIGRATIONS.LAST_EXECUTION,
+      )
 
       return stored || null
     } catch (error) {
@@ -126,7 +171,10 @@ class NewApiModelSyncStorage {
    */
   async saveLastExecution(result: ExecutionResult): Promise<boolean> {
     try {
-      await this.storage.set(STORAGE_KEYS.LAST_EXECUTION, result)
+      await this.storage.set(
+        STORAGE_KEY_MIGRATIONS.LAST_EXECUTION.canonical,
+        result,
+      )
       console.log("[ManagedSiteModelSync] Execution result saved")
       return true
     } catch (error) {
@@ -143,7 +191,7 @@ class NewApiModelSyncStorage {
    */
   async clearLastExecution(): Promise<boolean> {
     try {
-      await this.storage.remove(STORAGE_KEYS.LAST_EXECUTION)
+      await this.storage.remove(STORAGE_KEY_MIGRATIONS.LAST_EXECUTION.canonical)
       console.log("[ManagedSiteModelSync] Last execution cleared")
       return true
     } catch (error) {
@@ -160,9 +208,9 @@ class NewApiModelSyncStorage {
    */
   async getChannelUpstreamModelOptions(): Promise<string[]> {
     try {
-      const stored = (await this.storage.get(
-        STORAGE_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE,
-      )) as string[] | undefined
+      const stored = await this.getWithMigration<string[]>(
+        STORAGE_KEY_MIGRATIONS.CHANNEL_UPSTREAM_MODELS_CACHE,
+      )
 
       if (!stored || stored.length === 0) {
         return []
@@ -192,11 +240,11 @@ class NewApiModelSyncStorage {
       ).sort((a, b) => a.localeCompare(b))
 
       await this.storage.set(
-        STORAGE_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE,
+        STORAGE_KEY_MIGRATIONS.CHANNEL_UPSTREAM_MODELS_CACHE.canonical,
         normalized,
       )
       console.log(
-        `[NewApiModelSync] Cached ${normalized.length} channel upstream models`,
+        `[ManagedSiteModelSync] Cached ${normalized.length} channel upstream models`,
       )
       return true
     } catch (error) {
@@ -211,8 +259,8 @@ class NewApiModelSyncStorage {
   /**
    * Get default preferences
    */
-  private getDefaultPreferences(): NewApiModelSyncPreferences {
-    const defaultConfig = DEFAULT_PREFERENCES.newApiModelSync!
+  private getDefaultPreferences(): ManagedSiteModelSyncPreferences {
+    const defaultConfig = DEFAULT_PREFERENCES.managedSiteModelSync!
     return {
       enableSync: defaultConfig.enabled,
       intervalMs: defaultConfig.interval,
@@ -228,4 +276,4 @@ class NewApiModelSyncStorage {
 }
 
 // Create singleton instance
-export const newApiModelSyncStorage = new NewApiModelSyncStorage()
+export const managedSiteModelSyncStorage = new ManagedSiteModelSyncStorage()

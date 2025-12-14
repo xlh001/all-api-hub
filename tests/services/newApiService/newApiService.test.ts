@@ -177,16 +177,18 @@ function createMockUserPreferencesWithNewApi(overrides?: any) {
       adminToken: "admin-token-123",
       userId: "user-123",
     },
-    newApiModelSync: {
+    managedSiteModelSync: {
       enabled: false,
       interval: 3600000,
       concurrency: 5,
       maxRetries: 3,
       rateLimit: { requestsPerMinute: 60, burst: 10 },
+      allowedModels: [],
+      globalChannelModelFilters: [],
     },
     autoCheckin: { enabled: false },
     modelRedirect: { enabled: false, customMappings: [] },
-    preferencesVersion: 5,
+    preferencesVersion: 7,
     ...overrides,
   }
 }

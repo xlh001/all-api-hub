@@ -26,11 +26,9 @@ import { deepOverride } from "~/utils"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 
-
-
-
-
-type UserNewApiModelSyncConfig = NonNullable<UserPreferences["newApiModelSync"]>
+type UserManagedSiteModelSyncConfig = NonNullable<
+  UserPreferences["managedSiteModelSync"]
+>
 
 // 1. 定义 Context 的值类型
 interface UserPreferencesContextType {
@@ -78,9 +76,7 @@ interface UserPreferencesContextType {
   updateVeloeraBaseUrl: (url: string) => Promise<boolean>
   updateVeloeraAdminToken: (token: string) => Promise<boolean>
   updateVeloeraUserId: (userId: string) => Promise<boolean>
-  updateManagedSiteType: (
-    siteType: ManagedSiteType,
-  ) => Promise<boolean>
+  updateManagedSiteType: (siteType: ManagedSiteType) => Promise<boolean>
   updateCliProxyBaseUrl: (url: string) => Promise<boolean>
   updateCliProxyManagementKey: (key: string) => Promise<boolean>
   updateThemeMode: (themeMode: ThemeMode) => Promise<boolean>
@@ -88,7 +84,7 @@ interface UserPreferencesContextType {
     updates: Partial<AutoCheckinPreferences>,
   ) => Promise<boolean>
   updateNewApiModelSync: (
-    updates: Partial<UserNewApiModelSyncConfig>,
+    updates: Partial<UserManagedSiteModelSyncConfig>,
   ) => Promise<boolean>
   updateModelRedirect: (
     updates: Partial<ModelRedirectPreferences>,
@@ -454,20 +450,21 @@ export const UserPreferencesProvider = ({
   )
 
   const updateNewApiModelSync = useCallback(
-    async (updates: Partial<UserNewApiModelSyncConfig>) => {
+    async (updates: Partial<UserManagedSiteModelSyncConfig>) => {
       const success = await userPreferences.savePreferences({
-        newApiModelSync: updates,
+        managedSiteModelSync: updates,
       })
       if (success) {
         setPreferences((prev) => {
           if (!prev) return null
           const merged = deepOverride(
-            prev.newApiModelSync ?? DEFAULT_PREFERENCES.newApiModelSync,
+            prev.managedSiteModelSync ??
+              DEFAULT_PREFERENCES.managedSiteModelSync,
             updates,
           )
           return {
             ...prev,
-            newApiModelSync: merged,
+            managedSiteModelSync: merged,
           }
         })
 
@@ -592,10 +589,10 @@ export const UserPreferencesProvider = ({
       }
 
       // Notify New API model sync service
-      if (defaults.newApiModelSync) {
+      if (defaults.managedSiteModelSync) {
         void sendRuntimeMessage({
           action: "modelSync:updateSettings",
-          settings: defaults.newApiModelSync,
+          settings: defaults.managedSiteModelSync,
         })
       }
     }
@@ -676,11 +673,11 @@ export const UserPreferencesProvider = ({
   const resetNewApiModelSyncConfig = useCallback(async () => {
     const success = await userPreferences.resetNewApiModelSyncConfig()
     if (success) {
-      const defaults = DEFAULT_PREFERENCES.newApiModelSync
+      const defaults = DEFAULT_PREFERENCES.managedSiteModelSync
       setPreferences((prev) =>
         prev
           ? deepOverride(prev, {
-              newApiModelSync: defaults,
+              managedSiteModelSync: defaults,
               lastUpdated: Date.now(),
             })
           : prev,
@@ -853,8 +850,7 @@ export const UserPreferencesProvider = ({
       (DEFAULT_PREFERENCES.tempWindowFallback as TempWindowFallbackPreferences),
     tempWindowFallbackReminder:
       preferences.tempWindowFallbackReminder ??
-      (DEFAULT_PREFERENCES
-        .tempWindowFallbackReminder as TempWindowFallbackReminderPreferences),
+      (DEFAULT_PREFERENCES.tempWindowFallbackReminder as TempWindowFallbackReminderPreferences),
     updateActiveTab,
     updateDefaultTab,
     updateCurrencyType,

@@ -227,9 +227,7 @@ export async function handleTempWindowFetch(
   if (!originUrl || !fetchUrl) {
     sendResponse({
       success: false,
-      error:
-        t("messages:background.invalidFetchRequest", "Invalid fetch request") ||
-        "Invalid fetch request",
+      error: t("messages:background.invalidFetchRequest"),
     })
     return
   }

@@ -16,27 +16,13 @@ export default function ManagedSiteTab() {
 
   return (
     <div className="space-y-6">
-      <section id="managed-site-selector">
-        <ManagedSiteSelector />
-      </section>
+      <ManagedSiteSelector />
 
-      {managedSiteType === NEW_API ? (
-        <section id="new-api">
-          <NewApiSettings />
-        </section>
-      ) : (
-        <section id="veloera">
-          <VeloeraSettings />
-        </section>
-      )}
+      {managedSiteType === NEW_API ? <NewApiSettings /> : <VeloeraSettings />}
 
-      <section id="new-api-model-sync">
-        <ManagedSiteModelSyncSettings />
-      </section>
+      <ManagedSiteModelSyncSettings />
 
-      <section id="model-redirect">
-        <ModelRedirectSettings />
-      </section>
+      <ModelRedirectSettings />
     </div>
   )
 }
