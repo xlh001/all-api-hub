@@ -35,13 +35,13 @@ type UserManagedSiteModelSyncConfig = NonNullable<
 type EditableFilter = ChannelModelFilterRule
 
 /**
- * Render the New API Model Sync settings UI and manage its local state and interactions.
+ * Render the Managed Site Model Sync settings UI and manage its local state and interactions.
  *
  * This component displays controls for enabling auto-sync, adjusting interval, concurrency,
  * retries and rate limits, selecting allowed models (loaded from model metadata), and navigating
  * to the sync execution view. It loads model metadata on mount, persists preference changes via
  * the user preferences context, and shows success/error toasts for save operations.
- * @returns The settings section React element for configuring New API Model Sync.
+ * @returns The settings section React element for configuring Managed Site Model Sync.
  */
 export default function ManagedSiteModelSyncSettings() {
   const { t } = useTranslation([
