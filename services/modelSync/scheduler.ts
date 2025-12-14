@@ -201,7 +201,7 @@ class ModelSyncScheduler {
 
     // List channels
     const channelListResponse = await service.listChannels()
-    const allChannels = channelListResponse.items as ManagedSiteChannel[]
+    const allChannels = channelListResponse.items
 
     // Filter channels if specific IDs provided
     let channels: ManagedSiteChannel[]
@@ -431,7 +431,7 @@ class ModelSyncScheduler {
     try {
       browser.runtime
         .sendMessage({
-          type: "NEW_API_MODEL_SYNC_PROGRESS",
+          type: "MANAGED_SITE_MODEL_SYNC_PROGRESS",
           payload: this.currentProgress,
         })
         .catch(() => {
