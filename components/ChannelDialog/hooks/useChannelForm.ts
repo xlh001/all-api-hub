@@ -49,7 +49,7 @@ export function useChannelForm({
   initialModels,
   initialGroups,
 }: UseChannelFormProps) {
-  const { t } = useTranslation("channelDialog")
+  const { t } = useTranslation(["channelDialog", "messages"])
 
   const buildInitialFormData = useCallback(
     (): ChannelFormData => ({
@@ -237,20 +237,17 @@ export function useChannelForm({
 
     // Validation
     if (!formData.name.trim()) {
-      toast.error(t("validation.nameRequired") || "Channel name is required")
+      toast.error(t("channelDialog:validation.nameRequired"))
       return
     }
 
     if (isKeyFieldRequired && !formData.key.trim()) {
-      toast.error(t("validation.keyRequired") || "API key is required")
+      toast.error(t("channelDialog:validation.keyRequired"))
       return
     }
 
     if (isBaseUrlRequired && !formData?.base_url?.trim()) {
-      toast.error(
-        t("validation.baseUrlRequired") ||
-          "Base URL is required for this channel type",
-      )
+      toast.error(t("channelDialog:validation.baseUrlRequired"))
       return
     }
 
@@ -260,7 +257,7 @@ export function useChannelForm({
       const service = await getManagedSiteService()
       const apiConfig = await service.getConfig()
       if (!apiConfig) {
-        throw new Error("New API configuration not found")
+        throw new Error(t(`messages:${service.messagesKey}.configMissing`))
       }
 
       // Build payload
@@ -270,7 +267,7 @@ export function useChannelForm({
       if (mode === DIALOG_MODES.EDIT && channel) {
         const channelId = channel.id
         if (!channelId) {
-          throw new Error("Existing channel id is missing")
+          throw new Error(t("channelDialog:messages.missingChannelId"))
         }
         const updatePayload: UpdateChannelPayload = (() => {
           return {
@@ -302,14 +299,13 @@ export function useChannelForm({
         onClose()
         resetForm()
       } else {
-        throw new Error(response.message || "Failed to save channel")
+        throw new Error(response.message)
       }
     } catch (error: any) {
       console.error("[ChannelForm] Save failed:", error)
       toast.error(
         t("channelDialog:messages.saveFailed", {
           error: error.message,
-          defaultValue: `Failed to save channel: ${error.message}`,
         }),
       )
     } finally {
