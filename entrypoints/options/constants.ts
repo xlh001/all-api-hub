@@ -18,7 +18,7 @@ import ImportExport from "./pages/ImportExport"
 import KeyManagement from "./pages/KeyManagement"
 import managedSiteChannels from "./pages/ManagedSiteChannels"
 import ModelList from "./pages/ModelList"
-import NewApiModelSync from "./pages/NewApiModelSync"
+import ManagedSiteModelSync from "./pages/NewApiModelSync"
 
 // 菜单项类型定义
 export interface MenuItem {
@@ -67,10 +67,10 @@ export const menuItems: MenuItem[] = [
     component: managedSiteChannels,
   },
   {
-    id: "newApiModelSync",
+    id: "managedSiteModelSync",
     name: "模型同步",
     icon: RefreshCcw,
-    component: NewApiModelSync,
+    component: ManagedSiteModelSync,
   },
   {
     id: "importExport",

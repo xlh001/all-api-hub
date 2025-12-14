@@ -170,7 +170,7 @@ function Sidebar({
 
                 if (
                   !hasValidManagedSiteConfig(preferences ?? null) &&
-                  (item.id === "newApiModelSync" ||
+                  (item.id === "managedSiteModelSync" ||
                     item.id === "managedSiteChannels")
                 ) {
                   return null
