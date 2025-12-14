@@ -4,6 +4,10 @@ import type { ApiToken, DisplaySiteData, SiteAccount } from "~/types"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 import type { ChannelFormData, CreateChannelPayload } from "~/types/newapi"
 
+
+
+
+
 // ============================================================================
 // MOCKS
 // ============================================================================
@@ -376,7 +380,7 @@ describe("newApiService", () => {
       expect(result).toEqual({ success: true })
       expect(mockFetchApi).toHaveBeenCalledWith({
         baseUrl: "https://api.example.com",
-        endpoint: "/api/channel",
+        endpoint: "/api/channel/",
         userId: "user-123",
         token: "admin-token",
         options: {
@@ -468,7 +472,7 @@ describe("newApiService", () => {
       expect(result).toEqual({ success: true })
       expect(mockFetchApi).toHaveBeenCalledWith({
         baseUrl: "https://api.example.com",
-        endpoint: "/api/channel",
+        endpoint: "/api/channel/",
         userId: "user-123",
         token: "admin-token",
         options: {
@@ -514,7 +518,7 @@ describe("newApiService", () => {
       expect(hasValidNewApiConfig(null)).toBe(false)
     })
 
-    it("should return false when newApi is missing", async () => {
+    it("should return false when managedSite is missing", async () => {
       const { hasValidNewApiConfig } = await import(
         "~/services/newApiService/newApiService"
       )

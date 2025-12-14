@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest"
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
 
+
+
+
+
 describe("userPreferences", () => {
   describe("DEFAULT_PREFERENCES", () => {
     it("has correct default values", () => {
@@ -29,7 +33,7 @@ describe("userPreferences", () => {
       expect(DEFAULT_PREFERENCES.webdav.autoSync).toBe(false)
     })
 
-    it("has valid newApi config", () => {
+    it("has valid managedSite config", () => {
       expect(DEFAULT_PREFERENCES.newApi).toBeDefined()
       expect(DEFAULT_PREFERENCES.newApi.baseUrl).toBe("")
     })
