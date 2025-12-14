@@ -80,7 +80,6 @@
     "updateSuccess": "Account {{name}} updated successfully!",
     "operationFailed": "Operation failed: {{error}}",
     "saveFailed": "Save failed",
-    "startNewApiConfig": "Starting automatic configuration to New API...",
     "saveAccountFailed": "Failed to save account",
     "newApiConfigFailed": "Auto-configuration to New API failed: {{error}}"
   }

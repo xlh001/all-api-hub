@@ -80,7 +80,6 @@
     "updateSuccess": "账号 {{name}} 更新成功!",
     "operationFailed": "操作失败: {{error}}",
     "saveFailed": "保存失败",
-    "startNewApiConfig": "正在开始自动配置到 New API...",
     "saveAccountFailed": "保存账号失败",
     "newApiConfigFailed": "自动配置到 New API失败: {{error}}"
   }

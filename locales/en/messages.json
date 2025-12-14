@@ -2,9 +2,6 @@
   "toast": {
     "loading": {
       "refreshingAccount": "Refreshing {{accountName}}...",
-      "autoConfiguring": "Auto-configuring to New API...",
-      "checkingApiKeys": "Checking API keys...",
-      "importingToNewApi": "Importing to New API...",
       "fetchingAccountData": "Fetching account data..."
     },
     "success": {
@@ -16,7 +13,6 @@
       "accountSaveSuccess": "Account saved successfully",
       "accountUpdateSuccess": "Account updated successfully",
       "autoDetectSuccess": "Auto-detect successful!",
-      "newApiConfigSuccess": "{{message}}",
       "keyCopied": "Key {{name}} copied to clipboard",
       "deleteKeySuccess": "Key {{name}} deleted successfully",
       "importedAccounts": "Imported and migrated {{migratedCount}} account(s)",
@@ -30,7 +26,6 @@
       "operationFailed": "Operation failed: {{error}}",
       "saveFailed": "Save failed",
       "saveAccountFailed": "Failed to save account",
-      "newApiConfigFailed": "Auto-configuration to New API failed: {{error}}",
       "copyFailed": "Copy failed",
       "accountNotFound": "Account information not found",
       "deleteKeyFailed": "Failed to delete key, please try again later",
@@ -47,7 +42,10 @@
       "updateAccountFailed": "Failed to update account {{error}}",
       "newApiBaseUrlRequired": "New API base URL not configured",
       "newApiAdminTokenRequired": "New API admin token not configured",
-      "newApiUserIdRequired": "New API user ID not configured"
+      "newApiUserIdRequired": "New API user ID not configured",
+      "veloeraBaseUrlRequired": "Veloera base URL not configured",
+      "veloeraAdminTokenRequired": "Veloera admin token not configured",
+      "veloeraUserIdRequired": "Veloera user ID not configured"
     },
     "api": {
       "fetchUserInfoFailed": "Failed to get user info",
@@ -78,6 +76,7 @@
   "accountOperations": {
     "checkingApiKeys": "Checking API key...",
     "importingToNewApi": "Importing to New API...",
+    "importingToVeloera": "Importing to Veloera...",
     "createTokenFailed": "Failed to create API token",
     "tokenNotFound": "Failed to create or find an API token",
     "retrying": "An error occurred, attempting retry #{{attempt}}"
@@ -98,6 +97,14 @@
   "newapi": {
     "configMissing": "Please configure New API address, admin token, and user ID in basic settings first",
     "dataFetchFailed": "Failed to fetch New API data, please check if the configuration is correct",
+    "noAnyModels": "No models available",
+    "channelExists": "Channel {{channelName}} already exists, no need to import again",
+    "importSuccess": "Successfully imported new channel {{channelName}}",
+    "importFailed": "Import failed, an unknown error occurred"
+  },
+  "veloera": {
+    "configMissing": "Please configure Veloera address, admin token, and user ID in basic settings first",
+    "dataFetchFailed": "Failed to fetch Veloera data, please check if the configuration is correct",
     "noAnyModels": "No models available",
     "channelExists": "Channel {{channelName}} already exists, no need to import again",
     "importSuccess": "Successfully imported new channel {{channelName}}",

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { ApiError } from "~/services/apiService/common/errors"
-import { fetchApiData } from "~/services/apiService/common/utils"
 import { AuthTypeEnum, TEMP_WINDOW_HEALTH_STATUS_CODES } from "~/types"
+
+let fetchApiData: typeof import("~/services/apiService/common/utils").fetchApiData
+let ApiError: typeof import("~/services/apiService/common/errors").ApiError
 
 const { mockHasCookieInterceptorPermissions, mockGetPreferences } = vi.hoisted(
   () => ({
@@ -53,6 +54,19 @@ const createFetchMock = (response: any) => {
 declare const global: any
 
 describe("apiService common fetchApi helpers", () => {
+  beforeEach(async () => {
+    // Ensure we always use the real implementations even if other tests mock these modules.
+    const utils = await vi.importActual<
+      typeof import("~/services/apiService/common/utils")
+    >("~/services/apiService/common/utils")
+    fetchApiData = utils.fetchApiData
+
+    const errors = await vi.importActual<
+      typeof import("~/services/apiService/common/errors")
+    >("~/services/apiService/common/errors")
+    ApiError = errors.ApiError
+  })
+
   beforeEach(() => {
     vi.restoreAllMocks()
 
