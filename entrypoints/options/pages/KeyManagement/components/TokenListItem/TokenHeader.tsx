@@ -3,20 +3,19 @@ import {
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline"
-import { NewAPI } from "@lobehub/icons"
 import { useTranslation } from "react-i18next"
 
 import { useChannelDialog } from "~/components/ChannelDialog"
 import { CCSwitchIcon } from "~/components/icons/CCSwitchIcon"
 import { CherryIcon } from "~/components/icons/CherryIcon"
 import { CliProxyIcon } from "~/components/icons/CliProxyIcon"
-import { VeloeraIcon } from "~/components/icons/VeloeraIcon"
+import { ManagedSiteIcon } from "~/components/icons/ManagedSiteIcon"
 import { Badge, Heading6, IconButton } from "~/components/ui"
-import { VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { importToCliProxy } from "~/services/cliProxyService"
 import type { DisplaySiteData } from "~/types"
 import { OpenInCherryStudio } from "~/utils/cherryStudio"
+import { getManagedSiteLabelKey } from "~/utils/managedSite"
 import { showResultToast } from "~/utils/toastHelpers"
 
 import { AccountToken } from "../../type"
@@ -70,12 +69,9 @@ function TokenActionButtons({
   const { managedSiteType } = useUserPreferencesContext()
   const { openWithAccount } = useChannelDialog()
 
-  const managedSiteLabel =
-    managedSiteType === VELOERA
-      ? t("settings:managedSite.veloera")
-      : t("settings:managedSite.newApi")
+  const managedSiteLabel = t(getManagedSiteLabelKey(managedSiteType))
 
-  const handleImportToNewApi = async () => {
+  const handleImportToManagedSite = async () => {
     await openWithAccount(account, token, (result) => {
       showResultToast(result)
     })
@@ -128,13 +124,9 @@ function TokenActionButtons({
         })}
         size="sm"
         variant="ghost"
-        onClick={handleImportToNewApi}
+        onClick={handleImportToManagedSite}
       >
-        {managedSiteType === VELOERA ? (
-          <VeloeraIcon size="sm" />
-        ) : (
-          <NewAPI className="h-4 w-4 text-blue-500" />
-        )}
+        <ManagedSiteIcon siteType={managedSiteType} size="sm" />
       </IconButton>
       <IconButton
         aria-label={t("actions.editKey")}
