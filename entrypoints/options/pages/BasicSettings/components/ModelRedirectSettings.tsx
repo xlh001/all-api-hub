@@ -102,7 +102,7 @@ export default function ModelRedirectSettings() {
 
   return (
     <SettingSection
-      id="model-redirect"
+      id="managed-site-model-redirect"
       title={t("title")}
       description={t("description")}
       onReset={resetModelRedirectConfig}

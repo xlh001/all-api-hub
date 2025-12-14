@@ -343,7 +343,7 @@ export default function ManagedSiteModelSyncSettings() {
 
   return (
     <SettingSection
-      id="new-api-model-sync"
+      id="managed-site-model-sync"
       title={t("managedSiteModelSync:settings.title")}
       description={t("managedSiteModelSync:description")}
       onReset={async () => {
