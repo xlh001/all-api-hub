@@ -4,7 +4,6 @@
  * Based on gpt-api-sync logic with enhancements for weighted channel selection
  */
 
-import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import { modelMetadataService } from "~/services/modelMetadata"
 import { ModelSyncService } from "~/services/modelSync"
 import type { ManagedSiteChannel } from "~/types/managedSite"
@@ -13,11 +12,11 @@ import {
   ALL_PRESET_STANDARD_MODELS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
 } from "~/types/managedSiteModelRedirect"
+import { getManagedSiteConfig } from "~/utils/managedSite"
 
 import { hasValidManagedSiteConfig } from "../managedSiteService"
 import { userPreferences } from "../userPreferences"
 import { renameModel } from "./modelNormalization"
-
 
 /**
  * Model Redirect Service
@@ -107,8 +106,7 @@ export class ModelRedirectService {
         console.warn("[ModelRedirect] Failed to initialize metadata:", error)
       })
 
-      const siteType: ManagedSiteType = prefs.managedSiteType || NEW_API
-      const managedConfig = siteType === VELOERA ? prefs.veloera : prefs.newApi
+      const { siteType, config: managedConfig } = getManagedSiteConfig(prefs)
 
       const service = new ModelSyncService(
         managedConfig.baseUrl!,

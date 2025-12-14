@@ -17,7 +17,7 @@ import {
 } from "~/utils/managedSite"
 
 import * as newApiService from "./newApiService/newApiService"
-import type { UserPreferences } from "./userPreferences"
+import { userPreferences, type UserPreferences } from "./userPreferences"
 import * as veloeraService from "./veloeraService/veloeraService"
 
 export interface ManagedSiteConfig {
@@ -109,7 +109,8 @@ export function hasValidManagedSiteConfig(
  *
  */
 export async function getManagedSiteService(): Promise<ManagedSiteService> {
-  const { siteType, messagesKey } = await getManagedSiteContext()
+  const prefs = await userPreferences.getPreferences()
+  const { siteType, messagesKey } = getManagedSiteContext(prefs)
 
   if (siteType === VELOERA) {
     return {

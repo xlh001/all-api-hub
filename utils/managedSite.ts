@@ -1,6 +1,7 @@
 import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
-import { userPreferences } from "~/services/userPreferences"
 import type { UserPreferences } from "~/services/userPreferences"
+import type { NewApiConfig } from "~/types/newApiConfig"
+import type { VeloeraConfig } from "~/types/veloeraConfig"
 
 export type ManagedSiteLabelKey =
   | "settings:managedSite.newApi"
@@ -15,6 +16,33 @@ export interface ManagedSiteAdminConfig {
   baseUrl: string
   adminToken: string
   userId: string
+}
+
+export type ManagedSiteConfig = NewApiConfig | VeloeraConfig
+
+/**
+ * Extracts the selected managed site type and its corresponding config from a
+ * given preferences snapshot.
+ */
+export function getManagedSiteConfigFromPreferences(
+  preferences: UserPreferences,
+): {
+  siteType: ManagedSiteType
+  config: ManagedSiteConfig
+} {
+  const siteType: ManagedSiteType = preferences.managedSiteType || NEW_API
+  const config = siteType === VELOERA ? preferences.veloera : preferences.newApi
+  return { siteType, config }
+}
+
+/**
+ * Convenience wrapper for retrieving the managed site type + config.
+ */
+export function getManagedSiteConfig(prefs: UserPreferences): {
+  siteType: ManagedSiteType
+  config: ManagedSiteConfig
+} {
+  return getManagedSiteConfigFromPreferences(prefs)
 }
 
 /**
@@ -46,8 +74,7 @@ export function getManagedSiteMessagesKeyFromSiteType(
 export function getManagedSiteAdminConfig(
   preferences: UserPreferences,
 ): ManagedSiteAdminConfig | null {
-  const siteType: ManagedSiteType = preferences.managedSiteType || NEW_API
-  const config = siteType === VELOERA ? preferences.veloera : preferences.newApi
+  const { config } = getManagedSiteConfigFromPreferences(preferences)
 
   if (!config?.baseUrl || !config?.adminToken || !config?.userId) {
     return null
@@ -63,22 +90,18 @@ export function getManagedSiteAdminConfig(
 /**
  * Gets the current managed site type from user preferences.
  */
-export async function getManagedSiteType(
-  prefs?: UserPreferences,
-): Promise<ManagedSiteType> {
-  if (!prefs) {
-    prefs = await userPreferences.getPreferences()
-  }
+export function getManagedSiteType(prefs: UserPreferences): ManagedSiteType {
   return prefs.managedSiteType || NEW_API
 }
 
 /**
  * Returns both the selected managed site type and its corresponding i18n messages key.
  */
-export async function getManagedSiteContext(
-  prefs?: UserPreferences,
-): Promise<{ siteType: ManagedSiteType; messagesKey: ManagedSiteMessagesKey }> {
-  const siteType = await getManagedSiteType(prefs)
+export function getManagedSiteContext(prefs: UserPreferences): {
+  siteType: ManagedSiteType
+  messagesKey: ManagedSiteMessagesKey
+} {
+  const siteType = getManagedSiteType(prefs)
   return {
     siteType,
     messagesKey: getManagedSiteMessagesKeyFromSiteType(siteType),
@@ -88,9 +111,9 @@ export async function getManagedSiteContext(
 /**
  * Returns the current managed site messages key.
  */
-export async function getManagedSiteMessagesKey(
-  prefs?: UserPreferences,
-): Promise<ManagedSiteMessagesKey> {
-  const { messagesKey } = await getManagedSiteContext(prefs)
+export function getManagedSiteMessagesKey(
+  prefs: UserPreferences,
+): ManagedSiteMessagesKey {
+  const { messagesKey } = getManagedSiteContext(prefs)
   return messagesKey
 }

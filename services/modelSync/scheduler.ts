@@ -49,7 +49,7 @@ class ModelSyncScheduler {
   private async createService(): Promise<ModelSyncService> {
     const userPrefs = await userPreferences.getPreferences()
 
-    const { siteType, messagesKey } = await getManagedSiteContext(userPrefs)
+    const { siteType, messagesKey } = getManagedSiteContext(userPrefs)
     const managedConfig = getManagedSiteAdminConfig(userPrefs)
 
     if (!managedConfig) {
@@ -191,7 +191,7 @@ class ModelSyncScheduler {
 
     // Get preferences from userPreferences
     const prefs = await userPreferences.getPreferences()
-    const { messagesKey } = await getManagedSiteContext(prefs)
+    const { messagesKey } = getManagedSiteContext(prefs)
     const config =
       prefs.managedSiteModelSync ?? DEFAULT_PREFERENCES.managedSiteModelSync!
     const concurrency = Math.max(1, config.concurrency)
