@@ -109,16 +109,13 @@ export function ChannelDialog({
     <div>
       <h3 className="dark:text-dark-text-primary text-lg font-semibold text-gray-900">
         {mode === DIALOG_MODES.ADD
-          ? t("channelDialog:title.add", "Add Channel")
-          : t("channelDialog:title.edit", "Edit Channel")}
+          ? t("channelDialog:title.add")
+          : t("channelDialog:title.edit")}
       </h3>
       <p className="dark:text-dark-text-secondary mt-1 text-sm text-gray-500">
         {mode === DIALOG_MODES.ADD
-          ? t(
-              "channelDialog:description.add",
-              "Create a new channel for your API aggregator",
-            )
-          : t("channelDialog:description.edit", "Update channel settings")}
+          ? t("channelDialog:description.add")
+          : t("channelDialog:description.edit")}
       </p>
     </div>
   )
@@ -131,7 +128,7 @@ export function ChannelDialog({
         disabled={isSaving}
         type="button"
       >
-        {t("common:actions.cancel", "Cancel")}
+        {t("common:actions.cancel")}
       </Button>
       <Button
         onClick={handleSubmit}
@@ -140,8 +137,8 @@ export function ChannelDialog({
         type="submit"
       >
         {mode === DIALOG_MODES.ADD
-          ? t("channelDialog:actions.create", "Create Channel")
-          : t("channelDialog:actions.update", "Update Channel")}
+          ? t("channelDialog:actions.create")
+          : t("channelDialog:actions.update")}
       </Button>
     </div>
   )
@@ -192,10 +189,7 @@ export function ChannelDialog({
           >
             <SelectTrigger id="channel-type">
               <SelectValue
-                placeholder={t(
-                  "channelDialog:fields.type.placeholder",
-                  "Select a type",
-                )}
+                placeholder={t("channelDialog:fields.type.placeholder")}
               />
             </SelectTrigger>
             <SelectContent>
@@ -214,7 +208,7 @@ export function ChannelDialog({
         {/* API Key */}
         <div>
           <Label htmlFor="channel-key" required={isKeyFieldRequired}>
-            {t("channelDialog:fields.key.label", "API Key")}
+            {t("channelDialog:fields.key.label")}
           </Label>
           <Input
             id="channel-key"
@@ -231,8 +225,8 @@ export function ChannelDialog({
                 onClick={() => setShowKey(!showKey)}
                 aria-label={
                   showKey
-                    ? t("channelDialog:actions.hideKey", "Hide Key")
-                    : t("channelDialog:actions.showKey", "Show Key")
+                    ? t("channelDialog:actions.hideKey")
+                    : t("channelDialog:actions.showKey")
                 }
                 type="button"
                 disabled={isSaving}
@@ -250,7 +244,7 @@ export function ChannelDialog({
         {/* Base URL */}
         <div>
           <Label htmlFor="channel-base-url" required={isBaseUrlRequired}>
-            {t("channelDialog:fields.baseUrl.label", "Base URL")}
+            {t("channelDialog:fields.baseUrl.label")}
           </Label>
           <Input
             id="channel-base-url"
@@ -267,7 +261,7 @@ export function ChannelDialog({
         <div>
           <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <Label className="mb-0">
-              {t("channelDialog:fields.models.label", "Models")}
+              {t("channelDialog:fields.models.label")}
             </Label>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -279,7 +273,7 @@ export function ChannelDialog({
                 }
                 type="button"
               >
-                {t("channelDialog:actions.selectAll", "Select All")}
+                {t("channelDialog:actions.selectAll")}
               </Button>
               <Button
                 variant="outline"
@@ -290,7 +284,7 @@ export function ChannelDialog({
                 }
                 type="button"
               >
-                {t("channelDialog:actions.inverse", "Inverse")}
+                {t("channelDialog:actions.inverse")}
               </Button>
               <Button
                 variant="outline"
@@ -301,7 +295,7 @@ export function ChannelDialog({
                 }
                 type="button"
               >
-                {t("channelDialog:actions.deselectAll", "Deselect All")}
+                {t("channelDialog:actions.deselectAll")}
               </Button>
             </div>
           </div>
@@ -325,36 +319,33 @@ export function ChannelDialog({
         {/* Groups */}
         <div>
           <MultiSelect
-            label={t("channelDialog:fields.groups.label", "Groups")}
+            label={t("channelDialog:fields.groups.label")}
             options={availableGroups}
             selected={formData.groups}
             onChange={(groups) => updateField("groups", groups)}
             placeholder={
               isLoadingGroups
-                ? t("channelDialog:fields.groups.loading", "Loading groups...")
-                : t("channelDialog:fields.groups.placeholder", "Select groups")
+                ? t("channelDialog:fields.groups.loading")
+                : t("channelDialog:fields.groups.placeholder")
             }
             disabled={isSaving || isLoadingGroups}
             allowCustom
           />
           <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
-            {t(
-              "channelDialog:fields.groups.hint",
-              "Groups from your New API configuration",
-            )}
+            {t("channelDialog:fields.groups.hint")}
           </p>
         </div>
 
         {/* Advanced Settings */}
         <details className="dark:border-dark-bg-tertiary rounded-lg border border-gray-200 p-3">
           <summary className="dark:text-dark-text-primary cursor-pointer text-sm font-medium text-gray-700">
-            {t("channelDialog:sections.advanced", "Advanced Settings")}
+            {t("channelDialog:sections.advanced")}
           </summary>
           <div className="mt-3 space-y-4">
             {/* Priority */}
             <div>
               <Label htmlFor="channel-priority">
-                {t("channelDialog:fields.priority.label", "Priority")}
+                {t("channelDialog:fields.priority.label")}
               </Label>
               <Input
                 id="channel-priority"
@@ -368,17 +359,14 @@ export function ChannelDialog({
                 min="0"
               />
               <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
-                {t(
-                  "channelDialog:fields.priority.hint",
-                  "Higher priority channels are used first",
-                )}
+                {t("channelDialog:fields.priority.hint")}
               </p>
             </div>
 
             {/* Weight */}
             <div>
               <Label htmlFor="channel-weight">
-                {t("channelDialog:fields.weight.label", "Weight")}
+                {t("channelDialog:fields.weight.label")}
               </Label>
               <Input
                 id="channel-weight"
@@ -392,17 +380,14 @@ export function ChannelDialog({
                 min="0"
               />
               <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
-                {t(
-                  "channelDialog:fields.weight.hint",
-                  "Weight for load balancing (0 = equal distribution)",
-                )}
+                {t("channelDialog:fields.weight.hint")}
               </p>
             </div>
 
             {/* Status */}
             <div>
               <Label htmlFor="channel-status">
-                {t("channelDialog:fields.status.label", "Status")}
+                {t("channelDialog:fields.status.label")}
               </Label>
               <Select
                 value={
@@ -420,10 +405,10 @@ export function ChannelDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={String(CHANNEL_STATUS.Enable)}>
-                    {t("channelDialog:fields.status.enabled", "Enabled")}
+                    {t("channelDialog:fields.status.enabled")}
                   </SelectItem>
                   <SelectItem value={String(CHANNEL_STATUS.ManuallyDisabled)}>
-                    {t("channelDialog:fields.status.disabled", "Disabled")}
+                    {t("channelDialog:fields.status.disabled")}
                   </SelectItem>
                 </SelectContent>
               </Select>

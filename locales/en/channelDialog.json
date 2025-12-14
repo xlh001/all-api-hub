@@ -4,7 +4,7 @@
     "edit": "Edit Channel"
   },
   "description": {
-    "add": "Configure a new forwarding channel for your New API deployment",
+    "add": "Configure a new channel for your managed site",
     "edit": "Update channel settings and routing information"
   },
   "actions": {
@@ -48,14 +48,14 @@
     "models": {
       "label": "Available Models",
       "placeholder": "Select or type model names",
-      "loading": "Loading models..",
+      "loading": "Loading models...",
       "hint": "Type to search or press Enter to add a custom model name"
     },
     "groups": {
       "label": "Channel Groups",
       "placeholder": "Select groups",
-      "loading": "Loading groups..",
-      "hint": "Groups are sourced from your configured New API site"
+      "loading": "Loading groups...",
+      "hint": "Groups are sourced from your managed site"
     },
     "priority": {
       "label": "Priority",
