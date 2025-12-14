@@ -17,9 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { PageHeader } from "~/entrypoints/options/components/PageHeader"
-import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { OPTIONAL_PERMISSIONS } from "~/services/permissions/permissionManager"
 import {
   navigateToAnchor,
@@ -44,7 +44,7 @@ type TabId =
   | "refresh"
   | "checkinRedeem"
   | "dataBackup"
-  | "newApi"
+  | "managedSite"
   | "cliProxy"
   | "permissions"
 
@@ -65,7 +65,7 @@ const TAB_CONFIGS = [
   { id: "accountManagement", component: AccountManagementTab },
   { id: "refresh", component: AutoRefreshTab },
   { id: "checkinRedeem", component: CheckinRedeemTab },
-  { id: "newApi", component: ManagedSiteTab },
+  { id: "managedSite", component: ManagedSiteTab },
   { id: "cliProxy", component: CliProxyTab },
   ...(hasOptionalPermissions ? [PERMISSIONS_TAB_CONFIG] : []),
   { id: "dataBackup", component: DataBackupTab },
@@ -86,10 +86,10 @@ const ANCHOR_TO_TAB: Record<string, TabId> = {
   webdav: "dataBackup",
   "webdav-auto-sync": "dataBackup",
   "import-export-entry": "dataBackup",
-  "new-api": "newApi",
-  "new-api-model-sync": "newApi",
+  "new-api": "managedSite",
+  "new-api-model-sync": "managedSite",
   "cli-proxy": "cliProxy",
-  "dangerous-zone": "newApi",
+  "dangerous-zone": "managedSite",
   ...(hasOptionalPermissions ? { permissions: "permissions" } : {}),
 }
 
