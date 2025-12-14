@@ -84,7 +84,7 @@ class NewApiModelSyncScheduler {
    */
   async initialize() {
     if (this.isInitialized) {
-      console.log("[NewApiModelSync] Scheduler already initialized")
+      console.log("[ManagedSiteModelSync] Scheduler already initialized")
       return
     }
 
@@ -95,7 +95,7 @@ class NewApiModelSyncScheduler {
           if (alarm.name === NewApiModelSyncScheduler.ALARM_NAME) {
             this.executeSync().catch((error) => {
               console.error(
-                "[NewApiModelSync] Scheduled execution failed:",
+                "[ManagedSiteModelSync] Scheduled execution failed:",
                 error,
               )
             })
@@ -106,14 +106,17 @@ class NewApiModelSyncScheduler {
         await this.setupAlarm()
       } else {
         console.warn(
-          "[NewApiModelSync] Alarms API not available, automatic sync disabled",
+          "[ManagedSiteModelSync] Alarms API not available, automatic sync disabled",
         )
       }
 
       this.isInitialized = true
-      console.log("[NewApiModelSync] Scheduler initialized")
+      console.log("[ManagedSiteModelSync] Scheduler initialized")
     } catch (error) {
-      console.error("[NewApiModelSync] Failed to initialize scheduler:", error)
+      console.error(
+        "[ManagedSiteModelSync] Failed to initialize scheduler:",
+        error,
+      )
     }
   }
 
@@ -127,7 +130,7 @@ class NewApiModelSyncScheduler {
     // Check if alarms API is supported
     if (!hasAlarmsAPI()) {
       console.warn(
-        "[NewApiModelSync] Alarms API not supported, auto-sync disabled",
+        "[ManagedSiteModelSync] Alarms API not supported, auto-sync disabled",
       )
       return
     }
@@ -139,7 +142,7 @@ class NewApiModelSyncScheduler {
     await clearAlarm(NewApiModelSyncScheduler.ALARM_NAME)
 
     if (!config.enabled) {
-      console.log("[NewApiModelSync] Auto-sync disabled, alarm cleared")
+      console.log("[ManagedSiteModelSync] Auto-sync disabled, alarm cleared")
       return
     }
 
@@ -163,10 +166,10 @@ class NewApiModelSyncScheduler {
           periodInMinutes: alarm.periodInMinutes,
         })
       } else {
-        console.warn("[NewApiModelSync] Alarm was not created properly")
+        console.warn("[ManagedSiteModelSync] Alarm was not created properly")
       }
     } catch (error) {
-      console.error("[NewApiModelSync] Failed to create alarm:", error)
+      console.error("[ManagedSiteModelSync] Failed to create alarm:", error)
     }
   }
 
@@ -182,7 +185,7 @@ class NewApiModelSyncScheduler {
    * @returns ExecutionResult with per-channel outcomes and statistics.
    */
   async executeSync(channelIds?: number[]): Promise<ExecutionResult> {
-    console.log("[NewApiModelSync] Starting execution")
+    console.log("[ManagedSiteModelSync] Starting execution")
 
     // Initialize service
     const service = await this.createService()
@@ -414,7 +417,7 @@ class NewApiModelSyncScheduler {
 
     await userPreferences.savePreferences({ newApiModelSync: updated })
     await this.setupAlarm()
-    console.log("[NewApiModelSync] Settings updated:", updated)
+    console.log("[ManagedSiteModelSync] Settings updated:", updated)
   }
 
   /**
@@ -510,7 +513,7 @@ export const handleNewApiModelSyncMessage = async (
         sendResponse({ success: false, error: "Unknown action" })
     }
   } catch (error) {
-    console.error("[NewApiModelSync] Message handling failed:", error)
+    console.error("[ManagedSiteModelSync] Message handling failed:", error)
     sendResponse({ success: false, error: getErrorMessage(error) })
   }
 }

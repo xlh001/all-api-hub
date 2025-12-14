@@ -22,7 +22,6 @@ import {
 
 import { RateLimiter } from "./rateLimiter"
 
-
 /**
  * New API Model Sync Service
  * Handles channel operations for model synchronization
@@ -122,7 +121,7 @@ export class ModelSyncService {
         this.siteType,
       )
     } catch (error) {
-      console.error("[NewApiModelSync] Failed to list channels:", error)
+      console.error("[ManagedSiteModelSync] Failed to list channels:", error)
       throw error
     }
   }
@@ -144,7 +143,7 @@ export class ModelSyncService {
         this.siteType,
       )
     } catch (error: any) {
-      console.error("[NewApiModelSync] Failed to fetch models:", error)
+      console.error("[ManagedSiteModelSync] Failed to fetch models:", error)
       throw error
     }
   }
@@ -170,7 +169,7 @@ export class ModelSyncService {
         this.siteType,
       )
     } catch (error: any) {
-      console.error("[NewApiModelSync] Failed to update channel:", error)
+      console.error("[ManagedSiteModelSync] Failed to update channel:", error)
       throw error
     }
   }

@@ -10,6 +10,8 @@ import {
   UserRound,
 } from "lucide-react"
 
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+
 import About from "./pages/About"
 import AccountManagement from "./pages/AccountManagement"
 import AutoCheckin from "./pages/AutoCheckin"
@@ -17,10 +19,8 @@ import BasicSettings from "./pages/BasicSettings"
 import ImportExport from "./pages/ImportExport"
 import KeyManagement from "./pages/KeyManagement"
 import managedSiteChannels from "./pages/ManagedSiteChannels"
+import ManagedSiteModelSync from "./pages/ManagedSiteModelSync"
 import ModelList from "./pages/ModelList"
-import ManagedSiteModelSync from "./pages/NewApiModelSync"
-
-import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 
 // 菜单项类型定义
 export interface MenuItem {

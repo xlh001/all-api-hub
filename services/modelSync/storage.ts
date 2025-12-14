@@ -47,7 +47,7 @@ class NewApiModelSyncStorage {
         ],
       }
     } catch (error) {
-      console.error("[NewApiModelSync] Failed to get preferences:", error)
+      console.error("[ManagedSiteModelSync] Failed to get preferences:", error)
       return this.getDefaultPreferences()
     }
   }
@@ -94,10 +94,10 @@ class NewApiModelSyncStorage {
       }
 
       await userPreferences.savePreferences({ newApiModelSync: updated })
-      console.log("[NewApiModelSync] Preferences saved:", updated)
+      console.log("[ManagedSiteModelSync] Preferences saved:", updated)
       return true
     } catch (error) {
-      console.error("[NewApiModelSync] Failed to save preferences:", error)
+      console.error("[ManagedSiteModelSync] Failed to save preferences:", error)
       return false
     }
   }
@@ -113,7 +113,10 @@ class NewApiModelSyncStorage {
 
       return stored || null
     } catch (error) {
-      console.error("[NewApiModelSync] Failed to get last execution:", error)
+      console.error(
+        "[ManagedSiteModelSync] Failed to get last execution:",
+        error,
+      )
       return null
     }
   }
@@ -124,10 +127,13 @@ class NewApiModelSyncStorage {
   async saveLastExecution(result: ExecutionResult): Promise<boolean> {
     try {
       await this.storage.set(STORAGE_KEYS.LAST_EXECUTION, result)
-      console.log("[NewApiModelSync] Execution result saved")
+      console.log("[ManagedSiteModelSync] Execution result saved")
       return true
     } catch (error) {
-      console.error("[NewApiModelSync] Failed to save execution result:", error)
+      console.error(
+        "[ManagedSiteModelSync] Failed to save execution result:",
+        error,
+      )
       return false
     }
   }
@@ -138,10 +144,13 @@ class NewApiModelSyncStorage {
   async clearLastExecution(): Promise<boolean> {
     try {
       await this.storage.remove(STORAGE_KEYS.LAST_EXECUTION)
-      console.log("[NewApiModelSync] Last execution cleared")
+      console.log("[ManagedSiteModelSync] Last execution cleared")
       return true
     } catch (error) {
-      console.error("[NewApiModelSync] Failed to clear last execution:", error)
+      console.error(
+        "[ManagedSiteModelSync] Failed to clear last execution:",
+        error,
+      )
       return false
     }
   }
@@ -166,7 +175,7 @@ class NewApiModelSyncStorage {
       return normalized.sort((a, b) => a.localeCompare(b))
     } catch (error) {
       console.error(
-        "[NewApiModelSync] Failed to get channel upstream model cache:",
+        "[ManagedSiteModelSync] Failed to get channel upstream model cache:",
         error,
       )
       return []
@@ -192,7 +201,7 @@ class NewApiModelSyncStorage {
       return true
     } catch (error) {
       console.error(
-        "[NewApiModelSync] Failed to save channel upstream model cache:",
+        "[ManagedSiteModelSync] Failed to save channel upstream model cache:",
         error,
       )
       return false
