@@ -1,6 +1,4 @@
 import { t } from "i18next"
-
-import { NEW_API, VELOERA, type ManagedSiteType } from "~/constants/siteType"
 import { ModelRedirectService } from "~/services/modelRedirect"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type { ManagedSiteChannel } from "~/types/managedSite"
@@ -20,6 +18,7 @@ import {
   onAlarm,
 } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
+import { getManagedSiteAdminConfig, getManagedSiteContext } from "~/utils/managedSite"
 
 import { channelConfigStorage } from "../channelConfigStorage"
 import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
@@ -46,16 +45,10 @@ class ModelSyncScheduler {
   private async createService(): Promise<ModelSyncService> {
     const userPrefs = await userPreferences.getPreferences()
 
-    const siteType: ManagedSiteType = userPrefs.managedSiteType || NEW_API
-    const messagesKey = siteType === VELOERA ? "veloera" : "newapi"
-    const managedConfig =
-      siteType === VELOERA ? userPrefs.veloera : userPrefs.newApi
+    const { siteType, messagesKey } = await getManagedSiteContext(userPrefs)
+    const managedConfig = getManagedSiteAdminConfig(userPrefs)
 
-    if (
-      !managedConfig?.baseUrl ||
-      !managedConfig?.adminToken ||
-      !managedConfig?.userId
-    ) {
+    if (!managedConfig) {
       throw new Error(t(`messages:${messagesKey}.configMissing`))
     }
 
