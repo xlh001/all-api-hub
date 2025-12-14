@@ -859,6 +859,10 @@ export default function ManagedSiteChannels() {
                   {headerGroup.headers.map((header) => (
                     <TableHead
                       key={header.id}
+                      className={cn(
+                        header.column.id === "actions" &&
+                          "bg-background sticky right-0 z-30 border-l",
+                      )}
                       style={{ width: header.getSize() }}
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
@@ -907,12 +911,24 @@ export default function ManagedSiteChannels() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="align-middle"
+                  className="group align-middle"
                 >
                   {row
                     .getVisibleCells()
                     .map((cell: Cell<ChannelRow, unknown>) => (
-                      <TableCell key={cell.id} className="py-3">
+                      <TableCell
+                        key={cell.id}
+                        data-state={
+                          cell.column.id === "actions" && row.getIsSelected()
+                            ? "selected"
+                            : undefined
+                        }
+                        className={cn(
+                          "py-3",
+                          cell.column.id === "actions" &&
+                            "bg-background group-hover:bg-muted/50 data-[state=selected]:bg-muted sticky right-0 z-20 border-l",
+                        )}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),

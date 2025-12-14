@@ -67,7 +67,7 @@
     },
     "actions": {
       "retryAccount": "重新尝试",
-      "openManual": "打开手动签到"
+      "openManual": "手动签到"
     },
     "filters": {
       "all": "全部",

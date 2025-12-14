@@ -67,7 +67,7 @@
     },
     "actions": {
       "retryAccount": "Retry",
-      "openManual": "Open manual sign-in"
+      "openManual": "Manual sign-in"
     },
     "filters": {
       "all": "All",

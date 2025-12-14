@@ -106,7 +106,7 @@ export default function ResultsTable({
               <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 {t("execution.table.time")}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
+              <th className="sticky right-0 z-20 border-l border-gray-200 bg-gray-50 px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                 {t("execution.table.actions")}
               </th>
             </tr>
@@ -115,7 +115,7 @@ export default function ResultsTable({
             {results.map((result) => (
               <tr
                 key={result.accountId}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="group hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100">
                   <AccountLinkButton
@@ -132,7 +132,7 @@ export default function ResultsTable({
                 <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-400">
                   {formatTimestamp(result.timestamp)}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                <td className="sticky right-0 z-10 border-l border-gray-200 bg-white px-6 py-4 text-sm text-gray-500 group-hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:group-hover:bg-gray-800">
                   <div className="flex flex-wrap gap-2">
                     {onRetryAccount &&
                       result.status === CHECKIN_RESULT_STATUS.FAILED && (
