@@ -33,7 +33,7 @@ export default function ActionBar({
   onRetryFailed,
   onRefresh,
 }: ActionBarProps) {
-  const { t } = useTranslation("newApiModelSync")
+  const { t } = useTranslation("managedSiteModelSync")
 
   return (
     <div className="flex flex-wrap gap-3">

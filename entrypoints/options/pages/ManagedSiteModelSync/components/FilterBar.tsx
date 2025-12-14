@@ -37,7 +37,7 @@ export default function FilterBar({
   onStatusChange,
   onKeywordChange,
 }: FilterBarProps) {
-  const { t } = useTranslation("newApiModelSync")
+  const { t } = useTranslation("managedSiteModelSync")
 
   const renderFilterButton = (
     value: FilterStatus,

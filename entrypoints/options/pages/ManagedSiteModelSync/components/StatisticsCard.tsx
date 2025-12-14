@@ -15,7 +15,7 @@ interface StatisticsCardProps {
  */
 export default function StatisticsCard(props: StatisticsCardProps) {
   const { statistics } = props
-  const { t } = useTranslation("newApiModelSync")
+  const { t } = useTranslation("managedSiteModelSync")
 
   return (
     <Card>

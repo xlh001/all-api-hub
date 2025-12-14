@@ -15,7 +15,7 @@ interface ProgressCardProps {
  */
 export default function ProgressCard(props: ProgressCardProps) {
   const { progress } = props
-  const { t } = useTranslation("newApiModelSync")
+  const { t } = useTranslation("managedSiteModelSync")
 
   if (!progress?.isRunning) {
     return null

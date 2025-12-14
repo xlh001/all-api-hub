@@ -48,7 +48,7 @@ export default function ResultsTable({
   runningChannelId,
   visibleColumns,
 }: ResultsTableProps) {
-  const { t } = useTranslation("newApiModelSync")
+  const { t } = useTranslation("managedSiteModelSync")
 
   const allSelected = items.length > 0 && selectedIds.size === items.length
   const columns = {

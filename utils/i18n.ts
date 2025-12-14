@@ -38,6 +38,7 @@ i18n
       "channelDialog",
       "keyManagement",
       "modelList",
+      "managedSiteModelSync",
       "settings",
       "messages",
       "redemptionAssist",

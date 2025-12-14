@@ -33,8 +33,8 @@ const TAB_INDEX = {
  * Fetches execution data, channels, and renders tabs for history and manual sync.
  * @returns Page layout with controls, status, and result tables.
  */
-export default function NewApiModelSync() {
-  const { t } = useTranslation("newApiModelSync")
+export default function ManagedSiteModelSync() {
+  const { t } = useTranslation("managedSiteModelSync")
   const hasInitializedTab = useRef(false)
   const [lastExecution, setLastExecution] = useState<ExecutionResult | null>(
     null,

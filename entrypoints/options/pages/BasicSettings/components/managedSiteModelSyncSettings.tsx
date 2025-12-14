@@ -45,7 +45,7 @@ type EditableFilter = ChannelModelFilterRule
  */
 export default function ManagedSiteModelSyncSettings() {
   const { t } = useTranslation([
-    "newApiModelSync",
+    "managedSiteModelSync",
     "settings",
     "managedSiteChannels",
     "common",

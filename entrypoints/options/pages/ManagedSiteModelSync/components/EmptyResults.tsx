@@ -23,7 +23,7 @@ interface EmptyResultsProps {
  */
 export default function EmptyResults(props: EmptyResultsProps) {
   const { hasHistory } = props
-  const { t } = useTranslation("newApiModelSync")
+  const { t } = useTranslation("managedSiteModelSync")
   const [hasValidConfig, setHasValidConfig] = useState(true)
 
   useEffect(() => {
