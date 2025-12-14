@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { Storage } from "@plasmohq/storage"
 
-import { newApiModelSyncStorage } from "~/services/modelSync/storage"
+import { managedSiteModelSyncStorage } from "~/services/modelSync/storage"
 
 vi.mock("@plasmohq/storage", () => {
   const set = vi.fn()
@@ -25,7 +25,8 @@ vi.mock("@plasmohq/storage", () => {
 
 const CANONICAL_KEYS = {
   LAST_EXECUTION: "managedSiteModelSync_lastExecution",
-  CHANNEL_UPSTREAM_MODELS_CACHE: "managedSiteModelSync_channelUpstreamModelsCache",
+  CHANNEL_UPSTREAM_MODELS_CACHE:
+    "managedSiteModelSync_channelUpstreamModelsCache",
 } as const
 
 const LEGACY_KEYS = {
@@ -33,7 +34,7 @@ const LEGACY_KEYS = {
   CHANNEL_UPSTREAM_MODELS_CACHE: "newApiModelSync_channelUpstreamModelsCache",
 } as const
 
-describe("newApiModelSyncStorage - storage key migration", () => {
+describe("managedSiteModelSyncStorage - storage key migration", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -48,7 +49,7 @@ describe("newApiModelSyncStorage - storage key migration", () => {
 
     get.mockResolvedValueOnce(execution)
 
-    const result = await newApiModelSyncStorage.getLastExecution()
+    const result = await managedSiteModelSyncStorage.getLastExecution()
 
     expect(get).toHaveBeenCalledTimes(1)
     expect(get).toHaveBeenCalledWith(CANONICAL_KEYS.LAST_EXECUTION)
@@ -63,13 +64,16 @@ describe("newApiModelSyncStorage - storage key migration", () => {
     get.mockResolvedValueOnce(undefined)
     get.mockResolvedValueOnce(legacyExecution)
 
-    const result = await newApiModelSyncStorage.getLastExecution()
+    const result = await managedSiteModelSyncStorage.getLastExecution()
 
     expect(get).toHaveBeenCalledTimes(2)
     expect(get).toHaveBeenNthCalledWith(1, CANONICAL_KEYS.LAST_EXECUTION)
     expect(get).toHaveBeenNthCalledWith(2, LEGACY_KEYS.LAST_EXECUTION)
     expect(set).toHaveBeenCalledTimes(1)
-    expect(set).toHaveBeenCalledWith(CANONICAL_KEYS.LAST_EXECUTION, legacyExecution)
+    expect(set).toHaveBeenCalledWith(
+      CANONICAL_KEYS.LAST_EXECUTION,
+      legacyExecution,
+    )
     expect(remove).toHaveBeenCalledTimes(1)
     expect(remove).toHaveBeenCalledWith(LEGACY_KEYS.LAST_EXECUTION)
     expect(result).toEqual(legacyExecution)
@@ -81,7 +85,7 @@ describe("newApiModelSyncStorage - storage key migration", () => {
     get.mockResolvedValueOnce(undefined)
     get.mockResolvedValueOnce(undefined)
 
-    const result = await newApiModelSyncStorage.getLastExecution()
+    const result = await managedSiteModelSyncStorage.getLastExecution()
 
     expect(result).toBeNull()
     expect(set).not.toHaveBeenCalled()
@@ -93,16 +97,25 @@ describe("newApiModelSyncStorage - storage key migration", () => {
     get.mockResolvedValueOnce(undefined)
     get.mockResolvedValueOnce(["  gpt-4o  ", "gpt-4o", "claude-3", "  "])
 
-    const result = await newApiModelSyncStorage.getChannelUpstreamModelOptions()
+    const result =
+      await managedSiteModelSyncStorage.getChannelUpstreamModelOptions()
 
-    expect(get).toHaveBeenNthCalledWith(1, CANONICAL_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE)
-    expect(get).toHaveBeenNthCalledWith(2, LEGACY_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE)
+    expect(get).toHaveBeenNthCalledWith(
+      1,
+      CANONICAL_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE,
+    )
+    expect(get).toHaveBeenNthCalledWith(
+      2,
+      LEGACY_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE,
+    )
     expect(set).toHaveBeenCalledWith(
       CANONICAL_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE,
       ["  gpt-4o  ", "gpt-4o", "claude-3", "  "],
     )
     expect(remove).toHaveBeenCalledTimes(1)
-    expect(remove).toHaveBeenCalledWith(LEGACY_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE)
+    expect(remove).toHaveBeenCalledWith(
+      LEGACY_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE,
+    )
     expect(result).toEqual(["claude-3", "gpt-4o"])
   })
 
@@ -110,7 +123,7 @@ describe("newApiModelSyncStorage - storage key migration", () => {
     const { set } = (Storage as any).__mocks as any
 
     const execution = { statistics: { total: 0, successCount: 0 } } as any
-    await newApiModelSyncStorage.saveLastExecution(execution)
+    await managedSiteModelSyncStorage.saveLastExecution(execution)
 
     expect(set).toHaveBeenCalledWith(CANONICAL_KEYS.LAST_EXECUTION, execution)
     expect(set).not.toHaveBeenCalledWith(LEGACY_KEYS.LAST_EXECUTION, execution)
@@ -119,7 +132,7 @@ describe("newApiModelSyncStorage - storage key migration", () => {
   it("saveChannelUpstreamModelOptions always writes canonical key", async () => {
     const { set } = (Storage as any).__mocks as any
 
-    await newApiModelSyncStorage.saveChannelUpstreamModelOptions([
+    await managedSiteModelSyncStorage.saveChannelUpstreamModelOptions([
       "  gpt-4o  ",
       "gpt-4o",
       "claude-3",
@@ -127,7 +140,9 @@ describe("newApiModelSyncStorage - storage key migration", () => {
     ])
 
     expect(set).toHaveBeenCalledTimes(1)
-    expect(set.mock.calls[0][0]).toBe(CANONICAL_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE)
+    expect(set.mock.calls[0][0]).toBe(
+      CANONICAL_KEYS.CHANNEL_UPSTREAM_MODELS_CACHE,
+    )
     expect(set.mock.calls[0][1]).toEqual(["claude-3", "gpt-4o"])
   })
 })

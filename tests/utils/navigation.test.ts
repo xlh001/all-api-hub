@@ -17,18 +17,19 @@ vi.mock("~/utils/browser", () => ({
   OPTIONS_PAGE_URL: "chrome-extension://options.html",
 }))
 
-vi.mock("~/utils/browserApi", () => {
+vi.mock("~/utils/browserApi", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("~/utils/browserApi")>()
   const createTab = vi.fn()
   const focusTab = vi.fn()
   const getExtensionURL = vi.fn((path: string) => `ext://${path}`)
   const openSidePanel = vi.fn()
 
   return {
+    ...actual,
     createTab,
     focusTab,
     getExtensionURL,
     openSidePanel,
-    __esModule: true,
   }
 })
 

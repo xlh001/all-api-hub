@@ -25,7 +25,7 @@ import { channelConfigStorage } from "../channelConfigStorage"
 import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
 import { collectModelsFromExecution } from "./modelCollection"
 import { ModelSyncService } from "./modelSyncService"
-import { newApiModelSyncStorage } from "./storage"
+import { managedSiteModelSyncStorage } from "./storage"
 
 /**
  * Scheduler for New API Model Sync.
@@ -297,13 +297,13 @@ class ModelSyncScheduler {
       })
 
       // Save execution result
-      await newApiModelSyncStorage.saveLastExecution(result)
+      await managedSiteModelSyncStorage.saveLastExecution(result)
 
       // Cache upstream model options for allow-list selection, only if full sync
       if (!channelIds) {
         const collectedModels = collectModelsFromExecution(result)
         if (collectedModels.length > 0) {
-          await newApiModelSyncStorage.saveChannelUpstreamModelOptions(
+          await managedSiteModelSyncStorage.saveChannelUpstreamModelOptions(
             collectedModels,
           )
         }
@@ -334,7 +334,7 @@ class ModelSyncScheduler {
    * @throws {Error} When no previous execution exists or no failed channels are found.
    */
   async executeFailedOnly(): Promise<ExecutionResult> {
-    const lastExecution = await newApiModelSyncStorage.getLastExecution()
+    const lastExecution = await managedSiteModelSyncStorage.getLastExecution()
     if (!lastExecution) {
       throw new Error("No previous execution found")
     }
@@ -450,7 +450,7 @@ export const modelSyncScheduler = new ModelSyncScheduler()
  * Message handler for New API Model Sync actions (trigger, retry failed, prefs).
  * Centralizes background-only control plane for sync operations.
  */
-export const handleNewApiModelSyncMessage = async (
+export const handleManagedSiteModelSyncMessage = async (
   request: any,
   sendResponse: (response: any) => void,
 ) => {
@@ -477,7 +477,8 @@ export const handleNewApiModelSyncMessage = async (
       }
 
       case "modelSync:getLastExecution": {
-        const lastExecution = await newApiModelSyncStorage.getLastExecution()
+        const lastExecution =
+          await managedSiteModelSyncStorage.getLastExecution()
         sendResponse({ success: true, data: lastExecution })
         break
       }
@@ -494,14 +495,14 @@ export const handleNewApiModelSyncMessage = async (
         break
 
       case "modelSync:getPreferences": {
-        const prefs = await newApiModelSyncStorage.getPreferences()
+        const prefs = await managedSiteModelSyncStorage.getPreferences()
         sendResponse({ success: true, data: prefs })
         break
       }
 
       case "modelSync:getChannelUpstreamModelOptions": {
         const upstreamOptions =
-          await newApiModelSyncStorage.getChannelUpstreamModelOptions()
+          await managedSiteModelSyncStorage.getChannelUpstreamModelOptions()
         sendResponse({ success: true, data: upstreamOptions })
         break
       }

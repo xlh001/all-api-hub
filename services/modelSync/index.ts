@@ -1,3 +1,6 @@
 export { ModelSyncService } from "./modelSyncService"
-export { newApiModelSyncStorage } from "./storage"
-export { modelSyncScheduler, handleNewApiModelSyncMessage } from "./scheduler"
+export { managedSiteModelSyncStorage } from "./storage"
+export {
+  modelSyncScheduler,
+  handleManagedSiteModelSyncMessage,
+} from "./scheduler"

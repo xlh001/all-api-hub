@@ -201,7 +201,7 @@ export class ModelSyncService {
       )
     } catch (error) {
       console.error(
-        `[NewApiModelSync] Failed to update channel mapping for channel ${channel.id}:`,
+        `[ManagedSiteModelSync] Failed to update channel mapping for channel ${channel.id}:`,
         error,
       )
       throw error
@@ -260,7 +260,7 @@ export class ModelSyncService {
       } catch (error: any) {
         lastError = error
         console.error(
-          `[NewApiModelSync] Unexpected error for channel ${channel.id}:`,
+          `[ManagedSiteModelSync] Unexpected error for channel ${channel.id}:`,
           error,
         )
 
@@ -320,7 +320,7 @@ export class ModelSyncService {
           result = await this.runForChannel(channel, maxRetries)
         } catch (error: any) {
           console.error(
-            `[NewApiModelSync] Unexpected error for channel ${channel.id}:`,
+            `[ManagedSiteModelSync] Unexpected error for channel ${channel.id}:`,
             error,
           )
           result = {
@@ -493,7 +493,7 @@ export class ModelSyncService {
       return model.toLowerCase().includes(pattern.toLowerCase())
     } catch (error) {
       console.warn(
-        `[NewApiModelSync] Invalid channel filter pattern for channel rule ${rule.id}:`,
+        `[ManagedSiteModelSync] Invalid channel filter pattern for channel rule ${rule.id}:`,
         error,
       )
       return false

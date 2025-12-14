@@ -32,7 +32,7 @@ const STORAGE_KEY_MIGRATIONS = {
 /**
  * Storage service for New API Model Sync
  */
-class NewApiModelSyncStorage {
+class ManagedSiteModelSyncStorage {
   private storage: Storage
 
   constructor() {
@@ -244,7 +244,7 @@ class NewApiModelSyncStorage {
         normalized,
       )
       console.log(
-        `[NewApiModelSync] Cached ${normalized.length} channel upstream models`,
+        `[ManagedSiteModelSync] Cached ${normalized.length} channel upstream models`,
       )
       return true
     } catch (error) {
@@ -276,4 +276,4 @@ class NewApiModelSyncStorage {
 }
 
 // Create singleton instance
-export const newApiModelSyncStorage = new NewApiModelSyncStorage()
+export const managedSiteModelSyncStorage = new ManagedSiteModelSyncStorage()

@@ -1,10 +1,10 @@
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { handleAutoCheckinMessage } from "~/services/autoCheckin/scheduler"
 import { handleAutoRefreshMessage } from "~/services/autoRefreshService"
 import { handleChannelConfigMessage } from "~/services/channelConfigStorage"
-import { handleNewApiModelSyncMessage } from "~/services/modelSync"
+import { handleManagedSiteModelSyncMessage } from "~/services/modelSync"
 import { handleRedemptionAssistMessage } from "~/services/redemptionAssist"
 import { handleWebdavAutoSyncMessage } from "~/services/webdav/webdavAutoSyncService"
-import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { onRuntimeMessage } from "~/utils/browserApi"
 import { openOrFocusOptionsMenuItem } from "~/utils/navigation"
 
@@ -69,9 +69,9 @@ export function setupRuntimeMessageListeners() {
       return true
     }
 
-    // 处理New API模型同步相关消息
+    // 处理模型同步相关消息
     if (request.action && request.action.startsWith("modelSync:")) {
-      handleNewApiModelSyncMessage(request, sendResponse)
+      handleManagedSiteModelSyncMessage(request, sendResponse)
       return true
     }
 
