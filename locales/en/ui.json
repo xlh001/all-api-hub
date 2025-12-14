@@ -18,8 +18,6 @@
     "models": "Model List",
     "autoCheckin": "Auto Check-in",
     "managedSiteChannels": "Channels Management",
-    "newApiChannels": "Channels Management",
-    "newApiModelSync": "Model sync",
     "managedSiteModelSync": "Model sync",
     "keys": "Key Management",
     "importExport": "Import/Export",

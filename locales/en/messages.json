@@ -2,9 +2,6 @@
   "toast": {
     "loading": {
       "refreshingAccount": "Refreshing {{accountName}}...",
-      "autoConfiguring": "Auto-configuring to New API...",
-      "checkingApiKeys": "Checking API keys...",
-      "importingToNewApi": "Importing to New API...",
       "fetchingAccountData": "Fetching account data..."
     },
     "success": {
@@ -16,7 +13,6 @@
       "accountSaveSuccess": "Account saved successfully",
       "accountUpdateSuccess": "Account updated successfully",
       "autoDetectSuccess": "Auto-detect successful!",
-      "newApiConfigSuccess": "{{message}}",
       "keyCopied": "Key {{name}} copied to clipboard",
       "deleteKeySuccess": "Key {{name}} deleted successfully",
       "importedAccounts": "Imported and migrated {{migratedCount}} account(s)",
@@ -30,7 +26,6 @@
       "operationFailed": "Operation failed: {{error}}",
       "saveFailed": "Save failed",
       "saveAccountFailed": "Failed to save account",
-      "newApiConfigFailed": "Auto-configuration to New API failed: {{error}}",
       "copyFailed": "Copy failed",
       "accountNotFound": "Account information not found",
       "deleteKeyFailed": "Failed to delete key, please try again later",

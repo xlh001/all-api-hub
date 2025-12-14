@@ -2,9 +2,6 @@
   "toast": {
     "loading": {
       "refreshingAccount": "正在刷新 {{accountName}}...",
-      "autoConfiguring": "正在自动配置到 New API...",
-      "checkingApiKeys": "正在检查 API 密钥...",
-      "importingToNewApi": "正在导入到 New API...",
       "fetchingAccountData": "正在获取账号数据..."
     },
     "success": {
@@ -16,7 +13,6 @@
       "accountSaveSuccess": "账号保存成功",
       "accountUpdateSuccess": "账号更新成功",
       "autoDetectSuccess": "自动识别成功！",
-      "newApiConfigSuccess": "{{message}}",
       "keyCopied": "密钥 {{name}} 已复制到剪贴板",
       "deleteKeySuccess": "密钥 {{name}} 删除成功",
       "importedAccounts": "已导入并迁移 {{migratedCount}} 个账号",
@@ -30,7 +26,6 @@
       "operationFailed": "操作失败: {{error}}",
       "saveFailed": "保存失败",
       "saveAccountFailed": "保存账号失败",
-      "newApiConfigFailed": "自动配置到 New API 失败: {{error}}",
       "copyFailed": "复制失败",
       "accountNotFound": "找不到对应账号信息",
       "deleteKeyFailed": "删除密钥失败，请稍后重试",
