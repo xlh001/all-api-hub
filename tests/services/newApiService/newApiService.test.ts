@@ -47,7 +47,7 @@ vi.mock("~/services/apiService/common/errors", () => ({
 
 // Mock higher-level API service functions
 const mockFetchAccountAvailableModels = vi.fn()
-const mockFetchUpstreamModelsNameList = vi.fn()
+const mockFetchOpenAICompatibleModelIds = vi.fn()
 const mockSearchChannel = vi.fn()
 const mockCreateChannel = vi.fn()
 const mockUpdateChannel = vi.fn()
@@ -65,11 +65,21 @@ vi.mock("~/services/apiService/common", async () => {
   return {
     ...actual,
     fetchAccountAvailableModels: mockFetchAccountAvailableModels,
-    fetchUpstreamModelsNameList: mockFetchUpstreamModelsNameList,
     searchChannel: mockSearchChannel,
     createChannel: mockCreateChannel,
     updateChannel: mockUpdateChannel,
     deleteChannel: mockDeleteChannel,
+  }
+})
+
+vi.mock("~/services/apiService/openaiCompatible", async () => {
+  const actual = await vi.importActual<
+    typeof import("~/services/apiService/openaiCompatible")
+  >("~/services/apiService/openaiCompatible")
+
+  return {
+    ...actual,
+    fetchOpenAICompatibleModelIds: mockFetchOpenAICompatibleModelIds,
   }
 })
 
@@ -676,7 +686,7 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "" })
 
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce([
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([
         "gpt-4",
         "gpt-3.5-turbo",
       ])
@@ -694,7 +704,9 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "" })
 
-      mockFetchUpstreamModelsNameList.mockRejectedValueOnce(new Error("Failed"))
+      mockFetchOpenAICompatibleModelIds.mockRejectedValueOnce(
+        new Error("Failed"),
+      )
       mockFetchAccountAvailableModels.mockResolvedValueOnce(["claude-3-opus"])
 
       const result = await fetchAvailableModels(account, token)
@@ -709,7 +721,7 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "gpt-4,gpt-3.5-turbo" })
 
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce([
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([
         "gpt-4",
         "gpt-4-turbo",
       ])
@@ -734,7 +746,7 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "" })
 
-      mockFetchUpstreamModelsNameList.mockRejectedValueOnce(
+      mockFetchOpenAICompatibleModelIds.mockRejectedValueOnce(
         new Error("Upstream failed"),
       )
       mockFetchAccountAvailableModels.mockRejectedValueOnce(
@@ -818,7 +830,7 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ group: "custom-group" })
 
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce([
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([
         "gpt-4",
         "gpt-3.5-turbo",
       ])
@@ -839,7 +851,7 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken()
 
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce([])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([])
 
       await expect(prepareChannelFormData(account, token)).rejects.toThrow()
     })
@@ -851,7 +863,7 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ group: undefined })
 
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce(["gpt-4"])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce(["gpt-4"])
 
       const result = await prepareChannelFormData(account, token)
 
@@ -865,7 +877,7 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken()
 
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce(["gpt-4"])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce(["gpt-4"])
 
       const result = await prepareChannelFormData(account, token)
 
@@ -1136,7 +1148,7 @@ describe("newApiService", () => {
       mockGetPreferences.mockResolvedValueOnce(
         createMockUserPreferencesWithNewApi(),
       )
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce(["gpt-4"])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce(["gpt-4"])
       mockSearchChannel.mockResolvedValueOnce(
         createMockNewApiChannelListData([existingChannel]),
       )
@@ -1158,7 +1170,7 @@ describe("newApiService", () => {
       mockGetPreferences.mockResolvedValueOnce(
         createMockUserPreferencesWithNewApi(),
       )
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce(["gpt-4"])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce(["gpt-4"])
       mockSearchChannel.mockResolvedValueOnce(
         createMockNewApiChannelListData([]),
       )
@@ -1180,7 +1192,7 @@ describe("newApiService", () => {
       mockGetPreferences.mockResolvedValueOnce(
         createMockUserPreferencesWithNewApi(),
       )
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce(["gpt-4"])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce(["gpt-4"])
       mockSearchChannel.mockResolvedValueOnce(
         createMockNewApiChannelListData([]),
       )
@@ -1256,7 +1268,7 @@ describe("newApiService", () => {
       )
       mockAccountStorageConvertToDisplayData.mockReturnValue(displayData)
       mockEnsureAccountApiToken.mockResolvedValue(token)
-      mockFetchUpstreamModelsNameList.mockResolvedValue(["gpt-4"])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValue(["gpt-4"])
       mockSearchChannel.mockResolvedValue(createMockNewApiChannelListData([]))
       mockCreateChannel.mockResolvedValue({ success: true })
 
@@ -1286,7 +1298,7 @@ describe("newApiService", () => {
         .mockRejectedValueOnce(new Error("network error"))
         .mockResolvedValueOnce(token)
 
-      mockFetchUpstreamModelsNameList.mockResolvedValue(["gpt-4"])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValue(["gpt-4"])
       mockSearchChannel.mockResolvedValue(createMockNewApiChannelListData([]))
       mockCreateChannel.mockResolvedValue({ success: true })
 
@@ -1369,7 +1381,7 @@ describe("newApiService", () => {
         .mockRejectedValueOnce(new Error("network error"))
         .mockResolvedValueOnce(token)
 
-      mockFetchUpstreamModelsNameList.mockResolvedValue(["gpt-4"])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValue(["gpt-4"])
       mockSearchChannel.mockResolvedValue(createMockNewApiChannelListData([]))
       mockCreateChannel.mockResolvedValue({ success: true })
 
@@ -1441,7 +1453,7 @@ describe("newApiService", () => {
       const account = createMockDisplaySiteData()
       const token = createMockApiToken({ models: "" })
 
-      mockFetchUpstreamModelsNameList.mockResolvedValueOnce([])
+      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([])
       mockFetchAccountAvailableModels.mockResolvedValueOnce([])
 
       const result = await fetchAvailableModels(account, token)

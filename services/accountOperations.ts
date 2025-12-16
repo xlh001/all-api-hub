@@ -8,16 +8,7 @@ import toast from "react-hot-toast"
 import { SITE_TITLE_RULES, UNKNOWN_SITE } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { accountStorage } from "~/services/accountStorage"
-import {
-  createApiToken,
-  extractDefaultExchangeRate,
-  fetchAccountData,
-  fetchAccountTokens,
-  fetchSiteStatus,
-  fetchSupportCheckIn,
-  fetchUserInfo,
-  getOrCreateAccessToken,
-} from "~/services/apiService"
+import { getApiService } from "~/services/apiService"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import {
   ApiToken,
@@ -102,9 +93,9 @@ export async function autoDetectAccount(
 
     // 根据 authType 选择对应的 Promise
     if (authType === AuthTypeEnum.Cookie) {
-      tokenPromise = fetchUserInfo(url, userId)
+      tokenPromise = getApiService(siteType).fetchUserInfo(url, userId)
     } else if (authType === AuthTypeEnum.AccessToken) {
-      tokenPromise = getOrCreateAccessToken(url, userId)
+      tokenPromise = getApiService(siteType).getOrCreateAccessToken(url, userId)
     } else {
       // none 或其他情况
       tokenPromise = Promise.resolve(null)
@@ -113,8 +104,8 @@ export async function autoDetectAccount(
     // 并行执行 token 获取和 site 状态获取（降低端到端等待）
     const [tokenInfo, siteStatus, checkSupport, siteName] = await Promise.all([
       tokenPromise,
-      fetchSiteStatus(url, authType),
-      fetchSupportCheckIn(url),
+      getApiService(siteType).fetchSiteStatus(url, authType),
+      getApiService(siteType).fetchSupportCheckIn(url),
       getSiteName(url),
     ])
 
@@ -132,7 +123,8 @@ export async function autoDetectAccount(
     }
 
     // 获取默认充值比例
-    const defaultExchangeRate = extractDefaultExchangeRate(siteStatus)
+    const defaultExchangeRate =
+      getApiService(undefined).extractDefaultExchangeRate(siteStatus)
 
     return {
       success: true,
@@ -288,7 +280,7 @@ export async function validateAndSaveAccount(
   try {
     // 获取账号余额和今日使用情况
     console.log(t("messages:toast.loading.fetchingAccountData"))
-    const freshAccountData = await fetchAccountData(
+    const freshAccountData = await getApiService(siteType).fetchAccountData(
       url.trim(),
       parsedUserId,
       accessToken.trim(),
@@ -461,7 +453,7 @@ export async function validateAndUpdateAccount(
   try {
     // 获取账号余额和今日使用情况
     console.log(t("messages:toast.loading.fetchingAccountData"))
-    const freshAccountData = await fetchAccountData(
+    const freshAccountData = await getApiService(siteType).fetchAccountData(
       url.trim(),
       parsedUserId,
       accessToken.trim(),
@@ -641,7 +633,8 @@ export async function getSiteName(
   const hostWithProtocol = `${urlObj.protocol}//${urlObj.host}`
 
   // 4. 从站点状态获取
-  const siteStatusInfo = await fetchSiteStatus(hostWithProtocol)
+  const siteStatusInfo =
+    await getApiService(undefined).fetchSiteStatus(hostWithProtocol)
   if (
     siteStatusInfo?.system_name &&
     IsNotDefaultSiteName(siteStatusInfo.system_name)
@@ -708,12 +701,16 @@ export async function ensureAccountApiToken(
     id: toastId,
   })
 
-  const tokens = await fetchAccountTokens(displaySiteData)
+  const tokens = await getApiService(
+    displaySiteData.siteType,
+  ).fetchAccountTokens(displaySiteData)
   let apiToken: ApiToken | undefined = tokens.at(-1)
 
   if (!apiToken) {
     const newTokenData = generateDefaultToken()
-    const createApiTokenResult = await createApiToken(
+    const createApiTokenResult = await getApiService(
+      displaySiteData.siteType,
+    ).createApiToken(
       account.site_url,
       account.account_info.id,
       account.account_info.access_token,
@@ -724,7 +721,9 @@ export async function ensureAccountApiToken(
       throw new Error(t("messages:accountOperations.createTokenFailed"))
     }
 
-    const updatedTokens = await fetchAccountTokens(displaySiteData)
+    const updatedTokens = await getApiService(
+      displaySiteData.siteType,
+    ).fetchAccountTokens(displaySiteData)
     apiToken = updatedTokens.at(-1)
   }
 

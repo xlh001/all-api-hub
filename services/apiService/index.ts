@@ -21,13 +21,15 @@ const siteOverrideMap = {
 // 添加类型定义
 type SiteOverrideMap = typeof siteOverrideMap
 
+export type ApiOverrideSite = keyof SiteOverrideMap
+
 /**
  * Append an optional SiteType hint to a function signature.
  * This allows callers to explicitly request a site/version implementation
  * without changing the underlying common API function shapes.
  */
 type WithSiteHint<F> = F extends (...args: infer A) => infer R
-  ? (...args: [...A, SiteType?]) => R
+  ? (...args: [...A, ApiOverrideSite?]) => R
   : F
 
 // 获取对应站点的 API 函数
@@ -88,6 +90,45 @@ function createWrappedFunction<T extends (...args: any[]) => any>(
   }) as T
 }
 
+const createSiteScopedFunction = <T extends (...args: any[]) => any>(
+  funcName: keyof typeof commonAPI,
+  site: ApiOverrideSite,
+): T => {
+  return ((...args: any[]) => {
+    const targetFunc = getApiFunc(funcName, site)
+    return (targetFunc as any)(...args)
+  }) as T
+}
+
+export const apiForSite = (site: ApiOverrideSite) => {
+  const scopedAPI = {} as {
+    [K in keyof typeof commonAPI]: (typeof commonAPI)[K]
+  }
+
+  for (const key in commonAPI) {
+    // eslint-disable-next-line import/namespace
+    const func = commonAPI[key as keyof typeof commonAPI]
+    if (typeof func === "function") {
+      ;(scopedAPI as any)[key] = createSiteScopedFunction(
+        key as keyof typeof commonAPI,
+        site,
+      )
+    } else {
+      ;(scopedAPI as any)[key] = func
+    }
+  }
+
+  return scopedAPI
+}
+
+export const isApiOverrideSite = (value: unknown): value is ApiOverrideSite =>
+  typeof value === "string" && value in siteOverrideMap
+
+export const getApiService = (site: unknown) =>
+  (isApiOverrideSite(site)
+    ? apiForSite(site)
+    : exportedAPI) as typeof exportedAPI
+
 // 创建导出对象
 const exportedAPI = {} as {
   [K in keyof typeof commonAPI]: WithSiteHint<(typeof commonAPI)[K]>
@@ -106,42 +147,4 @@ for (const key in commonAPI) {
   }
 }
 
-// 导出所有函数
-export const {
-  fetchUserInfo,
-  createAccessToken,
-  fetchSiteStatus,
-  extractDefaultExchangeRate,
-  searchChannel,
-  createChannel,
-  updateChannel,
-  deleteChannel,
-  listAllChannels,
-  fetchChannelModels,
-  updateChannelModels,
-  updateChannelModelMapping,
-  getOrCreateAccessToken,
-  fetchAccountQuota,
-  fetchCheckInStatus,
-  fetchSupportCheckIn,
-  fetchTodayUsage,
-  fetchTodayIncome,
-  fetchAccountData,
-  refreshAccountData,
-  validateAccountConnection,
-  fetchAccountTokens,
-  fetchAccountAvailableModels,
-  fetchUpstreamModels,
-  fetchUpstreamModelsNameList,
-  fetchUserGroups,
-  fetchSiteUserGroups,
-  createApiToken,
-  fetchTokenById,
-  updateApiToken,
-  deleteApiToken,
-  fetchModelPricing,
-  redeemCode,
-  determineHealthStatus,
-} = exportedAPI
-
-export { exportedAPI }
+export type ApiService = typeof exportedAPI
