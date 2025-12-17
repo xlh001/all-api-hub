@@ -12,8 +12,24 @@ import type { AutoCheckinProvider } from "./index"
 
 export interface CheckinResult {
   status: CheckinResultStatus
-  message: string
+  messageKey?: string
+  messageParams?: Record<string, any>
+  rawMessage?: string
   data?: any
+}
+
+/**
+ * Check if the message indicates already checked in
+ * @param message - The message to check
+ * @returns true if already checked in
+ */
+const isAlreadyChecked = (message: string): boolean => {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes("已签到") ||
+    normalized.includes("已经签到") ||
+    normalized.includes("already checked")
+  )
 }
 
 /**
@@ -44,13 +60,13 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
     const normalizedMessage = responseMessage.toLowerCase()
 
     // Check if response.message indicates already checked in
-    if (
-      normalizedMessage.includes("已签到") ||
-      normalizedMessage.includes("already checked in")
-    ) {
+    if (isAlreadyChecked(normalizedMessage)) {
       return {
         status: CHECKIN_RESULT_STATUS.ALREADY_CHECKED,
-        message: responseMessage || "Already checked in today",
+        rawMessage: responseMessage || undefined,
+        messageKey: responseMessage
+          ? undefined
+          : "autoCheckin:providerFallback.alreadyCheckedToday",
       }
     }
 
@@ -58,7 +74,10 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
     if (response.success) {
       return {
         status: CHECKIN_RESULT_STATUS.SUCCESS,
-        message: responseMessage || "Check-in successful",
+        rawMessage: responseMessage || undefined,
+        messageKey: responseMessage
+          ? undefined
+          : "autoCheckin:providerFallback.checkinSuccessful",
         data: response.data,
       }
     }
@@ -66,7 +85,10 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
     // Other failure cases
     return {
       status: CHECKIN_RESULT_STATUS.FAILED,
-      message: responseMessage || "Check-in failed",
+      rawMessage: responseMessage || undefined,
+      messageKey: responseMessage
+        ? undefined
+        : "autoCheckin:providerFallback.checkinFailed",
     }
   } catch (error: any) {
     // Handle specific error cases
@@ -74,13 +96,10 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
     const normalizedErrorMessage = errorMessage.toLowerCase()
 
     // Check if already checked in based on error message
-    if (
-      normalizedErrorMessage.includes("已签到") ||
-      normalizedErrorMessage.includes("already checked in")
-    ) {
+    if (isAlreadyChecked(normalizedErrorMessage)) {
       return {
         status: CHECKIN_RESULT_STATUS.ALREADY_CHECKED,
-        message: errorMessage,
+        rawMessage: errorMessage,
       }
     }
 
@@ -88,14 +107,17 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
     if (error?.statusCode === 404 || errorMessage.includes("404")) {
       return {
         status: CHECKIN_RESULT_STATUS.FAILED,
-        message: "Check-in endpoint not supported",
+        messageKey: "autoCheckin:providerFallback.endpointNotSupported",
       }
     }
 
     // General failure
     return {
       status: CHECKIN_RESULT_STATUS.FAILED,
-      message: errorMessage || "Unknown error occurred",
+      rawMessage: errorMessage || undefined,
+      messageKey: errorMessage
+        ? undefined
+        : "autoCheckin:providerFallback.unknownError",
     }
   }
 }
