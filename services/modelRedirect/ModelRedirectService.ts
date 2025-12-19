@@ -179,6 +179,21 @@ export class ModelRedirectService {
   }
 
   /**
+   * Build a version-agnostic comparison key by:
+   * - Lowercasing
+   * - Treating dots and hyphens/underscores as the same separator
+   * - Comparing as an unordered token set to align variants like
+   *   "claude-4.5-sonnet" and "claude-sonnet-4-5".
+   */
+  static toVersionAgnosticKey = (modelName: string): string | null => {
+    const cleaned = modelName.replace(/\./g, "-")
+    const tokens = cleaned.split(/[-_]/).map((t) => t.trim().toLowerCase())
+    const validTokens = tokens.filter(Boolean)
+    if (validTokens.length === 0) return null
+    return validTokens.sort().join("-")
+  }
+
+  /**
    * Generate model mapping for a single channel
    * Returns an object of standardModel -> actualModel mappings
    * Uses multi-stage extraction pipeline with deduplication
@@ -195,44 +210,70 @@ export class ModelRedirectService {
     const actualModelSet = new Set<string>()
 
     const normalizedActualMap = new Map<string, string[]>()
+    const versionKeyToActualMap = new Map<string, string[]>()
+
+    // traverse actual models to build lookup maps
     for (const rawActual of actualModels) {
       const actualModel = rawActual.trim()
       if (!actualModel) continue
       actualModelSet.add(actualModel)
 
+      // Normalize actual model name
       const normalizedModelName = renameModel(actualModel, false)?.trim()
       if (!normalizedModelName) continue
 
+      // Build normalized map for deduplication
       if (!normalizedActualMap.has(normalizedModelName)) {
         normalizedActualMap.set(normalizedModelName, [])
       }
       normalizedActualMap.get(normalizedModelName)!.push(actualModel)
+
+      // Build version-agnostic map for fuzzy matching
+      const versionKey =
+        ModelRedirectService.toVersionAgnosticKey(normalizedModelName)
+      if (versionKey) {
+        if (!versionKeyToActualMap.has(versionKey)) {
+          versionKeyToActualMap.set(versionKey, [])
+        }
+        versionKeyToActualMap.get(versionKey)!.push(actualModel)
+      }
     }
 
+    // Match standard models to actual models
     for (const rawStandard of standardModels) {
       const standardModel = rawStandard.trim()
       if (!standardModel) continue
 
+      // Skip if already mapped or exact match
       if (actualModelSet.has(standardModel)) {
         continue
       }
-
       if (mapping[standardModel]) {
         continue
       }
 
+      // normalize standard model name
       const normalizedStandardModelName = renameModel(
         standardModel,
         false,
       )?.trim()
       if (!normalizedStandardModelName) continue
 
+      // Find candidates from both normalized and version-agnostic maps
       const candidates = normalizedActualMap.get(normalizedStandardModelName)
-      if (!candidates || candidates.length === 0) continue
-
-      const availableCandidate = candidates.find(
-        (candidate) => !usedActualModels.has(candidate),
+      const versionKey = ModelRedirectService.toVersionAgnosticKey(
+        normalizedStandardModelName,
       )
+      const versionCandidates =
+        versionKey && versionKeyToActualMap.get(versionKey)
+
+      // Filter out already used actual models
+      const availableCandidate = [
+        ...(candidates ?? []),
+        ...(versionCandidates ?? []),
+      ].find((candidate) => !usedActualModels.has(candidate))
+
+      // Map the standard model to the first available candidate
       if (availableCandidate) {
         mapping[standardModel] = availableCandidate
         usedActualModels.add(availableCandidate)

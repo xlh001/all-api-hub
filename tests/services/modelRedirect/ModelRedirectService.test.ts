@@ -101,6 +101,18 @@ describe("ModelRedirectService.generateModelMappingForChannel", () => {
 
     expect(mapping).toEqual({})
   })
+
+  it("treats hyphen-separated and dot-separated model versions as equivalent", () => {
+    const standardModels = ["claude-sonnet-4-5"]
+    const actualModels = ["claude-4.5-sonnet"]
+
+    const mapping = ModelRedirectService.generateModelMappingForChannel(
+      standardModels,
+      actualModels,
+    )
+
+    expect(mapping["claude-sonnet-4-5"]).toEqual("claude-4.5-sonnet")
+  })
 })
 
 describe("extractActualModel", () => {
