@@ -13,6 +13,7 @@ export default defineConfig({
       "tabs",
       "storage",
       "alarms",
+      "contextMenus",
       ...(browser === "firefox" ? [] : ["sidePanel"]),
     ],
     ...(browser === "firefox"

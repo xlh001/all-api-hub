@@ -1,3 +1,4 @@
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { setupRuntimeMessageListeners } from "~/entrypoints/background/runtimeMessages"
 import { setupTempWindowListeners } from "~/entrypoints/background/tempWindowPool"
 import { accountStorage } from "~/services/accountStorage"
@@ -5,9 +6,9 @@ import { migrateAccountsConfig } from "~/services/configMigration/account/accoun
 import { OPTIONAL_PERMISSIONS } from "~/services/permissions/permissionManager"
 import { userPreferences } from "~/services/userPreferences"
 import { onInstalled } from "~/utils/browserApi"
-import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { openOrFocusOptionsMenuItem } from "~/utils/navigation"
 
+import { setupContextMenus } from "./contextMenus"
 import {
   initializeCookieInterceptors,
   setupCookieInterceptorListeners,
@@ -23,6 +24,7 @@ export default defineBackground(() => {
   setupRuntimeMessageListeners()
   setupTempWindowListeners()
   setupCookieInterceptorListeners()
+  setupContextMenus()
 
   /**
    * 监听插件安装/更新事件

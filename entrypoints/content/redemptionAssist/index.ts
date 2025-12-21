@@ -18,6 +18,7 @@ export const REDEMPTION_TOAST_HOST_TAG = "all-api-hub-redemption-toast"
  */
 export function setupRedemptionAssistContent() {
   setupRedemptionAssistDetection()
+  registerContextMenuTriggerListener()
 }
 
 /**
@@ -78,6 +79,134 @@ function setupRedemptionAssistDetection() {
   document.addEventListener("click", handleClick, true)
   document.addEventListener("copy", handleClipboardEvent, true)
   document.addEventListener("cut", handleClipboardEvent, true)
+}
+
+/**
+ * Listens for right-click context menu triggers from the background page.
+ * This entry point bypasses whitelist and code format filters: it sends the raw
+ * selection to the background auto-redeem flow directly.
+ */
+function registerContextMenuTriggerListener() {
+  browser.runtime.onMessage.addListener((request) => {
+    if (request?.action !== "redemptionAssist:contextMenuTrigger") return
+
+    const selectionText = (request.selectionText ?? "").trim()
+    const pageUrl = request.pageUrl || window.location.href
+
+    if (!selectionText) {
+      console.warn(
+        "[RedemptionAssist][Content] Context menu trigger missing selection",
+      )
+      return
+    }
+
+    void handleContextMenuRedemption(selectionText, pageUrl)
+  })
+}
+
+/**
+ * Context-menu-triggered redemption flow that skips whitelist/format gating.
+ * @param selectionText Raw user-selected text passed from background menu click.
+ * @param pageUrl Page URL where the selection was made.
+ */
+async function handleContextMenuRedemption(
+  selectionText: string,
+  pageUrl: string,
+) {
+  try {
+    const code = selectionText.trim()
+    if (!code) return
+
+    const loadingMessage = t("redemptionAssist:messages.redeemLoading")
+    let loadingToastId: string | undefined
+
+    const dismissLoadingToast = () => {
+      if (loadingToastId) {
+        dismissToast(loadingToastId)
+        loadingToastId = undefined
+      }
+    }
+
+    try {
+      loadingToastId = await showRedeemLoadingToast(loadingMessage)
+
+      const redeemResp: any = await sendRuntimeMessage({
+        action: "redemptionAssist:autoRedeemByUrl",
+        url: pageUrl,
+        code,
+      })
+
+      const result = redeemResp?.data
+
+      if (result?.success) {
+        if (result.message) {
+          await showRedeemResultToast(true, result.message)
+        }
+        return
+      }
+
+      if (result?.code === "MULTIPLE_ACCOUNTS" && result.candidates?.length) {
+        dismissLoadingToast()
+        const selected = await showAccountSelectToast(result.candidates, {
+          title: t("redemptionAssist:accountSelect.titleMultiple", {
+            defaultValue: "检测到多个可用账号，请选择一个用于兑换",
+          }),
+        })
+
+        if (!selected) {
+          return
+        }
+
+        const manualResult = await performManualRedeem(
+          selected.id,
+          code,
+          loadingMessage,
+        )
+        if (manualResult?.message) {
+          await showRedeemResultToast(
+            !!manualResult.success,
+            manualResult.message,
+          )
+        }
+        return
+      }
+
+      if (result?.code === "NO_ACCOUNTS" && result.allAccounts?.length) {
+        dismissLoadingToast()
+        const selected = await showAccountSelectToast(result.allAccounts, {
+          title: t("redemptionAssist:accountSelect.titleFallback"),
+        })
+
+        if (!selected) {
+          return
+        }
+
+        const manualResult = await performManualRedeem(
+          selected.id,
+          code,
+          loadingMessage,
+        )
+        if (manualResult?.message) {
+          await showRedeemResultToast(
+            !!manualResult.success,
+            manualResult.message,
+          )
+        }
+        return
+      }
+
+      const fallbackMessage = t("redemptionAssist:messages.redeemFailed")
+      const msg = redeemResp?.error || result?.message || fallbackMessage
+      await showRedeemResultToast(false, msg)
+    } finally {
+      dismissLoadingToast()
+    }
+  } catch (error) {
+    console.error(
+      "[RedemptionAssist][Content] context menu flow failed:",
+      error,
+    )
+  }
 }
 
 /**
