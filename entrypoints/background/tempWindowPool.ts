@@ -2,6 +2,11 @@ import { t } from "i18next"
 
 import { getSiteType } from "~/services/detectSiteType"
 import {
+  DEFAULT_PREFERENCES,
+  TempWindowFallbackPreferences,
+  userPreferences,
+} from "~/services/userPreferences"
+import {
   createTab,
   createWindow,
   hasWindowsAPI,
@@ -19,7 +24,34 @@ import { isProtectionBypassFirefoxEnv } from "~/utils/protectionBypass"
 import { sanitizeUrlForLog } from "~/utils/sanitizeUrlForLog"
 
 const TEMP_CONTEXT_IDLE_TIMEOUT = 5000
+const QUIET_WINDOW_IDLE_TIMEOUT = 3000
 const TEMP_WINDOW_LOG_PREFIX = "[Background][TempWindow]"
+const DEFAULT_TEMP_CONTEXT_MODE: TempWindowFallbackPreferences["tempContextMode"] =
+  "tab"
+
+/**
+ * Resolve the preferred temporary context mode from user preferences.
+ * Falls back to default when preferences are unavailable.
+ */
+async function resolveTempContextMode(): Promise<
+  TempWindowFallbackPreferences["tempContextMode"]
+> {
+  try {
+    const prefs = await userPreferences.getPreferences()
+    const mode =
+      (prefs.tempWindowFallback as TempWindowFallbackPreferences | undefined)
+        ?.tempContextMode ??
+      (DEFAULT_PREFERENCES.tempWindowFallback as TempWindowFallbackPreferences)
+        .tempContextMode
+
+    return mode ?? DEFAULT_TEMP_CONTEXT_MODE
+  } catch {
+    return (
+      (DEFAULT_PREFERENCES.tempWindowFallback as TempWindowFallbackPreferences)
+        .tempContextMode ?? DEFAULT_TEMP_CONTEXT_MODE
+    )
+  }
+}
 
 /**
  * Log temporary window events to console.
@@ -145,15 +177,18 @@ export async function handleOpenTempWindow(
 ) {
   try {
     const { url, requestId } = request
+    const preferredMode = await resolveTempContextMode()
 
     logTempWindow("openTempWindow", {
       requestId,
       origin: normalizeOrigin(url),
       url: sanitizeUrlForLog(url),
+      preferredMode,
     })
 
-    // 手机 不支持 windows API，使用 tabs 替代
-    if (hasWindowsAPI()) {
+    const shouldUseWindow = preferredMode === "window" && hasWindowsAPI()
+
+    if (shouldUseWindow) {
       // 创建新窗口
       const window = await createWindow({
         url: url,
@@ -175,6 +210,7 @@ export async function handleOpenTempWindow(
         logTempWindow("openTempWindowFailed", {
           requestId,
           reason: "noWindowId",
+          preferredMode,
         })
         sendResponse({
           success: false,
@@ -182,19 +218,21 @@ export async function handleOpenTempWindow(
         })
       }
     } else {
-      // 手机: 使用标签页
+      // 使用标签页
       const tab = await createTab(url, false)
       if (tab?.id) {
         tempWindows.set(requestId, tab.id)
         logTempWindow("openTempTabSuccess", {
           requestId,
           tabId: tab.id,
+          preferredMode,
         })
         sendResponse({ success: true, tabId: tab.id })
       } else {
         logTempWindow("openTempTabFailed", {
           requestId,
           reason: "noTabId",
+          preferredMode,
         })
         sendResponse({
           success: false,
@@ -522,10 +560,12 @@ async function destroyOriginPool(
  */
 async function acquireTempContext(url: string, requestId: string) {
   const origin = normalizeOrigin(url)
+  const preferredMode = await resolveTempContextMode()
 
   logTempWindow("acquireTempContextStart", {
     requestId,
     origin,
+    preferredMode,
   })
 
   return await withOriginLock(origin, async () => {
@@ -541,8 +581,14 @@ async function acquireTempContext(url: string, requestId: string) {
         requestId,
         origin,
         url: sanitizeUrlForLog(url),
+        preferredMode,
       })
-      context = await createTempContextInstance(url, origin, requestId)
+      context = await createTempContextInstance(
+        url,
+        origin,
+        requestId,
+        preferredMode,
+      )
       registerContext(origin, context)
       logTempWindow("acquireTempContextCreated", {
         requestId,
@@ -550,6 +596,7 @@ async function acquireTempContext(url: string, requestId: string) {
         contextId: context.id,
         tabId: context.tabId,
         type: context.type,
+        preferredMode,
       })
     } else {
       logTempWindow("acquireTempContextReuse", {
@@ -558,6 +605,7 @@ async function acquireTempContext(url: string, requestId: string) {
         contextId: context.id,
         tabId: context.tabId,
         type: context.type,
+        preferredMode,
       })
     }
 
@@ -712,18 +760,21 @@ async function createTempContextInstance(
   url: string,
   origin: string,
   requestId: string,
+  preferredMode: TempWindowFallbackPreferences["tempContextMode"] = DEFAULT_TEMP_CONTEXT_MODE,
 ) {
   let contextId: number | undefined
   let tabId: number | undefined
   let type: "window" | "tab" = "window"
 
   try {
-    if (hasWindowsAPI()) {
+    const canUseWindow = preferredMode === "window" && hasWindowsAPI()
+
+    if (canUseWindow) {
       const window = await createWindow({
         url,
         type: "popup",
-        width: 800,
-        height: 600,
+        width: 420,
+        height: 520,
         focused: false,
       })
 
@@ -737,6 +788,23 @@ async function createTempContextInstance(
         active: true,
       })
       tabId = tabs[0]?.id
+
+      // Best-effort minimize to reduce disturbance.
+      try {
+        await browser.windows.update(window.id, { state: "minimized" })
+        logTempWindow("quietWindowMinimized", {
+          requestId,
+          origin,
+          windowId: window.id,
+        })
+      } catch (minErr) {
+        logTempWindow("quietWindowMinimizeFailed", {
+          requestId,
+          origin,
+          windowId: window.id,
+          error: getErrorMessage(minErr),
+        })
+      }
     } else {
       const tab = await createTab(url, false)
       contextId = tab?.id
@@ -754,6 +822,7 @@ async function createTempContextInstance(
       contextId,
       tabId,
       type,
+      preferredMode,
       url: sanitizeUrlForLog(url),
     })
 
@@ -765,6 +834,7 @@ async function createTempContextInstance(
       contextId,
       tabId,
       type,
+      preferredMode,
     })
 
     return {
@@ -783,6 +853,7 @@ async function createTempContextInstance(
       tabId: tabId ?? null,
       type,
       error: getErrorMessage(error),
+      preferredMode,
     })
     if (contextId) {
       try {
@@ -818,12 +889,17 @@ function scheduleContextCleanup(context: TempContext) {
     clearTimeout(context.releaseTimer)
   }
 
+  const idleTimeoutMs =
+    context.type === "window"
+      ? QUIET_WINDOW_IDLE_TIMEOUT
+      : TEMP_CONTEXT_IDLE_TIMEOUT
+
   logTempWindow("scheduleContextCleanup", {
     origin: context.origin,
     contextId: context.id,
     tabId: context.tabId,
     type: context.type,
-    idleTimeoutMs: TEMP_CONTEXT_IDLE_TIMEOUT,
+    idleTimeoutMs,
   })
 
   context.releaseTimer = setTimeout(() => {
@@ -838,7 +914,7 @@ function scheduleContextCleanup(context: TempContext) {
         console.error("[Background] Failed to destroy idle temp context", error)
       })
     }
-  }, TEMP_CONTEXT_IDLE_TIMEOUT)
+  }, idleTimeoutMs)
 }
 
 /**
