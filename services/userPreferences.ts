@@ -303,9 +303,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
     globalChannelModelFilters: [],
   },
   autoCheckin: {
-    globalEnabled: false,
+    globalEnabled: true,
     windowStart: "09:00",
-    windowEnd: "18:00",
+    windowEnd: "23:00",
     scheduleMode: AUTO_CHECKIN_SCHEDULE_MODE.RANDOM,
     deterministicTime: "09:00",
     retryStrategy: {
