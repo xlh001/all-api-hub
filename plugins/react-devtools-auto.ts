@@ -122,7 +122,7 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
       }
 
       if (config.autoStart && !devtoolsProcess) {
-        devtoolsProcess = spawn("npx", ["react-devtools"], {
+        devtoolsProcess = spawn("pnpm", ["react-devtools"], {
           stdio: "inherit",
           shell: true,
         })
