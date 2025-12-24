@@ -12,7 +12,6 @@ import {
   hasWindowsAPI,
   onTabRemoved,
   onWindowRemoved,
-  removeTabOrWindow,
 } from "~/utils/browserApi"
 import { getCookieHeaderForUrl } from "~/utils/cookieHelper"
 import {
@@ -50,6 +49,70 @@ async function resolveTempContextMode(): Promise<
       (DEFAULT_PREFERENCES.tempWindowFallback as TempWindowFallbackPreferences)
         .tempContextMode ?? DEFAULT_TEMP_CONTEXT_MODE
     )
+  }
+}
+
+/**
+ * 在临时上下文中渲染页面并读取真实的 document.title。
+ */
+export async function handleTempWindowGetRenderedTitle(
+  request: any,
+  sendResponse: (response?: any) => void,
+) {
+  const { originUrl, requestId, suppressMinimize } = request
+  const tempRequestId = requestId || `temp-title-${Date.now()}`
+
+  logTempWindow("tempWindowGetRenderedTitleStart", {
+    requestId: tempRequestId,
+    origin: originUrl ? normalizeOrigin(originUrl) : null,
+  })
+
+  try {
+    const context = await acquireTempContext(
+      originUrl,
+      tempRequestId,
+      suppressMinimize,
+    )
+    const { tabId } = context
+    let released = false
+
+    try {
+      const response = await browser.tabs.sendMessage(tabId, {
+        action: "getRenderedTitle",
+        requestId: tempRequestId,
+      })
+
+      if (!response) {
+        throw new Error("No response from rendered title fetch")
+      }
+
+      sendResponse(response)
+    } catch (error) {
+      logTempWindow("tempWindowGetRenderedTitleError", {
+        requestId: tempRequestId,
+        error: getErrorMessage(error),
+      })
+      await releaseTempContext(tempRequestId, {
+        forceClose: true,
+        reason: "tempWindowGetRenderedTitleError",
+      })
+      released = true
+      sendResponse({ success: false, error: getErrorMessage(error) })
+    } finally {
+      if (!released) {
+        await releaseTempContext(tempRequestId)
+      }
+    }
+  } catch (error) {
+    logTempWindow("tempWindowGetRenderedTitleError", {
+      requestId: tempRequestId,
+      error: getErrorMessage(error),
+    })
+    await releaseTempContext(tempRequestId, {
+      forceClose: true,
+      reason: "tempWindowGetRenderedTitleError",
+    })
+    sendResponse({ success: false, error: getErrorMessage(error) })
   }
 }
 
@@ -351,6 +414,7 @@ export async function handleTempWindowFetch(
     fetchOptions,
     responseType = "json",
     requestId,
+    suppressMinimize,
   } = request
 
   if (!originUrl || !fetchUrl) {
@@ -371,7 +435,11 @@ export async function handleTempWindowFetch(
   })
 
   try {
-    const context = await acquireTempContext(originUrl, tempRequestId)
+    const context = await acquireTempContext(
+      originUrl,
+      tempRequestId,
+      suppressMinimize,
+    )
     const { tabId } = context
     let ruleId: number | null = null
     let released = false
@@ -456,9 +524,13 @@ export async function handleTempWindowFetch(
  * @param url 页面地址（含 origin），用于确定要打开的临时窗口
  * @param requestId 用于标识本次请求的唯一 ID，便于释放上下文
  */
-async function getSiteDataFromTab(url: string, requestId: string) {
+async function getSiteDataFromTab(
+  url: string,
+  requestId: string,
+  suppressMinimize?: boolean,
+) {
   try {
-    const context = await acquireTempContext(url, requestId)
+    const context = await acquireTempContext(url, requestId, suppressMinimize)
     const { tabId } = context
 
     // 通过 content script 获取用户信息
@@ -558,7 +630,11 @@ async function destroyOriginPool(
  * - 如有可复用上下文则复用，否则创建新的窗口/标签页
  * - 使用 destroyingOrigins 防止与销毁流程并发冲突
  */
-async function acquireTempContext(url: string, requestId: string) {
+async function acquireTempContext(
+  url: string,
+  requestId: string,
+  suppressMinimize?: boolean,
+) {
   const origin = normalizeOrigin(url)
   const preferredMode = await resolveTempContextMode()
 
@@ -588,6 +664,7 @@ async function acquireTempContext(url: string, requestId: string) {
         origin,
         requestId,
         preferredMode,
+        suppressMinimize,
       )
       registerContext(origin, context)
       logTempWindow("acquireTempContextCreated", {
@@ -761,6 +838,7 @@ async function createTempContextInstance(
   origin: string,
   requestId: string,
   preferredMode: TempWindowFallbackPreferences["tempContextMode"] = DEFAULT_TEMP_CONTEXT_MODE,
+  suppressMinimize = false,
 ) {
   let contextId: number | undefined
   let tabId: number | undefined
@@ -789,21 +867,23 @@ async function createTempContextInstance(
       })
       tabId = tabs[0]?.id
 
-      // Best-effort minimize to reduce disturbance.
-      try {
-        await browser.windows.update(window.id, { state: "minimized" })
-        logTempWindow("quietWindowMinimized", {
-          requestId,
-          origin,
-          windowId: window.id,
-        })
-      } catch (minErr) {
-        logTempWindow("quietWindowMinimizeFailed", {
-          requestId,
-          origin,
-          windowId: window.id,
-          error: getErrorMessage(minErr),
-        })
+      // Best-effort minimize to reduce disturbance unless suppressed (e.g., popup context).
+      if (!suppressMinimize) {
+        try {
+          await browser.windows.update(window.id, { state: "minimized" })
+          logTempWindow("quietWindowMinimized", {
+            requestId,
+            origin,
+            windowId: window.id,
+          })
+        } catch (minErr) {
+          logTempWindow("quietWindowMinimizeFailed", {
+            requestId,
+            origin,
+            windowId: window.id,
+            error: getErrorMessage(minErr),
+          })
+        }
       }
     } else {
       const tab = await createTab(url, false)
