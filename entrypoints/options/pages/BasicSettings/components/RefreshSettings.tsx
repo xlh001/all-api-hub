@@ -50,11 +50,7 @@ export default function RefreshSettings() {
   const handleRefreshIntervalBlur = async () => {
     const value = parseInt(intervalInput, 10)
     if (isNaN(value) || value < 10) {
-      toast.error(
-        t("refresh.refreshInterval") +
-          " " +
-          t("refresh.minRefreshIntervalDesc"),
-      )
+      toast.error(t("refresh.refreshIntervalInvalid"))
       setIntervalInput(refreshInterval.toString())
       return
     }
@@ -67,11 +63,7 @@ export default function RefreshSettings() {
   const handleMinRefreshIntervalBlur = async () => {
     const value = parseInt(minIntervalInput, 10)
     if (isNaN(value) || value < 0 || value > 300) {
-      toast.error(
-        t("refresh.minRefreshInterval") +
-          " " +
-          t("refresh.minRefreshIntervalDesc"),
-      )
+      toast.error(t("refresh.minRefreshIntervalInvalid"))
       setMinIntervalInput(minRefreshInterval.toString())
       return
     }
