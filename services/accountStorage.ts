@@ -109,7 +109,8 @@ class AccountStorageService {
       const accounts = await this.getAllAccounts()
       const account = accounts.find(
         (acc) =>
-          acc.site_url === baseUrl && acc.account_info.id.toString() === userId,
+          acc.site_url === baseUrl &&
+          String(acc.account_info.id) === String(userId),
       )
 
       if (account && needsConfigMigration(account)) {
