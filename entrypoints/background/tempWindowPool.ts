@@ -21,6 +21,7 @@ import {
 import { getErrorMessage } from "~/utils/error"
 import { isProtectionBypassFirefoxEnv } from "~/utils/protectionBypass"
 import { sanitizeUrlForLog } from "~/utils/sanitizeUrlForLog"
+import { TempWindowFetchParams } from "~/utils/tempWindowFetch"
 
 const TEMP_CONTEXT_IDLE_TIMEOUT = 5000
 const QUIET_WINDOW_IDLE_TIMEOUT = 3000
@@ -74,35 +75,17 @@ export async function handleTempWindowGetRenderedTitle(
       suppressMinimize,
     )
     const { tabId } = context
-    let released = false
 
-    try {
-      const response = await browser.tabs.sendMessage(tabId, {
-        action: "getRenderedTitle",
-        requestId: tempRequestId,
-      })
+    const response = await browser.tabs.sendMessage(tabId, {
+      action: "getRenderedTitle",
+      requestId: tempRequestId,
+    })
 
-      if (!response) {
-        throw new Error("No response from rendered title fetch")
-      }
-
-      sendResponse(response)
-    } catch (error) {
-      logTempWindow("tempWindowGetRenderedTitleError", {
-        requestId: tempRequestId,
-        error: getErrorMessage(error),
-      })
-      await releaseTempContext(tempRequestId, {
-        forceClose: true,
-        reason: "tempWindowGetRenderedTitleError",
-      })
-      released = true
-      sendResponse({ success: false, error: getErrorMessage(error) })
-    } finally {
-      if (!released) {
-        await releaseTempContext(tempRequestId)
-      }
+    if (!response) {
+      throw new Error("No response from rendered title fetch")
     }
+
+    sendResponse(response)
   } catch (error) {
     logTempWindow("tempWindowGetRenderedTitleError", {
       requestId: tempRequestId,
@@ -113,6 +96,8 @@ export async function handleTempWindowGetRenderedTitle(
       reason: "tempWindowGetRenderedTitleError",
     })
     sendResponse({ success: false, error: getErrorMessage(error) })
+  } finally {
+    await releaseTempContext(tempRequestId)
   }
 }
 
@@ -405,7 +390,7 @@ export async function handleAutoDetectSite(
  * 在临时上下文中执行跨域 fetch 请求，用于绕过需要真实浏览器环境的接口访问。
  */
 export async function handleTempWindowFetch(
-  request: any,
+  request: TempWindowFetchParams,
   sendResponse: (response?: any) => void,
 ) {
   const {
@@ -425,7 +410,8 @@ export async function handleTempWindowFetch(
     return
   }
 
-  const tempRequestId = requestId || `temp-fetch-${Date.now()}`
+  const tempRequestId =
+    requestId || `temp-fetch-${fetchUrl}-${crypto.randomUUID()}`
 
   logTempWindow("tempWindowFetchStart", {
     requestId: tempRequestId,
@@ -434,6 +420,11 @@ export async function handleTempWindowFetch(
     responseType,
   })
 
+  let ruleId: number | null = null
+
+  const rawOptions = (fetchOptions ?? {}) as Record<string, any>
+  let effectiveFetchOptions: Record<string, any> = rawOptions
+
   try {
     const context = await acquireTempContext(
       originUrl,
@@ -441,71 +432,43 @@ export async function handleTempWindowFetch(
       suppressMinimize,
     )
     const { tabId } = context
-    let ruleId: number | null = null
-    let released = false
-    const rawOptions = (fetchOptions ?? {}) as Record<string, any>
-    let effectiveFetchOptions: Record<string, any> = rawOptions
 
-    try {
-      // Chromium-based browsers: for token-auth (credentials=omit) we still need WAF cookies,
-      // but MUST exclude session cookies to prevent cross-account contamination (issue #204).
-      if (
-        !isProtectionBypassFirefoxEnv() &&
-        rawOptions.credentials === "omit"
-      ) {
-        const cookieHeader = await getCookieHeaderForUrl(fetchUrl, {
-          includeSession: false,
+    // Chromium-based browsers: for token-auth (credentials=omit) we still need WAF cookies,
+    // but MUST exclude session cookies to prevent cross-account contamination (issue #204).
+    if (!isProtectionBypassFirefoxEnv() && rawOptions.credentials === "omit") {
+      const cookieHeader = await getCookieHeaderForUrl(fetchUrl, {
+        includeSession: false,
+      })
+
+      if (cookieHeader) {
+        ruleId = await applyTempWindowCookieRule({
+          tabId,
+          url: fetchUrl,
+          cookieHeader,
         })
 
-        if (cookieHeader) {
-          ruleId = await applyTempWindowCookieRule({
-            tabId,
-            url: fetchUrl,
-            cookieHeader,
-          })
-
-          if (ruleId) {
-            effectiveFetchOptions = {
-              ...rawOptions,
-              credentials: "include",
-            }
+        if (ruleId) {
+          effectiveFetchOptions = {
+            ...rawOptions,
+            credentials: "include",
           }
         }
       }
-
-      const response = await browser.tabs.sendMessage(tabId, {
-        action: "performTempWindowFetch",
-        requestId: tempRequestId,
-        fetchUrl,
-        fetchOptions: effectiveFetchOptions,
-        responseType,
-      })
-
-      if (!response) {
-        throw new Error("No response from temp window fetch")
-      }
-
-      sendResponse(response)
-    } catch (error) {
-      logTempWindow("tempWindowFetchError", {
-        requestId: tempRequestId,
-        error: getErrorMessage(error),
-      })
-      await releaseTempContext(tempRequestId, {
-        forceClose: true,
-        reason: "tempWindowFetchError",
-      })
-      released = true
-      sendResponse({ success: false, error: getErrorMessage(error) })
-    } finally {
-      if (ruleId) {
-        await removeTempWindowCookieRule(ruleId)
-      }
-
-      if (!released) {
-        await releaseTempContext(tempRequestId)
-      }
     }
+
+    const response = await browser.tabs.sendMessage(tabId, {
+      action: "performTempWindowFetch",
+      requestId: tempRequestId,
+      fetchUrl,
+      fetchOptions: effectiveFetchOptions,
+      responseType,
+    })
+
+    if (!response) {
+      throw new Error("No response from temp window fetch")
+    }
+
+    sendResponse(response)
   } catch (error) {
     logTempWindow("tempWindowFetchError", {
       requestId: tempRequestId,
@@ -516,6 +479,12 @@ export async function handleTempWindowFetch(
       reason: "tempWindowFetchError",
     })
     sendResponse({ success: false, error: getErrorMessage(error) })
+  } finally {
+    if (ruleId) {
+      await removeTempWindowCookieRule(ruleId)
+    }
+
+    await releaseTempContext(tempRequestId)
   }
 }
 
@@ -761,9 +730,14 @@ async function releaseTempContext(
           type: context.type,
           reason: options.reason ?? null,
         })
-        await destroyContext(context, {
-          reason: options.reason ?? "forceClose",
-        })
+        destroyingOrigins.add(context.origin)
+        try {
+          await destroyContext(context, {
+            reason: options.reason ?? "forceClose",
+          })
+        } finally {
+          destroyingOrigins.delete(context.origin)
+        }
         return
       }
 
