@@ -1,3 +1,5 @@
+import i18next from "i18next"
+
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import {
   API_ERROR_CODES,
@@ -184,7 +186,11 @@ const apiRequestData = async <T>(
   responseType: TempWindowResponseType,
 ): Promise<T> => {
   if (responseType !== "json") {
-    throw new ApiError("仅支持 JSON 响应数据", undefined, endpoint)
+    throw new ApiError(
+      i18next.t("messages:errors.api.onlyJsonSupported"),
+      undefined,
+      endpoint,
+    )
   }
 
   const res = (await apiRequest<T>(
@@ -194,14 +200,7 @@ const apiRequestData = async <T>(
     responseType,
   )) as ApiResponse<T>
 
-  if (!res.success || res.data === undefined) {
-    if (res.message) {
-      throw new ApiError(res.message, undefined, endpoint)
-    }
-    throw new ApiError("响应数据格式错误", undefined, endpoint)
-  }
-
-  return res.data
+  return extractDataFromApiResponseBody(res, endpoint)
 }
 
 /**
@@ -417,12 +416,16 @@ export function extractDataFromApiResponseBody<T>(
   body: any,
   endpoint?: string,
 ): T {
+  const invalidResponseMessage = i18next.t(
+    "messages:errors.api.invalidResponseFormat",
+  )
+
   if (!body || typeof body !== "object") {
-    throw new ApiError("响应数据格式错误", undefined, endpoint)
+    throw new ApiError(invalidResponseMessage, undefined, endpoint)
   }
 
-  if (body.success === false || body.data === undefined) {
-    const message = body.message || "响应数据格式错误"
+  if (body.success === false) {
+    const message = body.message || invalidResponseMessage
     throw new ApiError(message, undefined, endpoint)
   }
 

@@ -139,21 +139,6 @@ describe("apiService common fetchApi helpers", () => {
     ).rejects.toMatchObject({ message: "bad request" } as any)
   })
 
-  it("fetchApiData should throw ApiError when data is missing", async () => {
-    global.fetch = createFetchMock({
-      success: true,
-      message: "no data",
-    })
-
-    await expect(
-      fetchApiData({
-        baseUrl: BASE_URL,
-        endpoint: ENDPOINT,
-        authType: AuthTypeEnum.AccessToken,
-      } as any),
-    ).rejects.toBeInstanceOf(ApiError)
-  })
-
   it("fetchApiData should tag eligible errors when temp-window fallback is disabled", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,

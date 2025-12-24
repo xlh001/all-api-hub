@@ -49,7 +49,9 @@
     },
     "api": {
       "fetchUserInfoFailed": "获取用户信息失败",
-      "getAccessTokenFailed": "获取访问令牌失败"
+      "getAccessTokenFailed": "获取访问令牌失败",
+      "invalidResponseFormat": "响应数据格式错误",
+      "onlyJsonSupported": "仅支持 JSON 响应数据"
     },
     "operation": {
       "autoDetectFailed": "自动识别失败: {{error}}",
