@@ -1,6 +1,9 @@
 import { t } from "i18next"
 
-import { sendRuntimeMessage } from "~/utils/browserApi"
+import {
+  checkPermissionViaMessage,
+  sendRuntimeMessage,
+} from "~/utils/browserApi"
 import { extractRedemptionCodesFromText } from "~/utils/redemptionAssist"
 
 import {
@@ -47,6 +50,26 @@ function setupRedemptionAssistDetection() {
         const target = event.target as HTMLElement | null
         if (target) {
           text = (target.innerText || target.textContent || "").slice(0, 50)
+        }
+      }
+
+      if (!text && navigator.clipboard && navigator.clipboard.readText) {
+        // check clipboardRead permission first to avoid prompting needs to access clipboard in any website
+        const hasPermission = await checkPermissionViaMessage({
+          permissions: ["clipboardRead"],
+        })
+        if (hasPermission) {
+          try {
+            const clipText = await navigator.clipboard.readText()
+            if (clipText) {
+              text = clipText.trim()
+            }
+          } catch (error) {
+            console.warn(
+              "[RedemptionAssist][Content] Clipboard read failed:",
+              error,
+            )
+          }
         }
       }
 
