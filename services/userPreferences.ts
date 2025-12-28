@@ -332,7 +332,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
     enabled: true,
     urlWhitelist: {
       enabled: true,
-      patterns: [],
+      patterns: ["cdk.linux.do"],
       includeAccountSiteUrls: true,
       includeCheckInAndRedeemUrls: true,
     },

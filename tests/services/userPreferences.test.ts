@@ -27,7 +27,7 @@ describe("userPreferences", () => {
       ).toBe(true)
       expect(
         DEFAULT_PREFERENCES.redemptionAssist?.urlWhitelist.patterns,
-      ).toEqual([])
+      ).toEqual(["cdk.linux.do"])
       expect(DEFAULT_PREFERENCES.tempWindowFallbackReminder?.dismissed).toBe(
         false,
       )
