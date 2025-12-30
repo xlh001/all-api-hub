@@ -73,13 +73,13 @@ export const NewcomerSupportCard = () => {
           </Button>
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={handleOpenDocs}
             leftIcon={<BookOpen className="h-4 w-4" />}
           >
             {t("newcomerSupport.actions.docs")}
           </Button>
-          <Button size="sm" variant="ghost" onClick={handleOpenAbout}>
+          <Button size="sm" variant="outline" onClick={handleOpenAbout}>
             {t("newcomerSupport.actions.about")}
           </Button>
         </div>
