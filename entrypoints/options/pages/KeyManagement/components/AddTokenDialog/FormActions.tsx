@@ -29,7 +29,7 @@ export function FormActions({
   const { t } = useTranslation("keyManagement")
 
   return (
-    <div className="flex justify-end space-x-3 pt-4">
+    <div className="flex justify-end space-x-3">
       <Button onClick={onClose} disabled={isSubmitting} variant="secondary">
         {t("common:actions.cancel")}
       </Button>
