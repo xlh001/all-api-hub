@@ -33,6 +33,15 @@
   },
   "execution": {
     "title": "Model List Synchronization",
+    "overview": {
+      "autoSync": "Auto-sync",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "everyHours": "Every {{count}}h",
+      "everyMinutes": "Every {{count}}m",
+      "lastRun": "Last run",
+      "never": "Never"
+    },
     "lastExecution": "Last Execution",
     "tabs": {
       "history": "Execution History",
@@ -45,7 +54,8 @@
       "duration": "Duration",
       "startTime": "Start Time",
       "endTime": "End Time",
-      "nextRun": "Next Scheduled Run"
+      "nextRun": "Next Scheduled Run",
+      "notScheduled": "Not scheduled"
     },
     "actions": {
       "runAll": "Run All",

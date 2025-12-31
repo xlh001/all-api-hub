@@ -19,10 +19,10 @@ import ActionBar from "./components/ActionBar"
 import EmptyResults from "./components/EmptyResults"
 import FilterBar, { type FilterStatus } from "./components/FilterBar"
 import LoadingSkeleton from "./components/LoadingSkeleton"
+import OverviewCard from "./components/OverviewCard"
 import ProgressCard from "./components/ProgressCard"
 import ResultsTable from "./components/ResultsTable"
 import StatisticsCard from "./components/StatisticsCard"
-
 
 const TAB_INDEX = {
   history: 0,
@@ -41,6 +41,9 @@ export default function ManagedSiteModelSync() {
     null,
   )
   const [progress, setProgress] = useState<ExecutionProgress | null>(null)
+  const [nextScheduledAt, setNextScheduledAt] = useState<string | null>(null)
+  const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState<boolean>(false)
+  const [intervalMs, setIntervalMs] = useState<number | undefined>(undefined)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all")
   const [searchKeyword, setSearchKeyword] = useState("")
   const [historySelectedIds, setHistorySelectedIds] = useState<Set<number>>(
@@ -90,6 +93,35 @@ export default function ManagedSiteModelSync() {
     }
   }, [])
 
+  const loadNextRun = useCallback(async () => {
+    try {
+      const response = await sendRuntimeMessage({
+        action: "modelSync:getNextRun",
+      })
+
+      if (response.success) {
+        setNextScheduledAt(response.data?.nextScheduledAt ?? null)
+      }
+    } catch (error) {
+      console.error("Failed to load next run:", error)
+    }
+  }, [])
+
+  const loadPreferences = useCallback(async () => {
+    try {
+      const response = await sendRuntimeMessage({
+        action: "modelSync:getPreferences",
+      })
+
+      if (response.success) {
+        setIsAutoSyncEnabled(!!response.data?.enableSync)
+        setIntervalMs(response.data?.intervalMs)
+      }
+    } catch (error) {
+      console.error("Failed to load preferences:", error)
+    }
+  }, [])
+
   const loadChannels = useCallback(async () => {
     try {
       setIsChannelsLoading(true)
@@ -120,6 +152,8 @@ export default function ManagedSiteModelSync() {
   useEffect(() => {
     void loadLastExecution()
     void loadProgress()
+    void loadNextRun()
+    void loadPreferences()
 
     // Listen for progress updates
     const handleMessage = (message: any) => {
@@ -129,6 +163,7 @@ export default function ManagedSiteModelSync() {
         // If sync completed, reload execution results
         if (!message.payload?.isRunning) {
           void loadLastExecution()
+          void loadNextRun()
         }
       }
     }
@@ -137,7 +172,7 @@ export default function ManagedSiteModelSync() {
     return () => {
       browser.runtime.onMessage.removeListener(handleMessage)
     }
-  }, [loadLastExecution, loadProgress])
+  }, [loadLastExecution, loadNextRun, loadPreferences, loadProgress])
 
   useEffect(() => {
     if (!progress?.isRunning) {
@@ -256,6 +291,8 @@ export default function ManagedSiteModelSync() {
   const handleRefresh = () => {
     void loadLastExecution()
     void loadProgress()
+    void loadNextRun()
+    void loadPreferences()
   }
 
   const handleRunSingle = async (channelId: number) => {
@@ -549,6 +586,15 @@ export default function ManagedSiteModelSync() {
         description={t("description")}
         spacing="compact"
       />
+
+      <div className="mb-6">
+        <OverviewCard
+          enabled={isAutoSyncEnabled}
+          intervalMs={intervalMs}
+          nextScheduledAt={nextScheduledAt}
+          lastRunAt={lastExecution?.statistics?.endedAt ?? null}
+        />
+      </div>
 
       {progress?.isRunning && (
         <div className="mb-6">
