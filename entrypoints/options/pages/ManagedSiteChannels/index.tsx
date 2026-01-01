@@ -94,6 +94,7 @@ import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type { ManagedSiteChannel } from "~/types/managedSite"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
+import { openManagedSiteModelSyncForChannel } from "~/utils/navigation"
 
 type ChannelRow = ManagedSiteChannel
 type CheckboxState = boolean | "indeterminate"
@@ -101,6 +102,7 @@ type RowActionsLabels = {
   edit: string
   sync: string
   syncing: string
+  openSync: string
   filters: string
   delete: string
 }
@@ -219,7 +221,7 @@ const multiColumnFilterFn: FilterFn<ChannelRow> = (
   filterValue,
 ) => {
   const content =
-    `${row.original.name} ${row.original.base_url} ${row.original.group}`
+    `${row.original.id} ${row.original.name} ${row.original.base_url} ${row.original.group}`
       .toLowerCase()
       .trim()
   const searchTerm = (filterValue ?? "").toLowerCase().trim()
@@ -236,11 +238,33 @@ const statusFilterFn: FilterFn<ChannelRow> = (
   return filterValue.includes(String(row.getValue(columnId)))
 }
 
+const channelIdFilterFn: FilterFn<ChannelRow> = (
+  row,
+  columnId,
+  filterValue,
+) => {
+  const value = String(row.getValue(columnId) ?? "").trim()
+  const expected = String(filterValue ?? "").trim()
+  if (!expected) return true
+  return value === expected
+}
+
 /**
  * Main management page for New API channels including table, filters, and dialogs.
  * Fetches channel data, exposes filtering tools, and handles CRUD operations.
  */
-export default function ManagedSiteChannels() {
+interface ManagedSiteChannelsProps {
+  refreshKey?: number
+  routeParams?: Record<string, string>
+}
+
+/**
+ *
+ */
+export default function ManagedSiteChannels({
+  refreshKey,
+  routeParams,
+}: ManagedSiteChannelsProps) {
   const { t } = useTranslation(["managedSiteChannels", "messages"])
   const [channels, setChannels] = useState<ChannelRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -307,6 +331,12 @@ export default function ManagedSiteChannels() {
   useEffect(() => {
     void refreshChannels()
   }, [refreshChannels])
+
+  useEffect(() => {
+    if (refreshKey) {
+      void refreshChannels()
+    }
+  }, [refreshChannels, refreshKey])
 
   const handleOpenCreateDialog = useCallback(() => {
     openWithCustom({
@@ -461,6 +491,7 @@ export default function ManagedSiteChannels() {
       edit: t("table.rowActions.edit"),
       sync: t("table.rowActions.sync"),
       syncing: t("table.rowActions.syncing"),
+      openSync: t("table.rowActions.openSync"),
       filters: t("table.rowActions.filters"),
       delete: t("table.rowActions.delete"),
     }),
@@ -505,6 +536,15 @@ export default function ManagedSiteChannels() {
         size: 16,
         enableSorting: false,
         enableHiding: false,
+      },
+      {
+        accessorKey: "id",
+        header: t("table.columns.id"),
+        cell: ({ row }: { row: Row<ChannelRow> }) => (
+          <span className="font-mono text-sm">{row.original.id}</span>
+        ),
+        filterFn: channelIdFilterFn,
+        size: 40,
       },
       {
         accessorKey: "name",
@@ -596,6 +636,9 @@ export default function ManagedSiteChannels() {
             onEdit={() => handleOpenEditDialog(row.original)}
             onDelete={() => scheduleDelete([row.original.id])}
             onSync={() => handleSyncChannels([row.original.id])}
+            onOpenSync={() =>
+              void openManagedSiteModelSyncForChannel(row.original.id)
+            }
             onFilters={() => handleOpenFilterDialog(row.original)}
             isSyncing={syncingIds.has(row.original.id)}
             labels={rowActionLabels}
@@ -639,6 +682,29 @@ export default function ManagedSiteChannels() {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     enableSortingRemoval: false,
   })
+
+  useEffect(() => {
+    const channelIdParam = routeParams?.channelId?.trim()
+    const idColumn = table.getColumn("id")
+    const nameColumn = table.getColumn("name")
+
+    if (channelIdParam) {
+      idColumn?.setFilterValue(channelIdParam)
+      nameColumn?.setFilterValue(undefined)
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+      return
+    }
+
+    const searchParam = routeParams?.search?.trim()
+    if (searchParam) {
+      if (/^\d+$/.test(searchParam)) {
+        idColumn?.setFilterValue(searchParam)
+        nameColumn?.setFilterValue(undefined)
+        setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+      }
+      return
+    }
+  }, [routeParams?.channelId, routeParams?.search, table])
 
   const statusColumn = table.getColumn("status")
   const uniqueStatusValues = useMemo(() => {
@@ -1082,6 +1148,7 @@ function RowActions({
   onEdit,
   onDelete,
   onSync,
+  onOpenSync,
   onFilters,
   isSyncing,
   labels,
@@ -1089,6 +1156,7 @@ function RowActions({
   onEdit: () => void
   onDelete: () => void
   onSync: () => void
+  onOpenSync: () => void
   onFilters: () => void
   isSyncing: boolean
   labels: RowActionsLabels
@@ -1105,6 +1173,9 @@ function RowActions({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onFilters}>
           {labels.filters}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenSync}>
+          {labels.openSync}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onSync} disabled={isSyncing}>
           {isSyncing ? labels.syncing : labels.sync}
