@@ -5,7 +5,7 @@ const REDEMPTION_MENU_ID = "redemption-assist-context-menu"
  * The handler forwards selection text to the active tab's content script, which
  * will bypass whitelist and code-format filters.
  */
-export function setupContextMenus() {
+export async function setupContextMenus() {
   if (!browser?.contextMenus) {
     console.warn("[ContextMenu] contextMenus API unavailable")
     return
@@ -15,6 +15,10 @@ export function setupContextMenus() {
     const title =
       browser.i18n?.getMessage("context_menu_redeem_selection") ||
       "使用兑换助手兑换选中文本"
+    // Remove any existing menus to prevent duplicates
+    await browser.contextMenus.removeAll()
+
+    // Create the redemption assist context menu
     browser.contextMenus.create({
       id: REDEMPTION_MENU_ID,
       title,
