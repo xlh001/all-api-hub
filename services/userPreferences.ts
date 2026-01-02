@@ -54,8 +54,9 @@ export interface TempWindowFallbackPreferences {
    * Preferred temporary context type for protection bypass.
    * - "tab": Open a temporary tab (default)
    * - "window": Open a popup window
+   * - "composite": Open temporary tabs inside a shared window
    */
-  tempContextMode: "tab" | "window"
+  tempContextMode: "tab" | "window" | "composite"
 }
 
 export interface TempWindowFallbackReminderPreferences {
@@ -354,7 +355,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
     useInOptions: true,
     useForAutoRefresh: true,
     useForManualRefresh: true,
-    tempContextMode: "tab",
+    tempContextMode: "composite",
   },
   tempWindowFallbackReminder: {
     dismissed: false,
