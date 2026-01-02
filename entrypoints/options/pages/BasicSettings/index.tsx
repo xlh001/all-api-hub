@@ -123,6 +123,8 @@ export default function BasicSettings() {
     useState<string | null>(null)
 
   const applyUrlState = useCallback(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+    const pendingAnchor = searchParams.get("anchor")
     const { tab, anchor, isHeadingAnchor } = parseTabFromUrl({
       ignoreAnchors: [MENU_ITEM_IDS.BASIC],
       defaultHashPage: MENU_ITEM_IDS.BASIC,
@@ -132,6 +134,12 @@ export default function BasicSettings() {
       const index = TAB_CONFIGS.findIndex((cfg) => cfg.id === tab)
       if (index >= 0) {
         setSelectedTabIndex(index)
+      }
+
+      if (pendingAnchor) {
+        window.setTimeout(() => {
+          navigateToAnchor(pendingAnchor)
+        }, 150)
       }
       return
     }
