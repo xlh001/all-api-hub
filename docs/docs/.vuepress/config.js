@@ -40,6 +40,7 @@ export default defineUserConfig({
         navbar: [
           "/",
           "/get-started",
+          "/changelog",
           "/faq",
           {
             text: '专题指南',
@@ -67,6 +68,7 @@ export default defineUserConfig({
         navbar: [
           "/en/",
           "/en/get-started",
+          "/en/changelog",
           "/en/faq",
           {
             text: 'Guides',
@@ -94,6 +96,7 @@ export default defineUserConfig({
         navbar: [
           "/ja/",
           "/ja/get-started",
+          "/ja/changelog",
           "/ja/faq",
           {
             text: '機能ガイド',
