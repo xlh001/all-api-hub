@@ -10,6 +10,7 @@ import {
   AccountData,
   ApiServiceAccountRequest,
   ApiServiceRequest,
+  CheckInStatus,
   CreateTokenRequest,
   HealthCheckResult,
   LogResponseData,
@@ -416,11 +417,7 @@ export const extractDefaultExchangeRate = (
 
 /**
  * Fetch payment info (RIX_API specific; kept in common for fallback).
- * @param params Request metadata describing site base URL and auth context.
- * @param params.baseUrl Site base URL.
- * @param params.userId User id for the request.
- * @param params.token Token for auth.
- * @param params.authType Auth mode (cookie/token/none).
+ * @param request ApiServiceRequest.
  * @returns Payment summary from backend.
  */
 export async function fetchPaymentInfo(
@@ -487,18 +484,13 @@ export async function fetchAccountQuota(
 export async function fetchCheckInStatus(
   request: ApiServiceRequest,
 ): Promise<boolean | undefined> {
+  const currentMonth = new Date().toISOString().slice(0, 7)
   try {
-    const checkInData = await fetchApiData<{ can_check_in?: boolean }>(
-      request,
-      {
-        endpoint: "/api/user/check_in_status",
-      },
-    )
-    // 仅当 can_check_in 明确为 true 或 false 时才返回，否则返回 undefined
-    if (typeof checkInData.can_check_in === "boolean") {
-      return checkInData.can_check_in
-    }
-    return undefined
+    const checkInData = await fetchApiData<CheckInStatus>(request, {
+      endpoint: `/api/user/checkin?month=${currentMonth}`,
+    })
+    // 返回今天是否已签到的状态
+    return !checkInData.stats.checked_in_today
   } catch (error) {
     // 如果接口不存在或返回错误（如 404 Not Found），则认为不支持签到功能
     if (
@@ -521,12 +513,12 @@ export async function fetchSupportCheckIn(
   request: ApiServiceRequest,
 ): Promise<boolean | undefined> {
   const siteStatus = await fetchSiteStatus(request)
-  return siteStatus?.check_in_enabled
+  return siteStatus?.checkin_enabled
 }
 
 /**
  * Fetch paginated logs and aggregate results.
- * @param authParams Auth context (baseUrl, userId, token, authType).
+ * @param request ApiServiceRequest.
  * @param logTypes Log categories to fetch.
  * @param dataAggregator Reducer to merge items into accumulator.
  * @param initialValue Initial accumulator value.
@@ -640,7 +632,7 @@ export async function fetchTodayIncome(
   request: ApiServiceRequest,
 ): Promise<TodayIncomeData> {
   const { baseUrl } = request
-  const userId = request.auth.userId
+  const { userId } = request.auth
   let exchangeRate: number = UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
 
   const account = request.accountId

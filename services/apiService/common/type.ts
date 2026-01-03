@@ -66,7 +66,10 @@ export interface SiteStatusInfo {
   stripe_unit_price?: number
   PaymentUSDRate?: number
   system_name?: string
-  check_in_enabled?: boolean
+  /**
+   * 是否启用签到功能
+   */
+  checkin_enabled?: boolean
 }
 
 // 模型列表响应类型
@@ -340,4 +343,55 @@ export interface RedeemCodeResponse {
    * 兑换获得的额度
    */
   data: number
+}
+
+export interface CheckinRecord {
+  /**
+   * 签到日期，格式 YYYY-MM-DD
+   * @example "2026-01-03"
+   */
+  checkin_date: string
+  quota_awarded: number
+}
+
+export interface CheckInStatus {
+  /**
+   * 是否启用签到功能
+   */
+  enabled: boolean
+  max_quota: number
+  min_quota: number
+  stats: {
+    /**
+     * 今天是否已签到
+     * @example true 今日已经签到
+     * @example false 今日尚未签到
+     */
+    checked_in_today: boolean
+    checkin_count: number
+    records: CheckinRecord[]
+    total_checkins: number
+    total_quota: number
+  }
+}
+
+export interface CheckInStatusResponse {
+  data: CheckInStatus
+  success: boolean
+}
+
+/**
+ * New-API 签到响应类型
+ */
+export type NewApiCheckinResponse = {
+  data: CheckinRecord
+  success: boolean
+  /**
+   * Response message from the API.
+   * @example "签到成功"
+   * @example "今日已签到"
+   * @example "签到失败，请稍后重试"
+   * @example "签到失败：更新额度出错"
+   */
+  message: string
 }
