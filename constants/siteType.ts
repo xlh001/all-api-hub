@@ -49,13 +49,16 @@ function makeTitleRegex(name: string): RegExp {
 
 // 默认的用量路径
 const DEFAULT_USAGE_PATH = "/console/log"
-const DEFAULT_CHECKIN_PATH = "/app/me"
+const DEFAULT_CHECKIN_PATH = "/console/personal"
 const DEFAULT_REDEEM_PATH = "/console/topup"
 
 // 定义各站点对应的 API 路径
 export const SITE_API_ROUTER: Record<string, any> = {
   [ONE_API]: { usagePath: DEFAULT_USAGE_PATH },
-  [NEW_API]: { usagePath: DEFAULT_USAGE_PATH },
+  [NEW_API]: {
+    usagePath: DEFAULT_USAGE_PATH,
+    checkInPath: "/console/personal",
+  },
   [VO_API]: { usagePath: DEFAULT_USAGE_PATH, redeemPath: "/wallet" },
   [VELOERA]: {
     usagePath: "/app/logs/api-usage",
