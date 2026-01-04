@@ -109,6 +109,33 @@
         "export": "Export"
       }
     },
+    "cliproxy": {
+      "title": "Import to CLIProxyAPI",
+      "description": "Create or update an OpenAI-compatible provider in CLIProxyAPI.",
+      "fields": {
+        "name": "Provider name",
+        "baseUrl": "Provider base URL",
+        "proxyUrl": "Proxy URL (optional)",
+        "models": "Model mapping (optional)"
+      },
+      "descriptions": {
+        "baseUrl": "OpenAI-compatible upstream base URL, typically ending with /v1.",
+        "proxyUrl": "Optional proxy URL used for this API key entry.",
+        "models": "Map upstream model names to optional aliases (name → alias). Leave blank to omit."
+      },
+      "placeholders": {
+        "name": "e.g. Acme Relay",
+        "baseUrl": "https://example.com/v1",
+        "proxyUrl": "http://localhost:3000",
+        "modelName": "Model name, e.g. claude",
+        "modelAlias": "Model alias (optional)"
+      },
+      "actions": {
+        "addModel": "Add Model",
+        "removeModel": "Remove model",
+        "reorderModel": "Reorder model"
+      }
+    },
     "claudeCodeRouter": {
       "title": "Import to Claude Code Router",
       "description": "Create or update a provider in Claude Code Router. Models are required.",
@@ -157,5 +184,25 @@
   "searchableSelect": {
     "searchPlaceholder": "Search...",
     "empty": "No results found"
+  },
+  "repeatableInput": {
+    "actions": {
+      "add": "Add",
+      "remove": "Remove",
+      "reorder": "Drag to reorder"
+    }
+  },
+  "modelListInput": {
+    "title": "Model List (name[, alias] one per line):",
+    "description": "Example: gpt-4o-mini or moonshotai/kimi-k2:free, kimi-k2",
+    "actions": {
+      "add": "Add Model",
+      "remove": "Remove model",
+      "reorder": "Reorder model"
+    },
+    "placeholders": {
+      "name": "Model name, e.g. claude",
+      "alias": "Model alias (optional)"
+    }
   }
 }

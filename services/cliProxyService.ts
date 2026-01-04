@@ -149,11 +149,30 @@ async function patchProviderByIndex(
  * @param token API token to register.
  * @returns ServiceResponse with success flag and message.
  */
+export interface ImportToCliProxyOptions {
+  account: DisplaySiteData
+  token: ApiToken
+  providerName?: string
+  providerBaseUrl?: string
+  proxyUrl?: string
+  models?: Array<{ name: string; alias?: string }>
+}
+
+/**
+ *
+ */
 export async function importToCliProxy(
-  account: DisplaySiteData,
-  token: ApiToken,
+  options: ImportToCliProxyOptions,
 ): Promise<ServiceResponse<void>> {
   try {
+    const {
+      account,
+      token,
+      providerName: providerNameOverride,
+      providerBaseUrl: providerBaseUrlOverride,
+      proxyUrl: proxyUrlOverride,
+      models: modelsOverride,
+    } = options
     const config = await getCliProxyConfig()
 
     if (!config) {
@@ -165,14 +184,33 @@ export async function importToCliProxy(
 
     const { baseUrl, managementKey } = config
 
-    const providerBaseUrl = getProviderBaseUrl(account)
-    const providerName = buildProviderName(account)
+    const providerBaseUrl =
+      providerBaseUrlOverride?.trim() || getProviderBaseUrl(account)
+    const providerName =
+      providerNameOverride?.trim() || buildProviderName(account)
+
+    const normalizedModels = (() => {
+      if (!modelsOverride) return undefined
+
+      const nextModels = modelsOverride
+        .map((model) => {
+          const name = model.name.trim()
+          const alias = model.alias?.trim()
+          return {
+            name,
+            alias: alias || undefined,
+          }
+        })
+        .filter((model) => model.name.length > 0)
+
+      return nextModels.length > 0 ? nextModels : undefined
+    })()
 
     const providers = await fetchProviders(baseUrl, managementKey)
 
     const apiKeyEntry: OpenAICompatibilityProviderApiKeyEntry = {
       "api-key": token.key,
-      "proxy-url": "",
+      "proxy-url": proxyUrlOverride?.trim() || "",
     }
 
     const existingIndex = providers.findIndex(
@@ -192,6 +230,7 @@ export async function importToCliProxy(
         name: existing.name || providerName,
         "base-url": providerBaseUrl,
         "api-key-entries": [...filtered, apiKeyEntry],
+        ...(normalizedModels ? { models: normalizedModels } : {}),
       }
 
       await patchProviderByIndex(
@@ -213,7 +252,7 @@ export async function importToCliProxy(
       name: providerName,
       "base-url": providerBaseUrl,
       "api-key-entries": [apiKeyEntry],
-      models: [],
+      models: normalizedModels ?? [],
       headers: {},
     }
 
