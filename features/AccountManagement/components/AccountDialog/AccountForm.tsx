@@ -1,10 +1,12 @@
 import {
   ArrowDownTrayIcon,
+  CalendarDaysIcon,
   CurrencyDollarIcon,
   EyeIcon,
   EyeSlashIcon,
   GlobeAltIcon,
   KeyIcon,
+  TicketIcon,
   UserIcon,
 } from "@heroicons/react/24/outline"
 import { useMemo } from "react"
@@ -326,8 +328,8 @@ export default function AccountForm({
               },
             })
           }
-          placeholder="https://example.com/api/checkin"
-          leftIcon={<GlobeAltIcon className="h-5 w-5" />}
+          placeholder="https://cdk.example.com/"
+          leftIcon={<CalendarDaysIcon className="h-5 w-5" />}
         />
       </FormField>
 
@@ -409,7 +411,7 @@ export default function AccountForm({
             })
           }
           placeholder="https://example.com/console/topup"
-          leftIcon={<GlobeAltIcon className="h-5 w-5" />}
+          leftIcon={<TicketIcon className="h-5 w-5" />}
         />
       </FormField>
 
