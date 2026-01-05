@@ -27,7 +27,7 @@
       "unknown": "未知",
       "notAvailable": "不可用",
       "refreshHealthStatus": "点击刷新健康状态",
-      "customCheckInUrl": "自定义签到地址，点我去签到: {{url}}",
+      "customCheckInUrl": "外部签到地址，点我去签到: {{url}}",
       "checkInUnsupported": "站点可能不支持签到",
       "checkedInToday": "今日已签到，点我查看",
       "notCheckedInToday": "今日未签到，点我去签到"

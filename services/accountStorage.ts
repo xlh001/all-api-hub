@@ -465,7 +465,7 @@ class AccountStorageService {
         },
       })
     } catch (error) {
-      console.error("标记账号自定义签到为已完成失败:", error)
+      console.error("标记账号外部签到为已完成失败:", error)
       return false
     }
   }

@@ -27,7 +27,7 @@
       "unknown": "Unknown",
       "notAvailable": "N/A",
       "refreshHealthStatus": "Click to refresh health status",
-      "customCheckInUrl": "Custom check-in URL, click to go: {{url}}",
+      "customCheckInUrl": "External check-in URL, click to go: {{url}}",
       "checkInUnsupported": "Site may not support check-in",
       "checkedInToday": "Checked in today, click to view",
       "notCheckedInToday": "Not checked in today, click to go"
