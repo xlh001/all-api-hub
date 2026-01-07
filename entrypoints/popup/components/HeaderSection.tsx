@@ -13,6 +13,7 @@ import Tooltip from "~/components/Tooltip"
 import { BodySmall, Caption, IconButton } from "~/components/ui"
 import { COLORS } from "~/constants/designTokens"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
+import { isExtensionSidePanel } from "~/utils/browser"
 import {
   openFullAccountManagerPage,
   openSettingsPage,
@@ -28,6 +29,7 @@ import CompactThemeToggle from "./ThemeToggle"
 export default function HeaderSection() {
   const { t } = useTranslation(["ui", "account", "common"])
   const { isRefreshing, handleRefresh } = useAccountDataContext()
+  const inSidePanel = isExtensionSidePanel()
 
   const handleGlobalRefresh = useCallback(async () => {
     try {
@@ -124,16 +126,18 @@ export default function HeaderSection() {
             <Cog6ToothIcon className="h-4 w-4" />
           </IconButton>
         </Tooltip>
-        <Tooltip content={t("common:actions.openSidePanel")}>
-          <IconButton
-            aria-label={t("common:actions.openSidePanel")}
-            size="sm"
-            variant="outline"
-            onClick={handleOpenSidePanel}
-          >
-            <PanelRightClose className="h-4 w-4" />
-          </IconButton>
-        </Tooltip>
+        {!inSidePanel && (
+          <Tooltip content={t("common:actions.openSidePanel")}>
+            <IconButton
+              aria-label={t("common:actions.openSidePanel")}
+              size="sm"
+              variant="outline"
+              onClick={handleOpenSidePanel}
+            >
+              <PanelRightClose className="h-4 w-4" />
+            </IconButton>
+          </Tooltip>
+        )}
       </div>
     </header>
   )
