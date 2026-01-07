@@ -1101,7 +1101,7 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
     // 其他API错误（数据格式错误等）
     return {
       status: SiteHealthStatus.Unknown,
-      message: i18next.t("account:healthStatus.apiError"),
+      message: error.message || i18next.t("account:healthStatus.apiError"),
     }
   }
 
@@ -1116,6 +1116,6 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
   // 其他未知错误
   return {
     status: SiteHealthStatus.Unknown,
-    message: i18next.t("account:healthStatus.unknownError"),
+    message: error.message || i18next.t("account:healthStatus.unknownError"),
   }
 }
