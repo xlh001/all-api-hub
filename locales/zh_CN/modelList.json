@@ -57,5 +57,8 @@
   "messages": {
     "modelNameCopied": "模型名称已复制",
     "copyFailed": "复制失败"
+  },
+  "actions": {
+    "verifyApi": "验证接口"
   }
 }

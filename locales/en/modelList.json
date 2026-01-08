@@ -57,5 +57,8 @@
   "messages": {
     "modelNameCopied": "Model name copied",
     "copyFailed": "Copy failed"
+  },
+  "actions": {
+    "verifyApi": "Verify API"
   }
 }
