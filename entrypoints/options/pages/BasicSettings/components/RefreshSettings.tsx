@@ -62,7 +62,9 @@ export default function RefreshSettings() {
 
   const handleMinRefreshIntervalBlur = async () => {
     const value = parseInt(minIntervalInput, 10)
-    if (isNaN(value) || value < 0 || value > 300) {
+    // No upper bound: allow any non-negative integer to let users effectively
+    // disable automatic refresh-by-click by setting a very large interval.
+    if (isNaN(value) || value < 0) {
       toast.error(t("refresh.minRefreshIntervalInvalid"))
       setMinIntervalInput(minRefreshInterval.toString())
       return
@@ -140,7 +142,6 @@ export default function RefreshSettings() {
                 <Input
                   type="number"
                   min={0}
-                  max={300}
                   value={minIntervalInput}
                   onChange={(e) => setMinIntervalInput(e.target.value)}
                   onBlur={handleMinRefreshIntervalBlur}
