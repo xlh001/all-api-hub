@@ -56,9 +56,11 @@
   },
   "messages": {
     "modelNameCopied": "Model name copied",
+    "modelNamesCopied": "Model names copied",
     "copyFailed": "Copy failed"
   },
   "actions": {
+    "copyModelName": "Copy model name",
     "verifyApi": "Verify API",
     "verifyCliSupport": "Verify CLI Support"
   }

@@ -65,8 +65,8 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleCopyModelName}
-            title={t("messages.modelNameCopied")}
-            aria-label={t("messages.modelNameCopied")}
+            title={t("actions.copyModelName")}
+            aria-label={t("actions.copyModelName")}
             className="shrink-0"
           >
             <DocumentDuplicateIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />

@@ -87,7 +87,7 @@ export function ControlPanel({
       .map((item) => item.model.model_name)
       .join(",")
     navigator.clipboard.writeText(modelNames)
-    toast.success(t("messages.modelNameCopied"))
+    toast.success(t("messages.modelNamesCopied"))
   }
 
   return (

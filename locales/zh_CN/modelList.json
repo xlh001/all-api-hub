@@ -56,9 +56,11 @@
   },
   "messages": {
     "modelNameCopied": "模型名称已复制",
+    "modelNamesCopied": "模型名称已复制",
     "copyFailed": "复制失败"
   },
   "actions": {
+    "copyModelName": "复制模型名称",
     "verifyApi": "验证接口",
     "verifyCliSupport": "验证 CLI 兼容性"
   }
