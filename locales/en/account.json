@@ -77,6 +77,8 @@
     "modelManagement": "Model Management",
     "usageLog": "Usage Log",
     "redeemPage": "Redeem/Top-up",
+    "openAllExternalCheckIn": "Open all external check-ins",
+    "openAllExternalCheckInHint": "Open unchecked external check-ins. Ctrl/Cmd: open all.",
     "pin": "Pin account",
     "unpin": "Unpin account",
     "pinned": "Pinned",

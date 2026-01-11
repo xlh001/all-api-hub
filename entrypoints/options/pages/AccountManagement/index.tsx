@@ -1,9 +1,12 @@
-import { UserRound } from "lucide-react"
+import { CalendarCheck2, UserRound } from "lucide-react"
+import type { MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "~/components/ui"
 import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import AccountList from "~/features/AccountManagement/components/AccountList"
+import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
+import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 
@@ -13,6 +16,24 @@ import { useDialogStateContext } from "~/features/AccountManagement/hooks/Dialog
 function AccountManagementContent({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation("account")
   const { openAddAccount } = useDialogStateContext()
+  const { displayData } = useAccountDataContext()
+  const { handleOpenExternalCheckIns } = useAccountActionsContext()
+
+  const externalCheckInAccounts = displayData.filter((account) => {
+    const customUrl = account.checkIn?.customCheckIn?.url
+    return typeof customUrl === "string" && customUrl.trim() !== ""
+  })
+
+  const canOpenExternalCheckIns = externalCheckInAccounts.length > 0
+
+  // Open all configured external check-in sites and sync the checked-in status.
+  const handleOpenExternalCheckInsClick = async (
+    event: MouseEvent<HTMLButtonElement>,
+  ) => {
+    // Ctrl/Cmd click opens all external check-ins; default opens only unchecked today.
+    const openAll = event.ctrlKey || event.metaKey
+    await handleOpenExternalCheckIns(externalCheckInAccounts, { openAll })
+  }
 
   return (
     <div className="dark:bg-dark-bg-secondary flex flex-col bg-white p-6">
@@ -20,7 +41,20 @@ function AccountManagementContent({ searchQuery }: { searchQuery?: string }) {
         icon={UserRound}
         title={t("title")}
         description={t("description")}
-        actions={<Button onClick={openAddAccount}>{t("addAccount")}</Button>}
+        actions={
+          <>
+            {canOpenExternalCheckIns && (
+              <Button
+                onClick={handleOpenExternalCheckInsClick}
+                leftIcon={<CalendarCheck2 className="h-4 w-4" />}
+                title={t("actions.openAllExternalCheckInHint")}
+              >
+                {t("actions.openAllExternalCheckIn")}
+              </Button>
+            )}
+            <Button onClick={openAddAccount}>{t("addAccount")}</Button>
+          </>
+        }
       />
 
       {/* Account List */}

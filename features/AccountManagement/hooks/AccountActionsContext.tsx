@@ -11,6 +11,8 @@ import toast from "react-hot-toast"
 
 import { accountStorage } from "~/services/accountStorage"
 import type { DisplaySiteData } from "~/types"
+import { getErrorMessage } from "~/utils/error"
+import { openExternalCheckInPages } from "~/utils/navigation"
 
 import { useAccountDataContext } from "./AccountDataContext"
 
@@ -25,6 +27,10 @@ interface AccountActionsContextType {
   handleCopyUrl: (account: DisplaySiteData) => void
   handleMarkCustomCheckInAsCheckedIn: (
     account: DisplaySiteData,
+  ) => Promise<void>
+  handleOpenExternalCheckIns: (
+    accounts: DisplaySiteData[],
+    options?: { openAll?: boolean },
   ) => Promise<void>
 }
 
@@ -127,6 +133,54 @@ export const AccountActionsProvider = ({
     [loadAccountData],
   )
 
+  /**
+   * Bulk open external check-in sites and mark them as checked in, mirroring the
+   * single-account check-in behavior. Defaults to only opening unchecked sites.
+   */
+  const handleOpenExternalCheckIns = useCallback(
+    async (accounts: DisplaySiteData[], options?: { openAll?: boolean }) => {
+      const accountsToOpen = options?.openAll
+        ? accounts
+        : accounts.filter(
+            (account) => !account.checkIn?.customCheckIn?.isCheckedInToday,
+          )
+
+      if (!accountsToOpen.length) {
+        toast.error(
+          i18next.t("messages:toast.error.externalCheckInNonePending"),
+        )
+        return
+      }
+
+      try {
+        for (const account of accountsToOpen) {
+          await openExternalCheckInPages([account])
+          await accountStorage.markAccountAsCustomCheckedIn(account.id)
+        }
+
+        await loadAccountData()
+      } catch (error) {
+        console.error("Error opening external check-ins:", error)
+        toast.error(
+          i18next.t("messages:errors.operation.failed", {
+            error: getErrorMessage(error),
+          }),
+        )
+        return
+      }
+
+      toast.success(
+        i18next.t("messages:toast.success.externalCheckInOpened", {
+          count: accountsToOpen.length,
+          mode: options?.openAll
+            ? i18next.t("messages:toast.success.externalCheckInModeAll")
+            : i18next.t("messages:toast.success.externalCheckInModeUnchecked"),
+        }),
+      )
+    },
+    [loadAccountData],
+  )
+
   const value = useMemo(
     () => ({
       refreshingAccountId,
@@ -134,6 +188,7 @@ export const AccountActionsProvider = ({
       handleDeleteAccount,
       handleCopyUrl,
       handleMarkCustomCheckInAsCheckedIn,
+      handleOpenExternalCheckIns,
     }),
     [
       refreshingAccountId,
@@ -141,6 +196,7 @@ export const AccountActionsProvider = ({
       handleDeleteAccount,
       handleCopyUrl,
       handleMarkCustomCheckInAsCheckedIn,
+      handleOpenExternalCheckIns,
     ],
   )
 
