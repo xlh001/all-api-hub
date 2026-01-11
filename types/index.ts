@@ -1,6 +1,3 @@
-// 账号信息数据类型定义
-
-// 站点健康状态
 import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { TempWindowHealthStatusCode } from "~/types/tempWindow"
 
@@ -9,15 +6,6 @@ export enum SiteHealthStatus {
   Warning = "warning",
   Error = "error",
   Unknown = "unknown",
-}
-
-// Log item from API
-export interface LogItem {
-  type: number
-  quota: number
-  created_time: number
-  token_name?: string
-  model_name?: string
 }
 
 export interface HealthStatus {
