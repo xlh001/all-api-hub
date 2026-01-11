@@ -342,7 +342,7 @@ class AutoCheckinScheduler {
 
     return {
       accountId: account.id,
-      accountName: account.site_name,
+      accountName: `${account.site_name} - ${account.account_info.username}`,
       siteType: account.site_type,
       detectionEnabled,
       autoCheckinEnabled,
@@ -375,7 +375,7 @@ class AutoCheckinScheduler {
       >,
     ): CheckinAccountResult => ({
       accountId: account.id,
-      accountName: account.site_name,
+      accountName: `${account.site_name} - ${account.account_info.username}`,
       status,
       ...(partial ?? {}),
       timestamp: Date.now(),
