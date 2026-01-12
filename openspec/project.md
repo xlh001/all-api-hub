@@ -24,7 +24,7 @@ Core goals:
 ## Project Conventions
 
 ### Code Style
-- **Formatting**: Prettier with no semicolons, 2-space indentation, and Tailwind class sorting; import order is enforced via `@ianvs/prettier-plugin-sort-imports` (`.prettierrc.mjs`).
+- **Formatting**: Husky will run Prettier on staged files; Not needed to run formatter manually (`.prettierrc`).
 - **Linting**: ESLint + TypeScript ESLint; React Hooks rules are errors; JSDoc is linted (`eslint.config.js`).
 - **Comments/docs**: TSDoc for public APIs; JSDoc for complex logic; keep comments aligned with behavior.
 - **Imports/aliases**: Prefer `~/...` imports (maps to repo root); keep imports sorted/partitioned per Prettier import order.
