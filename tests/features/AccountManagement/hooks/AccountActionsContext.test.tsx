@@ -2,6 +2,7 @@ import { act, render, waitFor } from "@testing-library/react"
 import { useEffect } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   AccountActionsProvider,
   useAccountActionsContext,
@@ -109,8 +110,9 @@ describe("AccountActionsContext", () => {
 
     expect(mockSendRuntimeMessage).toHaveBeenCalledTimes(1)
     expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
-      action: "externalCheckIn:openAndMark",
+      action: RuntimeActionIds.ExternalCheckInOpenAndMark,
       accountIds: ["a2", "a3"],
+      openInNewWindow: false,
     })
     expect(mockLoadAccountData).toHaveBeenCalled()
     expect(mockToast.success).toHaveBeenCalled()
@@ -155,8 +157,58 @@ describe("AccountActionsContext", () => {
 
     expect(mockSendRuntimeMessage).toHaveBeenCalledTimes(1)
     expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
-      action: "externalCheckIn:openAndMark",
+      action: RuntimeActionIds.ExternalCheckInOpenAndMark,
       accountIds: ["b1", "b2"],
+      openInNewWindow: false,
+    })
+    expect(mockLoadAccountData).toHaveBeenCalled()
+    expect(mockToast.success).toHaveBeenCalled()
+  })
+
+  it("forwards openInNewWindow to background handler", async () => {
+    let captured: ReturnType<typeof useAccountActionsContext> | undefined
+    render(
+      <AccountActionsProvider>
+        <ContextProbe onReady={(ctx) => (captured = ctx)} />
+      </AccountActionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(captured).toBeDefined()
+    })
+
+    const accounts = [
+      {
+        id: "w1",
+        checkIn: { customCheckIn: { isCheckedInToday: true } },
+      },
+      {
+        id: "w2",
+        checkIn: { customCheckIn: { isCheckedInToday: false } },
+      },
+    ] as any
+
+    await act(async () => {
+      mockSendRuntimeMessage.mockResolvedValueOnce({
+        success: true,
+        data: {
+          results: [],
+          openedCount: 1,
+          markedCount: 1,
+          failedCount: 0,
+          totalCount: 1,
+        },
+      })
+      await captured!.handleOpenExternalCheckIns(accounts, {
+        openInNewWindow: true,
+      })
+    })
+
+    expect(mockSendRuntimeMessage).toHaveBeenCalledTimes(1)
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.ExternalCheckInOpenAndMark,
+      accountIds: ["w2"],
+      openInNewWindow: true,
     })
     expect(mockLoadAccountData).toHaveBeenCalled()
     expect(mockToast.success).toHaveBeenCalled()

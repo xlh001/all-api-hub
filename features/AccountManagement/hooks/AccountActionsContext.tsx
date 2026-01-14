@@ -9,6 +9,7 @@ import {
 } from "react"
 import toast from "react-hot-toast"
 
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { accountStorage } from "~/services/accountStorage"
 import type { DisplaySiteData } from "~/types"
 import { sendRuntimeMessage } from "~/utils/browserApi"
@@ -30,7 +31,7 @@ interface AccountActionsContextType {
   ) => Promise<void>
   handleOpenExternalCheckIns: (
     accounts: DisplaySiteData[],
-    options?: { openAll?: boolean },
+    options?: { openAll?: boolean; openInNewWindow?: boolean },
   ) => Promise<void>
 }
 
@@ -141,7 +142,10 @@ export const AccountActionsProvider = ({
    * in-flight async work if executed directly in the popup context.
    */
   const handleOpenExternalCheckIns = useCallback(
-    async (accounts: DisplaySiteData[], options?: { openAll?: boolean }) => {
+    async (
+      accounts: DisplaySiteData[],
+      options?: { openAll?: boolean; openInNewWindow?: boolean },
+    ) => {
       const accountsToOpen = options?.openAll
         ? accounts
         : accounts.filter(
@@ -157,8 +161,9 @@ export const AccountActionsProvider = ({
 
       try {
         const response = await sendRuntimeMessage({
-          action: "externalCheckIn:openAndMark",
+          action: RuntimeActionIds.ExternalCheckInOpenAndMark,
           accountIds: accountsToOpen.map((account) => account.id),
+          openInNewWindow: Boolean(options?.openInNewWindow),
         })
 
         if (!response?.data) {

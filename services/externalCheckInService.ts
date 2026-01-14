@@ -1,6 +1,7 @@
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { getSiteApiRouter } from "~/constants/siteType"
 import { accountStorage } from "~/services/accountStorage"
-import { createTab } from "~/utils/browserApi"
+import { createTab, createWindow, hasWindowsAPI } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 import { joinUrl } from "~/utils/url"
 
@@ -14,12 +15,14 @@ import { joinUrl } from "~/utils/url"
  *   the account after the check-in URL was opened successfully.
  *
  * Message contract:
- * - Request: `{ action: "externalCheckIn:openAndMark", accountIds: string[] }`
+ * - Request: `{ action: RuntimeActionIds.ExternalCheckInOpenAndMark, accountIds: string[], openInNewWindow?: boolean }`
  * - Response: `{ success: boolean, data?: { results, openedCount, markedCount, failedCount, totalCount }, error?: string }`
  *
  * Semantics:
  * - Redeem page opening is best-effort and never blocks the check-in marking.
  * - The account is marked as checked-in only when the check-in tab is created successfully.
+ * - When `openInNewWindow` is enabled and the Windows API is available, pages are opened in a new browser window
+ *   and subsequent pages are opened as tabs within that same window.
  */
 type ExternalCheckInOpenResult = {
   accountId: string
@@ -31,7 +34,8 @@ type ExternalCheckInOpenResult = {
 }
 
 /**
- *
+ * Handles runtime messages for the external check-in flow.
+ * Designed to run in the background context so tab/window creation and state updates are not interrupted.
  */
 export async function handleExternalCheckInMessage(
   request: any,
@@ -39,8 +43,9 @@ export async function handleExternalCheckInMessage(
 ) {
   try {
     switch (request.action) {
-      case "externalCheckIn:openAndMark": {
+      case RuntimeActionIds.ExternalCheckInOpenAndMark: {
         const accountIds: unknown = request.accountIds
+        const openInNewWindow = Boolean(request.openInNewWindow)
 
         if (!Array.isArray(accountIds) || accountIds.length === 0) {
           sendResponse({ success: false, error: "Missing accountIds" })
@@ -48,6 +53,43 @@ export async function handleExternalCheckInMessage(
         }
 
         const results: ExternalCheckInOpenResult[] = []
+        let targetWindowId: number | null = null
+
+        /**
+         * Opens a URL either as a tab (default) or inside a dedicated window when requested.
+         *
+         * This is best-effort: when window creation fails or the Windows API is unavailable,
+         * it falls back to creating a normal tab.
+         */
+        const openExternalPage = async (url: string) => {
+          if (openInNewWindow && hasWindowsAPI()) {
+            if (targetWindowId == null) {
+              const created = await createWindow({ url, focused: true })
+              if (created?.id != null) {
+                targetWindowId = created.id
+                return true
+              }
+            } else {
+              try {
+                const tab = await createTab(url, true, {
+                  windowId: targetWindowId,
+                })
+                if (tab?.id != null) return true
+              } catch {
+                // ignore and try to recreate the target window
+              }
+
+              const recreated = await createWindow({ url, focused: true })
+              if (recreated?.id != null) {
+                targetWindowId = recreated.id
+                return true
+              }
+            }
+          }
+
+          const tab = await createTab(url, true)
+          return tab?.id != null
+        }
 
         for (const accountId of accountIds) {
           if (typeof accountId !== "string" || !accountId.trim()) {
@@ -102,8 +144,7 @@ export async function handleExternalCheckInMessage(
                 )
 
               try {
-                const redeemTab = await createTab(redeemUrl, true)
-                openedRedeem = Boolean(redeemTab?.id)
+                openedRedeem = await openExternalPage(redeemUrl)
                 if (!openedRedeem) {
                   redeemError = "Failed to open redeem tab"
                 }
@@ -112,8 +153,7 @@ export async function handleExternalCheckInMessage(
               }
             }
 
-            const checkInTab = await createTab(checkInUrl, true)
-            const openedCheckIn = Boolean(checkInTab?.id)
+            const openedCheckIn = await openExternalPage(checkInUrl)
 
             if (!openedCheckIn) {
               results.push({

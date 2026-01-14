@@ -87,6 +87,7 @@ describe("popup ActionButtons", () => {
       displayDataMock,
       {
         openAll: false,
+        openInNewWindow: false,
       },
     )
   })
@@ -117,6 +118,65 @@ describe("popup ActionButtons", () => {
       displayDataMock,
       {
         openAll: true,
+        openInNewWindow: false,
+      },
+    )
+  })
+
+  it("opens external check-ins in a new window on shift click", async () => {
+    displayDataMock = [
+      {
+        id: "a1",
+        checkIn: { customCheckIn: { url: "https://checkin.a1" } },
+      },
+    ]
+    const { default: ActionButtons } = await import(
+      "~/entrypoints/popup/components/ActionButtons"
+    )
+    render(<ActionButtons />)
+
+    const externalButton = await screen.findByRole("button", {
+      name: "navigation.externalCheckinAll",
+    })
+
+    fireEvent.click(externalButton, { shiftKey: true })
+
+    expect(handleOpenExternalCheckInsMock).toHaveBeenCalledWith(
+      displayDataMock,
+      {
+        openAll: false,
+        openInNewWindow: true,
+      },
+    )
+  })
+
+  it("supports ctrl/cmd + shift together for external check-ins", async () => {
+    displayDataMock = [
+      {
+        id: "a1",
+        checkIn: { customCheckIn: { url: "https://checkin.a1" } },
+      },
+      {
+        id: "a2",
+        checkIn: { customCheckIn: { url: "https://checkin.a2" } },
+      },
+    ]
+    const { default: ActionButtons } = await import(
+      "~/entrypoints/popup/components/ActionButtons"
+    )
+    render(<ActionButtons />)
+
+    const externalButton = await screen.findByRole("button", {
+      name: "navigation.externalCheckinAll",
+    })
+
+    fireEvent.click(externalButton, { ctrlKey: true, shiftKey: true })
+
+    expect(handleOpenExternalCheckInsMock).toHaveBeenCalledWith(
+      displayDataMock,
+      {
+        openAll: true,
+        openInNewWindow: true,
       },
     )
   })
