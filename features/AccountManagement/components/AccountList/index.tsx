@@ -351,7 +351,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
       <CopyKeyDialog
         isOpen={copyKeyDialogAccount !== null}
         onClose={() => setCopyKeyDialogAccount(null)}
-        account={copyKeyDialogAccount as DisplaySiteData}
+        account={copyKeyDialogAccount}
       />
     </Card>
   )

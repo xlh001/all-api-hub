@@ -23,10 +23,13 @@ function getErrorMessage(error: any): string {
 /**
  * CopyKeyDialog 核心逻辑 hook，负责加载 token、处理复制与展开状态。
  * @param isOpen 对话框是否打开
- * @param account 当前账号
+ * @param account 当前账号（可能为空）
  * @returns token 数据、加载状态、错误以及相关操作方法
  */
-export function useCopyKeyDialog(isOpen: boolean, account: DisplaySiteData) {
+export function useCopyKeyDialog(
+  isOpen: boolean,
+  account: DisplaySiteData | null,
+) {
   const { t } = useTranslation(["ui", "messages"])
   const [tokens, setTokens] = useState<ApiToken[]>([])
   const [isLoading, setIsLoading] = useState(false)

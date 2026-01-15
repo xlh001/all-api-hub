@@ -14,7 +14,7 @@ import { TokenList } from "./TokenList"
 interface CopyKeyDialogProps {
   isOpen: boolean
   onClose: () => void
-  account: DisplaySiteData
+  account: DisplaySiteData | null
 }
 
 /**
@@ -55,6 +55,9 @@ export default function CopyKeyDialog({
     }
     if (error) {
       return <ErrorDisplay error={error} onRetry={fetchTokens} />
+    }
+    if (!account) {
+      return null
     }
     return (
       <TokenList
