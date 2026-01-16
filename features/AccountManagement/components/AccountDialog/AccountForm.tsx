@@ -314,6 +314,35 @@ export default function AccountForm({
         />
       </div>
 
+      {/* 自动签到开关 */}
+      {checkIn.enableDetection && (
+        <div className="flex w-full items-center justify-between">
+          <div className="flex-1">
+            <label
+              htmlFor="auto-checkin-enabled"
+              className="dark:text-dark-text-secondary text-sm font-medium text-gray-700"
+            >
+              {t("form.autoCheckInEnabled")}
+            </label>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t("form.autoCheckInEnabledDesc")}
+            </p>
+          </div>
+          <Switch
+            checked={checkIn.autoCheckInEnabled !== false}
+            onChange={(autoCheckInEnabled) =>
+              onCheckInChange({ ...checkIn, autoCheckInEnabled })
+            }
+            id="auto-checkin-enabled"
+            className={`${
+              checkIn.autoCheckInEnabled !== false
+                ? "bg-green-600"
+                : "bg-gray-200"
+            } focus:ring-green-500`}
+          />
+        </div>
+      )}
+
       {/* Custom Check-in URL */}
       <FormField
         label={t("form.customCheckInUrl")}
@@ -360,35 +389,6 @@ export default function AccountForm({
             id="open-redeem-with-checkin"
             className={`${
               checkIn.customCheckIn?.openRedeemWithCheckIn ?? true
-                ? "bg-green-600"
-                : "bg-gray-200"
-            } focus:ring-green-500`}
-          />
-        </div>
-      )}
-
-      {/* 自动签到开关 */}
-      {checkIn.enableDetection && (
-        <div className="flex w-full items-center justify-between">
-          <div className="flex-1">
-            <label
-              htmlFor="auto-checkin-enabled"
-              className="dark:text-dark-text-secondary text-sm font-medium text-gray-700"
-            >
-              {t("form.autoCheckInEnabled")}
-            </label>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {t("form.autoCheckInEnabledDesc")}
-            </p>
-          </div>
-          <Switch
-            checked={checkIn.autoCheckInEnabled !== false}
-            onChange={(autoCheckInEnabled) =>
-              onCheckInChange({ ...checkIn, autoCheckInEnabled })
-            }
-            id="auto-checkin-enabled"
-            className={`${
-              checkIn.autoCheckInEnabled !== false
                 ? "bg-green-600"
                 : "bg-gray-200"
             } focus:ring-green-500`}
