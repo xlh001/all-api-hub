@@ -28,6 +28,7 @@
 
 ## 🔧 特殊站点问题
 
+<a id="anyrouter-error"></a>
 ### AnyRouter 网站报错怎么办？
 
 AnyRouter 是魔改版的中转站，不支持标准的 Access Token 方式。

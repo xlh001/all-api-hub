@@ -36,7 +36,7 @@
 ## 3. 添加站点
 
 ::: info 提示
-必须先使用浏览器自行登录目标中转站，这样插件的自动识别功能才能通过 Cookie 获取到您账号的 [访问令牌(Access Token)](#_3-3-手动添加)。
+必须先使用浏览器自行登录目标中转站，这样插件的自动识别功能才能通过 Cookie 获取到您账号的 [访问令牌(Access Token)](#manual-addition)。
 :::
 
 ### 3.1 自动识别添加
@@ -55,7 +55,7 @@
 插件会自动识别您账号的各种信息，如：
 - 用户名
 - 用户 ID
-- [访问令牌(Access Token)](#_3-3-手动添加)
+- [访问令牌(Access Token)](#manual-addition)
 - 充值金额比例
 :::
 
@@ -66,8 +66,9 @@
 
 - 识别到 Cloudflare 五秒盾时，插件会自动拉起一个临时窗口帮助完成校验；若挑战需要人工干预，请在弹窗内点击验证即可。
 - 校验通过后会自动回到原始流程，继续获取 Access Token 和站点信息。
-- 更多细节可参考 [Cloudflare 防护与临时窗口降级](#_5-8-cloudflare-防护与临时窗口降级)。
+- 更多细节可参考 [Cloudflare 防护与临时窗口降级](#cloudflare-window-downgrade)。
 
+<a id="manual-addition"></a>
 ### 3.3 手动添加
 
 ::: info 提示
@@ -75,8 +76,9 @@
 :::
 ![用户信息](./static/image/site-user-info.png)
 
-如果目标站点为魔改版本（如 AnyRouter），请在添加账号时手动切换到 **Cookie 模式**，再执行自动识别或手动填写。遇到严格防护的站点时，也可以结合 Cloudflare 过盾助手配合使用。详情可查看 [常见问题](./faq.md#anyrouter-网站报错怎么办)。
+如果目标站点为魔改版本（如 AnyRouter），请在添加账号时手动切换到 **Cookie 模式**，再执行自动识别或手动填写。遇到严格防护的站点时，也可以结合 Cloudflare 过盾助手配合使用。详情可查看 [常见问题](./faq.md#anyrouter-error)。
 
+<a id="quick-export-sites"></a>
 ## 4. 快速导出站点
 
 本插件支持将已添加的站点 API 配置一键导出到 [CherryStudio](https://github.com/CherryHQ/cherry-studio)、[CC Switch](https://github.com/ccswitch/ccswitch) 和 [New API](https://github.com/QuantumNous/new-api)，从而简化在这些平台中添加上游供应商的流程。
@@ -134,6 +136,7 @@
 
 在插件内直接创建/编辑/删除渠道，搭配模型白名单和单通道同步调试，可大幅减少往返 New API 后台的频次。参见 [New API 渠道管理](./new-api-channel-management.md) 了解详细操作与注意事项。
 
+<a id="cloudflare-window-downgrade"></a>
 ### 5.8 Cloudflare 防护与临时窗口降级
 
 - 识别或 API 调用被 Cloudflare 拦截（常见状态码 401/403/429）时，会自动切换到临时窗口重试，保持目标域 Cookie，一般无需手动操作；原理详见 [Cloudflare 过盾助手](./cloudflare-helper.md)。

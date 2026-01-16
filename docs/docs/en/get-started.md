@@ -35,7 +35,7 @@ If a site has undergone secondary development, causing some key interfaces (e.g.
 ## 3. Adding Sites
 
 ::: info Tip
-You must first log in to the target proxy site using your browser so that the plugin's automatic recognition function can obtain your account's [Access Token](#_3-3-manual-addition) via Cookie.
+You must first log in to the target proxy site using your browser so that the plugin's automatic recognition function can obtain your account's [Access Token](#manual-addition) via Cookie.
 :::
 
 ### 3.1 Automatic Recognition and Addition
@@ -54,7 +54,7 @@ You must first log in to the target proxy site using your browser so that the pl
 The plugin will automatically recognize various information about your account, such as:
 - Username
 - User ID
-- [Access Token](#_3-3-manual-addition)
+- [Access Token](#manual-addition)
 - Recharge amount Ratio
 :::
 
@@ -65,8 +65,9 @@ The plugin will automatically recognize various information about your account, 
 
 - When a Cloudflare 5-second shield is detected, the plugin will automatically launch a temporary window to help complete the verification; if the challenge requires manual intervention, please click verify within the pop-up.
 - After successful verification, it will automatically return to the original process to continue obtaining the Access Token and site information.
-- For more details, refer to [Cloudflare Protection and Temporary Window Downgrade](#_5-8-cloudflare-protection-and-temporary-window-downgrade).
+- For more details, refer to [Cloudflare Protection and Temporary Window Downgrade](#cloudflare-window-downgrade).
 
+<a id="manual-addition"></a>
 ### 3.3 Manual Addition
 
 ::: info Tip
@@ -74,8 +75,9 @@ If automatic recognition fails, you can manually add a site account. You will ne
 :::
 ![User Info](../static/image/site-user-info.png)
 
-If the target site is a modified version (e.g., AnyRouter), please manually switch to **Cookie Mode** when adding the account, then perform automatic recognition or manual entry. When encountering sites with strict protection, you can also use it in conjunction with the Cloudflare Bypass Assistant. For details, please refer to [FAQ](./faq.md#anyrouter-网站报错怎么办).
+If the target site is a modified version (e.g., AnyRouter), please manually switch to **Cookie Mode** when adding the account, then perform automatic recognition or manual entry. When encountering sites with strict protection, you can also use it in conjunction with the Cloudflare Bypass Assistant. For details, please refer to [FAQ](./faq.md#anyrouter-error).
 
+<a id="quick-export-sites"></a>
 ## 4. Quick Export Sites
 
 This plugin supports one-click export of added site API configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), and [New API](https://github.com/QuantumNous/new-api), thereby simplifying the process of adding upstream providers to these platforms.
@@ -133,6 +135,7 @@ For detailed documentation on the New API model list synchronization feature, pl
 
 Create/edit/delete channels directly within the plugin, combined with model whitelisting and single-channel sync debugging, can significantly reduce the frequency of going back and forth to the New API backend. See [New API Channel Management](./new-api-channel-management.md) for detailed operations and considerations.
 
+<a id="cloudflare-window-downgrade"></a>
 ### 5.8 Cloudflare Protection and Temporary Window Downgrade
 
 - When Cloudflare intercepts recognition or API calls (common status codes 401/403/429), it will automatically switch to a temporary window to retry, maintaining the target domain Cookie, generally without manual operation; the principle is detailed in [Cloudflare Bypass Assistant](./cloudflare-helper.md).

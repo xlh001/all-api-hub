@@ -33,7 +33,7 @@
 
 ## 関連ドキュメント
 
--   [Cloudflare 保護と一時ウィンドウの降格（クイックスタート）](./get-started.md#_5-8-cloudflare-防护与临时窗口降级)
+-   [Cloudflare 保護と一時ウィンドウの降格（クイックスタート）](./get-started.md#cloudflare-window-downgrade)
 -   [サイトのクイックエクスポート](./quick-export.md)
 -   [New API チャネル管理](./new-api-channel-management.md)
 -   [権限管理（オプションの権限）](./permissions.md)

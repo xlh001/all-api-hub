@@ -33,7 +33,7 @@
 
 ## Related Documents
 
-- [Cloudflare Protection and Temporary Window Degradation (Quick Start)](./get-started.md#_5-8-cloudflare-防护与临时窗口降级)
+- [Cloudflare Protection and Temporary Window Degradation (Quick Start)](./get-started.md#cloudflare-window-downgrade)
 - [Quick Site Export](./quick-export.md)
 - [New API Channel Management](./new-api-channel-management.md)
 - [Permission Management (Optional Permissions)](./permissions.md)

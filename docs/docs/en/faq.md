@@ -28,6 +28,7 @@ When adding an account, select the corresponding authentication method in the ac
 
 ## 🔧 Special Site Issues
 
+<a id="anyrouter-error"></a>
 ### What to do if AnyRouter website reports an error?
 
 AnyRouter is a modified relay station that does not support the standard Access Token method.

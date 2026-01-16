@@ -81,4 +81,4 @@ If you are debugging with **New API Model Synchronization**, you can click the *
 ## Related Documentation
 
 -   [New API Model List Synchronization](./new-api-model-sync.md): Automatically batch sync channel models.
--   [Quick Export and Integration](./get-started.md#_4-快速导出站点): Learn how to push channels to downstream applications.
+-   [Quick Export and Integration](./get-started.md#quick-export-sites): Learn how to push channels to downstream applications.

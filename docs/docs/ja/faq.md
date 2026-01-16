@@ -28,6 +28,7 @@
 
 ## 🔧 特殊なサイトに関する問題
 
+<a id="anyrouter-error"></a>
 ### AnyRouterサイトでエラーが発生した場合、どうすればよいですか？
 
 AnyRouter は改造版の中継サイトであり、標準の Access Token 方式をサポートしていません。

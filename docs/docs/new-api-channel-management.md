@@ -81,4 +81,4 @@
 ## 关联文档
 
 - [New API 模型列表同步](./new-api-model-sync.md)：自动批量同步渠道模型。
-- [快速导出与集成](./get-started.md#_4-快速导出站点)：了解如何把渠道推送到下游应用。
+- [快速导出与集成](./get-started.md#quick-export-sites)：了解如何把渠道推送到下游应用。
