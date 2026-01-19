@@ -7,18 +7,21 @@ import {
   Input,
   Label,
   Modal,
+  SearchableSelect,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "~/components/ui"
+import { fetchOpenAICompatibleModelIds } from "~/services/apiService/openaiCompatible"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import {
   CCSWITCH_APPS,
   openInCCSwitch,
   type CCSwitchApp,
 } from "~/utils/ccSwitch"
+import { normalizeHttpUrl, stripTrailingOpenAIV1 } from "~/utils/url"
 
 interface CCSwitchExportDialogProps {
   isOpen: boolean
@@ -47,6 +50,10 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
   const [providerName, setProviderName] = useState(account.name)
   const [homepage, setHomepage] = useState(account.baseUrl)
   const [endpoint, setEndpoint] = useState(account.baseUrl)
+  const [upstreamModelOptions, setUpstreamModelOptions] = useState<
+    { value: string; label: string }[]
+  >([])
+  const [isLoadingModels, setIsLoadingModels] = useState(false)
   const formId = useMemo(() => `ccswitch-export-form-${token.id}`, [token.id])
 
   useEffect(() => {
@@ -57,8 +64,59 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
       setProviderName(account.name)
       setHomepage(account.baseUrl)
       setEndpoint(account.baseUrl)
+      setUpstreamModelOptions([])
+      setIsLoadingModels(false)
     }
   }, [account.name, account.baseUrl, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const normalizedEndpoint = normalizeHttpUrl(endpoint)
+    const upstreamBaseUrl = normalizedEndpoint
+      ? stripTrailingOpenAIV1(normalizedEndpoint)
+      : ""
+    if (!upstreamBaseUrl) {
+      setUpstreamModelOptions([])
+      return
+    }
+
+    let isMounted = true
+    const handle = setTimeout(() => {
+      void (async () => {
+        try {
+          setIsLoadingModels(true)
+          const modelIds = await fetchOpenAICompatibleModelIds({
+            baseUrl: upstreamBaseUrl,
+            apiKey: token.key,
+          })
+          const normalized = modelIds
+            .map((item) => (typeof item === "string" ? item.trim() : ""))
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b))
+            .map((id) => ({ value: id, label: id }))
+
+          if (isMounted) {
+            setUpstreamModelOptions(normalized)
+          }
+        } catch (error) {
+          console.warn("[CCSwitch] Failed to fetch upstream model list", error)
+          if (isMounted) {
+            setUpstreamModelOptions([])
+          }
+        } finally {
+          if (isMounted) {
+            setIsLoadingModels(false)
+          }
+        }
+      })()
+    }, 300)
+
+    return () => {
+      isMounted = false
+      clearTimeout(handle)
+    }
+  }, [endpoint, isOpen, token.key])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -172,13 +230,29 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
           <Label htmlFor="ccswitch-model">
             {t("ui:dialog.ccswitch.fields.model")}
           </Label>
-          <Input
+          <SearchableSelect
             id="ccswitch-model"
-            value={model}
             className="mt-1"
-            placeholder={t("ui:dialog.ccswitch.placeholders.model")}
-            onChange={(event) => setModel(event.target.value)}
+            value={model}
+            onChange={setModel}
+            placeholder={
+              isLoadingModels
+                ? t("common:status.loading")
+                : t("ui:dialog.ccswitch.placeholders.model")
+            }
+            options={[
+              {
+                value: "",
+                label: t("ui:dialog.ccswitch.modelOptions.none"),
+              },
+              ...upstreamModelOptions,
+            ]}
+            allowCustomValue
+            disabled={isLoadingModels}
           />
+          <p className="dark:text-dark-text-secondary mt-1 text-xs text-gray-500">
+            {t("ui:dialog.ccswitch.descriptions.model")}
+          </p>
         </div>
 
         <div>

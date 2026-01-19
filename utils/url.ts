@@ -130,3 +130,97 @@ export function navigateToAnchor(
     }, delay)
   })
 }
+
+/**
+ * Normalize user-provided URL strings into a valid HTTP(S) URL without a trailing slash.
+ *
+ * - Adds an implicit `https://` prefix when the scheme is missing.
+ * - Returns `null` when the URL is invalid or uses a non-HTTP(S) scheme.
+ */
+export function normalizeHttpUrl(
+  url: string | undefined | null,
+): string | null {
+  if (!url) return null
+  const trimmed = url.trim()
+  if (!trimmed) return null
+
+  // Reject non-http schemes early
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^https?:/i.test(trimmed)) {
+    return null
+  }
+
+  const prefixed = /^(https?:)?\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`
+
+  try {
+    const parsed = new URL(prefixed)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null
+    }
+    return parsed.toString().replace(/\/$/, "")
+  } catch (e) {
+    console.error("[normalizeHttpUrl] Invalid URL:", e)
+    return null
+  }
+}
+
+/**
+ * Strip a trailing `/v1` from a user-supplied OpenAI-compatible base URL.
+ *
+ * This is needed for APIs like `fetchOpenAICompatibleModelIds` that already append
+ * `/v1/models` internally — passing a base URL ending with `/v1` would otherwise
+ * yield `/v1/v1/models`.
+ */
+export function stripTrailingOpenAIV1(baseUrl: string): string {
+  const trimmed = (baseUrl || "").trim()
+  if (!trimmed) return ""
+
+  try {
+    const url = new URL(trimmed)
+    const pathname = url.pathname.replace(/\/+$/, "")
+    if (!pathname.endsWith("/v1")) {
+      return url.toString().replace(/\/+$/, "")
+    }
+
+    url.pathname = pathname.replace(/\/v1$/, "") || "/"
+    return url.toString().replace(/\/+$/, "")
+  } catch (e) {
+    console.error("[stripTrailingOpenAIV1] Invalid URL:", e)
+    return trimmed.replace(/\/v1\/?$/, "").replace(/\/+$/, "")
+  }
+}
+
+/**
+ * Ensure a URL's path ends with a given suffix.
+ *
+ * This is useful for provider base URLs that must include a specific prefix such as
+ * `/v1` (OpenAI/Anthropic) or `/v1beta` (Google/Gemini).
+ *
+ * - When the input is a valid URL, the suffix is appended to the pathname if missing.
+ * - When the input is not a valid URL, returns the trimmed string without trailing slashes.
+ */
+export function coerceBaseUrlToPathSuffix(
+  baseUrl: string,
+  suffix: string,
+): string {
+  const trimmed = (baseUrl || "").trim()
+  if (!trimmed) return trimmed
+
+  const normalizedSuffix = suffix.startsWith("/") ? suffix : `/${suffix}`
+
+  try {
+    const url = new URL(trimmed)
+    const pathname = url.pathname.replace(/\/+$/, "")
+    if (pathname.endsWith(normalizedSuffix)) {
+      url.pathname = pathname
+      return url.toString().replace(/\/+$/, "")
+    }
+
+    url.pathname = `${pathname}${normalizedSuffix}`.replace(/\/{2,}/g, "/")
+    return url.toString().replace(/\/+$/, "")
+  } catch (e) {
+    console.error("[coerceBaseUrlToPathSuffix] Invalid URL:", e)
+    return trimmed.replace(/\/+$/, "")
+  }
+}
