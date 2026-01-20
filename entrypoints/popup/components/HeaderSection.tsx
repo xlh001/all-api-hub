@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next"
 import iconImage from "~/assets/icon.png"
 import Tooltip from "~/components/Tooltip"
 import { BodySmall, Caption, IconButton } from "~/components/ui"
+import { VersionBadge } from "~/components/VersionBadge"
 import { COLORS } from "~/constants/designTokens"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { isExtensionSidePanel } from "~/utils/browser"
@@ -23,7 +24,7 @@ import {
 import CompactThemeToggle from "./ThemeToggle"
 
 /**
- * Popup header with app identity, theme toggle, and navigation controls.
+ * Popup header with app identity (including version), theme toggle, and navigation controls.
  * Provides refresh, account manager, settings, and side panel shortcuts.
  */
 export default function HeaderSection() {
@@ -75,9 +76,13 @@ export default function HeaderSection() {
           className="h-6 w-6 shrink-0 rounded-lg shadow-sm sm:h-7 sm:w-7"
         />
         <div className="flex min-w-0 flex-1 flex-col">
-          <BodySmall weight="semibold" className="truncate">
-            {t("ui:app.name")}
-          </BodySmall>
+          <div className="flex min-w-0 items-center gap-2">
+            <BodySmall weight="semibold" className="truncate">
+              {t("ui:app.name")}
+            </BodySmall>
+            {/* Current extension version (links to the changelog). */}
+            <VersionBadge size="sm" className="shrink-0" />
+          </div>
           <Caption className="xs:block hidden truncate">
             {t("ui:app.description")}
           </Caption>
