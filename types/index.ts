@@ -64,6 +64,17 @@ export interface SiteAccount {
   notes?: string // 备注
   tags?: string[] // 标签
   /**
+   * Whether this stored account is disabled in the extension.
+   *
+   * Disabled accounts:
+   * - Must not participate in background/automated services (refresh, auto check-in, redeem assist, etc.)
+   * - Must be excluded from aggregate stats computations
+   * - Must have all account actions blocked except re-enabling
+   *
+   * Backward compatible: missing/undefined is treated as enabled (false).
+   */
+  disabled?: boolean
+  /**
    * Legacy flag indicating whether the account can be checked in today.
    * @deprecated Use `checkIn.siteStatus.isCheckedInToday` instead.
    */
@@ -85,7 +96,9 @@ export interface SiteAccount {
   /**
    * Configuration version for migration tracking
    * 1.0.0: Initial version (no version field = version 0)
-   * 1.1.0: Introduced checkIn object structure
+   * 1.1.0: Introduced `checkIn` object structure (configVersion = 1)
+   * 1.1.1: Split site vs custom check-in state (configVersion = 2)
+   * 1.2.0: Persist/normalize `disabled` flag (configVersion = 3)
    * @since 1.0.0
    */
   configVersion?: number
@@ -237,6 +250,13 @@ export interface DisplaySiteData {
   userId: number // 真实的用户 ID，用于 API 调用
   notes?: string
   tags?: string[]
+  /**
+   * Disabled state projected from {@link SiteAccount.disabled}.
+   *
+   * UI can use this flag to grey-out accounts and restrict actions without
+   * re-querying storage.
+   */
+  disabled?: boolean
   /**
    * Legacy flag indicating whether the account can be checked in today.
    * @deprecated Use `checkIn.siteStatus.isCheckedInToday` instead.
