@@ -6,7 +6,6 @@ import {
 import { useTranslation } from "react-i18next"
 
 import { IconButton } from "~/components/ui"
-import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { useTheme } from "~/contexts/ThemeContext"
 import type { ThemeMode } from "~/types/theme"
 
@@ -62,9 +61,8 @@ const CompactThemeToggle = () => {
   return (
     <IconButton
       onClick={handleThemeToggle}
-      variant="ghost"
-      size="default"
-      className={`relative rounded-full p-2.5 focus:ring-2 focus:ring-offset-2 focus:outline-none ${COLORS.background.tertiary} hover:${COLORS.background.secondary} shadow-sm hover:scale-105 hover:shadow-md focus:ring-blue-500 active:scale-95 dark:focus:ring-blue-400 ${ANIMATIONS.transition.base} `}
+      variant="outline"
+      size="sm"
       title={
         t("theme.current", {
           theme: t(`theme.${currentTheme?.mode}`),
@@ -78,14 +76,15 @@ const CompactThemeToggle = () => {
         nextMode: t(`theme.${nextTheme.mode}`),
       })}
     >
+      {/* Match header icon sizing, but keep a subtle mode color cue. */}
       <CurrentIcon
-        className={`h-5 w-5 transition-colors duration-200 ${
+        className={`h-4 w-4 transition-colors ${
           themeMode === "light"
             ? "text-amber-500 dark:text-amber-400"
             : themeMode === "dark"
               ? "text-blue-500 dark:text-blue-400"
               : "text-purple-500 dark:text-purple-400"
-        } `}
+        }`}
       />
     </IconButton>
   )
