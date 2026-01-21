@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
+import {
+  DATA_TYPE_BALANCE,
+  DATA_TYPE_CONSUMPTION,
+  DATA_TYPE_INCOME,
+} from "~/constants"
 import type { DisplaySiteData, SiteAccount } from "~/types"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 import {
@@ -107,6 +111,37 @@ describe("createDynamicSortComparator", () => {
     })
   })
 
+  describe("DISABLED_ACCOUNT criterion", () => {
+    it("should place disabled accounts at the bottom even if pinned", () => {
+      const enabledAccount = createDisplaySiteData({
+        id: "enabled-1",
+        name: "Enabled",
+        disabled: false,
+      })
+      const disabledPinnedAccount = createDisplaySiteData({
+        id: "disabled-1",
+        name: "Disabled (Pinned)",
+        disabled: true,
+      })
+
+      const comparator = createDynamicSortComparator(
+        DEFAULT_SORTING_PRIORITY_CONFIG,
+        null,
+        "name",
+        "USD",
+        "asc",
+        {},
+        ["disabled-1"],
+        {},
+      )
+
+      expect(comparator(enabledAccount, disabledPinnedAccount)).toBeLessThan(0)
+      expect(comparator(disabledPinnedAccount, enabledAccount)).toBeGreaterThan(
+        0,
+      )
+    })
+  })
+
   // Helper to create a SiteAccount for detectedAccount parameter
   const createSiteAccount = (
     overrides: Partial<SiteAccount> = {},
@@ -131,6 +166,7 @@ describe("createDynamicSortComparator", () => {
     last_sync_time: Date.now(),
     updated_at: Date.now(),
     created_at: Date.now(),
+    tagIds: [],
     authType: AuthTypeEnum.AccessToken,
     checkIn: { enableDetection: false },
     ...overrides,
@@ -1019,6 +1055,84 @@ describe("createDynamicSortComparator", () => {
     })
   })
 
+  describe("USER_SORT_FIELD criterion - income", () => {
+    it("should sort by income in ascending order", () => {
+      const lowIncome = createDisplaySiteData({
+        id: "low",
+        todayIncome: { USD: 1, CNY: 7 },
+      })
+      const midIncome = createDisplaySiteData({
+        id: "mid",
+        todayIncome: { USD: 5, CNY: 35 },
+      })
+      const highIncome = createDisplaySiteData({
+        id: "high",
+        todayIncome: { USD: 10, CNY: 70 },
+      })
+
+      const config = {
+        ...DEFAULT_SORTING_PRIORITY_CONFIG,
+        criteria: [
+          {
+            id: SortingCriteriaType.USER_SORT_FIELD,
+            enabled: true,
+            priority: 0,
+          },
+        ],
+      }
+
+      const comparator = createDynamicSortComparator(
+        config,
+        null,
+        DATA_TYPE_INCOME,
+        "USD",
+        "asc",
+      )
+
+      expect(comparator(lowIncome, midIncome)).toBeLessThan(0)
+      expect(comparator(midIncome, highIncome)).toBeLessThan(0)
+      expect(comparator(highIncome, lowIncome)).toBeGreaterThan(0)
+    })
+
+    it("should sort by income in descending order", () => {
+      const lowIncome = createDisplaySiteData({
+        id: "low",
+        todayIncome: { USD: 1, CNY: 7 },
+      })
+      const midIncome = createDisplaySiteData({
+        id: "mid",
+        todayIncome: { USD: 5, CNY: 35 },
+      })
+      const highIncome = createDisplaySiteData({
+        id: "high",
+        todayIncome: { USD: 10, CNY: 70 },
+      })
+
+      const config = {
+        ...DEFAULT_SORTING_PRIORITY_CONFIG,
+        criteria: [
+          {
+            id: SortingCriteriaType.USER_SORT_FIELD,
+            enabled: true,
+            priority: 0,
+          },
+        ],
+      }
+
+      const comparator = createDynamicSortComparator(
+        config,
+        null,
+        DATA_TYPE_INCOME,
+        "USD",
+        "desc",
+      )
+
+      expect(comparator(highIncome, midIncome)).toBeLessThan(0)
+      expect(comparator(midIncome, lowIncome)).toBeLessThan(0)
+      expect(comparator(lowIncome, highIncome)).toBeGreaterThan(0)
+    })
+  })
+
   describe("Multiple criteria with priority ordering", () => {
     it("should short-circuit when first criterion produces a difference", () => {
       const pinnedAccount = createDisplaySiteData({
@@ -1264,8 +1378,8 @@ describe("createDynamicSortComparator", () => {
         pinnedAccountIds,
       )
 
-      // account-1 is pinned, so despite account-2 being detected and having better health
-      expect(comparator(account1, account2)).toBeLessThan(0)
+      // CURRENT_SITE is evaluated before PINNED in the default config, so the detected account wins.
+      expect(comparator(account1, account2)).toBeGreaterThan(0)
     })
 
     it("should handle array.sort() correctly", () => {
