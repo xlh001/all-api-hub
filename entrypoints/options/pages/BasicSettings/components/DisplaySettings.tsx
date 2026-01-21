@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next"
 
 import { SettingSection } from "~/components/SettingSection"
 import { Card, CardItem, CardList, ToggleButton } from "~/components/ui"
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
+import { DATA_TYPE_BALANCE, DATA_TYPE_CASHFLOW } from "~/constants"
 import { ANIMATIONS, COLORS } from "~/constants/designTokens"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import type { BalanceType, CurrencyType } from "~/types"
+import type { CurrencyType, DashboardTabType } from "~/types"
 import { showUpdateToast } from "~/utils/toastHelpers"
 
 /**
@@ -28,7 +28,7 @@ export default function DisplaySettings() {
     showUpdateToast(success, t("display.currencyUnit"))
   }
 
-  const handleDefaultTabChange = async (tab: BalanceType) => {
+  const handleDefaultTabChange = async (tab: DashboardTabType) => {
     if (tab === activeTab) return
     const success = await updateDefaultTab(tab)
     showUpdateToast(success, t("display.defaultTab"))
@@ -84,12 +84,12 @@ export default function DisplaySettings() {
                 className={`flex flex-col sm:flex-row ${COLORS.background.tertiary} rounded-lg p-1 shadow-sm ${ANIMATIONS.transition.base}`}
               >
                 <ToggleButton
-                  onClick={() => handleDefaultTabChange(DATA_TYPE_CONSUMPTION)}
-                  isActive={activeTab === DATA_TYPE_CONSUMPTION}
+                  onClick={() => handleDefaultTabChange(DATA_TYPE_CASHFLOW)}
+                  isActive={activeTab === DATA_TYPE_CASHFLOW}
                   size="default"
-                  aria-label={t("display.todayConsumption")}
+                  aria-label={t("display.todayCashflow")}
                 >
-                  {t("display.todayConsumption")}
+                  {t("display.todayCashflow")}
                 </ToggleButton>
                 <ToggleButton
                   onClick={() => handleDefaultTabChange(DATA_TYPE_BALANCE)}

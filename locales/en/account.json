@@ -15,7 +15,7 @@
     },
     "balance": {
       "refreshBalance": "Click to refresh balance",
-      "refreshConsumption": "Click to refresh today's consumption",
+      "refreshCashflow": "Click to refresh today's consumption",
       "refreshIncome": "Click to refresh today's income"
     },
     "site": {
@@ -36,6 +36,7 @@
   },
   "stats": {
     "totalBalance": "Total Balance",
+    "todayCashflow": "Today's Cashflow",
     "todayConsumption": "Today's Consumption",
     "todayIncome": "Today's Income",
     "prompt": "Prompt",
