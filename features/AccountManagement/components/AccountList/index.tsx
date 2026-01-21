@@ -29,7 +29,11 @@ import {
   IconButton,
   TagFilter,
 } from "~/components/ui"
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
+import {
+  DATA_TYPE_BALANCE,
+  DATA_TYPE_CONSUMPTION,
+  DATA_TYPE_INCOME,
+} from "~/constants"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import {
@@ -308,6 +312,15 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
                 {renderSortButton(
                   DATA_TYPE_CONSUMPTION,
                   t("account:list.header.todayConsumption"),
+                )}
+              </div>
+              <div className="dark:text-dark-text-tertiary text-[10px] text-gray-400 sm:text-xs">
+                /
+              </div>
+              <div className="dark:text-dark-text-tertiary flex items-center text-[9px] text-gray-400 sm:text-[10px]">
+                {renderSortButton(
+                  DATA_TYPE_INCOME,
+                  t("account:list.header.todayIncome"),
                 )}
               </div>
             </div>

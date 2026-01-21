@@ -11,7 +11,8 @@
     "header": {
       "account": "账号",
       "balance": "余额",
-      "todayConsumption": "今日消费"
+      "todayConsumption": "今日消费",
+      "todayIncome": "今日收入"
     },
     "balance": {
       "refreshBalance": "点击刷新余额",

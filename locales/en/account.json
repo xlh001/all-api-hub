@@ -11,7 +11,8 @@
     "header": {
       "account": "Account",
       "balance": "Balance",
-      "todayConsumption": "Today's Consumption"
+      "todayConsumption": "Today's Consumption",
+      "todayIncome": "Today's Income"
     },
     "balance": {
       "refreshBalance": "Click to refresh balance",

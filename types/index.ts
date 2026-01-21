@@ -2,6 +2,7 @@ import {
   DATA_TYPE_BALANCE,
   DATA_TYPE_CASHFLOW,
   DATA_TYPE_CONSUMPTION,
+  DATA_TYPE_INCOME,
 } from "~/constants"
 import { TempWindowHealthStatusCode } from "~/types/tempWindow"
 
@@ -256,6 +257,7 @@ export interface ApiResponse<T = any> {
 export type SortField =
   | "name"
   | typeof DATA_TYPE_CONSUMPTION
+  | typeof DATA_TYPE_INCOME
   | typeof DATA_TYPE_BALANCE
 export type SortOrder = "asc" | "desc"
 

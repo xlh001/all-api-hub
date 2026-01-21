@@ -1,4 +1,8 @@
-import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
+import {
+  DATA_TYPE_BALANCE,
+  DATA_TYPE_CONSUMPTION,
+  DATA_TYPE_INCOME,
+} from "~/constants"
 import type {
   CurrencyType,
   DisplaySiteData,
@@ -95,6 +99,10 @@ function compareByUserSortField(
       return sortOrder === "asc"
         ? a.todayConsumption[currencyType] - b.todayConsumption[currencyType]
         : b.todayConsumption[currencyType] - a.todayConsumption[currencyType]
+    case DATA_TYPE_INCOME:
+      return sortOrder === "asc"
+        ? a.todayIncome[currencyType] - b.todayIncome[currencyType]
+        : b.todayIncome[currencyType] - a.todayIncome[currencyType]
     default:
       return 0
   }
@@ -232,8 +240,8 @@ function applySortingCriteria(
  * Creates a dynamic comparator function for sorting site data based on a data-only configuration.
  * @param config Sorting priority configuration containing data-only fields.
  * @param detectedAccount Currently detected site account, used for 'current_site' priority.
- * @param userSortField Field selected by the user for sorting ('name', 'balance', 'consumption').
- * @param currencyType Currency used for balance/consumption comparisons.
+ * @param userSortField Field selected by the user for sorting ('name', 'balance', 'consumption', 'income').
+ * @param currencyType Currency used for balance/consumption/income comparisons.
  * @param sortOrder Sort order ('asc' or 'desc').
  * @param matchedAccountScores Map of account IDs to matching scores from open tabs.
  * @param pinnedAccountIds The list of pinned account IDs in priority order.
