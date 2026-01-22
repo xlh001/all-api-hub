@@ -3,7 +3,13 @@ import { beforeAll, describe, expect, it, vi } from "vitest"
 import { VerifyCliSupportDialog } from "~/components/VerifyCliSupportDialog"
 import cliSupportVerificationEn from "~/locales/en/cliSupportVerification.json"
 import { testI18n } from "~/tests/test-utils/i18n"
-import { fireEvent, render, screen, within } from "~/tests/test-utils/render"
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "~/tests/test-utils/render"
 
 const mockFetchAccountTokens = vi.fn()
 
@@ -153,14 +159,17 @@ describe("VerifyCliSupportDialog", () => {
     const runButton = within(toolCard).getByRole("button", {
       name: cliSupportVerificationEn.verifyDialog.actions.runOne,
     })
+    await waitFor(() => expect(runButton).toBeEnabled())
     fireEvent.click(runButton)
 
-    expect(mockRunCliSupportTool).toHaveBeenCalledTimes(1)
-    expect(mockRunCliSupportTool).toHaveBeenCalledWith({
-      toolId: "claude",
-      baseUrl: "https://example.com",
-      apiKey: "secret",
-      modelId: "gpt-test",
+    await waitFor(() => {
+      expect(mockRunCliSupportTool).toHaveBeenCalledTimes(1)
+      expect(mockRunCliSupportTool).toHaveBeenCalledWith({
+        toolId: "claude",
+        baseUrl: "https://example.com",
+        apiKey: "secret",
+        modelId: "gpt-test",
+      })
     })
 
     expect(

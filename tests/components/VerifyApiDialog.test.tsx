@@ -1,9 +1,15 @@
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { VerifyApiDialog } from "~/components/VerifyApiDialog"
 import apiVerificationEn from "~/locales/en/aiApiVerification.json"
 import { testI18n } from "~/tests/test-utils/i18n"
-import { fireEvent, render, screen, within } from "~/tests/test-utils/render"
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "~/tests/test-utils/render"
 
 const mockFetchAccountTokens = vi.fn()
 
@@ -34,6 +40,12 @@ describe("VerifyApiDialog", () => {
       true,
       true,
     )
+  })
+
+  beforeEach(() => {
+    // Prevent cross-test leakage from `mockResolvedValueOnce` and call counts.
+    mockFetchAccountTokens.mockReset()
+    mockRunApiVerificationProbe.mockReset()
   })
 
   it("renders probe items before running", async () => {
@@ -153,9 +165,14 @@ describe("VerifyApiDialog", () => {
     const runButton = within(probeCard).getByRole("button", {
       name: apiVerificationEn.verifyDialog.actions.runOne,
     })
+
+    // The action button is disabled until tokens are fetched and a token is selected.
+    await waitFor(() => expect(runButton).toBeEnabled())
     fireEvent.click(runButton)
 
-    expect(mockRunApiVerificationProbe).toHaveBeenCalledTimes(1)
+    await waitFor(() =>
+      expect(mockRunApiVerificationProbe).toHaveBeenCalledTimes(1),
+    )
 
     expect(
       await within(probeCard).findByText("Text generation succeeded"),
@@ -232,8 +249,14 @@ describe("VerifyApiDialog", () => {
     const runButton = within(probeCard).getByRole("button", {
       name: apiVerificationEn.verifyDialog.actions.runOne,
     })
+
+    // Wait for async token load/selection so the click reliably triggers `runProbe`.
+    await waitFor(() => expect(runButton).toBeEnabled())
     fireEvent.click(runButton)
 
+    await waitFor(() =>
+      expect(mockRunApiVerificationProbe).toHaveBeenCalledTimes(1),
+    )
     expect(
       await within(probeCard).findByText(
         testI18n.t("verifyDialog.unsupportedProbeForApiType", {
