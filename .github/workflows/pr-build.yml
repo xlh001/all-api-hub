@@ -78,6 +78,38 @@ jobs:
             echo "files=No artifacts found" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Write PR build metadata (for workflow_run commenter)
+        # pull_request runs from forks use a read-only GITHUB_TOKEN, so comment publishing must be done
+        # in a separate workflow triggered by workflow_run (runs in the base repo context).
+        env:
+          ARTIFACT_LIST: ${{ steps.collect_artifacts.outputs.files }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || github.event.pull_request.number }}
+          COMMIT_SHA: ${{ github.event_name == 'workflow_dispatch' && steps.pr_details.outputs.sha || github.event.pull_request.head.sha }}
+        run: |
+          node -e "
+            const fs = require('fs');
+
+            const artifactFiles = (process.env.ARTIFACT_LIST || '')
+              .split('\\n')
+              .map((line) => line.trim())
+              .filter(Boolean);
+
+            const payload = {
+              prNumber: Number(process.env.PR_NUMBER),
+              commitSha: process.env.COMMIT_SHA || '',
+              artifactFiles,
+              generatedAt: new Date().toISOString(),
+            };
+
+            fs.writeFileSync('pr-build-metadata.json', JSON.stringify(payload, null, 2) + '\\n', 'utf8');
+          "
+
+      - name: Upload PR build metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-build-metadata
+          path: pr-build-metadata.json
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -86,6 +118,9 @@ jobs:
           include-hidden-files: true
 
       - name: Comment build info on PR
+        # Use workflow_dispatch for maintainers; for pull_request, comments are published by workflow_run
+        # to support fork PRs safely (avoids running untrusted code with a write token).
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/github-script@v7
         env:
           ARTIFACT_LIST: ${{ steps.collect_artifacts.outputs.files }}

@@ -1,0 +1,94 @@
+name: pr-build-preview-comment
+
+on:
+  workflow_run:
+    workflows: ["pr-build-preview"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  comment:
+    # Only publish a comment for pull_request-triggered runs (fork PRs included).
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download PR build metadata
+        # This workflow runs in the base repository context, so it can comment on PRs even for fork builds.
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-build-metadata
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: pr-build-metadata
+
+      - name: Comment build info on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+
+            const workflowRun = context.payload.workflow_run;
+            const pullRequest = (workflowRun.pull_requests || [])[0];
+
+            if (!pullRequest?.number) {
+              core.info("No pull_request found in workflow_run payload; skipping comment.");
+              return;
+            }
+
+            const metadataPath = "pr-build-metadata/pr-build-metadata.json";
+            const metadataRaw = fs.readFileSync(metadataPath, "utf8");
+            const metadata = JSON.parse(metadataRaw);
+
+            const marker = "<!-- pr-build-artifact -->";
+            const prNumber = Number(pullRequest.number);
+            const commitSha = String(metadata.commitSha || workflowRun.head_sha || "");
+
+            const artifactFiles = Array.isArray(metadata.artifactFiles) ? metadata.artifactFiles : [];
+            const artifactList = artifactFiles.length
+              ? artifactFiles.map((name) => `- ${name}`).join("\n")
+              : "- (none)";
+
+            const runUrl = workflowRun.html_url || `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRun.id}`;
+
+            const body = [
+              marker,
+              `**Preview build ready** for commit \`${commitSha.slice(0, 7)}\`.`,
+              "",
+              "Artifacts:",
+              artifactList,
+              "",
+              `Download from workflow run: ${runUrl}`,
+              "",
+              "_This build is for review only and is not released._",
+            ].join("\n");
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) => comment.body && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
