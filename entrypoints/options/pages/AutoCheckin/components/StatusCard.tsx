@@ -4,20 +4,23 @@ import { Card, CardContent } from "~/components/ui"
 import {
   AUTO_CHECKIN_RUN_RESULT,
   CHECKIN_RESULT_STATUS,
+  type AutoCheckinPreferences,
   type AutoCheckinRunResult,
   type AutoCheckinStatus,
 } from "~/types/autoCheckin"
 
 interface StatusCardProps {
   status: AutoCheckinStatus
+  preferences: AutoCheckinPreferences
 }
 
 /**
  * Shows aggregated auto-checkin status info (last run, next schedule, results summary).
  * @param props Component props container.
  * @param props.status Status payload from auto-checkin service.
+ * @param props.preferences User preferences used to interpret missing schedules (disabled vs not scheduled).
  */
-export default function StatusCard({ status }: StatusCardProps) {
+export default function StatusCard({ status, preferences }: StatusCardProps) {
   const { t } = useTranslation("autoCheckin")
 
   const formatDateTime = (isoString?: string): string => {
@@ -30,6 +33,32 @@ export default function StatusCard({ status }: StatusCardProps) {
     } catch {
       return t("status.notScheduled")
     }
+  }
+
+  // Backward compatibility: older status payloads only store `nextScheduledAt` (single-alarm model).
+  const nextDailyScheduledAt =
+    status.nextDailyScheduledAt ?? status.nextScheduledAt
+  const nextRetryScheduledAt = status.nextRetryScheduledAt
+  // Pending retry is derived from retry state; `pendingRetry` is kept for legacy stored payloads.
+  const hasPendingRetry =
+    status.pendingRetry ||
+    (status.retryState?.pendingAccountIds?.length ?? 0) > 0
+  const isRetryEnabled = Boolean(preferences.retryStrategy?.enabled)
+
+  /**
+   * Interprets "no alarm" situations:
+   * - Daily schedule: show "disabled" when global auto check-in is turned off.
+   * - Retry schedule: show "retry disabled" when retry is off; show "no pending retry" when retry is on but queue is empty.
+   */
+  const getNextDailyText = (): string => {
+    if (!preferences.globalEnabled) return t("status.disabled")
+    return formatDateTime(nextDailyScheduledAt)
+  }
+
+  const getNextRetryText = (): string => {
+    if (!isRetryEnabled) return t("status.retryDisabled")
+    if (!hasPendingRetry) return t("status.noPendingRetry")
+    return formatDateTime(nextRetryScheduledAt)
   }
 
   const getResultBadgeColor = (result?: AutoCheckinRunResult): string => {
@@ -93,7 +122,7 @@ export default function StatusCard({ status }: StatusCardProps) {
   return (
     <Card>
       <CardContent>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
               {t("status.lastRun")}
@@ -105,11 +134,20 @@ export default function StatusCard({ status }: StatusCardProps) {
 
           <div>
             <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {t("status.nextScheduled")}
+              {t("status.nextDaily")}
             </div>
             <div className="mt-1 text-lg font-semibold">
-              {formatDateTime(status.nextScheduledAt)}
-              {status.pendingRetry && (
+              {getNextDailyText()}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {t("status.nextRetry")}
+            </div>
+            <div className="mt-1 text-lg font-semibold">
+              {getNextRetryText()}
+              {hasPendingRetry && isRetryEnabled && (
                 <span className="ml-2 inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
                   {t("status.pendingRetry")}
                 </span>

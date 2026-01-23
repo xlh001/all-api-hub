@@ -20,15 +20,19 @@
     "retryInterval": "重试间隔（分钟）",
     "retryIntervalDesc": "每次重试之间等待的时间。",
     "retryMaxAttempts": "每日最大尝试次数",
-    "retryMaxAttemptsDesc": "每天允许的总运行次数（首次 + 重试）。",
+    "retryMaxAttemptsDesc": "每个账号每天允许的最大尝试次数（首次 + 重试）。",
     "viewExecution": "查看签到历史",
     "viewExecutionDesc": "查看每次自动签到的详细结果与日志。",
     "viewExecutionButton": "打开记录"
   },
   "status": {
     "lastRun": "最近运行",
-    "nextScheduled": "下次计划",
+    "nextDaily": "下次每日计划",
+    "nextRetry": "下次重试计划",
     "notScheduled": "未计划",
+    "disabled": "已禁用",
+    "retryDisabled": "重试未启用",
+    "noPendingRetry": "无待重试",
     "pendingRetry": "等待重试",
     "result": {
       "success": "成功",
@@ -48,6 +52,10 @@
     "title": "自动签到",
     "runNow": "立即执行",
     "refresh": "刷新",
+    "debug": {
+      "triggerDailyAlarmNow": "调试：触发每日闹钟",
+      "triggerRetryAlarmNow": "调试：触发重试闹钟"
+    },
     "statistics": {
       "result": "执行结果",
       "accounts": "账号（成功 / 失败 / 总计）"
@@ -128,6 +136,8 @@
       "loadFailed": "获取自动签到设置失败：{{error}}",
       "runFailed": "执行自动签到失败：{{error}}",
       "retryFailed": "重新尝试失败：{{error}}",
+      "dailyAlarmTriggerFailed": "触发每日闹钟失败：{{error}}",
+      "retryAlarmTriggerFailed": "触发重试闹钟失败：{{error}}",
       "openManualFailed": "打开手动签到页面失败：{{error}}",
       "invalidTimeWindow": "无效的时间窗口，开始时间和结束时间不能相同。",
       "invalidDeterministicTime": "请输入合法的 HH:mm 格式时间。",
@@ -137,10 +147,14 @@
     "success": {
       "settingsSaved": "自动签到设置已保存。",
       "runCompleted": "自动签到已完成。",
-      "retryCompleted": "重新尝试已完成。"
+      "retryCompleted": "重新尝试已完成。",
+      "dailyAlarmTriggered": "已触发每日闹钟执行。",
+      "retryAlarmTriggered": "已触发重试闹钟执行。"
     },
     "loading": {
-      "running": "正在执行自动签到..."
+      "running": "正在执行自动签到...",
+      "triggeringDailyAlarm": "正在触发每日闹钟...",
+      "triggeringRetryAlarm": "正在触发重试闹钟..."
     }
   }
 }

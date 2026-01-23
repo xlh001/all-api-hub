@@ -4,7 +4,9 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { PageHeader } from "~/entrypoints/options/components/PageHeader"
+import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
 import { AutoCheckinStatus, CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { navigateWithinOptionsPage, openCheckInPage } from "~/utils/navigation"
@@ -27,6 +29,9 @@ export default function AutoCheckin(props: {
   routeParams?: Record<string, string>
 }) {
   const { t } = useTranslation("autoCheckin")
+  const { preferences: userPrefs } = useUserPreferencesContext()
+  const autoCheckinPreferences =
+    userPrefs?.autoCheckin ?? DEFAULT_PREFERENCES.autoCheckin!
   const routeParams = props.routeParams
   const QUICK_RUN_PARAM = "runNow" as const
   const QUICK_RUN_VALUE = "true" as const
@@ -37,6 +42,7 @@ export default function AutoCheckin(props: {
   const [searchKeyword, setSearchKeyword] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isRunning, setIsRunning] = useState(false)
+  const [isDebugTriggering, setIsDebugTriggering] = useState(false)
   const [retryingAccountId, setRetryingAccountId] = useState<string | null>(
     null,
   )
@@ -89,6 +95,70 @@ export default function AutoCheckin(props: {
       toast.error(t("messages.error.runFailed", { error: error.message }))
     } finally {
       setIsRunning(false)
+    }
+  }, [loadStatus, t])
+
+  const showDebugButtons = import.meta.env.MODE === "development"
+
+  const handleDebugTriggerDailyAlarmNow = useCallback(async () => {
+    try {
+      setIsDebugTriggering(true)
+      toast.loading(t("messages.loading.triggeringDailyAlarm"))
+
+      const response = await sendRuntimeMessage({
+        action: "autoCheckin:debugTriggerDailyAlarmNow",
+      })
+
+      toast.dismiss()
+
+      if (response.success) {
+        toast.success(t("messages.success.dailyAlarmTriggered"))
+        await loadStatus()
+      } else {
+        toast.error(
+          t("messages.error.dailyAlarmTriggerFailed", {
+            error: response.error ?? "",
+          }),
+        )
+      }
+    } catch (error: any) {
+      toast.dismiss()
+      toast.error(
+        t("messages.error.dailyAlarmTriggerFailed", { error: error.message }),
+      )
+    } finally {
+      setIsDebugTriggering(false)
+    }
+  }, [loadStatus, t])
+
+  const handleDebugTriggerRetryAlarmNow = useCallback(async () => {
+    try {
+      setIsDebugTriggering(true)
+      toast.loading(t("messages.loading.triggeringRetryAlarm"))
+
+      const response = await sendRuntimeMessage({
+        action: "autoCheckin:debugTriggerRetryAlarmNow",
+      })
+
+      toast.dismiss()
+
+      if (response.success) {
+        toast.success(t("messages.success.retryAlarmTriggered"))
+        await loadStatus()
+      } else {
+        toast.error(
+          t("messages.error.retryAlarmTriggerFailed", {
+            error: response.error ?? "",
+          }),
+        )
+      }
+    } catch (error: any) {
+      toast.dismiss()
+      toast.error(
+        t("messages.error.retryAlarmTriggerFailed", { error: error.message }),
+      )
+    } finally {
+      setIsDebugTriggering(false)
     }
   }, [loadStatus, t])
 
@@ -223,15 +293,19 @@ export default function AutoCheckin(props: {
 
       {status && (
         <div className="mb-6">
-          <StatusCard status={status} />
+          <StatusCard status={status} preferences={autoCheckinPreferences} />
         </div>
       )}
 
       <div className="mb-6">
         <ActionBar
           isRunning={isRunning}
+          isDebugTriggering={isDebugTriggering}
           onRunNow={handleRunNow}
           onRefresh={handleRefresh}
+          showDebugButtons={showDebugButtons}
+          onDebugTriggerDailyAlarmNow={handleDebugTriggerDailyAlarmNow}
+          onDebugTriggerRetryAlarmNow={handleDebugTriggerRetryAlarmNow}
         />
       </div>
 

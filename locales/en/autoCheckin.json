@@ -20,15 +20,19 @@
     "retryInterval": "Retry interval (minutes)",
     "retryIntervalDesc": "How long to wait before the next retry attempt.",
     "retryMaxAttempts": "Max attempts per day",
-    "retryMaxAttemptsDesc": "Total number of runs (initial + retries) allowed each day.",
+    "retryMaxAttemptsDesc": "Max attempts per account per day (initial + retries).",
     "viewExecution": "Auto check-in history",
     "viewExecutionDesc": "View detailed results and logs for each automatic check-in run.",
     "viewExecutionButton": "Open results"
   },
   "status": {
     "lastRun": "Last run",
-    "nextScheduled": "Next scheduled run",
+    "nextDaily": "Next daily run",
+    "nextRetry": "Next retry run",
     "notScheduled": "Not scheduled",
+    "disabled": "Disabled",
+    "retryDisabled": "Retry disabled",
+    "noPendingRetry": "No pending retries",
     "pendingRetry": "Retry pending",
     "result": {
       "success": "Success",
@@ -48,6 +52,10 @@
     "title": "Auto Check-in",
     "runNow": "Run now",
     "refresh": "Refresh",
+    "debug": {
+      "triggerDailyAlarmNow": "Debug: trigger daily alarm",
+      "triggerRetryAlarmNow": "Debug: trigger retry alarm"
+    },
     "statistics": {
       "result": "Result",
       "accounts": "Accounts (Success / Failed / Total)"
@@ -128,6 +136,8 @@
       "loadFailed": "Failed to load auto check-in settings: {{error}}",
       "runFailed": "Failed to run auto check-in: {{error}}",
       "retryFailed": "Retry failed: {{error}}",
+      "dailyAlarmTriggerFailed": "Failed to trigger daily alarm: {{error}}",
+      "retryAlarmTriggerFailed": "Failed to trigger retry alarm: {{error}}",
       "openManualFailed": "Failed to open manual sign-in page: {{error}}",
       "invalidTimeWindow": "Invalid time window. Start and end cannot be the same.",
       "invalidDeterministicTime": "Please provide a valid deterministic time in HH:mm format.",
@@ -137,10 +147,14 @@
     "success": {
       "settingsSaved": "Auto check-in settings have been saved.",
       "runCompleted": "Auto check-in completed.",
-      "retryCompleted": "Retry completed."
+      "retryCompleted": "Retry completed.",
+      "dailyAlarmTriggered": "Daily alarm execution triggered.",
+      "retryAlarmTriggered": "Retry alarm execution triggered."
     },
     "loading": {
-      "running": "Running auto check-in..."
+      "running": "Running auto check-in...",
+      "triggeringDailyAlarm": "Triggering daily alarm...",
+      "triggeringRetryAlarm": "Triggering retry alarm..."
     }
   }
 }
