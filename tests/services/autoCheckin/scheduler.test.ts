@@ -25,6 +25,7 @@ vi.mock("~/services/userPreferences", () => ({
   DEFAULT_PREFERENCES: {
     autoCheckin: {
       globalEnabled: true,
+      pretriggerDailyOnUiOpen: true,
       windowStart: "08:00",
       windowEnd: "10:00",
       scheduleMode: "random",
@@ -458,6 +459,63 @@ describe("handleAutoCheckinMessage", () => {
     expect(sendResponse).toHaveBeenCalledWith({ success: true })
   })
 
+  it("should pretrigger daily run on autoCheckin:pretriggerDailyOnUiOpen", async () => {
+    const pretriggerSpy = vi
+      .spyOn(autoCheckinScheduler as any, "pretriggerDailyOnUiOpen")
+      .mockResolvedValueOnce({ started: false, eligible: false })
+    const sendResponse = vi.fn()
+
+    await handleAutoCheckinMessage(
+      { action: "autoCheckin:pretriggerDailyOnUiOpen", requestId: "req-1" },
+      sendResponse,
+    )
+
+    expect(pretriggerSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId: "req-1" }),
+    )
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      started: false,
+      eligible: false,
+    })
+  })
+
+  it("should reset lastDailyRunDay on autoCheckin:debugResetLastDailyRunDay", async () => {
+    const debugSpy = vi
+      .spyOn(autoCheckinScheduler as any, "debugResetLastDailyRunDay")
+      .mockResolvedValue(undefined)
+    const sendResponse = vi.fn()
+
+    await handleAutoCheckinMessage(
+      { action: "autoCheckin:debugResetLastDailyRunDay" },
+      sendResponse,
+    )
+
+    expect(debugSpy).toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({ success: true })
+  })
+
+  it("should schedule the daily alarm for today on autoCheckin:debugScheduleDailyAlarmForToday", async () => {
+    const debugSpy = vi
+      .spyOn(autoCheckinScheduler as any, "debugScheduleDailyAlarmForToday")
+      .mockResolvedValue(123)
+    const sendResponse = vi.fn()
+
+    await handleAutoCheckinMessage(
+      {
+        action: "autoCheckin:debugScheduleDailyAlarmForToday",
+        minutesFromNow: 5,
+      },
+      sendResponse,
+    )
+
+    expect(debugSpy).toHaveBeenCalledWith({ minutesFromNow: 5 })
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      scheduledTime: 123,
+    })
+  })
+
   it("should return error for unknown action", async () => {
     const sendResponse = vi.fn()
 
@@ -516,5 +574,149 @@ describe("autoCheckinScheduler.retryAccount", () => {
     expect(result.result.status).toBe("skipped")
     expect(result.result.reasonCode).toBe("account_disabled")
     expect(mockedAutoCheckinStorage.saveStatus).toHaveBeenCalled()
+  })
+})
+
+describe("autoCheckinScheduler.pretriggerDailyOnUiOpen", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockedBrowserApi.hasAlarmsAPI.mockReturnValue(true)
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        pretriggerDailyOnUiOpen: true,
+      },
+    })
+  })
+
+  it("starts today's daily run early when eligible", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    alarmStore.autoCheckinDaily = {
+      name: "autoCheckinDaily",
+      scheduledTime: Date.now() + 60_000,
+    }
+
+    const today = (autoCheckinScheduler as any).getLocalDay(new Date())
+
+    const runSpy = vi
+      .spyOn(autoCheckinScheduler as any, "runCheckins")
+      .mockImplementation(async ({ runType }: any) => {
+        expect(runType).toBe(AUTO_CHECKIN_RUN_TYPE.DAILY)
+        await autoCheckinStorage.saveStatus({
+          ...(storedStatus ?? {}),
+          lastDailyRunDay: today,
+          lastRunResult: "success",
+          summary: {
+            totalEligible: 2,
+            executed: 1,
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 1,
+            needsRetry: false,
+          },
+          pendingRetry: false,
+        } as any)
+      })
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      requestId: "req-1",
+    })
+
+    expect(result.started).toBe(true)
+    expect(result.eligible).toBe(true)
+    expect(runSpy).toHaveBeenCalled()
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        totalEligible: 2,
+        executed: 1,
+        successCount: 1,
+        failedCount: 0,
+        skippedCount: 1,
+      }),
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("does not start when current time is outside the window", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T11:00:00"))
+
+    alarmStore.autoCheckinDaily = {
+      name: "autoCheckinDaily",
+      scheduledTime: Date.now() + 60_000,
+    }
+
+    const runSpy = vi.spyOn(autoCheckinScheduler as any, "runCheckins")
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      requestId: "req-2",
+    })
+
+    expect(result.started).toBe(false)
+    expect(result.eligible).toBe(false)
+    expect(result.ineligibleReason).toBe("outside_time_window")
+    expect(runSpy).not.toHaveBeenCalled()
+
+    vi.useRealTimers()
+  })
+
+  it("returns eligible=true but does not start in dryRun mode", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    alarmStore.autoCheckinDaily = {
+      name: "autoCheckinDaily",
+      scheduledTime: Date.now() + 60_000,
+    }
+
+    const runSpy = vi.spyOn(autoCheckinScheduler as any, "runCheckins")
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      dryRun: true,
+      debug: true,
+    })
+
+    expect(result.started).toBe(false)
+    expect(result.eligible).toBe(true)
+    expect(runSpy).not.toHaveBeenCalled()
+    expect(result.debug).toEqual(
+      expect.objectContaining({
+        today: expect.any(String),
+        isWithinWindow: true,
+        dailyAlarmScheduledTime: expect.any(Number),
+      }),
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("does not start when today's daily run already executed", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const today = (autoCheckinScheduler as any).getLocalDay(new Date())
+    storedStatus = { lastDailyRunDay: today }
+
+    alarmStore.autoCheckinDaily = {
+      name: "autoCheckinDaily",
+      scheduledTime: Date.now() + 60_000,
+    }
+
+    const runSpy = vi.spyOn(autoCheckinScheduler as any, "runCheckins")
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      requestId: "req-3",
+    })
+
+    expect(result.started).toBe(false)
+    expect(result.eligible).toBe(false)
+    expect(result.ineligibleReason).toBe("already_ran_today")
+    expect(runSpy).not.toHaveBeenCalled()
+
+    vi.useRealTimers()
   })
 })
