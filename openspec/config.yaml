@@ -1,0 +1,71 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+context: |
+  Project: All API Hub (中转站管理器)
+  Repo type: WXT-based WebExtension; Chromium targets Manifest V3, Firefox ships Manifest V2 (MV3 build artifacts may exist for experimentation).
+
+  Product goals
+  - Auto-detect supported sites from an open tab and add an account using existing login state (cookies/session).
+  - Show/refresh account balance/usage, model availability/pricing, and health status.
+  - Manage API keys/tokens (list/copy/export) and support workflows like daily check-in.
+  - Provide “New API” admin tooling (model sync, channel management) for self-hosted instances.
+  - Support backup/restore, including JSON import/export and WebDAV sync.
+
+  Stack (verify against `package.json`)
+  - Node.js >= 20, pnpm; scripts use `pnpm dev|build|test|lint|format|compile`.
+  - WXT (`wxt`) + `@wxt-dev/module-react`; Vite config via `wxt.config.ts`.
+  - React 19 + TypeScript (strict; `tsconfig.json` sets `~/*` → repo root).
+  - Tailwind CSS v4 (dark mode uses `class`; config in `tailwind.config.js`).
+  - UI primitives: Headless UI, Radix UI; shadcn-style components under `components/ui/`.
+  - Async state: TanStack React Query.
+  - i18n: i18next + react-i18next.
+    - UI resources: `locales/<lang>/<namespace>.json` loaded via `import.meta.glob` (`utils/i18n.ts`).
+    - Manifest strings: `public/_locales/<lang>/messages.json` (also read for dev branding in `wxt.config.ts`).
+  - Storage: `@plasmohq/storage` wrapped by services (typically `new Storage({ area: "local" })`).
+    - For read-modify-write flows, use `services/storageWriteLock.ts` to avoid cross-context races (popup/options/background).
+  - Testing: Vitest (jsdom) + Testing Library; MSW for network mocking.
+    - Global setup in `tests/setup.ts` uses `wxt/testing/fake-browser` and MSW server.
+    - Use `tests/test-utils/render.tsx` for component tests (wraps providers + test i18n).
+    - Coverage exists but threshold is intentionally low at the moment (see `CONTRIBUTING.md`).
+  - Lint/format: ESLint flat config in `eslint.config.js` (TypeScript + React Hooks + JSDoc + import rules),
+    Prettier config in `.prettierrc.mjs` (import sorting + Tailwind plugin).
+    - Husky pre-commit runs `pnpm lint-staged` (`.husky/pre-commit`).
+
+  Code conventions
+  - Prefer `~/...` imports (repo-root alias) and keep imports auto-sorted via Prettier config.
+  - Keep business logic + persistence in `services/`; keep UI components focused on rendering and calling services/hooks.
+  - User-facing strings must be i18n’d; update `locales/` resources alongside UI changes.
+  - Treat tokens/API keys/backups as secrets: don’t log them; don’t commit them; redact in examples.
+  - Keep Firefox MV2 vs Chromium MV3 differences in mind:
+    - MV3 uses `background.service_worker`; MV2 uses `background.scripts`.
+    - Some APIs/permissions differ; guard browser-specific behavior via `env.browser` in `wxt.config.ts` or runtime checks.
+
+  Architecture (high-level)
+  - `entrypoints/` (background/content scripts/popup/options/sidepanel), `components/`, `components/ui/`,
+    `features/`, `contexts/`, `hooks/`, `services/`, `utils/`, `constants/`, `types/`, `tests/`.
+  - Tests are primarily under `tests/`, but some unit/component tests may be colocated in `__tests__/` folders.
+  
+  Important constraints
+  - MV3 environment: background service worker, CSP, limited APIs; handle browser differences (Chrome/Edge vs Firefox).
+  - Permissions: host access is broad (`<all_urls>`); optional permissions differ by browser.
+  - Security/privacy: treat tokens/API keys and backups as sensitive; avoid logging secrets; never commit credentials.
+  - Localization: UI copy must be translatable; update locale keys alongside UI changes.
+
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
