@@ -1,5 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
 
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { accountStorage } from "~/services/accountStorage"
 import {
   autoRefreshService,
@@ -29,10 +38,16 @@ vi.mock("~/services/userPreferences", () => ({
 
 // Mock browser runtime using vi.stubGlobal like other tests
 const mockSendMessage = vi.fn()
+const originalBrowser = (globalThis as any).browser
 vi.stubGlobal("browser", {
   runtime: {
     sendMessage: mockSendMessage,
   },
+})
+
+afterAll(() => {
+  vi.unstubAllGlobals()
+  ;(globalThis as any).browser = originalBrowser
 })
 
 describe("AutoRefreshService", () => {
@@ -433,7 +448,7 @@ describe("handleAutoRefreshMessage", () => {
     autoRefreshService.destroy()
   })
 
-  describe("setupAutoRefresh action", () => {
+  describe("autoRefresh:setup action", () => {
     it("should setup auto refresh and send success response", async () => {
       const mockPreferences: UserPreferences = {
         accountAutoRefresh: {
@@ -448,7 +463,7 @@ describe("handleAutoRefreshMessage", () => {
       )
 
       await handleAutoRefreshMessage(
-        { action: "setupAutoRefresh" },
+        { action: RuntimeActionIds.AutoRefreshSetup },
         mockSendResponse,
       )
 
@@ -461,7 +476,7 @@ describe("handleAutoRefreshMessage", () => {
       vi.mocked(userPreferences.getPreferences).mockRejectedValue(error)
 
       await handleAutoRefreshMessage(
-        { action: "setupAutoRefresh" },
+        { action: RuntimeActionIds.AutoRefreshSetup },
         mockSendResponse,
       )
 
@@ -470,7 +485,7 @@ describe("handleAutoRefreshMessage", () => {
     })
   })
 
-  describe("refreshNow action", () => {
+  describe("autoRefresh:refreshNow action", () => {
     it("should refresh now and send result", async () => {
       const mockResult = {
         success: 3,
@@ -480,7 +495,10 @@ describe("handleAutoRefreshMessage", () => {
       }
       vi.mocked(accountStorage.refreshAllAccounts).mockResolvedValue(mockResult)
 
-      await handleAutoRefreshMessage({ action: "refreshNow" }, mockSendResponse)
+      await handleAutoRefreshMessage(
+        { action: RuntimeActionIds.AutoRefreshRefreshNow },
+        mockSendResponse,
+      )
 
       expect(accountStorage.refreshAllAccounts).toHaveBeenCalledWith(true)
       expect(mockSendResponse).toHaveBeenCalledWith({
@@ -493,7 +511,10 @@ describe("handleAutoRefreshMessage", () => {
       const error = new Error("Refresh failed")
       vi.mocked(accountStorage.refreshAllAccounts).mockRejectedValue(error)
 
-      await handleAutoRefreshMessage({ action: "refreshNow" }, mockSendResponse)
+      await handleAutoRefreshMessage(
+        { action: RuntimeActionIds.AutoRefreshRefreshNow },
+        mockSendResponse,
+      )
 
       expect(mockSendResponse).toHaveBeenCalledWith({
         success: false,
@@ -502,10 +523,10 @@ describe("handleAutoRefreshMessage", () => {
     })
   })
 
-  describe("stopAutoRefresh action", () => {
+  describe("autoRefresh:stop action", () => {
     it("should stop auto refresh and send success response", async () => {
       await handleAutoRefreshMessage(
-        { action: "stopAutoRefresh" },
+        { action: RuntimeActionIds.AutoRefreshStop },
         mockSendResponse,
       )
 
@@ -514,7 +535,7 @@ describe("handleAutoRefreshMessage", () => {
     })
   })
 
-  describe("updateAutoRefreshSettings action", () => {
+  describe("autoRefresh:updateSettings action", () => {
     it("should update settings and send success response", async () => {
       const settings = { accountAutoRefresh: { enabled: false, interval: 600 } }
       vi.mocked(userPreferences.savePreferences).mockResolvedValue(true)
@@ -527,7 +548,7 @@ describe("handleAutoRefreshMessage", () => {
       } as UserPreferences)
 
       await handleAutoRefreshMessage(
-        { action: "updateAutoRefreshSettings", settings },
+        { action: RuntimeActionIds.AutoRefreshUpdateSettings, settings },
         mockSendResponse,
       )
 
@@ -541,7 +562,7 @@ describe("handleAutoRefreshMessage", () => {
       vi.mocked(userPreferences.savePreferences).mockRejectedValue(error)
 
       await handleAutoRefreshMessage(
-        { action: "updateAutoRefreshSettings", settings },
+        { action: RuntimeActionIds.AutoRefreshUpdateSettings, settings },
         mockSendResponse,
       )
 
@@ -550,10 +571,10 @@ describe("handleAutoRefreshMessage", () => {
     })
   })
 
-  describe("getAutoRefreshStatus action", () => {
+  describe("autoRefresh:getStatus action", () => {
     it("should return current status", async () => {
       await handleAutoRefreshMessage(
-        { action: "getAutoRefreshStatus" },
+        { action: RuntimeActionIds.AutoRefreshGetStatus },
         mockSendResponse,
       )
 
