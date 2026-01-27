@@ -9,6 +9,7 @@ import {
   autoDetectAccount,
   getSiteName,
   isValidAccount,
+  parseManualQuotaFromUsd,
   validateAndSaveAccount,
   validateAndUpdateAccount,
 } from "~/services/accountOperations"
@@ -77,6 +78,7 @@ export function useAccountDialog({
     mode === DIALOG_MODES.EDIT,
   )
   const [exchangeRate, setExchangeRate] = useState("")
+  const [manualBalanceUsd, setManualBalanceUsd] = useState("")
   const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
   const [tagIds, setTagIds] = useState<string[]>([])
@@ -119,6 +121,7 @@ export function useAccountDialog({
     setDetectionError(null)
     setShowManualForm(mode === DIALOG_MODES.EDIT)
     setExchangeRate("")
+    setManualBalanceUsd("")
     setCurrentTabUrl(null)
     setNotes("")
     setTagIds([])
@@ -154,6 +157,7 @@ export function useAccountDialog({
           setAccessToken(siteAccount.account_info.access_token)
           setUserId(siteAccount.account_info.id.toString())
           setExchangeRate(siteAccount.exchange_rate.toString())
+          setManualBalanceUsd(siteAccount.manualBalanceUsd ?? "")
           setNotes(siteAccount.notes || "")
           setTagIds(siteAccount.tagIds || [])
           setCheckIn({
@@ -443,6 +447,7 @@ export function useAccountDialog({
               siteType,
               authType,
               cookieAuthSessionCookie.trim(),
+              manualBalanceUsd,
             )
           : await validateAndUpdateAccount(
               account!.id,
@@ -458,6 +463,7 @@ export function useAccountDialog({
               siteType,
               authType,
               cookieAuthSessionCookie.trim(),
+              manualBalanceUsd,
             )
 
       if (result.success) {
@@ -576,6 +582,9 @@ export function useAccountDialog({
     cookieAuthSessionCookie,
     exchangeRate,
   })
+  const isManualBalanceUsdInvalid =
+    manualBalanceUsd.trim() !== "" &&
+    parseManualQuotaFromUsd(manualBalanceUsd) === undefined
 
   return {
     state: {
@@ -592,13 +601,15 @@ export function useAccountDialog({
       detectionError,
       showManualForm,
       exchangeRate,
+      manualBalanceUsd,
+      isManualBalanceUsdInvalid,
       currentTabUrl,
       notes,
       tagIds,
       checkIn,
       siteType,
       authType,
-      isFormValid,
+      isFormValid: isFormValid && !isManualBalanceUsdInvalid,
       isAutoConfiguring,
       cookieAuthSessionCookie,
       isImportingCookies,
@@ -612,6 +623,7 @@ export function useAccountDialog({
       setShowAccessToken,
       setShowManualForm,
       setExchangeRate,
+      setManualBalanceUsd,
       setNotes,
       setTagIds,
       setCheckIn,

@@ -34,6 +34,26 @@ import { autoDetectSmart } from "./autoDetectService"
 const logger = createLogger("AccountOperations")
 
 /**
+ * Parses a manual balance in USD from a string value and converts it to quota
+ * units.
+ *
+ * Returns undefined when the value is empty/undefined, not a finite number, or
+ * negative.
+ */
+export function parseManualQuotaFromUsd(
+  value: string | undefined,
+): number | undefined {
+  if (value === undefined) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+
+  const amount = Number.parseFloat(trimmed)
+  if (!Number.isFinite(amount) || amount < 0) return undefined
+
+  return Math.round(amount * UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR)
+}
+
+/**
  * 智能自动识别账号信息
  * 工作流程：
  * 1. 通过 background script 创建临时窗口访问目标站点
@@ -289,6 +309,7 @@ export async function validateAndSaveAccount(
   siteType: string,
   authType: AuthTypeEnum,
   cookieAuthSessionCookie: string,
+  manualBalanceUsd?: string,
 ): Promise<AccountSaveResponse> {
   const sessionCookieHeader =
     authType === AuthTypeEnum.Cookie
@@ -320,6 +341,10 @@ export async function validateAndSaveAccount(
       message: t("messages:errors.validation.userIdNumeric"),
     }
   }
+
+  const manualQuota = parseManualQuotaFromUsd(manualBalanceUsd)
+  const normalizedManualBalanceUsd =
+    manualQuota === undefined ? "" : manualBalanceUsd!.trim()
 
   try {
     // 获取账号余额和今日使用情况
@@ -359,13 +384,14 @@ export async function validateAndSaveAccount(
       exchange_rate:
         parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT, // 使用用户输入的汇率
       notes: notes || "",
+      manualBalanceUsd: normalizedManualBalanceUsd,
       tagIds: normalizedTagIds,
       checkIn: freshAccountData.checkIn,
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),
         username: username.trim(),
-        quota: freshAccountData.quota,
+        quota: manualQuota ?? freshAccountData.quota,
         today_prompt_tokens: freshAccountData.today_prompt_tokens,
         today_completion_tokens: freshAccountData.today_completion_tokens,
         today_quota_consumption: freshAccountData.today_quota_consumption,
@@ -409,6 +435,7 @@ export async function validateAndSaveAccount(
       exchange_rate:
         parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
       notes: notes || "",
+      manualBalanceUsd: normalizedManualBalanceUsd,
       tagIds: normalizedTagIds,
       checkIn: checkInConfig,
       health: {
@@ -419,7 +446,7 @@ export async function validateAndSaveAccount(
         id: parsedUserId,
         access_token: accessToken.trim(),
         username: username.trim(),
-        quota: 0,
+        quota: manualQuota ?? 0,
         today_prompt_tokens: 0,
         today_completion_tokens: 0,
         today_quota_consumption: 0,
@@ -491,6 +518,7 @@ export async function validateAndUpdateAccount(
   siteType: string,
   authType: AuthTypeEnum,
   cookieAuthSessionCookie: string,
+  manualBalanceUsd?: string,
 ): Promise<AccountSaveResponse> {
   const sessionCookieHeader =
     authType === AuthTypeEnum.Cookie
@@ -522,6 +550,10 @@ export async function validateAndUpdateAccount(
       message: t("messages:errors.validation.userIdNumeric"),
     }
   }
+
+  const manualQuota = parseManualQuotaFromUsd(manualBalanceUsd)
+  const normalizedManualBalanceUsd =
+    manualQuota === undefined ? "" : manualBalanceUsd!.trim()
 
   try {
     // 获取账号余额和今日使用情况
@@ -562,13 +594,14 @@ export async function validateAndUpdateAccount(
       exchange_rate:
         parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT, // 使用用户输入的汇率
       notes: notes,
+      manualBalanceUsd: normalizedManualBalanceUsd,
       tagIds: normalizedTagIds,
       checkIn: freshAccountData.checkIn,
       account_info: {
         id: parsedUserId,
         access_token: accessToken.trim(),
         username: username.trim(),
-        quota: freshAccountData.quota,
+        quota: manualQuota ?? freshAccountData.quota,
         today_prompt_tokens: freshAccountData.today_prompt_tokens,
         today_completion_tokens: freshAccountData.today_completion_tokens,
         today_quota_consumption: freshAccountData.today_quota_consumption,
@@ -618,6 +651,7 @@ export async function validateAndUpdateAccount(
       exchange_rate:
         parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
       notes: notes,
+      manualBalanceUsd: normalizedManualBalanceUsd,
       tagIds: normalizedTagIds,
       checkIn: checkInConfig,
       health: {
@@ -628,6 +662,7 @@ export async function validateAndUpdateAccount(
         id: parsedUserId,
         access_token: accessToken.trim(),
         username: username.trim(),
+        ...(manualQuota === undefined ? {} : { quota: manualQuota }),
       },
       last_sync_time: Date.now(),
     }
