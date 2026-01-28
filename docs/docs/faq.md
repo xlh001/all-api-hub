@@ -290,7 +290,7 @@ WebDAV 备份可以帮你在多设备间同步数据：
 - [使用教程](./get-started.md)
 - [GitHub 仓库](https://github.com/qixing-jk/all-api-hub)
 - [问题反馈](https://github.com/qixing-jk/all-api-hub/issues)
-- [更新日志](https://github.com/qixing-jk/all-api-hub/blob/main/CHANGELOG.md)
+- [更新日志](./changelog.md)
 
 ::: tip 找不到答案？
 如果以上内容没有解决你的问题，欢迎在 [GitHub Issues](https://github.com/qixing-jk/all-api-hub/issues) 提问。

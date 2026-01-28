@@ -161,7 +161,7 @@
 
 - 查看更详细的 [常见问题](./faq.md)，了解认证方式、AnyRouter 适配、功能使用技巧等。
 - 如果遇到问题或需要新功能，欢迎前往 [GitHub Issues](https://github.com/qixing-jk/all-api-hub/issues) 进行反馈。
-- 了解历史更新请查看 [更新日志](https://github.com/qixing-jk/all-api-hub/blob/main/CHANGELOG.md)。
+- 了解历史更新请查看 [更新日志](./changelog.md)。
 
 ::: tip 下一步
 完成基础设置后，您可以继续配置自动刷新、签到检测或 WebDAV 同步，以获得更完整的使用体验。
