@@ -21,6 +21,18 @@ The message payload MUST include:
 - `updatedAccountIds`: the list of account IDs whose persisted site check-in status was updated by the execution (i.e., accounts whose provider outcome was `success` or `already_checked`)
 - `timestamp`: milliseconds since epoch
 
+#### Scenario: Completion notification payload is account-scoped
+- **GIVEN** `autoCheckin.notifyUiOnCompletion = true`
+- **AND** a daily auto check-in execution completes for account A with provider outcome `success`
+- **AND** a daily auto check-in execution completes for account B with provider outcome `already_checked`
+- **AND** a daily auto check-in execution completes for account C with provider outcome `failed`
+- **WHEN** the background broadcasts the completion notification
+- **THEN** the message `action` MUST be `autoCheckin:runCompleted` (via the canonical action ID `RuntimeActionIds.AutoCheckinRunCompleted`)
+- **AND** `runKind` MUST be `daily`
+- **AND** `updatedAccountIds` MUST include account A and account B
+- **AND** `updatedAccountIds` MUST NOT include account C
+- **AND** `timestamp` MUST be present and represent milliseconds since epoch
+
 ### Requirement: Successful check-ins trigger a post-run account refresh (no extra check-in)
 After an auto check-in execution completes, the background MUST attempt a best-effort **account data refresh** for each account whose provider outcome was `success` so balances/quotas reflect the effect of the check-in.
 
