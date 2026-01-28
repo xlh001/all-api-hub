@@ -174,17 +174,24 @@ function useSingleAccountModelData(params: {
 /**
  * Fetches pricing data for all accounts concurrently and aggregates results.
  * @param accounts List of accounts to query.
+ * @param enabled When true, triggers fetches; when false, keeps queries idle.
  * @returns Pricing contexts, loading/error flags, and reload helper.
  */
 function useAllAccountsModelData(
   accounts: DisplaySiteData[],
+  enabled: boolean,
 ): UseModelDataReturn {
   const safeDisplayData = useMemo(() => accounts || [], [accounts])
 
   const queries = useQueries({
     queries: safeDisplayData.map((account) => ({
       queryKey: ["model-pricing", account.id, account.baseUrl, account.userId],
-      enabled: safeDisplayData.length > 0,
+      /**
+       * Only load pricing when the UI is explicitly in "all accounts" mode.
+       * This avoids triggering expensive background fetches while the user is
+       * still selecting a single account.
+       */
+      enabled: enabled && safeDisplayData.length > 0,
       staleTime: MODEL_PRICING_CACHE_TTL_MS,
       refetchOnWindowFocus: false,
       retry: 1,
@@ -302,7 +309,10 @@ export function useModelData(params: UseModelDataProps): UseModelDataReturn {
     accounts: safeDisplayData,
   })
 
-  const allAccountsResult = useAllAccountsModelData(safeDisplayData)
+  const allAccountsResult = useAllAccountsModelData(
+    safeDisplayData,
+    isAllAccounts,
+  )
 
   return isAllAccounts ? allAccountsResult : singleAccountResult
 }
