@@ -91,16 +91,6 @@ All API Hub, a browser plugin, can automatically recognize accounts on these pla
 
 <table>
   <tr>
-    <td align="center" width="50%">
-      <img src="docs/docs/static/image/en/current-site-check.png" alt="current-site-check" style="width:100%; height:auto;"/>
-      <div>Duplicate Site Detection (1)</div>
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/docs/static/image/en/try-add-existing-site.png" alt="try-add-existing-site" style="width:100%; height:auto;"/>
-      <div>Duplicate Site Detection (2)</div>
-    </td>
-  </tr>
-  <tr>
     <td align="center">
       <img src="docs/docs/static/image/en/account-manage.png" alt="account-manage" style="width:100%; height:auto;"/>
       <div>Account Management Overview</div>
@@ -116,18 +106,28 @@ All API Hub, a browser plugin, can automatically recognize accounts on these pla
       <div>Key List & Export</div>
     </td>
     <td align="center">
-      <img src="docs/docs/static/image/en/new-api-channel-sync.png" alt="new-api-channel-sync" style="width:100%; height:auto;"/>
-      <div>New API Model Sync</div>
+      <img src="docs/docs/static/image/en/auto-check-in.png" alt="auto-check-in" style="width:100%; height:auto;"/>
+      <div>Auto Check-in</div>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img src="docs/docs/static/image/en/new-api-channel-manage.png" alt="new-api-channel-manage" style="width:100%; height:auto;"/>
-      <div>New API Channel Management</div>
+      <img src="docs/docs/static/image/en/account-model-usage-overview.png" alt="account-model-usage-overview" style="width:100%; height:auto;"/>
+      <div>Account Model Usage Overview</div>
     </td>
     <td align="center">
-      <img src="docs/docs/static/image/en/import-and-export-setting.png" alt="import-and-export-setting" style="width:100%; height:auto;"/>
-      <div>Import / Export Settings</div>
+      <img src="docs/docs/static/image/en/account-model-latency-overview.png" alt="account-model-latency-overview" style="width:100%; height:auto;"/>
+      <div>Account Model Latency Overview</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/docs/static/image/en/new-api-channel-sync.png" alt="new-api-channel-sync" style="width:100%; height:auto;"/>
+      <div>New API Model Sync</div>
+    </td>
+    <td align="center">
+      <img src="docs/docs/static/image/en/new-api-channel-manage.png" alt="new-api-channel-manage" style="width:100%; height:auto;"/>
+      <div>New API Channel Management</div>
     </td>
   </tr>
 </table>

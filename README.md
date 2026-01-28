@@ -92,16 +92,6 @@ All API Hub 作为浏览器插件，可以自动识别这些站点的账号，�
 
 <table>
   <tr>
-    <td align="center" width="50%">
-      <img src="docs/docs/static/image/current-site-check.png" alt="current-site-check" style="width:100%; height:auto;"/>
-      <div>站点重复检测（一）</div>
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/docs/static/image/try-add-existing-site.png" alt="try-add-existing-site" style="width:100%; height:auto;"/>
-      <div>站点重复检测（二）</div>
-    </td>
-  </tr>
-  <tr>
     <td align="center">
       <img src="docs/docs/static/image/account-manage.png" alt="account-manage" style="width:100%; height:auto;"/>
       <div>账户管理总览</div>
@@ -117,18 +107,28 @@ All API Hub 作为浏览器插件，可以自动识别这些站点的账号，�
       <div>密钥列表与导出</div>
     </td>
     <td align="center">
-      <img src="docs/docs/static/image/new-api-channel-sync.png" alt="new-api-channel-sync" style="width:100%; height:auto;"/>
-      <div>New API 模型同步</div>
+      <img src="docs/docs/static/image/auto-check-in.png" alt="auto-check-in" style="width:100%; height:auto;"/>
+      <div>账号自动签到</div>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img src="docs/docs/static/image/new-api-channel-manage.png" alt="new-api-channel-manage" style="width:100%; height:auto;"/>
-      <div>New API 渠道管理</div>
+      <img src="docs/docs/static/image/account-model-usage-overview.png" alt="account-model-usage-overview" style="width:100%; height:auto;"/>
+      <div>账号模型使用情况</div>
     </td>
     <td align="center">
-      <img src="docs/docs/static/image/import-and-export-setting.png" alt="import-and-export-setting" style="width:100%; height:auto;"/>
-      <div>导入导出配置</div>
+      <img src="docs/docs/static/image/account-model-latency-overview.png" alt="account-model-latency-overview" style="width:100%; height:auto;"/>
+      <div>模型慢查询分析</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/docs/static/image/new-api-channel-sync.png" alt="new-api-channel-sync" style="width:100%; height:auto;"/>
+      <div>New API 模型同步</div>
+    </td>
+    <td align="center">
+      <img src="docs/docs/static/image/new-api-channel-manage.png" alt="new-api-channel-manage" style="width:100%; height:auto;"/>
+      <div>New API 渠道管理</div>
     </td>
   </tr>
 </table>
