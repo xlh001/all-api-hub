@@ -49,40 +49,43 @@ All API Hub, a browser plugin, can automatically recognize accounts on these pla
 ## ✨ Features
 
 - 🔍 **Smart Site Detection**  
-  Automatically detects AI aggregation / relay sites based on common New API‑series projects, creates access tokens, parses pricing and configuration, and prevents duplicates.
-
-- 🏷️ **Rich Site Information Management**  
-  Retrieves real site names in multiple ways, tracks check‑in capability and health, and lets you add any compatible relay site manually.
-
-- 👥 **Multi‑Account Dashboard**  
-  Manage multiple accounts per site with grouping, pinning, and smart sorting. Balances, usage stats, and health state are all visible at a glance.
-
-- 🔑 **Token & Key Management**  
-  Conveniently inspect, copy, and manage API keys, with support for bulk operations and one‑click export to downstream tools.
-
-- 🤖 **Model Information & Pricing**  
-  View the models supported by each site together with pricing and key configuration details.
-
-- 🔄 **New API Management (Own Instance)**  
-  For your own New API instance, provide dedicated tools to synchronize model lists, filter via regex, review sync logs, and manage channels directly from the extension UI. See [New API Model Sync](https://all-api-hub.qixing1217.top/en/new-api-model-sync.html) and [New API Channel Management](https://all-api-hub.qixing1217.top/en/new-api-channel-management.html) for details.
-
-- 📆 **Automatic check‑in so you don’t forget**  
-  Detects which relay sites support daily check‑in and keeps track of who still needs it. Once enabled, you can handle check‑ins from a single place so you don’t lose free quota just because you forgot to visit each dashboard.
-
-- 🚀 **Quick Export Integration**  
-  One‑click export of configurations to [CherryStudio](https://github.com/CherryHQ/cherry-studio), [CC Switch](https://github.com/ccswitch/ccswitch), [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) and [New API](https://github.com/QuantumNous/new-api). See [Quick Export Site Configuration](https://all-api-hub.qixing1217.top/en/quick-export.html) for details.
+  Paste the site URL after signing in to add an account; basic account info is filled automatically, with duplicate protection and a manual fallback.
 
 - 🛡️ **Cloudflare Bypass Assistant**  
-  Uses a temporary window and optional cookie / webRequest permissions to reliably pass Cloudflare‑style 5‑second shields so data refresh and detection continue to work. See [Cloudflare Bypass Assistant](https://all-api-hub.qixing1217.top/en/cloudflare-helper.html) for details.
+  Opens a helper window when Cloudflare challenges block detection or refresh, then continues after you complete the challenge.
 
-- ☁️ **Data Backup and Recovery**  
-  Export/import JSON, and configure [WebDAV backup and automatic synchronization](https://all-api-hub.qixing1217.top/en/webdav-sync.html) and [data import/export](https://all-api-hub.qixing1217.top/en/data-management.html) to keep configurations safe and synchronized across devices.
+- 👥 **Multi‑Account Dashboard**  
+  Manage multiple sites and accounts in one place, with balances, usage, health, and auto refresh.
+
+- 🔑 **Token & Key Management**  
+  Inspect, copy, and manage API keys per site, with bulk actions.
+
+- 🤖 **Model Information & Pricing**  
+  View per‑site model lists and pricing details for comparison.
+
+- 🧪 **Model & API Verification**  
+  Verify whether a key/model works and check common capabilities, including CLI compatibility, for troubleshooting.
+
+- 📊 **Usage Analytics & Visualization**  
+  Aggregate usage across multiple sites/accounts: filter by site, account, token, and date range, compare usage/cost/model breakdowns and trends, and inspect latency/slow requests when needed.
+
+- 🚀 **Quick Export Integration**  
+  Export configuration to CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, New API, and Veloera.
+
+- 🔄 **New API Management (Own Instance)**  
+  For your own New API instance: model sync, channel management, and model redirect.
+
+- 📆 **Automatic check‑in**  
+  Detects which sites support daily check‑in, can run automatically, and keeps run records.
+
+- ☁️ **Data Backup and Synchronization**  
+  Import/export and WebDAV sync for backup and migration across devices.
 
 - 🌐 **Cross‑Platform Compatible**  
-  Works on Chrome, Edge, Firefox and Chromium‑based mobile browsers like Kiwi, with automatic dark‑mode support.
+  Works on Chrome, Edge, Firefox and mobile Chromium browsers like Kiwi, with dark mode.
 
 - 🔒 **Privacy‑First Local Storage**  
-  Runs fully offline by default; all data is stored locally in your browser. WebDAV and external APIs are only used when explicitly configured.
+  Local‑first by default with no telemetry; WebDAV and external APIs are only used when configured.
 
 > [!NOTE]
 > Originally based on [One API Hub](https://github.com/fxaxg/one-api-hub), now significantly refactored and expanded. Data format remains compatible, supporting direct import
