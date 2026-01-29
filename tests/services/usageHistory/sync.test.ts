@@ -68,6 +68,7 @@ async function createTestAccount(baseUrl: string): Promise<string> {
     last_sync_time: Date.now(),
     notes: undefined,
     tags: undefined,
+    tagIds: [],
     can_check_in: undefined,
     supports_check_in: undefined,
     authType: AuthTypeEnum.AccessToken,

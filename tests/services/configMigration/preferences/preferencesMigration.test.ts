@@ -8,7 +8,10 @@ import {
   migratePreferences,
   needsPreferencesMigration,
 } from "~/services/configMigration/preferences/preferencesMigration"
-import type { UserPreferences } from "~/services/userPreferences"
+import {
+  DEFAULT_PREFERENCES,
+  type UserPreferences,
+} from "~/services/userPreferences"
 import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig"
 import { SortingCriteriaType } from "~/types/sorting"
@@ -19,12 +22,16 @@ import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/utils/sortingPriority"
 // Helper function to create a minimal v0 preferences object
 /**
  * Builds a baseline v0 UserPreferences object for migration test scenarios.
+ *
+ * Note: the returned object includes currently-required fields like `logging`
+ * to keep the fixture type-safe.
  */
 function createV0Preferences(
   overrides?: Partial<UserPreferences>,
 ): UserPreferences {
   return {
     themeMode: "system" as const,
+    logging: DEFAULT_PREFERENCES.logging,
     // Legacy stored value before the v7->v8 cashflow tab rename migration.
     activeTab: DATA_TYPE_CONSUMPTION as any,
     currencyType: "USD" as const,
@@ -374,6 +381,7 @@ describe("preferencesMigration", () => {
       // Manually build prefs without relying on helper to avoid pre-populated structures
       const prefs: UserPreferences = {
         themeMode: "system",
+        logging: DEFAULT_PREFERENCES.logging,
         // Legacy stored value before the v7->v8 cashflow tab rename migration.
         activeTab: DATA_TYPE_CONSUMPTION as any,
         currencyType: "USD",

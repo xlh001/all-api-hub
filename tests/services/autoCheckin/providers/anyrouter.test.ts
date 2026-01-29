@@ -16,6 +16,7 @@ const mockAccount: SiteAccount = {
   authType: AuthTypeEnum.Cookie,
   exchange_rate: 7.0,
   notes: "",
+  tagIds: [],
   checkIn: { enableDetection: true },
   health: { status: SiteHealthStatus.Healthy },
   account_info: {

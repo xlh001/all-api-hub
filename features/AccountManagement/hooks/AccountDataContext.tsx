@@ -381,7 +381,9 @@ export const AccountDataProvider = ({
     const reloadAccountsById = async (accountIds: string[]) => {
       const uniqueIds = Array.from(
         new Set(
-          accountIds.filter((id): id is string => typeof id === "string" && id),
+          accountIds.filter(
+            (id): id is string => typeof id === "string" && id.length > 0,
+          ),
         ),
       )
 

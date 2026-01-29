@@ -15,6 +15,7 @@ import { AuthTypeEnum } from "~/types"
 
 /**
  * Creates a minimal SiteAccount fixture for tag-related tests.
+ * Defaults `tagIds` to an empty list when omitted.
  */
 function makeAccount(overrides: Partial<SiteAccount>): SiteAccount {
   return {
@@ -42,6 +43,7 @@ function makeAccount(overrides: Partial<SiteAccount>): SiteAccount {
     created_at: overrides.created_at ?? 0,
     authType: overrides.authType ?? AuthTypeEnum.AccessToken,
     checkIn: overrides.checkIn ?? ({ enableDetection: false } as any),
+    tagIds: overrides.tagIds ?? [],
     ...overrides,
   }
 }
