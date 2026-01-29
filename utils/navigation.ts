@@ -384,6 +384,17 @@ const _openModelsPage = async (accountId?: string) => {
 }
 
 /**
+ * Opens the stored account's base URL in a new browser tab.
+ * This remains available even when the account is disabled so users can still reach the provider site.
+ * @param account Account metadata containing the base URL to open.
+ */
+const _openAccountBaseUrl = async (
+  account: Pick<DisplaySiteData, "baseUrl">,
+) => {
+  await createActiveTab(account.baseUrl)
+}
+
+/**
  * Opens the provider usage log endpoint derived from account metadata.
  * @param account Account definition containing base URL and site type.
  */
@@ -486,6 +497,11 @@ export const openKeysPage = withPopupClose(_openKeysPage)
  * popup afterwards.
  */
 export const openModelsPage = withPopupClose(_openModelsPage)
+
+/**
+ * Open the stored account's base URL in a new tab and auto-close the popup when triggered from popup.html.
+ */
+export const openAccountBaseUrl = withPopupClose(_openAccountBaseUrl)
 
 /**
  * Open Managed Site channel management and close the popup afterwards.

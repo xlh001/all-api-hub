@@ -1,7 +1,12 @@
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 import SiteInfo from "~/features/AccountManagement/components/AccountList/SiteInfo"
+
+const { mockOpenAccountBaseUrl } = vi.hoisted(() => ({
+  mockOpenAccountBaseUrl: vi.fn(),
+}))
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -25,6 +30,7 @@ vi.mock("~/features/AccountManagement/hooks/AccountActionsContext", () => ({
 }))
 
 vi.mock("~/utils/navigation", () => ({
+  openAccountBaseUrl: mockOpenAccountBaseUrl,
   openCheckInAndRedeem: vi.fn(),
   openCheckInPage: vi.fn(),
   openCustomCheckInPage: vi.fn(),
@@ -32,7 +38,9 @@ vi.mock("~/utils/navigation", () => ({
 }))
 
 describe("SiteInfo", () => {
-  it("shows a disabled badge and still renders the site as a link", () => {
+  it("shows a disabled badge and still opens the site URL", async () => {
+    const user = userEvent.setup()
+
     render(
       <SiteInfo
         site={
@@ -58,7 +66,11 @@ describe("SiteInfo", () => {
     )
 
     expect(screen.getByText("list.site.disabled")).toBeInTheDocument()
-    const link = screen.getByRole("link", { name: "Site" })
-    expect(link).toHaveAttribute("href", "https://example.com")
+
+    await user.click(screen.getByRole("button", { name: "Site" }))
+    expect(mockOpenAccountBaseUrl).toHaveBeenCalledTimes(1)
+    expect(mockOpenAccountBaseUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ baseUrl: "https://example.com" }),
+    )
   })
 })

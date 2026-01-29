@@ -35,6 +35,7 @@ import {
 } from "~/types"
 import { createLogger } from "~/utils/logger"
 import {
+  openAccountBaseUrl,
   openCheckInAndRedeem,
   openCheckInPage,
   openCustomCheckInPage,
@@ -112,6 +113,20 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
     canOpenHealthSettings && healthCode
       ? getTempWindowFallbackSettingsTab(healthCode)
       : null
+
+  const handleOpenAccountSite = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await openAccountBaseUrl(site)
+    } catch (error) {
+      logger.error("Failed to open account base URL", {
+        error,
+        accountId: site.id,
+        baseUrl: site.baseUrl,
+      })
+    }
+  }
 
   const handlePinClick = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -379,17 +394,18 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
 
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             {/* Keep the site URL clickable even when the account is disabled so users can still open the provider site. */}
-            <a
-              href={site.baseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block min-w-0 truncate"
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="h-auto min-w-0 justify-start truncate p-0 text-left"
               title={site.name}
+              onClick={handleOpenAccountSite}
             >
               <BodySmall weight="medium" className="truncate">
                 {renderHighlightedFragments(highlights?.name, site.name)}
               </BodySmall>
-            </a>
+            </Button>
 
             {checkInIndicator && (
               <div className="flex items-center">{checkInIndicator}</div>
