@@ -32,7 +32,7 @@ vi.mock("~/utils/navigation", () => ({
 }))
 
 describe("SiteInfo", () => {
-  it("shows a disabled badge and does not render the site as a link", () => {
+  it("shows a disabled badge and still renders the site as a link", () => {
     render(
       <SiteInfo
         site={
@@ -58,6 +58,7 @@ describe("SiteInfo", () => {
     )
 
     expect(screen.getByText("list.site.disabled")).toBeInTheDocument()
-    expect(screen.queryByRole("link", { name: "Site" })).toBeNull()
+    const link = screen.getByRole("link", { name: "Site" })
+    expect(link).toHaveAttribute("href", "https://example.com")
   })
 })

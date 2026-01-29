@@ -378,25 +378,18 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
           )}
 
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-            {isAccountDisabled ? (
-              <span className="block min-w-0 truncate" title={site.name}>
-                <BodySmall weight="medium" className="truncate">
-                  {renderHighlightedFragments(highlights?.name, site.name)}
-                </BodySmall>
-              </span>
-            ) : (
-              <a
-                href={site.baseUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block min-w-0 truncate"
-                title={site.name}
-              >
-                <BodySmall weight="medium" className="truncate">
-                  {renderHighlightedFragments(highlights?.name, site.name)}
-                </BodySmall>
-              </a>
-            )}
+            {/* Keep the site URL clickable even when the account is disabled so users can still open the provider site. */}
+            <a
+              href={site.baseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block min-w-0 truncate"
+              title={site.name}
+            >
+              <BodySmall weight="medium" className="truncate">
+                {renderHighlightedFragments(highlights?.name, site.name)}
+              </BodySmall>
+            </a>
 
             {checkInIndicator && (
               <div className="flex items-center">{checkInIndicator}</div>
