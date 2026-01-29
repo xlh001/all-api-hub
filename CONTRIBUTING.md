@@ -49,7 +49,7 @@ pnpm dev:firefox
 4. **Load the extension in your browser**
 
 - Chrome: Navigate to `chrome://extensions/`, enable "Developer mode", click "Load unpacked", and select the `.output/chrome-mv3-dev` directory.
-- Firefox: Navigate to `about:debugging#/runtime/this-firefox`, click "Load Temporary Add-on", and select any file in the `.output/firefox-mv3-dev` directory.
+- Firefox: Navigate to `about:debugging#/runtime/this-firefox`, click "Load Temporary Add-on", and select `manifest.json` inside the `.output/firefox-mv2-dev` directory.
 
 ## Testing
 
@@ -140,8 +140,7 @@ describe("LinkCard", () => {
 
 The test setup (`tests/setup.ts`) provides the following mocks:
 
-- **@plasmohq/storage**: In-memory storage implementation
-- **Browser APIs**: Mocked WebExtension APIs via `vitest-webextension-mock`
+- **Browser APIs + storage**: `wxt/testing/fake-browser` (wired up in `tests/setup.ts`) sets `globalThis.browser` / `globalThis.chrome`, including `browser.storage.*`. `@plasmohq/storage` works on top of this without extra mocks.
 - **i18next**: Lightweight test instance configured in `tests/test-utils/i18n.ts`
 - **MSW**: Mock Service Worker for API endpoint mocking
 
@@ -202,14 +201,11 @@ pnpm compile
 
 This project uses [Husky](https://typicode.github.io/husky) to enforce code quality through Git hooks:
 
-- **pre-commit**: Automatically checks code formatting and linting before each commit
-  - Runs `pnpm format:check` to verify code formatting
-  - Runs `pnpm lint` to check for linting issues
-  - If issues are found, it will attempt to auto-fix and require you to review and stage changes
-  
-- **pre-push**: Ensures code quality before pushing to remote
-  - Runs `pnpm test:ci` to execute all tests with coverage
-  - Runs `pnpm compile` to verify TypeScript type checking
+- **pre-commit**: Runs `pnpm lint-staged` (see `.husky/pre-commit` and `lint-staged` in `package.json`)
+  - Formats staged files with Prettier
+  - Fixes lint issues with ESLint
+  - Runs `vitest related --run` for staged JS/TS files
+- **pre-push**: Not configured in this repo currently (CI covers `pnpm test:ci`; run `pnpm test:ci && pnpm compile` locally before pushing when possible).
 
 The hooks are automatically set up when you run `pnpm install` (via the `prepare` script).
 
@@ -218,11 +214,8 @@ The hooks are automatically set up when you run `pnpm install` (via the `prepare
 In rare cases where you need to bypass hooks:
 
 ```bash
-# Skip pre-commit hook
+# Skip Husky hooks (e.g., pre-commit)
 git commit --no-verify
-
-# Skip pre-push hook
-git push --no-verify
 ```
 
 ⚠️ **Warning**: Only skip hooks if you have a valid reason, as they ensure code quality and prevent common issues.

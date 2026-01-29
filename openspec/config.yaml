@@ -12,13 +12,6 @@ context: |
   Project: All API Hub (中转站管理器)
   Repo type: WXT-based WebExtension; Chromium targets Manifest V3, Firefox ships Manifest V2 (MV3 build artifacts may exist for experimentation).
 
-  Product goals
-  - Auto-detect supported sites from an open tab and add an account using existing login state (cookies/session).
-  - Show/refresh account balance/usage, model availability/pricing, and health status.
-  - Manage API keys/tokens (list/copy/export) and support workflows like daily check-in.
-  - Provide “New API” admin tooling (model sync, channel management) for self-hosted instances.
-  - Support backup/restore, including JSON import/export and WebDAV sync.
-
   Stack (verify against `package.json`)
   - Node.js >= 20, pnpm; scripts use `pnpm dev|build|test|lint|format|compile`.
   - WXT (`wxt`) + `@wxt-dev/module-react`; Vite config via `wxt.config.ts`.
@@ -48,11 +41,6 @@ context: |
     - MV3 uses `background.service_worker`; MV2 uses `background.scripts`.
     - Some APIs/permissions differ; guard browser-specific behavior via `env.browser` in `wxt.config.ts` or runtime checks.
 
-  Architecture (high-level)
-  - `entrypoints/` (background/content scripts/popup/options/sidepanel), `components/`, `components/ui/`,
-    `features/`, `contexts/`, `hooks/`, `services/`, `utils/`, `constants/`, `types/`, `tests/`.
-  - Tests are primarily under `tests/`, but some unit/component tests may be colocated in `__tests__/` folders.
-  
   Important constraints
   - MV3 environment: background service worker, CSP, limited APIs; handle browser differences (Chrome/Edge vs Firefox).
   - Permissions: host access is broad (`<all_urls>`); optional permissions differ by browser.
