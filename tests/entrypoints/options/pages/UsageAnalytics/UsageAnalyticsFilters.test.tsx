@@ -1,4 +1,3 @@
-import { fireEvent } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
 import UsageAnalytics from "~/entrypoints/options/pages/UsageAnalytics"
@@ -8,7 +7,7 @@ import { accountStorage } from "~/services/accountStorage"
 import { createEmptyUsageHistoryAccountStore } from "~/services/usageHistory/core"
 import { usageHistoryStorage } from "~/services/usageHistory/storage"
 import { testI18n } from "~/tests/test-utils/i18n"
-import { render, screen } from "~/tests/test-utils/render"
+import { fireEvent, render, screen, within } from "~/tests/test-utils/render"
 
 vi.mock("~/components/charts/echarts", async () => {
   const instance = {
@@ -44,6 +43,18 @@ describe("UsageAnalytics filters", () => {
     true,
   )
   testI18n.addResourceBundle("en", "common", commonEn, true, true)
+
+  const getFilterContainer = (label: string): HTMLElement => {
+    const labelNode = screen.getByText(label)
+    const header = labelNode.closest("div")
+    const filter = header?.nextElementSibling
+
+    if (!filter || !(filter instanceof HTMLElement)) {
+      throw new Error(`Missing TagFilter container for "${label}"`)
+    }
+
+    return filter
+  }
 
   it("cascades filters from site to account to token", async () => {
     vi.mocked(accountStorage.getAllAccounts).mockResolvedValue([
@@ -96,29 +107,45 @@ describe("UsageAnalytics filters", () => {
 
     await screen.findByText("Sites")
 
-    const siteAButton = await screen.findByRole("button", { name: /Site A/ })
+    const sitesFilter = getFilterContainer("Sites")
+    const accountsFilter = getFilterContainer("Accounts")
+    const tokensFilter = getFilterContainer("API tokens")
+
+    const siteAButton = await within(sitesFilter).findByRole("button", {
+      name: /Site A/,
+    })
     fireEvent.click(siteAButton)
 
-    expect(screen.queryByRole("button", { name: /User B/ })).toBeNull()
     expect(
-      await screen.findByRole("button", { name: "Token A (#1)" }),
+      within(accountsFilter).queryByRole("button", { name: /Site B/ }),
+    ).toBeNull()
+    expect(
+      await within(tokensFilter).findByRole("button", { name: "Token A (#1)" }),
     ).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Token B (#2)" })).toBeNull()
+    expect(
+      within(tokensFilter).queryByRole("button", { name: "Token B (#2)" }),
+    ).toBeNull()
 
-    const accountButton = await screen.findByRole("button", { name: /User A/ })
+    const accountButton = await within(accountsFilter).findByRole("button", {
+      name: /Site A/,
+    })
     fireEvent.click(accountButton)
 
-    const allSitesButton = await screen.findByRole("button", {
-      name: "All sites",
+    const allSitesButton = await within(sitesFilter).findByRole("button", {
+      name: /All sites/,
     })
     fireEvent.click(allSitesButton)
 
-    const siteBButton = await screen.findByRole("button", { name: /Site B/ })
+    const siteBButton = await within(sitesFilter).findByRole("button", {
+      name: /Site B/,
+    })
     fireEvent.click(siteBButton)
 
     expect(
-      await screen.findByRole("button", { name: "Token B (#2)" }),
+      await within(tokensFilter).findByRole("button", { name: "Token B (#2)" }),
     ).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Token A (#1)" })).toBeNull()
+    expect(
+      within(tokensFilter).queryByRole("button", { name: "Token A (#1)" }),
+    ).toBeNull()
   })
 })

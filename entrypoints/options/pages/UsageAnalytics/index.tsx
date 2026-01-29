@@ -309,7 +309,7 @@ export default function UsageAnalytics() {
       const disambiguate = (usernameCounts.get(username) ?? 0) > 1
       const label = disambiguate
         ? `${username} (${account.site_name})`
-        : username
+        : account.site_name
       out.set(account.id, label)
     }
     return out
