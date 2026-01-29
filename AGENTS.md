@@ -32,6 +32,12 @@ Prereqs: Node.js 20+ and pnpm 10+.
 - Run: `pnpm test` (quick) or `pnpm test:ci` (coverage to `coverage/`, used in CI).
 - Coverage: current global baseline is 5% (see `vitest.config.ts`). Add tests for new/changed behavior and raise thresholds incrementally.
 
+## Documentation Guidelines
+
+- Repo docs (e.g., `README.md`, `README_EN.md`, and other multi-language Markdown) should be kept consistent across language versions when updating content.
+- Docs site (`docs/docs/`): treat Chinese pages (`docs/docs/*.md`) as the source of truth; `docs/docs/en/**` and `docs/docs/ja/**` are auto-translated (see `docs_assistant/translate.py` / `.github/workflows/translate-docs.yml`) and generally shouldn’t be edited manually.
+- When adding/removing a docs page under `docs/docs/`, update the locale nav links in `docs/docs/.vuepress/config.js` for each language (e.g., `/...`, `/en/...`, `/ja/...`).
+
 ## Commit & Pull Request Guidelines
 
 - Commits follow Conventional Commits in practice: `feat(scope): …`, `fix: …`, `docs: …`, `chore: …`.

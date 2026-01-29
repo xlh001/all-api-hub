@@ -441,3 +441,9 @@ Hooks are automatically set up when you run `pnpm install`.
 - **User Documentation**: https://all-api-hub.qixing1217.top/
 - **WXT Documentation**: https://wxt.dev/
 - **Contributing Guide**: See CONTRIBUTING.md
+
+### Documentation Guidelines
+
+- Repo docs (e.g., `README.md`, `README_EN.md`, and other multi-language Markdown) should be kept consistent across language versions when updating content.
+- Docs site (`docs/docs/`): treat Chinese pages (`docs/docs/*.md`) as the source of truth; `docs/docs/en/**` and `docs/docs/ja/**` are auto-translated (see `docs_assistant/translate.py` / `.github/workflows/translate-docs.yml`) and generally shouldn’t be edited manually.
+- When adding/removing a docs page under `docs/docs/`, update the locale nav links in `docs/docs/.vuepress/config.js` for each language (e.g., `/...`, `/en/...`, `/ja/...`).
