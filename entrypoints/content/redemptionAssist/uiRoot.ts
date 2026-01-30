@@ -43,6 +43,7 @@ export async function ensureRedemptionToastUi(): Promise<void> {
     const ui = await createShadowRootUi(ctxRef as ContentScriptContext, {
       name: REDEMPTION_TOAST_HOST_TAG,
       position: "overlay",
+      zIndex: 2147483647,
       anchor: "body",
       onMount(container) {
         const root = createRoot(container)

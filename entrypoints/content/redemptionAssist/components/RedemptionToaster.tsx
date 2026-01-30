@@ -20,7 +20,7 @@ export const RedemptionToaster: React.FC = () => {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-4 z-9999 flex justify-center sm:justify-end"
+      className="pointer-events-none fixed inset-x-0 top-4 z-2147483647 flex justify-center sm:justify-end"
       onMouseEnter={startPause}
       onMouseLeave={endPause}
     >
