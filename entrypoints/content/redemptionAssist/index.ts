@@ -55,16 +55,11 @@ function setupRedemptionAssistDetection() {
       if (now - lastClickScan < CLICK_SCAN_INTERVAL_MS) return
       lastClickScan = now
 
+      // Try to get selected text first
       const selection = window.getSelection()
       let text = selection?.toString().trim() || ""
 
-      if (!text) {
-        const target = event.target as HTMLElement | null
-        if (target) {
-          text = (target.innerText || target.textContent || "").slice(0, 50)
-        }
-      }
-
+      // Fallback: try to read clipboard content if the click target looks like a copy action
       if (
         !text &&
         isLikelyCopyActionTarget(event.target) &&
@@ -84,6 +79,14 @@ function setupRedemptionAssistDetection() {
           } catch (error) {
             logger.warn("Clipboard read failed", error)
           }
+        }
+      }
+
+      // Fallback: extract text from the clicked element (limited length)
+      if (!text) {
+        const target = event.target as HTMLElement | null
+        if (target) {
+          text = (target.innerText || target.textContent || "").slice(0, 50)
         }
       }
 
