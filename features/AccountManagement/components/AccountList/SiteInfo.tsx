@@ -397,6 +397,7 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
             <Button
               type="button"
               variant="link"
+              bleed
               size="sm"
               className="h-auto min-w-0 justify-start truncate p-0 text-left"
               title={site.name}
