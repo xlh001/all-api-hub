@@ -201,6 +201,8 @@
   "searchableSelect": {
     "searchPlaceholder": "搜索...",
     "empty": "未找到匹配项",
+    "noOptionsAllowCustom": "暂无可选项，可输入创建",
+    "noOptions": "暂无可选项",
     "useValue": "使用“{{value}}”"
   },
   "repeatableInput": {

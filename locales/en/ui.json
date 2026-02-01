@@ -201,6 +201,8 @@
   "searchableSelect": {
     "searchPlaceholder": "Search...",
     "empty": "No results found",
+    "noOptionsAllowCustom": "No options available. Type to create one",
+    "noOptions": "No options available",
     "useValue": "Use \"{{value}}\""
   },
   "repeatableInput": {

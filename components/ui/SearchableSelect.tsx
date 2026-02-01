@@ -112,7 +112,16 @@ export function SearchableSelect({
   const resolvedSearchPlaceholder =
     searchPlaceholder ?? t("searchableSelect.searchPlaceholder")
 
-  const resolvedEmptyMessage = emptyMessage ?? t("searchableSelect.empty")
+  // Provide a better default empty-state message when there are no options at all,
+  // especially for allowCustomValue flows where the user is expected to type.
+  const defaultEmptyMessage =
+    options.length === 0
+      ? allowCustomValue
+        ? t("searchableSelect.noOptionsAllowCustom")
+        : t("searchableSelect.noOptions")
+      : t("searchableSelect.empty")
+
+  const resolvedEmptyMessage = emptyMessage ?? defaultEmptyMessage
 
   const isDisabled = disabled ?? false
 
@@ -159,7 +168,18 @@ export function SearchableSelect({
             onValueChange={setSearchTerm}
           />
           <CommandList>
-            <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
+            {options.length === 0 && !canUseCustomValue ? (
+              <div
+                data-slot="searchable-select-empty"
+                className="py-6 text-center text-sm"
+              >
+                {resolvedEmptyMessage}
+              </div>
+            ) : null}
+
+            {options.length > 0 ? (
+              <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
+            ) : null}
             <CommandGroup>
               {canUseCustomValue ? (
                 <CommandItem
