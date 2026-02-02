@@ -145,7 +145,10 @@ export function SearchableSelect({
             <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
           }
         >
-          {displayedLabel}
+          {/* Prevent long option labels from overflowing the trigger button. */}
+          <span className="min-w-0 flex-1 truncate text-left">
+            {displayedLabel}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-(--radix-popper-anchor-width) p-0">
