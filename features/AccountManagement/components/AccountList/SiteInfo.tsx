@@ -394,12 +394,12 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
 
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             {/* Keep the site URL clickable even when the account is disabled so users can still open the provider site. */}
+            {/* Avoid `bleed`/non-shrinking button layout that can overflow into the action buttons column. */}
             <Button
               type="button"
               variant="link"
-              bleed
               size="sm"
-              className="h-auto min-w-0 justify-start truncate p-0 text-left"
+              className="h-auto min-w-0 flex-1 shrink justify-start p-0 text-left"
               title={site.name}
               onClick={handleOpenAccountSite}
             >
@@ -409,7 +409,9 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
             </Button>
 
             {checkInIndicator && (
-              <div className="flex items-center">{checkInIndicator}</div>
+              <div className="flex shrink-0 items-center">
+                {checkInIndicator}
+              </div>
             )}
           </div>
         </div>

@@ -67,7 +67,14 @@ describe("SiteInfo", () => {
 
     expect(screen.getByText("list.site.disabled")).toBeInTheDocument()
 
-    await user.click(screen.getByRole("button", { name: "Site" }))
+    const siteLinkButton = screen.getByRole("button", { name: "Site" })
+
+    // Regression: The link button must be able to shrink/truncate so it doesn't overlap the row action buttons.
+    expect(siteLinkButton).toHaveClass("flex-1")
+    expect(siteLinkButton).toHaveClass("shrink")
+    expect(siteLinkButton).not.toHaveClass("w-full")
+
+    await user.click(siteLinkButton)
     expect(mockOpenAccountBaseUrl).toHaveBeenCalledTimes(1)
     expect(mockOpenAccountBaseUrl).toHaveBeenCalledWith(
       expect.objectContaining({ baseUrl: "https://example.com" }),

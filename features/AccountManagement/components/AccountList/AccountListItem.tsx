@@ -40,7 +40,8 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
       >
         <div className="flex w-full min-w-0 items-center gap-1 sm:gap-2">
           {/* 左侧：站点信息 - 可压缩 */}
-          <div className="min-w-[60px] flex-1 sm:min-w-[80px]">
+          {/* Clip any accidental overflow so long names/links never overlap the middle action buttons. */}
+          <div className="min-w-[60px] flex-1 overflow-x-hidden sm:min-w-[80px]">
             <SiteInfo site={site} highlights={highlights} />
           </div>
 
