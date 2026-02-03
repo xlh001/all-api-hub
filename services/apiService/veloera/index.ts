@@ -1,8 +1,22 @@
+import i18next from "i18next"
+
+import {
+  determineHealthStatus,
+  fetchAccountQuota,
+  fetchTodayIncome,
+  fetchTodayUsage,
+} from "~/services/apiService/common"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
-import type { ApiServiceRequest } from "~/services/apiService/common/type"
+import type {
+  AccountData,
+  ApiServiceAccountRequest,
+  ApiServiceRequest,
+  RefreshAccountResult,
+} from "~/services/apiService/common/type"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
+import { CheckInConfig, SiteHealthStatus } from "~/types"
 import type {
   CreateChannelPayload,
   ManagedSiteChannel,
@@ -261,5 +275,103 @@ export async function searchChannel(
   } catch (error) {
     logger.error("Failed to search channels", error)
     return null
+  }
+}
+
+/**
+ * Fetch check-in capability for the user.
+ * @param request ApiServiceRequest.
+ * @returns True/false when available; undefined if unsupported or errors.
+ */
+export async function fetchCheckInStatus(
+  request: ApiServiceRequest,
+): Promise<boolean | undefined> {
+  try {
+    const checkInData = await fetchApiData<{ can_check_in?: boolean }>(
+      request,
+      {
+        endpoint: "/api/user/check_in_status",
+      },
+    )
+    // 仅当 can_check_in 明确为 true 或 false 时才返回，否则返回 undefined
+    if (typeof checkInData.can_check_in === "boolean") {
+      return checkInData.can_check_in
+    }
+    return undefined
+  } catch (error) {
+    // 如果接口不存在或返回错误（如 404 Not Found），则认为不支持签到功能
+    if (
+      error instanceof ApiError &&
+      (error.statusCode === 404 || error.statusCode === 500)
+    ) {
+      return undefined
+    }
+    logger.warn("获取签到状态失败:", error)
+    return undefined // 其他错误也视为不支持
+  }
+}
+
+/**
+ * Refresh a single account's data and return health status.
+ * @param request ApiServiceRequest (use `request.checkIn` for check-in config).
+ * @returns Success flag, data (when success), and health status.
+ */
+export async function refreshAccountData(
+  request: ApiServiceAccountRequest,
+): Promise<RefreshAccountResult> {
+  try {
+    const data = await fetchAccountData(request)
+    return {
+      success: true,
+      data,
+      healthStatus: {
+        status: SiteHealthStatus.Healthy,
+        message: i18next.t("account:healthStatus.normal"),
+      },
+    }
+  } catch (error) {
+    logger.error("刷新账号数据失败", error)
+    return {
+      success: false,
+      healthStatus: determineHealthStatus(error),
+    }
+  }
+}
+
+/**
+ * Fetch full account snapshot (quota, usage, income, check-in).
+ * @param request ApiServiceRequest (use `request.checkIn` for check-in config).
+ * @returns Aggregated account data with check-in state.
+ */
+export async function fetchAccountData(
+  request: ApiServiceAccountRequest,
+): Promise<AccountData> {
+  const resolvedCheckIn: CheckInConfig = request.checkIn
+
+  const quotaPromise = fetchAccountQuota(request)
+  const todayUsagePromise = fetchTodayUsage(request)
+  const todayIncomePromise = fetchTodayIncome(request)
+  const checkInPromise = resolvedCheckIn?.enableDetection
+    ? fetchCheckInStatus(request)
+    : Promise.resolve<boolean | undefined>(undefined)
+
+  const [quota, todayUsage, todayIncome, canCheckIn] = await Promise.all([
+    quotaPromise,
+    todayUsagePromise,
+    todayIncomePromise,
+    checkInPromise,
+  ])
+
+  return {
+    quota,
+    ...todayUsage,
+    ...todayIncome,
+    checkIn: {
+      ...resolvedCheckIn,
+      siteStatus: {
+        ...(resolvedCheckIn.siteStatus ?? {}),
+        isCheckedInToday: !(canCheckIn ?? true),
+      },
+    },
   }
 }
