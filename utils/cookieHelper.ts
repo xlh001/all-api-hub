@@ -19,7 +19,7 @@ interface CookieCache {
 }
 
 const cookieCache = new Map<string, CookieCache>()
-const CACHE_DURATION = 10000 // 10秒缓存
+const CACHE_DURATION = 5000 // 5秒缓存
 
 const buildCacheKey = (url: string, includeSession: boolean) =>
   includeSession ? url : `${url}__no_session`
