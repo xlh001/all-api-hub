@@ -1,7 +1,3 @@
-/**
- * Firefox Cookie 助手（WebRequest 方案）
- * 使用 WebRequest 拦截器自动注入 Cookie
- */
 import { checkCookieInterceptorRequirement } from "~/entrypoints/background/cookieInterceptor"
 import { mergeCookieHeaders } from "~/utils/cookieString"
 import { createLogger } from "~/utils/logger"
@@ -11,18 +7,6 @@ import { isProtectionBypassFirefoxEnv } from "~/utils/protectionBypass"
  * Unified logger scoped to the cookie helper utilities.
  */
 const logger = createLogger("CookieHelper")
-
-// Cookie 缓存
-interface CookieCache {
-  cookies: string
-  timestamp: number
-}
-
-const cookieCache = new Map<string, CookieCache>()
-const CACHE_DURATION = 5000 // 5秒缓存
-
-const buildCacheKey = (url: string, includeSession: boolean) =>
-  includeSession ? url : `${url}__no_session`
 
 const normalizeHeaders = (
   headers: HeadersInit = {},
@@ -60,13 +44,6 @@ export async function getCookieHeaderForUrl(
   options: { includeSession?: boolean } = {},
 ): Promise<string> {
   const includeSession = options.includeSession ?? true
-  const cacheKey = buildCacheKey(url, includeSession)
-  // 检查缓存
-  const cached = cookieCache.get(cacheKey)
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    logger.debug("使用缓存 Cookie", { url })
-    return cached.cookies
-  }
 
   try {
     // 读取 cookies
@@ -95,31 +72,11 @@ export async function getCookieHeaderForUrl(
 
     logger.debug("获取到 Cookie", { url, cookieCount: validCookies.length })
 
-    // 更新缓存
-    if (cookieHeader) {
-      cookieCache.set(cacheKey, {
-        cookies: cookieHeader,
-        timestamp: Date.now(),
-      })
-    }
-
     return cookieHeader
   } catch (error) {
     logger.warn("获取 Cookie 失败", error)
     return ""
   }
-}
-
-/**
- * 清除 Cookie 缓存
- */
-export function clearCookieCache(url?: string): void {
-  if (url) {
-    cookieCache.delete(buildCacheKey(url, true))
-    cookieCache.delete(buildCacheKey(url, false))
-    return
-  }
-  cookieCache.clear()
 }
 
 /**
