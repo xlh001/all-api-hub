@@ -135,7 +135,7 @@
     "checkinFailed": "签到失败",
     "checkinSuccessful": "签到成功",
     "alreadyCheckedToday": "今日已签到",
-    "endpointNotSupported": "不支持该签到接口",
+    "endpointNotSupported": "不支持该签到接口，请检查账号的站点类型与实际站点是否相同",
     "unknownError": "发生未知错误"
   },
   "providerWong": {

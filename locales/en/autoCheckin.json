@@ -135,7 +135,7 @@
     "checkinFailed": "Check-in failed",
     "checkinSuccessful": "Check-in successful",
     "alreadyCheckedToday": "Already checked in today",
-    "endpointNotSupported": "Check-in endpoint not supported",
+    "endpointNotSupported": "This check-in endpoint is not supported. Please check if your account's site type is the same as the actual site.",
     "unknownError": "Unknown error occurred"
   },
   "providerWong": {
