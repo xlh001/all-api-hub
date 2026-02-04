@@ -1,5 +1,6 @@
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { AccountAutoRefresh } from "~/types/accountAutoRefresh"
+import { sendRuntimeMessage } from "~/utils/browserApi"
 import { createLogger } from "~/utils/logger"
 
 import { getErrorMessage } from "../utils/error"
@@ -178,23 +179,26 @@ class AutoRefreshService {
   private notifyFrontend(type: string, data: any) {
     try {
       // 向所有连接的客户端发送消息
-      browser.runtime
-        .sendMessage({
+      void sendRuntimeMessage(
+        {
           type: "AUTO_REFRESH_UPDATE",
           payload: { type, data },
-        })
-        .catch((error) => {
-          // 静默处理"没有接收者"的错误（popup可能没打开）
-          if (
-            String(error?.message || "").includes(
-              "receiving end does not exist",
-            )
-          ) {
-            logger.debug("前端未打开，跳过通知")
-          } else {
-            logger.warn("通知前端失败", error)
-          }
-        })
+        },
+        { maxAttempts: 1 },
+      ).catch((error) => {
+        const errorMessage = getErrorMessage(error)
+
+        // 静默处理"没有接收者"的错误（popup可能没打开）
+        if (
+          /Receiving end does not exist/i.test(errorMessage) ||
+          /Could not establish connection/i.test(errorMessage)
+        ) {
+          logger.debug("前端未打开，跳过通知")
+          return
+        }
+
+        logger.warn("通知前端失败", error)
+      })
     } catch (error) {
       // 静默处理错误，避免影响后台刷新
       logger.warn("发送消息异常，可能前端未打开", error)

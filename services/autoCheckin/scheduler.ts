@@ -32,6 +32,7 @@ import {
   getAlarm,
   hasAlarmsAPI,
   onAlarm,
+  sendRuntimeMessage,
 } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 import { createLogger } from "~/utils/logger"
@@ -215,7 +216,7 @@ class AutoCheckinScheduler {
     }
 
     try {
-      await browser.runtime.sendMessage(message)
+      await sendRuntimeMessage(message, { maxAttempts: 1 })
     } catch (error) {
       const errorMessage = getErrorMessage(error)
       // Ignore "no receiver" errors (popup/options closed). Log others for diagnostics.
@@ -1250,10 +1251,13 @@ class AutoCheckinScheduler {
 
     if (params?.requestId) {
       try {
-        await browser.runtime.sendMessage({
-          action: RuntimeActionIds.AutoCheckinPretriggerStarted,
-          requestId: params.requestId,
-        })
+        await sendRuntimeMessage(
+          {
+            action: RuntimeActionIds.AutoCheckinPretriggerStarted,
+            requestId: params.requestId,
+          },
+          { maxAttempts: 1 },
+        )
       } catch {
         // Ignore if no UI is listening (popup closed, no receivers, etc.).
       }

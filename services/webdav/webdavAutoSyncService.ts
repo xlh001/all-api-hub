@@ -21,6 +21,7 @@ import {
   getAlarm,
   hasAlarmsAPI,
   onAlarm,
+  sendRuntimeMessage,
 } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 import { createLogger } from "~/utils/logger"
@@ -670,23 +671,26 @@ class WebdavAutoSyncService {
   private notifyFrontend(type: string, data: any) {
     try {
       // 向所有连接的客户端发送消息
-      browser.runtime
-        .sendMessage({
+      void sendRuntimeMessage(
+        {
           type: "WEBDAV_AUTO_SYNC_UPDATE",
           payload: { type, data },
-        })
-        .catch((error) => {
-          // 静默处理"没有接收者"的错误（popup可能没打开）
-          if (
-            String(error?.message || "").includes(
-              "receiving end does not exist",
-            )
-          ) {
-            logger.debug("前端未打开，跳过通知")
-          } else {
-            logger.warn("通知前端失败", error)
-          }
-        })
+        },
+        { maxAttempts: 1 },
+      ).catch((error) => {
+        const errorMessage = getErrorMessage(error)
+
+        // 静默处理"没有接收者"的错误（popup可能没打开）
+        if (
+          /Receiving end does not exist/i.test(errorMessage) ||
+          /Could not establish connection/i.test(errorMessage)
+        ) {
+          logger.debug("前端未打开，跳过通知")
+          return
+        }
+
+        logger.warn("通知前端失败", error)
+      })
     } catch (error) {
       // 静默处理错误，避免影响后台同步
       logger.warn("发送消息异常，可能前端未打开", error)

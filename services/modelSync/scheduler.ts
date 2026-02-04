@@ -18,6 +18,7 @@ import {
   getAlarm,
   hasAlarmsAPI,
   onAlarm,
+  sendRuntimeMessage,
 } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
 import { createLogger } from "~/utils/logger"
@@ -445,14 +446,15 @@ class ModelSyncScheduler {
    */
   private notifyProgress() {
     try {
-      browser.runtime
-        .sendMessage({
+      void sendRuntimeMessage(
+        {
           type: "MANAGED_SITE_MODEL_SYNC_PROGRESS",
           payload: this.currentProgress,
-        })
-        .catch(() => {
-          // Silent: frontend might not be open
-        })
+        },
+        { maxAttempts: 1 },
+      ).catch(() => {
+        // Silent: frontend might not be open
+      })
     } catch {
       // Silent: frontend might not be open
     }
