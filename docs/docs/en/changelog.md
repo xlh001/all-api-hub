@@ -8,6 +8,27 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting issues**: You can enable console logs in "Settings → General → Logs" and attach reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.13.0
+- **New Features:**
+  - Account Management: Added a "Sign-in status expired" prompt – when the "Signed in today / Not signed in" status was not checked today, an orange warning icon will be displayed; clicking it allows for a one-click refresh of the account data, preventing misleading old statuses.
+  - Interface: Multi-select control upgraded to a more compact selector (saves space, supports search, and clearer display of selected items).
+- **Bug Fixes:**
+  - Veloera: Fixed account data refresh and sign-in logic, improving usability.
+  - Cookie Authentication: Removed the Cookie caching mechanism to reduce exceptions caused by still reading old values after a Cookie update.
+
+**Location Hints:**
+- Sign-in status expired prompt: In "Settings → Account Management", within the account list, next to the site information's sign-in icon.
+
+## 3.12.0
+- **New Features:**
+  - Key Management: Added "Export to Kilo Code" – generates `providerProfiles` configuration for Kilo Code / Roo Code, supporting copying `apiConfigs` snippets or downloading `settings` JSON for import (import is additive, it will not clear your existing providers).
+- **Bug Fixes:**
+  - Account Management: Fixed layout overflow issues caused by excessively long text like site names, now automatically truncates display.
+  - Dropdown Selector: Optimized empty state prompts and fixed overflow issues when option text is too long.
+
+**Location Hints:**
+- Export to Kilo Code: In "Settings → Key Management", in the key list, click the Kilo Code icon in the top right corner of a key.
+
 ## 3.11.0
 - **New Features:**
   - New API Channel Management: Added "Duplicate Channel" warning—a warning dialog will pop up when identical/similar channels are detected, allowing you to choose whether to continue creation or cancel (no longer blocking creation with an error Toast).
