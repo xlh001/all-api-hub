@@ -25,6 +25,26 @@ describe("AutoCheckin ResultsTable troubleshooting hints", () => {
     ).toBeInTheDocument()
   })
 
+  it("shows noTabWithId hint when a temporary tab is closed before the flow finishes", async () => {
+    render(
+      <ResultsTable
+        results={[
+          {
+            accountId: "account-3",
+            accountName: "Account 3",
+            status: CHECKIN_RESULT_STATUS.FAILED,
+            rawMessage: "No tab with id: 123.",
+            timestamp: 0,
+          },
+        ]}
+      />,
+    )
+
+    expect(
+      await screen.findByText("execution.hints.noTabWithId"),
+    ).toBeInTheDocument()
+  })
+
   it("does not show invalidAccessToken hint for unrelated failure messages", async () => {
     render(
       <ResultsTable

@@ -76,6 +76,16 @@ export default function ResultsTable({
   }
 
   /**
+   * Returns true when the failure message indicates a temporary tab opened by the extension
+   * has been closed before the flow completed (e.g. "No tab with id: 123").
+   */
+  const isNoTabWithIdMessage = (message: string): boolean => {
+    if (!message) return false
+
+    return /no tab with id[: ]\s*\d+/i.test(message)
+  }
+
+  /**
    * Map certain failure messages to a concise, localized troubleshooting hint shown under the raw message.
    */
   const getTroubleshootingHintKey = (
@@ -89,6 +99,10 @@ export default function ResultsTable({
 
     if (isInvalidAccessTokenMessage(message)) {
       return "execution.hints.invalidAccessToken"
+    }
+
+    if (isNoTabWithIdMessage(message)) {
+      return "execution.hints.noTabWithId"
     }
 
     return null

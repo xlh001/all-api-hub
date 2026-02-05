@@ -88,7 +88,8 @@
       "openManual": "Manual sign-in"
     },
     "hints": {
-      "invalidAccessToken": "Solution: The Access Token may have expired. Please log in to the site again, then in 'Account Management → Edit Account', automatically re-identify/refresh the Access Token. If this issue still occurs after automatic identification, please manually obtain and modify the Access Token."
+      "invalidAccessToken": "Solution: The Access Token may have expired. Please log in to the site again, then in 'Account Management → Edit Account', automatically re-identify/refresh the Access Token. If this issue still occurs after automatic identification, please manually obtain and modify the Access Token.",
+      "noTabWithId": "Tip: Don't close any tab/window opened automatically by the extension. The extension will close them after a short time. If you must close them manually, wait at least 1 minute before closing."
     },
     "filters": {
       "all": "All",
