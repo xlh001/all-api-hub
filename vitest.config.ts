@@ -44,12 +44,10 @@ export default defineConfig({
       ],
       // Coverage thresholds (can be adjusted - starting with lower targets)
       thresholds: {
-        global: {
-          statements: 5,
-          branches: 5,
-          functions: 5,
-          lines: 5,
-        },
+        statements: 55,
+        branches: 45,
+        functions: 50,
+        lines: 55,
       },
     },
 
