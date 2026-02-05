@@ -96,6 +96,14 @@ jobs:
 
             const marker = "<!-- pr-build-artifact -->";
             const commitSha = String(metadata.commitSha || workflowRun.head_sha || "");
+            // Link the short SHA to the GitHub commit page for quick navigation.
+            const shortSha = commitSha ? commitSha.slice(0, 7) : "";
+            const commitUrl = commitSha
+              ? `https://github.com/${context.repo.owner}/${context.repo.repo}/commit/${commitSha}`
+              : "";
+            const commitDisplay = commitSha
+              ? "[`" + shortSha + "`](" + commitUrl + ")"
+              : "`(unknown)`";
 
             const artifactFiles = Array.isArray(metadata.artifactFiles) ? metadata.artifactFiles : [];
             const artifactList = artifactFiles.length
@@ -106,7 +114,7 @@ jobs:
 
             const body = [
               marker,
-              `**Preview build ready** for commit \`${commitSha.slice(0, 7)}\`.`,
+              `**Preview build ready** for commit ${commitDisplay}.`,
               "",
               "Artifacts:",
               artifactList,
