@@ -35,7 +35,7 @@
     "autoRefresh": "自动刷新",
     "autoRefreshDesc": "定期自动刷新账号数据",
     "refreshInterval": "刷新间隔",
-    "refreshIntervalDesc": "设置自动刷新的时间间隔（默认360秒，建议不要设置过小以避免频繁请求）",
+    "refreshIntervalDesc": "设置自动刷新的时间间隔（默认{{defaultInterval}}秒，建议不要设置过小以避免频繁请求）",
     "refreshIntervalInvalid": "请输入有效的刷新间隔（至少 10 秒）。",
     "refreshOnOpen": "打开插件时自动刷新",
     "refreshOnOpenDesc": "当打开插件弹出窗口时自动刷新账号数据",

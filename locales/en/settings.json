@@ -35,7 +35,7 @@
     "autoRefresh": "Auto Refresh",
     "autoRefreshDesc": "Regularly auto-refresh account data",
     "refreshInterval": "Refresh Interval",
-    "refreshIntervalDesc": "Set the time interval for auto-refresh (default 360 seconds, it is recommended not to set too small to avoid frequent requests)",
+    "refreshIntervalDesc": "Set the time interval for auto-refresh (default {{defaultInterval}} seconds, it is recommended not to set too small to avoid frequent requests)",
     "refreshIntervalInvalid": "Please enter a valid refresh interval (at least 10 seconds).",
     "refreshOnOpen": "Auto-refresh when opening plugin",
     "refreshOnOpenDesc": "Auto-refresh account data when opening the plugin popup",

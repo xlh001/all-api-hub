@@ -26,6 +26,7 @@ import type {
   SortField,
   SortOrder,
 } from "~/types"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 import type { AutoCheckinPreferences } from "~/types/autoCheckin"
 import type { LogLevel } from "~/types/logging"
 import type { ModelRedirectPreferences } from "~/types/managedSiteModelRedirect"
@@ -1051,10 +1052,18 @@ export const UserPreferencesProvider = ({
     sortOrder: preferences?.sortOrder || UI_CONSTANTS.SORT.DEFAULT_ORDER,
     sortingPriorityConfig:
       preferences?.sortingPriorityConfig || DEFAULT_SORTING_PRIORITY_CONFIG,
-    autoRefresh: preferences?.accountAutoRefresh?.enabled ?? true,
-    refreshInterval: preferences?.accountAutoRefresh?.interval ?? 360,
-    minRefreshInterval: preferences?.accountAutoRefresh?.minInterval ?? 60,
-    refreshOnOpen: preferences?.accountAutoRefresh?.refreshOnOpen ?? true,
+    autoRefresh:
+      preferences?.accountAutoRefresh?.enabled ??
+      DEFAULT_ACCOUNT_AUTO_REFRESH.enabled,
+    refreshInterval:
+      preferences?.accountAutoRefresh?.interval ??
+      DEFAULT_ACCOUNT_AUTO_REFRESH.interval,
+    minRefreshInterval:
+      preferences?.accountAutoRefresh?.minInterval ??
+      DEFAULT_ACCOUNT_AUTO_REFRESH.minInterval,
+    refreshOnOpen:
+      preferences?.accountAutoRefresh?.refreshOnOpen ??
+      DEFAULT_ACCOUNT_AUTO_REFRESH.refreshOnOpen,
     actionClickBehavior: preferences?.actionClickBehavior ?? "popup",
     openChangelogOnUpdate:
       preferences?.openChangelogOnUpdate ??

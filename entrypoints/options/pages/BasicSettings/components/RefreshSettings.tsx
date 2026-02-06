@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { SettingSection } from "~/components/SettingSection"
 import { Card, CardItem, CardList, Input, Switch } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 import { showUpdateToast } from "~/utils/toastHelpers"
 
 /**
@@ -98,7 +99,9 @@ export default function RefreshSettings() {
           {autoRefresh && (
             <CardItem
               title={t("refresh.refreshInterval")}
-              description={t("refresh.refreshIntervalDesc")}
+              description={t("refresh.refreshIntervalDesc", {
+                defaultInterval: DEFAULT_ACCOUNT_AUTO_REFRESH.interval,
+              })}
               rightContent={
                 <div className="flex items-center space-x-2">
                   <Input
@@ -112,7 +115,7 @@ export default function RefreshSettings() {
                         ;(e.currentTarget as HTMLInputElement).blur()
                       }
                     }}
-                    placeholder="360"
+                    placeholder={String(DEFAULT_ACCOUNT_AUTO_REFRESH.interval)}
                     className="w-24"
                   />
                   <span className="dark:text-dark-text-secondary text-sm text-gray-500">
@@ -150,7 +153,7 @@ export default function RefreshSettings() {
                       ;(e.currentTarget as HTMLInputElement).blur()
                     }
                   }}
-                  placeholder="60"
+                  placeholder={String(DEFAULT_ACCOUNT_AUTO_REFRESH.minInterval)}
                   className="w-24"
                 />
                 <span className="dark:text-dark-text-secondary text-sm text-gray-500">

@@ -8,6 +8,7 @@ import RefreshSettings from "~/entrypoints/options/pages/BasicSettings/component
 import commonEn from "~/locales/en/common.json"
 import settingsEn from "~/locales/en/settings.json"
 import { testI18n } from "~/tests/test-utils/i18n"
+import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 
 vi.mock("~/contexts/UserPreferencesContext", () => ({
   useUserPreferencesContext: vi.fn(),
@@ -48,7 +49,9 @@ describe("RefreshSettings (min refresh interval)", () => {
 
     renderSubject()
 
-    const input = screen.getByPlaceholderText("60")
+    const input = screen.getByPlaceholderText(
+      String(DEFAULT_ACCOUNT_AUTO_REFRESH.minInterval),
+    )
     fireEvent.change(input, { target: { value: "301" } })
     fireEvent.blur(input)
 
@@ -74,7 +77,9 @@ describe("RefreshSettings (min refresh interval)", () => {
 
     renderSubject()
 
-    const input = screen.getByPlaceholderText("60") as HTMLInputElement
+    const input = screen.getByPlaceholderText(
+      String(DEFAULT_ACCOUNT_AUTO_REFRESH.minInterval),
+    ) as HTMLInputElement
     fireEvent.change(input, { target: { value: "-1" } })
     fireEvent.blur(input)
 
