@@ -158,6 +158,7 @@ describe("accountStorage core behaviors", () => {
         today_completion_tokens: 0,
         today_quota_consumption: 0,
         today_requests_count: 0,
+        today_income: 0,
         checkIn: {
           ...(request.checkIn ?? { enableDetection: false }),
           siteStatus: {
@@ -718,9 +719,48 @@ describe("accountStorage core behaviors", () => {
         accessToken: "token",
       },
     })
+    expect(mockFetchTodayIncome).not.toHaveBeenCalled()
     const updatedAccount = await accountStorage.getAccountById("known-site")
     expect(updatedAccount?.site_type).toBe("one-api")
     expect(updatedAccount?.checkIn?.enableDetection).toBe(false)
+  })
+
+  it("refreshAccount should persist today_income from refreshAccountData", async () => {
+    const account = createAccount({
+      id: "income-sync",
+      site_url: "https://income.example.com",
+      site_type: "one-api",
+      checkIn: { enableDetection: true },
+    })
+    seedStorage([account])
+
+    mockRefreshAccountData.mockResolvedValueOnce({
+      success: true,
+      data: {
+        quota: 0,
+        today_prompt_tokens: 0,
+        today_completion_tokens: 0,
+        today_quota_consumption: 0,
+        today_requests_count: 0,
+        today_income: 123_456,
+        checkIn: {
+          enableDetection: true,
+          siteStatus: {
+            isCheckedInToday: false,
+          },
+        },
+      },
+      healthStatus: {
+        status: SiteHealthStatus.Healthy,
+        message: "",
+      },
+    })
+
+    await accountStorage.refreshAccount("income-sync", true)
+
+    const updatedAccount = await accountStorage.getAccountById("income-sync")
+    expect(updatedAccount?.account_info.today_income).toBe(123_456)
+    expect(mockFetchTodayIncome).not.toHaveBeenCalled()
   })
 
   it("refreshAccount should persist health code for actionable UI", async () => {
@@ -757,6 +797,7 @@ describe("accountStorage core behaviors", () => {
         today_completion_tokens: 0,
         today_quota_consumption: 0,
         today_requests_count: 0,
+        today_income: 0,
         checkIn: {
           enableDetection: true,
           siteStatus: {

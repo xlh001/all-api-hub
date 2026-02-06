@@ -806,36 +806,7 @@ class AccountStorageService {
           today_completion_tokens: result.data.today_completion_tokens,
           today_quota_consumption: result.data.today_quota_consumption,
           today_requests_count: result.data.today_requests_count,
-        }
-      }
-
-      // 获取今日收入数据
-      try {
-        const todayIncome = await getApiService(
-          account.site_type,
-        ).fetchTodayIncome({
-          baseUrl: account.site_url,
-          accountId: account.id,
-          auth: {
-            authType: account.authType,
-            userId: account.account_info.id,
-            accessToken: account.account_info.access_token,
-          },
-        })
-        updateData.account_info = {
-          ...(updateData.account_info || account.account_info),
-          today_income: todayIncome.today_income,
-        }
-      } catch (error) {
-        logger.warn("获取账号今日收入失败", {
-          accountId: account.id,
-          siteName: account.site_name,
-          error,
-        })
-        // 如果获取收入失败，设置为0
-        updateData.account_info = {
-          ...(updateData.account_info || account.account_info),
-          today_income: 0,
+          today_income: result.data.today_income,
         }
       }
 
