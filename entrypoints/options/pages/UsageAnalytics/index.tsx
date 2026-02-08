@@ -1062,7 +1062,7 @@ export default function UsageAnalytics() {
             onChange={setSelectedSiteNames}
             includeAllOption
             allLabel={t("filters.allSites")}
-            maxVisibleLines={6}
+            maxVisibleLines={2}
             disabled={siteOptions.length === 0}
           />
 
