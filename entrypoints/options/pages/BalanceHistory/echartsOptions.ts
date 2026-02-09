@@ -1,6 +1,23 @@
 import type { EChartsOption } from "~/components/charts/echarts"
 
 /**
+ * ECharts tooltip value can be a scalar or an array (multi-dimension values).
+ * Normalize it to a scalar so our simple money formatter can handle it.
+ */
+function normalizeTooltipValue(value: unknown): number | string {
+  if (typeof value === "number" || typeof value === "string") return value
+  if (value instanceof Date) return value.valueOf()
+
+  if (Array.isArray(value) && value.length > 0) {
+    const first = value[0]
+    if (typeof first === "number" || typeof first === "string") return first
+    if (first instanceof Date) return first.valueOf()
+  }
+
+  return ""
+}
+
+/**
  * Build a single-series line chart option for the balance trend.
  *
  * `null` values are treated as gaps so users can spot missing days.
@@ -11,12 +28,32 @@ export function buildBalanceTrendOption(params: {
   seriesLabel: string
   yAxisLabel?: string
   isDark?: boolean
+  axisLabelFormatter?: (value: number | string, index: number) => string
+  valueFormatter?: (value: number | string, dataIndex: number) => string
 }): EChartsOption {
-  const { dayKeys, values, seriesLabel, yAxisLabel, isDark = false } = params
+  const {
+    dayKeys,
+    values,
+    seriesLabel,
+    yAxisLabel,
+    isDark = false,
+    axisLabelFormatter,
+    valueFormatter,
+  } = params
+
+  const tooltipValueFormatter = valueFormatter
+    ? (value: unknown, dataIndex: number) =>
+        valueFormatter(normalizeTooltipValue(value), dataIndex)
+    : undefined
 
   return {
     backgroundColor: "transparent",
-    tooltip: { trigger: "axis" },
+    tooltip: {
+      trigger: "axis",
+      ...(tooltipValueFormatter
+        ? { valueFormatter: tooltipValueFormatter }
+        : {}),
+    },
     grid: { left: 16, right: 16, top: 16, bottom: 24, containLabel: true },
     xAxis: {
       type: "category",
@@ -27,7 +64,10 @@ export function buildBalanceTrendOption(params: {
     yAxis: {
       type: "value",
       name: yAxisLabel,
-      axisLabel: { color: isDark ? "#9ca3af" : "#6b7280" },
+      axisLabel: {
+        color: isDark ? "#9ca3af" : "#6b7280",
+        ...(axisLabelFormatter ? { formatter: axisLabelFormatter } : {}),
+      },
       splitLine: { lineStyle: { color: isDark ? "#1f2937" : "#f3f4f6" } },
     },
     series: [
@@ -60,6 +100,8 @@ export function buildIncomeOutcomeBarOption(params: {
   outcomeLabel: string
   yAxisLabel?: string
   isDark?: boolean
+  axisLabelFormatter?: (value: number | string, index: number) => string
+  valueFormatter?: (value: number | string, dataIndex: number) => string
 }): EChartsOption {
   const {
     dayKeys,
@@ -69,11 +111,23 @@ export function buildIncomeOutcomeBarOption(params: {
     outcomeLabel,
     yAxisLabel,
     isDark = false,
+    axisLabelFormatter,
+    valueFormatter,
   } = params
+
+  const tooltipValueFormatter = valueFormatter
+    ? (value: unknown, dataIndex: number) =>
+        valueFormatter(normalizeTooltipValue(value), dataIndex)
+    : undefined
 
   return {
     backgroundColor: "transparent",
-    tooltip: { trigger: "axis" },
+    tooltip: {
+      trigger: "axis",
+      ...(tooltipValueFormatter
+        ? { valueFormatter: tooltipValueFormatter }
+        : {}),
+    },
     legend: {
       top: 0,
       textStyle: { color: isDark ? "#9ca3af" : "#6b7280" },
@@ -88,7 +142,10 @@ export function buildIncomeOutcomeBarOption(params: {
     yAxis: {
       type: "value",
       name: yAxisLabel,
-      axisLabel: { color: isDark ? "#9ca3af" : "#6b7280" },
+      axisLabel: {
+        color: isDark ? "#9ca3af" : "#6b7280",
+        ...(axisLabelFormatter ? { formatter: axisLabelFormatter } : {}),
+      },
       splitLine: { lineStyle: { color: isDark ? "#1f2937" : "#f3f4f6" } },
     },
     series: [
@@ -107,4 +164,3 @@ export function buildIncomeOutcomeBarOption(params: {
     ],
   }
 }
-
