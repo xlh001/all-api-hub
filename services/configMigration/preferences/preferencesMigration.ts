@@ -13,6 +13,7 @@ import {
   DEFAULT_ACCOUNT_AUTO_REFRESH,
   type AccountAutoRefresh,
 } from "~/types/accountAutoRefresh"
+import { DEFAULT_OCTOPUS_CONFIG } from "~/types/octopusConfig"
 import {
   DEFAULT_BALANCE_HISTORY_PREFERENCES,
   type BalanceHistoryPreferences,
@@ -25,7 +26,7 @@ import { migrateSortingConfig } from "./sortingConfigMigration"
 const logger = createLogger("PreferencesMigration")
 
 // Current version of the preferences schema
-export const CURRENT_PREFERENCES_VERSION = 12
+export const CURRENT_PREFERENCES_VERSION = 13
 
 /**
  * Migration function type
@@ -301,6 +302,22 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
         retentionDays,
       },
       preferencesVersion: 12,
+    }
+  },
+
+  // Version 12 -> 13: Initialize octopus config if missing
+  13: (prefs: UserPreferences): UserPreferences => {
+    logger.debug(
+      "Migrating preferences from v12 to v13 (octopus config initialization)",
+    )
+
+    const storedOctopus = (prefs as any).octopus
+    const octopus = storedOctopus ? storedOctopus : DEFAULT_OCTOPUS_CONFIG
+
+    return {
+      ...prefs,
+      octopus,
+      preferencesVersion: 13,
     }
   },
 }
