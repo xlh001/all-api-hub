@@ -458,10 +458,14 @@ export async function findMatchingChannel(
   _userId: number | string,
   accountBaseUrl: string,
   models: string[],
+  key?: string,
 ): Promise<ManagedSiteChannel | null> {
   try {
     const config = await getFullOctopusConfig()
     if (!config) return null
+
+    const normalizedDesiredKey = (key ?? "").trim()
+    const shouldMatchKey = normalizedDesiredKey.length > 0
 
     const channels = await octopusApi.listChannels(config)
 
@@ -471,10 +475,17 @@ export async function findMatchingChannel(
     const match = channels.find((ch) => {
       const chBaseUrl = ch.base_urls[0]?.url || ""
       const chModels = parseDelimitedList(ch.model)
-      return (
+      const matchesBaseAndModels =
         chBaseUrl === normalizedBase &&
         chModels.length === models.length &&
         chModels.every((m) => models.includes(m))
+
+      if (!matchesBaseAndModels) return false
+      if (!shouldMatchKey) return true
+
+      const keys = Array.isArray(ch.keys) ? ch.keys : []
+      return keys.some(
+        (item) => (item.channel_key ?? "").trim() === normalizedDesiredKey,
       )
     })
 
@@ -521,6 +532,7 @@ export async function autoConfigToOctopus(
       "",
       displaySiteData.baseUrl,
       formData.models,
+      formData.key,
     )
 
     if (existingChannel) {

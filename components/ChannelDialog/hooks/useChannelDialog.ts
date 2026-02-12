@@ -87,6 +87,7 @@ export function useChannelDialog() {
         managedConfig.userId,
         displaySiteData.baseUrl,
         formData.models,
+        formData.key,
       )
 
       if (existingChannel) {

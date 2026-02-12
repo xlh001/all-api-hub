@@ -306,6 +306,9 @@ export function buildChannelPayload(
 
 /**
  * Finds a channel that matches the account base URL and models.
+ *
+ * When `key` is provided, the match is refined to include the key to avoid treating
+ * different keys as duplicates.
  */
 export async function findMatchingChannel(
   baseUrl: string,
@@ -313,6 +316,7 @@ export async function findMatchingChannel(
   userId: number | string,
   accountBaseUrl: string,
   models: string[],
+  key?: string,
 ): Promise<ManagedSiteChannel | null> {
   const searchResults = await searchChannel(
     baseUrl,
@@ -325,12 +329,25 @@ export async function findMatchingChannel(
     return null
   }
 
+  const normalizedDesiredKey = (key ?? "").trim()
+  const shouldMatchKey = normalizedDesiredKey.length > 0
+
   return (
-    searchResults.items.find(
-      (channel: ManagedSiteChannel) =>
-        channel.base_url === accountBaseUrl &&
-        isArraysEqual(parseDelimitedList(channel.models), models),
-    ) ?? null
+    searchResults.items.find((channel: ManagedSiteChannel) => {
+      if (channel.base_url !== accountBaseUrl) return false
+      if (!isArraysEqual(parseDelimitedList(channel.models), models)) {
+        return false
+      }
+
+      if (!shouldMatchKey) return true
+
+      const candidates = (channel.key ?? "")
+        .split(/[\n,]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+
+      return candidates.includes(normalizedDesiredKey)
+    }) ?? null
   )
 }
 
@@ -366,6 +383,7 @@ export async function importToVeloera(
       veloeraUserId!,
       account.baseUrl,
       formData.models,
+      formData.key,
     )
 
     if (existingChannel) {

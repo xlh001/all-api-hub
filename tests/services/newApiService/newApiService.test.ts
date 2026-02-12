@@ -1077,6 +1077,97 @@ describe("newApiService", () => {
       expect(result).toEqual(matchingChannel)
     })
 
+    it("should refine match by key when channel key is available", async () => {
+      const { findMatchingChannel } = await import(
+        "~/services/newApiService/newApiService"
+      )
+
+      const accountBaseUrl = "https://api.example.com"
+      const channel1 = createMockNewApiChannel({
+        id: 1,
+        base_url: accountBaseUrl,
+        models: "gpt-4",
+        key: "sk-key-a",
+      })
+      const channel2 = createMockNewApiChannel({
+        id: 2,
+        base_url: accountBaseUrl,
+        models: "gpt-4",
+        key: "sk-key-b",
+      })
+
+      mockSearchChannel.mockResolvedValueOnce(
+        createMockNewApiChannelListData([channel1, channel2]),
+      )
+
+      const result = await findMatchingChannel(
+        "https://new-api.example.com",
+        "admin-token",
+        "user-123",
+        accountBaseUrl,
+        ["gpt-4"],
+        "sk-key-b",
+      )
+
+      expect(result?.id).toBe(2)
+    })
+
+    it("should not match when key mismatches and is comparable", async () => {
+      const { findMatchingChannel } = await import(
+        "~/services/newApiService/newApiService"
+      )
+
+      const accountBaseUrl = "https://api.example.com"
+      const channel = createMockNewApiChannel({
+        base_url: accountBaseUrl,
+        models: "gpt-4",
+        key: "sk-key-a",
+      })
+
+      mockSearchChannel.mockResolvedValueOnce(
+        createMockNewApiChannelListData([channel]),
+      )
+
+      const result = await findMatchingChannel(
+        "https://new-api.example.com",
+        "admin-token",
+        "user-123",
+        accountBaseUrl,
+        ["gpt-4"],
+        "sk-key-b",
+      )
+
+      expect(result).toBeNull()
+    })
+
+    it("should not match when channel key is redacted", async () => {
+      const { findMatchingChannel } = await import(
+        "~/services/newApiService/newApiService"
+      )
+
+      const accountBaseUrl = "https://api.example.com"
+      const channel = createMockNewApiChannel({
+        base_url: accountBaseUrl,
+        models: "gpt-4",
+        key: "sk-****",
+      })
+
+      mockSearchChannel.mockResolvedValueOnce(
+        createMockNewApiChannelListData([channel]),
+      )
+
+      const result = await findMatchingChannel(
+        "https://new-api.example.com",
+        "admin-token",
+        "user-123",
+        accountBaseUrl,
+        ["gpt-4"],
+        "sk-key-a",
+      )
+
+      expect(result).toBeNull()
+    })
+
     it("should return null when no matching channel found", async () => {
       const { findMatchingChannel } = await import(
         "~/services/newApiService/newApiService"

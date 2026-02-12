@@ -318,7 +318,10 @@ export function buildChannelPayload(
 }
 
 /**
- * 查找是否存在匹配的渠道
+ * 查找是否存在匹配的渠道。
+ *
+ * 默认匹配条件为 base_url + models；当传入 key 时，会进一步按 key 精确匹配，
+ * 避免把不同 key 的渠道误判为重复。
  */
 export async function findMatchingChannel(
   baseUrl: string,
@@ -326,6 +329,7 @@ export async function findMatchingChannel(
   userId: number | string,
   accountBaseUrl: string,
   models: string[],
+  key?: string,
 ): Promise<ManagedSiteChannel | null> {
   const searchResults = await searchChannel(
     baseUrl,
@@ -338,12 +342,25 @@ export async function findMatchingChannel(
     return null
   }
 
+  const normalizedDesiredKey = (key ?? "").trim()
+  const shouldMatchKey = normalizedDesiredKey.length > 0
+
   return (
-    searchResults.items.find(
-      (channel: ManagedSiteChannel) =>
-        channel.base_url === accountBaseUrl &&
-        isArraysEqual(parseDelimitedList(channel.models), models),
-    ) ?? null
+    searchResults.items.find((channel: ManagedSiteChannel) => {
+      if (channel.base_url !== accountBaseUrl) return false
+      if (!isArraysEqual(parseDelimitedList(channel.models), models)) {
+        return false
+      }
+
+      if (!shouldMatchKey) return true
+
+      const candidates = (channel.key ?? "")
+        .split(/[\n,]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+
+      return candidates.includes(normalizedDesiredKey)
+    }) ?? null
   )
 }
 
@@ -390,6 +407,7 @@ export async function importToNewApi(
       newApiUserId!,
       account.baseUrl,
       formData.models,
+      formData.key,
     )
 
     if (existingChannel) {

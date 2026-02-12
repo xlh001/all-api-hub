@@ -141,7 +141,7 @@ export interface NewApiChannel {
   type: ChannelType
   /**
    * 渠道key
-   * 通常从接口获取时该字段可能为空字符串。
+   * 通常从接口获取时该字段为空字符串，拿到原始值需要管理员用户的两步验证。
    */
   key: string
   name: string

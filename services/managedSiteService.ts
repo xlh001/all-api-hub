@@ -90,6 +90,7 @@ export interface ManagedSiteService {
     userId: number | string,
     accountBaseUrl: string,
     models: string[],
+    key?: string,
   ): Promise<ManagedSiteChannel | null>
 
   autoConfigToManagedSite(
