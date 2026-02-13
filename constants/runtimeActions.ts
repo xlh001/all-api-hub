@@ -9,6 +9,7 @@
  */
 export const RuntimeActionPrefixes = {
   AccountDialog: "accountDialog:",
+  AccountKeyRepair: "accountKeyRepair:",
   ApiCheck: "apiCheck:",
   AutoCheckin: "autoCheckin:",
   AutoCheckinPretrigger: "autoCheckinPretrigger:",
@@ -30,6 +31,15 @@ export type RuntimeActionPrefix =
   (typeof RuntimeActionPrefixes)[keyof typeof RuntimeActionPrefixes]
 
 /**
+ * Canonical runtime message `type` values used for broadcast updates.
+ *
+ * Values are part of the on-the-wire contract between extension contexts and MUST remain stable.
+ */
+export const RuntimeMessageTypes = {
+  AccountKeyRepairProgress: "ACCOUNT_KEY_REPAIR_PROGRESS",
+} as const
+
+/**
  * Canonical runtime message action IDs.
  *
  * Values are part of the on-the-wire contract between extension contexts and MUST remain stable.
@@ -38,6 +48,15 @@ export const RuntimeActionIds = {
   AccountDialogImportCookieAuthSessionCookie: composeRuntimeAction(
     RuntimeActionPrefixes.AccountDialog,
     "importCookieAuthSessionCookie",
+  ),
+
+  AccountKeyRepairStart: composeRuntimeAction(
+    RuntimeActionPrefixes.AccountKeyRepair,
+    "start",
+  ),
+  AccountKeyRepairGetProgress: composeRuntimeAction(
+    RuntimeActionPrefixes.AccountKeyRepair,
+    "getProgress",
   ),
 
   ApiCheckContextMenuTrigger: composeRuntimeAction(
