@@ -26,6 +26,7 @@
 - [Veloera](https://github.com/Veloera/Veloera)
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
+- [Sub2API](https://github.com/Wei-Shaw/sub2api)
 - [VoAPI](https://github.com/VoAPI/VoAPI)
 - [Super-API](https://github.com/SuperAI-Api/Super-API)
 
@@ -36,7 +37,7 @@
 ## 3. 添加站点
 
 ::: info 提示
-必须先使用浏览器自行登录目标中转站，这样插件的自动识别功能才能通过 Cookie 获取到您账号的 [访问令牌(Access Token)](#manual-addition)。
+必须先使用浏览器自行登录目标网站，这样插件的自动识别功能才能读取您的登录信息，并获取账号信息。
 :::
 
 ### 3.1 自动识别添加
