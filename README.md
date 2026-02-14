@@ -9,7 +9,7 @@
 
 # All API Hub – AI 中转站 & New API 管理器
 
-**开源浏览器扩展，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、查看余额、同步模型、管理密钥，并支持跨平台与云端备份。**
+**一站式管理 New API 兼容中转站账号：余额/用量看板、自动签到、密钥一键导出到常用应用、网页内 API 可用性测试、渠道与模型同步/重定向**
 
 <p align="center">
 <a href="https://github.com/qixing-jk/all-api-hub/releases">
@@ -24,9 +24,16 @@
 <a href="https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa">
   <img alt="Microsoft Edge" src="https://img.shields.io/badge/dynamic/json?label=Edge&prefix=v&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fpcokpjaffghgipcgjhapgdpeddlhblaa&logo=microsoftedge&style=flat">
 </a>
+<a href="https://t.me/qixing_chat">
+  <img alt="Telegram Group" src="https://img.shields.io/badge/Telegram-交流群-blue?logo=telegram">
+</a>
 </p>
 
 **[文档教程](https://all-api-hub.qixing1217.top/) | [快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [常见问题](https://all-api-hub.qixing1217.top/faq.html) | [更新日志](CHANGELOG.md) | [贡献指南](CONTRIBUTING.md)**
+
+💬 **加入讨论**：有使用、功能或技术问题？欢迎加入 [Telegram 交流群](https://t.me/qixing_chat) 与社区一起讨论！
+
+---
 
 </div>
 
@@ -91,7 +98,7 @@ All API Hub 作为浏览器扩展，一站式管理 New API 等中转站账号�
 > 最初基于 [One API Hub](https://github.com/fxaxg/one-api-hub) 开发，现已大幅重构扩展。数据格式保持兼容，支持直接导入
 
 
-## 🖥️ 截图展示
+## 🖼️ 界面预览
 
 <table>
   <tr>

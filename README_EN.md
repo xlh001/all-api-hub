@@ -9,7 +9,7 @@
 
 # All API Hub – AI Relay & New API Manager
 
-**Open-source browser extension for both third-party New API-compatible relays and your own New API instance: auto-detect accounts, view balances, sync models, manage keys, with cross-platform and cloud backup support**
+**One-stop management for New API-compatible relay accounts: balance/usage dashboard, automatic check-in, one-click key export to popular apps, in-page API availability testing, and channel/model sync & redirect**
 
 <p align="center">
 <a href="https://github.com/qixing-jk/all-api-hub/releases">
@@ -24,9 +24,16 @@
 <a href="https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa">
   <img alt="Microsoft Edge" src="https://img.shields.io/badge/dynamic/json?label=Edge&prefix=v&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fpcokpjaffghgipcgjhapgdpeddlhblaa&logo=microsoftedge&style=flat">
 </a>
+<a href="https://t.me/qixing_chat">
+  <img alt="Telegram Group" src="https://img.shields.io/badge/Telegram-交流群-blue?logo=telegram">
+</a>
 </p>
 
 **[Documentation](https://all-api-hub.qixing1217.top/en) | [Getting Started](https://all-api-hub.qixing1217.top/en/get-started.html) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [Changelog](CHANGELOG.md) | [Contributing](CONTRIBUTING.md)**
+
+💬 **Join the discussion**: Have usage, feature, or technical questions? Join the [Telegram group](https://t.me/qixing_chat) and chat with the community!
+
+---
 
 </div>
 
@@ -91,7 +98,7 @@ All API Hub is a browser extension for one-stop management of New API-style rela
 > [!NOTE]
 > Originally based on [One API Hub](https://github.com/fxaxg/one-api-hub), now significantly refactored and expanded. Data format remains compatible, supporting direct import
 
-## 🖥️ Screenshots
+## 🖼️ UI Preview
 
 <table>
   <tr>
