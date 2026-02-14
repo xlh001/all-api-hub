@@ -32,9 +32,9 @@
 
 ## 📖 Introduction
 
-Nowadays, within the AI ecosystem, there's a growing number of aggregated relay stations and custom dashboards built upon the New API series. Simultaneously managing the balances, model lists, and API keys across these various platforms often proves to be both fragmented and time-consuming.
+Nowadays, within the AI ecosystem, there's a growing number of aggregated relay stations and custom dashboards built upon the New API series. Checking balances and model lists across these platforms, while also managing and quickly using API keys, is often fragmented and time-consuming.
 
-All API Hub, a browser plugin, can automatically recognize accounts on these platforms, allowing users to view balances, manage models and keys, and perform automatic check-ins with a single click. Furthermore, it offers tools such as model synchronization and channel management for self-built New API instances. It currently supports relay station accounts from projects such as:
+All API Hub is a browser extension for one-stop management of New API-style relay accounts: balance/usage dashboard, automatic check-in, one-click key export to popular apps, in-page API availability testing, and channel/model sync & redirect. It currently supports relay station accounts from projects such as:
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)
@@ -71,10 +71,10 @@ All API Hub, a browser plugin, can automatically recognize accounts on these pla
   Aggregate usage across multiple sites/accounts: filter by site, account, token, and date range, compare usage/cost/model breakdowns and trends, and inspect latency/slow requests when needed.
 
 - 🚀 **Quick Export Integration**  
-  Export configuration to CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, New API, and Veloera.
+  Export configuration to CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code, New API, Veloera, and Octopus.
 
-- 🔄 **New API Management (Own Instance)**  
-  For your own New API instance: model sync, channel management, and model redirect.
+- 🔄 **New API, Veloera & Octopus Management (Self‑Hosted)**  
+  For your self‑hosted New API, Veloera, and Octopus instances: model sync, channel management, and model redirect.
 
 - 📆 **Automatic check‑in**  
   Detects which sites support daily check‑in, can run automatically, and keeps run records.

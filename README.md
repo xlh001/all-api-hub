@@ -32,10 +32,9 @@
 
 ## 📖 介绍
 
-现在 AI 生态里有越来越多基于 New API 系列的聚合中转站和自建面板，要同时管理各站点的余额、模型列表和 API 密钥，往往既分散又费时。
+现在 AI 生态里有越来越多基于 New API 系列的聚合中转站和自建面板，要查看各站点的余额和模型列表，并管理和快速使用API 密钥，往往既分散又费时。
 
-All API Hub 作为浏览器扩展，可以自动识别这些站点的账号，并一键查看余额、管理模型、密钥与自动签到，并为自建 New API 提供模型同步和渠道管理等工具。当前已支持基于以下项目的中转站账号：
-
+All API Hub 作为浏览器扩展，一站式管理 New API 等中转站账号：余额/用量看板、自动签到、密钥一键导出到常用应用、网页内 API 可用性测试、渠道与模型同步/重定向。当前已支持基于以下项目的中转站账号：
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)
 - [Veloera](https://github.com/Veloera/Veloera)
@@ -71,10 +70,10 @@ All API Hub 作为浏览器扩展，可以自动识别这些站点的账号，�
   面向多站点/多账号的用量报表：按站点、账号、Token、日期筛选与对比，查看用量、花费、模型分布与趋势，并提供延迟与慢请求视图辅助排查。
 
 - 🚀 **快速导出集成**  
-  一键导出到 CherryStudio、CC Switch、CLIProxyAPI、Claude Code Router、New API 和 Veloera 等常用工具，减少复制粘贴与重复配置。
+  一键导出到 CherryStudio、CC Switch、CLIProxyAPI、Claude Code Router、Kilo Code、New API、Veloera 和 Octopus 等常用工具，减少复制粘贴与重复配置。
 
-- 🔄 **自建 New API 和 Veloera 管理**  
-  面向自建 New API 和 Veloera 的站点管理员，提供一键创建渠道、渠道管理、模型同步与模型重定向等工具，减少频繁进后台操作。
+- 🔄 **自建 New API 、Veloera 和 Octopus 管理**  
+  面向自建 New API 、Veloera 和 Octopus 的站点管理员，提供一键创建渠道、渠道管理、模型同步与模型重定向等工具，减少频繁进后台操作。
 
 - 🛡️ **Cloudflare 过盾助手**  
   遇到 Cloudflare 挑战时自动弹出临时窗口协助通过，验证成功后继续原有流程。
