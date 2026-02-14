@@ -26,7 +26,7 @@
 </a>
 </p>
 
-**[Documentation](https://all-api-hub.qixing1217.top/en) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html)**
+**[Documentation](https://all-api-hub.qixing1217.top/en) | [Getting Started](https://all-api-hub.qixing1217.top/en/get-started.html) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [Changelog](CHANGELOG.md) | [Contributing](CONTRIBUTING.md)**
 
 </div>
 
@@ -145,7 +145,8 @@ All API Hub, a browser plugin, can automatically recognize accounts on these pla
 | Firefox Add-ons | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | ![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat) |
 | GitHub Release | [Release Download](https://github.com/qixing-jk/all-api-hub/releases) | ![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat) |
 
-### Manual Installation
+<details>
+<summary>Manual installation (Load unpacked)</summary>
 
 1. Download the latest release package.
 2. Open Chrome and navigate to `chrome://extensions/`.
@@ -153,17 +154,11 @@ All API Hub, a browser plugin, can automatically recognize accounts on these pla
 4. Click "Load unpacked".
 5. Select the unzipped extension folder.
 
+</details>
+
 ## 🧑‍🚀 Quick Start Guide for New Users
 
-1. **Install and pin the extension**: Install All API Hub from the Chrome/Edge/Firefox store or GitHub Release, then pin the icon to your toolbar so it’s easy to open.
-2. **Sign in to your relay sites**: In normal browser tabs, open each relay site you use (New API, one-api, etc.) and log in as usual. The extension reuses these sessions when adding accounts.
-3. **Add your first account**: Click the All API Hub icon → click “Add Account” → paste the site URL and choose “Auto-Identify.” If a Cloudflare 5‑second challenge appears, finish it in the helper window and the detection continues automatically.
-4. **View everything in one place**: In the popup or on the “Account Management” page, you’ll see balances, models, and keys for each site. Use search, grouping, and sorting to quickly find the account you care about.
-5. **Export to your favorite tools (optional)**: On the **Key Management** page, use **Export** to send channels and keys into CherryStudio, CC Switch, CLIProxyAPI, or New API instead of copying values by hand.
-6. **Connect your own New API (optional)**: If you host New API yourself, go to **Settings → New API**, fill in the Admin URL / Token / User ID, then use the **New API Model Sync** and **Channel Management (Beta)** pages to keep channels and model lists in sync.
-7. **Back up and sync across devices (optional)**: Use **Settings → Data & Backup** to export a JSON backup, or configure WebDAV automatic sync so your configuration follows you to other browsers and machines.
-
-For a more detailed walkthrough and advanced setup, see the [Getting Started guide](https://all-api-hub.qixing1217.top/en/get-started.html).
+[Getting Started guide](https://all-api-hub.qixing1217.top/en/get-started.html).
 
 ## 🛠️ Development Guide
 

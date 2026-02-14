@@ -26,7 +26,7 @@
 </a>
 </p>
 
-**[文档教程](https://all-api-hub.qixing1217.top/) | [常见问题](https://all-api-hub.qixing1217.top/faq.html)**
+**[文档教程](https://all-api-hub.qixing1217.top/) | [快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [常见问题](https://all-api-hub.qixing1217.top/faq.html) | [更新日志](CHANGELOG.md) | [贡献指南](CONTRIBUTING.md)**
 
 </div>
 
@@ -146,7 +146,8 @@ All API Hub 作为浏览器扩展，可以自动识别这些站点的账号，�
 | Firefox 商店 | [Firefox 商店](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | ![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat) |
 | GitHub Release | [Release 下载](https://github.com/qixing-jk/all-api-hub/releases) | ![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat) |
 
-### 手动安装
+<details>
+<summary>手动安装（解压加载）</summary>
 
 1. 下载最新版本的扩展包
 2. 打开 Chrome 浏览器，进入 `chrome://extensions/`
@@ -154,17 +155,11 @@ All API Hub 作为浏览器扩展，可以自动识别这些站点的账号，�
 4. 点击 "加载已解压的扩展程序"
 5. 选择解压后的扩展文件夹
 
+</details>
+
 ## 🧑‍🚀 新手快速上手
 
-1. **安装并固定扩展图标**：从 Chrome / Edge / Firefox 商店或 GitHub Release 安装最新版本，在浏览器工具栏中固定 All API Hub，方便随时打开。
-2. **先登录各个中转站账号**：像平时一样在浏览器标签页里打开 New API / one-api 等站点并完成登录，扩展会复用这些登录状态。
-3. **添加第一个账号**：点击浏览器工具栏中的扩展图标 → 在首页点击“新增账号” → 粘贴站点地址并选择“自动识别”。如遇 Cloudflare 五秒盾，只需在弹出的辅助窗口中等待或完成验证。
-4. **在面板中查看账号信息**：回到扩展弹窗或“账号管理”页面，可以按站点查看余额、模型和密钥，配合搜索、分组和排序快速找到需要的账号。
-5. **快速导出到常用软件（可选）**：在“密钥管理”页面，为目标站点找到对应密钥，使用“导出”功能，一键推送到 CherryStudio、CC Switch、CLIProxyAPI 或 New API，而不必逐项复制粘贴。
-6. **连接自建 New API（可选）**：如果你有自建 New API，前往“基础设置 → New API 集成设置”填写管理员 URL、Token、用户 ID，然后在“模型同步”和“渠道管理（Beta）”页面维护渠道和模型白名单。
-7. **备份配置并在多设备间同步（可选）**：在“基础设置 → 数据与备份”的“导入与导出”区域导出 JSON 备份，或在页面下方配置 WebDAV 自动同步，在多台设备之间共享同一份配置。
-
-更多详细步骤和进阶配置，请参阅文档站的[快速上手指南](https://all-api-hub.qixing1217.top/get-started.html)。
+[快速上手指南](https://all-api-hub.qixing1217.top/get-started.html)。
 
 ## 🛠️ 开发指南
 
