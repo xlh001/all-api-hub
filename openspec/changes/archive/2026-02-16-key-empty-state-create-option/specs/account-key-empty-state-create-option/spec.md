@@ -18,6 +18,12 @@ When the token inventory is empty, the dialog MUST support:
 - A quick-create action that provisions a default token.
 - A custom-create action that allows the user to manually configure token fields before creating.
 
+#### Scenario: User sees quick-create and custom-create options
+- **GIVEN** the copy-key dialog is open for an account with zero tokens
+- **WHEN** the empty token list view is rendered
+- **THEN** the dialog presents a quick-create action for creating a default token
+- **AND** the dialog presents a custom-create action for opening the token configuration form
+
 ### Requirement: Creating a key requires explicit user intent
 The system MUST NOT create a key automatically solely because the token list is empty. The system MUST create a key only after the user explicitly selects the create-key action.
 
@@ -41,7 +47,7 @@ When the user selects either create-key action (quick-create or custom-create), 
 - **AND** the system reloads the token inventory for the account and renders the updated list
 
 ### Requirement: Success continues the original copy intent
-After a successful key creation and token inventory refresh:
+After a successful key creation and token inventory refresh, the system MUST continue the original copy intent as follows:
 - If exactly one token is available, the system MUST copy that token key to the clipboard and provide success feedback.
 - If multiple tokens are available, the system MUST allow the user to choose which key to copy.
 
