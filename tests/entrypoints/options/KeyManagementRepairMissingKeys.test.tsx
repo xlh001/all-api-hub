@@ -286,8 +286,8 @@ describe("KeyManagement repair missing keys entry point", () => {
     expect(runtimeMessageState.listener).toBeTypeOf("function")
 
     // Disabled accounts must not be shown in the dialog/results.
+    expect(await screen.findByText("Enabled Site")).toBeInTheDocument()
     expect(screen.queryByText("Disabled Site")).not.toBeInTheDocument()
-    expect(screen.getByText("Enabled Site")).toBeInTheDocument()
 
     // Progress subscription updates the UI.
     const updated: AccountKeyRepairProgress = {
