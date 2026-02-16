@@ -27,6 +27,7 @@
     "externalCheckinAllHint": "Open unchecked external check-ins. Ctrl/Cmd: open all. Shift: open in new window. Ctrl/Cmd+Shift: open all in new window.",
     "externalCheckinAllDisabled": "No external check-in URLs configured",
     "keys": "Key Management",
+    "apiCredentialProfiles": "API Credential Profiles",
     "importExport": "Import/Export",
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
@@ -183,6 +184,7 @@
         "copiedApiConfigs": "apiConfigs copied to clipboard",
         "copyFailed": "Copy failed",
         "downloadedSettings": "Settings file downloaded",
+        "downloadFailed": "Failed to download settings file",
         "nothingToExportTitle": "Nothing to export",
         "nothingToExportDescription": "Select at least one exportable token/site to enable copy/download."
       }
