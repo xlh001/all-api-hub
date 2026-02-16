@@ -1,7 +1,8 @@
-# API Credential Profiles
+# api-credential-profiles Specification
 
-## ADDED Requirements
-
+## Purpose
+Define requirements for managing standalone API credential profiles (base URL + API key + API type) in the extension, including secure handling, verification probes, backup/restore inclusion, and quick-export flows.
+## Requirements
 ### Requirement: Users can manage standalone API credential profiles
 
 The system SHALL provide an Options UI page that allows users to create, view, edit, and delete standalone API credential profiles.
@@ -67,6 +68,11 @@ The system MUST treat stored API keys as secrets.
 - Logs MUST NOT contain raw API keys.
 - Any user-facing error summaries MUST redact known keys.
 
+#### Scenario: UI masks a stored API key
+- **WHEN** a user views a stored profile
+- **THEN** the system masks the API key value by default
+- **AND** the system MUST NOT reveal the API key unless the user explicitly chooses to reveal it
+
 ### Requirement: Profiles can be verified without adding site accounts
 
 The system SHALL allow verifying a profile’s credentials by executing `aiApiVerification` probes directly against the profile inputs.
@@ -78,7 +84,7 @@ The system SHALL allow verifying a profile’s credentials by executing `aiApiVe
 
 ### Requirement: Key Management can save account tokens into profiles
 
-The system SHOULD allow users to save an existing account token (baseUrl + token key) from Key Management into an API credential profile.
+The system SHALL allow users to save an existing account token (baseUrl + token key) from Key Management into an API credential profile.
 
 #### Scenario: Save token as profile
 - **WHEN** the user clicks “Save as API profile” for a token in Key Management
@@ -86,11 +92,16 @@ The system SHOULD allow users to save an existing account token (baseUrl + token
 
 ### Requirement: Backups may include profiles
 
-The system SHOULD include API credential profiles in full backups (Import/Export + WebDAV sync) so profiles can be restored on another device.
+The system SHALL include API credential profiles in full backups (Import/Export + WebDAV sync) so profiles can be restored on another device.
+
+#### Scenario: Backup round-trip restores profiles
+- **WHEN** the user exports a full backup that includes profiles
+- **AND** the user imports that backup on another device
+- **THEN** the system restores the exported profiles
 
 ### Requirement: Profiles can be quick-exported like Key Management
 
-The system SHOULD allow exporting a stored API credential profile to the same quick-export targets available in Key Management, using the profile's `baseUrl` and `apiKey`.
+The system SHALL allow exporting a stored API credential profile to the same quick-export targets available in Key Management, using the profile's `baseUrl` and `apiKey`.
 
 Supported export targets SHOULD include:
 - Cherry Studio (deeplink)
