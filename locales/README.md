@@ -15,6 +15,7 @@ locales/
 │   ├── messages.json       # 消息提示
 │   ├── ui.json             # UI 元素
 │   ├── importExport.json   # 导入/导出
+│   ├── shareSnapshots.json # 分享快照（图片 + 文案）
 │   └── about.json          # 关于
 ├── zh_CN/                  # 中文翻译
 │   └── (同上结构)
@@ -68,4 +69,5 @@ function MyComponent() {
 | `messages` | 消息提示 | `t("messages:toast.success.accountAdded")` |
 | `ui` | UI 元素 | `t("ui:navigation.home")` |
 | `importExport` | 导入/导出 | `t("importExport:export.title")` |
+| `shareSnapshots` | 共享快照 | `t("shareSnapshots:<key>")` |
 | `about` | 关于 | `t("about:title")` |
