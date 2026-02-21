@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "@vuepress/bundler-vite": "2.0.0-rc.24",
+    "@vuepress/plugin-sitemap": "2.0.0-rc.112",
     "@vuepress/theme-default": "2.0.0-rc.112",
     "sass-embedded": "^1.86.0",
     "vue": "^3.5.13",

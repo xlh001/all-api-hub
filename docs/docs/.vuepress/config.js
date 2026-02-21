@@ -1,6 +1,9 @@
 import { viteBundler } from "@vuepress/bundler-vite"
+import { sitemapPlugin } from "@vuepress/plugin-sitemap"
 import { defaultTheme } from "@vuepress/theme-default"
 import { defineUserConfig } from "vuepress"
+
+const sitemapHostname = process.env.DOCS_HOSTNAME ?? "https://all-api-hub.qixing1217.top"
 
 export default defineUserConfig({
   base: "/",
@@ -126,6 +129,14 @@ export default defineUserConfig({
       }
     }
   }),
+
+  plugins: [
+    sitemapPlugin({
+      hostname: sitemapHostname,
+      excludePaths: ["/404.html"],
+      devServer: true
+    }),
+  ],
 
   bundler: viteBundler()
 })
