@@ -106,11 +106,15 @@ jobs:
               : "`(unknown)`";
 
             const artifactFiles = Array.isArray(metadata.artifactFiles) ? metadata.artifactFiles : [];
-            const artifactList = artifactFiles.length
-              ? artifactFiles.map((name) => `- ${name}`).join("\n")
-              : "- (none)";
 
-            const runUrl = workflowRun.html_url || `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRun.id}`;
+            const runUrl =
+              workflowRun.html_url ||
+              `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRun.id}`;
+            const artifactDownloadUrl = `${runUrl}#artifacts`;
+
+            const artifactList = artifactFiles.length
+              ? artifactFiles.map((name) => `- [${name}](${artifactDownloadUrl})`).join("\n")
+              : "- (none)";
 
             const body = [
               marker,
@@ -118,8 +122,6 @@ jobs:
               "",
               "Artifacts:",
               artifactList,
-              "",
-              `Download from workflow run: ${runUrl}`,
               "",
               "_This build is for review only and is not released._",
             ].join("\n");
