@@ -19,6 +19,11 @@ interface Account {
 interface AddTokenDialogProps {
   isOpen: boolean
   availableAccounts: Account[]
+  /**
+   * Account to pre-select when opening the dialog in create mode.
+   * - `null`: intentionally unset (force user to pick; used for all-accounts mode)
+   * - `undefined`: not provided (fall back to the first available account)
+   */
   preSelectedAccountId?: string | null
   editingToken?: AccountToken | null
   createPrefill?: {
@@ -97,7 +102,7 @@ export function useTokenForm({
     if (isOpen) {
       if (isEditMode && editingToken) {
         const matchingAccount = availableAccounts.find(
-          (acc) => acc.name === editingToken.accountName,
+          (acc) => acc.id === editingToken.accountId,
         )
         const accountId =
           matchingAccount?.id ||
@@ -128,8 +133,10 @@ export function useTokenForm({
         })
       } else {
         const defaultAccountId =
-          preSelectedAccountId ||
-          (availableAccounts.length > 0 ? availableAccounts[0].id : "")
+          preSelectedAccountId === null
+            ? ""
+            : preSelectedAccountId ||
+              (availableAccounts.length > 0 ? availableAccounts[0].id : "")
 
         const normalizedModelId =
           typeof createPrefill?.modelId === "string"

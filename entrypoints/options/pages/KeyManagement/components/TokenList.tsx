@@ -1,26 +1,35 @@
-import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
-import { useState } from "react"
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  KeyIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { CCSwitchExportDialog } from "~/components/CCSwitchExportDialog"
-import { Card, EmptyState } from "~/components/ui"
+import { Badge, Button, Card, EmptyState } from "~/components/ui"
+import { cn } from "~/lib/utils"
 import type { DisplaySiteData } from "~/types"
 
+import { KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE } from "../constants"
 import { AccountToken } from "../type"
+import { buildTokenIdentityKey } from "../utils"
 import { TokenListItem } from "./TokenListItem"
 
 interface TokenListProps {
   isLoading: boolean
   tokens: AccountToken[]
   filteredTokens: AccountToken[]
-  visibleKeys: Set<number>
-  toggleKeyVisibility: (id: number) => void
+  visibleKeys: Set<string>
+  toggleKeyVisibility: (identityKey: string) => void
   copyKey: (key: string, name: string) => void
   handleEditToken: (token: AccountToken) => void
   handleDeleteToken: (token: AccountToken) => void
   handleAddToken: () => void
   selectedAccount: string
   displayData: DisplaySiteData[]
+  allAccountsFilterAccountId?: string | null
 }
 
 /**
@@ -123,12 +132,110 @@ export function TokenList(props: TokenListProps) {
     handleAddToken,
     selectedAccount,
     displayData,
+    allAccountsFilterAccountId,
   } = props
   const { t } = useTranslation("keyManagement")
   const [ccSwitchContext, setCCSwitchContext] = useState<{
     token: AccountToken
     account: DisplaySiteData
   } | null>(null)
+
+  const accountById = useMemo(() => {
+    return new Map(displayData.map((account) => [account.id, account]))
+  }, [displayData])
+
+  const isAllAccountsMode =
+    selectedAccount === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE
+  const [collapsedAccountIds, setCollapsedAccountIds] = useState<Set<string>>(
+    () =>
+      selectedAccount === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE
+        ? new Set(displayData.map((account) => account.id))
+        : new Set(),
+  )
+  const hasInitializedCollapseRef = useRef(isAllAccountsMode)
+
+  useEffect(() => {
+    if (!isAllAccountsMode) {
+      hasInitializedCollapseRef.current = false
+      setCollapsedAccountIds(new Set())
+      return
+    }
+
+    if (hasInitializedCollapseRef.current) return
+    hasInitializedCollapseRef.current = true
+    setCollapsedAccountIds(new Set(displayData.map((account) => account.id)))
+  }, [displayData, isAllAccountsMode])
+
+  useEffect(() => {
+    if (!isAllAccountsMode) return
+    if (!allAccountsFilterAccountId) return
+
+    // When the user filters to a single account via AccountSummaryBar, ensure the
+    // corresponding group is expanded so the tokens are immediately visible.
+    setCollapsedAccountIds((prev) => {
+      if (!prev.has(allAccountsFilterAccountId)) return prev
+      const next = new Set(prev)
+      next.delete(allAccountsFilterAccountId)
+      return next
+    })
+  }, [allAccountsFilterAccountId, isAllAccountsMode])
+
+  const groupedTokens = useMemo(() => {
+    if (!isAllAccountsMode) return null
+
+    const totalTokensByAccountId = new Map<string, AccountToken[]>()
+    for (const token of tokens) {
+      const list = totalTokensByAccountId.get(token.accountId) ?? []
+      list.push(token)
+      totalTokensByAccountId.set(token.accountId, list)
+    }
+
+    const filteredTokensByAccountId = new Map<string, AccountToken[]>()
+    for (const token of filteredTokens) {
+      const list = filteredTokensByAccountId.get(token.accountId) ?? []
+      list.push(token)
+      filteredTokensByAccountId.set(token.accountId, list)
+    }
+
+    return displayData
+      .filter((account) => filteredTokensByAccountId.has(account.id))
+      .map((account) => {
+        const total = totalTokensByAccountId.get(account.id) ?? []
+        const filtered = filteredTokensByAccountId.get(account.id) ?? []
+        return {
+          account,
+          totalTokens: total,
+          filteredTokens: filtered,
+          totalCount: total.length,
+          enabledCount: total.filter((item) => item.status === 1).length,
+          showingCount: filtered.length,
+        }
+      })
+  }, [displayData, filteredTokens, isAllAccountsMode, tokens])
+
+  const collapseAll = useCallback(() => {
+    if (!groupedTokens) return
+    setCollapsedAccountIds(
+      new Set(groupedTokens.map((group) => group.account.id)),
+    )
+  }, [groupedTokens, setCollapsedAccountIds])
+
+  const expandAll = useCallback(
+    () => setCollapsedAccountIds(new Set()),
+    [setCollapsedAccountIds],
+  )
+
+  const toggleGroup = (accountId: string) => {
+    setCollapsedAccountIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(accountId)) {
+        next.delete(accountId)
+      } else {
+        next.add(accountId)
+      }
+      return next
+    })
+  }
 
   const handleOpenCCSwitchDialog = (
     token: AccountToken,
@@ -150,7 +257,7 @@ export function TokenList(props: TokenListProps) {
     )
   }
 
-  if (isLoading) {
+  if (isLoading && (!isAllAccountsMode || tokens.length === 0)) {
     return <LoadingSkeleton />
   }
 
@@ -166,32 +273,127 @@ export function TokenList(props: TokenListProps) {
 
   return (
     <>
-      <div className="space-y-3">
-        {filteredTokens.map((token) => {
-          const account = displayData.find(
-            (item) => item.name === token.accountName,
-          )
-          if (!account) {
-            return null
-          }
+      {isAllAccountsMode && groupedTokens && groupedTokens.length > 0 ? (
+        <>
+          <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={expandAll}
+              leftIcon={<ChevronDownIcon className="h-4 w-4" />}
+            >
+              {t("actions.expandAll")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={collapseAll}
+              leftIcon={<ChevronUpIcon className="h-4 w-4" />}
+            >
+              {t("actions.collapseAll")}
+            </Button>
+          </div>
 
-          return (
-            <TokenListItem
-              key={`${token.accountName}-${token.id}`}
-              token={token}
-              visibleKeys={visibleKeys}
-              toggleKeyVisibility={toggleKeyVisibility}
-              copyKey={copyKey}
-              handleEditToken={handleEditToken}
-              handleDeleteToken={handleDeleteToken}
-              account={account}
-              onOpenCCSwitchDialog={() =>
-                handleOpenCCSwitchDialog(token, account)
-              }
-            />
-          )
-        })}
-      </div>
+          <div className="space-y-3">
+            {groupedTokens.map((group) => {
+              const { account } = group
+              const isCollapsed = collapsedAccountIds.has(account.id)
+              const shouldShowShowingCount =
+                group.showingCount !== group.totalCount
+
+              return (
+                <Card
+                  key={account.id}
+                  variant="outlined"
+                  className="overflow-hidden"
+                >
+                  <button
+                    type="button"
+                    className={cn(
+                      "dark:hover:bg-dark-bg-tertiary flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-gray-50",
+                      isCollapsed
+                        ? "rounded-lg"
+                        : "dark:border-dark-bg-tertiary border-b border-gray-200",
+                    )}
+                    onClick={() => toggleGroup(account.id)}
+                    aria-expanded={!isCollapsed}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="truncate font-medium">
+                        {account.name}
+                      </span>
+                      <Badge variant="secondary" size="sm" className="shrink-0">
+                        {t("accountSummary.keys", { count: group.totalCount })}
+                      </Badge>
+                      <Badge variant="outline" size="sm" className="shrink-0">
+                        {t("enabledCount", { count: group.enabledCount })}
+                      </Badge>
+                      {shouldShowShowingCount ? (
+                        <Badge variant="outline" size="sm" className="shrink-0">
+                          {t("showingCount", { count: group.showingCount })}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <ChevronDownIcon
+                      className={cn(
+                        "dark:text-dark-text-tertiary h-4 w-4 shrink-0 text-gray-500 transition-transform",
+                        isCollapsed ? "rotate-0" : "rotate-180",
+                      )}
+                    />
+                  </button>
+
+                  {!isCollapsed ? (
+                    <div className="space-y-3 p-3">
+                      {group.filteredTokens.map((token) => (
+                        <TokenListItem
+                          key={buildTokenIdentityKey(token.accountId, token.id)}
+                          token={token}
+                          visibleKeys={visibleKeys}
+                          toggleKeyVisibility={toggleKeyVisibility}
+                          copyKey={copyKey}
+                          handleEditToken={handleEditToken}
+                          handleDeleteToken={handleDeleteToken}
+                          account={account}
+                          onOpenCCSwitchDialog={() =>
+                            handleOpenCCSwitchDialog(token, account)
+                          }
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </Card>
+              )
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="space-y-3">
+          {filteredTokens.map((token) => {
+            const account = accountById.get(token.accountId)
+            if (!account) {
+              return null
+            }
+
+            return (
+              <TokenListItem
+                key={buildTokenIdentityKey(token.accountId, token.id)}
+                token={token}
+                visibleKeys={visibleKeys}
+                toggleKeyVisibility={toggleKeyVisibility}
+                copyKey={copyKey}
+                handleEditToken={handleEditToken}
+                handleDeleteToken={handleDeleteToken}
+                account={account}
+                onOpenCCSwitchDialog={() =>
+                  handleOpenCCSwitchDialog(token, account)
+                }
+              />
+            )
+          })}
+        </div>
+      )}
 
       {ccSwitchContext && (
         <CCSwitchExportDialog

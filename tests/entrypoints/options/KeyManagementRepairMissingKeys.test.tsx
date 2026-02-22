@@ -63,10 +63,16 @@ vi.mock(
       visibleKeys: new Set(),
       isAddTokenOpen: false,
       editingToken: null,
+      tokenLoadProgress: null,
+      failedAccounts: [],
+      accountSummaryItems: [],
+      allAccountsFilterAccountId: null,
+      setAllAccountsFilterAccountId: vi.fn(),
       loadTokens: vi.fn(),
       filteredTokens: [],
       copyKey: vi.fn(),
       toggleKeyVisibility: vi.fn(),
+      retryFailedAccounts: vi.fn(),
       handleAddToken: vi.fn(),
       handleCloseAddToken: vi.fn(),
       handleEditToken: vi.fn(),
@@ -76,9 +82,9 @@ vi.mock(
 )
 
 vi.mock(
-  "~/entrypoints/options/pages/KeyManagement/components/Controls",
+  "~/entrypoints/options/pages/KeyManagement/components/AccountSelectorPanel",
   () => ({
-    Controls: () => <div data-testid="controls" />,
+    AccountSelectorPanel: () => <div data-testid="controls" />,
   }),
 )
 
