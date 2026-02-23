@@ -86,6 +86,7 @@ export {
   Code,
   typographyVariants,
 } from "./Typography"
+export { ExternalUrlText, type ExternalUrlTextProps } from "./ExternalUrlText"
 
 // Design Tokens
 export {

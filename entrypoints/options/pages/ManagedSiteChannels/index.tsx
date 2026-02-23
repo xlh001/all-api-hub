@@ -36,7 +36,11 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { useChannelDialog } from "~/components/ChannelDialog"
-import { DestructiveConfirmDialog, Input } from "~/components/ui"
+import {
+  DestructiveConfirmDialog,
+  ExternalUrlText,
+  Input,
+} from "~/components/ui"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/Alert"
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
@@ -71,6 +75,7 @@ import {
 } from "~/components/ui/table"
 import { ChannelTypeNames } from "~/constants/managedSite"
 import { OctopusOutboundTypeNames } from "~/constants/octopus"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { OCTOPUS } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -79,7 +84,10 @@ import { cn } from "~/lib/utils"
 import { getManagedSiteService } from "~/services/managedSiteService"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { getErrorMessage } from "~/utils/error"
-import { openManagedSiteModelSyncForChannel } from "~/utils/navigation"
+import {
+  navigateWithinOptionsPage,
+  openManagedSiteModelSyncForChannel,
+} from "~/utils/navigation"
 
 import ChannelFilterDialog from "./components/ChannelFilterDialog"
 import RowActions from "./components/RowActions"
@@ -410,7 +418,10 @@ export default function ManagedSiteChannels({
           <div>
             <div className="leading-tight font-medium">{row.original.name}</div>
             <div className="text-muted-foreground truncate text-xs">
-              {row.original.base_url}
+              <ExternalUrlText
+                value={row.original.base_url}
+                className="truncate"
+              />
             </div>
           </div>
         ),
@@ -550,20 +561,38 @@ export default function ManagedSiteChannels({
     const nameColumn = table.getColumn("name")
 
     if (channelIdParam) {
-      idColumn?.setFilterValue(channelIdParam)
-      nameColumn?.setFilterValue(undefined)
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+      const currentIdFilter = (idColumn?.getFilterValue() as string) ?? ""
+      const currentSearchFilter = (nameColumn?.getFilterValue() as string) ?? ""
+      let didChange = false
+
+      if (currentIdFilter !== channelIdParam) {
+        idColumn?.setFilterValue(channelIdParam)
+        didChange = true
+      }
+
+      if (currentSearchFilter !== channelIdParam) {
+        nameColumn?.setFilterValue(channelIdParam)
+        didChange = true
+      }
+
+      if (didChange) {
+        setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+      }
       return
     }
 
     const searchParam = routeParams?.search?.trim()
-    if (searchParam) {
-      if (/^\d+$/.test(searchParam)) {
-        idColumn?.setFilterValue(searchParam)
-        nameColumn?.setFilterValue(undefined)
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-      }
-      return
+    const currentIdFilter = (idColumn?.getFilterValue() as string) ?? ""
+    const currentSearchFilter = (nameColumn?.getFilterValue() as string) ?? ""
+    const nextSearchFilter = searchParam ?? ""
+
+    if (currentIdFilter) {
+      idColumn?.setFilterValue(undefined)
+    }
+
+    if (currentSearchFilter !== nextSearchFilter) {
+      nameColumn?.setFilterValue(nextSearchFilter || undefined)
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
     }
   }, [routeParams?.channelId, routeParams?.search, table])
 
@@ -596,6 +625,22 @@ export default function ManagedSiteChannels({
   const searchValue =
     (table.getColumn("name")?.getFilterValue() as string) ?? ""
   const rowsPerPageOptions = [10, 25, 50, 100]
+  const managedSiteChannelsHash = `#${MENU_ITEM_IDS.MANAGED_SITE_CHANNELS}`
+
+  const handleSearchChange = (value: string) => {
+    table.getColumn("name")?.setFilterValue(value || undefined)
+    table.getColumn("id")?.setFilterValue(undefined)
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+
+    if (value === (routeParams?.search ?? "") && !routeParams?.channelId) {
+      return
+    }
+
+    navigateWithinOptionsPage(
+      managedSiteChannelsHash,
+      value ? { search: value } : {},
+    )
+  }
 
   const handleStatusChange = (checked: CheckboxState, value: string) => {
     const filterValue = statusColumn?.getFilterValue() as string[]
@@ -640,9 +685,7 @@ export default function ManagedSiteChannels({
         <div className="relative w-full md:max-w-sm">
           <Input
             value={searchValue}
-            onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
-            }
+            onChange={(event) => handleSearchChange(event.target.value)}
             placeholder={t("toolbar.searchPlaceholder")}
             className="ps-9"
           />
@@ -652,7 +695,7 @@ export default function ManagedSiteChannels({
               type="button"
               aria-label={t("toolbar.clearSearch")}
               className="text-muted-foreground/80 absolute top-1/2 right-2 -translate-y-1/2"
-              onClick={() => table.getColumn("name")?.setFilterValue(undefined)}
+              onClick={() => handleSearchChange("")}
             >
               <CircleX className="h-4 w-4" />
             </button>
