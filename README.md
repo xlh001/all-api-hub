@@ -29,7 +29,7 @@
 </a>
 </p>
 
-**[文档教程](https://all-api-hub.qixing1217.top/) | [快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [常见问题](https://all-api-hub.qixing1217.top/faq.html) | [更新日志](CHANGELOG.md) | [贡献指南](CONTRIBUTING.md)**
+**[文档教程](https://all-api-hub.qixing1217.top/) | [快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [常见问题](https://all-api-hub.qixing1217.top/faq.html) | [更新日志](https://all-api-hub.qixing1217.top/changelog.html) | [贡献指南](CONTRIBUTING.md)**
 
 💬 **加入讨论**：有使用、功能或技术问题？欢迎加入 [Telegram 交流群](https://t.me/qixing_chat) 与社区一起讨论！
 

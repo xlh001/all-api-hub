@@ -29,7 +29,7 @@
 </a>
 </p>
 
-**[Documentation](https://all-api-hub.qixing1217.top/en) | [Getting Started](https://all-api-hub.qixing1217.top/en/get-started.html) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [Changelog](CHANGELOG.md) | [Contributing](CONTRIBUTING.md)**
+**[Documentation](https://all-api-hub.qixing1217.top/en) | [Getting Started](https://all-api-hub.qixing1217.top/en/get-started.html) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [Changelog](https://all-api-hub.qixing1217.top/en/changelog.html) | [Contributing](CONTRIBUTING.md)**
 
 💬 **Join the discussion**: Have usage, feature, or technical questions? Join the [Telegram group](https://t.me/qixing_chat) and chat with the community!
 
