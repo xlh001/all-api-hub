@@ -396,27 +396,85 @@ export function onInstalled(
   }
 }
 
+export type SidePanelSupport =
+  | { supported: true; kind: "firefox-sidebar-action" }
+  | { supported: true; kind: "chromium-side-panel" }
+  | { supported: false; kind: "unsupported"; reason: string }
+
+/**
+ * Side panel capability is cached at module load time to avoid repeatedly touching globals.
+ */
+const CACHED_SIDE_PANEL_SUPPORT: SidePanelSupport = (() => {
+  const runtimeBrowser = (globalThis as any).browser
+  if (typeof runtimeBrowser?.sidebarAction?.open === "function") {
+    return { supported: true, kind: "firefox-sidebar-action" }
+  }
+
+  const runtimeChrome = (globalThis as any).chrome
+  if (typeof runtimeChrome?.sidePanel?.open === "function") {
+    return { supported: true, kind: "chromium-side-panel" }
+  }
+
+  const reasons: string[] = []
+  if (typeof runtimeBrowser?.sidebarAction?.open !== "function") {
+    reasons.push("browser.sidebarAction.open missing")
+  }
+  if (typeof runtimeChrome?.sidePanel?.open !== "function") {
+    reasons.push("chrome.sidePanel.open missing")
+  }
+
+  return {
+    supported: false,
+    kind: "unsupported",
+    reason: reasons.join("; ") || "Side panel APIs not available",
+  }
+})()
+
+/**
+ * Detects whether the current runtime can open a side panel/sidebar.
+ */
+export function getSidePanelSupport(): SidePanelSupport {
+  return CACHED_SIDE_PANEL_SUPPORT
+}
+
 /**
  * Open the extension side panel using the host browser's native APIs.
  * Automatically chooses the appropriate Chromium or Firefox pathway.
  * @throws {Error} When the current browser does not expose side panel support.
  */
 export const openSidePanel = async () => {
-  // Firefox
-  if (typeof browser !== "undefined" && browser.sidebarAction) {
-    return browser.sidebarAction.open()
+  const support = getSidePanelSupport()
+
+  if (!support.supported) {
+    throw new Error(`Side panel is not supported: ${support.reason}`)
   }
 
-  // Chrome
-  if (typeof chrome !== "undefined" && chrome.sidePanel) {
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    })
-    return chrome.sidePanel.open({ windowId: tab.windowId })
+  if (support.kind === "firefox-sidebar-action") {
+    return await (browser as any).sidebarAction.open()
   }
 
-  throw new Error("Sidebar not supported")
+  const tab = await getActiveTab()
+  const windowId = tab?.windowId
+  const tabId = tab?.id
+
+  const sidePanel = (globalThis as any).chrome?.sidePanel
+
+  if (typeof windowId === "number") {
+    try {
+      return await sidePanel.open({ windowId })
+    } catch (error) {
+      if (typeof tabId === "number") {
+        return await sidePanel.open({ tabId })
+      }
+      throw error
+    }
+  }
+
+  if (typeof tabId === "number") {
+    return await sidePanel.open({ tabId })
+  }
+
+  throw new Error("Side panel open failed: active tab/window not found")
 }
 
 /**

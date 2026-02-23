@@ -12,6 +12,7 @@ import {
 } from "~/utils/browserApi"
 
 const originalBrowser = (globalThis as any).browser
+const originalChrome = (globalThis as any).chrome
 
 // Note: these helpers now use the unified logger, so tests avoid asserting on `console.*` output.
 describe("browserApi alarms helpers", () => {
@@ -160,6 +161,7 @@ describe("browserApi alarms helpers", () => {
   // restore original browser after all tests
   afterAll(() => {
     ;(globalThis as any).browser = originalBrowser
+    ;(globalThis as any).chrome = originalChrome
   })
 })
 
@@ -171,6 +173,7 @@ describe("browserApi sendRuntimeActionMessage", () => {
 
   afterAll(() => {
     ;(globalThis as any).browser = originalBrowser
+    ;(globalThis as any).chrome = originalChrome
   })
 
   it("forwards payload to browser.runtime.sendMessage unchanged", async () => {
@@ -233,5 +236,117 @@ describe("browserApi sendRuntimeActionMessage", () => {
         return result
       })(),
     ).resolves.toEqual({ ok: true })
+  })
+})
+
+describe("browserApi getSidePanelSupport", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.resetModules()
+    ;(globalThis as any).browser = undefined
+    ;(globalThis as any).chrome = undefined
+  })
+
+  afterAll(() => {
+    ;(globalThis as any).browser = originalBrowser
+    ;(globalThis as any).chrome = originalChrome
+  })
+
+  it("treats browser.sidebarAction.open as Firefox side panel support", async () => {
+    ;(globalThis as any).browser = {
+      sidebarAction: {
+        open: vi.fn(),
+      },
+    }
+    ;(globalThis as any).chrome = {}
+
+    const { getSidePanelSupport } = await import("~/utils/browserApi")
+    expect(getSidePanelSupport()).toEqual({
+      supported: true,
+      kind: "firefox-sidebar-action",
+    })
+  })
+
+  it("treats chrome.sidePanel.open as Chromium side panel support", async () => {
+    ;(globalThis as any).browser = {}
+    ;(globalThis as any).chrome = {
+      sidePanel: {
+        open: vi.fn(),
+      },
+    }
+
+    const { getSidePanelSupport } = await import("~/utils/browserApi")
+    expect(getSidePanelSupport()).toEqual({
+      supported: true,
+      kind: "chromium-side-panel",
+    })
+  })
+
+  it("returns unsupported when neither side panel API is available", async () => {
+    ;(globalThis as any).browser = {}
+    ;(globalThis as any).chrome = {}
+
+    const { getSidePanelSupport } = await import("~/utils/browserApi")
+    const result = getSidePanelSupport()
+
+    expect(result.supported).toBe(false)
+    expect(result.kind).toBe("unsupported")
+    if (result.supported) {
+      throw new Error("Expected getSidePanelSupport to return unsupported")
+    }
+    expect(result.reason).toContain("browser.sidebarAction.open missing")
+    expect(result.reason).toContain("chrome.sidePanel.open missing")
+  })
+
+  it("caches support check at module load time", async () => {
+    ;(globalThis as any).browser = {
+      sidebarAction: {
+        open: vi.fn(),
+      },
+    }
+    ;(globalThis as any).chrome = {}
+
+    const { getSidePanelSupport } = await import("~/utils/browserApi")
+
+    expect(getSidePanelSupport()).toEqual({
+      supported: true,
+      kind: "firefox-sidebar-action",
+    })
+    ;(globalThis as any).browser = {}
+    ;(globalThis as any).chrome = {
+      sidePanel: {
+        open: vi.fn(),
+      },
+    }
+
+    expect(getSidePanelSupport()).toEqual({
+      supported: true,
+      kind: "firefox-sidebar-action",
+    })
+  })
+
+  it("uses specific reasons when APIs exist but are unusable", async () => {
+    ;(globalThis as any).browser = {
+      sidebarAction: {
+        open: {},
+      },
+    }
+    ;(globalThis as any).chrome = {
+      sidePanel: {
+        open: {},
+      },
+    }
+
+    const { getSidePanelSupport } = await import("~/utils/browserApi")
+    const result = getSidePanelSupport()
+
+    expect(result.supported).toBe(false)
+    expect(result.kind).toBe("unsupported")
+    if (result.supported) {
+      throw new Error("Expected getSidePanelSupport to return unsupported")
+    }
+    expect(result.reason).toBe(
+      "browser.sidebarAction.open missing; chrome.sidePanel.open missing",
+    )
   })
 })

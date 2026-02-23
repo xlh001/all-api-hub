@@ -1,10 +1,12 @@
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import {
   addActionClickListener,
+  getSidePanelSupport,
   openSidePanel,
   removeActionClickListener,
   setActionPopup,
 } from "~/utils/browserApi"
+import { getErrorMessage } from "~/utils/error"
 import { createLogger } from "~/utils/logger"
 import { openOrFocusOptionsMenuItem } from "~/utils/navigation"
 
@@ -25,7 +27,9 @@ const handleActionClick = async () => {
   try {
     await openSidePanel()
   } catch (error) {
-    logger.warn("Side panel unavailable, opening settings instead", error)
+    logger.warn(
+      `Side panel unavailable, opening settings instead:\n${getErrorMessage(error)}`,
+    )
     openOrFocusOptionsMenuItem(MENU_ITEM_IDS.BASIC)
   }
 }
@@ -38,27 +42,37 @@ const handleActionClick = async () => {
 export async function applyActionClickBehavior(
   behavior: ActionClickBehavior,
 ): Promise<void> {
-  const isSidePanel = behavior === "sidepanel"
+  const sidePanelSupport = getSidePanelSupport()
+  const effectiveBehavior: ActionClickBehavior =
+    behavior === "sidepanel" && sidePanelSupport.supported
+      ? "sidepanel"
+      : "popup"
+  const isSidePanel = effectiveBehavior === "sidepanel"
 
   // 清理旧的点击监听
   removeActionClickListener(handleActionClick)
 
   // 设置 sidePanel 行为 (chrome only)
-  try {
-    await chrome.sidePanel.setPanelBehavior({
-      openPanelOnActionClick: isSidePanel,
-    })
-  } catch (error) {
-    logger.warn("sidePanel.setPanelBehavior not available", error)
+  if (typeof (chrome as any)?.sidePanel?.setPanelBehavior === "function") {
+    try {
+      await chrome.sidePanel.setPanelBehavior({
+        openPanelOnActionClick: isSidePanel,
+      })
+    } catch (error) {
+      logger.warn(
+        `sidePanel.setPanelBehavior not available:\n${getErrorMessage(error)}`,
+      )
+    }
   }
 
   // 当选择 sidepanel 时清空 popup；选择 popup 时恢复 popup.html
   try {
     await setActionPopup(isSidePanel ? "" : POPUP_PAGE)
   } catch (error) {
-    logger.warn("action.setPopup not available", error)
+    logger.warn(`action.setPopup not available:\n${getErrorMessage(error)}`)
   }
 
-  // 确保监听已注册
-  addActionClickListener(handleActionClick)
+  if (isSidePanel) {
+    addActionClickListener(handleActionClick)
+  }
 }
