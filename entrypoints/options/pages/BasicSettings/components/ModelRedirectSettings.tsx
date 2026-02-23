@@ -6,6 +6,7 @@ import { SettingSection } from "~/components/SettingSection"
 import { Button, Card, CardContent, CompactMultiSelect } from "~/components/ui"
 import { Switch } from "~/components/ui/Switch"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { ClearModelRedirectMappingsDialog } from "~/entrypoints/options/pages/BasicSettings/components/ClearModelRedirectMappingsDialog"
 import { getApiService } from "~/services/apiService"
 import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { ModelRedirectService } from "~/services/modelRedirect"
@@ -29,6 +30,7 @@ export default function ModelRedirectSettings() {
     useUserPreferencesContext()
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isBulkClearOpen, setIsBulkClearOpen] = useState(false)
 
   const modelRedirect = preferences?.modelRedirect
 
@@ -106,6 +108,10 @@ export default function ModelRedirectSettings() {
     }
   }
 
+  const canUseManagedSiteAdmin = Boolean(
+    preferences && hasValidManagedSiteConfig(preferences),
+  )
+
   return (
     <SettingSection
       id="managed-site-model-redirect"
@@ -168,8 +174,27 @@ export default function ModelRedirectSettings() {
               </div>
             </>
           )}
+
+          <div className="pt-2">
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!canUseManagedSiteAdmin}
+              onClick={() => setIsBulkClearOpen(true)}
+            >
+              {t("bulkClear.action")}
+            </Button>
+            <p className="dark:text-dark-text-secondary mt-1 text-sm text-gray-500">
+              {t("bulkClear.actionDesc")}
+            </p>
+          </div>
         </CardContent>
       </Card>
+
+      <ClearModelRedirectMappingsDialog
+        isOpen={isBulkClearOpen}
+        onClose={() => setIsBulkClearOpen(false)}
+      />
     </SettingSection>
   )
 }

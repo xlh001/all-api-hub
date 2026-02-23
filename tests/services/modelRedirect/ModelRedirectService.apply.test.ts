@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
 import { modelMetadataService } from "~/services/modelMetadata"
@@ -25,13 +25,12 @@ const listChannelsMock = vi.fn()
 const updateChannelModelMappingMock = vi.fn()
 
 vi.mock("~/services/modelSync", () => {
-  const NewApiModelSyncServiceMock = vi.fn().mockImplementation(() => ({
-    listChannels: listChannelsMock,
-    updateChannelModelMapping: updateChannelModelMappingMock,
-  }))
+  class ModelSyncServiceMock {
+    listChannels = listChannelsMock
+    updateChannelModelMapping = updateChannelModelMappingMock
+  }
   return {
-    NewApiModelSyncService: NewApiModelSyncServiceMock,
-    __esModule: true,
+    ModelSyncService: ModelSyncServiceMock,
   }
 })
 
@@ -126,10 +125,6 @@ describe("ModelRedirectService.applyModelMappingToChannel", () => {
 
 describe("ModelRedirectService.applyModelRedirect", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  afterEach(() => {
     vi.clearAllMocks()
   })
 
