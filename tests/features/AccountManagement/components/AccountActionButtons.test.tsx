@@ -1,27 +1,45 @@
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
+import { buildDisplaySiteData } from "~/tests/test-utils/factories"
+import { render } from "~/tests/test-utils/render"
+import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
 
 const {
   mockHandleSetAccountDisabled,
   fetchAccountTokensMock,
+  sendRuntimeMessageMock,
+  loadAccountDataMock,
+  toastDismissMock,
+  toastLoadingMock,
   toastSuccessMock,
   toastErrorMock,
 } = vi.hoisted(() => ({
   mockHandleSetAccountDisabled: vi.fn(),
   fetchAccountTokensMock: vi.fn(),
+  sendRuntimeMessageMock: vi.fn(),
+  loadAccountDataMock: vi.fn(),
+  toastDismissMock: vi.fn(),
+  toastLoadingMock: vi.fn(),
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
 }))
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}))
+vi.mock("react-i18next", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-i18next")>()
+  return {
+    ...actual,
+    useTranslation: () => ({ t: (key: string) => key }),
+  }
+})
 
 vi.mock("react-hot-toast", () => ({
   default: {
+    dismiss: toastDismissMock,
+    loading: toastLoadingMock,
     success: toastSuccessMock,
     error: toastErrorMock,
   },
@@ -31,6 +49,10 @@ vi.mock("~/services/apiService", () => ({
   getApiService: () => ({
     fetchAccountTokens: fetchAccountTokensMock,
   }),
+}))
+
+vi.mock("~/utils/browserApi", () => ({
+  sendRuntimeMessage: sendRuntimeMessageMock,
 }))
 
 vi.mock("~/features/AccountManagement/hooks/AccountActionsContext", () => ({
@@ -46,6 +68,7 @@ vi.mock("~/features/AccountManagement/hooks/AccountDataContext", () => ({
     isAccountPinned: () => false,
     togglePinAccount: vi.fn(),
     isPinFeatureEnabled: false,
+    loadAccountData: loadAccountDataMock,
   }),
 }))
 
@@ -56,6 +79,7 @@ vi.mock("~/features/AccountManagement/hooks/DialogStateContext", () => ({
 }))
 
 vi.mock("~/contexts/UserPreferencesContext", () => ({
+  UserPreferencesProvider: ({ children }: { children: any }) => children,
   useUserPreferencesContext: () => ({
     currencyType: "USD",
     showTodayCashflow: true,
@@ -79,19 +103,11 @@ describe("AccountActionButtons", () => {
 
     render(
       <AccountActionButtons
-        site={
-          {
-            id: "acc-1",
-            disabled: true,
-            name: "Site",
-            siteType: "test",
-            baseUrl: "https://example.com",
-            token: "token",
-            userId: 1,
-            authType: "access_token",
-            checkIn: { enableDetection: false },
-          } as any
-        }
+        site={buildDisplaySiteData({
+          id: "acc-1",
+          disabled: true,
+          name: "Site",
+        })}
         onCopyKey={vi.fn()}
         onDeleteAccount={vi.fn()}
       />,
@@ -134,19 +150,11 @@ describe("AccountActionButtons", () => {
 
     render(
       <AccountActionButtons
-        site={
-          {
-            id: "acc-2",
-            disabled: false,
-            name: "Site",
-            siteType: "test",
-            baseUrl: "https://example.com",
-            token: "token",
-            userId: 1,
-            authType: "access_token",
-            checkIn: { enableDetection: false },
-          } as any
-        }
+        site={buildDisplaySiteData({
+          id: "acc-2",
+          disabled: false,
+          name: "Site",
+        })}
         onCopyKey={vi.fn()}
         onDeleteAccount={vi.fn()}
       />,
@@ -182,19 +190,11 @@ describe("AccountActionButtons", () => {
 
     render(
       <AccountActionButtons
-        site={
-          {
-            id: "acc-3",
-            disabled: false,
-            name: "Site",
-            siteType: "test",
-            baseUrl: "https://example.com",
-            token: "token",
-            userId: 1,
-            authType: "access_token",
-            checkIn: { enableDetection: false },
-          } as any
-        }
+        site={buildDisplaySiteData({
+          id: "acc-3",
+          disabled: false,
+          name: "Site",
+        })}
         onCopyKey={vi.fn()}
         onDeleteAccount={vi.fn()}
       />,
@@ -229,19 +229,11 @@ describe("AccountActionButtons", () => {
 
     render(
       <AccountActionButtons
-        site={
-          {
-            id: "acc-4",
-            disabled: false,
-            name: "Site",
-            siteType: "test",
-            baseUrl: "https://example.com",
-            token: "token",
-            userId: 1,
-            authType: "access_token",
-            checkIn: { enableDetection: false },
-          } as any
-        }
+        site={buildDisplaySiteData({
+          id: "acc-4",
+          disabled: false,
+          name: "Site",
+        })}
         onCopyKey={onCopyKey}
         onDeleteAccount={vi.fn()}
       />,
@@ -256,5 +248,65 @@ describe("AccountActionButtons", () => {
     })
 
     expect(toastErrorMock).not.toHaveBeenCalledWith("actions.noKeyFound")
+  })
+
+  it("sends a targeted autoCheckin:runNow payload when Quick check-in is clicked", async () => {
+    toastLoadingMock.mockReturnValue("toast-quick-checkin")
+    sendRuntimeMessageMock
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          perAccount: {
+            "acc-5": {
+              status: CHECKIN_RESULT_STATUS.SUCCESS,
+              messageKey: "autoCheckin:providerFallback.checkinSuccessful",
+            },
+          },
+        },
+      })
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-5",
+          disabled: false,
+          name: "Site",
+          checkIn: { enableDetection: true },
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText("actions.quickCheckin")
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    expect(toastLoadingMock).toHaveBeenCalledWith(
+      "autoCheckin:messages.loading.running",
+    )
+    await waitFor(() => {
+      expect(sendRuntimeMessageMock).toHaveBeenNthCalledWith(1, {
+        action: RuntimeActionIds.AutoCheckinRunNow,
+        accountIds: ["acc-5"],
+      })
+      expect(sendRuntimeMessageMock).toHaveBeenNthCalledWith(2, {
+        action: RuntimeActionIds.AutoCheckinGetStatus,
+      })
+      expect(toastDismissMock).toHaveBeenCalledWith("toast-quick-checkin")
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "Site: autoCheckin:providerFallback.checkinSuccessful",
+      )
+      expect(loadAccountDataMock).toHaveBeenCalled()
+    })
   })
 })

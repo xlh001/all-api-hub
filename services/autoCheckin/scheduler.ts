@@ -1458,7 +1458,7 @@ class AutoCheckinScheduler {
   }
 
   /**
-   * Execute check-ins for all eligible accounts.
+   * Execute check-ins for all eligible accounts, optionally scoped to a target set.
    *
    * Run types:
    * - `AUTO_CHECKIN_RUN_TYPE.DAILY`: invoked by the daily alarm. Records `lastDailyRunDay` and builds a retry queue
@@ -1469,17 +1469,84 @@ class AutoCheckinScheduler {
    * Important: we DO NOT use `checkIn.siteStatus.isCheckedInToday` for eligibility because it
    * is not trusted. Providers must return `already_checked` when appropriate.
    */
-  async runCheckins(options?: { runType?: AutoCheckinRunType }): Promise<void> {
+  async runCheckins(options?: {
+    runType?: AutoCheckinRunType
+    targetAccountIds?: string[]
+  }): Promise<void> {
     // Default to manual runs for UI-triggered or debug entry points.
     const runType = options?.runType ?? AUTO_CHECKIN_RUN_TYPE.MANUAL
     const isDailyRun = runType === AUTO_CHECKIN_RUN_TYPE.DAILY
+    const targetAccountIds = options?.targetAccountIds
+    const targetAccountIdSet =
+      !isDailyRun &&
+      Array.isArray(targetAccountIds) &&
+      targetAccountIds.length > 0
+        ? new Set(targetAccountIds)
+        : null
     let notifyUiOnCompletion: boolean | null = null
 
-    logger.info("Starting check-in execution", { runType })
+    logger.info("Starting check-in execution", {
+      runType,
+      targetAccountCount: targetAccountIdSet?.size ?? null,
+    })
     const startTime = Date.now()
     const now = new Date()
     const today = this.getLocalDay(now)
     const currentStatus = await autoCheckinStorage.getStatus()
+    const mergeHistory = Boolean(targetAccountIdSet)
+
+    const mergePerAccountIfNeeded = (
+      nextResults: Record<string, CheckinAccountResult>,
+    ): Record<string, CheckinAccountResult> => {
+      if (!mergeHistory) return nextResults
+      return {
+        ...(currentStatus?.perAccount ?? {}),
+        ...nextResults,
+      }
+    }
+
+    const mergeAccountsSnapshotIfNeeded = (
+      currentRunSnapshots: AutoCheckinAccountSnapshot[],
+      nextResults: Record<string, CheckinAccountResult>,
+    ): AutoCheckinAccountSnapshot[] => {
+      if (!mergeHistory) {
+        return this.attachResultsToSnapshots(currentRunSnapshots, nextResults)
+      }
+
+      let nextSnapshots = currentStatus?.accountsSnapshot
+      if (!nextSnapshots || nextSnapshots.length === 0) {
+        return this.attachResultsToSnapshots(currentRunSnapshots, nextResults)
+      }
+
+      for (const result of Object.values(nextResults)) {
+        nextSnapshots =
+          this.updateSnapshotWithResult(nextSnapshots, result) ?? nextSnapshots
+      }
+
+      const existingIds = new Set(
+        nextSnapshots.map((snapshot) => snapshot.accountId),
+      )
+      const missing = currentRunSnapshots.filter(
+        (snapshot) => !existingIds.has(snapshot.accountId),
+      )
+      if (missing.length === 0) return nextSnapshots
+
+      return [
+        ...nextSnapshots,
+        ...this.attachResultsToSnapshots(missing, nextResults),
+      ]
+    }
+
+    const mergeSummaryIfNeeded = (
+      summary: AutoCheckinRunSummary,
+      perAccount: Record<string, CheckinAccountResult>,
+    ): AutoCheckinRunSummary => {
+      if (!mergeHistory) return summary
+      return this.recalculateSummaryFromResults(
+        perAccount,
+        currentStatus?.summary ?? summary,
+      )
+    }
 
     try {
       // Get preferences
@@ -1496,7 +1563,12 @@ class AutoCheckinScheduler {
       // Get all accounts, then exclude disabled accounts from runnable selection.
       // Disabled accounts must not participate, but we still record an explicit
       // skip reason so background status/history can explain why an account was skipped.
-      const allAccounts = await accountStorage.getAllAccounts()
+      const availableAccounts = await accountStorage.getAllAccounts()
+      const allAccounts = targetAccountIdSet
+        ? availableAccounts.filter((account) =>
+            targetAccountIdSet.has(account.id),
+          )
+        : availableAccounts
       const enabledAccounts = allAccounts.filter(
         (account) => account.disabled !== true,
       )
@@ -1566,17 +1638,20 @@ class AutoCheckinScheduler {
           skippedCount: accountSnapshots.length,
           needsRetry: false,
         }
+        const perAccount = mergePerAccountIfNeeded(results)
+        const accountsSnapshot = mergeAccountsSnapshotIfNeeded(
+          accountSnapshots,
+          results,
+        )
+        const mergedSummary = mergeSummaryIfNeeded(summary, perAccount)
 
         await autoCheckinStorage.saveStatus({
           ...(currentStatus ?? {}),
           lastRunAt: new Date().toISOString(),
           lastRunResult: AUTO_CHECKIN_RUN_RESULT.SUCCESS,
-          perAccount: results,
-          summary,
-          accountsSnapshot: this.attachResultsToSnapshots(
-            accountSnapshots,
-            results,
-          ),
+          perAccount,
+          summary: mergedSummary,
+          accountsSnapshot,
           ...(isDailyRun
             ? {
                 lastDailyRunDay: today,
@@ -1592,7 +1667,7 @@ class AutoCheckinScheduler {
           await this.notifyUiRunCompleted({
             runKind: runType,
             updatedAccountIds: [],
-            summary,
+            summary: mergedSummary,
           })
         }
         return
@@ -1687,18 +1762,22 @@ class AutoCheckinScheduler {
         retryState?.day === today && retryState.pendingAccountIds.length > 0,
       )
 
+      const perAccount = mergePerAccountIfNeeded(results)
+      const accountsSnapshot = mergeAccountsSnapshotIfNeeded(
+        accountSnapshots,
+        results,
+      )
+      const mergedSummary = mergeSummaryIfNeeded(summary, perAccount)
+
       await autoCheckinStorage.saveStatus({
         ...(currentStatus ?? {}),
         lastRunAt: new Date().toISOString(),
         lastRunResult: overallResult,
-        perAccount: results,
-        summary,
+        perAccount,
+        summary: mergedSummary,
         retryState,
         pendingRetry,
-        accountsSnapshot: this.attachResultsToSnapshots(
-          accountSnapshots,
-          results,
-        ),
+        accountsSnapshot,
         ...(isDailyRun
           ? {
               lastDailyRunDay: today,
@@ -1717,7 +1796,7 @@ class AutoCheckinScheduler {
         await this.notifyUiRunCompleted({
           runKind: runType,
           updatedAccountIds,
-          summary,
+          summary: mergedSummary,
         })
       }
 
@@ -1733,7 +1812,7 @@ class AutoCheckinScheduler {
         ...(currentStatus ?? {}),
         lastRunAt: new Date().toISOString(),
         lastRunResult: AUTO_CHECKIN_RUN_RESULT.FAILED,
-        perAccount: {},
+        perAccount: mergeHistory ? currentStatus?.perAccount ?? {} : {},
         pendingRetry: false,
         retryState: isDailyRun ? undefined : currentStatus?.retryState,
         ...(isDailyRun
@@ -2088,6 +2167,44 @@ class AutoCheckinScheduler {
 export const autoCheckinScheduler = new AutoCheckinScheduler()
 
 /**
+ * Normalizes an optional `accountIds` payload into a unique list of account IDs.
+ * Returns an error when the payload is present but invalid.
+ */
+function parseTargetAccountIds(accountIds: unknown):
+  | {
+      success: true
+      targetAccountIds: string[] | undefined
+    }
+  | {
+      success: false
+      error: string
+    } {
+  if (accountIds === undefined) {
+    return { success: true, targetAccountIds: undefined }
+  }
+
+  if (!Array.isArray(accountIds)) {
+    return {
+      success: false,
+      error: "Invalid payload: accountIds must be a non-empty string[]",
+    }
+  }
+
+  const normalized = accountIds
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter((value) => value.length > 0)
+
+  if (normalized.length === 0 || normalized.length !== accountIds.length) {
+    return {
+      success: false,
+      error: "Invalid payload: accountIds must be a non-empty string[]",
+    }
+  }
+
+  return { success: true, targetAccountIds: Array.from(new Set(normalized)) }
+}
+
+/**
  * Message handler for Auto Check-in actions (run, retry, get status/settings).
  * Keeps background-only logic centralized for content scripts/options UI calls.
  * @param request Incoming message with action/payload.
@@ -2099,10 +2216,17 @@ export const handleAutoCheckinMessage = async (
 ) => {
   try {
     switch (request.action) {
-      case RuntimeActionIds.AutoCheckinRunNow:
+      case RuntimeActionIds.AutoCheckinRunNow: {
+        const targetIdsResult = parseTargetAccountIds(request.accountIds)
+        if (!targetIdsResult.success) {
+          sendResponse({ success: false, error: targetIdsResult.error })
+          break
+        }
+
         try {
           await autoCheckinScheduler.runCheckins({
             runType: AUTO_CHECKIN_RUN_TYPE.MANUAL,
+            targetAccountIds: targetIdsResult.targetAccountIds,
           })
           sendResponse({ success: true })
         } catch (e) {
@@ -2110,9 +2234,16 @@ export const handleAutoCheckinMessage = async (
           logger.error("Manual run failed", e)
           sendResponse({ success: false, error: getErrorMessage(e) })
         } finally {
-          await autoCheckinScheduler.scheduleNextRun({ preserveExisting: true })
+          try {
+            await autoCheckinScheduler.scheduleNextRun({
+              preserveExisting: true,
+            })
+          } catch (error) {
+            logger.warn("Failed to reschedule after manual run", error)
+          }
         }
         break
+      }
 
       case RuntimeActionIds.AutoCheckinDebugTriggerDailyAlarmNow: {
         if (
