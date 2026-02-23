@@ -6,6 +6,7 @@ export default {
   useTabs: false,
   semi: false,
   singleQuote: false,
+  endOfLine: "auto",
   bracketSpacing: true,
   bracketSameLine: false,
   plugins: [
