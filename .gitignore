@@ -15,6 +15,7 @@
 # playwright-cli
 .playwright-cli/
 .playwright/
+.playwright-profiles/
 
 # misc
 .DS_Store
