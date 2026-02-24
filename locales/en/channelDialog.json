@@ -69,7 +69,7 @@
     },
     "priority": {
       "label": "Priority",
-      "hint": "Channels with lower priority numbers are used before others"
+      "hint": "Channels with larger priority numbers are used before others"
     },
     "weight": {
       "label": "Weight",
