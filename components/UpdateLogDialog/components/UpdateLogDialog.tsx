@@ -17,14 +17,14 @@ export interface UpdateLogDialogProps {
 type IframeStatus = "loading" | "loaded" | "failed"
 
 /**
- *
+ * A modal dialog that displays the update log for a specific version of the extension.
  */
 export function UpdateLogDialog({
   isOpen,
   onClose,
   version,
 }: UpdateLogDialogProps) {
-  const { t } = useTranslation(["ui", "common"])
+  const { t, i18n } = useTranslation(["ui", "common"])
   const [iframeStatus, setIframeStatus] = useState<IframeStatus>("loading")
   const { openChangelogOnUpdate, updateOpenChangelogOnUpdate } =
     useUserPreferencesContext()
@@ -33,7 +33,10 @@ export function UpdateLogDialog({
 
   const autoOpenEnabled = autoOpenOverride ?? openChangelogOnUpdate
 
-  const iframeUrl = useMemo(() => getDocsChangelogUrl(version), [version])
+  const iframeUrl = useMemo(
+    () => getDocsChangelogUrl(version, i18n.language),
+    [version, i18n.language],
+  )
 
   useEffect(() => {
     if (!isOpen) return
@@ -51,7 +54,7 @@ export function UpdateLogDialog({
 
   const handleOpenFullChangelog = async () => {
     try {
-      await createTab(getDocsChangelogUrl(version), true)
+      await createTab(iframeUrl, true)
     } catch (error) {
       const logger = createLogger("UpdateLogDialog")
       logger.error(
