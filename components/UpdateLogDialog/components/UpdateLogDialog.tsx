@@ -126,6 +126,7 @@ export function UpdateLogDialog({
       header={header}
       footer={footer}
       size="lg"
+      panelClassName="max-h-[95vh] max-w-5xl"
     >
       <div data-testid="update-log-dialog" className="space-y-3">
         <div className="dark:border-dark-bg-tertiary overflow-hidden rounded-lg border border-gray-200">
@@ -141,7 +142,7 @@ export function UpdateLogDialog({
             <iframe
               title={t("ui:dialog.updateLog.title")}
               src={iframeUrl}
-              className="dark:bg-dark-bg-secondary h-[60vh] w-full bg-white"
+              className="dark:bg-dark-bg-secondary h-[70vh] w-full bg-white sm:h-[75vh]"
               onLoad={() => setIframeStatus("loaded")}
               sandbox="allow-same-origin allow-scripts"
             />
