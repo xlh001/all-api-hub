@@ -1,5 +1,6 @@
 // 站点名称常量
-import merge from "lodash-es/merge"
+// eslint-disable-next-line import/extensions
+import merge from "lodash-es/merge.js"
 
 export const ONE_API = "one-api"
 export const NEW_API = "new-api"

@@ -1,6 +1,7 @@
 import type { BrowserContext, Page, Worker } from "@playwright/test"
 
 import { expect, test } from "~/e2e/fixtures/extensionTest"
+import { CURRENT_PREFERENCES_VERSION } from "~/services/configMigration/preferences/preferencesMigration"
 import { STORAGE_KEYS } from "~/services/storageKeys"
 import { getErrorMessage } from "~/utils/error"
 import { createLogger } from "~/utils/logger"
@@ -285,6 +286,7 @@ test("does not show update log when disabled, but still consumes pending marker"
   )
   await setPlasmoStorageValue(serviceWorker, STORAGE_KEYS.USER_PREFERENCES, {
     openChangelogOnUpdate: false,
+    preferencesVersion: CURRENT_PREFERENCES_VERSION,
   })
   await setPlasmoStorageValue(
     serviceWorker,
