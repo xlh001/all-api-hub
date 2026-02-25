@@ -1,36 +1,40 @@
-import { renderHook } from "@testing-library/react"
-import { act } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { useChannelDialogContext } from "~/components/ChannelDialog/context/ChannelDialogContext"
 import { useChannelDialog } from "~/components/ChannelDialog/hooks/useChannelDialog"
+import { ChannelType } from "~/constants"
 import { DIALOG_MODES } from "~/constants/dialogModes"
+import * as accountOperations from "~/services/accountOperations"
+import { accountStorage } from "~/services/accountStorage"
+import * as managedSiteService from "~/services/managedSiteService"
+import type { ManagedSiteService } from "~/services/managedSiteService"
+import { act, renderHook, waitFor } from "~/tests/test-utils/render"
 import {
   AuthTypeEnum,
   SiteHealthStatus,
   type ApiToken,
+  type DisplaySiteData,
   type SiteAccount,
 } from "~/types"
+import type { ChannelFormData, ManagedSiteChannel } from "~/types/managedSite"
 
-const {
-  mockOpenDialog,
-  mockRequestDuplicateChannelWarning,
-  mockToastLoading,
-  mockToastDismiss,
-  mockToastError,
-  mockGetManagedSiteService,
-  mockConvertToDisplayData,
-  mockEnsureAccountApiToken,
-} = vi.hoisted(() => ({
-  mockOpenDialog: vi.fn(),
-  mockRequestDuplicateChannelWarning:
-    vi.fn<(options: { existingChannelName: string }) => Promise<boolean>>(),
-  mockToastLoading: vi.fn(),
-  mockToastDismiss: vi.fn(),
-  mockToastError: vi.fn(),
-  mockGetManagedSiteService: vi.fn(),
-  mockConvertToDisplayData: vi.fn(),
-  mockEnsureAccountApiToken: vi.fn(),
-}))
+const { mockToastLoading, mockToastDismiss, mockToastError } = vi.hoisted(
+  () => ({
+    mockToastLoading: vi.fn(),
+    mockToastDismiss: vi.fn(),
+    mockToastError: vi.fn(),
+  }),
+)
+
+const getManagedSiteServiceSpy = vi.spyOn(
+  managedSiteService,
+  "getManagedSiteService",
+)
+const getAccountByIdSpy = vi.spyOn(accountStorage, "getAccountById")
+const ensureAccountApiTokenSpy = vi.spyOn(
+  accountOperations,
+  "ensureAccountApiToken",
+)
 
 const buildSiteAccount = (
   overrides: Partial<SiteAccount> = {},
@@ -65,6 +69,26 @@ const buildSiteAccount = (
   ...overrides,
 })
 
+const buildDisplaySiteData = (
+  overrides: Partial<DisplaySiteData> = {},
+): DisplaySiteData => ({
+  id: "account-id",
+  name: "Account",
+  username: "user",
+  balance: { USD: 0, CNY: 0 },
+  todayConsumption: { USD: 0, CNY: 0 },
+  todayIncome: { USD: 0, CNY: 0 },
+  todayTokens: { upload: 0, download: 0 },
+  health: { status: SiteHealthStatus.Healthy },
+  siteType: "newapi",
+  baseUrl: "https://upstream.example.com",
+  token: "access-token",
+  userId: 1,
+  authType: AuthTypeEnum.AccessToken,
+  checkIn: { enableDetection: false },
+  ...overrides,
+})
+
 const buildApiToken = (overrides: Partial<ApiToken> = {}): ApiToken => ({
   id: 1,
   user_id: 1,
@@ -88,109 +112,136 @@ vi.mock("react-hot-toast", () => ({
   },
 }))
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}))
-
-vi.mock("~/components/ChannelDialog/context/ChannelDialogContext", () => ({
-  useChannelDialogContext: () => ({
-    openDialog: mockOpenDialog,
-    requestDuplicateChannelWarning: mockRequestDuplicateChannelWarning,
-  }),
-}))
-
-vi.mock("~/services/managedSiteService", () => ({
-  getManagedSiteService: mockGetManagedSiteService,
-}))
-
-vi.mock("~/services/accountStorage", () => ({
-  accountStorage: {
-    convertToDisplayData: mockConvertToDisplayData,
-    getAccountById: vi.fn(),
-  },
-}))
-
-vi.mock("~/services/accountOperations", () => ({
-  ensureAccountApiToken: mockEnsureAccountApiToken,
-}))
-
 describe("useChannelDialog duplicate channel warning", () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
     mockToastLoading.mockReturnValue("toast-id")
-    mockConvertToDisplayData.mockReturnValue({
-      id: "account-id",
-      name: "Account",
-      baseUrl: "https://upstream.example.com",
-    })
-    mockEnsureAccountApiToken.mockImplementation(() => {
+    getAccountByIdSpy.mockResolvedValue(buildSiteAccount())
+    ensureAccountApiTokenSpy.mockImplementation(() => {
       throw new Error("ensureAccountApiToken should not be called in this test")
     })
   })
 
   it("shows warning and cancels when user does not continue", async () => {
-    const mockService = {
+    const mockService: Partial<ManagedSiteService> = {
       messagesKey: "newapi",
       getConfig: vi.fn(async () => ({
         baseUrl: "https://managed.example.com",
         token: "admin-token",
         userId: "1",
       })),
-      prepareChannelFormData: vi.fn(async () => ({
-        name: "Auto channel",
-        models: ["gpt-4"],
-        groups: ["default"],
-      })),
-      findMatchingChannel: vi.fn(async () => ({ name: "Existing channel" })),
+      prepareChannelFormData: vi.fn(
+        async () =>
+          ({
+            name: "Auto channel",
+            type: ChannelType.OpenAI,
+            key: "sk-test",
+            base_url: "https://upstream.example.com",
+            models: ["gpt-4"],
+            groups: ["default"],
+            priority: 0,
+            weight: 0,
+            status: 1,
+          }) satisfies ChannelFormData,
+      ),
+      findMatchingChannel: vi.fn(
+        async () => ({ name: "Existing channel" }) as ManagedSiteChannel,
+      ),
     }
-    mockGetManagedSiteService.mockResolvedValue(mockService)
-    mockRequestDuplicateChannelWarning.mockResolvedValue(false)
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
 
-    const { result } = renderHook(() => useChannelDialog())
+    const { result } = renderHook(() => ({
+      dialog: useChannelDialog(),
+      context: useChannelDialogContext(),
+    }))
+
+    await waitFor(() => {
+      expect(result.current).not.toBeNull()
+    })
+
+    const openPromise = result.current.dialog.openWithAccount(
+      buildDisplaySiteData(),
+      buildApiToken(),
+    )
+
+    await waitFor(() => {
+      expect(result.current.context.duplicateChannelWarning).toEqual({
+        isOpen: true,
+        existingChannelName: "Existing channel",
+      })
+    })
 
     await act(async () => {
-      await result.current.openWithAccount(buildSiteAccount(), buildApiToken())
+      result.current.context.resolveDuplicateChannelWarning(false)
+      await openPromise
     })
 
-    expect(mockRequestDuplicateChannelWarning).toHaveBeenCalledWith({
-      existingChannelName: "Existing channel",
-    })
-    expect(mockOpenDialog).not.toHaveBeenCalled()
+    expect(result.current.context.state.isOpen).toBe(false)
     expect(mockToastError).not.toHaveBeenCalled()
     expect(mockToastDismiss).toHaveBeenCalledWith("toast-id")
   })
 
   it("opens ChannelDialog when user continues despite duplicate", async () => {
-    const mockService = {
+    const mockService: Partial<ManagedSiteService> = {
       messagesKey: "newapi",
       getConfig: vi.fn(async () => ({
         baseUrl: "https://managed.example.com",
         token: "admin-token",
         userId: "1",
       })),
-      prepareChannelFormData: vi.fn(async () => ({
-        name: "Auto channel",
-        models: ["gpt-4"],
-        groups: ["default"],
-      })),
-      findMatchingChannel: vi.fn(async () => ({ name: "Existing channel" })),
+      prepareChannelFormData: vi.fn(
+        async () =>
+          ({
+            name: "Auto channel",
+            type: ChannelType.OpenAI,
+            key: "sk-test",
+            base_url: "https://upstream.example.com",
+            models: ["gpt-4"],
+            groups: ["default"],
+            priority: 0,
+            weight: 0,
+            status: 1,
+          }) satisfies ChannelFormData,
+      ),
+      findMatchingChannel: vi.fn(
+        async () => ({ name: "Existing channel" }) as ManagedSiteChannel,
+      ),
     }
-    mockGetManagedSiteService.mockResolvedValue(mockService)
-    mockRequestDuplicateChannelWarning.mockResolvedValue(true)
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
 
-    const { result } = renderHook(() => useChannelDialog())
+    const { result } = renderHook(() => ({
+      dialog: useChannelDialog(),
+      context: useChannelDialogContext(),
+    }))
+
+    await waitFor(() => {
+      expect(result.current).not.toBeNull()
+    })
+
+    const openPromise = result.current.dialog.openWithAccount(
+      buildSiteAccount(),
+      buildApiToken(),
+    )
+
+    await waitFor(() => {
+      expect(result.current.context.duplicateChannelWarning).toEqual({
+        isOpen: true,
+        existingChannelName: "Existing channel",
+      })
+    })
 
     await act(async () => {
-      await result.current.openWithAccount(buildSiteAccount(), buildApiToken())
+      result.current.context.resolveDuplicateChannelWarning(true)
+      await openPromise
     })
 
-    expect(mockRequestDuplicateChannelWarning).toHaveBeenCalledWith({
-      existingChannelName: "Existing channel",
-    })
-    expect(mockOpenDialog).toHaveBeenCalledWith({
+    expect(result.current.context.state).toMatchObject({
+      isOpen: true,
       mode: DIALOG_MODES.ADD,
       initialValues: {
         name: "Auto channel",
@@ -199,7 +250,6 @@ describe("useChannelDialog duplicate channel warning", () => {
       },
       initialModels: ["gpt-4"],
       initialGroups: ["default"],
-      onSuccess: expect.any(Function),
     })
     expect(mockToastError).not.toHaveBeenCalled()
     expect(mockToastDismiss).toHaveBeenCalledWith("toast-id")

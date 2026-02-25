@@ -2,8 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ActionClickBehaviorSettings from "~/entrypoints/options/pages/BasicSettings/components/ActionClickBehaviorSettings"
-import settingsEn from "~/locales/en/settings.json"
-import { testI18n } from "~/tests/test-utils/i18n"
 import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
 import { getSidePanelSupport, type SidePanelSupport } from "~/utils/browserApi"
 import { showResultToast, showUpdateToast } from "~/utils/toastHelpers"
@@ -31,12 +29,12 @@ vi.mock("~/utils/toastHelpers", () => ({
 }))
 
 describe("ActionClickBehaviorSettings (side panel fallback)", () => {
-  testI18n.addResourceBundle("en", "settings", settingsEn, true, true)
-
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
+  // Note: `renderSubject()` uses the shared test renderer; i18n runs in key-assertion mode
+  // so `t()` returns fully-qualified keys (e.g. "settings:...").
   const renderSubject = () => render(<ActionClickBehaviorSettings />)
 
   it("shows unsupported helper even when stored preference is sidepanel", async () => {
@@ -61,7 +59,7 @@ describe("ActionClickBehaviorSettings (side panel fallback)", () => {
 
     expect(
       await screen.findByText(
-        settingsEn.actionClick.sidepanelUnsupportedHelper,
+        "settings:actionClick.sidepanelUnsupportedHelper",
       ),
     ).toBeInTheDocument()
   })
@@ -89,7 +87,7 @@ describe("ActionClickBehaviorSettings (side panel fallback)", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: settingsEn.actionClick.sidepanelTitle,
+        name: "settings:actionClick.sidepanelTitle",
       }),
     )
 
@@ -99,7 +97,7 @@ describe("ActionClickBehaviorSettings (side panel fallback)", () => {
 
     expect(vi.mocked(showResultToast)).toHaveBeenCalledWith(
       true,
-      settingsEn.actionClick.sidepanelFallbackToast,
+      "settings:actionClick.sidepanelFallbackToast",
     )
     expect(vi.mocked(showUpdateToast)).not.toHaveBeenCalled()
   })

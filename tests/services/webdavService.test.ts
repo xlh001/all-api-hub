@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { userPreferences } from "~/services/userPreferences"
 import {
@@ -7,14 +7,6 @@ import {
   testWebdavConnection,
   uploadBackup,
 } from "~/services/webdav/webdavService"
-
-// Mock i18n so error messages are deterministic
-vi.mock("i18next", () => ({
-  t: (key: string, params?: { status?: number }) =>
-    params && typeof params.status !== "undefined"
-      ? `${key}:${params.status}`
-      : key,
-}))
 
 vi.mock("~/services/userPreferences", () => ({
   userPreferences: {
@@ -25,12 +17,22 @@ vi.mock("~/services/userPreferences", () => ({
 const mockedUserPreferences = userPreferences as any
 
 const globalAny = globalThis as any
+const originalFetch = globalAny.fetch
 
 describe("webdavService", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Fresh fetch mock for each test
     globalAny.fetch = vi.fn()
+  })
+
+  afterAll(() => {
+    if (typeof originalFetch === "undefined") {
+      delete globalAny.fetch
+      return
+    }
+
+    globalAny.fetch = originalFetch
   })
 
   const basePrefs = {
@@ -98,7 +100,7 @@ describe("webdavService", () => {
       globalAny.fetch.mockResolvedValue({ status: 500 })
 
       await expect(testWebdavConnection()).rejects.toThrow(
-        "messages:webdav.connectionFailed:500",
+        "messages:webdav.connectionFailed",
       )
     })
   })
@@ -159,7 +161,7 @@ describe("webdavService", () => {
       globalAny.fetch.mockResolvedValue({ status: 500 })
 
       await expect(downloadBackup()).rejects.toThrow(
-        "messages:webdav.downloadFailed:500",
+        "messages:webdav.downloadFailed",
       )
     })
   })
@@ -218,7 +220,7 @@ describe("webdavService", () => {
         .mockResolvedValueOnce({ status: 500 })
 
       await expect(uploadBackup("{}")).rejects.toThrow(
-        "messages:webdav.uploadFailed:500",
+        "messages:webdav.uploadFailed",
       )
     })
   })

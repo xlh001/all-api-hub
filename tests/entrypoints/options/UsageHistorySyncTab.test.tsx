@@ -1,21 +1,22 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { I18nextProvider } from "react-i18next"
+import { fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import UsageHistorySyncTab from "~/entrypoints/options/pages/BasicSettings/components/UsageHistorySyncTab"
-import commonEn from "~/locales/en/common.json"
-import settingsEn from "~/locales/en/settings.json"
-import usageAnalyticsEn from "~/locales/en/usageAnalytics.json"
 import { accountStorage } from "~/services/accountStorage"
 import { usageHistoryStorage } from "~/services/usageHistory/storage"
-import { testI18n } from "~/tests/test-utils/i18n"
+import { render } from "~/tests/test-utils/render"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 
-vi.mock("~/contexts/UserPreferencesContext", () => ({
-  useUserPreferencesContext: vi.fn(),
-}))
+vi.mock("~/contexts/UserPreferencesContext", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("~/contexts/UserPreferencesContext")>()
+  return {
+    ...actual,
+    useUserPreferencesContext: vi.fn(),
+  }
+})
 
 vi.mock("~/services/accountStorage", () => ({
   accountStorage: { getAllAccounts: vi.fn(), getEnabledAccounts: vi.fn() },
@@ -40,22 +41,7 @@ vi.mock("react-hot-toast", () => ({
 }))
 
 describe("UsageHistorySyncTab", () => {
-  testI18n.addResourceBundle(
-    "en",
-    "usageAnalytics",
-    usageAnalyticsEn,
-    true,
-    true,
-  )
-  testI18n.addResourceBundle("en", "settings", settingsEn, true, true)
-  testI18n.addResourceBundle("en", "common", commonEn, true, true)
-
-  const renderSubject = () =>
-    render(
-      <I18nextProvider i18n={testI18n}>
-        <UsageHistorySyncTab />
-      </I18nextProvider>,
-    )
+  const renderSubject = () => render(<UsageHistorySyncTab />)
 
   it("sends usageHistory:updateSettings with current form values", async () => {
     const loadPreferences = vi.fn().mockResolvedValue(undefined)
@@ -83,7 +69,9 @@ describe("UsageHistorySyncTab", () => {
 
     renderSubject()
 
-    const applyButton = await screen.findByText("Apply settings")
+    const applyButton = await screen.findByText(
+      "usageAnalytics:actions.applySettings",
+    )
     fireEvent.click(applyButton)
 
     await waitFor(() => {
@@ -135,12 +123,16 @@ describe("UsageHistorySyncTab", () => {
 
     renderSubject()
 
-    const syncSelectedButton = await screen.findByText("Sync selected")
+    const syncSelectedButton = await screen.findByText(
+      "usageAnalytics:syncTab.actions.syncSelected",
+    )
     expect(syncSelectedButton).toBeDisabled()
 
-    const account1Checkbox = await screen.findByLabelText(
-      "Select account: Account 1",
-    )
+    const account1Cell = await screen.findByText("Account 1")
+    const account1Row = account1Cell.closest("tr")
+    if (!account1Row) throw new Error("Missing account row for Account 1")
+
+    const account1Checkbox = within(account1Row).getByRole("checkbox")
     fireEvent.click(account1Checkbox)
 
     await waitFor(() => {

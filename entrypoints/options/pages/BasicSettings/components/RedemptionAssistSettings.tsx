@@ -14,6 +14,7 @@ import {
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { DEFAULT_PREFERENCES } from "~/services/userPreferences"
+import { getErrorMessage } from "~/utils/error"
 import { createLogger } from "~/utils/logger"
 
 /**
@@ -59,25 +60,17 @@ export default function RedemptionAssistSettings() {
       const success = await updateRedemptionAssist(updates)
 
       if (success) {
-        toast.success(
-          t("redemptionAssist:messages.success.settingsSaved", {
-            defaultValue: "Redemption assist settings have been saved.",
-          }),
-        )
+        toast.success(t("redemptionAssist:messages.success.settingsSaved"))
       } else {
-        toast.error(
-          t("settings:messages.saveSettingsFailed", {
-            defaultValue: "Failed to save settings",
-          }),
-        )
+        toast.error(t("settings:messages.saveSettingsFailed"))
       }
     } catch (error) {
-      logger.error("Failed to save redemption assist settings", error)
-      toast.error(
-        t("settings:messages.saveSettingsFailed", {
-          defaultValue: "Failed to save settings",
-        }),
-      )
+      const msg = getErrorMessage(error)
+      logger.error("Failed to save redemption assist settings", {
+        message: msg,
+        error,
+      })
+      toast.error(msg || t("settings:messages.saveSettingsFailed"))
     } finally {
       setIsSaving(false)
     }
@@ -132,15 +125,9 @@ export default function RedemptionAssistSettings() {
           />
 
           <CardItem
-            title={t("redemptionAssist:settings.relaxedCodeValidation", {
-              defaultValue: "Relax code format restrictions",
-            })}
+            title={t("redemptionAssist:settings.relaxedCodeValidation")}
             description={t(
               "redemptionAssist:settings.relaxedCodeValidationDesc",
-              {
-                defaultValue:
-                  "When enabled, any 32-character code will be treated as a possible redemption code (no charset check).",
-              },
             )}
             rightContent={
               <Switch
@@ -154,16 +141,8 @@ export default function RedemptionAssistSettings() {
           />
 
           <CardItem
-            title={t("redemptionAssist:settings.urlWhitelist.enable", {
-              defaultValue: "Enable URL whitelist",
-            })}
-            description={t(
-              "redemptionAssist:settings.urlWhitelist.enableDesc",
-              {
-                defaultValue:
-                  "When enabled, redemption assist only runs on URLs allowed by the rules below.",
-              },
-            )}
+            title={t("redemptionAssist:settings.urlWhitelist.enable")}
+            description={t("redemptionAssist:settings.urlWhitelist.enableDesc")}
             rightContent={
               <Switch
                 checked={whitelist.enabled}
@@ -183,16 +162,9 @@ export default function RedemptionAssistSettings() {
           <CardItem
             title={t(
               "redemptionAssist:settings.urlWhitelist.includeAccountSiteUrls",
-              {
-                defaultValue: "Include account site URLs",
-              },
             )}
             description={t(
               "redemptionAssist:settings.urlWhitelist.includeAccountSiteUrlsDesc",
-              {
-                defaultValue:
-                  "Allow all pages under each account's site URL origin.",
-              },
             )}
             rightContent={
               <Switch
@@ -213,16 +185,9 @@ export default function RedemptionAssistSettings() {
           <CardItem
             title={t(
               "redemptionAssist:settings.urlWhitelist.includeCheckInAndRedeemUrls",
-              {
-                defaultValue: "Include check-in & redeem URLs",
-              },
             )}
             description={t(
               "redemptionAssist:settings.urlWhitelist.includeCheckInAndRedeemUrlsDesc",
-              {
-                defaultValue:
-                  "Allow the check-in and redeem pages (custom or default) for each account.",
-              },
             )}
             rightContent={
               <Switch
@@ -247,24 +212,16 @@ export default function RedemptionAssistSettings() {
         >
           <div className="space-y-2">
             <div className="text-sm font-medium">
-              {t("redemptionAssist:settings.urlWhitelist.patterns", {
-                defaultValue: "Custom regex patterns",
-              })}
+              {t("redemptionAssist:settings.urlWhitelist.patterns")}
             </div>
             <div className="text-muted-foreground text-xs">
-              {t("redemptionAssist:settings.urlWhitelist.patternsDesc", {
-                defaultValue:
-                  "One JavaScript RegExp pattern per line. Case-insensitive match is applied.",
-              })}
+              {t("redemptionAssist:settings.urlWhitelist.patternsDesc")}
             </div>
             <Textarea
               value={patternsDraft}
               onChange={(event) => setPatternsDraft(event.target.value)}
               placeholder={t(
                 "redemptionAssist:settings.urlWhitelist.patternsPlaceholder",
-                {
-                  defaultValue: "^https://example\\.com/console/topup",
-                },
               )}
               rows={6}
               disabled={isSaving}
@@ -288,7 +245,7 @@ export default function RedemptionAssistSettings() {
                   })
                 }}
               >
-                {t("common:actions.save", { defaultValue: "Save" })}
+                {t("common:actions.save")}
               </Button>
             </div>
           </div>

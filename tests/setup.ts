@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest"
 
 import { cleanup, configure } from "@testing-library/react"
+import i18next from "i18next"
 
 import "whatwg-fetch"
 
@@ -9,6 +10,17 @@ import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest"
 import { fakeBrowser } from "wxt/testing/fake-browser"
 
 import { server } from "./msw/server"
+
+await i18next.init({
+  lng: "en",
+  fallbackLng: "en",
+  appendNamespaceToMissingKey: true,
+  initImmediate: false,
+  parseMissingKeyHandler: (key: string) => key,
+  interpolation: {
+    escapeValue: false,
+  },
+})
 
 vi.mock("@lobehub/icons", () => {
   const createIcon = () => () => null
@@ -102,6 +114,18 @@ globalAny.ResizeObserver = class ResizeObserver {
 // implemented by jsdom by default.
 if (!globalAny.HTMLElement?.prototype?.scrollIntoView) {
   globalAny.HTMLElement.prototype.scrollIntoView = vi.fn()
+}
+
+// Radix UI components rely on pointer capture APIs that are not implemented by
+// jsdom by default.
+if (!globalAny.HTMLElement?.prototype?.setPointerCapture) {
+  globalAny.HTMLElement.prototype.setPointerCapture = vi.fn()
+}
+if (!globalAny.HTMLElement?.prototype?.releasePointerCapture) {
+  globalAny.HTMLElement.prototype.releasePointerCapture = vi.fn()
+}
+if (!globalAny.HTMLElement?.prototype?.hasPointerCapture) {
+  globalAny.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false)
 }
 
 configure({ testIdAttribute: "data-testid" })

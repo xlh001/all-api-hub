@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import BookmarksList from "~/features/SiteBookmarks/components/BookmarksList"
 import {
   fireEvent,
   render,
@@ -176,16 +177,12 @@ beforeEach(() => {
 
 describe("BookmarksList", () => {
   it("renders empty state and opens add bookmark dialog", async () => {
-    const { default: BookmarksList } = await import(
-      "~/features/SiteBookmarks/components/BookmarksList"
-    )
-
     render(<BookmarksList />)
 
-    expect(await screen.findByText("emptyState")).toBeInTheDocument()
+    expect(await screen.findByText("bookmark:emptyState")).toBeInTheDocument()
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "addFirstBookmark" }),
+      await screen.findByRole("button", { name: "bookmark:addFirstBookmark" }),
     )
 
     expect(openAddBookmarkMock).toHaveBeenCalledTimes(1)
@@ -223,10 +220,6 @@ describe("BookmarksList", () => {
         t2: tagsMock[1],
       },
     }
-
-    const { default: BookmarksList } = await import(
-      "~/features/SiteBookmarks/components/BookmarksList"
-    )
 
     render(<BookmarksList initialSearchQuery="docs" />)
 
@@ -269,10 +262,6 @@ describe("BookmarksList", () => {
       },
     }
 
-    const { default: BookmarksList } = await import(
-      "~/features/SiteBookmarks/components/BookmarksList"
-    )
-
     render(<BookmarksList />)
 
     expect(await screen.findByText("Docs")).toBeInTheDocument()
@@ -300,13 +289,11 @@ describe("BookmarksList", () => {
     bookmarksMock = [bookmark]
     togglePinAccountMock.mockResolvedValue(true)
 
-    const { default: BookmarksList } = await import(
-      "~/features/SiteBookmarks/components/BookmarksList"
-    )
-
     render(<BookmarksList />)
 
-    fireEvent.click(await screen.findByRole("button", { name: "actions.open" }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: "bookmark:actions.open" }),
+    )
 
     await waitFor(() => {
       expect(mockCreateTab).toHaveBeenCalledWith(
@@ -317,7 +304,7 @@ describe("BookmarksList", () => {
     expect(mockCloseIfPopup).toHaveBeenCalledTimes(1)
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "actions.copyUrl" }),
+      await screen.findByRole("button", { name: "bookmark:actions.copyUrl" }),
     )
 
     await waitFor(() => {
@@ -326,10 +313,12 @@ describe("BookmarksList", () => {
       )
     })
     expect(toastSuccessMock).toHaveBeenCalledWith(
-      "toast.success.bookmarkUrlCopied",
+      "messages:toast.success.bookmarkUrlCopied",
     )
 
-    fireEvent.click(await screen.findByRole("button", { name: "actions.edit" }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: "common:actions.edit" }),
+    )
     expect(openEditBookmarkMock).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "b1",
@@ -351,10 +340,6 @@ describe("BookmarksList", () => {
     }
 
     bookmarksMock = [bookmark]
-
-    const { default: BookmarksList } = await import(
-      "~/features/SiteBookmarks/components/BookmarksList"
-    )
 
     render(<BookmarksList />)
 
@@ -397,20 +382,16 @@ describe("BookmarksList", () => {
 
     bookmarksMock = [bookmark]
 
-    const { default: BookmarksList } = await import(
-      "~/features/SiteBookmarks/components/BookmarksList"
-    )
-
     const { unmount } = render(<BookmarksList />)
     expect(
-      await screen.findByRole("button", { name: "list.dragHandle" }),
+      await screen.findByRole("button", { name: "bookmark:list.dragHandle" }),
     ).toBeInTheDocument()
 
     unmount()
 
     render(<BookmarksList initialSearchQuery="docs" />)
     expect(
-      screen.queryByRole("button", { name: "list.dragHandle" }),
+      screen.queryByRole("button", { name: "bookmark:list.dragHandle" }),
     ).not.toBeInTheDocument()
   })
 
@@ -430,32 +411,36 @@ describe("BookmarksList", () => {
     loadAccountDataMock.mockResolvedValue(undefined)
     mockDeleteBookmark.mockResolvedValue(true)
 
-    const { default: BookmarksList } = await import(
-      "~/features/SiteBookmarks/components/BookmarksList"
-    )
-
     render(<BookmarksList />)
 
     // Pin
-    fireEvent.click(await screen.findByRole("button", { name: "actions.more" }))
-    fireEvent.click(await screen.findByRole("button", { name: "actions.pin" }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: "common:actions.more" }),
+    )
+    fireEvent.click(
+      await screen.findByRole("button", { name: "bookmark:actions.pin" }),
+    )
 
     expect(togglePinAccountMock).toHaveBeenCalledWith("b1")
     await waitFor(() => {
       expect(toastSuccessMock).toHaveBeenCalledWith(
-        "toast.success.bookmarkPinned",
+        "messages:toast.success.bookmarkPinned",
       )
     })
 
     // Delete
-    fireEvent.click(await screen.findByRole("button", { name: "actions.more" }))
     fireEvent.click(
-      await screen.findByRole("button", { name: "actions.delete" }),
+      await screen.findByRole("button", { name: "common:actions.more" }),
+    )
+    fireEvent.click(
+      await screen.findByRole("button", { name: "common:actions.delete" }),
     )
 
     const dialog = await screen.findByRole("dialog")
     fireEvent.click(
-      await within(dialog).findByRole("button", { name: "actions.delete" }),
+      await within(dialog).findByRole("button", {
+        name: "common:actions.delete",
+      }),
     )
 
     await waitFor(() => {
@@ -463,7 +448,7 @@ describe("BookmarksList", () => {
     })
     expect(loadAccountDataMock).toHaveBeenCalledTimes(1)
     expect(toastSuccessMock).toHaveBeenCalledWith(
-      "toast.success.bookmarkDeleted",
+      "messages:toast.success.bookmarkDeleted",
     )
   })
 })

@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "~/tests/test-utils/render"
+import BookmarkDialog from "~/features/SiteBookmarks/components/BookmarkDialog"
+import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
 import type { SiteBookmark } from "~/types"
 
 const loadAccountDataMock = vi.fn()
@@ -63,9 +58,6 @@ beforeEach(() => {
 describe("BookmarkDialog", () => {
   it("validates required fields before submitting", async () => {
     const onClose = vi.fn()
-    const { default: BookmarkDialog } = await import(
-      "~/features/SiteBookmarks/components/BookmarkDialog"
-    )
 
     render(
       <BookmarkDialog
@@ -76,13 +68,15 @@ describe("BookmarkDialog", () => {
       />,
     )
 
-    fireEvent.click(await screen.findByRole("button", { name: "actions.add" }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: "bookmark:actions.add" }),
+    )
 
     expect(
-      await screen.findByText("validation.nameRequired"),
+      await screen.findByText("bookmark:validation.nameRequired"),
     ).toBeInTheDocument()
     expect(
-      await screen.findByText("validation.urlRequired"),
+      await screen.findByText("bookmark:validation.urlRequired"),
     ).toBeInTheDocument()
 
     expect(addBookmarkMock).not.toHaveBeenCalled()
@@ -90,9 +84,6 @@ describe("BookmarkDialog", () => {
 
   it("creates a bookmark in add mode", async () => {
     const onClose = vi.fn()
-    const { default: BookmarkDialog } = await import(
-      "~/features/SiteBookmarks/components/BookmarkDialog"
-    )
 
     render(
       <BookmarkDialog
@@ -104,20 +95,18 @@ describe("BookmarkDialog", () => {
     )
 
     fireEvent.change(
-      await screen.findByPlaceholderText("form.namePlaceholder"),
+      await screen.findByPlaceholderText("bookmark:form.namePlaceholder"),
       { target: { value: "Docs" } },
     )
 
-    const urlField = (await screen.findByText("form.urlLabel")).closest("div")
-    if (!urlField) {
-      throw new Error("Could not locate URL form field wrapper")
-    }
+    fireEvent.change(
+      await screen.findByPlaceholderText("bookmark:form.urlPlaceholder"),
+      { target: { value: "https://example.com/docs" } },
+    )
 
-    fireEvent.change(within(urlField).getByRole("textbox"), {
-      target: { value: "https://example.com/docs" },
-    })
-
-    fireEvent.click(await screen.findByRole("button", { name: "actions.add" }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: "bookmark:actions.add" }),
+    )
 
     await waitFor(() => {
       expect(addBookmarkMock).toHaveBeenCalledWith(
@@ -131,7 +120,9 @@ describe("BookmarkDialog", () => {
     })
 
     expect(loadAccountDataMock).toHaveBeenCalledTimes(1)
-    expect(toastSuccessMock).toHaveBeenCalledWith("toast.success.bookmarkAdded")
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      "messages:toast.success.bookmarkAdded",
+    )
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -147,10 +138,6 @@ describe("BookmarkDialog", () => {
       updated_at: 0,
     }
 
-    const { default: BookmarkDialog } = await import(
-      "~/features/SiteBookmarks/components/BookmarkDialog"
-    )
-
     render(
       <BookmarkDialog
         isOpen={true}
@@ -161,11 +148,13 @@ describe("BookmarkDialog", () => {
     )
 
     fireEvent.change(
-      await screen.findByPlaceholderText("form.namePlaceholder"),
+      await screen.findByPlaceholderText("bookmark:form.namePlaceholder"),
       { target: { value: "New" } },
     )
 
-    fireEvent.click(await screen.findByRole("button", { name: "actions.save" }))
+    fireEvent.click(
+      await screen.findByRole("button", { name: "common:actions.save" }),
+    )
 
     await waitFor(() => {
       expect(updateBookmarkMock).toHaveBeenCalledWith(
@@ -178,7 +167,7 @@ describe("BookmarkDialog", () => {
 
     expect(loadAccountDataMock).toHaveBeenCalledTimes(1)
     expect(toastSuccessMock).toHaveBeenCalledWith(
-      "toast.success.bookmarkUpdated",
+      "messages:toast.success.bookmarkUpdated",
     )
     expect(onClose).toHaveBeenCalledTimes(1)
   })
