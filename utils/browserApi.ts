@@ -204,10 +204,18 @@ export async function focusTab(tab: browser.tabs.Tab): Promise<void> {
  * @param options 可选的重试和延迟配置。
  */
 export async function sendRuntimeMessage(
-  message: any,
+  message: unknown,
   options?: SendMessageRetryOptions,
-): Promise<any> {
-  return await sendMessageWithRetry(message, options)
+): Promise<any>
+export async function sendRuntimeMessage<TResponse>(
+  message: unknown,
+  options?: SendMessageRetryOptions,
+): Promise<TResponse>
+export async function sendRuntimeMessage<TResponse>(
+  message: unknown,
+  options?: SendMessageRetryOptions,
+): Promise<TResponse> {
+  return await sendMessageWithRetry<TResponse>(message, options)
 }
 
 /**
@@ -219,8 +227,16 @@ export async function sendRuntimeMessage(
 export async function sendRuntimeActionMessage(
   message: { action: RuntimeActionId } & Record<string, unknown>,
   options?: SendMessageRetryOptions,
-): Promise<any> {
-  return await sendRuntimeMessage(message, options)
+): Promise<any>
+export async function sendRuntimeActionMessage<TResponse>(
+  message: { action: RuntimeActionId } & Record<string, unknown>,
+  options?: SendMessageRetryOptions,
+): Promise<TResponse>
+export async function sendRuntimeActionMessage<TResponse>(
+  message: { action: RuntimeActionId } & Record<string, unknown>,
+  options?: SendMessageRetryOptions,
+): Promise<TResponse> {
+  return await sendRuntimeMessage<TResponse>(message, options)
 }
 
 export interface SendMessageRetryOptions {
@@ -234,36 +250,48 @@ const RECOVERABLE_MESSAGE_SNIPPETS = [
 ]
 
 /**
- * Determines whether a runtime messaging error is transient and worth retrying.
- * @param error Error caught from `browser.runtime.sendMessage`.
- * @returns True when the error message matches a known recoverable snippet.
+ * Determines whether a WebExtension messaging error is transient and worth retrying.
+ *
+ * Applies to both `browser.runtime.sendMessage` and `browser.tabs.sendMessage`,
+ * where content scripts may not be ready yet.
  */
-function isRecoverableSendMessageError(error: any): boolean {
-  const message = (error?.message || String(error || "")).toLowerCase()
+function isRecoverableMessageError(error: unknown): boolean {
+  const messageValue =
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+      ? (error as { message?: unknown }).message
+      : null
+
+  const message = String(messageValue ?? error ?? "").toLowerCase()
   return RECOVERABLE_MESSAGE_SNIPPETS.some((snippet) =>
     message.includes(snippet.toLowerCase()),
   )
 }
 
+type MessageRetryDefaults = {
+  maxAttempts: number
+  delayMs: number
+}
+
 /**
- * Sends a runtime message with retry logic for recoverable failures.
- * Applies exponential backoff based on `maxAttempts` and `delayMs`.
- * @param message Payload forwarded to the background/page runtime.
- * @param options Optional retry configuration.
+ * Internal helper to retry WebExtension messaging work with exponential backoff.
  */
-export async function sendMessageWithRetry(
-  message: any,
-  options?: SendMessageRetryOptions,
-) {
-  const maxAttempts = Math.max(1, options?.maxAttempts ?? 3)
-  const delayMs = options?.delayMs ?? 500
+async function withMessageRetry<T>(
+  work: () => Promise<T>,
+  options: SendMessageRetryOptions | undefined,
+  defaults: MessageRetryDefaults,
+): Promise<T> {
+  const maxAttempts = Math.max(1, options?.maxAttempts ?? defaults.maxAttempts)
+  const delayMs = options?.delayMs ?? defaults.delayMs
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      return await browser.runtime.sendMessage(message)
+      return await work()
     } catch (error) {
       const shouldRetry =
-        attempt < maxAttempts - 1 && isRecoverableSendMessageError(error)
+        attempt < maxAttempts - 1 && isRecoverableMessageError(error)
 
       if (!shouldRetry) {
         throw error
@@ -274,6 +302,64 @@ export async function sendMessageWithRetry(
       )
     }
   }
+
+  // `work()` either returns or throws; this is just to satisfy TypeScript.
+  throw new Error("withMessageRetry: exhausted retries")
+}
+
+/**
+ * Sends a runtime message with retry logic for recoverable failures.
+ * Applies exponential backoff based on `maxAttempts` and `delayMs`.
+ * @param message Payload forwarded to the background/page runtime.
+ * @param options Optional retry configuration.
+ */
+export async function sendMessageWithRetry(
+  message: unknown,
+  options?: SendMessageRetryOptions,
+): Promise<any>
+export async function sendMessageWithRetry<TResponse>(
+  message: unknown,
+  options?: SendMessageRetryOptions,
+): Promise<TResponse>
+export async function sendMessageWithRetry<TResponse>(
+  message: unknown,
+  options?: SendMessageRetryOptions,
+): Promise<TResponse> {
+  return await withMessageRetry(
+    () => browser.runtime.sendMessage(message) as Promise<TResponse>,
+    options,
+    { maxAttempts: 3, delayMs: 500 },
+  )
+}
+
+/**
+ * Sends a message to a tab content script with retry logic for recoverable failures.
+ *
+ * This is useful when a tab has just been created and the content script might
+ * not be ready to receive messages yet.
+ *
+ * Applies exponential backoff based on `maxAttempts` and `delayMs`.
+ */
+export async function sendTabMessageWithRetry(
+  tabId: number,
+  message: unknown,
+  options?: SendMessageRetryOptions,
+): Promise<any>
+export async function sendTabMessageWithRetry<TResponse>(
+  tabId: number,
+  message: unknown,
+  options?: SendMessageRetryOptions,
+): Promise<TResponse>
+export async function sendTabMessageWithRetry<TResponse>(
+  tabId: number,
+  message: unknown,
+  options?: SendMessageRetryOptions,
+): Promise<TResponse> {
+  return await withMessageRetry(
+    () => browser.tabs.sendMessage(tabId, message) as Promise<TResponse>,
+    options,
+    { maxAttempts: 5, delayMs: 400 },
+  )
 }
 
 /**

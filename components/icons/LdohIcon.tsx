@@ -1,22 +1,22 @@
-import doneHubLogo from "~/assets/done-hub-logo.png"
+import ldohLogo from "~/assets/ldoh-logo.svg"
 import {
   ICON_SIZE_CLASSNAME,
   type IconSize,
 } from "~/components/icons/iconSizes"
 import { cn } from "~/lib/utils"
 
-interface DoneHubIconProps {
+interface LdohIconProps {
   size?: IconSize
 }
 
 /**
- * DoneHubIcon renders the DoneHub brand mark at a chosen size.
+ * LdohIcon renders the LDOH brand mark at a chosen size.
  */
-export function DoneHubIcon({ size = "sm" }: DoneHubIconProps) {
+export function LdohIcon({ size = "sm" }: LdohIconProps) {
   return (
     <img
-      src={doneHubLogo}
-      alt="DoneHub logo"
+      src={ldohLogo}
+      alt="LDOH logo"
       className={cn(ICON_SIZE_CLASSNAME[size])}
       loading="lazy"
       decoding="async"
