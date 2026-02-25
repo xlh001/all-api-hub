@@ -3,7 +3,7 @@
     "message": "All API Hub – AI 中转站 & New API 管理器"
   },
   "manifest_description": {
-    "message": "统一管理第三方 New API 中转站与自建 New API：账号余额、渠道管理与模型同步一站式搞定。"
+    "message": "一站式管理 New API 兼容中转站账号：余额/用量看板、自动签到、密钥一键导出到常用应用、网页内 API 可用性测试、渠道与模型同步/重定向"
   },
   "manifest_commands_sidebar_action": {
     "message": "在侧边栏中打开 All API Hub"

@@ -3,7 +3,7 @@
     "message": "All API Hub – AI Relay & New API Manager"
   },
   "manifest_description": {
-    "message": "Manage third-party New API-compatible relays and your own New API: accounts, balances, channels, and model sync in one place."
+    "message": "New‑API relay manager: balance/usage, auto check‑in, one‑click key export to popular clients, in‑page API checks, channel/model sync & redirect"
   },
   "manifest_commands_sidebar_action": {
     "message": "Open All API Hub in sidebar"
