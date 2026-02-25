@@ -33,6 +33,24 @@ describe("userPreferences openChangelogOnUpdate", () => {
     expect((storedAfter as any)?.openChangelogOnUpdate).toBe(true)
   })
 
+  it("re-enables openChangelogOnUpdate during migration and saves back", async () => {
+    const storage = new Storage({ area: "local" })
+
+    await storage.set(USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES, {
+      ...DEFAULT_PREFERENCES,
+      openChangelogOnUpdate: false,
+      preferencesVersion: 13,
+    })
+
+    const prefs = await userPreferences.getPreferences()
+    expect(prefs.openChangelogOnUpdate).toBe(true)
+
+    const storedAfter = await storage.get(
+      USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES,
+    )
+    expect((storedAfter as any)?.openChangelogOnUpdate).toBe(true)
+  })
+
   it("persists updates via updateOpenChangelogOnUpdate", async () => {
     const storage = new Storage({ area: "local" })
 

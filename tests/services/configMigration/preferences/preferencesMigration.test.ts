@@ -215,6 +215,19 @@ describe("preferencesMigration", () => {
       expect(result.balanceHistory).toEqual(DEFAULT_BALANCE_HISTORY_PREFERENCES)
     })
 
+    it("re-enables openChangelogOnUpdate during v13->v14 migration", () => {
+      const prefs: UserPreferences = {
+        ...DEFAULT_PREFERENCES,
+        preferencesVersion: 13,
+        openChangelogOnUpdate: false,
+      }
+
+      const result = migratePreferences(prefs)
+
+      expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
+      expect(result.openChangelogOnUpdate).toBe(true)
+    })
+
     it("processes v1 preferences with sorting config migration", () => {
       const prefs = createV0Preferences({
         preferencesVersion: 1,

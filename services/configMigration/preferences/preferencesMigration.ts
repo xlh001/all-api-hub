@@ -26,7 +26,7 @@ import { migrateSortingConfig } from "./sortingConfigMigration"
 const logger = createLogger("PreferencesMigration")
 
 // Current version of the preferences schema
-export const CURRENT_PREFERENCES_VERSION = 13
+export const CURRENT_PREFERENCES_VERSION = 14
 
 /**
  * Migration function type
@@ -320,6 +320,19 @@ const migrations: Record<number, PreferencesMigrationFunction> = {
       ...prefs,
       octopus,
       preferencesVersion: 13,
+    }
+  },
+
+  // Version 13 -> 14: Re-enable changelog-on-update UI for all users
+  14: (prefs: UserPreferences): UserPreferences => {
+    logger.debug(
+      "Migrating preferences from v13 to v14 (re-enable changelog on update)",
+    )
+
+    return {
+      ...prefs,
+      openChangelogOnUpdate: true,
+      preferencesVersion: 14,
     }
   },
 }
