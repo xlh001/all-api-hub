@@ -170,9 +170,12 @@ test("shows update log inline once on first UI open after update", async ({
 
   await page.goto(`chrome-extension://${extensionId}/options.html`)
 
-  await expect
-    .poll(() => page.locator('[data-testid="update-log-dialog"]').count())
-    .toBe(1)
+  // Options is heavier than popup and can take a bit longer to mount providers
+  // + run the UI-open handler on slower CI machines.
+  await expect(page.locator("#root > *")).not.toHaveCount(0)
+  await expect(page.getByTestId("update-log-dialog")).toBeVisible({
+    timeout: 20_000,
+  })
 
   await expect
     .poll(() =>
