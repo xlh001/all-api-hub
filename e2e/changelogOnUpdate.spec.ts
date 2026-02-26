@@ -42,7 +42,16 @@ async function closeOtherPages(context: BrowserContext, keepPage: Page) {
 async function removeStorageKey(serviceWorker: Worker, key: string) {
   await serviceWorker.evaluate(async (storageKey) => {
     const chromeApi = (globalThis as any).chrome
-    await chromeApi.storage.local.remove(storageKey)
+    await new Promise<void>((resolve, reject) => {
+      chromeApi.storage.local.remove(storageKey, () => {
+        const error = chromeApi.runtime?.lastError
+        if (error) {
+          reject(new Error(error.message))
+          return
+        }
+        resolve()
+      })
+    })
   }, key)
 }
 
@@ -58,8 +67,20 @@ async function setPlasmoStorageValue(
   await serviceWorker.evaluate(
     async ({ storageKey, storageValue }) => {
       const chromeApi = (globalThis as any).chrome
-      await chromeApi.storage.local.set({
-        [storageKey]: storageValue,
+      await new Promise<void>((resolve, reject) => {
+        chromeApi.storage.local.set(
+          {
+            [storageKey]: storageValue,
+          },
+          () => {
+            const error = chromeApi.runtime?.lastError
+            if (error) {
+              reject(new Error(error.message))
+              return
+            }
+            resolve()
+          },
+        )
       })
     },
     { storageKey: key, storageValue: serialized },
@@ -75,8 +96,16 @@ async function getPlasmoStorageRawValue<T>(
 ): Promise<T> {
   return await serviceWorker.evaluate(async (storageKey) => {
     const chromeApi = (globalThis as any).chrome
-    const stored = await chromeApi.storage.local.get(storageKey)
-    return stored[storageKey]
+    return await new Promise<T>((resolve, reject) => {
+      chromeApi.storage.local.get(storageKey, (stored: Record<string, T>) => {
+        const error = chromeApi.runtime?.lastError
+        if (error) {
+          reject(new Error(error.message))
+          return
+        }
+        resolve(stored[storageKey])
+      })
+    })
   }, key)
 }
 
