@@ -146,6 +146,10 @@ test("shows update log inline once on first UI open after update", async ({
 
   await closeOtherPages(context, page)
   await removeStorageKey(serviceWorker, STORAGE_KEYS.USER_PREFERENCES)
+  await setPlasmoStorageValue(serviceWorker, STORAGE_KEYS.USER_PREFERENCES, {
+    openChangelogOnUpdate: true,
+    preferencesVersion: CURRENT_PREFERENCES_VERSION,
+  })
   await removeStorageKey(
     serviceWorker,
     STORAGE_KEYS.CHANGELOG_ON_UPDATE_PENDING_VERSION,
