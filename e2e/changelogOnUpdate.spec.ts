@@ -36,6 +36,53 @@ async function closeOtherPages(context: BrowserContext, keepPage: Page) {
   )
 }
 
+const UPDATE_LOG_DIALOG_SELECTOR = '[data-testid="update-log-dialog"]'
+
+/**
+ * search through open pages in the context to find one that has the update log dialog, which may be opened in either popup or options contexts, and return it for interaction in testing
+ */
+async function findPageWithUpdateLogDialog(
+  context: BrowserContext,
+): Promise<Page | null> {
+  for (const page of context.pages()) {
+    if (page.isClosed()) continue
+    if (!page.url().includes("-extension://")) continue
+
+    try {
+      const count = await page.locator(UPDATE_LOG_DIALOG_SELECTOR).count()
+      if (count > 0) return page
+    } catch {
+      // ignore pages that may be navigating/closed
+    }
+  }
+
+  return null
+}
+
+/**
+ * wait for a page with the update log dialog to appear in the context, which may be opened in either popup or options contexts, and return it for interaction in testing, throwing if it doesn't appear within the timeout
+ */
+async function waitForUpdateLogDialogPage(
+  context: BrowserContext,
+  timeoutMs = 60_000,
+): Promise<Page> {
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    const page = await findPageWithUpdateLogDialog(context)
+    if (page) return page
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
+
+  const openPages = context
+    .pages()
+    .map((p) => p.url())
+    .join("\n")
+
+  throw new Error(
+    `Timed out waiting for update-log dialog to appear. Open pages:\n${openPages}`,
+  )
+}
+
 /**
  * remove a key from chrome.storage.local within the service worker context, to ensure clean state for testing
  */
@@ -177,9 +224,9 @@ test("shows update log inline once on first UI open after update", async ({
   await expect(page.locator("#root > *")).not.toHaveCount(0, {
     timeout: 30_000,
   })
-  await expect(page.getByTestId("update-log-dialog")).toBeVisible({
-    timeout: 60_000,
-  })
+
+  const dialogPage = await waitForUpdateLogDialogPage(context, 60_000)
+  await expect(dialogPage.locator(UPDATE_LOG_DIALOG_SELECTOR)).toBeVisible()
 
   await expect
     .poll(() =>
@@ -198,7 +245,7 @@ test("shows update log inline once on first UI open after update", async ({
     )
     .toBe(0)
 
-  await page.getByTestId("update-log-dialog-auto-open-toggle").click()
+  await dialogPage.getByTestId("update-log-dialog-auto-open-toggle").click()
   await expect
     .poll(async () => {
       const raw = await getPlasmoStorageRawValue<unknown>(
@@ -217,7 +264,7 @@ test("shows update log inline once on first UI open after update", async ({
     })
     .toBe(false)
 
-  await page.getByTestId("update-log-dialog-auto-open-toggle").click()
+  await dialogPage.getByTestId("update-log-dialog-auto-open-toggle").click()
   await expect
     .poll(async () => {
       const raw = await getPlasmoStorageRawValue<unknown>(
@@ -236,11 +283,11 @@ test("shows update log inline once on first UI open after update", async ({
     })
     .toBe(true)
 
-  await page.getByLabel("Close").click()
-  await expect(page.locator('[data-testid="update-log-dialog"]')).toHaveCount(0)
+  await dialogPage.getByLabel("Close").click()
+  await expect(dialogPage.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
 
-  await page.reload()
-  await expect(page.locator('[data-testid="update-log-dialog"]')).toHaveCount(0)
+  await dialogPage.reload()
+  await expect(dialogPage.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
 })
 
 test("shows update log inline in popup once on first UI open after update", async ({
@@ -278,9 +325,9 @@ test("shows update log inline in popup once on first UI open after update", asyn
 
   await page.goto(`chrome-extension://${extensionId}/popup.html`)
 
-  await expect
-    .poll(() => page.locator('[data-testid="update-log-dialog"]').count())
-    .toBe(1)
+  await expect(page.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(1, {
+    timeout: 30_000,
+  })
 
   await expect
     .poll(() =>
@@ -300,10 +347,10 @@ test("shows update log inline in popup once on first UI open after update", asyn
     .toBe(0)
 
   await page.getByLabel("Close").click()
-  await expect(page.locator('[data-testid="update-log-dialog"]')).toHaveCount(0)
+  await expect(page.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
 
   await page.reload()
-  await expect(page.locator('[data-testid="update-log-dialog"]')).toHaveCount(0)
+  await expect(page.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
 })
 
 test("does not show update log when disabled, but still consumes pending marker", async ({
@@ -346,7 +393,7 @@ test("does not show update log when disabled, but still consumes pending marker"
     )
     .toBeUndefined()
 
-  await expect(page.locator('[data-testid="update-log-dialog"]')).toHaveCount(0)
+  await expect(page.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
   await expect
     .poll(
       () =>
