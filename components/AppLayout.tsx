@@ -32,10 +32,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         <ThemeProvider>
           <ChannelDialogProvider>
             <UpdateLogDialogProvider>
-              {children}
               <ChangelogOnUpdateUiOpenHandler />
               <AutoCheckinUiOpenPretrigger />
               <UpdateLogDialogContainer />
+              {children}
               <ChannelDialogContainer />
               <DuplicateChannelWarningDialogContainer />
             </UpdateLogDialogProvider>

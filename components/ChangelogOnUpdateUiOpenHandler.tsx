@@ -2,7 +2,10 @@ import { useEffect, useRef } from "react"
 
 import { useUpdateLogDialogContext } from "~/components/UpdateLogDialog"
 import { changelogOnUpdateState } from "~/services/changelogOnUpdateState"
-import { userPreferences } from "~/services/userPreferences"
+import {
+  DEFAULT_PREFERENCES,
+  userPreferences,
+} from "~/services/userPreferences"
 import { getErrorMessage } from "~/utils/error"
 import { createLogger } from "~/utils/logger"
 
@@ -24,7 +27,6 @@ export function ChangelogOnUpdateUiOpenHandler() {
 
     void (async () => {
       try {
-        const prefs = await userPreferences.getPreferences()
         const pendingVersion =
           await changelogOnUpdateState.consumePendingVersion()
 
@@ -32,7 +34,13 @@ export function ChangelogOnUpdateUiOpenHandler() {
           return
         }
 
-        if (!(prefs.openChangelogOnUpdate ?? true)) {
+        const prefs = await userPreferences.getPreferences()
+        if (
+          !(
+            prefs.openChangelogOnUpdate ??
+            DEFAULT_PREFERENCES.openChangelogOnUpdate
+          )
+        ) {
           return
         }
 
