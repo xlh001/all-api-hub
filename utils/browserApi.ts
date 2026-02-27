@@ -8,6 +8,7 @@ import {
   RuntimeActionIds,
   type RuntimeActionId,
 } from "~/constants/runtimeActions"
+import { getErrorMessage } from "~/utils/error"
 import { isNotEmptyArray } from "~/utils/index"
 import { createLogger } from "~/utils/logger"
 
@@ -675,6 +676,28 @@ export function getManifest(): browser._manifest.WebExtensionManifest {
  */
 export function getManifestVersion(): number {
   return getManifest().manifest_version
+}
+
+/**
+ * Returns whether the extension is allowed to run in incognito/private windows.
+ *
+ * Chrome/Edge require the user to explicitly allow an extension to run in
+ * Incognito mode. Firefox has a similar "Run in Private Windows" toggle.
+ *
+ * - `true`: allowed
+ * - `false`: explicitly disallowed
+ * - `null`: unknown/unsupported in the current environment
+ */
+export async function isAllowedIncognitoAccess(): Promise<boolean | null> {
+  try {
+    return browser.extension.isAllowedIncognitoAccess()
+  } catch (error) {
+    logger.debug(
+      "extension.isAllowedIncognitoAccess failed",
+      getErrorMessage(error),
+    )
+    return null
+  }
 }
 
 type ActionClickListener = (tab: browser.tabs.Tab, info?: any) => void

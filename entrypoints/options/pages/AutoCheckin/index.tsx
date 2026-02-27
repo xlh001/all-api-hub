@@ -16,7 +16,9 @@ import {
   AutoCheckinStatus,
   CHECKIN_RESULT_STATUS,
 } from "~/types/autoCheckin"
+import { stripAutoCheckinMessageKeyPrefix } from "~/utils/autoCheckin"
 import { onRuntimeMessage, sendRuntimeMessage } from "~/utils/browserApi"
+import { getErrorMessage } from "~/utils/error"
 import { safeRandomUUID } from "~/utils/identifier"
 import { createLogger } from "~/utils/logger"
 import { navigateWithinOptionsPage, openCheckInPage } from "~/utils/navigation"
@@ -131,9 +133,11 @@ export default function AutoCheckin(props: {
       } else {
         toast.error(t("messages.error.runFailed", { error: response.error }))
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.dismiss()
-      toast.error(t("messages.error.runFailed", { error: error.message }))
+      toast.error(
+        t("messages.error.runFailed", { error: getErrorMessage(error) }),
+      )
     } finally {
       setIsRunning(false)
     }
@@ -162,10 +166,12 @@ export default function AutoCheckin(props: {
           }),
         )
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.dismiss()
       toast.error(
-        t("messages.error.dailyAlarmTriggerFailed", { error: error.message }),
+        t("messages.error.dailyAlarmTriggerFailed", {
+          error: getErrorMessage(error),
+        }),
       )
     } finally {
       setIsDebugTriggering(false)
@@ -193,10 +199,12 @@ export default function AutoCheckin(props: {
           }),
         )
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.dismiss()
       toast.error(
-        t("messages.error.retryAlarmTriggerFailed", { error: error.message }),
+        t("messages.error.retryAlarmTriggerFailed", {
+          error: getErrorMessage(error),
+        }),
       )
     } finally {
       setIsDebugTriggering(false)
@@ -226,11 +234,11 @@ export default function AutoCheckin(props: {
           }),
         )
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.dismiss()
       toast.error(
         t("messages.error.dailyAlarmScheduleForTodayFailed", {
-          error: error.message,
+          error: getErrorMessage(error),
         }),
       )
     } finally {
@@ -274,11 +282,11 @@ export default function AutoCheckin(props: {
           }),
         )
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.dismiss()
       toast.error(
         t("messages.error.uiOpenPretriggerEvaluationFailed", {
-          error: error.message,
+          error: getErrorMessage(error),
         }),
       )
     } finally {
@@ -340,11 +348,11 @@ export default function AutoCheckin(props: {
         pendingRetry: Boolean(response.pendingRetry),
       })
       await loadStatus()
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.dismiss()
       toast.error(
         t("messages.error.uiOpenPretriggerTriggerFailed", {
-          error: error.message,
+          error: getErrorMessage(error),
         }),
       )
     } finally {
@@ -375,11 +383,11 @@ export default function AutoCheckin(props: {
           }),
         )
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.dismiss()
       toast.error(
         t("messages.error.lastDailyRunDayResetFailed", {
-          error: error.message,
+          error: getErrorMessage(error),
         }),
       )
     } finally {
@@ -424,8 +432,10 @@ export default function AutoCheckin(props: {
           t("messages.error.retryFailed", { error: response.error ?? "" }),
         )
       }
-    } catch (error: any) {
-      toast.error(t("messages.error.retryFailed", { error: error.message }))
+    } catch (error: unknown) {
+      toast.error(
+        t("messages.error.retryFailed", { error: getErrorMessage(error) }),
+      )
     } finally {
       setRetryingAccountId(null)
     }
@@ -445,9 +455,9 @@ export default function AutoCheckin(props: {
 
       const displayData = response.data
       await openCheckInPage(displayData)
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        t("messages.error.openManualFailed", { error: error.message }),
+        t("messages.error.openManualFailed", { error: getErrorMessage(error) }),
       )
     } finally {
       setOpeningManualAccountId(null)
@@ -485,7 +495,7 @@ export default function AutoCheckin(props: {
       const displayMessage =
         result.rawMessage ??
         (result.messageKey
-          ? (t(result.messageKey.replace(/^autoCheckin:/, ""), {
+          ? (t(stripAutoCheckinMessageKeyPrefix(result.messageKey), {
               ...(result.messageParams ?? {}),
               defaultValue: result.messageKey,
             }) as string)
@@ -557,6 +567,7 @@ export default function AutoCheckin(props: {
       ) : (
         <ResultsTable
           results={filteredResults}
+          showDevActions={showDebugButtons}
           retryingAccountId={retryingAccountId}
           openingManualAccountId={openingManualAccountId}
           onRetryAccount={handleRetryAccount}

@@ -2,6 +2,7 @@ import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   handleTempWindowFetch,
   handleTempWindowGetRenderedTitle,
+  handleTempWindowTurnstileFetch,
 } from "~/entrypoints/background/tempWindowPool"
 import {
   API_ERROR_CODES,
@@ -22,7 +23,15 @@ import {
   TempWindowFallbackPreferences,
   userPreferences,
 } from "~/services/userPreferences"
-import { AuthTypeEnum } from "~/types"
+import type {
+  TempWindowFallbackAllowlist,
+  TempWindowFallbackContext,
+  TempWindowFetch,
+  TempWindowFetchParams,
+  TempWindowRenderedTitleResponse,
+  TempWindowTurnstileFetch,
+  TempWindowTurnstileFetchParams,
+} from "~/types/tempWindowFetch"
 import {
   isExtensionBackground,
   isExtensionPopup,
@@ -39,35 +48,17 @@ import { isProtectionBypassFirefoxEnv } from "~/utils/protectionBypass"
  */
 const logger = createLogger("TempWindowFetch")
 
-export type TempWindowResponseType = "json" | "text" | "arrayBuffer" | "blob"
+function isTempWindowRenderedTitleResponse(
+  value: unknown,
+): value is TempWindowRenderedTitleResponse {
+  if (!value || typeof value !== "object") return false
+  const record = value as Record<string, unknown>
 
-export interface TempWindowFetchParams {
-  originUrl: string
-  fetchUrl: string
-  fetchOptions?: Record<string, any>
-  requestId?: string
-  responseType?: TempWindowResponseType
-  suppressMinimize?: boolean
-  /** Account ID for per-request cookie isolation */
-  accountId?: string
-  /** Auth type for cookie auth handling */
-  authType?: AuthTypeEnum
-  /** Per-account session cookie header to merge with WAF cookies */
-  cookieAuthSessionCookie?: string
-}
+  if (typeof record.success !== "boolean") return false
+  if (record.title !== undefined && typeof record.title !== "string") return false
+  if (record.error !== undefined && typeof record.error !== "string") return false
 
-export interface TempWindowFetch {
-  success: boolean
-  status?: number
-  headers?: Record<string, string>
-  data?: any
-  error?: string
-}
-
-export interface TempWindowRenderedTitleResponse {
-  success: boolean
-  title?: string
-  error?: string
+  return true
 }
 
 /**
@@ -100,20 +91,85 @@ export async function tempWindowFetch(
     suppressMinimize,
   }
 
+  // Make sure works normally in all contexts, including background
   if (isExtensionBackground()) {
     return await new Promise<TempWindowFetch>((resolve) => {
-      void handleTempWindowFetch(payload, (response) => {
+      let responded = false
+
+      const finalize = (response?: TempWindowFetch) => {
+        if (responded) return
+        responded = true
         resolve(
-          (response ?? {
+          response ?? {
             success: false,
             error: "Empty tempWindowFetch response",
-          }) as TempWindowFetch,
+          },
         )
-      })
+      }
+
+      void (async () => {
+        try {
+          await handleTempWindowFetch(payload, (response) => {
+            finalize(response as TempWindowFetch)
+          })
+        } finally {
+          finalize()
+        }
+      })()
     })
   }
   return await sendRuntimeMessage({
     action: RuntimeActionIds.TempWindowFetch,
+    ...payload,
+  })
+}
+
+/**
+ * Performs a Turnstile-assisted network request via the background "temp window" channel.
+ */
+export async function tempWindowTurnstileFetch(
+  params: TempWindowTurnstileFetchParams,
+): Promise<TempWindowTurnstileFetch> {
+  const suppressMinimize =
+    params.suppressMinimize ??
+    (typeof window !== "undefined" && isExtensionPopup())
+
+  const payload: TempWindowTurnstileFetchParams = {
+    ...params,
+    suppressMinimize,
+  }
+
+  // Make sure works normally in all contexts, including background
+  if (isExtensionBackground()) {
+    return await new Promise<TempWindowTurnstileFetch>((resolve) => {
+      let responded = false
+
+      const finalize = (response?: TempWindowTurnstileFetch) => {
+        if (responded) return
+        responded = true
+        resolve(
+          response ?? {
+            success: false,
+            error: "Empty tempWindowTurnstileFetch response",
+            turnstile: { status: "error", hasTurnstile: false },
+          },
+        )
+      }
+
+      void (async () => {
+        try {
+          await handleTempWindowTurnstileFetch(payload, (response) => {
+            finalize(response as TempWindowTurnstileFetch)
+          })
+        } finally {
+          finalize()
+        }
+      })()
+    })
+  }
+
+  return await sendRuntimeMessage({
+    action: RuntimeActionIds.TempWindowTurnstileFetch,
     ...payload,
   })
 }
@@ -134,17 +190,40 @@ export async function tempWindowGetRenderedTitle(params: {
       (typeof window !== "undefined" && isExtensionPopup()),
   }
 
+  // Make sure works normally in all contexts, including background
   if (isExtensionBackground()) {
     return await new Promise<TempWindowRenderedTitleResponse>((resolve) => {
       // reuse background handler directly for synchronous contexts
-      void handleTempWindowGetRenderedTitle(payload, (response: any) => {
+      let responded = false
+
+      const finalize = (response?: TempWindowRenderedTitleResponse) => {
+        if (responded) return
+        responded = true
         resolve(
-          (response ?? {
+          response ?? {
             success: false,
             error: "Empty tempWindowGetRenderedTitle response",
-          }) as TempWindowRenderedTitleResponse,
+          },
         )
-      })
+      }
+
+      void (async () => {
+        try {
+          await handleTempWindowGetRenderedTitle(payload, (response: unknown) => {
+            if (isTempWindowRenderedTitleResponse(response)) {
+              finalize(response)
+              return
+            }
+
+            finalize({
+              success: false,
+              error: "Invalid tempWindowGetRenderedTitle response",
+            })
+          })
+        } finally {
+          finalize()
+        }
+      })()
     })
   }
 
@@ -156,11 +235,6 @@ const TEMP_WINDOW_FALLBACK_CODES = new Set<ApiErrorCode>([
   API_ERROR_CODES.HTTP_403,
   API_ERROR_CODES.CONTENT_TYPE_MISMATCH,
 ])
-
-export interface TempWindowFallbackAllowlist {
-  statusCodes?: number[]
-  codes?: ApiErrorCode[]
-}
 
 /**
  * Determines whether a given error matches the status codes or error codes that should trigger temp window fallback.
@@ -200,26 +274,6 @@ function tagTempWindowFallbackBlocked(
     error.originalCode = error.code
   }
   error.code = code
-}
-
-export interface TempWindowFallbackContext {
-  baseUrl: string
-  url: string
-  endpoint: string
-  fetchOptions: RequestInit
-  onlyData: boolean
-  responseType: TempWindowResponseType
-  /**
-   * Allowlist controlling which `ApiError.statusCode` and/or `ApiError.code` values can trigger temp-window fallback.
-   * When provided, this fully overrides the default allowlist: omitted fields default to empty lists.
-   */
-  tempWindowFallback?: TempWindowFallbackAllowlist
-  /** Account ID for per-request cookie isolation */
-  accountId?: string
-  /** Auth type for cookie auth handling */
-  authType: AuthTypeEnum
-  /** Per-account session cookie header to merge with WAF cookies */
-  cookieAuthSessionCookie?: string
 }
 
 /**

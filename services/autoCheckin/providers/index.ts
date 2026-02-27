@@ -1,7 +1,7 @@
 import { ANYROUTER, NEW_API, VELOERA, WONG_GONGYI } from "~/constants/siteType"
 import { newApiProvider } from "~/services/autoCheckin/providers/newApi"
+import type { AutoCheckinProviderResult } from "~/services/autoCheckin/providers/types"
 import type { SiteAccount } from "~/types"
-import type { CheckinResultStatus } from "~/types/autoCheckin"
 
 import { AnyrouterCheckInParams, anyrouterProvider } from "./anyrouter"
 import { veloeraProvider } from "./veloera"
@@ -16,13 +16,9 @@ import { wongGongyiProvider } from "./wong"
  */
 export interface AutoCheckinProvider {
   canCheckIn(account: SiteAccount): boolean
-  checkIn(account: SiteAccount | AnyrouterCheckInParams): Promise<{
-    status: CheckinResultStatus
-    messageKey?: string
-    messageParams?: Record<string, any>
-    rawMessage?: string
-    data?: any
-  }>
+  checkIn(
+    account: SiteAccount | AnyrouterCheckInParams,
+  ): Promise<AutoCheckinProviderResult>
 }
 
 const providers: Record<string, AutoCheckinProvider> = {

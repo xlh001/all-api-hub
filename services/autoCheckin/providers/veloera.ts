@@ -1,36 +1,27 @@
 /**
- * Veloera Check-in Provider
- * Handles check-in operations for Veloera sites
+ * Veloera auto check-in provider.
+ *
+ * Endpoint: POST `/api/user/check_in`.
  */
 
 import { fetchApi } from "~/services/apiService/common/utils"
+import {
+  AUTO_CHECKIN_PROVIDER_FALLBACK_MESSAGE_KEYS,
+  isAlreadyCheckedMessage,
+  normalizeCheckinMessage,
+  resolveProviderErrorResult,
+} from "~/services/autoCheckin/providers/shared"
+import type { AutoCheckinProviderResult } from "~/services/autoCheckin/providers/types"
 import type { SiteAccount } from "~/types"
 import { AuthTypeEnum } from "~/types"
-import { CHECKIN_RESULT_STATUS, CheckinResultStatus } from "~/types/autoCheckin"
+import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
+import { getErrorMessage } from "~/utils/error"
 
 import type { AutoCheckinProvider } from "./index"
 
-export interface CheckinResult {
-  status: CheckinResultStatus
-  messageKey?: string
-  messageParams?: Record<string, any>
-  rawMessage?: string
-  data?: any
-}
+export type CheckinResult = AutoCheckinProviderResult
 
-/**
- * Check if the message indicates already checked in
- * @param message - The message to check
- * @returns true if already checked in
- */
-const isAlreadyChecked = (message: string): boolean => {
-  const normalized = message.toLowerCase()
-  return (
-    normalized.includes("已签到") ||
-    normalized.includes("已经签到") ||
-    normalized.includes("already checked")
-  )
-}
+const ENDPOINT = "/api/user/check_in"
 
 /**
  * Perform check-in for a Veloera account
@@ -42,7 +33,7 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
 
   try {
     // Call the check-in API endpoint
-    const response = await fetchApi<any>(
+    const response = await fetchApi<unknown>(
       {
         baseUrl: site_url,
         auth: {
@@ -52,23 +43,19 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
         },
       },
       {
-        endpoint: "/api/user/check_in",
+        endpoint: ENDPOINT,
         options: { method: "POST" },
       },
     )
 
-    const responseMessage =
-      typeof response.message === "string" ? response.message : ""
-    const normalizedMessage = responseMessage.toLowerCase()
+    const responseMessage = normalizeCheckinMessage(response?.message)
 
     // Check if response.message indicates already checked in
-    if (isAlreadyChecked(normalizedMessage)) {
+    if (responseMessage && isAlreadyCheckedMessage(responseMessage)) {
       return {
         status: CHECKIN_RESULT_STATUS.ALREADY_CHECKED,
         rawMessage: responseMessage || undefined,
-        messageKey: responseMessage
-          ? undefined
-          : "autoCheckin:providerFallback.alreadyCheckedToday",
+        data: response.data ?? undefined,
       }
     }
 
@@ -79,7 +66,7 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
         rawMessage: responseMessage || undefined,
         messageKey: responseMessage
           ? undefined
-          : "autoCheckin:providerFallback.checkinSuccessful",
+          : AUTO_CHECKIN_PROVIDER_FALLBACK_MESSAGE_KEYS.checkinSuccessful,
         data: response.data,
       }
     }
@@ -90,37 +77,11 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
       rawMessage: responseMessage || undefined,
       messageKey: responseMessage
         ? undefined
-        : "autoCheckin:providerFallback.checkinFailed",
+        : AUTO_CHECKIN_PROVIDER_FALLBACK_MESSAGE_KEYS.checkinFailed,
+      data: response ?? undefined,
     }
-  } catch (error: any) {
-    // Handle specific error cases
-    const errorMessage = error?.message || String(error)
-    const normalizedErrorMessage = errorMessage.toLowerCase()
-
-    // Check if already checked in based on error message
-    if (isAlreadyChecked(normalizedErrorMessage)) {
-      return {
-        status: CHECKIN_RESULT_STATUS.ALREADY_CHECKED,
-        rawMessage: errorMessage,
-      }
-    }
-
-    // Handle 404 or endpoint not found
-    if (error?.statusCode === 404 || errorMessage.includes("404")) {
-      return {
-        status: CHECKIN_RESULT_STATUS.FAILED,
-        messageKey: "autoCheckin:providerFallback.endpointNotSupported",
-      }
-    }
-
-    // General failure
-    return {
-      status: CHECKIN_RESULT_STATUS.FAILED,
-      rawMessage: errorMessage || undefined,
-      messageKey: errorMessage
-        ? undefined
-        : "autoCheckin:providerFallback.unknownError",
-    }
+  } catch (error: unknown) {
+    return resolveProviderErrorResult({ error: getErrorMessage(error) })
   }
 }
 
@@ -130,18 +91,20 @@ async function checkinVeloera(account: SiteAccount): Promise<CheckinResult> {
  * @returns true if account meets check-in requirements
  */
 function canCheckIn(account: SiteAccount): boolean {
-  // Must have enableDetection enabled
   if (!account.checkIn?.enableDetection) {
     return false
   }
 
-  // Must have valid credentials
-  if (!account.account_info?.access_token || !account.account_info?.id) {
+  if (!account.account_info?.id) {
     return false
   }
 
-  // Veloera sites should have site_type set (but we'll be lenient)
-  // For now, we'll allow any account that meets the above criteria
+  const authType = account.authType || AuthTypeEnum.AccessToken
+
+  if (authType === AuthTypeEnum.AccessToken) {
+    return Boolean(account.account_info?.access_token)
+  }
+
   return true
 }
 
