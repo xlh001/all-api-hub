@@ -112,7 +112,12 @@ export function UpdateLogDialog({
       </Button>
 
       <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={onClose} type="button">
+        <Button
+          data-testid="update-log-dialog-close"
+          variant="outline"
+          onClick={onClose}
+          type="button"
+        >
           {t("common:actions.close")}
         </Button>
         <Button onClick={() => void handleOpenFullChangelog()} type="button">

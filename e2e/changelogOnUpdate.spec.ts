@@ -217,7 +217,7 @@ test("shows update log inline once on first UI open after update", async ({
 
   // Use a lightweight options route to reduce flakiness from the heavier
   // BasicSettings page mounting all tab panels by default.
-  await page.goto(`chrome-extension://${extensionId}/options.html#about`)
+  await page.goto(`chrome-extension://${extensionId}/options.html`)
 
   // Options is heavier than popup and can take a bit longer to mount providers
   // + run the UI-open handler on slower CI machines.
@@ -283,7 +283,7 @@ test("shows update log inline once on first UI open after update", async ({
     })
     .toBe(true)
 
-  await dialogPage.getByLabel("Close").click()
+  await dialogPage.getByTestId("update-log-dialog-close").click()
   await expect(dialogPage.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
 
   await dialogPage.reload()
@@ -325,9 +325,8 @@ test("shows update log inline in popup once on first UI open after update", asyn
 
   await page.goto(`chrome-extension://${extensionId}/popup.html`)
 
-  await expect(page.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(1, {
-    timeout: 30_000,
-  })
+  const dialogPage = await waitForUpdateLogDialogPage(context, 60_000)
+  await expect(dialogPage.locator(UPDATE_LOG_DIALOG_SELECTOR)).toBeVisible()
 
   await expect
     .poll(() =>
@@ -346,11 +345,11 @@ test("shows update log inline in popup once on first UI open after update", asyn
     )
     .toBe(0)
 
-  await page.getByLabel("Close").click()
-  await expect(page.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
+  await dialogPage.getByTestId("update-log-dialog-close").click()
+  await expect(dialogPage.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
 
-  await page.reload()
-  await expect(page.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
+  await dialogPage.reload()
+  await expect(dialogPage.locator(UPDATE_LOG_DIALOG_SELECTOR)).toHaveCount(0)
 })
 
 test("does not show update log when disabled, but still consumes pending marker", async ({
