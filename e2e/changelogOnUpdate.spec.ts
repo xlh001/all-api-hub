@@ -168,13 +168,17 @@ test("shows update log inline once on first UI open after update", async ({
     })
   })
 
-  await page.goto(`chrome-extension://${extensionId}/options.html`)
+  // Use a lightweight options route to reduce flakiness from the heavier
+  // BasicSettings page mounting all tab panels by default.
+  await page.goto(`chrome-extension://${extensionId}/options.html#about`)
 
   // Options is heavier than popup and can take a bit longer to mount providers
   // + run the UI-open handler on slower CI machines.
-  await expect(page.locator("#root > *")).not.toHaveCount(0)
+  await expect(page.locator("#root > *")).not.toHaveCount(0, {
+    timeout: 30_000,
+  })
   await expect(page.getByTestId("update-log-dialog")).toBeVisible({
-    timeout: 20_000,
+    timeout: 60_000,
   })
 
   await expect
