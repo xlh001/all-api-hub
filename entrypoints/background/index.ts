@@ -3,7 +3,6 @@ import { setupRuntimeMessageListeners } from "~/entrypoints/background/runtimeMe
 import { setupTempWindowListeners } from "~/entrypoints/background/tempWindowPool"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { migrateAccountsConfig } from "~/services/accounts/migrations/accountDataMigration"
-import { changelogOnUpdateState } from "~/services/changelogOnUpdateState"
 import {
   hasNewOptionalPermissions,
   setLastSeenOptionalPermissions,
@@ -13,6 +12,7 @@ import {
   OPTIONAL_PERMISSIONS,
 } from "~/services/permissions/permissionManager"
 import { tagStorage } from "~/services/tags/tagStorage"
+import { changelogOnUpdateState } from "~/services/updates/changelogOnUpdateState"
 import { userPreferences } from "~/services/userPreferences"
 import { getManifest, onInstalled, onStartup } from "~/utils/browserApi"
 import { createLogger } from "~/utils/logger"

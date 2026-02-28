@@ -66,7 +66,7 @@ describe("background onInstalled changelog opening", () => {
       userPreferences: { getPreferences: getPreferencesMock },
     }))
 
-    vi.doMock("~/services/changelogOnUpdateState", () => ({
+    vi.doMock("~/services/updates/changelogOnUpdateState", () => ({
       changelogOnUpdateState: {
         setPendingVersion: setPendingVersionMock,
       },
@@ -132,7 +132,7 @@ describe("background onInstalled changelog opening", () => {
 
     vi.doUnmock("~/utils/browserApi")
     vi.doUnmock("~/utils/docsLinks")
-    vi.doUnmock("~/services/changelogOnUpdateState")
+    vi.doUnmock("~/services/updates/changelogOnUpdateState")
     vi.doUnmock("~/services/userPreferences")
     vi.doUnmock("~/entrypoints/background/runtimeMessages")
     vi.doUnmock("~/entrypoints/background/tempWindowPool")

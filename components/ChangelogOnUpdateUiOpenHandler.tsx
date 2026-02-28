@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 
 import { useUpdateLogDialogContext } from "~/components/UpdateLogDialog"
-import { changelogOnUpdateState } from "~/services/changelogOnUpdateState"
+import { changelogOnUpdateState } from "~/services/updates/changelogOnUpdateState"
 import {
   DEFAULT_PREFERENCES,
   userPreferences,

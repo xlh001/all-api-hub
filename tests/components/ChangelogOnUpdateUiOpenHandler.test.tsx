@@ -5,7 +5,7 @@ import {
   UpdateLogDialogContainer,
   UpdateLogDialogProvider,
 } from "~/components/UpdateLogDialog"
-import { changelogOnUpdateState } from "~/services/changelogOnUpdateState"
+import { changelogOnUpdateState } from "~/services/updates/changelogOnUpdateState"
 import {
   DEFAULT_PREFERENCES,
   userPreferences,
