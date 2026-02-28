@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 
-import { drawShareSnapshotOverlay } from "~/services/shareSnapshots/shareSnapshotOverlay"
-import type { ShareSnapshotOverlayLabels } from "~/services/shareSnapshots/shareSnapshotOverlay"
-import type { ShareSnapshotPayload } from "~/services/shareSnapshots/types"
+import { drawShareSnapshotOverlay } from "~/services/sharing/shareSnapshots/shareSnapshotOverlay"
+import type { ShareSnapshotOverlayLabels } from "~/services/sharing/shareSnapshots/shareSnapshotOverlay"
+import type { ShareSnapshotPayload } from "~/services/sharing/shareSnapshots/types"
 
 /**
  * Unit tests for the share snapshot canvas overlay renderer.

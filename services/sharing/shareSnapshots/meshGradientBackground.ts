@@ -1,8 +1,12 @@
 import {
   createMeshGradientPlan,
   type MeshGradientBlob,
-} from "~/services/shareSnapshots/meshGradient"
-import { clamp, clampByte, mulberry32 } from "~/services/shareSnapshots/utils"
+} from "~/services/sharing/shareSnapshots/meshGradient"
+import {
+  clamp,
+  clampByte,
+  mulberry32,
+} from "~/services/sharing/shareSnapshots/utils"
 
 export type DrawMeshGradientBackgroundOptions = {
   seed: number

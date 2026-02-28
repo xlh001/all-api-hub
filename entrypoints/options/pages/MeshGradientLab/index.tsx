@@ -15,14 +15,14 @@ import { PageHeader } from "~/entrypoints/options/components/PageHeader"
 import {
   MESH_GRADIENT_LAYOUT_COUNT,
   MESH_GRADIENT_PALETTES,
-} from "~/services/shareSnapshots/meshGradient"
-import { drawMeshGradientBackground } from "~/services/shareSnapshots/meshGradientBackground"
+} from "~/services/sharing/shareSnapshots/meshGradient"
+import { drawMeshGradientBackground } from "~/services/sharing/shareSnapshots/meshGradientBackground"
 import {
   drawShareSnapshotOverlay,
   type ShareSnapshotOverlayLabels,
-} from "~/services/shareSnapshots/shareSnapshotOverlay"
-import type { ShareSnapshotPayload } from "~/services/shareSnapshots/types"
-import { createShareSnapshotSeed } from "~/services/shareSnapshots/utils"
+} from "~/services/sharing/shareSnapshots/shareSnapshotOverlay"
+import type { ShareSnapshotPayload } from "~/services/sharing/shareSnapshots/types"
+import { createShareSnapshotSeed } from "~/services/sharing/shareSnapshots/utils"
 
 type ViewMode = "palettes" | "layouts"
 

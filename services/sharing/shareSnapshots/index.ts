@@ -1,23 +1,23 @@
 import i18next from "i18next"
 
-import { drawMeshGradientBackground } from "~/services/shareSnapshots/meshGradientBackground"
+import { drawMeshGradientBackground } from "~/services/sharing/shareSnapshots/meshGradientBackground"
 import {
   drawShareSnapshotOverlay,
   type ShareSnapshotOverlayLabels,
-} from "~/services/shareSnapshots/shareSnapshotOverlay"
+} from "~/services/sharing/shareSnapshots/shareSnapshotOverlay"
 import type {
   AccountShareSnapshotPayload,
   OverviewShareSnapshotPayload,
   ShareSnapshotExportResult,
   ShareSnapshotPayload,
-} from "~/services/shareSnapshots/types"
+} from "~/services/sharing/shareSnapshots/types"
 import {
   createShareSnapshotSeed,
   formatAsOfTimestamp,
   formatCurrencyAmount,
   formatLocalDateStamp,
   formatSignedCurrencyAmount,
-} from "~/services/shareSnapshots/utils"
+} from "~/services/sharing/shareSnapshots/utils"
 import type { CurrencyType } from "~/types"
 import { createLogger } from "~/utils/logger"
 

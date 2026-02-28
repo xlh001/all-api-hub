@@ -11,7 +11,7 @@ import type {
   AccountShareSnapshotPayload,
   OverviewShareSnapshotPayload,
   ShareSnapshotPayload,
-} from "~/services/shareSnapshots/types"
+} from "~/services/sharing/shareSnapshots/types"
 import {
   DEFAULT_PREFERENCES,
   type TempWindowFallbackPreferences,
