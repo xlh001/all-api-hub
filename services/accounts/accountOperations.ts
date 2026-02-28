@@ -14,7 +14,7 @@ import {
 } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { getApiService } from "~/services/apiService"
-import { autoDetectSmart } from "~/services/autoDetectService"
+import { autoDetectSmart } from "~/services/siteDetection/autoDetectService"
 import {
   DEFAULT_PREFERENCES,
   userPreferences,

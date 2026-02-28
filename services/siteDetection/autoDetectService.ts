@@ -19,7 +19,7 @@ import {
 import { getErrorMessage } from "~/utils/error"
 import { createLogger } from "~/utils/logger"
 
-import { getApiService } from "./apiService"
+import { getApiService } from "../apiService"
 import { getSiteType } from "./detectSiteType"
 
 /**

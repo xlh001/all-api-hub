@@ -73,7 +73,7 @@ vi.mock("~/services/apiService", () => ({
   })),
 }))
 
-vi.mock("~/services/detectSiteType", () => ({
+vi.mock("~/services/siteDetection/detectSiteType", () => ({
   getSiteType: mockGetSiteType,
 }))
 

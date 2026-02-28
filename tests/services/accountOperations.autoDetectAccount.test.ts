@@ -19,7 +19,7 @@ const {
   mockExtractDefaultExchangeRate: vi.fn(),
 }))
 
-vi.mock("~/services/autoDetectService", () => ({
+vi.mock("~/services/siteDetection/autoDetectService", () => ({
   autoDetectSmart: mockAutoDetectSmart,
 }))
 

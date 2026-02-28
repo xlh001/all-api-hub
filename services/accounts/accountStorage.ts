@@ -28,7 +28,7 @@ import { safeRandomUUID } from "~/utils/identifier"
 import { createLogger } from "~/utils/logger"
 
 import { maybeCaptureDailyBalanceSnapshot } from "../dailyBalanceHistory/capture"
-import { getSiteType } from "../detectSiteType"
+import { getSiteType } from "../siteDetection/detectSiteType"
 import { userPreferences } from "../userPreferences"
 import {
   migrateAccountConfig,
