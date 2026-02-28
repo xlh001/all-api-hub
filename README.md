@@ -24,14 +24,21 @@
 <a href="https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa">
   <img alt="Microsoft Edge" src="https://img.shields.io/badge/dynamic/json?label=Edge&prefix=v&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fpcokpjaffghgipcgjhapgdpeddlhblaa&logo=microsoftedge&style=flat">
 </a>
-<a href="https://t.me/qixing_chat">
-  <img alt="Telegram Group" src="https://img.shields.io/badge/Telegram-交流群-blue?logo=telegram">
-</a>
 </p>
+
+---
 
 **[文档教程](https://all-api-hub.qixing1217.top/) | [快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [常见问题](https://all-api-hub.qixing1217.top/faq.html) | [更新日志](https://all-api-hub.qixing1217.top/changelog.html) | [贡献指南](CONTRIBUTING.md)**
 
-💬 **加入讨论**：有使用、功能或技术问题？欢迎加入 [Telegram 交流群](https://t.me/qixing_chat) 与社区一起讨论！
+<p align="center">
+  <strong>💬 社区：</strong> 
+  <a href="./resources/wechat_group.png">
+    <img alt="中文群" src="https://img.shields.io/badge/WeChat-中文群-green" />
+  </a>
+  <a href="https://t.me/qixing_chat">
+    <img alt="Telegram-多语言群" src="https://img.shields.io/badge/Telegram-多语言群-blue?logo=telegram">
+  </a>
+</p>
 
 ---
 
