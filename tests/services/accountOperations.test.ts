@@ -6,7 +6,7 @@ import {
   isValidAccount,
   isValidExchangeRate,
   validateAndUpdateAccount,
-} from "~/services/accountOperations"
+} from "~/services/accounts/accountOperations"
 import { AuthTypeEnum } from "~/types"
 
 const { mockFetchAccountData, mockUpdateAccount } = vi.hoisted(() => ({
@@ -24,9 +24,9 @@ vi.mock("~/services/apiService", async (importOriginal) => {
   }
 })
 
-vi.mock("~/services/accountStorage", async (importOriginal) => {
+vi.mock("~/services/accounts/accountStorage", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("~/services/accountStorage")>()
+    await importOriginal<typeof import("~/services/accounts/accountStorage")>()
 
   return {
     ...actual,

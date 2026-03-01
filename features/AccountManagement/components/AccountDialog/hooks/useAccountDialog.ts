@@ -13,8 +13,8 @@ import {
   parseManualQuotaFromUsd,
   validateAndSaveAccount,
   validateAndUpdateAccount,
-} from "~/services/accountOperations"
-import { accountStorage } from "~/services/accountStorage"
+} from "~/services/accounts/accountOperations"
+import { accountStorage } from "~/services/accounts/accountStorage"
 import {
   AuthTypeEnum,
   type CheckInConfig,

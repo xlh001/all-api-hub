@@ -77,7 +77,7 @@ vi.mock("~/services/apiService/openaiCompatible", async () => {
 
 // Mock account storage
 const mockAccountStorageConvertToDisplayData = vi.fn()
-vi.mock("~/services/accountStorage", () => ({
+vi.mock("~/services/accounts/accountStorage", () => ({
   accountStorage: {
     convertToDisplayData: mockAccountStorageConvertToDisplayData,
   },
@@ -85,7 +85,7 @@ vi.mock("~/services/accountStorage", () => ({
 
 // Mock account operations
 const mockEnsureAccountApiToken = vi.fn()
-vi.mock("~/services/accountOperations", () => ({
+vi.mock("~/services/accounts/accountOperations", () => ({
   ensureAccountApiToken: mockEnsureAccountApiToken,
 }))
 

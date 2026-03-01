@@ -3,10 +3,10 @@ import { AccountAutoRefresh } from "~/types/accountAutoRefresh"
 import { sendRuntimeMessage } from "~/utils/browserApi"
 import { createLogger } from "~/utils/logger"
 
-import { getErrorMessage } from "../utils/error"
+import { getErrorMessage } from "../../utils/error"
+import { usageHistoryScheduler } from "../usageHistory/scheduler"
+import { userPreferences } from "../userPreferences"
 import { accountStorage } from "./accountStorage"
-import { usageHistoryScheduler } from "./usageHistory/scheduler"
-import { userPreferences } from "./userPreferences"
 
 const logger = createLogger("AutoRefresh")
 

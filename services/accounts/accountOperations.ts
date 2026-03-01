@@ -11,8 +11,8 @@ import { UI_CONSTANTS } from "~/constants/ui"
 import {
   ensureDefaultApiTokenForAccount,
   generateDefaultTokenRequest,
-} from "~/services/accountKeyAutoProvisioning/ensureDefaultToken"
-import { accountStorage } from "~/services/accountStorage"
+} from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
+import { accountStorage } from "~/services/accounts/accountStorage"
 import { getApiService } from "~/services/apiService"
 import { autoDetectSmart } from "~/services/autoDetectService"
 import {
