@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { NEW_API } from "~/constants/siteType"
-import { ModelRedirectService } from "~/services/modelRedirect/ModelRedirectService"
+import { ModelRedirectService } from "~/services/models/modelRedirect/ModelRedirectService"
 import { userPreferences } from "~/services/userPreferences"
 import {
   getManagedSiteAdminConfig,
@@ -11,7 +11,7 @@ import {
 const listChannelsMock = vi.fn()
 const updateChannelModelMappingMock = vi.fn()
 
-vi.mock("~/services/modelSync", () => {
+vi.mock("~/services/models/modelSync", () => {
   class ModelSyncServiceMock {
     listChannels = listChannelsMock
     updateChannelModelMapping = updateChannelModelMappingMock

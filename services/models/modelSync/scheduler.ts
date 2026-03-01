@@ -3,7 +3,7 @@ import { t } from "i18next"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { OCTOPUS } from "~/constants/siteType"
 import * as octopusApi from "~/services/apiService/octopus"
-import { ModelRedirectService } from "~/services/modelRedirect"
+import { ModelRedirectService } from "~/services/models/modelRedirect"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type {
   ManagedSiteChannel,
@@ -34,9 +34,9 @@ import {
   getManagedSiteContext,
 } from "~/utils/managedSite"
 
-import { channelConfigStorage } from "../channelConfigStorage"
-import { octopusChannelToManagedSite } from "../octopusService/octopusService"
-import { DEFAULT_PREFERENCES, userPreferences } from "../userPreferences"
+import { channelConfigStorage } from "../../channelConfigStorage"
+import { octopusChannelToManagedSite } from "../../octopusService/octopusService"
+import { DEFAULT_PREFERENCES, userPreferences } from "../../userPreferences"
 import { collectModelsFromExecution } from "./modelCollection"
 import { ModelSyncService } from "./modelSyncService"
 import { runOctopusBatch } from "./octopusModelSync"

@@ -10,8 +10,8 @@ import {
   OCTOPUS,
   type ManagedSiteType,
 } from "~/constants/siteType"
-import { modelMetadataService } from "~/services/modelMetadata"
-import { ModelSyncService } from "~/services/modelSync"
+import { modelMetadataService } from "~/services/models/modelMetadata"
+import { ModelSyncService } from "~/services/models/modelSync"
 import type { ManagedSiteChannel } from "~/types/managedSite"
 import { CHANNEL_STATUS } from "~/types/managedSite"
 import {
@@ -26,8 +26,8 @@ import {
 } from "~/utils/managedSite"
 import { toModelTokenKey } from "~/utils/modelName"
 
-import { hasValidManagedSiteConfig } from "../managedSiteService"
-import { userPreferences, type UserPreferences } from "../userPreferences"
+import { hasValidManagedSiteConfig } from "../../managedSiteService"
+import { userPreferences, type UserPreferences } from "../../userPreferences"
 import { extractActualModel, renameModel } from "./modelNormalization"
 import { isEmptyModelMapping } from "./utils"
 

@@ -32,7 +32,7 @@ vi.mock("~/services/webdav/webdavAutoSyncService", () => ({
   webdavAutoSyncService: { initialize: webdavInitMock },
 }))
 
-vi.mock("~/services/modelSync", () => ({
+vi.mock("~/services/models/modelSync", () => ({
   modelSyncScheduler: { initialize: modelSyncInitMock },
 }))
 
@@ -40,7 +40,7 @@ vi.mock("~/services/checkin/autoCheckin/scheduler", () => ({
   autoCheckinScheduler: { initialize: autoCheckinInitMock },
 }))
 
-vi.mock("~/services/modelMetadata", () => ({
+vi.mock("~/services/models/modelMetadata", () => ({
   modelMetadataService: { initialize: modelMetadataInitMock },
 }))
 

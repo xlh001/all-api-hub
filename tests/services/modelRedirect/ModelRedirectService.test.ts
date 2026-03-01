@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { extractActualModel } from "~/services/modelRedirect/modelNormalization"
-import { ModelRedirectService } from "~/services/modelRedirect/ModelRedirectService"
+import { extractActualModel } from "~/services/models/modelRedirect/modelNormalization"
+import { ModelRedirectService } from "~/services/models/modelRedirect/ModelRedirectService"
 
 const MOCKED_METADATA = vi.hoisted(() => {
   const mockMetadataMap = new Map<
@@ -31,7 +31,7 @@ const MOCKED_METADATA = vi.hoisted(() => {
   }
 })
 
-vi.mock("~/services/modelMetadata", () => ({
+vi.mock("~/services/models/modelMetadata", () => ({
   modelMetadataService: {
     initialize: vi.fn().mockResolvedValue(undefined),
     findStandardModelName: MOCKED_METADATA.findStandardModelNameMock,

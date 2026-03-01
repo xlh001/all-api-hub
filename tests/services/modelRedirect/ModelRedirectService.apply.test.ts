@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { DONE_HUB, NEW_API } from "~/constants/siteType"
 import { hasValidManagedSiteConfig } from "~/services/managedSiteService"
-import { modelMetadataService } from "~/services/modelMetadata"
-import { ModelRedirectService } from "~/services/modelRedirect/ModelRedirectService"
+import { modelMetadataService } from "~/services/models/modelMetadata"
+import { ModelRedirectService } from "~/services/models/modelRedirect/ModelRedirectService"
 import { userPreferences } from "~/services/userPreferences"
 import { DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/managedSiteModelRedirect"
 import { CHANNEL_STATUS } from "~/types/newapi"
 
-vi.mock("~/services/modelMetadata", () => ({
+vi.mock("~/services/models/modelMetadata", () => ({
   modelMetadataService: {
     initialize: vi.fn().mockResolvedValue(undefined),
     findStandardModelName: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock("~/services/modelMetadata", () => ({
 const listChannelsMock = vi.fn()
 const updateChannelModelMappingMock = vi.fn()
 
-vi.mock("~/services/modelSync", () => {
+vi.mock("~/services/models/modelSync", () => {
   class ModelSyncServiceMock {
     listChannels = listChannelsMock
     updateChannelModelMapping = updateChannelModelMappingMock
