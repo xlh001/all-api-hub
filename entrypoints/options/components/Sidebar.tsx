@@ -156,7 +156,10 @@ function Sidebar({
 
           <Separator className="mx-3" />
 
-          <nav aria-label={navAriaLabel} className="flex-1 py-4">
+          <nav
+            aria-label={navAriaLabel}
+            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto py-4"
+          >
             <ul className="space-y-1 px-2">
               {menuItems.map((item) => {
                 const Icon = item.icon
