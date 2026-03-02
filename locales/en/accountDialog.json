@@ -27,7 +27,7 @@
     "alreadyAdded": "Account(s) already exist for this site",
     "currentLoginAlreadyAdded": "Current login already added",
     "editNow": "Edit Now",
-    "cookieWarning": "Cookie authentication uses your current login account, cannot be used for multiple accounts on the same site, do not use unless necessary",
+    "cookieWarning": "Prefer access tokens. Cookie auth requires importing a session cookie, and it may expire/renew and stop working, requiring re-import; for multiple accounts on the same site, import a session cookie per account. Use only when necessary.",
     "sub2apiAuthOnly": "Sub2API only supports Access Token authentication (JWT)",
     "sub2apiHint": "Sub2API uses short-term JWTs. When they expire, the extension will automatically try to obtain a new JWT using a temporary window (requires being logged in on the site). With \"Plugin Hosted Session\" enabled, each account can automatically refresh and renew authentication independently in the background, supporting multiple accounts on the same site.",
     "unknown": "Unable to get",
@@ -105,7 +105,7 @@
     "tagsDeleteConfirm": "Delete",
     "tagsRemove": "Remove {{name}}",
     "cookieAuthSessionCookie": "Session Cookie",
-    "cookieAuthSessionCookieDesc": "Import session cookies from the currently logged-in browser tab",
+    "cookieAuthSessionCookieDesc": "Import this account's session cookie from a logged-in browser tab (import separately for multi-account)",
     "importCookieAuthSessionCookie": "Import from current login",
     "cookieAuthSessionCookiePlaceholder": "Paste Cookie header value"
   },
