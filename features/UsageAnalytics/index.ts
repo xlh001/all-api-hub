@@ -1,1 +1,1 @@
-export { default } from "./UsageAnalyticsPage"
+export { default } from "./UsageAnalytics"
