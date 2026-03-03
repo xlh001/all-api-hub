@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { DIALOG_MODES } from "~/constants/dialogModes"
@@ -10,7 +11,8 @@ const { mockOpenWithAccount } = vi.hoisted(() => ({
   mockOpenWithAccount: vi.fn(),
 }))
 
-vi.mock("~/components/ChannelDialog", () => ({
+vi.mock("~/components/dialogs/ChannelDialog", () => ({
+  ChannelDialogProvider: ({ children }: { children: ReactNode }) => children,
   useChannelDialog: () => ({ openWithAccount: mockOpenWithAccount }),
 }))
 
