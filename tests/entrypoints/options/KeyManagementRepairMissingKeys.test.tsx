@@ -366,8 +366,8 @@ describe("KeyManagement repair missing keys entry point", () => {
       })
     })
 
-    expect(screen.getByText("Enabled Site")).toBeInTheDocument()
-    expect(screen.getByText("Another Site")).toBeInTheDocument()
+    expect(await screen.findByText("Enabled Site")).toBeInTheDocument()
+    expect(await screen.findByText("Another Site")).toBeInTheDocument()
 
     const searchInput = screen.getByPlaceholderText(
       "keyManagement:repairMissingKeys.searchPlaceholder",
@@ -375,11 +375,13 @@ describe("KeyManagement repair missing keys entry point", () => {
 
     fireEvent.change(searchInput, { target: { value: "Another" } })
 
-    expect(screen.queryByText("Enabled Site")).not.toBeInTheDocument()
-    expect(screen.getByText("Another Site")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText("Enabled Site")).not.toBeInTheDocument()
+      expect(screen.getByText("Another Site")).toBeInTheDocument()
+    })
 
     fireEvent.click(
-      screen.getByRole("button", { name: "common:actions.clear" }),
+      await screen.findByRole("button", { name: "common:actions.clear" }),
     )
 
     fireEvent.click(
@@ -388,8 +390,10 @@ describe("KeyManagement repair missing keys entry point", () => {
       }),
     )
 
-    expect(screen.queryByText("Enabled Site")).not.toBeInTheDocument()
-    expect(screen.getByText("Another Site")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText("Enabled Site")).not.toBeInTheDocument()
+      expect(screen.getByText("Another Site")).toBeInTheDocument()
+    })
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -397,12 +401,16 @@ describe("KeyManagement repair missing keys entry point", () => {
       }),
     )
 
-    expect(screen.getByText("Enabled Site")).toBeInTheDocument()
-    expect(screen.queryByText("Another Site")).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText("Enabled Site")).toBeInTheDocument()
+      expect(screen.queryByText("Another Site")).not.toBeInTheDocument()
+    })
 
     fireEvent.click(screen.getByRole("button", { name: /common:total/ }))
 
-    expect(screen.getByText("Enabled Site")).toBeInTheDocument()
-    expect(screen.getByText("Another Site")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText("Enabled Site")).toBeInTheDocument()
+      expect(screen.getByText("Another Site")).toBeInTheDocument()
+    })
   })
 })
