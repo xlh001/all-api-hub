@@ -2,14 +2,13 @@ import {
   ACCOUNT_STORAGE_KEYS,
   accountStorage,
 } from "~/services/accounts/accountStorage"
-import { hasCookieInterceptorPermissions } from "~/services/permissions/permissionManager"
 import { AccountStorageConfig, type SiteAccount } from "~/types"
 import { isSameStringSet } from "~/utils"
 import {
+  checkCookieInterceptorRequirement,
   registerWebRequestInterceptor,
   setupWebRequestInterceptor,
 } from "~/utils/browser/cookieHelper"
-import { isProtectionBypassFirefoxEnv } from "~/utils/browser/protectionBypass"
 import { createLogger } from "~/utils/core/logger"
 
 /**
@@ -19,27 +18,6 @@ const logger = createLogger("CookieInterceptor")
 
 const temporaryUrlPatternExpiry = new Map<string, number>()
 const DEFAULT_TEMP_PATTERN_TTL_MS = 5 * 60 * 1000
-
-/**
- * Checks whether cookie interception should run (Firefox + permissions).
- * Logs helpful warnings when optional permissions were not granted.
- */
-export async function checkCookieInterceptorRequirement(): Promise<boolean> {
-  // 仅 Firefox 使用这个功能
-  if (isProtectionBypassFirefoxEnv()) {
-    // 检查权限
-    const granted = await hasCookieInterceptorPermissions()
-    if (!granted) {
-      logger.warn(
-        "Required optional permissions (cookies/webRequest) are missing; skip cookie interception",
-      )
-    }
-    return granted
-  }
-
-  // 非 Firefox 不需要拦截器
-  return false
-}
 
 /**
  * Converts stored account URLs into unique origin match patterns usable by webRequest APIs.

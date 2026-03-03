@@ -1,4 +1,4 @@
-import { checkCookieInterceptorRequirement } from "~/entrypoints/background/cookieInterceptor"
+import { hasCookieInterceptorPermissions } from "~/services/permissions/permissionManager"
 import { mergeCookieHeaders } from "~/utils/browser/cookieString"
 import { isProtectionBypassFirefoxEnv } from "~/utils/browser/protectionBypass"
 import { createLogger } from "~/utils/core/logger"
@@ -35,6 +35,27 @@ export type AuthMode = (typeof AUTH_MODE)[keyof typeof AUTH_MODE]
 
 // 拦截器注册状态
 let isInterceptorRegistered = false
+
+/**
+ * Checks whether cookie interception should run (Firefox + permissions).
+ * Logs helpful warnings when optional permissions were not granted.
+ */
+export async function checkCookieInterceptorRequirement(): Promise<boolean> {
+  // 仅 Firefox 使用这个功能
+  if (isProtectionBypassFirefoxEnv()) {
+    // 检查权限
+    const granted = await hasCookieInterceptorPermissions()
+    if (!granted) {
+      logger.warn(
+        "Required optional permissions (cookies/webRequest) are missing; skip cookie interception",
+      )
+    }
+    return granted
+  }
+
+  // 非 Firefox 不需要拦截器
+  return false
+}
 
 /**
  * 获取指定 URL 的 Cookie 请求头
