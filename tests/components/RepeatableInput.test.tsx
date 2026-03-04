@@ -2,7 +2,7 @@ import React from "react"
 import { describe, expect, it } from "vitest"
 
 import { RepeatableInput } from "~/components/ui"
-import { fireEvent, render, screen } from "~/tests/test-utils/render"
+import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 interface TestItem {
   id: string

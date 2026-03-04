@@ -7,8 +7,8 @@ import {
   DEFAULT_PREFERENCES,
   userPreferences,
 } from "~/services/preferences/userPreferences"
-import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
 import * as browserApi from "~/utils/browser/browserApi"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("react-hot-toast", () => {
   const toast = Object.assign(vi.fn(), {

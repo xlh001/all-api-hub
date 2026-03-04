@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { fireEvent, render, screen } from "~/tests/test-utils/render"
+import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 // Shared mocks to control account data and capture bulk check-in clicks.
 let displayDataMock: any[] = []

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { VersionBadge } from "~/components/VersionBadge"
-import { render, screen } from "~/tests/test-utils/render"
+import { render, screen } from "~~/tests/test-utils/render"
 
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   const actual =

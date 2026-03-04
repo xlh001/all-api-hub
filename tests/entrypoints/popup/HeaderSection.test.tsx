@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import HeaderSection from "~/entrypoints/popup/components/HeaderSection"
-import { render, screen } from "~/tests/test-utils/render"
 import { isExtensionSidePanel } from "~/utils/browser"
+import { render, screen } from "~~/tests/test-utils/render"
 
 vi.mock("~/assets/icon.png", () => ({
   default: "icon.png",

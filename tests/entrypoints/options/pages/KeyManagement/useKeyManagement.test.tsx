@@ -7,9 +7,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { useKeyManagement } from "~/features/KeyManagement/hooks/useKeyManagement"
 import { useAccountData } from "~/hooks/useAccountData"
 import { getApiService } from "~/services/apiService"
-import testI18n from "~/tests/test-utils/i18n"
-import { createToken } from "~/tests/utils/keyManagementFactories"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
+import testI18n from "~~/tests/test-utils/i18n"
+import { createToken } from "~~/tests/utils/keyManagementFactories"
 
 vi.mock("~/hooks/useAccountData", () => ({
   useAccountData: vi.fn(),

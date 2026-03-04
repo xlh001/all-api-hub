@@ -2,7 +2,7 @@ import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 import { describe, expect, it } from "vitest"
 
 import LinkCard from "~/components/LinkCard"
-import { render, screen } from "~/tests/test-utils/render"
+import { render, screen } from "~~/tests/test-utils/render"
 
 describe("LinkCard", () => {
   const defaultProps = {

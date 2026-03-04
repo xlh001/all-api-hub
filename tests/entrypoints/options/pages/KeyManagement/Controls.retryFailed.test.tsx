@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from "vitest"
 
 import { AccountSelectorPanel } from "~/features/KeyManagement/components/AccountSelectorPanel"
 import { KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE } from "~/features/KeyManagement/constants"
-import { render, screen } from "~/tests/test-utils/render"
-import { createAccount } from "~/tests/utils/keyManagementFactories"
+import { render, screen } from "~~/tests/test-utils/render"
+import { createAccount } from "~~/tests/utils/keyManagementFactories"
 
 describe("KeyManagement AccountSelectorPanel retry failed", () => {
   it("renders retry failed accounts button and statistics in all-accounts mode", async () => {

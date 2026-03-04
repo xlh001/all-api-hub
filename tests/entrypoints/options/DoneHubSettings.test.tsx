@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import DoneHubSettings from "~/features/BasicSettings/components/tabs/ManagedSite/DoneHubSettings"
-import { testI18n } from "~/tests/test-utils/i18n"
 import { showUpdateToast } from "~/utils/core/toastHelpers"
+import { testI18n } from "~~/tests/test-utils/i18n"
 
 vi.mock("~/contexts/UserPreferencesContext", () => ({
   useUserPreferencesContext: vi.fn(),

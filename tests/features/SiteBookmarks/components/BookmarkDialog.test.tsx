@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import BookmarkDialog from "~/features/SiteBookmarks/components/BookmarkDialog"
-import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
 import type { SiteBookmark } from "~/types"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const loadAccountDataMock = vi.fn()
 

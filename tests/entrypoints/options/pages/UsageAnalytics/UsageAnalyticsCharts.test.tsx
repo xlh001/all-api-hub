@@ -8,7 +8,7 @@ import {
   createEmptyUsageHistoryLatencyAggregate,
 } from "~/services/history/usageHistory/core"
 import { usageHistoryStorage } from "~/services/history/usageHistory/storage"
-import { render, screen, waitFor } from "~/tests/test-utils/render"
+import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const echartsInstances: Array<{
   setOption: ReturnType<typeof vi.fn>

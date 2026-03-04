@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { TokenHeader } from "~/features/KeyManagement/components/TokenListItem/TokenHeader"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
-import { render, screen, waitFor } from "~/tests/test-utils/render"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
+import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const mockCreateProfile = vi.fn()
 const mockOpenApiCredentialProfilesPage = vi.fn()

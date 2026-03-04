@@ -2,7 +2,7 @@ import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 import { ShareSnapshotCaptionToast } from "~/features/ShareSnapshots/components/ShareSnapshotCaptionToast"
-import { render, screen, waitFor } from "~/tests/test-utils/render"
+import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 describe("ShareSnapshotCaptionToast", () => {
   it("disables copy button while copying and ignores concurrent clicks", async () => {

@@ -1,4 +1,4 @@
-import type { ApiToken } from "~/types"
+import type { ApiToken } from "~/types/index"
 
 export type AccountToken = ApiToken & {
   accountId: string

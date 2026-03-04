@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import AutoCheckin from "~/entrypoints/options/pages/AutoCheckin"
-import { act, render, screen, waitFor } from "~/tests/test-utils/render"
+import { act, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("react-hot-toast", () => ({
   default: {

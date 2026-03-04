@@ -6,7 +6,7 @@ import {
   DEFAULT_PREFERENCES,
   userPreferences,
 } from "~/services/preferences/userPreferences"
-import { render, screen, waitFor } from "~/tests/test-utils/render"
+import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("react-hot-toast", () => ({
   default: {

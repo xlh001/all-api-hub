@@ -6,8 +6,8 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import UsageHistorySyncTab from "~/features/BasicSettings/components/tabs/UsageHistorySync/UsageHistorySyncTab"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { usageHistoryStorage } from "~/services/history/usageHistory/storage"
-import { render } from "~/tests/test-utils/render"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
+import { render } from "~~/tests/test-utils/render"
 
 vi.mock("~/contexts/UserPreferencesContext", async (importOriginal) => {
   const actual =

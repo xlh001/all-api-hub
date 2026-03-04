@@ -7,8 +7,8 @@ import {
   LDOH_SITES_ENDPOINT,
 } from "~/services/integrations/ldohSiteLookup/constants"
 import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
-import { server } from "~/tests/msw/server"
-import { buildTempWindowPrefs } from "~/tests/test-utils/factories"
+import { server } from "~~/tests/msw/server"
+import { buildTempWindowPrefs } from "~~/tests/test-utils/factories"
 
 vi.mock("~/entrypoints/background/tempWindowPool", () => ({
   handleTempWindowFetch: vi.fn(),

@@ -1,8 +1,8 @@
 import { http, HttpResponse } from "msw"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { server } from "~/tests/msw/server"
 import { AuthTypeEnum, TEMP_WINDOW_HEALTH_STATUS_CODES } from "~/types"
+import { server } from "~~/tests/msw/server"
 
 let fetchApiData: typeof import("~/services/apiService/common/utils").fetchApiData
 let fetchApi: typeof import("~/services/apiService/common/utils").fetchApi

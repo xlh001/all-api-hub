@@ -10,7 +10,7 @@ import {
   userPreferences,
 } from "~/services/preferences/userPreferences"
 import { changelogOnUpdateState } from "~/services/updates/changelogOnUpdateState"
-import { render, screen, waitFor } from "~/tests/test-utils/render"
+import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 describe("ChangelogOnUpdateUiOpenHandler", () => {
   afterEach(() => {

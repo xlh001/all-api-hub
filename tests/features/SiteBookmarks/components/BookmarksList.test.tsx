@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import BookmarksList from "~/features/SiteBookmarks/components/BookmarksList"
+import type { SiteBookmark, Tag, TagStore } from "~/types"
 import {
   fireEvent,
   render,
   screen,
   waitFor,
   within,
-} from "~/tests/test-utils/render"
-import type { SiteBookmark, Tag, TagStore } from "~/types"
+} from "~~/tests/test-utils/render"
 
 let bookmarksMock: SiteBookmark[] = []
 let pinnedAccountIdsMock: string[] = []

@@ -1,4 +1,4 @@
-import { isFirefox } from "~/utils/browser"
+import { isFirefox } from "~/utils/browser/index"
 
 /**
  * UI variants for protection-bypass related copy.

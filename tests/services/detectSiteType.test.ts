@@ -6,7 +6,7 @@ import {
   fetchSiteOriginalTitle,
   getSiteType,
 } from "~/services/siteDetection/detectSiteType"
-import { server } from "~/tests/msw/server"
+import { server } from "~~/tests/msw/server"
 
 describe("detectSiteType", () => {
   beforeEach(() => {

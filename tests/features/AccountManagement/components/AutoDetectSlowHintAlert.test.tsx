@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import AutoDetectSlowHintAlert from "~/features/AccountManagement/components/AccountDialog/AutoDetectSlowHintAlert"
-import { fireEvent, render, screen } from "~/tests/test-utils/render"
+import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 vi.mock("~/utils/navigation/docsLinks", () => ({
   getDocsAutoDetectUrl: vi.fn(),

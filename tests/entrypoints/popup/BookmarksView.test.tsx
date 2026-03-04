@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 import { describe, expect, it, vi } from "vitest"
 
 import { BookmarkDialogStateProvider } from "~/features/SiteBookmarks/hooks/BookmarkDialogStateContext"
-import { fireEvent, render, screen } from "~/tests/test-utils/render"
+import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 vi.mock("~/components/AppLayout", () => ({
   AppLayout: ({ children }: { children: ReactNode }) => <>{children}</>,

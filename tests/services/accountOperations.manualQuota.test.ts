@@ -7,8 +7,8 @@ import {
   validateAndUpdateAccount,
 } from "~/services/accounts/accountOperations"
 import { accountStorage } from "~/services/accounts/accountStorage"
-import { server } from "~/tests/msw/server"
 import { AuthTypeEnum, SiteHealthStatus, type CheckInConfig } from "~/types"
+import { server } from "~~/tests/msw/server"
 
 const CHECK_IN_DISABLED: CheckInConfig = {
   enableDetection: false,

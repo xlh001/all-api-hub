@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { VerifyApiCredentialProfileDialog } from "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
-import { render, screen, waitFor, within } from "~/tests/test-utils/render"
+import { render, screen, waitFor, within } from "~~/tests/test-utils/render"
 
 const mockRunApiVerificationProbe = vi.fn()
 

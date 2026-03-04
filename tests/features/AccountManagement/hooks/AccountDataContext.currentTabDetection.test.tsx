@@ -7,8 +7,8 @@ import {
   AccountDataProvider,
   useAccountDataContext,
 } from "~/features/AccountManagement/hooks/AccountDataContext"
-import i18nInstance from "~/tests/test-utils/i18n"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
+import i18nInstance from "~~/tests/test-utils/i18n"
 
 let activeTabs: any[] = []
 let tabUpdatedListener: any = null

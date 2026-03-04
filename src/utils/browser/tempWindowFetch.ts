@@ -32,13 +32,13 @@ import type {
   TempWindowTurnstileFetch,
   TempWindowTurnstileFetchParams,
 } from "~/types/tempWindowFetch"
+import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import {
   isExtensionBackground,
   isExtensionPopup,
   isExtensionSidePanel,
   OPTIONS_PAGE_URL,
-} from "~/utils/browser"
-import { sendRuntimeMessage } from "~/utils/browser/browserApi"
+} from "~/utils/browser/index"
 import { isProtectionBypassFirefoxEnv } from "~/utils/browser/protectionBypass"
 import { safeRandomUUID } from "~/utils/core/identifier"
 import { createLogger } from "~/utils/core/logger"

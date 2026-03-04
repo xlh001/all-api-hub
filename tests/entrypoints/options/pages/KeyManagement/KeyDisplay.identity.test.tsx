@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 
 import { KeyDisplay } from "~/features/KeyManagement/components/TokenListItem/KeyDisplay"
 import { buildTokenIdentityKey } from "~/features/KeyManagement/utils"
-import { render, screen } from "~/tests/test-utils/render"
+import { render, screen } from "~~/tests/test-utils/render"
 
 const TOKEN_A_KEY = "sk-a-12345678901234567890"
 const TOKEN_B_KEY = "sk-b-12345678901234567890"

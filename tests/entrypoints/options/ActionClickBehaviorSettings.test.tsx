@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ActionClickBehaviorSettings from "~/features/BasicSettings/components/tabs/General/ActionClickBehaviorSettings"
-import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
 import {
   getSidePanelSupport,
   type SidePanelSupport,
 } from "~/utils/browser/browserApi"
 import { showResultToast, showUpdateToast } from "~/utils/core/toastHelpers"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("~/contexts/UserPreferencesContext", async (importOriginal) => {
   const actual =

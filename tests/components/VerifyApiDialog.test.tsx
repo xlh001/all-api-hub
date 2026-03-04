@@ -7,7 +7,7 @@ import {
   screen,
   waitFor,
   within,
-} from "~/tests/test-utils/render"
+} from "~~/tests/test-utils/render"
 
 const mockFetchAccountTokens = vi.fn()
 

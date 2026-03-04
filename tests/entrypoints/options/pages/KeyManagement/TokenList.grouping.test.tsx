@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from "vitest"
 
 import { TokenList } from "~/features/KeyManagement/components/TokenList"
 import { KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE } from "~/features/KeyManagement/constants"
-import { render, screen, waitFor } from "~/tests/test-utils/render"
+import { render, screen, waitFor } from "~~/tests/test-utils/render"
 import {
   createAccount,
   createToken,
-} from "~/tests/utils/keyManagementFactories"
+} from "~~/tests/utils/keyManagementFactories"
 
 vi.mock("~/features/KeyManagement/components/TokenListItem", () => ({
   TokenListItem: ({ token }: { token: { name: string } }) => (

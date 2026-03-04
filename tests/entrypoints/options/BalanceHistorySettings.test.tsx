@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import BalanceHistorySettings from "~/features/BasicSettings/components/tabs/BalanceHistory/BalanceHistorySettings"
-import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
 import { hasAlarmsAPI } from "~/utils/browser/browserApi"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("~/contexts/UserPreferencesContext", async () => {
   const actual = await vi.importActual<

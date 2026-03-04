@@ -4,8 +4,8 @@ import { I18nextProvider } from "react-i18next"
 import { describe, expect, it, vi } from "vitest"
 
 import { RedemptionAccountSelectToast } from "~/entrypoints/content/redemptionAssist/components/RedemptionAccountSelectToast"
-import testI18nInstance from "~/tests/test-utils/i18n"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
+import testI18nInstance from "~~/tests/test-utils/i18n"
 
 const makeAccount = (
   overrides: Partial<DisplaySiteData> & Pick<DisplaySiteData, "id" | "name">,

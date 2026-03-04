@@ -4,8 +4,8 @@ import { NEW_API } from "~/constants/siteType"
 import { ModelRedirectService } from "~/services/models/modelRedirect"
 import { modelSyncScheduler } from "~/services/models/modelSync/scheduler"
 import { userPreferences } from "~/services/preferences/userPreferences"
-import { buildManagedSiteChannel } from "~/tests/test-utils/factories"
 import { DEFAULT_MODEL_REDIRECT_PREFERENCES } from "~/types/managedSiteModelRedirect"
+import { buildManagedSiteChannel } from "~~/tests/test-utils/factories"
 
 const {
   mockGetAllChannelConfigs,

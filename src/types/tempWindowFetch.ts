@@ -1,5 +1,5 @@
 import { ApiErrorCode } from "~/services/apiService/common/errors"
-import type { AuthTypeEnum } from "~/types"
+import type { AuthTypeEnum } from "~/types/index"
 import type { TurnstilePreTrigger } from "~/types/turnstile"
 
 export type TempWindowResponseType = "json" | "text" | "arrayBuffer" | "blob"

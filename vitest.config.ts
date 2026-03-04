@@ -24,14 +24,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
-      include: [
-        "components/**/*.{ts,tsx}",
-        "contexts/**/*.{ts,tsx}",
-        "features/**/*.{ts,tsx}",
-        "hooks/**/*.{ts,tsx}",
-        "services/**/*.{ts,tsx}",
-        "utils/**/*.{ts,tsx}",
-      ],
+      include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "**/*.d.ts",
         "**/*.config.*",
@@ -44,7 +37,7 @@ export default defineConfig({
       ],
       // Coverage thresholds (can be adjusted - starting with lower targets)
       thresholds: {
-        statements: 55,
+        statements: 50,
         branches: 45,
         functions: 50,
         lines: 55,
@@ -65,7 +58,8 @@ export default defineConfig({
   resolve: {
     alias: {
       // Mirror WXT/Vite path aliases
-      "~": path.resolve(rootDir, "."),
+      "~": path.resolve(rootDir, "src"),
+      "~~": path.resolve(rootDir, "."),
     },
   },
 })

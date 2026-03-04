@@ -10,13 +10,13 @@ import {
 } from "~/entrypoints/content/webAiApiCheck/events"
 import { showApiCheckConfirmToast } from "~/entrypoints/content/webAiApiCheck/utils/apiCheckToasts"
 import {
-  buildApiCheckClipboardText,
-  buildApiKey,
-} from "~/tests/test-utils/factories"
-import {
   checkPermissionViaMessage,
   sendRuntimeMessage,
 } from "~/utils/browser/browserApi"
+import {
+  buildApiCheckClipboardText,
+  buildApiKey,
+} from "~~/tests/test-utils/factories"
 
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   const actual =

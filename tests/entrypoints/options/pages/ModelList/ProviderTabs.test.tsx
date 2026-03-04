@@ -2,7 +2,7 @@ import { Tab } from "@headlessui/react"
 import { describe, expect, it, vi } from "vitest"
 
 import { ProviderTabs } from "~/features/ModelList/components/ProviderTabs"
-import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const createProviders = () => ["OpenAI", "Claude", "Gemini"] as any
 const TABLIST_CLIENT_WIDTH_PX = 100

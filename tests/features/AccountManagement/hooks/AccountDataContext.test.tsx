@@ -8,7 +8,7 @@ import {
   AccountDataProvider,
   useAccountDataContext,
 } from "~/features/AccountManagement/hooks/AccountDataContext"
-import i18nInstance from "~/tests/test-utils/i18n"
+import i18nInstance from "~~/tests/test-utils/i18n"
 
 const {
   mockGetAllAccounts,

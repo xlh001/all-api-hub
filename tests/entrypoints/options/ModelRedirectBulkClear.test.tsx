@@ -5,9 +5,9 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ModelRedirectSettings from "~/features/BasicSettings/components/tabs/ManagedSite/ModelRedirectSettings"
 import { hasValidManagedSiteConfig } from "~/services/managedSites/managedSiteService"
 import { ModelRedirectService } from "~/services/models/modelRedirect"
-import { buildManagedSiteChannel } from "~/tests/test-utils/factories"
-import { testI18n } from "~/tests/test-utils/i18n"
-import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
+import { buildManagedSiteChannel } from "~~/tests/test-utils/factories"
+import { testI18n } from "~~/tests/test-utils/i18n"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("~/contexts/UserPreferencesContext", async () => {
   const actual = await vi.importActual<

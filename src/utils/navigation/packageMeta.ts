@@ -1,7 +1,7 @@
 import { DOCS_BASE_URL, REPO_URL } from "~/constants/about"
-import pkg from "~/package.json"
 import { joinUrl } from "~/utils/core/url"
 import { getDocsLocalePath } from "~/utils/navigation/docsLocale"
+import pkg from "~~/package.json"
 
 interface PackageJsonMeta {
   homepage?: string

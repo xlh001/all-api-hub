@@ -2,7 +2,7 @@ import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 import SiteInfo from "~/features/AccountManagement/components/AccountList/SiteInfo"
-import { fireEvent, render, screen } from "~/tests/test-utils/render"
+import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 const {
   mockOpenAccountBaseUrl,

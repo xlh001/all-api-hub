@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { DIALOG_MODES } from "~/constants/dialogModes"
 import { useAccountDialog } from "~/features/AccountManagement/components/AccountDialog/hooks/useAccountDialog"
 import { accountStorage } from "~/services/accounts/accountStorage"
-import { renderHook, waitFor } from "~/tests/test-utils/render"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
+import { renderHook, waitFor } from "~~/tests/test-utils/render"
 
 const { mockOpenWithAccount } = vi.hoisted(() => ({
   mockOpenWithAccount: vi.fn(),

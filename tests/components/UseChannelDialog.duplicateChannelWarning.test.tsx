@@ -10,7 +10,6 @@ import * as accountOperations from "~/services/accounts/accountOperations"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import * as managedSiteService from "~/services/managedSites/managedSiteService"
 import type { ManagedSiteService } from "~/services/managedSites/managedSiteService"
-import { act, renderHook, waitFor } from "~/tests/test-utils/render"
 import {
   AuthTypeEnum,
   SiteHealthStatus,
@@ -19,6 +18,7 @@ import {
   type SiteAccount,
 } from "~/types"
 import type { ChannelFormData, ManagedSiteChannel } from "~/types/managedSite"
+import { act, renderHook, waitFor } from "~~/tests/test-utils/render"
 
 const { mockToastLoading, mockToastDismiss, mockToastError } = vi.hoisted(
   () => ({

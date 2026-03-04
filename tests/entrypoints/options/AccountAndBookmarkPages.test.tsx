@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import AccountManagement from "~/entrypoints/options/pages/AccountManagement"
 import BookmarkManagement from "~/entrypoints/options/pages/BookmarkManagement"
-import { fireEvent, render, screen } from "~/tests/test-utils/render"
+import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 const openAddAccountMock = vi.fn()
 

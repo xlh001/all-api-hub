@@ -16,8 +16,8 @@ import {
   dispatchOpenApiCheckModal,
   type ApiCheckOpenModalDetail,
 } from "~/entrypoints/content/webAiApiCheck/events"
-import { render } from "~/tests/test-utils/render"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
+import { render } from "~~/tests/test-utils/render"
 
 vi.mock("react-hot-toast/headless", () => ({
   default: {

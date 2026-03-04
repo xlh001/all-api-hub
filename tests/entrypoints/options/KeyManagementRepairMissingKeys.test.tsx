@@ -5,14 +5,14 @@ import {
   RuntimeMessageTypes,
 } from "~/constants/runtimeActions"
 import KeyManagement from "~/entrypoints/options/pages/KeyManagement"
+import type { AccountKeyRepairProgress } from "~/types/accountKeyAutoProvisioning"
 import {
   act,
   fireEvent,
   render,
   screen,
   waitFor,
-} from "~/tests/test-utils/render"
-import type { AccountKeyRepairProgress } from "~/types/accountKeyAutoProvisioning"
+} from "~~/tests/test-utils/render"
 
 const { sendRuntimeActionMessageMock, runtimeMessageState } = vi.hoisted(
   () => ({

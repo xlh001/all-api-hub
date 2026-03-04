@@ -4,9 +4,9 @@ import { NEW_API } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ManagedSiteChannels from "~/entrypoints/options/pages/ManagedSiteChannels"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
-import { fireEvent, render, screen, waitFor } from "~/tests/test-utils/render"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { navigateWithinOptionsPage } from "~/utils/navigation"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("~/utils/browser/browserApi", async (importActual) => {
   const actual = (await importActual()) as any

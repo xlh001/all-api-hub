@@ -14,8 +14,8 @@ import {
 } from "~/services/history/dailyBalanceHistory/dayKeys"
 import { dailyBalanceHistoryStorage } from "~/services/history/dailyBalanceHistory/storage"
 import { tagStorage } from "~/services/tags/tagStorage"
-import { render, screen, waitFor } from "~/tests/test-utils/render"
 import { DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION } from "~/types/dailyBalanceHistory"
+import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("~/components/charts/echarts", async () => {
   return {
