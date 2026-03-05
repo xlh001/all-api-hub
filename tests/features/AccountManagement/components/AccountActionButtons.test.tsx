@@ -129,8 +129,9 @@ describe("AccountActionButtons", () => {
     hasValidManagedSiteConfigMock.mockReturnValue(true)
   })
 
-  it("shows only Enable action when account is disabled", async () => {
+  it("shows Enable and Delete actions when account is disabled", async () => {
     const user = userEvent.setup()
+    const onDeleteAccount = vi.fn()
 
     render(
       <AccountActionButtons
@@ -140,7 +141,7 @@ describe("AccountActionButtons", () => {
           name: "Site",
         })}
         onCopyKey={vi.fn()}
-        onDeleteAccount={vi.fn()}
+        onDeleteAccount={onDeleteAccount}
       />,
     )
 
@@ -162,23 +163,48 @@ describe("AccountActionButtons", () => {
     const enableLabel = await within(menu).findByText(
       "account:actions.enableAccount",
     )
+    const deleteLabel = await within(menu).findByText("account:actions.delete")
     const enableButton = enableLabel.closest("button")
+    const deleteButton = deleteLabel.closest("button")
     expect(enableButton).not.toBeNull()
+    expect(deleteButton).not.toBeNull()
 
     expect(enableButton!).toBeInTheDocument()
     expect(enableButton!).toHaveClass("text-emerald-600")
+    expect(deleteButton!).toBeInTheDocument()
+    expect(deleteButton!).toHaveClass("text-red-600")
     expect(
       screen.queryByRole("button", { name: "account:actions.disableAccount" }),
     ).toBeNull()
-    expect(
-      screen.queryByRole("button", { name: "account:actions.delete" }),
-    ).toBeNull()
-    expect(Array.from(menu.querySelectorAll("button"))).toEqual([enableButton!])
+    expect(Array.from(menu.querySelectorAll("button"))).toEqual([
+      enableButton!,
+      deleteButton!,
+    ])
 
     await user.click(enableButton!)
     expect(mockHandleSetAccountDisabled).toHaveBeenCalledWith(
       expect.objectContaining({ id: "acc-1" }),
       false,
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByRole("menu")).toBeNull()
+    })
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const reopenedMenu = await screen.findByRole("menu")
+    const reopenedDeleteLabel = await within(reopenedMenu).findByText(
+      "account:actions.delete",
+    )
+    const reopenedDeleteButton = reopenedDeleteLabel.closest("button")
+    expect(reopenedDeleteButton).not.toBeNull()
+
+    await user.click(reopenedDeleteButton!)
+    expect(onDeleteAccount).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "acc-1" }),
     )
   })
 

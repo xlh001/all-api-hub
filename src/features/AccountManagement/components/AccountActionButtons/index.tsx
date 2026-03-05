@@ -560,12 +560,23 @@ export default function AccountActionButtons({
           className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary z-50 rounded-lg border border-gray-200 bg-white py-1 shadow-lg [--anchor-gap:4px] [--anchor-padding:8px] focus:outline-none"
         >
           {isAccountDisabled ? (
-            <AccountActionMenuItem
-              onClick={handleDisableToggle}
-              icon={CheckCircleIcon}
-              label={t("actions.enableAccount")}
-              tone="success"
-            />
+            <>
+              <AccountActionMenuItem
+                onClick={handleDisableToggle}
+                icon={CheckCircleIcon}
+                label={t("actions.enableAccount")}
+                tone="success"
+              />
+
+              <hr className="dark:border-dark-bg-tertiary my-1 border-gray-200" />
+
+              <AccountActionMenuItem
+                onClick={handleDeleteLocal}
+                icon={TrashIcon}
+                label={t("actions.delete")}
+                isDestructive={true}
+              />
+            </>
           ) : (
             <>
               {/* Secondary Menu Items */}
