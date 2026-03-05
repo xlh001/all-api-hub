@@ -16,6 +16,13 @@ const logger = createLogger("UrlUtils")
 const TAB_QUERY_PARAM_NAME = "tab" as const
 const TAB_HASH_PREFIX = "tab=" as const
 
+const looksLikePathFragmentOrQuery = (value: string): boolean =>
+  value.startsWith("?") ||
+  value.startsWith("#") ||
+  (value.startsWith("/") && !value.startsWith("//")) ||
+  value.startsWith("./") ||
+  value.startsWith("../")
+
 /**
  * Join a base URL and a path, collapsing duplicate slashes.
  */
@@ -183,6 +190,8 @@ export function normalizeHttpUrl(
   const trimmed = url.trim()
   if (!trimmed) return null
 
+  if (looksLikePathFragmentOrQuery(trimmed)) return null
+
   // Reject non-http schemes early
   if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^https?:/i.test(trimmed)) {
     return null
@@ -201,6 +210,44 @@ export function normalizeHttpUrl(
   } catch (e) {
     logger.warn("normalizeHttpUrl: Invalid URL", e)
     return null
+  }
+}
+
+/**
+ * Normalize a user-provided URL string to origin-only (scheme + host + optional port).
+ *
+ * Returns undefined when the input is missing, invalid, uses a non-HTTP(S) scheme,
+ * or has an opaque origin (e.g. `"null"`).
+ */
+export function sanitizeOriginUrl(
+  value: string | undefined | null,
+): string | undefined {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+
+  if (looksLikePathFragmentOrQuery(trimmed)) return undefined
+
+  const looksLikeHostWithPort =
+    /^[a-zA-Z0-9.-]+:\d+($|[/?#])/.test(trimmed) ||
+    /^\[[0-9a-fA-F:]+\]:\d+($|[/?#])/.test(trimmed)
+
+  const normalized = trimmed.includes("://")
+    ? trimmed
+    : trimmed.startsWith("//")
+      ? `https:${trimmed}`
+      : /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed) && !looksLikeHostWithPort
+        ? trimmed
+        : `https://${trimmed}`
+
+  try {
+    const url = new URL(normalized)
+    if (url.protocol !== "http:" && url.protocol !== "https:") return undefined
+    const origin = url.origin
+    if (!origin || origin === "null") return undefined
+    return origin
+  } catch {
+    return undefined
   }
 }
 

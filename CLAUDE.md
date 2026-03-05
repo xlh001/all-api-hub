@@ -382,7 +382,7 @@ t("account:healthStatus.normal")  // namespace:key
 
 ### Logging
 
-**Structured Logging** (`src/utils/logger.ts`):
+**Structured Logging** (`~/utils/core/logger`):
 ```typescript
 const logger = createLogger("ServiceName")
 
@@ -400,7 +400,7 @@ logger.error("Operation failed", error)
 
 **Error Utilities**:
 ```typescript
-import { getErrorMessage } from "~/utils/error"
+import { getErrorMessage } from "~/utils/core/error"
 
 try {
   await operation()
