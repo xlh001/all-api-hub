@@ -26,6 +26,7 @@ import {
   type DisplaySiteData,
   type Sub2ApiAuthConfig,
 } from "~/types"
+import { deepOverride } from "~/utils"
 import {
   getActiveTabs,
   getAllTabs,
@@ -383,6 +384,8 @@ export function useAccountDialog({
             },
             customCheckIn: {
               url: siteAccount.checkIn?.customCheckIn?.url ?? "",
+              turnstilePreTrigger:
+                siteAccount.checkIn?.customCheckIn?.turnstilePreTrigger,
               redeemUrl: siteAccount.checkIn?.customCheckIn?.redeemUrl ?? "",
               openRedeemWithCheckIn:
                 siteAccount.checkIn?.customCheckIn?.openRedeemWithCheckIn ??
@@ -707,24 +710,35 @@ export function useAccountDialog({
             resultData.sub2apiAuth.tokenExpiresAt ?? null,
           )
         }
-        setCheckIn({
+
+        const detectedCheckIn: CheckInConfig = {
+          ...(resultData.checkIn ?? {}),
           enableDetection: resultData.checkIn?.enableDetection ?? false,
           autoCheckInEnabled: resultData.checkIn?.autoCheckInEnabled ?? true,
           siteStatus: {
+            ...(resultData.checkIn?.siteStatus ?? {}),
             isCheckedInToday:
               resultData.checkIn?.siteStatus?.isCheckedInToday ?? false,
-            lastCheckInDate: resultData.checkIn?.siteStatus?.lastCheckInDate,
           },
           customCheckIn: {
+            ...(resultData.checkIn?.customCheckIn ?? {}),
             url: resultData.checkIn?.customCheckIn?.url ?? "",
             redeemUrl: resultData.checkIn?.customCheckIn?.redeemUrl ?? "",
             openRedeemWithCheckIn:
               resultData.checkIn?.customCheckIn?.openRedeemWithCheckIn ?? true,
             isCheckedInToday:
               resultData.checkIn?.customCheckIn?.isCheckedInToday ?? false,
-            lastCheckInDate: resultData.checkIn?.customCheckIn?.lastCheckInDate,
           },
-        })
+        }
+
+        const preserveExistingCheckIn =
+          mode === DIALOG_MODES.EDIT || showManualForm
+
+        setCheckIn((prev) =>
+          preserveExistingCheckIn
+            ? deepOverride(detectedCheckIn, prev)
+            : detectedCheckIn,
+        )
 
         if (resultData.exchangeRate) {
           setExchangeRate(resultData.exchangeRate.toString())
