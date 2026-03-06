@@ -9,6 +9,16 @@ on:
         description: "Release tag or commit hash to build. Leave empty to auto-detect latest."
         required: false
         default: ""
+      review_chrome:
+        description: "Submit Chrome build for review"
+        required: false
+        type: boolean
+        default: true
+      review_edge:
+        description: "Submit Edge build for review"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write # 上传构建产物到 Release 需要写权限
@@ -99,11 +109,16 @@ jobs:
         if: ${{ steps.get_ref.outputs.ref != '' }}
         continue-on-error: true
         run: |
+          echo "Chrome review: $([ "$CHROME_SKIP_SUBMIT_REVIEW" = "true" ] && echo skipped || echo submitted)"
+          echo "Edge review: $([ "$EDGE_SKIP_SUBMIT_REVIEW" = "true" ] && echo skipped || echo submitted)"
+
           pnpm wxt submit \
             --chrome-zip .output/*-chrome.zip \
             --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip \
             --edge-zip .output/*-chrome.zip
         env:
+          CHROME_SKIP_SUBMIT_REVIEW: ${{ github.event.inputs.review_chrome == 'false' }}
+          EDGE_SKIP_SUBMIT_REVIEW: ${{ github.event.inputs.review_edge == 'false' }}
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
