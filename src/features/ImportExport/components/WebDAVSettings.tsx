@@ -16,10 +16,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Checkbox,
   FormField,
   Heading4,
   IconButton,
   Input,
+  Label,
   Switch,
 } from "~/components/ui"
 import { accountStorage } from "~/services/accounts/accountStorage"
@@ -33,10 +35,23 @@ import {
   type EncryptedWebdavBackupEnvelopeV1,
 } from "~/services/webdav/webdavBackupEncryption"
 import {
+  buildWebdavImportPayloadBySelection,
+  mergeWebdavBackupPayloadBySelection,
+} from "~/services/webdav/webdavSelectiveSync"
+import {
+  downloadBackup,
   downloadBackupRaw,
+  isWebdavFileNotFoundError,
   testWebdavConnection,
   uploadBackup,
 } from "~/services/webdav/webdavService"
+import {
+  isWebdavSyncDataSelectionEmpty,
+  resolveWebdavSyncDataSelection,
+  WEBDAV_SYNC_DATA_KEYS,
+  type WebDAVSyncDataKey,
+  type WebDAVSyncDataSelection,
+} from "~/types/webdav"
 import { createLogger } from "~/utils/core/logger"
 
 import {
@@ -51,6 +66,20 @@ import { WebDAVDecryptPasswordModal } from "./WebDAVDecryptPasswordModal"
  */
 const logger = createLogger("WebDAVSettings")
 
+const WEBDAV_SYNC_DATA_INPUT_IDS: Record<WebDAVSyncDataKey, string> = {
+  accounts: "webdavSyncDataAccounts",
+  bookmarks: "webdavSyncDataBookmarks",
+  apiCredentialProfiles: "webdavSyncDataApiCredentialProfiles",
+  preferences: "webdavSyncDataPreferences",
+}
+
+const WEBDAV_SYNC_DATA_LABEL_KEYS: Record<WebDAVSyncDataKey, string> = {
+  accounts: "webdav.syncData.accounts",
+  bookmarks: "webdav.syncData.bookmarks",
+  apiCredentialProfiles: "webdav.syncData.apiCredentialProfiles",
+  preferences: "webdav.syncData.preferences",
+}
+
 /**
  * WebDAV backup configuration card handling save/test/upload/download actions.
  */
@@ -61,6 +90,11 @@ export default function WebDAVSettings() {
   const [webdavUsername, setWebdavUsername] = useState("")
   const [webdavPassword, setWebdavPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+
+  const [syncDataSelection, setSyncDataSelection] =
+    useState<WebDAVSyncDataSelection>(() =>
+      resolveWebdavSyncDataSelection(null),
+    )
 
   const [backupEncryptionEnabled, setBackupEncryptionEnabled] = useState(false)
   const [backupEncryptionPassword, setBackupEncryptionPassword] = useState("")
@@ -85,6 +119,35 @@ export default function WebDAVSettings() {
     [webdavUrl, webdavUsername, webdavPassword],
   )
 
+  const syncDataOptions = useMemo(
+    () =>
+      WEBDAV_SYNC_DATA_KEYS.map((key) => ({
+        key,
+        id: WEBDAV_SYNC_DATA_INPUT_IDS[key],
+        label: t(WEBDAV_SYNC_DATA_LABEL_KEYS[key]),
+      })),
+    [t],
+  )
+
+  const updateSyncDataSelection = (
+    key: WebDAVSyncDataKey,
+    checked: boolean | "indeterminate",
+  ) => {
+    setSyncDataSelection((previousSelection) => ({
+      ...previousSelection,
+      [key]: checked === true,
+    }))
+  }
+
+  const ensureSyncDataSelected = () => {
+    if (!isWebdavSyncDataSelectionEmpty(syncDataSelection)) {
+      return true
+    }
+
+    toast.error(t("webdav.syncData.selectionRequired"))
+    return false
+  }
+
   // 初始加载
   useEffect(() => {
     ;(async () => {
@@ -95,6 +158,9 @@ export default function WebDAVSettings() {
 
       setBackupEncryptionEnabled(Boolean(prefs.webdav.backupEncryptionEnabled))
       setBackupEncryptionPassword(prefs.webdav.backupEncryptionPassword ?? "")
+      setSyncDataSelection(
+        resolveWebdavSyncDataSelection(prefs.webdav.syncData),
+      )
     })()
   }, [])
 
@@ -104,6 +170,7 @@ export default function WebDAVSettings() {
     password: webdavPassword,
     backupEncryptionEnabled,
     backupEncryptionPassword,
+    syncData: syncDataSelection,
   }
 
   const handleSaveConfig = async () => {
@@ -144,6 +211,10 @@ export default function WebDAVSettings() {
   const handleUploadBackup = async () => {
     setUploading(true)
     try {
+      if (!ensureSyncDataSelected()) {
+        return
+      }
+
       await userPreferences.updateWebdavSettings(webdavConfig)
       const [
         accountData,
@@ -167,7 +238,25 @@ export default function WebDAVSettings() {
         channelConfigs,
         apiCredentialProfiles,
       }
-      await uploadBackup(JSON.stringify(exportData, null, 2), webdavConfig)
+
+      let remoteBackup: any | null = null
+
+      try {
+        const remoteContent = await downloadBackup(webdavConfig)
+        remoteBackup = JSON.parse(remoteContent)
+      } catch (error: any) {
+        if (!isWebdavFileNotFoundError(error)) {
+          throw error
+        }
+      }
+
+      const payload = mergeWebdavBackupPayloadBySelection({
+        backup: exportData,
+        selection: syncDataSelection,
+        remoteBackup,
+      })
+
+      await uploadBackup(JSON.stringify(payload, null, 2), webdavConfig)
       toast.success(t("export.dataExported"))
     } catch (e: any) {
       logger.error("Failed to upload backup to WebDAV", e)
@@ -175,6 +264,17 @@ export default function WebDAVSettings() {
     } finally {
       setUploading(false)
     }
+  }
+
+  const handleImportWithSelection = async (rawBackup: any) => {
+    const payload = await buildWebdavImportPayloadBySelection({
+      rawBackup,
+      selection: syncDataSelection,
+    })
+
+    return await importFromBackupObject(payload, {
+      preserveWebdav: true,
+    })
   }
 
   /**
@@ -187,6 +287,10 @@ export default function WebDAVSettings() {
   const handleDownloadAndImport = async () => {
     setDownloading(true)
     try {
+      if (!ensureSyncDataSelected()) {
+        return
+      }
+
       await userPreferences.updateWebdavSettings(webdavConfig)
       const raw = await downloadBackupRaw(webdavConfig)
       const envelope = tryParseEncryptedWebdavBackupEnvelope(raw)
@@ -217,9 +321,7 @@ export default function WebDAVSettings() {
       }
 
       const data = JSON.parse(content)
-      const result = await importFromBackupObject(data, {
-        preserveWebdav: true,
-      })
+      const result = await handleImportWithSelection(data)
       if (result.allImported) {
         toast.success(t("importExport:import.importSuccess"))
       }
@@ -244,15 +346,17 @@ export default function WebDAVSettings() {
 
     setDecrypting(true)
     try {
+      if (!ensureSyncDataSelected()) {
+        return
+      }
+
       const content = await decryptWebdavBackupEnvelope({
         envelope: pendingEnvelope,
         password: pwd,
       })
 
       const data = JSON.parse(content)
-      const result = await importFromBackupObject(data, {
-        preserveWebdav: true,
-      })
+      const result = await handleImportWithSelection(data)
       if (result.allImported) {
         toast.success(t("importExport:import.importSuccess"))
       }
@@ -348,6 +452,36 @@ export default function WebDAVSettings() {
                 />
               </div>
             </FormField>
+          </div>
+
+          <div className="rounded-md bg-gray-50 p-3 dark:bg-gray-800">
+            <div className="space-y-1">
+              <Heading4 className="m-0">{t("webdav.syncData.title")}</Heading4>
+              <BodySmall className="m-0">
+                {t("webdav.syncData.description")}
+              </BodySmall>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {syncDataOptions.map((option) => (
+                <div key={option.key} className="flex items-center gap-2">
+                  <Checkbox
+                    id={option.id}
+                    checked={syncDataSelection[option.key]}
+                    onCheckedChange={(checked) =>
+                      updateSyncDataSelection(option.key, checked)
+                    }
+                  />
+                  <Label htmlFor={option.id}>{option.label}</Label>
+                </div>
+              ))}
+            </div>
+
+            {isWebdavSyncDataSelectionEmpty(syncDataSelection) && (
+              <BodySmall className="mt-2 mb-0 text-red-600 dark:text-red-400">
+                {t("webdav.syncData.selectionRequired")}
+              </BodySmall>
+            )}
           </div>
 
           <div className="rounded-md bg-gray-50 p-3 dark:bg-gray-800">
