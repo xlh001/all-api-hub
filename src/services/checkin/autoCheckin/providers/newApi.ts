@@ -74,11 +74,6 @@ function isTurnstileRequiredMessage(message: string): boolean {
  * Resolve a user-openable URL for manual Turnstile verification.
  */
 function resolveCheckInUrl(account: SiteAccount): string {
-  const customUrl = account.checkIn?.customCheckIn?.url
-  if (typeof customUrl === "string" && customUrl.trim()) {
-    return customUrl.trim()
-  }
-
   return joinUrl(
     account.site_url,
     getSiteApiRouter(account.site_type).checkInPath,
@@ -207,7 +202,7 @@ function getTurnstileAssistedFetchOptions(account: SiteAccount): RequestInit {
 }
 
 /**
- *
+ * When the initial check-in attempt indicates Turnstile verification is required,
  */
 function buildTurnstileAssistedParams(
   account: SiteAccount,
@@ -230,7 +225,7 @@ function buildTurnstileAssistedParams(
 }
 
 /**
- *
+ * When the Turnstile-assisted check-in attempt fails due to missing token and no
  */
 async function maybeRetryTurnstileInIncognito(params: {
   assisted: TempWindowTurnstileFetch

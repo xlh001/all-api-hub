@@ -78,7 +78,7 @@ describe("newApiProvider", () => {
   })
 
   describe("checkIn", () => {
-    it("retries once via Turnstile-assisted temp context when message indicates Turnstile is required", async () => {
+    it("uses the site check-in page for Turnstile-assisted temp context when Turnstile is required", async () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
       const { tempWindowTurnstileFetch } = await import(
         "~/utils/browser/tempWindowFetch"
@@ -117,7 +117,7 @@ describe("newApiProvider", () => {
       expect(tempWindowTurnstileFetch).toHaveBeenCalledWith(
         expect.objectContaining({
           originUrl: "https://test.com",
-          pageUrl: "https://test.com/custom-checkin",
+          pageUrl: "https://test.com/console/personal",
           fetchUrl: "https://test.com/api/user/checkin",
           responseType: "json",
           authType: AuthTypeEnum.AccessToken,
@@ -127,7 +127,7 @@ describe("newApiProvider", () => {
       )
     })
 
-    it("returns manual-required messaging when Turnstile token cannot be obtained", async () => {
+    it("returns manual-required messaging with the site check-in URL when Turnstile token cannot be obtained", async () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
       const { fetchApiData } = await import(
         "~/services/apiService/common/utils"
@@ -152,7 +152,15 @@ describe("newApiProvider", () => {
         stats: { checked_in_today: false },
       } as any)
 
-      const result = await newApiProvider.checkIn(mockAccount)
+      const account = {
+        ...mockAccount,
+        checkIn: {
+          ...mockAccount.checkIn,
+          customCheckIn: { url: "https://test.com/custom-checkin" },
+        },
+      }
+
+      const result = await newApiProvider.checkIn(account)
 
       expect(result.status).toBe("failed")
       expect(result.messageKey).toBe(
