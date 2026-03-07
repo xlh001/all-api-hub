@@ -61,6 +61,30 @@ interface AccountListProps {
   initialSearchQuery?: string
 }
 
+type AccountDisabledFilterValue = "enabled" | "disabled"
+
+const ACCOUNT_STATUS_FILTER_OPTION_VALUES = {
+  enabled: "__account_status_enabled",
+  disabled: "__account_status_disabled",
+} as const
+
+const ACCOUNT_STATUS_FILTER_OPTION_VALUE_SET = new Set(
+  Object.values(ACCOUNT_STATUS_FILTER_OPTION_VALUES),
+)
+
+/**
+ * Type guard to determine if a filter option value is one of the account status options.
+ * @param value - The filter option value to check.
+ * @returns True if the value is an account status filter option, false otherwise.
+ */
+function isAccountStatusFilterOptionValue(
+  value: string,
+): value is (typeof ACCOUNT_STATUS_FILTER_OPTION_VALUES)[keyof typeof ACCOUNT_STATUS_FILTER_OPTION_VALUES] {
+  return ACCOUNT_STATUS_FILTER_OPTION_VALUE_SET.has(
+    value as (typeof ACCOUNT_STATUS_FILTER_OPTION_VALUES)[keyof typeof ACCOUNT_STATUS_FILTER_OPTION_VALUES],
+  )
+}
+
 /**
  * Master list view for user accounts, including search, tagging, sorting, filtering, and manual reordering controls.
  */
@@ -89,6 +113,8 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const [copyKeyDialogAccount, setCopyKeyDialogAccount] =
     useState<DisplaySiteData | null>(null)
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [disabledFilter, setDisabledFilter] =
+    useState<AccountDisabledFilterValue | null>(null)
 
   const { query, setQuery, clearSearch, searchResults, inSearchMode } =
     useAccountSearch(displayData, initialSearchQuery)
@@ -117,6 +143,54 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     }))
   }, [tags, tagCountsById])
 
+  const filterOptions = useMemo(() => {
+    const enabledCount = displayData.filter(
+      (account) => account.disabled !== true,
+    ).length
+    const disabledCount = displayData.length - enabledCount
+
+    return [
+      {
+        value: ACCOUNT_STATUS_FILTER_OPTION_VALUES.enabled,
+        label: t("common:enabled"),
+        count: enabledCount,
+      },
+      {
+        value: ACCOUNT_STATUS_FILTER_OPTION_VALUES.disabled,
+        label: t("common:disabled"),
+        count: disabledCount,
+      },
+      ...tagFilterOptions,
+    ]
+  }, [displayData, t, tagFilterOptions])
+
+  const selectedFilterValues = useMemo(() => {
+    const values = [...selectedTagIds]
+
+    if (disabledFilter !== null) {
+      values.push(ACCOUNT_STATUS_FILTER_OPTION_VALUES[disabledFilter])
+    }
+
+    return values
+  }, [disabledFilter, selectedTagIds])
+
+  const handleFilterChange = (nextValues: string[]) => {
+    const statusValues = nextValues.filter(isAccountStatusFilterOptionValue)
+    const resolvedStatusValue = statusValues.at(-1) ?? null
+
+    setDisabledFilter(
+      resolvedStatusValue === ACCOUNT_STATUS_FILTER_OPTION_VALUES.enabled
+        ? "enabled"
+        : resolvedStatusValue === ACCOUNT_STATUS_FILTER_OPTION_VALUES.disabled
+          ? "disabled"
+          : null,
+    )
+
+    setSelectedTagIds(
+      nextValues.filter((value) => !isAccountStatusFilterOptionValue(value)),
+    )
+  }
+
   const baseResults = useMemo<
     Array<{
       account: DisplaySiteData
@@ -134,14 +208,23 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   }, [inSearchMode, searchResults, sortedData])
 
   const displayedResults = useMemo(() => {
+    const disabledFilteredResults =
+      disabledFilter === null
+        ? baseResults
+        : baseResults.filter(({ account }) =>
+            disabledFilter === "disabled"
+              ? account.disabled === true
+              : account.disabled !== true,
+          )
+
     if (selectedTagIds.length === 0) {
-      return baseResults
+      return disabledFilteredResults
     }
-    return baseResults.filter(({ account }) => {
+    return disabledFilteredResults.filter(({ account }) => {
       const ids = account.tagIds || []
       return selectedTagIds.some((tagId) => ids.includes(tagId))
     })
-  }, [baseResults, selectedTagIds])
+  }, [baseResults, disabledFilter, selectedTagIds])
 
   const filteredSites = useMemo(
     () => displayedResults.map((item) => item.account),
@@ -162,7 +245,8 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   )
 
   const hasAccounts = displayData.length > 0
-  const showFilteredSummary = inSearchMode || selectedTagIds.length > 0
+  const showFilteredSummary =
+    inSearchMode || selectedTagIds.length > 0 || disabledFilter !== null
   const dragDisabled = inSearchMode || !isManualSortFeatureEnabled
   const handleLabel = t("account:list.dragHandle")
 
@@ -260,9 +344,9 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
         <div className="dark:border-dark-bg-tertiary border-b border-gray-200 px-3 py-2 sm:px-5">
           <div className="flex flex-col gap-2">
             <TagFilter
-              options={tagFilterOptions}
-              value={selectedTagIds}
-              onChange={setSelectedTagIds}
+              options={filterOptions}
+              value={selectedFilterValues}
+              onChange={handleFilterChange}
               maxVisibleLines={maxTagFilterLines}
               allLabel={t("account:filter.tagsAllLabel")}
               allCount={displayData.length}
