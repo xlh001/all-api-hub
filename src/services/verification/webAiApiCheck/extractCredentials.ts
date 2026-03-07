@@ -1,4 +1,9 @@
 import { normalizeHttpUrl } from "~/utils/core/url"
+import {
+  normalizeUrlForBasePath,
+  normalizeUrlPathname,
+  transformNormalizedUrlPath,
+} from "~/utils/core/urlParsing"
 
 /**
  * Extraction result for the in-page Web AI API Check feature.
@@ -34,18 +39,11 @@ export function normalizeApiCheckBaseUrl(baseUrl: string): string | null {
   const normalized = normalizeHttpUrl(trimWrappingPunctuation(baseUrl))
   if (!normalized) return null
 
-  try {
-    const url = new URL(normalized)
-    url.search = ""
-    url.hash = ""
-    return url.toString().replace(/\/$/, "")
-  } catch {
-    return normalized
-  }
+  return normalizeUrlForBasePath(normalized) || null
 }
 
 /**
- *
+ * Normalize a base URL by stripping a specific path segment and anything after it.
  */
 function normalizeBaseUrlByStrippingPathSegment(
   baseUrl: string,
@@ -54,27 +52,25 @@ function normalizeBaseUrlByStrippingPathSegment(
   const normalized = normalizeApiCheckBaseUrl(baseUrl)
   if (!normalized) return null
 
-  try {
-    const url = new URL(normalized)
-    const rawSegments = url.pathname.replace(/\/+$/, "").split("/")
-    const segments = rawSegments.filter(Boolean)
-    const segmentIndex = segments.findIndex(
-      (segment) => segment.toLowerCase() === segmentToStrip.toLowerCase(),
-    )
+  return transformNormalizedUrlPath(normalized, (pathname) => {
+    const segments = normalizeUrlPathname(pathname).split("/").filter(Boolean)
+    const normalizedSegmentToStrip = segmentToStrip.toLowerCase()
+    let lastMatchIndex = -1
 
-    if (segmentIndex >= 0) {
-      const prefixSegments = segments.slice(0, segmentIndex)
-      url.pathname = prefixSegments.length
-        ? `/${prefixSegments.join("/")}`
-        : "/"
+    for (let index = segments.length - 1; index >= 0; index -= 1) {
+      if (segments[index].toLowerCase() === normalizedSegmentToStrip) {
+        lastMatchIndex = index
+        break
+      }
     }
 
-    url.search = ""
-    url.hash = ""
-    return url.toString().replace(/\/$/, "")
-  } catch {
-    return normalized
-  }
+    if (lastMatchIndex < 0) {
+      return pathname
+    }
+
+    const prefixSegments = segments.slice(0, lastMatchIndex)
+    return prefixSegments.length ? `/${prefixSegments.join("/")}` : "/"
+  })
 }
 
 /**
@@ -138,7 +134,13 @@ export function extractApiCheckCredentialsFromText(
     const raw = trimWrappingPunctuation(match[1] ?? "")
     const normalized = normalizeApiCheckBaseUrl(raw)
     const openAiNormalized = normalizeOpenAiFamilyBaseUrl(raw)
-    pushUnique(baseUrlCandidates, openAiNormalized)
+    const googleNormalized = normalizeGoogleFamilyBaseUrl(raw)
+    if (openAiNormalized !== normalized) {
+      pushUnique(baseUrlCandidates, openAiNormalized)
+    }
+    if (googleNormalized !== normalized) {
+      pushUnique(baseUrlCandidates, googleNormalized)
+    }
     pushUnique(baseUrlCandidates, normalized)
   }
 
@@ -148,7 +150,13 @@ export function extractApiCheckCredentialsFromText(
     const raw = trimWrappingPunctuation(match[0] ?? "")
     const normalized = normalizeApiCheckBaseUrl(raw)
     const openAiNormalized = normalizeOpenAiFamilyBaseUrl(raw)
-    pushUnique(baseUrlCandidates, openAiNormalized)
+    const googleNormalized = normalizeGoogleFamilyBaseUrl(raw)
+    if (openAiNormalized !== normalized) {
+      pushUnique(baseUrlCandidates, openAiNormalized)
+    }
+    if (googleNormalized !== normalized) {
+      pushUnique(baseUrlCandidates, googleNormalized)
+    }
     pushUnique(baseUrlCandidates, normalized)
   }
 
