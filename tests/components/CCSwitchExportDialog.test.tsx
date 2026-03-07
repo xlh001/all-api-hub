@@ -114,4 +114,27 @@ describe("CCSwitchExportDialog", () => {
     expect(screen.queryByText("gpt-4")).toBeNull()
     warnSpy.mockRestore()
   })
+
+  it("prefills notes from the API token note field", async () => {
+    vi.resetModules()
+    const { CCSwitchExportDialog } = await import(
+      "~/components/CCSwitchExportDialog"
+    )
+    mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([])
+
+    render(
+      <CCSwitchExportDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={
+          { id: "acc", name: "Example", baseUrl: "https://x.test/v1" } as any
+        }
+        token={{ id: "tok", key: "sk-test", note: "token note" } as any}
+      />,
+    )
+
+    expect(
+      await screen.findByLabelText("ui:dialog.ccswitch.fields.notes"),
+    ).toHaveValue("token note")
+  })
 })

@@ -436,6 +436,7 @@ export interface ApiToken {
   key: string
   status: number
   name: string
+  note?: string
   created_time: number
   accessed_time: number
   expired_time: number

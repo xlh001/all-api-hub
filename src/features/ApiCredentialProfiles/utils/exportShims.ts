@@ -58,6 +58,7 @@ export function createExportToken(profile: ApiCredentialProfile): ApiToken {
   return {
     id,
     user_id: 0,
+    note: profile.notes,
     key: profile.apiKey,
     status: 1,
     name: profile.name,

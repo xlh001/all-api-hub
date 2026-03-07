@@ -71,7 +71,7 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
     if (isOpen) {
       setApp(DEFAULT_APP)
       setModel("")
-      setNotes("")
+      setNotes(token.note ?? "")
       setProviderName(account.name)
       setHomepage(account.baseUrl)
       setEndpoint(account.baseUrl)
@@ -79,7 +79,7 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
       setUpstreamModelOptions([])
       setIsLoadingModels(false)
     }
-  }, [account.name, account.baseUrl, isOpen])
+  }, [account.baseUrl, account.id, account.name, isOpen, token.id, token.note])
 
   useEffect(() => {
     if (!isOpen) return
