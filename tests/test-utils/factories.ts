@@ -8,6 +8,7 @@
 
 import { ChannelType } from "~/constants"
 import {
+  createDefaultPreferences,
   DEFAULT_PREFERENCES,
   type TempWindowFallbackPreferences,
   type UserPreferences,
@@ -332,7 +333,23 @@ export function buildManagedSiteChannel(
 export function buildUserPreferences(
   overrides: Partial<UserPreferences> = {},
 ): UserPreferences {
-  return { ...structuredClone(DEFAULT_PREFERENCES), ...overrides }
+  const preferences = { ...createDefaultPreferences(), ...overrides }
+  if (!Object.prototype.hasOwnProperty.call(overrides, "lastUpdated")) {
+    preferences.lastUpdated = DEFAULT_PREFERENCES.lastUpdated
+  }
+
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      overrides,
+      "sharedPreferencesLastUpdated",
+    )
+  ) {
+    preferences.sharedPreferencesLastUpdated =
+      DEFAULT_PREFERENCES.sharedPreferencesLastUpdated ??
+      DEFAULT_PREFERENCES.lastUpdated
+  }
+
+  return preferences
 }
 
 /**
