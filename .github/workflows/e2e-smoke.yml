@@ -3,8 +3,34 @@ name: E2E Smoke
 on:
   push:
     branches: [main, develop, test/**]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "plugins/**"
+      - "e2e/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "tsconfig.json"
+      - "playwright.config.ts"
+      - "postcss.config.js"
+      - "tailwind.config.js"
+      - "wxt.config.ts"
+      - ".github/workflows/e2e-smoke.yml"
   pull_request:
     branches: [main, develop]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "plugins/**"
+      - "e2e/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "tsconfig.json"
+      - "playwright.config.ts"
+      - "postcss.config.js"
+      - "tailwind.config.js"
+      - "wxt.config.ts"
+      - ".github/workflows/e2e-smoke.yml"
   workflow_dispatch: {}
 
 jobs:

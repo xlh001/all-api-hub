@@ -3,8 +3,30 @@ name: Test
 on:
   push:
     branches: [main, develop, test/**]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "plugins/**"
+      - "tests/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - "wxt.config.ts"
+      - ".github/workflows/test.yml"
   pull_request:
     branches: [main, develop]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "plugins/**"
+      - "tests/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - "wxt.config.ts"
+      - ".github/workflows/test.yml"
 
 jobs:
   test:
