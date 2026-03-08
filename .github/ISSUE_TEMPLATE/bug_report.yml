@@ -10,25 +10,11 @@ body:
 
         感谢您抽出时间填写此 bug 报告！请尽可能提供详细信息。
 
-  - type: dropdown
-    id: browser
-    attributes:
-      label: Browser / 浏览器
-      description: Which browser are you using? / 您使用的是哪个浏览器？
-      options:
-        - Chrome
-        - Firefox
-        - Edge
-        - Safari
-        - Other / 其他
-    validations:
-      required: true
-
   - type: input
-    id: browser-version
+    id: browser-info
     attributes:
-      label: Browser Version / 浏览器版本
-      description: What version of the browser are you using? / 您使用的浏览器版本是什么？
+      label: Browser and Version / 浏览器和版本
+      description: Which browser and version are you using? / 您使用的是哪个浏览器及其版本？
       placeholder: e.g., Chrome 120.0.6099.109
     validations:
       required: true
