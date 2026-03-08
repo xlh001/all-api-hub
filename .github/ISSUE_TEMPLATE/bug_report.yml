@@ -24,15 +24,12 @@ body:
     attributes:
       label: Extension Version / 扩展版本
       description: |
-        What version of the extension are you using? You can find this in:
-        - Chrome: chrome://extensions/
-        - Firefox: about:addons
-        - Edge: edge://extensions/
-
-        您使用的扩展版本是什么？您可以在以下位置找到：
-        - Chrome: chrome://extensions/
-        - Firefox: about:addons
-        - Edge: edge://extensions/
+        What version of the extension are you using? / 您使用的扩展版本是什么？
+        Recommended: On any extension page, the version number appears to the right of the extension name in the top-left corner. / 推荐：在扩展任意界面的左上角，扩展名称右侧会显示版本号。
+        You can also find it here / 也可按以下方式查看：
+        - Chrome: Open `chrome://extensions/?id=lapnciffpekdengooeolaienkeoilfeo` / 打开 `chrome://extensions/?id=lapnciffpekdengooeolaienkeoilfeo`
+        - Edge: Open `edge://extensions/?id=pcokpjaffghgipcgjhapgdpeddlhblaa` / 打开 `edge://extensions/?id=pcokpjaffghgipcgjhapgdpeddlhblaa`
+        - Firefox: Open `about:addons`, find `All API Hub`, open its details page, then check the version. / 打开 `about:addons`，找到 `All API Hub`，进入详情页后查看版本号。
       placeholder: e.g., 1.0.0
     validations:
       required: true
