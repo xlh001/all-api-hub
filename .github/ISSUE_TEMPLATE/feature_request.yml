@@ -10,17 +10,6 @@ body:
 
         感谢您抽出时间建议新功能！您的想法有助于改进此项目。
 
-  - type: checkboxes
-    id: pre-submission
-    attributes:
-      label: Pre-submission Checklist / 提交前检查清单
-      description: Please confirm the following before submitting / 提交前请确认以下内容
-      options:
-        - label: I have searched existing issues to ensure this feature hasn't been requested / 我已检索现有 issue 确认该功能未被请求
-          required: true
-        - label: I have checked the latest release and main branch to confirm this feature doesn't exist / 我已检查最新 release 版本和 main 分支确认该功能不存在
-          required: true
-
   - type: textarea
     id: feature-description
     attributes:

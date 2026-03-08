@@ -10,19 +10,6 @@ body:
 
         感谢您抽出时间填写此 bug 报告！请尽可能提供详细信息。
 
-  - type: checkboxes
-    id: pre-submission
-    attributes:
-      label: Pre-submission Checklist / 提交前检查清单
-      description: Please confirm the following before submitting / 提交前请确认以下内容
-      options:
-        - label: I have searched existing issues to ensure this is not a duplicate / 我已检索现有 issue 确认这不是重复问题
-          required: true
-        - label: I have tested with the latest release version or main branch / 我已使用最新 release 版本或 main 分支的最新版测试
-          required: true
-        - label: This bug still exists in the latest version / 该 bug 在最新版本中仍然存在
-          required: true
-
   - type: dropdown
     id: browser
     attributes:
