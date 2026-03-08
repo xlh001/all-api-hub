@@ -34,7 +34,7 @@ export default defineUserConfig({
   },
 
   theme: defaultTheme({
-    logo: "https://github.com/qixing-jk/all-api-hub/blob/main/src/assets/icon.png?raw=true",
+    logo: "/512.png",
     
     locales: {
       '/': {

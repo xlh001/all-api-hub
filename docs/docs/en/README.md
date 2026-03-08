@@ -1,7 +1,7 @@
 ---
 home: true
 title: Home
-heroImage: https://github.com/qixing-jk/all-api-hub/blob/main/src/assets/icon.png?raw=true
+heroImage: /512.png
 heroText: All API Hub - AI Aggregation Relay Manager
 tagline: "Open-source browser extension to uniformly manage third-party AI aggregation relays and self-built New APIs: automatically identify accounts, view balances, synchronize models, manage keys, and support cross-platform and cloud backup."
 actions:

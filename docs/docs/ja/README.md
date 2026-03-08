@@ -1,7 +1,7 @@
 ---
 home: true
 title: ホーム
-heroImage: https://github.com/qixing-jk/all-api-hub/blob/main/src/assets/icon.png?raw=true
+heroImage: /512.png
 heroText: All API Hub - AI集約中継ステーションマネージャー
 tagline: "オープンソースのブラウザ拡張機能。サードパーティのAI集約中継ステーションと自社構築のNew APIを統一的に管理します。アカウントの自動認識、残高の確認、モデルの同期、キーの管理をサポートし、クロスプラットフォームとクラウドバックアップにも対応しています。"
 actions:
