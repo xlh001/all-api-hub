@@ -57,7 +57,7 @@ All API Hub is a browser extension for one-stop management of New API-style rela
 - [Veloera](https://github.com/Veloera/Veloera)
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
-- [Sub2API](https://github.com/Wei-Shaw/sub2api) (basic functionality supported)
+- [Sub2API](https://github.com/Wei-Shaw/sub2api)
 - Neo-API (closed source)
 - Super-API (closed source)
 - RIX_API (closed source, basic functionality supported)
