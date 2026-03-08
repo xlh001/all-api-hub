@@ -39,7 +39,9 @@ body:
     attributes:
       label: Bug Description / Bug 描述
       description: A clear and concise description of what the bug is / 清晰简洁地描述这个 bug 是什么
-      placeholder: Describe the bug... / 描述该 bug...
+      placeholder: |
+        A short summary of what went wrong...
+        简要描述遇到了什么问题...
     validations:
       required: true
 
@@ -49,10 +51,10 @@ body:
       label: Steps to Reproduce / 复现步骤
       description: If you remember the steps, listing them here helps us verify the problem on our side. / 如果您还记得复现步骤，写在这里会帮助我们在本地验证问题。
       placeholder: |
-        1. Go to... / 前往...
-        2. Click on... / 点击...
-        3. Scroll down to... / 滚动到...
-        4. See error / 看到错误
+        1. Open... / 打开...
+        2. Do... / 执行...
+        3. Then... / 然后...
+        4. The issue appears / 问题出现
     validations:
       required: true
 
@@ -61,7 +63,9 @@ body:
     attributes:
       label: Expected Behavior / 预期行为
       description: A clear and concise description of what you expected to happen / 清晰简洁地描述您期望发生什么
-      placeholder: Describe what you expected... / 描述您的预期...
+      placeholder: |
+        What did you hope would happen here?
+        您原本期望这里会发生什么？
     validations:
       required: true
 
@@ -70,7 +74,9 @@ body:
     attributes:
       label: Actual Behavior / 实际行为
       description: A clear and concise description of what actually happened / 清晰简洁地描述实际发生了什么
-      placeholder: Describe what actually happened... / 描述实际发生了什么...
+      placeholder: |
+        What happened instead?
+        实际上发生了什么？
     validations:
       required: true
 
@@ -79,12 +85,16 @@ body:
     attributes:
       label: Screenshots / 截图
       description: If applicable, add screenshots to help explain your problem / 如果适用，请添加截图以帮助解释您的问题
-      placeholder: Drag and drop images here or paste image URLs / 在此处拖放图像或粘贴图像 URL
+      placeholder: |
+        If you have a screenshot, you can drop it here or paste an image link
+        如果您有截图，可以拖到这里或粘贴图片链接
 
   - type: textarea
     id: additional-context
     attributes:
       label: Additional Context / 其他信息
       description: Add any other context about the problem here / 在此处添加有关该问题的任何其他信息
-      placeholder: Any additional information... / 任何其他信息...
+      placeholder: |
+        Anything else that may help us understand the issue...
+        任何可能帮助我们理解问题的补充信息...
 
