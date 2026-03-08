@@ -58,6 +58,7 @@ All API Hub is a browser extension for one-stop management of New API-style rela
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
 - [Sub2API](https://github.com/Wei-Shaw/sub2api)
+- [AnyRouter](https://anyrouter.top)
 - Neo-API (closed source)
 - Super-API (closed source)
 - RIX_API (closed source, basic functionality supported)
