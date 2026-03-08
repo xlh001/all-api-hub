@@ -1,14 +1,14 @@
 name: Feature Request / 功能请求
-description: Suggest a new feature or enhancement / 建议新功能或改进
+description: Tell us what would make All API Hub work better for you / 告诉我们什么能让 All API Hub 更适合您的使用
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to suggest a new feature! Your ideas help make this project better.
+        Thank you for taking the time to share an idea. Knowing a little about the context helps us understand the request more clearly and think about it in a way that is genuinely useful.
 
-        感谢您抽出时间建议新功能！您的想法有助于改进此项目。
+        感谢您愿意分享想法。多一点使用背景，会帮助我们更准确地理解这个需求，也更认真地思考怎样做才真正有帮助。
 
   - type: textarea
     id: feature-description
@@ -23,7 +23,7 @@ body:
     id: use-case
     attributes:
       label: Use Case / Motivation / 使用场景 / 动机
-      description: Explain the use case or problem this feature would solve / 解释此功能将解决的使用场景或问题
+      description: If you can share the situation behind this request, it helps us understand why it matters to you. / 如果您愿意补充这个需求背后的使用场景，会帮助我们理解它为什么对您重要。
       placeholder: |
         Why do you need this feature? What problem does it solve?
         为什么需要此功能？它解决什么问题？
@@ -34,7 +34,7 @@ body:
     id: proposed-solution
     attributes:
       label: Proposed Solution / 建议的解决方案
-      description: How would you like to see this feature implemented? / 您希望如何实现此功能？
+      description: If you already have an idea for how this could work, we would love to hear it. If not, simply describe the outcome you hope for. / 如果您已经想过它大概可以怎么实现，欢迎直接告诉我们；如果还没有，也只需描述您希望达到的效果。
       placeholder: Describe your proposed solution... / 描述您建议的解决方案...
 
   - type: textarea
@@ -63,3 +63,4 @@ body:
       label: Additional Context / 其他信息
       description: Add any other context, screenshots, or mockups about the feature request here / 在此处添加有关功能请求的任何其他信息、截图或模型
       placeholder: Any additional information, screenshots, or mockups... / 任何其他信息、截图或模型...
+
