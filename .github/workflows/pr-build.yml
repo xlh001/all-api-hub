@@ -3,12 +3,27 @@ name: pr-build-preview
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "plugins/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "tsconfig.json"
+      - "postcss.config.js"
+      - "tailwind.config.js"
+      - "wxt.config.ts"
+      - ".github/workflows/pr-build.yml"
   workflow_dispatch:
     inputs:
       pr_number:
         description: "PR number to build"
         required: true
         type: number
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
