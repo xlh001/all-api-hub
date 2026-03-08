@@ -29,7 +29,7 @@ interface ProviderTabListProps {
 }
 
 /**
- *
+ * Renders the provider tab list.
  */
 function ProviderTabList({
   providers,

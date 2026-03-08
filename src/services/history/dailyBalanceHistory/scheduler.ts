@@ -28,7 +28,7 @@ const END_OF_DAY_CAPTURE_TIME = {
 } as const
 
 /**
- *
+ * Computes the next end-of-day capture time.
  */
 function computeNextEndOfDayCaptureWhenMs(nowMs: number): number {
   const target = new Date(nowMs)

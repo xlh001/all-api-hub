@@ -138,7 +138,7 @@ vi.mock("~/features/AccountManagement/components/NewcomerSupportCard", () => ({
 }))
 
 /**
- *
+ * Creates an account data context value for tests.
  */
 function createAccountDataContextValue() {
   const enabledAlpha = buildDisplaySiteData({

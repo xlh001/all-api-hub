@@ -43,7 +43,7 @@ interface BalanceHistoryAccountSummaryTableProps {
 }
 
 /**
- *
+ * Sorts nullable numeric values.
  */
 function sortNullableNumber<RowType extends Record<string, unknown>>(
   rowA: Row<RowType>,

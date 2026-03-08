@@ -57,7 +57,7 @@ vi.mock("~/contexts/UserPreferencesContext", async () => {
 })
 
 /**
- *
+ * Creates an account stub for tests.
  */
 function createAccountStub(): DisplaySiteData {
   return {

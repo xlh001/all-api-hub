@@ -120,7 +120,7 @@ interface SettingsTabItem {
 }
 
 /**
- *
+ * Renders the desktop tabs.
  */
 function DesktopTabs({
   tabs,

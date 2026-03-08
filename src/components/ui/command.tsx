@@ -79,7 +79,7 @@ type CommandInputProps = React.ComponentProps<typeof CommandPrimitive.Input> & {
 }
 
 /**
- *
+ * Renders the command palette input with a clear action.
  */
 function CommandInput({
   className,

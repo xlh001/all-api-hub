@@ -112,7 +112,7 @@ const mockDownloadBackup = vi.fn()
 const mockUploadBackup = vi.fn()
 
 /**
- *
+ * Creates a deferred promise helper for tests.
  */
 function createDeferred<T>() {
   let resolve!: (value: T) => void

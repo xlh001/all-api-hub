@@ -308,7 +308,7 @@ function normalizeTagIdsInput(tagIds: TagIdsInput): string[] {
 }
 
 /**
- *
+ * Normalizes the Sub2API auth input.
  */
 function normalizeSub2ApiAuthInput(
   siteType: string,

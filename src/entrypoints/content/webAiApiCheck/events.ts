@@ -48,7 +48,7 @@ export function dispatchApiCheckModalHostReady() {
 }
 
 /**
- *
+ * Waits for the API check modal host to be ready.
  */
 export function waitForApiCheckModalHostReady(options?: {
   timeoutMs?: number

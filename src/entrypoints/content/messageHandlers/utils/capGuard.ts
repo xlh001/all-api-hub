@@ -27,7 +27,7 @@ const CAP_AUTOSTART_MIN_INTERVAL_MS = 1000
 const CAP_AUTOSTART_MAX_ATTEMPTS = 3
 
 /**
- *
+ * Returns the CAP auto-start state map.
  */
 function getCapAutoStartStateMap(): Map<string, CapAutoStartState> {
   const globalAny = globalThis as any

@@ -15,7 +15,7 @@ import { computeRetentionCutoffDayKey, parseDayKey } from "./dayKeys"
 const logger = createLogger("DailyBalanceHistoryStorage")
 
 /**
- *
+ * Creates an empty daily balance history store.
  */
 function createEmptyStore(): DailyBalanceHistoryStore {
   return {
@@ -25,7 +25,7 @@ function createEmptyStore(): DailyBalanceHistoryStore {
 }
 
 /**
- *
+ * Sanitizes a daily balance snapshot.
  */
 function sanitizeSnapshot(value: unknown): DailyBalanceSnapshot | null {
   if (!value || typeof value !== "object") {
@@ -80,7 +80,7 @@ function sanitizeSnapshot(value: unknown): DailyBalanceSnapshot | null {
 }
 
 /**
- *
+ * Sanitizes the daily balance history store.
  */
 function sanitizeStore(value: unknown): DailyBalanceHistoryStore {
   const base = createEmptyStore()
@@ -129,7 +129,7 @@ function sanitizeStore(value: unknown): DailyBalanceHistoryStore {
 }
 
 /**
- *
+ * Prunes expired entries from the store in place.
  */
 function pruneStoreInPlace(
   store: DailyBalanceHistoryStore,

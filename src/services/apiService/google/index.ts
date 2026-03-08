@@ -20,7 +20,7 @@ const MAX_PAGES = 20
 const MAX_MODELS = 2000
 
 /**
- *
+ * Fetches Google model IDs.
  */
 export async function fetchGoogleModelIds(
   params: GoogleAuthParams,

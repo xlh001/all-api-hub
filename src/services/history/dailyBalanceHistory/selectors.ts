@@ -34,7 +34,7 @@ export interface AccountRangeSummary {
 }
 
 /**
- *
+ * Resolves the applicable exchange rate.
  */
 function resolveExchangeRate(params: {
   accountId: string

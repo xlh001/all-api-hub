@@ -7,7 +7,7 @@ import {
 } from "~/entrypoints/content/messageHandlers/utils/turnstileGuard"
 
 /**
- *
+ * Creates a mock DOM element for tests.
  */
 function createMockElement<K extends keyof HTMLElementTagNameMap>(
   tagName: K,

@@ -60,7 +60,7 @@ function sanitizeAggregate(value: unknown): UsageHistoryAggregate {
 }
 
 /**
- *
+ * Sanitizes a latency aggregate.
  */
 function sanitizeLatencyAggregate(
   value: unknown,
@@ -92,7 +92,7 @@ function sanitizeLatencyAggregate(
 }
 
 /**
- *
+ * Sanitizes a usage history cursor.
  */
 function sanitizeCursor(value: unknown): UsageHistoryCursor {
   const payload = isPlainObject(value) ? value : {}
@@ -116,7 +116,7 @@ function sanitizeCursor(value: unknown): UsageHistoryCursor {
 }
 
 /**
- *
+ * Sanitizes aggregate usage grouped by day.
  */
 function sanitizeAggregateByDay(
   value: unknown,
@@ -136,7 +136,7 @@ function sanitizeAggregateByDay(
 }
 
 /**
- *
+ * Sanitizes aggregate usage grouped by hour.
  */
 function sanitizeAggregateByHour(
   value: unknown,
@@ -156,7 +156,7 @@ function sanitizeAggregateByHour(
 }
 
 /**
- *
+ * Sanitizes hourly usage grouped by day.
  */
 function sanitizeHourlyByDay(
   value: unknown,
@@ -179,7 +179,7 @@ function sanitizeHourlyByDay(
 }
 
 /**
- *
+ * Sanitizes hourly usage by token grouped by day.
  */
 function sanitizeHourlyByTokenByDay(
   value: unknown,
@@ -217,7 +217,7 @@ function sanitizeHourlyByTokenByDay(
 }
 
 /**
- *
+ * Sanitizes aggregate usage by model grouped by day.
  */
 function sanitizeAggregateByModelByDay(
   value: unknown,
@@ -240,7 +240,7 @@ function sanitizeAggregateByModelByDay(
 }
 
 /**
- *
+ * Sanitizes aggregate usage by token grouped by day.
  */
 function sanitizeAggregateByTokenByDay(
   value: unknown,
@@ -263,7 +263,7 @@ function sanitizeAggregateByTokenByDay(
 }
 
 /**
- *
+ * Sanitizes aggregate usage by token and model grouped by day.
  */
 function sanitizeAggregateByTokenByModelByDay(
   value: unknown,
@@ -301,7 +301,7 @@ function sanitizeAggregateByTokenByModelByDay(
 }
 
 /**
- *
+ * Sanitizes latency grouped by day.
  */
 function sanitizeLatencyByDay(
   value: unknown,
@@ -321,7 +321,7 @@ function sanitizeLatencyByDay(
 }
 
 /**
- *
+ * Sanitizes latency by model grouped by day.
  */
 function sanitizeLatencyByModelByDay(
   value: unknown,
@@ -344,7 +344,7 @@ function sanitizeLatencyByModelByDay(
 }
 
 /**
- *
+ * Sanitizes latency by token grouped by day.
  */
 function sanitizeLatencyByTokenByDay(
   value: unknown,
@@ -367,7 +367,7 @@ function sanitizeLatencyByTokenByDay(
 }
 
 /**
- *
+ * Sanitizes latency by token and model grouped by day.
  */
 function sanitizeLatencyByTokenByModelByDay(
   value: unknown,

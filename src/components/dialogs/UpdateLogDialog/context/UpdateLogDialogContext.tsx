@@ -15,7 +15,7 @@ const UpdateLogDialogContext =
   createContext<UpdateLogDialogContextValue | null>(null)
 
 /**
- *
+ * Provides update log dialog state to descendants.
  */
 export function UpdateLogDialogProvider({
   children,
@@ -52,7 +52,7 @@ export function UpdateLogDialogProvider({
 }
 
 /**
- *
+ * Returns the update log dialog context.
  */
 export function useUpdateLogDialogContext() {
   const context = useContext(UpdateLogDialogContext)

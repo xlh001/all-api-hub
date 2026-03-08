@@ -25,7 +25,7 @@ const MAX_PAGES = 20
 const MAX_MODELS = 2000
 
 /**
- *
+ * Fetches Anthropic model IDs.
  */
 export async function fetchAnthropicModelIds(
   params: AnthropicAuthParams,

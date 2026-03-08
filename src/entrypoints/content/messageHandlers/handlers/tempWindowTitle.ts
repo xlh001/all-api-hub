@@ -9,7 +9,7 @@ import { createLogger } from "~/utils/core/logger"
 const logger = createLogger("TempWindowTitleHandler")
 
 /**
- *
+ * Returns the current rendered page title.
  */
 export function handleGetRenderedTitle(
   _request: any,

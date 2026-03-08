@@ -5,7 +5,7 @@ import { runPerKeySequential } from "~/services/accounts/accountKeyAutoProvision
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 /**
- *
+ * Creates a deferred promise helper for tests.
  */
 function createDeferred() {
   let resolve!: () => void

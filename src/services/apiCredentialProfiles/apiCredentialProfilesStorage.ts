@@ -44,7 +44,7 @@ const createDefaultConfig = (): ApiCredentialProfilesConfig => ({
 })
 
 /**
- *
+ * Clones the config.
  */
 function cloneConfig(
   config: ApiCredentialProfilesConfig,
@@ -56,7 +56,7 @@ function cloneConfig(
 }
 
 /**
- *
+ * Normalizes the tag ID list.
  */
 function normalizeTagIdList(input: unknown): string[] {
   const raw = Array.isArray(input) ? input : []
@@ -76,7 +76,7 @@ function normalizeTagIdList(input: unknown): string[] {
 }
 
 /**
- *
+ * Normalizes the profile base URL.
  */
 function normalizeProfileBaseUrl(
   apiType: ApiVerificationApiType,
@@ -89,7 +89,7 @@ function normalizeProfileBaseUrl(
 }
 
 /**
- *
+ * Coerces the API type into a supported value.
  */
 function coerceApiType(raw: unknown): ApiVerificationApiType {
   const value = typeof raw === "string" ? raw : ""
@@ -99,7 +99,7 @@ function coerceApiType(raw: unknown): ApiVerificationApiType {
 }
 
 /**
- *
+ * Returns the profile identity key.
  */
 function getIdentityKey(
   profile: Pick<ApiCredentialProfile, "apiType" | "baseUrl" | "apiKey">,
@@ -109,7 +109,7 @@ function getIdentityKey(
 }
 
 /**
- *
+ * Deduplicates profiles by identity.
  */
 function dedupeProfiles(profiles: ApiCredentialProfile[]): {
   profiles: ApiCredentialProfile[]
@@ -148,7 +148,7 @@ function dedupeProfiles(profiles: ApiCredentialProfile[]): {
 }
 
 /**
- *
+ * Coerces stored profile config into the supported shape.
  */
 export function coerceApiCredentialProfilesConfig(
   raw: unknown,
@@ -222,7 +222,7 @@ export function coerceApiCredentialProfilesConfig(
 }
 
 /**
- *
+ * Merges local and remote profile configs.
  */
 export function mergeApiCredentialProfilesConfigs(params: {
   local: ApiCredentialProfilesConfig

@@ -46,7 +46,7 @@ function pickSuggestedModelId(
 }
 
 /**
- *
+ * Strips the query string and hash from a URL.
  */
 function stripQueryAndHash(baseUrl: string): string {
   const trimmed = (baseUrl || "").trim()
@@ -61,7 +61,7 @@ function stripQueryAndHash(baseUrl: string): string {
 }
 
 /**
- *
+ * Normalizes the models base URL.
  */
 function normalizeModelsBaseUrl(
   apiType: ApiVerificationApiType,

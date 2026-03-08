@@ -36,7 +36,7 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
   let resolvedPublicDir = path.resolve(process.cwd(), "public")
 
   /**
-   *
+   * Returns the backend script path.
    */
   function getBackendPath() {
     return path.join(resolvedPublicDir, "react-devtools-backend.js")

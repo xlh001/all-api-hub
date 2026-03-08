@@ -29,7 +29,7 @@ interface UsageAnalyticsFiltersCardProps {
 }
 
 /**
- *
+ * Renders the usage analytics filters card.
  */
 export default function UsageAnalyticsFiltersCard({
   siteOptions,

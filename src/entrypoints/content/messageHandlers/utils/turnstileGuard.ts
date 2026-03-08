@@ -373,7 +373,7 @@ function compileOptionalCaseInsensitiveRegex(
 }
 
 /**
- *
+ * Returns the label for a pre-trigger when available.
  */
 function getPreTriggerLabel(preTrigger: TurnstilePreTrigger): string | null {
   if (preTrigger.kind === "clickSelector" || preTrigger.kind === "clickText") {

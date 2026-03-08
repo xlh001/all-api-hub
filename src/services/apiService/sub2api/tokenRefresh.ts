@@ -31,7 +31,7 @@ const normalizeExpiresInSeconds = (value: unknown): number =>
   typeof value === "number" && Number.isFinite(value) ? value : 0
 
 /**
- *
+ * Refreshes Sub2API tokens.
  */
 export async function refreshSub2ApiTokens(params: {
   baseUrl: string

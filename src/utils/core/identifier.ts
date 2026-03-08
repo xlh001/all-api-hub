@@ -13,7 +13,7 @@ import { createLogger } from "~/utils/core/logger"
 const logger = createLogger("Identifier")
 
 /**
- *
+ * Generates a random UUID with an optional prefix.
  */
 export function safeRandomUUID(customPrefix?: string): string {
   const cryptoRef = globalThis.crypto

@@ -85,14 +85,14 @@ export function setLoggerContext(context: ExtensionLogContext) {
 }
 
 /**
- *
+ * Returns the logger context.
  */
 export function getLoggerContext(): ExtensionLogContext {
   return currentContext
 }
 
 /**
- *
+ * Returns the current logging preferences.
  */
 export function getLoggingPreferences(): LoggingPreferences {
   return currentPreferences
@@ -175,7 +175,7 @@ export function initializeLogging(): void {
 }
 
 /**
- *
+ * Writes a log entry without throwing.
  */
 function safeLog(
   level: LogLevel,
@@ -205,7 +205,7 @@ function safeLog(
 }
 
 /**
- *
+ * Checks whether the log level should be emitted.
  */
 function shouldEmit(level: LogLevel): boolean {
   const preferences = currentPreferences
@@ -214,14 +214,14 @@ function shouldEmit(level: LogLevel): boolean {
 }
 
 /**
- *
+ * Formats the log prefix.
  */
 function formatPrefix(scope: string): string {
   return `[${currentContext}][${scope}]`
 }
 
 /**
- *
+ * Returns the console sink for a log level.
  */
 function getConsoleSink(
   level: LogLevel,
@@ -257,7 +257,7 @@ function getConsoleSink(
 }
 
 /**
- *
+ * Sanitizes log details before output.
  */
 function sanitizeLogDetails(details: unknown): unknown {
   try {
@@ -269,7 +269,7 @@ function sanitizeLogDetails(details: unknown): unknown {
 }
 
 /**
- *
+ * Sanitizes a value for logging.
  */
 function sanitizeValue(
   value: unknown,
@@ -360,14 +360,14 @@ function sanitizeValue(
 }
 
 /**
- *
+ * Checks whether a key is sensitive.
  */
 function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_MATCHERS.some((matcher) => matcher.test(key))
 }
 
 /**
- *
+ * Applies logging preferences from stored data.
  */
 function applyPreferencesFromStoredValue(stored: unknown) {
   try {
@@ -396,7 +396,7 @@ function applyPreferencesFromStoredValue(stored: unknown) {
 }
 
 /**
- *
+ * Checks whether a value is a supported log level.
  */
 function isLogLevel(value: unknown): value is LogLevel {
   return (
@@ -408,7 +408,7 @@ function isLogLevel(value: unknown): value is LogLevel {
 }
 
 /**
- *
+ * Detects the current extension context.
  */
 function detectExtensionContext(): ExtensionLogContext {
   try {
@@ -441,14 +441,14 @@ function detectExtensionContext(): ExtensionLogContext {
 }
 
 /**
- *
+ * Returns the available extension API.
  */
 function getExtensionApi(): any {
   return (globalThis as any).browser ?? (globalThis as any).chrome ?? null
 }
 
 /**
- *
+ * Reads a value from extension local storage.
  */
 async function storageLocalGet(key: string): Promise<unknown> {
   const api = getExtensionApi()
