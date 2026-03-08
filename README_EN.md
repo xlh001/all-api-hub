@@ -101,7 +101,7 @@ All API Hub is a browser extension for one-stop management of New API-style rela
   Import/export and WebDAV sync for backup and migration across devices.
 
 - 🌐 **Cross‑Platform Compatible**  
-  Works on Chrome, Edge, Firefox and mobile Chromium browsers like Kiwi, with dark mode.
+  Works on Chrome, Edge, Firefox, and mobile browsers such as mobile Edge, Firefox for Android, and Kiwi, with dark mode.
 
 - 🔒 **Privacy‑First Local Storage**  
   Local‑first by default with no telemetry; WebDAV and external APIs are only used when configured.
@@ -164,6 +164,10 @@ All API Hub is a browser extension for one-stop management of New API-style rela
 | Edge Add-ons | [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) | ![Edge version](https://img.shields.io/badge/dynamic/json?label=Edge&prefix=v&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fpcokpjaffghgipcgjhapgdpeddlhblaa&logo=microsoftedge&style=flat) |
 | Firefox Add-ons | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | ![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat) |
 | GitHub Release | [Release Download](https://github.com/qixing-jk/all-api-hub/releases) | ![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat) |
+
+> [!TIP]
+> The extension also works on mobile browsers, such as mobile `Edge`, `Firefox for Android`, and `Kiwi`.
+> See the [mobile usage FAQ](https://all-api-hub.qixing1217.top/en/faq.html#mobile-browser-support) for details.
 
 <details>
 <summary>Manual installation (Load unpacked)</summary>
