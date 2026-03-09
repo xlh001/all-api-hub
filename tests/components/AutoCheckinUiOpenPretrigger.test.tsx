@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import AutoCheckinUiOpenPretrigger from "~/components/AutoCheckinUiOpenPretrigger"
+import { AutoCheckinUiOpenPretrigger } from "~/components/AutoCheckinUiOpenPretrigger"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   DEFAULT_PREFERENCES,

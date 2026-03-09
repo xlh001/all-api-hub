@@ -19,7 +19,7 @@ import {
 import { createLogger } from "~/utils/core/logger"
 import { showResultToast } from "~/utils/core/toastHelpers"
 
-import PermissionList from "./PermissionList"
+import { PermissionList } from "./PermissionList"
 
 interface PermissionState {
   statuses: Record<ManifestOptionalPermissions, boolean | null>

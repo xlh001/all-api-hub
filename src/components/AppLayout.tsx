@@ -2,8 +2,8 @@ import { ReactNode } from "react"
 
 import "~/styles/style.css"
 
-import AutoCheckinUiOpenPretrigger from "~/components/AutoCheckinUiOpenPretrigger"
-import ChangelogOnUpdateUiOpenHandler from "~/components/ChangelogOnUpdateUiOpenHandler"
+import { AutoCheckinUiOpenPretrigger } from "~/components/AutoCheckinUiOpenPretrigger"
+import { ChangelogOnUpdateUiOpenHandler } from "~/components/ChangelogOnUpdateUiOpenHandler"
 import {
   ChannelDialogContainer,
   ChannelDialogProvider,
