@@ -187,7 +187,6 @@ const focusWindow = async (tab: browser.tabs.Tab) => {
 /**
  * Queries tabs with error handling and executes a callback with results.
  * @param queryInfo Tab query filter.
- * @param callback Invoked with matched tabs.
  */
 const queryTabs = async (
   queryInfo: browser.tabs._QueryQueryInfo,

@@ -79,39 +79,6 @@ interface AccountFormProps {
 
 /**
  * Account form body used inside the account dialog for creating/editing accounts.
- * @param props Component props configuring every field and handler.
- * @param props.authType Selected authentication type controlling visible fields.
- * @param props.siteName Current site name value.
- * @param props.username Account username.
- * @param props.userId Numeric user id string.
- * @param props.accessToken Access token string for auth.
- * @param props.exchangeRate Top-up exchange rate value.
- * @param props.showAccessToken Whether the token input is visible.
- * @param props.notes User-provided notes.
- * @param props.selectedTagIds Selected tag ids.
- * @param props.excludeFromTotalBalance Whether the account is excluded from Total Balance.
- * @param props.onSiteNameChange Handler to update site name.
- * @param props.onUsernameChange Handler to update username.
- * @param props.onUserIdChange Handler to update user id.
- * @param props.onAccessTokenChange Handler to update access token.
- * @param props.onExchangeRateChange Handler to update exchange rate.
- * @param props.onToggleShowAccessToken Toggles token visibility.
- * @param props.onNotesChange Handler to update notes.
- * @param props.onSelectedTagIdsChange Handler to update tag id selection.
- * @param props.onExcludeFromTotalBalanceChange Handler to toggle Total Balance exclusion.
- * @param props.cookieAuthSessionCookie Cookie value used for cookie-based auth.
- * @param props.isImportingCookies Whether cookie import is in progress.
- * @param props.onCookieAuthSessionCookieChange Handler to update cookie value.
- * @param props.onImportCookieAuthSessionCookie Handler to trigger cookie import.
- * @param props.tags Tags available from the global tag store.
- * @param props.tagCountsById Optional usage counts keyed by tag id.
- * @param props.createTag Creates a new global tag.
- * @param props.renameTag Renames a global tag.
- * @param props.deleteTag Deletes a global tag (removes from all accounts).
- * @param props.siteType Selected site type identifier.
- * @param props.onSiteTypeChange Handler when site type changes.
- * @param props.checkIn Check-in configuration payload.
- * @param props.onCheckInChange Handler when check-in config changes.
  */
 export default function AccountForm({
   authType,

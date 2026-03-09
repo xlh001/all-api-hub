@@ -27,12 +27,6 @@ interface AccountSelectorPanelProps {
 
 /**
  * AccountSelectorPanel block for selecting an account, filtering tokens, and summarizing counts.
- * @param props Component props container.
- * @param props.selectedAccount Currently selected account identifier.
- * @param props.setSelectedAccount Setter for the selected account.
- * @param props.displayData Accounts to show inside the searchable dropdown.
- * @param props.tokens Complete token list for the chosen account.
- * @param props.filteredTokens Tokens that match the current filters/search.
  */
 export function AccountSelectorPanel({
   selectedAccount,

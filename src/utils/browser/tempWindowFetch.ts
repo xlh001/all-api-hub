@@ -247,6 +247,8 @@ const TEMP_WINDOW_FALLBACK_CODES = new Set<ApiErrorCode>([
 /**
  * Determines whether a given error matches the status codes or error codes that should trigger temp window fallback.
  * @param error The error thrown by the primary request, which may contain a `statusCode` and/or `code` property.
+ * @param error.statusCode Optional HTTP status code from the failed request, if available.
+ * @param error.code Optional API error code from the failed request, if available.
  * @param allowlist Optional allowlist of status codes and error codes that should trigger temp window fallback. When omitted, defaults to HTTP 403 and `CONTENT_TYPE_MISMATCH` (plus `HTTP_403`) allowlisting. When provided, it fully overrides defaults: omitted fields (e.g. `statusCodes` or `codes`) are treated as empty lists.
  */
 export function matchesTempWindowFallbackAllowlist(

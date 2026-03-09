@@ -18,6 +18,7 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Create a limiter that enforces a minimum interval between acquisitions.
+ * @param options Configuration options for the limiter.
  * @param options.minIntervalMs Minimum interval in milliseconds (<= 0 disables).
  * @returns A function that resolves when the caller is allowed to proceed.
  */
