@@ -334,6 +334,32 @@ function normalizeSub2ApiAuthInput(
 }
 
 /**
+ * Parses the user-provided exchange rate (CNY per USD) with a safe fallback.
+ *
+ * Returns {@link UI_CONSTANTS.EXCHANGE_RATE.DEFAULT} when the input is empty or invalid.
+ */
+function parsePositiveExchangeRate(input: string): number | undefined {
+  const trimmed = input.trim()
+  if (!trimmed) return undefined
+
+  const value = Number(trimmed)
+  if (!Number.isFinite(value) || value <= 0) {
+    return undefined
+  }
+
+  return value
+}
+
+/**
+ * Parses the user-provided exchange rate (CNY per USD) with a safe fallback.
+ *
+ * Returns {@link UI_CONSTANTS.EXCHANGE_RATE.DEFAULT} when the input is empty or invalid.
+ */
+function resolveExchangeRate(input: string): number {
+  return parsePositiveExchangeRate(input) ?? UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
+}
+
+/**
  * 验证并保存账号信息（用于新增）
  *
  * Validates user-supplied account form data, fetches the freshest remote
@@ -453,15 +479,15 @@ export async function validateAndSaveAccount(
       health: { status: SiteHealthStatus.Healthy }, // 成功获取数据说明状态正常
       site_type: siteType,
       authType: authType,
+      disabled: false,
       excludeFromTotalBalance: excludeFromTotalBalance === true,
       cookieAuth:
         authType === AuthTypeEnum.Cookie
           ? { sessionCookie: sessionCookieHeader.trim() }
           : undefined,
       sub2apiAuth: normalizedSub2ApiAuth,
-      exchange_rate:
-        parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT, // 使用用户输入的汇率
-      notes: notes || "",
+      exchange_rate: resolveExchangeRate(exchangeRate), // 使用用户输入的汇率
+      notes,
       manualBalanceUsd: normalizedManualBalanceUsd,
       tagIds: normalizedTagIds,
       checkIn: freshAccountData.checkIn,
@@ -511,15 +537,15 @@ export async function validateAndSaveAccount(
       site_url: url.trim(),
       site_type: siteType,
       authType: authType,
+      disabled: false,
       excludeFromTotalBalance: excludeFromTotalBalance === true,
       cookieAuth:
         authType === AuthTypeEnum.Cookie
           ? { sessionCookie: sessionCookieHeader.trim() }
           : undefined,
       sub2apiAuth: normalizedSub2ApiAuth,
-      exchange_rate:
-        parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
-      notes: notes || "",
+      exchange_rate: resolveExchangeRate(exchangeRate),
+      notes,
       manualBalanceUsd: normalizedManualBalanceUsd,
       tagIds: normalizedTagIds,
       checkIn: checkInConfig,
@@ -690,8 +716,7 @@ export async function validateAndUpdateAccount(
           ? { sessionCookie: sessionCookieHeader.trim() }
           : undefined,
       sub2apiAuth: normalizedSub2ApiAuth,
-      exchange_rate:
-        parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT, // 使用用户输入的汇率
+      exchange_rate: resolveExchangeRate(exchangeRate), // 使用用户输入的汇率
       notes: notes,
       manualBalanceUsd: normalizedManualBalanceUsd,
       tagIds: normalizedTagIds,
@@ -749,8 +774,7 @@ export async function validateAndUpdateAccount(
           ? { sessionCookie: sessionCookieHeader.trim() }
           : undefined,
       sub2apiAuth: normalizedSub2ApiAuth,
-      exchange_rate:
-        parseFloat(exchangeRate) || UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
+      exchange_rate: resolveExchangeRate(exchangeRate),
       notes: notes,
       manualBalanceUsd: normalizedManualBalanceUsd,
       tagIds: normalizedTagIds,
@@ -791,7 +815,6 @@ export async function validateAndUpdateAccount(
   }
 }
 
-// 提取域名的主要部分（一级域名前缀）
 /**
  * 提取域名关键部分（排除 www 与常见双后缀）供 UI 显示默认站点名使用。
  * @param hostname 待分析的主机名
@@ -887,8 +910,7 @@ export async function getSiteName(
  * A valid exchange rate is a number greater than 0.
  */
 export function isValidExchangeRate(rate: string): boolean {
-  const num = parseFloat(rate)
-  return !isNaN(num) && num > 0
+  return parsePositiveExchangeRate(rate) !== undefined
 }
 
 /**

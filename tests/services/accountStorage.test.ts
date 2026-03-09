@@ -93,7 +93,8 @@ const createAccount = (overrides: Partial<SiteAccount> = {}): SiteAccount => {
 
   return {
     id: overrides.id || "account-1",
-    disabled: overrides.disabled,
+    disabled: overrides.disabled === true,
+    excludeFromTotalBalance: overrides.excludeFromTotalBalance === true,
     site_name: overrides.site_name || "Test Site",
     site_url: overrides.site_url || "https://test.example.com",
     health: overrides.health || { status: SiteHealthStatus.Healthy },
@@ -115,7 +116,7 @@ const createAccount = (overrides: Partial<SiteAccount> = {}): SiteAccount => {
     last_sync_time: overrides.last_sync_time ?? Date.now(),
     updated_at: overrides.updated_at ?? Date.now(),
     created_at: overrides.created_at ?? Date.now(),
-    notes: overrides.notes,
+    notes: overrides.notes ?? "",
     manualBalanceUsd: overrides.manualBalanceUsd,
     sub2apiAuth: overrides.sub2apiAuth,
     tagIds: overrides.tagIds ?? [],
@@ -282,6 +283,38 @@ describe("accountStorage core behaviors", () => {
     ])
 
     expect(await accountStorage.getPinnedList()).toEqual(["valid-1", "valid-2"])
+  })
+
+  it("setPinnedList should fail closed when reading storage fails", async () => {
+    const accounts = [createAccount({ id: "valid-1" })]
+    seedStorage(accounts, ["valid-1"])
+
+    const originalConfig = JSON.parse(
+      JSON.stringify(storageData.get(ACCOUNT_STORAGE_KEYS.ACCOUNTS)),
+    ) as AccountStorageConfig
+
+    storageHooks.beforeGet = async (key) => {
+      if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+        throw new Error("storage get failed")
+      }
+    }
+
+    const success = await accountStorage.setPinnedList(["missing"])
+
+    expect(success).toBe(false)
+    expect(storageData.get(ACCOUNT_STORAGE_KEYS.ACCOUNTS)).toEqual(
+      originalConfig,
+    )
+  })
+
+  it("getPinnedList should keep a safe default when reading storage fails", async () => {
+    storageHooks.beforeGet = async (key) => {
+      if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+        throw new Error("storage get failed")
+      }
+    }
+
+    expect(await accountStorage.getPinnedList()).toEqual([])
   })
 
   it("setOrderedList should dedupe and drop invalid ids then persist", async () => {

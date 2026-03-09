@@ -17,6 +17,8 @@ const mockAccount: SiteAccount = {
   exchange_rate: 7.0,
   notes: "",
   tagIds: [],
+  disabled: false,
+  excludeFromTotalBalance: false,
   checkIn: { enableDetection: true },
   health: { status: SiteHealthStatus.Healthy },
   account_info: {
@@ -53,6 +55,23 @@ describe("wongGongyiProvider", () => {
     it("returns false when authType is token but token is missing", () => {
       const account = {
         ...mockAccount,
+        account_info: { ...mockAccount.account_info, access_token: "" },
+      }
+      expect(wongGongyiProvider.canCheckIn(account)).toBe(false)
+    })
+
+    it("treats missing authType as access-token auth", () => {
+      const account = {
+        ...mockAccount,
+        authType: undefined as any,
+      }
+      expect(wongGongyiProvider.canCheckIn(account)).toBe(true)
+    })
+
+    it("requires an access token when authType is missing", () => {
+      const account = {
+        ...mockAccount,
+        authType: undefined as any,
         account_info: { ...mockAccount.account_info, access_token: "" },
       }
       expect(wongGongyiProvider.canCheckIn(account)).toBe(false)
