@@ -1,4 +1,3 @@
-import { t } from "i18next"
 import toast from "react-hot-toast"
 
 import { accountStorage } from "~/services/accounts/accountStorage"
@@ -22,6 +21,7 @@ import { channelConfigStorage } from "~/services/managedSites/channelConfigStora
 import { userPreferences } from "~/services/preferences/userPreferences"
 import { tagStorage } from "~/services/tags/tagStorage"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 /**
  * Unified logger scoped to import/export UI wrappers for backups and preferences.

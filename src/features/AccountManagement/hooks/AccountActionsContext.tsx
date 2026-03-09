@@ -1,4 +1,3 @@
-import i18next from "i18next"
 import {
   createContext,
   useCallback,
@@ -15,6 +14,7 @@ import type { DisplaySiteData } from "~/types"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 import { useAccountDataContext } from "./AccountDataContext"
 
@@ -75,7 +75,7 @@ export const AccountActionsProvider = ({
           return result
         } else {
           throw new Error(
-            i18next.t("messages:toast.error.refreshAccount", {
+            t("messages:toast.error.refreshAccount", {
               accountName: account.name,
             }),
           )
@@ -86,18 +86,18 @@ export const AccountActionsProvider = ({
         await toast.promise(
           refreshPromise().then((result) => {
             if (!result.refreshed) {
-              return i18next.t("messages:toast.success.refreshSkipped")
+              return t("messages:toast.success.refreshSkipped")
             }
-            return i18next.t("messages:toast.success.refreshAccount", {
+            return t("messages:toast.success.refreshAccount", {
               accountName: account.name,
             })
           }),
           {
-            loading: i18next.t("messages:toast.loading.refreshingAccount", {
+            loading: t("messages:toast.loading.refreshingAccount", {
               accountName: account.name,
             }),
             success: (message) => message,
-            error: i18next.t("messages:toast.error.refreshAccount", {
+            error: t("messages:toast.error.refreshAccount", {
               accountName: account.name,
             }),
           },
@@ -119,8 +119,8 @@ export const AccountActionsProvider = ({
       )
       if (!success) {
         toast.error(
-          i18next.t("messages:toast.error.operationFailed", {
-            error: i18next.t("messages:storage.updateFailed", { error: "" }),
+          t("messages:toast.error.operationFailed", {
+            error: t("messages:storage.updateFailed", { error: "" }),
           }),
         )
         return
@@ -130,10 +130,10 @@ export const AccountActionsProvider = ({
 
       toast.success(
         disabled
-          ? i18next.t("messages:toast.success.accountDisabled", {
+          ? t("messages:toast.success.accountDisabled", {
               accountName: account.name,
             })
-          : i18next.t("messages:toast.success.accountEnabled", {
+          : t("messages:toast.success.accountEnabled", {
               accountName: account.name,
             }),
       )
@@ -150,7 +150,7 @@ export const AccountActionsProvider = ({
   const handleCopyUrl = useCallback((account: DisplaySiteData) => {
     navigator.clipboard.writeText(account.baseUrl)
     toast.success(
-      i18next.t("messages:toast.success.urlCopied", {
+      t("messages:toast.success.urlCopied", {
         accountName: account.name,
       }),
     )
@@ -196,9 +196,7 @@ export const AccountActionsProvider = ({
           )
 
       if (!accountsToOpen.length) {
-        toast.error(
-          i18next.t("messages:toast.error.externalCheckInNonePending"),
-        )
+        toast.error(t("messages:toast.error.externalCheckInNonePending"))
         return
       }
 
@@ -217,7 +215,7 @@ export const AccountActionsProvider = ({
 
         if (response.data.failedCount > 0) {
           toast.error(
-            i18next.t("messages:errors.operation.failed", {
+            t("messages:errors.operation.failed", {
               error: `${response.data.failedCount}/${response.data.totalCount} failed`,
             }),
           )
@@ -226,7 +224,7 @@ export const AccountActionsProvider = ({
       } catch (error) {
         logger.error("Error opening external check-ins", error)
         toast.error(
-          i18next.t("messages:errors.operation.failed", {
+          t("messages:errors.operation.failed", {
             error: getErrorMessage(error),
           }),
         )
@@ -234,11 +232,11 @@ export const AccountActionsProvider = ({
       }
 
       toast.success(
-        i18next.t("messages:toast.success.externalCheckInOpened", {
+        t("messages:toast.success.externalCheckInOpened", {
           count: accountsToOpen.length,
           mode: options?.openAll
-            ? i18next.t("messages:toast.success.externalCheckInModeAll")
-            : i18next.t("messages:toast.success.externalCheckInModeUnchecked"),
+            ? t("messages:toast.success.externalCheckInModeAll")
+            : t("messages:toast.success.externalCheckInModeUnchecked"),
         }),
       )
     },

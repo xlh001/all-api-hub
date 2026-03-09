@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import { Storage } from "@plasmohq/storage"
 
 import { SUB2API, UNKNOWN_SITE } from "~/constants/siteType"
@@ -27,6 +25,7 @@ import { deepOverride } from "~/utils"
 import { getErrorMessage } from "~/utils/core/error"
 import { safeRandomUUID } from "~/utils/core/identifier"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 import { userPreferences } from "../preferences/userPreferences"
 import { getSiteType } from "../siteDetection/detectSiteType"

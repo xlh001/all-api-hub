@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import { ApiError } from "~/services/apiService/common/errors"
@@ -18,6 +16,7 @@ import {
   type UsageHistoryPreferences,
 } from "~/types/usageHistory"
 import { getErrorMessage } from "~/utils/core/error"
+import { t } from "~/utils/i18n/core"
 
 import {
   USAGE_HISTORY_LIMITS,

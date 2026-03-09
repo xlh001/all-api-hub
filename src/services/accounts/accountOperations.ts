@@ -2,7 +2,6 @@
  * 账号操作服务模块
  */
 
-import { t } from "i18next"
 import toast from "react-hot-toast"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
@@ -37,6 +36,7 @@ import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { extractSessionCookieHeader } from "~/utils/browser/cookieString"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 const logger = createLogger("AccountOperations")
 

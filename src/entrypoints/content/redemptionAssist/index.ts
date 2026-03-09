@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   CONTENT_UI_HOST_TAG,
@@ -16,6 +14,7 @@ import {
   sendRuntimeMessage,
 } from "~/utils/browser/browserApi"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 import {
   dismissToast,

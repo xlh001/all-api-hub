@@ -1,31 +1,12 @@
 import dayjs from "dayjs"
-import i18n from "i18next"
 
 import "dayjs/locale/zh-cn"
 
 import { DEFAULT_LANG } from "~/constants"
 import { userPreferences } from "~/services/preferences/userPreferences"
 
-// 自动导入 locales 下的 json 文件
-const modules = import.meta.glob("~/locales/*/*.json", { eager: true })
-
-// 动态组装成 i18n 资源对象
-const resources: Record<string, Record<string, any>> = {}
-for (const path in modules) {
-  const match = path.match(/locales\/([^/]+)\/([^/]+)\.json$/)
-  if (match) {
-    const [, lang, ns] = match
-    resources[lang] ??= {}
-    resources[lang][ns] = (modules[path] as any).default
-  }
-}
-
-/**
- * 将 i18next 的语言代码转换为 dayjs 可识别的 locale 名称
- */
-function mapToDayjsLocale(lng: string): string {
-  return lng.toLowerCase().replace("_", "-")
-}
+import i18n from "./core"
+import { mapToDayjsLocale, resources } from "./resources"
 
 /**
  * 初始化 background i18n

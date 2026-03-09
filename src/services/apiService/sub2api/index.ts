@@ -4,8 +4,6 @@
  * Sub2API differs from One-API/New-API backends in that authenticated endpoints
  * live under `/api/v1/*` and require a dashboard JWT.
  */
-import { t } from "i18next"
-
 import { determineHealthStatus } from "~/services/apiService/common"
 import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import type {
@@ -26,6 +24,7 @@ import {
   type CheckInConfig,
 } from "~/types"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 import {
   buildSub2ApiUserGroups,

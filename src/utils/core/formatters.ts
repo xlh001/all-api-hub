@@ -1,6 +1,5 @@
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
-import { t } from "i18next"
 
 import { CURRENCY_SYMBOLS, UI_CONSTANTS } from "~/constants/ui"
 import type {
@@ -11,6 +10,7 @@ import type {
   SortOrder,
 } from "~/types"
 import { formatMoneyFixed } from "~/utils/core/money"
+import { t } from "~/utils/i18n/core"
 
 // 初始化 dayjs
 dayjs.extend(relativeTime)

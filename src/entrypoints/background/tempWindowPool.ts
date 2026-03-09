@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { TURNSTILE_DEFAULT_QUERY_PARAM_NAME } from "~/constants/turnstile"
 import { accountStorage } from "~/services/accounts/accountStorage"
@@ -44,6 +42,7 @@ import { safeRandomUUID } from "~/utils/core/identifier"
 import { createLogger } from "~/utils/core/logger"
 import { sanitizeUrlForLog } from "~/utils/core/sanitizeUrlForLog"
 import { appendQueryParam } from "~/utils/core/url"
+import { t } from "~/utils/i18n/core"
 
 /**
  * Unified logger scoped to background temp-window lifecycle and fetch helpers.

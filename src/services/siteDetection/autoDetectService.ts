@@ -7,8 +7,6 @@
  * 2. 检测站点类型
  * 3. 返回统一的结果格式
  */
-import { t } from "i18next"
-
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { AuthTypeEnum, type Sub2ApiAuthConfig } from "~/types"
 import {
@@ -18,6 +16,7 @@ import {
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 import { getApiService } from "../apiService"
 import { getSiteType } from "./detectSiteType"

@@ -2,10 +2,9 @@
  * 模型定价计算工具
  */
 
-import { t } from "i18next"
-
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CurrencyType } from "~/types"
+import { t } from "~/utils/i18n/core"
 
 export interface CalculatedPrice {
   inputUSD: number // 每1M token输入价格（美元）

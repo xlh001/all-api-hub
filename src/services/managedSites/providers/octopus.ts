@@ -2,7 +2,6 @@
  * Octopus Service
  * 实现 ManagedSiteService 接口，提供 Octopus 站点的渠道管理功能
  */
-import { t } from "i18next"
 import toast from "react-hot-toast"
 
 import { ChannelType } from "~/constants"
@@ -46,6 +45,7 @@ import type { OctopusConfig } from "~/types/octopusConfig"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 import { normalizeList, parseDelimitedList } from "~/utils/core/string"
+import { t } from "~/utils/i18n/core"
 
 const logger = createLogger("OctopusService")
 

@@ -15,9 +15,8 @@
  * - AddAccountDialog 和 EditAccountDialog 中的自动识别错误处理
  * - AutoDetectErrorAlert 组件中的错误展示和操作
  */
-import { t } from "i18next"
-
 import { getErrorMessage } from "~/utils/core/error"
+import { t } from "~/utils/i18n/core"
 import { getDocsAutoDetectUrl } from "~/utils/navigation/docsLinks"
 
 // 自动识别错误类型

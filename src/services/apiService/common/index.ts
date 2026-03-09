@@ -1,5 +1,3 @@
-import i18next from "i18next"
-
 import { UI_CONSTANTS } from "~/constants/ui"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { normalizeApiTokenKey } from "~/services/apiService/common/apiKey"
@@ -48,6 +46,7 @@ import type {
   UpdateChannelPayload,
 } from "~/types/managedSite"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 const CHANNEL_API_BASE = "/api/channel/"
 
@@ -753,7 +752,7 @@ export async function refreshAccountData(
       data,
       healthStatus: {
         status: SiteHealthStatus.Healthy,
-        message: i18next.t("account:healthStatus.normal"),
+        message: t("account:healthStatus.normal"),
       },
     }
   } catch (error) {
@@ -1108,14 +1107,14 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
     if (error.code === API_ERROR_CODES.TEMP_WINDOW_DISABLED) {
       return {
         status: SiteHealthStatus.Warning,
-        message: i18next.t("account:healthStatus.tempWindowDisabled"),
+        message: t("account:healthStatus.tempWindowDisabled"),
         code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
       }
     }
     if (error.code === API_ERROR_CODES.TEMP_WINDOW_PERMISSION_REQUIRED) {
       return {
         status: SiteHealthStatus.Warning,
-        message: i18next.t("account:healthStatus.tempWindowPermissionRequired"),
+        message: t("account:healthStatus.tempWindowPermissionRequired"),
         code: TEMP_WINDOW_HEALTH_STATUS_CODES.PERMISSION_REQUIRED,
       }
     }
@@ -1124,7 +1123,7 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
     if (error.statusCode) {
       return {
         status: SiteHealthStatus.Warning,
-        message: i18next.t("account:healthStatus.httpError", {
+        message: t("account:healthStatus.httpError", {
           statusCode: error.statusCode,
           message: error.message,
         }),
@@ -1133,7 +1132,7 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
     // 其他API错误（数据格式错误等）
     return {
       status: SiteHealthStatus.Unknown,
-      message: error.message || i18next.t("account:healthStatus.apiError"),
+      message: error.message || t("account:healthStatus.apiError"),
     }
   }
 
@@ -1141,13 +1140,13 @@ export const determineHealthStatus = (error: any): HealthCheckResult => {
   if (error instanceof TypeError && error.message.includes("fetch")) {
     return {
       status: SiteHealthStatus.Error,
-      message: i18next.t("account:healthStatus.networkFailed"),
+      message: t("account:healthStatus.networkFailed"),
     }
   }
 
   // 其他未知错误
   return {
     status: SiteHealthStatus.Unknown,
-    message: error.message || i18next.t("account:healthStatus.unknownError"),
+    message: error.message || t("account:healthStatus.unknownError"),
   }
 }

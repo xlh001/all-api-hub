@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { OCTOPUS } from "~/constants/siteType"
 import * as octopusApi from "~/services/apiService/octopus"
@@ -33,6 +31,7 @@ import {
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 import { channelConfigStorage } from "../../managedSites/channelConfigStorage"
 import { octopusChannelToManagedSite } from "../../managedSites/providers/octopus"

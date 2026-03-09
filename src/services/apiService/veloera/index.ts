@@ -1,5 +1,3 @@
-import i18next from "i18next"
-
 import {
   determineHealthStatus,
   fetchAccountQuota,
@@ -24,6 +22,7 @@ import type {
   UpdateChannelPayload,
 } from "~/types/managedSite"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 /**
  * Unified logger scoped to Veloera API service calls.
@@ -326,7 +325,7 @@ export async function refreshAccountData(
       data,
       healthStatus: {
         status: SiteHealthStatus.Healthy,
-        message: i18next.t("account:healthStatus.normal"),
+        message: t("account:healthStatus.normal"),
       },
     }
   } catch (error) {

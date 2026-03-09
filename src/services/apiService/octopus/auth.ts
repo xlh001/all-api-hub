@@ -2,11 +2,10 @@
  * Octopus 认证服务
  * 处理 JWT Token 的获取、缓存和刷新
  */
-import i18next from "i18next"
-
 import type { OctopusLoginResponse } from "~/types/octopus"
 import type { OctopusConfig } from "~/types/octopusConfig"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 const logger = createLogger("OctopusAuth")
 
@@ -69,7 +68,7 @@ class OctopusAuthManager {
 
       // 针对 403 错误添加 CORS 配置提示
       if (response.status === 403) {
-        const corsHint = i18next.t("messages:octopus.corsError")
+        const corsHint = t("messages:octopus.corsError")
         const detail = serverMessage || "Forbidden"
         throw new Error(`${detail}\n${corsHint}`)
       }

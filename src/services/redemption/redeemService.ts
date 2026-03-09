@@ -1,11 +1,10 @@
-import { t } from "i18next"
-
 import { UI_CONSTANTS } from "~/constants/ui"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { getApiService } from "~/services/apiService"
 import type { DisplaySiteData } from "~/types"
 import { getErrorMessage } from "~/utils/core/error"
 import { formatMoneyFixed } from "~/utils/core/money"
+import { t } from "~/utils/i18n/core"
 
 export interface RedeemResult {
   success: boolean

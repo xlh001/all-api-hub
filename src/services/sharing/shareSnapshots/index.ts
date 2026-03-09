@@ -1,5 +1,3 @@
-import i18next from "i18next"
-
 import { drawMeshGradientBackground } from "~/services/sharing/shareSnapshots/meshGradientBackground"
 import {
   drawShareSnapshotOverlay,
@@ -20,6 +18,7 @@ import {
 } from "~/services/sharing/shareSnapshots/utils"
 import type { CurrencyType } from "~/types"
 import { createLogger } from "~/utils/core/logger"
+import i18n, { t } from "~/utils/i18n/core"
 
 export const SHARE_SNAPSHOT_IMAGE = {
   width: 1200,
@@ -31,30 +30,30 @@ const APP_WATERMARK_FALLBACK = "All API Hub"
 const logger = createLogger("ShareSnapshots")
 
 const getWatermarkText = (): string => {
-  const translated = i18next.t("ui:app.name")
+  const translated = t("ui:app.name")
   return translated && translated !== "ui:app.name"
     ? translated
     : APP_WATERMARK_FALLBACK
 }
 
 const getLocale = (): string | undefined => {
-  const lng = i18next.language
+  const lng = i18n.language
   return lng && lng !== "cimode"
     ? lng.toLowerCase().replace(/_/g, "-")
     : undefined
 }
 
 const resolveOverlayLabels = (): ShareSnapshotOverlayLabels => ({
-  overview: i18next.t("shareSnapshots:labels.overview"),
-  totalBalance: i18next.t("shareSnapshots:labels.totalBalance"),
-  balance: i18next.t("shareSnapshots:labels.balance"),
-  accounts: i18next.t("shareSnapshots:labels.accounts"),
-  site: i18next.t("shareSnapshots:labels.site"),
-  asOf: i18next.t("shareSnapshots:labels.asOf"),
-  today: i18next.t("shareSnapshots:labels.today"),
-  income: i18next.t("shareSnapshots:labels.income"),
-  outcome: i18next.t("shareSnapshots:labels.outcome"),
-  net: i18next.t("shareSnapshots:labels.net"),
+  overview: t("shareSnapshots:labels.overview"),
+  totalBalance: t("shareSnapshots:labels.totalBalance"),
+  balance: t("shareSnapshots:labels.balance"),
+  accounts: t("shareSnapshots:labels.accounts"),
+  site: t("shareSnapshots:labels.site"),
+  asOf: t("shareSnapshots:labels.asOf"),
+  today: t("shareSnapshots:labels.today"),
+  income: t("shareSnapshots:labels.income"),
+  outcome: t("shareSnapshots:labels.outcome"),
+  net: t("shareSnapshots:labels.net"),
 })
 
 const resolveSafeAsOf = (asOf: number | undefined, fallback = Date.now()) =>

@@ -6,8 +6,6 @@
  * - Check-in support and daily check-in status (GET `/api/user/checkin`).
  * - Account refresh composition while preserving common quota/usage calls.
  */
-import { t } from "i18next"
-
 import {
   determineHealthStatus,
   fetchAccountQuota,
@@ -23,6 +21,7 @@ import type {
 import { fetchApi } from "~/services/apiService/common/utils"
 import { AuthTypeEnum, SiteHealthStatus, type CheckInConfig } from "~/types"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 /**
  * Unified logger scoped to WONG site API overrides.

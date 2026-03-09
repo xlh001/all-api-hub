@@ -1,7 +1,6 @@
-import { t } from "i18next"
-
 import { userPreferences } from "~/services/preferences/userPreferences"
 import type { WebDAVConfig } from "~/types/webdav"
+import { t } from "~/utils/i18n/core"
 
 import {
   decryptWebdavBackupEnvelope,

@@ -1,4 +1,3 @@
-import { t } from "i18next"
 import toast from "react-hot-toast"
 
 import { DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
@@ -25,6 +24,7 @@ import { isArraysEqual } from "~/utils"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 import { normalizeList, parseDelimitedList } from "~/utils/core/string"
+import { t } from "~/utils/i18n/core"
 
 import {
   UserPreferences,

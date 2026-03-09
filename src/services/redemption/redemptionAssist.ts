@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { getSiteApiRouter } from "~/constants/siteType"
 import { accountStorage } from "~/services/accounts/accountStorage"
@@ -17,6 +15,7 @@ import {
   buildUrlPrefixWhitelistPattern,
   isUrlAllowedByRegexList,
 } from "~/utils/core/urlWhitelist"
+import { t } from "~/utils/i18n/core"
 
 /**
  * Unified logger scoped to the redemption assist background service.

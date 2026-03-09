@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import {
   determineHealthStatus,
   fetchAccountQuota,
@@ -16,6 +14,7 @@ import { anyrouterProvider } from "~/services/checkin/autoCheckin/providers/anyr
 import { SiteHealthStatus, type CheckInConfig } from "~/types"
 import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 /**
  * Unified logger scoped to AnyRouter site API overrides.

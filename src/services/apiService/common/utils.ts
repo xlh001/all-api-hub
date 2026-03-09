@@ -1,5 +1,3 @@
-import i18next from "i18next"
-
 import { buildCompatUserIdHeaders } from "~/services/apiService/common/compatHeaders"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import {
@@ -32,6 +30,7 @@ import { executeWithTempWindowFallback } from "~/utils/browser/tempWindowFetch"
 import { createLogger } from "~/utils/core/logger"
 import { joinUrl } from "~/utils/core/url"
 import { normalizeUrlForOriginKey } from "~/utils/core/urlParsing"
+import { t } from "~/utils/i18n/core"
 
 type NormalizedAuthContext = AuthConfig
 
@@ -251,7 +250,7 @@ const apiRequestData = async <T>(
 ): Promise<T> => {
   if (responseType !== "json") {
     throw new ApiError(
-      i18next.t("messages:errors.api.onlyJsonSupported"),
+      t("messages:errors.api.onlyJsonSupported"),
       undefined,
       endpoint,
     )
@@ -542,9 +541,7 @@ export function extractDataFromApiResponseBody<T>(
   body: any,
   endpoint?: string,
 ): T {
-  const invalidResponseMessage = i18next.t(
-    "messages:errors.api.invalidResponseFormat",
-  )
+  const invalidResponseMessage = t("messages:errors.api.invalidResponseFormat")
 
   if (!body || typeof body !== "object") {
     throw new ApiError(invalidResponseMessage, undefined, endpoint)

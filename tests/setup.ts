@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest"
 
 import { cleanup, configure } from "@testing-library/react"
-import i18next from "i18next"
+import { init } from "i18next"
 
 import "whatwg-fetch"
 
@@ -11,7 +11,7 @@ import { fakeBrowser } from "wxt/testing/fake-browser"
 
 import { server } from "./msw/server"
 
-await i18next.init({
+await init({
   lng: "en",
   fallbackLng: "en",
   appendNamespaceToMissingKey: true,

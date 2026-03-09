@@ -1,5 +1,6 @@
-import { t } from "i18next"
 import toast from "react-hot-toast"
+
+import { t } from "~/utils/i18n/core"
 
 type ToastParams =
   | [success: boolean, successMsg: string, errorMsg?: string]

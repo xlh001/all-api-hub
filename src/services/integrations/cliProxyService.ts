@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import { userPreferences } from "~/services/preferences/userPreferences"
 import type { ApiVerificationApiType } from "~/services/verification/aiApiVerification"
 import type { ApiToken, DisplaySiteData } from "~/types"
@@ -7,6 +5,7 @@ import type { ServiceResponse } from "~/types/serviceResponse"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 import { joinUrl } from "~/utils/core/url"
+import { t } from "~/utils/i18n/core"
 
 import {
   buildDefaultCliProxyProviderBaseUrl,

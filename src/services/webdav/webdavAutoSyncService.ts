@@ -1,5 +1,3 @@
-import { t } from "i18next"
-
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   apiCredentialProfilesStorage,
@@ -43,6 +41,7 @@ import {
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
+import { t } from "~/utils/i18n/core"
 
 import { accountStorage } from "../accounts/accountStorage"
 import { STORAGE_LOCKS } from "../core/storageKeys"

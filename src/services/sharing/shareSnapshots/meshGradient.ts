@@ -45,8 +45,8 @@ type MeshGradientPalette = {
 }
 
 /**
- * Curated palettes inspired by Apple-like mesh gradients (see: mikhailmogilnikov/mesh-gradient).
- * @link https://github.com/mikhailmogilnikov/mesh-gradient/blob/0ae08e02f872d5936a6618f7ad8bca57c99bda77/apps/docs/src/features/mesh/model/colors.tsx#L3
+ * Curated palettes inspired by Apple-like mesh gradients
+ * @see https://github.com/mikhailmogilnikov/mesh-gradient/blob/0ae08e02f872d5936a6618f7ad8bca57c99bda77/apps/docs/src/features/mesh/model/colors.tsx#L3
  */
 export const MESH_GRADIENT_PALETTES: readonly MeshGradientPalette[] = [
   {

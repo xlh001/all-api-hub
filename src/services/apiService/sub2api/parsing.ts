@@ -1,5 +1,3 @@
-import i18next from "i18next"
-
 import { UI_CONSTANTS } from "~/constants/ui"
 import { normalizeApiTokenKey } from "~/services/apiService/common/apiKey"
 import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
@@ -9,6 +7,7 @@ import type {
   UserGroupInfo,
 } from "~/services/apiService/common/type"
 import type { ApiToken } from "~/types"
+import { t } from "~/utils/i18n/core"
 
 import type {
   Sub2ApiAuthMeData,
@@ -25,7 +24,7 @@ const SHARED_UNLIMITED_EXPIRED_TIME = -1
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 const getInvalidResponseMessage = () =>
-  i18next.t("messages:errors.api.invalidResponseFormat")
+  t("messages:errors.api.invalidResponseFormat")
 
 const createInvalidResponseError = (endpoint: string) =>
   new ApiError(getInvalidResponseMessage(), undefined, endpoint)
