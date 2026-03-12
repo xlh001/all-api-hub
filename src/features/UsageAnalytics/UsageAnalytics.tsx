@@ -55,8 +55,8 @@ export default function UsageAnalytics() {
     useUsageAnalyticsData()
 
   const {
-    selectedSiteNames,
-    setSelectedSiteNames,
+    selectedSiteAccountIds,
+    setSelectedSiteAccountIds,
     selectedAccountIds,
     setSelectedAccountIds,
     selectedTokenIds,
@@ -76,7 +76,12 @@ export default function UsageAnalytics() {
     exportSelection,
     exportPreview,
     dayKeysInRange,
-  } = useUsageAnalyticsFilters({ enabledAccounts, store, disabledAccountIdSet })
+  } = useUsageAnalyticsFilters({
+    enabledAccounts,
+    store,
+    disabledAccountIdSet,
+    isLoading,
+  })
 
   const { handleExport } = useUsageAnalyticsExport({ store, exportSelection })
 
@@ -590,8 +595,8 @@ export default function UsageAnalytics() {
 
       <UsageAnalyticsFiltersCard
         siteOptions={siteOptions}
-        selectedSiteNames={selectedSiteNames}
-        onSiteChange={setSelectedSiteNames}
+        selectedSiteIds={selectedSiteAccountIds}
+        onSiteChange={setSelectedSiteAccountIds}
         accountOptions={accountOptions}
         selectedAccountIds={selectedAccountIds}
         onAccountChange={setSelectedAccountIds}

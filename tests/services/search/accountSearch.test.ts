@@ -92,6 +92,23 @@ describe("accountSearch", () => {
       expect(results[0].matchedFields).toContain("username")
     })
 
+    it("treats username punctuation literally instead of URL-normalizing it", () => {
+      const results = searchAccounts(
+        [
+          {
+            ...mockAccounts[0],
+            id: "3",
+            username: "alice#1",
+          },
+        ],
+        "alice#1",
+      )
+
+      expect(results).toHaveLength(1)
+      expect(results[0].account.username).toBe("alice#1")
+      expect(results[0].matchedFields).toContain("username")
+    })
+
     it("finds customCheckInUrl match", () => {
       const results = searchAccounts(mockAccounts, "checkin.openai.com")
       expect(results).toHaveLength(1)
@@ -108,6 +125,27 @@ describe("accountSearch", () => {
       const results = searchAccounts(mockAccounts, "OpenAI user1")
       expect(results).toHaveLength(1)
       expect(results[0].account.name).toBe("OpenAI")
+    })
+
+    it("matches both base name and username for a disambiguated label", () => {
+      const results = searchAccounts(
+        [
+          ...mockAccounts,
+          {
+            ...mockAccounts[0],
+            id: "3",
+            name: "My Site · alice",
+            username: "alice",
+          },
+        ],
+        "My Site alice",
+      )
+
+      expect(results).toHaveLength(1)
+      expect(results[0].account.id).toBe("3")
+      expect(results[0].matchedFields).toEqual(
+        expect.arrayContaining(["name", "username"]),
+      )
     })
 
     it("requires all keywords to match", () => {

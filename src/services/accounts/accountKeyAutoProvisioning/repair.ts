@@ -147,7 +147,15 @@ class AccountKeyRepairRunner {
 
   private async run(jobId: string): Promise<void> {
     try {
-      const enabledAccounts = await accountStorage.getEnabledAccounts()
+      const allAccounts = await accountStorage.getAllAccounts()
+      const enabledAccounts = allAccounts.filter(
+        (account) => account.disabled !== true,
+      )
+      const displaySiteDataById = new Map(
+        accountStorage
+          .convertToDisplayData(allAccounts, allAccounts)
+          .map((account) => [account.id, account] as const),
+      )
 
       const eligibleAccounts: SiteAccount[] = []
 
@@ -165,7 +173,8 @@ class AccountKeyRepairRunner {
         if (skipReason) {
           await this.recordResult({
             accountId: account.id,
-            accountName: account.site_name,
+            accountName:
+              displaySiteDataById.get(account.id)?.name ?? account.site_name,
             siteType: account.site_type,
             siteUrlOrigin: getOriginKey(account.site_url),
             outcome: "skipped",
@@ -191,7 +200,11 @@ class AccountKeyRepairRunner {
         items: eligibleAccounts,
         getKey: (account) => getOriginKey(account.site_url),
         worker: async (account) => {
-          await this.processEligibleAccount(account)
+          await this.processEligibleAccount(
+            account,
+            displaySiteDataById.get(account.id)?.name ?? account.site_name,
+            displaySiteDataById,
+          )
         },
       })
 
@@ -221,10 +234,15 @@ class AccountKeyRepairRunner {
     }
   }
 
-  private async processEligibleAccount(account: SiteAccount): Promise<void> {
+  private async processEligibleAccount(
+    account: SiteAccount,
+    accountName: string,
+    displaySiteDataById: ReadonlyMap<string, DisplaySiteData>,
+  ): Promise<void> {
     const originKey = getOriginKey(account.site_url)
     try {
       const displaySiteData: DisplaySiteData =
+        displaySiteDataById.get(account.id) ??
         accountStorage.convertToDisplayData(account)
       const hasToken =
         typeof displaySiteData?.token === "string" &&
@@ -256,7 +274,7 @@ class AccountKeyRepairRunner {
 
       await this.recordResult({
         accountId: account.id,
-        accountName: account.site_name,
+        accountName,
         siteType: account.site_type,
         siteUrlOrigin: originKey,
         outcome: result.created ? "created" : "alreadyHad",
@@ -265,7 +283,7 @@ class AccountKeyRepairRunner {
     } catch (error) {
       await this.recordResult({
         accountId: account.id,
-        accountName: account.site_name,
+        accountName,
         siteType: account.site_type,
         siteUrlOrigin: originKey,
         outcome: "failed",

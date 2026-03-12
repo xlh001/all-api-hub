@@ -20,6 +20,7 @@ import {
 } from "~/components/ui"
 import { useAccountData } from "~/hooks/useAccountData"
 import { ensureAccountApiToken } from "~/services/accounts/accountOperations"
+import { compareAccountDisplayNames } from "~/services/accounts/utils/accountDisplayName"
 import { getApiService } from "~/services/apiService"
 import { fetchOpenAICompatibleModelIds } from "~/services/apiService/openaiCompatible"
 import {
@@ -394,19 +395,19 @@ export function KiloCodeExportDialog({
   }
 
   const siteOptions: CompactMultiSelectOption[] = useMemo(() => {
-    return displayData
+    return [...displayData]
+      .sort((a, b) => compareAccountDisplayNames(a, b))
       .map((site) => ({
         value: site.id,
         label: site.name || site.baseUrl,
       }))
-      .sort((a, b) => a.label.localeCompare(b.label))
   }, [displayData])
 
   const selectedSites = useMemo(() => {
     return selectedSiteIds
       .map((id) => displayById.get(id))
       .filter((site): site is DisplaySiteData => Boolean(site))
-      .sort((a, b) => (a.name || a.baseUrl).localeCompare(b.name || b.baseUrl))
+      .sort((a, b) => compareAccountDisplayNames(a, b))
   }, [displayById, selectedSiteIds])
 
   useEffect(() => {

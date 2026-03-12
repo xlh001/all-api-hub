@@ -2,6 +2,10 @@ import { Storage } from "@plasmohq/storage"
 
 import { SUB2API, UNKNOWN_SITE } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
+import {
+  collectDuplicateAccountNameKeys,
+  resolveAccountDisplayName,
+} from "~/services/accounts/utils/accountDisplayName"
 import { getApiService } from "~/services/apiService"
 import {
   ACCOUNT_STORAGE_KEYS,
@@ -180,6 +184,52 @@ class AccountStorageService {
       logger.error("获取账号信息失败", error)
       return null
     }
+  }
+
+  /**
+   * Resolve display data for a single account using the full stored account set.
+   *
+   * This preserves global duplicate-name context so callers with only an
+   * account id still get the same user-facing label as list-based views.
+   */
+  async getDisplayDataById(id: string): Promise<DisplaySiteData | null> {
+    const allAccounts = await this.getAllAccounts()
+    const account = allAccounts.find((item) => item.id === id)
+
+    return account ? this.resolveDisplayData(account, allAccounts) : null
+  }
+
+  /**
+   * Resolve display data for one account while preserving duplicate-name
+   * context from a broader account set when available.
+   */
+  resolveDisplayData(
+    account: SiteAccount,
+    accountsContext: SiteAccount[] = [],
+  ): DisplaySiteData {
+    const normalizedAccount = normalizeSiteAccount(account)
+    const normalizedContext = accountsContext.map((item) =>
+      normalizeSiteAccount(item),
+    )
+
+    const contextWithAccount = Array.from(
+      new Map(
+        [...normalizedContext, normalizedAccount].map((item) => [
+          item.id,
+          item,
+        ]),
+      ).values(),
+    )
+
+    const displayAccounts = this.convertToDisplayData(contextWithAccount)
+    const resolved = displayAccounts.find(
+      (displayAccount) => displayAccount.id === normalizedAccount.id,
+    )
+
+    return (
+      resolved ??
+      this.convertToDisplayData(normalizedAccount, contextWithAccount)
+    )
   }
 
   /**
@@ -1030,18 +1080,43 @@ class AccountStorageService {
    * helpers like tags and health summaries. This adapter ensures we never leak
    * the raw storage format into presentation logic.
    * @param input Single account or array of accounts.
+   * @param displayNameAccountsContext Optional broader account snapshot used to
+   * compute globally consistent duplicate-name disambiguation.
    * @returns Display-ready representation preserving existing metadata.
    */
-  convertToDisplayData(input: SiteAccount): DisplaySiteData
-  convertToDisplayData(input: SiteAccount[]): DisplaySiteData[]
+  convertToDisplayData(
+    input: SiteAccount,
+    displayNameAccountsContext?: readonly SiteAccount[],
+  ): DisplaySiteData
+  convertToDisplayData(
+    input: SiteAccount[],
+    displayNameAccountsContext?: readonly SiteAccount[],
+  ): DisplaySiteData[]
   convertToDisplayData(
     input: SiteAccount | SiteAccount[],
+    displayNameAccountsContext?: readonly SiteAccount[],
   ): DisplaySiteData | DisplaySiteData[] {
-    const transform = (account: SiteAccount): DisplaySiteData => {
-      const normalized = normalizeSiteAccount(account)
+    const normalizedAccounts = Array.isArray(input)
+      ? input.map((account) => normalizeSiteAccount(account))
+      : [normalizeSiteAccount(input)]
+    const normalizedDisplayNameContext = displayNameAccountsContext
+      ? displayNameAccountsContext.map((account) =>
+          normalizeSiteAccount(account),
+        )
+      : normalizedAccounts
+    const duplicateKeys = collectDuplicateAccountNameKeys(
+      normalizedDisplayNameContext,
+    )
+
+    const transform = (normalized: SiteAccount): DisplaySiteData => {
       return {
         id: normalized.id,
-        name: normalized.site_name,
+        name: resolveAccountDisplayName({
+          baseName: normalized.site_name,
+          username: normalized.account_info.username,
+          duplicateKeys,
+        }),
+        baseName: normalized.site_name,
         username: normalized.account_info.username,
         disabled: AccountStorageService.isAccountDisabled(normalized),
         excludeFromTotalBalance:
@@ -1093,11 +1168,10 @@ class AccountStorageService {
       }
     }
 
-    // 判断是否是数组
     if (Array.isArray(input)) {
-      return input.map(transform)
+      return normalizedAccounts.map(transform)
     } else {
-      return transform(input)
+      return transform(normalizedAccounts[0])
     }
   }
 
