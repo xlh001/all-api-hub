@@ -16,6 +16,7 @@ import type {
   ManagedSiteConfig,
   ManagedSiteService,
 } from "~/services/managedSites/managedSiteService"
+import { findManagedSiteChannelByComparableInputs } from "~/services/managedSites/utils/channelMatching"
 import type { ManagedSiteMessagesKey } from "~/services/managedSites/utils/managedSite"
 import {
   userPreferences,
@@ -468,32 +469,17 @@ export async function findMatchingChannel(
     const config = await getFullOctopusConfig()
     if (!config) return null
 
-    const normalizedDesiredKey = (key ?? "").trim()
-    const shouldMatchKey = normalizedDesiredKey.length > 0
-
     const channels = await octopusApi.listChannels(config)
 
     // 规范化 accountBaseUrl，与 prepareChannelFormData 保持一致
     const normalizedBase = buildOctopusBaseUrl(accountBaseUrl)
 
-    const match = channels.find((ch) => {
-      const chBaseUrl = ch.base_urls[0]?.url || ""
-      const chModels = parseDelimitedList(ch.model)
-      const matchesBaseAndModels =
-        chBaseUrl === normalizedBase &&
-        chModels.length === models.length &&
-        chModels.every((m) => models.includes(m))
-
-      if (!matchesBaseAndModels) return false
-      if (!shouldMatchKey) return true
-
-      const keys = Array.isArray(ch.keys) ? ch.keys : []
-      return keys.some(
-        (item) => (item.channel_key ?? "").trim() === normalizedDesiredKey,
-      )
+    return findManagedSiteChannelByComparableInputs({
+      channels: channels.map(octopusChannelToManagedSite),
+      accountBaseUrl: normalizedBase,
+      models,
+      key,
     })
-
-    return match ? octopusChannelToManagedSite(match) : null
   } catch (error) {
     logger.error("Failed to find matching channel", error)
     return null

@@ -5,7 +5,12 @@ import { DONE_HUB } from "~/constants/siteType"
 import { ensureAccountApiToken } from "~/services/accounts/accountOperations"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { getApiService } from "~/services/apiService"
+import { fetchChannel as fetchDoneHubChannel } from "~/services/apiService/doneHub"
 import { fetchOpenAICompatibleModelIds } from "~/services/apiService/openaiCompatible"
+import {
+  findManagedSiteChannelByComparableInputs,
+  findManagedSiteChannelsByBaseUrlAndModels,
+} from "~/services/managedSites/utils/channelMatching"
 import {
   UserPreferences,
   userPreferences,
@@ -25,7 +30,6 @@ import type {
   AutoConfigToNewApiResponse,
   ServiceResponse,
 } from "~/types/serviceResponse"
-import { isArraysEqual } from "~/utils"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 import { normalizeList, parseDelimitedList } from "~/utils/core/string"
@@ -37,6 +41,22 @@ import { resolveDefaultChannelGroups } from "./defaultChannelGroups"
  * Unified logger scoped to the Done Hub integration and auto-config flows.
  */
 const logger = createLogger("DoneHubService")
+
+const toSafeDoneHubChannelDetailDiagnostic = (error: unknown): string => {
+  const message = getErrorMessage(error) || "Unknown error"
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    error.code.trim() !== ""
+  ) {
+    return `${message} (${error.code})`
+  }
+
+  return message
+}
 
 /**
  * Searches channels matching the keyword.
@@ -320,6 +340,10 @@ export function buildChannelPayload(
  *
  * Matches by base_url + models by default; when key is provided, it further
  * requires an exact key match to avoid false positives.
+ *
+ * DoneHub's list/search responses may omit the channel key, so exact key
+ * matching must fetch the channel detail payload by id before deciding whether
+ * the comparable key is truly present.
  */
 export async function findMatchingChannel(
   baseUrl: string,
@@ -340,26 +364,64 @@ export async function findMatchingChannel(
     return null
   }
 
-  const normalizedDesiredKey = (key ?? "").trim()
-  const shouldMatchKey = normalizedDesiredKey.length > 0
+  const comparableChannels = findManagedSiteChannelsByBaseUrlAndModels({
+    channels: searchResults.items,
+    accountBaseUrl,
+    models,
+  })
 
-  return (
-    searchResults.items.find((channel: ManagedSiteChannel) => {
-      if (channel.base_url !== accountBaseUrl) return false
-      if (!isArraysEqual(parseDelimitedList(channel.models), models)) {
-        return false
+  if (!key?.trim()) {
+    return comparableChannels[0] ?? null
+  }
+
+  const immediateMatch = findManagedSiteChannelByComparableInputs({
+    channels: comparableChannels,
+    accountBaseUrl,
+    models,
+    key,
+  })
+
+  if (immediateMatch) {
+    return immediateMatch
+  }
+
+  for (const channel of comparableChannels) {
+    if (!channel.id) {
+      continue
+    }
+
+    try {
+      const detailedChannel = await fetchDoneHubChannel(
+        {
+          baseUrl,
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: adminToken,
+            userId,
+          },
+        },
+        channel.id,
+      )
+
+      const detailMatch = findManagedSiteChannelByComparableInputs({
+        channels: [detailedChannel],
+        accountBaseUrl,
+        models,
+        key,
+      })
+
+      if (detailMatch) {
+        return detailMatch
       }
+    } catch (error) {
+      logger.warn("Failed to fetch Done Hub channel detail for key matching", {
+        channelId: channel.id,
+        diagnostic: toSafeDoneHubChannelDetailDiagnostic(error),
+      })
+    }
+  }
 
-      if (!shouldMatchKey) return true
-
-      const candidates = (channel.key ?? "")
-        .split(/[\n,]/)
-        .map((item) => item.trim())
-        .filter(Boolean)
-
-      return candidates.includes(normalizedDesiredKey)
-    }) ?? null
-  )
+  return null
 }
 
 /**
