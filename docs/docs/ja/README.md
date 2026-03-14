@@ -6,7 +6,7 @@ heroText: All API Hub - AI集約中継ステーションマネージャー
 tagline: "サードパーティAI集約中継ステーションと自社構築New APIを統一管理するオープンソースブラウザ拡張機能：アカウントの自動認識、残高表示、モデル同期、キー管理、クロスプラットフォームおよびクラウドバックアップをサポート"
 actions:
   - text: 使用開始
-    link: /get-started.html # 実際のドキュメントパスに変更することを推奨します。例: /guide/
+    link: /ja/get-started.html # 実際のドキュメントパスに変更することを推奨します。例: /guide/
     type: primary
     
   - text: Chromeストア
