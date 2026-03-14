@@ -48,6 +48,8 @@ export default defineUserConfig({
           {
             text: '专题指南',
             children: [
+              { text: '支持的工具', link: '/supported-export-tools' },
+              { text: '支持的站点', link: '/supported-sites' },
               { text: 'Cloudflare 过盾助手', link: '/cloudflare-helper' },
               { text: '快速导出站点', link: '/quick-export' },
               { text: '自动刷新', link: '/auto-refresh' },
