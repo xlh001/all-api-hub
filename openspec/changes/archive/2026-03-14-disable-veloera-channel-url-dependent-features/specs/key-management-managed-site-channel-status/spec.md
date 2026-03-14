@@ -1,9 +1,4 @@
-# key-management-managed-site-channel-status Specification
-
-## Purpose
-Define requirements for showing managed-site channel status in Key Management, including automatic refresh behavior, invalidation rules, and secret-safe status feedback.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Key Management shows managed-site verification status and review signals for each loaded key
 The system MUST display a managed-site channel status for each token rendered in Key Management when the currently configured managed-site provider supports reliable base-URL channel lookup for review/navigation flows.
@@ -227,11 +222,3 @@ When the active managed-site provider changes to one that does not support relia
 - **THEN** the system clears the affected per-token managed-site status results
 - **AND** the system stops showing token-level managed-site verification output
 - **AND** the page shows localized guidance that managed-site channel verification is unsupported for Veloera
-
-### Requirement: Status feedback does not expose secrets
-The system MUST NOT include raw token keys, managed-site admin tokens, or other plaintext credentials in managed-site status labels, explanations, error messages, toasts, or logs emitted for this feature.
-
-#### Scenario: Verification failure is reported without secret leakage
-- **GIVEN** a managed-site status check fails while processing a token
-- **WHEN** the system reports the failure to the user or records diagnostics for the feature
-- **THEN** the reported output omits the raw token key and managed-site credentials

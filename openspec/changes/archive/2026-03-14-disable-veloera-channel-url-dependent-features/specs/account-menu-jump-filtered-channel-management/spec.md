@@ -1,9 +1,5 @@
-# account-menu-jump-filtered-channel-management Specification
+## MODIFIED Requirements
 
-## Purpose
-The `account-menu-jump-filtered-channel-management` specification exists to help users quickly locate the Managed Site channel that backs a selected account by adding a “Locate channel” action to the account menu and defining best-effort matching and navigation (focus an exact channel when possible, otherwise open channel management filtered by base URL with clear UX feedback).
-
-## Requirements
 ### Requirement: Account menu includes a channel-location entry
 The system MUST provide an entry in the account card “more actions / context menu” that helps the user locate the channel corresponding to the current account when the user has configured managed-site admin credentials in settings and the account is enabled.
 
