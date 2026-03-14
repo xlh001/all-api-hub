@@ -30,17 +30,6 @@
 
 **[Documentation](https://all-api-hub.qixing1217.top/en) | [Getting Started](https://all-api-hub.qixing1217.top/en/get-started.html) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [Changelog](https://all-api-hub.qixing1217.top/en/changelog.html) | [Contributing](CONTRIBUTING.md)**
 
-<a id="community"></a>
-<p align="center">
-  <strong>💬 Community:</strong> 
-  <a href="./resources/wechat_group.png">
-    <img alt="WeChat-Chinese Group" src="https://img.shields.io/badge/WeChat-Chinese%20Group-green" />
-  </a>
-  <a href="https://t.me/qixing_chat">
-    <img alt="Telegram-Multilingual Group" src="https://img.shields.io/badge/Telegram-Multilingual%20Group-blue?logo=telegram">
-  </a>
-</p>
-
 ---
 
 </div>
