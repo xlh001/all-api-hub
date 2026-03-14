@@ -57,6 +57,26 @@ import { openApiCredentialProfilesPage } from "~/utils/navigation"
  */
 const logger = createLogger("TokenHeader")
 
+/**
+ *
+ */
+function buildApiCredentialProfileName(params: {
+  accountName: string
+  fallbackAccountName?: string
+  tokenName: string
+}) {
+  const parts = [
+    params.accountName,
+    params.fallbackAccountName ?? "",
+    params.tokenName,
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .filter((value, index, list) => list.indexOf(value) === index)
+
+  return parts.join(" - ")
+}
+
 interface TokenHeaderProps {
   /**
    * Token data with account display name included.
@@ -438,10 +458,15 @@ function TokenActionButtons({
 
   const handleSaveToApiCredentialProfiles = async () => {
     const apiType: ApiVerificationApiType = API_TYPES.OPENAI_COMPATIBLE
+    const profileName = buildApiCredentialProfileName({
+      accountName: account.name,
+      fallbackAccountName: token.accountName,
+      tokenName: token.name,
+    })
 
     try {
-      await apiCredentialProfilesStorage.createProfile({
-        name: token.name,
+      const profile = await apiCredentialProfilesStorage.createProfile({
+        name: profileName,
         apiType,
         baseUrl: account.baseUrl,
         apiKey: token.key,
@@ -452,7 +477,7 @@ function TokenActionButtons({
           <div className="flex min-w-0 items-center gap-2">
             <span className="min-w-0 truncate">
               {t("keyManagement:messages.savedToApiProfiles", {
-                name: token.name,
+                name: profile.name,
               })}
             </span>
             <button

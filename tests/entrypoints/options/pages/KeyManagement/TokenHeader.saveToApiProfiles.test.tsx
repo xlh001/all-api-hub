@@ -174,6 +174,7 @@ describe("TokenHeader save to API profiles", () => {
   it("creates an openai-compatible profile from token + account baseUrl", async () => {
     const user = userEvent.setup()
     const account = createAccountStub()
+    const expectedProfileName = `${account.name} - Token`
 
     const token = {
       id: 1,
@@ -193,7 +194,7 @@ describe("TokenHeader save to API profiles", () => {
 
     mockCreateProfile.mockResolvedValue({
       id: "p-1",
-      name: token.name,
+      name: expectedProfileName,
       apiType: API_TYPES.OPENAI_COMPATIBLE,
       baseUrl: account.baseUrl,
       apiKey: token.key,
@@ -221,7 +222,7 @@ describe("TokenHeader save to API profiles", () => {
 
     await waitFor(() => {
       expect(mockCreateProfile).toHaveBeenCalledWith({
-        name: token.name,
+        name: expectedProfileName,
         apiType: API_TYPES.OPENAI_COMPATIBLE,
         baseUrl: account.baseUrl,
         apiKey: token.key,
@@ -233,6 +234,7 @@ describe("TokenHeader save to API profiles", () => {
   it("provides a quick-open button after saving", async () => {
     const user = userEvent.setup()
     const account = createAccountStub()
+    const expectedProfileName = `${account.name} - Token`
 
     const token = {
       id: 1,
@@ -252,7 +254,7 @@ describe("TokenHeader save to API profiles", () => {
 
     mockCreateProfile.mockResolvedValue({
       id: "p-1",
-      name: token.name,
+      name: expectedProfileName,
       apiType: API_TYPES.OPENAI_COMPATIBLE,
       baseUrl: account.baseUrl,
       apiKey: token.key,
