@@ -47,7 +47,6 @@ context: |
   - Permissions: host access is broad (`<all_urls>`); optional permissions differ by browser.
   - Security/privacy: treat tokens/API keys and backups as sensitive; avoid logging secrets; never commit credentials.
   - Localization: UI copy must be translatable; update locale keys alongside UI changes.
-  - Change verification minimum bar: before treating a change as verified or ready to archive, run `pnpm lint` and the smallest related automated test scope that covers the touched behavior. If either cannot run, record the blocker explicitly.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
@@ -65,4 +64,4 @@ rules:
     - Start with a repo recon/reuse task that names the existing modules, abstractions, or UI patterns to inspect before implementation.
     - If implementation would duplicate nearby logic, add a scoped refactor or extraction task instead of a parallel implementation task.
     - When non-obvious logic or constraints are expected, note that implementation should add brief clarifying comments rather than relying on implicit knowledge.
-    - Add an explicit verification section for every change. The minimum verification tasks must include `pnpm lint` and the smallest related automated test command for the touched behavior; if validation is blocked, require the blocker to be documented.
+    - Add an explicit verification section for every change. The minimum verification tasks must include `pnpm lint` and the smallest related automated test command for the touched behavior; prefer repo-native related/affected flows when available (for example `vitest related --run` or the direct equivalent of Husky/`lint-staged` validation without creating a commit), expand validation when shared hooks, services, utils, types, or contracts are touched, and require blockers to be documented if validation cannot run.
