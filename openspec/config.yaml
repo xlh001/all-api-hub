@@ -57,3 +57,10 @@ context: |
 #       - Always include a "Non-goals" section
 #     tasks:
 #       - Break tasks into chunks of max 2 hours
+rules:
+  design:
+    - List the nearest existing helpers, services, hooks, components, or patterns and state whether the change should reuse, extend, or extract them before proposing new abstractions.
+  tasks:
+    - Start with a repo recon/reuse task that names the existing modules, abstractions, or UI patterns to inspect before implementation.
+    - If implementation would duplicate nearby logic, add a scoped refactor or extraction task instead of a parallel implementation task.
+    - When non-obvious logic or constraints are expected, note that implementation should add brief clarifying comments rather than relying on implicit knowledge.

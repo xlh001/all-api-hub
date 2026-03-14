@@ -86,6 +86,11 @@ Prereqs: Node.js 20+ and pnpm 10+.
 - Tests typically use `*.test.ts` or `*.test.tsx` and are either colocated in `__tests__/` or organized under `tests/` for cross-cutting coverage.
 - Keep options-page entrypoints thin; shared logic should not depend on `src/entrypoints/options/pages/**`.
 
+## Implementation Expectations
+
+- Inspect nearby existing abstractions before planning or implementing new helpers, modules, or UI patterns; prefer reuse or small extensions over parallel implementations.
+- Add brief inline comments or short code-block comments when non-obvious intent, invariants, edge cases, or protocol/browser constraints need clarification; do not narrate obvious code.
+
 ## Testing Guidelines
 
 - Unit and component tests use Vitest with jsdom and Testing Library.
