@@ -60,7 +60,7 @@ import { openApiCredentialProfilesPage } from "~/utils/navigation"
 const logger = createLogger("TokenHeader")
 
 /**
- *
+ * Build a stable API credential profile name from token and account labels.
  */
 function buildApiCredentialProfileName(params: {
   accountName: string
@@ -370,7 +370,7 @@ const getManagedSiteModelsSignalTooltip = (
 }
 
 /**
- *
+ * Compact managed-site signal badge with a tooltip describing the match result.
  */
 function ManagedSiteSignalBadge(props: {
   badgeText: string
