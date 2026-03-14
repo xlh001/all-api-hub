@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { VerifyApiCredentialProfileDialog } from "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
+import { testI18n } from "~~/tests/test-utils/i18n"
 import { render, screen, waitFor, within } from "~~/tests/test-utils/render"
 
 const { loggerErrorMock, mockRunApiVerificationProbe } = vi.hoisted(() => ({
@@ -64,6 +65,22 @@ describe("VerifyApiCredentialProfileDialog", () => {
     mockFetchOpenAICompatibleModelIds.mockResolvedValue([])
     mockFetchAnthropicModelIds.mockResolvedValue([])
     mockFetchGoogleModelIds.mockResolvedValue([])
+    testI18n.addResourceBundle(
+      "en",
+      "apiCredentialProfiles",
+      {
+        verify: {
+          override: {
+            badge: "Override",
+            title: "Temporary API type override",
+            description:
+              "Saved profile API type: {{savedApiType}}. Current verification API type: {{currentApiType}}. This only affects the current test and will not modify the saved profile.",
+          },
+        },
+      },
+      true,
+      true,
+    )
   })
 
   it("renders probe items before running", async () => {
@@ -380,6 +397,19 @@ describe("VerifyApiCredentialProfileDialog", () => {
         "aiApiVerification:verifyDialog.apiTypes.anthropic",
       ),
     )
+
+    expect(screen.getByText("Override")).toBeInTheDocument()
+    expect(screen.getByText("Temporary API type override")).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Saved profile API type: aiApiVerification:verifyDialog\.apiTypes\.openaiCompatible\./,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Current verification API type: aiApiVerification:verifyDialog\.apiTypes\.anthropic\./,
+      ),
+    ).toBeInTheDocument()
 
     await waitFor(() =>
       expect(mockFetchAnthropicModelIds).toHaveBeenCalledWith({

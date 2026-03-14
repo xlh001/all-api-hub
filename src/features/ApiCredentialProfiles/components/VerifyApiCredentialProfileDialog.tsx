@@ -166,6 +166,15 @@ export function VerifyApiCredentialProfileDialog({
   const canClose = !isRunning && !isAnyProbeRunning
 
   const hasAnyResult = probes.some((p) => p.result !== null)
+  const hasApiTypeOverride = Boolean(profile && apiType !== profile.apiType)
+  const savedApiTypeLabel = profile
+    ? t(
+        `aiApiVerification:verifyDialog.apiTypes.${apiTypeLabelKey(profile.apiType)}`,
+      )
+    : ""
+  const currentApiTypeLabel = t(
+    `aiApiVerification:verifyDialog.apiTypes.${apiTypeLabelKey(apiType)}`,
+  )
 
   const header = useMemo(() => {
     if (!profile) return null
@@ -378,8 +387,15 @@ export function VerifyApiCredentialProfileDialog({
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <div className="dark:text-dark-text-tertiary text-xs text-gray-500">
-                {t("aiApiVerification:verifyDialog.meta.apiType")}
+              <div className="flex min-h-7 items-center gap-2">
+                <div className="dark:text-dark-text-tertiary text-xs text-gray-500">
+                  {t("aiApiVerification:verifyDialog.meta.apiType")}
+                </div>
+                {hasApiTypeOverride ? (
+                  <Badge variant="warning" size="sm">
+                    {t("apiCredentialProfiles:verify.override.badge")}
+                  </Badge>
+                ) : null}
               </div>
               <SearchableSelect
                 options={[
@@ -422,8 +438,10 @@ export function VerifyApiCredentialProfileDialog({
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <div className="dark:text-dark-text-tertiary text-xs text-gray-500">
-                {t("aiApiVerification:verifyDialog.meta.model")}
+              <div className="flex min-h-7 items-center">
+                <div className="dark:text-dark-text-tertiary text-xs text-gray-500">
+                  {t("aiApiVerification:verifyDialog.meta.model")}
+                </div>
               </div>
 
               <SearchableSelect
@@ -448,6 +466,20 @@ export function VerifyApiCredentialProfileDialog({
               ) : null}
             </div>
           </div>
+
+          {hasApiTypeOverride ? (
+            <Alert
+              variant="warning"
+              title={t("apiCredentialProfiles:verify.override.title")}
+              description={t(
+                "apiCredentialProfiles:verify.override.description",
+                {
+                  savedApiType: savedApiTypeLabel,
+                  currentApiType: currentApiTypeLabel,
+                },
+              )}
+            />
+          ) : null}
 
           {!hasAnyResult && (
             <div className="dark:text-dark-text-secondary text-sm text-gray-600">
