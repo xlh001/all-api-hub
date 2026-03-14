@@ -1,8 +1,3 @@
-```yaml
-title: Supported Site List
-description: All API Hub primarily supports two types of objects: the intermediate stations/management panels you use daily, and backend systems you build yourself that you wish to continue managing within the plugin.
-```
-
 # Supported Site List
 
 > All API Hub primarily supports two types of objects: the intermediate stations/management panels you use daily, and backend systems you build yourself that you wish to continue managing within the plugin.
