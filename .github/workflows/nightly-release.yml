@@ -119,11 +119,6 @@ jobs:
           - Built at: \`${{ steps.metadata.outputs.built_at }}\`
           - Source branch: \`${{ steps.target.outputs.branch }}\`
           - Trigger: \`${{ github.event_name }}\`
-
-          Asset names are intentionally stable so external links keep working:
-          - \`all-api-hub-nightly-chrome.zip\`
-          - \`all-api-hub-nightly-firefox.zip\`
-          - \`all-api-hub-nightly-sources.zip\`
           EOF
 
       - name: Move nightly tag
