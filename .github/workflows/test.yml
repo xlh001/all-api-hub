@@ -10,6 +10,8 @@ on:
       - "tests/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "i18next.config.ts"
+      - "scripts/run-i18n-check-if-staged.mjs"
       - "tsconfig.json"
       - "vitest.config.ts"
       - "wxt.config.ts"
@@ -23,6 +25,8 @@ on:
       - "tests/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "i18next.config.ts"
+      - "scripts/run-i18n-check-if-staged.mjs"
       - "tsconfig.json"
       - "vitest.config.ts"
       - "wxt.config.ts"
@@ -54,6 +58,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Run i18n extract check
+        run: pnpm run i18n:extract:ci
 
       - name: Run tests with coverage
         run: pnpm test:ci

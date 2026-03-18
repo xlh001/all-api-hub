@@ -5,4 +5,11 @@ pnpm lint-staged --concurrent false || {
   exit 1
 }
 
+echo "🌐 Running i18n staged check..."
+
+pnpm run i18n:check:staged || {
+  echo "❌ i18n staged check failed"
+  exit 1
+}
+
 echo "✅ All checks passed!"
