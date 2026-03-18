@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next"
 import { Button, Heading3, IconButton, Separator } from "~/components/ui"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { getMenuItemLabel } from "~/features/OptionsMenu/getMenuItemLabel"
 import { cn } from "~/lib/utils"
 import { hasValidManagedSiteConfig } from "~/services/managedSites/managedSiteService"
 
@@ -64,9 +65,9 @@ function Sidebar({
   const navAriaLabel = shouldShowCollapsedState
     ? t("navigation.sidebarCollapsedHint")
     : t("navigation.settingsOptions")
-  const collapseButtonLabel = t(
-    `navigation.${shouldShowCollapsedState ? "expandSidebar" : "collapseSidebar"}`,
-  )
+  const collapseButtonLabel = shouldShowCollapsedState
+    ? t("navigation.expandSidebar")
+    : t("navigation.collapseSidebar")
   const sidebarHeight = isMobileOpen
     ? "100vh"
     : "calc(100vh - var(--options-header-height))"
@@ -164,7 +165,7 @@ function Sidebar({
               {menuItems.map((item) => {
                 const Icon = item.icon
                 const isActive = activeMenuItem === item.id
-                const label = t(`navigation.${item.id}`)
+                const label = getMenuItemLabel(t, item.id)
 
                 if (
                   item.id === MENU_ITEM_IDS.AUTO_CHECKIN &&

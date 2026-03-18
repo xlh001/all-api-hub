@@ -7,6 +7,7 @@ import {
   LightBulbIcon,
   StarIcon,
 } from "@heroicons/react/24/outline"
+import type { TFunction } from "i18next"
 import { Info } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
@@ -29,6 +30,17 @@ import PluginIntroCard from "./components/PluginIntroCard"
 import PrivacyNotice from "./components/PrivacyNotice"
 import TechStackGrid from "./components/TechStackGrid"
 
+const getStoreLabel = (t: TFunction, storeId: ExtensionStoreId) => {
+  switch (storeId) {
+    case "chrome":
+      return t("about:stores.chrome")
+    case "edge":
+      return t("about:stores.edge")
+    case "firefox":
+      return t("about:stores.firefox")
+  }
+}
+
 /**
  * Options/About page: displays app metadata, links, features, tech stack, credits, and privacy notice.
  */
@@ -42,7 +54,7 @@ export default function About() {
 
   // Store CTA: ask for a positive review on the current store, and provide download links for other stores.
   const currentStoreId = detectExtensionStore()
-  const currentStoreName = t(`stores.${currentStoreId}`)
+  const currentStoreName = getStoreLabel(t, currentStoreId)
   const otherStoreIds = (
     Object.keys(EXTENSION_STORE_LISTING_URLS) as ExtensionStoreId[]
   ).filter((storeId) => storeId !== currentStoreId)
@@ -165,20 +177,24 @@ export default function About() {
               buttonVariant="default"
               iconClass="text-yellow-500 dark:text-yellow-400"
             />
-            {otherStoreIds.map((storeId) => (
-              <LinkCard
-                key={storeId}
-                Icon={ArrowDownTrayIcon}
-                title={t(`stores.${storeId}`)}
-                description={t("storesSection.download.description", {
-                  store: t(`stores.${storeId}`),
-                })}
-                href={EXTENSION_STORE_LISTING_URLS[storeId]}
-                buttonText={t("storesSection.download.button")}
-                buttonVariant="secondary"
-                iconClass="text-blue-600 dark:text-blue-400"
-              />
-            ))}
+            {otherStoreIds.map((storeId) => {
+              const storeLabel = getStoreLabel(t, storeId)
+
+              return (
+                <LinkCard
+                  key={storeId}
+                  Icon={ArrowDownTrayIcon}
+                  title={storeLabel}
+                  description={t("storesSection.download.description", {
+                    store: storeLabel,
+                  })}
+                  href={EXTENSION_STORE_LISTING_URLS[storeId]}
+                  buttonText={t("storesSection.download.button")}
+                  buttonVariant="secondary"
+                  iconClass="text-blue-600 dark:text-blue-400"
+                />
+              )
+            })}
           </div>
         </section>
 

@@ -21,6 +21,7 @@ import {
   AutoCheckinSkipReason,
   AutoCheckinStatus,
   CHECKIN_RESULT_STATUS,
+  getAutoCheckinSkipReasonTranslationKey,
   type AutoCheckinRunKind,
   type AutoCheckinRunType,
   type CheckinAccountResult,
@@ -714,13 +715,6 @@ class AutoCheckinScheduler {
     return updated ? nextSnapshots : snapshots
   }
 
-  /**
-   * Returns the i18n key for a skip reason code.
-   */
-  private getSkipReasonMessageKey(reason: AutoCheckinSkipReason): string {
-    return `autoCheckin:skipReasons.${reason}`
-  }
-
   private buildAccountSnapshot(
     account: SiteAccount,
     accountName: string,
@@ -797,7 +791,9 @@ class AutoCheckinScheduler {
     try {
       const provider = resolveAutoCheckinProvider(account)
       if (!provider) {
-        const messageKey = "autoCheckin:skipReasons.no_provider"
+        const messageKey = getAutoCheckinSkipReasonTranslationKey(
+          AUTO_CHECKIN_SKIP_REASON.NO_PROVIDER,
+        )
         logger.warn("No check-in provider; skipping", {
           accountId: account.id,
           siteName: account.site_name,
@@ -1774,7 +1770,7 @@ class AutoCheckinScheduler {
           accountId: account.id,
           accountName: accountDisplayNameById.get(account.id) ?? account.id,
           status: CHECKIN_RESULT_STATUS.SKIPPED,
-          messageKey: this.getSkipReasonMessageKey(
+          messageKey: getAutoCheckinSkipReasonTranslationKey(
             AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED,
           ),
           reasonCode: AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED,
@@ -1789,7 +1785,9 @@ class AutoCheckinScheduler {
             accountId: snapshot.accountId,
             accountName: snapshot.accountName,
             status: CHECKIN_RESULT_STATUS.SKIPPED,
-            messageKey: this.getSkipReasonMessageKey(snapshot.skipReason),
+            messageKey: getAutoCheckinSkipReasonTranslationKey(
+              snapshot.skipReason,
+            ),
             reasonCode: snapshot.skipReason,
             timestamp,
           }
@@ -2093,7 +2091,7 @@ class AutoCheckinScheduler {
             ? accountDisplayNameById.get(account.id) ?? account.id
             : accountId,
           status: CHECKIN_RESULT_STATUS.SKIPPED,
-          messageKey: this.getSkipReasonMessageKey(
+          messageKey: getAutoCheckinSkipReasonTranslationKey(
             AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED,
           ),
           reasonCode: AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED,
@@ -2111,7 +2109,9 @@ class AutoCheckinScheduler {
           accountId,
           accountName: snapshot.accountName,
           status: CHECKIN_RESULT_STATUS.SKIPPED,
-          messageKey: this.getSkipReasonMessageKey(snapshot.skipReason),
+          messageKey: getAutoCheckinSkipReasonTranslationKey(
+            snapshot.skipReason,
+          ),
           reasonCode: snapshot.skipReason,
           timestamp: Date.now(),
         }
@@ -2257,7 +2257,7 @@ class AutoCheckinScheduler {
             accountId: account.id,
             accountName: accountDisplayNameById.get(account.id) ?? account.id,
             status: CHECKIN_RESULT_STATUS.SKIPPED,
-            messageKey: this.getSkipReasonMessageKey(
+            messageKey: getAutoCheckinSkipReasonTranslationKey(
               AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED,
             ),
             reasonCode: AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED,

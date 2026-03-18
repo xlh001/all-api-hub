@@ -4,6 +4,7 @@ import { Card, CardContent } from "~/components/ui"
 import {
   AUTO_CHECKIN_RUN_RESULT,
   CHECKIN_RESULT_STATUS,
+  getAutoCheckinRunResultLabel,
   type AutoCheckinPreferences,
   type AutoCheckinRunResult,
   type AutoCheckinStatus,
@@ -153,7 +154,7 @@ export default function StatusCard({ status, preferences }: StatusCardProps) {
                 <span
                   className={`inline-block rounded px-2 py-1 text-sm font-medium ${getResultBadgeColor(status.lastRunResult)}`}
                 >
-                  {t(`status.result.${status.lastRunResult}`)}
+                  {getAutoCheckinRunResultLabel(t, status.lastRunResult)}
                 </span>
               )}
               {!status.lastRunResult && (

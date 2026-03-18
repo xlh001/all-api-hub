@@ -3,6 +3,8 @@
  * Types for automatic daily check-in feature
  */
 
+import type { TFunction } from "i18next"
+
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 
 /**
@@ -38,6 +40,30 @@ export const AUTO_CHECKIN_SKIP_REASONS = Object.values(
 ) as AutoCheckinSkipReason[]
 
 /**
+ * Returns the localized skip-reason key for a stable auto-check-in reason code.
+ */
+export function getAutoCheckinSkipReasonTranslationKey(
+  reason: AutoCheckinSkipReason,
+): string {
+  switch (reason) {
+    case AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED:
+      return "autoCheckin:skipReasons.account_disabled"
+    case AUTO_CHECKIN_SKIP_REASON.DETECTION_DISABLED:
+      return "autoCheckin:skipReasons.detection_disabled"
+    case AUTO_CHECKIN_SKIP_REASON.AUTO_CHECKIN_DISABLED:
+      return "autoCheckin:skipReasons.auto_checkin_disabled"
+    case AUTO_CHECKIN_SKIP_REASON.ALREADY_CHECKED_TODAY:
+      return "autoCheckin:skipReasons.already_checked_today"
+    case AUTO_CHECKIN_SKIP_REASON.NO_PROVIDER:
+      return "autoCheckin:skipReasons.no_provider"
+    case AUTO_CHECKIN_SKIP_REASON.PROVIDER_NOT_READY:
+      return "autoCheckin:skipReasons.provider_not_ready"
+  }
+
+  return "autoCheckin:skipReasons.unknown"
+}
+
+/**
  * Single account check-in result
  */
 export interface CheckinAccountResult {
@@ -65,6 +91,25 @@ export type AutoCheckinRunResult =
 export const AUTO_CHECKIN_RUN_RESULTS = Object.values(
   AUTO_CHECKIN_RUN_RESULT,
 ) as AutoCheckinRunResult[]
+
+/**
+ * Returns the localized label for a persisted auto check-in run result.
+ */
+export function getAutoCheckinRunResultLabel(
+  t: TFunction,
+  result: AutoCheckinRunResult,
+): string {
+  switch (result) {
+    case AUTO_CHECKIN_RUN_RESULT.SUCCESS:
+      return t("autoCheckin:status.result.success")
+    case AUTO_CHECKIN_RUN_RESULT.PARTIAL:
+      return t("autoCheckin:status.result.partial")
+    case AUTO_CHECKIN_RUN_RESULT.FAILED:
+      return t("autoCheckin:status.result.failed")
+  }
+
+  return t("common:labels.unknown")
+}
 
 /**
  * Auto check-in execution run type.

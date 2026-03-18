@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next"
 import {
   ChevronDown,
   LineChart,
@@ -56,6 +57,7 @@ import type { CurrencyType, SiteAccount, TagStore } from "~/types"
 import { DEFAULT_BALANCE_HISTORY_PREFERENCES } from "~/types/dailyBalanceHistory"
 import type { DailyBalanceHistoryStore } from "~/types/dailyBalanceHistory"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
+import { assertNever } from "~/utils/core/assert"
 import { getErrorMessage } from "~/utils/core/error"
 import { getCurrencySymbol } from "~/utils/core/formatters"
 import { createLogger } from "~/utils/core/logger"
@@ -84,6 +86,68 @@ const QUICK_RANGES = [
 
 type BalanceHistoryBreakdownChartType = "pie" | "bar"
 type BalanceHistoryTrendSeriesScope = "accounts" | "total"
+type BalanceHistoryQuickRangeId = (typeof QUICK_RANGES)[number]["id"]
+
+/**
+ * Returns the localized label for a supported balance-history metric.
+ */
+function getBalanceHistoryMetricLabel(
+  t: TFunction,
+  metric: DailyBalanceHistoryMetric,
+) {
+  switch (metric) {
+    case "balance":
+      return t("balanceHistory:metrics.balance")
+    case "income":
+      return t("balanceHistory:metrics.income")
+    case "outcome":
+      return t("balanceHistory:metrics.outcome")
+    case "net":
+      return t("balanceHistory:metrics.net")
+    default:
+      return assertNever(metric, `Unexpected balance history metric: ${metric}`)
+  }
+}
+
+/**
+ * Returns the localized label for the current trend aggregation scope.
+ */
+function getBalanceHistoryTrendScopeLabel(
+  t: TFunction,
+  scope: BalanceHistoryTrendSeriesScope,
+) {
+  switch (scope) {
+    case "accounts":
+      return t("balanceHistory:trend.scopes.accounts")
+    case "total":
+      return t("balanceHistory:trend.scopes.total")
+    default:
+      return assertNever(scope, `Unexpected trend scope: ${scope}`)
+  }
+}
+
+/**
+ * Returns the localized label for a preset date range chip.
+ */
+function getBalanceHistoryQuickRangeLabel(
+  t: TFunction,
+  rangeId: BalanceHistoryQuickRangeId,
+) {
+  switch (rangeId) {
+    case "7d":
+      return t("balanceHistory:filters.quickRanges.7d")
+    case "30d":
+      return t("balanceHistory:filters.quickRanges.30d")
+    case "90d":
+      return t("balanceHistory:filters.quickRanges.90d")
+    case "180d":
+      return t("balanceHistory:filters.quickRanges.180d")
+    case "365d":
+      return t("balanceHistory:filters.quickRanges.365d")
+    default:
+      return assertNever(rangeId, `Unexpected quick range id: ${rangeId}`)
+  }
+}
 
 /**
  * Clamp a retention-days value coming from user preferences or input.
@@ -583,7 +647,7 @@ export default function BalanceHistory() {
   ])
 
   const trendOption = useMemo(() => {
-    const metricLabel = t(`metrics.${trendMetric}`)
+    const metricLabel = getBalanceHistoryMetricLabel(t, trendMetric)
     return buildMultiSeriesTrendOption({
       dayKeys: perAccountSeries.dayKeys,
       series: trendSeries,
@@ -676,7 +740,7 @@ export default function BalanceHistory() {
   const breakdownOption = useMemo(() => {
     if (!breakdownData.values.length) return null
 
-    const valueLabel = `${t(`metrics.${breakdownMetric}`)} (${currencySymbol})`
+    const valueLabel = `${getBalanceHistoryMetricLabel(t, breakdownMetric)} (${currencySymbol})`
 
     return breakdownChartType === "pie"
       ? buildAccountBreakdownPieOption({
@@ -1009,7 +1073,7 @@ export default function BalanceHistory() {
 
               <div className="flex flex-wrap gap-2">
                 {QUICK_RANGES.map((preset) => {
-                  const label = t(`filters.quickRanges.${preset.id}`)
+                  const label = getBalanceHistoryQuickRangeLabel(t, preset.id)
                   return (
                     <Button
                       key={preset.id}
@@ -1157,7 +1221,10 @@ export default function BalanceHistory() {
                             >
                               <span className="min-w-0 truncate">
                                 {t("breakdown.title")}:{" "}
-                                {t(`metrics.${breakdownMetric}`)}
+                                {getBalanceHistoryMetricLabel(
+                                  t,
+                                  breakdownMetric,
+                                )}
                               </span>
                               <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
                             </button>
@@ -1274,7 +1341,7 @@ export default function BalanceHistory() {
                               >
                                 <span className="min-w-0 truncate">
                                   {t("trend.title")}:{" "}
-                                  {t(`metrics.${trendMetric}`)}
+                                  {getBalanceHistoryMetricLabel(t, trendMetric)}
                                 </span>
                                 <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
                               </button>
@@ -1312,7 +1379,10 @@ export default function BalanceHistory() {
                               >
                                 <span className="min-w-0 truncate">
                                   {t("trend.controls.scope")}:{" "}
-                                  {t(`trend.scopes.${trendScope}`)}
+                                  {getBalanceHistoryTrendScopeLabel(
+                                    t,
+                                    trendScope,
+                                  )}
                                 </span>
                                 <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
                               </button>
@@ -1394,7 +1464,7 @@ export default function BalanceHistory() {
                     ) : (
                       <div className="dark:text-dark-text-secondary text-sm text-gray-600">
                         {t("trend.emptyMetric", {
-                          metric: t(`metrics.${trendMetric}`),
+                          metric: getBalanceHistoryMetricLabel(t, trendMetric),
                         })}
                       </div>
                     )}
