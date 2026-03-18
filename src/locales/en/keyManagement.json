@@ -11,8 +11,6 @@
   "allAccountsProgress": "{{loaded}}/{{total}} accounts loaded",
   "allAccountsLoading": "{{count}} loading",
   "allAccountsFailed": "{{count}} failed",
-  "allAccountsLoadFailedTitle": "{{count}} account(s) failed to load",
-  "allAccountsLoadFailedDescription": "Failed: {{accounts}}",
   "accountSummary": {
     "title": "Accounts overview",
     "keys": "{{count}} keys",
