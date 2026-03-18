@@ -93,6 +93,26 @@ export function getManagedSiteLabelKey(
 }
 
 /**
+ * Returns the translated managed-site label for the given site type.
+ */
+export function getManagedSiteLabel(
+  t: (key: string, options?: any) => string,
+  siteType: ManagedSiteType,
+) {
+  switch (siteType) {
+    case OCTOPUS:
+      return t("settings:managedSite.octopus")
+    case DONE_HUB:
+      return t("settings:managedSite.doneHub")
+    case VELOERA:
+      return t("settings:managedSite.veloera")
+    case NEW_API:
+    default:
+      return t("settings:managedSite.newApi")
+  }
+}
+
+/**
  * Returns the `messages` namespace key for the selected managed site type.
  */
 export function getManagedSiteMessagesKeyFromSiteType(
@@ -191,4 +211,44 @@ export function getManagedSiteMessagesKey(
 ): ManagedSiteMessagesKey {
   const { messagesKey } = getManagedSiteContext(prefs)
   return messagesKey
+}
+
+/**
+ * Returns the translated config-missing message for the selected managed-site backend.
+ */
+export function getManagedSiteConfigMissingMessage(
+  t: (key: string, options?: any) => string,
+  messagesKey: ManagedSiteMessagesKey,
+) {
+  switch (messagesKey) {
+    case "donehub":
+      return t("messages:donehub.configMissing")
+    case "veloera":
+      return t("messages:veloera.configMissing")
+    case "octopus":
+      return t("messages:octopus.configMissing")
+    case "newapi":
+    default:
+      return t("messages:newapi.configMissing")
+  }
+}
+
+/**
+ * Returns the translated no-channels-to-sync message for the selected managed-site backend.
+ */
+export function getManagedSiteNoChannelsToSyncMessage(
+  t: (key: string, options?: any) => string,
+  messagesKey: ManagedSiteMessagesKey,
+) {
+  switch (messagesKey) {
+    case "donehub":
+      return t("messages:donehub.noChannelsToSync")
+    case "veloera":
+      return t("messages:veloera.noChannelsToSync")
+    case "octopus":
+      return t("messages:octopus.noChannelsToSync")
+    case "newapi":
+    default:
+      return t("messages:newapi.noChannelsToSync")
+  }
 }

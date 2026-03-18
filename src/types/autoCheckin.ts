@@ -64,6 +64,29 @@ export function getAutoCheckinSkipReasonTranslationKey(
 }
 
 /**
+ * Returns the localized skip-reason label for a stable auto-check-in reason code.
+ */
+export function translateAutoCheckinSkipReason(
+  t: TFunction,
+  reason: AutoCheckinSkipReason,
+): string {
+  switch (reason) {
+    case AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED:
+      return t("autoCheckin:skipReasons.account_disabled")
+    case AUTO_CHECKIN_SKIP_REASON.DETECTION_DISABLED:
+      return t("autoCheckin:skipReasons.detection_disabled")
+    case AUTO_CHECKIN_SKIP_REASON.AUTO_CHECKIN_DISABLED:
+      return t("autoCheckin:skipReasons.auto_checkin_disabled")
+    case AUTO_CHECKIN_SKIP_REASON.ALREADY_CHECKED_TODAY:
+      return t("autoCheckin:skipReasons.already_checked_today")
+    case AUTO_CHECKIN_SKIP_REASON.NO_PROVIDER:
+      return t("autoCheckin:skipReasons.no_provider")
+    case AUTO_CHECKIN_SKIP_REASON.PROVIDER_NOT_READY:
+      return t("autoCheckin:skipReasons.provider_not_ready")
+  }
+}
+
+/**
  * Single account check-in result
  */
 export interface CheckinAccountResult {

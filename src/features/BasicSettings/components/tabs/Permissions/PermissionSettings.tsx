@@ -33,6 +33,52 @@ const buildState = <T,>(value: T) =>
   >
 
 /**
+ * Resolve the localized title for a supported optional permission.
+ */
+function getPermissionTitle(
+  t: (key: string, options?: any) => string,
+  id: ManifestOptionalPermissions,
+) {
+  switch (id) {
+    case "cookies":
+      return t("settings:permissions.items.cookies.title")
+    case "declarativeNetRequestWithHostAccess":
+      return t(
+        "settings:permissions.items.declarativeNetRequestWithHostAccess.title",
+      )
+    case "webRequest":
+      return t("settings:permissions.items.webRequest.title")
+    case "webRequestBlocking":
+      return t("settings:permissions.items.webRequestBlocking.title")
+    case "clipboardRead":
+      return t("settings:permissions.items.clipboardRead.title")
+  }
+}
+
+/**
+ * Resolve the localized description for a supported optional permission.
+ */
+function getPermissionDescription(
+  t: (key: string, options?: any) => string,
+  id: ManifestOptionalPermissions,
+) {
+  switch (id) {
+    case "cookies":
+      return t("settings:permissions.items.cookies.description")
+    case "declarativeNetRequestWithHostAccess":
+      return t(
+        "settings:permissions.items.declarativeNetRequestWithHostAccess.description",
+      )
+    case "webRequest":
+      return t("settings:permissions.items.webRequest.description")
+    case "webRequestBlocking":
+      return t("settings:permissions.items.webRequestBlocking.description")
+    case "clipboardRead":
+      return t("settings:permissions.items.clipboardRead.description")
+  }
+}
+
+/**
  * Unified logger scoped to optional permission settings in the options UI.
  */
 const logger = createLogger("PermissionSettings")
@@ -93,10 +139,7 @@ export default function PermissionSettings() {
         },
       }))
 
-      const label = t(
-        OPTIONAL_PERMISSION_DEFINITIONS.find((perm) => perm.id === id)
-          ?.titleKey ?? id,
-      )
+      const label = getPermissionTitle(t, id)
       logger.debug("Permission toggle requested by user", {
         id,
         action: shouldEnable ? "request" : "revoke",
@@ -191,12 +234,12 @@ export default function PermissionSettings() {
           items={OPTIONAL_PERMISSION_DEFINITIONS.map((permission) => {
             const granted = state.statuses[permission.id]
             const pending = state.pending[permission.id]
-            const label = t(permission.titleKey)
+            const label = getPermissionTitle(t, permission.id)
 
             return {
               id: permission.id,
               title: label,
-              description: t(permission.descriptionKey),
+              description: getPermissionDescription(t, permission.id),
               rightContent: (
                 <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
                   <Badge
@@ -210,11 +253,9 @@ export default function PermissionSettings() {
                   >
                     {granted === null
                       ? t("permissions.status.checking")
-                      : t(
-                          granted
-                            ? "permissions.status.granted"
-                            : "permissions.status.denied",
-                        )}
+                      : granted
+                        ? t("permissions.status.granted")
+                        : t("permissions.status.denied")}
                   </Badge>
                   <Button
                     size="sm"

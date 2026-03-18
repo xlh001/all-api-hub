@@ -30,7 +30,11 @@
       "noModelIdProvided": "No model id provided.",
       "noModelIdProvidedToRunProbe": "No model id provided to run probe.",
       "noModelIdProvidedToRunProbes": "No model id provided to run probes.",
-      "noModelAvailableToRunProbes": "No model available to run probes."
+      "noModelAvailableToRunProbes": "No model available to run probes.",
+      "unauthorized": "Unauthorized (401): invalid key or missing auth",
+      "forbidden": "Forbidden (403): access denied",
+      "endpointNotFound": "Endpoint not found (404): this API may not be supported",
+      "httpError": "HTTP error ({{status}})"
     },
     "meta": {
       "token": "Token",

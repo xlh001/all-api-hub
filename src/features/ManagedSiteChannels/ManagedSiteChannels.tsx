@@ -85,6 +85,7 @@ import { NewApiManagedVerificationDialog } from "~/features/ManagedSiteVerificat
 import { useNewApiManagedVerification } from "~/features/ManagedSiteVerification/useNewApiManagedVerification"
 import { cn } from "~/lib/utils"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
+import { getManagedSiteConfigMissingMessage } from "~/services/managedSites/utils/managedSite"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import {
@@ -94,7 +95,7 @@ import {
 
 import ChannelFilterDialog from "./components/ChannelFilterDialog"
 import RowActions from "./components/RowActions"
-import StatusBadge, { STATUS_VARIANTS } from "./components/StatusBadge"
+import StatusBadge from "./components/StatusBadge"
 import type { ChannelRow, CheckboxState, RowActionsLabels } from "./types"
 import {
   channelIdFilterFn,
@@ -135,6 +136,26 @@ function getManagedSiteChannelColumnLabel(
       return t("managedSiteChannels:table.columns.weight")
     default:
       return columnId
+  }
+}
+
+/**
+ * Resolve the localized status label shown in the status-filter popover.
+ */
+function getManagedSiteChannelStatusFilterLabel(
+  t: (key: string, options?: any) => string,
+  value: string,
+) {
+  switch (value) {
+    case "1":
+      return t("managedSiteChannels:statusLabels.enabled")
+    case "2":
+      return t("managedSiteChannels:statusLabels.manualPause")
+    case "3":
+      return t("managedSiteChannels:statusLabels.autoDisabled")
+    case "0":
+    default:
+      return t("managedSiteChannels:statusLabels.unknown")
   }
 }
 
@@ -200,7 +221,7 @@ export default function ManagedSiteChannels({
       if (!config) {
         setConfigMissing(true)
         setConfigMissingMessage(
-          t(`messages:${service.messagesKey}.configMissing`),
+          getManagedSiteConfigMissingMessage(t, service.messagesKey),
         )
         setChannels([])
         return
@@ -337,7 +358,9 @@ export default function ManagedSiteChannels({
       const service = await getManagedSiteService()
       const config = await service.getConfig()
       if (!config) {
-        throw new Error(t(`messages:${service.messagesKey}.configMissing`))
+        throw new Error(
+          getManagedSiteConfigMissingMessage(t, service.messagesKey),
+        )
       }
 
       const results = await Promise.allSettled(
@@ -821,10 +844,7 @@ export default function ManagedSiteChannels({
                           htmlFor={`status-${value}`}
                           className="text-sm font-normal"
                         >
-                          {t(
-                            STATUS_VARIANTS[Number(value)]?.labelKey ??
-                              STATUS_VARIANTS[0].labelKey,
-                          )}
+                          {getManagedSiteChannelStatusFilterLabel(t, value)}
                         </Label>
                       </div>
                       <span className="text-muted-foreground text-xs">

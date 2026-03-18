@@ -21,7 +21,10 @@ import {
   type ApiVerificationProbeId,
   type ApiVerificationProbeResult,
 } from "~/services/verification/aiApiVerification"
-import { getApiVerificationProbeLabel } from "~/services/verification/aiApiVerification/i18n"
+import {
+  getApiVerificationProbeLabel,
+  translateApiVerificationSummary,
+} from "~/services/verification/aiApiVerification/i18n"
 import { extractApiCheckCredentialsFromText } from "~/services/verification/webAiApiCheck/extractCredentials"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 
@@ -676,10 +679,11 @@ export function ApiCheckModalHost() {
                   const result = probe.result
 
                   const summary = result?.summaryKey
-                    ? t(
-                        `aiApiVerification:${result.summaryKey}` as any,
+                    ? (translateApiVerificationSummary(
+                        t,
+                        result.summaryKey,
                         result.summaryParams,
-                      )
+                      ) ?? result.summary)
                     : result?.summary
 
                   const notRunYet = t("webAiApiCheck:modal.probes.notRunYet")

@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next"
+
 export const AUTO_CHECKIN_MESSAGE_KEY_PREFIX = "autoCheckin:" as const
 
 /**
@@ -13,6 +15,61 @@ export function stripAutoCheckinMessageKeyPrefix(messageKey: string): string {
   return messageKey.startsWith(AUTO_CHECKIN_MESSAGE_KEY_PREFIX)
     ? messageKey.slice(AUTO_CHECKIN_MESSAGE_KEY_PREFIX.length)
     : messageKey
+}
+
+/**
+ * Translate a known auto-checkin i18n key while preserving non-i18n backend
+ * messages as-is.
+ */
+export function translateAutoCheckinMessageKey(
+  t: TFunction,
+  messageKey: string,
+  messageParams?: Record<string, unknown>,
+): string {
+  switch (messageKey) {
+    case "autoCheckin:providerFallback.alreadyCheckedToday":
+      return t(
+        "autoCheckin:providerFallback.alreadyCheckedToday",
+        messageParams,
+      )
+    case "autoCheckin:providerFallback.checkinSuccessful":
+      return t("autoCheckin:providerFallback.checkinSuccessful", messageParams)
+    case "autoCheckin:providerFallback.checkinFailed":
+      return t("autoCheckin:providerFallback.checkinFailed", messageParams)
+    case "autoCheckin:providerFallback.endpointNotSupported":
+      return t(
+        "autoCheckin:providerFallback.endpointNotSupported",
+        messageParams,
+      )
+    case "autoCheckin:providerFallback.unknownError":
+      return t("autoCheckin:providerFallback.unknownError", messageParams)
+    case "autoCheckin:providerFallback.turnstileManualRequired":
+      return t(
+        "autoCheckin:providerFallback.turnstileManualRequired",
+        messageParams,
+      )
+    case "autoCheckin:providerFallback.turnstileIncognitoAccessRequired":
+      return t(
+        "autoCheckin:providerFallback.turnstileIncognitoAccessRequired",
+        messageParams,
+      )
+    case "autoCheckin:providerWong.checkinDisabled":
+      return t("autoCheckin:providerWong.checkinDisabled", messageParams)
+    case "autoCheckin:skipReasons.account_disabled":
+      return t("autoCheckin:skipReasons.account_disabled", messageParams)
+    case "autoCheckin:skipReasons.detection_disabled":
+      return t("autoCheckin:skipReasons.detection_disabled", messageParams)
+    case "autoCheckin:skipReasons.auto_checkin_disabled":
+      return t("autoCheckin:skipReasons.auto_checkin_disabled", messageParams)
+    case "autoCheckin:skipReasons.already_checked_today":
+      return t("autoCheckin:skipReasons.already_checked_today", messageParams)
+    case "autoCheckin:skipReasons.no_provider":
+      return t("autoCheckin:skipReasons.no_provider", messageParams)
+    case "autoCheckin:skipReasons.provider_not_ready":
+      return t("autoCheckin:skipReasons.provider_not_ready", messageParams)
+    default:
+      return messageKey
+  }
 }
 
 const INVALID_ACCESS_TOKEN_STRICT_SNIPPET = "access token 无效"

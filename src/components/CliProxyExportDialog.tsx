@@ -22,6 +22,10 @@ import {
   buildDefaultCliProxyProviderBaseUrl,
   CLI_PROXY_PROVIDER_METADATA,
   CLI_PROXY_PROVIDER_TYPES,
+  getCliProxyProviderBaseUrlDescription,
+  getCliProxyProviderBaseUrlPlaceholder,
+  getCliProxyProviderTypeDescription,
+  getCliProxyProviderTypeLabel,
   mapApiTypeHintToCliProxyProviderType,
   normalizeCliProxyProviderBaseUrl,
   type CliProxyProviderType,
@@ -177,10 +181,10 @@ export function CliProxyExportDialog(props: CliProxyExportDialogProps) {
     [token.id],
   )
   const providerTypeMetadata = CLI_PROXY_PROVIDER_METADATA[providerType]
-  const providerTypeDescription = `${t("ui:dialog.cliproxy.descriptions.providerType")} ${t(providerTypeMetadata.descriptionKey)}`
-  const modelsDescriptionKey = providerTypeMetadata.supportsModelSuggestions
-    ? "ui:dialog.cliproxy.descriptions.models"
-    : "ui:dialog.cliproxy.descriptions.modelsManual"
+  const providerTypeDescription = `${t("ui:dialog.cliproxy.descriptions.providerType")} ${getCliProxyProviderTypeDescription(t, providerType)}`
+  const modelsDescription = providerTypeMetadata.supportsModelSuggestions
+    ? t("ui:dialog.cliproxy.descriptions.models")
+    : t("ui:dialog.cliproxy.descriptions.modelsManual")
 
   useEffect(() => {
     if (!isOpen) {
@@ -376,10 +380,9 @@ export function CliProxyExportDialog(props: CliProxyExportDialogProps) {
             </SelectTrigger>
             <SelectContent>
               {Object.values(CLI_PROXY_PROVIDER_TYPES).map((value) => {
-                const metadata = CLI_PROXY_PROVIDER_METADATA[value]
                 return (
                   <SelectItem key={value} value={value}>
-                    {t(metadata.labelKey)}
+                    {getCliProxyProviderTypeLabel(t, value)}
                   </SelectItem>
                 )
               })}
@@ -406,7 +409,7 @@ export function CliProxyExportDialog(props: CliProxyExportDialogProps) {
           label={t("ui:dialog.cliproxy.fields.baseUrl")}
           htmlFor={providerBaseUrlFieldId}
           required={providerTypeMetadata.baseUrlRequired}
-          description={t(providerTypeMetadata.baseUrlDescriptionKey)}
+          description={getCliProxyProviderBaseUrlDescription(t, providerType)}
         >
           <Input
             aria-label={t("ui:dialog.cliproxy.fields.baseUrl")}
@@ -414,7 +417,7 @@ export function CliProxyExportDialog(props: CliProxyExportDialogProps) {
             value={providerBaseUrl}
             required={providerTypeMetadata.baseUrlRequired}
             onChange={(event) => setProviderBaseUrl(event.target.value)}
-            placeholder={t(providerTypeMetadata.baseUrlPlaceholderKey)}
+            placeholder={getCliProxyProviderBaseUrlPlaceholder(t, providerType)}
           />
         </FormField>
 
@@ -434,7 +437,7 @@ export function CliProxyExportDialog(props: CliProxyExportDialogProps) {
 
         <FormField
           label={t("ui:dialog.cliproxy.fields.models")}
-          description={t(modelsDescriptionKey)}
+          description={modelsDescription}
         >
           <ModelListInput
             value={models}

@@ -51,6 +51,25 @@ interface UsageHistorySyncStateTableProps {
 }
 
 /**
+ * Resolve the localized label for a usage-history sync state badge.
+ */
+function getUsageHistorySyncStateLabel(
+  t: (key: string, options?: any) => string,
+  state: UsageHistorySyncState,
+) {
+  switch (state) {
+    case "never":
+      return t("usageAnalytics:status.states.never")
+    case "success":
+      return t("usageAnalytics:status.states.success")
+    case "error":
+      return t("usageAnalytics:status.states.error")
+    case "unsupported":
+      return t("usageAnalytics:status.states.unsupported")
+  }
+}
+
+/**
  * Multi-select table for per-account usage-history sync status, with bulk + row actions.
  */
 export default function UsageHistorySyncStateTable({
@@ -128,7 +147,7 @@ export default function UsageHistorySyncStateTable({
             variant={getStatusBadgeVariant(row.original.state) as any}
             className="shrink-0"
           >
-            {t(`status.states.${row.original.state}`)}
+            {getUsageHistorySyncStateLabel(t, row.original.state)}
           </Badge>
         ),
       },

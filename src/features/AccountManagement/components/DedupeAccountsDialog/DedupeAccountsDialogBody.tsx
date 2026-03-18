@@ -18,21 +18,34 @@ import type {
 
 const STRATEGIES: Array<{
   value: AccountDedupeKeepStrategy
-  labelKey: string
 }> = [
   {
     value: "keepPinned",
-    labelKey: "ui:dialog.dedupeAccounts.strategy.keepPinned",
   },
   {
     value: "keepEnabled",
-    labelKey: "ui:dialog.dedupeAccounts.strategy.keepEnabled",
   },
   {
     value: "keepMostRecentlyUpdated",
-    labelKey: "ui:dialog.dedupeAccounts.strategy.keepMostRecentlyUpdated",
   },
 ]
+
+/**
+ * Resolve the localized label for a dedupe keep-strategy option.
+ */
+function getDedupeStrategyLabel(
+  t: TFunction,
+  strategy: AccountDedupeKeepStrategy,
+) {
+  switch (strategy) {
+    case "keepPinned":
+      return t("ui:dialog.dedupeAccounts.strategy.keepPinned")
+    case "keepEnabled":
+      return t("ui:dialog.dedupeAccounts.strategy.keepEnabled")
+    case "keepMostRecentlyUpdated":
+      return t("ui:dialog.dedupeAccounts.strategy.keepMostRecentlyUpdated")
+  }
+}
 
 export interface DedupeAccountsDialogBodyProps {
   strategy: AccountDedupeKeepStrategy
@@ -88,7 +101,7 @@ export function DedupeAccountsDialogBody({
             <SelectContent>
               {STRATEGIES.map((item) => (
                 <SelectItem key={item.value} value={item.value}>
-                  {t(item.labelKey)}
+                  {getDedupeStrategyLabel(t, item.value)}
                 </SelectItem>
               ))}
             </SelectContent>

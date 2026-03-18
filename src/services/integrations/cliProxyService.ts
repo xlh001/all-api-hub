@@ -387,7 +387,7 @@ function getProviderDisplayName(
         providerBaseUrl: openAIProvider["base-url"],
         providerName: openAIProvider.name,
       },
-      (key) => t(key),
+      t,
     )
   }
 
@@ -397,7 +397,7 @@ function getProviderDisplayName(
     {
       providerBaseUrl: apiKeyProvider["base-url"],
     },
-    (key) => t(key),
+    t,
   )
 }
 

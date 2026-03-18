@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next"
 
 import AccountLinkButton from "~/components/AccountLinkButton"
 import { Button, Card } from "~/components/ui"
-import { stripAutoCheckinMessageKeyPrefix } from "~/features/AutoCheckin/utils/autoCheckin"
+import { translateAutoCheckinMessageKey } from "~/features/AutoCheckin/utils/autoCheckin"
 import {
   CHECKIN_RESULT_STATUS,
   CheckinAccountResult,
@@ -47,10 +47,11 @@ export default function ResultsTable({
   const getResultMessage = (result: CheckinAccountResult): string => {
     if (result.rawMessage) return result.rawMessage
     if (result.messageKey) {
-      return t(stripAutoCheckinMessageKeyPrefix(result.messageKey), {
-        ...(result.messageParams ?? {}),
-        defaultValue: result.messageKey,
-      }) as string
+      return translateAutoCheckinMessageKey(
+        t,
+        result.messageKey,
+        result.messageParams,
+      )
     }
     return result.message ?? "-"
   }
@@ -76,6 +77,17 @@ export default function ResultsTable({
     }
 
     return null
+  }
+
+  const getTroubleshootingHintLabel = (hintKey: string) => {
+    switch (hintKey) {
+      case "execution.hints.invalidAccessToken":
+        return t("execution.hints.invalidAccessToken")
+      case "execution.hints.noTabWithId":
+        return t("execution.hints.noTabWithId")
+      default:
+        return hintKey
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -168,7 +180,7 @@ export default function ResultsTable({
                       <div>{getResultMessage(result)}</div>
                       {troubleshootingHintKey && (
                         <div className="text-xs text-gray-400 dark:text-gray-500">
-                          {t(troubleshootingHintKey)}
+                          {getTroubleshootingHintLabel(troubleshootingHintKey)}
                         </div>
                       )}
                     </div>

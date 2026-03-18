@@ -73,11 +73,23 @@ const WEBDAV_SYNC_DATA_INPUT_IDS: Record<WebDAVSyncDataKey, string> = {
   preferences: "webdavSyncDataPreferences",
 }
 
-const WEBDAV_SYNC_DATA_LABEL_KEYS: Record<WebDAVSyncDataKey, string> = {
-  accounts: "webdav.syncData.accounts",
-  bookmarks: "webdav.syncData.bookmarks",
-  apiCredentialProfiles: "webdav.syncData.apiCredentialProfiles",
-  preferences: "webdav.syncData.preferences",
+/**
+ * Resolve the localized label for a selectable WebDAV sync data section.
+ */
+function getWebdavSyncDataLabel(
+  t: (key: string, options?: any) => string,
+  key: WebDAVSyncDataKey,
+) {
+  switch (key) {
+    case "accounts":
+      return t("importExport:webdav.syncData.accounts")
+    case "bookmarks":
+      return t("importExport:webdav.syncData.bookmarks")
+    case "apiCredentialProfiles":
+      return t("importExport:webdav.syncData.apiCredentialProfiles")
+    case "preferences":
+      return t("importExport:webdav.syncData.preferences")
+  }
 }
 
 /**
@@ -124,7 +136,7 @@ export default function WebDAVSettings() {
       WEBDAV_SYNC_DATA_KEYS.map((key) => ({
         key,
         id: WEBDAV_SYNC_DATA_INPUT_IDS[key],
-        label: t(WEBDAV_SYNC_DATA_LABEL_KEYS[key]),
+        label: getWebdavSyncDataLabel(t, key),
       })),
     [t],
   )

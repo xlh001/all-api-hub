@@ -28,7 +28,10 @@ import {
   runCliSupportTool,
 } from "~/services/verification/cliSupportVerification"
 import type { CliSupportResult } from "~/services/verification/cliSupportVerification"
-import { getCliSupportToolLabel } from "~/services/verification/cliSupportVerification/i18n"
+import {
+  getCliSupportToolLabel,
+  translateCliSupportSummary,
+} from "~/services/verification/cliSupportVerification/i18n"
 import type { ApiToken } from "~/types"
 import { createLogger } from "~/utils/core/logger"
 
@@ -495,7 +498,11 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
             const resultSummary = isDisabledForModel
               ? t("verifyDialog.requiresModelId")
               : result?.summaryKey
-                ? t(result.summaryKey, result.summaryParams)
+                ? (translateCliSupportSummary(
+                    t,
+                    result.summaryKey,
+                    result.summaryParams,
+                  ) ?? result.summary)
                 : result
                   ? result.summary
                   : t("verifyDialog.notRunYet")

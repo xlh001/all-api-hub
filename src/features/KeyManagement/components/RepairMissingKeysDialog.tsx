@@ -24,6 +24,7 @@ import type { DisplaySiteData } from "~/types"
 import type {
   AccountKeyRepairOutcome,
   AccountKeyRepairProgress,
+  AccountKeyRepairSkipReason,
 } from "~/types/accountKeyAutoProvisioning"
 import {
   onRuntimeMessage,
@@ -42,10 +43,15 @@ interface RepairMissingKeysDialogProps {
  */
 function getSkipReasonLabel(
   t: (key: string, options?: any) => string,
-  reason: string | undefined,
+  reason: AccountKeyRepairSkipReason | undefined,
 ) {
   if (!reason) return ""
-  return t(`repairMissingKeys.skipReasons.${reason}`)
+  switch (reason) {
+    case "sub2api":
+      return t("keyManagement:repairMissingKeys.skipReasons.sub2api")
+    case "noneAuth":
+      return t("keyManagement:repairMissingKeys.skipReasons.noneAuth")
+  }
 }
 
 type BadgeVariant = React.ComponentProps<typeof Badge>["variant"]
@@ -55,6 +61,25 @@ const OUTCOME_BADGE_VARIANTS: Record<AccountKeyRepairOutcome, BadgeVariant> = {
   alreadyHad: "info",
   skipped: "warning",
   failed: "danger",
+}
+
+/**
+ * Returns the localized outcome label shown for each repair result row.
+ */
+function getRepairOutcomeLabel(
+  t: (key: string, options?: any) => string,
+  outcome: AccountKeyRepairOutcome,
+) {
+  switch (outcome) {
+    case "created":
+      return t("keyManagement:repairMissingKeys.outcomes.created")
+    case "alreadyHad":
+      return t("keyManagement:repairMissingKeys.outcomes.alreadyHad")
+    case "skipped":
+      return t("keyManagement:repairMissingKeys.outcomes.skipped")
+    case "failed":
+      return t("keyManagement:repairMissingKeys.outcomes.failed")
+  }
 }
 
 /**
@@ -480,8 +505,9 @@ export function RepairMissingKeysDialog(props: RepairMissingKeysDialogProps) {
                 ) : (
                   <ul className="dark:divide-dark-bg-tertiary divide-y">
                     {filteredResults.map((result) => {
-                      const outcomeLabel = t(
-                        `repairMissingKeys.outcomes.${result.outcome}`,
+                      const outcomeLabel = getRepairOutcomeLabel(
+                        t,
+                        result.outcome,
                       )
                       const details =
                         result.outcome === "skipped"

@@ -27,6 +27,7 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
+import { translateAutoCheckinMessageKey } from "~/features/AutoCheckin/utils/autoCheckin"
 import { exportShareSnapshotWithToast } from "~/features/ShareSnapshots/utils/exportShareSnapshotWithToast"
 import { resolveDisplayAccountTokenForSecret } from "~/services/accounts/utils/apiServiceRequest"
 import { getApiService } from "~/services/apiService"
@@ -94,10 +95,11 @@ function resolveAutoCheckinResultMessage(params: {
       ? (params.result.messageParams as Record<string, unknown>)
       : {}
 
-    return params.t(params.result.messageKey, {
-      ...messageParams,
-      defaultValue: params.result.messageKey,
-    })
+    return translateAutoCheckinMessageKey(
+      params.t,
+      params.result.messageKey,
+      messageParams,
+    )
   }
 
   if (
@@ -131,7 +133,8 @@ export interface ActionButtonsProps {
  */
 const logger = createLogger("AccountActionButtons")
 
-const getLocateManagedSiteChannelToastKey = (
+const getLocateManagedSiteChannelToastMessage = (
+  t: TFunction,
   inspection: ManagedSiteChannelMatchInspection,
 ) => {
   if (inspection.key.matched && inspection.models.matched) {
@@ -139,30 +142,30 @@ const getLocateManagedSiteChannelToastKey = (
       inspection.key.channel?.id != null &&
       inspection.key.channel.id === inspection.models.channel?.id
     ) {
-      return "actions.channelLocateKeyMatchedModelsDrifted"
+      return t("account:actions.channelLocateKeyMatchedModelsDrifted")
     }
 
-    return "actions.channelLocateSignalsConflict"
+    return t("account:actions.channelLocateSignalsConflict")
   }
 
   if (inspection.key.matched) {
-    return "actions.channelLocateKeyMatchOnly"
+    return t("account:actions.channelLocateKeyMatchOnly")
   }
 
   switch (inspection.models.reason) {
     case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.EXACT:
-      return "actions.channelLocateSecondaryExactModels"
+      return t("account:actions.channelLocateSecondaryExactModels")
     case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.CONTAINED:
-      return "actions.channelLocateSecondaryModelsContained"
+      return t("account:actions.channelLocateSecondaryModelsContained")
     case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.SIMILAR:
-      return "actions.channelLocateSecondaryModelsSimilar"
+      return t("account:actions.channelLocateSecondaryModelsSimilar")
   }
 
   if (inspection.url.matched) {
-    return "actions.channelLocateFuzzyUrlOnly"
+    return t("account:actions.channelLocateFuzzyUrlOnly")
   }
 
-  return "actions.channelLocateUnresolved"
+  return t("account:actions.channelLocateUnresolved")
 }
 
 /**
@@ -447,7 +450,7 @@ export default function AccountActionButtons({
         return
       }
 
-      toast.success(t(getLocateManagedSiteChannelToastKey(resolution)))
+      toast.success(getLocateManagedSiteChannelToastMessage(t, resolution))
     } catch (error) {
       logger.error("Failed to locate managed site channel", {
         diagnostic: toSanitizedErrorSummary(error, Array.from(secretsToRedact)),
@@ -493,10 +496,10 @@ export default function AccountActionButtons({
       balance: site.balance?.[currencyType] ?? 0,
       includeTodayCashflow: includeToday,
       todayIncome: includeToday
-        ? site.todayIncome?.[currencyType] ?? 0
+        ? (site.todayIncome?.[currencyType] ?? 0)
         : undefined,
       todayOutcome: includeToday
-        ? site.todayConsumption?.[currencyType] ?? 0
+        ? (site.todayConsumption?.[currencyType] ?? 0)
         : undefined,
       asOf:
         site.last_sync_time && site.last_sync_time > 0

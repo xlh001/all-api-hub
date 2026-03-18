@@ -29,6 +29,52 @@ const logger = createLogger("PermissionOnboardingDialog")
 
 const GITHUB_URL = "https://github.com/qixing-jk/all-api-hub"
 
+/**
+ * Resolve the localized title for a supported optional permission.
+ */
+function getPermissionTitle(
+  t: (key: string, options?: any) => string,
+  id: ManifestOptionalPermissions,
+) {
+  switch (id) {
+    case "cookies":
+      return t("settings:permissions.items.cookies.title")
+    case "declarativeNetRequestWithHostAccess":
+      return t(
+        "settings:permissions.items.declarativeNetRequestWithHostAccess.title",
+      )
+    case "webRequest":
+      return t("settings:permissions.items.webRequest.title")
+    case "webRequestBlocking":
+      return t("settings:permissions.items.webRequestBlocking.title")
+    case "clipboardRead":
+      return t("settings:permissions.items.clipboardRead.title")
+  }
+}
+
+/**
+ * Resolve the localized description for a supported optional permission.
+ */
+function getPermissionDescription(
+  t: (key: string, options?: any) => string,
+  id: ManifestOptionalPermissions,
+) {
+  switch (id) {
+    case "cookies":
+      return t("settings:permissions.items.cookies.description")
+    case "declarativeNetRequestWithHostAccess":
+      return t(
+        "settings:permissions.items.declarativeNetRequestWithHostAccess.description",
+      )
+    case "webRequest":
+      return t("settings:permissions.items.webRequest.description")
+    case "webRequestBlocking":
+      return t("settings:permissions.items.webRequestBlocking.description")
+    case "clipboardRead":
+      return t("settings:permissions.items.clipboardRead.description")
+  }
+}
+
 const buildState = <T,>(value: T) =>
   Object.fromEntries(OPTIONAL_PERMISSIONS.map((id) => [id, value])) as Record<
     ManifestOptionalPermissions,
@@ -261,8 +307,8 @@ export function PermissionOnboardingDialog({
             <PermissionList
               items={permissionList.map((permission) => ({
                 id: permission.id,
-                title: t(permission.titleKey),
-                description: t(permission.descriptionKey),
+                title: getPermissionTitle(t, permission.id),
+                description: getPermissionDescription(t, permission.id),
                 rightContent: (
                   <Badge
                     variant={
@@ -275,11 +321,9 @@ export function PermissionOnboardingDialog({
                   >
                     {permission.granted === null
                       ? t("permissions.status.checking")
-                      : t(
-                          permission.granted
-                            ? "permissions.status.granted"
-                            : "permissions.status.denied",
-                        )}
+                      : permission.granted
+                        ? t("permissions.status.granted")
+                        : t("permissions.status.denied")}
                   </Badge>
                 ),
               }))}

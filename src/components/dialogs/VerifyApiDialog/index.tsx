@@ -27,6 +27,7 @@ import type {
 import {
   getApiVerificationApiTypeLabel,
   getApiVerificationProbeLabel,
+  translateApiVerificationSummary,
 } from "~/services/verification/aiApiVerification/i18n"
 import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
 import type { ApiToken } from "~/types"
@@ -385,7 +386,11 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
             const resultSummary = isDisabledForModel
               ? t("verifyDialog.requiresModelId")
               : result?.summaryKey
-                ? t(result.summaryKey, result.summaryParams)
+                ? (translateApiVerificationSummary(
+                    t,
+                    result.summaryKey,
+                    result.summaryParams,
+                  ) ?? result.summary)
                 : result?.status === "unsupported"
                   ? t("verifyDialog.unsupportedProbeForApiType", {
                       probe: getApiVerificationProbeLabel(

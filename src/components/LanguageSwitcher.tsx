@@ -19,6 +19,36 @@ interface LanguageSwitcherProps {
 }
 
 /**
+ * Resolve the localized short label shown on each language toggle.
+ */
+function getLanguageOptionLabel(
+  t: (key: string, options?: any) => string,
+  language: SupportedUiLanguage,
+) {
+  switch (language) {
+    case "en":
+      return t("settings:appearanceLanguage.switcher.options.en.label")
+    case DEFAULT_LANG:
+      return t("settings:appearanceLanguage.switcher.options.zh_CN.label")
+  }
+}
+
+/**
+ * Resolve the localized language name used in accessibility copy.
+ */
+function getLanguageOptionName(
+  t: (key: string, options?: any) => string,
+  language: SupportedUiLanguage,
+) {
+  switch (language) {
+    case "en":
+      return t("settings:appearanceLanguage.switcher.options.en.name")
+    case DEFAULT_LANG:
+      return t("settings:appearanceLanguage.switcher.options.zh_CN.name")
+  }
+}
+
+/**
  * LanguageSwitcher toggles the UI language and persists the preference.
  */
 export function LanguageSwitcher({
@@ -61,16 +91,17 @@ export function LanguageSwitcher({
           !compact && "sm:p-1",
         )}
       >
-        {UI_LANGUAGE_OPTIONS.map(({ code, translationKey }) => {
+        {UI_LANGUAGE_OPTIONS.map(({ code }) => {
           const isActive = activeLanguage === code
-          const label = t(`${translationKey}.label`)
-          const languageName = t(`${translationKey}.name`)
-          const accessibleLabel = t(
-            isActive
-              ? "appearanceLanguage.switcher.currentLanguage"
-              : "appearanceLanguage.switcher.switchToLanguage",
-            { language: languageName },
-          )
+          const label = getLanguageOptionLabel(t, code)
+          const languageName = getLanguageOptionName(t, code)
+          const accessibleLabel = isActive
+            ? t("appearanceLanguage.switcher.currentLanguage", {
+                language: languageName,
+              })
+            : t("appearanceLanguage.switcher.switchToLanguage", {
+                language: languageName,
+              })
 
           return (
             <ToggleButton

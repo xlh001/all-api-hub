@@ -10,7 +10,7 @@ import { Modal } from "~/components/ui/Dialog/Modal"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { stripAutoCheckinMessageKeyPrefix } from "~/features/AutoCheckin/utils/autoCheckin"
+import { translateAutoCheckinMessageKey } from "~/features/AutoCheckin/utils/autoCheckin"
 import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
 import {
   AutoCheckinRunSummary,
@@ -498,11 +498,12 @@ export default function AutoCheckin(props: {
       const displayMessage =
         result.rawMessage ??
         (result.messageKey
-          ? (t(stripAutoCheckinMessageKeyPrefix(result.messageKey), {
-              ...(result.messageParams ?? {}),
-              defaultValue: result.messageKey,
-            }) as string)
-          : result.message ?? "")
+          ? translateAutoCheckinMessageKey(
+              t,
+              result.messageKey,
+              result.messageParams,
+            )
+          : (result.message ?? ""))
       return (
         result.accountName.toLowerCase().includes(keyword) ||
         String(result.accountId).toLowerCase().includes(keyword) ||

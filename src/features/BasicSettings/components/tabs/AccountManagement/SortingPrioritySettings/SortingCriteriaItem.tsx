@@ -62,7 +62,7 @@ export function SortingCriteriaItem({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Badge variant="default" size="sm">
-              {t(`sorting.priority`)}: {item.priority + 1}
+              {t("sorting.priority")}: {item.priority + 1}
             </Badge>
             <Switch
               checked={item.enabled}

@@ -877,14 +877,13 @@ export function useAccountDialog({
 
       toast.success(
         result.message ??
-          t(
-            mode === DIALOG_MODES.ADD
-              ? "messages.addSuccess"
-              : "messages.updateSuccess",
-            {
-              name: siteName,
-            },
-          ),
+          (mode === DIALOG_MODES.ADD
+            ? t("messages.addSuccess", {
+                name: siteName,
+              })
+            : t("messages.updateSuccess", {
+                name: siteName,
+              })),
       )
       return result
     } catch (error: any) {

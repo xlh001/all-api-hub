@@ -45,8 +45,22 @@ export function getHealthStatusDisplay(
     }
   }
 
+  const text = (() => {
+    switch (status) {
+      case "healthy":
+        return t("account:healthStatus.healthy")
+      case "warning":
+        return t("account:healthStatus.warning")
+      case "error":
+        return t("account:healthStatus.error")
+      case "unknown":
+      default:
+        return t("account:healthStatus.unknown")
+    }
+  })()
+
   return {
-    text: t(`account:healthStatus.${status}`),
+    text,
     color: config.color,
   }
 }

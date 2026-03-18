@@ -40,7 +40,7 @@ import {
   type ManagedSiteTokenChannelStatus,
 } from "~/services/managedSites/tokenChannelStatus"
 import {
-  getManagedSiteLabelKey,
+  getManagedSiteLabel,
   supportsManagedSiteBaseUrlChannelLookup,
 } from "~/services/managedSites/utils/managedSite"
 import {
@@ -448,7 +448,7 @@ function TokenActionButtons({
   const [isCliProxyDialogOpen, setIsCliProxyDialogOpen] = useState(false)
   const [isKiloCodeDialogOpen, setIsKiloCodeDialogOpen] = useState(false)
 
-  const managedSiteLabel = t(getManagedSiteLabelKey(managedSiteType))
+  const managedSiteLabel = getManagedSiteLabel(t, managedSiteType)
 
   const handleImportToManagedSite = async () => {
     await openWithAccount(account, token, (result) => {
@@ -717,7 +717,7 @@ export function TokenHeader({
       : undefined
   const canRetryManagedSiteVerification = Boolean(
     managedSiteRecovery?.loginCredentialsConfigured ||
-      managedSiteRecovery?.authenticatedBrowserSessionExists,
+    managedSiteRecovery?.authenticatedBrowserSessionExists,
   )
   const matchedManagedSiteChannel =
     managedSiteStatus && "matchedChannel" in managedSiteStatus
@@ -725,8 +725,8 @@ export function TokenHeader({
       : undefined
   const shouldShowManagedSiteVerificationRetry = Boolean(
     canRetryManagedSiteVerification &&
-      managedSiteStatus &&
-      onManagedSiteVerificationRetry,
+    managedSiteStatus &&
+    onManagedSiteVerificationRetry,
   )
   const shouldShowManagedSiteSettingsAction = Boolean(
     managedSiteRecovery && !canRetryManagedSiteVerification,

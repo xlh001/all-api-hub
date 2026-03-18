@@ -30,6 +30,7 @@ import {
 import {
   getApiVerificationApiTypeLabel,
   getApiVerificationProbeLabel,
+  translateApiVerificationSummary,
 } from "~/services/verification/aiApiVerification/i18n"
 import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
@@ -491,10 +492,11 @@ export function VerifyApiCredentialProfileDialog({
               const resultSummary = isDisabledForModel
                 ? t("aiApiVerification:verifyDialog.requiresModelId")
                 : result?.summaryKey
-                  ? t(
-                      `aiApiVerification:${result.summaryKey}`,
+                  ? (translateApiVerificationSummary(
+                      t,
+                      result.summaryKey,
                       result.summaryParams,
-                    )
+                    ) ?? result.summary)
                   : result?.status === "unsupported"
                     ? t(
                         "aiApiVerification:verifyDialog.unsupportedProbeForApiType",
