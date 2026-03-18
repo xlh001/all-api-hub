@@ -28,7 +28,7 @@
 
 ---
 
-**[Documentation](https://all-api-hub.qixing1217.top/en) | [Supported Tools](https://all-api-hub.qixing1217.top/supported-export-tools.html) | [Supported Sites](https://all-api-hub.qixing1217.top/supported-sites.html) | [Getting Started](https://all-api-hub.qixing1217.top/en/get-started.html) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [Changelog](https://all-api-hub.qixing1217.top/en/changelog.html) | [Contributing](CONTRIBUTING.md)**
+**[Documentation](https://all-api-hub.qixing1217.top/en/) | [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html) | [Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html) | [Getting Started](https://all-api-hub.qixing1217.top/en/get-started.html) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [Changelog](https://all-api-hub.qixing1217.top/en/changelog.html) | [Contributing](CONTRIBUTING.md)**
 
 ---
 
@@ -56,8 +56,8 @@ All API Hub is a browser extension for one-stop management of New API-style rela
 
 For the latest compatibility references, see:
 
-- [Supported Sites](https://all-api-hub.qixing1217.top/supported-sites.html)
-- [Supported Tools](https://all-api-hub.qixing1217.top/supported-export-tools.html)
+- [Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html)
+- [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html)
 
 <a id="features"></a>
 ## ✨ Features
