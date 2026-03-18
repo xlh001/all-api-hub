@@ -586,9 +586,11 @@ export function getSidePanelSupport(): SidePanelSupport {
  * Automatically chooses the appropriate Chromium or Firefox pathway.
  * Prefers Chromium's window-scoped open call before falling back to tab-scoped
  * open requests when a runtime rejects the first variant.
+ * When a clicked tab is provided, uses it before any async active-tab lookup so
+ * Chromium keeps treating the open request as user initiated.
  * @throws {Error} When the current browser does not expose side panel support.
  */
-export const openSidePanel = async () => {
+export const openSidePanel = async (targetTab?: browser.tabs.Tab | null) => {
   const support = getSidePanelSupport()
 
   if (!support.supported) {
@@ -600,11 +602,15 @@ export const openSidePanel = async () => {
       return await (browser as any).sidebarAction.open()
     }
 
-    const tab = await getActiveTab()
-    const windowId = tab?.windowId
-    const tabId = tab?.id
-
     const sidePanel = (globalThis as any).chrome?.sidePanel
+    let windowId = targetTab?.windowId
+    let tabId = targetTab?.id
+
+    if (typeof windowId !== "number" && typeof tabId !== "number") {
+      const activeTab = await getActiveTab()
+      windowId = activeTab?.windowId
+      tabId = activeTab?.id
+    }
 
     if (typeof windowId === "number") {
       try {

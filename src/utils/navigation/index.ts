@@ -580,10 +580,15 @@ export const openAutoCheckinPage = withPopupClose(
  * settings page so callers never leave the user without a visible destination.
  * The fallback targets Basic settings because it already hosts side-panel
  * behavior controls and related guidance.
+ * When invoked from a toolbar action click, callers can forward the clicked tab
+ * so Chromium receives the sidePanel.open request before user-gesture context is
+ * lost to async tab lookup.
  */
-export const openSidePanelWithFallback = async () => {
+export const openSidePanelWithFallback = async (
+  targetTab?: browser.tabs.Tab | null,
+) => {
   try {
-    await _openSidePanel()
+    await _openSidePanel(targetTab)
   } catch (error) {
     logger.warn(
       `Failed to open side panel, falling back to settings:\n${getErrorMessage(error)}`,

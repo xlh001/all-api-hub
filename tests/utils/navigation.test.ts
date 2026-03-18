@@ -193,6 +193,14 @@ describe("navigation utilities", () => {
     })
   })
 
+  it("openSidePanelWithFallback should forward the clicked tab context", async () => {
+    const clickedTab = { id: 7, windowId: 9 } as browser.tabs.Tab
+
+    await openSidePanelWithFallback(clickedTab)
+
+    expect(mockedOpenSidePanel).toHaveBeenCalledWith(clickedTab)
+  })
+
   it("openSidePanelPage should close the popup after fallback navigation", async () => {
     const closeSpy = vi.spyOn(window, "close").mockImplementation(() => {})
     mockedIsExtensionPopup.mockReturnValue(true)

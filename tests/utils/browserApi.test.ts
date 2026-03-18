@@ -512,4 +512,26 @@ describe("browserApi getSidePanelSupport", () => {
       "browser.sidebarAction.open missing; chrome.sidePanel.open missing",
     )
   })
+
+  it("uses the provided Chromium tab context before querying the active tab", async () => {
+    const queryTabs = vi.fn().mockRejectedValue(new Error("should not query"))
+    const open = vi.fn().mockResolvedValue(undefined)
+    ;(globalThis as any).browser = {
+      tabs: {
+        query: queryTabs,
+      },
+    }
+    ;(globalThis as any).chrome = {
+      sidePanel: {
+        open,
+      },
+    }
+
+    const { openSidePanel } = await import("~/utils/browser/browserApi")
+
+    await openSidePanel({ id: 7, windowId: 9 } as browser.tabs.Tab)
+
+    expect(open).toHaveBeenCalledWith({ windowId: 9 })
+    expect(queryTabs).not.toHaveBeenCalled()
+  })
 })

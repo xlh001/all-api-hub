@@ -19,9 +19,11 @@ const logger = createLogger("ActionClickBehavior")
 /**
  * Singleton click handler used when the action is configured to open the side panel.
  * Uses the shared open-or-fallback path so toolbar clicks never dead-end.
+ * Forwarding the clicked tab lets Chromium keep the sidePanel.open call inside
+ * the original user gesture.
  */
-const handleActionClick = async () => {
-  await openSidePanelWithFallback()
+const handleActionClick = async (tab: browser.tabs.Tab) => {
+  await openSidePanelWithFallback(tab)
 }
 
 /**

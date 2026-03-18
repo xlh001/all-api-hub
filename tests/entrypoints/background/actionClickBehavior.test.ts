@@ -111,6 +111,7 @@ describe("background applyActionClickBehavior", () => {
       supported: true,
       kind: "chromium-side-panel",
     })
+    const clickedTab = { id: 123, windowId: 456 } as browser.tabs.Tab
 
     const { applyActionClickBehavior } = await import(
       "~/entrypoints/background/actionClickBehavior"
@@ -121,8 +122,8 @@ describe("background applyActionClickBehavior", () => {
     const clickHandler = addActionClickListener.mock.calls[0]?.[0]
     expect(typeof clickHandler).toBe("function")
 
-    await clickHandler?.()
+    await clickHandler?.(clickedTab)
 
-    expect(openSidePanelWithFallback).toHaveBeenCalledTimes(1)
+    expect(openSidePanelWithFallback).toHaveBeenCalledWith(clickedTab)
   })
 })
