@@ -66,11 +66,13 @@ function MyComponent() {
 | `keyManagement` | 密钥管理 | `t("keyManagement:selectAccount")` |
 | `modelList` | 模型列表 | `t("modelList:searchModels")` |
 | `settings` | 设置 | `t("settings:display.title")` |
-| `messages` | 消息提示 | `t("messages:toast.success.accountAdded")` |
+| `messages` | 消息提示 | `t("messages:toast.success.accountSaveSuccess")` |
 | `ui` | UI 元素 | `t("ui:navigation.home")` |
 | `importExport` | 导入/导出 | `t("importExport:export.title")` |
 | `shareSnapshots` | 共享快照 | `t("shareSnapshots:<key>")` |
 | `about` | 关于 | `t("about:title")` |
+
+- `common.status.*` 是状态类文案（如 `enabled` / `disabled` / `error`）的唯一来源；不要再在 `common` 根级新增同名别名，避免中英文翻译漂移。
 
 ---
 
