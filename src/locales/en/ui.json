@@ -343,9 +343,11 @@
     "usageAnalytics": "Usage Analytics"
   },
   "pageTitle": {
-    "options": "All API Hub | Settings",
-    "popup": "All API Hub | Popup",
-    "sidepanel": "All API Hub | Sidebar"
+    "app": "All API Hub",
+    "options": "Settings",
+    "popup": "Popup",
+    "sidepanel": "Sidebar",
+    "template": "{{page}} | {{app}}"
   },
   "repeatableInput": {
     "actions": {

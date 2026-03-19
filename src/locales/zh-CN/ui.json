@@ -338,9 +338,11 @@
     "usageAnalytics": "用量分析"
   },
   "pageTitle": {
-    "options": "中转站管理器 - All API Hub | 设置",
-    "popup": "中转站管理器 - All API Hub | 弹窗",
-    "sidepanel": "中转站管理器 - All API Hub | 侧边栏"
+    "app": "中转站管理器 - All API Hub",
+    "options": "设置",
+    "popup": "弹窗",
+    "sidepanel": "侧边栏",
+    "template": "{{page}} | {{app}}"
   },
   "repeatableInput": {
     "actions": {

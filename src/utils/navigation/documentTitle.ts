@@ -6,10 +6,12 @@ import i18n from "~/utils/i18n"
  */
 const logger = createLogger("DocumentTitle")
 
+type DocumentPageType = "options" | "popup" | "sidepanel"
+
 /**
- * Resolve the localized document title for a known extension page type.
+ * Resolve the localized page label for a known extension page type.
  */
-function getDocumentTitle(pageType: "options" | "popup" | "sidepanel"): string {
+function getPageTitle(pageType: DocumentPageType): string {
   switch (pageType) {
     case "options":
       return i18n.t("ui:pageTitle.options")
@@ -21,12 +23,20 @@ function getDocumentTitle(pageType: "options" | "popup" | "sidepanel"): string {
 }
 
 /**
+ * Resolve the localized document title for a known extension page type.
+ */
+function getDocumentTitle(pageType: DocumentPageType): string {
+  return i18n.t("ui:pageTitle.template", {
+    app: i18n.t("ui:pageTitle.app"),
+    page: getPageTitle(pageType),
+  })
+}
+
+/**
  * Initializes the document title and sets up a listener for language changes
  * @param pageType - The type of page ('options', 'popup', or 'sidepanel')
  */
-export function initializeDocumentTitle(
-  pageType: "options" | "popup" | "sidepanel",
-): void {
+export function initializeDocumentTitle(pageType: DocumentPageType): void {
   // Set initial title
   setDocumentTitle(pageType)
 
@@ -41,9 +51,7 @@ export function initializeDocumentTitle(
  * This can be called before i18n is fully initialized
  * @param pageType - The type of page ('options', 'popup', or 'sidepanel')
  */
-export function setDocumentTitle(
-  pageType: "options" | "popup" | "sidepanel",
-): void {
+export function setDocumentTitle(pageType: DocumentPageType): void {
   try {
     document.title = getDocumentTitle(pageType)
   } catch (error) {
