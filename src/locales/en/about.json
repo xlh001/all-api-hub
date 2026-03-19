@@ -7,6 +7,10 @@
       "button": "Open bug report",
       "description": "Report broken behavior, errors, or unexpected results with the bug-report template."
     },
+    "community": {
+      "button": "Open community hub",
+      "description": "See the WeChat QR code, Telegram group, and other community channels for quick questions and setup discussions."
+    },
     "discussion": {
       "button": "Open discussions",
       "description": "Ask questions, compare setups, or start a broader community discussion on GitHub Discussions."

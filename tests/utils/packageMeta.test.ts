@@ -57,6 +57,9 @@ describe("packageMeta", () => {
 
   describe("getFeedbackDestinationUrls", () => {
     it("builds the repository feedback destinations from the repository url", () => {
+      const homepage = new URL(getHomepage())
+      homepage.hash = "community"
+
       expect(getFeedbackDestinationUrls()).toEqual({
         repository: "https://github.com/qixing-jk/all-api-hub",
         bugReport:
@@ -64,7 +67,20 @@ describe("packageMeta", () => {
         featureRequest:
           "https://github.com/qixing-jk/all-api-hub/issues/new?template=feature_request.yml",
         discussions: "https://github.com/qixing-jk/all-api-hub/discussions",
+        community: homepage.toString(),
       })
+    })
+
+    it("builds locale-aware community destinations", () => {
+      expect(getFeedbackDestinationUrls("en").community).toBe(
+        "https://all-api-hub.qixing1217.top/en/#community",
+      )
+      expect(getFeedbackDestinationUrls("ja").community).toBe(
+        "https://all-api-hub.qixing1217.top/ja/#community",
+      )
+      expect(getFeedbackDestinationUrls("zh-CN").community).toBe(
+        "https://all-api-hub.qixing1217.top/#community",
+      )
     })
   })
 })

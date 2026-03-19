@@ -7,7 +7,7 @@ import { getSidePanelSupport } from "~/utils/browser/browserApi"
 import {
   openApiCredentialProfilesPage,
   openBugReportPage,
-  openDiscussionsPage,
+  openCommunityPage,
   openFeatureRequestPage,
   openFullAccountManagerPage,
   openFullBookmarkManagerPage,
@@ -46,7 +46,7 @@ vi.mock("~/features/AccountManagement/hooks/AccountDataContext", () => ({
 vi.mock("~/utils/navigation", () => ({
   openApiCredentialProfilesPage: vi.fn(),
   openBugReportPage: vi.fn(),
-  openDiscussionsPage: vi.fn(),
+  openCommunityPage: vi.fn(),
   openFeatureRequestPage: vi.fn(),
   openFullAccountManagerPage: vi.fn(),
   openFullBookmarkManagerPage: vi.fn(),
@@ -60,7 +60,7 @@ const mockedOpenApiCredentialProfilesPage = vi.mocked(
   openApiCredentialProfilesPage,
 )
 const mockedOpenBugReportPage = vi.mocked(openBugReportPage)
-const mockedOpenDiscussionsPage = vi.mocked(openDiscussionsPage)
+const mockedOpenCommunityPage = vi.mocked(openCommunityPage)
 const mockedOpenFeatureRequestPage = vi.mocked(openFeatureRequestPage)
 const mockedOpenFullAccountManagerPage = vi.mocked(openFullAccountManagerPage)
 const mockedOpenFullBookmarkManagerPage = vi.mocked(openFullBookmarkManagerPage)
@@ -181,10 +181,14 @@ describe("popup HeaderSection", () => {
     await user.click(
       await screen.findByRole("button", { name: "ui:feedback.trigger" }),
     )
+    expect(
+      screen.queryByRole("menuitem", { name: "ui:feedback.discussion" }),
+    ).not.toBeInTheDocument()
     await user.click(
-      await screen.findByRole("menuitem", { name: "ui:feedback.discussion" }),
+      await screen.findByRole("menuitem", { name: "ui:feedback.community" }),
     )
 
-    expect(mockedOpenDiscussionsPage).toHaveBeenCalledTimes(1)
+    expect(mockedOpenCommunityPage).toHaveBeenCalledTimes(1)
+    expect(mockedOpenCommunityPage).toHaveBeenCalledWith("en")
   })
 })

@@ -5,6 +5,7 @@ import {
   ChatBubbleLeftEllipsisIcon,
   Cog6ToothIcon,
   LightBulbIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline"
 import { PanelRightClose } from "lucide-react"
 import { useCallback } from "react"
@@ -32,7 +33,7 @@ import { createLogger } from "~/utils/core/logger"
 import {
   openApiCredentialProfilesPage,
   openBugReportPage,
-  openDiscussionsPage,
+  openCommunityPage,
   openFeatureRequestPage,
   openFullAccountManagerPage,
   openFullBookmarkManagerPage,
@@ -99,7 +100,7 @@ export default function HeaderSection({
   showRefresh?: boolean
   activeView?: PopupViewType
 }) {
-  const { t } = useTranslation(["ui", "account", "common"])
+  const { t, i18n } = useTranslation(["ui", "account", "common"])
   const { isRefreshing, handleRefresh } = useAccountDataContext()
   const inSidePanel = isExtensionSidePanel()
   const sidePanelSupported = getSidePanelSupport().supported
@@ -208,9 +209,11 @@ export default function HeaderSection({
               <LightBulbIcon className="h-4 w-4" />
               {t("ui:feedback.featureRequest")}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void openDiscussionsPage()}>
-              <ChatBubbleLeftEllipsisIcon className="h-4 w-4" />
-              {t("ui:feedback.discussion")}
+            <DropdownMenuItem
+              onClick={() => void openCommunityPage(i18n.language)}
+            >
+              <UserGroupIcon className="h-4 w-4" />
+              {t("ui:feedback.community")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

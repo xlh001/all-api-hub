@@ -2,6 +2,8 @@ import { joinUrl } from "~/utils/core/url"
 import { getChangelogAnchorId } from "~/utils/navigation/changelogAnchor"
 import { getHomepage } from "~/utils/navigation/packageMeta"
 
+const DOCS_COMMUNITY_ANCHOR = "community"
+
 /**
  * Resolve the documentation homepage URL for a given language.
  *
@@ -29,6 +31,18 @@ export const getDocsAutoDetectUrl = (language?: string) =>
 
 export const getDocsGetStartedUrl = (language?: string) =>
   getDocsPageUrl("get-started", language)
+
+/**
+ * Resolve the shared community hub on the localized docs homepage.
+ *
+ * This keeps extension entry points aligned with the user's current language
+ * once translated docs add a matching `#community` section.
+ */
+export const getDocsCommunityUrl = (language?: string) => {
+  const url = new URL(getDocsHomepageUrl(language))
+  url.hash = DOCS_COMMUNITY_ANCHOR
+  return url.toString()
+}
 
 export const getDocsChangelogUrl = (version?: string, language?: string) => {
   const url = getDocsPageUrl("changelog.html", language)

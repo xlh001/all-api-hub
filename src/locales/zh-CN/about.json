@@ -7,6 +7,10 @@
       "button": "打开问题反馈",
       "description": "使用问题反馈模板提交异常行为、报错或与预期不符的结果。"
     },
+    "community": {
+      "button": "查看交流渠道",
+      "description": "查看微信群二维码、Telegram 群和其他社区交流入口，适合快速提问或交流使用经验。"
+    },
     "discussion": {
       "button": "打开讨论区",
       "description": "前往 GitHub Discussions 提问、交流配置经验，或发起更广泛的社区讨论。"

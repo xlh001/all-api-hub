@@ -407,6 +407,13 @@ const _openDiscussionsPage = async () => {
 }
 
 /**
+ * Opens the docs community hub in a new browser tab.
+ */
+const _openCommunityPage = async (language?: string) => {
+  await createActiveTab(getFeedbackDestinationUrls(language).community)
+}
+
+/**
  * Opens the API credential profiles section, preferring in-page navigation when already on options.html.
  */
 const _openApiCredentialProfilesPage = () => {
@@ -701,6 +708,11 @@ export const openFeatureRequestPage = withPopupClose(_openFeatureRequestPage)
  * Open the GitHub Discussions page and close the popup afterward when needed.
  */
 export const openDiscussionsPage = withPopupClose(_openDiscussionsPage)
+
+/**
+ * Open the docs community hub and close the popup afterward when needed.
+ */
+export const openCommunityPage = withPopupClose(_openCommunityPage)
 
 /**
  * Open the API credential profiles page and close the popup afterward when applicable.

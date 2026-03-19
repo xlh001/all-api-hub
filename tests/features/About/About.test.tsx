@@ -12,7 +12,7 @@ describe("About", () => {
       await screen.findByText("about:feedbackSection.title"),
     ).toBeInTheDocument()
 
-    const feedbackUrls = getFeedbackDestinationUrls()
+    const feedbackUrls = getFeedbackDestinationUrls("en")
 
     expect(
       await screen.findByRole("link", {
@@ -24,10 +24,18 @@ describe("About", () => {
         name: "about:feedbackSection.featureRequest.button",
       }),
     ).toHaveAttribute("href", feedbackUrls.featureRequest)
+    const communityLink = await screen.findByRole("link", {
+      name: "about:feedbackSection.community.button",
+    })
+    expect(communityLink).toHaveAttribute("href", feedbackUrls.community)
+
+    const discussionLink = await screen.findByRole("link", {
+      name: "about:feedbackSection.discussion.button",
+    })
+    expect(discussionLink).toHaveAttribute("href", feedbackUrls.discussions)
     expect(
-      await screen.findByRole("link", {
-        name: "about:feedbackSection.discussion.button",
-      }),
-    ).toHaveAttribute("href", feedbackUrls.discussions)
+      communityLink.compareDocumentPosition(discussionLink) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 })

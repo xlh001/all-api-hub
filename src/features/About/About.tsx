@@ -6,6 +6,7 @@ import {
   GlobeAltIcon,
   LightBulbIcon,
   StarIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline"
 import type { TFunction } from "i18next"
 import { Info } from "lucide-react"
@@ -50,7 +51,7 @@ export default function About() {
 
   // 从工具函数获取元数据
   const homepage = getDocsHomepageUrl(i18n.language)
-  const feedbackDestinations = getFeedbackDestinationUrls()
+  const feedbackDestinations = getFeedbackDestinationUrls(i18n.language)
 
   // Store CTA: ask for a positive review on the current store, and provide download links for other stores.
   const currentStoreId = detectExtensionStore()
@@ -147,6 +148,15 @@ export default function About() {
               buttonText={t("feedbackSection.featureRequest.button")}
               buttonVariant="secondary"
               iconClass="text-amber-500 dark:text-amber-400"
+            />
+            <LinkCard
+              Icon={UserGroupIcon}
+              title={t("ui:feedback.community")}
+              description={t("feedbackSection.community.description")}
+              href={feedbackDestinations.community}
+              buttonText={t("feedbackSection.community.button")}
+              buttonVariant="outline"
+              iconClass="text-emerald-600 dark:text-emerald-400"
             />
             <LinkCard
               Icon={ChatBubbleLeftEllipsisIcon}

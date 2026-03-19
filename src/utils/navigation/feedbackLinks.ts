@@ -1,3 +1,4 @@
+import { getDocsCommunityUrl } from "~/utils/navigation/docsLinks"
 import { getRepository } from "~/utils/navigation/packageMeta"
 
 const BUG_REPORT_TEMPLATE = "bug_report.yml"
@@ -8,6 +9,7 @@ export interface FeedbackDestinationUrls {
   bugReport: string
   featureRequest: string
   discussions: string
+  community: string
 }
 
 const normalizeRepositoryUrl = (repositoryUrl: string) => {
@@ -20,7 +22,9 @@ const buildIssueTemplateUrl = (repositoryUrl: string, template: string) => {
   return url.toString()
 }
 
-export const getFeedbackDestinationUrls = (): FeedbackDestinationUrls => {
+export const getFeedbackDestinationUrls = (
+  language?: string,
+): FeedbackDestinationUrls => {
   const repository = normalizeRepositoryUrl(getRepository())
 
   return {
@@ -28,5 +32,6 @@ export const getFeedbackDestinationUrls = (): FeedbackDestinationUrls => {
     bugReport: buildIssueTemplateUrl(repository, BUG_REPORT_TEMPLATE),
     featureRequest: buildIssueTemplateUrl(repository, FEATURE_REQUEST_TEMPLATE),
     discussions: `${repository}/discussions`,
+    community: getDocsCommunityUrl(language),
   }
 }
