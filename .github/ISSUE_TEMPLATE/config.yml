@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Community Groups / 社区交流群
+    url: https://all-api-hub.qixing1217.top/#community
+    about: Join the WeChat or Telegram groups for quick discussion / 加入微信群或 Telegram 群进行快速交流
   - name: GitHub Discussions / GitHub 讨论区
     url: https://github.com/qixing-jk/all-api-hub/discussions
     about: Ask questions and discuss ideas with the community / 向社区提问和讨论想法
