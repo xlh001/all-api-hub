@@ -1,14 +1,7 @@
-echo "🔍 Running lint-staged..."
+echo "🔍 Running staged validation..."
 
-pnpm lint-staged --concurrent false || {
-  echo "❌ Lint-staged checks failed"
-  exit 1
-}
-
-echo "🌐 Running i18n staged check..."
-
-pnpm run i18n:check:staged || {
-  echo "❌ i18n staged check failed"
+pnpm run validate:staged || {
+  echo "❌ Staged validation failed"
   exit 1
 }
 

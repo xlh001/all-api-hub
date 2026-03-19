@@ -223,13 +223,13 @@ pnpm compile
 
 This project uses [Husky](https://typicode.github.io/husky) to enforce code quality through Git hooks:
 
-- **pre-commit**: Runs `pnpm lint-staged` (see `.husky/pre-commit` and `lint-staged` in `package.json`)
-  - Formats staged files with Prettier
-  - Fixes lint issues with ESLint
-  - Runs `vitest related --run` for staged JS/TS files
+- **pre-commit**: Runs `pnpm run validate:staged` (see `.husky/pre-commit` and `package.json`)
+  - Runs `pnpm lint-staged --concurrent false` to format staged files with Prettier, fix ESLint issues, and run `vitest related --run` for staged JS/TS files
+  - Then runs `pnpm run i18n:check:staged` so repo-level translation extraction checks are not skipped when `lint-staged` passes
 - **pre-push**: Not configured in this repo currently (CI covers `pnpm test:ci`; run `pnpm test:ci && pnpm compile` locally before pushing when possible).
 
 The hooks are automatically set up when you run `pnpm install` (via the `prepare` script).
+If you want to reproduce the full pre-commit validation manually, run `pnpm run validate:staged`. Do not treat bare `pnpm lint-staged` as equivalent to the repo's complete pre-commit flow.
 
 #### Skipping Hooks (Not Recommended)
 

@@ -6,13 +6,11 @@ This project uses [Husky](https://typicode.github.io/husky/) to manage Git hooks
 
 ### pre-commit
 Runs before each commit to ensure code quality:
-- **Code Formatting**: Checks code formatting with Prettier
-  - If formatting issues are found, it will auto-format and require you to review and stage changes
-- **Linting**: Checks code with ESLint
-  - If linting issues are found, it will attempt to auto-fix and require you to review and stage changes
-- **i18n Extraction Guard**: Runs `pnpm run i18n:check:staged`
-  - Only triggers when staged files touch `src/**`, `package.json`, `pnpm-lock.yaml`, or `i18next.config.ts`
-  - Internally runs `pnpm run i18n:extract:ci` to ensure locale files stay in sync with code
+- **Unified staged validation**: Runs `pnpm run validate:staged`
+  - Internally runs `pnpm lint-staged --concurrent false` for staged file formatting, ESLint fixes, and `vitest related --run`
+  - Then runs `pnpm run i18n:check:staged` as a repo-level guard
+  - The i18n guard only triggers when staged files touch `src/**`, `package.json`, `pnpm-lock.yaml`, or `i18next.config.ts`
+  - Internally the i18n guard runs `pnpm run i18n:extract:ci` to ensure locale files stay in sync with code
 
 ## Manual Commands
 
@@ -34,7 +32,10 @@ pnpm lint:fix
 # Run full i18n extract CI guard
 pnpm run i18n:extract:ci
 
-# Run the staged-only i18n pre-commit check manually
+# Run the full staged pre-commit-equivalent validation manually
+pnpm run validate:staged
+
+# Run only the staged i18n guard manually
 pnpm run i18n:check:staged
 
 ```
