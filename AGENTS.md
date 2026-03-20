@@ -100,6 +100,8 @@ Prereqs: Node.js 20+ and pnpm 10+.
 - HTTP mocking uses MSW from `tests/msw/handlers.ts` and `tests/msw/server.ts`.
 - Shared test rendering utilities live in `tests/test-utils/render.tsx`.
 - Global test setup lives in `tests/setup.ts` and uses `wxt/testing/fake-browser` for WebExtension API mocking.
+- For `src/**` TS/TSX changes that add or modify executable logic, treat tests as part of the same task by default instead of waiting for CI to expose a coverage drop. Pure types, constants, copy, styles, and no-behavior refactors are the main exceptions.
+- New executable files, functions, branches, listeners/controllers, or error fallback paths should usually ship with at least one targeted test covering the added behavior.
 - Start with the repo-defined `pre-commit`, affected-file, or `related` validation flow for the touched files, then broaden only if the change is cross-cutting.
 - For TS/TSX edits in this repo, treat `pnpm run validate:staged` / the Husky `pre-commit` path as the default affected validation flow and prefer `vitest related --run` style checks over a manually assembled test file list.
 - If a change modifies shared component or hook props, validation must cover direct render/use sites and standalone harness tests that instantiate the changed API surface.
