@@ -44,6 +44,7 @@ interface CCSwitchExportDialogProps {
 const logger = createLogger("CCSwitchExportDialog")
 
 const DEFAULT_APP: CCSwitchApp = "claude"
+const APP_LIMITATION_NOTICE_ID = "ccswitch-app-limitation"
 
 const getCCSwitchAppLabel = (
   t: (key: string, options?: any) => string,
@@ -56,6 +57,24 @@ const getCCSwitchAppLabel = (
       return t("ui:dialog.ccswitch.appOptions.codex")
     case "gemini":
       return t("ui:dialog.ccswitch.appOptions.gemini")
+    case "opencode":
+      return t("ui:dialog.ccswitch.appOptions.opencode")
+    case "openclaw":
+      return t("ui:dialog.ccswitch.appOptions.openclaw")
+  }
+}
+
+const getCCSwitchLimitationNotice = (
+  t: (key: string, options?: any) => string,
+  app: CCSwitchApp,
+) => {
+  switch (app) {
+    case "opencode":
+      return t("ui:dialog.ccswitch.notices.opencode")
+    case "openclaw":
+      return t("ui:dialog.ccswitch.notices.openclaw")
+    default:
+      return null
   }
 }
 
@@ -83,6 +102,7 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
   >([])
   const [isLoadingModels, setIsLoadingModels] = useState(false)
   const formId = useMemo(() => `ccswitch-export-form-${token.id}`, [token.id])
+  const limitationNotice = getCCSwitchLimitationNotice(t, app)
 
   useEffect(() => {
     if (isOpen) {
@@ -102,6 +122,8 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
     if (!isOpen) return
     if (isEndpointCustomized) return
 
+    // CC Switch expects Codex exports to default to an OpenAI-style /v1 endpoint,
+    // while OpenCode/OpenClaw should keep the stored base URL unless the user overrides it.
     const defaultEndpoint =
       app === "codex"
         ? coerceBaseUrlToPathSuffix(account.baseUrl, "/v1")
@@ -226,6 +248,45 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
     >
       <form className="space-y-4" id={formId} onSubmit={handleSubmit}>
         <div>
+          <Label htmlFor="ccswitch-app">
+            {t("ui:dialog.ccswitch.fields.app")}
+          </Label>
+          <Select
+            value={app ?? ""}
+            onValueChange={(value) => setApp(value as CCSwitchApp)}
+          >
+            <SelectTrigger
+              id="ccswitch-app"
+              className="mt-1"
+              aria-describedby={
+                limitationNotice ? APP_LIMITATION_NOTICE_ID : undefined
+              }
+            >
+              <SelectValue placeholder={t("ui:dialog.ccswitch.fields.app")} />
+            </SelectTrigger>
+            <SelectContent>
+              {CCSWITCH_APPS.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {getCCSwitchAppLabel(t, value)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {limitationNotice ? (
+          <div
+            id={APP_LIMITATION_NOTICE_ID}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/30 dark:text-amber-100"
+          >
+            {limitationNotice}
+          </div>
+        ) : null}
+
+        <div>
           <Label htmlFor="ccswitch-name">
             {t("ui:dialog.ccswitch.fields.name")}
           </Label>
@@ -265,27 +326,6 @@ export function CCSwitchExportDialog(props: CCSwitchExportDialogProps) {
               setEndpoint(event.target.value)
             }}
           />
-        </div>
-
-        <div>
-          <Label htmlFor="ccswitch-app">
-            {t("ui:dialog.ccswitch.fields.app")}
-          </Label>
-          <Select
-            value={app ?? ""}
-            onValueChange={(value) => setApp(value as CCSwitchApp)}
-          >
-            <SelectTrigger id="ccswitch-app" className="mt-1">
-              <SelectValue placeholder={t("ui:dialog.ccswitch.fields.app")} />
-            </SelectTrigger>
-            <SelectContent>
-              {CCSWITCH_APPS.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {getCCSwitchAppLabel(t, value)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <div>
