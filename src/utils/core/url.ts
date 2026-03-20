@@ -15,6 +15,8 @@ const logger = createLogger("UrlUtils")
 
 const TAB_QUERY_PARAM_NAME = "tab" as const
 const TAB_HASH_PREFIX = "tab=" as const
+const ANCHOR_SCROLL_RETRY_INTERVAL_MS = 50 as const
+const ANCHOR_SCROLL_MAX_WAIT_MS = 2000 as const
 
 const looksLikePathFragmentOrQuery = (value: string): boolean =>
   value.startsWith("?") ||
@@ -22,6 +24,40 @@ const looksLikePathFragmentOrQuery = (value: string): boolean =>
   (value.startsWith("/") && !value.startsWith("//")) ||
   value.startsWith("./") ||
   value.startsWith("../")
+
+/**
+ * Retry anchor scrolling briefly so lazy-loaded tab content has time to mount.
+ */
+function scrollToAnchorWhenAvailable(
+  anchor: string,
+  options: {
+    retryIntervalMs?: number
+    maxWaitMs?: number
+  } = {},
+) {
+  const {
+    retryIntervalMs = ANCHOR_SCROLL_RETRY_INTERVAL_MS,
+    maxWaitMs = ANCHOR_SCROLL_MAX_WAIT_MS,
+  } = options
+
+  const tryScroll = (remainingWaitMs: number) => {
+    const element = document.getElementById(anchor)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" })
+      return
+    }
+
+    if (remainingWaitMs <= 0) {
+      return
+    }
+
+    window.setTimeout(() => {
+      tryScroll(remainingWaitMs - retryIntervalMs)
+    }, retryIntervalMs)
+  }
+
+  tryScroll(maxWaitMs)
+}
 
 /**
  * Join a base URL and a path, collapsing duplicate slashes.
@@ -169,10 +205,7 @@ export function navigateToAnchor(
 
   window.requestAnimationFrame(() => {
     window.setTimeout(() => {
-      const element = document.getElementById(anchor)
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" })
-      }
+      scrollToAnchorWhenAvailable(anchor)
     }, delay)
   })
 }

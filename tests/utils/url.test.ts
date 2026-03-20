@@ -432,6 +432,28 @@ describe("navigateToAnchor", () => {
     expect(mockElement?.scrollIntoView).toHaveBeenCalled()
   })
 
+  it("should retry scrolling until the anchor appears", async () => {
+    const mockElement = {
+      scrollIntoView: vi.fn(),
+    }
+    let lookupCount = 0
+
+    ;(document.getElementById as any).mockImplementation(() => {
+      lookupCount += 1
+      return lookupCount >= 3 ? mockElement : null
+    })
+
+    navigateToAnchor("section-id")
+
+    await vi.runAllTimersAsync()
+
+    expect(document.getElementById).toHaveBeenCalledTimes(3)
+    expect(mockElement.scrollIntoView).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "start",
+    })
+  })
+
   it("should handle hashPage option with tab", async () => {
     navigateToAnchor("section-id", "settings", { hashPage: "config" })
 
