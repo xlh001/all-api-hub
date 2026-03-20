@@ -15,20 +15,20 @@ import {
 import { server } from "~~/tests/msw/server"
 
 const { generateNewApiTotpCodeMock } = vi.hoisted(() => ({
-  generateNewApiTotpCodeMock: vi.fn(),
+  generateNewApiTotpCodeMock: vi.fn<(secret: string) => string>(),
 }))
 
 vi.mock(
   "~/services/managedSites/providers/newApiTotp",
   async (importOriginal) => {
-    const actual = await importOriginal<
-      typeof import("~/services/managedSites/providers/newApiTotp")
-    >("~/services/managedSites/providers/newApiTotp")
+    const actual =
+      await importOriginal<
+        typeof import("~/services/managedSites/providers/newApiTotp")
+      >()
 
     return {
       ...actual,
-      generateNewApiTotpCode: (...args: unknown[]) =>
-        generateNewApiTotpCodeMock(...args),
+      generateNewApiTotpCode: generateNewApiTotpCodeMock,
     }
   },
 )
@@ -293,9 +293,9 @@ describe("newApiSession", () => {
         userId: BASE_CONFIG.userId,
         channelId: 12,
       }),
-    ).rejects.toMatchObject<NewApiChannelKeyRequirementError>({
+    ).rejects.toMatchObject({
       kind: NEW_API_CHANNEL_KEY_ERROR_KINDS.LOGIN_REQUIRED,
-    })
+    } satisfies Pick<NewApiChannelKeyRequirementError, "kind">)
   })
 
   it("classifies secure verification requirements when reading a hidden channel key", async () => {
@@ -315,8 +315,8 @@ describe("newApiSession", () => {
         userId: BASE_CONFIG.userId,
         channelId: 12,
       }),
-    ).rejects.toMatchObject<NewApiChannelKeyRequirementError>({
+    ).rejects.toMatchObject({
       kind: NEW_API_CHANNEL_KEY_ERROR_KINDS.SECURE_VERIFICATION_REQUIRED,
-    })
+    } satisfies Pick<NewApiChannelKeyRequirementError, "kind">)
   })
 })

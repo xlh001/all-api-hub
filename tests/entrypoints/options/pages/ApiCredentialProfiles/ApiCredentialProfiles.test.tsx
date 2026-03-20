@@ -15,7 +15,13 @@ let store: ApiCredentialProfile[] = []
 const mockOpenModelsPage = vi.fn()
 
 const mockListProfiles = vi.fn(async () => store)
-const mockFetchApiCredentialModelIds = vi.fn(async () => [])
+const mockFetchApiCredentialModelIds = vi.fn(
+  async (
+    _params: Parameters<
+      typeof import("~/services/apiCredentialProfiles/modelCatalog").fetchApiCredentialModelIds
+    >[0],
+  ): Promise<string[]> => [],
+)
 const mockListTags = vi.fn(async (): Promise<Tag[]> => [])
 const mockCreateTag = vi.fn(async (name: string) => ({
   id: `t-${name}`,
@@ -102,8 +108,11 @@ vi.mock("~/services/apiCredentialProfiles/modelCatalog", async () => {
 
   return {
     ...actual,
-    fetchApiCredentialModelIds: (...args: any[]) =>
-      mockFetchApiCredentialModelIds(...args),
+    fetchApiCredentialModelIds: (
+      params: Parameters<
+        typeof import("~/services/apiCredentialProfiles/modelCatalog").fetchApiCredentialModelIds
+      >[0],
+    ) => mockFetchApiCredentialModelIds(params),
   }
 })
 

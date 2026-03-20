@@ -15,6 +15,13 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
   },
-  "exclude": ["node_modules"],
+  "exclude": [
+    "node_modules",
+    ".output",
+    "coverage",
+    "diagnostics-results",
+    "playwright-report",
+    "test-results",
+  ],
   "extends": "./.wxt/tsconfig.json",
 }

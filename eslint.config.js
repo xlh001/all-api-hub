@@ -36,6 +36,7 @@ export default defineConfig([
       ".plasmo/**",
       ".output/**",
       ".wxt/**",
+      "diagnostics-results/**",
       "docs/**",
       "coverage/**",
       "playwright-report/**",
