@@ -1,5 +1,6 @@
 import { ChildProcess, spawn } from "child_process"
 import fs from "fs/promises"
+import { Socket } from "net"
 import path from "path"
 import { Plugin } from "vite"
 
@@ -12,6 +13,7 @@ interface ReactDevToolsOptions {
 }
 
 let devtoolsProcess: ChildProcess | null = null
+let ownsDevtoolsProcess = false
 
 /**
  * Vite plugin that auto-starts React DevTools standalone and injects the backend script during dev.
@@ -66,21 +68,84 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
 
   // ======== 辅助函数 ========
   /**
-   * Poll local React DevTools server until reachable or timeout.
-   * @returns 是否在限定时间内成功连接
+   * Heuristically verify the fetched script really looks like the React DevTools backend bundle.
+   * @param content HTTP response body from the local DevTools server
    */
-  async function waitForDevTools(): Promise<boolean> {
+  function isDevToolsBackend(content: string) {
+    return (
+      content.includes("__REACT_DEVTOOLS_GLOBAL_HOOK__") &&
+      content.includes("window.__REACT_DEVTOOLS_COMPONENT_FILTERS__")
+    )
+  }
+
+  /**
+   * Fetch the local React DevTools backend if available.
+   * @param logUnexpectedResponse whether to warn when the port responds with unexpected content
+   */
+  async function getDevToolsBackend(
+    logUnexpectedResponse = false,
+  ): Promise<string | null> {
+    try {
+      const res = await fetch(`http://localhost:${config.port}`)
+      if (!res.ok) return null
+
+      const content = await res.text()
+      if (!isDevToolsBackend(content)) {
+        if (logUnexpectedResponse) {
+          console.warn(
+            `⚠️ Port ${config.port} responded, but it does not look like React DevTools. Skipping auto-fetch.`,
+          )
+        }
+        return null
+      }
+
+      return content
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Check whether the configured local port is already occupied.
+   * @returns true when the port appears to be in use by any process
+   */
+  async function isPortInUse(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const socket = new Socket()
+
+      const finalize = (inUse: boolean) => {
+        socket.removeAllListeners()
+        socket.destroy()
+        resolve(inUse)
+      }
+
+      socket.setTimeout(300)
+      socket.once("connect", () => finalize(true))
+      socket.once("timeout", () => finalize(true))
+      socket.once("error", (error: NodeJS.ErrnoException) => {
+        if (error.code === "ECONNREFUSED") {
+          finalize(false)
+          return
+        }
+        finalize(true)
+      })
+
+      socket.connect(config.port, "localhost")
+    })
+  }
+
+  /**
+   * Poll local React DevTools server until reachable or timeout.
+   * @returns backend script content when DevTools becomes reachable
+   */
+  async function waitForDevTools(): Promise<string | null> {
     const start = Date.now()
     while (Date.now() - start < config.maxWait) {
-      try {
-        const res = await fetch(`http://localhost:${config.port}`)
-        if (res.ok) return true
-      } catch (error) {
-        console.error(error)
-      }
+      const content = await getDevToolsBackend()
+      if (content) return content
       await new Promise((resolve) => setTimeout(resolve, 200))
     }
-    return false
+    return null
   }
 
   /**
@@ -98,19 +163,16 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
   }
 
   /**
-   * 下载最新的 React DevTools backend 并写入 public 目录。
+   * Persist the fetched React DevTools backend into the public directory cache.
    */
-  async function fetchBackend() {
+  async function writeBackend(content: string) {
     try {
-      const content = await fetch(`http://localhost:${config.port}`).then((r) =>
-        r.text(),
-      )
       const backendPath = getBackendPath()
       await fs.mkdir(path.dirname(backendPath), { recursive: true })
       await fs.writeFile(backendPath, content)
       console.log("✅ React DevTools backend updated")
     } catch (error) {
-      console.warn("⚠️ Failed to fetch React DevTools backend:", error)
+      console.warn("⚠️ Failed to cache React DevTools backend:", error)
       console.log("💡 You can manually run: npx react-devtools")
     }
   }
@@ -132,31 +194,54 @@ export function reactDevToolsAuto(options: ReactDevToolsOptions = {}): Plugin {
         return
       }
 
-      if (config.autoStart && !devtoolsProcess) {
-        devtoolsProcess = spawn("pnpm", ["react-devtools"], {
-          stdio: "inherit",
-          shell: true,
-        })
+      let backendContent = await getDevToolsBackend(true)
+
+      if (backendContent) {
         console.log(
-          `🚀 React DevTools standalone starting on port ${config.port}...`,
+          `✅ React DevTools already running on port ${config.port}, reusing existing instance`,
         )
+      } else if (config.autoStart && !devtoolsProcess) {
+        const portInUse = await isPortInUse()
+        if (portInUse) {
+          console.warn(
+            `⚠️ Port ${config.port} is already in use by another process. Skipping React DevTools auto-start.`,
+          )
+        } else {
+          devtoolsProcess = spawn("pnpm", ["react-devtools"], {
+            env: {
+              ...process.env,
+              REACT_DEVTOOLS_PORT: String(config.port),
+            },
+            stdio: "inherit",
+            shell: true,
+          })
+          ownsDevtoolsProcess = true
+          devtoolsProcess.once("exit", () => {
+            devtoolsProcess = null
+            ownsDevtoolsProcess = false
+          })
+          console.log(
+            `🚀 React DevTools standalone starting on port ${config.port}...`,
+          )
+        }
       }
 
-      const ready = await waitForDevTools()
+      backendContent ??= await waitForDevTools()
       const expired = await isCacheExpired(getBackendPath())
 
-      if (config.forceFetch || (ready && expired)) {
-        await fetchBackend()
+      if (backendContent && (config.forceFetch || expired)) {
+        await writeBackend(backendContent)
       } else if (!expired) {
         console.log("✅ React DevTools backend cache is valid")
-      } else if (!ready && expired) {
+      } else if (!backendContent && expired) {
         console.warn("⚠️ DevTools not started, using stale backend (if exists)")
       }
 
       server.httpServer?.once("close", () => {
-        if (devtoolsProcess) {
+        if (devtoolsProcess && ownsDevtoolsProcess) {
           devtoolsProcess.kill()
           devtoolsProcess = null
+          ownsDevtoolsProcess = false
           console.log("🛑 React DevTools standalone stopped")
         }
       })
