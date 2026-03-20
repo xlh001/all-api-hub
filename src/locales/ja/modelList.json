@@ -1,0 +1,112 @@
+{
+  "accountSummary": {
+    "incompatible": "形式非互換",
+    "loadFailed": "読み込み失敗",
+    "models_other": "{{count}} モデル",
+    "title": "アカウント概要"
+  },
+  "actions": {
+    "copyModelName": "モデル名をコピー",
+    "keyForModel": "このモデル用のキー",
+    "verifyApi": "API を検証",
+    "verifyCliSupport": "CLI 対応を検証"
+  },
+  "allAccounts": "すべてのアカウント",
+  "allGroups": "すべてのグループ",
+  "allProviders_other": "すべてのプロバイダー ({{count}})",
+  "available": "利用可能",
+  "availableGroups": "利用可能なグループ",
+  "clickSwitchGroup": "{{group}} グループへ切り替える",
+  "collapseDetails": "詳細を折りたたむ",
+  "copyAllNames": "すべてのモデル名をコピー",
+  "description": "利用可能な AI モデルを確認・管理します",
+  "detailedPricing": "詳細料金",
+  "displayOptions": "表示オプション:",
+  "endpointType": "エンドポイント種別",
+  "endpointTypes": "エンドポイント種別",
+  "expandDetails": "詳細を展開",
+  "input": "入力:",
+  "input1MTokens": "入力（100 万トークン）",
+  "keyDialog": {
+    "copyFailed": "コピーに失敗しました",
+    "createAnotherKey": "別のキーを作成",
+    "createCustomKey": "カスタムキーを作成",
+    "createDisabledTitle": "キー作成は利用できません",
+    "createErrorTitle": "キーを作成できませんでした",
+    "createFailed": "作成に失敗しました: {{error}}",
+    "createGroupHint": "グループを選択してください。このモデルに対応するグループのみ表示されます。",
+    "createGroupLabel": "新しいキーのグループ",
+    "createGroupPlaceholder": "グループを選択",
+    "createGroupRequired": "キーを作成するにはグループを選択してください。",
+    "createKey": "キーを作成",
+    "createNotSupported": "このアカウントではキー作成を利用できません。",
+    "createSuccess": "キーを作成しました",
+    "getFailed": "キーの読み込みに失敗しました",
+    "ineligible": {
+      "accountDisabled": "このアカウントは無効です。",
+      "missingAuth": "このアカウントには認証設定がありません。",
+      "missingCredentials": "このアカウントには必要な認証情報が不足しています。"
+    },
+    "keyCopied": "キーをコピーしました",
+    "loadFailed": "キーの読み込みに失敗しました: {{error}}",
+    "loading": "キーを読み込み中...",
+    "noCompatibleDescription": "このモデル用のキーを作成するか、既存キーのモデル制限を調整してください。",
+    "noCompatibleFoundAfterCreate": "キーは作成されましたが、{{modelId}} に対応するキーは見つかりませんでした。",
+    "noCompatibleTitle": "{{modelId}} に対応するキーがありません",
+    "selectHint": "このモデルに使用するキーを選択してください。",
+    "selectLabel": "対応キー",
+    "selectPlaceholder": "キーを選択",
+    "subtitle": "アカウント: {{accountName}} · モデル: {{modelId}}",
+    "title": "モデル用キー"
+  },
+  "messages": {
+    "copyFailed": "コピーに失敗しました",
+    "modelNameCopied": "モデル名をコピーしました",
+    "modelNamesCopied": "モデル名をコピーしました"
+  },
+  "noMatchingModels": "一致するモデルが見つかりません",
+  "output": "出力:",
+  "output1MTokens": "出力（100 万トークン）",
+  "perCall": "1 回あたり:",
+  "pleaseSelectFirst": "モデル一覧を表示するには、先にアカウントまたは API 認証情報プロファイルを選択してください",
+  "pleaseSelectSource": "ソースを選択してください",
+  "pricingDescription": "料金情報はサイトが提供する API インターフェースから取得されます。実際の費用は各サイトが公開している価格に従います。従量課金モデルの価格は 100 万トークンあたりで表示され、コール課金モデルは 1 回あたりの価格を表示します。",
+  "pricingNote": "モデル料金に関する注意",
+  "profileSourceNotice": {
+    "description": "保存済みの API 認証情報プロファイルでは、モデル検出と検証のみ利用できます。このソースでは、料金、グループフィルター、アカウント概要、キー互換性は利用できません。",
+    "title": "プロファイル由来のモデルカタログ"
+  },
+  "providerTabs": {
+    "scrollLeft": "プロバイダータブを左にスクロール",
+    "scrollRight": "プロバイダータブを右にスクロール"
+  },
+  "ratio": "倍率:",
+  "realAmount": "実際のチャージ額",
+  "refreshData": "データを更新",
+  "searchModels": "モデルを検索",
+  "searchPlaceholder": "モデル名または説明を入力...",
+  "selectSource": "ソースを選択",
+  "showing_other": "{{count}} 件を表示中",
+  "showRatio": "倍率を表示",
+  "sourceLabels": {
+    "profileBadge": "プロファイル: {{name}} · {{host}}",
+    "profileOption": "API 認証情報: {{name}} · {{host}}"
+  },
+  "status": {
+    "dataLoaded": "モデルデータを正常に読み込みました",
+    "formatNotStandard": "現在のサイトのモデルデータ形式は標準仕様に準拠していません。サイトの料金ページを手動で確認してください",
+    "genericLoadFailedTitle": "モデルデータの読み込みに失敗しました",
+    "goToSitePricing": "サイトで料金情報を見る",
+    "incompatibleDesc": "現在のサイトのモデルデータインターフェースは標準仕様に準拠していません。サイト側の二次開発が原因の可能性があり、このサイトのモデル料金情報は現時点で解析できません。",
+    "incompatibleFormat": "データ形式に互換性がありません",
+    "loadFailed": "モデルデータの読み込みに失敗しました。しばらくしてからもう一度お試しください",
+    "loading": "モデルデータを読み込み中...",
+    "profileLoadFailed": "この API 認証情報プロファイルのモデル読み込みに失敗しました: {{errorMessage}}",
+    "profileLoadFailedTitle": "この API 認証情報プロファイルのモデル読み込みに失敗しました",
+    "retryLoad": "再読み込み"
+  },
+  "title": "モデル一覧",
+  "totalModels_other": "合計 {{count}} モデル",
+  "unavailable": "利用不可",
+  "userGroup": "ユーザーグループ"
+}
