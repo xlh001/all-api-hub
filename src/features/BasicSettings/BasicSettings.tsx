@@ -3,6 +3,8 @@ import type { TFunction } from "i18next"
 import { ChevronLeft, ChevronRight, Settings } from "lucide-react"
 import {
   Fragment,
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -19,6 +21,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Spinner,
 } from "~/components/ui"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -34,18 +37,7 @@ import {
 
 import { PermissionOnboardingDialog } from "./components/dialogs/PermissionOnboardingDialog"
 import LoadingSkeleton from "./components/shared/LoadingSkeleton"
-import AccountManagementTab from "./components/tabs/AccountManagement/AccountManagementTab"
-import BalanceHistoryTab from "./components/tabs/BalanceHistory/BalanceHistoryTab"
-import CheckinRedeemTab from "./components/tabs/CheckinRedeem/CheckinRedeemTab"
-import ClaudeCodeRouterTab from "./components/tabs/ClaudeCodeRouter/ClaudeCodeRouterTab"
-import CliProxyTab from "./components/tabs/CliProxy/CliProxyTab"
-import DataBackupTab from "./components/tabs/DataBackup/DataBackupTab"
 import GeneralTab from "./components/tabs/General/GeneralTab"
-import ManagedSiteTab from "./components/tabs/ManagedSite/ManagedSiteTab"
-import PermissionsTab from "./components/tabs/Permissions/PermissionsTab"
-import AutoRefreshTab from "./components/tabs/Refresh/AutoRefreshTab"
-import UsageHistorySyncTab from "./components/tabs/UsageHistorySync/UsageHistorySyncTab"
-import WebAiApiCheckTab from "./components/tabs/WebAiApiCheck/WebAiApiCheckTab"
 
 type TabId =
   | "general"
@@ -66,7 +58,50 @@ interface TabConfig {
   component: ComponentType
 }
 
+/**
+ * Wrap a lazily imported settings tab so it can be stored in the shared tab config.
+ */
+function createLazyTabComponent(
+  loader: () => Promise<{ default: ComponentType<any> }>,
+): ComponentType {
+  return lazy(loader) as ComponentType
+}
+
 const hasOptionalPermissions = OPTIONAL_PERMISSIONS.length > 0
+
+const AccountManagementTab = createLazyTabComponent(
+  () => import("./components/tabs/AccountManagement/AccountManagementTab"),
+)
+const BalanceHistoryTab = createLazyTabComponent(
+  () => import("./components/tabs/BalanceHistory/BalanceHistoryTab"),
+)
+const CheckinRedeemTab = createLazyTabComponent(
+  () => import("./components/tabs/CheckinRedeem/CheckinRedeemTab"),
+)
+const ClaudeCodeRouterTab = createLazyTabComponent(
+  () => import("./components/tabs/ClaudeCodeRouter/ClaudeCodeRouterTab"),
+)
+const CliProxyTab = createLazyTabComponent(
+  () => import("./components/tabs/CliProxy/CliProxyTab"),
+)
+const DataBackupTab = createLazyTabComponent(
+  () => import("./components/tabs/DataBackup/DataBackupTab"),
+)
+const ManagedSiteTab = createLazyTabComponent(
+  () => import("./components/tabs/ManagedSite/ManagedSiteTab"),
+)
+const PermissionsTab = createLazyTabComponent(
+  () => import("./components/tabs/Permissions/PermissionsTab"),
+)
+const AutoRefreshTab = createLazyTabComponent(
+  () => import("./components/tabs/Refresh/AutoRefreshTab"),
+)
+const UsageHistorySyncTab = createLazyTabComponent(
+  () => import("./components/tabs/UsageHistorySync/UsageHistorySyncTab"),
+)
+const WebAiApiCheckTab = createLazyTabComponent(
+  () => import("./components/tabs/WebAiApiCheck/WebAiApiCheckTab"),
+)
 
 const PERMISSIONS_TAB_CONFIG: TabConfig = {
   id: "permissions",
@@ -119,6 +154,40 @@ const ANCHOR_TO_TAB: Record<string, TabId> = {
 interface SettingsTabItem {
   id: TabId
   label: string
+}
+
+/**
+ * Resolve the currently requested Basic Settings tab from the URL state.
+ */
+function resolveSelectedTabIndexFromUrl(): number {
+  if (typeof window === "undefined") {
+    return 0
+  }
+
+  const { tab, anchor, isHeadingAnchor } = parseTabFromUrl({
+    ignoreAnchors: [MENU_ITEM_IDS.BASIC],
+    defaultHashPage: MENU_ITEM_IDS.BASIC,
+  })
+
+  if (tab) {
+    const normalizedTab = tab === "sync" ? "accountUsage" : tab
+    const index = TAB_CONFIGS.findIndex((config) => config.id === normalizedTab)
+    if (index >= 0) {
+      return index
+    }
+  }
+
+  if (isHeadingAnchor && anchor) {
+    const targetTab = ANCHOR_TO_TAB[anchor]
+    if (targetTab) {
+      const index = TAB_CONFIGS.findIndex((config) => config.id === targetTab)
+      if (index >= 0) {
+        return index
+      }
+    }
+  }
+
+  return 0
 }
 
 /**
@@ -235,11 +304,27 @@ function DesktopTabs({
 }
 
 /**
+ * Localized fallback shown while a lazily loaded settings tab chunk is being fetched.
+ */
+function SettingsTabContentFallback() {
+  const { t } = useTranslation("common")
+
+  return (
+    <div className="flex min-h-[240px] items-center justify-center">
+      <Spinner size="lg" aria-label={t("status.loading")} />
+    </div>
+  )
+}
+
+/**
  * Basic Settings page: renders tabs for all settings sections and handles URL syncing/onboarding.
  */
 export default function BasicSettings() {
   const { t } = useTranslation("settings")
   const { isLoading } = useUserPreferencesContext()
+  const initialSelectedTabIndex = useMemo(resolveSelectedTabIndexFromUrl, [])
+  const initialSelectedTabId =
+    TAB_CONFIGS[initialSelectedTabIndex]?.id ?? "general"
 
   const tabs = useMemo<SettingsTabItem[]>(
     () =>
@@ -250,9 +335,14 @@ export default function BasicSettings() {
     [t],
   )
 
-  const [selectedTabIndex, setSelectedTabIndex] = useState(0)
+  const [selectedTabIndex, setSelectedTabIndex] = useState(
+    initialSelectedTabIndex,
+  )
   const selectedTab = TAB_CONFIGS[selectedTabIndex]
   const selectedTabId = selectedTab?.id ?? "general"
+  const [mountedTabIds, setMountedTabIds] = useState<TabId[]>([
+    initialSelectedTabId,
+  ])
   const [showPermissionsOnboarding, setShowPermissionsOnboarding] =
     useState(false)
   const [permissionsOnboardingReason, setPermissionsOnboardingReason] =
@@ -261,36 +351,30 @@ export default function BasicSettings() {
   const applyUrlState = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search)
     const pendingAnchor = searchParams.get("anchor")
-    const { tab, anchor, isHeadingAnchor } = parseTabFromUrl({
+    const { anchor, isHeadingAnchor } = parseTabFromUrl({
       ignoreAnchors: [MENU_ITEM_IDS.BASIC],
       defaultHashPage: MENU_ITEM_IDS.BASIC,
     })
+    const nextIndex = resolveSelectedTabIndexFromUrl()
+    const nextTab = TAB_CONFIGS[nextIndex]
 
-    if (tab) {
-      const normalizedTab = tab === "sync" ? "accountUsage" : tab
-      const index = TAB_CONFIGS.findIndex((cfg) => cfg.id === normalizedTab)
-      if (index >= 0) {
-        setSelectedTabIndex(index)
-      }
+    if (nextTab) {
+      setSelectedTabIndex(nextIndex)
+      setMountedTabIds((previous) =>
+        previous.includes(nextTab.id) ? previous : [...previous, nextTab.id],
+      )
 
       if (pendingAnchor) {
         window.setTimeout(() => {
           navigateToAnchor(pendingAnchor)
         }, 150)
+        return
       }
-      return
-    }
 
-    if (isHeadingAnchor && anchor) {
-      const targetTab = ANCHOR_TO_TAB[anchor]
-      if (targetTab) {
-        const index = TAB_CONFIGS.findIndex((cfg) => cfg.id === targetTab)
-        if (index >= 0) {
-          setSelectedTabIndex(index)
-          window.setTimeout(() => {
-            navigateToAnchor(anchor)
-          }, 150)
-        }
+      if (isHeadingAnchor && anchor) {
+        window.setTimeout(() => {
+          navigateToAnchor(anchor)
+        }, 150)
       }
     }
   }, [])
@@ -331,6 +415,9 @@ export default function BasicSettings() {
     if (index < 0 || index >= TAB_CONFIGS.length) return
     setSelectedTabIndex(index)
     const tab = TAB_CONFIGS[index]
+    setMountedTabIds((previous) =>
+      previous.includes(tab.id) ? previous : [...previous, tab.id],
+    )
     updateUrlWithTab(tab.id, { hashPage: MENU_ITEM_IDS.BASIC })
   }, [])
 
@@ -339,7 +426,7 @@ export default function BasicSettings() {
   }
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-4 sm:p-6" data-testid="basic-settings-page">
       <PageHeader
         icon={Settings}
         title={t("title")}
@@ -380,7 +467,11 @@ export default function BasicSettings() {
             const Component = config.component
             return (
               <Tab.Panel key={config.id} unmount={false}>
-                <Component />
+                {mountedTabIds.includes(config.id) ? (
+                  <Suspense fallback={<SettingsTabContentFallback />}>
+                    <Component />
+                  </Suspense>
+                ) : null}
               </Tab.Panel>
             )
           })}

@@ -4,14 +4,14 @@ import path from "node:path"
 import {
   writeHistoryReport,
   writeSummaryReport,
-} from "./lazy-loading-report-utils.mjs"
+} from "./extension-memory-report-utils.mjs"
 
 /**
- * Parse CLI flags for the lazy-loading report renderer.
+ * Parse CLI flags for the memory report renderer.
  */
 function parseArgs(argv) {
   const options = {
-    rootDir: path.resolve("lazy-loading-compare-results"),
+    rootDir: path.resolve("diagnostics-results", "memory", "compare"),
     summary: null,
   }
 
