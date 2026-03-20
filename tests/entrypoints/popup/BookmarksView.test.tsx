@@ -1,13 +1,14 @@
-import {
-  forwardRef,
-  useImperativeHandle,
-  useState,
-  type ReactNode,
-} from "react"
-import { describe, expect, it, vi } from "vitest"
+import { useState, type ReactNode } from "react"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { BookmarkDialogStateProvider } from "~/features/SiteBookmarks/hooks/BookmarkDialogStateContext"
-import { fireEvent, render, screen } from "~~/tests/test-utils/render"
+import { fireEvent, render, screen, within } from "~~/tests/test-utils/render"
+
+const { bookmarksPreloadMock, apiCredentialProfilesPreloadMock } = vi.hoisted(
+  () => ({
+    bookmarksPreloadMock: vi.fn(),
+    apiCredentialProfilesPreloadMock: vi.fn(),
+  }),
+)
 
 vi.mock("~/components/AppLayout", () => ({
   AppLayout: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -15,7 +16,7 @@ vi.mock("~/components/AppLayout", () => ({
 
 vi.mock("~/features/AccountManagement/hooks/AccountManagementProvider", () => ({
   AccountManagementProvider: ({ children }: { children: ReactNode }) => (
-    <BookmarkDialogStateProvider>{children}</BookmarkDialogStateProvider>
+    <>{children}</>
   ),
 }))
 
@@ -24,36 +25,11 @@ vi.mock("~/utils/browser", () => ({
   isMobileDevice: () => false,
 }))
 
-vi.mock("~/hooks/useAddAccountHandler", () => ({
-  useAddAccountHandler: () => ({
-    handleAddAccountClick: vi.fn(),
-  }),
-}))
-
 vi.mock("~/entrypoints/popup/components/HeaderSection", () => ({
   default: ({ showRefresh }: { showRefresh?: boolean }) => (
     <div>{`HeaderRefresh:${String(showRefresh)}`}</div>
   ),
 }))
-
-vi.mock("~/entrypoints/popup/components/BalanceSection", () => ({
-  default: () => <div>BalanceSection</div>,
-}))
-
-vi.mock("~/entrypoints/popup/components/ShareOverviewSnapshotButton", () => ({
-  default: () => <div>ShareOverviewSnapshotButton</div>,
-}))
-
-vi.mock("~/entrypoints/popup/components/BookmarkStatsSection", () => ({
-  default: () => <div>BookmarkStatsSection</div>,
-}))
-
-vi.mock(
-  "~/entrypoints/popup/components/ApiCredentialProfilesStatsSection",
-  () => ({
-    default: () => <div>ApiCredentialProfilesStatsSection</div>,
-  }),
-)
 
 vi.mock("~/entrypoints/popup/components/ActionButtons", () => ({
   default: ({
@@ -70,43 +46,60 @@ vi.mock("~/entrypoints/popup/components/ActionButtons", () => ({
   ),
 }))
 
-vi.mock("~/features/AccountManagement/components/AccountList", () => ({
-  default: () => <div>AccountList</div>,
-}))
+vi.mock("~/entrypoints/popup/viewRegistry", () => ({
+  usePopupViewRegistry: () => {
+    const [bookmarkDialogOpen, setBookmarkDialogOpen] = useState(false)
+    const [
+      apiCredentialProfilesDialogOpen,
+      setApiCredentialProfilesDialogOpen,
+    ] = useState(false)
 
-vi.mock("~/features/SiteBookmarks/components/BookmarksList", () => ({
-  default: () => <div>BookmarksList</div>,
-}))
-
-vi.mock(
-  "~/features/ApiCredentialProfiles/components/ApiCredentialProfilesPopupView",
-  () => ({
-    default: forwardRef((_, ref) => {
-      const [isAddOpen, setIsAddOpen] = useState(false)
-      useImperativeHandle(
-        ref,
-        () => ({
-          openAddDialog: () => setIsAddOpen(true),
-        }),
-        [],
-      )
-
-      return (
-        <div>
-          <div>ApiCredentialProfilesPopupView</div>
-          {isAddOpen ? <div>ApiCredentialProfileDialogOpen</div> : null}
-        </div>
-      )
-    }),
-  }),
-)
-
-vi.mock("~/features/SiteBookmarks/components/BookmarkDialog", () => ({
-  default: ({ isOpen }: { isOpen: boolean }) =>
-    isOpen ? <div>BookmarkDialogOpen</div> : null,
+    return {
+      accounts: {
+        showRefresh: true,
+        headerAction: <div>ShareOverviewSnapshotButton</div>,
+        statsSection: <div>BalanceSection</div>,
+        primaryActionLabel: "account:addAccount",
+        onPrimaryAction: vi.fn(),
+        content: <div>AccountList</div>,
+      },
+      bookmarks: {
+        showRefresh: false,
+        statsSection: <div>BookmarkStatsSection</div>,
+        primaryActionLabel: "bookmark:actions.add",
+        onPrimaryAction: () => setBookmarkDialogOpen(true),
+        content: (
+          <div>
+            <div>BookmarksList</div>
+            {bookmarkDialogOpen ? <div>BookmarkDialogOpen</div> : null}
+          </div>
+        ),
+        preload: bookmarksPreloadMock,
+      },
+      apiCredentialProfiles: {
+        showRefresh: false,
+        statsSection: <div>ApiCredentialProfilesStatsSection</div>,
+        primaryActionLabel: "apiCredentialProfiles:actions.add",
+        onPrimaryAction: () => setApiCredentialProfilesDialogOpen(true),
+        content: (
+          <div>
+            <div>ApiCredentialProfilesPopupView</div>
+            {apiCredentialProfilesDialogOpen ? (
+              <div>ApiCredentialProfileDialogOpen</div>
+            ) : null}
+          </div>
+        ),
+        preload: apiCredentialProfilesPreloadMock,
+      },
+    }
+  },
 }))
 
 describe("popup bookmarks view", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it("switches between accounts, bookmarks, and api credentials layouts", async () => {
     const { default: App } = await import("~/entrypoints/popup/App")
 
@@ -122,10 +115,14 @@ describe("popup bookmarks view", () => {
     expect(screen.getByText("AccountList")).toBeInTheDocument()
     expect(screen.queryByText("BookmarksList")).not.toBeInTheDocument()
 
+    const accountsView = screen.getByTestId("popup-view-accounts")
+    expect(within(accountsView).getByText("AccountList")).toBeInTheDocument()
+
     fireEvent.click(
       await screen.findByRole("tab", { name: "bookmark:switch.bookmarks" }),
     )
 
+    expect(bookmarksPreloadMock).toHaveBeenCalledTimes(1)
     expect(await screen.findByText("HeaderRefresh:false")).toBeInTheDocument()
     expect(screen.queryByText("BalanceSection")).not.toBeInTheDocument()
     expect(screen.getByText("BookmarkStatsSection")).toBeInTheDocument()
@@ -134,7 +131,14 @@ describe("popup bookmarks view", () => {
     ).not.toBeInTheDocument()
     expect(screen.getByText("ActionButtons")).toBeInTheDocument()
     expect(screen.queryByText("AccountList")).not.toBeInTheDocument()
-    expect(screen.getByText("BookmarksList")).toBeInTheDocument()
+
+    const bookmarksView = screen.getByTestId("popup-view-bookmarks")
+    expect(within(bookmarksView).getByText("BookmarksList")).toBeInTheDocument()
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "bookmark:actions.add" }),
+    )
+    expect(await screen.findByText("BookmarkDialogOpen")).toBeInTheDocument()
 
     fireEvent.click(
       await screen.findByRole("tab", {
@@ -142,6 +146,7 @@ describe("popup bookmarks view", () => {
       }),
     )
 
+    expect(apiCredentialProfilesPreloadMock).toHaveBeenCalledTimes(1)
     expect(await screen.findByText("HeaderRefresh:false")).toBeInTheDocument()
     expect(screen.queryByText("BalanceSection")).not.toBeInTheDocument()
     expect(screen.queryByText("BookmarkStatsSection")).not.toBeInTheDocument()
@@ -151,8 +156,14 @@ describe("popup bookmarks view", () => {
     expect(screen.getByText("ActionButtons")).toBeInTheDocument()
     expect(screen.queryByText("AccountList")).not.toBeInTheDocument()
     expect(screen.queryByText("BookmarksList")).not.toBeInTheDocument()
+
+    const apiCredentialProfilesView = screen.getByTestId(
+      "popup-view-apiCredentialProfiles",
+    )
     expect(
-      screen.getByText("ApiCredentialProfilesPopupView"),
+      within(apiCredentialProfilesView).getByText(
+        "ApiCredentialProfilesPopupView",
+      ),
     ).toBeInTheDocument()
 
     fireEvent.click(
@@ -163,14 +174,5 @@ describe("popup bookmarks view", () => {
     expect(
       await screen.findByText("ApiCredentialProfileDialogOpen"),
     ).toBeInTheDocument()
-
-    fireEvent.click(
-      await screen.findByRole("tab", { name: "bookmark:switch.bookmarks" }),
-    )
-
-    fireEvent.click(
-      await screen.findByRole("button", { name: "bookmark:actions.add" }),
-    )
-    expect(await screen.findByText("BookmarkDialogOpen")).toBeInTheDocument()
   })
 })

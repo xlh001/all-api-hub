@@ -1,89 +1,30 @@
-import { useRef, useState, type ReactNode } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { AppLayout } from "~/components/AppLayout"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import AccountList from "~/features/AccountManagement/components/AccountList"
 import { AccountManagementProvider } from "~/features/AccountManagement/hooks/AccountManagementProvider"
-import ApiCredentialProfilesPopupView, {
-  type ApiCredentialProfilesPopupViewHandle,
-} from "~/features/ApiCredentialProfiles/components/ApiCredentialProfilesPopupView"
-import BookmarksList from "~/features/SiteBookmarks/components/BookmarksList"
-import { useBookmarkDialogContext } from "~/features/SiteBookmarks/hooks/BookmarkDialogStateContext"
-import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
 import { cn } from "~/lib/utils"
 import { isExtensionSidePanel, isMobileDevice } from "~/utils/browser"
 
 import ActionButtons from "./components/ActionButtons"
-import ApiCredentialProfilesStatsSection from "./components/ApiCredentialProfilesStatsSection"
-import BalanceSection from "./components/BalanceSection"
-import BookmarkStatsSection from "./components/BookmarkStatsSection"
 import HeaderSection from "./components/HeaderSection"
 import PopupViewSwitchTabs, {
   type PopupViewType,
 } from "./components/PopupViewSwitchTabs"
-import ShareOverviewSnapshotButton from "./components/ShareOverviewSnapshotButton"
+import { usePopupViewRegistry } from "./viewRegistry"
 
 /**
  * Popup body content for the extension popup and side panel.
  * Handles device-aware layout sizing, header/actions, and account list rendering.
  */
 function PopupContent() {
-  const { t } = useTranslation([
-    "account",
-    "bookmark",
-    "common",
-    "apiCredentialProfiles",
-  ])
+  const { t } = useTranslation(["bookmark", "apiCredentialProfiles"])
   const { isLoading } = useUserPreferencesContext()
-  const { handleAddAccountClick } = useAddAccountHandler()
   const inSidePanel = isExtensionSidePanel()
-
   const [activeView, setActiveView] = useState<PopupViewType>("accounts")
-
-  const { openAddBookmark } = useBookmarkDialogContext()
-
-  const apiCredentialProfilesViewRef =
-    useRef<ApiCredentialProfilesPopupViewHandle>(null)
-
-  const viewConfig: Record<
-    PopupViewType,
-    {
-      showRefresh: boolean
-      headerAction?: ReactNode
-      statsSection?: ReactNode
-      primaryActionLabel: string
-      onPrimaryAction: () => void
-      content: ReactNode
-    }
-  > = {
-    accounts: {
-      showRefresh: true,
-      headerAction: <ShareOverviewSnapshotButton />,
-      statsSection: <BalanceSection />,
-      primaryActionLabel: t("account:addAccount"),
-      onPrimaryAction: handleAddAccountClick,
-      content: <AccountList />,
-    },
-    bookmarks: {
-      showRefresh: false,
-      statsSection: <BookmarkStatsSection />,
-      primaryActionLabel: t("bookmark:actions.add"),
-      onPrimaryAction: openAddBookmark,
-      content: <BookmarksList />,
-    },
-    apiCredentialProfiles: {
-      showRefresh: false,
-      statsSection: <ApiCredentialProfilesStatsSection />,
-      primaryActionLabel: t("apiCredentialProfiles:actions.add"),
-      onPrimaryAction: () =>
-        apiCredentialProfilesViewRef.current?.openAddDialog(),
-      content: (
-        <ApiCredentialProfilesPopupView ref={apiCredentialProfilesViewRef} />
-      ),
-    },
-  }
+  const viewConfig = usePopupViewRegistry()
 
   const activeViewConfig = viewConfig[activeView]
 
@@ -116,7 +57,10 @@ function PopupContent() {
         <div className="flex items-center justify-between gap-2">
           <PopupViewSwitchTabs
             value={activeView}
-            onChange={setActiveView}
+            onChange={(nextView) => {
+              setActiveView(nextView)
+              viewConfig[nextView].preload?.()
+            }}
             accountsLabel={t("bookmark:switch.accounts")}
             bookmarksLabel={t("bookmark:switch.bookmarks")}
             apiCredentialProfilesLabel={t(
@@ -130,7 +74,7 @@ function PopupContent() {
           : null}
       </section>
 
-      <div className="flex-1">
+      <div className="flex-1" data-testid={`popup-view-${activeView}`}>
         <ActionButtons
           primaryActionLabel={activeViewConfig.primaryActionLabel}
           onPrimaryAction={activeViewConfig.onPrimaryAction}
