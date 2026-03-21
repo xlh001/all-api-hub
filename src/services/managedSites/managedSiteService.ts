@@ -102,6 +102,13 @@ export interface ManagedSiteService {
     key?: string,
   ): Promise<ManagedSiteChannel | null>
 
+  fetchChannelSecretKey?(
+    baseUrl: string,
+    adminToken: string,
+    userId: number | string,
+    channelId: number,
+  ): Promise<string>
+
   autoConfigToManagedSite(
     account: SiteAccount,
     toastId?: string,
@@ -162,6 +169,7 @@ export async function getManagedSiteService(): Promise<ManagedSiteService> {
       prepareChannelFormData: veloeraService.prepareChannelFormData,
       buildChannelPayload: veloeraService.buildChannelPayload,
       findMatchingChannel: veloeraService.findMatchingChannel,
+      fetchChannelSecretKey: veloeraService.fetchChannelSecretKey,
       autoConfigToManagedSite: veloeraService.autoConfigToVeloera,
     }
   }
@@ -181,6 +189,7 @@ export async function getManagedSiteService(): Promise<ManagedSiteService> {
       prepareChannelFormData: doneHubService.prepareChannelFormData,
       buildChannelPayload: doneHubService.buildChannelPayload,
       findMatchingChannel: doneHubService.findMatchingChannel,
+      fetchChannelSecretKey: doneHubService.fetchChannelSecretKey,
       autoConfigToManagedSite: doneHubService.autoConfigToDoneHub,
     }
   }
@@ -199,6 +208,7 @@ export async function getManagedSiteService(): Promise<ManagedSiteService> {
     prepareChannelFormData: newApiService.prepareChannelFormData,
     buildChannelPayload: newApiService.buildChannelPayload,
     findMatchingChannel: newApiService.findMatchingChannel,
+    fetchChannelSecretKey: newApiService.fetchChannelSecretKey,
     autoConfigToManagedSite: newApiService.autoConfigToNewApi,
   }
 }

@@ -148,4 +148,37 @@ describe("doneHubService findMatchingChannel", () => {
 
     expect(result).toBeNull()
   })
+
+  it("fetches the full channel key from channel detail", async () => {
+    const { fetchChannelSecretKey } = await import(
+      "~/services/managedSites/providers/doneHubService"
+    )
+
+    mockFetchDoneHubChannel.mockResolvedValueOnce(
+      buildManagedSiteChannel({
+        id: 21,
+        key: "sk-done-hub-channel-key",
+      }),
+    )
+
+    const result = await fetchChannelSecretKey(
+      "https://done-hub.example.com",
+      "admin-token",
+      "1",
+      21,
+    )
+
+    expect(mockFetchDoneHubChannel).toHaveBeenCalledWith(
+      {
+        baseUrl: "https://done-hub.example.com",
+        auth: {
+          authType: "access_token",
+          accessToken: "admin-token",
+          userId: "1",
+        },
+      },
+      21,
+    )
+    expect(result).toBe("sk-done-hub-channel-key")
+  })
 })

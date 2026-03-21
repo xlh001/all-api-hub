@@ -28,7 +28,7 @@
     "key": {
       "label": "API 金鑰",
       "placeholder": "輸入上游提供商的 API 金鑰",
-      "realKeyHint": "對於 New API，檢視真實渠道 key 本身需要先完成 2FA 驗證；如果未在設定中填寫登入與兩步驗證輔助資訊，則無法讀取該 key。"
+      "realKeyHint": "當列表介面未回傳完整渠道 key 時，可在此載入真實 key；部分渠道類型可能還需要額外驗證。"
     },
     "models": {
       "hint": "輸入搜尋或按 Enter 新增自定義模型名稱",

@@ -6,6 +6,7 @@ import { ensureAccountApiToken } from "~/services/accounts/accountOperations"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { getApiService } from "~/services/apiService"
 import { fetchOpenAICompatibleModelIds } from "~/services/apiService/openaiCompatible"
+import { fetchChannel as fetchVeloeraChannel } from "~/services/apiService/veloera"
 import { findManagedSiteChannelByComparableInputs } from "~/services/managedSites/utils/channelMatching"
 import { ApiToken, AuthTypeEnum, DisplaySiteData, SiteAccount } from "~/types"
 import type { AccountToken } from "~/types"
@@ -123,6 +124,35 @@ export async function deleteChannel(
     },
     channelId,
   )
+}
+
+/**
+ * Fetches the full secret key for a Veloera channel from its detail payload.
+ */
+export async function fetchChannelSecretKey(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelId: number,
+): Promise<string> {
+  const channel = await fetchVeloeraChannel(
+    {
+      baseUrl,
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: adminToken,
+        userId,
+      },
+    },
+    channelId,
+  )
+
+  const key = channel.key?.trim()
+  if (!key) {
+    throw new Error("veloera_channel_key_missing")
+  }
+
+  return key
 }
 
 /**

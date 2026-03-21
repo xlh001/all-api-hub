@@ -78,7 +78,7 @@ import { ChannelTypeNames } from "~/constants/managedSite"
 import { OctopusOutboundTypeNames } from "~/constants/octopus"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
-import { NEW_API, OCTOPUS } from "~/constants/siteType"
+import { DONE_HUB, NEW_API, OCTOPUS, VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { loadNewApiChannelKeyWithVerification } from "~/features/ManagedSiteVerification/loadNewApiChannelKeyWithVerification"
 import { NewApiManagedVerificationDialog } from "~/features/ManagedSiteVerification/NewApiManagedVerificationDialog"
@@ -159,6 +159,11 @@ function getManagedSiteChannelStatusFilterLabel(
   }
 }
 
+const channelNeedsRealKeyResolution = (key?: string | null) => {
+  const trimmedKey = key?.trim() ?? ""
+  return trimmedKey.length === 0 || trimmedKey.includes("*")
+}
+
 /**
  * Render the managed site channels page with data loading, filtering, and actions.
  */
@@ -177,6 +182,8 @@ export default function ManagedSiteChannels({
   } = useUserPreferencesContext()
   const isOctopus = managedSiteType === OCTOPUS
   const isNewApiManagedSite = managedSiteType === NEW_API
+  const supportsDetailBackedRealKeyLoading =
+    managedSiteType === DONE_HUB || managedSiteType === VELOERA
 
   const [channels, setChannels] = useState<ChannelRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -280,6 +287,10 @@ export default function ManagedSiteChannels({
         channel.group?.split(",").map((value) => value.trim()) ?? []
       const models =
         channel.models?.split(",").map((value) => value.trim()) ?? []
+      const shouldOfferRealKeyLoading =
+        channelNeedsRealKeyResolution(channel.key) &&
+        (isNewApiManagedSite || supportsDetailBackedRealKeyLoading)
+
       openWithCustom({
         mode: "edit",
         channel,
@@ -296,23 +307,52 @@ export default function ManagedSiteChannels({
         },
         initialGroups: groups,
         initialModels: models,
-        onRequestRealKey: isNewApiManagedSite
+        onRequestRealKey: shouldOfferRealKeyLoading
           ? ({ setKey }) => {
               const loadRealKey = async () => {
                 try {
-                  await loadNewApiChannelKeyWithVerification({
-                    channelId: channel.id,
-                    label: channel.name,
-                    config: {
-                      baseUrl: newApiBaseUrl,
-                      userId: newApiUserId,
-                      username: newApiUsername,
-                      password: newApiPassword,
-                      totpSecret: newApiTotpSecret,
-                    },
-                    setKey,
-                    openVerification: openNewApiManagedVerification,
-                  })
+                  if (isNewApiManagedSite) {
+                    await loadNewApiChannelKeyWithVerification({
+                      channelId: channel.id,
+                      label: channel.name,
+                      config: {
+                        baseUrl: newApiBaseUrl,
+                        userId: newApiUserId,
+                        username: newApiUsername,
+                        password: newApiPassword,
+                        totpSecret: newApiTotpSecret,
+                      },
+                      setKey,
+                      openVerification: openNewApiManagedVerification,
+                    })
+                    return
+                  }
+
+                  const service = await getManagedSiteService()
+                  const config = await service.getConfig()
+                  if (!config) {
+                    throw new Error(
+                      getManagedSiteConfigMissingMessage(
+                        t,
+                        service.messagesKey,
+                      ),
+                    )
+                  }
+
+                  if (!service.fetchChannelSecretKey) {
+                    throw new Error(
+                      "Channel key loading is not supported for this managed site",
+                    )
+                  }
+
+                  const resolvedKey = await service.fetchChannelSecretKey(
+                    config.baseUrl,
+                    config.token,
+                    config.userId,
+                    channel.id,
+                  )
+
+                  setKey(resolvedKey)
                 } catch (error) {
                   toast.error(
                     t("managedSiteChannels:toasts.revealKeyFailed", {
@@ -340,6 +380,7 @@ export default function ManagedSiteChannels({
       newApiUsername,
       openWithCustom,
       refreshChannels,
+      supportsDetailBackedRealKeyLoading,
       t,
       openNewApiManagedVerification,
     ],

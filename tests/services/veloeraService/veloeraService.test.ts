@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { CreateChannelPayload, UpdateChannelPayload } from "~/types/newApi"
 
@@ -22,6 +22,7 @@ const mockSearchChannel = vi.fn()
 const mockCreateChannel = vi.fn()
 const mockUpdateChannel = vi.fn()
 const mockDeleteChannel = vi.fn()
+const mockFetchVeloeraChannel = vi.fn()
 
 vi.mock("~/services/apiService", () => ({
   getApiService: vi.fn(() => ({
@@ -31,6 +32,10 @@ vi.mock("~/services/apiService", () => ({
     updateChannel: mockUpdateChannel,
     deleteChannel: mockDeleteChannel,
   })),
+}))
+
+vi.mock("~/services/apiService/veloera", () => ({
+  fetchChannel: (...args: unknown[]) => mockFetchVeloeraChannel(...args),
 }))
 
 vi.mock("~/services/apiService/openaiCompatible", () => ({
@@ -69,6 +74,10 @@ function createMockUserPreferencesWithVeloera(
 // ============================================================================
 
 describe("veloeraService", () => {
+  beforeEach(() => {
+    mockFetchVeloeraChannel.mockReset()
+  })
+
   describe("hasValidVeloeraConfig", () => {
     it("returns true with valid config", async () => {
       const { hasValidVeloeraConfig } = await import(
@@ -243,6 +252,39 @@ describe("veloeraService", () => {
         },
         1,
       )
+    })
+  })
+
+  describe("fetchChannelSecretKey", () => {
+    it("fetches the full channel key from channel detail", async () => {
+      const { fetchChannelSecretKey } = await import(
+        "~/services/managedSites/providers/veloera"
+      )
+
+      mockFetchVeloeraChannel.mockResolvedValueOnce({
+        id: 88,
+        key: "sk-veloera-channel-key",
+      })
+
+      const result = await fetchChannelSecretKey(
+        "https://veloera.example.com",
+        "token",
+        "1",
+        88,
+      )
+
+      expect(mockFetchVeloeraChannel).toHaveBeenCalledWith(
+        {
+          baseUrl: "https://veloera.example.com",
+          auth: {
+            authType: "access_token",
+            accessToken: "token",
+            userId: "1",
+          },
+        },
+        88,
+      )
+      expect(result).toBe("sk-veloera-channel-key")
     })
   })
 })

@@ -26,6 +26,7 @@ vi.mock("~/services/managedSites/providers/newApi", () => ({
   prepareChannelFormData: vi.fn(),
   buildChannelPayload: vi.fn(),
   findMatchingChannel: vi.fn(),
+  fetchChannelSecretKey: vi.fn(),
   autoConfigToNewApi: vi.fn(),
 }))
 
@@ -45,6 +46,7 @@ vi.mock("~/services/managedSites/providers/veloera", () => ({
   prepareChannelFormData: vi.fn(),
   buildChannelPayload: vi.fn(),
   findMatchingChannel: vi.fn(),
+  fetchChannelSecretKey: vi.fn(),
   autoConfigToVeloera: vi.fn(),
 }))
 

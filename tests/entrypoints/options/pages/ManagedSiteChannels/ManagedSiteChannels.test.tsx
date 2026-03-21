@@ -2,7 +2,7 @@ import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 import { ChannelDialogContainer } from "~/components/dialogs/ChannelDialog"
-import { NEW_API } from "~/constants/siteType"
+import { DONE_HUB, NEW_API, VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ManagedSiteChannels from "~/entrypoints/options/pages/ManagedSiteChannels"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
@@ -62,9 +62,25 @@ const waitForRowText = (text: string) =>
   })
 
 describe("ManagedSiteChannels", () => {
-  const mockChannels = (channels: any[]) => {
+  const mockChannels = (
+    channels: any[],
+    options?: {
+      managedSiteType?: string
+      messagesKey?: string
+      fetchChannelSecretKey?: (...args: unknown[]) => Promise<string>
+    },
+  ) => {
+    const managedSiteType = options?.managedSiteType ?? NEW_API
+    const messagesKey =
+      options?.messagesKey ??
+      (managedSiteType === DONE_HUB
+        ? "donehub"
+        : managedSiteType === VELOERA
+          ? "veloera"
+          : "newapi")
+
     vi.mocked(useUserPreferencesContext).mockReturnValue({
-      managedSiteType: NEW_API,
+      managedSiteType,
       newApiBaseUrl: "https://admin.example",
       newApiUserId: "1",
       newApiUsername: "admin",
@@ -73,12 +89,14 @@ describe("ManagedSiteChannels", () => {
     } as any)
 
     vi.mocked(getManagedSiteService).mockResolvedValue({
-      messagesKey: "newapi",
+      siteType: managedSiteType,
+      messagesKey,
       getConfig: vi.fn().mockResolvedValue({
         baseUrl: "https://admin.example",
         token: "t",
         userId: "1",
       }),
+      fetchChannelSecretKey: options?.fetchChannelSecretKey,
     } as any)
 
     vi.mocked(sendRuntimeMessage).mockResolvedValue({
@@ -324,4 +342,83 @@ describe("ManagedSiteChannels", () => {
       ).not.toBeInTheDocument()
     })
   })
+
+  it.each([
+    [DONE_HUB, "donehub"],
+    [VELOERA, "veloera"],
+  ])(
+    "loads the real channel key from the edit dialog for %s",
+    async (managedSiteType, messagesKey) => {
+      const user = userEvent.setup()
+      const fetchChannelSecretKey = vi
+        .fn()
+        .mockResolvedValue("sk-real-channel-key")
+
+      mockChannels(
+        [
+          {
+            id: 308,
+            name: "Alpha",
+            base_url: "https://example.com",
+            type: 1,
+            models: "gpt-4o",
+            group: "default",
+            status: 1,
+            priority: 0,
+            weight: 0,
+            key: "",
+          },
+        ],
+        {
+          managedSiteType,
+          messagesKey,
+          fetchChannelSecretKey,
+        },
+      )
+
+      render(
+        <>
+          <ManagedSiteChannels />
+          <ChannelDialogContainer />
+        </>,
+      )
+
+      await waitForRowText("Alpha")
+
+      const row = screen.getByText("Alpha").closest("tr")
+      expect(row).toBeTruthy()
+      await user.click(
+        within(row!).getByRole("button", {
+          name: "managedSiteChannels:table.columns.actions",
+        }),
+      )
+
+      await user.click(
+        await screen.findByRole("menuitem", {
+          name: "managedSiteChannels:table.rowActions.edit",
+        }),
+      )
+
+      await user.click(
+        await screen.findByRole("button", {
+          name: "channelDialog:actions.loadRealKey",
+        }),
+      )
+
+      await waitFor(() => {
+        expect(fetchChannelSecretKey).toHaveBeenCalledWith(
+          "https://admin.example",
+          "t",
+          "1",
+          308,
+        )
+      })
+
+      await waitFor(() => {
+        expect(
+          screen.getByDisplayValue("sk-real-channel-key"),
+        ).toBeInTheDocument()
+      })
+    },
+  )
 })

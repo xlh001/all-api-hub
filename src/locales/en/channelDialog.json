@@ -28,7 +28,7 @@
     "key": {
       "label": "API Key",
       "placeholder": "Enter the upstream provider API key",
-      "realKeyHint": "For New API, viewing the real channel key itself requires 2FA. If the login and 2FA-assist fields are not filled in under Settings, this key cannot be read."
+      "realKeyHint": "If the channel list omitted or masked the full key, load the real key here. Some managed-site types may require extra verification."
     },
     "models": {
       "hint": "Type to search or press Enter to add a custom model name",

@@ -28,7 +28,7 @@
     "key": {
       "label": "API 密钥",
       "placeholder": "输入上游提供商的 API 密钥",
-      "realKeyHint": "对于 New API，查看真实渠道 key 本身需要先完成 2FA 验证；如果未在设置中填写登录与两步验证辅助信息，则无法读取该 key。"
+      "realKeyHint": "当列表接口未返回完整渠道 key 时，可在此加载真实 key；部分渠道类型可能还需要额外验证。"
     },
     "models": {
       "hint": "输入搜索或按 Enter 添加自定义模型名称",

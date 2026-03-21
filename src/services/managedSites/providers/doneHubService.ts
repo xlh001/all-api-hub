@@ -147,6 +147,35 @@ export async function deleteChannel(
 }
 
 /**
+ * Fetches the full secret key for a Done Hub channel from its detail payload.
+ */
+export async function fetchChannelSecretKey(
+  baseUrl: string,
+  adminToken: string,
+  userId: number | string,
+  channelId: number,
+): Promise<string> {
+  const channel = await fetchDoneHubChannel(
+    {
+      baseUrl,
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: adminToken,
+        userId,
+      },
+    },
+    channelId,
+  )
+
+  const key = channel.key?.trim()
+  if (!key) {
+    throw new Error("done_hub_channel_key_missing")
+  }
+
+  return key
+}
+
+/**
  * Checks whether the given user preferences contain a complete Done Hub config.
  */
 export function hasValidDoneHubConfig(

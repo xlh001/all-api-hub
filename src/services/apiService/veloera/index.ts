@@ -282,6 +282,20 @@ export async function searchChannel(
 }
 
 /**
+ * Fetch a single Veloera channel detail payload and normalize it to
+ * `ManagedSiteChannel`.
+ */
+export async function fetchChannel(
+  request: ApiServiceRequest,
+  channelId: number,
+): Promise<ManagedSiteChannel> {
+  const endpoint = `${VELOERA_CHANNEL_ENDPOINT}/${channelId}`
+  const result = await fetchApiData<unknown>(request, { endpoint })
+
+  return normalizeChannel(result as VeloeraChannelRaw)
+}
+
+/**
  * Fetch check-in capability for the user.
  * @param request ApiServiceRequest.
  * @returns True/false when available; undefined if unsupported or errors.

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   createChannel,
+  fetchChannel,
   listAllChannels,
   searchChannel,
   updateChannel,
@@ -112,6 +113,39 @@ describe("apiService veloera channel APIs", () => {
     expect(result!.items).toHaveLength(2)
     expect(result!.total).toBe(2)
     expect(result!.type_counts).toEqual({ "1": 1, "2": 1 })
+  })
+
+  it("fetchChannel should call the detail endpoint and normalize the payload", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: 1,
+      },
+    }
+
+    mockFetchApiData.mockResolvedValueOnce({
+      id: 9,
+      type: 1,
+      name: "detail-channel",
+      key: "sk-veloera-detail-key",
+      base_url: "https://upstream.example.com",
+      models: "gpt-4o",
+    })
+
+    const result = await fetchChannel(request as any, 9)
+
+    expect(mockFetchApiData).toHaveBeenCalledWith(request, {
+      endpoint: "/api/channel/9",
+    })
+    expect(result).toMatchObject({
+      id: 9,
+      name: "detail-channel",
+      key: "sk-veloera-detail-key",
+      base_url: "https://upstream.example.com",
+      models: "gpt-4o",
+    })
   })
 
   it("createChannel should post flat payload with group string", async () => {

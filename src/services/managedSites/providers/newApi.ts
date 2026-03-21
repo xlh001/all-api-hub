@@ -150,6 +150,22 @@ export async function deleteChannel(
 }
 
 /**
+ * Reads a single managed-site channel key using the New API verification flow.
+ */
+export async function fetchChannelSecretKey(
+  baseUrl: string,
+  _adminToken: string,
+  userId: number | string,
+  channelId: number,
+): Promise<string> {
+  return await fetchNewApiChannelKey({
+    baseUrl,
+    userId,
+    channelId,
+  })
+}
+
+/**
  * Checks whether the given user preferences contain a complete New API config.
  */
 export function hasValidNewApiConfig(prefs: UserPreferences | null): boolean {
