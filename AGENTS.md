@@ -114,6 +114,14 @@ Prereqs: Node.js 20+ and pnpm 10+.
 - `docs/docs/en/**` and `docs/docs/ja/**` are auto-translated by `docs_assistant/translate.py` and `.github/workflows/translate-docs.yml`; avoid manual edits unless the workflow itself changes.
 - When adding or removing docs pages under `docs/docs/`, update locale navigation in `docs/docs/.vuepress/config.js`.
 
+## i18n Guidelines
+
+- When adding short badge, chip, button, or helper-copy translations, avoid `t(key, { count })` unless plural key families are explicitly intended and already modeled in locale files.
+- For compact UI labels that include a number, prefer rendering the numeric count separately and translating only the static label text so `i18n:extract` does not rewrite the key into `_one` / `_other` variants unexpectedly.
+- Treat any unexpected `_one`, `_other`, or similar extract-generated key-family rewrites as a signal to change the calling pattern or key shape, not as something to patch manually in locale JSON.
+- After changing translation keys, locale JSON, or any UI code that adds new `t(...)` usages, run `pnpm run i18n:extract:ci` and ensure it reports no unexpected updates before handoff.
+- Keep locale key shapes stable across languages; do not let one language drift into a pluralized or structurally different key family unless that family is intentionally introduced for every locale.
+
 ## Security & Configuration Tips
 
 - Never commit secrets, tokens, or private environment overrides.
