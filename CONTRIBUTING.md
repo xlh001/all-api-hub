@@ -224,7 +224,7 @@ pnpm compile
 This project uses [Husky](https://typicode.github.io/husky) to enforce code quality through Git hooks:
 
 - **pre-commit**: Runs `pnpm run validate:staged` (see `.husky/pre-commit` and `package.json`)
-  - Runs `pnpm lint-staged --concurrent false` to format staged files with Prettier, fix ESLint issues, and run `vitest related --run` for staged JS/TS files
+  - Runs `pnpm lint-staged --concurrent false` to format staged source and script files with Prettier, fix ESLint issues, and run `vitest related --run` for staged JS/TS files
   - Then runs `pnpm run i18n:check:staged` so repo-level translation extraction checks are not skipped when `lint-staged` passes
 - **pre-push**: Runs `pnpm compile` (see `.husky/pre-push`)
   - This catches full-repo TypeScript issues locally before push

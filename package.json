@@ -43,6 +43,10 @@
       "eslint --fix",
       "vitest related --run"
     ],
+    "*.{mjs,cjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
     "*.{json,md,css,scss}": [
       "prettier --write"
     ]
