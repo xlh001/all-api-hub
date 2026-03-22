@@ -39,6 +39,7 @@ import { useTranslation } from "react-i18next"
 import { useChannelDialog } from "~/components/dialogs/ChannelDialog"
 import { PageHeader } from "~/components/PageHeader"
 import {
+  Badge,
   DestructiveConfirmDialog,
   ExternalUrlText,
   Input,
@@ -945,9 +946,14 @@ export default function ManagedSiteChannels({
               onClick={handleToggleMigrationMode}
               leftIcon={<ArrowRightLeft className="h-4 w-4" />}
             >
-              {isMigrationMode
-                ? t("toolbar.exitMigrationMode")
-                : t("toolbar.enterMigrationMode")}
+              <span>
+                {isMigrationMode
+                  ? t("toolbar.exitMigrationMode")
+                  : t("toolbar.enterMigrationMode")}
+              </span>
+              <Badge variant="warning" size="sm" className="shrink-0">
+                {t("migration.betaBadge")}
+              </Badge>
             </Button>
           </div>
         }

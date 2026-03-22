@@ -448,8 +448,13 @@ export function ManagedSiteChannelMigrationDialog({
         size="lg"
         header={
           <div className="space-y-1">
-            <div className="text-base font-semibold">
-              {t("managedSiteChannels:migration.title")}
+            <div className="flex items-center gap-2">
+              <div className="text-base font-semibold">
+                {t("managedSiteChannels:migration.title")}
+              </div>
+              <Badge variant="warning" size="sm" className="shrink-0">
+                {t("managedSiteChannels:migration.betaBadge")}
+              </Badge>
             </div>
             <div className="text-muted-foreground text-sm">
               {t("managedSiteChannels:migration.description", {

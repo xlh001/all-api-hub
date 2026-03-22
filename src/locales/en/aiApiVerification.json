@@ -75,6 +75,6 @@
     },
     "title": "API Verification",
     "unsupportedProbeForApiType": "{{probe}} probe is not supported for this API type.",
-    "warning": "This feature is in beta. When support is detected, it is highly likely to be genuine. When support is not detected, it may still be supported. Results are for reference only; rely on actual tool usage."
+    "warning": "When support is detected, it is highly likely to be genuine. When support is not detected, it may still be supported. Results are for reference only; rely on actual tool usage."
   }
 }

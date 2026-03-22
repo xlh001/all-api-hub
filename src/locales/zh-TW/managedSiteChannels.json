@@ -88,6 +88,7 @@
         "description": "請先在設定中配置另一個可用的託管站點目標，才能啟用渠道遷移。"
       }
     },
+    "betaBadge": "Beta",
     "blockedReasons": {
       "sourceKeyMissing": "缺少來源渠道金鑰，目前無法遷移此渠道。",
       "sourceKeyResolutionFailed": "無法取得來源渠道金鑰。若剛完成驗證，請重新整理預覽後再試。"

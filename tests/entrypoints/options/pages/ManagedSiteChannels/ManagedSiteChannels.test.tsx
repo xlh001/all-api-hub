@@ -543,9 +543,12 @@ describe("ManagedSiteChannels", () => {
     await waitForRowText("Alpha")
 
     const entry = screen.getByRole("button", {
-      name: "managedSiteChannels:toolbar.enterMigrationMode",
+      name: /managedSiteChannels:toolbar.enterMigrationMode/,
     })
     expect(entry).toBeInTheDocument()
+    expect(
+      within(entry).getByText("managedSiteChannels:migration.betaBadge"),
+    ).toBeInTheDocument()
 
     await user.click(entry)
 
@@ -589,13 +592,13 @@ describe("ManagedSiteChannels", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "managedSiteChannels:toolbar.enterMigrationMode",
+        name: /managedSiteChannels:toolbar.enterMigrationMode/,
       }),
     )
 
     expect(
       screen.getByRole("button", {
-        name: "managedSiteChannels:toolbar.exitMigrationMode",
+        name: /managedSiteChannels:toolbar.exitMigrationMode/,
       }),
     ).toBeInTheDocument()
     expect(
@@ -691,6 +694,9 @@ describe("ManagedSiteChannels", () => {
     expect(
       within(dialog).getByText("managedSiteChannels:migration.title"),
     ).toBeInTheDocument()
+    expect(
+      within(dialog).getByText("managedSiteChannels:migration.betaBadge"),
+    ).toBeInTheDocument()
     expect(within(dialog).getByText("Beta")).toBeInTheDocument()
 
     const betaDetailsToggle = within(dialog).getByText("Beta").closest("button")
@@ -751,7 +757,7 @@ describe("ManagedSiteChannels", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "managedSiteChannels:toolbar.enterMigrationMode",
+        name: /managedSiteChannels:toolbar.enterMigrationMode/,
       }),
     )
 

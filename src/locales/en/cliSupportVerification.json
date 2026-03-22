@@ -53,6 +53,6 @@
       "codex": "Codex (Codex CLI)",
       "gemini": "Gemini CLI"
     },
-    "warning": "This feature is Beta. A detected pass is likely real; a fail may still work in some clients. Treat the result as guidance and verify with the actual CLI when possible."
+    "warning": "A detected pass is likely real; a fail may still work in some clients. Treat the result as guidance and verify with the actual CLI when possible."
   }
 }
