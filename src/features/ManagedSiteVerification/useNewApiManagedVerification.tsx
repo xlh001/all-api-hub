@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import toast from "react-hot-toast"
 
 import {
@@ -33,7 +33,13 @@ export interface OpenNewApiManagedVerificationParams {
   >
   label?: string
   onVerified?: () => Promise<void> | void
+  initialSessionResult?: EnsureNewApiManagedSessionResult
 }
+
+type StoredNewApiManagedVerificationRequest = Omit<
+  OpenNewApiManagedVerificationParams,
+  "initialSessionResult"
+>
 
 interface NewApiManagedVerificationState {
   isOpen: boolean
@@ -42,7 +48,7 @@ interface NewApiManagedVerificationState {
   busyMessage?: string
   code: string
   errorMessage?: string
-  request: OpenNewApiManagedVerificationParams | null
+  request: StoredNewApiManagedVerificationRequest | null
 }
 
 const INITIAL_STATE: NewApiManagedVerificationState = {
@@ -66,6 +72,15 @@ const normalizeConfig = (
   username: config.username?.trim() ?? "",
   password: config.password ?? "",
   totpSecret: config.totpSecret?.trim() ?? "",
+})
+
+const createStoredRequest = (
+  request: OpenNewApiManagedVerificationParams,
+): StoredNewApiManagedVerificationRequest => ({
+  kind: request.kind,
+  label: request.label,
+  onVerified: request.onVerified,
+  config: normalizeConfig(request.config),
 })
 
 const mapSessionResultToStep = (
@@ -93,12 +108,14 @@ const mapSessionResultToStep = (
 export function useNewApiManagedVerification() {
   const [state, setState] =
     useState<NewApiManagedVerificationState>(INITIAL_STATE)
+  const activeRequestScopeRef = useRef<string | null>(null)
 
-  const closeDialog = () => {
+  const closeDialog = useCallback(() => {
+    activeRequestScopeRef.current = null
     setState(INITIAL_STATE)
-  }
+  }, [])
 
-  const openBaseUrl = async () => {
+  const openBaseUrl = useCallback(async () => {
     const baseUrl = state.request?.config.baseUrl?.trim()
     if (!baseUrl) return
 
@@ -107,113 +124,124 @@ export function useNewApiManagedVerification() {
     } catch {
       window.open(baseUrl, "_blank", "noopener,noreferrer")
     }
-  }
+  }, [state.request?.config.baseUrl])
 
-  const showSuccessToast = (request: OpenNewApiManagedVerificationParams) => {
-    const message =
-      request.kind === "token"
-        ? t("newApiManagedVerification:dialog.body.successToken", {
-            label: request.label ?? "",
-          })
-        : request.kind === "channel"
-          ? t("newApiManagedVerification:dialog.body.successChannel", {
+  const showSuccessToast = useCallback(
+    (request: StoredNewApiManagedVerificationRequest) => {
+      const message =
+        request.kind === "token"
+          ? t("newApiManagedVerification:dialog.body.successToken", {
               label: request.label ?? "",
             })
-          : t("newApiManagedVerification:dialog.body.successSettings")
+          : request.kind === "channel"
+            ? t("newApiManagedVerification:dialog.body.successChannel", {
+                label: request.label ?? "",
+              })
+            : t("newApiManagedVerification:dialog.body.successSettings")
 
-    toast.success(message)
-  }
+      toast.success(message)
+    },
+    [],
+  )
 
-  const finishVerifiedFlow = async (
-    request: OpenNewApiManagedVerificationParams,
-  ) => {
-    if (request.onVerified) {
+  const finishVerifiedFlow = useCallback(
+    async (request: StoredNewApiManagedVerificationRequest) => {
+      if (request.onVerified) {
+        setState((prev) => ({
+          ...prev,
+          isBusy: true,
+          busyMessage:
+            request.kind === "token"
+              ? t("newApiManagedVerification:dialog.messages.refreshingToken")
+              : request.kind === "channel"
+                ? t(
+                    "newApiManagedVerification:dialog.messages.refreshingChannel",
+                  )
+                : t("newApiManagedVerification:dialog.messages.finishing"),
+        }))
+
+        await Promise.resolve(request.onVerified())
+      }
+
+      showSuccessToast(request)
+      closeDialog()
+    },
+    [closeDialog, showSuccessToast],
+  )
+
+  const applySessionResult = useCallback(
+    async (
+      request: StoredNewApiManagedVerificationRequest,
+      result: EnsureNewApiManagedSessionResult,
+    ) => {
+      if (result.status === NEW_API_MANAGED_SESSION_STATUSES.VERIFIED) {
+        await finishVerifiedFlow(request)
+        return
+      }
+
       setState((prev) => ({
         ...prev,
-        isBusy: true,
-        busyMessage:
-          request.kind === "token"
-            ? t("newApiManagedVerification:dialog.messages.refreshingToken")
-            : request.kind === "channel"
-              ? t("newApiManagedVerification:dialog.messages.refreshingChannel")
-              : t("newApiManagedVerification:dialog.messages.finishing"),
-      }))
-
-      await Promise.resolve(request.onVerified())
-    }
-
-    showSuccessToast(request)
-    closeDialog()
-  }
-
-  const applySessionResult = async (
-    request: OpenNewApiManagedVerificationParams,
-    result: EnsureNewApiManagedSessionResult,
-  ) => {
-    if (result.status === NEW_API_MANAGED_SESSION_STATUSES.VERIFIED) {
-      await finishVerifiedFlow(request)
-      return
-    }
-
-    setState((prev) => ({
-      ...prev,
-      step: mapSessionResultToStep(result),
-      isBusy: false,
-      busyMessage: undefined,
-      errorMessage: "errorMessage" in result ? result.errorMessage : undefined,
-      code: "",
-    }))
-  }
-
-  const runInitialFlow = async (
-    request: OpenNewApiManagedVerificationParams,
-  ) => {
-    const normalizedRequest: OpenNewApiManagedVerificationParams = {
-      ...request,
-      config: normalizeConfig(request.config),
-    }
-
-    if (!normalizedRequest.config.baseUrl) {
-      setState({
-        isOpen: true,
-        step: NEW_API_MANAGED_VERIFICATION_STEPS.FAILURE,
-        isBusy: false,
-        busyMessage: undefined,
-        code: "",
-        errorMessage: t(
-          "newApiManagedVerification:dialog.messages.missingBaseUrl",
-        ),
-        request: normalizedRequest,
-      })
-      return
-    }
-
-    setState({
-      isOpen: true,
-      step: NEW_API_MANAGED_VERIFICATION_STEPS.LOGGING_IN,
-      isBusy: true,
-      busyMessage: t("newApiManagedVerification:dialog.messages.starting"),
-      code: "",
-      errorMessage: undefined,
-      request: normalizedRequest,
-    })
-
-    try {
-      const result = await ensureNewApiManagedSession(normalizedRequest.config)
-      await applySessionResult(normalizedRequest, result)
-    } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        step: NEW_API_MANAGED_VERIFICATION_STEPS.FAILURE,
+        step: mapSessionResultToStep(result),
         isBusy: false,
         busyMessage: undefined,
         errorMessage:
-          error instanceof Error ? error.message : String(error ?? ""),
+          "errorMessage" in result ? result.errorMessage : undefined,
+        code: "",
       }))
-    }
-  }
+    },
+    [finishVerifiedFlow],
+  )
 
-  const submitCode = async () => {
+  const runInitialFlow = useCallback(
+    async (request: OpenNewApiManagedVerificationParams) => {
+      const normalizedRequest = createStoredRequest(request)
+      const initialSessionResult = request.initialSessionResult
+
+      if (!normalizedRequest.config.baseUrl) {
+        setState({
+          isOpen: true,
+          step: NEW_API_MANAGED_VERIFICATION_STEPS.FAILURE,
+          isBusy: false,
+          busyMessage: undefined,
+          code: "",
+          errorMessage: t(
+            "newApiManagedVerification:dialog.messages.missingBaseUrl",
+          ),
+          request: normalizedRequest,
+        })
+        return
+      }
+
+      setState({
+        isOpen: true,
+        step: NEW_API_MANAGED_VERIFICATION_STEPS.LOGGING_IN,
+        isBusy: true,
+        busyMessage: t("newApiManagedVerification:dialog.messages.starting"),
+        code: "",
+        errorMessage: undefined,
+        request: normalizedRequest,
+      })
+
+      try {
+        const result =
+          initialSessionResult ??
+          (await ensureNewApiManagedSession(normalizedRequest.config))
+        await applySessionResult(normalizedRequest, result)
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          step: NEW_API_MANAGED_VERIFICATION_STEPS.FAILURE,
+          isBusy: false,
+          busyMessage: undefined,
+          errorMessage:
+            error instanceof Error ? error.message : String(error ?? ""),
+        }))
+      }
+    },
+    [applySessionResult],
+  )
+
+  const submitCode = useCallback(async () => {
     const request = state.request
     const trimmedCode = state.code.trim()
 
@@ -256,32 +284,44 @@ export function useNewApiManagedVerification() {
           error instanceof Error ? error.message : String(error ?? ""),
       }))
     }
-  }
+  }, [applySessionResult, state.code, state.request, state.step])
 
-  const retryVerification = async () => {
+  const retryVerification = useCallback(async () => {
     if (!state.request) return
     await runInitialFlow(state.request)
-  }
+  }, [runInitialFlow, state.request])
+
+  const setCode = useCallback((code: string) => {
+    setState((prev) => ({
+      ...prev,
+      code,
+    }))
+  }, [])
+
+  const openNewApiManagedVerification = useCallback(
+    (request: OpenNewApiManagedVerificationParams) => {
+      const requestScope = request.config.baseUrl.trim()
+      if (
+        requestScope &&
+        activeRequestScopeRef.current &&
+        activeRequestScopeRef.current === requestScope
+      ) {
+        return
+      }
+
+      activeRequestScopeRef.current = requestScope
+      void runInitialFlow(request)
+    },
+    [runInitialFlow],
+  )
 
   return {
     dialogState: state,
-    setCode: (code: string) =>
-      setState((prev) => ({
-        ...prev,
-        code,
-      })),
+    setCode,
     closeDialog,
     openBaseUrl,
-    openNewApiManagedVerification: (
-      request: OpenNewApiManagedVerificationParams,
-    ) => {
-      void runInitialFlow(request)
-    },
-    submitCode: () => {
-      void submitCode()
-    },
-    retryVerification: () => {
-      void retryVerification()
-    },
+    openNewApiManagedVerification,
+    submitCode,
+    retryVerification,
   }
 }

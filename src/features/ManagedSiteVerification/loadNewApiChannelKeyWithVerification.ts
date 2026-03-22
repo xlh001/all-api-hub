@@ -33,10 +33,29 @@ export async function loadNewApiChannelKeyWithVerification(
       baseUrl: params.config.baseUrl,
       userId: params.config.userId,
       channelId: params.channelId,
+      username: params.config.username,
+      password: params.config.password,
+      totpSecret: params.config.totpSecret,
     })
 
     await Promise.resolve(params.setKey(key))
     await Promise.resolve(params.onLoaded?.())
+  }
+
+  const openVerification = async (
+    request?: OpenNewApiManagedVerificationParams["initialSessionResult"],
+  ) => {
+    await Promise.resolve(
+      params.openVerification({
+        kind: params.requestKind ?? "channel",
+        label: params.label,
+        config: params.config,
+        initialSessionResult: request ?? undefined,
+        onVerified: async () => {
+          await loadKey()
+        },
+      }),
+    )
   }
 
   try {
@@ -44,16 +63,7 @@ export async function loadNewApiChannelKeyWithVerification(
     return true
   } catch (error) {
     if (error instanceof NewApiChannelKeyRequirementError) {
-      await Promise.resolve(
-        params.openVerification({
-          kind: params.requestKind ?? "channel",
-          label: params.label,
-          config: params.config,
-          onVerified: async () => {
-            await loadKey()
-          },
-        }),
-      )
+      await openVerification(error.sessionResult)
       return false
     }
 

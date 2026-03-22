@@ -17,6 +17,7 @@ import {
   type HeaderGroup,
 } from "@tanstack/react-table"
 import {
+  ArrowRightLeft,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -74,6 +75,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table"
+import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelTypeNames } from "~/constants/managedSite"
 import { OctopusOutboundTypeNames } from "~/constants/octopus"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
@@ -85,7 +87,11 @@ import { NewApiManagedVerificationDialog } from "~/features/ManagedSiteVerificat
 import { useNewApiManagedVerification } from "~/features/ManagedSiteVerification/useNewApiManagedVerification"
 import { cn } from "~/lib/utils"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
-import { getManagedSiteConfigMissingMessage } from "~/services/managedSites/utils/managedSite"
+import {
+  getManagedSiteConfigMissingMessage,
+  getManagedSiteTargetOptions,
+  needsManagedSiteChannelKeyResolution,
+} from "~/services/managedSites/utils/managedSite"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import {
@@ -94,6 +100,7 @@ import {
 } from "~/utils/navigation"
 
 import ChannelFilterDialog from "./components/ChannelFilterDialog"
+import { ManagedSiteChannelMigrationDialog } from "./components/ManagedSiteChannelMigrationDialog"
 import RowActions from "./components/RowActions"
 import StatusBadge from "./components/StatusBadge"
 import type { ChannelRow, CheckboxState, RowActionsLabels } from "./types"
@@ -159,11 +166,6 @@ function getManagedSiteChannelStatusFilterLabel(
   }
 }
 
-const channelNeedsRealKeyResolution = (key?: string | null) => {
-  const trimmedKey = key?.trim() ?? ""
-  return trimmedKey.length === 0 || trimmedKey.includes("*")
-}
-
 /**
  * Render the managed site channels page with data loading, filtering, and actions.
  */
@@ -173,6 +175,7 @@ export default function ManagedSiteChannels({
 }: ManagedSiteChannelsProps) {
   const { t } = useTranslation(["managedSiteChannels", "messages", "common"])
   const {
+    preferences,
     managedSiteType,
     newApiBaseUrl,
     newApiUserId,
@@ -214,10 +217,21 @@ export default function ManagedSiteChannels({
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false)
   const [filterDialogChannel, setFilterDialogChannel] =
     useState<ChannelRow | null>(null)
+  const [migrationChannels, setMigrationChannels] = useState<ChannelRow[]>([])
+  const [isMigrationDialogOpen, setIsMigrationDialogOpen] = useState(false)
+  const [isMigrationMode, setIsMigrationMode] = useState(false)
   const verification = useNewApiManagedVerification()
   const { openNewApiManagedVerification } = verification
 
   const { openWithCustom } = useChannelDialog()
+  const migrationTargets = useMemo(
+    () =>
+      getManagedSiteTargetOptions(preferences, {
+        excludeSiteTypes: [managedSiteType],
+      }),
+    [managedSiteType, preferences],
+  )
+  const hasMigrationTargets = migrationTargets.length > 0
 
   const refreshChannels = useCallback(async () => {
     setIsLoading(true)
@@ -281,18 +295,18 @@ export default function ManagedSiteChannels({
     })
   }, [openWithCustom, refreshChannels, t])
 
-  const handleOpenEditDialog = useCallback(
-    (channel: ChannelRow) => {
+  const openChannelDialogForMode = useCallback(
+    (channel: ChannelRow, mode: DialogMode) => {
       const groups =
         channel.group?.split(",").map((value) => value.trim()) ?? []
       const models =
         channel.models?.split(",").map((value) => value.trim()) ?? []
       const shouldOfferRealKeyLoading =
-        channelNeedsRealKeyResolution(channel.key) &&
+        needsManagedSiteChannelKeyResolution(channel.key) &&
         (isNewApiManagedSite || supportsDetailBackedRealKeyLoading)
 
       openWithCustom({
-        mode: "edit",
+        mode,
         channel,
         initialValues: {
           name: channel.name,
@@ -365,10 +379,13 @@ export default function ManagedSiteChannels({
               return loadRealKey()
             }
           : undefined,
-        onSuccess: () => {
-          toast.success(t("toasts.channelUpdated"))
-          void refreshChannels()
-        },
+        onSuccess:
+          mode === DIALOG_MODES.EDIT
+            ? () => {
+                toast.success(t("toasts.channelUpdated"))
+                void refreshChannels()
+              }
+            : undefined,
       })
     },
     [
@@ -384,6 +401,20 @@ export default function ManagedSiteChannels({
       t,
       openNewApiManagedVerification,
     ],
+  )
+
+  const handleOpenEditDialog = useCallback(
+    (channel: ChannelRow) => {
+      openChannelDialogForMode(channel, DIALOG_MODES.EDIT)
+    },
+    [openChannelDialogForMode],
+  )
+
+  const handleOpenViewDialog = useCallback(
+    (channel: ChannelRow) => {
+      openChannelDialogForMode(channel, DIALOG_MODES.VIEW)
+    },
+    [openChannelDialogForMode],
   )
 
   const scheduleDelete = useCallback((ids: number[]) => {
@@ -499,6 +530,8 @@ export default function ManagedSiteChannels({
     () => ({
       trigger: t("table.columns.actions"),
       edit: t("table.rowActions.edit"),
+      view: t("table.rowActions.view"),
+      migrate: t("table.rowActions.migrate"),
       sync: t("table.rowActions.sync"),
       syncing: t("table.rowActions.syncing"),
       openSync: t("table.rowActions.openSync"),
@@ -517,6 +550,89 @@ export default function ManagedSiteChannels({
     setIsFilterDialogOpen(false)
     setFilterDialogChannel(null)
   }, [])
+
+  const openMigrationDialog = useCallback(
+    (nextChannels: ChannelRow[]) => {
+      if (!nextChannels.length || !hasMigrationTargets) {
+        return
+      }
+
+      setMigrationChannels(nextChannels)
+      setIsMigrationDialogOpen(true)
+    },
+    [hasMigrationTargets],
+  )
+
+  const handleToggleMigrationMode = useCallback(() => {
+    if (!hasMigrationTargets) {
+      toast.error(
+        t("managedSiteChannels:migration.alerts.noTargets.description"),
+      )
+      return
+    }
+
+    setIsMigrationMode((prev) => !prev)
+  }, [hasMigrationTargets, t])
+
+  const handleCloseMigrationDialog = useCallback(() => {
+    setIsMigrationDialogOpen(false)
+    setMigrationChannels([])
+  }, [])
+
+  const handleOpenSingleChannelMigration = useCallback(
+    (channel: ChannelRow) => {
+      openMigrationDialog([channel])
+    },
+    [openMigrationDialog],
+  )
+
+  const resolveNewApiMigrationSourceKey = useCallback(
+    async ({
+      channelId,
+      channelName,
+    }: {
+      channelId: number
+      channelName: string
+    }) => {
+      let resolvedKey = ""
+
+      const loaded = await loadNewApiChannelKeyWithVerification({
+        channelId,
+        label: channelName,
+        requestKind: "channel",
+        config: {
+          baseUrl: newApiBaseUrl,
+          userId: newApiUserId,
+          username: newApiUsername,
+          password: newApiPassword,
+          totpSecret: newApiTotpSecret,
+        },
+        setKey: (key) => {
+          resolvedKey = key
+        },
+        openVerification: openNewApiManagedVerification,
+      })
+
+      if (loaded && resolvedKey.trim()) {
+        return resolvedKey.trim()
+      }
+
+      throw new Error(
+        t(
+          "managedSiteChannels:migration.blockedReasons.sourceKeyResolutionFailed",
+        ),
+      )
+    },
+    [
+      newApiBaseUrl,
+      newApiPassword,
+      newApiTotpSecret,
+      newApiUserId,
+      newApiUsername,
+      openNewApiManagedVerification,
+      t,
+    ],
+  )
 
   const columns = useMemo<ColumnDef<ChannelRow, unknown>[]>(
     () => [
@@ -652,10 +768,14 @@ export default function ManagedSiteChannels({
           <RowActions
             channel={row.original}
             onEdit={handleOpenEditDialog}
+            onView={handleOpenViewDialog}
+            onMigrate={handleOpenSingleChannelMigration}
             onDelete={scheduleDelete}
             onSync={handleSyncChannels}
             onOpenSync={openManagedSiteModelSyncForChannel}
             onFilters={handleOpenFilterDialog}
+            canMigrate={hasMigrationTargets}
+            showMigrationAction={isMigrationMode}
             isSyncing={syncingIds.has(row.original.id)}
             labels={rowActionLabels}
           />
@@ -668,7 +788,11 @@ export default function ManagedSiteChannels({
     [
       handleOpenEditDialog,
       handleOpenFilterDialog,
+      handleOpenSingleChannelMigration,
+      handleOpenViewDialog,
       handleSyncChannels,
+      hasMigrationTargets,
+      isMigrationMode,
       isOctopus,
       rowActionLabels,
       scheduleDelete,
@@ -766,7 +890,9 @@ export default function ManagedSiteChannels({
   }, [statusColumn])
 
   const selectedRows = table.getSelectedRowModel().rows
+  const filteredRows = table.getFilteredRowModel().rows
   const selectedCount = selectedRows.length
+  const filteredCount = filteredRows.length
   const searchValue =
     (table.getColumn("name")?.getFilterValue() as string) ?? ""
   const rowsPerPageOptions = [10, 25, 50, 100]
@@ -805,6 +931,26 @@ export default function ManagedSiteChannels({
         icon={Layers}
         title={t("title")}
         description={t("description")}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => void refreshChannels()}
+              leftIcon={<RefreshCcw className="h-4 w-4" />}
+            >
+              {t("toolbar.refresh")}
+            </Button>
+            <Button
+              variant={isMigrationMode ? "default" : "outline"}
+              onClick={handleToggleMigrationMode}
+              leftIcon={<ArrowRightLeft className="h-4 w-4" />}
+            >
+              {isMigrationMode
+                ? t("toolbar.exitMigrationMode")
+                : t("toolbar.enterMigrationMode")}
+            </Button>
+          </div>
+        }
       />
 
       {configMissing && (
@@ -932,39 +1078,62 @@ export default function ManagedSiteChannels({
           </DropdownMenu>
 
           <div className="col-span-2 grid grid-cols-2 gap-2 md:ml-auto md:flex md:items-center md:justify-end md:gap-2">
-            <Button
-              variant="outline"
-              disabled={!selectedCount}
-              onClick={() =>
-                scheduleDelete(selectedRows.map((row) => row.original.id))
-              }
-              leftIcon={<Trash2 className="h-4 w-4" />}
-            >
-              {t("toolbar.deleteSelected")}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!selectedCount}
-              onClick={() =>
-                handleSyncChannels(selectedRows.map((row) => row.original.id))
-              }
-              leftIcon={<RefreshCcw className="h-4 w-4" />}
-            >
-              {t("toolbar.syncSelected")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => void refreshChannels()}
-              leftIcon={<RefreshCcw className="h-4 w-4" />}
-            >
-              {t("toolbar.refresh")}
-            </Button>
-            <Button
-              onClick={handleOpenCreateDialog}
-              leftIcon={<Plus className="h-4 w-4" />}
-            >
-              {t("toolbar.addChannel")}
-            </Button>
+            {isMigrationMode && hasMigrationTargets && (
+              <Button
+                variant="outline"
+                disabled={!selectedCount}
+                onClick={() =>
+                  openMigrationDialog(selectedRows.map((row) => row.original))
+                }
+                leftIcon={<ArrowRightLeft className="h-4 w-4" />}
+              >
+                {t("toolbar.migrateSelected")}
+              </Button>
+            )}
+            {isMigrationMode && hasMigrationTargets && (
+              <Button
+                variant="outline"
+                disabled={!filteredCount}
+                onClick={() =>
+                  openMigrationDialog(filteredRows.map((row) => row.original))
+                }
+                leftIcon={<ArrowRightLeft className="h-4 w-4" />}
+              >
+                {t("toolbar.migrateFiltered")}
+              </Button>
+            )}
+            {!isMigrationMode && (
+              <Button
+                variant="outline"
+                disabled={!selectedCount}
+                onClick={() =>
+                  scheduleDelete(selectedRows.map((row) => row.original.id))
+                }
+                leftIcon={<Trash2 className="h-4 w-4" />}
+              >
+                {t("toolbar.deleteSelected")}
+              </Button>
+            )}
+            {!isMigrationMode && (
+              <Button
+                variant="outline"
+                disabled={!selectedCount}
+                onClick={() =>
+                  handleSyncChannels(selectedRows.map((row) => row.original.id))
+                }
+                leftIcon={<RefreshCcw className="h-4 w-4" />}
+              >
+                {t("toolbar.syncSelected")}
+              </Button>
+            )}
+            {!isMigrationMode && (
+              <Button
+                onClick={handleOpenCreateDialog}
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                {t("toolbar.addChannel")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -1169,6 +1338,18 @@ export default function ManagedSiteChannels({
         channel={filterDialogChannel}
         open={isFilterDialogOpen}
         onClose={handleCloseFilterDialog}
+      />
+
+      <ManagedSiteChannelMigrationDialog
+        isOpen={isMigrationDialogOpen}
+        onClose={handleCloseMigrationDialog}
+        channels={migrationChannels}
+        preferences={preferences}
+        sourceSiteType={managedSiteType}
+        availableTargets={migrationTargets}
+        resolveNewApiSourceKey={
+          isNewApiManagedSite ? resolveNewApiMigrationSourceKey : undefined
+        }
       />
 
       <NewApiManagedVerificationDialog

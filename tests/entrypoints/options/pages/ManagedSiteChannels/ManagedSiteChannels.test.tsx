@@ -1,12 +1,21 @@
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import toast from "react-hot-toast"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ChannelDialogContainer } from "~/components/dialogs/ChannelDialog"
 import { DONE_HUB, NEW_API, VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ManagedSiteChannels from "~/entrypoints/options/pages/ManagedSiteChannels"
-import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
-import { fetchNewApiChannelKey } from "~/services/managedSites/providers/newApiSession"
+import {
+  getManagedSiteService,
+  getManagedSiteServiceForType,
+} from "~/services/managedSites/managedSiteService"
+import {
+  ensureNewApiManagedSession,
+  fetchNewApiChannelKey,
+  isNewApiVerifiedSessionActive,
+  NEW_API_MANAGED_SESSION_STATUSES,
+} from "~/services/managedSites/providers/newApiSession"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { navigateWithinOptionsPage } from "~/utils/navigation"
 import {
@@ -24,6 +33,7 @@ vi.mock("~/utils/browser/browserApi", async (importActual) => {
 
 vi.mock("~/services/managedSites/managedSiteService", () => ({
   getManagedSiteService: vi.fn(),
+  getManagedSiteServiceForType: vi.fn(),
 }))
 
 vi.mock(
@@ -32,7 +42,9 @@ vi.mock(
     const actual = (await importActual()) as any
     return {
       ...actual,
+      ensureNewApiManagedSession: vi.fn(),
       fetchNewApiChannelKey: vi.fn(),
+      isNewApiVerifiedSessionActive: vi.fn(),
     }
   },
 )
@@ -44,7 +56,10 @@ vi.mock("~/contexts/UserPreferencesContext", async (importActual) => {
 
 vi.mock("~/utils/navigation", async (importActual) => {
   const actual = (await importActual()) as any
-  return { ...actual, navigateWithinOptionsPage: vi.fn() }
+  return {
+    ...actual,
+    navigateWithinOptionsPage: vi.fn(),
+  }
 })
 
 vi.mock("react-hot-toast", () => ({
@@ -62,11 +77,64 @@ const waitForRowText = (text: string) =>
   })
 
 describe("ManagedSiteChannels", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const buildPreferences = (options?: {
+    managedSiteType?: string
+    withMigrationTarget?: boolean
+  }) => {
+    const managedSiteType = options?.managedSiteType ?? NEW_API
+
+    return {
+      managedSiteType,
+      newApi: {
+        baseUrl: "https://admin.example",
+        adminToken: "new-api-token",
+        userId: "1",
+        username: "admin",
+        password: "secret-password",
+        totpSecret: "JBSWY3DPEHPK3PXP",
+      },
+      doneHub:
+        options?.withMigrationTarget || managedSiteType === DONE_HUB
+          ? {
+              baseUrl: "https://donehub.example",
+              adminToken: "donehub-token",
+              userId: "9",
+            }
+          : {
+              baseUrl: "",
+              adminToken: "",
+              userId: "",
+            },
+      veloera:
+        managedSiteType === VELOERA
+          ? {
+              baseUrl: "https://veloera.example",
+              adminToken: "veloera-token",
+              userId: "5",
+            }
+          : {
+              baseUrl: "",
+              adminToken: "",
+              userId: "",
+            },
+      octopus: {
+        baseUrl: "",
+        username: "",
+        password: "",
+      },
+    }
+  }
+
   const mockChannels = (
     channels: any[],
     options?: {
       managedSiteType?: string
       messagesKey?: string
+      withMigrationTarget?: boolean
       fetchChannelSecretKey?: (...args: unknown[]) => Promise<string>
     },
   ) => {
@@ -78,14 +146,19 @@ describe("ManagedSiteChannels", () => {
         : managedSiteType === VELOERA
           ? "veloera"
           : "newapi")
+    const preferences = buildPreferences({
+      managedSiteType,
+      withMigrationTarget: options?.withMigrationTarget,
+    })
 
     vi.mocked(useUserPreferencesContext).mockReturnValue({
+      preferences,
       managedSiteType,
-      newApiBaseUrl: "https://admin.example",
-      newApiUserId: "1",
-      newApiUsername: "admin",
-      newApiPassword: "secret-password",
-      newApiTotpSecret: "JBSWY3DPEHPK3PXP",
+      newApiBaseUrl: preferences.newApi.baseUrl,
+      newApiUserId: preferences.newApi.userId,
+      newApiUsername: preferences.newApi.username,
+      newApiPassword: preferences.newApi.password,
+      newApiTotpSecret: preferences.newApi.totpSecret,
     } as any)
 
     vi.mocked(getManagedSiteService).mockResolvedValue({
@@ -102,6 +175,36 @@ describe("ManagedSiteChannels", () => {
     vi.mocked(sendRuntimeMessage).mockResolvedValue({
       success: true,
       data: { items: channels },
+    } as any)
+
+    vi.mocked(isNewApiVerifiedSessionActive).mockReturnValue(true)
+    vi.mocked(ensureNewApiManagedSession).mockResolvedValue({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+      methods: {
+        twoFactorEnabled: true,
+        passkeyEnabled: false,
+      },
+    } as any)
+
+    vi.mocked(getManagedSiteServiceForType).mockReturnValue({
+      siteType: DONE_HUB,
+      messagesKey: "donehub",
+      getConfig: vi.fn().mockResolvedValue({
+        baseUrl: "https://donehub.example",
+        token: "donehub-token",
+        userId: "9",
+      }),
+      buildChannelPayload: vi.fn((draft: any) => ({
+        mode: "single",
+        channel: {
+          name: draft.name,
+          key: draft.key,
+        },
+      })),
+      createChannel: vi.fn().mockResolvedValue({
+        success: true,
+        message: "ok",
+      }),
     } as any)
   }
 
@@ -207,6 +310,9 @@ describe("ManagedSiteChannels", () => {
       expect(fetchNewApiChannelKey).toHaveBeenCalledWith({
         baseUrl: "https://admin.example",
         userId: "1",
+        username: "admin",
+        password: "secret-password",
+        totpSecret: "JBSWY3DPEHPK3PXP",
         channelId: 208,
       })
     })
@@ -301,6 +407,9 @@ describe("ManagedSiteChannels", () => {
       expect(fetchNewApiChannelKey).toHaveBeenCalledWith({
         baseUrl: "https://admin.example",
         userId: "1",
+        username: "admin",
+        password: "secret-password",
+        totpSecret: "JBSWY3DPEHPK3PXP",
         channelId: 208,
       })
     })
@@ -421,4 +530,269 @@ describe("ManagedSiteChannels", () => {
       })
     },
   )
+
+  it("shows the migration entry and explains when no target is configured", async () => {
+    const user = userEvent.setup()
+    mockChannels(
+      [{ id: 1, name: "Alpha", base_url: "https://example.com", key: "k" }],
+      { withMigrationTarget: false },
+    )
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    const entry = screen.getByRole("button", {
+      name: "managedSiteChannels:toolbar.enterMigrationMode",
+    })
+    expect(entry).toBeInTheDocument()
+
+    await user.click(entry)
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "managedSiteChannels:migration.alerts.noTargets.description",
+    )
+  })
+
+  it("keeps refresh and read-only channel viewing available in migration mode", async () => {
+    const user = userEvent.setup()
+
+    mockChannels(
+      [
+        { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+        { id: 2, name: "Beta", base_url: "https://beta.example", key: "b" },
+      ],
+      { withMigrationTarget: true },
+    )
+
+    render(
+      <>
+        <ManagedSiteChannels />
+        <ChannelDialogContainer />
+      </>,
+    )
+
+    await waitForRowText("Alpha")
+    await waitForRowText("Beta")
+    const initialRequestCount = vi.mocked(sendRuntimeMessage).mock.calls.length
+
+    expect(
+      screen.queryByRole("button", {
+        name: "managedSiteChannels:toolbar.migrateSelected",
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.refresh",
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.enterMigrationMode",
+      }),
+    )
+
+    expect(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.exitMigrationMode",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.migrateSelected",
+      }),
+    ).toBeInTheDocument()
+    const refreshButton = screen.getByRole("button", {
+      name: "managedSiteChannels:toolbar.refresh",
+    })
+    expect(refreshButton).toBeInTheDocument()
+
+    await user.click(refreshButton)
+
+    await waitFor(() => {
+      expect(sendRuntimeMessage).toHaveBeenCalledTimes(initialRequestCount + 1)
+    })
+
+    const betaRow = screen.getByText("Beta").closest("tr")
+    expect(betaRow).toBeTruthy()
+    await user.click(
+      within(betaRow!).getByRole("button", {
+        name: "managedSiteChannels:table.columns.actions",
+      }),
+    )
+
+    expect(
+      await screen.findByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.view",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.edit",
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.openSync",
+      }),
+    ).not.toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.view",
+      }),
+    )
+
+    const viewDialog = await screen.findByRole("dialog")
+    expect(
+      within(viewDialog).getByText("channelDialog:title.view"),
+    ).toBeInTheDocument()
+    expect(screen.getByDisplayValue("Beta")).toBeInTheDocument()
+    expect(
+      within(viewDialog).getByRole("button", {
+        name: "common:actions.close",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      within(viewDialog).queryByRole("button", {
+        name: "channelDialog:actions.update",
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(viewDialog).queryByRole("button", {
+        name: "channelDialog:actions.loadRealKey",
+      }),
+    ).not.toBeInTheDocument()
+
+    await user.click(
+      within(viewDialog).getByRole("button", {
+        name: "common:actions.close",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+
+    await user.click(
+      within(betaRow!).getByRole("button", {
+        name: "managedSiteChannels:table.columns.actions",
+      }),
+    )
+
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.migrate",
+      }),
+    )
+
+    const dialog = await screen.findByRole("dialog")
+    expect(
+      within(dialog).getByText("managedSiteChannels:migration.title"),
+    ).toBeInTheDocument()
+    expect(within(dialog).getByText("Beta")).toBeInTheDocument()
+
+    const betaDetailsToggle = within(dialog).getByText("Beta").closest("button")
+    expect(betaDetailsToggle).toBeTruthy()
+
+    await user.click(betaDetailsToggle!)
+
+    expect(
+      within(dialog).getByText("channelDialog:fields.priority.label"),
+    ).toBeInTheDocument()
+  })
+
+  it("uses filtered rows for migrate filtered and shows an execution summary", async () => {
+    const user = userEvent.setup()
+
+    mockChannels(
+      [
+        {
+          id: 1,
+          name: "Alpha",
+          base_url: "https://site-a.example",
+          key: "alpha-key",
+          type: 1,
+          models: "gpt-4o",
+          group: "default",
+          status: 1,
+          priority: 0,
+          weight: 0,
+        },
+        {
+          id: 2,
+          name: "Beta",
+          base_url: "https://site-b.example",
+          key: "beta-key",
+          type: 1,
+          models: "gpt-4o-mini",
+          group: "default",
+          status: 1,
+          priority: 0,
+          weight: 0,
+        },
+      ],
+      { withMigrationTarget: true },
+    )
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+    await waitForRowText("Beta")
+
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "site-a" },
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByText("Beta")).not.toBeInTheDocument()
+    })
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.enterMigrationMode",
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.migrateFiltered",
+      }),
+    )
+
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByText("Alpha")).toBeInTheDocument()
+    expect(within(dialog).queryByText("Beta")).not.toBeInTheDocument()
+
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: "managedSiteChannels:migration.actions.start",
+      }),
+    )
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "managedSiteChannels:migration.confirm.confirm",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        within(dialog).getByText("managedSiteChannels:migration.results.title"),
+      ).toBeInTheDocument()
+    })
+    expect(
+      within(dialog).getByLabelText(
+        "managedSiteChannels:migration.target.label",
+      ),
+    ).toBeDisabled()
+    expect(
+      within(dialog).getByRole("button", {
+        name: "managedSiteChannels:migration.actions.refreshPreview",
+      }),
+    ).toBeDisabled()
+
+    expect(getManagedSiteServiceForType).toHaveBeenCalledWith("done-hub")
+  })
 })

@@ -1,0 +1,513 @@
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+import { ChannelType } from "~/constants/managedSite"
+import { DONE_HUB, NEW_API, OCTOPUS, VELOERA } from "~/constants/siteType"
+import {
+  DEFAULT_PREFERENCES,
+  type UserPreferences,
+} from "~/services/preferences/userPreferences"
+import type { ManagedSiteChannel } from "~/types/managedSite"
+import {
+  MANAGED_SITE_CHANNEL_MIGRATION_BLOCKED_REASON_CODES,
+  MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES,
+} from "~/types/managedSiteMigration"
+
+const mockGetManagedSiteServiceForType = vi.fn()
+const mockDoneHubBuildChannelPayload = vi.fn()
+const mockDoneHubCreateChannel = vi.fn()
+const mockDoneHubFetchChannelSecretKey = vi.fn()
+const mockDoneHubGetConfig = vi.fn()
+const mockVeloeraFetchChannelSecretKey = vi.fn()
+const mockVeloeraGetConfig = vi.fn()
+
+vi.mock("~/services/managedSites/managedSiteService", () => ({
+  getManagedSiteServiceForType: mockGetManagedSiteServiceForType,
+}))
+
+const buildManagedSiteChannel = (
+  overrides: Partial<ManagedSiteChannel> = {},
+): ManagedSiteChannel =>
+  ({
+    id: 1,
+    type: ChannelType.OpenAI,
+    key: "channel-key",
+    name: "Alpha",
+    base_url: "https://source.example.com",
+    models: "gpt-4o,gpt-4o-mini",
+    status: 1,
+    weight: 0,
+    priority: 0,
+    openai_organization: null,
+    test_model: null,
+    created_time: 0,
+    test_time: 0,
+    response_time: 0,
+    other: "",
+    balance: 0,
+    balance_updated_time: 0,
+    group: "default",
+    used_quota: 0,
+    model_mapping: "",
+    status_code_mapping: "",
+    auto_ban: 0,
+    other_info: "",
+    tag: null,
+    param_override: null,
+    header_override: null,
+    remark: null,
+    channel_info: {
+      is_multi_key: false,
+      multi_key_size: 0,
+      multi_key_status_list: null,
+      multi_key_polling_index: 0,
+      multi_key_mode: "",
+    },
+    setting: "",
+    settings: "",
+    ...overrides,
+  }) satisfies ManagedSiteChannel
+
+const buildPreferences = (
+  overrides: Partial<UserPreferences> = {},
+): UserPreferences =>
+  ({
+    ...DEFAULT_PREFERENCES,
+    doneHub: {
+      baseUrl: "https://donehub.example.com",
+      adminToken: "donehub-token",
+      userId: "9",
+    },
+    ...overrides,
+  }) satisfies UserPreferences
+
+describe("channelMigration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockDoneHubGetConfig.mockResolvedValue({
+      baseUrl: "https://donehub.example.com",
+      token: "donehub-token",
+      userId: "9",
+    })
+    mockDoneHubBuildChannelPayload.mockImplementation((draft: any) => ({
+      mode: "single",
+      channel: {
+        name: draft.name,
+        key: draft.key,
+      },
+    }))
+    mockDoneHubCreateChannel.mockResolvedValue({
+      success: true,
+      message: "ok",
+    })
+    mockDoneHubFetchChannelSecretKey.mockResolvedValue("real-donehub-key")
+    mockVeloeraGetConfig.mockResolvedValue({
+      baseUrl: "https://veloera.example.com",
+      token: "veloera-token",
+      userId: "8",
+    })
+    mockVeloeraFetchChannelSecretKey.mockResolvedValue("real-veloera-key")
+    mockGetManagedSiteServiceForType.mockImplementation((siteType: string) => {
+      if (siteType === DONE_HUB) {
+        return {
+          getConfig: mockDoneHubGetConfig,
+          buildChannelPayload: mockDoneHubBuildChannelPayload,
+          createChannel: mockDoneHubCreateChannel,
+          fetchChannelSecretKey: mockDoneHubFetchChannelSecretKey,
+        }
+      }
+
+      if (siteType === VELOERA) {
+        return {
+          getConfig: mockVeloeraGetConfig,
+          buildChannelPayload: vi.fn((draft: any) => ({
+            mode: "single",
+            channel: {
+              name: draft.name,
+              key: draft.key,
+            },
+          })),
+          createChannel: vi.fn().mockResolvedValue({
+            success: true,
+            message: "ok",
+          }),
+          fetchChannelSecretKey: mockVeloeraFetchChannelSecretKey,
+        }
+      }
+
+      return {
+        getConfig: vi.fn().mockResolvedValue({
+          baseUrl: "https://target.example.com",
+          token: "target-token",
+          userId: "1",
+        }),
+        buildChannelPayload: vi.fn((draft: any) => ({
+          mode: "single",
+          channel: {
+            name: draft.name,
+            key: draft.key,
+          },
+        })),
+        createChannel: vi.fn().mockResolvedValue({
+          success: true,
+          message: "ok",
+        }),
+      }
+    })
+  })
+
+  it("blocks New API preview items when a masked source key still requires verification", async () => {
+    const { prepareManagedSiteChannelMigrationPreview } = await import(
+      "~/services/managedSites/channelMigration"
+    )
+
+    const preview = await prepareManagedSiteChannelMigrationPreview({
+      preferences: buildPreferences(),
+      sourceSiteType: NEW_API,
+      targetSiteType: DONE_HUB,
+      channels: [
+        buildManagedSiteChannel({
+          id: 11,
+          key: "sk-********",
+        }),
+      ],
+      resolveNewApiSourceKey: vi
+        .fn()
+        .mockRejectedValue(new Error("Verification required")),
+    })
+
+    expect(preview.readyCount).toBe(0)
+    expect(preview.blockedCount).toBe(1)
+    expect(preview.items[0]).toMatchObject({
+      channelId: 11,
+      status: "blocked",
+      blockingReasonCode:
+        MANAGED_SITE_CHANNEL_MIGRATION_BLOCKED_REASON_CODES.SOURCE_KEY_RESOLUTION_FAILED,
+      blockingMessage: "Verification required",
+    })
+  })
+
+  it("hydrates masked Done Hub keys and warns about Octopus-specific field normalization", async () => {
+    const { prepareManagedSiteChannelMigrationPreview } = await import(
+      "~/services/managedSites/channelMigration"
+    )
+
+    const preview = await prepareManagedSiteChannelMigrationPreview({
+      preferences: buildPreferences(),
+      sourceSiteType: DONE_HUB,
+      targetSiteType: OCTOPUS,
+      channels: [
+        buildManagedSiteChannel({
+          id: 21,
+          key: "sk-********",
+          type: ChannelType.Gemini,
+          base_url: "https://provider.example.com",
+          group: "vip,default",
+          priority: 10,
+          weight: 5,
+          status: 3,
+          model_mapping: '{"gpt-4o":"gpt-4.1"}',
+        }),
+      ],
+    })
+
+    expect(mockDoneHubFetchChannelSecretKey).toHaveBeenCalledWith(
+      "https://donehub.example.com",
+      "donehub-token",
+      "9",
+      21,
+    )
+    expect(preview.readyCount).toBe(1)
+    expect(preview.items[0].draft).toMatchObject({
+      key: "real-donehub-key",
+      base_url: "https://provider.example.com/v1",
+      groups: ["default"],
+      priority: 0,
+      weight: 0,
+      status: 2,
+      type: 3,
+    })
+    expect(preview.items[0].warningCodes).toEqual(
+      expect.arrayContaining([
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.DROPS_MODEL_MAPPING,
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_REMAPS_CHANNEL_TYPE,
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_NORMALIZES_BASE_URL,
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_FORCES_DEFAULT_GROUP,
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_IGNORES_PRIORITY,
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_IGNORES_WEIGHT,
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_SIMPLIFIES_STATUS,
+      ]),
+    )
+  })
+
+  it("hydrates masked Veloera keys through the managed-site service loader", async () => {
+    const { prepareManagedSiteChannelMigrationPreview } = await import(
+      "~/services/managedSites/channelMigration"
+    )
+
+    const preview = await prepareManagedSiteChannelMigrationPreview({
+      preferences: buildPreferences({
+        veloera: {
+          baseUrl: "https://veloera.example.com",
+          adminToken: "veloera-token",
+          userId: "8",
+        },
+      }),
+      sourceSiteType: VELOERA,
+      targetSiteType: DONE_HUB,
+      channels: [
+        buildManagedSiteChannel({
+          id: 22,
+          key: "sk-********",
+        }),
+      ],
+    })
+
+    expect(mockVeloeraFetchChannelSecretKey).toHaveBeenCalledWith(
+      "https://veloera.example.com",
+      "veloera-token",
+      "8",
+      22,
+    )
+    expect(preview.readyCount).toBe(1)
+    expect(preview.items[0].draft?.key).toBe("real-veloera-key")
+  })
+
+  it("limits concurrent preview key resolution while preserving channel order", async () => {
+    const { prepareManagedSiteChannelMigrationPreview } = await import(
+      "~/services/managedSites/channelMigration"
+    )
+
+    const channels = Array.from({ length: 7 }, (_, index) =>
+      buildManagedSiteChannel({
+        id: 100 + index,
+        name: `Channel ${index + 1}`,
+        key: "sk-********",
+      }),
+    )
+    const releaseResolvers: Array<() => void> = []
+    let activeResolvers = 0
+    let maxActiveResolvers = 0
+
+    const previewPromise = prepareManagedSiteChannelMigrationPreview({
+      preferences: buildPreferences(),
+      sourceSiteType: NEW_API,
+      targetSiteType: DONE_HUB,
+      channels,
+      resolveNewApiSourceKey: vi.fn(async ({ channelId }) => {
+        activeResolvers += 1
+        maxActiveResolvers = Math.max(maxActiveResolvers, activeResolvers)
+
+        await new Promise<void>((resolve) => {
+          releaseResolvers.push(() => {
+            activeResolvers -= 1
+            resolve()
+          })
+        })
+
+        return `real-key-${channelId}`
+      }),
+    })
+
+    await vi.waitFor(() => {
+      expect(releaseResolvers).toHaveLength(5)
+    })
+    expect(maxActiveResolvers).toBe(5)
+
+    const firstWave = releaseResolvers.splice(0, 5)
+    firstWave.forEach((release) => release())
+
+    await vi.waitFor(() => {
+      expect(releaseResolvers).toHaveLength(2)
+    })
+
+    const secondWave = releaseResolvers.splice(0, 2)
+    secondWave.forEach((release) => release())
+
+    const preview = await previewPromise
+
+    expect(maxActiveResolvers).toBe(5)
+    expect(preview.items.map((item) => item.channelId)).toEqual(
+      channels.map((channel) => channel.id),
+    )
+    expect(preview.readyCount).toBe(channels.length)
+  })
+
+  it("blocks preview items when hydrated source keys are still masked", async () => {
+    const { prepareManagedSiteChannelMigrationPreview } = await import(
+      "~/services/managedSites/channelMigration"
+    )
+
+    mockVeloeraFetchChannelSecretKey.mockResolvedValue("sk-********")
+
+    const preview = await prepareManagedSiteChannelMigrationPreview({
+      preferences: buildPreferences({
+        veloera: {
+          baseUrl: "https://veloera.example.com",
+          adminToken: "veloera-token",
+          userId: "8",
+        },
+      }),
+      sourceSiteType: VELOERA,
+      targetSiteType: DONE_HUB,
+      channels: [
+        buildManagedSiteChannel({
+          id: 23,
+          key: "sk-********",
+        }),
+      ],
+    })
+
+    expect(preview.readyCount).toBe(0)
+    expect(preview.blockedCount).toBe(1)
+    expect(preview.items[0]).toMatchObject({
+      channelId: 23,
+      status: "blocked",
+      blockingReasonCode:
+        MANAGED_SITE_CHANNEL_MIGRATION_BLOCKED_REASON_CODES.SOURCE_KEY_MISSING,
+    })
+  })
+
+  it("creates only ready channels and skips blocked rows during execution", async () => {
+    const { executeManagedSiteChannelMigration } = await import(
+      "~/services/managedSites/channelMigration"
+    )
+
+    const result = await executeManagedSiteChannelMigration({
+      preview: {
+        sourceSiteType: NEW_API,
+        targetSiteType: DONE_HUB,
+        generalWarningCodes: [],
+        totalCount: 2,
+        readyCount: 1,
+        blockedCount: 1,
+        items: [
+          {
+            channelId: 31,
+            channelName: "Ready",
+            sourceChannel: buildManagedSiteChannel({ id: 31, name: "Ready" }),
+            draft: {
+              name: "Ready",
+              type: ChannelType.OpenAI,
+              key: "ready-key",
+              base_url: "https://source.example.com",
+              models: ["gpt-4o"],
+              groups: ["default"],
+              priority: 0,
+              weight: 0,
+              status: 1,
+            },
+            status: "ready",
+            warningCodes: [],
+          },
+          {
+            channelId: 32,
+            channelName: "Blocked",
+            sourceChannel: buildManagedSiteChannel({ id: 32, name: "Blocked" }),
+            draft: null,
+            status: "blocked",
+            warningCodes: [],
+            blockingReasonCode:
+              MANAGED_SITE_CHANNEL_MIGRATION_BLOCKED_REASON_CODES.SOURCE_KEY_MISSING,
+            blockingMessage: "Missing key",
+          },
+        ],
+      },
+    })
+
+    expect(mockDoneHubBuildChannelPayload).toHaveBeenCalledTimes(1)
+    expect(mockDoneHubCreateChannel).toHaveBeenCalledTimes(1)
+    expect(result).toMatchObject({
+      totalSelected: 2,
+      attemptedCount: 1,
+      createdCount: 1,
+      failedCount: 0,
+      skippedCount: 1,
+    })
+    expect(result.items).toEqual([
+      {
+        channelId: 31,
+        channelName: "Ready",
+        success: true,
+        skipped: false,
+      },
+      {
+        channelId: 32,
+        channelName: "Blocked",
+        success: false,
+        skipped: true,
+        blockingReasonCode:
+          MANAGED_SITE_CHANNEL_MIGRATION_BLOCKED_REASON_CODES.SOURCE_KEY_MISSING,
+        error: "Missing key",
+      },
+    ])
+  })
+
+  it("preserves blocker details when execution fails before creating target channels", async () => {
+    const { executeManagedSiteChannelMigration } = await import(
+      "~/services/managedSites/channelMigration"
+    )
+
+    mockDoneHubGetConfig.mockResolvedValue(null)
+
+    const result = await executeManagedSiteChannelMigration({
+      preview: {
+        sourceSiteType: NEW_API,
+        targetSiteType: DONE_HUB,
+        generalWarningCodes: [],
+        totalCount: 2,
+        readyCount: 1,
+        blockedCount: 1,
+        items: [
+          {
+            channelId: 41,
+            channelName: "Ready",
+            sourceChannel: buildManagedSiteChannel({ id: 41, name: "Ready" }),
+            draft: {
+              name: "Ready",
+              type: ChannelType.OpenAI,
+              key: "ready-key",
+              base_url: "https://source.example.com",
+              models: ["gpt-4o"],
+              groups: ["default"],
+              priority: 0,
+              weight: 0,
+              status: 1,
+            },
+            status: "ready",
+            warningCodes: [],
+          },
+          {
+            channelId: 42,
+            channelName: "Blocked",
+            sourceChannel: buildManagedSiteChannel({ id: 42, name: "Blocked" }),
+            draft: null,
+            status: "blocked",
+            warningCodes: [],
+            blockingReasonCode:
+              MANAGED_SITE_CHANNEL_MIGRATION_BLOCKED_REASON_CODES.SOURCE_KEY_MISSING,
+            blockingMessage: "Missing key",
+          },
+        ],
+      },
+    })
+
+    expect(result.items).toEqual([
+      {
+        channelId: 41,
+        channelName: "Ready",
+        success: false,
+        skipped: false,
+        error: "Target managed-site configuration is missing.",
+      },
+      {
+        channelId: 42,
+        channelName: "Blocked",
+        success: false,
+        skipped: true,
+        blockingReasonCode:
+          MANAGED_SITE_CHANNEL_MIGRATION_BLOCKED_REASON_CODES.SOURCE_KEY_MISSING,
+        error: "Missing key",
+      },
+    ])
+  })
+})
