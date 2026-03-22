@@ -196,7 +196,7 @@ const formatArrayValues = (items: string[] | null | undefined) =>
   items && items.length > 0 ? items.join(", ") : "—"
 
 /**
- *
+ * Render a single source-to-target field comparison row in the migration preview.
  */
 function PreviewComparisonRow({
   label,
@@ -223,7 +223,7 @@ function PreviewComparisonRow({
 }
 
 /**
- *
+ * Render the warning list shown inside tooltip popovers in the migration dialog.
  */
 function WarningTooltipContent({ items }: { items: string[] }) {
   return (

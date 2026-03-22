@@ -3,6 +3,7 @@ import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ChannelDialogContainer } from "~/components/dialogs/ChannelDialog"
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { DONE_HUB, NEW_API, VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ManagedSiteChannels from "~/entrypoints/options/pages/ManagedSiteChannels"
@@ -224,6 +225,74 @@ describe("ManagedSiteChannels", () => {
     await waitFor(() => {
       expect(screen.queryByText("Beta")).not.toBeInTheDocument()
     })
+  })
+
+  it("reloads the channel list when the managed site type changes", async () => {
+    let currentManagedSiteType = NEW_API
+    let currentPreferences = buildPreferences({
+      managedSiteType: currentManagedSiteType,
+      withMigrationTarget: true,
+    })
+
+    vi.mocked(useUserPreferencesContext).mockImplementation(
+      () =>
+        ({
+          preferences: currentPreferences,
+          managedSiteType: currentManagedSiteType,
+          newApiBaseUrl: currentPreferences.newApi.baseUrl,
+          newApiUserId: currentPreferences.newApi.userId,
+          newApiUsername: currentPreferences.newApi.username,
+          newApiPassword: currentPreferences.newApi.password,
+          newApiTotpSecret: currentPreferences.newApi.totpSecret,
+          updateManagedSiteType: vi.fn().mockResolvedValue(true),
+        }) as any,
+    )
+
+    vi.mocked(getManagedSiteService).mockImplementation(
+      async () =>
+        ({
+          siteType: currentManagedSiteType,
+          messagesKey:
+            currentManagedSiteType === DONE_HUB ? "donehub" : "newapi",
+          getConfig: vi.fn().mockResolvedValue({
+            baseUrl:
+              currentManagedSiteType === DONE_HUB
+                ? "https://donehub.example"
+                : "https://admin.example",
+            token: "token",
+            userId: "1",
+          }),
+        }) as any,
+    )
+
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      data: {
+        items: [{ id: 1, name: "Alpha", base_url: "https://site-a.example" }],
+      },
+    } as any)
+
+    const { rerender } = render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    vi.mocked(sendRuntimeMessage).mockClear()
+
+    currentManagedSiteType = DONE_HUB
+    currentPreferences = buildPreferences({
+      managedSiteType: currentManagedSiteType,
+      withMigrationTarget: true,
+    })
+
+    rerender(<ManagedSiteChannels />)
+
+    await waitFor(() =>
+      expect(sendRuntimeMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: RuntimeActionIds.ModelSyncListChannels,
+        }),
+      ),
+    )
   })
 
   it("renders base_url as a clickable link", async () => {

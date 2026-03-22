@@ -37,6 +37,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { useChannelDialog } from "~/components/dialogs/ChannelDialog"
+import ManagedSiteTypeSwitcher from "~/components/ManagedSiteTypeSwitcher"
 import { PageHeader } from "~/components/PageHeader"
 import {
   Badge,
@@ -174,7 +175,12 @@ export default function ManagedSiteChannels({
   refreshKey,
   routeParams,
 }: ManagedSiteChannelsProps) {
-  const { t } = useTranslation(["managedSiteChannels", "messages", "common"])
+  const { t } = useTranslation([
+    "managedSiteChannels",
+    "messages",
+    "common",
+    "settings",
+  ])
   const {
     preferences,
     managedSiteType,
@@ -268,7 +274,7 @@ export default function ManagedSiteChannels({
 
   useEffect(() => {
     void refreshChannels()
-  }, [refreshChannels])
+  }, [managedSiteType, refreshChannels])
 
   // 当站点类型变化时，更新分组、优先级、权重列的可见性
   useEffect(() => {
@@ -279,6 +285,17 @@ export default function ManagedSiteChannels({
       weight: !isOctopus,
     }))
   }, [isOctopus])
+
+  useEffect(() => {
+    setRowSelection({})
+    setPendingDeleteIds([])
+    setIsDeleteDialogOpen(false)
+    setFilterDialogChannel(null)
+    setIsFilterDialogOpen(false)
+    setMigrationChannels([])
+    setIsMigrationDialogOpen(false)
+    setIsMigrationMode(false)
+  }, [managedSiteType])
 
   useEffect(() => {
     if (refreshKey) {
@@ -933,7 +950,14 @@ export default function ManagedSiteChannels({
         title={t("title")}
         description={t("description")}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ManagedSiteTypeSwitcher
+              ariaLabel={t("settings:managedSite.siteTypeLabel")}
+              configuredOnly
+              hideWhenSingleOption
+              size="sm"
+              triggerClassName="w-auto min-w-[172px]"
+            />
             <Button
               variant="outline"
               onClick={() => void refreshChannels()}

@@ -1,25 +1,8 @@
 import { useTranslation } from "react-i18next"
 
+import ManagedSiteTypeSwitcher from "~/components/ManagedSiteTypeSwitcher"
 import { SettingSection } from "~/components/SettingSection"
-import {
-  Card,
-  CardItem,
-  CardList,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui"
-import {
-  DONE_HUB,
-  NEW_API,
-  OCTOPUS,
-  VELOERA,
-  type ManagedSiteType,
-} from "~/constants/siteType"
-import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
-import { showUpdateToast } from "~/utils/core/toastHelpers"
+import { Card, CardItem, CardList } from "~/components/ui"
 
 /**
  * Component for selecting which managed site type to use.
@@ -27,15 +10,6 @@ import { showUpdateToast } from "~/utils/core/toastHelpers"
  */
 export default function ManagedSiteSelector() {
   const { t } = useTranslation("settings")
-  const { managedSiteType, updateManagedSiteType } = useUserPreferencesContext()
-
-  const handleManagedSiteTypeChange = async (value: string) => {
-    const siteType = value as ManagedSiteType
-    if (siteType === managedSiteType) return
-
-    const success = await updateManagedSiteType(siteType)
-    showUpdateToast(success, t("managedSite.siteTypeLabel"))
-  }
 
   return (
     <SettingSection
@@ -49,31 +23,11 @@ export default function ManagedSiteSelector() {
             title={t("managedSite.siteTypeLabel")}
             description={t("managedSite.siteTypeDesc")}
             rightContent={
-              <Select
-                value={managedSiteType}
-                onValueChange={handleManagedSiteTypeChange}
-              >
-                <SelectTrigger
-                  className="w-full"
-                  aria-label={t("managedSite.siteTypeLabel")}
-                >
-                  <SelectValue placeholder={t("managedSite.siteTypeLabel")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NEW_API}>
-                    {t("managedSite.newApi")}
-                  </SelectItem>
-                  <SelectItem value={DONE_HUB}>
-                    {t("managedSite.doneHub")}
-                  </SelectItem>
-                  <SelectItem value={VELOERA}>
-                    {t("managedSite.veloera")}
-                  </SelectItem>
-                  <SelectItem value={OCTOPUS}>
-                    {t("managedSite.octopus")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <ManagedSiteTypeSwitcher
+                ariaLabel={t("managedSite.siteTypeLabel")}
+                triggerClassName="w-full"
+                wrapperClassName="w-full"
+              />
             }
           />
         </CardList>

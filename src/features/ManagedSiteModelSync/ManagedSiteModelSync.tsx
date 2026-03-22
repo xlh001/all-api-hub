@@ -5,9 +5,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import ManagedSiteTypeSwitcher from "~/components/ManagedSiteTypeSwitcher"
 import { PageHeader } from "~/components/PageHeader"
 import { Button, EmptyState, Input } from "~/components/ui"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import type { ManagedSiteChannel } from "~/types/managedSite"
 import type {
   ExecutionItemResult,
@@ -53,7 +55,8 @@ export default function ManagedSiteModelSync({
   refreshKey,
   routeParams,
 }: ManagedSiteModelSyncProps) {
-  const { t } = useTranslation("managedSiteModelSync")
+  const { t } = useTranslation(["managedSiteModelSync", "settings"])
+  const { managedSiteType } = useUserPreferencesContext()
   const hasInitializedTab = useRef(false)
   const [lastExecution, setLastExecution] = useState<ExecutionResult | null>(
     null,
@@ -190,7 +193,26 @@ export default function ManagedSiteModelSync({
     return () => {
       browser.runtime.onMessage.removeListener(handleMessage)
     }
-  }, [loadLastExecution, loadNextRun, loadPreferences, loadProgress])
+  }, [
+    loadLastExecution,
+    loadNextRun,
+    loadPreferences,
+    loadProgress,
+    managedSiteType,
+  ])
+
+  useEffect(() => {
+    hasInitializedTab.current = false
+    setLastExecution(null)
+    setProgress(null)
+    setNextScheduledAt(null)
+    setHistorySelectedIds(new Set())
+    setManualSelectedIds(new Set())
+    setRunningChannelId(null)
+    setChannels([])
+    setChannelsError(null)
+    setHasAttemptedChannelsLoad(false)
+  }, [managedSiteType])
 
   useEffect(() => {
     if (!progress?.isRunning) {
@@ -667,6 +689,15 @@ export default function ManagedSiteModelSync({
         icon={RefreshCcw}
         title={t("execution.title")}
         description={t("description")}
+        actions={
+          <ManagedSiteTypeSwitcher
+            ariaLabel={t("settings:managedSite.siteTypeLabel")}
+            configuredOnly
+            hideWhenSingleOption
+            size="sm"
+            triggerClassName="w-auto min-w-[172px]"
+          />
+        }
         spacing="compact"
       />
 
