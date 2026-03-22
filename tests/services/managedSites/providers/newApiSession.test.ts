@@ -319,7 +319,10 @@ describe("newApiSession", () => {
       sessionResult: {
         status: NEW_API_MANAGED_SESSION_STATUSES.CREDENTIALS_MISSING,
       },
-    } satisfies Pick<NewApiChannelKeyRequirementError, "kind">)
+    } satisfies Pick<
+      NewApiChannelKeyRequirementError,
+      "kind" | "sessionResult"
+    >)
 
     expect(keyEndpointCalls).toBe(0)
   })
@@ -353,8 +356,16 @@ describe("newApiSession", () => {
       kind: NEW_API_CHANNEL_KEY_ERROR_KINDS.SECURE_VERIFICATION_REQUIRED,
       sessionResult: {
         status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+        methods: {
+          twoFactorEnabled: true,
+          passkeyEnabled: false,
+        },
+        automaticAttempted: false,
       },
-    } satisfies Pick<NewApiChannelKeyRequirementError, "kind">)
+    } satisfies Pick<
+      NewApiChannelKeyRequirementError,
+      "kind" | "sessionResult"
+    >)
 
     expect(keyEndpointCalls).toBe(0)
   })
