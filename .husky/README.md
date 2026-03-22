@@ -12,6 +12,11 @@ Runs before each commit to ensure code quality:
   - The i18n guard only triggers when staged files touch `src/**`, `package.json`, `pnpm-lock.yaml`, or `i18next.config.ts`
   - Internally the i18n guard runs `pnpm run i18n:extract:ci` to ensure locale files stay in sync with code
 
+### pre-push
+Runs before each push to catch repository-wide issues that staged-file checks can miss:
+- **Push validation**: Runs `pnpm compile`
+  - This catches TypeScript regressions locally before the push reaches CI
+
 ## Manual Commands
 
 You can also run these checks manually:
@@ -34,6 +39,9 @@ pnpm run i18n:extract:ci
 
 # Run the full staged pre-commit-equivalent validation manually
 pnpm run validate:staged
+
+# Run the pre-push type check manually
+pnpm compile
 
 # Run only the staged i18n guard manually
 pnpm run i18n:check:staged
@@ -70,4 +78,5 @@ If you get permission errors:
 
 ```bash
 chmod +x .husky/pre-commit
+chmod +x .husky/pre-push
 ```

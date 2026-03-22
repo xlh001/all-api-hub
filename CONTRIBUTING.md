@@ -226,10 +226,12 @@ This project uses [Husky](https://typicode.github.io/husky) to enforce code qual
 - **pre-commit**: Runs `pnpm run validate:staged` (see `.husky/pre-commit` and `package.json`)
   - Runs `pnpm lint-staged --concurrent false` to format staged files with Prettier, fix ESLint issues, and run `vitest related --run` for staged JS/TS files
   - Then runs `pnpm run i18n:check:staged` so repo-level translation extraction checks are not skipped when `lint-staged` passes
-- **pre-push**: Not configured in this repo currently (CI covers `pnpm test:ci`; run `pnpm test:ci && pnpm compile` locally before pushing when possible).
+- **pre-push**: Runs `pnpm compile` (see `.husky/pre-push`)
+  - This catches full-repo TypeScript issues locally before push
 
 The hooks are automatically set up when you run `pnpm install` (via the `prepare` script).
 If you want to reproduce the full pre-commit validation manually, run `pnpm run validate:staged`. Do not treat bare `pnpm lint-staged` as equivalent to the repo's complete pre-commit flow.
+If you want to reproduce the pre-push validation manually, run `pnpm compile`.
 
 #### Skipping Hooks (Not Recommended)
 
@@ -276,8 +278,11 @@ GitHub Actions automatically runs tests on every push and pull request. The work
 
 1. Checks out the code
 2. Installs dependencies with pnpm
-3. Runs `pnpm test:ci` to execute tests with coverage
-4. Uploads coverage artifacts
+3. Runs `pnpm compile` for full-repo type checking
+4. Runs `pnpm lint` for repository-wide lint validation
+5. Runs `pnpm run i18n:extract:ci` to ensure locale files stay in sync with code
+6. Runs `pnpm test:ci` to execute tests with coverage
+7. Uploads coverage artifacts
 
 Make sure all tests pass before submitting a pull request.
 
