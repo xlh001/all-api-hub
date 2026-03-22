@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
+import { ProbeStatusBadge } from "~/components/dialogs/VerifyApiDialog/ProbeStatusBadge"
+import { VerificationStatusBadge } from "~/components/dialogs/VerifyApiDialog/VerificationStatusBadge"
 import {
   Alert,
   Badge,
@@ -23,6 +25,7 @@ import {
 import type {
   ApiVerificationApiType,
   ApiVerificationProbeId,
+  ApiVerificationProbeResult,
 } from "~/services/verification/aiApiVerification"
 import {
   getApiVerificationApiTypeLabel,
@@ -30,11 +33,17 @@ import {
   translateApiVerificationSummary,
 } from "~/services/verification/aiApiVerification/i18n"
 import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
+import {
+  createAccountModelVerificationHistoryTarget,
+  verificationResultHistoryStorage,
+} from "~/services/verification/verificationResultHistory"
 import type { ApiToken } from "~/types"
+import { formatLocaleDateTime } from "~/utils/core/formatters"
 import { createLogger } from "~/utils/core/logger"
 
-import { ProbeStatusBadge } from "./ProbeStatusBadge"
-import type { ProbeItemState, VerifyApiDialogProps } from "./types"
+import { buildProbeState } from "./probeState"
+import type { VerifyApiDialogProps } from "./types"
+import { useVerificationDialogState } from "./useVerificationDialogState"
 import { formatLatency, safeJsonStringify } from "./utils"
 
 /**
@@ -57,7 +66,22 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
     API_TYPES.OPENAI_COMPATIBLE,
   )
   const [modelId, setModelId] = useState<string>(initialModelId?.trim() ?? "")
-  const [probes, setProbes] = useState<ProbeItemState[]>([])
+  const historyTarget = useMemo(() => {
+    const trimmedModelId = initialModelId?.trim()
+    return trimmedModelId
+      ? createAccountModelVerificationHistoryTarget(account.id, trimmedModelId)
+      : null
+  }, [account.id, initialModelId])
+  const {
+    probes,
+    setProbes: replaceProbes,
+    probesRef,
+    persistedSummary,
+    setPersistedSummary: applyPersistedSummary,
+    persistedSummaryRef,
+    persistCurrentResults,
+    loadVerificationHistory,
+  } = useVerificationDialogState(historyTarget)
 
   const selectedToken = tokens.find(
     (tok) => tok.id.toString() === selectedTokenId,
@@ -86,22 +110,6 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
       </div>
     )
   }, [account.baseUrl, account.name, t])
-
-  /**
-   * Build the probe list state for the selected API type.
-   * The list is shown immediately so users can run/retry individual items.
-   */
-  const buildProbeState = (nextApiType: ApiVerificationApiType) => {
-    const defs = getApiVerificationProbeDefinitions(nextApiType)
-    return defs.map(
-      (definition): ProbeItemState => ({
-        definition,
-        isRunning: false,
-        attempts: 0,
-        result: null,
-      }),
-    )
-  }
 
   const loadTokens = async () => {
     setIsLoadingTokens(true)
@@ -150,13 +158,12 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
     if (!selectedToken) return
     let resolvedToken = selectedToken
 
-    setProbes((prev) =>
-      prev.map((p) =>
-        p.definition.id === probeId
-          ? { ...p, isRunning: true, attempts: p.attempts + 1 }
-          : p,
-      ),
+    const pendingProbes = probesRef.current.map((probe) =>
+      probe.definition.id === probeId
+        ? { ...probe, isRunning: true, attempts: probe.attempts + 1 }
+        : probe,
     )
+    replaceProbes(pendingProbes)
 
     try {
       resolvedToken = await resolveDisplayAccountTokenForSecret(
@@ -177,10 +184,16 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
         probeId,
       })
 
-      setProbes((prev) =>
-        prev.map((p) =>
-          p.definition.id === probeId ? { ...p, isRunning: false, result } : p,
-        ),
+      const nextProbes = probesRef.current.map((probe) =>
+        probe.definition.id === probeId
+          ? { ...probe, isRunning: false, result }
+          : probe,
+      )
+      replaceProbes(nextProbes)
+      await persistCurrentResults(
+        apiType,
+        nextProbes,
+        modelId.trim() || tokenModelHint || initialModelId?.trim(),
       )
     } catch (error) {
       logger.error("Probe failed", {
@@ -195,23 +208,36 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
           ].filter(Boolean) as string[],
         ),
       })
-      setProbes((prev) =>
-        prev.map((p) => {
-          if (p.definition.id !== probeId) return p
-          return {
-            ...p,
-            isRunning: false,
-            // Surface a generic message to avoid leaking provider error details.
-            result: {
-              id: probeId,
-              status: "fail",
-              latencyMs: 0,
-              summary: t("verifyDialog.errors.unexpected"),
-            },
-          }
-        }),
+
+      const fallback: ApiVerificationProbeResult = {
+        id: probeId,
+        status: "fail",
+        latencyMs: 0,
+        summary: t("verifyDialog.errors.unexpected"),
+      }
+      const nextProbes = probesRef.current.map((probe) => {
+        if (probe.definition.id !== probeId) return probe
+        return {
+          ...probe,
+          isRunning: false,
+          // Surface a generic message to avoid leaking provider error details.
+          result: fallback,
+        }
+      })
+      replaceProbes(nextProbes)
+      await persistCurrentResults(
+        apiType,
+        nextProbes,
+        modelId.trim() || tokenModelHint || initialModelId?.trim(),
       )
     }
+  }
+
+  const clearHistory = async () => {
+    if (!historyTarget) return
+    await verificationResultHistoryStorage.clearTarget(historyTarget)
+    applyPersistedSummary(null)
+    replaceProbes(buildProbeState(apiType))
   }
 
   // The suite can always run the models probe without a model id.
@@ -221,9 +247,7 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
     if (!canRunAll) return
 
     setIsRunning(true)
-    setProbes((prev) =>
-      prev.map((p) => ({ ...p, isRunning: false, attempts: 0, result: null })),
-    )
+    replaceProbes(buildProbeState(apiType))
     try {
       // Run sequentially so each probe updates independently (and can be retried individually).
       const ordered = getApiVerificationProbeDefinitions(apiType)
@@ -240,10 +264,13 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
 
   useEffect(() => {
     if (!isOpen) return
+
+    let cancelled = false
     const trimmedModelId = initialModelId?.trim() ?? ""
     setTokens([])
     setSelectedTokenId("")
     setModelId(trimmedModelId)
+    applyPersistedSummary(null)
 
     const providerType = trimmedModelId
       ? identifyProvider(trimmedModelId)
@@ -258,30 +285,60 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
           : API_TYPES.OPENAI_COMPATIBLE
 
     setApiType(initialApiType)
-    setProbes(buildProbeState(initialApiType))
+    replaceProbes(buildProbeState(initialApiType))
+
+    void loadVerificationHistory({
+      apiType: initialApiType,
+      isCancelled: () => cancelled,
+      onResolvedModelId: (resolvedModelId) => {
+        setModelId((current) => current.trim() || resolvedModelId)
+      },
+    })
+
     void loadTokens()
+
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account.id, initialModelId, isOpen])
+  }, [account.id, historyTarget, initialModelId, isOpen])
 
   useEffect(() => {
     if (!isOpen) return
-    setProbes(buildProbeState(apiType))
-  }, [apiType, isOpen])
+    replaceProbes(
+      buildProbeState(
+        apiType,
+        apiType === persistedSummaryRef.current?.apiType
+          ? persistedSummaryRef.current
+          : null,
+      ),
+      false,
+    )
+  }, [apiType, isOpen, persistedSummaryRef, replaceProbes])
 
   const footer = (
-    <div className="flex justify-end gap-2">
-      <Button variant="secondary" onClick={onClose} disabled={!canClose}>
-        {t("verifyDialog.actions.close")}
-      </Button>
-      <Button
-        variant="success"
-        onClick={runAll}
-        disabled={isRunning || isLoadingTokens || !canRunAll}
-      >
-        {isRunning
-          ? t("verifyDialog.actions.running")
-          : t("verifyDialog.actions.run")}
-      </Button>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        {historyTarget ? (
+          <Button variant="outline" onClick={clearHistory} disabled={!canClose}>
+            {t("verifyDialog.history.clear")}
+          </Button>
+        ) : null}
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose} disabled={!canClose}>
+          {t("verifyDialog.actions.close")}
+        </Button>
+        <Button
+          variant="success"
+          onClick={runAll}
+          disabled={isRunning || isLoadingTokens || !canRunAll}
+        >
+          {isRunning
+            ? t("verifyDialog.actions.running")
+            : t("verifyDialog.actions.run")}
+        </Button>
+      </div>
     </div>
   )
 
@@ -296,6 +353,22 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
       closeOnBackdropClick={canClose}
     >
       <div className="space-y-3">
+        {historyTarget ? (
+          <div className="dark:border-dark-bg-tertiary flex flex-wrap items-center gap-2 rounded-md border border-gray-100 p-3 text-sm">
+            <span className="dark:text-dark-text-tertiary text-gray-500">
+              {t("verifyDialog.history.lastVerified")}
+            </span>
+            <VerificationStatusBadge
+              status={persistedSummary?.status ?? "unverified"}
+            />
+            <span className="dark:text-dark-text-secondary text-gray-600">
+              {persistedSummary
+                ? formatLocaleDateTime(persistedSummary.verifiedAt)
+                : t("verifyDialog.history.unverified")}
+            </span>
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <div className="dark:text-dark-text-tertiary text-xs text-gray-500">
@@ -386,11 +459,11 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
             const resultSummary = isDisabledForModel
               ? t("verifyDialog.requiresModelId")
               : result?.summaryKey
-                ? (translateApiVerificationSummary(
+                ? translateApiVerificationSummary(
                     t,
                     result.summaryKey,
                     result.summaryParams,
-                  ) ?? result.summary)
+                  ) ?? result.summary
                 : result?.status === "unsupported"
                   ? t("verifyDialog.unsupportedProbeForApiType", {
                       probe: getApiVerificationProbeLabel(

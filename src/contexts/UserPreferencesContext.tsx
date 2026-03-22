@@ -220,7 +220,7 @@ export const UserPreferencesProvider = ({
   }, [])
 
   useEffect(() => {
-    loadPreferences()
+    void loadPreferences()
   }, [loadPreferences])
 
   /**

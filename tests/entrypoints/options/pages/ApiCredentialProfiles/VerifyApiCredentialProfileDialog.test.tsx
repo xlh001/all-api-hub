@@ -3,6 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { VerifyApiCredentialProfileDialog } from "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
+import {
+  createProfileModelVerificationHistoryTarget,
+  createProfileVerificationHistoryTarget,
+  createVerificationHistorySummary,
+  verificationResultHistoryStorage,
+} from "~/services/verification/verificationResultHistory"
+import { requireHistoryTarget } from "~~/tests/test-utils/history"
 import { testI18n } from "~~/tests/test-utils/i18n"
 import { render, screen, waitFor, within } from "~~/tests/test-utils/render"
 
@@ -10,6 +17,24 @@ const { loggerErrorMock, mockRunApiVerificationProbe } = vi.hoisted(() => ({
   loggerErrorMock: vi.fn(),
   mockRunApiVerificationProbe: vi.fn(),
 }))
+
+/**
+ * Small promise helper for coordinating async storage behavior in tests.
+ */
+function createDeferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve
+    reject = nextReject
+  })
+
+  return {
+    promise,
+    resolve,
+    reject,
+  }
+}
 
 vi.mock("~/services/verification/aiApiVerification", async (importOriginal) => {
   const original =
@@ -56,7 +81,8 @@ vi.mock("~/utils/core/logger", async (importOriginal) => {
 })
 
 describe("VerifyApiCredentialProfileDialog", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    vi.restoreAllMocks()
     loggerErrorMock.mockReset()
     mockRunApiVerificationProbe.mockReset()
     mockFetchOpenAICompatibleModelIds.mockReset()
@@ -65,6 +91,7 @@ describe("VerifyApiCredentialProfileDialog", () => {
     mockFetchOpenAICompatibleModelIds.mockResolvedValue([])
     mockFetchAnthropicModelIds.mockResolvedValue([])
     mockFetchGoogleModelIds.mockResolvedValue([])
+    await verificationResultHistoryStorage.clearAllData()
     testI18n.addResourceBundle(
       "en",
       "apiCredentialProfiles",
@@ -512,6 +539,349 @@ describe("VerifyApiCredentialProfileDialog", () => {
         probeId: "text-generation",
         modelId: "m1",
       }),
+    )
+  })
+
+  it("restores persisted history and clears it", async () => {
+    const user = userEvent.setup()
+
+    const target = requireHistoryTarget(
+      createProfileVerificationHistoryTarget("p-1"),
+    )
+
+    const summary = createVerificationHistorySummary({
+      target,
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      results: [
+        {
+          id: "models",
+          status: "pass",
+          latencyMs: 9,
+          summary: "Stored profile history",
+        },
+      ],
+    })
+
+    if (!summary) {
+      throw new Error("Expected history summary")
+    }
+
+    await verificationResultHistoryStorage.upsertLatestSummary(summary)
+
+    render(
+      <VerifyApiCredentialProfileDialog
+        isOpen={true}
+        onClose={() => {}}
+        profile={{
+          id: "p-1",
+          name: "Profile",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://example.com",
+          apiKey: "sk-test",
+          tagIds: [],
+          notes: "",
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+      />,
+    )
+
+    expect(
+      await screen.findByText(
+        "aiApiVerification:verifyDialog.history.lastVerified",
+      ),
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByText("Stored profile history"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "aiApiVerification:verifyDialog.history.clear",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("aiApiVerification:verifyDialog.history.unverified"),
+      ).toBeInTheDocument()
+    })
+  })
+
+  it("reloads persisted history for the active model and api type", async () => {
+    const user = userEvent.setup()
+
+    mockFetchOpenAICompatibleModelIds.mockResolvedValue(["m0", "m1"])
+    mockFetchAnthropicModelIds.mockResolvedValue(["claude-3-5-sonnet"])
+
+    const initialTarget = requireHistoryTarget(
+      createProfileModelVerificationHistoryTarget("p-1", "m0"),
+    )
+    const selectedTarget = requireHistoryTarget(
+      createProfileModelVerificationHistoryTarget("p-1", "m1"),
+    )
+
+    const initialSummary = createVerificationHistorySummary({
+      target: initialTarget,
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      preferredModelId: "m0",
+      results: [
+        {
+          id: "models",
+          status: "pass",
+          latencyMs: 3,
+          summary: "Stored m0 history",
+        },
+      ],
+    })
+    const selectedSummary = createVerificationHistorySummary({
+      target: selectedTarget,
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      preferredModelId: "m1",
+      results: [
+        {
+          id: "models",
+          status: "pass",
+          latencyMs: 4,
+          summary: "Stored m1 history",
+        },
+      ],
+    })
+
+    if (!initialSummary || !selectedSummary) {
+      throw new Error("Expected history summaries")
+    }
+
+    await verificationResultHistoryStorage.upsertLatestSummary(initialSummary)
+    await verificationResultHistoryStorage.upsertLatestSummary(selectedSummary)
+
+    render(
+      <VerifyApiCredentialProfileDialog
+        isOpen={true}
+        onClose={() => {}}
+        profile={{
+          id: "p-1",
+          name: "Profile",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://example.com",
+          apiKey: "sk-test",
+          tagIds: [],
+          notes: "",
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        initialModelId="m0"
+      />,
+    )
+
+    expect(await screen.findByText("Stored m0 history")).toBeInTheDocument()
+
+    await user.click(screen.getByTestId("profile-verify-model-id"))
+    await user.click(await screen.findByText("m1"))
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-verify-model-id")).toHaveTextContent(
+        "m1",
+      )
+    })
+    expect(await screen.findByText("Stored m1 history")).toBeInTheDocument()
+    expect(screen.queryByText("Stored m0 history")).not.toBeInTheDocument()
+
+    const apiTypeSelect = screen.getAllByRole("combobox")[0]
+    await user.click(apiTypeSelect)
+    await user.click(
+      await screen.findByText(
+        "aiApiVerification:verifyDialog.apiTypes.anthropic",
+      ),
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("aiApiVerification:verifyDialog.history.unverified"),
+      ).toBeInTheDocument()
+    })
+    expect(screen.queryByText("Stored m1 history")).not.toBeInTheDocument()
+
+    await user.click(screen.getAllByRole("combobox")[0])
+    await user.click(
+      await screen.findByText(
+        "aiApiVerification:verifyDialog.apiTypes.openaiCompatible",
+      ),
+    )
+
+    expect(await screen.findByText("Stored m1 history")).toBeInTheDocument()
+  })
+
+  it("persists and clears history for the currently selected model target", async () => {
+    const user = userEvent.setup()
+
+    mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce(["m0", "m1"])
+    mockRunApiVerificationProbe.mockResolvedValueOnce({
+      id: "text-generation",
+      status: "pass",
+      latencyMs: 7,
+      summary: "Generated text",
+    })
+
+    render(
+      <VerifyApiCredentialProfileDialog
+        isOpen={true}
+        onClose={() => {}}
+        profile={{
+          id: "p-1",
+          name: "Profile",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://example.com",
+          apiKey: "sk-test",
+          tagIds: [],
+          notes: "",
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        initialModelId="m0"
+      />,
+    )
+
+    await waitFor(() =>
+      expect(mockFetchOpenAICompatibleModelIds).toHaveBeenCalledWith({
+        baseUrl: "https://example.com",
+        apiKey: "sk-test",
+      }),
+    )
+
+    await user.click(screen.getByTestId("profile-verify-model-id"))
+    await user.click(await screen.findByText("m1"))
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-verify-model-id")).toHaveTextContent(
+        "m1",
+      )
+    })
+
+    const probeCard = await screen.findByTestId(
+      "profile-verify-probe-text-generation",
+    )
+    await user.click(
+      within(probeCard).getByRole("button", {
+        name: "aiApiVerification:verifyDialog.actions.runOne",
+      }),
+    )
+
+    await waitFor(() =>
+      expect(mockRunApiVerificationProbe).toHaveBeenCalledWith(
+        expect.objectContaining({
+          probeId: "text-generation",
+          modelId: "m1",
+        }),
+      ),
+    )
+
+    const initialTarget = requireHistoryTarget(
+      createProfileModelVerificationHistoryTarget("p-1", "m0"),
+    )
+    const selectedTarget = requireHistoryTarget(
+      createProfileModelVerificationHistoryTarget("p-1", "m1"),
+    )
+
+    expect(
+      await verificationResultHistoryStorage.getLatestSummary(initialTarget),
+    ).toBeNull()
+    expect(
+      await verificationResultHistoryStorage.getLatestSummary(selectedTarget),
+    ).toMatchObject({
+      targetKey: "profile:p-1:model:m1",
+      resolvedModelId: "m1",
+    })
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "aiApiVerification:verifyDialog.history.clear",
+      }),
+    )
+
+    await waitFor(async () => {
+      expect(
+        await verificationResultHistoryStorage.getLatestSummary(selectedTarget),
+      ).toBeNull()
+    })
+  })
+
+  it("waits for persistence to settle before enabling close controls", async () => {
+    const user = userEvent.setup()
+    const persistDeferred =
+      createDeferred<
+        Awaited<
+          ReturnType<
+            typeof verificationResultHistoryStorage.upsertLatestSummary
+          >
+        >
+      >()
+    vi.spyOn(
+      verificationResultHistoryStorage,
+      "upsertLatestSummary",
+    ).mockImplementation(() => persistDeferred.promise)
+
+    mockRunApiVerificationProbe.mockResolvedValueOnce({
+      id: "models",
+      status: "pass",
+      latencyMs: 12,
+      summary: "Fetched models",
+    })
+
+    render(
+      <VerifyApiCredentialProfileDialog
+        isOpen={true}
+        onClose={() => {}}
+        profile={{
+          id: "p-1",
+          name: "Profile",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://example.com",
+          apiKey: "sk-test",
+          tagIds: [],
+          notes: "",
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+      />,
+    )
+
+    const closeButton = await screen.findByRole("button", {
+      name: "aiApiVerification:verifyDialog.actions.close",
+    })
+    const clearButton = screen.getByRole("button", {
+      name: "aiApiVerification:verifyDialog.history.clear",
+    })
+    const probeCard = await screen.findByTestId("profile-verify-probe-models")
+
+    await user.click(
+      within(probeCard).getByRole("button", {
+        name: "aiApiVerification:verifyDialog.actions.runOne",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(within(probeCard).getByText("Fetched models")).toBeInTheDocument()
+      expect(closeButton).toBeDisabled()
+      expect(clearButton).toBeDisabled()
+    })
+
+    persistDeferred.reject(new Error("persist failed"))
+
+    await waitFor(() => {
+      expect(closeButton).toBeEnabled()
+      expect(clearButton).toBeEnabled()
+    })
+
+    expect(within(probeCard).getByText("Fetched models")).toBeInTheDocument()
+    expect(
+      screen.queryByText("aiApiVerification:verifyDialog.errors.unexpected"),
+    ).not.toBeInTheDocument()
+    expect(loggerErrorMock).toHaveBeenCalledWith(
+      "Failed to persist verification history",
+      {
+        error: expect.any(Error),
+      },
     )
   })
 })
