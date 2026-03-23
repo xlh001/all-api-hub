@@ -92,13 +92,13 @@ jobs:
           "
 
       - name: Upload PR build metadata
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pr-build-metadata
           path: pr-build-metadata.json
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pr-build-${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || github.event.pull_request.number }}-${{ github.run_attempt }}
           path: .output/*.zip

@@ -132,7 +132,7 @@ jobs:
           fi
 
       - name: Upload Safari build inputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: safari-build-inputs
           path: |

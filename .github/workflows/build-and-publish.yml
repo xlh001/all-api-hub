@@ -124,7 +124,7 @@ jobs:
 
       - name: Upload Safari build inputs
         if: ${{ steps.get_ref.outputs.ref != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: safari-build-inputs
           path: |
@@ -135,7 +135,7 @@ jobs:
 
       - name: Upload packaged archives
         if: ${{ steps.get_ref.outputs.ref != '' && github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: packaged-archives
           path: source/.output/*.zip
@@ -209,7 +209,7 @@ jobs:
 
       - name: Upload Safari release assets
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: safari-release-assets
           path: source/.output/release-assets/*.zip
