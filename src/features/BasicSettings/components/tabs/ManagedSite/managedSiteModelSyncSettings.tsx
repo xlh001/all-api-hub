@@ -1,4 +1,5 @@
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
+import type { TFunction } from "i18next"
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
@@ -299,7 +300,7 @@ export default function ManagedSiteModelSyncSettings() {
 
     if (viewMode === "json") {
       try {
-        rulesToSave = parseJsonGlobalChannelModelFilters(jsonText)
+        rulesToSave = parseJsonGlobalChannelModelFilters(t, jsonText)
       } catch (error) {
         toast.error(
           t("managedSiteChannels:filters.messages.jsonInvalid", {
@@ -641,7 +642,7 @@ export default function ManagedSiteModelSyncSettings() {
             if (viewMode === "visual") return
             try {
               const parsed = jsonText.trim()
-                ? parseJsonGlobalChannelModelFilters(jsonText)
+                ? parseJsonGlobalChannelModelFilters(t, jsonText)
                 : []
               setGlobalChannelModelFiltersDraft(parsed)
               setViewMode("visual")
@@ -673,11 +674,15 @@ export default function ManagedSiteModelSyncSettings() {
 
 /**
  * Parses JSON text into strongly typed global channel model filters.
+ * @param t Translation helper for user-facing validation errors.
  * @param rawJson Raw JSON string entered by the user.
  * @returns Parsed filters array guaranteeing id/name/pattern fields.
  * @throws {Error} When JSON is invalid or missing required fields.
  */
-function parseJsonGlobalChannelModelFilters(rawJson: string): EditableFilter[] {
+function parseJsonGlobalChannelModelFilters(
+  t: TFunction,
+  rawJson: string,
+): EditableFilter[] {
   const trimmed = rawJson.trim()
   if (!trimmed) {
     return []
@@ -691,14 +696,16 @@ function parseJsonGlobalChannelModelFilters(rawJson: string): EditableFilter[] {
   }
 
   if (!Array.isArray(parsed)) {
-    throw new Error("JSON must be an array of filter rules")
+    throw new Error(t("managedSiteChannels:filters.messages.jsonArrayRequired"))
   }
 
   const now = Date.now()
 
   return parsed.map((item, index) => {
     if (!item || typeof item !== "object") {
-      throw new Error(`Filter at index ${index} is not an object`)
+      throw new Error(
+        t("managedSiteChannels:filters.messages.jsonItemNotObject", { index }),
+      )
     }
 
     const anyItem = item as any
@@ -707,11 +714,15 @@ function parseJsonGlobalChannelModelFilters(rawJson: string): EditableFilter[] {
       typeof anyItem.pattern === "string" ? anyItem.pattern.trim() : ""
 
     if (!name) {
-      throw new Error(`Filter at index ${index} is missing a name`)
+      throw new Error(
+        t("managedSiteChannels:filters.messages.jsonMissingName", { index }),
+      )
     }
 
     if (!pattern) {
-      throw new Error(`Filter at index ${index} is missing a pattern`)
+      throw new Error(
+        t("managedSiteChannels:filters.messages.jsonMissingPattern", { index }),
+      )
     }
 
     return {

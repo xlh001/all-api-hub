@@ -722,8 +722,8 @@ describe("ManagedSiteChannels", () => {
     ).toBeInTheDocument()
     expect(screen.getByDisplayValue("Beta")).toBeInTheDocument()
     expect(
-      within(viewDialog).getByRole("button", {
-        name: "common:actions.close",
+      within(viewDialog).getByText("common:actions.close", {
+        selector: "button",
       }),
     ).toBeInTheDocument()
     expect(
@@ -738,8 +738,8 @@ describe("ManagedSiteChannels", () => {
     ).not.toBeInTheDocument()
 
     await user.click(
-      within(viewDialog).getByRole("button", {
-        name: "common:actions.close",
+      within(viewDialog).getByText("common:actions.close", {
+        selector: "button",
       }),
     )
 
