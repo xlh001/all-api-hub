@@ -138,6 +138,7 @@ jobs:
           path: |
             source/.output/safari-mv2
             source/.output/*-safari.zip
+          include-hidden-files: true
           if-no-files-found: error
 
       - name: Write nightly release notes

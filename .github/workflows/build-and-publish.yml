@@ -130,6 +130,7 @@ jobs:
           path: |
             source/.output/safari-mv2
             source/.output/*-safari.zip
+          include-hidden-files: true
           if-no-files-found: error
 
       - name: Upload packaged archives
@@ -138,6 +139,7 @@ jobs:
         with:
           name: packaged-archives
           path: source/.output/*.zip
+          include-hidden-files: true
           if-no-files-found: error
 
       # 上传 Release Artifact（仅当有 ref 时）
@@ -211,6 +213,7 @@ jobs:
         with:
           name: safari-release-assets
           path: source/.output/release-assets/*.zip
+          include-hidden-files: true
           if-no-files-found: error
 
       - name: Upload Safari Release Artifact
