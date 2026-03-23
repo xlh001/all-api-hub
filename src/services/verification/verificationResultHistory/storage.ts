@@ -62,7 +62,7 @@ export function subscribeToVerificationResultHistoryChanges(
 }
 
 /**
- *
+ * Create a detached copy of persisted history config data.
  */
 function cloneConfig(
   config: ApiVerificationHistoryConfig,
@@ -74,7 +74,7 @@ function cloneConfig(
 }
 
 /**
- *
+ * Normalize free-form persisted text into a compact single-line string.
  */
 function sanitizeText(input: unknown, fallback = "") {
   if (typeof input !== "string") return fallback
@@ -82,7 +82,7 @@ function sanitizeText(input: unknown, fallback = "") {
 }
 
 /**
- *
+ * Coerce persisted timestamps into positive integer epoch values.
  */
 function normalizeTimestamp(input: unknown) {
   if (typeof input === "number" && Number.isFinite(input) && input > 0) {
@@ -92,21 +92,21 @@ function normalizeTimestamp(input: unknown) {
 }
 
 /**
- *
+ * Narrow persisted aggregate status values to the supported stored variants.
  */
 function isPersistedStatus(value: unknown): value is "pass" | "fail" {
   return value === "pass" || value === "fail"
 }
 
 /**
- *
+ * Validate persisted probe status values before rehydrating summaries.
  */
 function isProbeStatus(value: unknown): value is ApiVerificationProbeStatus {
   return value === "pass" || value === "fail" || value === "unsupported"
 }
 
 /**
- *
+ * Keep only serializable scalar probe summary params from persisted data.
  */
 function coerceSummaryParams(raw: unknown) {
   if (!raw || typeof raw !== "object") return undefined
@@ -134,7 +134,7 @@ function coerceSummaryParams(raw: unknown) {
 }
 
 /**
- *
+ * Rehydrate a persisted verification target only when its identity is valid.
  */
 function coerceTarget(raw: unknown): ApiVerificationHistoryTarget | null {
   if (!raw || typeof raw !== "object") return null
@@ -165,7 +165,7 @@ function coerceTarget(raw: unknown): ApiVerificationHistoryTarget | null {
 }
 
 /**
- *
+ * Rehydrate a single persisted probe summary and discard invalid entries.
  */
 function coerceProbeSummary(
   raw: unknown,
@@ -194,7 +194,7 @@ function coerceProbeSummary(
 }
 
 /**
- *
+ * Rehydrate a persisted verification summary with sanitized probe data.
  */
 function coerceHistorySummary(
   raw: unknown,
@@ -228,7 +228,7 @@ function coerceHistorySummary(
 }
 
 /**
- *
+ * Normalize unknown storage payloads into the current config shape.
  */
 function coerceConfig(raw: unknown): ApiVerificationHistoryConfig {
   if (!raw || typeof raw !== "object") {

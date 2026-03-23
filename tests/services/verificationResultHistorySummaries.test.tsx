@@ -43,7 +43,7 @@ vi.mock("~/utils/core/logger", () => ({
 }))
 
 /**
- *
+ * Create a deferred promise so reload timing can be controlled in tests.
  */
 function createDeferred<T>() {
   let resolve!: (value: T) => void
@@ -61,7 +61,7 @@ function createDeferred<T>() {
 }
 
 /**
- *
+ * Build a minimal stored verification summary for hook tests.
  */
 function buildSummary(
   target: ApiVerificationHistoryTarget,

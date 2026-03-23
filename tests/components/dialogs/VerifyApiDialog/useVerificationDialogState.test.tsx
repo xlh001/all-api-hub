@@ -12,7 +12,7 @@ import {
 import { requireHistoryTarget } from "~~/tests/test-utils/history"
 
 /**
- *
+ * Create a deferred promise so tests can resolve history loads on demand.
  */
 function createDeferred<T>() {
   let resolve!: (value: T) => void

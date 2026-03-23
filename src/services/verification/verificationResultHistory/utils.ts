@@ -236,7 +236,12 @@ export function toPersistedProbeSummary(
 
 /**
  * Creates a sanitized verification history summary from probe results.
- * @param params - Target, api type, and probe results for a verification run.
+ * @param params - Verification history inputs for a completed run.
+ * @param params.target - Stable verification target for the stored summary.
+ * @param params.apiType - API family used by the verification run.
+ * @param params.results - Completed probe results to sanitize for storage.
+ * @param params.preferredModelId - Explicit model id selected by the caller.
+ * @param params.verifiedAt - Optional timestamp to persist for the summary.
  * @returns The persisted summary or `null` when there are no completed results.
  */
 export function createVerificationHistorySummary(params: {
