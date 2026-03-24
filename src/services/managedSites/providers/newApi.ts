@@ -618,9 +618,10 @@ async function validateNewApiConfig(): Promise<{
 }
 
 /**
- * 自动导入到 New API 中作为渠道，并通过 toast 展示进度与结果。
- * @param account 需要导入的新 API 站点账号实体。
- * @param toastId 可选 toast 标识，用于复用通知实例。
+ * Legacy direct-import helper for the managed-site compatibility path.
+ * @deprecated Unused by the current runtime flow. Account auto-config now
+ * uses `useChannelDialog().openWithAccount()` so users can review generated
+ * channel fields before creation. Kept temporarily for compatibility.
  */
 export async function autoConfigToNewApi(
   account: SiteAccount,

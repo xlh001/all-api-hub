@@ -111,6 +111,12 @@ export interface ManagedSiteService {
     channelId: number,
   ): Promise<string>
 
+  /**
+   * Legacy direct-import entrypoint kept on the managed-site service contract.
+   * @deprecated Unused by the current runtime flow. Account auto-config now
+   * routes through `useChannelDialog().openWithAccount()` so users can review
+   * generated channel fields before creation. Kept temporarily for compatibility.
+   */
   autoConfigToManagedSite(
     account: SiteAccount,
     toastId?: string,

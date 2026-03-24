@@ -558,7 +558,10 @@ async function validateDoneHubConfig(): Promise<{
 }
 
 /**
- * Auto-imports into Done Hub and reports progress via toast.
+ * Legacy direct-import helper for the managed-site compatibility path.
+ * @deprecated Unused by the current runtime flow. Account auto-config now
+ * uses `useChannelDialog().openWithAccount()` so users can review generated
+ * channel fields before creation. Kept temporarily for compatibility.
  */
 export async function autoConfigToDoneHub(
   account: SiteAccount,

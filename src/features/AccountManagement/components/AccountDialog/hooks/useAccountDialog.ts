@@ -930,7 +930,9 @@ export function useAccountDialog({
         displaySiteData = targetAccount
       }
 
-      // 使用 useChannelDialog hook 打开对话框
+      // The current runtime path opens the channel dialog with prefilled data
+      // so users can review it before creation. The direct auto-import helpers
+      // are kept only as deprecated compatibility shims.
       await openChannelDialog(displaySiteData, null, () => {
         if (onSuccess && targetAccountRef.current) {
           onSuccess(targetAccountRef.current)
