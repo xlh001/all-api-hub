@@ -20,23 +20,25 @@ import { CliProxyIcon } from "~/components/icons/CliProxyIcon"
 import { KiloCodeIcon } from "~/components/icons/KiloCodeIcon"
 import { ManagedSiteIcon } from "~/components/icons/ManagedSiteIcon"
 import { KiloCodeExportDialog } from "~/components/KiloCodeExportDialog"
+import {
+  getKeySignalLabel,
+  getKeySignalTooltip,
+  getModelsSignalLabel,
+  getModelsSignalTooltip,
+  getSignalBadgeVariant,
+  getUrlSignalLabel,
+  getUrlSignalTooltip,
+  SignalBadge,
+} from "~/components/ManagedSiteChannelAssessmentSignalHelpers"
 import ManagedSiteChannelLinkButton from "~/components/ManagedSiteChannelLinkButton"
-import Tooltip from "~/components/Tooltip"
 import { Badge, Button, Heading6, IconButton } from "~/components/ui"
-import { NEW_API } from "~/constants/siteType"
-import type { ManagedSiteType } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { resolveDisplayAccountTokenForSecret } from "~/services/accounts/utils/apiServiceRequest"
 import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
 import { OpenInCherryStudio } from "~/services/integrations/cherryStudio"
 import {
-  MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS,
-  MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS,
-} from "~/services/managedSites/channelMatch"
-import {
   MANAGED_SITE_TOKEN_CHANNEL_STATUS_UNKNOWN_REASONS,
   MANAGED_SITE_TOKEN_CHANNEL_STATUSES,
-  type ManagedSiteTokenChannelAssessment,
   type ManagedSiteTokenChannelStatus,
 } from "~/services/managedSites/tokenChannelStatus"
 import {
@@ -213,207 +215,6 @@ const getManagedSiteStatusDescription = (
   }
 }
 
-const appendManagedSiteKeyHintToTooltip = (
-  t: TFunction,
-  managedSiteType: ManagedSiteType,
-  message: string,
-  assessment: ManagedSiteTokenChannelAssessment,
-) => {
-  if (
-    managedSiteType !== NEW_API ||
-    assessment.key.reason !==
-      MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.COMPARISON_UNAVAILABLE
-  ) {
-    return message
-  }
-
-  return `${message} ${t("keyManagement:managedSiteStatus.descriptions.newApiRetrieveKeyHint")}`
-}
-
-const getManagedSiteSignalBadgeVariant = (params: {
-  assessment: ManagedSiteTokenChannelAssessment
-  signal: "url" | "key" | "models"
-}) => {
-  if (params.signal === "url") {
-    return params.assessment.url.matched
-      ? ("success" as const)
-      : ("outline" as const)
-  }
-
-  if (params.signal === "key") {
-    if (params.assessment.key.matched) {
-      return "success" as const
-    }
-
-    if (
-      params.assessment.key.reason ===
-        MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.NO_KEY_PROVIDED ||
-      params.assessment.key.reason ===
-        MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.COMPARISON_UNAVAILABLE
-    ) {
-      return "warning" as const
-    }
-
-    return "outline" as const
-  }
-
-  if (params.assessment.models.matched) {
-    return params.assessment.models.reason ===
-      MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.EXACT
-      ? ("success" as const)
-      : ("info" as const)
-  }
-
-  if (
-    params.assessment.models.reason ===
-      MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.NO_MODELS_PROVIDED ||
-    params.assessment.models.reason ===
-      MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.COMPARISON_UNAVAILABLE
-  ) {
-    return "warning" as const
-  }
-
-  return "outline" as const
-}
-
-const getManagedSiteUrlSignalLabel = (
-  t: TFunction,
-  assessment: ManagedSiteTokenChannelAssessment,
-) =>
-  assessment.url.matched
-    ? t("keyManagement:managedSiteStatus.signals.url.matched")
-    : t("keyManagement:managedSiteStatus.signals.url.noMatch")
-
-const getManagedSiteKeySignalLabel = (
-  t: TFunction,
-  assessment: ManagedSiteTokenChannelAssessment,
-) => {
-  switch (assessment.key.reason) {
-    case MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.MATCHED:
-      return t("keyManagement:managedSiteStatus.signals.key.matched")
-    case MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.NO_KEY_PROVIDED:
-      return t("keyManagement:managedSiteStatus.signals.key.notProvided")
-    case MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.COMPARISON_UNAVAILABLE:
-      return t("keyManagement:managedSiteStatus.signals.key.unavailable")
-    default:
-      return t("keyManagement:managedSiteStatus.signals.key.noMatch")
-  }
-}
-
-const getManagedSiteModelsSignalLabel = (
-  t: TFunction,
-  assessment: ManagedSiteTokenChannelAssessment,
-) => {
-  switch (assessment.models.reason) {
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.EXACT:
-      return t("keyManagement:managedSiteStatus.signals.models.exact")
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.CONTAINED:
-      return t("keyManagement:managedSiteStatus.signals.models.contained")
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.SIMILAR:
-      return t("keyManagement:managedSiteStatus.signals.models.similar")
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.NO_MODELS_PROVIDED:
-      return t("keyManagement:managedSiteStatus.signals.models.notProvided")
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.COMPARISON_UNAVAILABLE:
-      return t("keyManagement:managedSiteStatus.signals.models.unavailable")
-    default:
-      return t("keyManagement:managedSiteStatus.signals.models.noMatch")
-  }
-}
-
-const getManagedSiteUrlSignalTooltip = (
-  t: TFunction,
-  assessment: ManagedSiteTokenChannelAssessment,
-) => {
-  if (assessment.url.matched) {
-    return t("keyManagement:managedSiteStatus.signals.url.tooltipMatched", {
-      count: assessment.url.candidateCount,
-      channelName: assessment.url.channel?.name ?? "",
-    })
-  }
-
-  return t("keyManagement:managedSiteStatus.signals.url.tooltipNoMatch")
-}
-
-const getManagedSiteKeySignalTooltip = (
-  t: TFunction,
-  managedSiteType: ManagedSiteType,
-  assessment: ManagedSiteTokenChannelAssessment,
-) => {
-  switch (assessment.key.reason) {
-    case MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.MATCHED:
-      return t("keyManagement:managedSiteStatus.signals.key.tooltipMatched", {
-        channelName: assessment.key.channel?.name ?? "",
-      })
-    case MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.NO_KEY_PROVIDED:
-      return t("keyManagement:managedSiteStatus.signals.key.tooltipNotProvided")
-    case MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS.COMPARISON_UNAVAILABLE:
-      return appendManagedSiteKeyHintToTooltip(
-        t,
-        managedSiteType,
-        t("keyManagement:managedSiteStatus.signals.key.tooltipUnavailable"),
-        assessment,
-      )
-    default:
-      return t("keyManagement:managedSiteStatus.signals.key.tooltipNoMatch")
-  }
-}
-
-const getManagedSiteModelsSignalTooltip = (
-  t: TFunction,
-  assessment: ManagedSiteTokenChannelAssessment,
-) => {
-  switch (assessment.models.reason) {
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.EXACT:
-      return t("keyManagement:managedSiteStatus.signals.models.tooltipExact", {
-        channelName: assessment.models.channel?.name ?? "",
-      })
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.CONTAINED:
-      return t(
-        "keyManagement:managedSiteStatus.signals.models.tooltipContained",
-        {
-          channelName: assessment.models.channel?.name ?? "",
-        },
-      )
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.SIMILAR:
-      return t(
-        "keyManagement:managedSiteStatus.signals.models.tooltipSimilar",
-        {
-          channelName: assessment.models.channel?.name ?? "",
-          score: Math.round((assessment.models.similarityScore ?? 0) * 100),
-        },
-      )
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.NO_MODELS_PROVIDED:
-      return t(
-        "keyManagement:managedSiteStatus.signals.models.tooltipNotProvided",
-      )
-    case MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.COMPARISON_UNAVAILABLE:
-      return t(
-        "keyManagement:managedSiteStatus.signals.models.tooltipUnavailable",
-      )
-    default:
-      return t("keyManagement:managedSiteStatus.signals.models.tooltipNoMatch")
-  }
-}
-
-/**
- * Compact managed-site signal badge with a tooltip describing the match result.
- */
-function ManagedSiteSignalBadge(props: {
-  badgeText: string
-  tooltipText: string
-  variant: "success" | "info" | "outline" | "warning"
-}) {
-  return (
-    <Tooltip content={props.tooltipText} position="top">
-      <span title={props.tooltipText} className="inline-flex">
-        <Badge variant={props.variant} size="sm" className="cursor-help">
-          {props.badgeText}
-        </Badge>
-      </span>
-    </Tooltip>
-  )
-}
-
 /**
  * Renders action buttons for a token (copy, export, edit/delete).
  * @param props Component props container.
@@ -422,6 +223,7 @@ function ManagedSiteSignalBadge(props: {
  * @param props.handleEditToken Edit action callback.
  * @param props.handleDeleteToken Delete action callback.
  * @param props.account Account context for integrations.
+ * @param props.managedSiteStatus Current managed-site status used to reuse duplicate-review results when available.
  * @param props.onOpenCCSwitchDialog Optional CCSwitch export opener.
  * @param props.onManagedSiteImportSuccess Optional managed-site import success callback.
  */
@@ -431,6 +233,7 @@ function TokenActionButtons({
   handleEditToken,
   handleDeleteToken,
   account,
+  managedSiteStatus,
   onOpenCCSwitchDialog,
   onManagedSiteImportSuccess,
 }: TokenHeaderProps) {
@@ -451,15 +254,26 @@ function TokenActionButtons({
   const managedSiteLabel = getManagedSiteLabel(t, managedSiteType)
 
   const handleImportToManagedSite = async () => {
-    await openWithAccount(account, token, (result) => {
-      showResultToast(result)
+    await openWithAccount(
+      account,
+      token,
+      (result) => {
+        showResultToast(result)
 
-      if (result?.success && onManagedSiteImportSuccess) {
-        void Promise.resolve(onManagedSiteImportSuccess(token)).catch((error) =>
-          logger.error("Managed-site import success callback failed", error),
-        )
-      }
-    })
+        if (result?.success && onManagedSiteImportSuccess) {
+          void Promise.resolve(onManagedSiteImportSuccess(token)).catch(
+            (error) =>
+              logger.error(
+                "Managed-site import success callback failed",
+                error,
+              ),
+          )
+        }
+      },
+      {
+        managedSiteStatus,
+      },
+    )
   }
 
   const handleOpenCliProxyDialog = () => {
@@ -717,7 +531,7 @@ export function TokenHeader({
       : undefined
   const canRetryManagedSiteVerification = Boolean(
     managedSiteRecovery?.loginCredentialsConfigured ||
-    managedSiteRecovery?.authenticatedBrowserSessionExists,
+      managedSiteRecovery?.authenticatedBrowserSessionExists,
   )
   const matchedManagedSiteChannel =
     managedSiteStatus && "matchedChannel" in managedSiteStatus
@@ -725,8 +539,8 @@ export function TokenHeader({
       : undefined
   const shouldShowManagedSiteVerificationRetry = Boolean(
     canRetryManagedSiteVerification &&
-    managedSiteStatus &&
-    onManagedSiteVerificationRetry,
+      managedSiteStatus &&
+      onManagedSiteVerificationRetry,
   )
   const shouldShowManagedSiteSettingsAction = Boolean(
     managedSiteRecovery && !canRetryManagedSiteVerification,
@@ -801,45 +615,30 @@ export function TokenHeader({
             ) : null}
             {managedSiteAssessment ? (
               <>
-                <ManagedSiteSignalBadge
-                  badgeText={getManagedSiteUrlSignalLabel(
-                    t,
-                    managedSiteAssessment,
-                  )}
-                  tooltipText={getManagedSiteUrlSignalTooltip(
-                    t,
-                    managedSiteAssessment,
-                  )}
-                  variant={getManagedSiteSignalBadgeVariant({
+                <SignalBadge
+                  badgeText={getUrlSignalLabel(t, managedSiteAssessment)}
+                  tooltipText={getUrlSignalTooltip(t, managedSiteAssessment)}
+                  variant={getSignalBadgeVariant({
                     assessment: managedSiteAssessment,
                     signal: "url",
                   })}
                 />
-                <ManagedSiteSignalBadge
-                  badgeText={getManagedSiteKeySignalLabel(
-                    t,
-                    managedSiteAssessment,
-                  )}
-                  tooltipText={getManagedSiteKeySignalTooltip(
+                <SignalBadge
+                  badgeText={getKeySignalLabel(t, managedSiteAssessment)}
+                  tooltipText={getKeySignalTooltip(
                     t,
                     managedSiteType,
                     managedSiteAssessment,
                   )}
-                  variant={getManagedSiteSignalBadgeVariant({
+                  variant={getSignalBadgeVariant({
                     assessment: managedSiteAssessment,
                     signal: "key",
                   })}
                 />
-                <ManagedSiteSignalBadge
-                  badgeText={getManagedSiteModelsSignalLabel(
-                    t,
-                    managedSiteAssessment,
-                  )}
-                  tooltipText={getManagedSiteModelsSignalTooltip(
-                    t,
-                    managedSiteAssessment,
-                  )}
-                  variant={getManagedSiteSignalBadgeVariant({
+                <SignalBadge
+                  badgeText={getModelsSignalLabel(t, managedSiteAssessment)}
+                  tooltipText={getModelsSignalTooltip(t, managedSiteAssessment)}
+                  variant={getSignalBadgeVariant({
                     assessment: managedSiteAssessment,
                     signal: "models",
                   })}
@@ -910,6 +709,7 @@ export function TokenHeader({
         handleEditToken={handleEditToken}
         handleDeleteToken={handleDeleteToken}
         account={account}
+        managedSiteStatus={managedSiteStatus}
         onOpenCCSwitchDialog={onOpenCCSwitchDialog}
         onManagedSiteImportSuccess={onManagedSiteImportSuccess}
       />

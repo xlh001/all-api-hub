@@ -8,7 +8,15 @@ import React, {
 } from "react"
 
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import type { ManagedSiteChannelAssessmentSignals } from "~/services/managedSites/channelAssessmentSignals"
 import type { ChannelFormData, ManagedSiteChannel } from "~/types/managedSite"
+
+export interface ChannelDialogAdvisoryWarning {
+  kind: string
+  title: string
+  description: string
+  assessment?: ManagedSiteChannelAssessmentSignals | null
+}
 
 interface ChannelDialogState {
   isOpen: boolean
@@ -17,6 +25,7 @@ interface ChannelDialogState {
   initialValues?: Partial<ChannelFormData>
   initialModels?: string[]
   initialGroups?: string[]
+  advisoryWarning?: ChannelDialogAdvisoryWarning | null
   onRequestRealKey?:
     | ((options: { setKey: (key: string) => void }) => Promise<void>)
     | null
@@ -37,6 +46,7 @@ interface ChannelDialogContextValue {
     initialValues?: Partial<ChannelFormData>
     initialModels?: string[]
     initialGroups?: string[]
+    advisoryWarning?: ChannelDialogAdvisoryWarning | null
     onRequestRealKey?: (options: {
       setKey: (key: string) => void
     }) => Promise<void>
@@ -81,6 +91,7 @@ export function ChannelDialogProvider({
       initialValues?: Partial<ChannelFormData>
       initialModels?: string[]
       initialGroups?: string[]
+      advisoryWarning?: ChannelDialogAdvisoryWarning | null
       onRequestRealKey?: (options: {
         setKey: (key: string) => void
       }) => Promise<void>
@@ -93,6 +104,7 @@ export function ChannelDialogProvider({
         initialValues: config.initialValues,
         initialModels: config.initialModels,
         initialGroups: config.initialGroups,
+        advisoryWarning: config.advisoryWarning ?? null,
         onRequestRealKey: config.onRequestRealKey ?? null,
         onSuccessCallback: config.onSuccess,
       })

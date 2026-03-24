@@ -3,8 +3,16 @@ import { useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
+import type { ChannelDialogAdvisoryWarning } from "~/components/dialogs/ChannelDialog/context/ChannelDialogContext"
+import { useChannelDialogContext } from "~/components/dialogs/ChannelDialog/context/ChannelDialogContext"
 import { useChannelForm } from "~/components/dialogs/ChannelDialog/hooks/useChannelForm"
 import {
+  buildChannelDialogAdvisoryWarning,
+  CHANNEL_DIALOG_ADVISORY_WARNING_KINDS,
+} from "~/components/dialogs/ChannelDialog/utils/advisoryWarning"
+import { ManagedSiteChannelAssessmentSignalsRow } from "~/components/ManagedSiteChannelAssessmentSignals"
+import {
+  Alert,
   Button,
   CompactMultiSelect,
   IconButton,
@@ -20,8 +28,20 @@ import {
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelType, ChannelTypeOptions } from "~/constants/managedSite"
 import { OctopusOutboundTypeOptions } from "~/constants/octopus"
-import { OCTOPUS } from "~/constants/siteType"
+import { NEW_API, OCTOPUS } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { NewApiManagedVerificationDialog } from "~/features/ManagedSiteVerification/NewApiManagedVerificationDialog"
+import { useNewApiManagedVerification } from "~/features/ManagedSiteVerification/useNewApiManagedVerification"
+import { toManagedSiteChannelAssessmentSignals } from "~/services/managedSites/channelAssessmentSignals"
+import { getManagedSiteChannelExactMatch } from "~/services/managedSites/channelMatch"
+import { resolveManagedSiteChannelMatch } from "~/services/managedSites/channelMatchResolver"
+import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
+import {
+  hasNewApiAuthenticatedBrowserSession,
+  hasNewApiLoginAssistCredentials,
+  isNewApiVerifiedSessionActive,
+} from "~/services/managedSites/providers/newApiSession"
+import { getManagedSiteConfigMissingMessage } from "~/services/managedSites/utils/managedSite"
 import {
   CHANNEL_STATUS,
   type ChannelFormData,
@@ -39,6 +59,7 @@ export interface ChannelDialogProps {
   initialValues?: Partial<ChannelFormData>
   initialModels?: string[]
   initialGroups?: string[]
+  advisoryWarning?: ChannelDialogAdvisoryWarning | null
   onRequestRealKey?: (options: {
     setKey: (key: string) => void
   }) => Promise<void>
@@ -56,6 +77,7 @@ export interface ChannelDialogProps {
  * @param props.initialValues Pre-filled form values when reusing data.
  * @param props.initialModels Models to seed multi-select state.
  * @param props.initialGroups Groups to seed multi-select state.
+ * @param props.advisoryWarning Optional non-blocking duplicate-risk warning shown above the form.
  * @param props.onRequestRealKey Optional edit-mode hook that can load the real
  * managed-site key into the dialog when the list payload only provides a masked value.
  */
@@ -68,14 +90,31 @@ export function ChannelDialog({
   initialValues,
   initialModels,
   initialGroups,
+  advisoryWarning,
   onRequestRealKey,
 }: ChannelDialogProps) {
-  const { t } = useTranslation(["channelDialog", "common"])
+  const { t } = useTranslation(["channelDialog", "common", "messages"])
+  const { requestDuplicateChannelWarning } = useChannelDialogContext()
   const [showKey, setShowKey] = useState(false)
   const [isLoadingRealKey, setIsLoadingRealKey] = useState(false)
+  const [currentAdvisoryWarning, setCurrentAdvisoryWarning] = useState(
+    advisoryWarning ?? null,
+  )
+  const [canRecoverManagedVerification, setCanRecoverManagedVerification] =
+    useState(false)
   const requestIdRef = useRef(0)
-  const { managedSiteType } = useUserPreferencesContext()
+  const verification = useNewApiManagedVerification()
+  const {
+    managedSiteType,
+    newApiBaseUrl,
+    newApiUserId,
+    newApiUsername,
+    newApiPassword,
+    newApiTotpSecret,
+  } = useUserPreferencesContext()
   const isOctopus = managedSiteType === OCTOPUS
+  const canRunManagedVerification =
+    managedSiteType === NEW_API && canRecoverManagedVerification
   const isAddMode = mode === DIALOG_MODES.ADD
   const isViewMode = mode === DIALOG_MODES.VIEW
 
@@ -127,6 +166,66 @@ export function ChannelDialog({
     setIsLoadingRealKey(false)
   }, [channel?.id, isOpen, mode])
 
+  useEffect(() => {
+    setCurrentAdvisoryWarning(advisoryWarning ?? null)
+  }, [advisoryWarning, isOpen, mode, channel?.id])
+
+  useEffect(() => {
+    let cancelled = false
+    const managedBaseUrl = newApiBaseUrl.trim()
+
+    if (
+      !isOpen ||
+      managedSiteType !== NEW_API ||
+      currentAdvisoryWarning?.kind !==
+        CHANNEL_DIALOG_ADVISORY_WARNING_KINDS.VERIFICATION_REQUIRED ||
+      !managedBaseUrl
+    ) {
+      setCanRecoverManagedVerification(false)
+      return
+    }
+
+    if (
+      hasNewApiLoginAssistCredentials({
+        username: newApiUsername,
+        password: newApiPassword,
+      }) ||
+      isNewApiVerifiedSessionActive(managedBaseUrl)
+    ) {
+      setCanRecoverManagedVerification(true)
+      return
+    }
+
+    setCanRecoverManagedVerification(false)
+
+    void hasNewApiAuthenticatedBrowserSession({
+      baseUrl: managedBaseUrl,
+      userId: newApiUserId,
+    })
+      .then((authenticatedBrowserSessionExists) => {
+        if (!cancelled) {
+          setCanRecoverManagedVerification(authenticatedBrowserSessionExists)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCanRecoverManagedVerification(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    currentAdvisoryWarning?.kind,
+    isOpen,
+    managedSiteType,
+    newApiBaseUrl,
+    newApiPassword,
+    newApiUserId,
+    newApiUsername,
+  ])
+
   const handleLoadRealKey = async () => {
     if (isViewMode || !onRequestRealKey) return
 
@@ -159,6 +258,130 @@ export function ChannelDialog({
         setIsLoadingRealKey(false)
       }
     }
+  }
+
+  const reassessDuplicateWarning = async (options?: {
+    resolveHiddenKeys?: boolean
+  }) => {
+    const service = await getManagedSiteService()
+    const managedConfig = await service.getConfig()
+
+    if (!managedConfig) {
+      throw new Error(
+        getManagedSiteConfigMissingMessage(t, service.messagesKey),
+      )
+    }
+
+    const resolution = await resolveManagedSiteChannelMatch({
+      service,
+      managedConfig,
+      accountBaseUrl: formData.base_url,
+      models: formData.models,
+      key: formData.key,
+      resolveHiddenKeys: options?.resolveHiddenKeys,
+    })
+    const exactMatch = getManagedSiteChannelExactMatch(resolution)
+
+    if (exactMatch) {
+      return {
+        exactDuplicateChannelName: exactMatch.name,
+        advisoryWarning: null,
+        assessment: toManagedSiteChannelAssessmentSignals(resolution),
+      }
+    }
+
+    if (
+      service.messagesKey === "newapi" &&
+      resolution.searchCompleted &&
+      resolution.url.matched &&
+      !resolution.key.comparable
+    ) {
+      return {
+        exactDuplicateChannelName: null,
+        advisoryWarning: buildChannelDialogAdvisoryWarning(
+          t,
+          CHANNEL_DIALOG_ADVISORY_WARNING_KINDS.VERIFICATION_REQUIRED,
+          {
+            assessment: toManagedSiteChannelAssessmentSignals(resolution),
+          },
+        ),
+        assessment: toManagedSiteChannelAssessmentSignals(resolution),
+      }
+    }
+
+    if (
+      resolution.searchCompleted &&
+      (resolution.url.matched ||
+        resolution.key.matched ||
+        resolution.models.matched)
+    ) {
+      return {
+        exactDuplicateChannelName: null,
+        advisoryWarning: buildChannelDialogAdvisoryWarning(
+          t,
+          CHANNEL_DIALOG_ADVISORY_WARNING_KINDS.REVIEW_SUGGESTED,
+          {
+            assessment: toManagedSiteChannelAssessmentSignals(resolution),
+          },
+        ),
+        assessment: toManagedSiteChannelAssessmentSignals(resolution),
+      }
+    }
+
+    return {
+      exactDuplicateChannelName: null,
+      advisoryWarning: null,
+      assessment: toManagedSiteChannelAssessmentSignals(resolution),
+    }
+  }
+
+  const handleRunVerification = () => {
+    if (
+      !canRunManagedVerification ||
+      currentAdvisoryWarning?.kind !==
+        CHANNEL_DIALOG_ADVISORY_WARNING_KINDS.VERIFICATION_REQUIRED
+    ) {
+      return
+    }
+
+    verification.openNewApiManagedVerification({
+      kind: "channel",
+      label: formData.name.trim() || t("channelDialog:title.add"),
+      config: {
+        baseUrl: newApiBaseUrl,
+        userId: newApiUserId,
+        username: newApiUsername,
+        password: newApiPassword,
+        totpSecret: newApiTotpSecret,
+      },
+      onVerified: async () => {
+        const duplicateState = await reassessDuplicateWarning({
+          resolveHiddenKeys: true,
+        })
+
+        if (duplicateState.exactDuplicateChannelName) {
+          const shouldContinue = await requestDuplicateChannelWarning({
+            existingChannelName: duplicateState.exactDuplicateChannelName,
+          })
+
+          if (!shouldContinue) {
+            setCurrentAdvisoryWarning(
+              buildChannelDialogAdvisoryWarning(
+                t,
+                CHANNEL_DIALOG_ADVISORY_WARNING_KINDS.EXACT_DUPLICATE,
+                {
+                  assessment: duplicateState.assessment,
+                  channelName: duplicateState.exactDuplicateChannelName,
+                },
+              ),
+            )
+            return
+          }
+        }
+
+        setCurrentAdvisoryWarning(duplicateState.advisoryWarning)
+      },
+    })
   }
 
   const header = (
@@ -215,6 +438,41 @@ export function ChannelDialog({
       closeOnBackdropClick={!isSaving}
       closeOnEsc={!isSaving}
     >
+      {currentAdvisoryWarning ? (
+        <Alert
+          variant="warning"
+          title={currentAdvisoryWarning.title}
+          description={currentAdvisoryWarning.description}
+          className="mb-4"
+        >
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            {currentAdvisoryWarning.assessment ? (
+              <ManagedSiteChannelAssessmentSignalsRow
+                assessment={currentAdvisoryWarning.assessment}
+                managedSiteType={managedSiteType}
+                className="min-w-0"
+              />
+            ) : null}
+            {currentAdvisoryWarning.kind ===
+              CHANNEL_DIALOG_ADVISORY_WARNING_KINDS.VERIFICATION_REQUIRED &&
+            canRunManagedVerification ? (
+              <div className="sm:ml-auto">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleRunVerification}
+                  disabled={verification.dialogState.isBusy}
+                >
+                  {t(
+                    "channelDialog:warnings.verificationRequired.actions.verifyNow",
+                  )}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </Alert>
+      ) : null}
       <form
         onSubmit={isViewMode ? (event) => event.preventDefault() : handleSubmit}
         className="space-y-4"
@@ -526,6 +784,21 @@ export function ChannelDialog({
           </div>
         </details>
       </form>
+
+      <NewApiManagedVerificationDialog
+        isOpen={verification.dialogState.isOpen}
+        step={verification.dialogState.step}
+        request={verification.dialogState.request}
+        code={verification.dialogState.code}
+        errorMessage={verification.dialogState.errorMessage}
+        isBusy={verification.dialogState.isBusy}
+        busyMessage={verification.dialogState.busyMessage}
+        onCodeChange={verification.setCode}
+        onClose={verification.closeDialog}
+        onSubmit={verification.submitCode}
+        onRetry={verification.retryVerification}
+        onOpenSite={verification.openBaseUrl}
+      />
     </Modal>
   )
 }
