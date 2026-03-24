@@ -63,9 +63,9 @@ export function parseManualQuotaFromUsd(
 /**
  * 智能自动识别账号信息
  * 工作流程：
- * 1. 通过 background script 创建临时窗口访问目标站点
- * 2. 使用 content script 从站点获取用户信息
- * 3. 调用 API 获取访问令牌和账号数据
+ * 1. 调用 `autoDetectSmart` 按当前标签页、background、直接 API 的顺序选择识别方式
+ * 2. 在可用路径中读取用户信息与站点类型
+ * 3. 调用 API 获取访问令牌和账号补充数据
  * 4. 保存或更新账号信息到本地存储
  * @param url 站点地址（将被自动标准化并请求）
  * @param authType 当前选择的认证方式（Cookie / AccessToken / None）

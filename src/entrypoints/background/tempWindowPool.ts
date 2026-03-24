@@ -940,8 +940,8 @@ export async function handleTempWindowTurnstileFetch(
 }
 
 /**
- * 通过打开临时标签页获取站点用户信息
- * @param url 页面地址（含 origin），用于确定要打开的临时窗口
+ * 通过临时浏览上下文中的标签页获取站点用户信息
+ * @param url 页面地址（含 origin），用于确定要获取或创建的临时上下文
  * @param requestId 用于标识本次请求的唯一 ID，便于释放上下文
  */
 async function getSiteDataFromTab(

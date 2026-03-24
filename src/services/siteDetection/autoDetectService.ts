@@ -165,8 +165,9 @@ async function autoDetectDirect(url: string): Promise<AutoDetectResult> {
 /**
  * Fetch user data through background script flow with fallback to API.
  *
- * Creates a runtime request to content/background to read localStorage; if that
- * fails, attempts API-based fetch using cookies.
+ * Sends a runtime request to the background handler, which reads site data from
+ * a temporary browser context. If that path fails, this function falls back to
+ * an API-based cookie-auth request.
  * @param url Target site URL.
  * @param siteType Detected site type used to select an API implementation.
  * @returns User data or null when both methods fail.
@@ -216,9 +217,9 @@ async function getUserDataViaBackground(
 }
 
 /**
- * Auto-detect via background flow (desktop browsers).
+ * Auto-detect via background flow when runtime/background messaging is available.
  *
- * 1) Background script opens temp window/tab to read localStorage
+ * 1) Background script acquires a temporary browser context to read localStorage
  * 2) Falls back to API-based fetch when storage read fails
  */
 async function autoDetectViaBackground(url: string): Promise<AutoDetectResult> {
@@ -319,7 +320,7 @@ async function autoDetectFromCurrentTab(
  *
  * 优先级：
  * 1. 当前标签页方式（如果 URL 匹配）
- * 2. Background 方式（桌面浏览器）
+ * 2. Background 方式（如果支持 runtime/background messaging）
  * 3. 直接 API 方式（所有平台的 fallback）
  */
 export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
@@ -350,9 +351,10 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
     }
   }
 
-  // 2. 如果支持 background（桌面），使用 Background 方式
+  // 2. 如果支持 runtime/background messaging，使用 Background 方式
   if (capabilities.hasBackgroundMessaging) {
-    // Background path opens a temp window to fetch user context without disturbing active tab
+    // Background path uses a temporary browser context, which may be backed by
+    // a window or a tab depending on the current temp-context mode and browser capabilities.
     const result = await autoDetectViaBackground(url)
     if (result.success) {
       return result
