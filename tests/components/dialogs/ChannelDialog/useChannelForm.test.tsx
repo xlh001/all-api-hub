@@ -6,8 +6,11 @@ import { DIALOG_MODES } from "~/constants/dialogModes"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
 import { NEW_API } from "~/constants/siteType"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
-import type { ManagedSiteChannel } from "~/types/managedSite"
-import { renderHook, waitFor } from "~~/tests/test-utils/render"
+import type {
+  CreateChannelPayload,
+  ManagedSiteChannel,
+} from "~/types/managedSite"
+import { act, renderHook, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("~/services/managedSites/managedSiteService", () => ({
   getManagedSiteService: vi.fn(),
@@ -136,5 +139,68 @@ describe("useChannelForm", () => {
     expect(mockBuildChannelPayload).not.toHaveBeenCalled()
     expect(mockCreateChannel).not.toHaveBeenCalled()
     expect(mockUpdateChannel).not.toHaveBeenCalled()
+  })
+
+  it("adds a fallback success message when channel creation succeeds with an empty message", async () => {
+    const onClose = vi.fn()
+    const onSuccess = vi.fn()
+    const preventDefault = vi.fn()
+
+    mockGetConfig.mockResolvedValue({
+      baseUrl: "https://managed.example.com",
+      token: "admin-token",
+      userId: "1",
+    })
+    mockBuildChannelPayload.mockReturnValue({
+      mode: "single",
+      channel: {
+        name: "Alpha",
+        type: ChannelType.OpenAI,
+        key: "sk-test",
+        base_url: "https://source.example.com",
+        models: "gpt-4o",
+        groups: ["default"],
+        priority: 0,
+        weight: 0,
+        status: 1,
+      },
+    } satisfies CreateChannelPayload)
+    mockCreateChannel.mockResolvedValue({ success: true, message: "" })
+
+    const { result } = renderHook(() =>
+      useChannelForm({
+        mode: DIALOG_MODES.ADD,
+        channel: null,
+        isOpen: true,
+        onClose,
+        onSuccess,
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.formData.name).toBe("")
+    })
+
+    await act(async () => {
+      result.current.updateField("name", "Alpha")
+      result.current.updateField("key", "sk-test")
+    })
+
+    await act(async () => {
+      await result.current.handleSubmit({
+        preventDefault,
+      } as unknown as FormEvent)
+    })
+
+    expect(preventDefault).toHaveBeenCalledTimes(1)
+    expect(mockBuildChannelPayload).toHaveBeenCalled()
+    expect(mockCreateChannel).toHaveBeenCalled()
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        message: "managedSiteChannels:toasts.channelSaved",
+      }),
+    )
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

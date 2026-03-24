@@ -58,7 +58,11 @@ export function useChannelForm({
   initialModels,
   initialGroups,
 }: UseChannelFormProps) {
-  const { t } = useTranslation(["channelDialog", "messages"])
+  const { t } = useTranslation([
+    "channelDialog",
+    "messages",
+    "managedSiteChannels",
+  ])
 
   const normalizeChannelGroups = (group: string | null | undefined) => {
     const groups = group?.trim()
@@ -326,7 +330,17 @@ export function useChannelForm({
       }
 
       if (response.success) {
-        onSuccess?.(response)
+        const fallbackMessage =
+          mode === DIALOG_MODES.EDIT
+            ? t("managedSiteChannels:toasts.channelUpdated")
+            : t("managedSiteChannels:toasts.channelSaved")
+
+        const normalizedResponse = {
+          ...response,
+          message: response.message || fallbackMessage,
+        }
+
+        onSuccess?.(normalizedResponse)
         onClose()
         resetForm()
       } else {
