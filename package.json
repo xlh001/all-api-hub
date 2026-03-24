@@ -25,6 +25,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate:staged": "pnpm lint-staged --concurrent false && pnpm run i18n:check:staged",
+    "validate:push": "pnpm compile && pnpm knip",
     "i18n:check:staged": "node scripts/run-i18n-check-if-staged.mjs",
     "i18n:status": "i18next-cli status",
     "i18n:extract": "i18next-cli extract",

@@ -1,6 +1,6 @@
 echo "🧪 Running pre-push validation..."
 
-pnpm compile || {
+pnpm run validate:push || {
   echo "❌ Pre-push validation failed"
   exit 1
 }

@@ -57,6 +57,9 @@ pnpm e2e:ui
 ### Quality / Build
 
 ```bash
+pnpm run validate:staged
+pnpm run validate:push
+pnpm knip
 pnpm lint
 pnpm lint:fix
 pnpm format
@@ -144,7 +147,9 @@ If a user asks about backend behavior that could differ by deployment, verify up
 - WebExtension APIs are mocked with `wxt/testing/fake-browser`.
 - MSW handlers live in `tests/msw/handlers.ts` and `tests/msw/server.ts`.
 - Shared React testing helpers live in `tests/test-utils/render.tsx`.
-- Prefer the smallest affected test scope first, then broaden only if the change crosses feature or service boundaries.
+- Prefer `pnpm run validate:staged` as the default local validation baseline, then add the smallest affected test scope first and broaden only if the change crosses feature or service boundaries.
+- Add `pnpm knip` when changes can affect the module/dependency graph, such as `package.json` or lockfile edits, `knip.ts` edits, file moves/renames/deletions, new or removed exports/barrels, or dynamic wiring changes.
+- Use `pnpm run validate:push` when you want the full local pre-push-equivalent gate instead of assembling `compile` + `knip` manually.
 
 ## Coding Conventions
 
@@ -167,5 +172,5 @@ When making a change:
 1. Check the nearest existing abstraction and current wiring.
 2. Confirm whether the behavior is site-type-specific or shared.
 3. Make the smallest change that fits the current architecture.
-4. Run `pnpm lint` and the narrowest related test scope that still validates the touched behavior.
+4. Run `pnpm run validate:staged` and the narrowest related test scope that still validates the touched behavior; add `pnpm knip` or `pnpm run validate:push` when the change affects dependencies, exports, file topology, or dynamic wiring.
 5. Update nearby docs when behavior or workflow guidance changes.

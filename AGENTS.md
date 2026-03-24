@@ -74,7 +74,9 @@ Prereqs: Node.js 20+ and pnpm 10+.
 - Build: `pnpm build`, `pnpm build:firefox`, `pnpm build:all`.
 - Package: `pnpm zip`, `pnpm zip:firefox`, `pnpm zip:all`.
 - Type-check: `pnpm compile`.
+- Repo-wide dead-code/dependency analysis: `pnpm knip`.
 - Lint/format checks: `pnpm lint`, `pnpm format:check`.
+- Hook-equivalent validation: `pnpm run validate:staged`, `pnpm run validate:push`.
 - Unit tests: `pnpm test`, `pnpm test:watch`, `pnpm test:ci`.
 - E2E tests: `pnpm e2e:install`, `pnpm e2e`, `pnpm e2e:ui`.
 
@@ -92,6 +94,7 @@ Prereqs: Node.js 20+ and pnpm 10+.
 - Add brief inline comments or short code-block comments when non-obvious intent, invariants, edge cases, or protocol/browser constraints need clarification; do not narrate obvious code.
 - the minimum validation bar is the repo's `pre-commit`-equivalent validation flow when available; if no such flow exists, fall back to `pnpm lint` plus the repo's affected-file or related-test validation command for the touched files.
 - In this repo, the default staged validation entrypoint is `pnpm run validate:staged`; do not treat bare `pnpm lint-staged` as the full pre-commit flow because it skips the separate staged i18n guard.
+- Do not treat `pnpm knip` as the default minimum for every task. Add it when changes can affect the module/dependency graph, such as `package.json` or lockfile edits, `knip.ts` edits, file moves/renames/deletions, new or removed exports/barrels, or dynamic wiring changes that may leave dead files, exports, or dependencies behind.
 - When the repo defines a `pre-commit` validation flow, prefer running the equivalent `pre-commit` checks directly without creating a commit instead of assembling a hand-picked validation command set.
 
 ## Testing Guidelines
@@ -104,6 +107,7 @@ Prereqs: Node.js 20+ and pnpm 10+.
 - New executable files, functions, branches, listeners/controllers, or error fallback paths should usually ship with at least one targeted test covering the added behavior.
 - Start with the repo-defined `pre-commit`, affected-file, or `related` validation flow for the touched files, then broaden only if the change is cross-cutting.
 - For TS/TSX edits in this repo, treat `pnpm run validate:staged` / the Husky `pre-commit` path as the default affected validation flow and prefer `vitest related --run` style checks over a manually assembled test file list.
+- If the change can invalidate unused-file, export, or dependency analysis, broaden validation to include `pnpm knip`; use `pnpm run validate:push` when you want the full local pre-push-equivalent gate instead of assembling `compile` + `knip` manually.
 - If a change modifies shared component or hook props, validation must cover direct render/use sites and standalone harness tests that instantiate the changed API surface.
 - Current coverage baseline is configured in `vitest.config.ts`.
 

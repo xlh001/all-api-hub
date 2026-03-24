@@ -14,8 +14,9 @@ Runs before each commit to ensure code quality:
 
 ### pre-push
 Runs before each push to catch repository-wide issues that staged-file checks can miss:
-- **Push validation**: Runs `pnpm compile`
-  - This catches TypeScript regressions locally before the push reaches CI
+- **Push validation**: Runs `pnpm run validate:push`
+  - Internally runs `pnpm compile` to catch TypeScript regressions locally before the push reaches CI
+  - Then runs `pnpm knip` to catch unused files, exports, and dependencies before the push reaches CI
 
 ## Manual Commands
 
@@ -40,8 +41,8 @@ pnpm run i18n:extract:ci
 # Run the full staged pre-commit-equivalent validation manually
 pnpm run validate:staged
 
-# Run the pre-push type check manually
-pnpm compile
+# Run the full pre-push-equivalent validation manually
+pnpm run validate:push
 
 # Run only the staged i18n guard manually
 pnpm run i18n:check:staged
