@@ -209,7 +209,7 @@ export default function ManagedSiteChannels({
     pageSize: 10,
   })
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "name", desc: false },
+    { id: "id", desc: true },
   ])
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [pendingDeleteIds, setPendingDeleteIds] = useState<number[]>([])

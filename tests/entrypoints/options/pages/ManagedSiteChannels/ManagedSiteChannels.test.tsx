@@ -227,6 +227,25 @@ describe("ManagedSiteChannels", () => {
     })
   })
 
+  it("sorts channels by id descending by default", async () => {
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+      { id: 3, name: "Gamma", base_url: "https://gamma.example" },
+      { id: 2, name: "Beta", base_url: "https://beta.example" },
+    ])
+
+    const { container } = render(<ManagedSiteChannels />)
+
+    await waitForRowText("Gamma")
+
+    const rows = Array.from(container.querySelectorAll("tbody tr"))
+    const names = rows.map((row) =>
+      row.querySelector("td:nth-child(3) .font-medium")?.textContent?.trim(),
+    )
+
+    expect(names).toEqual(["Gamma", "Beta", "Alpha"])
+  })
+
   it("reloads the channel list when the managed site type changes", async () => {
     let currentManagedSiteType = NEW_API
     let currentPreferences = buildPreferences({
