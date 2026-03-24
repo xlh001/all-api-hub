@@ -158,6 +158,7 @@ If a user asks about backend behavior that could differ by deployment, verify up
 - Prefer existing abstractions before adding new ones.
 - Keep entrypoints thin and avoid duplicating business logic across features or services.
 - Match the repo's feature-oriented organization instead of creating one-off utility layers.
+- For user-visible success/error notifications, do not depend solely on backend `message` fields; add local fallback copy when responses may be empty, unstable, or not directly suitable for display.
 
 ## Documentation Notes
 
