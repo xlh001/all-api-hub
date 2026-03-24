@@ -33,11 +33,24 @@ describe("toastHelpers", () => {
       expect(toast.success).toHaveBeenCalledWith("Done")
     })
 
-    it("handles empty message", async () => {
+    it("falls back to a generic success message for empty boolean messages", async () => {
       const toast = (await import("react-hot-toast")).default
       vi.clearAllMocks()
       showResultToast(true, "")
-      expect(toast.success).not.toHaveBeenCalled()
+      expect(toast.success).toHaveBeenCalledWith(
+        "messages:toast.success.operationCompleted",
+      )
+    })
+
+    it("prefers explicit object fallbacks before the generic fallback", async () => {
+      const toast = (await import("react-hot-toast")).default
+      vi.clearAllMocks()
+      showResultToast({
+        success: false,
+        message: "",
+        errorFallback: "Channel save failed",
+      })
+      expect(toast.error).toHaveBeenCalledWith("Channel save failed")
     })
   })
 

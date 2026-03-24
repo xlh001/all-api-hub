@@ -2,9 +2,26 @@ import toast from "react-hot-toast"
 
 import { t } from "~/utils/i18n/core"
 
+type ToastResultObject = {
+  success: boolean
+  message?: string
+  successFallback?: string
+  errorFallback?: string
+}
+
 type ToastParams =
-  | [success: boolean, successMsg: string, errorMsg?: string]
-  | [{ success: boolean; message: string }]
+  | [success: boolean, successMsg?: string, errorMsg?: string]
+  | [result: ToastResultObject]
+
+const normalizeToastMessage = (message?: string) => {
+  const trimmed = message?.trim()
+  return trimmed ? trimmed : null
+}
+
+const getDefaultToastMessage = (success: boolean) =>
+  success
+    ? t("messages:toast.success.operationCompleted")
+    : t("messages:toast.error.operationFailedGeneric")
 
 /**
  * Shows a toast notification based on the success status of an operation.
@@ -12,17 +29,22 @@ type ToastParams =
 export function showResultToast(...args: ToastParams): void {
   if (typeof args[0] === "boolean") {
     // 兼容旧逻辑
-    const [success, successMsg, errorMsg = ""] = args
-    const message = success ? successMsg : errorMsg
-    if (message) {
-      toast[success ? "success" : "error"](message)
-    }
+    const [success, successMsg, errorMsg] = args
+    const message = normalizeToastMessage(success ? successMsg : errorMsg)
+    toast[success ? "success" : "error"](
+      message || getDefaultToastMessage(success),
+    )
   } else {
     // 支持对象参数
-    const { success, message = "" } = args[0]
-    if (message) {
-      toast[success ? "success" : "error"](message)
-    }
+    const { success, message, successFallback, errorFallback } = args[0]
+    const normalizedMessage = normalizeToastMessage(message)
+    const fallbackMessage = normalizeToastMessage(
+      success ? successFallback : errorFallback,
+    )
+
+    toast[success ? "success" : "error"](
+      normalizedMessage || fallbackMessage || getDefaultToastMessage(success),
+    )
   }
 }
 
