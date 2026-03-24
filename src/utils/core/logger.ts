@@ -3,7 +3,7 @@ import type { LoggingPreferences, LogLevel } from "~/types/logging"
 import { getDefaultLoggingPreferences } from "~/types/logging"
 import { sanitizeUrlForLog } from "~/utils/core/sanitizeUrlForLog"
 
-export type ExtensionLogContext =
+type ExtensionLogContext =
   | "Background"
   | "Content"
   | "Popup"
@@ -11,7 +11,7 @@ export type ExtensionLogContext =
   | "SidePanel"
   | "Unknown"
 
-export interface Logger {
+interface Logger {
   debug: (message: string, details?: unknown) => void
   info: (message: string, details?: unknown) => void
   warn: (message: string, details?: unknown) => void
@@ -85,31 +85,10 @@ export function setLoggerContext(context: ExtensionLogContext) {
 }
 
 /**
- * Returns the logger context.
- */
-export function getLoggerContext(): ExtensionLogContext {
-  return currentContext
-}
-
-/**
- * Returns the current logging preferences.
- */
-export function getLoggingPreferences(): LoggingPreferences {
-  return currentPreferences
-}
-
-/**
  * Replace the current logging preferences.
  */
 export function setLoggingPreferences(preferences: LoggingPreferences) {
   currentPreferences = preferences
-}
-
-/**
- * Merge updates into the current logging preferences.
- */
-export function updateLoggingPreferences(updates: Partial<LoggingPreferences>) {
-  currentPreferences = { ...currentPreferences, ...updates }
 }
 
 /**
@@ -118,7 +97,7 @@ export function updateLoggingPreferences(updates: Partial<LoggingPreferences>) {
  *
  * Returns a cleanup function (no-op if storage APIs are unavailable).
  */
-export function startLoggingPreferenceSync(): () => void {
+function startLoggingPreferenceSync(): () => void {
   if (unsubscribeStorageListener) return unsubscribeStorageListener
 
   const api = getExtensionApi()
@@ -149,7 +128,7 @@ export function startLoggingPreferenceSync(): () => void {
  * This is best-effort and never throws; defaults are used if the preference
  * payload is missing or invalid.
  */
-export async function loadLoggingPreferencesFromStorageOnce(): Promise<void> {
+async function loadLoggingPreferencesFromStorageOnce(): Promise<void> {
   if (initialPreferenceLoadStarted) return
   initialPreferenceLoadStarted = true
 
@@ -169,7 +148,7 @@ export async function loadLoggingPreferencesFromStorageOnce(): Promise<void> {
  *
  * Safe to call multiple times.
  */
-export function initializeLogging(): void {
+function initializeLogging(): void {
   startLoggingPreferenceSync()
   void loadLoggingPreferencesFromStorageOnce()
 }

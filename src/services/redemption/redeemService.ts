@@ -6,7 +6,7 @@ import { getErrorMessage } from "~/utils/core/error"
 import { formatMoneyFixed } from "~/utils/core/money"
 import { t } from "~/utils/i18n/core"
 
-export interface RedeemResult {
+interface RedeemResult {
   success: boolean
   message: string
   creditedAmount?: number
@@ -17,7 +17,7 @@ export interface RedeemResult {
  * Encapsulates redemption flows that convert codes into account credits while
  * handling storage lookups, API invocation, and success/error localization.
  */
-export class RedeemService {
+class RedeemService {
   /**
    * Redeems a code for the specified account, returning localized results with
    * credited amount and display-ready account info when successful.

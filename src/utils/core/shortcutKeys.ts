@@ -6,7 +6,7 @@
  * - For bulk actions we typically treat (Ctrl OR Cmd) as a single "primary modifier".
  */
 
-export type ModifierState = {
+type ModifierState = {
   altKey?: boolean
   ctrlKey?: boolean
   metaKey?: boolean
@@ -18,7 +18,7 @@ export type ModifierState = {
  * - Windows/Linux: Ctrl
  * - macOS: Cmd (Meta)
  */
-export function isPrimaryModifierPressed(modifiers: ModifierState): boolean {
+function isPrimaryModifierPressed(modifiers: ModifierState): boolean {
   return Boolean(modifiers.ctrlKey || modifiers.metaKey)
 }
 

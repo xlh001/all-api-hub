@@ -3,7 +3,7 @@ import { UI_CONSTANTS } from "~/constants/ui"
 /**
  * Formatting options for money-like numeric values used across the UI.
  */
-export type MoneyFormatOptions = {
+type MoneyFormatOptions = {
   decimals: number
   minNonZero: number
 }
@@ -11,7 +11,7 @@ export type MoneyFormatOptions = {
 /**
  * Default money formatting options for the application UI.
  */
-export const DEFAULT_MONEY_FORMAT_OPTIONS: MoneyFormatOptions = {
+const DEFAULT_MONEY_FORMAT_OPTIONS: MoneyFormatOptions = {
   decimals: UI_CONSTANTS.MONEY.DECIMALS,
   minNonZero: UI_CONSTANTS.MONEY.MIN_NON_ZERO,
 }
@@ -37,7 +37,7 @@ export const normalizeMoneyForDisplay = (
 /**
  * Rounds a number to the specified decimal places as a numeric value.
  */
-export const roundToDecimals = (value: number, decimals: number): number => {
+const roundToDecimals = (value: number, decimals: number): number => {
   if (!Number.isFinite(value)) return 0
   if (decimals <= 0) return Math.round(value)
 

@@ -5,7 +5,7 @@ import {
 import { normalizeHttpUrl } from "~/utils/core/url"
 import { tryParseUrl } from "~/utils/core/urlParsing"
 
-export type NormalizedUrlMatchParts = {
+type NormalizedUrlMatchParts = {
   origin: string | null
   hostname: string | null
 }
@@ -39,7 +39,7 @@ export function normalizeUrlForLdohMatch(
 /**
  * Builds an LDOH search URL for a given hostname.
  */
-export function buildLdohSiteSearchUrl(hostname: string): string {
+function buildLdohSiteSearchUrl(hostname: string): string {
   const query = String(hostname ?? "")
     .trim()
     .toLowerCase()

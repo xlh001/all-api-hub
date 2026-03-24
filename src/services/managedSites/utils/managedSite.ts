@@ -45,7 +45,7 @@ export interface ManagedSiteTargetOption {
   config: ManagedSiteAdminConfig
 }
 
-export type ManagedSiteConfig =
+type ManagedSiteConfig =
   | NewApiConfig
   | DoneHubConfig
   | VeloeraConfig
@@ -55,7 +55,7 @@ export type ManagedSiteConfig =
  * Extracts the selected managed site type and its corresponding config from a
  * given preferences snapshot.
  */
-export function getManagedSiteConfigFromPreferencesForType(
+function getManagedSiteConfigFromPreferencesForType(
   preferences: UserPreferences,
   siteType: ManagedSiteType,
 ): {
@@ -246,16 +246,6 @@ export function getManagedSiteContextForType(siteType: ManagedSiteType): {
     siteType,
     messagesKey: getManagedSiteMessagesKeyFromSiteType(siteType),
   }
-}
-
-/**
- * Returns the current managed site messages key.
- */
-export function getManagedSiteMessagesKey(
-  prefs: UserPreferences,
-): ManagedSiteMessagesKey {
-  const { messagesKey } = getManagedSiteContext(prefs)
-  return messagesKey
 }
 
 /**

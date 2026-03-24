@@ -8,7 +8,6 @@ import {
 import type {
   TurnstilePreTrigger,
   TurnstileTokenWaitResult,
-  TurnstileTokenWaitStatus,
   TurnstileWidgetDetection,
 } from "~/types/turnstile"
 import { createLogger } from "~/utils/core/logger"
@@ -18,12 +17,6 @@ import { sanitizeUrlForLog } from "~/utils/core/sanitizeUrlForLog"
  * Unified logger scoped to Turnstile detection/auto-start helpers.
  */
 const logger = createLogger("TurnstileGuard")
-
-export type {
-  TurnstileTokenWaitResult,
-  TurnstileTokenWaitStatus,
-  TurnstileWidgetDetection,
-}
 
 type TurnstileAutoStartAttempt = {
   attempted: boolean
@@ -82,7 +75,7 @@ function getTurnstileAutoStartStateMap(): Map<string, TurnstileAutoStartState> {
 /**
  * Clears any stored Turnstile auto-start throttling state for a request.
  */
-export function clearTurnstileAutoStartState(requestId?: string | null): void {
+function clearTurnstileAutoStartState(requestId?: string | null): void {
   const normalized = (requestId || "").trim()
   if (!normalized) return
   try {
@@ -111,7 +104,7 @@ function getTurnstilePreTriggerStateMap(): Map<
 /**
  * Clears stored Turnstile pre-trigger throttling state for a request.
  */
-export function clearTurnstilePreTriggerState(requestId?: string | null): void {
+function clearTurnstilePreTriggerState(requestId?: string | null): void {
   const normalized = (requestId || "").trim()
   if (!normalized) return
   try {
