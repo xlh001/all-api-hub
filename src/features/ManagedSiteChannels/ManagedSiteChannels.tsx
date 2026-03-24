@@ -1175,7 +1175,7 @@ export default function ManagedSiteChannels({
                       key={header.id}
                       className={cn(
                         header.column.id === "actions" &&
-                          "bg-background sticky right-0 z-30 border-l",
+                          "bg-background sticky right-0 z-20 border-l",
                       )}
                       style={{ width: header.getSize() }}
                     >
@@ -1240,7 +1240,7 @@ export default function ManagedSiteChannels({
                         className={cn(
                           "py-3",
                           cell.column.id === "actions" &&
-                            "bg-background group-hover:bg-muted/50 data-[state=selected]:bg-muted sticky right-0 z-20 border-l",
+                            "bg-background group-hover:bg-muted/50 data-[state=selected]:bg-muted sticky right-0 z-10 border-l",
                         )}
                       >
                         {flexRender(
