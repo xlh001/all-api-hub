@@ -15,16 +15,63 @@
 
 ## 安装方式
 
-Safari 当前建议按下面两种方式使用：
+有两种安装方式：
 
-1. 从源码自己构建，再用 Xcode 运行
-2. 从 GitHub Releases 下载已经打好的 Safari Xcode bundle，解压后直接用 Xcode 打开
+1. 从 GitHub 最新 Release 下载已经打好的 Safari Xcode 工程压缩包，解压后直接用 Xcode 打开
+2. 从源码自己构建，再用 Xcode 运行
 
-> **建议**
-> 如果你只是想尽快在自己的 Mac 上跑起来，优先使用“方式二：下载 Release bundle”。
-> 如果你要改代码、调试、验证本地修改，再用“方式一：从源码构建”。
+### 方式一：从 GitHub 最新 Release 下载 Safari 附件
 
-### 方式一：从源码构建安装
+Safari 附件会上传到最新版本 Release 页面：
+
+- [最新版本 Release](https://github.com/qixing-jk/all-api-hub/releases/latest)
+
+#### 1. 打开对应版本的 Release 页面
+
+直接打开上面的“最新版本 Release”即可。
+
+#### 2. 下载正确的 Safari 附件
+
+在页面附件里，下载下面这个文件：
+
+```text
+all-api-hub-<version>-safari-xcode-bundle.zip
+```
+
+例如：
+
+```text
+all-api-hub-3.29.0-safari-xcode-bundle.zip
+```
+
+这个压缩包已经包含可直接打开的 Xcode 工程和所需的 Safari 文件。
+
+请下载这个文件，不要下载 `all-api-hub-<version>-safari.zip`。
+
+<details>
+<summary>为什么要下载这个文件？</summary>
+
+`all-api-hub-<version>-safari-xcode-bundle.zip` 里通常会同时包含：
+
+- `all-api-hub-<version>-safari.zip`
+- `safari-mv2/`
+- 转换器生成的 Xcode 工程目录
+
+这样解压后就可以直接用 Xcode 打开工程，不需要自己再补齐工程引用的 Safari 文件。
+
+</details>
+
+#### 3. 解压后直接用 Xcode 打开工程
+
+1. 在解压目录中找到 Xcode 工程
+2. 双击工程文件，或用 Xcode 打开它
+3. 确保目标设备选择的是你的 Mac
+4. 点击 `Product > Run`
+5. Safari 提示后，在 `Safari > 设置 > 扩展` 中启用扩展
+
+压缩包里已经包含运行所需文件，解压后直接打开即可，通常不需要单独移动其中的目录。
+
+### 方式二：从源码构建安装
 
 #### 1. 获取源码并构建 Safari 产物
 
@@ -48,7 +95,7 @@ pnpm run build:safari
 xcrun safari-web-extension-converter .output/safari-mv2/
 ```
 
-如果你想自定义输出目录、App 名和 Bundle Identifier，也可以使用：
+如果你想自定义输出目录、应用名和包标识符，也可以使用：
 
 ```bash
 xcrun safari-web-extension-converter .output/safari-mv2/ \
@@ -75,52 +122,6 @@ xcrun safari-web-extension-converter .output/safari-mv2/ \
 4. 打开 `扩展` 标签页
 5. 找到 `All API Hub` 并启用
 6. 根据需要授予权限
-
-### 方式二：从 GitHub Releases 下载 Safari Xcode bundle
-
-#### 1. 下载正确的 Safari 资产
-
-打开 Releases 页面，下载类似下面名字的文件：
-
-```text
-all-api-hub-<version>-safari-xcode-bundle.zip
-```
-
-例如：
-
-```text
-all-api-hub-3.29.0-safari-xcode-bundle.zip
-```
-
-不要只下载 `all-api-hub-<version>-safari.zip`。
-
-WHY：
-`all-api-hub-<version>-safari.zip` 只是 Safari 编译产物本身，不包含可直接运行的 Xcode 工程；真正适合直接解压后打开 Xcode 的，是 `safari-xcode-bundle.zip`。
-
-#### 2. 解压后你会看到什么
-
-解压 `all-api-hub-<version>-safari-xcode-bundle.zip` 后，目录里通常会同时包含：
-
-- `all-api-hub-<version>-safari.zip`
-- `safari-mv2/`
-- converter 生成的 Xcode 工程目录
-
-这样设计的目的是把“编译好的 Safari 扩展文件”和“Xcode 工程”放在同一个 bundle 里，避免工程打开后找不到扩展资源而报丢失文件。
-
-#### 3. 直接用 Xcode 打开 bundle 内工程
-
-1. 在解压目录中找到 Xcode 工程
-2. 双击工程文件，或用 Xcode 打开它
-3. 确保目标设备选择的是你的 Mac
-4. 点击 `Product > Run`
-5. Safari 提示后，在 `Safari > 设置 > 扩展` 中启用扩展
-
-#### 4. 什么时候还需要 bundle 里的其他文件
-
-- `safari-mv2/`：Xcode 工程引用的编译后扩展目录
-- `all-api-hub-<version>-safari.zip`：便于你留档、比对或二次分发编译产物
-
-通常情况下，你只需要解压整个 bundle，不要单独移动其中某一个目录。
 
 ### 方式三：临时调试（仅开发用途）
 
@@ -162,38 +163,36 @@ pnpm run dev -- -b safari
 
 ## 常见问题
 
-### Q: 为什么 Safari 需要特殊处理？
+### 为什么 Safari 需要特殊处理？
 
-A: Safari 扩展需要打包成 macOS 应用才能安装和分发，这与 Chrome/Edge/Firefox 直接安装 `.crx` 或 `.xpi` 文件不同。
+Safari 扩展需要打包成 macOS 应用才能安装和分发，这与 Chrome、Edge、Firefox 直接安装 `.crx` 或 `.xpi` 文件不同。
 
-### Q: 有开发者账号和没有，有什么区别？
+### 有开发者账号和没有，有什么区别？
 
-A:
 - 没有账号：可以本机构建并使用，但更偏开发调试/自用，通常不能直接分发给普通用户。
 - 有账号：可以正式签名，并通过 TestFlight / App Store 分发，适合长期维护和正式发布。
 
-### Q: 能否像 Chrome 一样直接安装？
+### 能否像 Chrome 一样直接安装？
 
-A: 不可以。Safari 不能像 Chrome 一样直接解压加载做正式安装；本地使用通常走 Xcode，正式分发则走 TestFlight / App Store。
+不可以。Safari 不能像 Chrome 一样直接解压加载做正式安装；本地使用通常走 Xcode，正式分发则走 TestFlight / App Store。
 
-### Q: 构建时出现错误怎么办？
+### 构建时出现错误怎么办？
 
-A: 确保：
+请先确认：
 - Xcode 命令行工具已安装：`xcode-select --install`
 - 已同意 Xcode 许可：`sudo xcodebuild -license accept`
 - Node.js 版本 >= 18
 
-### Q: 扩展功能与 Chrome 版本有差异吗？
+### 扩展功能与 Chrome 版本有差异吗？
 
-A: 基本功能完全一致。但由于 Safari WebExtensions API 的一些限制，部分功能可能略有差异：
+基本功能完全一致。但由于 Safari WebExtensions API 的一些限制，部分功能可能略有差异：
 - `sidePanel` API 在 Safari 中不可用（使用弹出窗口代替）
 - 某些权限请求方式可能不同
 
-### Q: 如何更新扩展？
+### 如何更新扩展？
 
-A:
 - 如果你是从源码安装：重新构建 Safari 产物并重新运行 Xcode 工程
-- 如果你是从 Releases 下载 bundle：下载新的 `safari-xcode-bundle.zip`，解压后重新打开新的 Xcode 工程运行
+- 如果你是从最新 Release 安装：重新下载最新的 `all-api-hub-<version>-safari-xcode-bundle.zip`，解压后重新打开新的 Xcode 工程运行
 
 ## 卸载
 
