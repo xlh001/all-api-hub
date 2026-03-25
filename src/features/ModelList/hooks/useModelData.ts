@@ -1,12 +1,19 @@
 import { useQueries, useQuery } from "@tanstack/react-query"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import type { ModelManagementSource } from "~/features/ModelList/modelManagementSources"
 import {
+  canManageDisplayAccountTokens,
+  fetchDisplayAccountTokens,
+  InvalidTokenPayloadError,
+} from "~/services/accounts/utils/apiServiceRequest"
+import {
+  ACCOUNT_TOKEN_FALLBACK_LOAD_FAILED,
   buildApiCredentialProfilePricingResponse,
   fetchApiCredentialModelIds,
+  loadAccountTokenFallbackPricingResponse,
 } from "~/services/apiCredentialProfiles/modelCatalog"
 import { getApiService } from "~/services/apiService"
 import type { PricingResponse } from "~/services/apiService/common/type"
@@ -15,7 +22,8 @@ import {
   modelPricingCache,
 } from "~/services/models/modelPricingCache"
 import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
-import type { DisplaySiteData } from "~/types"
+import type { ApiToken, DisplaySiteData } from "~/types"
+import { getErrorMessage } from "~/utils/core/error"
 
 interface UseModelDataProps {
   selectedSource: ModelManagementSource | null
@@ -36,6 +44,22 @@ interface AccountQueryState {
   errorType?: AccountErrorType
 }
 
+export interface AccountFallbackControls {
+  isAvailable: boolean
+  isActive: boolean
+  hasLoadedTokens: boolean
+  isLoadingTokens: boolean
+  isLoadingCatalog: boolean
+  tokenLoadErrorMessage: string | null
+  catalogLoadErrorMessage: string | null
+  tokens: ApiToken[]
+  selectedTokenId: number | null
+  activeTokenName: string | null
+  loadTokens: () => Promise<void>
+  setSelectedTokenId: (tokenId: number | null) => void
+  loadCatalog: () => Promise<void>
+}
+
 interface UseModelDataReturn {
   pricingData: PricingResponse | null
   pricingContexts: AccountPricingContext[]
@@ -44,6 +68,7 @@ interface UseModelDataReturn {
   accountQueryStates: AccountQueryState[]
   loadPricingData: () => Promise<void>
   loadErrorMessage: string | null
+  accountFallback: AccountFallbackControls | null
 }
 
 /**
@@ -61,6 +86,21 @@ function useSingleAccountModelData(params: {
   const { t } = useTranslation("modelList")
   const [dataFormatError, setDataFormatError] = useState(false)
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null)
+  const [fallbackPricingData, setFallbackPricingData] =
+    useState<PricingResponse | null>(null)
+  const [fallbackTokens, setFallbackTokens] = useState<ApiToken[]>([])
+  const [hasLoadedFallbackTokens, setHasLoadedFallbackTokens] = useState(false)
+  const [isLoadingFallbackTokens, setIsLoadingFallbackTokens] = useState(false)
+  const [fallbackTokenLoadErrorMessage, setFallbackTokenLoadErrorMessage] =
+    useState<string | null>(null)
+  const [selectedFallbackTokenId, setSelectedFallbackTokenId] = useState<
+    number | null
+  >(null)
+  const [isLoadingFallbackCatalog, setIsLoadingFallbackCatalog] =
+    useState(false)
+  const [fallbackCatalogLoadErrorMessage, setFallbackCatalogLoadErrorMessage] =
+    useState<string | null>(null)
+  const [fallbackStateScopeKey, setFallbackStateScopeKey] = useState("none")
 
   const safeDisplayData = useMemo(() => accounts || [], [accounts])
 
@@ -71,6 +111,118 @@ function useSingleAccountModelData(params: {
         : undefined,
     [safeDisplayData, selectedSource],
   )
+
+  const resetFallbackState = useCallback(() => {
+    fallbackTokensRequestIdRef.current += 1
+    fallbackCatalogRequestIdRef.current += 1
+    setFallbackStateScopeKey("none")
+    setFallbackPricingData(null)
+    setFallbackTokens([])
+    setHasLoadedFallbackTokens(false)
+    setIsLoadingFallbackTokens(false)
+    setFallbackTokenLoadErrorMessage(null)
+    setSelectedFallbackTokenId(null)
+    setIsLoadingFallbackCatalog(false)
+    setFallbackCatalogLoadErrorMessage(null)
+  }, [])
+
+  const currentAccountScopeKey = useMemo(
+    () =>
+      currentAccount
+        ? [
+            currentAccount.id,
+            currentAccount.baseUrl,
+            currentAccount.userId,
+          ].join("|")
+        : "none",
+    [currentAccount],
+  )
+
+  const currentAccountScopeKeyRef = useRef(currentAccountScopeKey)
+  currentAccountScopeKeyRef.current = currentAccountScopeKey
+
+  const fallbackTokensRequestIdRef = useRef(0)
+  const fallbackCatalogRequestIdRef = useRef(0)
+
+  useEffect(() => {
+    // Fallback state is intentionally transient for the currently selected
+    // account, so changing the source scope always drops any cached key data.
+    resetFallbackState()
+  }, [currentAccountScopeKey, resetFallbackState, selectedSource?.kind])
+
+  const fallbackAvailable = useMemo(
+    () => canManageDisplayAccountTokens(currentAccount),
+    [currentAccount],
+  )
+
+  const isActiveFallbackTokensRequest = useCallback(
+    (scopeKey: string, requestId: number) =>
+      currentAccountScopeKeyRef.current === scopeKey &&
+      fallbackTokensRequestIdRef.current === requestId,
+    [],
+  )
+
+  const isActiveFallbackCatalogRequest = useCallback(
+    (scopeKey: string, requestId: number) =>
+      currentAccountScopeKeyRef.current === scopeKey &&
+      fallbackCatalogRequestIdRef.current === requestId,
+    [],
+  )
+
+  const scopedFallbackState = useMemo(() => {
+    const isCurrentFallbackScope =
+      !!currentAccount && fallbackStateScopeKey === currentAccountScopeKey
+
+    return {
+      fallbackPricingData: isCurrentFallbackScope ? fallbackPricingData : null,
+      fallbackTokens: isCurrentFallbackScope ? fallbackTokens : [],
+      hasLoadedFallbackTokens: isCurrentFallbackScope
+        ? hasLoadedFallbackTokens
+        : false,
+      isLoadingFallbackTokens: isCurrentFallbackScope
+        ? isLoadingFallbackTokens
+        : false,
+      fallbackTokenLoadErrorMessage: isCurrentFallbackScope
+        ? fallbackTokenLoadErrorMessage
+        : null,
+      selectedFallbackTokenId: isCurrentFallbackScope
+        ? selectedFallbackTokenId
+        : null,
+      isLoadingFallbackCatalog: isCurrentFallbackScope
+        ? isLoadingFallbackCatalog
+        : false,
+      fallbackCatalogLoadErrorMessage: isCurrentFallbackScope
+        ? fallbackCatalogLoadErrorMessage
+        : null,
+    }
+  }, [
+    currentAccount,
+    currentAccountScopeKey,
+    fallbackCatalogLoadErrorMessage,
+    fallbackPricingData,
+    fallbackStateScopeKey,
+    fallbackTokenLoadErrorMessage,
+    fallbackTokens,
+    hasLoadedFallbackTokens,
+    isLoadingFallbackCatalog,
+    isLoadingFallbackTokens,
+    selectedFallbackTokenId,
+  ])
+
+  const scopedFallbackPricingData = scopedFallbackState.fallbackPricingData
+  const scopedFallbackTokens = scopedFallbackState.fallbackTokens
+  const scopedHasLoadedFallbackTokens =
+    scopedFallbackState.hasLoadedFallbackTokens
+  const scopedIsLoadingFallbackTokens =
+    scopedFallbackState.isLoadingFallbackTokens
+  const scopedFallbackTokenLoadErrorMessage =
+    scopedFallbackState.fallbackTokenLoadErrorMessage
+  const scopedSelectedFallbackTokenId =
+    scopedFallbackState.selectedFallbackTokenId
+  const scopedIsLoadingFallbackCatalog =
+    scopedFallbackState.isLoadingFallbackCatalog
+  const scopedFallbackCatalogLoadErrorMessage =
+    scopedFallbackState.fallbackCatalogLoadErrorMessage
 
   const queryKey = useMemo(
     () =>
@@ -128,6 +280,166 @@ function useSingleAccountModelData(params: {
     },
   })
 
+  const selectedFallbackToken = useMemo(() => {
+    if (scopedSelectedFallbackTokenId !== null) {
+      return (
+        scopedFallbackTokens.find(
+          (token) => token.id === scopedSelectedFallbackTokenId,
+        ) ?? null
+      )
+    }
+
+    if (scopedFallbackTokens.length === 1) {
+      return scopedFallbackTokens[0]
+    }
+
+    return null
+  }, [scopedFallbackTokens, scopedSelectedFallbackTokenId])
+
+  const loadFallbackTokens = useCallback(async () => {
+    if (!currentAccount || !fallbackAvailable) return
+    const requestScopeKey = currentAccountScopeKey
+    const requestId = ++fallbackTokensRequestIdRef.current
+
+    setFallbackStateScopeKey(requestScopeKey)
+    setIsLoadingFallbackTokens(true)
+    setFallbackTokenLoadErrorMessage(null)
+    setFallbackCatalogLoadErrorMessage(null)
+
+    try {
+      const nextTokens = (
+        await fetchDisplayAccountTokens(currentAccount)
+      ).filter((token) => token.status === 1)
+
+      if (!isActiveFallbackTokensRequest(requestScopeKey, requestId)) {
+        return
+      }
+
+      setFallbackStateScopeKey(requestScopeKey)
+      setFallbackTokens(nextTokens)
+      setHasLoadedFallbackTokens(true)
+      setSelectedFallbackTokenId((currentTokenId) => {
+        if (
+          currentTokenId !== null &&
+          nextTokens.some((token) => token.id === currentTokenId)
+        ) {
+          return currentTokenId
+        }
+
+        if (nextTokens.length === 1) {
+          return nextTokens[0].id
+        }
+
+        return null
+      })
+    } catch (error) {
+      if (!isActiveFallbackTokensRequest(requestScopeKey, requestId)) {
+        return
+      }
+
+      const errorMessage =
+        error instanceof InvalidTokenPayloadError
+          ? t("status.fallback.loadKeysFailedFallback")
+          : getErrorMessage(error)
+
+      setFallbackStateScopeKey(requestScopeKey)
+      setFallbackTokenLoadErrorMessage(
+        errorMessage &&
+          errorMessage !== t("status.fallback.loadKeysFailedFallback")
+          ? t("status.fallback.loadKeysFailed", { errorMessage })
+          : t("status.fallback.loadKeysFailedFallback"),
+      )
+    } finally {
+      if (isActiveFallbackTokensRequest(requestScopeKey, requestId)) {
+        setIsLoadingFallbackTokens(false)
+      }
+    }
+  }, [
+    currentAccount,
+    currentAccountScopeKey,
+    fallbackAvailable,
+    isActiveFallbackTokensRequest,
+    t,
+  ])
+
+  const loadFallbackCatalog = useCallback(async () => {
+    if (!currentAccount || !selectedFallbackToken) return
+    const requestScopeKey = currentAccountScopeKey
+    const requestId = ++fallbackCatalogRequestIdRef.current
+
+    setFallbackStateScopeKey(requestScopeKey)
+    setIsLoadingFallbackCatalog(true)
+    setFallbackCatalogLoadErrorMessage(null)
+
+    try {
+      const pricing = await loadAccountTokenFallbackPricingResponse({
+        account: currentAccount,
+        token: selectedFallbackToken,
+      })
+
+      if (!isActiveFallbackCatalogRequest(requestScopeKey, requestId)) {
+        return
+      }
+
+      setFallbackStateScopeKey(requestScopeKey)
+      setFallbackPricingData(pricing)
+      setLoadErrorMessage(null)
+      setDataFormatError(false)
+      toast.success(t("status.dataLoaded"))
+    } catch (error) {
+      if (!isActiveFallbackCatalogRequest(requestScopeKey, requestId)) {
+        return
+      }
+
+      const errorMessage = getErrorMessage(error)
+      const sanitizedMessage =
+        errorMessage && errorMessage !== ACCOUNT_TOKEN_FALLBACK_LOAD_FAILED
+          ? errorMessage
+          : t("status.fallback.loadModelsFailedFallback")
+
+      setFallbackStateScopeKey(requestScopeKey)
+      setFallbackCatalogLoadErrorMessage(sanitizedMessage)
+      toast.error(sanitizedMessage)
+    } finally {
+      if (isActiveFallbackCatalogRequest(requestScopeKey, requestId)) {
+        setIsLoadingFallbackCatalog(false)
+      }
+    }
+  }, [
+    currentAccount,
+    currentAccountScopeKey,
+    isActiveFallbackCatalogRequest,
+    selectedFallbackToken,
+    t,
+  ])
+
+  useEffect(() => {
+    if (selectedSource?.kind !== "account" || !currentAccount) return
+    if (!fallbackAvailable) return
+    if (!query.isError) return
+
+    const typedError = (query.error ?? undefined) as
+      | { code?: string }
+      | undefined
+    if (typedError?.code === "INVALID_FORMAT") return
+    if (scopedHasLoadedFallbackTokens || scopedIsLoadingFallbackTokens) return
+    if (scopedFallbackTokenLoadErrorMessage) return
+
+    // Retryable account failures should immediately hydrate the fallback key
+    // list so the user can pick a key without an extra preparatory click.
+    void loadFallbackTokens()
+  }, [
+    currentAccount,
+    fallbackAvailable,
+    scopedFallbackTokenLoadErrorMessage,
+    scopedHasLoadedFallbackTokens,
+    scopedIsLoadingFallbackTokens,
+    loadFallbackTokens,
+    query.error,
+    query.isError,
+    selectedSource?.kind,
+  ])
+
   useEffect(() => {
     if (selectedSource?.kind !== "account" || !currentAccount) {
       setDataFormatError(false)
@@ -143,6 +455,7 @@ function useSingleAccountModelData(params: {
     if (query.isSuccess) {
       setDataFormatError(false)
       setLoadErrorMessage(null)
+      resetFallbackState()
       toast.success(t("status.dataLoaded"))
       return
     }
@@ -173,6 +486,7 @@ function useSingleAccountModelData(params: {
     currentAccount,
     selectedSource?.kind,
     t,
+    resetFallbackState,
   ])
 
   const loadPricingData = useCallback(async () => {
@@ -181,22 +495,67 @@ function useSingleAccountModelData(params: {
     await query.refetch()
   }, [currentAccount, query])
 
-  const pricingContexts: AccountPricingContext[] = useMemo(
-    () =>
-      currentAccount && query.data
-        ? [{ account: currentAccount, pricing: query.data }]
-        : [],
-    [currentAccount, query.data],
+  const pricingData = query.data ?? scopedFallbackPricingData ?? null
+  const isFallbackCatalogActive = Boolean(
+    scopedFallbackPricingData && !query.data,
   )
 
+  const pricingContexts: AccountPricingContext[] = useMemo(
+    () =>
+      currentAccount && pricingData
+        ? [{ account: currentAccount, pricing: pricingData }]
+        : [],
+    [currentAccount, pricingData],
+  )
+
+  const accountFallback = useMemo<AccountFallbackControls | null>(() => {
+    if (!currentAccount) {
+      return null
+    }
+
+    return {
+      isAvailable: fallbackAvailable,
+      isActive: isFallbackCatalogActive,
+      hasLoadedTokens: scopedHasLoadedFallbackTokens,
+      isLoadingTokens: scopedIsLoadingFallbackTokens,
+      isLoadingCatalog: scopedIsLoadingFallbackCatalog,
+      tokenLoadErrorMessage: scopedFallbackTokenLoadErrorMessage,
+      catalogLoadErrorMessage: scopedFallbackCatalogLoadErrorMessage,
+      tokens: scopedFallbackTokens,
+      selectedTokenId: scopedSelectedFallbackTokenId,
+      activeTokenName:
+        isFallbackCatalogActive && selectedFallbackToken
+          ? selectedFallbackToken.name
+          : null,
+      loadTokens: loadFallbackTokens,
+      setSelectedTokenId: setSelectedFallbackTokenId,
+      loadCatalog: loadFallbackCatalog,
+    }
+  }, [
+    currentAccount,
+    fallbackAvailable,
+    isFallbackCatalogActive,
+    scopedHasLoadedFallbackTokens,
+    scopedIsLoadingFallbackTokens,
+    scopedIsLoadingFallbackCatalog,
+    scopedFallbackTokenLoadErrorMessage,
+    scopedFallbackCatalogLoadErrorMessage,
+    scopedFallbackTokens,
+    scopedSelectedFallbackTokenId,
+    selectedFallbackToken,
+    loadFallbackTokens,
+    loadFallbackCatalog,
+  ])
+
   return {
-    pricingData: query.data ?? null,
+    pricingData,
     pricingContexts,
     isLoading: query.isFetching,
     dataFormatError,
     accountQueryStates: [],
     loadPricingData,
     loadErrorMessage,
+    accountFallback,
   }
 }
 
@@ -322,6 +681,7 @@ function useAllAccountsModelData(
     loadErrorMessage: queries.some((query) => query.isError)
       ? t("status.loadFailed")
       : null,
+    accountFallback: null,
   }
 }
 
@@ -416,6 +776,7 @@ function useProfileModelData(
     accountQueryStates: [],
     loadPricingData,
     loadErrorMessage,
+    accountFallback: null,
   }
 }
 
