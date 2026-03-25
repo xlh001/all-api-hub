@@ -5,9 +5,9 @@ import { VELOERA } from "~/constants/siteType"
 import { ensureAccountApiToken } from "~/services/accounts/accountOperations"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { getApiService } from "~/services/apiService"
-import { fetchOpenAICompatibleModelIds } from "~/services/apiService/openaiCompatible"
 import { fetchChannel as fetchVeloeraChannel } from "~/services/apiService/veloera"
 import { findManagedSiteChannelByComparableInputs } from "~/services/managedSites/utils/channelMatching"
+import { fetchTokenScopedModels } from "~/services/managedSites/utils/fetchTokenScopedModels"
 import { ApiToken, AuthTypeEnum, DisplaySiteData, SiteAccount } from "~/types"
 import type { AccountToken } from "~/types"
 import type {
@@ -224,17 +224,11 @@ export async function fetchAvailableModels(
     candidateSources.push(tokenModelList)
   }
 
-  try {
-    const upstreamModels = await fetchOpenAICompatibleModelIds({
-      baseUrl: account.baseUrl,
-      apiKey: token.key,
-    })
-    if (upstreamModels && upstreamModels.length > 0) {
-      candidateSources.push(upstreamModels)
-    }
-  } catch (error) {
-    logger.warn("Failed to fetch upstream models", error)
-  }
+  const { models: tokenScopedModels } = await fetchTokenScopedModels(
+    account,
+    token,
+  )
+  candidateSources.push(tokenScopedModels)
 
   try {
     const fallbackModels = await getApiService(
@@ -281,14 +275,13 @@ export async function prepareChannelFormData(
   account: DisplaySiteData,
   token: ApiToken | AccountToken,
 ): Promise<ChannelFormData> {
-  const availableModels = await fetchOpenAICompatibleModelIds({
-    baseUrl: account.baseUrl,
-    apiKey: token.key,
-  })
-
-  if (!availableModels.length) {
-    throw new Error(t("messages:veloera.noAnyModels"))
-  }
+  const tokenModelList = parseDelimitedList(token.models)
+  const { models: availableModels, fetchFailed } = await fetchTokenScopedModels(
+    account,
+    token,
+  )
+  const resolvedModels =
+    availableModels.length > 0 ? availableModels : tokenModelList
 
   const resolvedGroups = await resolveDefaultChannelGroups({
     siteType: VELOERA,
@@ -303,7 +296,8 @@ export async function prepareChannelFormData(
     type: DEFAULT_CHANNEL_FIELDS.type,
     key: token.key,
     base_url: account.baseUrl,
-    models: normalizeList(availableModels),
+    models: normalizeList(resolvedModels),
+    ...(fetchFailed ? { modelPrefillFetchFailed: true } : {}),
     groups: normalizeList(resolvedGroups),
     priority: DEFAULT_CHANNEL_FIELDS.priority,
     weight: DEFAULT_CHANNEL_FIELDS.weight,
