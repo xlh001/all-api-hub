@@ -39,6 +39,10 @@ export interface OpenNewApiManagedVerificationParams {
   initialFailureMessage?: string
 }
 
+export type NewApiManagedVerificationConfigUpdate = Partial<
+  Pick<NewApiConfig, "baseUrl" | "username" | "password" | "totpSecret">
+>
+
 type StoredNewApiManagedVerificationRequest = Omit<
   OpenNewApiManagedVerificationParams,
   "initialFailureMessage" | "initialSessionResult"
@@ -112,9 +116,11 @@ export function useNewApiManagedVerification() {
   const [state, setState] =
     useState<NewApiManagedVerificationState>(INITIAL_STATE)
   const activeRequestScopeRef = useRef<string | null>(null)
+  const requestRef = useRef<StoredNewApiManagedVerificationRequest | null>(null)
 
   const closeDialog = useCallback(() => {
     activeRequestScopeRef.current = null
+    requestRef.current = null
     setState(INITIAL_STATE)
   }, [])
 
@@ -199,6 +205,7 @@ export function useNewApiManagedVerification() {
     async (request: OpenNewApiManagedVerificationParams) => {
       const normalizedRequest = createStoredRequest(request)
       const initialSessionResult = request.initialSessionResult
+      requestRef.current = normalizedRequest
 
       if (!normalizedRequest.config.baseUrl) {
         setState({
@@ -301,9 +308,40 @@ export function useNewApiManagedVerification() {
   }, [applySessionResult, state.code, state.request, state.step])
 
   const retryVerification = useCallback(async () => {
-    if (!state.request) return
-    await runInitialFlow(state.request)
+    const request = requestRef.current ?? state.request
+    if (!request) return
+    await runInitialFlow(request)
   }, [runInitialFlow, state.request])
+
+  const patchRequestConfig = useCallback(
+    (updates: NewApiManagedVerificationConfigUpdate) => {
+      const currentRequest = requestRef.current ?? state.request
+      if (!currentRequest) {
+        return
+      }
+
+      const nextRequest = {
+        ...currentRequest,
+        config: normalizeConfig({
+          ...currentRequest.config,
+          ...updates,
+        }),
+      }
+      requestRef.current = nextRequest
+
+      setState((prev) => {
+        if (!prev.request) {
+          return prev
+        }
+
+        return {
+          ...prev,
+          request: nextRequest,
+        }
+      })
+    },
+    [state.request],
+  )
 
   const setCode = useCallback((code: string) => {
     setState((prev) => ({
@@ -337,5 +375,6 @@ export function useNewApiManagedVerification() {
     openNewApiManagedVerification,
     submitCode,
     retryVerification,
+    patchRequestConfig,
   }
 }
