@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { UI_CONSTANTS } from "~/constants/ui"
@@ -92,10 +92,25 @@ export function useTokenForm({
   editingToken,
   createPrefill,
 }: AddTokenDialogProps) {
-  const { t } = useTranslation("keyManagement")
+  const { t } = useTranslation(["keyManagement", "messages"])
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const isEditMode = !!editingToken
+  const allowedGroupsPrefillKey = Array.isArray(createPrefill?.allowedGroups)
+    ? createPrefill.allowedGroups
+        .map((group) => (typeof group === "string" ? group.trim() : ""))
+        .filter(Boolean)
+        .sort()
+        .join("\n")
+    : ""
+  const allowedGroups = useMemo(
+    () => (allowedGroupsPrefillKey ? allowedGroupsPrefillKey.split("\n") : []),
+    [allowedGroupsPrefillKey],
+  )
+  const hasRestrictedGroupSelection = useMemo(
+    () => allowedGroups.length > 0,
+    [allowedGroups],
+  )
 
   useEffect(() => {
     if (isOpen) {
@@ -154,13 +169,21 @@ export function useTokenForm({
           typeof createPrefill?.group === "string"
             ? createPrefill.group.trim()
             : ""
+        const isRestrictedPrefilledGroup =
+          allowedGroups.includes(normalizedGroup)
         setFormData({
           ...initialFormData,
           accountId: defaultAccountId,
           name: resolvedDefaultName,
           modelLimitsEnabled: shouldPrefillModel,
           modelLimits: shouldPrefillModel ? [normalizedModelId] : [],
-          group: normalizedGroup || initialFormData.group,
+          group:
+            (hasRestrictedGroupSelection
+              ? isRestrictedPrefilledGroup
+                ? normalizedGroup
+                : ""
+              : normalizedGroup) ||
+            (hasRestrictedGroupSelection ? "" : initialFormData.group),
         })
       }
     }
@@ -173,6 +196,9 @@ export function useTokenForm({
     createPrefill?.modelId,
     createPrefill?.defaultName,
     createPrefill?.group,
+    allowedGroupsPrefillKey,
+    allowedGroups,
+    hasRestrictedGroupSelection,
   ])
 
   const validateForm = (): boolean => {
@@ -197,6 +223,14 @@ export function useTokenForm({
     }
     if (formData.allowIps && !isValidIpList(formData.allowIps)) {
       newErrors.allowIps = t("dialog.validIp")
+    }
+    const normalizedSelectedGroup = formData.group.trim()
+    const isRestrictedGroupValid =
+      !hasRestrictedGroupSelection ||
+      allowedGroups.includes(normalizedSelectedGroup)
+
+    if (!normalizedSelectedGroup || !isRestrictedGroupValid) {
+      newErrors.group = t("messages:sub2api.createRequiresGroupSelection")
     }
 
     setErrors(newErrors)

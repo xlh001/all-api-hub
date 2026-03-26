@@ -18,8 +18,13 @@ import {
   SelectValue,
   type CompactMultiSelectOption,
 } from "~/components/ui"
+import AddTokenDialog from "~/features/KeyManagement/components/AddTokenDialog"
 import { useAccountData } from "~/hooks/useAccountData"
-import { ensureAccountApiToken } from "~/services/accounts/accountOperations"
+import { DEFAULT_AUTO_PROVISION_TOKEN_NAME } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
+import {
+  ensureAccountApiToken,
+  resolveSub2ApiQuickCreateResolution,
+} from "~/services/accounts/accountOperations"
 import { compareAccountDisplayNames } from "~/services/accounts/utils/accountDisplayName"
 import { resolveDisplayAccountTokenForSecret } from "~/services/accounts/utils/apiServiceRequest"
 import { getApiService } from "~/services/apiService"
@@ -72,6 +77,66 @@ function getTokenLabel(token: ApiToken, fallbackPrefix: string) {
 }
 
 /**
+ * Normalizes the creation timestamp used when choosing the newest token after refresh.
+ */
+function resolveTokenCreatedAt(token: ApiToken): number | null {
+  const candidate = token as ApiToken & {
+    createdAt?: number | string
+    created_at?: number | string
+  }
+  const rawCreatedAt =
+    candidate.createdAt ?? candidate.created_at ?? token.created_time
+
+  if (typeof rawCreatedAt === "number" && Number.isFinite(rawCreatedAt)) {
+    return rawCreatedAt
+  }
+
+  if (typeof rawCreatedAt === "string") {
+    const numeric = Number(rawCreatedAt)
+    if (Number.isFinite(numeric)) {
+      return numeric
+    }
+
+    const parsed = Date.parse(rawCreatedAt)
+    if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+
+  return null
+}
+
+/**
+ * Selects the newest token deterministically even when upstream fetch order is unstable.
+ */
+function pickNewestToken(tokens: ApiToken[]): ApiToken {
+  return tokens.reduce((selectedToken, candidateToken) => {
+    const selectedCreatedAt = resolveTokenCreatedAt(selectedToken)
+    const candidateCreatedAt = resolveTokenCreatedAt(candidateToken)
+
+    if (
+      selectedCreatedAt !== null &&
+      candidateCreatedAt !== null &&
+      selectedCreatedAt !== candidateCreatedAt
+    ) {
+      return candidateCreatedAt > selectedCreatedAt
+        ? candidateToken
+        : selectedToken
+    }
+
+    if (selectedCreatedAt === null && candidateCreatedAt !== null) {
+      return candidateToken
+    }
+
+    if (selectedCreatedAt !== null && candidateCreatedAt === null) {
+      return selectedToken
+    }
+
+    return candidateToken.id > selectedToken.id ? candidateToken : selectedToken
+  })
+}
+
+/**
  * Build arguments for `fetchAccountTokens` from display-layer account data.
  */
 function buildFetchTokenArgs(site: DisplaySiteData) {
@@ -119,7 +184,7 @@ export function KiloCodeExportDialog({
   initialSelectedSiteIds,
   initialSelectedTokenIdsBySite,
 }: KiloCodeExportDialogProps) {
-  const { t } = useTranslation(["ui", "common"])
+  const { t } = useTranslation(["ui", "common", "messages"])
   const { enabledAccounts: accounts, enabledDisplayData: displayData } =
     useAccountData()
 
@@ -135,6 +200,10 @@ export function KiloCodeExportDialog({
   const [isCreatingToken, setIsCreatingToken] = useState<
     Record<string, boolean>
   >({})
+  const [sub2apiCreateContext, setSub2apiCreateContext] = useState<{
+    siteId: string
+    allowedGroups: string[]
+  } | null>(null)
 
   const [modelInventories, setModelInventories] = useState<
     Record<string, ModelInventoryState>
@@ -161,6 +230,7 @@ export function KiloCodeExportDialog({
     setCurrentApiConfigName("")
     setTokenInventories({})
     setIsCreatingToken({})
+    setSub2apiCreateContext(null)
     setModelInventories({})
     setSelectedModelIdByToken({})
     modelLoadsInFlightRef.current.clear()
@@ -215,7 +285,7 @@ export function KiloCodeExportDialog({
   )
 
   const loadTokensForSite = useCallback(
-    async (siteId: string) => {
+    async (siteId: string, options?: { preferNewest?: boolean }) => {
       const site = displayById.get(siteId)
       if (!site) return
 
@@ -253,6 +323,11 @@ export function KiloCodeExportDialog({
         // UX: default-select the first token (common case is "one token per site"),
         // and keep previous selections if they still exist after refresh.
         setSelectedTokenIdsBySite((prev) => {
+          if (options?.preferNewest && tokens.length > 0) {
+            const newestToken = pickNewestToken(tokens)
+            return { ...prev, [siteId]: [`${newestToken.id}`] }
+          }
+
           const existingSelections = prev[siteId] ?? []
           const remainingSelections = existingSelections.filter((id) =>
             tokens.some((token) => `${token.id}` === id),
@@ -371,12 +446,57 @@ export function KiloCodeExportDialog({
     }))
 
     try {
-      const ensuredToken = await ensureAccountApiToken(account, site, toastId)
+      let ensuredToken: ApiToken
+      if (site.siteType === "sub2api") {
+        const resolution = await resolveSub2ApiQuickCreateResolution(site)
+        if (resolution.kind === "blocked") {
+          const userMessage = resolution.message?.trim()
+            ? resolution.message
+            : "Token creation was blocked. Please check site policy or try again."
+
+          toast.error(userMessage, { id: toastId })
+          setTokenInventories((prev) => ({
+            ...prev,
+            [siteId]: {
+              status: "error",
+              tokens: prev[siteId]?.tokens ?? [],
+              errorMessage: userMessage,
+            },
+          }))
+          return
+        }
+
+        if (resolution.kind === "selection_required") {
+          setSub2apiCreateContext({
+            siteId,
+            allowedGroups: resolution.allowedGroups,
+          })
+          setTokenInventories((prev) => ({
+            ...prev,
+            [siteId]: {
+              status: "loaded",
+              tokens: prev[siteId]?.tokens ?? [],
+              errorMessage: undefined,
+            },
+          }))
+          return
+        }
+
+        // Sub2API stays zero-click only when upstream currently exposes exactly
+        // one valid group after the user has triggered creation.
+        ensuredToken = await ensureAccountApiToken(account, site, {
+          toastId,
+          sub2apiGroup: resolution.group,
+        })
+      } else {
+        ensuredToken = await ensureAccountApiToken(account, site, toastId)
+      }
+
       toast.success(t("ui:dialog.kiloCode.messages.tokenCreated"), {
         id: toastId,
       })
 
-      await loadTokensForSite(siteId)
+      await loadTokensForSite(siteId, { preferNewest: true })
 
       setSelectedTokenIdsBySite((prev) => ({
         ...prev,
@@ -646,6 +766,30 @@ export function KiloCodeExportDialog({
 
     toast.success(t("ui:dialog.kiloCode.messages.downloadedSettings"))
   }
+
+  const handleCloseSub2ApiCreateDialog = () => {
+    setSub2apiCreateContext(null)
+  }
+
+  const handleSub2ApiCreateSuccess = async () => {
+    if (!sub2apiCreateContext) return
+
+    const { siteId } = sub2apiCreateContext
+    setSub2apiCreateContext(null)
+    await loadTokensForSite(siteId, { preferNewest: true })
+  }
+
+  const sub2apiQuickCreateSite = sub2apiCreateContext
+    ? displayById.get(sub2apiCreateContext.siteId)
+    : undefined
+  const sub2apiQuickCreatePrefill =
+    sub2apiCreateContext && sub2apiCreateContext.allowedGroups.length > 0
+      ? {
+          modelId: "",
+          defaultName: DEFAULT_AUTO_PROVISION_TOKEN_NAME,
+          allowedGroups: sub2apiCreateContext.allowedGroups,
+        }
+      : undefined
 
   const renderSiteCard = (site: DisplaySiteData) => {
     const siteId = site.id
@@ -917,154 +1061,170 @@ export function KiloCodeExportDialog({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="lg"
-      header={
-        <div className="pr-8">
-          <div className="dark:text-dark-text-primary text-base font-semibold text-gray-900">
-            {t("ui:dialog.kiloCode.title")}
-          </div>
-          <p className="dark:text-dark-text-secondary text-sm text-gray-500">
-            {t("ui:dialog.kiloCode.description")}
-          </p>
-        </div>
-      }
-      footer={
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {selectedSiteIds.length > 0 && (
-            <div className="dark:text-dark-text-tertiary mr-auto text-xs text-gray-500">
-              {selectionSummary}
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="lg"
+        header={
+          <div className="pr-8">
+            <div className="dark:text-dark-text-primary text-base font-semibold text-gray-900">
+              {t("ui:dialog.kiloCode.title")}
             </div>
-          )}
-          <Button variant="ghost" type="button" onClick={onClose}>
-            {t("common:actions.cancel")}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleCopyApiConfigs}
-            disabled={!canExport}
-          >
-            {t("ui:dialog.kiloCode.actions.copyApiConfigs")}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleDownloadSettings}
-            disabled={!canExport}
-          >
-            {t("ui:dialog.kiloCode.actions.downloadSettings")}
-          </Button>
-        </div>
-      }
-    >
-      <Alert
-        variant="info"
-        title={t("ui:dialog.kiloCode.help.perSiteTitle")}
-        description={t("ui:dialog.kiloCode.help.perSiteDescription")}
-      />
-
-      <FormField
-        label={t("ui:dialog.kiloCode.labels.selectedSites")}
-        description={selectionSummary}
+            <p className="dark:text-dark-text-secondary text-sm text-gray-500">
+              {t("ui:dialog.kiloCode.description")}
+            </p>
+          </div>
+        }
+        footer={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {selectedSiteIds.length > 0 && (
+              <div className="dark:text-dark-text-tertiary mr-auto text-xs text-gray-500">
+                {selectionSummary}
+              </div>
+            )}
+            <Button variant="ghost" type="button" onClick={onClose}>
+              {t("common:actions.cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleCopyApiConfigs}
+              disabled={!canExport}
+            >
+              {t("ui:dialog.kiloCode.actions.copyApiConfigs")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDownloadSettings}
+              disabled={!canExport}
+            >
+              {t("ui:dialog.kiloCode.actions.downloadSettings")}
+            </Button>
+          </div>
+        }
       >
-        <CompactMultiSelect
-          options={siteOptions}
-          selected={selectedSiteIds}
-          onChange={setSelectedSiteIds}
-          placeholder={t("ui:dialog.kiloCode.placeholders.selectSites")}
-          clearable
-        />
-      </FormField>
-
-      {selectedSites.length > 0 && (
-        <div className="space-y-3">
-          {selectedSites.map((site) => renderSiteCard(site))}
-        </div>
-      )}
-
-      <FormField
-        label={t("ui:dialog.kiloCode.labels.currentApiConfigName")}
-        description={t("ui:dialog.kiloCode.descriptions.currentApiConfigName", {
-          filename,
-        })}
-      >
-        <Select
-          value={effectiveCurrentApiConfigName}
-          onValueChange={setCurrentApiConfigName}
-          disabled={!hasExportableProfiles}
-        >
-          <SelectTrigger className="min-w-[240px]">
-            <SelectValue
-              placeholder={t(
-                "ui:dialog.kiloCode.placeholders.currentApiConfigName",
-              )}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {profileNames.map((name) => (
-              <SelectItem key={name} value={name}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FormField>
-
-      {hasExportableProfiles && missingModelIdCount > 0 && (
-        <Alert
-          variant="warning"
-          title={t("ui:dialog.kiloCode.messages.modelIdRequiredTitle")}
-          description={t(
-            "ui:dialog.kiloCode.messages.modelIdRequiredDescription",
-            {
-              count: missingModelIdCount,
-            },
-          )}
-        />
-      )}
-
-      {!hasExportableProfiles && (
         <Alert
           variant="info"
-          title={t("ui:dialog.kiloCode.messages.nothingToExportTitle")}
-          description={t(
-            "ui:dialog.kiloCode.messages.nothingToExportDescription",
-          )}
+          title={t("ui:dialog.kiloCode.help.perSiteTitle")}
+          description={t("ui:dialog.kiloCode.help.perSiteDescription")}
         />
-      )}
 
-      <Alert
-        variant="warning"
-        title={t("ui:dialog.kiloCode.warning.title")}
-        description={t("ui:dialog.kiloCode.warning.description")}
-      />
+        <FormField
+          label={t("ui:dialog.kiloCode.labels.selectedSites")}
+          description={selectionSummary}
+        >
+          <CompactMultiSelect
+            options={siteOptions}
+            selected={selectedSiteIds}
+            onChange={setSelectedSiteIds}
+            placeholder={t("ui:dialog.kiloCode.placeholders.selectSites")}
+            clearable
+          />
+        </FormField>
 
-      <Alert
-        variant="info"
-        title={t("ui:dialog.kiloCode.help.afterExportTitle")}
-        description={t("ui:dialog.kiloCode.help.afterExportDescription")}
-      >
-        <div className="space-y-2 text-sm">
-          <div className="space-y-1">
-            <div className="font-medium">
-              {t("ui:dialog.kiloCode.help.manualTitle")}
+        {selectedSites.length > 0 && (
+          <div className="space-y-3">
+            {selectedSites.map((site) => renderSiteCard(site))}
+          </div>
+        )}
+
+        <FormField
+          label={t("ui:dialog.kiloCode.labels.currentApiConfigName")}
+          description={t(
+            "ui:dialog.kiloCode.descriptions.currentApiConfigName",
+            {
+              filename,
+            },
+          )}
+        >
+          <Select
+            value={effectiveCurrentApiConfigName}
+            onValueChange={setCurrentApiConfigName}
+            disabled={!hasExportableProfiles}
+          >
+            <SelectTrigger className="min-w-[240px]">
+              <SelectValue
+                placeholder={t(
+                  "ui:dialog.kiloCode.placeholders.currentApiConfigName",
+                )}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {profileNames.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+
+        {hasExportableProfiles && missingModelIdCount > 0 && (
+          <Alert
+            variant="warning"
+            title={t("ui:dialog.kiloCode.messages.modelIdRequiredTitle")}
+            description={t(
+              "ui:dialog.kiloCode.messages.modelIdRequiredDescription",
+              {
+                count: missingModelIdCount,
+              },
+            )}
+          />
+        )}
+
+        {!hasExportableProfiles && (
+          <Alert
+            variant="info"
+            title={t("ui:dialog.kiloCode.messages.nothingToExportTitle")}
+            description={t(
+              "ui:dialog.kiloCode.messages.nothingToExportDescription",
+            )}
+          />
+        )}
+
+        <Alert
+          variant="warning"
+          title={t("ui:dialog.kiloCode.warning.title")}
+          description={t("ui:dialog.kiloCode.warning.description")}
+        />
+
+        <Alert
+          variant="info"
+          title={t("ui:dialog.kiloCode.help.afterExportTitle")}
+          description={t("ui:dialog.kiloCode.help.afterExportDescription")}
+        >
+          <div className="space-y-2 text-sm">
+            <div className="space-y-1">
+              <div className="font-medium">
+                {t("ui:dialog.kiloCode.help.manualTitle")}
+              </div>
+              <div className="dark:text-dark-text-secondary text-gray-600">
+                {t("ui:dialog.kiloCode.help.manualDescription")}
+              </div>
             </div>
-            <div className="dark:text-dark-text-secondary text-gray-600">
-              {t("ui:dialog.kiloCode.help.manualDescription")}
+            <div className="space-y-1">
+              <div className="font-medium">
+                {t("ui:dialog.kiloCode.help.importTitle")}
+              </div>
+              <div className="dark:text-dark-text-secondary text-gray-600">
+                {t("ui:dialog.kiloCode.help.importDescription", { filename })}
+              </div>
             </div>
           </div>
-          <div className="space-y-1">
-            <div className="font-medium">
-              {t("ui:dialog.kiloCode.help.importTitle")}
-            </div>
-            <div className="dark:text-dark-text-secondary text-gray-600">
-              {t("ui:dialog.kiloCode.help.importDescription", { filename })}
-            </div>
-          </div>
-        </div>
-      </Alert>
-    </Modal>
+        </Alert>
+      </Modal>
+      {sub2apiQuickCreateSite && sub2apiQuickCreatePrefill ? (
+        <AddTokenDialog
+          isOpen={true}
+          onClose={handleCloseSub2ApiCreateDialog}
+          availableAccounts={[sub2apiQuickCreateSite]}
+          preSelectedAccountId={sub2apiQuickCreateSite.id}
+          createPrefill={sub2apiQuickCreatePrefill}
+          prefillNotice={t("messages:sub2api.createRequiresGroupSelection")}
+          onSuccess={handleSub2ApiCreateSuccess}
+        />
+      ) : null}
+    </>
   )
 }
