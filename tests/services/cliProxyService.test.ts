@@ -1,11 +1,14 @@
+import { http, HttpResponse } from "msw"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { CLI_PROXY_PROVIDER_TYPES } from "~/services/integrations/cliProxyProviderTypes"
 import {
   importToCliProxy,
+  verifyCliProxyManagementConnection,
   type ImportToCliProxyOptions,
 } from "~/services/integrations/cliProxyService"
 import { userPreferences } from "~/services/preferences/userPreferences"
+import { server } from "~~/tests/msw/server"
 import {
   buildApiToken,
   buildDisplaySiteData,
@@ -485,5 +488,59 @@ describe("cliProxyService.importToCliProxy", () => {
       "base-url": "https://example.com/genai",
       models: [],
     })
+  })
+
+  it("maps remote-management access errors to a specific hint", async () => {
+    mockCliProxyPreferences()
+
+    server.use(
+      http.get(
+        "http://localhost:8317/v0/management/openai-compatibility",
+        () =>
+          new HttpResponse("allow-remote-management must be enabled", {
+            status: 403,
+            headers: { "Content-Type": "text/plain" },
+          }),
+      ),
+    )
+
+    const result = await importToCliProxy(createBaseOptions())
+
+    expect(result.success).toBe(false)
+    expect(result.message).toContain(
+      "messages:cliproxy.managementApiRemoteAccessDisabled",
+    )
+  })
+
+  it("can verify the management API connection with explicit settings", async () => {
+    server.use(
+      http.get("http://localhost:8317/v0/management/openai-compatibility", () =>
+        HttpResponse.json([]),
+      ),
+    )
+
+    const result = await verifyCliProxyManagementConnection({
+      baseUrl: "http://localhost:8317/v0/management",
+      managementKey: "k",
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.message).toContain(
+      "messages:cliproxy.managementApiConnectionSuccess",
+    )
+  })
+
+  it("uses a generic fallback message for unknown connection-check failures", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("")) as any)
+
+    const result = await verifyCliProxyManagementConnection({
+      baseUrl: "http://localhost:8317/v0/management",
+      managementKey: "k",
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.message).toContain(
+      "messages:toast.error.operationFailedGeneric",
+    )
   })
 })
