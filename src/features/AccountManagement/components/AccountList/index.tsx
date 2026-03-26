@@ -625,9 +625,9 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     >
       <CardContent padding={"none"} spacing={"none"}>
         {/* Search + Filters */}
-        <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-primary border-b border-gray-200 bg-white px-3 py-2 sm:px-5 sm:py-3">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+        <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-primary border-b border-gray-200 bg-white px-2 py-2 sm:px-5 sm:py-3">
+          <div className="flex flex-col gap-1.5 sm:gap-2">
+            <div className="flex flex-col gap-1.5 sm:gap-2 lg:flex-row lg:items-center lg:gap-3">
               <div className="min-w-0 lg:w-72 lg:shrink-0 xl:w-80">
                 <AccountSearchInput
                   value={query}

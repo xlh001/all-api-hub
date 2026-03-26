@@ -69,16 +69,16 @@ export default function AccountFilterBar({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger
         size="sm"
-        className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary/70 h-10 w-full min-w-0 rounded-lg border border-gray-200 bg-white pr-2 pl-2.5 shadow-xs transition-colors hover:border-gray-300 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-blue-500/50 md:min-w-[140px] xl:min-w-[160px]"
+        className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary/70 h-9 w-full min-w-0 rounded-lg border border-gray-200 bg-white pr-1.5 pl-2 shadow-xs transition-colors hover:border-gray-300 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-blue-500/50 sm:h-10 sm:pr-2 sm:pl-2.5 md:min-w-[140px] xl:min-w-[160px] [&_[data-slot='select-value']]:min-w-0 [&_[data-slot='select-value']]:flex-1 [&_[data-slot='select-value']]:overflow-hidden [&_[data-slot='select-value']>div]:w-full [&_[data-slot='select-value']>div]:min-w-0"
         data-testid={testId}
       >
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="dark:text-dark-text-tertiary flex h-5 w-5 shrink-0 items-center justify-center text-gray-500">
-            <Icon className="h-3.5 w-3.5" />
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
+          <span className="dark:text-dark-text-tertiary flex h-4 w-4 shrink-0 items-center justify-center text-gray-500 sm:h-5 sm:w-5">
+            <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           </span>
           <SelectValue
             placeholder={placeholder}
-            className="min-w-0 text-[13px] font-medium text-gray-700 dark:text-gray-200"
+            className="min-w-0 flex-1 truncate text-xs font-medium text-gray-700 sm:text-[13px] dark:text-gray-200"
           />
         </div>
       </SelectTrigger>
@@ -89,8 +89,8 @@ export default function AccountFilterBar({
             value={option.value}
             data-count={option.count}
           >
-            <div className="flex min-w-0 items-center justify-between gap-3">
-              <span className="truncate">{option.label}</span>
+            <div className="flex w-full min-w-0 items-center gap-3">
+              <span className="min-w-0 flex-1 truncate">{option.label}</span>
               {typeof option.count === "number" && (
                 <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
                   {option.count}
@@ -104,7 +104,7 @@ export default function AccountFilterBar({
   )
 
   return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-1.5 sm:gap-2 lg:grid-cols-4">
       {renderSelect(
         siteTypeValue,
         t("filter.siteType.placeholder"),
