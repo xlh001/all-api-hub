@@ -98,29 +98,42 @@ export function UpdateLogDialog({
   )
 
   const footer = (
-    <div className="flex items-center justify-between gap-3">
+    <div
+      data-testid="update-log-dialog-footer"
+      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
       <Button
         data-testid="update-log-dialog-auto-open-toggle"
         variant="outline"
         disabled={isSavingAutoOpen}
         onClick={() => void handleSetAutoOpenEnabled(!autoOpenEnabled)}
         type="button"
+        className="h-auto min-h-9 w-full py-2 text-left whitespace-normal sm:w-auto sm:text-center sm:whitespace-nowrap"
       >
         {autoOpenEnabled
           ? t("ui:dialog.updateLog.disableAutoOpen")
           : t("ui:dialog.updateLog.enableAutoOpen")}
       </Button>
 
-      <div className="flex justify-end gap-3">
+      <div
+        data-testid="update-log-dialog-footer-actions"
+        className="flex flex-col gap-3 sm:flex-row sm:justify-end"
+      >
         <Button
           data-testid="update-log-dialog-close"
           variant="outline"
           onClick={onClose}
           type="button"
+          className="w-full sm:w-auto"
         >
           {t("common:actions.close")}
         </Button>
-        <Button onClick={() => void handleOpenFullChangelog()} type="button">
+        <Button
+          data-testid="update-log-dialog-open-full-changelog"
+          onClick={() => void handleOpenFullChangelog()}
+          type="button"
+          className="h-auto min-h-9 w-full py-2 text-center whitespace-normal sm:w-auto sm:whitespace-nowrap"
+        >
           {t("ui:dialog.updateLog.openFullChangelog")}
         </Button>
       </div>

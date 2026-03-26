@@ -53,4 +53,30 @@ describe("UpdateLogDialog", () => {
       )
     })
   })
+
+  it("uses a responsive footer layout so action buttons do not overflow", async () => {
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
+      buildUserPreferences({ openChangelogOnUpdate: true }),
+    )
+
+    render(<UpdateLogDialog isOpen onClose={() => {}} version="2.39.0" />)
+
+    expect(await screen.findByTestId("update-log-dialog-footer")).toHaveClass(
+      "flex-col",
+      "sm:flex-row",
+    )
+
+    expect(screen.getByTestId("update-log-dialog-footer-actions")).toHaveClass(
+      "flex-col",
+      "sm:flex-row",
+    )
+
+    expect(
+      screen.getByTestId("update-log-dialog-auto-open-toggle"),
+    ).toHaveClass("h-auto", "min-h-9", "w-full", "whitespace-normal")
+
+    expect(
+      screen.getByTestId("update-log-dialog-open-full-changelog"),
+    ).toHaveClass("h-auto", "min-h-9", "w-full", "whitespace-normal")
+  })
 })
