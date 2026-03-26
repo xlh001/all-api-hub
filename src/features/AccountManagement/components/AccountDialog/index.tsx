@@ -1,3 +1,4 @@
+import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
 import { Modal } from "~/components/ui/Dialog/Modal"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -81,6 +82,12 @@ export default function AccountDialog({
       <Modal
         isOpen={isOpen}
         onClose={handlers.handleClose}
+        floatingContent={
+          <ThemeAwareToaster
+            position="top-center"
+            containerStyle={{ zIndex: 75 }}
+          />
+        }
         header={<DialogHeader mode={mode} />}
         footer={
           <ActionButtons
