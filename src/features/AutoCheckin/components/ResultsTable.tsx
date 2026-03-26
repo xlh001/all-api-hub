@@ -5,6 +5,7 @@ import {
   ExclamationTriangleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline"
+import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 
 import AccountLinkButton from "~/components/AccountLinkButton"
@@ -45,6 +46,15 @@ export default function ResultsTable({
 }: ResultsTableProps) {
   const { t } = useTranslation("autoCheckin")
   const forceShowActions = Boolean(showDevActions)
+  const visibleResults = useMemo(
+    () =>
+      [...results].sort((a, b) => {
+        const aIsSkipped = a.status === CHECKIN_RESULT_STATUS.SKIPPED ? 1 : 0
+        const bIsSkipped = b.status === CHECKIN_RESULT_STATUS.SKIPPED ? 1 : 0
+        return aIsSkipped - bIsSkipped
+      }),
+    [results],
+  )
 
   const getResultMessage = (result: CheckinAccountResult): string => {
     if (result.rawMessage) return result.rawMessage
@@ -165,7 +175,7 @@ export default function ResultsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-            {results.map((result) => {
+            {visibleResults.map((result) => {
               const troubleshootingHintKey = getTroubleshootingHintKey(result)
 
               return (
