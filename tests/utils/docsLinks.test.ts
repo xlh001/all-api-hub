@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import { getChangelogAnchorId } from "~/utils/navigation/changelogAnchor"
 import {
+  getDocsAutoDetectUrl,
   getDocsChangelogUrl,
+  getDocsCommunityUrl,
+  getDocsGetStartedUrl,
+  getDocsHomepageUrl,
   getDocsPageUrl,
 } from "~/utils/navigation/docsLinks"
 import { getDocsLocalePath } from "~/utils/navigation/docsLocale"
@@ -18,6 +22,10 @@ describe("docsLinks", () => {
     const url = getDocsChangelogUrl("2.39.0")
     expect(url.startsWith(getHomepage())).toBe(true)
     expect(url).toContain("changelog.html#_2-39-0")
+  })
+
+  it("builds changelog url without an anchor when no version is provided", () => {
+    expect(getDocsChangelogUrl()).toBe(getDocsPageUrl("changelog.html"))
   })
 
   it("maps extension language to docs locale path", () => {
@@ -40,5 +48,18 @@ describe("docsLinks", () => {
       getDocsPageUrl("faq.html", "zh-CN"),
     )
     expect(getDocsPageUrl("faq.html", "fr-FR")).toContain("/en/faq.html")
+  })
+
+  it("exposes semantic docs entrypoint helpers for homepage and getting started", () => {
+    expect(getDocsHomepageUrl("en")).toBe(getHomepage("en"))
+    expect(getDocsGetStartedUrl("ja")).toContain("/ja/get-started")
+    expect(getDocsAutoDetectUrl("en")).toContain("/en/auto-detect")
+  })
+
+  it("builds a community url on the localized docs homepage", () => {
+    const url = getDocsCommunityUrl("ja")
+
+    expect(url).toContain("/ja/")
+    expect(url.endsWith("#community")).toBe(true)
   })
 })

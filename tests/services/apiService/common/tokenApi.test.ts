@@ -286,6 +286,24 @@ describe("apiService common token APIs", () => {
     )
   })
 
+  it("fetchTokenSecretKeyById rejects when the secret endpoint omits the key field", async () => {
+    mockedFetchApiData.mockResolvedValueOnce({})
+
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-missing-key-field",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+      },
+    }
+
+    await expect(fetchTokenSecretKeyById(request as any, 16)).rejects.toThrow(
+      "token_secret_key_missing",
+    )
+  })
+
   it("invalidateResolvedApiTokenKeyCache clears cached entries for the current scope", async () => {
     mockedFetchApiData
       .mockResolvedValueOnce({ key: "first-secret" })
@@ -353,6 +371,100 @@ describe("apiService common token APIs", () => {
     await expect(
       resolveApiTokenKey(request as any, token as any),
     ).resolves.toBe("sk-refetched-secret")
+    expect(mockedFetchApiData).toHaveBeenCalledTimes(2)
+  })
+
+  it("invalidateResolvedApiTokenKeyCache only clears entries inside the matching scope", async () => {
+    mockedFetchApiData
+      .mockResolvedValueOnce({ key: "scoped-secret" })
+      .mockResolvedValueOnce({ key: "other-secret" })
+      .mockResolvedValueOnce({ key: "refetched-scoped-secret" })
+
+    const scopedRequest = {
+      baseUrl: "https://example.com",
+      accountId: "account-scope-a",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token-a",
+      },
+    }
+    const otherRequest = {
+      baseUrl: "https://example.com",
+      accountId: "account-scope-b",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 2,
+        accessToken: "token-b",
+      },
+    }
+    const scopedToken = {
+      id: 17,
+      key: "sk-scope************one",
+    }
+    const otherToken = {
+      id: 18,
+      key: "sk-scope************two",
+    }
+
+    await expect(
+      resolveApiTokenKey(scopedRequest as any, scopedToken as any),
+    ).resolves.toBe("sk-scoped-secret")
+    await expect(
+      resolveApiTokenKey(otherRequest as any, otherToken as any),
+    ).resolves.toBe("sk-other-secret")
+
+    invalidateResolvedApiTokenKeyCache(scopedRequest as any)
+
+    await expect(
+      resolveApiTokenKey(scopedRequest as any, scopedToken as any),
+    ).resolves.toBe("sk-refetched-scoped-secret")
+    await expect(
+      resolveApiTokenKey(otherRequest as any, otherToken as any),
+    ).resolves.toBe("sk-other-secret")
+
+    expect(mockedFetchApiData).toHaveBeenCalledTimes(3)
+  })
+
+  it("syncResolvedApiTokenKeyCache evicts masked-key cache entries when inventory no longer includes the key", async () => {
+    mockedFetchApiData
+      .mockResolvedValueOnce({ key: "stable-secret" })
+      .mockResolvedValueOnce({ key: "refetched-secret" })
+
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-stable-sync",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+      },
+    }
+    const token = {
+      id: 19,
+      key: "sk-stable************mask",
+    }
+
+    await expect(
+      resolveApiTokenKey(request as any, token as any),
+    ).resolves.toBe("sk-stable-secret")
+
+    syncResolvedApiTokenKeyCache(
+      request as any,
+      [
+        {
+          id: 19,
+          key: undefined,
+        },
+      ] as any,
+    )
+
+    await expect(
+      resolveApiTokenKey(request as any, { id: 19, key: undefined } as any),
+    ).resolves.toBe("")
+
+    await expect(
+      resolveApiTokenKey(request as any, token as any),
+    ).resolves.toBe("sk-refetched-secret")
+
     expect(mockedFetchApiData).toHaveBeenCalledTimes(2)
   })
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { DONE_HUB, NEW_API, VELOERA } from "~/constants/siteType"
+import { DONE_HUB, NEW_API, OCTOPUS, VELOERA } from "~/constants/siteType"
 
 const mockGetPreferences = vi.fn()
 
@@ -90,6 +90,37 @@ vi.mock("~/services/managedSites/providers/octopus", () => ({
 }))
 
 describe("managedSiteService", () => {
+  it("reports invalid managed-site config when preferences are missing", async () => {
+    const { hasValidManagedSiteConfig } = await import(
+      "~/services/managedSites/managedSiteService"
+    )
+
+    expect(hasValidManagedSiteConfig(null)).toBe(false)
+  })
+
+  it("validates explicit managed-site configs by site type", async () => {
+    const { hasValidManagedSiteConfig } = await import(
+      "~/services/managedSites/managedSiteService"
+    )
+
+    const prefs = {
+      managedSiteType: NEW_API,
+      newApi: {
+        baseUrl: "https://new-api.example.com",
+        adminToken: "admin-token",
+        userId: "admin",
+      },
+      octopus: {
+        baseUrl: "https://octopus.example.com",
+        username: "octo-admin",
+        password: "secret",
+      },
+    }
+
+    expect(hasValidManagedSiteConfig(prefs as any)).toBe(true)
+    expect(hasValidManagedSiteConfig(prefs as any, OCTOPUS)).toBe(true)
+  })
+
   it("routes to New API service by default", async () => {
     const { getManagedSiteService } = await import(
       "~/services/managedSites/managedSiteService"
@@ -131,5 +162,18 @@ describe("managedSiteService", () => {
 
     const config = await service.getConfig()
     expect(config?.baseUrl).toBe("d")
+  })
+
+  it("routes to Octopus service when selected explicitly", async () => {
+    const { getManagedSiteServiceForType } = await import(
+      "~/services/managedSites/managedSiteService"
+    )
+
+    const service = getManagedSiteServiceForType(OCTOPUS)
+    expect(service.siteType).toBe(OCTOPUS)
+    expect(service.messagesKey).toBe("octopus")
+
+    const config = await service.getConfig()
+    expect(config?.baseUrl).toBe("o")
   })
 })

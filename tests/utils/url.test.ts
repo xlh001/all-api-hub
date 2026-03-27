@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  appendQueryParam,
   coerceBaseUrlToPathSuffix,
   joinUrl,
   navigateToAnchor,
+  normalizeBaseUrl,
   normalizeHttpUrl,
   parseTabFromUrl,
   sanitizeOriginUrl,
@@ -77,6 +79,32 @@ describe("joinUrl", () => {
   })
 })
 
+describe("appendQueryParam", () => {
+  it("returns the original url when the query key is blank", () => {
+    expect(appendQueryParam("https://example.com/path", "   ", "value")).toBe(
+      "https://example.com/path",
+    )
+  })
+
+  it("appends or overwrites params on absolute urls", () => {
+    expect(
+      appendQueryParam("https://example.com/path?foo=1", "token", "abc"),
+    ).toBe("https://example.com/path?foo=1&token=abc")
+    expect(
+      appendQueryParam("https://example.com/path?token=old", "token", "new"),
+    ).toBe("https://example.com/path?token=new")
+  })
+
+  it("falls back gracefully for non-absolute urls while preserving fragments", () => {
+    expect(appendQueryParam("/relative/path#frag", "token", "a b")).toBe(
+      "/relative/path?token=a%20b#frag",
+    )
+    expect(appendQueryParam("/relative/path?foo=1", "token", "x")).toBe(
+      "/relative/path?foo=1&token=x",
+    )
+  })
+})
+
 describe("normalizeHttpUrl", () => {
   it("returns null for empty input", () => {
     expect(normalizeHttpUrl(undefined)).toBeNull()
@@ -139,6 +167,10 @@ describe("sanitizeOriginUrl", () => {
     expect(sanitizeOriginUrl("ftp://example.com")).toBeUndefined()
     expect(sanitizeOriginUrl("file:///etc/hosts")).toBeUndefined()
   })
+
+  it("preserves explicit non-http schemes for parsing and still rejects them", () => {
+    expect(sanitizeOriginUrl("mailto:test@example.com")).toBeUndefined()
+  })
 })
 
 describe("stripTrailingOpenAIV1", () => {
@@ -155,6 +187,11 @@ describe("stripTrailingOpenAIV1", () => {
     expect(stripTrailingOpenAIV1("https://x.test/v1beta")).toBe(
       "https://x.test/v1beta",
     )
+  })
+
+  it("falls back safely when the input is not an absolute url", () => {
+    expect(stripTrailingOpenAIV1("example.com/v1/")).toBe("example.com")
+    expect(stripTrailingOpenAIV1("example.com/api")).toBe("example.com/api")
   })
 })
 
@@ -181,6 +218,19 @@ describe("coerceBaseUrlToPathSuffix", () => {
     expect(coerceBaseUrlToPathSuffix("https://x.test", "v1beta")).toBe(
       "https://x.test/v1beta",
     )
+  })
+
+  it("returns trimmed non-absolute inputs unchanged apart from trailing slashes", () => {
+    expect(coerceBaseUrlToPathSuffix("example.com///", "/v1")).toBe(
+      "example.com",
+    )
+  })
+})
+
+describe("normalizeBaseUrl", () => {
+  it("removes a single trailing slash", () => {
+    expect(normalizeBaseUrl("https://example.com/")).toBe("https://example.com")
+    expect(normalizeBaseUrl("https://example.com")).toBe("https://example.com")
   })
 })
 
@@ -351,6 +401,13 @@ describe("updateUrlWithTab", () => {
     const url = call[2] as string
     expect(url).toContain("#config")
     expect(url).toContain("?tab=settings")
+  })
+
+  it("should preserve a pre-prefixed hashPage value", () => {
+    updateUrlWithTab("settings", { hashPage: "#config" })
+    const call = vi.mocked(window.history.replaceState).mock.calls[0]
+    const url = call[2] as string
+    expect(url).toContain("#config")
   })
 
   it("should preserve existing search parameters", () => {

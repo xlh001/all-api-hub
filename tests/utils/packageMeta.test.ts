@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { DOCS_BASE_URL, REPO_URL } from "~/constants/about"
 import { getFeedbackDestinationUrls } from "~/utils/navigation/feedbackLinks"
 import {
   getDocsBaseUrl,
@@ -12,6 +13,7 @@ describe("packageMeta", () => {
   afterEach(() => {
     vi.doUnmock("~/utils/navigation/packageMeta")
     vi.doUnmock("~/utils/navigation/docsLinks")
+    vi.doUnmock("~~/package.json")
     vi.resetModules()
     vi.restoreAllMocks()
   })
@@ -34,6 +36,21 @@ describe("packageMeta", () => {
       )
       expect(getHomepage("zh_CN")).toBe(getHomepage("zh-CN"))
     })
+
+    it("falls back to the docs base url when package metadata omits homepage", async () => {
+      vi.resetModules()
+      vi.doMock("~~/package.json", () => ({
+        default: {},
+      }))
+
+      const {
+        getDocsBaseUrl: getFreshDocsBaseUrl,
+        getHomepage: getFreshHomepage,
+      } = await import("~/utils/navigation/packageMeta")
+
+      expect(getFreshDocsBaseUrl()).toBe(DOCS_BASE_URL)
+      expect(getFreshHomepage("en")).toContain("/en/")
+    })
   })
 
   describe("getRepository", () => {
@@ -41,6 +58,34 @@ describe("packageMeta", () => {
       const repo = getRepository()
       expect(repo).toBeTruthy()
       expect(typeof repo).toBe("string")
+    })
+
+    it("falls back to the default repository url when package metadata omits repository", async () => {
+      vi.resetModules()
+      vi.doMock("~~/package.json", () => ({
+        default: {},
+      }))
+
+      const { getRepository: getFreshRepository } = await import(
+        "~/utils/navigation/packageMeta"
+      )
+
+      expect(getFreshRepository()).toBe(REPO_URL)
+    })
+
+    it("falls back to the default repository url when repository metadata has no url", async () => {
+      vi.resetModules()
+      vi.doMock("~~/package.json", () => ({
+        default: {
+          repository: {},
+        },
+      }))
+
+      const { getRepository: getFreshRepository } = await import(
+        "~/utils/navigation/packageMeta"
+      )
+
+      expect(getFreshRepository()).toBe(REPO_URL)
     })
   })
 

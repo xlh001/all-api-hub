@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { searchAccounts } from "~/services/search/accountSearch"
+import {
+  normalizeSearchText,
+  normalizeSearchUrl,
+  searchAccounts,
+} from "~/services/search/accountSearch"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
 
 const mockAccounts: DisplaySiteData[] = [
@@ -54,6 +58,13 @@ const mockAccounts: DisplaySiteData[] = [
 ]
 
 describe("accountSearch", () => {
+  describe("normalization helpers", () => {
+    it("normalizes empty general and url search text to empty strings", () => {
+      expect(normalizeSearchText("")).toBe("")
+      expect(normalizeSearchUrl("")).toBe("")
+    })
+  })
+
   describe("searchAccounts", () => {
     it("returns empty for empty query", () => {
       expect(searchAccounts(mockAccounts, "")).toEqual([])
@@ -121,6 +132,22 @@ describe("accountSearch", () => {
       expect(results[0].matchedFields).toContain("customRedeemUrl")
     })
 
+    it("matches url path segments in base urls", () => {
+      const results = searchAccounts(
+        [
+          {
+            ...mockAccounts[0],
+            id: "path-account",
+            baseUrl: "https://example.com/provider/openai/v1",
+          },
+        ],
+        "openai",
+      )
+
+      expect(results).toHaveLength(1)
+      expect(results[0].matchedFields).toContain("baseUrl")
+    })
+
     it("handles multiple keywords", () => {
       const results = searchAccounts(mockAccounts, "OpenAI user1")
       expect(results).toHaveLength(1)
@@ -174,6 +201,70 @@ describe("accountSearch", () => {
     it("returns empty for no matches", () => {
       const results = searchAccounts(mockAccounts, "nonexistent")
       expect(results).toEqual([])
+    })
+
+    it("matches tags without exposing token-only fields", () => {
+      const results = searchAccounts(
+        [
+          {
+            ...mockAccounts[0],
+            id: "tagged",
+            tags: ["VIP access", "   "],
+          },
+        ],
+        "VIP",
+      )
+
+      expect(results).toHaveLength(1)
+      expect(results[0].matchedFields).toContain("tags")
+    })
+
+    it("can match by internal account id when no visible field matches", () => {
+      const results = searchAccounts(
+        [
+          {
+            ...mockAccounts[0],
+            id: "account-12345",
+            name: "Hidden",
+            username: "nobody",
+            token: "totally-secret",
+            checkIn: {
+              enableDetection: false,
+              siteStatus: { isCheckedInToday: false },
+              customCheckIn: { url: "", redeemUrl: "" },
+            },
+          },
+        ],
+        "12345",
+      )
+
+      expect(results).toHaveLength(1)
+      expect(results[0].matchedFields).toEqual([])
+      expect(results[0].score).toBe(1)
+    })
+
+    it("can match by token without surfacing token in matched fields", () => {
+      const results = searchAccounts(
+        [
+          {
+            ...mockAccounts[0],
+            id: "token-only",
+            name: "Hidden",
+            username: "nobody",
+            token: "secret-token-value",
+            checkIn: {
+              enableDetection: false,
+              siteStatus: { isCheckedInToday: false },
+              customCheckIn: { url: "", redeemUrl: "" },
+            },
+          },
+        ],
+        "token-value",
+      )
+
+      expect(results).toHaveLength(1)
+      expect(results[0].matchedFields).toEqual([])
+      expect(results[0].score).toBe(1)
     })
   })
 })
