@@ -15,6 +15,10 @@
  * - AddAccountDialog 和 EditAccountDialog 中的自动识别错误处理
  * - AutoDetectErrorAlert 组件中的错误展示和操作
  */
+import {
+  AUTO_DETECT_ERROR_CODES,
+  type AutoDetectErrorCode,
+} from "~/constants/autoDetect"
 import { getErrorMessage } from "~/utils/core/error"
 import { t } from "~/utils/i18n/core"
 import { getDocsAutoDetectUrl } from "~/utils/navigation/docsLinks"
@@ -23,6 +27,7 @@ import { getDocsAutoDetectUrl } from "~/utils/navigation/docsLinks"
 export enum AutoDetectErrorType {
   TIMEOUT = "timeout",
   UNAUTHORIZED = "unauthorized",
+  CURRENT_TAB_RELOAD_REQUIRED = "current_tab_reload_required",
   INVALID_RESPONSE = "invalid_response",
   NETWORK_ERROR = "network_error",
   UNKNOWN = "unknown",
@@ -43,6 +48,14 @@ export interface AutoDetectError {
 const ERROR_KEYWORDS: Record<string, string[]> = {
   TIMEOUT: ["超时", "timeout", "请求超时", "request timeout", "timed out"],
   UNAUTHORIZED: ["401", "未授权", "Unauthorized", "未登录", "login required"],
+  CURRENT_TAB_RELOAD_REQUIRED: [
+    "receiving end does not exist",
+    "could not establish connection",
+    "content script",
+    "刷新当前页面",
+    "refresh the current page",
+    "reload the current page",
+  ],
   INVALID_RESPONSE: [
     "格式",
     "解析",
@@ -67,6 +80,36 @@ const ERROR_KEYWORDS: Record<string, string[]> = {
 }
 
 /**
+ * Builds the structured UI error shown when the active tab likely needs a
+ * manual reload so the content script can attach.
+ */
+function createCurrentTabReloadRequiredError(): AutoDetectError {
+  return {
+    type: AutoDetectErrorType.CURRENT_TAB_RELOAD_REQUIRED,
+    message: t("messages:autodetect.currentTabNeedsReload"),
+    actionText: t("accountDialog:actions.reloadCurrentPage"),
+    helpDocUrl: getDocsAutoDetectUrl(),
+  }
+}
+
+/**
+ * Maps a machine-readable auto-detect error code to a structured UI error when
+ * the caller already knows the exact failure category.
+ * @param errorCode Optional service-layer auto-detect error code.
+ * @returns Structured UI error when the code is recognized; otherwise null.
+ */
+export function getAutoDetectErrorByCode(
+  errorCode?: AutoDetectErrorCode,
+): AutoDetectError | null {
+  switch (errorCode) {
+    case AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE:
+      return createCurrentTabReloadRequiredError()
+    default:
+      return null
+  }
+}
+
+/**
  * Convert a raw error into a structured {@link AutoDetectError}.
  *
  * Scans known keyword buckets to infer the most likely failure type and
@@ -79,6 +122,11 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
 
   const msg = errorMessage.toLowerCase()
   const docsUrl = getDocsAutoDetectUrl()
+  const currentTabReloadMessage = t("messages:autodetect.currentTabNeedsReload")
+
+  if (errorMessage === currentTabReloadMessage) {
+    return createCurrentTabReloadRequiredError()
+  }
 
   // Iterate known keyword buckets and return the first matching structured error
   for (const [type, keywords] of Object.entries(ERROR_KEYWORDS)) {
@@ -97,6 +145,8 @@ export function analyzeAutoDetectError(error: any): AutoDetectError {
             actionText: t("messages:autodetect.loginThisSite"),
             helpDocUrl: docsUrl,
           }
+        case "CURRENT_TAB_RELOAD_REQUIRED":
+          return createCurrentTabReloadRequiredError()
         case "INVALID_RESPONSE":
           return {
             type: AutoDetectErrorType.INVALID_RESPONSE,
@@ -173,4 +223,20 @@ export function getLoginUrl(siteUrl: string): string {
 export async function openLoginTab(siteUrl: string): Promise<void> {
   const loginUrl = getLoginUrl(siteUrl)
   await browser.tabs.create({ url: loginUrl, active: true })
+}
+
+/**
+ * Reload the currently active page so a freshly installed or updated content
+ * script can attach before the next auto-detect attempt.
+ */
+export async function reloadCurrentTab(): Promise<void> {
+  const tabs = await browser.tabs.query({
+    active: true,
+    currentWindow: true,
+  })
+
+  const activeTab = tabs[0]
+  if (typeof activeTab?.id === "number") {
+    await browser.tabs.reload(activeTab.id)
+  }
 }

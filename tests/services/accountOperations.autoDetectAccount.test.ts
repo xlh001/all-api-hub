@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { AUTO_DETECT_ERROR_CODES } from "~/constants/autoDetect"
 import { SUB2API } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { autoDetectAccount } from "~/services/accounts/accountOperations"
@@ -75,5 +76,26 @@ describe("accountOperations autoDetectAccount", () => {
     expect(result.data?.username).toBe("")
     expect(result.data?.accessToken).toBe("jwt-token")
     expect(result.data?.exchangeRate).toBe(UI_CONSTANTS.EXCHANGE_RATE.DEFAULT)
+  })
+
+  it("maps current-tab content-script failures to a reload hint", async () => {
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: false,
+      error: "some generic failure",
+      errorCode: AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE,
+    })
+
+    const result = await autoDetectAccount(
+      "https://example.com",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result.success).toBe(false)
+    expect(result.detailedError).toMatchObject({
+      type: "current_tab_reload_required",
+      message: "messages:autodetect.currentTabNeedsReload",
+      actionText: "accountDialog:actions.reloadCurrentPage",
+    })
   })
 })

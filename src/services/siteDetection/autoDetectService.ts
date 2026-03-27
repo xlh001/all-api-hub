@@ -7,11 +7,16 @@
  * 2. 检测站点类型
  * 3. 返回统一的结果格式
  */
+import {
+  AUTO_DETECT_ERROR_CODES,
+  type AutoDetectErrorCode,
+} from "~/constants/autoDetect"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { AuthTypeEnum, type Sub2ApiAuthConfig } from "~/types"
 import {
   getActiveOrAllTabs,
   getActiveTabs,
+  isMessageReceiverUnavailableError,
   sendRuntimeMessage,
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
@@ -36,6 +41,7 @@ interface AutoDetectResult {
     sub2apiAuth?: Sub2ApiAuthConfig
   }
   error?: string
+  errorCode?: AutoDetectErrorCode
 }
 
 interface UserDataResult {
@@ -44,6 +50,19 @@ interface UserDataResult {
   accessToken?: string
   sub2apiAuth?: Sub2ApiAuthConfig
   siteTypeHint?: string
+}
+
+interface CurrentTabUserDataResult {
+  userData: UserDataResult | null
+  contentScriptUnavailable: boolean
+}
+
+/**
+ * Identifies the generic "no user data found" outcome so we only replace it
+ * with the reload hint when more specific downstream errors are unavailable.
+ */
+function isGenericUserDataMissingError(error?: string): boolean {
+  return !error || error === t("messages:operations.detection.getUserIdFailed")
 }
 
 /**
@@ -186,21 +205,7 @@ async function getUserDataViaBackground(
 
     if (!response || !response.success || !response.data) {
       // Fallback: if content script/localStorage fetch fails, attempt API-based fetch
-      const userInfo = await getApiService(siteType).fetchUserInfo({
-        baseUrl: url,
-        auth: {
-          authType: AuthTypeEnum.Cookie,
-        },
-      })
-      if (userInfo) {
-        return {
-          userId: userInfo.id,
-          user: userInfo,
-          siteTypeHint: siteType,
-        }
-      } else {
-        return null
-      }
+      return await getUserDataViaAPI(url, siteType)
     }
 
     return {
@@ -244,53 +249,66 @@ async function autoDetectViaBackground(url: string): Promise<AutoDetectResult> {
 async function getUserDataFromCurrentTab(
   url: string,
   siteType: string,
-): Promise<UserDataResult | null> {
+): Promise<CurrentTabUserDataResult> {
+  let contentScriptUnavailable = false
+
   try {
     // 1. 获取当前活动标签页
     const tabs = await getActiveTabs()
 
     if (!tabs || tabs.length === 0 || !tabs[0]?.id) {
       logger.warn("无法获取当前标签页", { url })
-      return null
+      return { userData: null, contentScriptUnavailable }
     }
 
     const tabId = tabs[0].id
 
     // 2. 通过 content script 获取用户信息
-    const userResponse = await browser.tabs.sendMessage(tabId, {
-      action: RuntimeActionIds.ContentGetUserFromLocalStorage,
-      url: url,
-    })
-
-    if (!userResponse || !userResponse.success || !userResponse.data) {
-      // fallback
-      const userInfo = await getApiService(siteType).fetchUserInfo({
-        baseUrl: url,
-        auth: {
-          authType: AuthTypeEnum.Cookie,
-        },
+    try {
+      const userResponse = await browser.tabs.sendMessage(tabId, {
+        action: RuntimeActionIds.ContentGetUserFromLocalStorage,
+        url: url,
       })
-      if (userInfo) {
+
+      if (userResponse?.success && userResponse.data) {
         return {
-          userId: userInfo.id,
-          user: userInfo,
-          siteTypeHint: siteType,
+          userData: {
+            userId: userResponse.data.userId,
+            user: userResponse.data.user,
+            accessToken: userResponse.data.accessToken,
+            sub2apiAuth: userResponse.data.sub2apiAuth,
+            siteTypeHint: userResponse.data.siteTypeHint,
+          },
+          contentScriptUnavailable,
         }
+      }
+    } catch (error) {
+      contentScriptUnavailable = isMessageReceiverUnavailableError(error)
+
+      if (contentScriptUnavailable) {
+        logger.warn("当前标签页 content script 不可用，尝试 API 降级", {
+          url,
+          tabId,
+          error: getErrorMessage(error),
+        })
       } else {
-        return null
+        logger.error("从当前标签页获取用户数据失败", error)
       }
     }
 
-    return {
-      userId: userResponse.data.userId,
-      user: userResponse.data.user,
-      accessToken: userResponse.data.accessToken,
-      sub2apiAuth: userResponse.data.sub2apiAuth,
-      siteTypeHint: userResponse.data.siteTypeHint,
+    // fallback
+    const fallbackUserData = await getUserDataViaAPI(url, siteType)
+    if (fallbackUserData) {
+      return {
+        userData: fallbackUserData,
+        contentScriptUnavailable,
+      }
     }
+
+    return { userData: null, contentScriptUnavailable }
   } catch (error) {
     logger.error("从当前标签页获取用户数据失败", error)
-    return null
+    return { userData: null, contentScriptUnavailable }
   }
 }
 
@@ -309,10 +327,21 @@ async function autoDetectFromCurrentTab(
   const siteType = await getSiteType(url)
 
   // 从当前标签页获取用户数据
-  const userData = await getUserDataFromCurrentTab(url, siteType)
+  const { userData, contentScriptUnavailable } =
+    await getUserDataFromCurrentTab(url, siteType)
 
   // 组合用户数据和站点类型（公共逻辑）
-  return await combineUserDataAndSiteType(userData, url)
+  const result = await combineUserDataAndSiteType(userData, url)
+
+  if (!result.success && contentScriptUnavailable) {
+    return {
+      ...result,
+      errorCode: AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE,
+      error: t("messages:autodetect.currentTabNeedsReload"),
+    }
+  }
+
+  return result
 }
 
 /**
@@ -325,6 +354,8 @@ async function autoDetectFromCurrentTab(
  */
 export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
   const capabilities = detectPlatformCapabilities()
+  let shouldHintCurrentTabReload = false
+  let currentTabReloadHintResult: AutoDetectResult | null = null
 
   // 1. 尝试从当前标签页获取（最快，无需创建新窗口）
   if (capabilities.hasTabs) {
@@ -343,7 +374,18 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
             url,
             currentTabUrl: currentTab.url,
           })
-          return await autoDetectFromCurrentTab(url)
+          const currentTabResult = await autoDetectFromCurrentTab(url)
+          if (currentTabResult.success) {
+            return currentTabResult
+          }
+
+          if (
+            currentTabResult.errorCode ===
+            AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE
+          ) {
+            shouldHintCurrentTabReload = true
+            currentTabReloadHintResult = currentTabResult
+          }
         }
       }
     } catch (error) {
@@ -363,5 +405,22 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
   }
 
   // 3. Fallback: 使用直接方式（手机 或其他方式失败）
-  return await autoDetectDirect(url)
+  const directResult = await autoDetectDirect(url)
+
+  if (
+    shouldHintCurrentTabReload &&
+    !directResult.success &&
+    isGenericUserDataMissingError(directResult.error)
+  ) {
+    return (
+      currentTabReloadHintResult ?? {
+        success: false,
+        error: t("messages:autodetect.currentTabNeedsReload"),
+        errorCode:
+          AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE,
+      }
+    )
+  }
+
+  return directResult
 }
