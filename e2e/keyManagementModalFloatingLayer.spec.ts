@@ -1,150 +1,29 @@
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
-import {
-  createDefaultAccountStorageConfig,
-  normalizeAccountStorageConfigForWrite,
-  normalizeSiteAccount,
-} from "~/services/accounts/accountDefaults"
-import {
-  I18NEXT_LANGUAGE_STORAGE_KEY,
-  STORAGE_KEYS,
-} from "~/services/core/storageKeys"
-import {
-  AuthTypeEnum,
-  SiteHealthStatus,
-  type AccountStorageConfig,
-  type SiteAccount,
-} from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
+import {
+  createStoredAccount,
+  forceExtensionLanguage,
+  installExtensionPageGuards,
+  seedStoredAccounts,
+  stubLlmMetadataIndex,
+  stubNewApiSiteRoutes,
+} from "~~/e2e/utils/commonUserFlows"
 import {
   expectPermissionOnboardingHidden,
   getServiceWorker,
-  setPlasmoStorageValue,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
-/**
- * Build the minimal persisted account config needed to load Key Management.
- */
-function createKeyManagementStorageConfig(): AccountStorageConfig {
-  const now = Date.now()
-  const account: SiteAccount = normalizeSiteAccount({
-    id: "e2e-account-1",
-    site_name: "E2E Example",
-    site_url: "https://example.com",
-    health: { status: SiteHealthStatus.Healthy },
-    site_type: "new-api",
-    exchange_rate: 7,
-    account_info: {
-      id: 1,
-      access_token: "e2e-token",
-      username: "e2e-user",
-      quota: 1000,
-      today_prompt_tokens: 0,
-      today_completion_tokens: 0,
-      today_quota_consumption: 0,
-      today_requests_count: 0,
-      today_income: 0,
-    },
-    last_sync_time: now,
-    updated_at: now,
-    created_at: now,
-    notes: "",
-    tagIds: [],
-    disabled: false,
-    excludeFromTotalBalance: false,
-    authType: AuthTypeEnum.AccessToken,
-    checkIn: { enableDetection: false },
-  })
-
-  return normalizeAccountStorageConfigForWrite({
-    ...createDefaultAccountStorageConfig(now),
-    accounts: [account],
-  })
-}
-
 test.beforeEach(async ({ context, page }) => {
-  page.on("pageerror", (error) => {
-    throw error
-  })
-
-  page.on("console", (msg) => {
-    if (msg.type() === "error") {
-      throw new Error(msg.text())
-    }
-  })
-
-  await page.addInitScript(
-    ([languageStorageKey]) => {
-      window.localStorage.setItem(languageStorageKey, "zh-CN")
+  installExtensionPageGuards(page)
+  await forceExtensionLanguage(page, "zh-CN")
+  await stubLlmMetadataIndex(context)
+  await stubNewApiSiteRoutes(context, {
+    models: ["gpt-4", "gpt-3.5"],
+    groups: {
+      default: { desc: "默认分组", ratio: 1 },
+      vip: { desc: "VIP", ratio: 1.5 },
     },
-    [I18NEXT_LANGUAGE_STORAGE_KEY],
-  )
-
-  await context.route(
-    "https://llm-metadata.pages.dev/api/index.json",
-    (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ models: [] }),
-      }),
-  )
-
-  await context.route("https://example.com/api/**", async (route) => {
-    const request = route.request()
-    const url = new URL(request.url())
-    const method = request.method()
-
-    if (method === "GET" && url.pathname === "/api/token/") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          message: "ok",
-          data: [],
-        }),
-      })
-      return
-    }
-
-    if (method === "GET" && url.pathname === "/api/user/models") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          message: "ok",
-          data: ["gpt-4", "gpt-3.5"],
-        }),
-      })
-      return
-    }
-
-    if (method === "GET" && url.pathname === "/api/user/self/groups") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          message: "ok",
-          data: {
-            default: { desc: "默认分组", ratio: 1 },
-            vip: { desc: "VIP", ratio: 1.5 },
-          },
-        }),
-      })
-      return
-    }
-
-    await route.fulfill({
-      status: 404,
-      contentType: "application/json",
-      body: JSON.stringify({
-        success: false,
-        message: `Unhandled E2E route: ${method} ${url.pathname}`,
-      }),
-    })
   })
 })
 
@@ -154,11 +33,7 @@ test("modal-hosted group selector stays visible and clickable above the add-toke
   page,
 }) => {
   const serviceWorker = await getServiceWorker(context)
-  await setPlasmoStorageValue(
-    serviceWorker,
-    STORAGE_KEYS.ACCOUNTS,
-    createKeyManagementStorageConfig(),
-  )
+  await seedStoredAccounts(serviceWorker, [createStoredAccount()])
 
   await page.goto(
     `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#keys?accountId=e2e-account-1`,
