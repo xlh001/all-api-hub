@@ -227,7 +227,7 @@ export function PermissionOnboardingDialog({
       header={header}
       footer={footer}
     >
-      <div className="space-y-4">
+      <div className="space-y-4" data-testid="permission-onboarding-dialog">
         <Card padding="none" className="overflow-hidden">
           <CardHeader
             bordered

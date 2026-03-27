@@ -16,7 +16,7 @@ export async function assertBuiltExtensionExists(
     throw new Error(
       [
         `Missing built extension at '${extensionDir}'.`,
-        "Run 'pnpm build' to generate '.output/chrome-mv3/'.",
+        "Run 'pnpm build:e2e' to generate the default E2E extension output.",
       ].join(" "),
     )
   }

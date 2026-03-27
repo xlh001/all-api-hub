@@ -21,6 +21,10 @@ describe("background onInstalled changelog opening", () => {
   let getDocsChangelogUrlMock: ReturnType<typeof vi.fn>
   let getManifestMock: ReturnType<typeof vi.fn>
   let getPreferencesMock: ReturnType<typeof vi.fn>
+  let hasPermissionsMock: ReturnType<typeof vi.fn>
+  let hasNewOptionalPermissionsMock: ReturnType<typeof vi.fn>
+  let openOrFocusOptionsMenuItemMock: ReturnType<typeof vi.fn>
+  let optionalPermissions: string[]
   let setPendingVersionMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
@@ -39,6 +43,10 @@ describe("background onInstalled changelog opening", () => {
       actionClickBehavior: "popup",
       openChangelogOnUpdate: true,
     })
+    hasPermissionsMock = vi.fn().mockResolvedValue(true)
+    hasNewOptionalPermissionsMock = vi.fn().mockResolvedValue(false)
+    openOrFocusOptionsMenuItemMock = vi.fn()
+    optionalPermissions = []
     setPendingVersionMock = vi.fn().mockResolvedValue(undefined)
 
     vi.resetModules()
@@ -122,15 +130,15 @@ describe("background onInstalled changelog opening", () => {
       })),
     }))
     vi.doMock("~/services/permissions/permissionManager", () => ({
-      OPTIONAL_PERMISSIONS: [],
-      hasPermissions: vi.fn().mockResolvedValue(true),
+      OPTIONAL_PERMISSIONS: optionalPermissions,
+      hasPermissions: hasPermissionsMock,
     }))
     vi.doMock("~/services/permissions/optionalPermissionState", () => ({
-      hasNewOptionalPermissions: vi.fn().mockResolvedValue(false),
+      hasNewOptionalPermissions: hasNewOptionalPermissionsMock,
       setLastSeenOptionalPermissions: vi.fn().mockResolvedValue(undefined),
     }))
     vi.doMock("~/utils/navigation", () => ({
-      openOrFocusOptionsMenuItem: vi.fn(),
+      openOrFocusOptionsMenuItem: openOrFocusOptionsMenuItemMock,
     }))
   })
 
@@ -192,5 +200,32 @@ describe("background onInstalled changelog opening", () => {
     expect(setPendingVersionMock).toHaveBeenCalledWith("2.39.0")
     expect(getDocsChangelogUrlMock).not.toHaveBeenCalled()
     expect(createTabMock).not.toHaveBeenCalled()
+  })
+
+  it("does not auto-open permissions onboarding on install in test mode", async () => {
+    optionalPermissions = ["cookies"]
+
+    await import("~/entrypoints/background/index")
+
+    expect(onInstalledListener).toBeTypeOf("function")
+    await onInstalledListener?.({ reason: "install" })
+    await flushPromises()
+
+    expect(openOrFocusOptionsMenuItemMock).not.toHaveBeenCalled()
+  })
+
+  it("does not auto-open new-permissions onboarding on update in test mode", async () => {
+    optionalPermissions = ["cookies"]
+    hasNewOptionalPermissionsMock.mockResolvedValue(true)
+    hasPermissionsMock.mockResolvedValue(false)
+
+    await import("~/entrypoints/background/index")
+
+    expect(onInstalledListener).toBeTypeOf("function")
+    await onInstalledListener?.({ reason: "update" })
+    await flushPromises()
+
+    expect(setPendingVersionMock).toHaveBeenCalledWith("2.39.0")
+    expect(openOrFocusOptionsMenuItemMock).not.toHaveBeenCalled()
   })
 })

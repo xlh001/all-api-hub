@@ -40,6 +40,15 @@ import { initializeServices } from "./servicesInit"
  */
 const logger = createLogger("BackgroundEntrypoint")
 
+/**
+ * Test-mode builds should not auto-open install/update permission onboarding,
+ * otherwise E2E suites inherit unrelated tabs/dialogs from the background
+ * lifecycle before they can drive a target page.
+ */
+function shouldAutoOpenPermissionsOnboarding(): boolean {
+  return import.meta.env.MODE !== "test"
+}
+
 export default defineBackground(() => {
   logger.debug("Hello background", { id: browser.runtime.id })
 
@@ -90,12 +99,23 @@ export default defineBackground(() => {
           logger.info("Account migration completed", { migratedCount })
         }
 
-        if (details.reason === "install" && OPTIONAL_PERMISSIONS.length > 0) {
+        if (
+          details.reason === "install" &&
+          OPTIONAL_PERMISSIONS.length > 0 &&
+          shouldAutoOpenPermissionsOnboarding()
+        ) {
           logger.info("First install detected, opening permissions onboarding")
           openOrFocusOptionsMenuItem(MENU_ITEM_IDS.BASIC, {
             tab: "permissions",
             onboarding: "permissions",
           })
+        } else if (
+          details.reason === "install" &&
+          OPTIONAL_PERMISSIONS.length > 0
+        ) {
+          logger.info(
+            "First install detected in test build; skipping permissions onboarding auto-open",
+          )
         }
 
         if (details.reason === "update") {
@@ -115,7 +135,7 @@ export default defineBackground(() => {
               logger.info(
                 "New optional permissions detected but already granted; snapshot refreshed without prompting",
               )
-            } else {
+            } else if (shouldAutoOpenPermissionsOnboarding()) {
               logger.info(
                 "Update detected with new optional permissions; prompting user to re-confirm",
               )
@@ -124,6 +144,10 @@ export default defineBackground(() => {
                 onboarding: "permissions",
                 reason: "new-permissions",
               })
+            } else {
+              logger.info(
+                "Update detected with new optional permissions in test build; skipping onboarding auto-open",
+              )
             }
           } else {
             // Keep snapshot fresh on update when nothing new to prompt

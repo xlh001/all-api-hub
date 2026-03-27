@@ -18,7 +18,7 @@ export const test = base.extend<ExtensionFixtures>({
     void browserName
     const extensionDir = process.env.AAH_EXTENSION_DIR
       ? path.resolve(process.cwd(), process.env.AAH_EXTENSION_DIR)
-      : path.resolve(process.cwd(), ".output", "chrome-mv3")
+      : path.resolve(process.cwd(), ".output", "chrome-mv3-test")
     await assertBuiltExtensionExists(extensionDir)
     await run(extensionDir)
   },

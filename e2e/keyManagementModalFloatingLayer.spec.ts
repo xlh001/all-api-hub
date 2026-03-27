@@ -1,5 +1,3 @@
-import type { BrowserContext, Page, Worker } from "@playwright/test"
-
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import {
   createDefaultAccountStorageConfig,
@@ -17,63 +15,12 @@ import {
   type SiteAccount,
 } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
+import {
+  expectPermissionOnboardingHidden,
+  getServiceWorker,
+  setPlasmoStorageValue,
+} from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
-
-const OPTIONAL_PERMISSIONS_STATE_KEY = "optional_permissions_state"
-
-/**
- * Resolve the MV3 service worker, waiting briefly if the extension just started.
- */
-async function getServiceWorker(context: BrowserContext): Promise<Worker> {
-  return (
-    context.serviceWorkers()[0] ??
-    (await context.waitForEvent("serviceworker", { timeout: 15_000 }))
-  )
-}
-
-/**
- * Persist a Plasmo-backed local-storage value from inside the service worker.
- */
-async function setPlasmoStorageValue(
-  serviceWorker: Worker,
-  key: string,
-  value: unknown,
-) {
-  const serialized = JSON.stringify(value)
-  await serviceWorker.evaluate(
-    async ({ storageKey, storageValue }) => {
-      const chromeApi = (globalThis as any).chrome
-      await new Promise<void>((resolve, reject) => {
-        chromeApi.storage.local.set(
-          {
-            [storageKey]: storageValue,
-          },
-          () => {
-            const error = chromeApi.runtime?.lastError
-            if (error) {
-              reject(new Error(error.message))
-              return
-            }
-            resolve()
-          },
-        )
-      })
-    },
-    { storageKey: key, storageValue: serialized },
-  )
-}
-
-/**
- * Close every page in the context except the one the test actively drives.
- */
-async function closeOtherPages(context: BrowserContext, keepPage: Page) {
-  const pages = context.pages()
-  await Promise.all(
-    pages
-      .filter((existingPage) => existingPage !== keepPage)
-      .map((existingPage) => existingPage.close().catch(() => {})),
-  )
-}
 
 /**
  * Build the minimal persisted account config needed to load Key Management.
@@ -207,31 +154,17 @@ test("modal-hosted group selector stays visible and clickable above the add-toke
   page,
 }) => {
   const serviceWorker = await getServiceWorker(context)
-  await setPlasmoStorageValue(serviceWorker, OPTIONAL_PERMISSIONS_STATE_KEY, {
-    lastSeen: [
-      "clipboardRead",
-      "cookies",
-      "declarativeNetRequestWithHostAccess",
-      "webRequest",
-      "webRequestBlocking",
-    ],
-  })
   await setPlasmoStorageValue(
     serviceWorker,
     STORAGE_KEYS.ACCOUNTS,
     createKeyManagementStorageConfig(),
   )
-  await closeOtherPages(context, page)
 
   await page.goto(
     `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#keys?accountId=e2e-account-1`,
   )
   await waitForExtensionRoot(page)
-
-  const maybeLaterButton = page.getByRole("button", { name: "稍后再说" })
-  if (await maybeLaterButton.isVisible().catch(() => false)) {
-    await maybeLaterButton.click()
-  }
+  await expectPermissionOnboardingHidden(page)
 
   await expect(
     page.getByRole("button", { name: "添加 API 密钥" }),

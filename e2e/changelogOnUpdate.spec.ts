@@ -1,41 +1,16 @@
-import type { BrowserContext, Page, Worker } from "@playwright/test"
+import type { BrowserContext, Page } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { CURRENT_PREFERENCES_VERSION } from "~/services/preferences/migrations/preferencesMigration"
-import { getErrorMessage } from "~/utils/core/error"
-import { createLogger } from "~/utils/core/logger"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
-
-const logger = createLogger("e2e/changelogOnUpdate")
-
-/**
- * get the service worker, waiting for it if it's not active yet (e.g. right after extension reload)
- */
-async function getServiceWorker(context: BrowserContext): Promise<Worker> {
-  return (
-    context.serviceWorkers()[0] ??
-    (await context.waitForEvent("serviceworker", { timeout: 15_000 }))
-  )
-}
-
-/**
- * close all pages in the context except the one provided, to ensure a clean slate for testing
- */
-async function closeOtherPages(context: BrowserContext, keepPage: Page) {
-  const pages = context.pages()
-  await Promise.all(
-    pages
-      .filter((existingPage) => existingPage !== keepPage)
-      .map(async (existingPage) => {
-        try {
-          await existingPage.close()
-        } catch (err) {
-          logger.error("Failed to close existingPage", getErrorMessage(err))
-        }
-      }),
-  )
-}
+import {
+  closeOtherPages,
+  getPlasmoStorageRawValue,
+  getServiceWorker,
+  removePlasmoStorageKey,
+  setPlasmoStorageValue,
+} from "~~/e2e/utils/extensionState"
 
 const UPDATE_LOG_DIALOG_SELECTOR = '[data-testid="update-log-dialog"]'
 
@@ -84,79 +59,6 @@ async function waitForUpdateLogDialogPage(
   )
 }
 
-/**
- * remove a key from chrome.storage.local within the service worker context, to ensure clean state for testing
- */
-async function removeStorageKey(serviceWorker: Worker, key: string) {
-  await serviceWorker.evaluate(async (storageKey) => {
-    const chromeApi = (globalThis as any).chrome
-    await new Promise<void>((resolve, reject) => {
-      chromeApi.storage.local.remove(storageKey, () => {
-        const error = chromeApi.runtime?.lastError
-        if (error) {
-          reject(new Error(error.message))
-          return
-        }
-        resolve()
-      })
-    })
-  }, key)
-}
-
-/**
- * set a key-value pair in chrome.storage.local within the service worker context, serializing the value as JSON, to prepare state for testing
- */
-async function setPlasmoStorageValue(
-  serviceWorker: Worker,
-  key: string,
-  value: unknown,
-) {
-  const serialized = JSON.stringify(value)
-  await serviceWorker.evaluate(
-    async ({ storageKey, storageValue }) => {
-      const chromeApi = (globalThis as any).chrome
-      await new Promise<void>((resolve, reject) => {
-        chromeApi.storage.local.set(
-          {
-            [storageKey]: storageValue,
-          },
-          () => {
-            const error = chromeApi.runtime?.lastError
-            if (error) {
-              reject(new Error(error.message))
-              return
-            }
-            resolve()
-          },
-        )
-      })
-    },
-    { storageKey: key, storageValue: serialized },
-  )
-}
-
-/**
- * get a raw value from chrome.storage.local within the service worker context without deserializing it, to verify correct storage state during testing
- */
-async function getPlasmoStorageRawValue<T>(
-  serviceWorker: Worker,
-  key: string,
-): Promise<T> {
-  return await serviceWorker.evaluate(async (storageKey) => {
-    const chromeApi = (globalThis as any).chrome
-    return await new Promise<T>((resolve, reject) => {
-      chromeApi.storage.local.get(storageKey, (stored: Record<string, T>) => {
-        const error = chromeApi.runtime?.lastError
-        if (error) {
-          reject(new Error(error.message))
-          return
-        }
-        resolve(stored[storageKey])
-      })
-    })
-  }, key)
-}
-
 test.beforeEach(async ({ page, context }) => {
   page.on("pageerror", (error) => {
     throw error
@@ -193,12 +95,12 @@ test("shows update log inline once on first UI open after update", async ({
   })
 
   await closeOtherPages(context, page)
-  await removeStorageKey(serviceWorker, STORAGE_KEYS.USER_PREFERENCES)
+  await removePlasmoStorageKey(serviceWorker, STORAGE_KEYS.USER_PREFERENCES)
   await setPlasmoStorageValue(serviceWorker, STORAGE_KEYS.USER_PREFERENCES, {
     openChangelogOnUpdate: true,
     preferencesVersion: CURRENT_PREFERENCES_VERSION,
   })
-  await removeStorageKey(
+  await removePlasmoStorageKey(
     serviceWorker,
     STORAGE_KEYS.CHANGELOG_ON_UPDATE_PENDING_VERSION,
   )
@@ -305,8 +207,8 @@ test("shows update log inline in popup once on first UI open after update", asyn
   })
 
   await closeOtherPages(context, page)
-  await removeStorageKey(serviceWorker, STORAGE_KEYS.USER_PREFERENCES)
-  await removeStorageKey(
+  await removePlasmoStorageKey(serviceWorker, STORAGE_KEYS.USER_PREFERENCES)
+  await removePlasmoStorageKey(
     serviceWorker,
     STORAGE_KEYS.CHANGELOG_ON_UPDATE_PENDING_VERSION,
   )
@@ -367,7 +269,7 @@ test("does not show update log when disabled, but still consumes pending marker"
   })
 
   await closeOtherPages(context, page)
-  await removeStorageKey(
+  await removePlasmoStorageKey(
     serviceWorker,
     STORAGE_KEYS.CHANGELOG_ON_UPDATE_PENDING_VERSION,
   )

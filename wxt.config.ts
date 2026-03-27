@@ -4,10 +4,16 @@ import { defineConfig } from "wxt"
 
 import { reactDevToolsAuto } from "./plugins/react-devtools-auto"
 
+const requestedMode = readWxtCliMode()
+const isTestBuild = requestedMode === "test"
+
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   srcDir: "src",
   publicDir: "src/public",
+  outDirTemplate: isTestBuild
+    ? "{{browser}}-mv{{manifestVersion}}-test"
+    : "{{browser}}-mv{{manifestVersion}}{{modeSuffix}}",
   modules: ["@wxt-dev/auto-icons", "@wxt-dev/module-react"],
   manifest: (env) => {
     const projectPath = getProjectRootPath()
@@ -118,4 +124,17 @@ function buildDevManifestDescription(projectPath: string) {
   const maxPathLen = MANIFEST_DESCRIPTION_MAX_LEN - prefix.length
   const shortPath = shortenPathForManifestDescription(projectPath, maxPathLen)
   return `${prefix}${shortPath}`
+}
+
+/**
+ * Parse the explicit WXT CLI mode from process arguments when present.
+ */
+function readWxtCliMode() {
+  const modeFlagIndex = process.argv.findIndex(
+    (arg) => arg === "--mode" || arg === "-m",
+  )
+  if (modeFlagIndex < 0) return undefined
+
+  const modeValue = process.argv[modeFlagIndex + 1]
+  return modeValue?.trim() || undefined
 }
