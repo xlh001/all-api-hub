@@ -5,17 +5,21 @@ import { isExtensionPopup } from "~/utils/browser"
 import {
   createTab as createTabApi,
   createWindow,
+  focusTab as focusTabApi,
   getExtensionURL,
   hasWindowsAPI,
   openSidePanel as openSidePanelApi,
 } from "~/utils/browser/browserApi"
 import { joinUrl } from "~/utils/core/url"
 import {
+  navigateWithinOptionsPage,
+  openAutoCheckinPage,
   openCheckInAndRedeem,
   openCheckInPages,
   openKeysPage,
   openModelsPage,
   openMultiplePages,
+  openOrFocusOptionsPage,
   openSidePanelPage,
   openSidePanelWithFallback,
   openUsagePage,
@@ -23,7 +27,7 @@ import {
 
 vi.mock("~/utils/browser", () => ({
   isExtensionPopup: vi.fn().mockReturnValue(false),
-  OPTIONS_PAGE_URL: "chrome-extension://options.html",
+  OPTIONS_PAGE_URL: "https://extension.local/options.html",
 }))
 
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
@@ -62,6 +66,7 @@ vi.mock("~/utils/core/url", () => ({
 const mockedIsExtensionPopup = vi.mocked(isExtensionPopup)
 const mockedCreateTab = vi.mocked(createTabApi)
 const mockedCreateWindow = vi.mocked(createWindow)
+const mockedFocusTab = vi.mocked(focusTabApi)
 const mockedGetExtensionURL = vi.mocked(getExtensionURL)
 const mockedHasWindowsAPI = vi.mocked(hasWindowsAPI)
 const mockedOpenSidePanel = vi.mocked(openSidePanelApi)
@@ -73,6 +78,7 @@ describe("navigation utilities", () => {
     vi.clearAllMocks()
     mockedHasWindowsAPI.mockReturnValue(false)
     mockedIsExtensionPopup.mockReturnValue(false)
+    window.history.replaceState(null, "", "/")
   })
 
   it("openKeysPage should open keys page without accountId", async () => {
@@ -97,6 +103,21 @@ describe("navigation utilities", () => {
       `${baseUrl}?accountId=123#keys`,
       true,
     )
+  })
+
+  it("openKeysPage should close popup after dispatching navigation", async () => {
+    const closeSpy = vi.spyOn(window, "close").mockImplementation(() => {})
+    mockedIsExtensionPopup.mockReturnValue(true)
+
+    await openKeysPage()
+
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "ext://options.html#keys",
+      true,
+    )
+    expect(closeSpy).toHaveBeenCalledTimes(1)
+
+    closeSpy.mockRestore()
   })
 
   it("openUsagePage should open usage URL built from site router", async () => {
@@ -141,6 +162,91 @@ describe("navigation utilities", () => {
       `${baseUrl}?profileId=profile-7#models`,
       true,
     )
+  })
+
+  it("openModelsPage should close popup and preserve parameterized routing", async () => {
+    const closeSpy = vi.spyOn(window, "close").mockImplementation(() => {})
+    mockedIsExtensionPopup.mockReturnValue(true)
+
+    await openModelsPage({ profileId: "profile-7" })
+
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "ext://options.html?profileId=profile-7#models",
+      true,
+    )
+    expect(closeSpy).toHaveBeenCalledTimes(1)
+
+    closeSpy.mockRestore()
+  })
+
+  it("openAutoCheckinPage should omit undefined params and close popup", async () => {
+    const closeSpy = vi.spyOn(window, "close").mockImplementation(() => {})
+    const querySpy = vi.spyOn(browser.tabs, "query").mockResolvedValue([])
+    mockedIsExtensionPopup.mockReturnValue(true)
+
+    await openAutoCheckinPage({ runNow: "true", ignored: undefined })
+
+    expect(querySpy).toHaveBeenCalledWith({})
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html?runNow=true#autoCheckin",
+      true,
+    )
+    expect(closeSpy).toHaveBeenCalledTimes(1)
+
+    querySpy.mockRestore()
+    closeSpy.mockRestore()
+  })
+
+  it("openOrFocusOptionsPage should reuse an existing matching tab and append refresh markers", async () => {
+    const querySpy = vi.spyOn(browser.tabs, "query").mockResolvedValue([
+      {
+        id: 5,
+        url: "https://extension.local/options.html?runNow=true#autoCheckin",
+      } as browser.tabs.Tab,
+    ])
+    const updateSpy = vi
+      .spyOn(browser.tabs, "update")
+      .mockResolvedValue({ id: 5 } as browser.tabs.Tab)
+    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(123)
+
+    await openOrFocusOptionsPage("#autoCheckin", { runNow: "true" })
+
+    expect(updateSpy).toHaveBeenCalledWith(5, {
+      active: true,
+      url: "https://extension.local/options.html?runNow=true&refresh=true&t=123#autoCheckin",
+    })
+    expect(mockedOpenSidePanel).not.toHaveBeenCalled()
+    expect(mockedCreateTab).not.toHaveBeenCalled()
+    expect(mockedFocusTab).toHaveBeenCalledWith({
+      id: 5,
+      url: "https://extension.local/options.html?runNow=true#autoCheckin",
+    })
+
+    nowSpy.mockRestore()
+    updateSpy.mockRestore()
+    querySpy.mockRestore()
+  })
+
+  it("navigateWithinOptionsPage should dispatch hashchange without replacing history when the URL is unchanged", () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/options.html?runNow=true#autoCheckin",
+    )
+    const dispatchSpy = vi.spyOn(window, "dispatchEvent")
+    const replaceStateSpy = vi.spyOn(window.history, "replaceState")
+
+    navigateWithinOptionsPage("#autoCheckin", {
+      runNow: "true",
+      ignored: undefined,
+    })
+
+    expect(replaceStateSpy).not.toHaveBeenCalled()
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.any(Event))
+    expect(window.location.search).toBe("?runNow=true")
+
+    replaceStateSpy.mockRestore()
+    dispatchSpy.mockRestore()
   })
 
   it("openMultiplePages should execute all operations and not close popup when isExtensionPopup is false", async () => {
@@ -255,7 +361,7 @@ describe("navigation utilities", () => {
 
     await vi.waitFor(() => {
       expect(mockedCreateTab).toHaveBeenCalledWith(
-        "chrome-extension://options.html#basic",
+        "https://extension.local/options.html#basic",
         true,
       )
     })

@@ -47,11 +47,42 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
 })
 
 describe("useAccountDialog duplicate account warning", () => {
+  const defaultAccountInfo = buildSiteAccount().account_info
+
   beforeEach(async () => {
     server.resetHandlers()
     await accountStorage.clearAllData()
     await userPreferences.resetToDefaults()
   })
+
+  /**
+   * Render the account dialog hook with defaults tuned for duplicate-warning tests.
+   */
+  async function renderDuplicateWarningHook(
+    options: {
+      mode?: (typeof DIALOG_MODES)[keyof typeof DIALOG_MODES]
+      account?: Parameters<typeof useAccountDialog>[0]["account"]
+    } = {},
+  ) {
+    const onClose = vi.fn()
+    const onSuccess = vi.fn()
+
+    const hook = renderHook(() =>
+      useAccountDialog({
+        mode: options.mode ?? DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose,
+        onSuccess,
+        account: options.account ?? null,
+      }),
+    )
+
+    await waitFor(() => {
+      expect(hook.result.current.state).toBeTruthy()
+    })
+
+    return hook
+  }
 
   it("warns when entering manual add flow if duplicate site exists (default enabled)", async () => {
     server.use(
@@ -191,6 +222,254 @@ describe("useAccountDialog duplicate account warning", () => {
 
     const afterAccounts = await accountStorage.getAllAccounts()
     expect(afterAccounts).toHaveLength(2)
+  })
+
+  it("skips duplicate warning when the target URL is empty", async () => {
+    const { result } = await renderDuplicateWarningHook()
+
+    await act(async () => {
+      await result.current.handlers.handleShowManualForm()
+    })
+
+    expect(result.current.state.duplicateAccountWarning.isOpen).toBe(false)
+    expect(result.current.state.showManualForm).toBe(true)
+  })
+
+  it("skips duplicate warning in edit mode", async () => {
+    const existingAccount = buildSiteAccount({
+      id: "existing-edit-account",
+      site_name: "Existing",
+      site_url: "https://api.example.com",
+      account_info: {
+        ...defaultAccountInfo,
+        id: 9,
+        username: "existing-user",
+        access_token: "existing-token",
+      },
+    })
+
+    await accountStorage.addAccount(existingAccount)
+
+    const { result } = await renderDuplicateWarningHook({
+      mode: DIALOG_MODES.EDIT,
+      account: accountStorage.convertToDisplayData(existingAccount),
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleShowManualForm()
+    })
+
+    expect(result.current.state.duplicateAccountWarning.isOpen).toBe(false)
+  })
+
+  it("keeps the manual add flow blocked when duplicate warning is canceled", async () => {
+    await accountStorage.addAccount(
+      buildSiteAccount({
+        site_name: "Existing",
+        site_url: "https://api.example.com",
+      }),
+    )
+
+    const { result } = await renderDuplicateWarningHook()
+
+    await act(async () => {
+      result.current.handlers.handleUrlChange(
+        "https://API.EXAMPLE.com/path?q=1",
+      )
+    })
+
+    let manualAddPromise!: Promise<void>
+    act(() => {
+      manualAddPromise = result.current.handlers.handleShowManualForm()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.duplicateAccountWarning).toMatchObject({
+        isOpen: true,
+        siteUrl: "https://api.example.com",
+      })
+    })
+
+    await act(async () => {
+      result.current.handlers.handleDuplicateAccountWarningCancel()
+      await manualAddPromise
+    })
+
+    expect(result.current.state.duplicateAccountWarning.isOpen).toBe(false)
+    expect(result.current.state.showManualForm).toBe(false)
+  })
+
+  it("suppresses repeated duplicate prompts for the same normalized URL until the URL changes", async () => {
+    await accountStorage.addAccount(
+      buildSiteAccount({
+        site_name: "Existing",
+        site_url: "https://api.example.com/v1/",
+      }),
+    )
+
+    const { result } = await renderDuplicateWarningHook()
+
+    await act(async () => {
+      result.current.handlers.handleUrlChange(
+        "https://API.EXAMPLE.com/v1/users?x=1",
+      )
+    })
+
+    let firstManualAddPromise!: Promise<void>
+    act(() => {
+      firstManualAddPromise = result.current.handlers.handleShowManualForm()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.duplicateAccountWarning).toMatchObject({
+        isOpen: true,
+        siteUrl: "https://api.example.com",
+      })
+    })
+
+    await act(async () => {
+      result.current.handlers.handleDuplicateAccountWarningContinue()
+      await firstManualAddPromise
+    })
+
+    expect(result.current.state.showManualForm).toBe(true)
+
+    await act(async () => {
+      result.current.setters.setShowManualForm(false)
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleShowManualForm()
+    })
+
+    expect(result.current.state.duplicateAccountWarning.isOpen).toBe(false)
+    expect(result.current.state.showManualForm).toBe(true)
+
+    await act(async () => {
+      result.current.setters.setShowManualForm(false)
+      result.current.handlers.handleUrlChange("https://other.example.com")
+      result.current.handlers.handleUrlChange("https://api.example.com")
+    })
+
+    let secondManualAddPromise!: Promise<void>
+    act(() => {
+      secondManualAddPromise = result.current.handlers.handleShowManualForm()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.duplicateAccountWarning.isOpen).toBe(true)
+    })
+
+    await act(async () => {
+      result.current.handlers.handleDuplicateAccountWarningCancel()
+      await secondManualAddPromise
+    })
+  })
+
+  it("shows exact duplicate metadata only when the user id matches an existing account", async () => {
+    await accountStorage.addAccount(
+      buildSiteAccount({
+        site_name: "Existing A",
+        site_url: "https://api.example.com",
+        account_info: {
+          ...defaultAccountInfo,
+          id: 42,
+          username: "matching-user",
+          access_token: "matching-token",
+        },
+      }),
+    )
+    await accountStorage.addAccount(
+      buildSiteAccount({
+        site_name: "Existing B",
+        site_url: "https://api.example.com",
+        account_info: {
+          ...defaultAccountInfo,
+          id: 84,
+          username: "other-user",
+          access_token: "other-token",
+        },
+      }),
+    )
+
+    const { result } = await renderDuplicateWarningHook()
+
+    await act(async () => {
+      result.current.handlers.handleUrlChange("https://api.example.com")
+      result.current.setters.setUserId("42")
+    })
+
+    let manualAddPromise!: Promise<void>
+    act(() => {
+      manualAddPromise = result.current.handlers.handleShowManualForm()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.duplicateAccountWarning).toMatchObject({
+        isOpen: true,
+        existingAccountsCount: 2,
+        existingUserId: 42,
+        existingUsername: "matching-user",
+      })
+    })
+
+    await act(async () => {
+      result.current.handlers.handleDuplicateAccountWarningCancel()
+      await manualAddPromise
+    })
+  })
+
+  it("falls back to generic duplicate context when no exact user id match exists", async () => {
+    await accountStorage.addAccount(
+      buildSiteAccount({
+        site_name: "Existing A",
+        site_url: "https://api.example.com",
+        account_info: {
+          ...defaultAccountInfo,
+          id: 42,
+          username: "matching-user",
+          access_token: "matching-token",
+        },
+      }),
+    )
+    await accountStorage.addAccount(
+      buildSiteAccount({
+        site_name: "Existing B",
+        site_url: "https://api.example.com",
+        account_info: {
+          ...defaultAccountInfo,
+          id: 84,
+          username: "other-user",
+          access_token: "other-token",
+        },
+      }),
+    )
+
+    const { result } = await renderDuplicateWarningHook()
+
+    await act(async () => {
+      result.current.handlers.handleUrlChange("https://api.example.com")
+      result.current.setters.setUserId("999")
+    })
+
+    let manualAddPromise!: Promise<void>
+    act(() => {
+      manualAddPromise = result.current.handlers.handleShowManualForm()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.duplicateAccountWarning).toMatchObject({
+        isOpen: true,
+        existingAccountsCount: 2,
+        existingUserId: null,
+        existingUsername: null,
+      })
+    })
+
+    await act(async () => {
+      result.current.handlers.handleDuplicateAccountWarningCancel()
+      await manualAddPromise
+    })
   })
 
   it("opens the Sub2API key creation dialog after saving a Sub2API account", async () => {
