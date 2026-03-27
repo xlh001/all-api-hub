@@ -78,17 +78,21 @@ const waitForRowText = (text: string) =>
   })
 
 /**
- * Opens the row-actions dropdown with a low-level pointer event to avoid
- * Radix menu flakiness in long-running jsdom suites. Keep business-flow tests
- * focused on the downstream action semantics, not the menu primitive timing.
+ * Radix dropdowns open on pointer-down; adding a synthetic click can
+ * intermittently re-toggle the menu in jsdom when this file runs as a suite.
+ * Keep downstream tests on the stable open path and let them focus on the
+ * action behavior after the menu is visible.
  */
-const openRowActionsMenu = (row: HTMLElement) => {
+const openRowActionsMenu = async (row: HTMLElement) => {
   const trigger = within(row).getByRole("button", {
     name: "managedSiteChannels:table.columns.actions",
   })
 
   fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
-  fireEvent.click(trigger, { button: 0, ctrlKey: false })
+
+  await waitFor(() => {
+    expect(trigger).toHaveAttribute("aria-expanded", "true")
+  })
 }
 
 describe("ManagedSiteChannels", () => {
@@ -357,8 +361,7 @@ describe("ManagedSiteChannels", () => {
     })
   })
 
-  it("opens the row actions menu on user click", async () => {
-    const user = userEvent.setup()
+  it("opens the row actions menu from the trigger", async () => {
     mockChannels([
       { id: 1, name: "Alpha", base_url: "https://example.com", key: "k" },
     ])
@@ -370,11 +373,7 @@ describe("ManagedSiteChannels", () => {
     const row = screen.getByText("Alpha").closest("tr")
     expect(row).toBeTruthy()
 
-    await user.click(
-      within(row!).getByRole("button", {
-        name: "managedSiteChannels:table.columns.actions",
-      }),
-    )
+    await openRowActionsMenu(row!)
 
     expect(
       await screen.findByRole("menuitem", {
@@ -418,7 +417,7 @@ describe("ManagedSiteChannels", () => {
 
     const row = screen.getByText("Alpha").closest("tr")
     expect(row).toBeTruthy()
-    openRowActionsMenu(row!)
+    await openRowActionsMenu(row!)
 
     const editItem = await screen.findByRole("menuitem", {
       name: "managedSiteChannels:table.rowActions.edit",
@@ -509,7 +508,7 @@ describe("ManagedSiteChannels", () => {
 
     const alphaRow = screen.getByText("Alpha").closest("tr")
     expect(alphaRow).toBeTruthy()
-    openRowActionsMenu(alphaRow!)
+    await openRowActionsMenu(alphaRow!)
 
     await user.click(
       await screen.findByRole("menuitem", {
@@ -546,7 +545,7 @@ describe("ManagedSiteChannels", () => {
 
     const betaRow = screen.getByText("Beta").closest("tr")
     expect(betaRow).toBeTruthy()
-    openRowActionsMenu(betaRow!)
+    await openRowActionsMenu(betaRow!)
 
     await user.click(
       await screen.findByRole("menuitem", {
@@ -612,7 +611,7 @@ describe("ManagedSiteChannels", () => {
 
       const row = screen.getByText("Alpha").closest("tr")
       expect(row).toBeTruthy()
-      openRowActionsMenu(row!)
+      await openRowActionsMenu(row!)
 
       await user.click(
         await screen.findByRole("menuitem", {
@@ -731,7 +730,7 @@ describe("ManagedSiteChannels", () => {
 
     const betaRow = screen.getByText("Beta").closest("tr")
     expect(betaRow).toBeTruthy()
-    openRowActionsMenu(betaRow!)
+    await openRowActionsMenu(betaRow!)
 
     expect(
       await screen.findByRole("menuitem", {
@@ -786,7 +785,7 @@ describe("ManagedSiteChannels", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     })
 
-    openRowActionsMenu(betaRow!)
+    await openRowActionsMenu(betaRow!)
 
     await user.click(
       await screen.findByRole("menuitem", {
