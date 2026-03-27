@@ -15,7 +15,7 @@ on:
         required: false
         default: ""
       dry_run:
-        description: "Build artifacts only; skip Release upload and browser-store submission."
+        description: "Run all jobs in dry-run mode; upload workflow artifacts instead of mutating GitHub Releases or browser stores."
         required: false
         type: boolean
         default: true
@@ -144,7 +144,7 @@ jobs:
 
   release-artifacts:
     needs: build
-    if: ${{ needs.build.outputs.release_ref != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+    if: ${{ needs.build.outputs.release_ref != '' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -154,7 +154,17 @@ jobs:
           name: packaged-archives
           path: .output
 
+      - name: Upload release artifacts dry-run preview
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-artifacts-dry-run
+          path: .output/*.zip
+          include-hidden-files: true
+          if-no-files-found: error
+
       - name: Upload release artifacts
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
         run: |
           echo "Uploading .output/*.zip to release ${{ needs.build.outputs.release_ref }}"
           gh release upload "${{ needs.build.outputs.release_ref }}" .output/*.zip --clobber
@@ -164,7 +174,7 @@ jobs:
 
   browser-platform-publish:
     needs: build
-    if: ${{ needs.build.outputs.release_ref != '' && !github.event.repository.fork && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+    if: ${{ needs.build.outputs.release_ref != '' && !github.event.repository.fork }}
     runs-on: ubuntu-latest
 
     steps:
@@ -204,11 +214,20 @@ jobs:
           echo "Chrome review: $([ "$CHROME_SKIP_SUBMIT_REVIEW" = "true" ] && echo skipped || echo submitted)"
           echo "Edge review: $([ "$EDGE_SKIP_SUBMIT_REVIEW" = "true" ] && echo skipped || echo submitted)"
 
-          pnpm wxt submit \
-            --chrome-zip .output/*-chrome.zip \
-            --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip \
+          args=(
+            --chrome-zip .output/*-chrome.zip
+            --firefox-zip .output/*-firefox.zip
+            --firefox-sources-zip .output/*-sources.zip
             --edge-zip .output/*-chrome.zip
+          )
+
+          if [ "$WXT_SUBMIT_DRY_RUN" = "true" ]; then
+            args=(--dry-run "${args[@]}")
+          fi
+
+          pnpm wxt submit "${args[@]}"
         env:
+          WXT_SUBMIT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
           CHROME_SKIP_SUBMIT_REVIEW: ${{ github.event.inputs.review_chrome == 'false' }}
           EDGE_SKIP_SUBMIT_REVIEW: ${{ github.event.inputs.review_edge == 'false' }}
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
