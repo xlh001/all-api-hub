@@ -354,6 +354,88 @@ describe("navigation utilities", () => {
     expect(result).toEqual({ openedCount: 2, failedCount: 0 })
   })
 
+  it("openCheckInPages should fall back to a normal tab when grouped window creation returns no id", async () => {
+    mockedHasWindowsAPI.mockReturnValue(true)
+    mockedCreateWindow.mockResolvedValue({} as any)
+    mockedCreateTab.mockResolvedValueOnce({ id: 31 } as any)
+
+    const result = await openCheckInPages(
+      [
+        {
+          baseUrl: "https://example.com",
+          siteType: "one-api",
+        } as any,
+      ],
+      { openInNewWindow: true },
+    )
+
+    expect(mockedCreateWindow).toHaveBeenCalledWith({
+      url: "https://example.com/checkin",
+      focused: true,
+    })
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://example.com/checkin",
+      true,
+    )
+    expect(result).toEqual({ openedCount: 1, failedCount: 0 })
+  })
+
+  it("openCheckInPages should recreate the grouped window when tab reuse fails", async () => {
+    mockedHasWindowsAPI.mockReturnValue(true)
+    mockedCreateWindow
+      .mockResolvedValueOnce({ id: 88 } as any)
+      .mockResolvedValueOnce({ id: 99 } as any)
+    mockedCreateTab.mockRejectedValueOnce(new Error("window closed"))
+
+    const result = await openCheckInPages(
+      [
+        {
+          baseUrl: "https://example.com",
+          siteType: "one-api",
+        } as any,
+        {
+          baseUrl: "https://example.org",
+          siteType: "one-api",
+        } as any,
+      ],
+      { openInNewWindow: true },
+    )
+
+    expect(mockedCreateWindow).toHaveBeenNthCalledWith(1, {
+      url: "https://example.com/checkin",
+      focused: true,
+    })
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://example.org/checkin",
+      true,
+      { windowId: 88 },
+    )
+    expect(mockedCreateWindow).toHaveBeenNthCalledWith(2, {
+      url: "https://example.org/checkin",
+      focused: true,
+    })
+    expect(result).toEqual({ openedCount: 2, failedCount: 0 })
+  })
+
+  it("openCheckInPages should report failed urls when opening returns no tab", async () => {
+    mockedCreateTab
+      .mockResolvedValueOnce({ id: 41 } as any)
+      .mockResolvedValueOnce(undefined as any)
+
+    const result = await openCheckInPages([
+      {
+        baseUrl: "https://example.com",
+        siteType: "one-api",
+      } as any,
+      {
+        baseUrl: "https://example.org",
+        siteType: "one-api",
+      } as any,
+    ])
+
+    expect(result).toEqual({ openedCount: 1, failedCount: 1 })
+  })
+
   it("openSidePanelWithFallback should open settings when side panel opening fails", async () => {
     mockedOpenSidePanel.mockRejectedValueOnce(new Error("fail"))
 
@@ -385,5 +467,20 @@ describe("navigation utilities", () => {
     expect(closeSpy).toHaveBeenCalledTimes(1)
 
     closeSpy.mockRestore()
+  })
+
+  it("openOrFocusOptionsPage should open a new tab when querying existing tabs fails", async () => {
+    const querySpy = vi
+      .spyOn(browser.tabs, "query")
+      .mockRejectedValueOnce(new Error("query failed"))
+
+    await openOrFocusOptionsPage("#basic")
+
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html#basic",
+      true,
+    )
+
+    querySpy.mockRestore()
   })
 })

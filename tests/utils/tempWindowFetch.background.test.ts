@@ -70,6 +70,26 @@ describe("tempWindowFetch helpers (background context)", () => {
     })
   })
 
+  it("keeps the first tempWindowFetch response when the handler responds multiple times", async () => {
+    handleTempWindowFetchMock.mockImplementation((_request, sendResponse) => {
+      sendResponse({ success: true, data: "first" })
+      sendResponse({ success: true, data: "second" })
+    })
+
+    const response = await tempWindowFetch({
+      originUrl: "https://example.com",
+      fetchUrl: "https://example.com/api/test",
+      fetchOptions: { method: "GET" },
+    })
+
+    expect(sendRuntimeMessageMock).not.toHaveBeenCalled()
+    expect(handleTempWindowFetchMock).toHaveBeenCalledTimes(1)
+    expect(response).toEqual({
+      success: true,
+      data: "first",
+    })
+  })
+
   it("delegates tempWindowTurnstileFetch to the background handler", async () => {
     handleTempWindowTurnstileFetchMock.mockImplementation(
       (request, sendResponse) => {
@@ -102,6 +122,38 @@ describe("tempWindowFetch helpers (background context)", () => {
     expect(response).toEqual({
       success: true,
       data: "https://example.com/api/checkin",
+      turnstile: { status: "token_obtained", hasTurnstile: true },
+    })
+  })
+
+  it("keeps the first tempWindowTurnstileFetch response when the handler responds multiple times", async () => {
+    handleTempWindowTurnstileFetchMock.mockImplementation(
+      (_request, sendResponse) => {
+        sendResponse({
+          success: true,
+          data: "first",
+          turnstile: { status: "token_obtained", hasTurnstile: true },
+        })
+        sendResponse({
+          success: false,
+          error: "late error",
+          turnstile: { status: "error", hasTurnstile: false },
+        })
+      },
+    )
+
+    const response = await tempWindowTurnstileFetch({
+      originUrl: "https://example.com",
+      pageUrl: "https://example.com/checkin",
+      fetchUrl: "https://example.com/api/checkin",
+      fetchOptions: { method: "POST" },
+    })
+
+    expect(sendRuntimeMessageMock).not.toHaveBeenCalled()
+    expect(handleTempWindowTurnstileFetchMock).toHaveBeenCalledTimes(1)
+    expect(response).toEqual({
+      success: true,
+      data: "first",
       turnstile: { status: "token_obtained", hasTurnstile: true },
     })
   })
@@ -178,6 +230,25 @@ describe("tempWindowFetch helpers (background context)", () => {
     expect(response).toEqual({
       success: false,
       error: "Empty tempWindowGetRenderedTitle response",
+    })
+  })
+
+  it("returns an explicit error when tempWindowGetRenderedTitle receives a malformed response", async () => {
+    handleTempWindowGetRenderedTitleMock.mockImplementation(
+      (_request, sendResponse) => {
+        sendResponse({ success: true, title: 123 } as any)
+      },
+    )
+
+    const response = await tempWindowGetRenderedTitle({
+      originUrl: "https://example.com",
+    })
+
+    expect(sendRuntimeMessageMock).not.toHaveBeenCalled()
+    expect(handleTempWindowGetRenderedTitleMock).toHaveBeenCalledTimes(1)
+    expect(response).toEqual({
+      success: false,
+      error: "Invalid tempWindowGetRenderedTitle response",
     })
   })
 })

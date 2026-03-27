@@ -34,6 +34,10 @@ function makeSite(overrides: Partial<DisplaySiteData>): DisplaySiteData {
 }
 
 describe("tempWindowFallbackReminder", () => {
+  it("returns null for an empty site list", () => {
+    expect(getTempWindowFallbackIssue([])).toBeNull()
+  })
+
   it("returns null when there is no relevant health code", () => {
     const issue = getTempWindowFallbackIssue([
       makeSite({
@@ -81,5 +85,35 @@ describe("tempWindowFallbackReminder", () => {
 
     expect(issue).not.toBeNull()
     expect(issue?.settingsTab).toBe("permissions")
+  })
+
+  it("returns the first matching issue when multiple sites are blocked", () => {
+    const issue = getTempWindowFallbackIssue([
+      makeSite({
+        id: "acc-10",
+        name: "First blocked",
+        health: {
+          status: SiteHealthStatus.Warning,
+          reason: "disabled",
+          code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
+        },
+      }),
+      makeSite({
+        id: "acc-11",
+        name: "Second blocked",
+        health: {
+          status: SiteHealthStatus.Warning,
+          reason: "perm",
+          code: TEMP_WINDOW_HEALTH_STATUS_CODES.PERMISSION_REQUIRED,
+        },
+      }),
+    ])
+
+    expect(issue).toEqual({
+      code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
+      accountId: "acc-10",
+      accountName: "First blocked",
+      settingsTab: "refresh",
+    })
   })
 })

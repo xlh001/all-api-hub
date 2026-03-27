@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { initializeServices } from "~/entrypoints/background/servicesInit"
-
 type InitMock = ReturnType<typeof vi.fn>
 
 const {
@@ -9,6 +7,7 @@ const {
   webdavInitMock,
   modelSyncInitMock,
   autoCheckinInitMock,
+  dailyBalanceInitMock,
   modelMetadataInitMock,
   autoRefreshInitMock,
   redemptionAssistInitMock,
@@ -18,6 +17,7 @@ const {
   webdavInitMock: vi.fn(),
   modelSyncInitMock: vi.fn(),
   autoCheckinInitMock: vi.fn(),
+  dailyBalanceInitMock: vi.fn(),
   modelMetadataInitMock: vi.fn(),
   autoRefreshInitMock: vi.fn(),
   redemptionAssistInitMock: vi.fn(),
@@ -40,6 +40,10 @@ vi.mock("~/services/checkin/autoCheckin/scheduler", () => ({
   autoCheckinScheduler: { initialize: autoCheckinInitMock },
 }))
 
+vi.mock("~/services/history/dailyBalanceHistory/scheduler", () => ({
+  dailyBalanceHistoryScheduler: { initialize: dailyBalanceInitMock },
+}))
+
 vi.mock("~/services/models/modelMetadata", () => ({
   modelMetadataService: { initialize: modelMetadataInitMock },
 }))
@@ -58,15 +62,21 @@ vi.mock("~/utils/i18n/background", () => ({
 
 describe("initializeServices alarm bootstrap ordering", () => {
   beforeEach(() => {
+    vi.resetModules()
     vi.clearAllMocks()
   })
 
   it("starts alarm-based schedulers before awaiting i18n", async () => {
+    const { initializeServices } = await import(
+      "~/entrypoints/background/servicesInit"
+    )
+
     const alarmInitCalled = {
       usageHistory: false,
       webdav: false,
       modelSync: false,
       autoCheckin: false,
+      dailyBalance: false,
     }
 
     let i18nObservedAllAlarmInits = false
@@ -87,6 +97,9 @@ describe("initializeServices alarm bootstrap ordering", () => {
     const autoCheckinInit: InitMock = vi.fn(async () => {
       alarmInitCalled.autoCheckin = true
     })
+    const dailyBalanceInit: InitMock = vi.fn(async () => {
+      alarmInitCalled.dailyBalance = true
+    })
 
     const modelMetadataInit: InitMock = vi.fn(async () => {})
     const autoRefreshInit: InitMock = vi.fn(async () => {})
@@ -96,6 +109,7 @@ describe("initializeServices alarm bootstrap ordering", () => {
     webdavInitMock.mockImplementation(webdavInit)
     modelSyncInitMock.mockImplementation(modelSyncInit)
     autoCheckinInitMock.mockImplementation(autoCheckinInit)
+    dailyBalanceInitMock.mockImplementation(dailyBalanceInit)
     modelMetadataInitMock.mockImplementation(modelMetadataInit)
     autoRefreshInitMock.mockImplementation(autoRefreshInit)
     redemptionAssistInitMock.mockImplementation(redemptionAssistInit)
@@ -105,7 +119,8 @@ describe("initializeServices alarm bootstrap ordering", () => {
         alarmInitCalled.usageHistory &&
         alarmInitCalled.webdav &&
         alarmInitCalled.modelSync &&
-        alarmInitCalled.autoCheckin
+        alarmInitCalled.autoCheckin &&
+        alarmInitCalled.dailyBalance
       return i18nPromise
     })
 
@@ -115,6 +130,7 @@ describe("initializeServices alarm bootstrap ordering", () => {
     expect(webdavInit).toHaveBeenCalledTimes(1)
     expect(modelSyncInit).toHaveBeenCalledTimes(1)
     expect(autoCheckinInit).toHaveBeenCalledTimes(1)
+    expect(dailyBalanceInit).toHaveBeenCalledTimes(1)
     expect(i18nObservedAllAlarmInits).toBe(true)
 
     resolveI18n?.()
@@ -123,5 +139,85 @@ describe("initializeServices alarm bootstrap ordering", () => {
     expect(modelMetadataInit).toHaveBeenCalledTimes(1)
     expect(autoRefreshInit).toHaveBeenCalledTimes(1)
     expect(redemptionAssistInit).toHaveBeenCalledTimes(1)
+  })
+
+  it("deduplicates concurrent initialization and skips re-initialization after success", async () => {
+    const { initializeServices } = await import(
+      "~/entrypoints/background/servicesInit"
+    )
+
+    let resolveI18n: (() => void) | undefined
+    initBackgroundI18nMock.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveI18n = resolve
+        }),
+    )
+
+    usageInitMock.mockResolvedValue(undefined)
+    webdavInitMock.mockResolvedValue(undefined)
+    modelSyncInitMock.mockResolvedValue(undefined)
+    autoCheckinInitMock.mockResolvedValue(undefined)
+    dailyBalanceInitMock.mockResolvedValue(undefined)
+    modelMetadataInitMock.mockResolvedValue(undefined)
+    autoRefreshInitMock.mockResolvedValue(undefined)
+    redemptionAssistInitMock.mockResolvedValue(undefined)
+
+    const first = initializeServices()
+    const second = initializeServices()
+
+    expect(usageInitMock).toHaveBeenCalledTimes(1)
+    expect(webdavInitMock).toHaveBeenCalledTimes(1)
+    expect(modelSyncInitMock).toHaveBeenCalledTimes(1)
+    expect(autoCheckinInitMock).toHaveBeenCalledTimes(1)
+    expect(dailyBalanceInitMock).toHaveBeenCalledTimes(1)
+    expect(initBackgroundI18nMock).toHaveBeenCalledTimes(1)
+
+    resolveI18n?.()
+    await Promise.all([first, second])
+
+    expect(modelMetadataInitMock).toHaveBeenCalledTimes(1)
+    expect(autoRefreshInitMock).toHaveBeenCalledTimes(1)
+    expect(redemptionAssistInitMock).toHaveBeenCalledTimes(1)
+
+    await initializeServices()
+
+    expect(usageInitMock).toHaveBeenCalledTimes(1)
+    expect(webdavInitMock).toHaveBeenCalledTimes(1)
+    expect(modelSyncInitMock).toHaveBeenCalledTimes(1)
+    expect(autoCheckinInitMock).toHaveBeenCalledTimes(1)
+    expect(dailyBalanceInitMock).toHaveBeenCalledTimes(1)
+    expect(initBackgroundI18nMock).toHaveBeenCalledTimes(1)
+    expect(modelMetadataInitMock).toHaveBeenCalledTimes(1)
+    expect(autoRefreshInitMock).toHaveBeenCalledTimes(1)
+    expect(redemptionAssistInitMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("continues initializing non-alarm services when i18n and an alarm scheduler fail", async () => {
+    const { initializeServices } = await import(
+      "~/entrypoints/background/servicesInit"
+    )
+
+    initBackgroundI18nMock.mockRejectedValueOnce(new Error("i18n failed"))
+    usageInitMock.mockResolvedValue(undefined)
+    webdavInitMock.mockRejectedValueOnce(new Error("webdav failed"))
+    modelSyncInitMock.mockResolvedValue(undefined)
+    autoCheckinInitMock.mockResolvedValue(undefined)
+    dailyBalanceInitMock.mockResolvedValue(undefined)
+    modelMetadataInitMock.mockResolvedValue(undefined)
+    autoRefreshInitMock.mockResolvedValue(undefined)
+    redemptionAssistInitMock.mockResolvedValue(undefined)
+
+    await expect(initializeServices()).resolves.toBeUndefined()
+
+    expect(usageInitMock).toHaveBeenCalledTimes(1)
+    expect(webdavInitMock).toHaveBeenCalledTimes(1)
+    expect(modelSyncInitMock).toHaveBeenCalledTimes(1)
+    expect(autoCheckinInitMock).toHaveBeenCalledTimes(1)
+    expect(dailyBalanceInitMock).toHaveBeenCalledTimes(1)
+    expect(initBackgroundI18nMock).toHaveBeenCalledTimes(1)
+    expect(modelMetadataInitMock).toHaveBeenCalledTimes(1)
+    expect(autoRefreshInitMock).toHaveBeenCalledTimes(1)
+    expect(redemptionAssistInitMock).toHaveBeenCalledTimes(1)
   })
 })

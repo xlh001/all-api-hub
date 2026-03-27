@@ -64,4 +64,40 @@ describe("matchesTempWindowFallbackAllowlist", () => {
       ),
     ).toBe(false)
   })
+
+  it("does not merge default code fallbacks into a partial custom allowlist", () => {
+    const allowlist = {
+      statusCodes: [429],
+    }
+
+    expect(
+      matchesTempWindowFallbackAllowlist({ statusCode: 429 }, allowlist),
+    ).toBe(true)
+    expect(
+      matchesTempWindowFallbackAllowlist(
+        { code: API_ERROR_CODES.CONTENT_TYPE_MISMATCH },
+        allowlist,
+      ),
+    ).toBe(false)
+    expect(
+      matchesTempWindowFallbackAllowlist(
+        { code: API_ERROR_CODES.HTTP_403, statusCode: 403 },
+        allowlist,
+      ),
+    ).toBe(false)
+  })
+
+  it("treats an explicit empty allowlist as disabling fallback matches", () => {
+    const allowlist = {
+      statusCodes: [],
+      codes: [],
+    }
+
+    expect(
+      matchesTempWindowFallbackAllowlist(
+        { statusCode: 403, code: API_ERROR_CODES.HTTP_403 },
+        allowlist,
+      ),
+    ).toBe(false)
+  })
 })

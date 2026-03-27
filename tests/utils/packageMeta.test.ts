@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { getFeedbackDestinationUrls } from "~/utils/navigation/feedbackLinks"
 import {
@@ -9,6 +9,13 @@ import {
 } from "~/utils/navigation/packageMeta"
 
 describe("packageMeta", () => {
+  afterEach(() => {
+    vi.doUnmock("~/utils/navigation/packageMeta")
+    vi.doUnmock("~/utils/navigation/docsLinks")
+    vi.resetModules()
+    vi.restoreAllMocks()
+  })
+
   describe("getHomepage", () => {
     it("returns homepage from package.json", () => {
       const homepage = getHomepage()
@@ -53,6 +60,11 @@ describe("packageMeta", () => {
       const version = getPkgVersion("react")
       expect(version).not.toMatch(/^[~^><= ]/)
     })
+
+    it("returns version for existing dev dependency", () => {
+      const version = getPkgVersion("vitest")
+      expect(version).toBe("4.0.3")
+    })
   })
 
   describe("getFeedbackDestinationUrls", () => {
@@ -81,6 +93,29 @@ describe("packageMeta", () => {
       expect(getFeedbackDestinationUrls("zh-CN").community).toBe(
         "https://all-api-hub.qixing1217.top/#community",
       )
+    })
+
+    it("normalizes git+ repository urls before building destinations", async () => {
+      vi.resetModules()
+      vi.doMock("~/utils/navigation/packageMeta", () => ({
+        getRepository: () => "git+https://github.com/example/project.git",
+      }))
+      vi.doMock("~/utils/navigation/docsLinks", () => ({
+        getDocsCommunityUrl: () => "https://docs.example.test/#community",
+      }))
+
+      const { getFeedbackDestinationUrls: getFreshFeedbackDestinationUrls } =
+        await import("~/utils/navigation/feedbackLinks")
+
+      expect(getFreshFeedbackDestinationUrls()).toEqual({
+        repository: "https://github.com/example/project",
+        bugReport:
+          "https://github.com/example/project/issues/new?template=bug_report.yml",
+        featureRequest:
+          "https://github.com/example/project/issues/new?template=feature_request.yml",
+        discussions: "https://github.com/example/project/discussions",
+        community: "https://docs.example.test/#community",
+      })
     })
   })
 })

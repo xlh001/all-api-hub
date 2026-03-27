@@ -11,6 +11,8 @@ describe("tempWindowPool window fallback", () => {
   let removeTabOrWindowMock: ReturnType<typeof vi.fn>
   let hasWindowsApiMock: ReturnType<typeof vi.fn>
   let isAllowedIncognitoAccessMock: ReturnType<typeof vi.fn>
+  let tabsGetMock: ReturnType<typeof vi.fn>
+  let tabsQueryMock: ReturnType<typeof vi.fn>
   let tempContextMode: "window" | "composite" | "tab"
 
   beforeEach(() => {
@@ -19,6 +21,8 @@ describe("tempWindowPool window fallback", () => {
     removeTabOrWindowMock = vi.fn().mockResolvedValue(undefined)
     hasWindowsApiMock = vi.fn(() => true)
     isAllowedIncognitoAccessMock = vi.fn().mockResolvedValue(true)
+    tabsGetMock = vi.fn().mockResolvedValue({ status: "complete" })
+    tabsQueryMock = vi.fn().mockResolvedValue([])
     tempContextMode = "window"
 
     vi.useFakeTimers()
@@ -28,8 +32,8 @@ describe("tempWindowPool window fallback", () => {
         getURL: vi.fn((path: string) => `chrome-extension://test/${path}`),
       },
       tabs: {
-        get: vi.fn().mockResolvedValue({ status: "complete" }),
-        query: vi.fn().mockResolvedValue([]),
+        get: tabsGetMock,
+        query: tabsQueryMock,
         update: vi.fn().mockResolvedValue(undefined),
         sendMessage: vi.fn(
           async (_tabId: number, message: { action: string }) => {
@@ -192,6 +196,45 @@ describe("tempWindowPool window fallback", () => {
     expect(removeTabOrWindowMock).toHaveBeenCalledWith(202)
   })
 
+  it("cleans up a half-created composite window before rolling back to a plain tab", async () => {
+    tempContextMode = "composite"
+    createWindowMock.mockResolvedValueOnce({ id: 303 })
+    tabsQueryMock.mockResolvedValueOnce([])
+    createTabMock.mockResolvedValueOnce({ id: 304 })
+
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/composite-missing-tab",
+        fetchOptions: { method: "GET" },
+        requestId: "req-composite-missing-tab",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: true,
+        message: "",
+        data: "ok",
+      },
+    })
+    expect(removeTabOrWindowMock).toHaveBeenNthCalledWith(1, 303)
+    expect(createTabMock).toHaveBeenCalledWith("https://example.com", false)
+
+    await vi.advanceTimersByTimeAsync(2500)
+    expect(removeTabOrWindowMock).toHaveBeenNthCalledWith(2, 304)
+  })
+
   it("preserves a structured unsupported result for incognito temp contexts", async () => {
     tempContextMode = "window"
     createWindowMock.mockRejectedValueOnce(
@@ -223,6 +266,75 @@ describe("tempWindowPool window fallback", () => {
       success: false,
       error: "messages:background.windowCreationUnavailable",
       code: API_ERROR_CODES.TEMP_WINDOW_WINDOW_CREATION_UNAVAILABLE,
+      turnstile: {
+        status: "error",
+        hasTurnstile: false,
+      },
+    })
+  })
+
+  it("preserves a windows-api-unavailable error for incognito temp contexts", async () => {
+    tempContextMode = "window"
+    hasWindowsApiMock.mockReturnValue(false)
+    createWindowMock.mockResolvedValueOnce(undefined)
+
+    const { handleTempWindowTurnstileFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    await handleTempWindowTurnstileFetch(
+      {
+        originUrl: "https://example.com",
+        pageUrl: "https://example.com/checkin",
+        fetchUrl: "https://example.com/api/checkin",
+        fetchOptions: { method: "POST" },
+        useIncognito: true,
+        requestId: "req-incognito-no-windows-api",
+      },
+      sendResponse,
+    )
+
+    expect(createTabMock).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "messages:background.windowCreationUnavailable",
+      code: API_ERROR_CODES.TEMP_WINDOW_WINDOWS_API_UNAVAILABLE,
+      turnstile: {
+        status: "error",
+        hasTurnstile: false,
+      },
+    })
+  })
+
+  it("preserves a missing-handle error for incognito popup temp contexts", async () => {
+    tempContextMode = "window"
+    createWindowMock.mockResolvedValueOnce({ id: 404 })
+    tabsQueryMock.mockResolvedValueOnce([])
+
+    const { handleTempWindowTurnstileFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    await handleTempWindowTurnstileFetch(
+      {
+        originUrl: "https://example.com",
+        pageUrl: "https://example.com/checkin",
+        fetchUrl: "https://example.com/api/checkin",
+        fetchOptions: { method: "POST" },
+        useIncognito: true,
+        requestId: "req-incognito-missing-tab",
+      },
+      sendResponse,
+    )
+
+    expect(createTabMock).not.toHaveBeenCalled()
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(404)
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "messages:background.windowCreationUnavailable",
+      code: API_ERROR_CODES.TEMP_WINDOW_WINDOW_HANDLE_UNAVAILABLE,
       turnstile: {
         status: "error",
         hasTurnstile: false,

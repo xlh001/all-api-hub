@@ -2,11 +2,20 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { UpdateLogDialog } from "~/components/dialogs/UpdateLogDialog"
 import { userPreferences } from "~/services/preferences/userPreferences"
+import * as browserApi from "~/utils/browser/browserApi"
+import * as docsLinks from "~/utils/navigation/docsLinks"
 import { buildUserPreferences } from "~~/tests/test-utils/factories"
-import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "~~/tests/test-utils/render"
 
 describe("UpdateLogDialog", () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -54,6 +63,56 @@ describe("UpdateLogDialog", () => {
     })
   })
 
+  it("keeps the current auto-open label when saving the toggle fails", async () => {
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
+      buildUserPreferences({ openChangelogOnUpdate: true }),
+    )
+
+    const updateSpy = vi
+      .spyOn(userPreferences, "updateOpenChangelogOnUpdate")
+      .mockResolvedValue(false)
+
+    render(<UpdateLogDialog isOpen onClose={() => {}} version="2.39.0" />)
+
+    const toggleButton = await screen.findByTestId(
+      "update-log-dialog-auto-open-toggle",
+    )
+
+    fireEvent.click(toggleButton)
+
+    await waitFor(() => {
+      expect(updateSpy).toHaveBeenCalledWith(false)
+    })
+
+    expect(toggleButton).toHaveTextContent(
+      "ui:dialog.updateLog.disableAutoOpen",
+    )
+  })
+
+  it("opens the full changelog in a new active tab", async () => {
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
+      buildUserPreferences({ openChangelogOnUpdate: true }),
+    )
+
+    const createTabSpy = vi
+      .spyOn(browserApi, "createTab")
+      .mockResolvedValue(undefined as any)
+    const getDocsChangelogUrlSpy = vi.spyOn(docsLinks, "getDocsChangelogUrl")
+
+    render(<UpdateLogDialog isOpen onClose={() => {}} version="2.39.0" />)
+
+    fireEvent.click(
+      await screen.findByTestId("update-log-dialog-open-full-changelog"),
+    )
+
+    await waitFor(() => {
+      expect(createTabSpy).toHaveBeenCalledWith(
+        getDocsChangelogUrlSpy.mock.results.at(-1)?.value,
+        true,
+      )
+    })
+  })
+
   it("uses a responsive footer layout so action buttons do not overflow", async () => {
     vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
       buildUserPreferences({ openChangelogOnUpdate: true }),
@@ -78,5 +137,31 @@ describe("UpdateLogDialog", () => {
     expect(
       screen.getByTestId("update-log-dialog-open-full-changelog"),
     ).toHaveClass("h-auto", "min-h-9", "w-full", "whitespace-normal")
+  })
+
+  it("shows the fallback message when the iframe does not finish loading in time", async () => {
+    vi.useFakeTimers()
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
+      buildUserPreferences({ openChangelogOnUpdate: true }),
+    )
+
+    render(<UpdateLogDialog isOpen onClose={() => {}} version="2.39.0" />)
+
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(screen.getByText("ui:dialog.updateLog.loading")).toBeVisible()
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000)
+    })
+
+    expect(
+      screen.getByText("ui:dialog.updateLog.missingSection", {
+        exact: false,
+      }),
+    ).toBeVisible()
   })
 })
