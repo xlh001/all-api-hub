@@ -78,17 +78,26 @@ const waitForRowText = (text: string) =>
   })
 
 /**
- * Radix dropdowns open on pointer-down; adding a synthetic click can
- * intermittently re-toggle the menu in jsdom when this file runs as a suite.
- * Keep downstream tests on the stable open path and let them focus on the
- * action behavior after the menu is visible.
+ * Radix dropdowns normally open on pointer-down. In the full-suite jsdom run
+ * the first pointer event occasionally fails to flip the trigger state, so we
+ * keep pointer-down as the primary path and only fall back to a click when the
+ * menu did not open.
  */
 const openRowActionsMenu = async (row: HTMLElement) => {
+  const user = userEvent.setup()
   const trigger = within(row).getByRole("button", {
     name: "managedSiteChannels:table.columns.actions",
   })
 
   fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
+
+  if (trigger.getAttribute("aria-expanded") !== "true") {
+    await user.click(trigger)
+  }
+
+  if (trigger.getAttribute("aria-expanded") !== "true") {
+    fireEvent.keyDown(trigger, { key: "Enter" })
+  }
 
   await waitFor(() => {
     expect(trigger).toHaveAttribute("aria-expanded", "true")
