@@ -134,7 +134,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload packaged archives
-        if: ${{ steps.get_ref.outputs.ref != '' && github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+        if: ${{ steps.get_ref.outputs.ref != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: packaged-archives
@@ -142,19 +142,63 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
 
-      # 上传 Release Artifact（仅当有 ref 时）
-      - name: Upload Release Artifact
-        if: ${{ steps.get_ref.outputs.ref != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
-        continue-on-error: true
-        run: |
-          echo "Uploading source/.output/*.zip to release ${{ steps.get_ref.outputs.ref }}"
-          gh release upload "${{ steps.get_ref.outputs.ref }}" source/.output/*.zip --clobber
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release-artifacts:
+    needs: build
+    if: ${{ needs.build.outputs.release_ref != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+    runs-on: ubuntu-latest
 
-      # 提交到浏览器商店
-      - name: Browser Platform Publish
-        if: ${{ steps.get_ref.outputs.ref != '' && !github.event.repository.fork && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+    steps:
+      - name: Download packaged archives
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-archives
+          path: .output
+
+      - name: Upload release artifacts
+        run: |
+          echo "Uploading .output/*.zip to release ${{ needs.build.outputs.release_ref }}"
+          gh release upload "${{ needs.build.outputs.release_ref }}" .output/*.zip --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+  browser-platform-publish:
+    needs: build
+    if: ${{ needs.build.outputs.release_ref != '' && !github.event.repository.fork && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout specific ref
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.release_ref }}
+          path: source
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10"
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: source/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: source
+        run: pnpm install
+
+      - name: Download packaged archives
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-archives
+          path: source/.output
+
+      - name: Submit browser platform builds
         working-directory: source
         run: |
           echo "Chrome review: $([ "$CHROME_SKIP_SUBMIT_REVIEW" = "true" ] && echo skipped || echo submitted)"
