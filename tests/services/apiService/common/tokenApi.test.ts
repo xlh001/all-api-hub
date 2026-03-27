@@ -5,6 +5,11 @@ import {
   fetchTokenById,
   resolveApiTokenKey,
 } from "~/services/apiService/common"
+import {
+  fetchTokenSecretKeyById,
+  invalidateResolvedApiTokenKeyCache,
+  syncResolvedApiTokenKeyCache,
+} from "~/services/apiService/common/tokenKeyResolver"
 import { fetchApiData } from "~/services/apiService/common/utils"
 import { AuthTypeEnum } from "~/types"
 
@@ -34,6 +39,8 @@ const mockedFetchApiData = fetchApiData as unknown as ReturnType<typeof vi.fn>
 describe("apiService common token APIs", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockedFetchApiData.mockReset()
+    mockFetchApi.mockReset()
   })
 
   it("fetchAccountTokens normalizes token.key with sk- prefix (array response)", async () => {
@@ -189,5 +196,192 @@ describe("apiService common token APIs", () => {
     expect(mockedFetchApiData).toHaveBeenCalledTimes(1)
     expect(first).toBe("sk-deduped-secret")
     expect(second).toBe("sk-deduped-secret")
+  })
+
+  it("resolveApiTokenKey returns an empty normalized key without fetching", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-empty",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+      },
+    }
+
+    const result = await resolveApiTokenKey(
+      request as any,
+      {
+        id: 10,
+        key: "   ",
+      } as any,
+    )
+
+    expect(result).toBe("")
+    expect(mockedFetchApiData).not.toHaveBeenCalled()
+  })
+
+  it("resolveApiTokenKey normalizes non-masked inventory keys without fetching", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-plain",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+      },
+    }
+
+    const result = await resolveApiTokenKey(
+      request as any,
+      {
+        id: 11,
+        key: "plain-secret",
+      } as any,
+    )
+
+    expect(result).toBe("sk-plain-secret")
+    expect(mockedFetchApiData).not.toHaveBeenCalled()
+  })
+
+  it("resolveApiTokenKey rejects masked keys that cannot be resolved by id", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-unresolvable",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+      },
+    }
+
+    await expect(
+      resolveApiTokenKey(
+        request as any,
+        {
+          id: Number.NaN,
+          key: "sk-abc************xyz",
+        } as any,
+      ),
+    ).rejects.toThrow("token_secret_key_unresolvable")
+
+    expect(mockedFetchApiData).not.toHaveBeenCalled()
+  })
+
+  it("fetchTokenSecretKeyById rejects when the secret endpoint returns a blank key", async () => {
+    mockedFetchApiData.mockResolvedValueOnce({ key: "   " })
+
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-missing-secret",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+      },
+    }
+
+    await expect(fetchTokenSecretKeyById(request as any, 12)).rejects.toThrow(
+      "token_secret_key_missing",
+    )
+  })
+
+  it("invalidateResolvedApiTokenKeyCache clears cached entries for the current scope", async () => {
+    mockedFetchApiData
+      .mockResolvedValueOnce({ key: "first-secret" })
+      .mockResolvedValueOnce({ key: "second-secret" })
+
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-invalidate",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+      },
+    }
+    const token = {
+      id: 13,
+      key: "sk-mask************key",
+    }
+
+    await expect(
+      resolveApiTokenKey(request as any, token as any),
+    ).resolves.toBe("sk-first-secret")
+
+    invalidateResolvedApiTokenKeyCache(request as any)
+
+    await expect(
+      resolveApiTokenKey(request as any, token as any),
+    ).resolves.toBe("sk-second-secret")
+    expect(mockedFetchApiData).toHaveBeenCalledTimes(2)
+  })
+
+  it("syncResolvedApiTokenKeyCache drops stale cached entries when inventory changes", async () => {
+    mockedFetchApiData
+      .mockResolvedValueOnce({ key: "first-secret" })
+      .mockResolvedValueOnce({ key: "refetched-secret" })
+
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-sync",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+      },
+    }
+    const token = {
+      id: 14,
+      key: "sk-old************mask",
+    }
+
+    await expect(
+      resolveApiTokenKey(request as any, token as any),
+    ).resolves.toBe("sk-first-secret")
+
+    syncResolvedApiTokenKeyCache(
+      request as any,
+      [
+        {
+          id: 14,
+          key: "sk-new************mask",
+        },
+      ] as any,
+    )
+
+    await expect(
+      resolveApiTokenKey(request as any, token as any),
+    ).resolves.toBe("sk-refetched-secret")
+    expect(mockedFetchApiData).toHaveBeenCalledTimes(2)
+  })
+
+  it("clears rejected masked-key fetches from cache so later retries can refetch", async () => {
+    mockedFetchApiData
+      .mockRejectedValueOnce(new Error("temporary failure"))
+      .mockResolvedValueOnce({ key: "retry-secret" })
+
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-retry",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+      },
+    }
+    const token = {
+      id: 15,
+      key: "sk-retry************mask",
+    }
+
+    await expect(
+      resolveApiTokenKey(request as any, token as any),
+    ).rejects.toThrow("temporary failure")
+    await expect(
+      resolveApiTokenKey(request as any, token as any),
+    ).resolves.toBe("sk-retry-secret")
+
+    expect(mockedFetchApiData).toHaveBeenCalledTimes(2)
   })
 })

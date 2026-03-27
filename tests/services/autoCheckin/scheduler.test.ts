@@ -1563,3 +1563,282 @@ describe("autoCheckinScheduler.pretriggerDailyOnUiOpen", () => {
     vi.useRealTimers()
   })
 })
+
+describe("autoCheckinScheduler private helpers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("refreshes unique accounts in batches and preserves an explicit force flag", async () => {
+    mockedAccountStorage.refreshAccount
+      .mockResolvedValueOnce({ refreshed: true })
+      .mockResolvedValueOnce(null)
+      .mockRejectedValueOnce(new Error("refresh failed"))
+
+    await expect(
+      (autoCheckinScheduler as any).refreshAccountsAfterSuccessfulCheckins({
+        accountIds: ["a", "a", " ", "b", "c"],
+        force: false,
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(mockedAccountStorage.refreshAccount).toHaveBeenCalledTimes(3)
+    expect(mockedAccountStorage.refreshAccount).toHaveBeenNthCalledWith(
+      1,
+      "a",
+      false,
+    )
+    expect(mockedAccountStorage.refreshAccount).toHaveBeenNthCalledWith(
+      2,
+      "b",
+      false,
+    )
+    expect(mockedAccountStorage.refreshAccount).toHaveBeenNthCalledWith(
+      3,
+      "c",
+      false,
+    )
+  })
+
+  it("returns early when there are no valid accounts to refresh", async () => {
+    await expect(
+      (autoCheckinScheduler as any).refreshAccountsAfterSuccessfulCheckins({
+        accountIds: ["", "   "],
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(mockedAccountStorage.refreshAccount).not.toHaveBeenCalled()
+  })
+
+  it("parses time strings and rejects invalid hour or minute values", () => {
+    expect((autoCheckinScheduler as any).parseTimeToMinutes("09:30")).toBe(570)
+    expect((autoCheckinScheduler as any).parseTimeToMinutes("24:00")).toBeNull()
+    expect((autoCheckinScheduler as any).parseTimeToMinutes("09:60")).toBeNull()
+    expect((autoCheckinScheduler as any).parseTimeToMinutes("nope")).toBeNull()
+  })
+
+  it("handles same-day and overnight windows correctly", () => {
+    expect(
+      (autoCheckinScheduler as any).isMinutesWithinWindow(600, 600, 600),
+    ).toBe(false)
+    expect(
+      (autoCheckinScheduler as any).isMinutesWithinWindow(570, 480, 600),
+    ).toBe(true)
+    expect(
+      (autoCheckinScheduler as any).isMinutesWithinWindow(60, 1320, 120),
+    ).toBe(true)
+    expect(
+      (autoCheckinScheduler as any).isMinutesWithinWindow(600, 1320, 120),
+    ).toBe(false)
+  })
+
+  it("rejects deterministic or random trigger plans when configuration is invalid", () => {
+    const day = new Date("2026-01-23T00:00:00")
+
+    expect(
+      (autoCheckinScheduler as any).calculateDeterministicTriggerForDay(
+        {
+          windowStart: "08:00",
+          windowEnd: "09:00",
+          deterministicTime: "10:00",
+        },
+        day,
+      ),
+    ).toBeNull()
+
+    expect(
+      (autoCheckinScheduler as any).calculateRandomTriggerForDay(
+        "08:xx",
+        "09:00",
+        day,
+      ),
+    ).toBeNull()
+  })
+
+  it("reuses only valid daily alarms for the current schedule plan", () => {
+    const triggerTime = new Date("2026-01-23T08:30:00")
+
+    expect(
+      (autoCheckinScheduler as any).isExistingDailyAlarmReusable(
+        {
+          scheduleMode: "random",
+        },
+        new Date("invalid"),
+        null,
+      ),
+    ).toBe(false)
+
+    expect(
+      (autoCheckinScheduler as any).isExistingDailyAlarmReusable(
+        {
+          scheduleMode: "random",
+        },
+        new Date("2026-01-23T08:15:00"),
+        {
+          triggerTime,
+          enforceTodayTarget: false,
+        },
+      ),
+    ).toBe(true)
+
+    expect(
+      (autoCheckinScheduler as any).isExistingDailyAlarmReusable(
+        {
+          scheduleMode: "deterministic",
+        },
+        new Date("2026-01-22T08:15:00"),
+        {
+          triggerTime,
+          enforceTodayTarget: true,
+        },
+      ),
+    ).toBe(false)
+  })
+
+  it("updates snapshots only when the matching account result exists", () => {
+    const originalSnapshots = [
+      { accountId: "a", lastResult: undefined, label: "A" },
+      { accountId: "b", lastResult: undefined, label: "B" },
+    ] as any
+    const result = {
+      accountId: "b",
+      status: "success",
+    } as any
+
+    expect(
+      (autoCheckinScheduler as any).updateSnapshotWithResult(undefined, result),
+    ).toBeUndefined()
+
+    expect(
+      (autoCheckinScheduler as any).updateSnapshotWithResult([], result),
+    ).toEqual([])
+
+    expect(
+      (autoCheckinScheduler as any).updateSnapshotWithResult(
+        originalSnapshots,
+        { accountId: "missing", status: "failed" } as any,
+      ),
+    ).toBe(originalSnapshots)
+
+    expect(
+      (autoCheckinScheduler as any).updateSnapshotWithResult(
+        originalSnapshots,
+        result,
+      ),
+    ).toEqual([
+      originalSnapshots[0],
+      {
+        ...originalSnapshots[1],
+        lastResult: result,
+      },
+    ])
+  })
+
+  it("derives snapshot skip reasons from account state and provider availability", () => {
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce({
+      canCheckIn: vi.fn(() => true),
+    })
+
+    expect(
+      (autoCheckinScheduler as any).buildAccountSnapshot(
+        {
+          id: "base",
+          disabled: false,
+          site_type: "new-api",
+          site_name: "Base",
+          account_info: { username: "user" },
+          checkIn: { enableDetection: true, autoCheckInEnabled: true },
+        },
+        "Base",
+      ),
+    ).toMatchObject({
+      accountId: "base",
+      skipReason: undefined,
+      providerAvailable: true,
+    })
+
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce(null)
+
+    expect(
+      (autoCheckinScheduler as any).buildAccountSnapshot(
+        {
+          id: "no-provider",
+          disabled: false,
+          site_type: "new-api",
+          site_name: "No Provider",
+          account_info: { username: "user" },
+          checkIn: { enableDetection: true, autoCheckInEnabled: true },
+        },
+        "No Provider",
+      ),
+    ).toMatchObject({
+      accountId: "no-provider",
+      skipReason: "no_provider",
+      providerAvailable: false,
+    })
+
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce({
+      canCheckIn: vi.fn(() => true),
+    })
+
+    expect(
+      (autoCheckinScheduler as any).buildAccountSnapshot(
+        {
+          id: "manual",
+          disabled: false,
+          site_type: "new-api",
+          site_name: "Manual",
+          account_info: { username: "user" },
+          checkIn: { enableDetection: false, autoCheckInEnabled: true },
+        },
+        "Manual",
+      ),
+    ).toMatchObject({
+      accountId: "manual",
+      skipReason: "detection_disabled",
+    })
+
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce({
+      canCheckIn: vi.fn(() => false),
+    })
+
+    expect(
+      (autoCheckinScheduler as any).buildAccountSnapshot(
+        {
+          id: "provider-not-ready",
+          disabled: false,
+          site_type: "new-api",
+          site_name: "Provider Not Ready",
+          account_info: { username: "user" },
+          checkIn: { enableDetection: true, autoCheckInEnabled: true },
+        },
+        "Provider Not Ready",
+      ),
+    ).toMatchObject({
+      accountId: "provider-not-ready",
+      skipReason: "provider_not_ready",
+      providerAvailable: false,
+    })
+
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce({
+      canCheckIn: vi.fn(() => true),
+    })
+
+    expect(
+      (autoCheckinScheduler as any).buildAccountSnapshot(
+        {
+          id: "auto-disabled",
+          disabled: false,
+          site_type: "new-api",
+          site_name: "Auto Disabled",
+          account_info: { username: "user" },
+          checkIn: { enableDetection: true, autoCheckInEnabled: false },
+        },
+        "Auto Disabled",
+      ),
+    ).toMatchObject({
+      accountId: "auto-disabled",
+      skipReason: "auto_checkin_disabled",
+    })
+  })
+})

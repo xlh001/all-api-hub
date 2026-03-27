@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { ensureDefaultApiTokenForAccount } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
+import {
+  DEFAULT_AUTO_PROVISION_TOKEN_NAME,
+  ensureDefaultApiTokenForAccount,
+  generateDefaultTokenRequest,
+} from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
 import {
   ensureAccountApiToken,
   resolveSub2ApiQuickCreateResolution,
@@ -55,6 +59,41 @@ const createTestAccounts = () => {
       id: displayAccount.userId,
       access_token: displayAccount.token,
       username: displayAccount.username,
+      quota: 0,
+      today_prompt_tokens: 0,
+      today_completion_tokens: 0,
+      today_quota_consumption: 0,
+      today_requests_count: 0,
+      today_income: 0,
+    },
+  })
+
+  return {
+    displayAccount,
+    siteAccount,
+  }
+}
+
+const createNonSub2ApiAccounts = () => {
+  const displayAccount = {
+    id: "new-api-account",
+    siteType: "new-api",
+    baseUrl: "https://new-api.example.com",
+    authType: AuthTypeEnum.AccessToken,
+    userId: 456,
+    token: "new-api-token",
+    cookieAuthSessionCookie: "session-cookie",
+  }
+
+  const siteAccount = buildSiteAccount({
+    id: displayAccount.id,
+    site_type: "new-api",
+    site_url: displayAccount.baseUrl,
+    authType: AuthTypeEnum.AccessToken,
+    account_info: {
+      id: displayAccount.userId,
+      access_token: displayAccount.token,
+      username: "new-api-user",
       quota: 0,
       today_prompt_tokens: 0,
       today_completion_tokens: 0,
@@ -167,5 +206,83 @@ describe("accountOperations Sub2API token creation guards", () => {
       kind: "selection_required",
       allowedGroups: ["default", "vip"],
     })
+  })
+})
+
+describe("ensureDefaultApiTokenForAccount non-Sub2API branches", () => {
+  beforeEach(() => {
+    fetchAccountTokensMock.mockReset()
+    createApiTokenMock.mockReset()
+    fetchUserGroupsMock.mockReset()
+    toastLoadingMock.mockReset()
+  })
+
+  it("keeps the default auto-provision token payload stable", () => {
+    expect(generateDefaultTokenRequest()).toEqual({
+      name: DEFAULT_AUTO_PROVISION_TOKEN_NAME,
+      unlimited_quota: true,
+      expired_time: -1,
+      remain_quota: 0,
+      allow_ips: "",
+      model_limits_enabled: false,
+      model_limits: "",
+      group: "",
+    })
+  })
+
+  it("creates a default token for non-Sub2API accounts when no tokens exist", async () => {
+    const { displayAccount, siteAccount } = createNonSub2ApiAccounts()
+    const createdToken = { id: 21, key: "sk-created-secret" }
+
+    fetchAccountTokensMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([createdToken])
+    createApiTokenMock.mockResolvedValueOnce(true)
+
+    await expect(
+      ensureDefaultApiTokenForAccount({
+        account: siteAccount as any,
+        displaySiteData: displayAccount as any,
+      }),
+    ).resolves.toEqual({ token: createdToken, created: true })
+
+    expect(createApiTokenMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseUrl: displayAccount.baseUrl,
+        accountId: displayAccount.id,
+      }),
+      expect.objectContaining({
+        name: DEFAULT_AUTO_PROVISION_TOKEN_NAME,
+        group: "",
+      }),
+    )
+  })
+
+  it("fails when default token creation reports false", async () => {
+    const { displayAccount, siteAccount } = createNonSub2ApiAccounts()
+
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+    createApiTokenMock.mockResolvedValueOnce(false)
+
+    await expect(
+      ensureDefaultApiTokenForAccount({
+        account: siteAccount as any,
+        displaySiteData: displayAccount as any,
+      }),
+    ).rejects.toThrow("create_token_failed")
+  })
+
+  it("fails when the token inventory is still empty after a successful create", async () => {
+    const { displayAccount, siteAccount } = createNonSub2ApiAccounts()
+
+    fetchAccountTokensMock.mockResolvedValueOnce([]).mockResolvedValueOnce([])
+    createApiTokenMock.mockResolvedValueOnce(true)
+
+    await expect(
+      ensureDefaultApiTokenForAccount({
+        account: siteAccount as any,
+        displaySiteData: displayAccount as any,
+      }),
+    ).rejects.toThrow("token_not_found")
   })
 })
