@@ -108,6 +108,8 @@ Prereqs: Node.js 20+ and pnpm 10+.
 - New executable files, functions, branches, listeners/controllers, or error fallback paths should usually ship with at least one targeted test covering the added behavior.
 - Start with the repo-defined `pre-commit`, affected-file, or `related` validation flow for the touched files, then broaden only if the change is cross-cutting.
 - For TS/TSX edits in this repo, treat `pnpm run validate:staged` / the Husky `pre-commit` path as the default affected validation flow and prefer `vitest related --run` style checks over a manually assembled test file list.
+- When a change touches real browser-extension runtime behavior, cross-page flows, permissions, service worker behavior, extension build output, or UI layering issues that are hard to verify reliably with lower-level tests, consider adding a Playwright E2E test for self-verification.
+- Temporary E2E tests created only for self-verification should be deleted before handoff by default. Keep them only when they are deterministic, reusable, and provide clear long-term regression value; if retention is genuinely ambiguous, explain the tradeoff and ask before keeping them.
 - If the change can invalidate unused-file, export, or dependency analysis, broaden validation to include `pnpm knip`; use `pnpm run validate:push` when you want the full local pre-push-equivalent gate instead of assembling `compile` + `knip` manually.
 - If a change modifies shared component or hook props, validation must cover direct render/use sites and standalone harness tests that instantiate the changed API surface.
 - Current coverage baseline is configured in `vitest.config.ts`.
