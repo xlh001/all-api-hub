@@ -13,7 +13,7 @@ const cardVariants = cva(
         default: "border-gray-200 dark:border-dark-bg-tertiary shadow-sm",
         elevated: "border-gray-200 dark:border-dark-bg-tertiary shadow-md",
         interactive:
-          "border-gray-200 dark:border-dark-bg-tertiary shadow-sm hover:shadow-md transition-shadow cursor-pointer",
+          "border-gray-200 dark:border-dark-bg-tertiary shadow-sm hover:shadow-md transition-shadow",
         outlined: "border-gray-300 dark:border-gray-600 shadow-none",
         ghost: "border-transparent shadow-none",
       },

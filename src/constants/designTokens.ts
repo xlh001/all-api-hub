@@ -195,7 +195,7 @@ export const COMPONENTS = {
     elevated:
       "bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg shadow-md",
     interactive:
-      "bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer",
+      "bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-bg-tertiary rounded-lg shadow-sm hover:shadow-md transition-shadow",
   },
 } as const
 
