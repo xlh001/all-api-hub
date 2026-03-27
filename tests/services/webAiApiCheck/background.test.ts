@@ -339,4 +339,143 @@ describe("webAiApiCheck background handlers", () => {
     expect(response?.name).toBe("proxy.example.com")
     expect(response?.apiKey).toBeUndefined()
   })
+
+  it("saveProfile rejects missing required fields", async () => {
+    vi.resetModules()
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckSaveProfile,
+        apiType: "openai-compatible",
+        baseUrl: "",
+        apiKey: "",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Missing apiType, baseUrl, or apiKey",
+    })
+  })
+
+  it("saveProfile rejects invalid base urls", async () => {
+    vi.resetModules()
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckSaveProfile,
+        apiType: "openai-compatible",
+        baseUrl: "not a url",
+        apiKey: "sk-valid-enough",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Invalid baseUrl",
+    })
+  })
+
+  it("saveProfile sanitizes apiKey when profile creation fails", async () => {
+    vi.resetModules()
+
+    const { apiCredentialProfilesStorage } = await import(
+      "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
+    )
+
+    vi.mocked(apiCredentialProfilesStorage.createProfile).mockRejectedValue(
+      new Error("duplicate key sk-secret-xyz"),
+    )
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckSaveProfile,
+        apiType: "openai-compatible",
+        baseUrl: "https://proxy.example.com/api/v1",
+        apiKey: "sk-secret-xyz",
+        name: "  My Profile  ",
+      },
+      sendResponse,
+    )
+
+    expect(apiCredentialProfilesStorage.createProfile).toHaveBeenCalledWith({
+      name: "My Profile",
+      apiType: "openai-compatible",
+      baseUrl: "https://proxy.example.com/api",
+      apiKey: "sk-secret-xyz",
+      tagIds: [],
+      notes: "",
+    })
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "duplicate key [REDACTED]",
+    })
+  })
+
+  it("returns an error for unknown actions", async () => {
+    vi.resetModules()
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: "unknown-action",
+      } as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Unknown action",
+    })
+  })
+
+  it("falls back to a generic error when the top-level handler throws", async () => {
+    vi.resetModules()
+
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockRejectedValue(
+      new Error("preferences exploded"),
+    )
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckShouldPrompt,
+        pageUrl: "https://example.com/docs",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Failed to handle request",
+    })
+  })
 })

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { LogType, type LogItem } from "~/services/apiService/common/type"
+import { USAGE_HISTORY_LIMITS } from "~/services/history/usageHistory/constants"
 import {
   computeRetentionCutoffDayKey,
   createEmptyUsageHistoryAccountStore,
@@ -248,6 +249,20 @@ describe("usageHistory core", () => {
       "2026-01-01": { ...accountStore.latencyDaily["2026-01-01"] },
       "2026-01-02": { ...accountStore.latencyDaily["2026-01-02"] },
     }
+    accountStore.latencyDailyByTokenByModel["legacy"] = {
+      "gpt-legacy": {
+        "2026-01-01": {
+          count: 1,
+          sum: 1,
+          max: 1,
+          slowCount: 0,
+          unknownCount: 0,
+          buckets: [1],
+        },
+      },
+    }
+    accountStore.tokenNamesById["legacy"] = "Legacy token"
+    accountStore.tokenNamesById["1"] = "Retained token"
 
     pruneUsageHistoryAccountStore(accountStore, "2026-01-02")
 
@@ -265,6 +280,9 @@ describe("usageHistory core", () => {
     expect(accountStore.latencyDaily["2026-01-02"]).toBeDefined()
     expect(accountStore.latencyDailyByToken["1"]["2026-01-01"]).toBeUndefined()
     expect(accountStore.latencyDailyByToken["1"]["2026-01-02"]).toBeDefined()
+    expect(accountStore.latencyDailyByTokenByModel["legacy"]).toBeUndefined()
+    expect(accountStore.tokenNamesById["legacy"]).toBeUndefined()
+    expect(accountStore.tokenNamesById["1"]).toBe("Retained token")
   })
 
   it("ingests token-scoped aggregates and latency histograms", () => {
@@ -430,5 +448,79 @@ describe("usageHistory core", () => {
     expect(
       accountStore.latencyDailyByTokenByModel["unknown"]["unknown"][dayKey],
     ).toMatchObject({ unknownCount: 2 })
+  })
+
+  it("skips non-consume items entirely", () => {
+    const accountStore = createEmptyUsageHistoryAccountStore()
+    const startCursor = {
+      ...accountStore.cursor,
+      fingerprintsAtLastSeenCreatedAt: [],
+    }
+
+    const result = ingestConsumeLogItems({
+      accountStore,
+      items: [
+        createConsumeLogItem({
+          id: 99,
+          created_at: 2000,
+          type: LogType.Topup,
+        }),
+      ],
+      startCursor,
+      cursorCandidate: { ...startCursor, fingerprintsAtLastSeenCreatedAt: [] },
+      timeZone: "UTC",
+    })
+
+    expect(result.ingestedCount).toBe(0)
+    expect(accountStore.daily).toEqual({})
+    expect(result.cursorCandidate).toEqual(startCursor)
+  })
+
+  it("caps stored boundary fingerprints to the configured maximum", () => {
+    const accountStore = createEmptyUsageHistoryAccountStore()
+    const createdAt = Math.floor(Date.UTC(2026, 0, 1, 12, 0, 0) / 1000)
+    const startCursor = {
+      ...accountStore.cursor,
+      fingerprintsAtLastSeenCreatedAt: [],
+    }
+
+    const items = Array.from(
+      { length: USAGE_HISTORY_LIMITS.maxFingerprints + 5 },
+      (_, index) =>
+        createConsumeLogItem({
+          id: index + 1,
+          created_at: createdAt,
+          quota: index + 1,
+          prompt_tokens: index + 1,
+          completion_tokens: index + 1,
+        }),
+    )
+
+    const result = ingestConsumeLogItems({
+      accountStore,
+      items,
+      startCursor,
+      cursorCandidate: { ...startCursor, fingerprintsAtLastSeenCreatedAt: [] },
+      timeZone: "UTC",
+    })
+
+    expect(result.ingestedCount).toBe(items.length)
+    expect(result.cursorCandidate.lastSeenCreatedAt).toBe(createdAt)
+    expect(result.cursorCandidate.fingerprintsAtLastSeenCreatedAt).toHaveLength(
+      USAGE_HISTORY_LIMITS.maxFingerprints,
+    )
+
+    const firstFingerprint = fingerprintLogItem(items[0]!)
+    const lastFingerprint = fingerprintLogItem(items.at(-1)!)
+    expect(
+      result.cursorCandidate.fingerprintsAtLastSeenCreatedAt.includes(
+        firstFingerprint,
+      ),
+    ).toBe(false)
+    expect(
+      result.cursorCandidate.fingerprintsAtLastSeenCreatedAt.includes(
+        lastFingerprint,
+      ),
+    ).toBe(true)
   })
 })

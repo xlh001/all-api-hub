@@ -151,4 +151,274 @@ describe("verificationResultHistoryStorage", () => {
       createAccountModelVerificationHistoryTarget("   ", "model-1"),
     ).toBeNull()
   })
+
+  it("rehydrates legacy raw storage across target kinds and drops invalid summaries", async () => {
+    const storage = new Storage({ area: "local" })
+
+    await storage.set(
+      API_VERIFICATION_HISTORY_STORAGE_KEYS.VERIFICATION_RESULT_HISTORY,
+      {
+        version: 0,
+        lastUpdated: 0,
+        summaries: [
+          {
+            target: {
+              kind: "profile-model",
+              profileId: " profile-1 ",
+              modelId: " gpt-4.1 ",
+            },
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            status: "unsupported",
+            verifiedAt: -5,
+            resolvedModelId: " resolved-model ",
+            probes: [
+              {
+                id: "models",
+                status: "unsupported",
+                latencyMs: -2.4,
+                summary: "  fetched \n models  ",
+                summaryKey: " summary.key ",
+                summaryParams: {
+                  " bool ": true,
+                  count: 2,
+                  text: "  spaced value  ",
+                  blank: "   ",
+                  nested: { keep: false },
+                  nan: Number.NaN,
+                  "   ": "ignored",
+                },
+              },
+            ],
+          },
+          {
+            target: {
+              kind: "account-model",
+              accountId: " account-1 ",
+              modelId: " claude-3.7 ",
+            },
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            status: "pass",
+            verifiedAt: 12.6,
+            probes: [
+              {
+                id: "models",
+                status: "pass",
+                latencyMs: 4.6,
+                summary: " ok ",
+              },
+            ],
+          },
+          {
+            target: {
+              kind: "account-model",
+              accountId: "account-1",
+              modelId: "claude-3.7",
+            },
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            status: "fail",
+            verifiedAt: 30,
+            probes: [
+              {
+                id: "models",
+                status: "fail",
+                latencyMs: 1,
+                summary: "duplicate should be dropped",
+              },
+            ],
+          },
+          {
+            target: {
+              kind: "mystery-kind",
+              profileId: "nope",
+            },
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            probes: [
+              {
+                id: "models",
+                status: "pass",
+                summary: "invalid target",
+              },
+            ],
+          },
+          {
+            target: {
+              kind: "profile",
+              profileId: "profile-invalid-api",
+            },
+            apiType: "invalid-api-type",
+            probes: [
+              {
+                id: "models",
+                status: "pass",
+                summary: "invalid api type",
+              },
+            ],
+          },
+          {
+            target: {
+              kind: "profile",
+              profileId: "profile-invalid-probe",
+            },
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            probes: [
+              {
+                id: "unknown-probe",
+                status: "pass",
+                summary: "invalid probe",
+              },
+            ],
+          },
+        ],
+      },
+    )
+
+    const summaries = await verificationResultHistoryStorage.listSummaries()
+
+    expect(summaries).toHaveLength(2)
+    expect(summaries[0]).toEqual({
+      target: {
+        kind: "profile-model",
+        profileId: "profile-1",
+        modelId: "gpt-4.1",
+      },
+      targetKey: "profile:profile-1:model:gpt-4.1",
+      status: "pass",
+      verifiedAt: expect.any(Number),
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      resolvedModelId: "resolved-model",
+      probes: [
+        {
+          id: "models",
+          status: "unsupported",
+          latencyMs: 0,
+          summary: "fetched models",
+          summaryKey: "summary.key",
+          summaryParams: {
+            bool: true,
+            count: 2,
+            text: "spaced value",
+          },
+        },
+      ],
+    })
+    expect(summaries[1]).toEqual({
+      target: {
+        kind: "account-model",
+        accountId: "account-1",
+        modelId: "claude-3.7",
+      },
+      targetKey: "account:account-1:model:claude-3.7",
+      status: "pass",
+      verifiedAt: 13,
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      resolvedModelId: undefined,
+      probes: [
+        {
+          id: "models",
+          status: "pass",
+          latencyMs: 5,
+          summary: "ok",
+          summaryKey: undefined,
+          summaryParams: undefined,
+        },
+      ],
+    })
+  })
+
+  it("returns keyed summaries for requested targets and an empty map for no targets", async () => {
+    const profileTarget = createProfileModelVerificationHistoryTarget(
+      "profile-9",
+      "gpt-5",
+    )
+    const accountTarget = createAccountModelVerificationHistoryTarget(
+      "account-9",
+      "claude-4",
+    )
+    const missingTarget =
+      createProfileVerificationHistoryTarget("missing-profile")
+
+    if (!profileTarget || !accountTarget || !missingTarget) {
+      throw new Error("Expected history targets")
+    }
+
+    const profileSummary = createVerificationHistorySummary({
+      target: profileTarget,
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      results: [
+        {
+          id: "models",
+          status: "pass",
+          latencyMs: 6,
+          summary: "profile summary",
+        },
+      ],
+    })
+    const accountSummary = createVerificationHistorySummary({
+      target: accountTarget,
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      results: [
+        {
+          id: "models",
+          status: "fail",
+          latencyMs: 9,
+          summary: "account summary",
+        },
+      ],
+    })
+
+    if (!profileSummary || !accountSummary) {
+      throw new Error("Expected verification summaries")
+    }
+
+    await verificationResultHistoryStorage.upsertLatestSummary(profileSummary)
+    await verificationResultHistoryStorage.upsertLatestSummary(accountSummary)
+
+    expect(
+      await verificationResultHistoryStorage.getLatestSummaries([]),
+    ).toEqual({})
+
+    expect(
+      await verificationResultHistoryStorage.getLatestSummaries([
+        profileTarget,
+        missingTarget,
+        accountTarget,
+      ]),
+    ).toEqual({
+      [profileSummary.targetKey]: expect.objectContaining({
+        targetKey: profileSummary.targetKey,
+        status: "pass",
+      }),
+      [accountSummary.targetKey]: expect.objectContaining({
+        targetKey: accountSummary.targetKey,
+        status: "fail",
+      }),
+    })
+  })
+
+  it("returns false when clearing a target that has no stored summary", async () => {
+    const target = createProfileVerificationHistoryTarget("never-stored")
+    if (!target) {
+      throw new Error("Expected history target")
+    }
+
+    await expect(
+      verificationResultHistoryStorage.clearTarget(target),
+    ).resolves.toBe(false)
+  })
+
+  it("rejects invalid summaries before writing to storage", async () => {
+    await expect(
+      verificationResultHistoryStorage.upsertLatestSummary({
+        target: {
+          kind: "profile",
+          profileId: "profile-1",
+        },
+        targetKey: "profile:profile-1",
+        status: "pass",
+        verifiedAt: Date.now(),
+        apiType: API_TYPES.OPENAI_COMPATIBLE,
+        probes: [],
+      } as any),
+    ).rejects.toThrow("Invalid verification history summary")
+  })
 })

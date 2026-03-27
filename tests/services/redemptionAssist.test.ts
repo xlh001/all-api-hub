@@ -74,6 +74,52 @@ describe("redemptionAssist shouldPrompt batch filtering", () => {
       promptableCodes: [validHex],
     })
   })
+
+  it("filters out codes when the whitelist blocks the url", async () => {
+    vi.resetModules()
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    const getPreferencesMock = vi.mocked(userPreferences.getPreferences)
+
+    getPreferencesMock.mockResolvedValue({
+      ...DEFAULT_PREFERENCES,
+      redemptionAssist: {
+        enabled: true,
+        contextMenu: {
+          enabled: true,
+        },
+        urlWhitelist: {
+          enabled: true,
+          patterns: ["^https://allowed\\.example\\.com"],
+          includeAccountSiteUrls: false,
+          includeCheckInAndRedeemUrls: false,
+        },
+        relaxedCodeValidation: false,
+      },
+    })
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+        url: "https://blocked.example.com/redeem",
+        codes: ["a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"],
+      },
+      { tab: { id: 7 } } as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      promptableCodes: [],
+    })
+  })
 })
 
 describe("redemptionAssist post-redeem refresh", () => {
@@ -325,6 +371,268 @@ describe("redemptionAssist post-redeem refresh", () => {
     expect(sendResponse).toHaveBeenCalledWith({
       success: true,
       data: { success: false, message: "nope" },
+    })
+  })
+
+  it("returns INVALID_URL when auto redeem by url receives an unparsable url", async () => {
+    vi.resetModules()
+
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue(
+      DEFAULT_PREFERENCES,
+    )
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistAutoRedeemByUrl,
+        url: "not-a-url",
+        code: "CODE_BAD_URL",
+      },
+      {} as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: false,
+        code: "INVALID_URL",
+        message: "redemptionAssist:messages.noAccountForUrl",
+      },
+    })
+  })
+
+  it("returns MULTIPLE_ACCOUNTS when several same-domain candidates match", async () => {
+    vi.resetModules()
+
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue(
+      DEFAULT_PREFERENCES,
+    )
+
+    const candidates = [
+      {
+        id: "acc_multi_1",
+        baseUrl: "https://example.com",
+        checkIn: { customCheckIn: { url: "https://example.com/check-in" } },
+      },
+      {
+        id: "acc_multi_2",
+        baseUrl: "https://example.com",
+        checkIn: { customCheckIn: { url: "https://example.com/redeem" } },
+      },
+    ]
+
+    vi.doMock("~/services/accounts/accountStorage", () => ({
+      accountStorage: {
+        getAllAccounts: vi.fn().mockResolvedValue([]),
+        convertToDisplayData: vi.fn().mockReturnValue(candidates),
+      },
+    }))
+
+    vi.doMock("~/services/search/accountSearch", () => ({
+      searchAccounts: vi.fn().mockReturnValue(
+        candidates.map((account) => ({
+          account,
+        })),
+      ),
+    }))
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistAutoRedeemByUrl,
+        url: "https://example.com/redeem",
+        code: "CODE_MULTI",
+      },
+      {} as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: false,
+        code: "MULTIPLE_ACCOUNTS",
+        candidates,
+      },
+    })
+  })
+
+  it("returns NO_ACCOUNTS with all accounts when no same-domain candidate matches", async () => {
+    vi.resetModules()
+
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue(
+      DEFAULT_PREFERENCES,
+    )
+
+    const allAccounts = [
+      {
+        id: "acc_manual_1",
+        baseUrl: "https://manual.example.com",
+        checkIn: {
+          customCheckIn: { url: "https://other.example.com/check-in" },
+        },
+      },
+    ]
+
+    vi.doMock("~/services/accounts/accountStorage", () => ({
+      accountStorage: {
+        getAllAccounts: vi.fn().mockResolvedValue([]),
+        convertToDisplayData: vi.fn().mockReturnValue(allAccounts),
+      },
+    }))
+
+    vi.doMock("~/services/search/accountSearch", () => ({
+      searchAccounts: vi.fn().mockReturnValue([]),
+    }))
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistAutoRedeemByUrl,
+        url: "https://example.com/redeem",
+        code: "CODE_NONE",
+      },
+      {} as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: false,
+        code: "NO_ACCOUNTS",
+        candidates: [],
+        allAccounts,
+        message: "redemptionAssist:messages.noAccountForUrl",
+      },
+    })
+  })
+
+  it("handles validation failures and unknown runtime actions", async () => {
+    vi.resetModules()
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+        url: "",
+        codes: [],
+      },
+      {} as any,
+      sendResponse,
+    )
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistAutoRedeem,
+        accountId: "",
+        code: "",
+      },
+      {} as any,
+      sendResponse,
+    )
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistAutoRedeemByUrl,
+        url: "",
+        code: "",
+      },
+      {} as any,
+      sendResponse,
+    )
+    await handleRedemptionAssistMessage(
+      {
+        action: "unknown-action",
+      },
+      {} as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenNthCalledWith(1, {
+      success: false,
+      error: "Missing url or codes",
+    })
+    expect(sendResponse).toHaveBeenNthCalledWith(2, {
+      success: false,
+      error: "Missing accountId or code",
+    })
+    expect(sendResponse).toHaveBeenNthCalledWith(3, {
+      success: false,
+      error: "Missing url or code",
+    })
+    expect(sendResponse).toHaveBeenNthCalledWith(4, {
+      success: false,
+      error: "Unknown action",
+    })
+  })
+
+  it("reports handler errors when redeeming throws", async () => {
+    vi.resetModules()
+
+    const redeemCodeForAccount = vi
+      .fn()
+      .mockRejectedValue(new Error("redeem exploded"))
+
+    vi.doMock("~/services/accounts/accountStorage", () => ({
+      accountStorage: {
+        refreshAccount: vi.fn(),
+      },
+    }))
+
+    vi.doMock("~/services/redemption/redeemService", () => ({
+      redeemService: {
+        redeemCodeForAccount,
+      },
+    }))
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistAutoRedeem,
+        accountId: "acc_error",
+        code: "CODE_ERR",
+      },
+      {} as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "redeem exploded",
     })
   })
 })
