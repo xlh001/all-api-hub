@@ -13,6 +13,32 @@ import { createLogger } from "~/utils/core/logger"
 const logger = createLogger("SortingConfigMigration")
 
 /**
+ * Detects configs that still prioritize MANUAL_ORDER ahead of USER_SORT_FIELD.
+ *
+ * This is intentionally broad: v18 treats the new canonical order as
+ * authoritative and upgrades all older layouts to it, even if the user had
+ * customized this relative ordering before.
+ */
+function hasLegacyManualOrderPriority(
+  config: SortingPriorityConfig | undefined,
+): boolean {
+  if (!config) return true
+
+  const manualOrder = config.criteria.find(
+    (criterion) => criterion.id === SortingCriteriaType.MANUAL_ORDER,
+  )
+  const userSortField = config.criteria.find(
+    (criterion) => criterion.id === SortingCriteriaType.USER_SORT_FIELD,
+  )
+
+  if (!manualOrder || !userSortField) {
+    return true
+  }
+
+  return manualOrder.priority < userSortField.priority
+}
+
+/**
  * Check if a sorting config needs migration
  */
 export function needsSortingConfigMigration(
@@ -23,6 +49,7 @@ export function needsSortingConfigMigration(
   const dst = new Set(DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => c.id))
   if (src.size !== dst.size) return true
   for (const id of dst) if (!src.has(id)) return true
+  if (hasLegacyManualOrderPriority(config)) return true
   return false
 }
 
@@ -135,11 +162,12 @@ export function migrateSortingConfig(
     })
   }
 
-  if (!modified) {
+  if (!modified && !hasLegacyManualOrderPriority(config)) {
     return config
   }
 
-  const normalizedCriteria = newCriteria
+  const normalizedCriteria = (modified ? newCriteria : config.criteria)
+    .map((criterion) => ({ ...criterion }))
     .sort((a, b) => {
       const getGroupRank = (id: SortingCriteriaType): number => {
         switch (id) {
@@ -149,10 +177,12 @@ export function migrateSortingConfig(
             return 0
           case SortingCriteriaType.PINNED:
             return 1
-          case SortingCriteriaType.MANUAL_ORDER:
+          case SortingCriteriaType.USER_SORT_FIELD:
             return 2
-          default:
+          case SortingCriteriaType.MANUAL_ORDER:
             return 3
+          default:
+            return 4
         }
       }
 

@@ -729,6 +729,81 @@ describe("preferencesMigration", () => {
       expect(result).toEqual(prefs)
     })
 
+    it("reorders legacy MANUAL_ORDER priority during v17->v18 migration", () => {
+      const prefs = createV0Preferences({
+        preferencesVersion: 17,
+        sortingPriorityConfig: {
+          lastModified: 1000,
+          criteria: [
+            {
+              id: SortingCriteriaType.DISABLED_ACCOUNT,
+              enabled: true,
+              priority: 0,
+            },
+            {
+              id: SortingCriteriaType.CURRENT_SITE,
+              enabled: true,
+              priority: 1,
+            },
+            {
+              id: SortingCriteriaType.PINNED,
+              enabled: true,
+              priority: 2,
+            },
+            {
+              id: SortingCriteriaType.MANUAL_ORDER,
+              enabled: true,
+              priority: 3,
+            },
+            {
+              id: SortingCriteriaType.USER_SORT_FIELD,
+              enabled: true,
+              priority: 4,
+            },
+            {
+              id: SortingCriteriaType.CHECK_IN_REQUIREMENT,
+              enabled: true,
+              priority: 5,
+            },
+            {
+              id: SortingCriteriaType.MATCHED_OPEN_TABS,
+              enabled: true,
+              priority: 6,
+            },
+            {
+              id: SortingCriteriaType.HEALTH_STATUS,
+              enabled: true,
+              priority: 7,
+            },
+            {
+              id: SortingCriteriaType.CUSTOM_CHECK_IN_URL,
+              enabled: true,
+              priority: 8,
+            },
+            {
+              id: SortingCriteriaType.CUSTOM_REDEEM_URL,
+              enabled: true,
+              priority: 9,
+            },
+          ],
+        },
+      })
+
+      const result = migratePreferences(prefs)
+      const ids = result.sortingPriorityConfig?.criteria.map(
+        (criterion) => criterion.id,
+      )
+
+      expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
+      expect(ids?.indexOf(SortingCriteriaType.USER_SORT_FIELD)).toBe(3)
+      expect(ids?.indexOf(SortingCriteriaType.MANUAL_ORDER)).toBe(4)
+      expect(ids?.indexOf(SortingCriteriaType.CHECK_IN_REQUIREMENT)).toBe(5)
+      expect(ids?.indexOf(SortingCriteriaType.MATCHED_OPEN_TABS)).toBe(6)
+      expect(ids?.indexOf(SortingCriteriaType.HEALTH_STATUS)).toBe(7)
+      expect(ids?.indexOf(SortingCriteriaType.CUSTOM_CHECK_IN_URL)).toBe(8)
+      expect(ids?.indexOf(SortingCriteriaType.CUSTOM_REDEEM_URL)).toBe(9)
+    })
+
     it("removes all deprecated fields after full migration", () => {
       const prefs = createV0Preferences({
         // All deprecated fields
