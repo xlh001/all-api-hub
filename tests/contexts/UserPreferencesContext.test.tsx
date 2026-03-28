@@ -722,6 +722,146 @@ describe("UserPreferencesContext", () => {
     expect(mockedSendRuntimeMessage).not.toHaveBeenCalled()
   })
 
+  it("keeps the current state when reset helpers fail and skips reset broadcasts", async () => {
+    const preferences = clonePreferences()
+    preferences.activeTab = DATA_TYPE_BALANCE
+    preferences.currencyType = "CNY"
+    preferences.themeMode = "dark"
+    preferences.language = "en"
+    preferences.accountAutoRefresh = {
+      ...preferences.accountAutoRefresh,
+      enabled: true,
+      interval: 180_000,
+    }
+    preferences.autoCheckin = {
+      ...preferences.autoCheckin,
+      globalEnabled: false,
+    }
+    preferences.redemptionAssist = {
+      ...DEFAULT_REDEMPTION_ASSIST_PREFERENCES,
+      relaxedCodeValidation: false,
+    }
+    preferences.webAiApiCheck = {
+      ...DEFAULT_WEB_AI_API_CHECK_PREFERENCES,
+      autoDetect: {
+        enabled: true,
+        urlWhitelist: {
+          patterns: ["https://allowed.example/*"],
+        },
+      },
+    }
+    preferences.sortingPriorityConfig = {
+      ...structuredClone(DEFAULT_SORTING_PRIORITY_CONFIG),
+      lastModified: Date.now(),
+    }
+
+    mockedUserPreferences.resetToDefaults.mockResolvedValue(false)
+    mockedUserPreferences.resetDisplaySettings.mockResolvedValue(false)
+    mockedUserPreferences.resetAutoRefreshConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetNewApiConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetDoneHubConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetVeloeraConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetOctopusConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetNewApiModelSyncConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetCliProxyConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetClaudeCodeRouterConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetAutoCheckinConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetRedemptionAssist.mockResolvedValue(false)
+    mockedUserPreferences.resetWebAiApiCheck.mockResolvedValue(false)
+    mockedUserPreferences.resetModelRedirectConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetWebdavConfig.mockResolvedValue(false)
+    mockedUserPreferences.resetThemeAndLanguage.mockResolvedValue(false)
+    mockedUserPreferences.updateLoggingPreferences.mockResolvedValue(false)
+    mockedUserPreferences.resetSortingPriorityConfig.mockResolvedValue(false)
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      expect(await context.resetToDefaults()).toBe(false)
+      expect(await context.resetDisplaySettings()).toBe(false)
+      expect(await context.resetAutoRefreshConfig()).toBe(false)
+      expect(await context.resetNewApiConfig()).toBe(false)
+      expect(await context.resetDoneHubConfig()).toBe(false)
+      expect(await context.resetVeloeraConfig()).toBe(false)
+      expect(await context.resetOctopusConfig()).toBe(false)
+      expect(await context.resetNewApiModelSyncConfig()).toBe(false)
+      expect(await context.resetCliProxyConfig()).toBe(false)
+      expect(await context.resetClaudeCodeRouterConfig()).toBe(false)
+      expect(await context.resetAutoCheckinConfig()).toBe(false)
+      expect(await context.resetRedemptionAssistConfig()).toBe(false)
+      expect(await context.resetWebAiApiCheckConfig()).toBe(false)
+      expect(await context.resetModelRedirectConfig()).toBe(false)
+      expect(await context.resetWebdavConfig()).toBe(false)
+      expect(await context.resetThemeAndLanguage()).toBe(false)
+      expect(await context.resetLoggingSettings()).toBe(false)
+      expect(await context.resetSortingPriorityConfig()).toBe(false)
+    })
+
+    expect((latestContext as any)?.preferences).toEqual(preferences)
+    expect(mockedUserPreferences.getPreferences).toHaveBeenCalledTimes(1)
+    expect(mockedSendRuntimeMessage).not.toHaveBeenCalled()
+  })
+
+  it("avoids refreshing context menus for non-visibility feature updates", async () => {
+    const context = await renderProvider()
+
+    await act(async () => {
+      await context.updateRedemptionAssist({
+        relaxedCodeValidation: false,
+        urlWhitelist: {
+          enabled: true,
+          patterns: ["https://redeem.example/*"],
+          includeAccountSiteUrls: true,
+          includeCheckInAndRedeemUrls: false,
+        },
+      })
+
+      await context.updateWebAiApiCheck({
+        autoDetect: {
+          enabled: true,
+          urlWhitelist: {
+            patterns: ["https://api-check.example/*"],
+          },
+        },
+      })
+    })
+
+    expect((latestContext as any)?.preferences.redemptionAssist).toEqual(
+      expect.objectContaining({
+        relaxedCodeValidation: false,
+        urlWhitelist: expect.objectContaining({
+          patterns: ["https://redeem.example/*"],
+          includeCheckInAndRedeemUrls: false,
+        }),
+      }),
+    )
+    expect((latestContext as any)?.preferences.webAiApiCheck).toEqual(
+      expect.objectContaining({
+        autoDetect: expect.objectContaining({
+          enabled: true,
+          urlWhitelist: { patterns: ["https://api-check.example/*"] },
+        }),
+      }),
+    )
+
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledTimes(1)
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.RedemptionAssistUpdateSettings,
+      settings: {
+        relaxedCodeValidation: false,
+        urlWhitelist: {
+          enabled: true,
+          patterns: ["https://redeem.example/*"],
+          includeAccountSiteUrls: true,
+          includeCheckInAndRedeemUrls: false,
+        },
+      },
+    })
+    expect(mockedSendRuntimeMessage).not.toHaveBeenCalledWith({
+      action: RuntimeActionIds.PreferencesRefreshContextMenus,
+    })
+  })
+
   it("falls back to default nested preference shapes when optional sections are missing", async () => {
     const preferences = clonePreferences()
     delete (preferences as Partial<UserPreferences>).balanceHistory

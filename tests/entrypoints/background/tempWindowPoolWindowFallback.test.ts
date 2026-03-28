@@ -22,6 +22,7 @@ describe("tempWindowPool window fallback", () => {
   let applyTempWindowCookieRuleMock: ReturnType<typeof vi.fn>
   let removeTempWindowCookieRuleMock: ReturnType<typeof vi.fn>
   let isProtectionBypassFirefoxEnvMock: ReturnType<typeof vi.fn>
+  let getSiteTypeMock: ReturnType<typeof vi.fn>
   let sendMessageMock: ReturnType<typeof vi.fn>
   let tabsGetMock: ReturnType<typeof vi.fn>
   let tabsQueryMock: ReturnType<typeof vi.fn>
@@ -44,6 +45,7 @@ describe("tempWindowPool window fallback", () => {
     applyTempWindowCookieRuleMock = vi.fn().mockResolvedValue(null)
     removeTempWindowCookieRuleMock = vi.fn().mockResolvedValue(undefined)
     isProtectionBypassFirefoxEnvMock = vi.fn(() => false)
+    getSiteTypeMock = vi.fn().mockResolvedValue("new-api")
     sendMessageMock = vi.fn(
       async (_tabId: number, message: { action: string }) => {
         switch (message.action) {
@@ -52,6 +54,16 @@ describe("tempWindowPool window fallback", () => {
           case RuntimeActionIds.ContentCheckCapGuard:
           case RuntimeActionIds.ContentCheckCloudflareGuard:
             return { success: true, passed: true }
+          case RuntimeActionIds.ContentGetUserFromLocalStorage:
+            return {
+              success: true,
+              data: {
+                userId: "user-1",
+                user: "alice",
+                accessToken: "access-token",
+                siteTypeHint: "new-api",
+              },
+            }
           case RuntimeActionIds.ContentPerformTempWindowFetch:
             return {
               success: true,
@@ -125,6 +137,9 @@ describe("tempWindowPool window fallback", () => {
     vi.doMock("~/utils/browser/protectionBypass", () => ({
       isProtectionBypassFirefoxEnv: isProtectionBypassFirefoxEnvMock,
     }))
+    vi.doMock("~/services/siteDetection/detectSiteType", () => ({
+      getSiteType: getSiteTypeMock,
+    }))
     vi.doMock("~/services/preferences/userPreferences", () => ({
       DEFAULT_PREFERENCES: {
         tempWindowFallback: {
@@ -155,6 +170,7 @@ describe("tempWindowPool window fallback", () => {
     vi.doUnmock("~/utils/browser/dnrCookieInjector")
     vi.doUnmock("~/utils/browser/protectionBypass")
     vi.doUnmock("~/utils/browser/browserApi")
+    vi.doUnmock("~/services/siteDetection/detectSiteType")
     vi.doUnmock("~/services/preferences/userPreferences")
     vi.doUnmock("~/utils/i18n/core")
     vi.resetModules()
@@ -392,6 +408,38 @@ describe("tempWindowPool window fallback", () => {
     })
   })
 
+  it("requires incognito access before opening a turnstile temp context", async () => {
+    isAllowedIncognitoAccessMock.mockResolvedValueOnce(false)
+
+    const { handleTempWindowTurnstileFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    await handleTempWindowTurnstileFetch(
+      {
+        originUrl: "https://example.com",
+        pageUrl: "https://example.com/auth",
+        fetchUrl: "https://example.com/api/turnstile",
+        fetchOptions: { method: "GET" },
+        useIncognito: true,
+        requestId: "req-incognito-access-denied",
+      },
+      sendResponse,
+    )
+
+    expect(createWindowMock).not.toHaveBeenCalled()
+    expect(createTabMock).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "messages:background.incognitoAccessRequired",
+      turnstile: {
+        status: "error",
+        hasTurnstile: false,
+      },
+    })
+  })
+
   it("rejects invalid temp-window fetch requests before opening any context", async () => {
     const { handleTempWindowFetch } = await import(
       "~/entrypoints/background/tempWindowPool"
@@ -414,6 +462,190 @@ describe("tempWindowPool window fallback", () => {
       success: false,
       error: "messages:background.invalidFetchRequest",
     })
+  })
+
+  it("merges detected site type with user data from the temp context", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 508 })
+
+    const { handleAutoDetectSite } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleAutoDetectSite(
+      {
+        url: "https://example.com/account",
+        requestId: "req-auto-detect-success",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(getSiteTypeMock).toHaveBeenCalledWith("https://example.com/account")
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        siteType: "new-api",
+        userId: "user-1",
+        user: "alice",
+        accessToken: "access-token",
+        siteTypeHint: "new-api",
+      },
+    })
+
+    await vi.advanceTimersByTimeAsync(2500)
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(508)
+  })
+
+  it("returns a safe null result when site detection succeeds but no user data can be read", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 509 })
+    sendMessageMock.mockImplementation(
+      async (_tabId: number, message: { action: string }) => {
+        switch (message.action) {
+          case RuntimeActionIds.ContentShowShieldBypassUi:
+            return undefined
+          case RuntimeActionIds.ContentCheckCapGuard:
+          case RuntimeActionIds.ContentCheckCloudflareGuard:
+            return { success: true, passed: true }
+          case RuntimeActionIds.ContentGetUserFromLocalStorage:
+            return {
+              success: false,
+              error: "no-session",
+            }
+          default:
+            throw new Error(`Unexpected action: ${message.action}`)
+        }
+      },
+    )
+
+    const { handleAutoDetectSite } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleAutoDetectSite(
+      {
+        url: "https://example.com/account",
+        requestId: "req-auto-detect-no-user",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: null,
+    })
+
+    await vi.advanceTimersByTimeAsync(2500)
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(509)
+  })
+
+  it("surfaces auto-detect failures when site-type detection throws", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 510 })
+    getSiteTypeMock.mockRejectedValueOnce(new Error("site-type lookup failed"))
+
+    const { handleAutoDetectSite } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleAutoDetectSite(
+      {
+        url: "https://example.com/account",
+        requestId: "req-auto-detect-site-type-error",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "site-type lookup failed",
+    })
+
+    await vi.advanceTimersByTimeAsync(2500)
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(510)
+  })
+
+  it("fails fast when the temp tab disappears before the page becomes ready", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 506 })
+    tabsGetMock.mockRejectedValueOnce(new Error("tab disappeared"))
+
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    await handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/tab-disappeared",
+        fetchOptions: { method: "GET" },
+        requestId: "req-tab-disappeared",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "tab disappeared",
+      code: undefined,
+    })
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(506)
+    expect(sendMessageMock).not.toHaveBeenCalledWith(
+      506,
+      expect.objectContaining({
+        action: RuntimeActionIds.ContentPerformTempWindowFetch,
+      }),
+    )
+  })
+
+  it("returns a page-load timeout when the temp context never finishes loading", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 507 })
+    tabsGetMock.mockResolvedValue({ status: "loading" })
+
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/still-loading",
+        fetchOptions: { method: "GET" },
+        requestId: "req-loading-timeout",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(20_100)
+    await request
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "messages:background.pageLoadTimeout",
+      code: undefined,
+    })
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(507)
+    expect(sendMessageMock).not.toHaveBeenCalledWith(
+      507,
+      expect.objectContaining({
+        action: RuntimeActionIds.ContentPerformTempWindowFetch,
+      }),
+    )
   })
 
   it("returns a failure response when the content script never answers the temp fetch", async () => {

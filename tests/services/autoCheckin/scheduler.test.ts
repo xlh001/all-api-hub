@@ -157,6 +157,7 @@ beforeEach(() => {
 describe("autoCheckinScheduler.initialize", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    ;(autoCheckinScheduler as any).isInitialized = false
     mockedBrowserApi.hasAlarmsAPI.mockReturnValue(true)
     mockedUserPreferences.getPreferences.mockResolvedValue({
       autoCheckin: {
@@ -174,12 +175,135 @@ describe("autoCheckinScheduler.initialize", () => {
     expect(mockedBrowserApi.onAlarm).toHaveBeenCalledTimes(1)
     expect(scheduleSpy).toHaveBeenCalled()
   })
+
+  it("does not register duplicate listeners when initialize is called twice", async () => {
+    const scheduleSpy = vi.spyOn(autoCheckinScheduler as any, "scheduleNextRun")
+
+    await autoCheckinScheduler.initialize()
+    await autoCheckinScheduler.initialize()
+
+    expect(mockedBrowserApi.onAlarm).toHaveBeenCalledTimes(1)
+    expect(scheduleSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it("warns and skips scheduling when the alarms API is unavailable", async () => {
+    mockedBrowserApi.hasAlarmsAPI.mockReturnValue(false)
+    const scheduleSpy = vi.spyOn(autoCheckinScheduler as any, "scheduleNextRun")
+
+    await autoCheckinScheduler.initialize()
+
+    expect(mockedBrowserApi.onAlarm).not.toHaveBeenCalled()
+    expect(scheduleSpy).not.toHaveBeenCalled()
+    expect((autoCheckinScheduler as any).isInitialized).toBe(true)
+  })
+
+  it("keeps alarm callbacks best-effort when daily or retry handlers throw", async () => {
+    const handleDailyAlarmSpy = vi
+      .spyOn(autoCheckinScheduler as any, "handleDailyAlarm")
+      .mockRejectedValueOnce(new Error("daily failed"))
+    const handleRetryAlarmSpy = vi
+      .spyOn(autoCheckinScheduler as any, "handleRetryAlarm")
+      .mockRejectedValueOnce(new Error("retry failed"))
+
+    await autoCheckinScheduler.initialize()
+
+    const alarmListener = mockedBrowserApi.onAlarm.mock.calls[0]?.[0]
+    expect(alarmListener).toBeTypeOf("function")
+
+    await expect(
+      alarmListener({
+        name: "autoCheckinDaily",
+        scheduledTime: Date.now(),
+      }),
+    ).resolves.toBeUndefined()
+    await expect(
+      alarmListener({
+        name: "autoCheckinRetry",
+        scheduledTime: Date.now() + 60_000,
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(handleDailyAlarmSpy).toHaveBeenCalledTimes(1)
+    expect(handleRetryAlarmSpy).toHaveBeenCalledTimes(1)
+
+    handleDailyAlarmSpy.mockRestore()
+    handleRetryAlarmSpy.mockRestore()
+  })
+
+  it("routes daily and retry alarm events through the installed listener", async () => {
+    const handleDailyAlarmSpy = vi
+      .spyOn(autoCheckinScheduler as any, "handleDailyAlarm")
+      .mockResolvedValue(undefined)
+    const handleRetryAlarmSpy = vi
+      .spyOn(autoCheckinScheduler as any, "handleRetryAlarm")
+      .mockResolvedValue(undefined)
+
+    await autoCheckinScheduler.initialize()
+
+    const alarmListener = mockedBrowserApi.onAlarm.mock.calls[0]?.[0]
+    expect(alarmListener).toBeTypeOf("function")
+
+    const dailyAlarm = {
+      name: "autoCheckinDaily",
+      scheduledTime: Date.now(),
+    }
+    const retryAlarm = {
+      name: "autoCheckinRetry",
+      scheduledTime: Date.now() + 60_000,
+    }
+
+    await alarmListener(dailyAlarm)
+    await alarmListener(retryAlarm)
+
+    expect(handleDailyAlarmSpy).toHaveBeenCalledWith(dailyAlarm)
+    expect(handleRetryAlarmSpy).toHaveBeenCalledWith(retryAlarm)
+
+    handleDailyAlarmSpy.mockRestore()
+    handleRetryAlarmSpy.mockRestore()
+  })
+
+  it("restores the schedule when the installed listener receives the legacy alarm", async () => {
+    const scheduleSpy = vi
+      .spyOn(autoCheckinScheduler as any, "scheduleNextRun")
+      .mockResolvedValue(undefined)
+
+    await autoCheckinScheduler.initialize()
+
+    const alarmListener = mockedBrowserApi.onAlarm.mock.calls[0]?.[0]
+    expect(alarmListener).toBeTypeOf("function")
+
+    await alarmListener({
+      name: "autoCheckin",
+      scheduledTime: Date.now(),
+    })
+
+    expect(scheduleSpy).toHaveBeenCalledTimes(2)
+    expect(scheduleSpy).toHaveBeenNthCalledWith(1, {
+      preserveExisting: true,
+      allowCatchUp: true,
+    })
+    expect(scheduleSpy).toHaveBeenNthCalledWith(2, {
+      allowCatchUp: true,
+    })
+
+    scheduleSpy.mockRestore()
+  })
 })
 
 describe("autoCheckinScheduler.scheduleNextRun", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockedBrowserApi.hasAlarmsAPI.mockReturnValue(true)
+  })
+
+  it("returns without touching alarms when the alarms API is unavailable", async () => {
+    mockedBrowserApi.hasAlarmsAPI.mockReturnValue(false)
+
+    await autoCheckinScheduler.scheduleNextRun()
+
+    expect(mockedBrowserApi.clearAlarm).not.toHaveBeenCalled()
+    expect(mockedBrowserApi.createAlarm).not.toHaveBeenCalled()
+    expect(mockedAutoCheckinStorage.saveStatus).not.toHaveBeenCalled()
   })
 
   it("should clear daily/retry alarms and clear schedules when globalEnabled is false", async () => {
@@ -2568,6 +2692,81 @@ describe("autoCheckinScheduler daily alarm helpers", () => {
     ).rejects.toThrow("Cannot schedule daily alarm for today")
 
     vi.useRealTimers()
+  })
+})
+
+describe("autoCheckinScheduler debug helpers", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
+    mockedBrowserApi.hasAlarmsAPI.mockReturnValue(true)
+  })
+
+  it("does not rewrite status when debugResetLastDailyRunDay has nothing to clear", async () => {
+    storedStatus = {
+      pendingRetry: true,
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+    }
+
+    await autoCheckinScheduler.debugResetLastDailyRunDay()
+
+    expect(mockedAutoCheckinStorage.saveStatus).not.toHaveBeenCalled()
+    expect(storedStatus).toEqual({
+      pendingRetry: true,
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    ;(autoCheckinScheduler as any).isInitialized = false
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    ;(autoCheckinScheduler as any).isInitialized = false
+  })
+
+  it("clamps debugScheduleDailyAlarmForToday to at least one minute and persists today's target day", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    storedStatus = {
+      lastRunResult: "success",
+    }
+
+    const scheduledAt =
+      await autoCheckinScheduler.debugScheduleDailyAlarmForToday({
+        minutesFromNow: 0,
+      })
+
+    expect(scheduledAt).toBe(Date.now() + 60_000)
+    expect(alarmStore.autoCheckinDaily?.scheduledTime).toBe(scheduledAt)
+    expect(storedStatus.nextDailyScheduledAt).toBe(
+      new Date(scheduledAt).toISOString(),
+    )
+    expect(storedStatus.dailyAlarmTargetDay).toBe("2026-01-23")
+    expect(storedStatus.nextScheduledAt).toBe(
+      new Date(scheduledAt).toISOString(),
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("rejects debugScheduleDailyAlarmForToday when the alarms API is unavailable", async () => {
+    mockedBrowserApi.hasAlarmsAPI.mockReturnValue(false)
+
+    await expect(
+      autoCheckinScheduler.debugScheduleDailyAlarmForToday(),
+    ).rejects.toThrow("[AutoCheckin] Alarms API not available")
   })
 })
 
