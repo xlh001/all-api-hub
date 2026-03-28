@@ -72,6 +72,14 @@ const {
   mockSyncResolvedApiTokenKeyCache: vi.fn(),
 }))
 
+const { mockLoggerDebug, mockLoggerError, mockLoggerInfo, mockLoggerWarn } =
+  vi.hoisted(() => ({
+    mockLoggerDebug: vi.fn(),
+    mockLoggerError: vi.fn(),
+    mockLoggerInfo: vi.fn(),
+    mockLoggerWarn: vi.fn(),
+  }))
+
 vi.mock("~/constants/ui", () => ({
   UI_CONSTANTS: {
     EXCHANGE_RATE: {
@@ -120,10 +128,10 @@ vi.mock("~/services/apiService/common/utils", () => ({
 
 vi.mock("~/utils/core/logger", () => ({
   createLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
+    debug: mockLoggerDebug,
+    error: mockLoggerError,
+    info: mockLoggerInfo,
+    warn: mockLoggerWarn,
   })),
 }))
 
@@ -406,6 +414,14 @@ describe("apiService common account-data helpers", () => {
     )
   })
 
+  it("fetchPaymentInfo rethrows upstream failures", async () => {
+    const error = new Error("payment failed")
+    mockFetchApi.mockRejectedValueOnce(error)
+
+    await expect(fetchPaymentInfo(baseRequest)).rejects.toBe(error)
+    expect(mockLoggerError).toHaveBeenCalledWith("获取支付信息失败", error)
+  })
+
   it("fetchTodayUsage short-circuits when cashflow collection is disabled", async () => {
     await expect(
       fetchTodayUsage({
@@ -454,6 +470,32 @@ describe("apiService common account-data helpers", () => {
         group: "",
       }).toString()}`,
     })
+  })
+
+  it("fetchTodayUsage warns when log pagination reaches the max page cap", async () => {
+    mockFetchApiData
+      .mockResolvedValueOnce({
+        items: [{ quota: 10, prompt_tokens: 2, completion_tokens: 3 }],
+        total: 99,
+      })
+      .mockResolvedValueOnce({
+        items: [{ quota: 20, prompt_tokens: 4, completion_tokens: 5 }],
+        total: 99,
+      })
+
+    await expect(fetchTodayUsage(baseRequest as any)).resolves.toEqual({
+      today_quota_consumption: 30,
+      today_prompt_tokens: 6,
+      today_completion_tokens: 8,
+      today_requests_count: 2,
+    })
+
+    expect(mockLoggerWarn).toHaveBeenCalledWith(
+      "达到最大分页限制，数据可能不完整",
+      {
+        maxPages: 2,
+      },
+    )
   })
 
   it("fetchTodayIncome short-circuits when cashflow collection is disabled", async () => {
@@ -616,6 +658,32 @@ describe("apiService common account-data helpers", () => {
     )
   })
 
+  it("fetchAccountTokens and related fetch helpers rethrow upstream failures", async () => {
+    const tokensError = new Error("tokens unavailable")
+    const modelsError = new Error("models unavailable")
+    const groupsError = new Error("groups unavailable")
+    const siteGroupsError = new Error("site groups unavailable")
+    const tokenError = new Error("token unavailable")
+    const redeemError = new Error("redeem unavailable")
+
+    mockFetchApiData
+      .mockRejectedValueOnce(tokensError)
+      .mockRejectedValueOnce(modelsError)
+      .mockRejectedValueOnce(groupsError)
+      .mockRejectedValueOnce(siteGroupsError)
+      .mockRejectedValueOnce(tokenError)
+      .mockRejectedValueOnce(redeemError)
+
+    await expect(fetchAccountTokens(baseRequest)).rejects.toBe(tokensError)
+    await expect(fetchAccountAvailableModels(baseRequest)).rejects.toBe(
+      modelsError,
+    )
+    await expect(fetchUserGroups(baseRequest)).rejects.toBe(groupsError)
+    await expect(fetchSiteUserGroups(baseRequest)).rejects.toBe(siteGroupsError)
+    await expect(fetchTokenById(baseRequest, 9)).rejects.toBe(tokenError)
+    await expect(redeemCode(baseRequest, "promo-123")).rejects.toBe(redeemError)
+  })
+
   it("fetchAccountAvailableModels and fetchUserGroups delegate to their endpoints", async () => {
     mockFetchApiData
       .mockResolvedValueOnce(["gpt-4.1", "claude-3.7"])
@@ -666,6 +734,21 @@ describe("apiService common account-data helpers", () => {
     expect(mockInvalidateResolvedApiTokenKeyCache).toHaveBeenCalledTimes(3)
   })
 
+  it("createApiToken rethrows failed create responses and transport failures", async () => {
+    const transportError = new Error("create transport failed")
+
+    mockFetchApi
+      .mockResolvedValueOnce({ success: false, message: "create failed" })
+      .mockRejectedValueOnce(transportError)
+
+    await expect(
+      createApiToken(baseRequest, { name: "CLI", expired_time: -1 } as any),
+    ).rejects.toMatchObject({ message: "create failed" })
+    await expect(
+      createApiToken(baseRequest, { name: "CLI", expired_time: -1 } as any),
+    ).rejects.toBe(transportError)
+  })
+
   it("fetchModelPricing and redeemCode delegate to their upstream endpoints", async () => {
     mockFetchApi.mockResolvedValueOnce({
       data: [{ model_name: "gpt-4.1", model_ratio: 1 }],
@@ -682,6 +765,14 @@ describe("apiService common account-data helpers", () => {
       success: true,
     })
     await expect(redeemCode(baseRequest, "promo-123")).resolves.toBe(500)
+  })
+
+  it("fetchModelPricing rethrows upstream failures", async () => {
+    const error = new Error("pricing unavailable")
+    mockFetchApi.mockRejectedValueOnce(error)
+
+    await expect(fetchModelPricing(baseRequest)).rejects.toBe(error)
+    expect(mockLoggerError).toHaveBeenCalledWith("获取模型定价失败", error)
   })
 
   it("refreshAccountData wraps successful refreshes with a healthy status", async () => {

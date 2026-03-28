@@ -2,10 +2,16 @@ import { http, HttpResponse } from "msw"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { AuthTypeEnum, TEMP_WINDOW_HEALTH_STATUS_CODES } from "~/types"
+import {
+  COOKIE_AUTH_HEADER_NAME,
+  COOKIE_SESSION_OVERRIDE_HEADER_NAME,
+} from "~/utils/browser/cookieHelper"
 import { server } from "~~/tests/msw/server"
 
 let fetchApiData: typeof import("~/services/apiService/common/utils").fetchApiData
 let fetchApi: typeof import("~/services/apiService/common/utils").fetchApi
+let extractDataFromApiResponseBody: typeof import("~/services/apiService/common/utils").extractDataFromApiResponseBody
+let isHttpUrl: typeof import("~/services/apiService/common/utils").isHttpUrl
 let ApiError: typeof import("~/services/apiService/common/errors").ApiError
 let ApiErrorCodes: typeof import("~/services/apiService/common/errors").API_ERROR_CODES
 
@@ -54,6 +60,10 @@ vi.mock("~/services/apiService/common/minIntervalLimiter", () => ({
   createMinIntervalLimiter: mockCreateMinIntervalLimiter,
 }))
 
+vi.mock("~/utils/browser/protectionBypass", () => ({
+  isProtectionBypassFirefoxEnv: vi.fn(() => true),
+}))
+
 const BASE_URL = "https://example.com/base/"
 const ENDPOINT = "/api/test"
 const API_URL = "https://example.com/base/api/test"
@@ -66,6 +76,8 @@ describe("apiService common fetchApi helpers", () => {
     >("~/services/apiService/common/utils")
     fetchApiData = utils.fetchApiData
     fetchApi = utils.fetchApi
+    extractDataFromApiResponseBody = utils.extractDataFromApiResponseBody
+    isHttpUrl = utils.isHttpUrl
 
     const errors = await vi.importActual<
       typeof import("~/services/apiService/common/errors")
@@ -131,6 +143,49 @@ describe("apiService common fetchApi helpers", () => {
     expect(result).toEqual(data)
   })
 
+  it("fetchApiData forwards cookie auth headers and a session override cookie when available", async () => {
+    let capturedCookie: string | null = null
+    let capturedCookieAuthMode: string | null = null
+    let capturedSessionOverride: string | null = null
+
+    server.use(
+      http.get(API_URL, ({ request }) => {
+        capturedCookie = request.headers.get("cookie")
+        capturedCookieAuthMode = request.headers.get(COOKIE_AUTH_HEADER_NAME)
+        capturedSessionOverride = request.headers.get(
+          COOKIE_SESSION_OVERRIDE_HEADER_NAME,
+        )
+
+        return HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "ok",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: 123,
+          },
+        },
+        {
+          endpoint: ENDPOINT,
+          tempWindowFallback: { statusCodes: [], codes: [] },
+        },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(capturedCookie).toBe("session=abc123")
+    expect(capturedCookieAuthMode).toBe("cookie")
+    expect(capturedSessionOverride).toBe("session=abc123")
+  })
+
   it("fetchApi should unwrap ApiResponse when _normalResponseType is true", async () => {
     const payload = { models: [{ name: "models/gemini-1.5-pro" }] }
     server.use(
@@ -178,6 +233,44 @@ describe("apiService common fetchApi helpers", () => {
     )
 
     expect(result).toEqual(pricingLikeResponse)
+  })
+
+  it("fetchApi returns the full response envelope when unwrapping is disabled", async () => {
+    const apiEnvelope = {
+      success: true,
+      data: { nested: "value" },
+      message: "ok",
+    }
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json(apiEnvelope)
+      }),
+    )
+
+    const result = await fetchApi<{ nested: string }>(
+      {
+        baseUrl: BASE_URL,
+        auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+      },
+      { endpoint: ENDPOINT },
+    )
+
+    expect(result).toEqual(apiEnvelope)
+  })
+
+  it("fetchApiData rejects non-JSON response types before issuing the request", async () => {
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        { endpoint: ENDPOINT, responseType: "text" },
+      ),
+    ).rejects.toMatchObject({
+      endpoint: ENDPOINT,
+      message: "fetchApiData 仅支持 JSON 响应",
+    })
   })
 
   it("fetchApiData should throw ApiError when HTTP response is not ok", async () => {
@@ -363,6 +456,32 @@ describe("apiService common fetchApi helpers", () => {
     })
   })
 
+  it("rejects 200 responses whose content type is not JSON", async () => {
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.text("plain text", {
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        {
+          endpoint: ENDPOINT,
+          tempWindowFallback: { statusCodes: [], codes: [] },
+        },
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 200,
+      code: ApiErrorCodes.CONTENT_TYPE_MISMATCH,
+    })
+  })
+
   it.each(["application/xhtml+xml", "application/xhtml+xml; charset=utf-8"])(
     "classifies 429 XHTML responses with Retry-After (%s) as HTTP_429 for JSON requests",
     async (contentType) => {
@@ -479,4 +598,85 @@ describe("apiService common fetchApi helpers", () => {
       }
     },
   )
+
+  it("fetchApi supports text responses", async () => {
+    server.use(
+      http.get("https://example.com/base/api/text", () => {
+        return HttpResponse.text("hello world")
+      }),
+    )
+
+    await expect(
+      fetchApi<string>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        { endpoint: "/api/text", responseType: "text" },
+        true,
+      ),
+    ).resolves.toBe("hello world")
+  })
+
+  it("fetchApi supports arrayBuffer responses", async () => {
+    server.use(
+      http.get("https://example.com/base/api/buffer", () => {
+        return new HttpResponse(Uint8Array.from([1, 2, 3]), {
+          headers: { "Content-Type": "application/octet-stream" },
+        })
+      }),
+    )
+
+    const result = await fetchApi<ArrayBuffer>(
+      {
+        baseUrl: BASE_URL,
+        auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+      },
+      { endpoint: "/api/buffer", responseType: "arrayBuffer" },
+      true,
+    )
+
+    expect(Array.from(new Uint8Array(result))).toEqual([1, 2, 3])
+  })
+
+  it("fetchApi supports blob responses", async () => {
+    server.use(
+      http.get("https://example.com/base/api/blob", () => {
+        return new HttpResponse(Uint8Array.from([4, 5, 6]), {
+          headers: { "Content-Type": "application/octet-stream" },
+        })
+      }),
+    )
+
+    const result = await fetchApi<Blob>(
+      {
+        baseUrl: BASE_URL,
+        auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+      },
+      { endpoint: "/api/blob", responseType: "blob" },
+      true,
+    )
+
+    expect(result).toBeInstanceOf(Blob)
+    expect(Array.from(new Uint8Array(await result.arrayBuffer()))).toEqual([
+      4, 5, 6,
+    ])
+  })
+
+  it("isHttpUrl and extractDataFromApiResponseBody guard invalid input", () => {
+    expect(isHttpUrl("https://example.com")).toBe(true)
+    expect(isHttpUrl("http://example.com")).toBe(true)
+    expect(isHttpUrl("ftp://example.com")).toBe(false)
+    expect(isHttpUrl("not-a-url")).toBe(false)
+
+    expect(() =>
+      extractDataFromApiResponseBody(null, "/api/invalid"),
+    ).toThrowError(ApiError)
+    expect(() =>
+      extractDataFromApiResponseBody(
+        { success: false, data: null, message: "" },
+        "/api/invalid",
+      ),
+    ).toThrowError(ApiError)
+  })
 })

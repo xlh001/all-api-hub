@@ -100,6 +100,26 @@ describe("apiService common channel APIs", () => {
     expect(result.type_counts).toEqual({ "1": 3 })
   })
 
+  it("listAllChannels rejects invalid upstream page envelopes", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: 1,
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({
+      success: false,
+      message: "channel list unavailable",
+    })
+
+    await expect(listAllChannels(request as any)).rejects.toMatchObject({
+      message: "channel list unavailable",
+    })
+  })
+
   it("fetchChannelModels should call correct endpoint and return data", async () => {
     const baseUrl = "https://example.com"
     const token = "token"
@@ -126,5 +146,28 @@ describe("apiService common channel APIs", () => {
       false,
     )
     expect(result).toEqual(["gpt-4"])
+  })
+
+  it("fetchChannelModels rejects malformed model payloads", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: 1,
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({
+      success: true,
+      data: { models: ["gpt-4"] },
+      message: "malformed payload",
+    })
+
+    await expect(fetchChannelModels(request as any, 123)).rejects.toMatchObject(
+      {
+        message: "malformed payload",
+      },
+    )
   })
 })
