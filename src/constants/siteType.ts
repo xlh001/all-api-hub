@@ -89,15 +89,9 @@ const SITE_API_ROUTER: Record<string, any> = {
   [RIX_API]: { usagePath: "/log", checkInPath: "/panel", redeemPath: "/topup" },
   [ANYROUTER]: { checkInPath: "/console/topup" },
   [WONG_GONGYI]: { checkInPath: "/console/topup" },
-  /**
-   * Sub2API frontends are often custom-branded single-page apps. Use root paths
-   * to avoid sending users to One-API-specific console routes.
-   */
   [SUB2API]: {
-    usagePath: "/",
-    checkInPath: "/",
-    adminCredentialsPath: "/",
-    redeemPath: "/",
+    usagePath: "/usage",
+    redeemPath: "/redeem",
   },
   Default: {
     usagePath: DEFAULT_USAGE_PATH,
