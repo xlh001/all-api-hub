@@ -798,6 +798,210 @@ describe("autoCheckinScheduler daily+retry behavior", () => {
   })
 })
 
+describe("autoCheckinScheduler retry scheduling", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("returns a short fallback delay when retry timing inputs are invalid", () => {
+    vi.useFakeTimers()
+    const now = new Date(2024, 0, 1, 9, 30, 0)
+    vi.setSystemTime(now)
+
+    const nextRetryTime = (
+      autoCheckinScheduler as any
+    ).computeNextRetryTriggerTime(
+      {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 0,
+          maxAttemptsPerDay: 3,
+        },
+      },
+      {
+        lastRunAt: "not-a-date",
+      },
+      now,
+    )
+
+    expect(nextRetryTime.getTime()).toBe(now.getTime() + 15_000)
+
+    vi.useRealTimers()
+  })
+
+  it("clears the retry alarm without persisting when no status exists", async () => {
+    storedStatus = null
+
+    await expect(
+      (autoCheckinScheduler as any).clearRetryAlarmAndState(null),
+    ).resolves.toBeUndefined()
+
+    expect(mockedBrowserApi.clearAlarm).toHaveBeenCalledWith("autoCheckinRetry")
+    expect(mockedAutoCheckinStorage.saveStatus).not.toHaveBeenCalled()
+  })
+
+  it("syncs a preserved same-day retry alarm back into stored state", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+
+    const scheduledTime = new Date(2024, 0, 1, 9, 45, 0)
+    storedStatus = {
+      lastDailyRunDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["a", "b"],
+        attemptsByAccount: {
+          a: 1,
+          b: 3,
+        },
+      },
+      pendingRetry: false,
+    } as any
+    alarmStore.autoCheckinRetry = {
+      name: "autoCheckinRetry",
+      scheduledTime: scheduledTime.getTime(),
+    }
+
+    await (autoCheckinScheduler as any).scheduleRetryAlarm(
+      {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+      {
+        preserveExisting: true,
+      },
+    )
+
+    expect(mockedBrowserApi.createAlarm).not.toHaveBeenCalled()
+    expect(mockedBrowserApi.clearAlarm).not.toHaveBeenCalled()
+    expect(storedStatus.nextRetryScheduledAt).toBe(scheduledTime.toISOString())
+    expect(storedStatus.retryAlarmTargetDay).toBe("2024-01-01")
+    expect(storedStatus.pendingRetry).toBe(true)
+    expect(storedStatus.retryState.pendingAccountIds).toEqual(["a"])
+    expect(storedStatus.retryState.attemptsByAccount).toEqual({ a: 1 })
+
+    vi.useRealTimers()
+  })
+
+  it("clears a preserved retry alarm when its target day is stale", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 2, 9, 0, 0))
+
+    storedStatus = {
+      lastDailyRunDay: "2024-01-02",
+      retryState: {
+        day: "2024-01-02",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: {
+          a: 1,
+        },
+      },
+      pendingRetry: true,
+    } as any
+    alarmStore.autoCheckinRetry = {
+      name: "autoCheckinRetry",
+      scheduledTime: new Date(2024, 0, 1, 23, 30, 0).getTime(),
+    }
+
+    await (autoCheckinScheduler as any).scheduleRetryAlarm(
+      {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+      {
+        preserveExisting: true,
+      },
+    )
+
+    expect(mockedBrowserApi.clearAlarm).toHaveBeenCalledWith("autoCheckinRetry")
+    expect(mockedBrowserApi.createAlarm).not.toHaveBeenCalled()
+    expect(storedStatus.nextRetryScheduledAt).toBeUndefined()
+    expect(storedStatus.retryAlarmTargetDay).toBeUndefined()
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+
+    vi.useRealTimers()
+  })
+
+  it("drops retry state instead of scheduling across the day boundary", async () => {
+    vi.useFakeTimers()
+    const now = new Date(2024, 0, 1, 23, 59, 55)
+    vi.setSystemTime(now)
+
+    storedStatus = {
+      lastRunAt: now.toISOString(),
+      lastDailyRunDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: {
+          a: 1,
+        },
+      },
+      pendingRetry: true,
+    } as any
+
+    await (autoCheckinScheduler as any).scheduleRetryAlarm({
+      ...(DEFAULT_PREFERENCES as any).autoCheckin,
+      retryStrategy: {
+        enabled: true,
+        intervalMinutes: 30,
+        maxAttemptsPerDay: 3,
+      },
+    })
+
+    expect(mockedBrowserApi.createAlarm).not.toHaveBeenCalled()
+    expect(storedStatus.nextRetryScheduledAt).toBeUndefined()
+    expect(storedStatus.retryAlarmTargetDay).toBeUndefined()
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+
+    vi.useRealTimers()
+  })
+
+  it("ignores stale retry alarms and clears retry state without retrying", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 2, 9, 0, 0))
+
+    storedStatus = {
+      retryAlarmTargetDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: {
+          a: 1,
+        },
+      },
+      pendingRetry: true,
+    } as any
+
+    const runRetrySpy = vi.spyOn(
+      autoCheckinScheduler as any,
+      "runRetryCheckins",
+    )
+
+    await (autoCheckinScheduler as any).handleRetryAlarm({
+      name: "autoCheckinRetry",
+      scheduledTime: Date.now(),
+    })
+
+    expect(runRetrySpy).not.toHaveBeenCalled()
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+
+    vi.useRealTimers()
+  })
+})
+
 describe("autoCheckinScheduler targeting support", () => {
   beforeEach(() => {
     vi.clearAllMocks()

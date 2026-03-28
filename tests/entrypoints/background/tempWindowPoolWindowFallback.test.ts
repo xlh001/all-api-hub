@@ -2,6 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { API_ERROR_CODES } from "~/services/apiService/common/errors"
+import { AuthTypeEnum } from "~/types"
+import {
+  AUTH_MODE,
+  COOKIE_SESSION_OVERRIDE_HEADER_NAME,
+} from "~/utils/browser/cookieHelper"
 
 const originalBrowser = (globalThis as any).browser
 
@@ -11,6 +16,12 @@ describe("tempWindowPool window fallback", () => {
   let removeTabOrWindowMock: ReturnType<typeof vi.fn>
   let hasWindowsApiMock: ReturnType<typeof vi.fn>
   let isAllowedIncognitoAccessMock: ReturnType<typeof vi.fn>
+  let getAccountByIdMock: ReturnType<typeof vi.fn>
+  let getCookieHeaderForUrlMock: ReturnType<typeof vi.fn>
+  let addAuthMethodHeaderMock: ReturnType<typeof vi.fn>
+  let applyTempWindowCookieRuleMock: ReturnType<typeof vi.fn>
+  let removeTempWindowCookieRuleMock: ReturnType<typeof vi.fn>
+  let isProtectionBypassFirefoxEnvMock: ReturnType<typeof vi.fn>
   let sendMessageMock: ReturnType<typeof vi.fn>
   let tabsGetMock: ReturnType<typeof vi.fn>
   let tabsQueryMock: ReturnType<typeof vi.fn>
@@ -22,6 +33,17 @@ describe("tempWindowPool window fallback", () => {
     removeTabOrWindowMock = vi.fn().mockResolvedValue(undefined)
     hasWindowsApiMock = vi.fn(() => true)
     isAllowedIncognitoAccessMock = vi.fn().mockResolvedValue(true)
+    getAccountByIdMock = vi.fn()
+    getCookieHeaderForUrlMock = vi.fn().mockResolvedValue("")
+    addAuthMethodHeaderMock = vi.fn(
+      async (headers: HeadersInit, mode: string) => ({
+        ...(headers as Record<string, string>),
+        "X-Auth-Mode": mode,
+      }),
+    )
+    applyTempWindowCookieRuleMock = vi.fn().mockResolvedValue(null)
+    removeTempWindowCookieRuleMock = vi.fn().mockResolvedValue(undefined)
+    isProtectionBypassFirefoxEnvMock = vi.fn(() => false)
     sendMessageMock = vi.fn(
       async (_tabId: number, message: { action: string }) => {
         switch (message.action) {
@@ -81,6 +103,28 @@ describe("tempWindowPool window fallback", () => {
         removeTabOrWindow: removeTabOrWindowMock,
       }
     })
+    vi.doMock("~/services/accounts/accountStorage", () => ({
+      accountStorage: {
+        getAccountById: getAccountByIdMock,
+      },
+    }))
+    vi.doMock("~/utils/browser/cookieHelper", async (importOriginal) => {
+      const actual =
+        await importOriginal<typeof import("~/utils/browser/cookieHelper")>()
+
+      return {
+        ...actual,
+        addAuthMethodHeader: addAuthMethodHeaderMock,
+        getCookieHeaderForUrl: getCookieHeaderForUrlMock,
+      }
+    })
+    vi.doMock("~/utils/browser/dnrCookieInjector", () => ({
+      applyTempWindowCookieRule: applyTempWindowCookieRuleMock,
+      removeTempWindowCookieRule: removeTempWindowCookieRuleMock,
+    }))
+    vi.doMock("~/utils/browser/protectionBypass", () => ({
+      isProtectionBypassFirefoxEnv: isProtectionBypassFirefoxEnvMock,
+    }))
     vi.doMock("~/services/preferences/userPreferences", () => ({
       DEFAULT_PREFERENCES: {
         tempWindowFallback: {
@@ -106,6 +150,10 @@ describe("tempWindowPool window fallback", () => {
     ;(globalThis as any).browser = originalBrowser
 
     vi.useRealTimers()
+    vi.doUnmock("~/services/accounts/accountStorage")
+    vi.doUnmock("~/utils/browser/cookieHelper")
+    vi.doUnmock("~/utils/browser/dnrCookieInjector")
+    vi.doUnmock("~/utils/browser/protectionBypass")
     vi.doUnmock("~/utils/browser/browserApi")
     vi.doUnmock("~/services/preferences/userPreferences")
     vi.doUnmock("~/utils/i18n/core")
@@ -413,5 +461,219 @@ describe("tempWindowPool window fallback", () => {
       error: "No response from temp window fetch",
     })
     expect(removeTabOrWindowMock).toHaveBeenCalledWith(505)
+  })
+
+  it("injects a WAF cookie rule for token-auth temp fetches and removes it afterward", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 606 })
+    getCookieHeaderForUrlMock.mockResolvedValueOnce("cf_clearance=1")
+    applyTempWindowCookieRuleMock.mockResolvedValueOnce(1_000_606)
+
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/token-auth",
+        fetchOptions: {
+          method: "GET",
+          credentials: "omit",
+        },
+        authType: AuthTypeEnum.AccessToken,
+        requestId: "req-token-auth",
+      },
+      sendResponse,
+    )
+    await vi.advanceTimersByTimeAsync(1000)
+    await request
+
+    const fetchCall = sendMessageMock.mock.calls.find(
+      ([, message]) =>
+        message.action === RuntimeActionIds.ContentPerformTempWindowFetch,
+    )
+
+    expect(getCookieHeaderForUrlMock).toHaveBeenCalledWith(
+      "https://example.com/api/token-auth",
+      {
+        includeSession: false,
+      },
+    )
+    expect(applyTempWindowCookieRuleMock).toHaveBeenCalledWith({
+      tabId: 606,
+      url: "https://example.com/api/token-auth",
+      cookieHeader: "cf_clearance=1",
+    })
+    expect(fetchCall?.[1].fetchOptions).toEqual(
+      expect.objectContaining({
+        credentials: "include",
+      }),
+    )
+    expect(removeTempWindowCookieRuleMock).toHaveBeenCalledWith(1_000_606)
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: true,
+        message: "",
+        data: "ok",
+      },
+    })
+  })
+
+  it("injects merged WAF and session cookies for Chromium cookie-auth fetches", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 707 })
+    getCookieHeaderForUrlMock.mockResolvedValueOnce("cf_clearance=1")
+    applyTempWindowCookieRuleMock.mockResolvedValueOnce(1_000_707)
+
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/cookie-auth",
+        fetchOptions: {
+          method: "GET",
+        },
+        authType: AuthTypeEnum.Cookie,
+        cookieAuthSessionCookie: "session=abc",
+        requestId: "req-cookie-auth",
+      },
+      sendResponse,
+    )
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    const fetchCall = sendMessageMock.mock.calls.find(
+      ([, message]) =>
+        message.action === RuntimeActionIds.ContentPerformTempWindowFetch,
+    )
+
+    expect(applyTempWindowCookieRuleMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tabId: 707,
+        url: "https://example.com/api/cookie-auth",
+        cookieHeader: expect.stringContaining("cf_clearance=1"),
+      }),
+    )
+    expect(applyTempWindowCookieRuleMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cookieHeader: expect.stringContaining("session=abc"),
+      }),
+    )
+    expect(fetchCall?.[1].fetchOptions).toEqual(
+      expect.objectContaining({
+        credentials: "include",
+      }),
+    )
+    expect(removeTempWindowCookieRuleMock).toHaveBeenCalledWith(1_000_707)
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: true,
+        message: "",
+        data: "ok",
+      },
+    })
+  })
+
+  it("adds Firefox auth headers during turnstile fetches without using DNR cookie rules", async () => {
+    tempContextMode = "tab"
+    isProtectionBypassFirefoxEnvMock.mockReturnValue(true)
+    createTabMock.mockResolvedValueOnce({ id: 808 })
+    vi.useRealTimers()
+    sendMessageMock.mockImplementation(
+      async (_tabId: number, message: { action: string }) => {
+        switch (message.action) {
+          case RuntimeActionIds.ContentShowShieldBypassUi:
+            return undefined
+          case RuntimeActionIds.ContentCheckCapGuard:
+          case RuntimeActionIds.ContentCheckCloudflareGuard:
+            return { success: true, passed: true }
+          case RuntimeActionIds.ContentWaitForTurnstileToken:
+            return {
+              success: true,
+              status: "token_obtained",
+              token: " token-123 ",
+              detection: {
+                hasTurnstile: true,
+              },
+            }
+          case RuntimeActionIds.ContentPerformTempWindowFetch:
+            return {
+              success: true,
+              data: {
+                success: true,
+                message: "",
+                data: "ok",
+              },
+            }
+          default:
+            throw new Error(`Unexpected action: ${message.action}`)
+        }
+      },
+    )
+
+    const { handleTempWindowTurnstileFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    await handleTempWindowTurnstileFetch(
+      {
+        originUrl: "https://example.com",
+        pageUrl: "https://example.com/checkin",
+        fetchUrl: "https://example.com/api/checkin",
+        fetchOptions: {
+          method: "POST",
+        },
+        authType: AuthTypeEnum.Cookie,
+        cookieAuthSessionCookie: "session=abc",
+        requestId: "req-turnstile-firefox",
+        turnstileParamName: "cf-turnstile-response",
+      },
+      sendResponse,
+    )
+
+    const fetchCall = sendMessageMock.mock.calls.find(
+      ([, message]) =>
+        message.action === RuntimeActionIds.ContentPerformTempWindowFetch,
+    )
+
+    expect(fetchCall?.[1].fetchUrl).toContain("cf-turnstile-response=token-123")
+    expect(addAuthMethodHeaderMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        [COOKIE_SESSION_OVERRIDE_HEADER_NAME.toLowerCase()]: "session=abc",
+      }),
+      AUTH_MODE.COOKIE_AUTH_MODE,
+    )
+    expect(fetchCall?.[1].fetchOptions).toEqual(
+      expect.objectContaining({
+        credentials: "include",
+        headers: expect.objectContaining({
+          [COOKIE_SESSION_OVERRIDE_HEADER_NAME.toLowerCase()]: "session=abc",
+          "X-Auth-Mode": AUTH_MODE.COOKIE_AUTH_MODE,
+        }),
+      }),
+    )
+    expect(applyTempWindowCookieRuleMock).not.toHaveBeenCalled()
+    expect(removeTempWindowCookieRuleMock).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: true,
+        message: "",
+        data: "ok",
+      },
+      turnstile: {
+        status: "token_obtained",
+        hasTurnstile: true,
+      },
+    })
   })
 })
