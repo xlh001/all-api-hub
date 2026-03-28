@@ -463,6 +463,119 @@ describe("tempWindowPool window fallback", () => {
     expect(removeTabOrWindowMock).toHaveBeenCalledWith(505)
   })
 
+  it("reuses a live same-origin tab context before delayed release and recreates it after idle cleanup", async () => {
+    tempContextMode = "tab"
+    createTabMock
+      .mockResolvedValueOnce({ id: 606 })
+      .mockResolvedValueOnce({ id: 607 })
+
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const firstResponse = vi.fn()
+    const firstRequest = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com/a",
+        fetchUrl: "https://example.com/api/first",
+        fetchOptions: { method: "GET" },
+        requestId: "req-reuse-1",
+      },
+      firstResponse,
+    )
+    await vi.advanceTimersByTimeAsync(500)
+    await firstRequest
+
+    const secondResponse = vi.fn()
+    const secondRequest = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com/b",
+        fetchUrl: "https://example.com/api/second",
+        fetchOptions: { method: "GET" },
+        requestId: "req-reuse-2",
+      },
+      secondResponse,
+    )
+    await vi.advanceTimersByTimeAsync(500)
+    await secondRequest
+
+    expect(createTabMock).toHaveBeenCalledTimes(1)
+    const fetchCallsBeforeCleanup = sendMessageMock.mock.calls.filter(
+      ([, message]) =>
+        message.action === RuntimeActionIds.ContentPerformTempWindowFetch,
+    )
+    expect(fetchCallsBeforeCleanup).toHaveLength(2)
+
+    await vi.advanceTimersByTimeAsync(2500)
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(606)
+
+    const thirdResponse = vi.fn()
+    const thirdRequest = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com/c",
+        fetchUrl: "https://example.com/api/third",
+        fetchOptions: { method: "GET" },
+        requestId: "req-reuse-3",
+      },
+      thirdResponse,
+    )
+    await vi.advanceTimersByTimeAsync(500)
+    await thirdRequest
+
+    expect(createTabMock).toHaveBeenCalledTimes(2)
+    expect(createTabMock).toHaveBeenLastCalledWith(
+      "https://example.com/c",
+      false,
+    )
+  })
+
+  it("drops a stale pooled context and creates a fresh tab for the next same-origin fetch", async () => {
+    tempContextMode = "tab"
+    createTabMock
+      .mockResolvedValueOnce({ id: 708 })
+      .mockResolvedValueOnce({ id: 709 })
+
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const firstResponse = vi.fn()
+    const firstRequest = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/first",
+        fetchOptions: { method: "GET" },
+        requestId: "req-stale-1",
+      },
+      firstResponse,
+    )
+    await vi.advanceTimersByTimeAsync(500)
+    await firstRequest
+
+    tabsGetMock.mockRejectedValueOnce(new Error("tab missing"))
+
+    const secondResponse = vi.fn()
+    const secondRequest = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/second",
+        fetchOptions: { method: "GET" },
+        requestId: "req-stale-2",
+      },
+      secondResponse,
+    )
+    await vi.advanceTimersByTimeAsync(500)
+    await secondRequest
+
+    expect(createTabMock).toHaveBeenCalledTimes(2)
+    expect(removeTabOrWindowMock).not.toHaveBeenCalledWith(708)
+    const fetchCalls = sendMessageMock.mock.calls.filter(
+      ([, message]) =>
+        message.action === RuntimeActionIds.ContentPerformTempWindowFetch,
+    )
+    expect(fetchCalls.at(-1)?.[0]).toBe(709)
+  })
+
   it("injects a WAF cookie rule for token-auth temp fetches and removes it afterward", async () => {
     tempContextMode = "tab"
     createTabMock.mockResolvedValueOnce({ id: 606 })
