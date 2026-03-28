@@ -10,7 +10,12 @@ import {
   DEFAULT_PREFERENCES,
   userPreferences,
 } from "~/services/preferences/userPreferences"
-import { clearAlarm, getAlarm, hasAlarmsAPI } from "~/utils/browser/browserApi"
+import {
+  clearAlarm,
+  getAlarm,
+  hasAlarmsAPI,
+  onAlarm,
+} from "~/utils/browser/browserApi"
 
 vi.mock("~/services/preferences/userPreferences", () => ({
   DEFAULT_PREFERENCES: {
@@ -68,6 +73,7 @@ const mockedBrowserApi = {
   clearAlarm: clearAlarm as unknown as ReturnType<typeof vi.fn>,
   getAlarm: getAlarm as unknown as ReturnType<typeof vi.fn>,
   hasAlarmsAPI: hasAlarmsAPI as unknown as ReturnType<typeof vi.fn>,
+  onAlarm: onAlarm as unknown as ReturnType<typeof vi.fn>,
 }
 
 describe("ManagedSiteModelSync message handling", () => {
@@ -362,6 +368,48 @@ describe("ManagedSiteModelSync.updateSettings and setupAlarm", () => {
 
     expect(mockedBrowserApi.clearAlarm).toHaveBeenCalledWith(
       "managedSiteModelSync",
+    )
+  })
+
+  it("returns early when alarms are unsupported", async () => {
+    mockedBrowserApi.hasAlarmsAPI.mockReturnValue(false)
+
+    await modelSyncScheduler.setupAlarm()
+
+    expect(mockedBrowserApi.clearAlarm).not.toHaveBeenCalled()
+    expect(mockedBrowserApi.getAlarm).not.toHaveBeenCalled()
+  })
+})
+
+describe("ManagedSiteModelSync scheduler lifecycle", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    ;(modelSyncScheduler as any).isInitialized = false
+  })
+
+  it("initializes once and skips alarm wiring when alarms are unsupported", async () => {
+    mockedBrowserApi.hasAlarmsAPI.mockReturnValue(false)
+
+    await modelSyncScheduler.initialize()
+    await modelSyncScheduler.initialize()
+
+    expect(mockedBrowserApi.onAlarm).not.toHaveBeenCalled()
+  })
+
+  it("rejects executeFailedOnly when there is no retryable execution history", async () => {
+    mockedStorage.getLastExecution.mockResolvedValueOnce(null)
+
+    await expect(modelSyncScheduler.executeFailedOnly()).rejects.toThrow(
+      "No previous execution found",
+    )
+
+    mockedStorage.getLastExecution.mockResolvedValueOnce({
+      items: [{ channelId: 1, channelName: "Alpha", ok: true }],
+      statistics: { total: 1, successCount: 1, failureCount: 0 },
+    })
+
+    await expect(modelSyncScheduler.executeFailedOnly()).rejects.toThrow(
+      "No failed channels to retry",
     )
   })
 })

@@ -583,6 +583,103 @@ describe("accountStorage core behaviors", () => {
     expect(updatedAccount?.checkIn?.customCheckIn?.lastCheckInDate).toBe(today)
   })
 
+  it("markAccountAsSiteCheckedIn returns false for missing or disabled accounts", async () => {
+    seedStorage([
+      createAccount({
+        id: "disabled-check-in",
+        disabled: true,
+      }),
+    ])
+
+    await expect(
+      accountStorage.markAccountAsSiteCheckedIn("missing-account"),
+    ).resolves.toBe(false)
+    await expect(
+      accountStorage.markAccountAsSiteCheckedIn("disabled-check-in"),
+    ).resolves.toBe(false)
+  })
+
+  it("markAccountAsCustomCheckedIn returns false for missing, disabled, or invalid custom URLs", async () => {
+    seedStorage([
+      createAccount({
+        id: "disabled-custom-check-in",
+        disabled: true,
+        checkIn: {
+          enableDetection: true,
+          customCheckIn: {
+            url: "https://example.com/check",
+            isCheckedInToday: false,
+          },
+        },
+      }),
+      createAccount({
+        id: "empty-custom-url",
+        checkIn: {
+          enableDetection: true,
+          customCheckIn: {
+            url: "   ",
+            isCheckedInToday: false,
+          },
+        },
+      }),
+    ])
+
+    await expect(
+      accountStorage.markAccountAsCustomCheckedIn("missing-account"),
+    ).resolves.toBe(false)
+    await expect(
+      accountStorage.markAccountAsCustomCheckedIn("disabled-custom-check-in"),
+    ).resolves.toBe(false)
+    await expect(
+      accountStorage.markAccountAsCustomCheckedIn("empty-custom-url"),
+    ).resolves.toBe(false)
+  })
+
+  it("refreshAllAccounts summarizes refreshed, reused, and failed refreshes", async () => {
+    seedStorage([
+      createAccount({ id: "refresh-1" }),
+      createAccount({ id: "refresh-2" }),
+      createAccount({ id: "refresh-3" }),
+    ])
+    storageData.set(USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES, {
+      showTodayCashflow: false,
+    })
+
+    const refreshAccountSpy = vi
+      .spyOn(accountStorage, "refreshAccount")
+      .mockResolvedValueOnce({
+        refreshed: true,
+        account: { last_sync_time: 100 },
+      } as any)
+      .mockResolvedValueOnce({
+        refreshed: false,
+        account: { last_sync_time: 250 },
+      } as any)
+      .mockRejectedValueOnce(new Error("refresh exploded"))
+
+    try {
+      const result = await accountStorage.refreshAllAccounts()
+
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(1, "refresh-1", false, {
+        includeTodayCashflow: false,
+      })
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(2, "refresh-2", false, {
+        includeTodayCashflow: false,
+      })
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(3, "refresh-3", false, {
+        includeTodayCashflow: false,
+      })
+      expect(result).toEqual({
+        success: 2,
+        failed: 1,
+        latestSyncTime: 250,
+        refreshedCount: 1,
+      })
+    } finally {
+      refreshAccountSpy.mockRestore()
+    }
+  })
+
   it("getAccountStats should aggregate numeric fields across accounts", async () => {
     const accountA = createAccount({
       id: "stats-a",

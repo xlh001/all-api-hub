@@ -92,9 +92,55 @@ describe("newApiProvider", () => {
       }
       expect(newApiProvider.canCheckIn(account)).toBe(false)
     })
+
+    it("allows cookie-auth accounts to check in without an access token", () => {
+      const account = {
+        ...mockAccount,
+        authType: AuthTypeEnum.Cookie,
+        account_info: { ...mockAccount.account_info, access_token: "" },
+      }
+      expect(newApiProvider.canCheckIn(account)).toBe(true)
+    })
   })
 
   describe("checkIn", () => {
+    it("returns the default success message key when the upstream check-in succeeds without a message", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: true,
+        message: "",
+        data: { checkin_date: "2026-01-01", quota_awarded: 1 },
+      })
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "success",
+        rawMessage: undefined,
+        messageKey: "autoCheckin:providerFallback.checkinSuccessful",
+        data: { checkin_date: "2026-01-01", quota_awarded: 1 },
+      })
+    })
+
+    it("treats upstream already-checked responses as already_checked results", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "今日已签到",
+        data: { checkin_date: "2026-01-01" },
+      })
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "already_checked",
+        rawMessage: "今日已签到",
+        data: { checkin_date: "2026-01-01" },
+      })
+    })
+
     it("uses the site check-in page for Turnstile-assisted temp context when Turnstile is required", async () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
       const { tempWindowTurnstileFetch } = await import(
@@ -354,6 +400,29 @@ describe("newApiProvider", () => {
 
       expect(result.status).toBe("failed")
       expect(tempWindowTurnstileFetch).not.toHaveBeenCalled()
+    })
+
+    it("returns a generic failed result when the Turnstile-assisted fetch cannot start", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      const { tempWindowTurnstileFetch } = await import(
+        "~/utils/browser/tempWindowFetch"
+      )
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "Turnstile token invalid",
+        data: null,
+      })
+      vi.mocked(tempWindowTurnstileFetch).mockResolvedValueOnce(null as any)
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        messageKey: "autoCheckin:providerFallback.checkinFailed",
+        rawMessage: "Turnstile token invalid",
+        data: undefined,
+      })
     })
   })
 })
