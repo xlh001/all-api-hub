@@ -1683,6 +1683,239 @@ describe("autoCheckinScheduler.pretriggerDailyOnUiOpen", () => {
 
     vi.useRealTimers()
   })
+
+  it("returns alarms_api_unavailable when the alarms API cannot be used", async () => {
+    mockedBrowserApi.hasAlarmsAPI.mockReturnValue(false)
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      debug: true,
+    })
+
+    expect(result.started).toBe(false)
+    expect(result.eligible).toBe(false)
+    expect(result.ineligibleReason).toBe("alarms_api_unavailable")
+    expect(mockedUserPreferences.getPreferences).not.toHaveBeenCalled()
+  })
+
+  it("returns global_disabled and pretrigger_disabled for the corresponding config gates", async () => {
+    mockedUserPreferences.getPreferences.mockResolvedValueOnce({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: false,
+        pretriggerDailyOnUiOpen: true,
+      },
+    })
+
+    await expect(
+      autoCheckinScheduler.pretriggerDailyOnUiOpen({ debug: true }),
+    ).resolves.toMatchObject({
+      started: false,
+      eligible: false,
+      ineligibleReason: "global_disabled",
+      debug: expect.objectContaining({
+        windowStart: (DEFAULT_PREFERENCES as any).autoCheckin.windowStart,
+        windowEnd: (DEFAULT_PREFERENCES as any).autoCheckin.windowEnd,
+      }),
+    })
+
+    mockedUserPreferences.getPreferences.mockResolvedValueOnce({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        pretriggerDailyOnUiOpen: false,
+      },
+    })
+
+    await expect(
+      autoCheckinScheduler.pretriggerDailyOnUiOpen({ debug: true }),
+    ).resolves.toMatchObject({
+      started: false,
+      eligible: false,
+      ineligibleReason: "pretrigger_disabled",
+    })
+  })
+
+  it("returns invalid_time_window when the configured time strings cannot be parsed", async () => {
+    mockedUserPreferences.getPreferences.mockResolvedValueOnce({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        pretriggerDailyOnUiOpen: true,
+        windowStart: "08:xx",
+        windowEnd: "10:00",
+      },
+    })
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      debug: true,
+    })
+
+    expect(result.started).toBe(false)
+    expect(result.eligible).toBe(false)
+    expect(result.ineligibleReason).toBe("invalid_time_window")
+    expect(result.debug).toEqual(
+      expect.objectContaining({
+        windowStartMinutes: null,
+        windowEndMinutes: 600,
+      }),
+    )
+  })
+
+  it("returns daily_alarm_missing when no daily alarm is scheduled", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      debug: true,
+    })
+
+    expect(result.started).toBe(false)
+    expect(result.eligible).toBe(false)
+    expect(result.ineligibleReason).toBe("daily_alarm_missing")
+    expect(result.debug).toEqual(
+      expect.objectContaining({
+        dailyAlarmScheduledTime: null,
+      }),
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("returns daily_alarm_not_today when the stored alarm target day is stale", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    alarmStore.autoCheckinDaily = {
+      name: "autoCheckinDaily",
+      scheduledTime: new Date("2026-01-23T09:30:00").getTime(),
+    }
+    storedStatus = {
+      dailyAlarmTargetDay: "2026-01-22",
+    }
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      debug: true,
+    })
+
+    expect(result.started).toBe(false)
+    expect(result.eligible).toBe(false)
+    expect(result.ineligibleReason).toBe("daily_alarm_not_today")
+    expect(result.debug).toEqual(
+      expect.objectContaining({
+        scheduledTargetDay: "2026-01-23",
+        storedTargetDay: "2026-01-22",
+        targetDay: "2026-01-22",
+      }),
+    )
+
+    vi.useRealTimers()
+  })
+})
+
+describe("autoCheckinScheduler daily alarm helpers", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
+  })
+
+  it("ignores duplicate daily alarms while a run for today is already in flight", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+    ;(autoCheckinScheduler as any).dailyRunInFlightDay = "2026-01-23"
+    ;(autoCheckinScheduler as any).dailyRunInFlightPromise =
+      Promise.resolve(undefined)
+    const runSpy = vi.spyOn(autoCheckinScheduler as any, "runCheckins")
+
+    await expect(
+      (autoCheckinScheduler as any).handleDailyAlarm({
+        name: "autoCheckinDaily",
+        scheduledTime: Date.now(),
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(runSpy).not.toHaveBeenCalled()
+    ;(autoCheckinScheduler as any).dailyRunInFlightDay = null
+    ;(autoCheckinScheduler as any).dailyRunInFlightPromise = null
+    vi.useRealTimers()
+  })
+
+  it("treats stale daily alarms as no-ops and reschedules instead of running", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    storedStatus = { dailyAlarmTargetDay: "2026-01-22" }
+    const runSpy = vi.spyOn(autoCheckinScheduler as any, "runCheckins")
+    const scheduleSpy = vi
+      .spyOn(autoCheckinScheduler as any, "scheduleNextRun")
+      .mockResolvedValueOnce(undefined)
+
+    await expect(
+      (autoCheckinScheduler as any).handleDailyAlarm({
+        name: "autoCheckinDaily",
+        scheduledTime: Date.now(),
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(runSpy).not.toHaveBeenCalled()
+    expect(scheduleSpy).toHaveBeenCalledTimes(1)
+    expect((autoCheckinScheduler as any).dailyRunInFlightDay).toBeNull()
+    expect((autoCheckinScheduler as any).dailyRunInFlightPromise).toBeNull()
+
+    vi.useRealTimers()
+  })
+
+  it("restores a same-day daily alarm when the browser schedules it for tomorrow", async () => {
+    vi.useFakeTimers()
+    const now = new Date(2026, 0, 23, 23, 58, 0, 0)
+    vi.setSystemTime(now)
+
+    const endOfToday = new Date(now)
+    endOfToday.setHours(23, 59, 59, 999)
+    const tomorrow = new Date(2026, 0, 24, 8, 0, 0, 0)
+    let getAlarmCall = 0
+
+    mockedBrowserApi.getAlarm.mockImplementation(async () => {
+      getAlarmCall += 1
+      return {
+        scheduledTime:
+          getAlarmCall === 1 ? tomorrow.getTime() : endOfToday.getTime(),
+      }
+    })
+
+    const scheduled = await (
+      autoCheckinScheduler as any
+    ).createDailyAlarmForToday(tomorrow.getTime())
+
+    expect(mockedBrowserApi.createAlarm).toHaveBeenNthCalledWith(
+      1,
+      "autoCheckinDaily",
+      {
+        when: endOfToday.getTime(),
+      },
+    )
+    expect(mockedBrowserApi.createAlarm).toHaveBeenNthCalledWith(
+      2,
+      "autoCheckinDaily",
+      {
+        when: endOfToday.getTime(),
+      },
+    )
+    expect(scheduled.toISOString()).toBe(endOfToday.toISOString())
+
+    vi.useRealTimers()
+  })
+
+  it("throws when createDailyAlarmForToday cannot schedule a same-day alarm", async () => {
+    vi.useFakeTimers()
+    const now = new Date(2026, 0, 23, 23, 59, 59, 999)
+    vi.setSystemTime(now)
+
+    await expect(
+      (autoCheckinScheduler as any).createDailyAlarmForToday(now.getTime()),
+    ).rejects.toThrow("Cannot schedule daily alarm for today")
+
+    vi.useRealTimers()
+  })
 })
 
 describe("autoCheckinScheduler private helpers", () => {

@@ -13,13 +13,33 @@ import {
 import { joinUrl } from "~/utils/core/url"
 import {
   navigateWithinOptionsPage,
+  openAboutPage,
+  openAccountBaseUrl,
+  openAccountManagerWithSearch,
+  openApiCredentialProfilesPage,
   openAutoCheckinPage,
+  openBookmarkManagerWithSearch,
+  openBugReportPage,
   openCheckInAndRedeem,
+  openCheckInPage,
   openCheckInPages,
+  openCommunityPage,
+  openCustomCheckInPage,
+  openDiscussionsPage,
+  openFeatureRequestPage,
+  openFullAccountManagerPage,
+  openFullBookmarkManagerPage,
   openKeysPage,
+  openManagedSiteChannelsForChannel,
+  openManagedSiteChannelsPage,
+  openManagedSiteModelSyncForChannel,
+  openManagedSiteModelSyncPage,
   openModelsPage,
   openMultiplePages,
   openOrFocusOptionsPage,
+  openRedeemPage,
+  openSettingsPage,
+  openSettingsTab,
   openSidePanelPage,
   openSidePanelWithFallback,
   openUsagePage,
@@ -61,6 +81,17 @@ vi.mock("~/constants/siteType", () => ({
 
 vi.mock("~/utils/core/url", () => ({
   joinUrl: vi.fn((base: string, path: string) => `${base}${path}`),
+}))
+
+vi.mock("~/utils/navigation/feedbackLinks", () => ({
+  getFeedbackDestinationUrls: vi.fn((language?: string) => ({
+    bugReport: "https://feedback.example/bug",
+    featureRequest: "https://feedback.example/feature",
+    discussions: "https://feedback.example/discussions",
+    community: language
+      ? `https://feedback.example/community?lang=${language}`
+      : "https://feedback.example/community",
+  })),
 }))
 
 const mockedIsExtensionPopup = vi.mocked(isExtensionPopup)
@@ -482,5 +513,152 @@ describe("navigation utilities", () => {
     )
 
     querySpy.mockRestore()
+  })
+
+  it("opens account, bookmark, settings, and managed-site wrappers with the expected targets", async () => {
+    await openFullAccountManagerPage()
+    await openAccountManagerWithSearch("alpha")
+    await openFullBookmarkManagerPage()
+    await openBookmarkManagerWithSearch("beta")
+    await openSettingsPage()
+    await openSettingsTab("permissions")
+    await openApiCredentialProfilesPage()
+    await openManagedSiteChannelsPage({
+      channelId: 42,
+      search: "relay",
+    })
+    await openManagedSiteChannelsForChannel(77)
+    await openManagedSiteModelSyncPage({
+      channelId: 99,
+      tab: "history",
+    })
+    await openManagedSiteModelSyncForChannel(100)
+
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html#account",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html?search=alpha#account",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html#bookmark",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html?search=beta#bookmark",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html#basic",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html?tab=permissions#basic",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html#apiCredentialProfiles",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html?channelId=42&search=relay#managedSiteChannels",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html?channelId=77#managedSiteChannels",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html?channelId=99&tab=history#managedSiteModelSync",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html?channelId=100&tab=manual#managedSiteModelSync",
+      true,
+    )
+  })
+
+  it("opens the remaining wrapper destinations in fresh tabs", async () => {
+    const account = {
+      baseUrl: "https://example.com",
+      siteType: "one-api",
+      checkIn: {
+        customCheckIn: {
+          url: "https://custom.example/check-in",
+          redeemUrl: "https://custom.example/redeem",
+        },
+      },
+    } as any
+
+    await openAboutPage()
+    await openBugReportPage()
+    await openFeatureRequestPage()
+    await openDiscussionsPage()
+    await openCommunityPage("ja")
+    await openAccountBaseUrl(account)
+    await openCheckInPage(account)
+    await openCustomCheckInPage(account)
+    await openRedeemPage(account)
+
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html#about",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://feedback.example/bug",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://feedback.example/feature",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://feedback.example/discussions",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://feedback.example/community?lang=ja",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith("https://example.com", true)
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://example.com/checkin",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://custom.example/check-in",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://custom.example/redeem",
+      true,
+    )
+  })
+
+  it("falls back to default check-in and redeem paths when custom URLs are missing", async () => {
+    const account = {
+      baseUrl: "https://fallback.example",
+      siteType: "one-api",
+      checkIn: {
+        customCheckIn: {
+          url: "",
+          redeemUrl: "",
+        },
+      },
+    } as any
+
+    await openCustomCheckInPage(account)
+    await openRedeemPage(account)
+
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://fallback.example/checkin",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://fallback.example/redeem",
+      true,
+    )
   })
 })
