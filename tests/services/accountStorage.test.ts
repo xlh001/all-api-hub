@@ -1233,6 +1233,30 @@ describe("accountStorage core behaviors", () => {
 describe("accountStorage bookmarks", () => {
   beforeEach(() => {
     storageData.clear()
+    storageHooks.beforeGet = async () => {}
+  })
+
+  it("getAllBookmarks falls back to an empty list when bookmark reads fail", async () => {
+    storageHooks.beforeGet = async (key) => {
+      if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+        throw new Error("bookmark read failed")
+      }
+    }
+
+    await expect(accountStorage.getAllBookmarks()).resolves.toEqual([])
+  })
+
+  it("getBookmarkById returns null for empty ids and missing bookmarks", async () => {
+    storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+      accounts: [createAccount({ id: "a-1" })],
+      bookmarks: [createBookmark({ id: "b-1" })],
+      pinnedAccountIds: [],
+      orderedAccountIds: [],
+      last_updated: Date.now(),
+    } satisfies AccountStorageConfig)
+
+    await expect(accountStorage.getBookmarkById("")).resolves.toBeNull()
+    await expect(accountStorage.getBookmarkById("missing")).resolves.toBeNull()
   })
 
   it("addBookmark persists a bookmark with normalized fields and timestamps", async () => {
@@ -1276,6 +1300,24 @@ describe("accountStorage bookmarks", () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it("addBookmark rejects missing required fields", async () => {
+    seedStorage([createAccount({ id: "a-1" })])
+
+    await expect(
+      accountStorage.addBookmark({
+        name: "   ",
+        url: "https://example.com",
+      }),
+    ).rejects.toThrow("messages:errors.validation.bookmarkNameRequired")
+
+    await expect(
+      accountStorage.addBookmark({
+        name: "Console",
+        url: "   ",
+      }),
+    ).rejects.toThrow("messages:errors.validation.bookmarkUrlRequired")
   })
 
   it("updateBookmark preserves created_at and updates updated_at", async () => {
@@ -1356,6 +1398,21 @@ describe("accountStorage bookmarks", () => {
     expect(saved?.bookmarks).toEqual([])
     expect(saved?.pinnedAccountIds).toEqual(["a-1"])
     expect(saved?.orderedAccountIds).toEqual(["a-1"])
+  })
+
+  it("updateBookmark and deleteBookmark fail closed when the bookmark is missing", async () => {
+    storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+      accounts: [createAccount({ id: "a-1" })],
+      bookmarks: [createBookmark({ id: "b-1" })],
+      pinnedAccountIds: [],
+      orderedAccountIds: [],
+      last_updated: Date.now(),
+    } satisfies AccountStorageConfig)
+
+    await expect(
+      accountStorage.updateBookmark("missing", { name: "Next" }),
+    ).resolves.toBe(false)
+    await expect(accountStorage.deleteBookmark("missing")).resolves.toBe(false)
   })
 
   it("setOrderedListSubset updates bookmark ids without dropping account ids", async () => {
