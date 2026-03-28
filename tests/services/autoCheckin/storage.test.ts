@@ -4,6 +4,12 @@ import { Storage } from "@plasmohq/storage"
 
 import { autoCheckinStorage } from "~/services/checkin/autoCheckin/storage"
 
+const { mockWithExtensionStorageWriteLock } = vi.hoisted(() => ({
+  mockWithExtensionStorageWriteLock: vi.fn(
+    async (_key: string, work: () => Promise<unknown>) => await work(),
+  ),
+}))
+
 vi.mock("@plasmohq/storage", () => {
   const set = vi.fn()
   const get = vi.fn()
@@ -22,6 +28,10 @@ vi.mock("@plasmohq/storage", () => {
 
   return { Storage, __esModule: true }
 })
+
+vi.mock("~/services/core/storageWriteLock", () => ({
+  withExtensionStorageWriteLock: mockWithExtensionStorageWriteLock,
+}))
 
 describe("autoCheckinStorage", () => {
   beforeEach(() => {
@@ -89,5 +99,106 @@ describe("autoCheckinStorage", () => {
     const ok = await autoCheckinStorage.clearStatus()
 
     expect(ok).toBe(false)
+  })
+
+  it("prunes deleted account ids from per-account, snapshots, and retry state", async () => {
+    const { get, set } = (Storage as any).__mocks as any
+    get.mockResolvedValueOnce({
+      perAccount: {
+        keep: { status: "success" },
+        drop: { status: "failed" },
+      },
+      accountsSnapshot: [{ accountId: "keep" }, { accountId: "drop" }],
+      retryState: {
+        day: "2026-03-28",
+        pendingAccountIds: ["keep", "drop"],
+        attemptsByAccount: {
+          keep: 1,
+          drop: 2,
+        },
+      },
+      pendingRetry: true,
+      nextRetryScheduledAt: "2026-03-28T01:00:00.000Z",
+      retryAlarmTargetDay: "2026-03-28",
+    })
+
+    const ok = await autoCheckinStorage.pruneStatusForDeletedAccounts([
+      "drop",
+      "drop",
+      "",
+    ])
+
+    expect(ok).toBe(true)
+    expect(mockWithExtensionStorageWriteLock).toHaveBeenCalled()
+    expect(set).toHaveBeenCalledWith("autoCheckin_status", {
+      perAccount: {
+        keep: { status: "success" },
+      },
+      accountsSnapshot: [{ accountId: "keep" }],
+      retryState: {
+        day: "2026-03-28",
+        pendingAccountIds: ["keep"],
+        attemptsByAccount: {
+          keep: 1,
+        },
+      },
+      pendingRetry: true,
+      nextRetryScheduledAt: "2026-03-28T01:00:00.000Z",
+      retryAlarmTargetDay: "2026-03-28",
+    })
+  })
+
+  it("clears invalid shapes and resets retry scheduling when nothing valid remains", async () => {
+    const { get, set } = (Storage as any).__mocks as any
+    get.mockResolvedValueOnce({
+      perAccount: "broken",
+      accountsSnapshot: "broken",
+      retryState: {
+        day: 123,
+        pendingAccountIds: "broken",
+        attemptsByAccount: [],
+      },
+      pendingRetry: true,
+      nextRetryScheduledAt: "2026-03-28T01:00:00.000Z",
+      retryAlarmTargetDay: "2026-03-28",
+    })
+
+    const ok = await autoCheckinStorage.pruneStatusForDeletedAccounts(["drop"])
+
+    expect(ok).toBe(true)
+    expect(set).toHaveBeenCalledWith("autoCheckin_status", {
+      perAccount: undefined,
+      accountsSnapshot: undefined,
+      retryState: undefined,
+      pendingRetry: false,
+      nextRetryScheduledAt: undefined,
+      retryAlarmTargetDay: undefined,
+    })
+  })
+
+  it("returns true without persisting when there is nothing to prune", async () => {
+    const { get, set } = (Storage as any).__mocks as any
+    get.mockResolvedValueOnce({
+      perAccount: {
+        keep: { status: "success" },
+      },
+      accountsSnapshot: [{ accountId: "keep" }],
+      retryState: {
+        day: "2026-03-28",
+        pendingAccountIds: ["keep"],
+        attemptsByAccount: { keep: 1 },
+      },
+      pendingRetry: true,
+    })
+
+    await expect(
+      autoCheckinStorage.pruneStatusForDeletedAccounts(["missing"]),
+    ).resolves.toBe(true)
+    expect(set).not.toHaveBeenCalled()
+
+    await expect(
+      autoCheckinStorage.pruneStatusForDeletedAccounts([]),
+    ).resolves.toBe(true)
+    expect(get).toHaveBeenCalledTimes(1)
   })
 })

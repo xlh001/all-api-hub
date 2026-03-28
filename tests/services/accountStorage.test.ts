@@ -1538,4 +1538,103 @@ describe("accountStorage bookmarks", () => {
       ])
     })
   })
+
+  describe("export and import resilience", () => {
+    it("getAccountByBaseUrlAndUserId migrates matched legacy accounts before returning", async () => {
+      const legacyAccount = createAccount({
+        id: "legacy-target",
+        site_url: "https://legacy.example.com",
+        account_info: {
+          id: 321,
+          access_token: "token",
+          username: "legacy-user",
+          quota: 100,
+          today_prompt_tokens: 0,
+          today_completion_tokens: 0,
+          today_quota_consumption: 0,
+          today_requests_count: 0,
+          today_income: 0,
+        },
+      })
+      delete (legacyAccount as any).disabled
+      delete (legacyAccount as any).excludeFromTotalBalance
+      seedStorage([legacyAccount])
+
+      const found = await accountStorage.getAccountByBaseUrlAndUserId(
+        "https://legacy.example.com",
+        321,
+      )
+
+      expect(found?.id).toBe("legacy-target")
+      expect(found?.disabled).toBe(false)
+      expect(found?.excludeFromTotalBalance).toBe(false)
+
+      const persisted = storageData.get(
+        ACCOUNT_STORAGE_KEYS.ACCOUNTS,
+      ) as AccountStorageConfig
+      expect(persisted.accounts[0].disabled).toBe(false)
+      expect(persisted.accounts[0].excludeFromTotalBalance).toBe(false)
+    })
+
+    it("exportData falls back to a safe default config when storage reads fail", async () => {
+      seedStorage([createAccount({ id: "existing-1" })])
+
+      let getCalls = 0
+      storageHooks.beforeGet = async (key) => {
+        if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+          getCalls += 1
+          if (getCalls > 1) {
+            throw new Error("storage get failed")
+          }
+        }
+      }
+
+      const exported = await accountStorage.exportData()
+
+      expect(exported.accounts).toEqual([])
+      expect(exported.bookmarks).toEqual([])
+      expect(exported.pinnedAccountIds).toEqual([])
+      expect(exported.orderedAccountIds).toEqual([])
+    })
+
+    it("importData restores the backup config when the migrated write fails", async () => {
+      storageHooks.beforeGet = async () => {}
+
+      const backupAccount = createAccount({ id: "backup-1" })
+      const backupBookmark = createBookmark({ id: "bookmark-1" })
+      storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+        accounts: [backupAccount],
+        bookmarks: [backupBookmark],
+        pinnedAccountIds: ["backup-1", "bookmark-1"],
+        orderedAccountIds: ["bookmark-1", "backup-1"],
+        last_updated: Date.now(),
+      } satisfies AccountStorageConfig)
+
+      let setCalls = 0
+      storageHooks.beforeSet = async (key) => {
+        if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+          setCalls += 1
+          if (setCalls === 1) {
+            throw new Error("primary write failed")
+          }
+        }
+      }
+
+      await expect(
+        accountStorage.importData({
+          accounts: [createAccount({ id: "imported-1" })],
+          pinnedAccountIds: ["imported-1"],
+        }),
+      ).rejects.toThrow("primary write failed")
+
+      const restored = storageData.get(
+        ACCOUNT_STORAGE_KEYS.ACCOUNTS,
+      ) as AccountStorageConfig
+      expect(restored.accounts).toHaveLength(1)
+      expect(restored.accounts[0].id).toBe("backup-1")
+      expect(restored.bookmarks).toEqual([backupBookmark])
+      expect(restored.pinnedAccountIds).toEqual(["backup-1", "bookmark-1"])
+      expect(restored.orderedAccountIds).toEqual(["bookmark-1", "backup-1"])
+    })
+  })
 })
