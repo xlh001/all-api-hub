@@ -65,7 +65,8 @@ describe("initBackgroundI18n", () => {
     })
     expect(resolveInitialAppLanguageMock).toHaveBeenCalledWith({
       userPreferenceLanguage: "ja",
-      detectedLanguage: navigator.language,
+      detectedLanguage:
+        typeof navigator !== "undefined" ? navigator.language : undefined,
     })
     expect(i18nCoreMock.changeLanguage).toHaveBeenCalledWith("ja")
     expect(localeSpy).toHaveBeenCalledWith("ja")
