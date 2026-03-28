@@ -11,6 +11,7 @@ describe("tempWindowPool window fallback", () => {
   let removeTabOrWindowMock: ReturnType<typeof vi.fn>
   let hasWindowsApiMock: ReturnType<typeof vi.fn>
   let isAllowedIncognitoAccessMock: ReturnType<typeof vi.fn>
+  let sendMessageMock: ReturnType<typeof vi.fn>
   let tabsGetMock: ReturnType<typeof vi.fn>
   let tabsQueryMock: ReturnType<typeof vi.fn>
   let tempContextMode: "window" | "composite" | "tab"
@@ -21,6 +22,28 @@ describe("tempWindowPool window fallback", () => {
     removeTabOrWindowMock = vi.fn().mockResolvedValue(undefined)
     hasWindowsApiMock = vi.fn(() => true)
     isAllowedIncognitoAccessMock = vi.fn().mockResolvedValue(true)
+    sendMessageMock = vi.fn(
+      async (_tabId: number, message: { action: string }) => {
+        switch (message.action) {
+          case RuntimeActionIds.ContentShowShieldBypassUi:
+            return undefined
+          case RuntimeActionIds.ContentCheckCapGuard:
+          case RuntimeActionIds.ContentCheckCloudflareGuard:
+            return { success: true, passed: true }
+          case RuntimeActionIds.ContentPerformTempWindowFetch:
+            return {
+              success: true,
+              data: {
+                success: true,
+                message: "",
+                data: "ok",
+              },
+            }
+          default:
+            throw new Error(`Unexpected action: ${message.action}`)
+        }
+      },
+    )
     tabsGetMock = vi.fn().mockResolvedValue({ status: "complete" })
     tabsQueryMock = vi.fn().mockResolvedValue([])
     tempContextMode = "window"
@@ -35,28 +58,7 @@ describe("tempWindowPool window fallback", () => {
         get: tabsGetMock,
         query: tabsQueryMock,
         update: vi.fn().mockResolvedValue(undefined),
-        sendMessage: vi.fn(
-          async (_tabId: number, message: { action: string }) => {
-            switch (message.action) {
-              case RuntimeActionIds.ContentShowShieldBypassUi:
-                return undefined
-              case RuntimeActionIds.ContentCheckCapGuard:
-              case RuntimeActionIds.ContentCheckCloudflareGuard:
-                return { success: true, passed: true }
-              case RuntimeActionIds.ContentPerformTempWindowFetch:
-                return {
-                  success: true,
-                  data: {
-                    success: true,
-                    message: "",
-                    data: "ok",
-                  },
-                }
-              default:
-                throw new Error(`Unexpected action: ${message.action}`)
-            }
-          },
-        ),
+        sendMessage: sendMessageMock,
       },
       windows: {
         get: vi.fn(),
@@ -340,5 +342,76 @@ describe("tempWindowPool window fallback", () => {
         hasTurnstile: false,
       },
     })
+  })
+
+  it("rejects invalid temp-window fetch requests before opening any context", async () => {
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    await handleTempWindowFetch(
+      {
+        originUrl: "",
+        fetchUrl: "",
+        fetchOptions: { method: "GET" },
+        requestId: "req-invalid",
+      },
+      sendResponse,
+    )
+
+    expect(createWindowMock).not.toHaveBeenCalled()
+    expect(createTabMock).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "messages:background.invalidFetchRequest",
+    })
+  })
+
+  it("returns a failure response when the content script never answers the temp fetch", async () => {
+    sendMessageMock.mockImplementation(
+      async (_tabId: number, message: { action: string }) => {
+        switch (message.action) {
+          case RuntimeActionIds.ContentShowShieldBypassUi:
+            return undefined
+          case RuntimeActionIds.ContentCheckCapGuard:
+          case RuntimeActionIds.ContentCheckCloudflareGuard:
+            return { success: true, passed: true }
+          case RuntimeActionIds.ContentPerformTempWindowFetch:
+            return undefined
+          default:
+            throw new Error(`Unexpected action: ${message.action}`)
+        }
+      },
+    )
+    createWindowMock.mockRejectedValueOnce(
+      new Error("Popup windows are not allowed on this runtime"),
+    )
+    createTabMock.mockResolvedValueOnce({ id: 505 })
+
+    const { handleTempWindowFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/no-response",
+        fetchOptions: { method: "GET" },
+        requestId: "req-no-response",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+    await vi.advanceTimersByTimeAsync(2500)
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "No response from temp window fetch",
+    })
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(505)
   })
 })

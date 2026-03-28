@@ -625,4 +625,204 @@ describe("UserPreferencesContext", () => {
       settings: DEFAULT_PREFERENCES.managedSiteModelSync,
     })
   })
+
+  it("keeps the current state when persistence helpers fail and skips runtime broadcasts", async () => {
+    const preferences = clonePreferences()
+    preferences.activeTab = DATA_TYPE_BALANCE
+    preferences.currencyType = "USD"
+    preferences.themeMode = "system"
+    preferences.managedSiteType = VELOERA
+
+    mockedUserPreferences.updateActiveTab.mockResolvedValue(false)
+    mockedUserPreferences.savePreferences.mockResolvedValue(false)
+    mockedUserPreferences.updateCurrencyType.mockResolvedValue(false)
+    mockedUserPreferences.updateSortConfig.mockResolvedValue(false)
+    mockedUserPreferences.setSortingPriorityConfig.mockResolvedValue(false)
+    mockedUserPreferences.updateOpenChangelogOnUpdate.mockResolvedValue(false)
+    mockedUserPreferences.updateAutoProvisionKeyOnAccountAdd.mockResolvedValue(
+      false,
+    )
+    mockedUserPreferences.updateWarnOnDuplicateAccountAdd.mockResolvedValue(
+      false,
+    )
+    mockedUserPreferences.updateManagedSiteType.mockResolvedValue(false)
+    mockedUserPreferences.updateLoggingPreferences.mockResolvedValue(false)
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      expect(await context.updateActiveTab(DATA_TYPE_CASHFLOW)).toBe(false)
+      expect(await context.updateActionClickBehavior("sidepanel")).toBe(false)
+      expect(await context.updateOpenChangelogOnUpdate(false)).toBe(false)
+      expect(await context.updateAutoProvisionKeyOnAccountAdd(true)).toBe(false)
+      expect(await context.updateWarnOnDuplicateAccountAdd(false)).toBe(false)
+      expect(await context.updateDefaultTab(DATA_TYPE_CASHFLOW)).toBe(false)
+      expect(await context.updateCurrencyType("CNY")).toBe(false)
+      expect(await context.updateShowTodayCashflow(false)).toBe(false)
+      expect(await context.updateSortConfig(DATA_TYPE_INCOME, "asc")).toBe(
+        false,
+      )
+      expect(
+        await context.updateSortingPriorityConfig(
+          DEFAULT_SORTING_PRIORITY_CONFIG,
+        ),
+      ).toBe(false)
+      expect(await context.updateAutoRefresh(true)).toBe(false)
+      expect(await context.updateRefreshInterval(60_000)).toBe(false)
+      expect(await context.updateMinRefreshInterval(15_000)).toBe(false)
+      expect(await context.updateRefreshOnOpen(true)).toBe(false)
+      expect(await context.updateNewApiBaseUrl("https://new-api.example")).toBe(
+        false,
+      )
+      expect(
+        await context.updateDoneHubBaseUrl("https://donehub.example"),
+      ).toBe(false)
+      expect(
+        await context.updateVeloeraBaseUrl("https://veloera.example"),
+      ).toBe(false)
+      expect(
+        await context.updateOctopusBaseUrl("https://octopus.example"),
+      ).toBe(false)
+      expect(await context.updateManagedSiteType(VELOERA)).toBe(false)
+      expect(await context.updateThemeMode("dark")).toBe(false)
+      expect(await context.updateLoggingConsoleEnabled(false)).toBe(false)
+      expect(await context.updateLoggingLevel("warn")).toBe(false)
+      expect(await context.updateAutoCheckin({ globalEnabled: false })).toBe(
+        false,
+      )
+      expect(await context.updateBalanceHistory({ enabled: true })).toBe(false)
+      expect(await context.updateNewApiModelSync({ enabled: true })).toBe(false)
+      expect(await context.updateModelRedirect({ enabled: true })).toBe(false)
+      expect(await context.updateRedemptionAssist({ enabled: false })).toBe(
+        false,
+      )
+      expect(await context.updateWebAiApiCheck({ enabled: false })).toBe(false)
+      expect(await context.updateTempWindowFallback({ enabled: false })).toBe(
+        false,
+      )
+      expect(
+        await context.updateTempWindowFallbackReminder({ dismissed: true }),
+      ).toBe(false)
+      expect(await context.updateCliProxyBaseUrl("https://cli.example")).toBe(
+        false,
+      )
+      expect(await context.updateCliProxyManagementKey("cli-key")).toBe(false)
+      expect(
+        await context.updateClaudeCodeRouterBaseUrl("https://ccr.example"),
+      ).toBe(false)
+      expect(await context.updateClaudeCodeRouterApiKey("ccr-key")).toBe(false)
+    })
+
+    expect((latestContext as any)?.activeTab).toBe(DATA_TYPE_BALANCE)
+    expect((latestContext as any)?.currencyType).toBe("USD")
+    expect((latestContext as any)?.themeMode).toBe("system")
+    expect((latestContext as any)?.preferences.newApi.baseUrl).toBe(
+      DEFAULT_PREFERENCES.newApi.baseUrl,
+    )
+    expect(mockedSendRuntimeMessage).not.toHaveBeenCalled()
+  })
+
+  it("falls back to default nested preference shapes when optional sections are missing", async () => {
+    const preferences = clonePreferences()
+    delete (preferences as Partial<UserPreferences>).balanceHistory
+    delete (preferences as Partial<UserPreferences>).managedSiteModelSync
+    delete (preferences as Partial<UserPreferences>).redemptionAssist
+    delete (preferences as Partial<UserPreferences>).webAiApiCheck
+    delete (preferences as Partial<UserPreferences>).tempWindowFallback
+    delete (preferences as Partial<UserPreferences>).tempWindowFallbackReminder
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateBalanceHistory({
+        enabled: true,
+        retentionDays: 30,
+      })
+      await context.updateNewApiModelSync({
+        enabled: true,
+        allowedModels: ["gpt-4o"],
+      })
+      await context.updateRedemptionAssist({
+        contextMenu: { enabled: false },
+      })
+      await context.updateWebAiApiCheck({
+        autoDetect: {
+          enabled: true,
+          urlWhitelist: {
+            patterns: [],
+          },
+        },
+      })
+      await context.updateTempWindowFallback({
+        useForManualRefresh: false,
+      })
+      await context.updateTempWindowFallbackReminder({
+        dismissed: true,
+      })
+    })
+
+    expect((latestContext as any)?.preferences.balanceHistory).toEqual(
+      expect.objectContaining({
+        ...DEFAULT_BALANCE_HISTORY_PREFERENCES,
+        enabled: true,
+        retentionDays: 30,
+      }),
+    )
+    expect((latestContext as any)?.preferences.managedSiteModelSync).toEqual(
+      expect.objectContaining({
+        ...DEFAULT_PREFERENCES.managedSiteModelSync,
+        enabled: true,
+        allowedModels: ["gpt-4o"],
+      }),
+    )
+    expect((latestContext as any)?.preferences.redemptionAssist).toEqual(
+      expect.objectContaining({
+        ...DEFAULT_REDEMPTION_ASSIST_PREFERENCES,
+        contextMenu: { enabled: false },
+      }),
+    )
+    expect((latestContext as any)?.preferences.webAiApiCheck).toEqual(
+      expect.objectContaining({
+        ...DEFAULT_WEB_AI_API_CHECK_PREFERENCES,
+        autoDetect: expect.objectContaining({ enabled: true }),
+      }),
+    )
+    expect((latestContext as any)?.preferences.tempWindowFallback).toEqual(
+      expect.objectContaining({
+        ...DEFAULT_PREFERENCES.tempWindowFallback,
+        useForManualRefresh: false,
+      }),
+    )
+    expect(
+      (latestContext as any)?.preferences.tempWindowFallbackReminder,
+    ).toEqual(expect.objectContaining({ dismissed: true }))
+
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.BalanceHistoryUpdateSettings,
+      settings: { enabled: true, retentionDays: 30 },
+    })
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.ModelSyncUpdateSettings,
+      settings: { enabled: true, allowedModels: ["gpt-4o"] },
+    })
+  })
+
+  it("logs initial load failures and still clears the loading state", async () => {
+    mockedUserPreferences.getPreferences.mockRejectedValueOnce(
+      new Error("load failed"),
+    )
+
+    render(
+      <UserPreferencesProvider>
+        <Probe />
+      </UserPreferencesProvider>,
+    )
+
+    await waitFor(() => {
+      expect(loggerMocks.error).toHaveBeenCalledWith(
+        "加载用户偏好设置失败",
+        expect.any(Error),
+      )
+    })
+  })
 })

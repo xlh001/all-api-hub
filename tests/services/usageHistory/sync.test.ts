@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { LogType, type LogItem } from "~/services/apiService/common/type"
+import { USAGE_HISTORY_LIMITS } from "~/services/history/usageHistory/constants"
 import { getDayKeyFromUnixSeconds } from "~/services/history/usageHistory/core"
 import { usageHistoryStorage } from "~/services/history/usageHistory/storage"
 import { syncUsageHistoryForAccount } from "~/services/history/usageHistory/sync"
@@ -78,6 +79,83 @@ async function createTestAccount(baseUrl: string): Promise<string> {
 }
 
 describe("usageHistory sync (MSW)", () => {
+  it("skips disabled sync and mismatched scheduled triggers before loading accounts", async () => {
+    const disabledConfig: UsageHistoryPreferences = {
+      enabled: false,
+      retentionDays: 30,
+      scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.MANUAL,
+      syncIntervalMinutes: 60,
+    }
+
+    await expect(
+      syncUsageHistoryForAccount({
+        accountId: "missing-disabled",
+        trigger: "manual",
+        config: disabledConfig,
+      }),
+    ).resolves.toMatchObject({
+      accountId: "missing-disabled",
+      status: "skipped",
+      partial: false,
+    })
+
+    const afterRefreshConfig: UsageHistoryPreferences = {
+      enabled: true,
+      retentionDays: 30,
+      scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.MANUAL,
+      syncIntervalMinutes: 60,
+    }
+
+    await expect(
+      syncUsageHistoryForAccount({
+        accountId: "missing-after-refresh",
+        trigger: "afterRefresh",
+        config: afterRefreshConfig,
+      }),
+    ).resolves.toMatchObject({
+      accountId: "missing-after-refresh",
+      status: "skipped",
+      partial: false,
+    })
+
+    const alarmConfig: UsageHistoryPreferences = {
+      enabled: true,
+      retentionDays: 30,
+      scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.AFTER_REFRESH,
+      syncIntervalMinutes: 60,
+    }
+
+    await expect(
+      syncUsageHistoryForAccount({
+        accountId: "missing-alarm",
+        trigger: "alarm",
+        config: alarmConfig,
+      }),
+    ).resolves.toMatchObject({
+      accountId: "missing-alarm",
+      status: "skipped",
+      partial: false,
+    })
+  })
+
+  it("returns an error when the requested account no longer exists", async () => {
+    const config: UsageHistoryPreferences = {
+      enabled: true,
+      retentionDays: 30,
+      scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.MANUAL,
+      syncIntervalMinutes: 60,
+    }
+
+    const result = await syncUsageHistoryForAccount({
+      accountId: "missing-account",
+      trigger: "manual",
+      config,
+    })
+
+    expect(result.status).toBe("error")
+    expect(result.error).toBe("messages:storage.accountNotFound")
+  })
+
   it("syncs /api/log/self with paging and is idempotent at the cursor boundary", async () => {
     const baseUrl = "https://api.example.com"
     const accountId = await createTestAccount(baseUrl)
@@ -299,5 +377,206 @@ describe("usageHistory sync (MSW)", () => {
     expect(after.accounts[accountId].latencyDaily[dayKey]?.count ?? 0).toBe(
       afterRequests,
     )
+  })
+
+  it("marks unsupported endpoints and then respects the cooldown window", async () => {
+    const baseUrl = "https://api-unsupported.example.com"
+    const accountId = await createTestAccount(baseUrl)
+
+    server.use(
+      http.get(`${baseUrl}/api/log/self`, () =>
+        HttpResponse.json(
+          { success: false, message: "not found" },
+          { status: 404 },
+        ),
+      ),
+    )
+
+    const config: UsageHistoryPreferences = {
+      enabled: true,
+      retentionDays: 30,
+      scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.MANUAL,
+      syncIntervalMinutes: 60,
+    }
+
+    const first = await syncUsageHistoryForAccount({
+      accountId,
+      trigger: "manual",
+      force: true,
+      config,
+    })
+
+    expect(first.status).toBe("unsupported")
+    expect(first.error).toBeTruthy()
+
+    const storeAfterFailure =
+      await usageHistoryStorage.getAccountStore(accountId)
+    expect(storeAfterFailure.status.state).toBe("unsupported")
+    expect(storeAfterFailure.status.unsupportedUntil).toBeGreaterThan(
+      Date.now(),
+    )
+
+    const skipped = await syncUsageHistoryForAccount({
+      accountId,
+      trigger: "manual",
+      config,
+    })
+
+    expect(skipped).toMatchObject({
+      accountId,
+      status: "skipped",
+      partial: false,
+    })
+  })
+
+  it("records generic fetch failures without marking the endpoint unsupported", async () => {
+    const baseUrl = "https://api-error.example.com"
+    const accountId = await createTestAccount(baseUrl)
+
+    server.use(
+      http.get(`${baseUrl}/api/log/self`, () =>
+        HttpResponse.json(
+          { success: false, message: "forbidden" },
+          { status: 401 },
+        ),
+      ),
+    )
+
+    const config: UsageHistoryPreferences = {
+      enabled: true,
+      retentionDays: 30,
+      scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.MANUAL,
+      syncIntervalMinutes: 60,
+    }
+
+    const result = await syncUsageHistoryForAccount({
+      accountId,
+      trigger: "manual",
+      force: true,
+      config,
+    })
+
+    expect(result.status).toBe("error")
+    expect(result.error).toBeTruthy()
+
+    const store = await usageHistoryStorage.getAccountStore(accountId)
+    expect(store.status.state).toBe("error")
+    expect(store.status.unsupportedUntil).toBeUndefined()
+  })
+
+  it("marks the run as partial when the item safety cap truncates a page", async () => {
+    const baseUrl = "https://api-item-cap.example.com"
+    const accountId = await createTestAccount(baseUrl)
+    const nowUnixSeconds = Math.floor(Date.now() / 1000)
+    const originalMaxItems = USAGE_HISTORY_LIMITS.maxItems
+
+    server.use(
+      http.get(`${baseUrl}/api/log/self`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "",
+          data: {
+            items: [
+              createConsumeLogItem({ id: 1, created_at: nowUnixSeconds - 2 }),
+              createConsumeLogItem({ id: 2, created_at: nowUnixSeconds - 1 }),
+            ],
+          },
+        }),
+      ),
+    )
+
+    try {
+      ;(USAGE_HISTORY_LIMITS as { maxItems: number }).maxItems = 1
+
+      const result = await syncUsageHistoryForAccount({
+        accountId,
+        trigger: "manual",
+        force: true,
+        config: {
+          enabled: true,
+          retentionDays: 30,
+          scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.MANUAL,
+          syncIntervalMinutes: 60,
+        },
+      })
+
+      expect(result).toMatchObject({
+        accountId,
+        status: "success",
+        partial: true,
+        pagesFetched: 1,
+        itemsFetched: 1,
+        ingestedCount: 1,
+      })
+
+      const store = await usageHistoryStorage.getAccountStore(accountId)
+      expect(store.status.state).toBe("success")
+      expect(store.status.lastWarning).toContain("Reached safety limits")
+    } finally {
+      ;(USAGE_HISTORY_LIMITS as { maxItems: number }).maxItems =
+        originalMaxItems
+    }
+  })
+
+  it("marks the run as partial when the page safety cap stops additional fetches", async () => {
+    const baseUrl = "https://api-page-cap.example.com"
+    const accountId = await createTestAccount(baseUrl)
+    const nowUnixSeconds = Math.floor(Date.now() / 1000)
+    const originalMaxPages = USAGE_HISTORY_LIMITS.maxPages
+
+    const dataset: LogItem[] = Array.from({ length: 101 }).map((_, index) =>
+      createConsumeLogItem({
+        id: index + 1,
+        created_at: nowUnixSeconds - index - 1,
+      }),
+    )
+
+    server.use(
+      http.get(`${baseUrl}/api/log/self`, ({ request }) => {
+        const url = new URL(request.url)
+        const page = Number(url.searchParams.get("p") ?? "1")
+        const pageSize = Number(url.searchParams.get("page_size") ?? "100")
+        const startIndex = (page - 1) * pageSize
+        const items = dataset.slice(startIndex, startIndex + pageSize)
+
+        return HttpResponse.json({
+          success: true,
+          message: "",
+          data: {
+            items,
+            total: dataset.length,
+          },
+        })
+      }),
+    )
+
+    try {
+      ;(USAGE_HISTORY_LIMITS as { maxPages: number }).maxPages = 1
+
+      const result = await syncUsageHistoryForAccount({
+        accountId,
+        trigger: "manual",
+        force: true,
+        config: {
+          enabled: true,
+          retentionDays: 30,
+          scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.MANUAL,
+          syncIntervalMinutes: 60,
+        },
+      })
+
+      expect(result).toMatchObject({
+        accountId,
+        status: "success",
+        partial: true,
+        pagesFetched: 1,
+      })
+
+      const store = await usageHistoryStorage.getAccountStore(accountId)
+      expect(store.status.lastWarning).toContain("Reached safety limits")
+    } finally {
+      ;(USAGE_HISTORY_LIMITS as { maxPages: number }).maxPages =
+        originalMaxPages
+    }
   })
 })

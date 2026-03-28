@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
 import { API_CREDENTIAL_PROFILES_STORAGE_KEYS } from "~/services/core/storageKeys"
 import { tagStorage } from "~/services/tags/tagStorage"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
@@ -38,6 +39,52 @@ describe("tagStorage", () => {
     await expect(tagStorage.createTag("  work  ")).rejects.toThrow(
       "Tag name already exists.",
     )
+  })
+
+  it("createTag rejects empty names", async () => {
+    await expect(tagStorage.createTag("   ")).rejects.toThrow(
+      "Tag name cannot be empty.",
+    )
+  })
+
+  it("getTagStore normalizes legacy falsy versions and listTags returns sorted names", async () => {
+    storageData.set("global_tag_store", {
+      version: 0,
+      tagsById: {
+        t2: { id: "t2", name: "Zoo", createdAt: 2, updatedAt: 2 },
+        t1: { id: "t1", name: "alpha", createdAt: 1, updatedAt: 1 },
+      },
+    })
+
+    const store = await tagStorage.getTagStore()
+    expect(store.version).toBeGreaterThan(0)
+
+    const tags = await tagStorage.listTags()
+    expect(tags.map((tag) => tag.name)).toEqual(["alpha", "Zoo"])
+    expect(await tagStorage.exportTagStore()).toEqual(store)
+  })
+
+  it("importTagStore sanitizes malformed payloads before persisting", async () => {
+    await tagStorage.importTagStore({
+      version: 0,
+      tagsById: {
+        keep: { id: "ignore-me", name: "  Work  ", createdAt: 1 },
+        drop: { id: "drop", name: "   " },
+      },
+    })
+
+    const savedStore = storageData.get("global_tag_store")
+    expect(savedStore).toEqual({
+      version: expect.any(Number),
+      tagsById: {
+        keep: {
+          id: "keep",
+          name: "Work",
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+    })
   })
 
   it("ensureLegacyMigration converts account.tags -> account.tagIds and creates global tags", async () => {
@@ -229,6 +276,64 @@ describe("tagStorage", () => {
     expect(savedStore.tagsById.t1).toBeUndefined()
   })
 
+  it("renameTag updates the display name and rejects missing, empty, or conflicting names", async () => {
+    storageData.set("global_tag_store", {
+      version: 1,
+      tagsById: {
+        t1: { id: "t1", name: "Work", createdAt: 1, updatedAt: 1 },
+        t2: { id: "t2", name: "Personal", createdAt: 2, updatedAt: 2 },
+      },
+    })
+
+    await expect(tagStorage.renameTag("missing", "Focus")).rejects.toThrow(
+      "Tag not found.",
+    )
+    await expect(tagStorage.renameTag("t1", "   ")).rejects.toThrow(
+      "Tag name cannot be empty.",
+    )
+    await expect(tagStorage.renameTag("t1", " personal ")).rejects.toThrow(
+      "Tag name already exists.",
+    )
+
+    vi.spyOn(Date, "now").mockReturnValue(999)
+    const renamed = await tagStorage.renameTag("t1", "  Deep Work  ")
+
+    expect(renamed).toEqual({
+      id: "t1",
+      name: "Deep Work",
+      createdAt: 1,
+      updatedAt: 999,
+    })
+
+    const savedStore = storageData.get("global_tag_store") as any
+    expect(savedStore.tagsById.t1).toEqual(renamed)
+  })
+
+  it("deleteTag is a no-op when the tag does not exist", async () => {
+    storageData.set("global_tag_store", {
+      version: 1,
+      tagsById: {
+        t1: { id: "t1", name: "Work", createdAt: 1, updatedAt: 1 },
+      },
+    })
+    storageData.set("site_accounts", {
+      accounts: [],
+      bookmarks: [],
+      pinnedAccountIds: [],
+      orderedAccountIds: [],
+      last_updated: 0,
+    })
+
+    const result = await tagStorage.deleteTag("missing")
+
+    expect(result).toEqual({
+      updatedAccounts: 0,
+      updatedBookmarks: 0,
+      updatedApiCredentialProfiles: 0,
+    })
+    expect(storageData.get("global_tag_store").tagsById.t1).toBeDefined()
+  })
+
   it("deleteTag removes the tag id from API credential profiles", async () => {
     const store = {
       version: 1,
@@ -275,5 +380,35 @@ describe("tagStorage", () => {
       API_CREDENTIAL_PROFILES_STORAGE_KEYS.API_CREDENTIAL_PROFILES,
     ) as any
     expect(savedProfiles.profiles[0]?.tagIds).toEqual([])
+  })
+
+  it("deleteTag still succeeds when API credential profile cleanup fails", async () => {
+    vi.spyOn(
+      apiCredentialProfilesStorage,
+      "removeTagIdFromAllProfiles",
+    ).mockRejectedValue(new Error("profile cleanup failed"))
+
+    storageData.set("global_tag_store", {
+      version: 1,
+      tagsById: {
+        t1: { id: "t1", name: "Work", createdAt: 1, updatedAt: 1 },
+      },
+    })
+    storageData.set("site_accounts", {
+      accounts: [],
+      bookmarks: [],
+      pinnedAccountIds: [],
+      orderedAccountIds: [],
+      last_updated: 0,
+    })
+
+    const result = await tagStorage.deleteTag("t1")
+
+    expect(result).toEqual({
+      updatedAccounts: 0,
+      updatedBookmarks: 0,
+      updatedApiCredentialProfiles: 0,
+    })
+    expect(storageData.get("global_tag_store").tagsById.t1).toBeUndefined()
   })
 })
