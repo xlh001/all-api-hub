@@ -18,7 +18,9 @@ import {
   createAlarm,
   getAlarm,
   hasAlarmsAPI,
+  isMessageReceiverUnavailableError,
   onAlarm,
+  sendRuntimeMessage,
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 
@@ -78,7 +80,9 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
     createAlarm: vi.fn(),
     getAlarm: vi.fn(),
     hasAlarmsAPI: vi.fn(),
+    isMessageReceiverUnavailableError: vi.fn(),
     onAlarm: vi.fn(),
+    sendRuntimeMessage: vi.fn(),
   }
 })
 
@@ -113,7 +117,10 @@ const mockedBrowserApi = {
   createAlarm: createAlarm as unknown as ReturnType<typeof vi.fn>,
   getAlarm: getAlarm as unknown as ReturnType<typeof vi.fn>,
   hasAlarmsAPI: hasAlarmsAPI as unknown as ReturnType<typeof vi.fn>,
+  isMessageReceiverUnavailableError:
+    isMessageReceiverUnavailableError as unknown as ReturnType<typeof vi.fn>,
   onAlarm: onAlarm as unknown as ReturnType<typeof vi.fn>,
+  sendRuntimeMessage: sendRuntimeMessage as unknown as ReturnType<typeof vi.fn>,
 }
 
 let storedStatus: any = null
@@ -969,12 +976,10 @@ describe("autoCheckinScheduler run-completed notifications", () => {
 
     const callOrder: string[] = []
 
-    const sendMessageSpy = vi
-      .spyOn(browser.runtime, "sendMessage")
-      .mockImplementation(async () => {
-        callOrder.push("send")
-        return undefined as any
-      })
+    mockedBrowserApi.sendRuntimeMessage.mockImplementation(async () => {
+      callOrder.push("send")
+      return undefined as any
+    })
 
     mockedUserPreferences.getPreferences.mockResolvedValue({
       autoCheckin: {
@@ -1036,13 +1041,14 @@ describe("autoCheckinScheduler run-completed notifications", () => {
     })
 
     expect(mockedAccountStorage.refreshAccount).toHaveBeenCalledWith("a", true)
-    expect(sendMessageSpy).toHaveBeenCalledWith(
+    expect(mockedBrowserApi.sendRuntimeMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         action: RuntimeActionIds.AutoCheckinRunCompleted,
         runKind: "manual",
         updatedAccountIds: ["a"],
         timestamp: expect.any(Number),
       }),
+      { maxAttempts: 1 },
     )
     expect(callOrder).toEqual(["refresh", "send"])
 
@@ -1055,12 +1061,10 @@ describe("autoCheckinScheduler run-completed notifications", () => {
 
     const callOrder: string[] = []
 
-    const sendMessageSpy = vi
-      .spyOn(browser.runtime, "sendMessage")
-      .mockImplementation(async () => {
-        callOrder.push("send")
-        return undefined as any
-      })
+    mockedBrowserApi.sendRuntimeMessage.mockImplementation(async () => {
+      callOrder.push("send")
+      return undefined as any
+    })
 
     mockedUserPreferences.getPreferences.mockResolvedValue({
       autoCheckin: {
@@ -1105,13 +1109,14 @@ describe("autoCheckinScheduler run-completed notifications", () => {
     })
 
     expect(mockedAccountStorage.refreshAccount).toHaveBeenCalledWith("a", true)
-    expect(sendMessageSpy).toHaveBeenCalledWith(
+    expect(mockedBrowserApi.sendRuntimeMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         action: RuntimeActionIds.AutoCheckinRunCompleted,
         runKind: "manual",
         updatedAccountIds: ["a"],
         timestamp: expect.any(Number),
       }),
+      { maxAttempts: 1 },
     )
     expect(callOrder).toEqual(["refresh", "send"])
 
@@ -1122,9 +1127,7 @@ describe("autoCheckinScheduler run-completed notifications", () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
 
-    const sendMessageSpy = vi
-      .spyOn(browser.runtime, "sendMessage")
-      .mockResolvedValue(undefined as any)
+    mockedBrowserApi.sendRuntimeMessage.mockResolvedValue(undefined as any)
 
     mockedUserPreferences.getPreferences.mockResolvedValue({
       autoCheckin: {
@@ -1169,7 +1172,7 @@ describe("autoCheckinScheduler run-completed notifications", () => {
     })
 
     expect(mockedAccountStorage.refreshAccount).toHaveBeenCalledWith("a", true)
-    expect(sendMessageSpy).not.toHaveBeenCalledWith(
+    expect(mockedBrowserApi.sendRuntimeMessage).not.toHaveBeenCalledWith(
       expect.objectContaining({
         action: RuntimeActionIds.AutoCheckinRunCompleted,
       }),
@@ -2193,6 +2196,201 @@ describe("autoCheckinScheduler private helpers", () => {
     ).toMatchObject({
       accountId: "auto-disabled",
       skipReason: "auto_checkin_disabled",
+    })
+  })
+
+  it("handles provider-missing, failed, and thrown account check-in outcomes", async () => {
+    mockedProviders.resolveAutoCheckinProvider.mockReset()
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce(null)
+
+    await expect(
+      (autoCheckinScheduler as any).runAccountCheckin(
+        {
+          id: "missing-provider",
+          site_name: "Missing Provider",
+        },
+        "Missing Provider",
+      ),
+    ).resolves.toMatchObject({
+      successful: false,
+      result: {
+        accountId: "missing-provider",
+        status: "failed",
+        reasonCode: "no_provider",
+      },
+    })
+
+    const failedProvider = {
+      checkIn: vi.fn().mockResolvedValue({
+        status: "failed",
+        rawMessage: "provider failed",
+      }),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce(
+      failedProvider as any,
+    )
+
+    await expect(
+      (autoCheckinScheduler as any).runAccountCheckin(
+        {
+          id: "provider-failed",
+          site_name: "Provider Failed",
+        },
+        "Provider Failed",
+      ),
+    ).resolves.toMatchObject({
+      successful: false,
+      result: {
+        accountId: "provider-failed",
+        status: "failed",
+        rawMessage: "provider failed",
+      },
+    })
+
+    const throwingProvider = {
+      checkIn: vi.fn().mockRejectedValue(new Error("provider exploded")),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce(
+      throwingProvider as any,
+    )
+
+    await expect(
+      (autoCheckinScheduler as any).runAccountCheckin(
+        {
+          id: "provider-threw",
+          site_name: "Provider Threw",
+        },
+        "Provider Threw",
+      ),
+    ).resolves.toMatchObject({
+      successful: false,
+      result: {
+        accountId: "provider-threw",
+        status: "failed",
+        rawMessage: expect.any(String),
+      },
+    })
+    expect(throwingProvider.checkIn).toHaveBeenCalledTimes(1)
+  })
+
+  it("marks accounts checked in for successful and already-checked outcomes", async () => {
+    const successProvider = {
+      checkIn: vi.fn().mockResolvedValueOnce({
+        status: "success",
+        rawMessage: "ok",
+      }),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce(
+      successProvider as any,
+    )
+
+    await expect(
+      (autoCheckinScheduler as any).runAccountCheckin(
+        {
+          id: "success-account",
+          site_name: "Success Account",
+        },
+        "Success Account",
+      ),
+    ).resolves.toMatchObject({
+      successful: true,
+      result: {
+        accountId: "success-account",
+        status: "success",
+      },
+    })
+
+    const alreadyCheckedProvider = {
+      checkIn: vi.fn().mockResolvedValueOnce({
+        status: "already_checked",
+        rawMessage: "already done",
+      }),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValueOnce(
+      alreadyCheckedProvider as any,
+    )
+
+    await expect(
+      (autoCheckinScheduler as any).runAccountCheckin(
+        {
+          id: "already-checked-account",
+          site_name: "Already Checked",
+        },
+        "Already Checked",
+      ),
+    ).resolves.toMatchObject({
+      successful: true,
+      result: {
+        accountId: "already-checked-account",
+        status: "already_checked",
+      },
+    })
+
+    expect(
+      mockedAccountStorage.markAccountAsSiteCheckedIn,
+    ).toHaveBeenNthCalledWith(1, "success-account")
+    expect(
+      mockedAccountStorage.markAccountAsSiteCheckedIn,
+    ).toHaveBeenNthCalledWith(2, "already-checked-account")
+  })
+
+  it("keeps run-completed notifications best-effort for missing receivers and other errors", async () => {
+    mockedBrowserApi.sendRuntimeMessage.mockRejectedValueOnce(
+      new Error("receiver unavailable"),
+    )
+    mockedBrowserApi.isMessageReceiverUnavailableError.mockReturnValueOnce(true)
+
+    await expect(
+      (autoCheckinScheduler as any).notifyUiRunCompleted({
+        runKind: AUTO_CHECKIN_RUN_TYPE.MANUAL,
+        updatedAccountIds: ["a"],
+        summary: {
+          totalEligible: 1,
+          executed: 1,
+          successCount: 1,
+          failedCount: 0,
+          skippedCount: 0,
+          needsRetry: false,
+        },
+      }),
+    ).resolves.toBeUndefined()
+
+    mockedBrowserApi.sendRuntimeMessage.mockRejectedValueOnce(
+      new Error("unexpected failure"),
+    )
+    mockedBrowserApi.isMessageReceiverUnavailableError.mockReturnValueOnce(
+      false,
+    )
+
+    await expect(
+      (autoCheckinScheduler as any).notifyUiRunCompleted({
+        runKind: AUTO_CHECKIN_RUN_TYPE.DAILY,
+        updatedAccountIds: [],
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(mockedBrowserApi.sendRuntimeMessage).toHaveBeenCalledTimes(2)
+  })
+
+  it("recalculates summaries while preserving the previous eligible total when provided", () => {
+    expect(
+      (autoCheckinScheduler as any).recalculateSummaryFromResults(
+        {
+          a: { status: "success" },
+          b: { status: "failed" },
+          c: { status: "skipped" },
+        },
+        {
+          totalEligible: 7,
+        },
+      ),
+    ).toEqual({
+      totalEligible: 7,
+      executed: 2,
+      successCount: 1,
+      failedCount: 1,
+      skippedCount: 1,
+      needsRetry: true,
     })
   })
 })
