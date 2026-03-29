@@ -1,4 +1,5 @@
 import { POPUP_PAGE_PATH } from "~/constants/extensionPages"
+import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   createStoredApiCredentialProfile,
@@ -7,7 +8,10 @@ import {
   seedApiCredentialProfiles,
   stubLlmMetadataIndex,
 } from "~~/e2e/utils/commonUserFlows"
-import { getServiceWorker } from "~~/e2e/utils/extensionState"
+import {
+  getPlasmoStorageRawValue,
+  getServiceWorker,
+} from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
 test.beforeEach(async ({ context, page }) => {
@@ -89,4 +93,119 @@ test("verifies a stored popup API credential profile against mocked endpoints", 
 
   await expect(modelsProbe).toContainText("Pass")
   await expect(modelsProbe).toContainText("Fetched 2 models.")
+})
+
+test("edits a stored popup API credential profile and persists the change", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedApiCredentialProfiles(serviceWorker, [
+    createStoredApiCredentialProfile({
+      id: "stored-profile-1",
+      name: "Stored Profile",
+      baseUrl: "https://api.example.com",
+      apiKey: "sk-stored-profile",
+    }),
+  ])
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    page.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+
+  await page.getByRole("button", { name: "Edit" }).click()
+
+  await expect(page.getByText("Edit API credential profile")).toBeVisible()
+
+  const nameInput = page.locator("#api-credential-profile-name")
+  await nameInput.clear()
+  await nameInput.fill("Updated Profile")
+  await page.getByRole("button", { name: "Save" }).click()
+
+  await expect(
+    page.getByRole("heading", { name: "Updated Profile" }),
+  ).toBeVisible()
+
+  await expect
+    .poll(async () => {
+      const raw = await getPlasmoStorageRawValue<unknown>(
+        serviceWorker,
+        STORAGE_KEYS.API_CREDENTIAL_PROFILES,
+      )
+
+      if (typeof raw !== "string") return null
+
+      try {
+        const parsed = JSON.parse(raw) as {
+          profiles?: Array<{ id?: string; name?: string }>
+        }
+        return (
+          parsed.profiles?.find((profile) => profile.id === "stored-profile-1")
+            ?.name ?? null
+        )
+      } catch {
+        return null
+      }
+    })
+    .toBe("Updated Profile")
+})
+
+test("deletes a stored popup API credential profile and removes it from storage", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedApiCredentialProfiles(serviceWorker, [
+    createStoredApiCredentialProfile({
+      id: "stored-profile-1",
+      name: "Delete Me",
+      baseUrl: "https://api.example.com",
+      apiKey: "sk-delete-me",
+    }),
+  ])
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    page.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+
+  await expect(page.getByRole("heading", { name: "Delete Me" })).toBeVisible()
+
+  await page.getByRole("button", { name: "Delete" }).click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByText("Delete profile")).toBeVisible()
+  await dialog.getByRole("button", { name: "Delete" }).click()
+
+  await expect(page.getByRole("heading", { name: "Delete Me" })).toHaveCount(0)
+
+  await expect
+    .poll(async () => {
+      const raw = await getPlasmoStorageRawValue<unknown>(
+        serviceWorker,
+        STORAGE_KEYS.API_CREDENTIAL_PROFILES,
+      )
+
+      if (typeof raw !== "string") return null
+
+      try {
+        const parsed = JSON.parse(raw) as {
+          profiles?: Array<{ id?: string }>
+        }
+        return parsed.profiles?.some(
+          (profile) => profile.id === "stored-profile-1",
+        )
+      } catch {
+        return null
+      }
+    })
+    .toBe(false)
 })

@@ -5,6 +5,7 @@ import { defineConfig } from "vitest/config"
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 const domOnlyTsTests = [
   "tests/entrypoints/content/index.test.ts",
+  "tests/entrypoints/content/redemptionAssist/index.test.ts",
   "tests/entrypoints/content/messageHandlers/utils/capGuard.test.ts",
   "tests/entrypoints/content/messageHandlers/utils/turnstileGuard.test.ts",
   "tests/entrypoints/content/webAiApiCheck/index.test.ts",
