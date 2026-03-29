@@ -7,6 +7,7 @@ import {
   installExtensionPageGuards,
   seedApiCredentialProfiles,
   stubLlmMetadataIndex,
+  waitForExtensionPage,
 } from "~~/e2e/utils/commonUserFlows"
 import {
   getPlasmoStorageRawValue,
@@ -93,6 +94,58 @@ test("verifies a stored popup API credential profile against mocked endpoints", 
 
   await expect(modelsProbe).toContainText("Pass")
   await expect(modelsProbe).toContainText("Fetched 2 models.")
+})
+
+test("opens Model Management for a stored popup API credential profile and loads its models", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedApiCredentialProfiles(serviceWorker, [
+    createStoredApiCredentialProfile({
+      id: "stored-profile-1",
+      name: "Model Profile",
+      baseUrl: "https://api.example.com",
+      apiKey: "sk-model-profile",
+    }),
+  ])
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    page.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+
+  const targetPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: "options.html",
+    hash: "#models",
+    searchParams: {
+      profileId: "stored-profile-1",
+    },
+  })
+
+  await page.getByRole("button", { name: "Open in Model Management" }).click()
+
+  const targetPage = await targetPagePromise
+  installExtensionPageGuards(targetPage)
+  await waitForExtensionRoot(targetPage)
+
+  const targetUrl = new URL(targetPage.url())
+  expect(targetUrl.hash).toBe("#models")
+  expect(targetUrl.searchParams.get("profileId")).toBe("stored-profile-1")
+
+  await expect(targetPage.getByText("gpt-4o-mini")).toBeVisible()
+  await expect(targetPage.getByText("gpt-4.1-mini")).toBeVisible()
+  await expect(
+    targetPage.getByText("Profile: Model Profile", { exact: false }).first(),
+  ).toBeVisible()
+  await expect(
+    targetPage.getByRole("button", { name: "Key for this model" }),
+  ).toHaveCount(0)
 })
 
 test("edits a stored popup API credential profile and persists the change", async ({
