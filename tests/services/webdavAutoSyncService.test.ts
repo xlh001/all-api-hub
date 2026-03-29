@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { createDefaultTagStore } from "~/services/tags/tagStoreUtils"
 import { webdavAutoSyncService } from "~/services/webdav/webdavAutoSyncService"
 import { normalizeWebdavOrderedEntryIds } from "~/services/webdav/webdavSelectiveSync"
 import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
@@ -343,6 +344,83 @@ describe("WebdavAutoSyncService.mergeData", () => {
 
     // id 2 should come from remote because of newer updatedAt
     expect(result.channelConfigs[2].updatedAt).toBe(20)
+  })
+
+  it("keeps local-only selections and ignores invalid remote channel config ids", () => {
+    const local: any = {
+      accounts: [{ id: "a1", site_name: "local-1" }],
+      bookmarks: [
+        {
+          id: "b1",
+          name: "local-bookmark",
+          url: "https://local.example.com",
+        },
+      ],
+      accountsTimestamp: 0,
+      tagStore: undefined,
+      preferences: { ...basePrefsLocal, themeMode: "local-only" },
+      preferencesTimestamp: 10,
+      channelConfigs: {
+        2: { ...mkChannelConfig(2, 30), label: "local-channel" },
+      },
+      apiCredentialProfiles: {
+        version: 2,
+        profiles: [{ id: "local-profile" }],
+        lastUpdated: 10,
+      },
+    }
+
+    const remote: any = {
+      accounts: [
+        { id: "a1", site_name: "remote-1", updated_at: 999 },
+        { id: "a2", site_name: "remote-2", updated_at: 999 },
+      ],
+      bookmarks: [
+        {
+          id: "b1",
+          name: "remote-bookmark",
+          url: "https://remote.example.com",
+          updated_at: 999,
+        },
+        {
+          id: "b2",
+          name: "remote-bookmark-2",
+          url: "https://remote2.example.com",
+          updated_at: 999,
+        },
+      ],
+      accountsTimestamp: 20,
+      tagStore: undefined,
+      preferences: { ...basePrefsRemote, themeMode: "remote-should-not-win" },
+      preferencesTimestamp: 20,
+      channelConfigs: {
+        0: mkChannelConfig(0, 100),
+        "-1": mkChannelConfig(-1, 100),
+        abc: mkChannelConfig(5, 100),
+        2: { ...mkChannelConfig(2, 1), label: "remote-older" },
+      },
+      apiCredentialProfiles: {
+        version: 2,
+        profiles: [{ id: "remote-profile" }],
+        lastUpdated: 20,
+      },
+    }
+
+    const result = (webdavAutoSyncService as any).mergeData(local, remote, {
+      accounts: false,
+      bookmarks: false,
+      apiCredentialProfiles: false,
+      preferences: false,
+    })
+
+    expect(result.accounts).toEqual(local.accounts)
+    expect(result.bookmarks).toEqual(local.bookmarks)
+    expect(result.preferences).toEqual(local.preferences)
+    expect(result.tagStore).toEqual(createDefaultTagStore())
+    expect(result.apiCredentialProfiles).toEqual(local.apiCredentialProfiles)
+    expect(result.channelConfigs).toEqual({
+      2: { ...mkChannelConfig(2, 30), label: "local-channel" },
+    })
   })
 })
 
@@ -1160,5 +1238,87 @@ describe("WebdavAutoSyncService local apply phase", () => {
     })
     expect(mockApiCredentialProfilesImport).not.toHaveBeenCalled()
     expect(mockUploadBackup).not.toHaveBeenCalled()
+  })
+
+  it("rolls back channel configs when api credential profile import fails", async () => {
+    const service = createService()
+
+    mockAccountStorageImportData.mockResolvedValue({ migratedCount: 0 })
+    mockTagStoreImport.mockResolvedValue(undefined)
+    mockImportPreferences.mockResolvedValue(true)
+    mockChannelConfigImport.mockResolvedValue(undefined)
+    mockApiCredentialProfilesImport.mockRejectedValueOnce(
+      new Error("profile import failed"),
+    )
+
+    await expect(service.syncWithWebdav()).rejects.toThrow(
+      "profile import failed",
+    )
+
+    expect(mockChannelConfigImport).toHaveBeenNthCalledWith(1, {
+      2: { enabled: false },
+    })
+    expect(mockChannelConfigImport).toHaveBeenNthCalledWith(2, {
+      1: { enabled: true },
+    })
+    expect(mockImportPreferences).toHaveBeenCalledTimes(2)
+    expect(mockUploadBackup).not.toHaveBeenCalled()
+  })
+
+  it("throws when importing synced preferences fails and rolls account metadata back to empty defaults", async () => {
+    const service = createService()
+    mockImportPreferences.mockResolvedValue(false)
+
+    await expect(
+      (service as any).applyLocalSyncResult({
+        syncDataSelection: {
+          accounts: true,
+          bookmarks: true,
+          apiCredentialProfiles: false,
+          preferences: true,
+        },
+        accountsToSave: [
+          { id: "remote-account", created_at: 3, updated_at: 30 },
+        ],
+        bookmarksToSave: [
+          { id: "remote-bookmark", created_at: 4, updated_at: 40 },
+        ],
+        pinnedAccountIdsToSave: ["remote-account"],
+        orderedAccountIdsToSave: ["remote-account", "remote-bookmark"],
+        tagStoreToSave: { version: 1, tagsById: {} },
+        preferencesToSave: { themeMode: "light" },
+        channelConfigsToSave: { 2: { enabled: false } },
+        apiCredentialProfilesToSave: {
+          version: 2,
+          profiles: [],
+          lastUpdated: 0,
+        },
+        localAccountsConfig: {
+          accounts: [{ id: "local-account", created_at: 1, updated_at: 10 }],
+        },
+        localTagStore: { version: 1, tagsById: {} },
+        localPreferences: { themeMode: "dark" },
+        localChannelConfigs: { 1: { enabled: true } },
+        localApiCredentialProfiles: {
+          version: 2,
+          profiles: [],
+          lastUpdated: 0,
+        },
+      }),
+    ).rejects.toThrow("Failed to import WebDAV preferences")
+
+    expect(mockAccountStorageImportData).toHaveBeenNthCalledWith(1, {
+      accounts: [{ id: "remote-account", created_at: 3, updated_at: 30 }],
+      pinnedAccountIds: ["remote-account"],
+      orderedAccountIds: ["remote-account", "remote-bookmark"],
+      bookmarks: [{ id: "remote-bookmark", created_at: 4, updated_at: 40 }],
+    })
+    expect(mockAccountStorageImportData).toHaveBeenNthCalledWith(2, {
+      accounts: [{ id: "local-account", created_at: 1, updated_at: 10 }],
+      bookmarks: [],
+      pinnedAccountIds: [],
+      orderedAccountIds: [],
+    })
+    expect(mockTagStoreImport).toHaveBeenCalledTimes(2)
   })
 })

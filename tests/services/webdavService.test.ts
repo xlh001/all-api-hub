@@ -4,16 +4,34 @@ import { userPreferences } from "~/services/preferences/userPreferences"
 import {
   downloadBackup,
   downloadBackupRaw,
+  isWebdavFileNotFoundError,
   testWebdavConnection,
   uploadBackup,
   WEBDAV_FILE_NOT_FOUND_ERROR_CODE,
   WebdavFileNotFoundError,
 } from "~/services/webdav/webdavService"
 
+const {
+  mockDecryptWebdavBackupEnvelope,
+  mockEncryptWebdavBackupContent,
+  mockTryParseEncryptedWebdavBackupEnvelope,
+} = vi.hoisted(() => ({
+  mockDecryptWebdavBackupEnvelope: vi.fn(),
+  mockEncryptWebdavBackupContent: vi.fn(),
+  mockTryParseEncryptedWebdavBackupEnvelope: vi.fn(),
+}))
+
 vi.mock("~/services/preferences/userPreferences", () => ({
   userPreferences: {
     getPreferences: vi.fn(),
   },
+}))
+
+vi.mock("~/services/webdav/webdavBackupEncryption", () => ({
+  decryptWebdavBackupEnvelope: mockDecryptWebdavBackupEnvelope,
+  encryptWebdavBackupContent: mockEncryptWebdavBackupContent,
+  tryParseEncryptedWebdavBackupEnvelope:
+    mockTryParseEncryptedWebdavBackupEnvelope,
 }))
 
 const mockedUserPreferences = userPreferences as any
@@ -26,6 +44,18 @@ describe("webdavService", () => {
     vi.clearAllMocks()
     // Fresh fetch mock for each test
     globalAny.fetch = vi.fn()
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(null)
+    mockDecryptWebdavBackupEnvelope.mockResolvedValue('{"decrypted":true}')
+    mockEncryptWebdavBackupContent.mockResolvedValue({
+      type: "all-api-hub-webdav-backup-encrypted",
+      v: 1,
+      kdf: "PBKDF2",
+      cipher: "AES-GCM",
+      iter: 250000,
+      salt: "salt",
+      iv: "iv",
+      ct: "cipher",
+    })
   })
 
   afterAll(() => {
@@ -46,6 +76,21 @@ describe("webdavService", () => {
       backupEncryptionPassword: "",
     },
   }
+
+  describe("isWebdavFileNotFoundError", () => {
+    it("recognizes both typed errors and serialized error objects", () => {
+      expect(isWebdavFileNotFoundError(new WebdavFileNotFoundError())).toBe(
+        true,
+      )
+      expect(
+        isWebdavFileNotFoundError({
+          code: WEBDAV_FILE_NOT_FOUND_ERROR_CODE,
+        }),
+      ).toBe(true)
+      expect(isWebdavFileNotFoundError("missing")).toBe(false)
+      expect(isWebdavFileNotFoundError({ code: "OTHER" })).toBe(false)
+    })
+  })
 
   describe("testWebdavConnection", () => {
     it("throws when config is incomplete", async () => {
@@ -224,6 +269,111 @@ describe("webdavService", () => {
         "messages:webdav.downloadFailed",
       )
     })
+
+    it("treats unreadable 409 bodies as a generic download failure", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue(basePrefs)
+      globalAny.fetch.mockResolvedValue({
+        status: 409,
+        text: vi.fn().mockRejectedValue(new Error("body stream failed")),
+      })
+
+      await expect(downloadBackup()).rejects.toThrow(
+        "messages:webdav.downloadFailed",
+      )
+    })
+
+    it("decrypts encrypted envelopes with the stored password", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue({
+        webdav: {
+          ...basePrefs.webdav,
+          backupEncryptionEnabled: true,
+          backupEncryptionPassword: "stored-secret",
+        },
+      })
+      globalAny.fetch.mockResolvedValue({
+        status: 200,
+        text: vi.fn().mockResolvedValue('{"encrypted":true}'),
+      })
+      mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue({
+        type: "all-api-hub-webdav-backup-encrypted",
+        v: 1,
+        kdf: "PBKDF2",
+        cipher: "AES-GCM",
+        iter: 250000,
+        salt: "salt",
+        iv: "iv",
+        ct: "cipher",
+      })
+
+      await expect(downloadBackup()).resolves.toBe('{"decrypted":true}')
+      expect(mockDecryptWebdavBackupEnvelope).toHaveBeenCalledWith({
+        envelope: {
+          type: "all-api-hub-webdav-backup-encrypted",
+          v: 1,
+          kdf: "PBKDF2",
+          cipher: "AES-GCM",
+          iter: 250000,
+          salt: "salt",
+          iv: "iv",
+          ct: "cipher",
+        },
+        password: "stored-secret",
+      })
+    })
+
+    it("throws when an encrypted backup is downloaded without a stored decrypt password", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue({
+        webdav: {
+          ...basePrefs.webdav,
+          backupEncryptionEnabled: true,
+          backupEncryptionPassword: "   ",
+        },
+      })
+      globalAny.fetch.mockResolvedValue({
+        status: 200,
+        text: vi.fn().mockResolvedValue('{"encrypted":true}'),
+      })
+      mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue({
+        type: "all-api-hub-webdav-backup-encrypted",
+        v: 1,
+        kdf: "PBKDF2",
+        cipher: "AES-GCM",
+        iter: 250000,
+        salt: "salt",
+        iv: "iv",
+        ct: "cipher",
+      })
+
+      await expect(downloadBackup()).rejects.toThrow(
+        "messages:webdav.decryptFailedNoPassword",
+      )
+      expect(mockDecryptWebdavBackupEnvelope).not.toHaveBeenCalled()
+    })
+
+    it("throws a localized decrypt failure when decryption fails", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue(basePrefs)
+      globalAny.fetch.mockResolvedValue({
+        status: 200,
+        text: vi.fn().mockResolvedValue('{"encrypted":true}'),
+      })
+      mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue({
+        type: "all-api-hub-webdav-backup-encrypted",
+        v: 1,
+        kdf: "PBKDF2",
+        cipher: "AES-GCM",
+        iter: 250000,
+        salt: "salt",
+        iv: "iv",
+        ct: "cipher",
+      })
+      mockDecryptWebdavBackupEnvelope.mockRejectedValueOnce(
+        new Error("wrong password"),
+      )
+
+      await expect(downloadBackup()).rejects.toThrow(
+        "messages:webdav.decryptFailed",
+      )
+    })
   })
 
   describe("uploadBackup", () => {
@@ -282,6 +432,104 @@ describe("webdavService", () => {
       await expect(uploadBackup("{}")).rejects.toThrow(
         "messages:webdav.uploadFailed",
       )
+    })
+
+    it("encrypts backup content before uploading when backup encryption is enabled", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue({
+        webdav: {
+          ...basePrefs.webdav,
+          backupEncryptionEnabled: true,
+          backupEncryptionPassword: "secret",
+        },
+      })
+
+      globalAny.fetch
+        .mockResolvedValueOnce({ status: 201 })
+        .mockResolvedValueOnce({ status: 204 })
+
+      await expect(uploadBackup('{"secure":true}')).resolves.toBe(true)
+      expect(mockEncryptWebdavBackupContent).toHaveBeenCalledWith({
+        content: '{"secure":true}',
+        password: "secret",
+      })
+      expect((globalAny.fetch.mock.calls[1][1] as RequestInit).body).toBe(
+        JSON.stringify({
+          type: "all-api-hub-webdav-backup-encrypted",
+          v: 1,
+          kdf: "PBKDF2",
+          cipher: "AES-GCM",
+          iter: 250000,
+          salt: "salt",
+          iv: "iv",
+          ct: "cipher",
+        }),
+      )
+    })
+
+    it("retries MKCOL with a trailing slash for custom file targets before uploading", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue(basePrefs)
+      globalAny.fetch
+        .mockResolvedValueOnce({ status: 409 })
+        .mockResolvedValueOnce({ status: 201 })
+        .mockResolvedValueOnce({ status: 204 })
+
+      await expect(
+        uploadBackup('{"custom":true}', {
+          url: "https://example.com/custom-backups/custom.json",
+        }),
+      ).resolves.toBe(true)
+
+      expect(globalAny.fetch).toHaveBeenCalledTimes(3)
+      expect(globalAny.fetch.mock.calls[0][0]).toBe(
+        "https://example.com/custom-backups",
+      )
+      expect(globalAny.fetch.mock.calls[1][0]).toBe(
+        "https://example.com/custom-backups/",
+      )
+      expect(globalAny.fetch.mock.calls[2][0]).toBe(
+        "https://example.com/custom-backups/custom.json",
+      )
+    })
+
+    it("keeps uploads permissive when MKCOL still fails for custom file targets", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue(basePrefs)
+      globalAny.fetch
+        .mockResolvedValueOnce({ status: 500 })
+        .mockResolvedValueOnce({ status: 500 })
+        .mockResolvedValueOnce({ status: 204 })
+
+      await expect(
+        uploadBackup('{"stillUploads":true}', {
+          url: "https://example.com/custom-backups/custom.json",
+        }),
+      ).resolves.toBe(true)
+
+      expect(globalAny.fetch).toHaveBeenCalledTimes(3)
+      expect((globalAny.fetch.mock.calls[0][1] as RequestInit).method).toBe(
+        "MKCOL",
+      )
+      expect((globalAny.fetch.mock.calls[1][1] as RequestInit).method).toBe(
+        "MKCOL",
+      )
+      expect((globalAny.fetch.mock.calls[2][1] as RequestInit).method).toBe(
+        "PUT",
+      )
+    })
+
+    it("throws when encryption is enabled but no upload password is configured", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue({
+        webdav: {
+          ...basePrefs.webdav,
+          backupEncryptionEnabled: true,
+          backupEncryptionPassword: "   ",
+        },
+      })
+
+      await expect(uploadBackup("{}")).rejects.toThrow(
+        "messages:webdav.encryptFailedNoPassword",
+      )
+      expect(globalAny.fetch).not.toHaveBeenCalled()
+      expect(mockEncryptWebdavBackupContent).not.toHaveBeenCalled()
     })
   })
 })

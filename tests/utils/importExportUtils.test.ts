@@ -15,6 +15,7 @@ import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/a
 import { channelConfigStorage } from "~/services/managedSites/channelConfigStorage"
 import { userPreferences } from "~/services/preferences/userPreferences"
 import { tagStorage } from "~/services/tags/tagStorage"
+import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 import { DEFAULT_WEBDAV_SETTINGS } from "~/types/webdav"
 
@@ -97,6 +98,8 @@ const mockTagStoreExport = tagStorage.exportTagStore as unknown as ReturnType<
 const mockTagStoreImport = tagStorage.importTagStore as unknown as ReturnType<
   typeof vi.fn
 >
+const mockMergeTagStoresForSync =
+  tagStorage.mergeTagStoresForSync as unknown as ReturnType<typeof vi.fn>
 
 const mockApiCredentialProfilesMergeConfig =
   apiCredentialProfilesStorage.mergeConfig as unknown as ReturnType<
@@ -326,6 +329,106 @@ describe("importFromBackupObject", () => {
     expect(result.sections.apiCredentialProfiles).toBe(true)
   })
 
+  it("merges profile-only V2 backups with tag stores before importing profiles", async () => {
+    mockTagStoreExport.mockResolvedValue({
+      version: 1,
+      tagsById: {
+        local: { id: "local", name: "Local", createdAt: 1, updatedAt: 1 },
+      },
+    })
+    mockMergeTagStoresForSync.mockReturnValue({
+      tagStore: {
+        version: 2,
+        tagsById: {
+          local: { id: "local", name: "Local", createdAt: 1, updatedAt: 1 },
+          remote: { id: "remote", name: "Remote", createdAt: 2, updatedAt: 2 },
+        },
+      },
+      localAccounts: [],
+      remoteAccounts: [],
+      localBookmarks: [],
+      remoteBookmarks: [],
+      localTaggables: [],
+      remoteTaggables: [
+        {
+          id: "p-1",
+          name: "Merged Profile",
+          tagIds: ["remote"],
+        },
+      ],
+    })
+
+    const backup = {
+      version: BACKUP_VERSION,
+      timestamp: Date.now(),
+      apiCredentialProfiles: {
+        version: 1,
+        profiles: [
+          {
+            id: "p-1",
+            name: "Merged Profile",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com",
+            apiKey: "sk-test",
+            tagIds: ["remote"],
+            notes: "",
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        lastUpdated: 1,
+      } as any,
+      tagStore: {
+        version: 1,
+        tagsById: {
+          remote: { id: "remote", name: "Remote", createdAt: 2, updatedAt: 2 },
+        },
+      },
+    } satisfies RawBackupData
+
+    const result = await importFromBackupObject(backup)
+
+    expect(mockTagStoreExport).toHaveBeenCalled()
+    expect(mockMergeTagStoresForSync).toHaveBeenCalledWith({
+      localTagStore: {
+        version: 1,
+        tagsById: {
+          local: { id: "local", name: "Local", createdAt: 1, updatedAt: 1 },
+        },
+      },
+      remoteTagStore: backup.tagStore,
+      localAccounts: [],
+      remoteAccounts: [],
+      localBookmarks: [],
+      remoteBookmarks: [],
+      localTaggables: [],
+      remoteTaggables: backup.apiCredentialProfiles?.profiles,
+    })
+    expect(mockTagStoreImport).toHaveBeenCalledWith({
+      version: 2,
+      tagsById: {
+        local: { id: "local", name: "Local", createdAt: 1, updatedAt: 1 },
+        remote: { id: "remote", name: "Remote", createdAt: 2, updatedAt: 2 },
+      },
+    })
+    expect(mockApiCredentialProfilesMergeConfig).toHaveBeenCalledWith({
+      ...backup.apiCredentialProfiles,
+      profiles: [
+        {
+          id: "p-1",
+          name: "Merged Profile",
+          tagIds: ["remote"],
+        },
+      ],
+    })
+    expect(result.sections).toEqual({
+      accounts: false,
+      preferences: false,
+      channelConfigs: false,
+      apiCredentialProfiles: true,
+    })
+  })
+
   it("imports partial V2 preferences-only backup", async () => {
     const backup: BackupPreferencesPartialV2 = {
       version: BACKUP_VERSION,
@@ -436,6 +539,35 @@ describe("importFromBackupObject", () => {
     )
   })
 
+  it("returns partial success when V2 preference import fails but other sections import", async () => {
+    mockUserPreferencesImport.mockResolvedValue(false)
+
+    const backup: BackupFullV2 = {
+      version: BACKUP_VERSION,
+      timestamp: Date.now(),
+      accounts: {
+        accounts: [{ id: "a1" } as any],
+        last_updated: Date.now(),
+      } as any,
+      preferences: { themeMode: "dark" } as any,
+      channelConfigs: {},
+    }
+
+    const result = await importFromBackupObject(backup as BackupV2)
+
+    expect(mockAccountStorageImportData).toHaveBeenCalled()
+    expect(mockUserPreferencesImport).toHaveBeenCalledWith({
+      themeMode: "dark",
+    })
+    expect(result.allImported).toBe(false)
+    expect(result.sections).toEqual({
+      accounts: true,
+      preferences: false,
+      channelConfigs: true,
+      apiCredentialProfiles: false,
+    })
+  })
+
   it("throws when nothing can be imported", async () => {
     const payload: RawBackupData = {
       version: BACKUP_VERSION,
@@ -523,6 +655,24 @@ describe("normalizeBackupForMerge", () => {
     expect(result.apiCredentialProfiles).toEqual(apiCredentialProfiles)
   })
 
+  it("normalizes V2 array-based account backups and falls back to local preferences when needed", () => {
+    const localPrefs = { themeMode: "system" }
+    const backup: RawBackupData = {
+      version: BACKUP_VERSION,
+      timestamp: 321,
+      accounts: [{ id: "array-account" }],
+      channelConfigs: "invalid" as any,
+    }
+
+    const result = normalizeBackupForMerge(backup, localPrefs)
+
+    expect(result.accounts).toEqual([{ id: "array-account" }])
+    expect(result.bookmarks).toEqual([])
+    expect(result.accountsTimestamp).toBe(321)
+    expect(result.preferences).toEqual(localPrefs)
+    expect(result.channelConfigs).toBeNull()
+  })
+
   it("normalizes V1-style backup falling back to legacy shapes", () => {
     const localPrefs = { themeMode: "system" }
     const payload: RawBackupData = {
@@ -545,6 +695,30 @@ describe("normalizeBackupForMerge", () => {
     expect(result.preferences).toEqual({ themeMode: "dark" })
     expect(result.channelConfigs).toEqual({ 2: { enabled: false } })
     expect(result.tagStore).toBeNull()
+  })
+
+  it("normalizes V1 backups using nested bookmark and tag-store fallbacks", () => {
+    const localPrefs = { themeMode: "system" }
+    const payload: RawBackupData = {
+      version: "1.0",
+      timestamp: 654,
+      accounts: [{ id: "legacy-array" }],
+      data: {
+        bookmarks: [{ id: "legacy-bookmark" }],
+        tagStore: { version: 1, tagsById: { t1: { id: "t1", name: "Tag" } } },
+      },
+    }
+
+    const result = normalizeBackupForMerge(payload, localPrefs)
+
+    expect(result.accounts).toEqual([{ id: "legacy-array" }])
+    expect(result.bookmarks).toEqual([{ id: "legacy-bookmark" }])
+    expect(result.accountsTimestamp).toBe(654)
+    expect(result.preferences).toEqual(localPrefs)
+    expect(result.tagStore).toEqual({
+      version: 1,
+      tagsById: { t1: { id: "t1", name: "Tag" } },
+    })
   })
 })
 
