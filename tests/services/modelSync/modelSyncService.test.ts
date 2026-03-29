@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { VELOERA } from "~/constants/siteType"
 import { getApiService } from "~/services/apiService"
@@ -18,6 +18,24 @@ vi.mock("~/services/apiService", () => ({
     updateChannelModelMapping: updateChannelModelMappingMock,
   })),
 }))
+
+const makeFilterRule = (
+  partial: Partial<ChannelModelFilterRule>,
+): ChannelModelFilterRule => ({
+  id: partial.id ?? "id",
+  name: partial.name ?? "rule",
+  pattern: partial.pattern ?? "",
+  isRegex: partial.isRegex ?? false,
+  action: partial.action ?? "include",
+  enabled: partial.enabled ?? true,
+  createdAt: partial.createdAt ?? Date.now(),
+  updatedAt: partial.updatedAt ?? Date.now(),
+  description: partial.description,
+})
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe("ModelSyncService - allowed model filtering", () => {
   const createService = (allowed?: string[]) =>
@@ -96,20 +114,6 @@ describe("ModelSyncService - siteType routing", () => {
 describe("ModelSyncService - global and channel filters", () => {
   const baseModels = ["gpt-4o", "gpt-4o-mini", "claude-3", "local-debug-model"]
 
-  const makeRule = (
-    partial: Partial<ChannelModelFilterRule>,
-  ): ChannelModelFilterRule => ({
-    id: partial.id ?? "id",
-    name: partial.name ?? "rule",
-    pattern: partial.pattern ?? "",
-    isRegex: partial.isRegex ?? false,
-    action: partial.action ?? "include",
-    enabled: partial.enabled ?? true,
-    createdAt: partial.createdAt ?? Date.now(),
-    updatedAt: partial.updatedAt ?? Date.now(),
-    description: partial.description,
-  })
-
   const callApplyFilters = (
     rules: ChannelModelFilterRule[] | null | undefined,
     models: string[],
@@ -125,14 +129,14 @@ describe("ModelSyncService - global and channel filters", () => {
 
   it("applies include-then-exclude logic correctly", () => {
     const rules: ChannelModelFilterRule[] = [
-      makeRule({
+      makeFilterRule({
         id: "include-openai",
         name: "Include GPT-4 family",
         pattern: "gpt-4o",
         isRegex: false,
         action: "include",
       }),
-      makeRule({
+      makeFilterRule({
         id: "exclude-mini",
         name: "Exclude mini",
         pattern: "mini",
@@ -147,7 +151,7 @@ describe("ModelSyncService - global and channel filters", () => {
 
   it("supports regex patterns in filters", () => {
     const rules: ChannelModelFilterRule[] = [
-      makeRule({
+      makeFilterRule({
         id: "include-gpt",
         name: "Include GPT*",
         pattern: "^gpt-",
@@ -162,7 +166,7 @@ describe("ModelSyncService - global and channel filters", () => {
 
   it("returns an empty result when regex filters are invalid", () => {
     const rules: ChannelModelFilterRule[] = [
-      makeRule({
+      makeFilterRule({
         id: "broken",
         pattern: "[",
         isRegex: true,
@@ -176,6 +180,25 @@ describe("ModelSyncService - global and channel filters", () => {
 })
 
 describe("ModelSyncService - channel execution", () => {
+  it("invokes the configured rate limiter before channel listing callbacks run", async () => {
+    const acquire = vi.fn().mockResolvedValue(undefined)
+    listAllChannelsMock.mockImplementation(async (_ctx, options) => {
+      await options.beforeRequest?.()
+      return {
+        items: [],
+        total: 0,
+        type_counts: {},
+      }
+    })
+
+    const service = new ModelSyncService("https://example.com", "token", "1")
+    ;(service as any).rateLimiter = { acquire }
+
+    await service.listChannels()
+
+    expect(acquire).toHaveBeenCalledTimes(1)
+  })
+
   it("skips channel updates when the normalized model set is unchanged", async () => {
     fetchChannelModelsMock.mockResolvedValueOnce([" model-b ", "model-a"])
 
@@ -197,6 +220,90 @@ describe("ModelSyncService - channel execution", () => {
       message: "Success",
     })
     expect(updateChannelModelsMock).not.toHaveBeenCalled()
+  })
+
+  it("composes global and channel filters before updating changed models", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce([
+      "gpt-4o",
+      "gpt-4o-mini",
+      "claude-3",
+    ])
+
+    const service = new ModelSyncService(
+      "https://example.com",
+      "token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      [
+        makeFilterRule({
+          id: "exclude-mini",
+          action: "exclude",
+          pattern: "mini",
+        }),
+      ],
+    )
+    service.setChannelConfigs({
+      7: {
+        modelFilterSettings: {
+          rules: [
+            makeFilterRule({
+              id: "include-claude",
+              action: "include",
+              pattern: "claude",
+            }),
+          ],
+        },
+      },
+    } as any)
+
+    const channel = {
+      id: 7,
+      name: "Scoped",
+      models: "gpt-4o",
+    } as any
+
+    const result = await service.runForChannel(channel, 0)
+
+    expect(updateChannelModelsMock).toHaveBeenCalledWith(
+      expect.anything(),
+      7,
+      "claude-3",
+    )
+    expect(channel.models).toBe("claude-3")
+    expect(result).toMatchObject({
+      channelId: 7,
+      ok: true,
+      oldModels: ["gpt-4o"],
+      newModels: ["claude-3"],
+    })
+  })
+
+  it("clears stored models when the upstream response only contains blank entries", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce([" ", "", "   "])
+
+    const service = new ModelSyncService("https://example.com", "token", "1")
+    const channel = {
+      id: 8,
+      name: "Blank Upstream",
+      models: "gpt-4o",
+    } as any
+
+    const result = await service.runForChannel(channel, 0)
+
+    expect(updateChannelModelsMock).toHaveBeenCalledWith(
+      expect.anything(),
+      8,
+      "",
+    )
+    expect(channel.models).toBe("")
+    expect(result).toMatchObject({
+      channelId: 8,
+      ok: true,
+      oldModels: ["gpt-4o"],
+      newModels: [],
+    })
   })
 
   it("retries failed channel fetches and returns a terminal failure after max retries", async () => {
@@ -227,9 +334,54 @@ describe("ModelSyncService - channel execution", () => {
       vi.useRealTimers()
     }
   })
+
+  it("falls back to an unknown error message when terminal failures have no message", async () => {
+    fetchChannelModelsMock.mockRejectedValue({
+      httpStatus: 503,
+    })
+
+    const service = new ModelSyncService("https://example.com", "token", "1")
+    const channel = {
+      id: 9,
+      name: "Status Only",
+      models: "gpt-4o",
+    } as any
+
+    const result = await service.runForChannel(channel, 0)
+
+    expect(result).toMatchObject({
+      channelId: 9,
+      ok: false,
+      httpStatus: 503,
+      attempts: 1,
+      message: "Unknown error",
+      oldModels: ["gpt-4o"],
+    })
+  })
 })
 
 describe("ModelSyncService - batching and mapping", () => {
+  it("returns empty statistics without progress callbacks when no channels are provided", async () => {
+    const service = new ModelSyncService("https://example.com", "token", "1")
+    const onProgress = vi.fn()
+
+    const result = await service.runBatch([], {
+      concurrency: 0,
+      maxRetries: 0,
+      onProgress,
+    })
+
+    expect(onProgress).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      items: [],
+      statistics: {
+        total: 0,
+        successCount: 0,
+        failureCount: 0,
+      },
+    })
+  })
+
   it("records failures when a worker throws unexpectedly during batch execution", async () => {
     const service = new ModelSyncService("https://example.com", "token", "1")
     const runForChannelSpy = vi

@@ -714,6 +714,146 @@ describe("newApiService", () => {
   })
 
   // ========================================================================
+  // getNewApiLoginAssistConfig
+  // ========================================================================
+
+  describe("getNewApiLoginAssistConfig", () => {
+    it("should return login-assist fields and default blank optional values", async () => {
+      const { getNewApiLoginAssistConfig } = await import(
+        "~/services/managedSites/providers/newApi"
+      )
+
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithNewApi({
+          newApi: {
+            baseUrl: "https://new-api.example.com/admin",
+            adminToken: "admin-token-123",
+            userId: "user-123",
+          },
+        }),
+      )
+
+      await expect(getNewApiLoginAssistConfig()).resolves.toEqual({
+        baseUrl: "https://new-api.example.com/admin",
+        username: "",
+        password: "",
+        totpSecret: "",
+      })
+    })
+
+    it("should return null when the configured base URL is missing", async () => {
+      const { getNewApiLoginAssistConfig } = await import(
+        "~/services/managedSites/providers/newApi"
+      )
+
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithNewApi({
+          newApi: {
+            baseUrl: "",
+            adminToken: "admin-token-123",
+            userId: "user-123",
+            username: "alice",
+            password: "secret",
+            totpSecret: "otp-secret",
+          },
+        }),
+      )
+
+      await expect(getNewApiLoginAssistConfig()).resolves.toBeNull()
+    })
+
+    it("should return null when reading login-assist config fails", async () => {
+      const { getNewApiLoginAssistConfig } = await import(
+        "~/services/managedSites/providers/newApi"
+      )
+
+      mockGetPreferences.mockRejectedValueOnce(new Error("Storage error"))
+
+      await expect(getNewApiLoginAssistConfig()).resolves.toBeNull()
+    })
+  })
+
+  // ========================================================================
+  // fetchChannelSecretKey
+  // ========================================================================
+
+  describe("fetchChannelSecretKey", () => {
+    it("should reuse login-assist credentials when the managed site shares the configured origin", async () => {
+      const { fetchChannelSecretKey } = await import(
+        "~/services/managedSites/providers/newApi"
+      )
+
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithNewApi({
+          newApi: {
+            baseUrl: "https://new-api.example.com/admin",
+            adminToken: "admin-token-123",
+            userId: "user-123",
+            username: "alice",
+            password: "secret",
+            totpSecret: "otp-secret",
+          },
+        }),
+      )
+      fetchNewApiChannelKeyMock.mockResolvedValueOnce("resolved-secret")
+
+      await expect(
+        fetchChannelSecretKey(
+          "https://new-api.example.com/api/v1",
+          "ignored-admin-token",
+          "managed-user",
+          99,
+        ),
+      ).resolves.toBe("resolved-secret")
+
+      expect(fetchNewApiChannelKeyMock).toHaveBeenCalledWith({
+        baseUrl: "https://new-api.example.com/api/v1",
+        userId: "managed-user",
+        username: "alice",
+        password: "secret",
+        totpSecret: "otp-secret",
+        channelId: 99,
+      })
+    })
+
+    it("should avoid reusing login-assist credentials when the managed site origin differs", async () => {
+      const { fetchChannelSecretKey } = await import(
+        "~/services/managedSites/providers/newApi"
+      )
+
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithNewApi({
+          newApi: {
+            baseUrl: "https://new-api.example.com/admin",
+            adminToken: "admin-token-123",
+            userId: "user-123",
+            username: "alice",
+            password: "secret",
+            totpSecret: "otp-secret",
+          },
+        }),
+      )
+      fetchNewApiChannelKeyMock.mockResolvedValueOnce("resolved-secret")
+
+      await fetchChannelSecretKey(
+        "https://other.example.com/api/v1",
+        "ignored-admin-token",
+        "managed-user",
+        100,
+      )
+
+      expect(fetchNewApiChannelKeyMock).toHaveBeenCalledWith({
+        baseUrl: "https://other.example.com/api/v1",
+        userId: "managed-user",
+        username: "",
+        password: "",
+        totpSecret: "",
+        channelId: 100,
+      })
+    })
+  })
+
+  // ========================================================================
   // fetchAvailableModels
   // ========================================================================
 

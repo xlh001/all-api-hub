@@ -10,6 +10,9 @@ import {
   clearNewApiManagedSessionState,
   ensureNewApiManagedSession,
   fetchNewApiChannelKey,
+  hasNewApiAuthenticatedBrowserSession,
+  hasNewApiLoginAssistCredentials,
+  isNewApiVerifiedSessionActive,
   NEW_API_CHANNEL_KEY_ERROR_KINDS,
   NEW_API_MANAGED_SESSION_STATUSES,
   NEW_API_VERIFIED_SESSION_WINDOW_MS,
@@ -259,6 +262,162 @@ describe("newApiSession", () => {
 
     await ensureNewApiManagedSession(BASE_CONFIG)
     expect(verifyCalls).toBe(2)
+  })
+
+  it("reports browser-session availability and propagates unexpected probe failures", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        jsonData({ enabled: false }),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+    )
+
+    await expect(
+      hasNewApiAuthenticatedBrowserSession(BASE_CONFIG),
+    ).resolves.toBe(true)
+
+    clearNewApiManagedSessionState()
+    server.use(
+      http.get(
+        `${BASE_CONFIG.baseUrl}/api/user/2fa/status`,
+        () => new HttpResponse("boom", { status: 500 }),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+    )
+
+    await expect(
+      hasNewApiAuthenticatedBrowserSession(BASE_CONFIG),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining("500"),
+    })
+  })
+
+  it("distinguishes when stored login-assist credentials are usable", () => {
+    expect(
+      hasNewApiLoginAssistCredentials({
+        username: " admin ",
+        password: "secret",
+      }),
+    ).toBe(true)
+    expect(
+      hasNewApiLoginAssistCredentials({
+        username: " ",
+        password: "secret",
+      }),
+    ).toBe(false)
+    expect(hasNewApiLoginAssistCredentials(null)).toBe(false)
+  })
+
+  it("returns passkey-manual-required when passkeys are enabled without 2FA", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        jsonData({ enabled: false }),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        jsonData({ enabled: true }),
+      ),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.PASSKEY_MANUAL_REQUIRED,
+      methods: {
+        twoFactorEnabled: false,
+        passkeyEnabled: true,
+      },
+    })
+  })
+
+  it("falls back to logged-in defaults when login succeeds but follow-up method probes are unavailable", async () => {
+    const endpointCalls = new Map<string, number>()
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () => {
+        const callCount = (endpointCalls.get("/api/user/2fa/status") ?? 0) + 1
+        endpointCalls.set("/api/user/2fa/status", callCount)
+        return unauthorizedResponse()
+      }),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () => {
+        const callCount = (endpointCalls.get("/api/user/passkey") ?? 0) + 1
+        endpointCalls.set("/api/user/passkey", callCount)
+        return unauthorizedResponse()
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData({ require_2fa: false }),
+      ),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+      methods: {
+        twoFactorEnabled: false,
+        passkeyEnabled: false,
+      },
+      automaticAttempted: false,
+    })
+
+    expect(endpointCalls.get("/api/user/2fa/status")).toBe(2)
+    expect(endpointCalls.get("/api/user/passkey")).toBe(2)
+  })
+
+  it("redacts TOTP material when automatic secure verification fails after login succeeds", async () => {
+    generateNewApiTotpCodeMock.mockReturnValue("222222")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        jsonData({ enabled: true }),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        jsonData({ enabled: false }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
+        HttpResponse.json({
+          success: false,
+          message: "JBSWY3DPEHPK3PXP 222222 secure verify failed",
+          data: null,
+        }),
+      ),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+      methods: {
+        twoFactorEnabled: true,
+        passkeyEnabled: false,
+      },
+      automaticAttempted: true,
+      errorMessage: "[REDACTED] [REDACTED] secure verify failed",
+    })
+  })
+
+  it("preserves automaticAttempted when login 2FA succeeds but secure verification is still required", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        jsonData({ enabled: false }),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        jsonData({ enabled: false }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login/2fa`, () =>
+        jsonData({}),
+      ),
+    )
+
+    await expect(
+      submitNewApiLoginTwoFactorCode(BASE_CONFIG, " 123456 ", {
+        automaticAttempted: true,
+      }),
+    ).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+      methods: {
+        twoFactorEnabled: false,
+        passkeyEnabled: false,
+      },
+      automaticAttempted: true,
+    })
   })
 
   it("redacts TOTP material from automatic 2FA failure messages", async () => {
@@ -517,5 +676,93 @@ describe("newApiSession", () => {
     ).rejects.toMatchObject({
       kind: NEW_API_CHANNEL_KEY_ERROR_KINDS.SECURE_VERIFICATION_REQUIRED,
     } satisfies Pick<NewApiChannelKeyRequirementError, "kind">)
+  })
+
+  it("reuses an already-verified session for hidden key reads without re-running preflight probes", async () => {
+    let twoFactorCalls = 0
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () => {
+        twoFactorCalls += 1
+        return jsonData({ enabled: true })
+      }),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        jsonData({ enabled: false }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
+        jsonData({ verified: true }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/channel/99/key`, () =>
+        jsonData({ key: "cached-session-key" }),
+      ),
+    )
+    generateNewApiTotpCodeMock.mockReturnValue("123456")
+
+    await ensureNewApiManagedSession(BASE_CONFIG)
+    expect(isNewApiVerifiedSessionActive(BASE_CONFIG.baseUrl)).toBe(true)
+    const preflightCalls = twoFactorCalls
+
+    await expect(
+      fetchNewApiChannelKey({
+        ...BASE_CONFIG,
+        channelId: 99,
+      }),
+    ).resolves.toBe("cached-session-key")
+
+    expect(twoFactorCalls).toBe(preflightCalls)
+  })
+
+  it("treats unauthorized key reads as a login-required recovery state", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        jsonData({ enabled: true }),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        jsonData({ enabled: false }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
+        jsonData({ verified: true, expires_at: 1_700_000_000 }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/channel/77/key`, () =>
+        unauthorizedResponse(),
+      ),
+    )
+    generateNewApiTotpCodeMock.mockReturnValue("123456")
+
+    await expect(
+      fetchNewApiChannelKey({
+        ...BASE_CONFIG,
+        channelId: 77,
+      }),
+    ).rejects.toMatchObject({
+      kind: NEW_API_CHANNEL_KEY_ERROR_KINDS.LOGIN_REQUIRED,
+    } satisfies Pick<NewApiChannelKeyRequirementError, "kind">)
+
+    expect(isNewApiVerifiedSessionActive(BASE_CONFIG.baseUrl)).toBe(false)
+  })
+
+  it("throws a stable error when the key endpoint returns an empty payload", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        jsonData({ enabled: true }),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        jsonData({ enabled: false }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
+        jsonData({ verified: true, expires_at: 1_700_000_000 }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/channel/55/key`, () =>
+        jsonData({ key: "   " }),
+      ),
+    )
+    generateNewApiTotpCodeMock.mockReturnValue("123456")
+
+    await expect(
+      fetchNewApiChannelKey({
+        ...BASE_CONFIG,
+        channelId: 55,
+      }),
+    ).rejects.toThrow("new_api_channel_key_missing")
   })
 })
