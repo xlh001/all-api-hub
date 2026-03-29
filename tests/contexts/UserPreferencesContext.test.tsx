@@ -862,6 +862,208 @@ describe("UserPreferencesContext", () => {
     })
   })
 
+  it("refreshes context menus when only the feature context-menu visibility changes", async () => {
+    const preferences = clonePreferences()
+    preferences.redemptionAssist = {
+      ...DEFAULT_REDEMPTION_ASSIST_PREFERENCES,
+      enabled: true,
+      contextMenu: { enabled: true },
+    }
+    preferences.webAiApiCheck = {
+      ...DEFAULT_WEB_AI_API_CHECK_PREFERENCES,
+      enabled: true,
+      contextMenu: { enabled: true },
+    }
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateRedemptionAssist({
+        contextMenu: { enabled: false },
+      })
+      await context.updateWebAiApiCheck({
+        contextMenu: { enabled: false },
+      })
+    })
+
+    expect((latestContext as any)?.preferences.redemptionAssist).toEqual(
+      expect.objectContaining({
+        enabled: true,
+        contextMenu: { enabled: false },
+      }),
+    )
+    expect((latestContext as any)?.preferences.webAiApiCheck).toEqual(
+      expect.objectContaining({
+        enabled: true,
+        contextMenu: { enabled: false },
+      }),
+    )
+
+    const refreshCalls = mockedSendRuntimeMessage.mock.calls.filter(
+      ([message]) =>
+        message?.action === RuntimeActionIds.PreferencesRefreshContextMenus,
+    )
+    expect(refreshCalls).toHaveLength(2)
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.RedemptionAssistUpdateSettings,
+      settings: {
+        contextMenu: { enabled: false },
+      },
+    })
+  })
+
+  it("normalizes hidden cashflow selections only when disabling would leave the UI on hidden tabs or sort fields", async () => {
+    const preferences = clonePreferences()
+    preferences.showTodayCashflow = true
+    preferences.activeTab = DATA_TYPE_CASHFLOW
+    preferences.sortField = DATA_TYPE_CONSUMPTION
+
+    let context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateShowTodayCashflow(false)
+    })
+
+    expect(mockedUserPreferences.savePreferences).toHaveBeenCalledWith({
+      showTodayCashflow: false,
+      activeTab: DATA_TYPE_BALANCE,
+      sortField: DATA_TYPE_BALANCE,
+    })
+    expect((latestContext as any)?.preferences.showTodayCashflow).toBe(false)
+    expect((latestContext as any)?.preferences.activeTab).toBe(
+      DATA_TYPE_BALANCE,
+    )
+    expect((latestContext as any)?.preferences.sortField).toBe(
+      DATA_TYPE_BALANCE,
+    )
+
+    mockedUserPreferences.savePreferences.mockClear()
+
+    const preservedPreferences = clonePreferences()
+    preservedPreferences.showTodayCashflow = true
+    preservedPreferences.activeTab = DATA_TYPE_BALANCE
+    preservedPreferences.sortField = DATA_TYPE_BALANCE
+
+    context = await renderProvider(preservedPreferences)
+
+    await act(async () => {
+      await context.updateShowTodayCashflow(false)
+    })
+
+    expect(mockedUserPreferences.savePreferences).toHaveBeenCalledWith({
+      showTodayCashflow: false,
+    })
+    expect((latestContext as any)?.preferences.activeTab).toBe(
+      DATA_TYPE_BALANCE,
+    )
+    expect((latestContext as any)?.preferences.sortField).toBe(
+      DATA_TYPE_BALANCE,
+    )
+  })
+
+  it("does not backfill hidden-tab normalization when re-enabling today cashflow from an already visible selection", async () => {
+    const preferences = clonePreferences()
+    preferences.showTodayCashflow = false
+    preferences.activeTab = DATA_TYPE_BALANCE
+    preferences.sortField = DATA_TYPE_BALANCE
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateShowTodayCashflow(true)
+    })
+
+    expect(mockedUserPreferences.savePreferences).toHaveBeenCalledWith({
+      showTodayCashflow: true,
+    })
+    expect((latestContext as any)?.preferences.showTodayCashflow).toBe(true)
+    expect((latestContext as any)?.preferences.activeTab).toBe(
+      DATA_TYPE_BALANCE,
+    )
+    expect((latestContext as any)?.preferences.sortField).toBe(
+      DATA_TYPE_BALANCE,
+    )
+  })
+
+  it("does not persist a fallback active tab for legacy snapshots that disable today cashflow without an active tab", async () => {
+    const preferences = clonePreferences()
+    preferences.showTodayCashflow = false
+    preferences.sortField = DATA_TYPE_BALANCE
+    delete (preferences as Partial<UserPreferences>).activeTab
+
+    await renderProvider(preferences)
+
+    expect(mockedUserPreferences.savePreferences).not.toHaveBeenCalled()
+    expect((latestContext as any)?.activeTab).toBe(DATA_TYPE_CASHFLOW)
+    expect((latestContext as any)?.sortField).toBe(DATA_TYPE_BALANCE)
+    expect((latestContext as any)?.showTodayCashflow).toBe(false)
+  })
+
+  it("uses safe provider defaults for legacy snapshots that omit top-level preference fields", async () => {
+    const preferences = clonePreferences()
+    delete (preferences as Partial<UserPreferences>).activeTab
+    delete (preferences as Partial<UserPreferences>).currencyType
+    delete (preferences as Partial<UserPreferences>).sortField
+    delete (preferences as Partial<UserPreferences>).sortOrder
+    delete (preferences as Partial<UserPreferences>).accountAutoRefresh
+    delete (preferences as Partial<UserPreferences>).actionClickBehavior
+    delete (preferences as Partial<UserPreferences>).openChangelogOnUpdate
+    delete (preferences as Partial<UserPreferences>)
+      .autoProvisionKeyOnAccountAdd
+    delete (preferences as Partial<UserPreferences>).warnOnDuplicateAccountAdd
+    delete (preferences as Partial<UserPreferences>).managedSiteType
+    delete (preferences as Partial<UserPreferences>).themeMode
+    delete (preferences as Partial<UserPreferences>).logging
+    delete (preferences as Partial<UserPreferences>).tempWindowFallback
+    delete (preferences as Partial<UserPreferences>).tempWindowFallbackReminder
+
+    await renderProvider(preferences)
+
+    expect((latestContext as any)?.activeTab).toBe(DATA_TYPE_CASHFLOW)
+    expect((latestContext as any)?.currencyType).toBe("USD")
+    expect((latestContext as any)?.sortField).toBe(DATA_TYPE_BALANCE)
+    expect((latestContext as any)?.sortOrder).toBe("desc")
+    expect((latestContext as any)?.autoRefresh).toBe(
+      DEFAULT_PREFERENCES.accountAutoRefresh.enabled,
+    )
+    expect((latestContext as any)?.refreshInterval).toBe(
+      DEFAULT_PREFERENCES.accountAutoRefresh.interval,
+    )
+    expect((latestContext as any)?.minRefreshInterval).toBe(
+      DEFAULT_PREFERENCES.accountAutoRefresh.minInterval,
+    )
+    expect((latestContext as any)?.refreshOnOpen).toBe(
+      DEFAULT_PREFERENCES.accountAutoRefresh.refreshOnOpen,
+    )
+    expect((latestContext as any)?.actionClickBehavior).toBe("popup")
+    expect((latestContext as any)?.openChangelogOnUpdate).toBe(
+      DEFAULT_PREFERENCES.openChangelogOnUpdate,
+    )
+    expect((latestContext as any)?.autoProvisionKeyOnAccountAdd).toBe(
+      DEFAULT_PREFERENCES.autoProvisionKeyOnAccountAdd,
+    )
+    expect((latestContext as any)?.warnOnDuplicateAccountAdd).toBe(
+      DEFAULT_PREFERENCES.warnOnDuplicateAccountAdd,
+    )
+    expect((latestContext as any)?.managedSiteType).toBe(
+      DEFAULT_PREFERENCES.managedSiteType,
+    )
+    expect((latestContext as any)?.themeMode).toBe("system")
+    expect((latestContext as any)?.loggingConsoleEnabled).toBe(
+      DEFAULT_PREFERENCES.logging.consoleEnabled,
+    )
+    expect((latestContext as any)?.loggingLevel).toBe(
+      DEFAULT_PREFERENCES.logging.level,
+    )
+    expect((latestContext as any)?.tempWindowFallback).toEqual(
+      DEFAULT_PREFERENCES.tempWindowFallback,
+    )
+    expect((latestContext as any)?.tempWindowFallbackReminder).toEqual(
+      DEFAULT_PREFERENCES.tempWindowFallbackReminder,
+    )
+    expect(mockedUserPreferences.savePreferences).not.toHaveBeenCalled()
+  })
+
   it("falls back to default nested preference shapes when optional sections are missing", async () => {
     const preferences = clonePreferences()
     delete (preferences as Partial<UserPreferences>).balanceHistory
@@ -945,6 +1147,77 @@ describe("UserPreferencesContext", () => {
       action: RuntimeActionIds.ModelSyncUpdateSettings,
       settings: { enabled: true, allowedModels: ["gpt-4o"] },
     })
+  })
+
+  it("refreshes context menus when feature enabled state changes and preserves existing nested settings", async () => {
+    const preferences = clonePreferences()
+    preferences.redemptionAssist = {
+      ...DEFAULT_REDEMPTION_ASSIST_PREFERENCES,
+      enabled: true,
+      relaxedCodeValidation: false,
+      urlWhitelist: {
+        enabled: true,
+        patterns: ["https://redeem.example/*"],
+        includeAccountSiteUrls: true,
+        includeCheckInAndRedeemUrls: false,
+      },
+    }
+    preferences.webAiApiCheck = {
+      ...DEFAULT_WEB_AI_API_CHECK_PREFERENCES,
+      enabled: true,
+      autoDetect: {
+        enabled: true,
+        urlWhitelist: {
+          patterns: ["https://api-check.example/*"],
+        },
+      },
+    }
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateRedemptionAssist({
+        enabled: false,
+      })
+      await context.updateWebAiApiCheck({
+        enabled: false,
+      })
+    })
+
+    expect((latestContext as any)?.preferences.redemptionAssist).toEqual(
+      expect.objectContaining({
+        enabled: false,
+        relaxedCodeValidation: false,
+        urlWhitelist: expect.objectContaining({
+          patterns: ["https://redeem.example/*"],
+          includeCheckInAndRedeemUrls: false,
+        }),
+      }),
+    )
+    expect((latestContext as any)?.preferences.webAiApiCheck).toEqual(
+      expect.objectContaining({
+        enabled: false,
+        autoDetect: expect.objectContaining({
+          enabled: true,
+          urlWhitelist: {
+            patterns: ["https://api-check.example/*"],
+          },
+        }),
+      }),
+    )
+
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.RedemptionAssistUpdateSettings,
+      settings: {
+        enabled: false,
+      },
+    })
+
+    const refreshCalls = mockedSendRuntimeMessage.mock.calls.filter(
+      ([message]) =>
+        message?.action === RuntimeActionIds.PreferencesRefreshContextMenus,
+    )
+    expect(refreshCalls).toHaveLength(2)
   })
 
   it("logs initial load failures and still clears the loading state", async () => {

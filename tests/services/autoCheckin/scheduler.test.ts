@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { accountStorage } from "~/services/accounts/accountStorage"
@@ -55,6 +55,7 @@ vi.mock("~/services/accounts/accountStorage", () => ({
     markAccountAsSiteCheckedIn: vi.fn(),
     refreshAccount: vi.fn(),
     getAccountById: vi.fn(),
+    getDisplayDataById: vi.fn(),
     convertToDisplayData: vi.fn(),
   },
 }))
@@ -103,8 +104,10 @@ const mockedAutoCheckinStorage = autoCheckinStorage as unknown as {
 const mockedAccountStorage = accountStorage as unknown as {
   getAccountById: ReturnType<typeof vi.fn>
   getAllAccounts: ReturnType<typeof vi.fn>
+  getDisplayDataById: ReturnType<typeof vi.fn>
   markAccountAsSiteCheckedIn: ReturnType<typeof vi.fn>
   refreshAccount: ReturnType<typeof vi.fn>
+  convertToDisplayData: ReturnType<typeof vi.fn>
 }
 
 const mockedProviders = {
@@ -994,6 +997,128 @@ describe("autoCheckinScheduler daily+retry behavior", () => {
     vi.useRealTimers()
   })
 
+  it("preserves targeted manual history when runCheckins fails before execution", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 15, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        notifyUiOnCompletion: true,
+      },
+    })
+
+    storedStatus = {
+      perAccount: {
+        legacy: {
+          accountId: "legacy",
+          accountName: "Legacy Site · user",
+          status: "failed",
+          timestamp: Date.now() - 60_000,
+        },
+      },
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["legacy"],
+        attemptsByAccount: { legacy: 1 },
+      },
+      pendingRetry: true,
+      summary: {
+        totalEligible: 1,
+        executed: 1,
+        successCount: 0,
+        failedCount: 1,
+        skippedCount: 0,
+        needsRetry: true,
+      },
+    } as any
+
+    mockedAccountStorage.getAllAccounts.mockRejectedValueOnce(
+      new Error("storage exploded"),
+    )
+
+    await expect(
+      autoCheckinScheduler.runCheckins({
+        runType: AUTO_CHECKIN_RUN_TYPE.MANUAL,
+        targetAccountIds: ["legacy"],
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(storedStatus.lastRunResult).toBe("failed")
+    expect(storedStatus.perAccount).toEqual({
+      legacy: expect.objectContaining({
+        accountId: "legacy",
+        status: "failed",
+      }),
+    })
+    expect(storedStatus.retryState).toEqual({
+      day: "2024-01-01",
+      pendingAccountIds: ["legacy"],
+      attemptsByAccount: { legacy: 1 },
+    })
+    expect(storedStatus.pendingRetry).toBe(false)
+    expect(mockedBrowserApi.sendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.AutoCheckinRunCompleted,
+        runKind: "manual",
+        updatedAccountIds: [],
+      }),
+      { maxAttempts: 1 },
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("marks the day as attempted and clears retry scheduling when a daily run fails before execution", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 15, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        notifyUiOnCompletion: false,
+      },
+    })
+
+    storedStatus = {
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["stale"],
+        attemptsByAccount: { stale: 1 },
+      },
+      pendingRetry: true,
+      nextRetryScheduledAt: "2024-01-01T09:30:00.000Z",
+      retryAlarmTargetDay: "2024-01-01",
+    } as any
+
+    mockedAccountStorage.getAllAccounts.mockRejectedValueOnce(
+      new Error("storage exploded"),
+    )
+
+    await expect(
+      autoCheckinScheduler.runCheckins({
+        runType: AUTO_CHECKIN_RUN_TYPE.DAILY,
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(storedStatus.lastRunResult).toBe("failed")
+    expect(storedStatus.lastDailyRunDay).toBe("2024-01-01")
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+    expect(storedStatus.nextRetryScheduledAt).toBeUndefined()
+    expect(storedStatus.retryAlarmTargetDay).toBeUndefined()
+    expect(mockedBrowserApi.sendRuntimeMessage).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.AutoCheckinRunCompleted,
+      }),
+      { maxAttempts: 1 },
+    )
+
+    vi.useRealTimers()
+  })
+
   it("processes mixed retry outcomes and keeps only failed accounts queued", async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2024, 0, 1, 9, 30, 0))
@@ -1345,6 +1470,328 @@ describe("autoCheckinScheduler retry scheduling", () => {
     expect(runRetrySpy).not.toHaveBeenCalled()
     expect(storedStatus.retryState).toBeUndefined()
     expect(storedStatus.pendingRetry).toBe(false)
+
+    vi.useRealTimers()
+  })
+
+  it("clears retry state when retry execution is disabled by config", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        retryStrategy: {
+          enabled: false,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      lastDailyRunDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+      pendingRetry: true,
+    } as any
+
+    await (autoCheckinScheduler as any).runRetryCheckins()
+
+    expect(mockedBrowserApi.clearAlarm).toHaveBeenCalledWith("autoCheckinRetry")
+    expect(mockedAccountStorage.getAccountById).not.toHaveBeenCalled()
+    expect(mockedProviders.resolveAutoCheckinProvider).not.toHaveBeenCalled()
+    expect(mockedBrowserApi.sendRuntimeMessage).not.toHaveBeenCalled()
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+
+    vi.useRealTimers()
+  })
+
+  it("clears retry state when today's normal run has not happened", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      lastDailyRunDay: "2023-12-31",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+      pendingRetry: true,
+    } as any
+
+    await (autoCheckinScheduler as any).runRetryCheckins()
+
+    expect(mockedBrowserApi.clearAlarm).toHaveBeenCalledWith("autoCheckinRetry")
+    expect(mockedAccountStorage.getAccountById).not.toHaveBeenCalled()
+    expect(mockedProviders.resolveAutoCheckinProvider).not.toHaveBeenCalled()
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+
+    vi.useRealTimers()
+  })
+
+  it("clears retry state when there are no pending accounts left", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      lastDailyRunDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: [],
+        attemptsByAccount: {},
+      },
+      pendingRetry: true,
+    } as any
+
+    await (autoCheckinScheduler as any).runRetryCheckins()
+
+    expect(mockedBrowserApi.clearAlarm).toHaveBeenCalledWith("autoCheckinRetry")
+    expect(mockedAccountStorage.getAccountById).not.toHaveBeenCalled()
+    expect(mockedProviders.resolveAutoCheckinProvider).not.toHaveBeenCalled()
+    expect(mockedBrowserApi.sendRuntimeMessage).not.toHaveBeenCalled()
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+
+    vi.useRealTimers()
+  })
+
+  it("marks missing retry accounts as skipped and clears the retry queue", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 30, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        notifyUiOnCompletion: true,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      lastDailyRunDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["missing"],
+        attemptsByAccount: {},
+      },
+      perAccount: {
+        missing: {
+          accountId: "missing",
+          accountName: "Missing Site",
+          status: "failed",
+          timestamp: Date.now(),
+        },
+      },
+      summary: {
+        totalEligible: 1,
+        executed: 1,
+        successCount: 0,
+        failedCount: 1,
+        skippedCount: 0,
+        needsRetry: true,
+      },
+      pendingRetry: true,
+    } as any
+
+    mockedAccountStorage.getAllAccounts.mockResolvedValue([])
+    mockedAccountStorage.getAccountById.mockResolvedValue(null)
+
+    await (autoCheckinScheduler as any).runRetryCheckins()
+
+    expect(mockedProviders.resolveAutoCheckinProvider).not.toHaveBeenCalled()
+    expect(storedStatus.perAccount.missing).toMatchObject({
+      accountId: "missing",
+      accountName: "missing",
+      status: "skipped",
+      reasonCode: "account_disabled",
+    })
+    expect(storedStatus.summary).toMatchObject({
+      totalEligible: 1,
+      executed: 0,
+      successCount: 0,
+      failedCount: 0,
+      skippedCount: 1,
+      needsRetry: false,
+    })
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+    expect(mockedBrowserApi.sendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.AutoCheckinRunCompleted,
+        runKind: "retry",
+        updatedAccountIds: [],
+        summary: expect.objectContaining({
+          skippedCount: 1,
+          needsRetry: false,
+        }),
+      }),
+      { maxAttempts: 1 },
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("marks retry accounts that are no longer auto-checkin eligible as skipped", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 30, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        notifyUiOnCompletion: true,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      lastDailyRunDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["paused"],
+        attemptsByAccount: {},
+      },
+      perAccount: {
+        paused: {
+          accountId: "paused",
+          accountName: "Paused Site · user",
+          status: "failed",
+          timestamp: Date.now(),
+        },
+      },
+      summary: {
+        totalEligible: 1,
+        executed: 1,
+        successCount: 0,
+        failedCount: 1,
+        skippedCount: 0,
+        needsRetry: true,
+      },
+      accountsSnapshot: [
+        {
+          accountId: "paused",
+          accountName: "Paused Site · user",
+        },
+      ],
+      pendingRetry: true,
+    } as any
+
+    const pausedAccount: any = {
+      id: "paused",
+      disabled: false,
+      site_name: "Paused Site",
+      site_type: "veloera",
+      account_info: { username: "user" },
+      checkIn: { enableDetection: true, autoCheckInEnabled: false },
+    }
+
+    mockedAccountStorage.getAllAccounts.mockResolvedValue([pausedAccount])
+    mockedAccountStorage.getAccountById.mockResolvedValue(pausedAccount)
+    const provider = {
+      canCheckIn: vi.fn(() => true),
+      checkIn: vi.fn(),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValue(provider)
+
+    await (autoCheckinScheduler as any).runRetryCheckins()
+
+    expect(provider.checkIn).not.toHaveBeenCalled()
+    expect(storedStatus.perAccount.paused).toMatchObject({
+      accountId: "paused",
+      status: "skipped",
+      reasonCode: "auto_checkin_disabled",
+    })
+    expect(storedStatus.summary).toMatchObject({
+      totalEligible: 1,
+      executed: 0,
+      successCount: 0,
+      failedCount: 0,
+      skippedCount: 1,
+      needsRetry: false,
+    })
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+    expect(mockedBrowserApi.sendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.AutoCheckinRunCompleted,
+        runKind: "retry",
+        updatedAccountIds: [],
+      }),
+      { maxAttempts: 1 },
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("clears exhausted retry queues instead of scheduling another retry alarm", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+
+    storedStatus = {
+      lastDailyRunDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 3 },
+      },
+      pendingRetry: true,
+    } as any
+
+    await (autoCheckinScheduler as any).scheduleRetryAlarm({
+      ...(DEFAULT_PREFERENCES as any).autoCheckin,
+      retryStrategy: {
+        enabled: true,
+        intervalMinutes: 30,
+        maxAttemptsPerDay: 3,
+      },
+    })
+
+    expect(mockedBrowserApi.clearAlarm).toHaveBeenCalledWith("autoCheckinRetry")
+    expect(mockedBrowserApi.createAlarm).not.toHaveBeenCalled()
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+    expect(storedStatus.nextRetryScheduledAt).toBeUndefined()
 
     vi.useRealTimers()
   })
@@ -2189,6 +2636,14 @@ describe("autoCheckinScheduler.retryAccount", () => {
     vi.clearAllMocks()
   })
 
+  it("throws when retrying an account that no longer exists", async () => {
+    mockedAccountStorage.getAllAccounts.mockResolvedValueOnce([])
+
+    await expect(
+      autoCheckinScheduler.retryAccount("missing-account"),
+    ).rejects.toThrow()
+  })
+
   it("skips disabled accounts with an explicit skip reason", async () => {
     mockedAccountStorage.getAllAccounts.mockResolvedValueOnce([
       {
@@ -2213,6 +2668,468 @@ describe("autoCheckinScheduler.retryAccount", () => {
     expect(result.result.status).toBe("skipped")
     expect(result.result.reasonCode).toBe("account_disabled")
     expect(mockedAutoCheckinStorage.saveStatus).toHaveBeenCalled()
+  })
+
+  it("removes a successful manual retry from today's retry queue and clears pendingRetry when it was the last account", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const account: any = {
+      id: "retry-1",
+      disabled: false,
+      site_name: "Retry Site",
+      site_type: "veloera",
+      account_info: { username: "user" },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }
+
+    mockedAccountStorage.getAllAccounts.mockResolvedValueOnce([account])
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      perAccount: {
+        "retry-1": {
+          accountId: "retry-1",
+          accountName: "Retry Site · user",
+          status: "failed",
+          timestamp: Date.now() - 1_000,
+        },
+      },
+      summary: {
+        totalEligible: 1,
+        executed: 1,
+        successCount: 0,
+        failedCount: 1,
+        skippedCount: 0,
+        needsRetry: true,
+      },
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["retry-1"],
+        attemptsByAccount: { "retry-1": 1 },
+      },
+      pendingRetry: true,
+      accountsSnapshot: [
+        {
+          accountId: "retry-1",
+          accountName: "Retry Site · user",
+        },
+      ],
+    } as any
+
+    const provider = {
+      canCheckIn: vi.fn(() => true),
+      checkIn: vi.fn(async () => ({ status: "success" })),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValue(provider)
+    const scheduleRetrySpy = vi
+      .spyOn(autoCheckinScheduler as any, "scheduleRetryAlarm")
+      .mockResolvedValue(undefined)
+
+    const result = await autoCheckinScheduler.retryAccount("retry-1")
+
+    expect(result.result.status).toBe("success")
+    expect(result.pendingRetry).toBe(false)
+    expect(storedStatus.lastRunResult).toBe("success")
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+    expect(storedStatus.summary).toMatchObject({
+      successCount: 1,
+      failedCount: 0,
+      needsRetry: false,
+    })
+    expect(scheduleRetrySpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      }),
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("removes only the retried account from today's retry queue when other failures still need retry", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const account: any = {
+      id: "retry-1",
+      disabled: false,
+      site_name: "Retry Site",
+      site_type: "veloera",
+      account_info: { username: "user" },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }
+    const remainingAccount: any = {
+      id: "retry-2",
+      disabled: false,
+      site_name: "Still Failing",
+      site_type: "veloera",
+      account_info: { username: "other" },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }
+
+    mockedAccountStorage.getAllAccounts.mockResolvedValueOnce([
+      account,
+      remainingAccount,
+    ])
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      perAccount: {
+        "retry-1": {
+          accountId: "retry-1",
+          accountName: "Retry Site · user",
+          status: "failed",
+          timestamp: Date.now() - 1_000,
+        },
+        "retry-2": {
+          accountId: "retry-2",
+          accountName: "Still Failing · other",
+          status: "failed",
+          timestamp: Date.now() - 500,
+        },
+      },
+      summary: {
+        totalEligible: 2,
+        executed: 2,
+        successCount: 0,
+        failedCount: 2,
+        skippedCount: 0,
+        needsRetry: true,
+      },
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["retry-1", "retry-2"],
+        attemptsByAccount: { "retry-1": 1, "retry-2": 2 },
+      },
+      pendingRetry: true,
+      accountsSnapshot: [
+        {
+          accountId: "retry-1",
+          accountName: "Retry Site · user",
+        },
+        {
+          accountId: "retry-2",
+          accountName: "Still Failing · other",
+        },
+      ],
+    } as any
+
+    const provider = {
+      canCheckIn: vi.fn(() => true),
+      checkIn: vi.fn(async () => ({ status: "success" })),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValue(provider)
+    const scheduleRetrySpy = vi
+      .spyOn(autoCheckinScheduler as any, "scheduleRetryAlarm")
+      .mockResolvedValue(undefined)
+
+    const result = await autoCheckinScheduler.retryAccount("retry-1")
+
+    expect(result.result.status).toBe("success")
+    expect(result.pendingRetry).toBe(true)
+    expect(storedStatus.lastRunResult).toBe("partial")
+    expect(storedStatus.retryState).toEqual({
+      day: "2026-01-23",
+      pendingAccountIds: ["retry-2"],
+      attemptsByAccount: { "retry-1": 1, "retry-2": 2 },
+    })
+    expect(storedStatus.pendingRetry).toBe(true)
+    expect(storedStatus.summary).toMatchObject({
+      totalEligible: 2,
+      successCount: 1,
+      failedCount: 1,
+      needsRetry: true,
+    })
+    expect(scheduleRetrySpy).toHaveBeenCalledTimes(1)
+
+    vi.useRealTimers()
+  })
+
+  it("keeps a failed manual retry in today's retry queue and preserves pendingRetry", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const account: any = {
+      id: "retry-1",
+      disabled: false,
+      site_name: "Retry Site",
+      site_type: "veloera",
+      account_info: { username: "user" },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }
+
+    mockedAccountStorage.getAllAccounts.mockResolvedValueOnce([account])
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      perAccount: {
+        "retry-1": {
+          accountId: "retry-1",
+          accountName: "Retry Site · user",
+          status: "failed",
+          timestamp: Date.now() - 1_000,
+        },
+      },
+      summary: {
+        totalEligible: 1,
+        executed: 1,
+        successCount: 0,
+        failedCount: 1,
+        skippedCount: 0,
+        needsRetry: true,
+      },
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["retry-1", "retry-2"],
+        attemptsByAccount: { "retry-1": 1, "retry-2": 2 },
+      },
+      pendingRetry: true,
+      accountsSnapshot: [
+        {
+          accountId: "retry-1",
+          accountName: "Retry Site · user",
+        },
+      ],
+    } as any
+
+    const provider = {
+      canCheckIn: vi.fn(() => true),
+      checkIn: vi.fn(async () => ({
+        status: "failed",
+        rawMessage: "retry still failing",
+      })),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValue(provider)
+    const scheduleRetrySpy = vi
+      .spyOn(autoCheckinScheduler as any, "scheduleRetryAlarm")
+      .mockResolvedValue(undefined)
+
+    const result = await autoCheckinScheduler.retryAccount("retry-1")
+
+    expect(result.result.status).toBe("failed")
+    expect(result.pendingRetry).toBe(true)
+    expect(storedStatus.lastRunResult).toBe("failed")
+    expect(storedStatus.retryState).toEqual({
+      day: "2026-01-23",
+      pendingAccountIds: ["retry-1", "retry-2"],
+      attemptsByAccount: { "retry-1": 1, "retry-2": 2 },
+    })
+    expect(storedStatus.pendingRetry).toBe(true)
+    expect(storedStatus.summary).toMatchObject({
+      successCount: 0,
+      failedCount: 1,
+      needsRetry: true,
+    })
+    expect(scheduleRetrySpy).toHaveBeenCalledTimes(1)
+
+    vi.useRealTimers()
+  })
+
+  it("does not mutate today's retry queue when manually retrying an account outside it", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const adhocAccount: any = {
+      id: "adhoc-1",
+      disabled: false,
+      site_name: "Adhoc Retry",
+      site_type: "veloera",
+      account_info: { username: "adhoc" },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }
+    const queuedAccount: any = {
+      id: "retry-2",
+      disabled: false,
+      site_name: "Queued Retry",
+      site_type: "veloera",
+      account_info: { username: "queued" },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }
+
+    mockedAccountStorage.getAllAccounts.mockResolvedValueOnce([
+      adhocAccount,
+      queuedAccount,
+    ])
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        retryStrategy: {
+          enabled: true,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    storedStatus = {
+      perAccount: {
+        "retry-2": {
+          accountId: "retry-2",
+          accountName: "Queued Retry · queued",
+          status: "failed",
+          timestamp: Date.now() - 1_000,
+        },
+      },
+      summary: {
+        totalEligible: 1,
+        executed: 1,
+        successCount: 0,
+        failedCount: 1,
+        skippedCount: 0,
+        needsRetry: true,
+      },
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["retry-2"],
+        attemptsByAccount: { "retry-2": 2 },
+      },
+      pendingRetry: true,
+      accountsSnapshot: [
+        {
+          accountId: "retry-2",
+          accountName: "Queued Retry · queued",
+        },
+      ],
+    } as any
+
+    const provider = {
+      canCheckIn: vi.fn(() => true),
+      checkIn: vi.fn(async () => ({ status: "success" })),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValue(provider)
+    const scheduleRetrySpy = vi
+      .spyOn(autoCheckinScheduler as any, "scheduleRetryAlarm")
+      .mockResolvedValue(undefined)
+
+    const result = await autoCheckinScheduler.retryAccount("adhoc-1")
+
+    expect(result.result.status).toBe("success")
+    expect(result.pendingRetry).toBe(true)
+    expect(storedStatus.lastRunResult).toBe("partial")
+    expect(storedStatus.retryState).toEqual({
+      day: "2026-01-23",
+      pendingAccountIds: ["retry-2"],
+      attemptsByAccount: { "retry-2": 2 },
+    })
+    expect(storedStatus.pendingRetry).toBe(true)
+    expect(storedStatus.summary).toMatchObject({
+      totalEligible: 1,
+      successCount: 1,
+      failedCount: 1,
+      needsRetry: true,
+    })
+    expect(scheduleRetrySpy).toHaveBeenCalledTimes(1)
+
+    vi.useRealTimers()
+  })
+})
+
+describe("autoCheckinScheduler.getAccountDisplayData", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
+  })
+
+  it("returns persisted display data when available", async () => {
+    const account: any = {
+      id: "account-1",
+      disabled: false,
+      site_name: "Display Site",
+      account_info: { username: "user" },
+    }
+    const displayData = {
+      id: "account-1",
+      name: "Display Site · user",
+      username: "user",
+    }
+
+    mockedAccountStorage.getAccountById.mockResolvedValueOnce(account)
+    mockedAccountStorage.getDisplayDataById.mockResolvedValueOnce(displayData)
+
+    await expect(
+      autoCheckinScheduler.getAccountDisplayData("account-1"),
+    ).resolves.toEqual(displayData as any)
+    expect(mockedAccountStorage.convertToDisplayData).not.toHaveBeenCalled()
+  })
+
+  it("falls back to converting the raw account when persisted display data is unavailable", async () => {
+    const account: any = {
+      id: "account-2",
+      disabled: false,
+      site_name: "Fallback Site",
+      account_info: { username: "fallback-user" },
+    }
+    const displayData = {
+      id: "account-2",
+      name: "Fallback Site · fallback-user",
+      username: "fallback-user",
+    }
+
+    mockedAccountStorage.getAccountById.mockResolvedValueOnce(account)
+    mockedAccountStorage.getDisplayDataById.mockResolvedValueOnce(null)
+    mockedAccountStorage.convertToDisplayData.mockReturnValueOnce(displayData)
+
+    await expect(
+      autoCheckinScheduler.getAccountDisplayData("account-2"),
+    ).resolves.toEqual(displayData as any)
+    expect(mockedAccountStorage.convertToDisplayData).toHaveBeenCalledWith(
+      account,
+    )
+  })
+
+  it("throws when the requested account does not exist", async () => {
+    mockedAccountStorage.getAccountById.mockResolvedValueOnce(null)
+
+    await expect(
+      autoCheckinScheduler.getAccountDisplayData("missing-account"),
+    ).rejects.toThrow()
+    expect(mockedAccountStorage.getDisplayDataById).not.toHaveBeenCalled()
+  })
+
+  it("throws when the requested account is disabled", async () => {
+    mockedAccountStorage.getAccountById.mockResolvedValueOnce({
+      id: "disabled-account",
+      disabled: true,
+      site_name: "Disabled Site",
+      account_info: { username: "user" },
+    })
+
+    await expect(
+      autoCheckinScheduler.getAccountDisplayData("disabled-account"),
+    ).rejects.toThrow()
+    expect(mockedAccountStorage.getDisplayDataById).not.toHaveBeenCalled()
   })
 })
 
@@ -2415,6 +3332,41 @@ describe("autoCheckinScheduler.pretriggerDailyOnUiOpen", () => {
     expect(result.ineligibleReason).toBe("already_ran_today")
     expect(runSpy).not.toHaveBeenCalled()
 
+    vi.useRealTimers()
+  })
+
+  it("does not start when today's daily run is already in flight", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const today = (autoCheckinScheduler as any).getLocalDay(new Date())
+    ;(autoCheckinScheduler as any).dailyRunInFlightDay = today
+    ;(autoCheckinScheduler as any).dailyRunInFlightPromise = new Promise(
+      () => {},
+    )
+
+    alarmStore.autoCheckinDaily = {
+      name: "autoCheckinDaily",
+      scheduledTime: Date.now() + 60_000,
+    }
+
+    const runSpy = vi.spyOn(autoCheckinScheduler as any, "runCheckins")
+
+    const result = await autoCheckinScheduler.pretriggerDailyOnUiOpen({
+      debug: true,
+    })
+
+    expect(result).toMatchObject({
+      started: false,
+      eligible: false,
+      ineligibleReason: "daily_run_in_flight",
+      debug: expect.objectContaining({
+        dailyRunInFlightDay: today,
+      }),
+    })
+    expect(runSpy).not.toHaveBeenCalled()
+    ;(autoCheckinScheduler as any).dailyRunInFlightDay = null
+    ;(autoCheckinScheduler as any).dailyRunInFlightPromise = null
     vi.useRealTimers()
   })
 

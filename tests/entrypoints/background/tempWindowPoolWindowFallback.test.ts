@@ -16,6 +16,8 @@ describe("tempWindowPool window fallback", () => {
   let removeTabOrWindowMock: ReturnType<typeof vi.fn>
   let hasWindowsApiMock: ReturnType<typeof vi.fn>
   let isAllowedIncognitoAccessMock: ReturnType<typeof vi.fn>
+  let onTabRemovedMock: ReturnType<typeof vi.fn>
+  let onWindowRemovedMock: ReturnType<typeof vi.fn>
   let getAccountByIdMock: ReturnType<typeof vi.fn>
   let getCookieHeaderForUrlMock: ReturnType<typeof vi.fn>
   let addAuthMethodHeaderMock: ReturnType<typeof vi.fn>
@@ -34,6 +36,8 @@ describe("tempWindowPool window fallback", () => {
     removeTabOrWindowMock = vi.fn().mockResolvedValue(undefined)
     hasWindowsApiMock = vi.fn(() => true)
     isAllowedIncognitoAccessMock = vi.fn().mockResolvedValue(true)
+    onTabRemovedMock = vi.fn(() => () => {})
+    onWindowRemovedMock = vi.fn(() => () => {})
     getAccountByIdMock = vi.fn()
     getCookieHeaderForUrlMock = vi.fn().mockResolvedValue("")
     addAuthMethodHeaderMock = vi.fn(
@@ -54,6 +58,8 @@ describe("tempWindowPool window fallback", () => {
           case RuntimeActionIds.ContentCheckCapGuard:
           case RuntimeActionIds.ContentCheckCloudflareGuard:
             return { success: true, passed: true }
+          case RuntimeActionIds.ContentGetRenderedTitle:
+            return { success: true, title: "Example title" }
           case RuntimeActionIds.ContentGetUserFromLocalStorage:
             return {
               success: true,
@@ -110,8 +116,8 @@ describe("tempWindowPool window fallback", () => {
         createWindow: createWindowMock,
         hasWindowsAPI: hasWindowsApiMock,
         isAllowedIncognitoAccess: isAllowedIncognitoAccessMock,
-        onTabRemoved: vi.fn(() => () => {}),
-        onWindowRemoved: vi.fn(() => () => {}),
+        onTabRemoved: onTabRemovedMock,
+        onWindowRemoved: onWindowRemovedMock,
         removeTabOrWindow: removeTabOrWindowMock,
       }
     })
@@ -577,6 +583,193 @@ describe("tempWindowPool window fallback", () => {
     expect(removeTabOrWindowMock).toHaveBeenCalledWith(510)
   })
 
+  it("returns a failure response when rendered-title content never answers and still cleans up the temp context", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 511 })
+    sendMessageMock.mockImplementation(
+      async (_tabId: number, message: { action: string }) => {
+        switch (message.action) {
+          case RuntimeActionIds.ContentShowShieldBypassUi:
+            return undefined
+          case RuntimeActionIds.ContentCheckCapGuard:
+          case RuntimeActionIds.ContentCheckCloudflareGuard:
+            return { success: true, passed: true }
+          case RuntimeActionIds.ContentGetRenderedTitle:
+            return undefined
+          default:
+            throw new Error(`Unexpected action: ${message.action}`)
+        }
+      },
+    )
+
+    const { handleTempWindowGetRenderedTitle } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowGetRenderedTitle(
+      {
+        originUrl: "https://example.com/rendered-title",
+        requestId: "req-rendered-title-missing-response",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "No response from rendered title fetch",
+    })
+
+    await vi.advanceTimersByTimeAsync(2100)
+    expect(removeTabOrWindowMock).toHaveBeenCalledTimes(1)
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(511)
+  })
+
+  it("allows manual close while a rendered-title request is still in delayed-release state", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 512 })
+
+    const { handleCloseTempWindow, handleTempWindowGetRenderedTitle } =
+      await import("~/entrypoints/background/tempWindowPool")
+
+    const titleResponse = vi.fn()
+    const request = handleTempWindowGetRenderedTitle(
+      {
+        originUrl: "https://example.com/rendered-title",
+        requestId: "req-rendered-title-close",
+      },
+      titleResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(titleResponse).toHaveBeenCalledWith({
+      success: true,
+      title: "Example title",
+    })
+
+    const closeResponse = vi.fn()
+    await handleCloseTempWindow(
+      { requestId: "req-rendered-title-close" },
+      closeResponse,
+    )
+
+    expect(closeResponse).toHaveBeenCalledWith({ success: true })
+
+    await vi.advanceTimersByTimeAsync(2100)
+    expect(removeTabOrWindowMock).toHaveBeenCalledTimes(1)
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(512)
+  })
+
+  it("cleans up a pooled tab context when the browser removes the temp tab externally", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 513 })
+
+    const {
+      handleCloseTempWindow,
+      handleTempWindowGetRenderedTitle,
+      setupTempWindowListeners,
+    } = await import("~/entrypoints/background/tempWindowPool")
+
+    setupTempWindowListeners()
+
+    const titleResponse = vi.fn()
+    const request = handleTempWindowGetRenderedTitle(
+      {
+        originUrl: "https://example.com/rendered-title",
+        requestId: "req-rendered-title-tab-removed",
+      },
+      titleResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(titleResponse).toHaveBeenCalledWith({
+      success: true,
+      title: "Example title",
+    })
+
+    const onTabRemoved = onTabRemovedMock.mock.calls.at(0)?.[0]
+    expect(onTabRemoved).toBeTypeOf("function")
+
+    onTabRemoved?.(513)
+    await vi.advanceTimersByTimeAsync(1)
+
+    const closeResponse = vi.fn()
+    await handleCloseTempWindow(
+      { requestId: "req-rendered-title-tab-removed" },
+      closeResponse,
+    )
+
+    expect(closeResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: "messages:background.windowNotFound",
+      }),
+    )
+
+    await vi.advanceTimersByTimeAsync(2100)
+    expect(removeTabOrWindowMock).not.toHaveBeenCalled()
+  })
+
+  it("cleans up a pooled popup context when the browser removes the temp window externally", async () => {
+    tempContextMode = "window"
+    createWindowMock.mockResolvedValueOnce({ id: 613 })
+    tabsQueryMock.mockResolvedValueOnce([{ id: 614 }])
+
+    const {
+      handleCloseTempWindow,
+      handleTempWindowGetRenderedTitle,
+      setupTempWindowListeners,
+    } = await import("~/entrypoints/background/tempWindowPool")
+
+    setupTempWindowListeners()
+
+    const titleResponse = vi.fn()
+    const request = handleTempWindowGetRenderedTitle(
+      {
+        originUrl: "https://example.com/rendered-title-window",
+        requestId: "req-rendered-title-window-removed",
+      },
+      titleResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(titleResponse).toHaveBeenCalledWith({
+      success: true,
+      title: "Example title",
+    })
+
+    const onWindowRemoved = onWindowRemovedMock.mock.calls.at(0)?.[0]
+    expect(onWindowRemoved).toBeTypeOf("function")
+
+    onWindowRemoved?.(613)
+    await vi.advanceTimersByTimeAsync(1)
+
+    const closeResponse = vi.fn()
+    await handleCloseTempWindow(
+      { requestId: "req-rendered-title-window-removed" },
+      closeResponse,
+    )
+
+    expect(closeResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: "messages:background.windowNotFound",
+      }),
+    )
+
+    await vi.advanceTimersByTimeAsync(2100)
+    expect(removeTabOrWindowMock).not.toHaveBeenCalled()
+  })
+
   it("fails fast when the temp tab disappears before the page becomes ready", async () => {
     tempContextMode = "tab"
     createTabMock.mockResolvedValueOnce({ id: 506 })
@@ -1020,5 +1213,142 @@ describe("tempWindowPool window fallback", () => {
         hasTurnstile: true,
       },
     })
+  })
+
+  it("returns structured turnstile timeout metadata when no token becomes available", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 809 })
+    vi.useRealTimers()
+    sendMessageMock.mockImplementation(
+      async (_tabId: number, message: { action: string }) => {
+        switch (message.action) {
+          case RuntimeActionIds.ContentShowShieldBypassUi:
+            return undefined
+          case RuntimeActionIds.ContentCheckCapGuard:
+          case RuntimeActionIds.ContentCheckCloudflareGuard:
+            return { success: true, passed: true }
+          case RuntimeActionIds.ContentWaitForTurnstileToken:
+            return {
+              success: true,
+              status: "timeout",
+              detection: {
+                hasTurnstile: true,
+              },
+            }
+          default:
+            throw new Error(`Unexpected action: ${message.action}`)
+        }
+      },
+    )
+
+    const { handleTempWindowTurnstileFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowTurnstileFetch(
+      {
+        originUrl: "https://example.com",
+        pageUrl: "https://example.com/checkin",
+        fetchUrl: "https://example.com/api/checkin",
+        fetchOptions: {
+          method: "POST",
+        },
+        requestId: "req-turnstile-timeout",
+      },
+      sendResponse,
+    )
+
+    await request
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Turnstile token not available",
+      turnstile: {
+        status: "timeout",
+        hasTurnstile: true,
+      },
+    })
+    expect(sendMessageMock).not.toHaveBeenCalledWith(
+      809,
+      expect.objectContaining({
+        action: RuntimeActionIds.ContentPerformTempWindowFetch,
+      }),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 2500))
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(809)
+    expect(removeTempWindowCookieRuleMock).not.toHaveBeenCalled()
+  })
+
+  it("surfaces a missing post-turnstile fetch response and still cleans up cookie rules", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 810 })
+    getCookieHeaderForUrlMock.mockResolvedValueOnce("cf_clearance=1")
+    applyTempWindowCookieRuleMock.mockResolvedValueOnce(1_000_810)
+    sendMessageMock.mockImplementation(
+      async (_tabId: number, message: { action: string }) => {
+        switch (message.action) {
+          case RuntimeActionIds.ContentShowShieldBypassUi:
+            return undefined
+          case RuntimeActionIds.ContentCheckCapGuard:
+          case RuntimeActionIds.ContentCheckCloudflareGuard:
+            return { success: true, passed: true }
+          case RuntimeActionIds.ContentWaitForTurnstileToken:
+            return {
+              success: true,
+              status: "token_obtained",
+              token: "token-xyz",
+              detection: {
+                hasTurnstile: true,
+              },
+            }
+          case RuntimeActionIds.ContentPerformTempWindowFetch:
+            return undefined
+          default:
+            throw new Error(`Unexpected action: ${message.action}`)
+        }
+      },
+    )
+
+    const { handleTempWindowTurnstileFetch } = await import(
+      "~/entrypoints/background/tempWindowPool"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowTurnstileFetch(
+      {
+        originUrl: "https://example.com",
+        pageUrl: "https://example.com/checkin",
+        fetchUrl: "https://example.com/api/checkin",
+        fetchOptions: {
+          method: "POST",
+          credentials: "omit",
+        },
+        authType: AuthTypeEnum.AccessToken,
+        requestId: "req-turnstile-no-fetch-response",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(1000)
+    await request
+    await vi.advanceTimersByTimeAsync(2500)
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "No response from temp window fetch",
+      code: undefined,
+      turnstile: {
+        status: "token_obtained",
+        hasTurnstile: true,
+      },
+    })
+    expect(applyTempWindowCookieRuleMock).toHaveBeenCalledWith({
+      tabId: 810,
+      url: "https://example.com/api/checkin?turnstile=token-xyz",
+      cookieHeader: "cf_clearance=1",
+    })
+    expect(removeTempWindowCookieRuleMock).toHaveBeenCalledWith(1_000_810)
+    expect(removeTabOrWindowMock).toHaveBeenCalledWith(810)
   })
 })
