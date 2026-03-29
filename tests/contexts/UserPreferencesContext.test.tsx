@@ -87,7 +87,6 @@ vi.mock("~/services/preferences/userPreferences", async (importOriginal) => {
       resetWebAiApiCheck: vi.fn(),
       resetModelRedirectConfig: vi.fn(),
       resetWebdavConfig: vi.fn(),
-      resetThemeAndLanguage: vi.fn(),
       resetSortingPriorityConfig: vi.fn(),
     },
   }
@@ -175,7 +174,6 @@ describe("UserPreferencesContext", () => {
     mockedUserPreferences.resetWebAiApiCheck.mockResolvedValue(true)
     mockedUserPreferences.resetModelRedirectConfig.mockResolvedValue(true)
     mockedUserPreferences.resetWebdavConfig.mockResolvedValue(true)
-    mockedUserPreferences.resetThemeAndLanguage.mockResolvedValue(true)
     mockedUserPreferences.resetSortingPriorityConfig.mockResolvedValue(true)
     mockedSendRuntimeMessage.mockResolvedValue(undefined)
   })
@@ -517,7 +515,6 @@ describe("UserPreferencesContext", () => {
       await context.resetWebAiApiCheckConfig()
       await context.resetModelRedirectConfig()
       await context.resetWebdavConfig()
-      await context.resetThemeAndLanguage()
       await context.resetLoggingSettings()
       await context.resetSortingPriorityConfig()
     })
@@ -563,12 +560,6 @@ describe("UserPreferencesContext", () => {
     )
     expect((latestContext as any)?.preferences.webdav).toEqual(
       expect.objectContaining(DEFAULT_PREFERENCES.webdav),
-    )
-    expect((latestContext as any)?.preferences.themeMode).toBe(
-      DEFAULT_PREFERENCES.themeMode,
-    )
-    expect((latestContext as any)?.preferences.language).toBe(
-      DEFAULT_PREFERENCES.language,
     )
     expect((latestContext as any)?.preferences.sortingPriorityConfig).toBe(
       undefined,
@@ -770,7 +761,6 @@ describe("UserPreferencesContext", () => {
     mockedUserPreferences.resetWebAiApiCheck.mockResolvedValue(false)
     mockedUserPreferences.resetModelRedirectConfig.mockResolvedValue(false)
     mockedUserPreferences.resetWebdavConfig.mockResolvedValue(false)
-    mockedUserPreferences.resetThemeAndLanguage.mockResolvedValue(false)
     mockedUserPreferences.updateLoggingPreferences.mockResolvedValue(false)
     mockedUserPreferences.resetSortingPriorityConfig.mockResolvedValue(false)
 
@@ -792,7 +782,6 @@ describe("UserPreferencesContext", () => {
       expect(await context.resetWebAiApiCheckConfig()).toBe(false)
       expect(await context.resetModelRedirectConfig()).toBe(false)
       expect(await context.resetWebdavConfig()).toBe(false)
-      expect(await context.resetThemeAndLanguage()).toBe(false)
       expect(await context.resetLoggingSettings()).toBe(false)
       expect(await context.resetSortingPriorityConfig()).toBe(false)
     })

@@ -180,7 +180,6 @@ interface UserPreferencesContextType {
   resetWebAiApiCheckConfig: () => Promise<boolean>
   resetModelRedirectConfig: () => Promise<boolean>
   resetWebdavConfig: () => Promise<boolean>
-  resetThemeAndLanguage: () => Promise<boolean>
   resetLoggingSettings: () => Promise<boolean>
   resetSortingPriorityConfig: () => Promise<boolean>
   loadPreferences: () => Promise<void>
@@ -1299,24 +1298,6 @@ export const UserPreferencesProvider = ({
     return success
   }, [])
 
-  const resetThemeAndLanguage = useCallback(async () => {
-    const success = await userPreferences.resetThemeAndLanguage()
-    if (success) {
-      const now = Date.now()
-      setPreferences((prev) =>
-        prev
-          ? {
-              ...prev,
-              themeMode: DEFAULT_PREFERENCES.themeMode,
-              language: DEFAULT_PREFERENCES.language,
-              lastUpdated: now,
-            }
-          : prev,
-      )
-    }
-    return success
-  }, [])
-
   const resetLoggingSettings = useCallback(async () => {
     const defaults = DEFAULT_PREFERENCES.logging
     const success = await userPreferences.updateLoggingPreferences(defaults)
@@ -1503,7 +1484,6 @@ export const UserPreferencesProvider = ({
     resetWebAiApiCheckConfig,
     resetModelRedirectConfig,
     resetWebdavConfig,
-    resetThemeAndLanguage,
     resetLoggingSettings,
     resetSortingPriorityConfig,
     loadPreferences,

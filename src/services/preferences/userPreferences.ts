@@ -1092,16 +1092,6 @@ class UserPreferencesService {
       webdav: DEFAULT_PREFERENCES.webdav,
     })
   }
-
-  /**
-   * Reset theme and language.
-   */
-  async resetThemeAndLanguage(): Promise<boolean> {
-    return this.savePreferences({
-      themeMode: DEFAULT_PREFERENCES.themeMode,
-      language: DEFAULT_PREFERENCES.language,
-    })
-  }
 }
 
 // 创建单例实例
