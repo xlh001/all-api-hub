@@ -76,6 +76,18 @@ export const DEFAULT_SORTING_PRIORITY_CONFIG: SortingPriorityConfig = {
 }
 
 /**
+ * Creates a fresh default sorting priority config snapshot with cloned criteria
+ * and a current timestamp.
+ */
+export function createDefaultSortingPriorityConfig(): SortingPriorityConfig {
+  return {
+    ...DEFAULT_SORTING_PRIORITY_CONFIG,
+    criteria: DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => ({ ...c })),
+    lastModified: Date.now(),
+  }
+}
+
+/**
  * Compare two display records using the user-selected sort field.
  * Keeps currency-aware ordering logic in a single place so every criteria can
  * reuse the same implementation.

@@ -21,7 +21,10 @@ import {
   CURRENT_PREFERENCES_VERSION,
   migratePreferences,
 } from "~/services/preferences/migrations/preferencesMigration"
-import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/services/preferences/utils/sortingPriority"
+import {
+  createDefaultSortingPriorityConfig,
+  DEFAULT_SORTING_PRIORITY_CONFIG,
+} from "~/services/preferences/utils/sortingPriority"
 import {
   getSharedPreferencesLastUpdated,
   normalizeSharedPreferencesMetadata,
@@ -870,9 +873,9 @@ class UserPreferencesService {
   }
 
   async resetSortingPriorityConfig(): Promise<boolean> {
-    const prefs = await this.getPreferences()
-    const { sortingPriorityConfig: _sortingPriorityConfig, ...rest } = prefs
-    return this.savePreferences(rest as any)
+    return this.savePreferences({
+      sortingPriorityConfig: createDefaultSortingPriorityConfig(),
+    })
   }
 
   /**

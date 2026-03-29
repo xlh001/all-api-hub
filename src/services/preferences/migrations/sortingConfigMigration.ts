@@ -3,7 +3,10 @@
  * Handles version-based migrations for sorting priority configurations
  */
 
-import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/services/preferences/utils/sortingPriority"
+import {
+  createDefaultSortingPriorityConfig,
+  DEFAULT_SORTING_PRIORITY_CONFIG,
+} from "~/services/preferences/utils/sortingPriority"
 import {
   SortingCriteriaType,
   type SortingPriorityConfig,
@@ -62,11 +65,7 @@ export function migrateSortingConfig(
 ): SortingPriorityConfig {
   // If no config exists, return default
   if (!config) {
-    return {
-      ...DEFAULT_SORTING_PRIORITY_CONFIG,
-      criteria: DEFAULT_SORTING_PRIORITY_CONFIG.criteria.map((c) => ({ ...c })),
-      lastModified: Date.now(),
-    }
+    return createDefaultSortingPriorityConfig()
   }
   // If no migration is needed, return the config as is
   if (!needsSortingConfigMigration(config)) {
