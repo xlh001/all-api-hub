@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("ai", () => ({
   generateText: mocks.generateText,
+  Output: {
+    object: vi.fn((definition) => definition),
+  },
   jsonSchema: vi.fn((schema) => schema),
   tool: vi.fn((definition) => definition),
 }))
@@ -23,6 +26,10 @@ describe("AI API verification probes", () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+    mocks.generateText.mockReset()
+    mocks.createModel.mockReset()
+    mocks.createOpenAIProvider.mockReset()
+    mocks.createGoogleProvider.mockReset()
 
     mocks.createOpenAIProvider.mockImplementation(() => {
       const provider = ((modelId: string) => ({
@@ -143,6 +150,320 @@ describe("AI API verification probes", () => {
       })
       expect(result.summary).not.toContain("sk-secret")
     })
+
+    it("fails for OpenAI endpoints when neither tool results nor sources are returned", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        toolResults: [],
+        sources: [],
+      })
+
+      const { runWebSearchProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/webSearchProbe"
+      )
+
+      await expect(
+        runWebSearchProbe({
+          apiType: "openai",
+          baseUrl: "https://example.com",
+          apiKey: "sk-secret",
+          modelId: "gpt-4.1",
+        }),
+      ).resolves.toMatchObject({
+        id: "web-search",
+        status: "fail",
+        summaryKey: "verifyDialog.summaries.webSearchNoResults",
+        output: {
+          sourcesCount: 0,
+          toolResultsCount: 0,
+        },
+      })
+    })
+
+    it("passes for Google endpoints when grounded sources are returned", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        toolResults: [],
+        sources: [{ title: "AI SDK update" }],
+      })
+
+      const { runWebSearchProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/webSearchProbe"
+      )
+
+      await expect(
+        runWebSearchProbe({
+          apiType: "google",
+          baseUrl: "https://generativelanguage.googleapis.com",
+          apiKey: "AIza-secret",
+          modelId: "gemini-2.5-pro",
+        }),
+      ).resolves.toMatchObject({
+        id: "web-search",
+        status: "pass",
+        summaryKey: "verifyDialog.summaries.webSearchGroundingSucceeded",
+        output: {
+          sourcesCount: 1,
+          toolResultsCount: 0,
+          sourcesPreview: [{ title: "AI SDK update" }],
+        },
+      })
+    })
+
+    it("passes for Google endpoints when the google_search tool result is present even without sources", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        toolResults: [{ toolName: "google_search" }],
+        sources: [],
+      })
+
+      const { runWebSearchProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/webSearchProbe"
+      )
+
+      await expect(
+        runWebSearchProbe({
+          apiType: "google",
+          baseUrl: "https://generativelanguage.googleapis.com",
+          apiKey: "AIza-secret",
+          modelId: "gemini-2.5-pro",
+        }),
+      ).resolves.toMatchObject({
+        id: "web-search",
+        status: "pass",
+        summaryKey: "verifyDialog.summaries.webSearchGroundingSucceeded",
+        output: {
+          sourcesCount: 0,
+          toolResultsCount: 1,
+        },
+      })
+    })
+
+    it("treats omitted OpenAI tool-results and sources arrays as an empty-result failure", async () => {
+      mocks.generateText.mockResolvedValueOnce({})
+
+      const { runWebSearchProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/webSearchProbe"
+      )
+
+      await expect(
+        runWebSearchProbe({
+          apiType: "openai",
+          baseUrl: "https://example.com",
+          apiKey: "sk-secret",
+          modelId: "gpt-4.1",
+        }),
+      ).resolves.toMatchObject({
+        id: "web-search",
+        status: "fail",
+        summaryKey: "verifyDialog.summaries.webSearchNoResults",
+        output: {
+          sourcesCount: 0,
+          toolResultsCount: 0,
+          sourcesPreview: [],
+        },
+      })
+    })
+
+    it("treats omitted Google grounding arrays as an empty-result failure", async () => {
+      mocks.generateText.mockResolvedValueOnce({})
+
+      const { runWebSearchProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/webSearchProbe"
+      )
+
+      await expect(
+        runWebSearchProbe({
+          apiType: "google",
+          baseUrl: "https://generativelanguage.googleapis.com",
+          apiKey: "AIza-secret",
+          modelId: "gemini-2.5-pro",
+        }),
+      ).resolves.toMatchObject({
+        id: "web-search",
+        status: "fail",
+        summaryKey: "verifyDialog.summaries.webSearchGroundingNoResults",
+        output: {
+          sourcesCount: 0,
+          toolResultsCount: 0,
+          sourcesPreview: [],
+        },
+      })
+    })
+
+    it("returns unsupported for API types without a web-search implementation", async () => {
+      const { runWebSearchProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/webSearchProbe"
+      )
+
+      await expect(
+        runWebSearchProbe({
+          apiType: "openai-compatible",
+          baseUrl: "https://example.com",
+          apiKey: "sk-secret",
+          modelId: "gpt-4.1",
+        }),
+      ).resolves.toMatchObject({
+        id: "web-search",
+        status: "unsupported",
+        summaryKey: "verifyDialog.summaries.webSearchUnsupportedForApiType",
+      })
+    })
+  })
+
+  describe("runTextGenerationProbe", () => {
+    it("passes when the model replies with OK text", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        text: "  OK  ",
+      })
+
+      const { runTextGenerationProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/textGenerationProbe"
+      )
+
+      await expect(
+        runTextGenerationProbe({
+          apiType: "openai",
+          baseUrl: "https://example.com",
+          apiKey: "sk-secret",
+          modelId: "gpt-4.1",
+        }),
+      ).resolves.toMatchObject({
+        id: "text-generation",
+        status: "pass",
+        summaryKey: "verifyDialog.summaries.textGenerationSucceeded",
+        output: {
+          text: "  OK  ",
+        },
+        details: undefined,
+      })
+    })
+
+    it("fails with a response preview when the reply does not contain OK", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        text: "No thanks",
+      })
+
+      const { runTextGenerationProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/textGenerationProbe"
+      )
+
+      await expect(
+        runTextGenerationProbe({
+          apiType: "openai",
+          baseUrl: "https://example.com",
+          apiKey: "sk-secret",
+          modelId: "gpt-4.1",
+        }),
+      ).resolves.toMatchObject({
+        id: "text-generation",
+        status: "fail",
+        summaryKey: "verifyDialog.summaries.textGenerationUnexpectedResponse",
+        output: {
+          text: "No thanks",
+        },
+        details: {
+          responsePreview: "No thanks",
+        },
+      })
+    })
+
+    it("sanitizes thrown text-generation errors", async () => {
+      mocks.generateText.mockRejectedValueOnce(
+        new Error("bad gateway sk-secret"),
+      )
+
+      const { runTextGenerationProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/textGenerationProbe"
+      )
+
+      const result = await runTextGenerationProbe({
+        apiType: "openai",
+        baseUrl: "https://example.com",
+        apiKey: "sk-secret",
+        modelId: "gpt-4.1",
+      })
+
+      expect(result).toMatchObject({
+        id: "text-generation",
+        status: "fail",
+      })
+      expect(result.summary).not.toContain("sk-secret")
+    })
+  })
+
+  describe("runStructuredOutputProbe", () => {
+    it("passes when the model returns the expected structured output", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        output: { ok: true },
+      })
+
+      const { runStructuredOutputProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/structuredOutputProbe"
+      )
+
+      await expect(
+        runStructuredOutputProbe({
+          apiType: "openai",
+          baseUrl: "https://example.com",
+          apiKey: "sk-secret",
+          modelId: "gpt-4.1",
+        }),
+      ).resolves.toMatchObject({
+        id: "structured-output",
+        status: "pass",
+        summaryKey: "verifyDialog.summaries.structuredOutputSucceeded",
+        output: {
+          output: { ok: true },
+        },
+      })
+    })
+
+    it("fails when the structured payload does not contain the expected flag", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        output: null,
+      })
+
+      const { runStructuredOutputProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/structuredOutputProbe"
+      )
+
+      await expect(
+        runStructuredOutputProbe({
+          apiType: "openai",
+          baseUrl: "https://example.com",
+          apiKey: "sk-secret",
+          modelId: "gpt-4.1",
+        }),
+      ).resolves.toMatchObject({
+        id: "structured-output",
+        status: "fail",
+        summaryKey: "verifyDialog.summaries.structuredOutputInvalid",
+        output: {
+          output: null,
+        },
+      })
+    })
+
+    it("sanitizes thrown structured-output errors", async () => {
+      mocks.generateText.mockRejectedValueOnce(
+        new Error("invalid schema sk-secret"),
+      )
+
+      const { runStructuredOutputProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/structuredOutputProbe"
+      )
+
+      const result = await runStructuredOutputProbe({
+        apiType: "openai",
+        baseUrl: "https://example.com",
+        apiKey: "sk-secret",
+        modelId: "gpt-4.1",
+      })
+
+      expect(result).toMatchObject({
+        id: "structured-output",
+        status: "fail",
+      })
+      expect(result.summary).not.toContain("sk-secret")
+    })
   })
 
   describe("runToolCallingProbe", () => {
@@ -171,11 +492,38 @@ describe("AI API verification probes", () => {
       })
     })
 
+    it("passes when the verify_tool result is present even without a toolCalls entry", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        toolResults: [{ toolName: "verify_tool", result: { now: "ok" } }],
+      })
+
+      const { runToolCallingProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/toolCallingProbe"
+      )
+
+      const result = await runToolCallingProbe({
+        apiType: "openai",
+        baseUrl: "https://example.com",
+        apiKey: "sk-secret",
+        modelId: "gpt-4.1",
+      })
+
+      expect(result).toMatchObject({
+        id: "tool-calling",
+        status: "pass",
+        summaryKey: "verifyDialog.summaries.toolCallSucceeded",
+        output: {
+          text: null,
+          toolCalls: [],
+          toolResults: [{ toolName: "verify_tool", result: { now: "ok" } }],
+        },
+      })
+    })
+
     it("fails with a detailed payload when no tool call is detected", async () => {
       mocks.generateText.mockResolvedValueOnce({
-        text: "plain text only",
-        toolCalls: [],
-        toolResults: [],
+        toolCalls: undefined,
+        toolResults: undefined,
       })
 
       const { runToolCallingProbe } = await import(
@@ -194,10 +542,34 @@ describe("AI API verification probes", () => {
         status: "fail",
         summaryKey: "verifyDialog.summaries.noToolCallDetected",
         output: {
-          text: "plain text only",
+          text: null,
           toolCalls: [],
           toolResults: [],
         },
+      })
+    })
+
+    it("exposes the generated verify_tool executor shape for callers that inspect the tool contract", async () => {
+      mocks.generateText.mockResolvedValueOnce({
+        toolCalls: [{ toolName: "verify_tool" }],
+        toolResults: [],
+      })
+
+      const { runToolCallingProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/toolCallingProbe"
+      )
+
+      await runToolCallingProbe({
+        apiType: "openai",
+        baseUrl: "https://example.com",
+        apiKey: "sk-secret",
+        modelId: "gpt-4.1",
+      })
+
+      const toolDefinition =
+        mocks.generateText.mock.calls[0][0].tools.verify_tool
+      await expect(toolDefinition.execute()).resolves.toEqual({
+        now: expect.any(String),
       })
     })
 
@@ -220,9 +592,31 @@ describe("AI API verification probes", () => {
       expect(result).toMatchObject({
         id: "tool-calling",
         status: "fail",
-        summaryKey: expect.any(String),
       })
       expect(result.summary).not.toContain("sk-secret")
+    })
+
+    it("falls back to a generic request failure message when sanitization returns nothing", async () => {
+      mocks.generateText.mockRejectedValueOnce({
+        message: "",
+      })
+
+      const { runToolCallingProbe } = await import(
+        "~/services/verification/aiApiVerification/probes/toolCallingProbe"
+      )
+
+      const result = await runToolCallingProbe({
+        apiType: "openai",
+        baseUrl: "https://example.com",
+        apiKey: "sk-secret",
+        modelId: "gpt-4.1",
+      })
+
+      expect(result).toMatchObject({
+        id: "tool-calling",
+        status: "fail",
+        summary: expect.any(String),
+      })
     })
   })
 })

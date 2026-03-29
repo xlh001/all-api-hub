@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { VELOERA } from "~/constants/siteType"
 import { veloeraProvider } from "~/services/checkin/autoCheckin/providers/veloera"
@@ -38,6 +38,10 @@ const mockAccount: SiteAccount = {
 }
 
 describe("veloeraProvider", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe("canCheckIn", () => {
     it("returns true for valid account", () => {
       expect(veloeraProvider.canCheckIn(mockAccount)).toBe(true)
@@ -55,9 +59,37 @@ describe("veloeraProvider", () => {
       }
       expect(veloeraProvider.canCheckIn(account)).toBe(false)
     })
+
+    it("allows cookie-auth accounts without an access token", () => {
+      const account = {
+        ...mockAccount,
+        authType: AuthTypeEnum.Cookie,
+        account_info: { ...mockAccount.account_info, access_token: "" },
+      }
+
+      expect(veloeraProvider.canCheckIn(account)).toBe(true)
+    })
   })
 
   describe("checkIn", () => {
+    it("returns the fallback success message key when the backend omits a message", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: true,
+        data: { quota_awarded: 2 },
+        message: "",
+      })
+
+      const result = await veloeraProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "success",
+        rawMessage: undefined,
+        messageKey: "autoCheckin:providerFallback.checkinSuccessful",
+        data: { quota_awarded: 2 },
+      })
+    })
+
     it("returns success on successful check-in", async () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
       vi.mocked(fetchApi).mockResolvedValueOnce({
@@ -80,6 +112,40 @@ describe("veloeraProvider", () => {
 
       const result = await veloeraProvider.checkIn(mockAccount)
       expect(result.status).toBe("already_checked")
+    })
+
+    it("returns the fallback failure key when the backend fails without a message", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        data: { code: 500 },
+        message: "",
+      })
+
+      const result = await veloeraProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        rawMessage: undefined,
+        messageKey: "autoCheckin:providerFallback.checkinFailed",
+        data: {
+          success: false,
+          data: { code: 500 },
+          message: "",
+        },
+      })
+    })
+
+    it("maps 404-style error messages to endpoint-not-supported", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      vi.mocked(fetchApi).mockRejectedValueOnce(new Error("404 Not found"))
+
+      const result = await veloeraProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        messageKey: "autoCheckin:providerFallback.endpointNotSupported",
+      })
     })
 
     it("handles errors gracefully", async () => {

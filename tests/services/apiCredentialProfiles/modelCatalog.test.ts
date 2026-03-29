@@ -2,16 +2,33 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   ACCOUNT_TOKEN_FALLBACK_LOAD_FAILED,
+  buildApiCredentialProfilePricingResponse,
+  fetchApiCredentialModelIds,
   loadAccountTokenFallbackPricingResponse,
+  normalizeApiCredentialModelIds,
 } from "~/services/apiCredentialProfiles/modelCatalog"
+import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { AuthTypeEnum } from "~/types"
 
 const {
+  fetchAnthropicModelIdsMock,
+  fetchGoogleModelIdsMock,
   fetchOpenAICompatibleModelIdsMock,
   resolveDisplayAccountTokenForSecretMock,
 } = vi.hoisted(() => ({
+  fetchAnthropicModelIdsMock: vi.fn(),
+  fetchGoogleModelIdsMock: vi.fn(),
   fetchOpenAICompatibleModelIdsMock: vi.fn(),
   resolveDisplayAccountTokenForSecretMock: vi.fn(),
+}))
+
+vi.mock("~/services/apiService/anthropic", () => ({
+  fetchAnthropicModelIds: (...args: unknown[]) =>
+    fetchAnthropicModelIdsMock(...args),
+}))
+
+vi.mock("~/services/apiService/google", () => ({
+  fetchGoogleModelIds: (...args: unknown[]) => fetchGoogleModelIdsMock(...args),
 }))
 
 vi.mock("~/services/apiService/openaiCompatible", () => ({
@@ -69,11 +86,59 @@ const TOKEN = {
 
 describe("loadAccountTokenFallbackPricingResponse", () => {
   beforeEach(() => {
+    fetchAnthropicModelIdsMock.mockReset()
+    fetchGoogleModelIdsMock.mockReset()
     fetchOpenAICompatibleModelIdsMock.mockReset()
     resolveDisplayAccountTokenForSecretMock.mockReset()
     resolveDisplayAccountTokenForSecretMock.mockImplementation(
       async (_account, token) => token,
     )
+  })
+
+  it("routes profile model-id lookups to the provider-specific fetcher", async () => {
+    fetchOpenAICompatibleModelIdsMock.mockResolvedValueOnce(["gpt-4.1"])
+    fetchOpenAICompatibleModelIdsMock.mockResolvedValueOnce(["gpt-4o"])
+    fetchAnthropicModelIdsMock.mockResolvedValueOnce(["claude-3-7-sonnet"])
+    fetchGoogleModelIdsMock.mockResolvedValueOnce(["gemini-2.5-pro"])
+
+    await expect(
+      fetchApiCredentialModelIds({
+        apiType: API_TYPES.OPENAI,
+        baseUrl: "https://openai.example.com",
+        apiKey: "openai-key",
+      }),
+    ).resolves.toEqual(["gpt-4.1"])
+    await expect(
+      fetchApiCredentialModelIds({
+        apiType: API_TYPES.OPENAI_COMPATIBLE,
+        baseUrl: "https://proxy.example.com",
+        apiKey: "proxy-key",
+      }),
+    ).resolves.toEqual(["gpt-4o"])
+    await expect(
+      fetchApiCredentialModelIds({
+        apiType: API_TYPES.ANTHROPIC,
+        baseUrl: "https://anthropic.example.com",
+        apiKey: "anthropic-key",
+      }),
+    ).resolves.toEqual(["claude-3-7-sonnet"])
+    await expect(
+      fetchApiCredentialModelIds({
+        apiType: API_TYPES.GOOGLE,
+        baseUrl: "https://google.example.com",
+        apiKey: "google-key",
+      }),
+    ).resolves.toEqual(["gemini-2.5-pro"])
+  })
+
+  it("throws for unsupported profile api types", async () => {
+    await expect(
+      fetchApiCredentialModelIds({
+        apiType: "unsupported" as any,
+        baseUrl: "https://example.com",
+        apiKey: "key",
+      }),
+    ).rejects.toThrow("Unsupported apiType")
   })
 
   it("merges token-declared and upstream model ids into a normalized catalog", async () => {
@@ -158,5 +223,28 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     expect(message).not.toContain("https://example.com")
     expect(message.length).toBeGreaterThan(0)
     expect(message).not.toBe(ACCOUNT_TOKEN_FALLBACK_LOAD_FAILED)
+  })
+
+  it("normalizes, filters, and de-duplicates raw model ids when building profile catalogs", () => {
+    expect(
+      normalizeApiCredentialModelIds([
+        " gpt-4o ",
+        "",
+        "gpt-4o",
+        "claude-3-haiku",
+        123,
+      ] as any),
+    ).toEqual(["gpt-4o", "claude-3-haiku"])
+
+    expect(
+      buildApiCredentialProfilePricingResponse([
+        " gpt-4o ",
+        "gpt-4o",
+        "claude-3-haiku",
+      ]).data,
+    ).toEqual([
+      expect.objectContaining({ model_name: "gpt-4o" }),
+      expect.objectContaining({ model_name: "claude-3-haiku" }),
+    ])
   })
 })

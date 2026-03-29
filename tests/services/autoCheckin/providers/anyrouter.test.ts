@@ -74,6 +74,33 @@ describe("anyrouterProvider", () => {
       expect(result.status).toBe("success")
     })
 
+    it("returns success for English success messages", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      const mockedFetchApi = vi.mocked(
+        fetchApi as unknown as (...args: any[]) => Promise<any>,
+      )
+      mockedFetchApi.mockResolvedValueOnce({
+        code: 1,
+        ret: 1,
+        success: true,
+        message: "Success! bonus quota granted",
+      })
+
+      const result = await anyrouterProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "success",
+        rawMessage: "Success! bonus quota granted",
+        messageKey: undefined,
+        data: {
+          code: 1,
+          ret: 1,
+          success: true,
+          message: "Success! bonus quota granted",
+        },
+      })
+    })
+
     it("returns already_checked when response is success and message is empty", async () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
       const mockedFetchApi = vi.mocked(
@@ -88,6 +115,72 @@ describe("anyrouterProvider", () => {
 
       const result = await anyrouterProvider.checkIn(mockAccount)
       expect(result.status).toBe("already_checked")
+    })
+
+    it("returns already_checked when response is success and message indicates a prior check-in", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      const mockedFetchApi = vi.mocked(
+        fetchApi as unknown as (...args: any[]) => Promise<any>,
+      )
+      mockedFetchApi.mockResolvedValueOnce({
+        code: 1,
+        ret: 0,
+        success: true,
+        message: "already checked today",
+      })
+
+      const result = await anyrouterProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "already_checked",
+        rawMessage: "already checked today",
+        messageKey: undefined,
+      })
+    })
+
+    it("returns the fallback failure key when the backend fails without a message", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      const mockedFetchApi = vi.mocked(
+        fetchApi as unknown as (...args: any[]) => Promise<any>,
+      )
+      mockedFetchApi.mockResolvedValueOnce({
+        code: 1,
+        ret: 0,
+        success: false,
+        message: "",
+      })
+
+      const result = await anyrouterProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        rawMessage: undefined,
+        messageKey: "autoCheckin:providerFallback.checkinFailed",
+        data: {
+          code: 1,
+          ret: 0,
+          success: false,
+          message: "",
+        },
+      })
+    })
+
+    it("returns failed when a success response has no success or already-checked signal", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      const mockedFetchApi = vi.mocked(
+        fetchApi as unknown as (...args: any[]) => Promise<any>,
+      )
+      mockedFetchApi.mockResolvedValueOnce({
+        code: 1,
+        ret: 1,
+        success: true,
+        message: "queued",
+      })
+
+      const result = await anyrouterProvider.checkIn(mockAccount)
+
+      expect(result.status).toBe("failed")
+      expect(result.rawMessage).toBe("queued")
     })
 
     it("returns failed when response is not success (even if message indicates already checked)", async () => {
@@ -120,6 +213,24 @@ describe("anyrouterProvider", () => {
 
       const result = await anyrouterProvider.checkIn(mockAccount)
       expect(result.status).toBe("failed")
+    })
+
+    it("maps 404 errors to endpoint-not-supported", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      const mockedFetchApi = vi.mocked(
+        fetchApi as unknown as (...args: any[]) => Promise<any>,
+      )
+      mockedFetchApi.mockRejectedValueOnce({
+        statusCode: 404,
+        message: "Not found",
+      })
+
+      const result = await anyrouterProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        messageKey: "autoCheckin:providerFallback.endpointNotSupported",
+      })
     })
 
     it("returns already_checked when request throws and error message indicates already checked", async () => {

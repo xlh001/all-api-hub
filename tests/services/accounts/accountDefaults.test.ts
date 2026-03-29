@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest"
 
+import { UNKNOWN_SITE } from "~/constants/siteType"
+import { UI_CONSTANTS } from "~/constants/ui"
 import {
   applySiteAccountUpdates,
+  createDefaultAccountStorageConfig,
+  createPersistedSiteAccount,
   normalizeAccountStorageConfigForRead,
+  normalizeAccountStorageConfigForWrite,
   normalizeSiteAccount,
 } from "~/services/accounts/accountDefaults"
 import type { AccountStorageConfig, SiteAccount } from "~/types"
@@ -67,6 +72,39 @@ describe("accountDefaults", () => {
     })
   })
 
+  describe("storage helpers", () => {
+    it("creates the canonical default storage shape", () => {
+      expect(createDefaultAccountStorageConfig(321)).toEqual({
+        accounts: [],
+        bookmarks: [],
+        pinnedAccountIds: [],
+        orderedAccountIds: [],
+        last_updated: 321,
+      })
+    })
+
+    it("normalizes write payloads before persistence", () => {
+      const normalized = normalizeAccountStorageConfigForWrite(
+        {
+          accounts: "bad" as any,
+          bookmarks: [{ id: "bookmark-1" }] as any,
+          pinnedAccountIds: "bad" as any,
+          orderedAccountIds: ["ordered-1"],
+          last_updated: 1,
+        } as any,
+        456,
+      )
+
+      expect(normalized).toEqual({
+        accounts: [],
+        bookmarks: [{ id: "bookmark-1" }],
+        pinnedAccountIds: [],
+        orderedAccountIds: ["ordered-1"],
+        last_updated: 456,
+      })
+    })
+  })
+
   describe("normalizeSiteAccount", () => {
     it("applies backward-compatible defaults for missing additive fields", () => {
       const legacy = createSiteAccount()
@@ -106,6 +144,86 @@ describe("accountDefaults", () => {
       expect(normalized.checkIn.enableDetection).toBe(true)
       expect(normalized.checkIn.autoCheckInEnabled).toBe(false)
       expect(normalized.notes).toBe("hello")
+    })
+
+    it("coerces invalid persisted values to stable defaults", () => {
+      const normalized = normalizeSiteAccount({
+        ...createSiteAccount(),
+        site_type: "",
+        exchange_rate: "bad" as any,
+        authType: "invalid-auth" as any,
+        account_info: {
+          ...createSiteAccount().account_info,
+          id: "12" as any,
+          quota: "15" as any,
+          today_income: "invalid" as any,
+        },
+        health: {
+          status: "invalid-status" as any,
+          reason: 123 as any,
+          code: "UNHEALTHY" as any,
+        },
+        checkIn: {
+          enableDetection: 1 as any,
+          customCheckIn: {
+            url: "https://checkin.example",
+          },
+        } as any,
+        tagIds: [" first ", "", 2 as any, "second"],
+        tags: "legacy" as any,
+      } as any)
+
+      expect(normalized.site_type).toBe(UNKNOWN_SITE)
+      expect(normalized.exchange_rate).toBe(UI_CONSTANTS.EXCHANGE_RATE.DEFAULT)
+      expect(normalized.authType).toBe(AuthTypeEnum.AccessToken)
+      expect(normalized.account_info.id).toBe(12)
+      expect(normalized.account_info.quota).toBe(15)
+      expect(normalized.account_info.today_income).toBe(0)
+      expect(normalized.health.status).toBe(SiteHealthStatus.Unknown)
+      expect(normalized.health.reason).toBeUndefined()
+      expect(normalized.health.code).toBe("UNHEALTHY")
+      expect(normalized.checkIn.enableDetection).toBe(false)
+      expect(normalized.checkIn.autoCheckInEnabled).toBe(true)
+      expect(normalized.checkIn.customCheckIn?.openRedeemWithCheckIn).toBe(true)
+      expect(normalized.tagIds).toEqual(["first", "second"])
+      expect(normalized.tags).toBeUndefined()
+    })
+  })
+
+  describe("createPersistedSiteAccount", () => {
+    it("applies generated ids and timestamps while normalizing nested fields", () => {
+      const {
+        id: _legacyId,
+        created_at: _legacyCreatedAt,
+        updated_at: _legacyUpdatedAt,
+        ...account
+      } = createSiteAccount({
+        id: "legacy-id" as any,
+        created_at: 1 as any,
+        updated_at: 2 as any,
+        notes: undefined as any,
+        checkIn: {
+          enableDetection: true,
+          customCheckIn: { url: "https://checkin.example" },
+        } as any,
+        tagIds: [" tag-a ", ""],
+      })
+      void _legacyId
+      void _legacyCreatedAt
+      void _legacyUpdatedAt
+
+      const created = createPersistedSiteAccount({
+        id: "persisted-id",
+        now: 777,
+        account,
+      })
+
+      expect(created.id).toBe("persisted-id")
+      expect(created.created_at).toBe(777)
+      expect(created.updated_at).toBe(777)
+      expect(created.notes).toBe("")
+      expect(created.tagIds).toEqual(["tag-a"])
+      expect(created.checkIn.customCheckIn?.openRedeemWithCheckIn).toBe(true)
     })
   })
 
