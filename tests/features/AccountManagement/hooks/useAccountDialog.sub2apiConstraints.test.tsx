@@ -335,4 +335,57 @@ describe("useAccountDialog Sub2API constraints", () => {
     expect(result.current.state.userId).toBe("")
     expect(mockToastError).toHaveBeenCalled()
   })
+
+  it("surfaces background fallback failures during Sub2API session import and resets the loading state", async () => {
+    const { getAllTabs, sendRuntimeMessage } = await import(
+      "~/utils/browser/browserApi"
+    )
+    vi.mocked(getAllTabs).mockResolvedValue([
+      {
+        id: 31,
+        url: "https://sub2.example.com/dashboard",
+        active: true,
+      } as any,
+    ])
+    vi.mocked(globalThis.browser.tabs.sendMessage).mockRejectedValue(
+      new Error("content script unavailable"),
+    )
+    vi.mocked(sendRuntimeMessage).mockRejectedValue(
+      new Error("background auto-detect failed"),
+    )
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://sub2.example.com")
+      result.current.setters.setSiteType(SUB2API)
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleImportSub2apiSession()
+    })
+
+    expect(sendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.AutoDetectSite,
+        url: "https://sub2.example.com",
+      }),
+    )
+    expect(mockToastError).toHaveBeenCalledWith(
+      "accountDialog:messages.operationFailed",
+    )
+    expect(result.current.state.isImportingSub2apiSession).toBe(false)
+    expect(result.current.state.sub2apiRefreshToken).toBe("")
+  })
 })
