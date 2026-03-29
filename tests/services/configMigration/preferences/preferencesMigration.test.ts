@@ -18,6 +18,7 @@ import {
   ACCOUNT_AUTO_REFRESH_MIN_INTERVAL_MIN_SECONDS,
   DEFAULT_ACCOUNT_AUTO_REFRESH,
 } from "~/types/accountAutoRefresh"
+import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import { DEFAULT_BALANCE_HISTORY_PREFERENCES } from "~/types/dailyBalanceHistory"
 import { DEFAULT_NEW_API_CONFIG } from "~/types/newApiConfig"
 import { SortingCriteriaType } from "~/types/sorting"
@@ -30,6 +31,20 @@ const buildModelRedirectFixture = () => ({
   enabled: false,
   standardModels: [],
   pruneMissingTargetsOnModelSync: false,
+})
+
+const buildChannelModelFilterRule = (
+  overrides: Partial<ChannelModelFilterRule> = {},
+): ChannelModelFilterRule => ({
+  id: "rule-1",
+  name: "OpenAI include",
+  pattern: "openai/*",
+  isRegex: false,
+  action: "include",
+  enabled: true,
+  createdAt: 1,
+  updatedAt: 1,
+  ...overrides,
 })
 
 // Helper function to create a minimal v0 preferences object
@@ -223,6 +238,48 @@ describe("preferencesMigration", () => {
       expect(result.balanceHistory).toEqual(DEFAULT_BALANCE_HISTORY_PREFERENCES)
     })
 
+    it("normalizes invalid balance-history settings during v11->v12 migration", () => {
+      const prefs = createV0Preferences({
+        preferencesVersion: 11,
+        balanceHistory: {
+          enabled: "yes" as any,
+          endOfDayCapture: { enabled: "no" as any },
+          retentionDays: "not-a-number" as any,
+        },
+      })
+
+      const result = migratePreferences(prefs)
+
+      expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
+      expect(result.balanceHistory).toEqual(DEFAULT_BALANCE_HISTORY_PREFERENCES)
+    })
+
+    it("clamps balance-history retention days into the supported storage range", () => {
+      const lowPrefs = createV0Preferences({
+        preferencesVersion: 11,
+        balanceHistory: {
+          enabled: true,
+          endOfDayCapture: { enabled: true },
+          retentionDays: 0,
+        },
+      })
+      const highPrefs = createV0Preferences({
+        preferencesVersion: 11,
+        balanceHistory: {
+          enabled: true,
+          endOfDayCapture: { enabled: false },
+          retentionDays: 99999,
+        },
+      })
+
+      const lowResult = migratePreferences(lowPrefs)
+      const highResult = migratePreferences(highPrefs)
+
+      expect(lowResult.balanceHistory?.retentionDays).toBe(1)
+      expect(highResult.balanceHistory?.retentionDays).toBe(3650)
+      expect(highResult.balanceHistory?.endOfDayCapture.enabled).toBe(false)
+    })
+
     it("re-enables openChangelogOnUpdate during v13->v14 migration", () => {
       const prefs: UserPreferences = {
         ...DEFAULT_PREFERENCES,
@@ -234,6 +291,26 @@ describe("preferencesMigration", () => {
 
       expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
       expect(result.openChangelogOnUpdate).toBe(true)
+    })
+
+    it("preserves an existing octopus config during v12->v13 migration", () => {
+      const prefs = createV0Preferences({
+        preferencesVersion: 12,
+        octopus: {
+          baseUrl: "https://octopus.example.com",
+          username: "alice",
+          password: "secret",
+        },
+      })
+
+      const result = migratePreferences(prefs)
+
+      expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
+      expect(result.octopus).toEqual({
+        baseUrl: "https://octopus.example.com",
+        username: "alice",
+        password: "secret",
+      })
     })
 
     it("processes v1 preferences with sorting config migration", () => {
@@ -330,6 +407,44 @@ describe("preferencesMigration", () => {
         adminToken: "admin-token",
         userId: "user-id",
       })
+    })
+
+    it("preserves managedSiteModelSync when both legacy and current sync configs exist", () => {
+      const prefs = createV0Preferences({
+        preferencesVersion: 6,
+        managedSiteModelSync: {
+          enabled: true,
+          interval: 1000,
+          concurrency: 4,
+          maxRetries: 3,
+          rateLimit: { requestsPerMinute: 30, burst: 10 },
+          allowedModels: ["gpt-4o"],
+          globalChannelModelFilters: [buildChannelModelFilterRule()],
+        },
+        newApiModelSync: {
+          enabled: false,
+          interval: 2000,
+          concurrency: 1,
+          maxRetries: 1,
+          rateLimit: { requestsPerMinute: 10, burst: 2 },
+          allowedModels: [],
+          globalChannelModelFilters: [],
+        },
+      })
+
+      const result = migratePreferences(prefs)
+
+      expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
+      expect(result.managedSiteModelSync).toEqual({
+        enabled: true,
+        interval: 1000,
+        concurrency: 4,
+        maxRetries: 3,
+        rateLimit: { requestsPerMinute: 30, burst: 10 },
+        allowedModels: ["gpt-4o"],
+        globalChannelModelFilters: [buildChannelModelFilterRule()],
+      })
+      expect(result).not.toHaveProperty("newApiModelSync")
     })
 
     it("clamps auto-refresh intervals to new minimums during migration", () => {
@@ -453,6 +568,18 @@ describe("preferencesMigration", () => {
       const result = migratePreferences(prefs)
 
       expect(result.language).toBe("zh-CN")
+    })
+
+    it("preserves unsupported language tags during v16->v17 migration", () => {
+      const prefs = createV0Preferences({
+        preferencesVersion: 16,
+        language: "custom-locale",
+      })
+
+      const result = migratePreferences(prefs)
+
+      expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
+      expect(result.language).toBe("custom-locale")
     })
 
     it("handles partial migrations correctly", () => {
@@ -679,6 +806,17 @@ describe("preferencesMigration", () => {
 
       expect(result.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
       expect(result.webdav.url).toBe("https://example.com")
+    })
+
+    it("stops gracefully when a migration step is missing", () => {
+      const prefs = createV0Preferences({
+        preferencesVersion: -1 as any,
+      })
+
+      const result = migratePreferences(prefs)
+
+      expect(result.preferencesVersion).toBe(-1)
+      expect(result.sharedPreferencesLastUpdated).toBe(prefs.lastUpdated)
     })
 
     it("updates lastUpdated timestamp during migration", () => {

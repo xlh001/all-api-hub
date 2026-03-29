@@ -74,6 +74,33 @@ describe("apiService index wrapper", () => {
     expect(oneHubFetchAccountTokens).toHaveBeenCalledWith(request)
   })
 
+  it("should detect override sites from the request payload itself", async () => {
+    oneHubFetchModelPricing.mockResolvedValue({} as any)
+
+    const request = {
+      baseUrl: "https://example.com",
+      auth: { authType: "none" },
+      siteType: ONE_HUB,
+    }
+    await (getApiService(undefined).fetchModelPricing as any)(request)
+
+    expect(oneHubFetchModelPricing).toHaveBeenCalledTimes(1)
+    expect(oneHubFetchModelPricing).toHaveBeenCalledWith(request)
+  })
+
+  it("should respect an explicit trailing site hint when using the exported wrapper", async () => {
+    oneHubFetchModelPricing.mockResolvedValue({} as any)
+
+    const request = {
+      baseUrl: "https://example.com",
+      auth: { authType: "none" },
+    }
+    await (getApiService(undefined).fetchModelPricing as any)(request, DONE_HUB)
+
+    expect(oneHubFetchModelPricing).toHaveBeenCalledTimes(1)
+    expect(oneHubFetchModelPricing).toHaveBeenCalledWith(request)
+  })
+
   it("should fall back to common implementation when override module does not implement function", async () => {
     commonFetchUserInfo.mockResolvedValue({} as any)
 

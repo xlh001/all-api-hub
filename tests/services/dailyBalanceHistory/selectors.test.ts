@@ -203,6 +203,84 @@ describe("dailyBalanceHistory selectors", () => {
     })
   })
 
+  it("returns null aggregate totals with zero coverage when no store is available", () => {
+    const result = buildAggregatedDailyBalanceSeries({
+      store: null,
+      accountIds: ["a1", "a2"],
+      startDayKey: "2026-02-07",
+      endDayKey: "2026-02-08",
+    })
+
+    expect(result.dayKeys).toEqual(["2026-02-07", "2026-02-08"])
+    expect(result.quotaTotals).toEqual([null, null])
+    expect(result.incomeTotals).toEqual([null, null])
+    expect(result.outcomeTotals).toEqual([null, null])
+    expect(result.coverage).toEqual([
+      { totalAccounts: 2, snapshotAccounts: 0, cashflowAccounts: 0 },
+      { totalAccounts: 2, snapshotAccounts: 0, cashflowAccounts: 0 },
+    ])
+  })
+
+  it("returns null money totals with zero coverage when the store is unavailable", () => {
+    const result = buildAggregatedDailyBalanceMoneySeries({
+      store: null,
+      accountIds: ["a1", "a2"],
+      startDayKey: "2026-02-07",
+      endDayKey: "2026-02-08",
+      currencyType: "USD",
+    })
+
+    expect(result.dayKeys).toEqual(["2026-02-07", "2026-02-08"])
+    expect(result.balanceTotals).toEqual([null, null])
+    expect(result.incomeTotals).toEqual([null, null])
+    expect(result.outcomeTotals).toEqual([null, null])
+    expect(result.coverage).toEqual([
+      { totalAccounts: 2, snapshotAccounts: 0, cashflowAccounts: 0 },
+      { totalAccounts: 2, snapshotAccounts: 0, cashflowAccounts: 0 },
+    ])
+  })
+
+  it("falls back to the default exchange rate when a CNY account rate is missing or invalid", () => {
+    const factor = UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+    const store = createStore({
+      a1: {
+        "2026-02-07": {
+          quota: 2 * factor,
+          today_income: 1 * factor,
+          today_quota_consumption: 0.5 * factor,
+          capturedAt: 0,
+          source: "refresh",
+        },
+      },
+      a2: {
+        "2026-02-07": {
+          quota: 3 * factor,
+          today_income: 2 * factor,
+          today_quota_consumption: 1 * factor,
+          capturedAt: 0,
+          source: "refresh",
+        },
+      },
+    })
+
+    const result = buildAggregatedDailyBalanceMoneySeries({
+      store,
+      accountIds: ["a1", "a2"],
+      startDayKey: "2026-02-07",
+      endDayKey: "2026-02-07",
+      currencyType: "CNY",
+      exchangeRateByAccountId: {
+        a1: 0,
+        a2: Number.NaN,
+      },
+    })
+
+    const fallbackRate = UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
+    expect(result.balanceTotals).toEqual([(2 + 3) * fallbackRate])
+    expect(result.incomeTotals).toEqual([(1 + 2) * fallbackRate])
+    expect(result.outcomeTotals).toEqual([(0.5 + 1) * fallbackRate])
+  })
+
   it("builds per-account daily series with per-account gaps (does not blank other accounts)", () => {
     const factor = UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
     const store = createStore({
@@ -275,6 +353,23 @@ describe("dailyBalanceHistory selectors", () => {
     expect(result.seriesByAccountId.a2.net).toEqual([-8])
   })
 
+  it("returns empty per-account series structures for empty selections", () => {
+    const result = buildPerAccountDailyBalanceMoneySeries({
+      store: null,
+      accountIds: [],
+      startDayKey: "2026-02-07",
+      endDayKey: "2026-02-08",
+      currencyType: "USD",
+    })
+
+    expect(result.dayKeys).toEqual(["2026-02-07", "2026-02-08"])
+    expect(result.seriesByAccountId).toEqual({})
+    expect(result.coverageByDay).toEqual([
+      { totalAccounts: 0, snapshotAccounts: 0, cashflowAccounts: 0 },
+      { totalAccounts: 0, snapshotAccounts: 0, cashflowAccounts: 0 },
+    ])
+  })
+
   it("summarizes per-account range totals and coverage", () => {
     const factor = UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
     const store = createStore({
@@ -338,5 +433,46 @@ describe("dailyBalanceHistory selectors", () => {
         totalDays: 2,
       },
     ])
+  })
+
+  it("returns null summary totals when an account has no snapshots in the selected range", () => {
+    const result = buildAccountRangeSummaries({
+      store: null,
+      accountIds: ["a1"],
+      startDayKey: "2026-02-07",
+      endDayKey: "2026-02-08",
+      currencyType: "CNY",
+      exchangeRateByAccountId: new Map([["a1", 8]]),
+    })
+
+    expect(result.dayKeys).toEqual(["2026-02-07", "2026-02-08"])
+    expect(result.summaries).toEqual([
+      {
+        accountId: "a1",
+        startBalance: null,
+        endBalance: null,
+        incomeTotal: null,
+        outcomeTotal: null,
+        netTotal: null,
+        snapshotDays: 0,
+        cashflowDays: 0,
+        totalDays: 2,
+      },
+    ])
+  })
+
+  it("returns no summaries when the selection is empty", () => {
+    const result = buildAccountRangeSummaries({
+      store: createStore({}),
+      accountIds: [],
+      startDayKey: "2026-02-07",
+      endDayKey: "2026-02-08",
+      currencyType: "USD",
+    })
+
+    expect(result).toEqual({
+      dayKeys: ["2026-02-07", "2026-02-08"],
+      summaries: [],
+    })
   })
 })

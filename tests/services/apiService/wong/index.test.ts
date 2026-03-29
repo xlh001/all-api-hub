@@ -1,39 +1,100 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { fetchCheckInStatus } from "~/services/apiService/wong"
-import { AuthTypeEnum } from "~/types"
+import {
+  fetchAccountData,
+  fetchCheckInStatus,
+  fetchSupportCheckIn,
+  refreshAccountData,
+} from "~/services/apiService/wong"
+import { AuthTypeEnum, SiteHealthStatus } from "~/types"
+
+const {
+  mockDetermineHealthStatus,
+  mockFetchAccountQuota,
+  mockFetchApi,
+  mockFetchTodayIncome,
+  mockFetchTodayUsage,
+  mockT,
+} = vi.hoisted(() => ({
+  mockDetermineHealthStatus: vi.fn(),
+  mockFetchAccountQuota: vi.fn(),
+  mockFetchApi: vi.fn(),
+  mockFetchTodayIncome: vi.fn(),
+  mockFetchTodayUsage: vi.fn(),
+  mockT: vi.fn((key: string) => `translated:${key}`),
+}))
+
+vi.mock("~/services/apiService/common", () => ({
+  determineHealthStatus: mockDetermineHealthStatus,
+  fetchAccountQuota: mockFetchAccountQuota,
+  fetchTodayIncome: mockFetchTodayIncome,
+  fetchTodayUsage: mockFetchTodayUsage,
+}))
 
 vi.mock("~/services/apiService/common/utils", () => ({
-  fetchApi: vi.fn(),
+  fetchApi: mockFetchApi,
+}))
+
+vi.mock("~/utils/i18n/core", () => ({
+  t: mockT,
 }))
 
 describe("apiService wong", () => {
-  it("fetchCheckInStatus returns false when backend says checked_in true", async () => {
-    const { fetchApi } = await import("~/services/apiService/common/utils")
-    vi.mocked(fetchApi).mockResolvedValueOnce({
-      success: true,
-      message: "",
-      data: {
-        enabled: true,
-        checked_in: true,
+  const baseRequest = {
+    baseUrl: "https://wong.example.com",
+    auth: {
+      authType: AuthTypeEnum.AccessToken,
+      userId: 1,
+      accessToken: "token",
+    },
+    checkIn: {
+      enableDetection: true,
+      siteStatus: {
+        isCheckedInToday: false,
+        lastDetectedAt: 111,
       },
+    },
+  } as any
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockDetermineHealthStatus.mockReturnValue({
+      status: SiteHealthStatus.Unknown,
+      message: "mapped error",
     })
-
-    const canCheckIn = await fetchCheckInStatus({
-      baseUrl: "https://wong.example.com",
-      auth: {
-        authType: AuthTypeEnum.AccessToken,
-        userId: 1,
-        accessToken: "token",
-      },
-    } as any)
-
-    expect(canCheckIn).toBe(false)
+    mockFetchAccountQuota.mockResolvedValue(1200)
+    mockFetchTodayUsage.mockResolvedValue({
+      today_quota_consumption: 10,
+      today_prompt_tokens: 20,
+      today_completion_tokens: 30,
+      today_requests_count: 2,
+    })
+    mockFetchTodayIncome.mockResolvedValue({
+      today_income: 50,
+    })
   })
 
-  it("fetchCheckInStatus returns true when backend says checked_in false", async () => {
-    const { fetchApi } = await import("~/services/apiService/common/utils")
-    vi.mocked(fetchApi).mockResolvedValueOnce({
+  it("reports check-in support only when the status endpoint returns a detectable result", async () => {
+    mockFetchApi
+      .mockResolvedValueOnce({
+        success: true,
+        message: "",
+        data: {
+          enabled: false,
+          checked_in: false,
+        },
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        message: "今天已经签到过啦",
+      })
+
+    await expect(fetchSupportCheckIn(baseRequest)).resolves.toBe(false)
+    await expect(fetchSupportCheckIn(baseRequest)).resolves.toBe(true)
+  })
+
+  it("normalizes none-auth requests before calling the WONG check-in endpoint", async () => {
+    mockFetchApi.mockResolvedValueOnce({
       success: true,
       message: "",
       data: {
@@ -42,101 +103,173 @@ describe("apiService wong", () => {
       },
     })
 
-    const canCheckIn = await fetchCheckInStatus({
-      baseUrl: "https://wong.example.com",
-      auth: {
-        authType: AuthTypeEnum.AccessToken,
-        userId: 1,
-        accessToken: "token",
-      },
-    } as any)
+    await expect(
+      fetchCheckInStatus({
+        ...baseRequest,
+        auth: {
+          authType: AuthTypeEnum.None,
+          accessToken: "",
+          userId: 1,
+        },
+      }),
+    ).resolves.toBe(true)
 
-    expect(canCheckIn).toBe(true)
+    expect(mockFetchApi).toHaveBeenCalledWith(
+      expect.objectContaining({
+        auth: expect.objectContaining({
+          authType: AuthTypeEnum.AccessToken,
+        }),
+      }),
+      expect.objectContaining({
+        endpoint: "/api/user/checkin",
+        options: expect.objectContaining({
+          method: "GET",
+          cache: "no-store",
+        }),
+      }),
+      false,
+    )
   })
 
-  it("fetchCheckInStatus returns undefined when enabled is false", async () => {
-    const { fetchApi } = await import("~/services/apiService/common/utils")
-    vi.mocked(fetchApi).mockResolvedValueOnce({
-      success: true,
-      message: "",
+  it("treats already-checked messages and checked_in payloads as not eligible for check-in", async () => {
+    mockFetchApi
+      .mockResolvedValueOnce({
+        success: true,
+        message: "Already checked in for today",
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        message: "",
+        data: {
+          enabled: true,
+          checked_in: true,
+        },
+      })
+
+    await expect(fetchCheckInStatus(baseRequest)).resolves.toBe(false)
+    await expect(fetchCheckInStatus(baseRequest)).resolves.toBe(false)
+  })
+
+  it("returns undefined for unsupported or malformed check-in responses", async () => {
+    mockFetchApi
+      .mockResolvedValueOnce({
+        success: false,
+        message: "server unavailable",
+        data: {
+          enabled: true,
+          checked_in: false,
+        },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        message: "",
+        data: {
+          enabled: true,
+        },
+      })
+
+    await expect(fetchCheckInStatus(baseRequest)).resolves.toBeUndefined()
+    await expect(fetchCheckInStatus(baseRequest)).resolves.toBeUndefined()
+  })
+
+  it("swallows status endpoint failures and reports an unknown check-in state", async () => {
+    mockFetchApi.mockRejectedValueOnce(new Error("endpoint down"))
+
+    await expect(fetchCheckInStatus(baseRequest)).resolves.toBeUndefined()
+  })
+
+  it("builds account data with detected check-in timestamps and unknown-status fallback", async () => {
+    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000)
+    mockFetchApi.mockResolvedValueOnce({
+      success: false,
+      message: "backend refused to say",
       data: {
-        enabled: false,
+        enabled: true,
         checked_in: false,
       },
     })
 
-    const canCheckIn = await fetchCheckInStatus({
-      baseUrl: "https://wong.example.com",
-      auth: {
-        authType: AuthTypeEnum.AccessToken,
-        userId: 1,
-        accessToken: "token",
+    const result = await fetchAccountData(baseRequest)
+
+    expect(result).toMatchObject({
+      quota: 1200,
+      today_income: 50,
+      today_quota_consumption: 10,
+      today_prompt_tokens: 20,
+      today_completion_tokens: 30,
+      today_requests_count: 2,
+      checkIn: {
+        enableDetection: true,
+        siteStatus: {
+          isCheckedInToday: undefined,
+          lastDetectedAt: 1_700_000_000_000,
+        },
       },
-    } as any)
-
-    expect(canCheckIn).toBeUndefined()
-  })
-
-  it("fetchCheckInStatus returns false when server returns already checked message with success=false", async () => {
-    const { fetchApi } = await import("~/services/apiService/common/utils")
-    vi.mocked(fetchApi).mockResolvedValueOnce({
-      success: false,
-      message: "今天已经签到过啦",
-      data: null,
     })
 
-    const canCheckIn = await fetchCheckInStatus({
-      baseUrl: "https://wong.example.com",
-      auth: {
-        authType: AuthTypeEnum.AccessToken,
-        userId: 1,
-        accessToken: "token",
-      },
-    } as any)
-
-    expect(canCheckIn).toBe(false)
+    nowSpy.mockRestore()
   })
 
-  it("fetchCheckInStatus returns false when server returns already checked message with success=true", async () => {
-    const { fetchApi } = await import("~/services/apiService/common/utils")
-    vi.mocked(fetchApi).mockResolvedValueOnce({
+  it("preserves the last known check-in state when detection is disabled", async () => {
+    const result = await fetchAccountData({
+      ...baseRequest,
+      checkIn: {
+        enableDetection: false,
+        siteStatus: {
+          isCheckedInToday: true,
+          lastDetectedAt: 555,
+        },
+      },
+    })
+
+    expect(result.checkIn.siteStatus).toEqual({
+      isCheckedInToday: true,
+      lastDetectedAt: 555,
+    })
+    expect(mockFetchApi).not.toHaveBeenCalled()
+  })
+
+  it("returns a healthy refresh result when account aggregation succeeds", async () => {
+    mockFetchApi.mockResolvedValueOnce({
       success: true,
-      message: "今天已经签到过啦",
-      data: undefined,
-    })
-
-    const canCheckIn = await fetchCheckInStatus({
-      baseUrl: "https://wong.example.com",
-      auth: {
-        authType: AuthTypeEnum.AccessToken,
-        userId: 1,
-        accessToken: "token",
-      },
-    } as any)
-
-    expect(canCheckIn).toBe(false)
-  })
-
-  it("fetchCheckInStatus returns false when server returns success=false but checked_in true", async () => {
-    const { fetchApi } = await import("~/services/apiService/common/utils")
-    vi.mocked(fetchApi).mockResolvedValueOnce({
-      success: false,
       message: "",
       data: {
         enabled: true,
-        checked_in: true,
+        checked_in: false,
       },
     })
 
-    const canCheckIn = await fetchCheckInStatus({
-      baseUrl: "https://wong.example.com",
-      auth: {
-        authType: AuthTypeEnum.AccessToken,
-        userId: 1,
-        accessToken: "token",
-      },
-    } as any)
+    const result = await refreshAccountData(baseRequest)
 
-    expect(canCheckIn).toBe(false)
+    expect(result).toEqual({
+      success: true,
+      data: expect.objectContaining({
+        quota: 1200,
+        checkIn: expect.objectContaining({
+          siteStatus: expect.objectContaining({
+            isCheckedInToday: false,
+          }),
+        }),
+      }),
+      healthStatus: {
+        status: SiteHealthStatus.Healthy,
+        message: "translated:account:healthStatus.normal",
+      },
+    })
+  })
+
+  it("maps refresh failures through determineHealthStatus", async () => {
+    mockFetchAccountQuota.mockRejectedValueOnce(new Error("quota failed"))
+
+    const result = await refreshAccountData(baseRequest)
+
+    expect(result).toEqual({
+      success: false,
+      healthStatus: {
+        status: SiteHealthStatus.Unknown,
+        message: "mapped error",
+      },
+    })
+    expect(mockDetermineHealthStatus).toHaveBeenCalled()
   })
 })
