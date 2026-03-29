@@ -196,4 +196,90 @@ describe("ldohSiteLookup background refresh", () => {
       { id: "site-1", apiBaseUrl: "https://api.example.com" },
     ])
   })
+
+  it("deduplicates concurrent refresh requests and reuses the same result", async () => {
+    vi.resetModules()
+
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue({
+      ...DEFAULT_PREFERENCES,
+      tempWindowFallback: buildTempWindowPrefs(),
+    })
+
+    const { writeLdohSiteListCache } = await import(
+      "~/services/integrations/ldohSiteLookup/cache"
+    )
+
+    let resolveWrite:
+      | ((value: {
+          version: 1
+          fetchedAt: number
+          expiresAt: number
+          items: Array<{ id: string; apiBaseUrl: string }>
+        }) => void)
+      | null = null
+
+    vi.mocked(writeLdohSiteListCache).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveWrite = resolve as typeof resolveWrite
+        }),
+    )
+
+    let requestCount = 0
+    server.use(
+      http.get(ldohSitesUrl, () => {
+        requestCount += 1
+        return HttpResponse.json({
+          sites: [{ id: "site-1", apiBaseUrl: "https://api.example.com" }],
+        })
+      }),
+    )
+
+    const { refreshLdohSiteListCache } = await import(
+      "~/services/integrations/ldohSiteLookup/background"
+    )
+
+    const first = refreshLdohSiteListCache()
+    const second = refreshLdohSiteListCache()
+
+    await vi.waitFor(() => {
+      expect(requestCount).toBe(1)
+      expect(writeLdohSiteListCache).toHaveBeenCalledTimes(1)
+    })
+
+    expect(resolveWrite).not.toBeNull()
+
+    resolveWrite!({
+      version: 1,
+      fetchedAt: 1,
+      expiresAt: 2,
+      items: [{ id: "site-1", apiBaseUrl: "https://api.example.com" }],
+    })
+
+    await expect(first).resolves.toEqual({ success: true, cachedCount: 1 })
+    await expect(second).resolves.toEqual({ success: true, cachedCount: 1 })
+  })
+
+  it("returns an error for unknown runtime actions", async () => {
+    vi.resetModules()
+
+    const { handleLdohSiteLookupMessage } = await import(
+      "~/services/integrations/ldohSiteLookup/background"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleLdohSiteLookupMessage(
+      { action: "unknown-action" } as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Unknown LDOH site lookup action.",
+    })
+  })
 })

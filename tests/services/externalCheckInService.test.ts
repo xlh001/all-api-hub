@@ -64,6 +64,114 @@ describe("handleExternalCheckInMessage", () => {
     })
   })
 
+  it("returns error for unknown actions", async () => {
+    const sendResponse = vi.fn()
+
+    await handleExternalCheckInMessage(
+      { action: "UNKNOWN_ACTION" },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Unknown action",
+    })
+  })
+
+  it("reports invalid account ids without querying storage", async () => {
+    const sendResponse = vi.fn()
+    mockedAccountStorage.getAccountById.mockResolvedValueOnce(null as any)
+
+    await handleExternalCheckInMessage(
+      {
+        action: RuntimeActionIds.ExternalCheckInOpenAndMark,
+        accountIds: ["", 123, "ok-id"],
+      },
+      sendResponse,
+    )
+
+    expect(mockedAccountStorage.getAccountById).toHaveBeenCalledTimes(1)
+    expect(mockedAccountStorage.getAccountById).toHaveBeenCalledWith("ok-id")
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        data: expect.objectContaining({
+          results: expect.arrayContaining([
+            expect.objectContaining({
+              accountId: "",
+              error: "Invalid accountId",
+            }),
+            expect.objectContaining({
+              accountId: "123",
+              error: "Invalid accountId",
+            }),
+          ]),
+        }),
+      }),
+    )
+  })
+
+  it("reports missing accounts without opening any pages", async () => {
+    const sendResponse = vi.fn()
+    mockedAccountStorage.getAccountById.mockResolvedValueOnce(null as any)
+
+    await handleExternalCheckInMessage(
+      {
+        action: RuntimeActionIds.ExternalCheckInOpenAndMark,
+        accountIds: ["missing-id"],
+      },
+      sendResponse,
+    )
+
+    expect(mockedCreateTab).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        data: expect.objectContaining({
+          results: [
+            expect.objectContaining({
+              accountId: "missing-id",
+              error: "Account not found",
+            }),
+          ],
+        }),
+      }),
+    )
+  })
+
+  it("reports accounts missing a custom check-in URL", async () => {
+    const sendResponse = vi.fn()
+    mockedAccountStorage.getAccountById.mockResolvedValue({
+      id: "a0",
+      site_url: "https://example.com",
+      site_type: "one-api",
+      checkIn: { customCheckIn: { url: "   " } },
+    } as any)
+
+    await handleExternalCheckInMessage(
+      {
+        action: RuntimeActionIds.ExternalCheckInOpenAndMark,
+        accountIds: ["a0"],
+      },
+      sendResponse,
+    )
+
+    expect(mockedCreateTab).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        data: expect.objectContaining({
+          results: [
+            expect.objectContaining({
+              accountId: "a0",
+              error: "Missing custom check-in URL",
+            }),
+          ],
+        }),
+      }),
+    )
+  })
+
   it("does not mark account when check-in tab open fails", async () => {
     const sendResponse = vi.fn()
     mockedAccountStorage.getAccountById.mockResolvedValue({
@@ -217,6 +325,92 @@ describe("handleExternalCheckInMessage", () => {
           failedCount: 0,
           totalCount: 1,
         }),
+      }),
+    )
+  })
+
+  it("skips redeem when the account disables redeem-with-check-in", async () => {
+    const sendResponse = vi.fn()
+    mockedAccountStorage.getAccountById.mockResolvedValue({
+      id: "a4",
+      site_url: "https://example.com",
+      site_type: "one-api",
+      checkIn: {
+        customCheckIn: {
+          url: "https://checkin.example",
+          openRedeemWithCheckIn: false,
+        },
+      },
+    } as any)
+    mockedCreateTab.mockResolvedValueOnce({ id: 44 } as any)
+    mockedAccountStorage.markAccountAsCustomCheckedIn.mockResolvedValue(true)
+
+    await handleExternalCheckInMessage(
+      {
+        action: RuntimeActionIds.ExternalCheckInOpenAndMark,
+        accountIds: ["a4"],
+      },
+      sendResponse,
+    )
+
+    expect(mockedJoinUrl).not.toHaveBeenCalled()
+    expect(mockedCreateTab).toHaveBeenCalledTimes(1)
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          results: [
+            expect.objectContaining({
+              accountId: "a4",
+              openedRedeem: null,
+              openedCheckIn: true,
+              markedCheckedIn: true,
+            }),
+          ],
+        }),
+      }),
+    )
+  })
+
+  it("recreates the target window when adding a tab to the existing window fails", async () => {
+    const sendResponse = vi.fn()
+    mockedHasWindowsAPI.mockReturnValue(true)
+    mockedAccountStorage.getAccountById.mockResolvedValue({
+      id: "a5",
+      site_url: "https://example.com",
+      site_type: "one-api",
+      checkIn: {
+        customCheckIn: {
+          url: "https://checkin.example",
+          openRedeemWithCheckIn: true,
+        },
+      },
+    } as any)
+    mockedCreateWindow
+      .mockResolvedValueOnce({ id: 300 } as any)
+      .mockResolvedValueOnce({ id: 301 } as any)
+    mockedCreateTab.mockRejectedValueOnce(new Error("window closed"))
+    mockedAccountStorage.markAccountAsCustomCheckedIn.mockResolvedValue(true)
+
+    await handleExternalCheckInMessage(
+      {
+        action: RuntimeActionIds.ExternalCheckInOpenAndMark,
+        accountIds: ["a5"],
+        openInNewWindow: true,
+      },
+      sendResponse,
+    )
+
+    expect(mockedCreateWindow).toHaveBeenNthCalledWith(2, {
+      url: "https://checkin.example",
+      focused: true,
+    })
+    expect(
+      mockedAccountStorage.markAccountAsCustomCheckedIn,
+    ).toHaveBeenCalledWith("a5")
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
       }),
     )
   })

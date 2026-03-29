@@ -57,4 +57,22 @@ describe("ldohSiteLookup cache + url helpers", () => {
       ),
     ).toBe("https://ldoh.105117.xyz/?q=api.example.com")
   })
+
+  it("returns null match parts and no deeplink for non-http or invalid inputs", () => {
+    expect(normalizeUrlForLdohMatch("mailto:test@example.com")).toEqual({
+      origin: null,
+      hostname: null,
+    })
+    expect(normalizeUrlForLdohMatch("")).toEqual({
+      origin: null,
+      hostname: null,
+    })
+    expect(buildLdohSiteSearchUrlFromUrl("javascript:alert(1)")).toBeNull()
+  })
+
+  it("builds a normalized deeplink from scheme-less host input", () => {
+    expect(buildLdohSiteSearchUrlFromUrl(" API.Example.com/path ")).toBe(
+      "https://ldoh.105117.xyz/?q=api.example.com",
+    )
+  })
 })
