@@ -1,18 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SUB2API } from "~/constants/siteType"
+import { UI_CONSTANTS } from "~/constants/ui"
 import {
   extractDomainPrefix,
+  getSiteName,
   isValidAccount,
   isValidExchangeRate,
+  parseManualQuotaFromUsd,
   validateAndUpdateAccount,
 } from "~/services/accounts/accountOperations"
 import { AuthTypeEnum } from "~/types"
 
-const { mockFetchAccountData, mockUpdateAccount } = vi.hoisted(() => ({
-  mockFetchAccountData: vi.fn(),
-  mockUpdateAccount: vi.fn(),
-}))
+const { mockFetchAccountData, mockFetchSiteStatus, mockUpdateAccount } =
+  vi.hoisted(() => ({
+    mockFetchAccountData: vi.fn(),
+    mockFetchSiteStatus: vi.fn(),
+    mockUpdateAccount: vi.fn(),
+  }))
 
 vi.mock("~/services/apiService", async (importOriginal) => {
   const actual = await importOriginal<typeof import("~/services/apiService")>()
@@ -20,6 +25,7 @@ vi.mock("~/services/apiService", async (importOriginal) => {
     ...actual,
     getApiService: vi.fn(() => ({
       fetchAccountData: mockFetchAccountData,
+      fetchSiteStatus: mockFetchSiteStatus,
     })),
   }
 })
@@ -40,6 +46,7 @@ vi.mock("~/services/accounts/accountStorage", async (importOriginal) => {
 describe("accountOperations", () => {
   beforeEach(() => {
     mockFetchAccountData.mockReset()
+    mockFetchSiteStatus.mockReset()
     mockUpdateAccount.mockReset()
   })
 
@@ -108,6 +115,66 @@ describe("accountOperations", () => {
           tagIds: [],
         }),
       )
+    })
+
+    it("returns a stable failure when the refreshed update cannot be persisted", async () => {
+      mockFetchAccountData.mockResolvedValueOnce({
+        quota: 1,
+        today_prompt_tokens: 0,
+        today_completion_tokens: 0,
+        today_quota_consumption: 0,
+        today_requests_count: 0,
+        today_income: 0,
+        checkIn: { enableDetection: false },
+      })
+      mockUpdateAccount.mockResolvedValueOnce(false)
+
+      const result = await validateAndUpdateAccount(
+        "account-1",
+        "https://api.example.com",
+        "Test Site",
+        "user",
+        "token",
+        "1",
+        "7.0",
+        "notes",
+        [],
+        { enableDetection: false },
+        "openai",
+        AuthTypeEnum.AccessToken,
+        "",
+      )
+
+      expect(result).toEqual({
+        success: false,
+        message: "messages:errors.validation.updateAccountFailed",
+      })
+    })
+
+    it("returns the same stable failure when the config-only fallback update cannot be persisted", async () => {
+      mockFetchAccountData.mockRejectedValueOnce(new Error("network error"))
+      mockUpdateAccount.mockResolvedValueOnce(false)
+
+      const result = await validateAndUpdateAccount(
+        "account-1",
+        "https://api.example.com",
+        "Test Site",
+        "user",
+        "token",
+        "1",
+        "7.0",
+        "notes",
+        [],
+        { enableDetection: false },
+        "openai",
+        AuthTypeEnum.AccessToken,
+        "",
+      )
+
+      expect(result).toEqual({
+        success: false,
+        message: "messages:errors.validation.updateAccountFailed",
+      })
     })
   })
 
@@ -237,6 +304,21 @@ describe("accountOperations", () => {
     })
   })
 
+  describe("parseManualQuotaFromUsd", () => {
+    it("rounds valid manual balances into quota units", () => {
+      expect(parseManualQuotaFromUsd("1.234")).toBe(
+        Math.round(1.234 * UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR),
+      )
+    })
+
+    it("rejects blank, negative, and non-finite manual balances", () => {
+      expect(parseManualQuotaFromUsd(undefined)).toBeUndefined()
+      expect(parseManualQuotaFromUsd("   ")).toBeUndefined()
+      expect(parseManualQuotaFromUsd("-1")).toBeUndefined()
+      expect(parseManualQuotaFromUsd("Infinity")).toBeUndefined()
+    })
+  })
+
   describe("extractDomainPrefix", () => {
     it("extracts simple domain", () => {
       expect(extractDomainPrefix("example.com")).toBe("Example")
@@ -261,6 +343,47 @@ describe("accountOperations", () => {
 
     it("capitalizes first letter", () => {
       expect(extractDomainPrefix("github.com")).toBe("Github")
+    })
+  })
+
+  describe("getSiteName", () => {
+    it("prefers a custom browser-tab title without calling site status", async () => {
+      const result = await getSiteName({
+        id: 1,
+        title: "Custom Portal",
+        url: "https://example.com/console",
+      } as browser.tabs.Tab)
+
+      expect(result).toBe("Custom Portal")
+      expect(mockFetchSiteStatus).not.toHaveBeenCalled()
+    })
+
+    it("falls back to system_name when the tab title is just a default site label", async () => {
+      mockFetchSiteStatus.mockResolvedValueOnce({
+        system_name: "Billing Center",
+      })
+
+      const result = await getSiteName({
+        id: 2,
+        title: "new-api",
+        url: "https://example.com/console",
+      } as browser.tabs.Tab)
+
+      expect(result).toBe("Billing Center")
+      expect(mockFetchSiteStatus).toHaveBeenCalledWith({
+        baseUrl: "https://example.com",
+        auth: { authType: AuthTypeEnum.None },
+      })
+    })
+
+    it("falls back to the normalized domain when site status also returns a default-like name", async () => {
+      mockFetchSiteStatus.mockResolvedValueOnce({
+        system_name: "one-api",
+      })
+
+      const result = await getSiteName("https://api.example.co.uk/console")
+
+      expect(result).toBe("Example")
     })
   })
 })

@@ -543,4 +543,325 @@ describe("cliProxyService.importToCliProxy", () => {
       "messages:toast.error.operationFailedGeneric",
     )
   })
+
+  it("returns config-missing when stored CLI Proxy settings are incomplete", async () => {
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue({
+      cliProxy: {
+        baseUrl: "http://localhost:8317/v0/management",
+        managementKey: "",
+      },
+    } as any)
+
+    await expect(verifyCliProxyManagementConnection()).resolves.toMatchObject({
+      success: false,
+      message: expect.stringContaining("messages:cliproxy.configMissing"),
+    })
+
+    await expect(importToCliProxy(createBaseOptions())).resolves.toMatchObject({
+      success: false,
+      message: expect.stringContaining("messages:cliproxy.configMissing"),
+    })
+  })
+
+  it("maps network failures to an unreachable management API hint", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("Failed to fetch")) as any,
+    )
+
+    const result = await verifyCliProxyManagementConnection({
+      baseUrl: "http://localhost:8317/v0/management",
+      managementKey: "k",
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.message).toContain(
+      "messages:cliproxy.managementApiUnreachable",
+    )
+  })
+
+  it("maps 401 management API failures to the invalid-key message", async () => {
+    server.use(
+      http.get(
+        "http://localhost:8317/v0/management/openai-compatibility",
+        () => new HttpResponse("nope", { status: 401 }),
+      ),
+    )
+
+    const result = await verifyCliProxyManagementConnection({
+      baseUrl: "http://localhost:8317/v0/management",
+      managementKey: "bad-key",
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.message).toContain(
+      "messages:cliproxy.managementApiInvalidKey",
+    )
+  })
+
+  it("maps 404 and 5xx management API failures to their specific connection-check messages", async () => {
+    server.use(
+      http.get(
+        "http://localhost:8317/v0/management/openai-compatibility",
+        () => new HttpResponse("missing", { status: 404 }),
+      ),
+    )
+
+    await expect(
+      verifyCliProxyManagementConnection({
+        baseUrl: "http://localhost:8317/v0/management",
+        managementKey: "k",
+      }),
+    ).resolves.toMatchObject({
+      success: false,
+      message: expect.stringContaining(
+        "messages:cliproxy.managementApiNotFound",
+      ),
+    })
+
+    server.use(
+      http.get(
+        "http://localhost:8317/v0/management/openai-compatibility",
+        () => new HttpResponse("server exploded", { status: 503 }),
+      ),
+    )
+
+    await expect(
+      verifyCliProxyManagementConnection({
+        baseUrl: "http://localhost:8317/v0/management",
+        managementKey: "k",
+      }),
+    ).resolves.toMatchObject({
+      success: false,
+      message: expect.stringContaining(
+        "messages:cliproxy.managementApiServerError",
+      ),
+    })
+  })
+
+  it("maps other HTTP management API failures to the generic http-error message", async () => {
+    server.use(
+      http.get(
+        "http://localhost:8317/v0/management/openai-compatibility",
+        () => new HttpResponse("teapot", { status: 418 }),
+      ),
+    )
+
+    await expect(
+      verifyCliProxyManagementConnection({
+        baseUrl: "http://localhost:8317/v0/management",
+        managementKey: "k",
+      }),
+    ).resolves.toMatchObject({
+      success: false,
+      message: expect.stringContaining(
+        "messages:cliproxy.managementApiHttpError",
+      ),
+    })
+  })
+
+  it("updates an OpenAI-compatible provider when the existing provider matches by normalized name", async () => {
+    mockCliProxyPreferences()
+
+    const existingProvider = {
+      name: "  Example  ",
+      "base-url": "https://other.example.com/v1",
+      "api-key-entries": [{ "api-key": "sk-old", "proxy-url": "" }],
+      headers: { "X-Provider": "example" },
+    }
+
+    const fetchMock = vi.fn().mockImplementation((input: any, init?: any) => {
+      const url = String(input)
+      const method = init?.method ?? "GET"
+
+      if (url.endsWith("/openai-compatibility") && method === "GET") {
+        return Promise.resolve(
+          new Response(JSON.stringify([existingProvider]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        )
+      }
+
+      if (url.endsWith("/openai-compatibility") && method === "PATCH") {
+        return Promise.resolve(new Response("", { status: 200 }))
+      }
+
+      return Promise.resolve(new Response("", { status: 500 }))
+    })
+
+    vi.stubGlobal("fetch", fetchMock as any)
+
+    const result = await importToCliProxy(
+      createBaseOptions({
+        providerName: " example ",
+        providerBaseUrl: "https://new.example.com/v1",
+      }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(
+      fetchMock.mock.calls.some(([, init]) => init?.method === "PATCH"),
+    ).toBe(true)
+    expect(
+      fetchMock.mock.calls.some(([, init]) => init?.method === "PUT"),
+    ).toBe(false)
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    )
+    const payload = JSON.parse(patchCall?.[1].body) as any
+    expect(payload.value).toMatchObject({
+      name: "example",
+      "base-url": "https://new.example.com/v1",
+    })
+    expect(payload.value["api-key-entries"]).toEqual([
+      { "api-key": "sk-old", "proxy-url": "" },
+      { "api-key": "sk-test", "proxy-url": "" },
+    ])
+  })
+
+  it("derives the provider type from apiTypeHint when providerType is omitted", async () => {
+    mockCliProxyPreferences()
+
+    const fetchMock = vi.fn().mockImplementation((input: any, init?: any) => {
+      const url = String(input)
+      const method = init?.method ?? "GET"
+
+      if (url.endsWith("/claude-api-key") && method === "GET") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ "claude-api-key": [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        )
+      }
+
+      if (url.endsWith("/claude-api-key") && method === "PUT") {
+        return Promise.resolve(new Response("", { status: 200 }))
+      }
+
+      return Promise.resolve(new Response("", { status: 500 }))
+    })
+
+    vi.stubGlobal("fetch", fetchMock as any)
+
+    const result = await importToCliProxy(
+      createBaseOptions({
+        providerType: undefined,
+        apiTypeHint: "anthropic",
+        providerBaseUrl: " https://api.anthropic.com/v1/messages ",
+        token: buildApiToken({ key: "anthropic-key" }),
+      }),
+    )
+
+    expect(result.success).toBe(true)
+
+    const putCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).endsWith("/claude-api-key") && init?.method === "PUT",
+    )
+    expect(putCall).toBeTruthy()
+
+    const payload = JSON.parse(putCall?.[1].body) as any[]
+    expect(payload[0]).toMatchObject({
+      "api-key": "anthropic-key",
+      "base-url": "https://api.anthropic.com",
+    })
+  })
+
+  it("falls back to account-derived names and default base URLs when OpenAI-compatible overrides are blank", async () => {
+    mockCliProxyPreferences()
+
+    const fetchMock = vi.fn().mockImplementation((input: any, init?: any) => {
+      const url = String(input)
+      const method = init?.method ?? "GET"
+
+      if (url.endsWith("/openai-compatibility") && method === "GET") {
+        return Promise.resolve(
+          new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        )
+      }
+
+      if (url.endsWith("/openai-compatibility") && method === "PUT") {
+        return Promise.resolve(new Response("", { status: 200 }))
+      }
+
+      return Promise.resolve(new Response("", { status: 500 }))
+    })
+
+    vi.stubGlobal("fetch", fetchMock as any)
+
+    const result = await importToCliProxy(
+      createBaseOptions({
+        account: buildDisplaySiteData({
+          id: "acc",
+          name: "",
+          baseUrl: "https://fallback.example.com",
+        }),
+        providerName: "   ",
+        providerBaseUrl: "   ",
+      }),
+    )
+
+    expect(result.success).toBe(true)
+
+    const putCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PUT",
+    )
+    const payload = JSON.parse(putCall?.[1].body) as any[]
+    expect(payload[0]).toMatchObject({
+      name: "https://fallback.example.com",
+      "base-url": "https://fallback.example.com/v1",
+    })
+  })
+
+  it("keeps the provider base URL empty for Claude imports when no normalized URL can be derived", async () => {
+    mockCliProxyPreferences()
+
+    const fetchMock = vi.fn().mockImplementation((input: any, init?: any) => {
+      const url = String(input)
+      const method = init?.method ?? "GET"
+
+      if (url.endsWith("/claude-api-key") && method === "GET") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ "claude-api-key": [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        )
+      }
+
+      if (url.endsWith("/claude-api-key") && method === "PUT") {
+        return Promise.resolve(new Response("", { status: 200 }))
+      }
+
+      return Promise.resolve(new Response("", { status: 500 }))
+    })
+
+    vi.stubGlobal("fetch", fetchMock as any)
+
+    const result = await importToCliProxy(
+      createBaseOptions({
+        providerType: CLI_PROXY_PROVIDER_TYPES.CLAUDE_API_KEY,
+        providerBaseUrl: "   ",
+        token: buildApiToken({ key: "claude-key" }),
+      }),
+    )
+
+    expect(result.success).toBe(true)
+
+    const putCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).endsWith("/claude-api-key") && init?.method === "PUT",
+    )
+    const payload = JSON.parse(putCall?.[1].body) as any[]
+    expect(payload[0]).toMatchObject({
+      "api-key": "claude-key",
+      "base-url": "",
+    })
+  })
 })

@@ -14,6 +14,7 @@ import {
   autoRefreshService,
   handleAutoRefreshMessage,
 } from "~/services/accounts/autoRefreshService"
+import { usageHistoryScheduler } from "~/services/history/usageHistory/scheduler"
 import type { UserPreferences } from "~/services/preferences/userPreferences"
 import { userPreferences } from "~/services/preferences/userPreferences"
 import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
@@ -36,6 +37,12 @@ vi.mock("~/services/preferences/userPreferences", () => ({
   userPreferences: {
     getPreferences: vi.fn(),
     savePreferences: vi.fn(),
+  },
+}))
+
+vi.mock("~/services/history/usageHistory/scheduler", () => ({
+  usageHistoryScheduler: {
+    runAfterRefreshSync: vi.fn(),
   },
 }))
 
@@ -154,6 +161,10 @@ describe("AutoRefreshService", () => {
 
     it("should create timer and trigger background refresh when enabled", async () => {
       const interval = 300 // 5 minutes
+      const notifyFrontendSpy = vi.spyOn(
+        autoRefreshService as any,
+        "notifyFrontend",
+      )
 
       const mockPreferences: UserPreferences = {
         accountAutoRefresh: {
@@ -167,13 +178,66 @@ describe("AutoRefreshService", () => {
       vi.mocked(userPreferences.getPreferences).mockResolvedValue(
         mockPreferences,
       )
+      vi.mocked(accountStorage.refreshAllAccounts).mockResolvedValue({
+        success: 2,
+        failed: 1,
+        refreshedCount: 2,
+        latestSyncTime: Date.now(),
+      })
+      vi.mocked(usageHistoryScheduler.runAfterRefreshSync).mockResolvedValue({
+        totals: { success: 2, skipped: 0, error: 0, unsupported: 0 },
+        perAccount: [],
+      })
 
       await autoRefreshService.setupAutoRefresh()
 
       expect(autoRefreshService.getStatus().isRunning).toBe(true)
+      await vi.advanceTimersByTimeAsync(interval * 1000)
+
+      expect(accountStorage.refreshAllAccounts).toHaveBeenCalledWith(false)
+      expect(usageHistoryScheduler.runAfterRefreshSync).toHaveBeenCalledTimes(1)
+      expect(notifyFrontendSpy).toHaveBeenCalledWith("refresh_completed", {
+        success: 2,
+        failed: 1,
+        refreshedCount: 2,
+        latestSyncTime: expect.any(Number),
+      })
+      notifyFrontendSpy.mockRestore()
 
       // Clean up timer to avoid hanging
       autoRefreshService.stopAutoRefresh()
+    })
+
+    it("should report refresh errors without triggering usage-history sync", async () => {
+      const interval = 60
+      const notifyFrontendSpy = vi.spyOn(
+        autoRefreshService as any,
+        "notifyFrontend",
+      )
+      const mockPreferences: UserPreferences = {
+        accountAutoRefresh: {
+          ...DEFAULT_ACCOUNT_AUTO_REFRESH,
+          enabled: true,
+          interval,
+        },
+        preferencesVersion: 5,
+      } as UserPreferences
+
+      vi.mocked(userPreferences.getPreferences).mockResolvedValue(
+        mockPreferences,
+      )
+      vi.mocked(accountStorage.refreshAllAccounts).mockRejectedValue(
+        new Error("background failed"),
+      )
+
+      await autoRefreshService.setupAutoRefresh()
+      await vi.advanceTimersByTimeAsync(interval * 1000)
+
+      expect(usageHistoryScheduler.runAfterRefreshSync).not.toHaveBeenCalled()
+      expect(notifyFrontendSpy).toHaveBeenCalledWith("refresh_error", {
+        error: "Error: background failed",
+      })
+      notifyFrontendSpy.mockRestore()
     })
 
     it("should handle setup errors gracefully", async () => {
