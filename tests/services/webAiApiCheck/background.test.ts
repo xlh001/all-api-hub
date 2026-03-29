@@ -49,6 +49,28 @@ vi.mock("~/services/verification/aiApiVerification", async (importOriginal) => {
 })
 
 describe("webAiApiCheck background handlers", () => {
+  it("shouldPrompt rejects missing page urls", async () => {
+    vi.resetModules()
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckShouldPrompt,
+        pageUrl: "   ",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Missing pageUrl",
+    })
+  })
+
   it("shouldPrompt returns false when auto-detect is disabled", async () => {
     vi.resetModules()
     const { userPreferences } = await import(
@@ -122,6 +144,85 @@ describe("webAiApiCheck background handlers", () => {
     expect(sendResponse).toHaveBeenCalledWith({
       success: true,
       shouldPrompt: true,
+    })
+  })
+
+  it("shouldPrompt falls back to default web-ai-api-check preferences when the section is missing", async () => {
+    vi.resetModules()
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue({
+      ...DEFAULT_PREFERENCES,
+      webAiApiCheck: undefined,
+    })
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckShouldPrompt,
+        pageUrl: "https://example.com/docs",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      shouldPrompt: false,
+    })
+  })
+
+  it("fetchModels rejects requests with missing required fields", async () => {
+    vi.resetModules()
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckFetchModels,
+        apiType: "openai-compatible",
+        baseUrl: " ",
+        apiKey: "",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Missing apiType, baseUrl, or apiKey",
+    })
+  })
+
+  it("fetchModels rejects invalid base urls before calling providers", async () => {
+    vi.resetModules()
+    const { fetchGoogleModelIds } = await import("~/services/apiService/google")
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckFetchModels,
+        apiType: "google",
+        baseUrl: "not a url",
+        apiKey: "AIza-test-key",
+      },
+      sendResponse,
+    )
+
+    expect(fetchGoogleModelIds).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Invalid baseUrl",
     })
   })
 
@@ -255,6 +356,139 @@ describe("webAiApiCheck background handlers", () => {
     })
   })
 
+  it("fetchModels returns a stable error for unsupported api types after generic normalization", async () => {
+    vi.resetModules()
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckFetchModels,
+        apiType: "custom-api" as any,
+        baseUrl: "proxy.example.com/api",
+        apiKey: "sk-test-unsupported",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Unsupported apiType",
+    })
+  })
+
+  it("runProbe rejects requests with missing required fields", async () => {
+    vi.resetModules()
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckRunProbe,
+        apiType: "openai-compatible",
+        baseUrl: "https://proxy.example.com/api/v1",
+        apiKey: "sk-secret-xyz",
+        probeId: "" as any,
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Missing apiType, baseUrl, apiKey, or probeId",
+    })
+  })
+
+  it("runProbe rejects invalid base urls before dispatching a probe", async () => {
+    vi.resetModules()
+    const { runApiVerificationProbe } = await import(
+      "~/services/verification/aiApiVerification"
+    )
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckRunProbe,
+        apiType: "openai-compatible",
+        baseUrl: "not a url",
+        apiKey: "sk-secret-xyz",
+        probeId: "text-generation",
+      },
+      sendResponse,
+    )
+
+    expect(runApiVerificationProbe).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "Invalid baseUrl",
+    })
+  })
+
+  it("runProbe forwards undefined model ids when the input only contains whitespace", async () => {
+    vi.resetModules()
+    const { runApiVerificationProbe } = await import(
+      "~/services/verification/aiApiVerification"
+    )
+    vi.mocked(runApiVerificationProbe).mockResolvedValue({
+      id: "text-generation",
+      status: "pass",
+      latencyMs: 42,
+      summary: "ok",
+      input: {
+        apiType: "openai-compatible",
+        baseUrl: "https://proxy.example.com/api",
+      },
+    } as any)
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckRunProbe,
+        apiType: "openai-compatible",
+        baseUrl: "https://proxy.example.com/api/v1",
+        apiKey: "sk-secret-xyz",
+        modelId: "   ",
+        probeId: "text-generation",
+      },
+      sendResponse,
+    )
+
+    expect(runApiVerificationProbe).toHaveBeenCalledWith({
+      apiType: "openai-compatible",
+      apiKey: "sk-secret-xyz",
+      baseUrl: "https://proxy.example.com/api",
+      modelId: undefined,
+      probeId: "text-generation",
+    })
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      result: {
+        id: "text-generation",
+        status: "pass",
+        latencyMs: 42,
+        summary: "ok",
+        input: {
+          apiType: "openai-compatible",
+          baseUrl: "https://proxy.example.com/api",
+        },
+      },
+    })
+  })
+
   it("runProbe sanitizes apiKey when probe execution throws", async () => {
     vi.resetModules()
     const { runApiVerificationProbe } = await import(
@@ -285,6 +519,48 @@ describe("webAiApiCheck background handlers", () => {
     expect(response?.success).toBe(true)
     expect(response?.result?.status).toBe("fail")
     expect(response?.result?.summary).toBe("Forbidden: [REDACTED]")
+  })
+
+  it("runProbe omits summary params when the failure has no inferable status code", async () => {
+    vi.resetModules()
+    const { runApiVerificationProbe } = await import(
+      "~/services/verification/aiApiVerification"
+    )
+    vi.mocked(runApiVerificationProbe).mockRejectedValue(
+      new Error("Socket hang up: sk-secret-xyz"),
+    )
+
+    const { handleWebAiApiCheckMessage } = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const sendResponse = vi.fn()
+    await handleWebAiApiCheckMessage(
+      {
+        action: RuntimeActionIds.ApiCheckRunProbe,
+        apiType: "openai-compatible",
+        baseUrl: "https://proxy.example.com/api/v1",
+        apiKey: "sk-secret-xyz",
+        probeId: "text-generation",
+      },
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      result: {
+        id: "text-generation",
+        status: "fail",
+        latencyMs: 0,
+        summary: "Socket hang up: [REDACTED]",
+        summaryKey: undefined,
+        summaryParams: undefined,
+        input: {
+          apiType: "openai-compatible",
+          baseUrl: "https://proxy.example.com/api",
+        },
+      },
+    })
   })
 
   it("saveProfile normalizes baseUrl and persists a profile without echoing secrets", async () => {
