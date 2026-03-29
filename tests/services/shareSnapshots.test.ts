@@ -87,6 +87,61 @@ describe("shareSnapshots", () => {
         vi.useRealTimers()
       }
     })
+
+    it("normalizes invalid numeric inputs before exposing overview payload data", () => {
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(new Date("2026-02-10T12:00:00.000Z"))
+
+        const payload = buildOverviewShareSnapshotPayload({
+          currencyType: "USD",
+          enabledAccountCount: -3.8,
+          totalBalance: Number.NaN,
+          includeTodayCashflow: true,
+          todayIncome: Number.NaN,
+          todayOutcome: undefined,
+          asOf: 0,
+          backgroundSeed: 0,
+        })
+
+        expect(payload.enabledAccountCount).toBe(0)
+        expect(payload.totalBalance).toBe(0)
+        expect(payload.todayIncome).toBe(0)
+        expect(payload.todayOutcome).toBe(0)
+        expect(payload.todayNet).toBe(0)
+        expect(payload.asOf).toBe(Date.now())
+        expect(Number.isInteger(payload.backgroundSeed)).toBe(true)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
+  describe("buildAccountShareSnapshotPayload", () => {
+    it("trims safe display fields and drops blank origin URLs", () => {
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(new Date("2026-02-10T12:00:00.000Z"))
+
+        const payload = buildAccountShareSnapshotPayload({
+          currencyType: "USD",
+          siteName: "  Example Site  ",
+          originUrl: "   ",
+          balance: Number.NaN,
+          includeTodayCashflow: false,
+          asOf: -1,
+          backgroundSeed: Number.NaN,
+        })
+
+        expect(payload.siteName).toBe("Example Site")
+        expect(payload.originUrl).toBeUndefined()
+        expect(payload.balance).toBe(0)
+        expect(payload.asOf).toBe(Date.now())
+        expect(Number.isInteger(payload.backgroundSeed)).toBe(true)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
   })
 
   describe("generateShareSnapshotCaption", () => {
@@ -134,6 +189,25 @@ describe("shareSnapshots", () => {
       expect(caption).toContain("shareSnapshots:labels.outcome")
       expect(caption).toContain("shareSnapshots:labels.net")
       expect(caption).toContain("shareSnapshots:labels.asOf")
+    })
+
+    it("omits the origin line when the account payload does not include a safe origin URL", () => {
+      const payload = buildAccountShareSnapshotPayload({
+        currencyType: "USD",
+        siteName: "Example Site",
+        originUrl: "   ",
+        balance: 12.34,
+        includeTodayCashflow: false,
+        asOf: 1700000000000,
+        backgroundSeed: 1,
+      })
+
+      const caption = generateShareSnapshotCaption(payload)
+
+      expect(caption).toContain("All API Hub")
+      expect(caption).toContain("Example Site")
+      expect(caption).not.toContain("https://")
+      expect(caption.split("\n")).toHaveLength(3)
     })
   })
 })

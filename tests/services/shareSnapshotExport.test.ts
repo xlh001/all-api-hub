@@ -92,16 +92,34 @@ describe("exportShareSnapshot", () => {
   )
 
   let lastAnchor: HTMLAnchorElement | null = null
+  let canvasMode: "ok" | "no-context" | "no-blob" = "ok"
 
   beforeEach(() => {
     lastAnchor = null
+    canvasMode = "ok"
 
     URL.createObjectURL = vi.fn(() => "blob:mock-url") as any
     URL.revokeObjectURL = vi.fn() as any
 
     document.createElement = vi.fn((tagName: string) => {
       const lower = tagName.toLowerCase()
-      if (lower === "canvas") return createCanvasStub()
+      if (lower === "canvas") {
+        if (canvasMode === "no-context") {
+          return {
+            width: 0,
+            height: 0,
+            getContext: () => null,
+          } as unknown as HTMLCanvasElement
+        }
+
+        if (canvasMode === "no-blob") {
+          const canvas = createCanvasStub() as any
+          canvas.toBlob = (cb: (blob: Blob | null) => void) => cb(null)
+          return canvas
+        }
+
+        return createCanvasStub()
+      }
       if (lower === "a") {
         const anchor = originalCreateElement.call(
           document,
@@ -206,5 +224,35 @@ describe("exportShareSnapshot", () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it("returns a download result without caption copy when text clipboard support is unavailable", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {},
+    })
+
+    const result = await exportShareSnapshot(payload)
+
+    expect(result.method).toBe("download")
+    expect(result.didCopyImage).toBe(false)
+    expect(result.didCopyCaption).toBe(false)
+    expect(lastAnchor).not.toBeNull()
+  })
+
+  it("fails with a stable error when the browser cannot create a 2d canvas context", async () => {
+    canvasMode = "no-context"
+
+    await expect(exportShareSnapshot(payload)).rejects.toThrow(
+      "Canvas not supported",
+    )
+  })
+
+  it("fails with a stable error when PNG encoding returns no blob", async () => {
+    canvasMode = "no-blob"
+
+    await expect(exportShareSnapshot(payload)).rejects.toThrow(
+      "Failed to encode PNG",
+    )
   })
 })

@@ -120,6 +120,256 @@ describe("redemptionAssist shouldPrompt batch filtering", () => {
       promptableCodes: [],
     })
   })
+
+  it("allows prompting when the whitelist is enabled but resolves to no effective patterns", async () => {
+    vi.resetModules()
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue({
+      ...DEFAULT_PREFERENCES,
+      redemptionAssist: {
+        enabled: true,
+        contextMenu: {
+          enabled: true,
+        },
+        urlWhitelist: {
+          enabled: true,
+          patterns: ["", "   ", null as any],
+          includeAccountSiteUrls: false,
+          includeCheckInAndRedeemUrls: false,
+        },
+        relaxedCodeValidation: false,
+      },
+    })
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+    const validHex = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+        url: "https://anywhere.example.com/redeem",
+        codes: [validHex],
+      },
+      { tab: { id: 8 } } as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      promptableCodes: [validHex],
+    })
+  })
+
+  it("derives whitelist patterns from account urls and reuses the cached pattern set", async () => {
+    vi.resetModules()
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue({
+      ...DEFAULT_PREFERENCES,
+      redemptionAssist: {
+        enabled: true,
+        contextMenu: {
+          enabled: true,
+        },
+        urlWhitelist: {
+          enabled: true,
+          patterns: [],
+          includeAccountSiteUrls: true,
+          includeCheckInAndRedeemUrls: true,
+        },
+        relaxedCodeValidation: false,
+      },
+    })
+
+    const getAllAccounts = vi.fn().mockResolvedValue([])
+    const convertToDisplayData = vi.fn().mockReturnValue([
+      {
+        id: "acc_derived_1",
+        siteType: "new-api",
+        baseUrl: "https://allowed.example.com/path",
+        disabled: false,
+        checkIn: {
+          customCheckIn: {
+            url: "https://allowed.example.com/custom-check-in",
+            redeemUrl: "https://allowed.example.com/custom-redeem",
+          },
+        },
+      },
+      {
+        id: "acc_derived_2",
+        siteType: "new-api",
+        baseUrl: "not-a-url",
+        disabled: false,
+      },
+      {
+        id: "acc_derived_disabled",
+        siteType: "new-api",
+        baseUrl: "https://disabled.example.com",
+        disabled: true,
+      },
+    ])
+
+    vi.doMock("~/services/accounts/accountStorage", () => ({
+      accountStorage: {
+        getAllAccounts,
+        convertToDisplayData,
+      },
+    }))
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+    const validHex = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+        url: "https://allowed.example.com/custom-redeem/code",
+        codes: [validHex],
+      },
+      { tab: { id: 10 } } as any,
+      sendResponse,
+    )
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+        url: "https://allowed.example.com/custom-check-in",
+        codes: [validHex],
+      },
+      { tab: { id: 10 } } as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenNthCalledWith(1, {
+      success: true,
+      promptableCodes: [validHex],
+    })
+    expect(sendResponse).toHaveBeenNthCalledWith(2, {
+      success: true,
+      promptableCodes: [validHex],
+    })
+    expect(getAllAccounts).toHaveBeenCalledTimes(1)
+    expect(convertToDisplayData).toHaveBeenCalledTimes(1)
+  })
+
+  it("updates runtime settings through the message handler and disables promptability immediately", async () => {
+    vi.resetModules()
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue({
+      ...DEFAULT_PREFERENCES,
+      redemptionAssist: {
+        enabled: true,
+        contextMenu: {
+          enabled: true,
+        },
+        urlWhitelist: {
+          enabled: false,
+          patterns: [],
+          includeAccountSiteUrls: true,
+          includeCheckInAndRedeemUrls: true,
+        },
+        relaxedCodeValidation: false,
+      },
+    })
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+    const validHex = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+        url: "https://runtime.example.com/redeem",
+        codes: [validHex],
+      },
+      { tab: { id: 11 } } as any,
+      sendResponse,
+    )
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistUpdateSettings,
+        settings: {
+          enabled: false,
+          relaxedCodeValidation: true,
+          urlWhitelist: {
+            enabled: true,
+            patterns: ["^https://runtime\\.example\\.com"],
+            includeAccountSiteUrls: false,
+            includeCheckInAndRedeemUrls: false,
+          },
+        },
+      },
+      {} as any,
+      sendResponse,
+    )
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+        url: "https://runtime.example.com/redeem",
+        codes: [validHex],
+      },
+      { tab: { id: 11 } } as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenNthCalledWith(1, {
+      success: true,
+      promptableCodes: [validHex],
+    })
+    expect(sendResponse).toHaveBeenNthCalledWith(2, { success: true })
+    expect(sendResponse).toHaveBeenNthCalledWith(3, {
+      success: true,
+      promptableCodes: [],
+    })
+  })
+
+  it("falls back to default runtime settings when loading preferences fails", async () => {
+    vi.resetModules()
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockRejectedValue(
+      new Error("prefs exploded"),
+    )
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+        url: "https://example.com/redeem",
+        codes: ["z".repeat(32)],
+      },
+      { tab: { id: 12 } } as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      promptableCodes: ["z".repeat(32)],
+    })
+  })
 })
 
 describe("redemptionAssist post-redeem refresh", () => {
@@ -470,6 +720,140 @@ describe("redemptionAssist post-redeem refresh", () => {
         success: false,
         code: "MULTIPLE_ACCOUNTS",
         candidates,
+      },
+    })
+  })
+
+  it("returns NO_ACCOUNTS when search results exist but none provide a matching custom check-in url", async () => {
+    vi.resetModules()
+
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue(
+      DEFAULT_PREFERENCES,
+    )
+
+    const allAccounts = [
+      {
+        id: "acc_missing_checkin",
+        baseUrl: "https://manual.example.com",
+      },
+    ]
+
+    vi.doMock("~/services/accounts/accountStorage", () => ({
+      accountStorage: {
+        getAllAccounts: vi.fn().mockResolvedValue([]),
+        convertToDisplayData: vi.fn().mockReturnValue(allAccounts),
+      },
+    }))
+
+    vi.doMock("~/services/search/accountSearch", () => ({
+      searchAccounts: vi.fn().mockReturnValue(
+        allAccounts.map((account) => ({
+          account,
+        })),
+      ),
+    }))
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistAutoRedeemByUrl,
+        url: "https://example.com/redeem",
+        code: "CODE_NO_CUSTOM_URL",
+      },
+      {} as any,
+      sendResponse,
+    )
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: false,
+        code: "NO_ACCOUNTS",
+        candidates: [],
+        allAccounts,
+        message: "redemptionAssist:messages.noAccountForUrl",
+      },
+    })
+  })
+
+  it("returns the failed redeem result for a single matched account without refreshing", async () => {
+    vi.resetModules()
+
+    const { userPreferences } = await import(
+      "~/services/preferences/userPreferences"
+    )
+    vi.mocked(userPreferences.getPreferences).mockResolvedValue(
+      DEFAULT_PREFERENCES,
+    )
+
+    const refreshAccount = vi.fn().mockResolvedValue({ refreshed: true })
+    const redeemCodeForAccount = vi
+      .fn()
+      .mockResolvedValue({ success: false, message: "denied" })
+
+    const displayAccount = {
+      id: "acc_single_fail",
+      baseUrl: "https://example.com",
+      checkIn: {
+        customCheckIn: {
+          url: "https://example.com/check-in",
+        },
+      },
+    }
+
+    vi.doMock("~/services/accounts/accountStorage", () => ({
+      accountStorage: {
+        refreshAccount,
+        getAllAccounts: vi.fn().mockResolvedValue([]),
+        convertToDisplayData: vi.fn().mockReturnValue([displayAccount]),
+      },
+    }))
+
+    vi.doMock("~/services/search/accountSearch", () => ({
+      searchAccounts: vi.fn().mockReturnValue([
+        {
+          account: displayAccount,
+        },
+      ]),
+    }))
+
+    vi.doMock("~/services/redemption/redeemService", () => ({
+      redeemService: {
+        redeemCodeForAccount,
+      },
+    }))
+
+    const { handleRedemptionAssistMessage } = await import(
+      "~/services/redemption/redemptionAssist"
+    )
+
+    const sendResponse = vi.fn()
+
+    await handleRedemptionAssistMessage(
+      {
+        action: RuntimeActionIds.RedemptionAssistAutoRedeemByUrl,
+        url: "https://example.com/redeem",
+        code: "CODE_FAIL",
+      },
+      {} as any,
+      sendResponse,
+    )
+
+    expect(refreshAccount).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        success: false,
+        message: "denied",
+        selectedAccount: displayAccount,
       },
     })
   })
