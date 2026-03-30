@@ -90,10 +90,27 @@ Prereqs: Node.js version from `.nvmrc` and pnpm 10+.
 
 ## Implementation Expectations
 
+### Implementation Strategy
+
 - Inspect nearby existing abstractions before planning or implementing new helpers, modules, or UI patterns; prefer reuse or small extensions over parallel implementations.
+
+### Progressive Refactoring
+
+- Prefer progressive refactors over big-bang rewrites when replacing legacy flows or reshaping feature boundaries.
+- When a new implementation path is chosen for a feature, route subsequent feature work to that path by default.
+- Legacy paths may receive only compatibility shims, required regression fixes, or migration glue that forwards toward the new path.
+- Do not implement the same new capability in both the preferred path and a legacy path unless the task explicitly requires a temporary compatibility bridge.
+- When keeping a legacy branch temporarily, add a short comment that states why it still exists, what new path replaces it, and what condition allows safe removal.
+- Before deleting an old path, verify inbound references, impacted site types or adapters, and the relevant validation coverage.
+
+### Comments and User Feedback
+
 - Add brief inline comments or short code-block comments when non-obvious intent, invariants, edge cases, or protocol/browser constraints need clarification; do not narrate obvious code.
 - For user-visible success/error feedback, do not rely solely on backend `message` fields; provide a local fallback when responses may be empty, unstable, or not suitable for direct display.
-- the minimum validation bar is the repo's `pre-commit`-equivalent validation flow when available; if no such flow exists, fall back to `pnpm lint` plus the repo's affected-file or related-test validation command for the touched files.
+
+### Validation Floor
+
+- The minimum validation bar is the repo's `pre-commit`-equivalent validation flow when available; if no such flow exists, fall back to `pnpm lint` plus the repo's affected-file or related-test validation command for the touched files.
 - In this repo, the default staged validation entrypoint is `pnpm run validate:staged`; do not treat bare `pnpm lint-staged` as the full pre-commit flow because it skips the separate staged i18n guard.
 - Do not treat `pnpm knip` as the default minimum for every task. Add it when changes can affect the module/dependency graph, such as `package.json` or lockfile edits, `knip.ts` edits, file moves/renames/deletions, new or removed exports/barrels, or dynamic wiring changes that may leave dead files, exports, or dependencies behind.
 - When the repo defines a `pre-commit` validation flow, prefer running the equivalent `pre-commit` checks directly without creating a commit instead of assembling a hand-picked validation command set.
