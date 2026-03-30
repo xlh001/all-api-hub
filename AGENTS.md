@@ -65,7 +65,7 @@ If the user's reported behavior differs from upstream, ask for the exact deploym
 
 ## Build, Test, and Development Commands
 
-Prereqs: Node.js 20+ and pnpm 10+.
+Prereqs: Node.js version from `.nvmrc` and pnpm 10+.
 
 - Install: `pnpm install` (runs `wxt prepare` via `postinstall`).
 - Dev, Chromium: `pnpm dev`, then load `.output/chrome-mv3-dev` as an unpacked extension.
