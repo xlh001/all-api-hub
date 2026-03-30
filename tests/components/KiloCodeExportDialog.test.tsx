@@ -9,7 +9,7 @@ import {
   type DisplaySiteData,
   type SiteAccount,
 } from "~/types"
-import { render, screen, waitFor } from "~~/tests/test-utils/render"
+import { render, screen, waitFor, within } from "~~/tests/test-utils/render"
 
 const mockUseAccountData = vi.fn()
 const { toastSuccessMock, toastErrorMock, addTokenDialogPropsMock } =
@@ -384,6 +384,123 @@ describe("KiloCodeExportDialog", () => {
     })
   })
 
+  it("recovers from a malformed token response after the user retries loading tokens", async () => {
+    const user = userEvent.setup()
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [],
+      enabledDisplayData: [
+        createDisplayAccount({
+          id: "b",
+          name: "Site B",
+          baseUrl: "https://b.test",
+        }),
+      ],
+    })
+
+    mockFetchAccountTokens
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce([{ id: 1, name: "Recovered", key: "sk-test" }])
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+
+    render(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    const sitePicker = await screen.findByPlaceholderText(
+      "ui:dialog.kiloCode.placeholders.selectSites",
+    )
+    await user.click(sitePicker)
+    await user.clear(sitePicker)
+    await user.type(sitePicker, "Site B")
+    await user.keyboard("{ArrowDown}")
+    await user.click(await screen.findByRole("option", { name: "Site B" }))
+
+    expect(
+      await screen.findByText("ui:dialog.kiloCode.messages.loadTokensFailed"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      await screen.findByRole("button", { name: "common:actions.retry" }),
+    )
+
+    await waitFor(() => {
+      expect(mockFetchAccountTokens).toHaveBeenCalledTimes(2)
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "ui:dialog.kiloCode.actions.copyApiConfigs",
+        }),
+      ).not.toBeDisabled()
+    })
+  })
+
+  it("shows model-load failure feedback and retries loading models for the selected token", async () => {
+    const user = userEvent.setup()
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [],
+      enabledDisplayData: [
+        createDisplayAccount({
+          id: "b",
+          name: "Site B",
+          baseUrl: "https://b.test",
+        }),
+      ],
+    })
+
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      { id: 1, name: "Default", key: "sk-test" },
+    ])
+    mockFetchOpenAICompatibleModelIds
+      .mockRejectedValueOnce(new Error("model load failed"))
+      .mockResolvedValueOnce(["gpt-4o-mini"])
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+
+    render(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    const sitePicker = await screen.findByPlaceholderText(
+      "ui:dialog.kiloCode.placeholders.selectSites",
+    )
+    await user.click(sitePicker)
+    await user.clear(sitePicker)
+    await user.type(sitePicker, "Site B")
+    await user.keyboard("{ArrowDown}")
+    await user.click(await screen.findByRole("option", { name: "Site B" }))
+
+    const errorText = await screen.findByText(
+      "ui:dialog.kiloCode.messages.loadModelsFailed",
+    )
+    expect(errorText).toBeInTheDocument()
+
+    const tokenSection = errorText.closest(".space-y-1")
+    expect(tokenSection).toBeTruthy()
+
+    await user.click(
+      within(tokenSection!).getByRole("button", {
+        name: "common:actions.retry",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockFetchOpenAICompatibleModelIds).toHaveBeenCalledTimes(2)
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "ui:dialog.kiloCode.actions.copyApiConfigs",
+        }),
+      ).not.toBeDisabled()
+    })
+  })
+
   it("preselects sites/tokens when initial selections are provided", async () => {
     mockUseAccountData.mockReturnValue({
       enabledAccounts: [],
@@ -699,6 +816,51 @@ describe("KiloCodeExportDialog", () => {
     expect(await screen.findByText(fallbackMessage)).toBeInTheDocument()
   })
 
+  it("shows accountNotFound feedback when token creation is requested without a backing account", async () => {
+    const user = userEvent.setup()
+    const site = createDisplayAccount({
+      id: "b",
+      name: "Site B",
+      baseUrl: "https://b.test",
+      siteType: "sub2api",
+    })
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [],
+      enabledDisplayData: [site],
+    })
+
+    mockFetchAccountTokens.mockResolvedValueOnce([])
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+
+    render(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    const sitePicker = await screen.findByPlaceholderText(
+      "ui:dialog.kiloCode.placeholders.selectSites",
+    )
+    await user.click(sitePicker)
+    await user.clear(sitePicker)
+    await user.type(sitePicker, "Site B")
+    await user.keyboard("{ArrowDown}")
+    await user.click(await screen.findByRole("option", { name: "Site B" }))
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.kiloCode.actions.createDefaultToken",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "ui:dialog.kiloCode.messages.accountNotFound",
+      )
+    })
+    expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
+  })
+
   it("copies export configs with resolved full keys instead of masked inventory values", async () => {
     const user = userEvent.setup()
     const writeText = vi
@@ -750,5 +912,132 @@ describe("KiloCodeExportDialog", () => {
     const copiedPayload = String(writeText.mock.calls[0]?.[0] ?? "")
     expect(copiedPayload).toContain("sk-full-secret")
     expect(copiedPayload).not.toContain("sk-abcd************wxyz")
+  })
+
+  it("shows copyFailed feedback when resolving export secrets throws", async () => {
+    const user = userEvent.setup()
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [],
+      enabledDisplayData: [
+        createDisplayAccount({
+          id: "b",
+          name: "Site B",
+          baseUrl: "https://b.test",
+        }),
+      ],
+    })
+
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      { id: 1, name: "Default", key: "sk-abcd************wxyz" },
+    ])
+    mockResolveApiTokenKey.mockImplementation(
+      async (_request, token: { key: string }) => token.key,
+    )
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+
+    render(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    const sitePicker = await screen.findByPlaceholderText(
+      "ui:dialog.kiloCode.placeholders.selectSites",
+    )
+    await user.click(sitePicker)
+    await user.clear(sitePicker)
+    await user.type(sitePicker, "Site B")
+    await user.keyboard("{ArrowDown}")
+    await user.click(await screen.findByRole("option", { name: "Site B" }))
+
+    const copyButton = await screen.findByRole("button", {
+      name: "ui:dialog.kiloCode.actions.copyApiConfigs",
+    })
+    await waitFor(() => expect(copyButton).toBeEnabled())
+
+    mockResolveApiTokenKey.mockRejectedValueOnce(new Error("resolve failed"))
+    await user.click(copyButton)
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "ui:dialog.kiloCode.messages.copyFailed",
+      )
+    })
+  })
+
+  it("downloads settings with resolved full keys and cleans up the blob URL", async () => {
+    const user = userEvent.setup()
+    const createObjectUrl = vi
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:kilo-code-settings")
+    const revokeObjectUrl = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => {})
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {})
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [],
+      enabledDisplayData: [
+        createDisplayAccount({
+          id: "b",
+          name: "Site B",
+          baseUrl: "https://b.test",
+        }),
+      ],
+    })
+
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      { id: 1, name: "Default", key: "sk-abcd************wxyz" },
+    ])
+    mockResolveApiTokenKey.mockResolvedValue("sk-full-secret")
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+
+    render(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    const sitePicker = await screen.findByPlaceholderText(
+      "ui:dialog.kiloCode.placeholders.selectSites",
+    )
+    await user.click(sitePicker)
+    await user.clear(sitePicker)
+    await user.type(sitePicker, "Site B")
+    await user.keyboard("{ArrowDown}")
+    await user.click(await screen.findByRole("option", { name: "Site B" }))
+
+    const downloadButton = await screen.findByRole("button", {
+      name: "ui:dialog.kiloCode.actions.downloadSettings",
+    })
+    await waitFor(() => expect(downloadButton).toBeEnabled())
+
+    await user.click(downloadButton)
+
+    await waitFor(() => {
+      expect(createObjectUrl).toHaveBeenCalledTimes(1)
+    })
+
+    const blob = createObjectUrl.mock.calls[0]?.[0] as Blob
+    const payload = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result ?? ""))
+      reader.onerror = () =>
+        reject(reader.error ?? new Error("failed to read blob"))
+      reader.readAsText(blob)
+    })
+
+    expect(payload).toContain("sk-full-secret")
+    expect(payload).not.toContain("sk-abcd************wxyz")
+    expect(clickSpy).toHaveBeenCalledTimes(1)
+    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:kilo-code-settings")
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      "ui:dialog.kiloCode.messages.downloadedSettings",
+    )
+
+    clickSpy.mockRestore()
+    revokeObjectUrl.mockRestore()
+    createObjectUrl.mockRestore()
   })
 })

@@ -4571,6 +4571,42 @@ describe("autoCheckinScheduler debug helpers", () => {
     mockedBrowserApi.hasAlarmsAPI.mockReturnValue(true)
   })
 
+  it("delegates debugTriggerDailyAlarmNow to the daily alarm handler", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const handleDailyAlarmSpy = vi
+      .spyOn(autoCheckinScheduler as any, "handleDailyAlarm")
+      .mockResolvedValue(undefined)
+
+    await autoCheckinScheduler.debugTriggerDailyAlarmNow()
+
+    expect(handleDailyAlarmSpy).toHaveBeenCalledWith({
+      name: "autoCheckinDaily",
+      scheduledTime: Date.now(),
+    })
+
+    vi.useRealTimers()
+  })
+
+  it("delegates debugTriggerRetryAlarmNow to the retry alarm handler", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-23T09:00:00"))
+
+    const handleRetryAlarmSpy = vi
+      .spyOn(autoCheckinScheduler as any, "handleRetryAlarm")
+      .mockResolvedValue(undefined)
+
+    await autoCheckinScheduler.debugTriggerRetryAlarmNow()
+
+    expect(handleRetryAlarmSpy).toHaveBeenCalledWith({
+      name: "autoCheckinRetry",
+      scheduledTime: Date.now(),
+    })
+
+    vi.useRealTimers()
+  })
+
   it("does not rewrite status when debugResetLastDailyRunDay has nothing to clear", async () => {
     storedStatus = {
       pendingRetry: true,
@@ -4584,6 +4620,37 @@ describe("autoCheckinScheduler debug helpers", () => {
     await autoCheckinScheduler.debugResetLastDailyRunDay()
 
     expect(mockedAutoCheckinStorage.saveStatus).not.toHaveBeenCalled()
+    expect(storedStatus).toEqual({
+      pendingRetry: true,
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+    })
+  })
+
+  it("clears only lastDailyRunDay when debugResetLastDailyRunDay has an existing marker", async () => {
+    storedStatus = {
+      lastDailyRunDay: "2026-01-23",
+      pendingRetry: true,
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+    }
+
+    await autoCheckinScheduler.debugResetLastDailyRunDay()
+
+    expect(mockedAutoCheckinStorage.saveStatus).toHaveBeenCalledWith({
+      pendingRetry: true,
+      retryState: {
+        day: "2026-01-23",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+    })
     expect(storedStatus).toEqual({
       pendingRetry: true,
       retryState: {
@@ -4675,6 +4742,23 @@ describe("autoCheckinScheduler private helpers", () => {
     )
   })
 
+  it("defaults post-checkin refreshes to force=true when no force flag is provided", async () => {
+    mockedAccountStorage.refreshAccount.mockResolvedValueOnce({
+      refreshed: false,
+    })
+
+    await expect(
+      (autoCheckinScheduler as any).refreshAccountsAfterSuccessfulCheckins({
+        accountIds: ["account-1"],
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(mockedAccountStorage.refreshAccount).toHaveBeenCalledWith(
+      "account-1",
+      true,
+    )
+  })
+
   it("returns early when there are no valid accounts to refresh", async () => {
     await expect(
       (autoCheckinScheduler as any).refreshAccountsAfterSuccessfulCheckins({
@@ -4728,6 +4812,33 @@ describe("autoCheckinScheduler private helpers", () => {
         day,
       ),
     ).toBeNull()
+  })
+
+  it("returns no deterministic catch-up trigger when the local day is already over", () => {
+    vi.useFakeTimers()
+    const now = new Date(2026, 0, 23, 23, 59, 59, 999)
+    vi.setSystemTime(now)
+
+    expect(
+      (autoCheckinScheduler as any).calculateDeterministicCatchUpTrigger(now),
+    ).toBeNull()
+
+    vi.useRealTimers()
+  })
+
+  it("uses the active overnight window after midnight instead of postponing to the next night", () => {
+    const now = new Date(2026, 0, 24, 1, 0, 0, 0)
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0)
+
+    const trigger = (autoCheckinScheduler as any).calculateRandomTrigger(
+      "23:00",
+      "02:00",
+      now,
+    )
+
+    expect(trigger.toISOString()).toBe(now.toISOString())
+
+    randomSpy.mockRestore()
   })
 
   it("reuses only valid daily alarms for the current schedule plan", () => {

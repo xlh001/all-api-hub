@@ -213,6 +213,29 @@ describe("UserPreferencesContext", () => {
     expect((latestContext as any)?.showTodayCashflow).toBe(false)
   })
 
+  it("only normalizes the hidden sort field on load when the active tab is already visible", async () => {
+    const preferences = clonePreferences()
+    preferences.showTodayCashflow = false
+    preferences.activeTab = DATA_TYPE_BALANCE
+    preferences.sortField = DATA_TYPE_INCOME
+
+    await renderProvider(preferences)
+
+    await waitFor(() => {
+      expect(mockedUserPreferences.savePreferences).toHaveBeenCalledWith({
+        sortField: DATA_TYPE_BALANCE,
+      })
+    })
+
+    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+      DATA_TYPE_BALANCE,
+    )
+    expect(screen.getByTestId("sort-field")).toHaveTextContent(
+      DATA_TYPE_BALANCE,
+    )
+    expect((latestContext as any)?.showTodayCashflow).toBe(false)
+  })
+
   it("updates scalar, nested, and runtime-backed preferences through the provider", async () => {
     const context = await renderProvider()
 
@@ -414,6 +437,97 @@ describe("UserPreferencesContext", () => {
       settings: {
         enabled: false,
         contextMenu: { enabled: false },
+      },
+    })
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.PreferencesRefreshContextMenus,
+    })
+  })
+
+  it("merges missing nested sections with defaults when runtime-backed updates arrive", async () => {
+    const preferences = clonePreferences()
+    delete (preferences as Partial<UserPreferences>).autoCheckin
+    delete (preferences as Partial<UserPreferences>).balanceHistory
+    delete (preferences as Partial<UserPreferences>).managedSiteModelSync
+    delete (preferences as Partial<UserPreferences>).redemptionAssist
+    delete (preferences as Partial<UserPreferences>).webAiApiCheck
+    delete (preferences as Partial<UserPreferences>).tempWindowFallbackReminder
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateAutoCheckin({
+        globalEnabled: false,
+      })
+      await context.updateBalanceHistory({
+        retentionDays: 14,
+      })
+      await context.updateNewApiModelSync({
+        allowedModels: ["gpt-4.1"],
+      })
+      await context.updateRedemptionAssist({
+        enabled: false,
+      })
+      await context.updateWebAiApiCheck({
+        enabled: false,
+        contextMenu: { enabled: false },
+      })
+      await context.updateTempWindowFallbackReminder({
+        dismissed: true,
+      })
+    })
+
+    expect((latestContext as any)?.preferences.autoCheckin).toMatchObject({
+      ...DEFAULT_PREFERENCES.autoCheckin,
+      globalEnabled: false,
+    })
+    expect((latestContext as any)?.preferences.balanceHistory).toMatchObject({
+      ...DEFAULT_BALANCE_HISTORY_PREFERENCES,
+      retentionDays: 14,
+    })
+    expect(
+      (latestContext as any)?.preferences.managedSiteModelSync,
+    ).toMatchObject({
+      ...DEFAULT_PREFERENCES.managedSiteModelSync,
+      allowedModels: ["gpt-4.1"],
+    })
+    expect((latestContext as any)?.preferences.redemptionAssist).toMatchObject({
+      ...DEFAULT_REDEMPTION_ASSIST_PREFERENCES,
+      enabled: false,
+    })
+    expect((latestContext as any)?.preferences.webAiApiCheck).toMatchObject({
+      ...DEFAULT_WEB_AI_API_CHECK_PREFERENCES,
+      enabled: false,
+      contextMenu: { enabled: false },
+    })
+    expect(
+      (latestContext as any)?.preferences.tempWindowFallbackReminder,
+    ).toEqual({
+      dismissed: true,
+    })
+
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.AutoCheckinUpdateSettings,
+      settings: {
+        globalEnabled: false,
+      },
+    })
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.BalanceHistoryUpdateSettings,
+      settings: {
+        retentionDays: 14,
+      },
+    })
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.ModelSyncUpdateSettings,
+      settings: {
+        allowedModels: ["gpt-4.1"],
+      },
+    })
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.RedemptionAssistUpdateSettings,
+      settings: {
+        enabled: false,
       },
     })
     expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
@@ -1207,6 +1321,90 @@ describe("UserPreferencesContext", () => {
         message?.action === RuntimeActionIds.PreferencesRefreshContextMenus,
     )
     expect(refreshCalls).toHaveLength(2)
+  })
+
+  it("merges nested content-script settings without refreshing context menus when enabled toggles are untouched", async () => {
+    const preferences = clonePreferences()
+    preferences.redemptionAssist = {
+      ...DEFAULT_REDEMPTION_ASSIST_PREFERENCES,
+      enabled: true,
+      contextMenu: { enabled: true },
+      urlWhitelist: {
+        enabled: true,
+        patterns: ["https://redeem.example/*"],
+        includeAccountSiteUrls: true,
+        includeCheckInAndRedeemUrls: false,
+      },
+    }
+    preferences.webAiApiCheck = {
+      ...DEFAULT_WEB_AI_API_CHECK_PREFERENCES,
+      enabled: true,
+      contextMenu: { enabled: true },
+      autoDetect: {
+        enabled: false,
+        urlWhitelist: {
+          patterns: ["https://api-check.example/*"],
+        },
+      },
+    }
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateRedemptionAssist({
+        urlWhitelist: {
+          patterns: ["https://redeem.example/*", "https://extra.example/*"],
+        },
+      })
+      await context.updateWebAiApiCheck({
+        autoDetect: {
+          enabled: true,
+          urlWhitelist: {
+            patterns: ["https://api-check.example/*", "https://new.example/*"],
+          },
+        },
+      })
+    })
+
+    expect((latestContext as any)?.preferences.redemptionAssist).toEqual(
+      expect.objectContaining({
+        enabled: true,
+        contextMenu: { enabled: true },
+        urlWhitelist: expect.objectContaining({
+          enabled: true,
+          patterns: ["https://redeem.example/*", "https://extra.example/*"],
+          includeAccountSiteUrls: true,
+          includeCheckInAndRedeemUrls: false,
+        }),
+      }),
+    )
+    expect((latestContext as any)?.preferences.webAiApiCheck).toEqual(
+      expect.objectContaining({
+        enabled: true,
+        contextMenu: { enabled: true },
+        autoDetect: expect.objectContaining({
+          enabled: true,
+          urlWhitelist: {
+            patterns: ["https://api-check.example/*", "https://new.example/*"],
+          },
+        }),
+      }),
+    )
+
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.RedemptionAssistUpdateSettings,
+      settings: {
+        urlWhitelist: {
+          patterns: ["https://redeem.example/*", "https://extra.example/*"],
+        },
+      },
+    })
+
+    const refreshCalls = mockedSendRuntimeMessage.mock.calls.filter(
+      ([message]) =>
+        message?.action === RuntimeActionIds.PreferencesRefreshContextMenus,
+    )
+    expect(refreshCalls).toHaveLength(0)
   })
 
   it("logs initial load failures and still clears the loading state", async () => {
