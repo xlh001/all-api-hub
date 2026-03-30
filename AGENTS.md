@@ -2,12 +2,17 @@
 
 ## Project Structure & Module Organization
 
+### Source Modules
+
 - `src/entrypoints/`: WXT extension entrypoints for `background`, `content`, `popup`, `options`, and `sidepanel`.
 - `src/features/`: feature-oriented UI modules; keep entrypoints thin and push reusable logic into features, services, hooks, or utils.
 - `src/components/` and `src/components/ui/`: shared React components and UI primitives.
 - `src/services/`: business logic, persistence, site adapters, and browser integration.
 - `src/hooks/`, `src/contexts/`, `src/utils/`, `src/types/`, `src/constants/`, `src/lib/`, `src/styles/`: shared app building blocks.
 - `src/locales/`: app i18n resources; manifest strings live in `src/public/_locales/`.
+
+### Tests and Artifacts
+
 - `tests/`: Vitest setup, MSW handlers, and shared test utilities.
 - `e2e/`: Playwright end-to-end coverage.
 - Build artifacts are written to `.output/`; browser test artifacts may appear in `coverage/`, `playwright-report/`, and `test-results/`.
@@ -65,14 +70,24 @@ If the user's reported behavior differs from upstream, ask for the exact deploym
 
 ## Build, Test, and Development Commands
 
-Prereqs: Node.js version from `.nvmrc` and pnpm 10+.
+### Prerequisites
+
+Node.js version from `.nvmrc` and pnpm 10+.
+
+### Local Development
 
 - Install: `pnpm install` (runs `wxt prepare` via `postinstall`).
 - Dev, Chromium: `pnpm dev`, then load `.output/chrome-mv3-dev` as an unpacked extension.
 - Dev, Firefox: `pnpm dev:firefox`, then load `.output/firefox-mv2-dev` as a temporary add-on.
 - Dev, mobile Firefox helper: `pnpm dev:mobile:firefox`.
+
+### Build and Package
+
 - Build: `pnpm build`, `pnpm build:firefox`, `pnpm build:all`.
 - Package: `pnpm zip`, `pnpm zip:firefox`, `pnpm zip:all`.
+
+### Validation and Tests
+
 - Type-check: `pnpm compile`.
 - Repo-wide dead-code/dependency analysis: `pnpm knip`.
 - Lint/format checks: `pnpm lint`, `pnpm format:check`.
@@ -82,8 +97,13 @@ Prereqs: Node.js version from `.nvmrc` and pnpm 10+.
 
 ## Coding Style & Naming Conventions
 
+### Style
+
 - TypeScript + React with Prettier formatting and ESLint enforcement.
 - Follow the existing repo style: 2 spaces, no semicolons, double quotes.
+
+### Imports and File Placement
+
 - Prefer `~/` for `src/` imports and `~~/` for repo-root imports such as tests and tooling.
 - Tests typically use `*.test.ts` or `*.test.tsx` and are organized under `tests/`; do not add colocated `__tests__/` directories under `src/`.
 - Keep options-page entrypoints thin; shared logic should not depend on `src/entrypoints/options/pages/**`.
@@ -117,42 +137,80 @@ Prereqs: Node.js version from `.nvmrc` and pnpm 10+.
 
 ## Testing Guidelines
 
+### Test Stack
+
 - Unit and component tests use Vitest with jsdom and Testing Library.
 - HTTP mocking uses MSW from `tests/msw/handlers.ts` and `tests/msw/server.ts`.
 - Shared test rendering utilities live in `tests/test-utils/render.tsx`.
 - Global test setup lives in `tests/setup.ts` and uses `wxt/testing/fake-browser` for WebExtension API mocking.
+
+### Coverage Expectations
+
 - For `src/**` TS/TSX changes that add or modify executable logic, treat tests as part of the same task by default instead of waiting for CI to expose a coverage drop. Pure types, constants, copy, styles, and no-behavior refactors are the main exceptions.
 - New executable files, functions, branches, listeners/controllers, or error fallback paths should usually ship with at least one targeted test covering the added behavior.
 - Do not stop at `happy path` coverage. For added or changed executable logic, identify and cover the most relevant `edge cases`, especially empty or partial inputs, invalid values, boundary conditions, backend error or empty responses, browser API unavailability, permission or environment limits, site-type compatibility branches, cache or persistence failures, and repeated or concurrent triggers.
 - If an important `edge case` is not practical to automate in this change, call out the uncovered scenario, why it remains uncovered, and the residual risk before handoff.
+
+### Validation Strategy
+
 - Start with the repo-defined `pre-commit`, affected-file, or `related` validation flow for the touched files, then broaden only if the change is cross-cutting.
 - For TS/TSX edits in this repo, treat `pnpm run validate:staged` / the Husky `pre-commit` path as the default affected validation flow and prefer `vitest related --run` style checks over a manually assembled test file list.
+
+### E2E and Broad Validation
+
 - When a change touches real browser-extension runtime behavior, cross-page flows, permissions, service worker behavior, extension build output, or UI layering issues that are hard to verify reliably with lower-level tests, consider adding a Playwright E2E test for self-verification.
 - Temporary E2E tests created only for self-verification should be deleted before handoff by default. Keep them only when they are deterministic, reusable, and provide clear long-term regression value; if retention is genuinely ambiguous, explain the tradeoff and ask before keeping them.
 - If the change can invalidate unused-file, export, or dependency analysis, broaden validation to include `pnpm knip`; use `pnpm run validate:push` when you want the full local pre-push-equivalent gate instead of assembling `compile` + `knip` manually.
+
+### Shared Surface Changes
+
 - If a change modifies shared component or hook props, validation must cover direct render/use sites and standalone harness tests that instantiate the changed API surface.
 - Current coverage baseline is configured in `vitest.config.ts`.
 
 ## Documentation Guidelines
 
+### Source of Truth
+
 - Keep repo docs such as `README.md` and `README_EN.md` consistent when their shared content changes.
 - In `docs/docs/`, treat Chinese pages as the source of truth.
+
+### Translation Workflow
+
 - `docs/docs/en/**` and `docs/docs/ja/**` are auto-translated by `docs_assistant/translate.py` and `.github/workflows/translate-docs.yml`; avoid manual edits unless the workflow itself changes.
+
+### Navigation
+
 - When adding or removing docs pages under `docs/docs/`, update locale navigation in `docs/docs/.vuepress/config.js`.
 
 ## i18n Guidelines
 
+### Typing and API Usage
+
 - When a helper explicitly accepts a translation function, type it as `TFunction` from `i18next`. Do not hand-write signatures like `(key: string, options?: any) => string` or `ReturnType<typeof useTranslation>["t"]` unless a narrower type is intentionally required.
+
+### Plurals and Count Semantics
+
 - When a visible phrase depends on `count` for grammar or wording, prefer a proper pluralized translation (`t(key, { count })`, ICU/message-format equivalent, or explicit plural key family) so the locale controls the full rendered phrase.
 - Only split the numeric value out of the translation when the number is a genuinely separate visual metric, such as a standalone badge/counter or a parenthesized metric that does not need grammatical agreement with the adjacent label.
 - Treat unexpected `_one`, `_other`, or similar extract-generated rewrites as a signal to clarify intent in source code: either model the phrase explicitly as pluralized copy, or remove `count` from the translation call because the number is visually independent. Do not patch locale JSON blindly without fixing the source usage pattern.
+
+### Extraction Workflow
+
 - After running `pnpm run i18n:extract`, inspect the locale diff before proceeding. Confirm the intended new keys are still present and no required keys were removed as "unused" by the extractor.
 - If `i18n:extract` removes keys you expected to keep, fix the source usage or extractor configuration instead of re-adding locale JSON by hand. In this repo, prefer direct extractable calls such as `t("ns:key")` over wrapper names like `translate("ns:key")` unless the wrapper is explicitly configured in `i18next.config.ts`.
 - After changing translation keys, locale JSON, or any UI code that adds new `t(...)` usages, run `pnpm run i18n:extract:ci` and ensure it reports no unexpected updates before handoff.
+
+### Locale Shape Consistency
+
 - Keep locale key shapes stable across languages; do not let one language drift into a pluralized or structurally different key family unless that family is intentionally introduced for every locale.
 
 ## Security & Configuration Tips
 
+### Secrets and Configuration
+
 - Never commit secrets, tokens, or private environment overrides.
 - Use `.env.example` as the reference for supported environment variables.
+
+### Local Files
+
 - Treat backup or generated local files as out of scope unless the task explicitly targets them.
