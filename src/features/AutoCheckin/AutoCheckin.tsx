@@ -34,6 +34,7 @@ import { createLogger } from "~/utils/core/logger"
 import { getExternalCheckInOpenOptions } from "~/utils/core/shortcutKeys"
 import {
   navigateWithinOptionsPage,
+  openAccountBaseUrl,
   openCheckInPage,
   openCheckInPages,
 } from "~/utils/navigation"
@@ -80,6 +81,8 @@ export default function AutoCheckin(props: {
   const [retryingAccountId, setRetryingAccountId] = useState<string | null>(
     null,
   )
+  const [pendingOpeningSiteAccountIds, setPendingOpeningSiteAccountIds] =
+    useState<Set<string>>(() => new Set())
   const [openingManualAccountId, setOpeningManualAccountId] = useState<
     string | null
   >(null)
@@ -467,12 +470,25 @@ export default function AutoCheckin(props: {
     }
   }
 
-  const resolveManualSignInAccount = useCallback(
-    async (accountId: string): Promise<DisplaySiteData> => {
-      const response = await sendRuntimeMessage({
+  const resolveAutoCheckinAccount = useCallback(
+    async (
+      accountId: string,
+      options?: { includeDisabled?: boolean },
+    ): Promise<DisplaySiteData> => {
+      const message = {
         action: RuntimeActionIds.AutoCheckinGetAccountInfo,
         accountId,
-      })
+      } as {
+        action: typeof RuntimeActionIds.AutoCheckinGetAccountInfo
+        accountId: string
+        includeDisabled?: boolean
+      }
+
+      if (typeof options?.includeDisabled !== "undefined") {
+        message.includeDisabled = options.includeDisabled
+      }
+
+      const response = await sendRuntimeMessage(message)
 
       if (!response.success || !response.data) {
         throw new Error(response.error || "Unknown error")
@@ -483,13 +499,44 @@ export default function AutoCheckin(props: {
     [],
   )
 
+  const openAccountSiteForAccount = useCallback(
+    async (accountId: string) => {
+      const displayData = await resolveAutoCheckinAccount(accountId, {
+        includeDisabled: true,
+      })
+      await openAccountBaseUrl(displayData)
+    },
+    [resolveAutoCheckinAccount],
+  )
+
   const openManualSignInForAccount = useCallback(
     async (accountId: string) => {
-      const displayData = await resolveManualSignInAccount(accountId)
+      const displayData = await resolveAutoCheckinAccount(accountId)
       await openCheckInPage(displayData)
     },
-    [resolveManualSignInAccount],
+    [resolveAutoCheckinAccount],
   )
+
+  const handleOpenAccountSite = async (accountId: string) => {
+    try {
+      setPendingOpeningSiteAccountIds((prev) => {
+        const next = new Set(prev)
+        next.add(accountId)
+        return next
+      })
+      await openAccountSiteForAccount(accountId)
+    } catch (error: unknown) {
+      toast.error(
+        t("messages.error.openSiteFailed", { error: getErrorMessage(error) }),
+      )
+    } finally {
+      setPendingOpeningSiteAccountIds((prev) => {
+        const next = new Set(prev)
+        next.delete(accountId)
+        return next
+      })
+    }
+  }
 
   const handleOpenManualSignIn = async (accountId: string) => {
     try {
@@ -529,7 +576,7 @@ export default function AutoCheckin(props: {
       // Best-effort bulk open: one failing account should not block the rest.
       for (const accountId of failedManualAccountIds) {
         try {
-          accountsToOpen.push(await resolveManualSignInAccount(accountId))
+          accountsToOpen.push(await resolveAutoCheckinAccount(accountId))
         } catch (error) {
           failedCount += 1
           logger.warn(
@@ -696,8 +743,10 @@ export default function AutoCheckin(props: {
           results={filteredResults}
           showDevActions={showDebugButtons}
           retryingAccountId={retryingAccountId}
+          pendingOpeningSiteAccountIds={pendingOpeningSiteAccountIds}
           openingManualAccountId={openingManualAccountId}
           onRetryAccount={handleRetryAccount}
+          onOpenAccountSite={handleOpenAccountSite}
           onOpenManualSignIn={handleOpenManualSignIn}
         />
       )}

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import AutoCheckin from "~/entrypoints/options/pages/AutoCheckin"
 import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
-import { render, screen, waitFor } from "~~/tests/test-utils/render"
+import { render, screen, waitFor, within } from "~~/tests/test-utils/render"
 
 const { toast } = vi.hoisted(() => ({
   toast: {
@@ -207,6 +207,227 @@ describe("AutoCheckin account actions", () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
         "autoCheckin:messages.error.openManualFailed",
+      )
+    })
+    await waitFor(() => {
+      expect(openButton).not.toBeDisabled()
+    })
+  })
+
+  it("opens the provider site from the row action", async () => {
+    const user = userEvent.setup()
+    const browserApi = await import("~/utils/browser/browserApi")
+    const navigation = await import("~/utils/navigation")
+    const openResolvers = new Map<string, () => void>()
+
+    const sendRuntimeMessageSpy = vi
+      .spyOn(browserApi, "sendRuntimeMessage")
+      .mockImplementation(async (message: any) => {
+        if (message.action === RuntimeActionIds.AutoCheckinGetStatus) {
+          return {
+            success: true,
+            data: {
+              perAccount: {
+                alpha: {
+                  accountId: "alpha",
+                  accountName: "Alpha",
+                  status: CHECKIN_RESULT_STATUS.SUCCESS,
+                  timestamp: 1700000000000,
+                  message: "ok",
+                },
+                beta: {
+                  accountId: "beta",
+                  accountName: "Beta",
+                  status: CHECKIN_RESULT_STATUS.SKIPPED,
+                  timestamp: 1700000001000,
+                  message: "needs manual attention",
+                },
+              },
+            },
+          }
+        }
+
+        if (message.action === RuntimeActionIds.AutoCheckinGetAccountInfo) {
+          if (message.accountId === "beta") {
+            return {
+              success: true,
+              data: {
+                id: "beta",
+                name: "Beta",
+                baseUrl: "https://beta.example",
+              },
+            }
+          }
+
+          return {
+            success: true,
+            data: {
+              id: "alpha",
+              name: "Alpha",
+              baseUrl: "https://alpha.example",
+            },
+          }
+        }
+
+        return { success: true }
+      })
+    const openAccountBaseUrlSpy = vi
+      .spyOn(navigation, "openAccountBaseUrl")
+      .mockImplementation(
+        (account: any) =>
+          new Promise<void>((resolve) => {
+            openResolvers.set(account.id, resolve)
+          }) as any,
+      )
+
+    render(<AutoCheckin routeParams={{}} />)
+
+    const alphaRow = await screen.findByText("Alpha")
+    const betaRow = await screen.findByText("Beta")
+    const alphaButton = within(alphaRow.closest("tr") as HTMLElement).getByRole(
+      "button",
+      {
+        name: "autoCheckin:execution.actions.openSite",
+      },
+    )
+    const betaButton = within(betaRow.closest("tr") as HTMLElement).getByRole(
+      "button",
+      {
+        name: "autoCheckin:execution.actions.openSite",
+      },
+    )
+
+    await user.click(alphaButton)
+
+    await waitFor(() => {
+      expect(alphaButton).toBeDisabled()
+    })
+
+    await user.click(alphaButton)
+    await user.click(betaButton)
+
+    await waitFor(() => {
+      expect(betaButton).toBeDisabled()
+    })
+
+    await waitFor(() => {
+      expect(openAccountBaseUrlSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "alpha",
+          baseUrl: "https://alpha.example",
+        }),
+      )
+    })
+    await waitFor(() => {
+      expect(openAccountBaseUrlSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "beta",
+          baseUrl: "https://beta.example",
+        }),
+      )
+    })
+
+    const accountInfoRequests = sendRuntimeMessageSpy.mock.calls
+      .map(([message]) => message as any)
+      .filter(
+        (message) =>
+          message.action === RuntimeActionIds.AutoCheckinGetAccountInfo,
+      )
+
+    expect(accountInfoRequests).toEqual([
+      {
+        action: RuntimeActionIds.AutoCheckinGetAccountInfo,
+        accountId: "alpha",
+        includeDisabled: true,
+      },
+      {
+        action: RuntimeActionIds.AutoCheckinGetAccountInfo,
+        accountId: "beta",
+        includeDisabled: true,
+      },
+    ])
+    expect(openAccountBaseUrlSpy).toHaveBeenCalledTimes(2)
+    expect(
+      openAccountBaseUrlSpy.mock.calls.filter(
+        ([account]) => (account as any).id === "alpha",
+      ),
+    ).toHaveLength(1)
+    expect(
+      openAccountBaseUrlSpy.mock.calls.filter(
+        ([account]) => (account as any).id === "beta",
+      ),
+    ).toHaveLength(1)
+
+    openResolvers.get("alpha")?.()
+    openResolvers.get("beta")?.()
+
+    await waitFor(() => {
+      expect(alphaButton).not.toBeDisabled()
+      expect(betaButton).not.toBeDisabled()
+    })
+  })
+
+  it("shows an error when site opening fails and restores the button state", async () => {
+    const user = userEvent.setup()
+    const browserApi = await import("~/utils/browser/browserApi")
+    const navigation = await import("~/utils/navigation")
+
+    let rejectOpen: ((reason?: unknown) => void) | undefined
+    vi.spyOn(browserApi, "sendRuntimeMessage").mockImplementation(
+      async (message: any) => {
+        if (message.action === RuntimeActionIds.AutoCheckinGetStatus) {
+          return {
+            success: true,
+            data: {
+              perAccount: {
+                alpha: {
+                  accountId: "alpha",
+                  accountName: "Alpha",
+                  status: CHECKIN_RESULT_STATUS.ALREADY_CHECKED,
+                  timestamp: 1700000000000,
+                  message: "already checked",
+                },
+              },
+            },
+          }
+        }
+
+        if (message.action === RuntimeActionIds.AutoCheckinGetAccountInfo) {
+          return {
+            success: true,
+            data: {
+              id: "alpha",
+              name: "Alpha",
+              baseUrl: "https://alpha.example",
+            },
+          }
+        }
+
+        return { success: true }
+      },
+    )
+    vi.spyOn(navigation, "openAccountBaseUrl").mockReturnValue(
+      new Promise((_, reject) => {
+        rejectOpen = reject
+      }) as any,
+    )
+
+    render(<AutoCheckin routeParams={{}} />)
+
+    const openButton = await screen.findByRole("button", {
+      name: "autoCheckin:execution.actions.openSite",
+    })
+    await user.click(openButton)
+
+    await waitFor(() => {
+      expect(openButton).toBeDisabled()
+    })
+
+    rejectOpen?.(new Error("popup blocked"))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "autoCheckin:messages.error.openSiteFailed",
       )
     })
     await waitFor(() => {

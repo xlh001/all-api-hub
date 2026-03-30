@@ -27,8 +27,10 @@ interface ResultsTableProps {
   results: CheckinAccountResult[]
   showDevActions?: boolean
   retryingAccountId?: string | null
+  pendingOpeningSiteAccountIds?: Set<string>
   openingManualAccountId?: string | null
   onRetryAccount?: (accountId: string) => void | Promise<void>
+  onOpenAccountSite?: (accountId: string) => void | Promise<void>
   onOpenManualSignIn?: (accountId: string) => void | Promise<void>
 }
 
@@ -39,8 +41,10 @@ export default function ResultsTable({
   results,
   showDevActions,
   retryingAccountId,
+  pendingOpeningSiteAccountIds,
   openingManualAccountId,
   onRetryAccount,
+  onOpenAccountSite,
   onOpenManualSignIn,
 }: ResultsTableProps) {
   const { t } = useTranslation("autoCheckin")
@@ -168,6 +172,8 @@ export default function ResultsTable({
           <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
             {visibleResults.map((result) => {
               const troubleshootingHintKey = getTroubleshootingHintKey(result)
+              const isOpeningSite =
+                pendingOpeningSiteAccountIds?.has(result.accountId) ?? false
 
               return (
                 <tr
@@ -237,6 +243,20 @@ export default function ResultsTable({
                             {t("execution.actions.openManual")}
                           </Button>
                         )}
+                      {onOpenAccountSite && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          loading={isOpeningSite}
+                          disabled={isOpeningSite}
+                          onClick={() => onOpenAccountSite(result.accountId)}
+                          leftIcon={
+                            <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+                          }
+                        >
+                          {t("execution.actions.openSite")}
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
