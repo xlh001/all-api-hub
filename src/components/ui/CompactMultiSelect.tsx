@@ -1,4 +1,10 @@
-import { CheckIcon, ChevronsUpDownIcon, XIcon } from "lucide-react"
+import {
+  CheckIcon,
+  ChevronsUpDownIcon,
+  ListChecksIcon,
+  ListXIcon,
+  XIcon,
+} from "lucide-react"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -151,6 +157,7 @@ export function CompactMultiSelect({
   }, [optionsByValue, selected])
 
   const hasSelection = selected.length > 0
+  const selectAllButtonLabel = t("ui:multiSelect.selectAll")
 
   const triggerText = React.useMemo(() => {
     if (!hasSelection) return localizedPlaceholder
@@ -464,8 +471,8 @@ export function CompactMultiSelect({
             variant="outline"
             size={clearButtonSize}
             onClick={selectAllSelectableOptions}
-            aria-label={t("ui:multiSelect.selectAll")}
-            title={t("ui:multiSelect.selectAll")}
+            aria-label={selectAllButtonLabel}
+            title={selectAllButtonLabel}
             disabled={
               disabled ||
               selectableOptionValues.length === 0 ||
@@ -473,19 +480,19 @@ export function CompactMultiSelect({
             }
             className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80"
           >
-            <CheckIcon className="size-4" />
+            <ListChecksIcon className="size-4" />
           </Button>
           <Button
             type="button"
             variant="outline"
             size={clearButtonSize}
             onClick={clearSelection}
-            aria-label={t("ui:multiSelect.cancelSelected")}
-            title={t("ui:multiSelect.cancelSelected")}
+            aria-label={t("multiSelect.cancelSelected")}
+            title={t("multiSelect.cancelSelected")}
             disabled={disabled || !hasSelection || !clearable}
             className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80"
           >
-            <XIcon className="size-4" />
+            <ListXIcon className="size-4" />
           </Button>
         </div>
       </div>
@@ -557,7 +564,7 @@ export function CompactMultiSelect({
                 value={searchTerm}
                 onValueChange={setSearchTerm}
                 onClear={() => setSearchTerm("")}
-                clearButtonLabel={t("ui:multiSelect.clearInput")}
+                clearButtonLabel={t("multiSelect.clearInput")}
               />
               <CommandList>
                 <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
@@ -608,8 +615,8 @@ export function CompactMultiSelect({
             variant="outline"
             size={clearButtonSize}
             onClick={clearSelection}
-            aria-label={t("ui:multiSelect.clearSelected")}
-            title={t("ui:multiSelect.clearSelected")}
+            aria-label={t("multiSelect.clearSelected")}
+            title={t("multiSelect.clearSelected")}
             className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80 shrink-0"
           >
             <XIcon className="size-4" />
