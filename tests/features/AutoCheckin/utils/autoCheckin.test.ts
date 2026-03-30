@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from "vitest"
 import {
   isInvalidAccessTokenMessage,
   isNoTabWithIdMessage,
+  resolveAutoCheckinTroubleshootingHintKey,
   translateAutoCheckinMessageKey,
 } from "~/features/AutoCheckin/utils/autoCheckin"
+import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
 
 describe("autoCheckin utils", () => {
   describe("translateAutoCheckinMessageKey", () => {
@@ -97,6 +99,46 @@ describe("autoCheckin utils", () => {
     it("does not match unrelated tab errors", () => {
       expect(isNoTabWithIdMessage("tab closed unexpectedly")).toBe(false)
       expect(isNoTabWithIdMessage("no window with id: 3")).toBe(false)
+    })
+  })
+
+  describe("resolveAutoCheckinTroubleshootingHintKey", () => {
+    it("returns the site-type hint for skipped no-provider results", () => {
+      expect(
+        resolveAutoCheckinTroubleshootingHintKey({
+          status: CHECKIN_RESULT_STATUS.SKIPPED,
+          messageKey: "autoCheckin:skipReasons.no_provider",
+          message: "账号所属站点类型暂不支持签到",
+        }),
+      ).toBe("execution.hints.siteTypeCheckinUnsupported")
+    })
+
+    it("returns the site-type hint for unsupported endpoint failures", () => {
+      expect(
+        resolveAutoCheckinTroubleshootingHintKey({
+          status: CHECKIN_RESULT_STATUS.FAILED,
+          messageKey: "autoCheckin:providerFallback.endpointNotSupported",
+          message: "不支持该签到接口",
+        }),
+      ).toBe("execution.hints.siteTypeCheckinUnsupported")
+    })
+
+    it("still matches access-token hints for failed raw messages", () => {
+      expect(
+        resolveAutoCheckinTroubleshootingHintKey({
+          status: CHECKIN_RESULT_STATUS.FAILED,
+          message: "access token invalid",
+        }),
+      ).toBe("execution.hints.invalidAccessToken")
+    })
+
+    it("does not return a raw-message hint for skipped rows without a known message key", () => {
+      expect(
+        resolveAutoCheckinTroubleshootingHintKey({
+          status: CHECKIN_RESULT_STATUS.SKIPPED,
+          message: "签到跳过",
+        }),
+      ).toBeNull()
     })
   })
 })

@@ -33,7 +33,8 @@
     "hints": {
       "invalidAccessToken": "解決方案：Access Token 可能已失效。請重新登入該站點，然後在「帳號管理 → 編輯帳號」中重新自動識別/重新整理 Access Token；如自動識別後仍出現此問題，請手動獲取並修改 Access Token。",
       "noTabWithId": "提示：請不要關閉擴充套件自動建立的標籤頁/視窗，擴充套件會在一段時間後自動關閉。如需手動關閉，請至少等待 1 分鐘後再關閉。",
-      "openFailedManualNewWindow": "提示：按住 Shift 點擊“開啟失敗帳號的手動簽到頁”，可在新視窗中開啟。"
+      "openFailedManualNewWindow": "提示：按住 Shift 點擊“開啟失敗帳號的手動簽到頁”，可在新視窗中開啟。",
+      "siteTypeCheckinUnsupported": "解決方案：先到「帳號管理 → 編輯帳號」檢查「站點型別」是否與實際站點一致；如果先前是自動識別出的結果，可在目標站點重新登入後再重新識別一次。若確認站點型別正確但仍顯示不支援，表示該站點目前可能尚未適配自動簽到，請改用「開啟網站」或「手動簽到」處理。"
     },
     "refresh": "重新整理",
     "runNow": "立即執行",

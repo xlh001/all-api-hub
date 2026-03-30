@@ -45,6 +45,28 @@ describe("AutoCheckin ResultsTable troubleshooting hints", () => {
     ).toBeInTheDocument()
   })
 
+  it("shows site-type troubleshooting for skipped no-provider results", async () => {
+    render(
+      <ResultsTable
+        results={[
+          {
+            accountId: "account-4",
+            accountName: "Account 4",
+            status: CHECKIN_RESULT_STATUS.SKIPPED,
+            messageKey: "autoCheckin:skipReasons.no_provider",
+            timestamp: 0,
+          },
+        ]}
+      />,
+    )
+
+    expect(
+      await screen.findByText(
+        "autoCheckin:execution.hints.siteTypeCheckinUnsupported",
+      ),
+    ).toBeInTheDocument()
+  })
+
   it("does not show invalidAccessToken hint for unrelated failure messages", async () => {
     render(
       <ResultsTable

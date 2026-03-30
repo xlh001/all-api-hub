@@ -1,5 +1,7 @@
 import type { TFunction } from "i18next"
 
+import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
+
 /**
  * Translate a known auto-checkin i18n key while preserving non-i18n backend
  * messages as-is.
@@ -97,4 +99,40 @@ const NO_TAB_WITH_ID_REGEX = /no tab with id[: ]\s*\d+/i
 export function isNoTabWithIdMessage(message: string): boolean {
   if (!message) return false
   return NO_TAB_WITH_ID_REGEX.test(message)
+}
+
+type AutoCheckinTroubleshootingHintKey =
+  | "execution.hints.invalidAccessToken"
+  | "execution.hints.noTabWithId"
+  | "execution.hints.siteTypeCheckinUnsupported"
+
+/**
+ * Resolve an optional troubleshooting hint for a result row based on its
+ * structured message key first, then on known raw/backend message patterns.
+ */
+export function resolveAutoCheckinTroubleshootingHintKey(params: {
+  status?: string
+  messageKey?: string
+  message: string
+}): AutoCheckinTroubleshootingHintKey | null {
+  if (
+    params.messageKey === "autoCheckin:skipReasons.no_provider" ||
+    params.messageKey === "autoCheckin:providerFallback.endpointNotSupported"
+  ) {
+    return "execution.hints.siteTypeCheckinUnsupported"
+  }
+
+  if (params.status !== CHECKIN_RESULT_STATUS.FAILED) {
+    return null
+  }
+
+  if (isInvalidAccessTokenMessage(params.message)) {
+    return "execution.hints.invalidAccessToken"
+  }
+
+  if (isNoTabWithIdMessage(params.message)) {
+    return "execution.hints.noTabWithId"
+  }
+
+  return null
 }

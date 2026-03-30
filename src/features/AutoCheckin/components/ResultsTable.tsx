@@ -11,18 +11,17 @@ import { useTranslation } from "react-i18next"
 import AccountLinkButton from "~/components/AccountLinkButton"
 import { Button, Card } from "~/components/ui"
 import { Z_INDEX } from "~/constants/designTokens"
-import { translateAutoCheckinMessageKey } from "~/features/AutoCheckin/utils/autoCheckin"
+import {
+  resolveAutoCheckinTroubleshootingHintKey,
+  translateAutoCheckinMessageKey,
+} from "~/features/AutoCheckin/utils/autoCheckin"
 import { cn } from "~/lib/utils"
 import {
   CHECKIN_RESULT_STATUS,
   CheckinAccountResult,
 } from "~/types/autoCheckin"
 
-import {
-  formatTimestamp,
-  isInvalidAccessTokenMessage,
-  isNoTabWithIdMessage,
-} from "../utils/tableUtils"
+import { formatTimestamp } from "../utils/tableUtils"
 
 interface ResultsTableProps {
   results: CheckinAccountResult[]
@@ -74,21 +73,11 @@ export default function ResultsTable({
   const getTroubleshootingHintKey = (
     result: CheckinAccountResult,
   ): string | null => {
-    if (result.status !== CHECKIN_RESULT_STATUS.FAILED) {
-      return null
-    }
-
-    const message = getResultMessage(result)
-
-    if (isInvalidAccessTokenMessage(message)) {
-      return "execution.hints.invalidAccessToken"
-    }
-
-    if (isNoTabWithIdMessage(message)) {
-      return "execution.hints.noTabWithId"
-    }
-
-    return null
+    return resolveAutoCheckinTroubleshootingHintKey({
+      status: result.status,
+      messageKey: result.messageKey,
+      message: getResultMessage(result),
+    })
   }
 
   const getTroubleshootingHintLabel = (hintKey: string) => {
@@ -97,6 +86,8 @@ export default function ResultsTable({
         return t("execution.hints.invalidAccessToken")
       case "execution.hints.noTabWithId":
         return t("execution.hints.noTabWithId")
+      case "execution.hints.siteTypeCheckinUnsupported":
+        return t("execution.hints.siteTypeCheckinUnsupported")
       default:
         return hintKey
     }
