@@ -480,10 +480,13 @@ describe("KiloCodeExportDialog", () => {
     expect(errorText).toBeInTheDocument()
 
     const tokenSection = errorText.closest(".space-y-1")
-    expect(tokenSection).toBeTruthy()
+    expect(tokenSection).toBeInstanceOf(HTMLElement)
+    if (!(tokenSection instanceof HTMLElement)) {
+      throw new Error("Expected token retry section to be an HTMLElement")
+    }
 
     await user.click(
-      within(tokenSection!).getByRole("button", {
+      within(tokenSection).getByRole("button", {
         name: "common:actions.retry",
       }),
     )

@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event"
+import type { ComponentProps } from "react"
 import { describe, expect, it, vi } from "vitest"
 
 import { DIALOG_MODES } from "~/constants/dialogModes"
@@ -6,7 +7,7 @@ import ActionButtons from "~/features/AccountManagement/components/AccountDialog
 import { render, screen } from "~~/tests/test-utils/render"
 
 describe("AccountDialog ActionButtons", () => {
-  const createProps = () => ({
+  const createProps = (): ComponentProps<typeof ActionButtons> => ({
     mode: DIALOG_MODES.ADD,
     url: "https://api.example.com",
     isDetecting: false,

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ApiError } from "~/services/apiService/common/errors"
 import { runOctopusBatch } from "~/services/models/modelSync/octopusModelSync"
+import type { OctopusChannelWithData } from "~/types/managedSite"
 
 const { fetchRemoteModelsMock, updateChannelMock, loggerErrorMock } =
   vi.hoisted(() => ({
@@ -27,18 +28,21 @@ const config = {
   password: "secret",
 }
 
-const createChannel = (overrides: Record<string, unknown> = {}) => ({
-  id: 1,
-  name: "Alpha",
-  models: "model-a",
-  _octopusData: {
-    type: 10,
-    base_urls: ["https://upstream.example.com"],
-    keys: ["key-1"],
-    proxy: "http://proxy.example.com",
-  },
-  ...overrides,
-})
+const createChannel = (
+  overrides: Record<string, unknown> = {},
+): OctopusChannelWithData =>
+  ({
+    id: 1,
+    name: "Alpha",
+    models: "model-a",
+    _octopusData: {
+      type: 10,
+      base_urls: ["https://upstream.example.com"],
+      keys: ["key-1"],
+      proxy: "http://proxy.example.com",
+    },
+    ...overrides,
+  }) as unknown as OctopusChannelWithData
 
 describe("runOctopusBatch", () => {
   beforeEach(() => {

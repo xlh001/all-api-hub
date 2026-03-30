@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event"
+import type { ComponentProps } from "react"
 import { describe, expect, it, vi } from "vitest"
 
 import { SUB2API, UNKNOWN_SITE } from "~/constants/siteType"
@@ -40,7 +41,7 @@ describe("AccountDialog AccountForm", () => {
       ...overrides,
     }) as CheckInConfig
 
-  const createProps = () => ({
+  const createProps = (): ComponentProps<typeof AccountForm> => ({
     authType: AuthTypeEnum.AccessToken,
     siteName: "Example Site",
     username: "alice",

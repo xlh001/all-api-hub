@@ -9,6 +9,8 @@ import {
   AccountDataProvider,
   useAccountDataContext,
 } from "~/features/AccountManagement/hooks/AccountDataContext"
+import type { SearchResult } from "~/services/search/accountSearch"
+import type { DisplaySiteData } from "~/types"
 import { SortingCriteriaType } from "~/types/sorting"
 import { testI18n } from "~~/tests/test-utils/i18n"
 
@@ -62,18 +64,47 @@ const {
   mockUnpinAccount: vi.fn(),
   mockRefreshAllAccounts: vi.fn(),
   mockToastPromise: vi.fn(),
-  mockGetActiveTabs: vi.fn(async () => []),
-  mockGetAllTabs: vi.fn(async () => []),
-  mockOnRuntimeMessage: vi.fn((listener: any) => {
+  mockGetActiveTabs: vi.fn<() => Promise<browser.tabs.Tab[]>>(async () => []),
+  mockGetAllTabs: vi.fn<() => Promise<browser.tabs.Tab[]>>(async () => []),
+  mockOnRuntimeMessage: vi.fn<
+    (
+      listener: (
+        message: any,
+        sender: browser.runtime.MessageSender,
+        sendResponse: (response?: any) => void,
+      ) => void | boolean,
+    ) => () => void
+  >((listener) => {
     ;(globalThis as any).__accountDataContextRuntimeListener = listener
     return () => {
       ;(globalThis as any).__accountDataContextRuntimeListener = undefined
     }
   }),
-  mockOnTabActivated: vi.fn(() => () => {}),
-  mockOnTabRemoved: vi.fn(() => () => {}),
-  mockOnTabUpdated: vi.fn(() => () => {}),
-  mockSearchAccounts: vi.fn(() => []),
+  mockOnTabActivated: vi.fn<
+    (
+      listener: (activeInfo: browser.tabs._OnActivatedActiveInfo) => void,
+    ) => () => void
+  >((_listener) => () => {}),
+  mockOnTabRemoved: vi.fn<
+    (
+      listener: (
+        tabId: number,
+        removeInfo: browser.tabs._OnRemovedRemoveInfo,
+      ) => void,
+    ) => () => void
+  >((_listener) => () => {}),
+  mockOnTabUpdated: vi.fn<
+    (
+      listener: (
+        tabId: number,
+        changeInfo: browser.tabs._OnUpdatedChangeInfo,
+        tab: browser.tabs.Tab,
+      ) => void | Promise<void>,
+    ) => () => void
+  >((_listener) => () => {}),
+  mockSearchAccounts: vi.fn<
+    (accounts: DisplaySiteData[], query: string) => SearchResult[]
+  >(() => []),
   mockUpdateSortConfig: vi.fn(),
 }))
 
@@ -237,6 +268,24 @@ function createEmptyStats() {
     today_total_completion_tokens: 0,
     today_total_income: 0,
   }
+}
+
+/**
+ *
+ */
+function createBrowserTab(
+  overrides: Partial<browser.tabs.Tab> = {},
+): browser.tabs.Tab {
+  return {
+    active: true,
+    highlighted: true,
+    id: 0,
+    incognito: false,
+    index: 0,
+    pinned: false,
+    windowId: 1,
+    ...overrides,
+  } as browser.tabs.Tab
 }
 
 /**
@@ -685,7 +734,7 @@ describe("AccountDataContext current tab detection", () => {
       otherSite,
     ])
     mockGetActiveTabs.mockResolvedValue([
-      { id: 7, url: "https://api.example.com/settings" },
+      createBrowserTab({ id: 7, url: "https://api.example.com/settings" }),
     ])
     vi.mocked(globalThis.browser.tabs.sendMessage).mockResolvedValue({
       success: true,
@@ -717,7 +766,7 @@ describe("AccountDataContext current tab detection", () => {
 
     mockGetAllAccounts.mockResolvedValue([sameSiteAccount])
     mockGetActiveTabs.mockResolvedValue([
-      { id: 8, url: "https://api.example.com/settings" },
+      createBrowserTab({ id: 8, url: "https://api.example.com/settings" }),
     ])
     vi.mocked(globalThis.browser.tabs.sendMessage).mockRejectedValue(
       new Error("content script unavailable"),
@@ -743,7 +792,9 @@ describe("AccountDataContext current tab detection", () => {
         last_sync_time: 0,
       },
     ])
-    mockGetActiveTabs.mockResolvedValue([{ id: 9, url: "chrome://extensions" }])
+    mockGetActiveTabs.mockResolvedValue([
+      createBrowserTab({ id: 9, url: "chrome://extensions" }),
+    ])
 
     const getLatestCtx = await renderAccountDataProvider()
 
@@ -1170,18 +1221,30 @@ describe("AccountDataContext sorting behavior", () => {
       },
     ])
     mockGetAllTabs.mockResolvedValue([
-      {
+      createBrowserTab({
         id: 10,
         url: "https://b.example.com/dashboard",
         title: "Beta workspace",
-      },
+      }),
     ])
     mockSearchAccounts.mockImplementation((_displayData, query: string) => {
       if (query === "https://b.example.com/dashboard") {
-        return [{ account: { id: "acc-b" }, score: 4 }]
+        return [
+          {
+            account: { id: "acc-b" } as DisplaySiteData,
+            score: 4,
+            matchedFields: [],
+          },
+        ]
       }
       if (query === "Beta workspace") {
-        return [{ account: { id: "acc-b" }, score: 2 }]
+        return [
+          {
+            account: { id: "acc-b" } as DisplaySiteData,
+            score: 2,
+            matchedFields: [],
+          },
+        ]
       }
       return []
     })

@@ -138,7 +138,7 @@ describe("userPreferences settings helpers", () => {
         contextMenu: { enabled: false },
         relaxedCodeValidation: false,
         urlWhitelist: {
-          ...DEFAULT_PREFERENCES.redemptionAssist.urlWhitelist,
+          ...DEFAULT_PREFERENCES.redemptionAssist!.urlWhitelist,
           enabled: false,
           patterns: ["^https://blocked.example.com$"],
           includeAccountSiteUrls: false,

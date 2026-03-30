@@ -5,6 +5,7 @@ import {
   fetchChannelFilters,
   saveChannelFilters,
 } from "~/features/ManagedSiteChannels/utils/channelFilters"
+import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 
 const { mockSendRuntimeMessage, mockGetConfig, mockUpsertFilters, mockWarn } =
   vi.hoisted(() => ({
@@ -31,7 +32,7 @@ vi.mock("~/utils/core/logger", () => ({
   }),
 }))
 
-const sampleRules = [
+const sampleRules: ChannelModelFilterRule[] = [
   {
     id: "rule-1",
     name: "Allow GPT",

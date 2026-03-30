@@ -1353,6 +1353,7 @@ describe("UserPreferencesContext", () => {
     await act(async () => {
       await context.updateRedemptionAssist({
         urlWhitelist: {
+          ...preferences.redemptionAssist!.urlWhitelist,
           patterns: ["https://redeem.example/*", "https://extra.example/*"],
         },
       })
@@ -1395,6 +1396,9 @@ describe("UserPreferencesContext", () => {
       action: RuntimeActionIds.RedemptionAssistUpdateSettings,
       settings: {
         urlWhitelist: {
+          enabled: true,
+          includeAccountSiteUrls: true,
+          includeCheckInAndRedeemUrls: false,
           patterns: ["https://redeem.example/*", "https://extra.example/*"],
         },
       },

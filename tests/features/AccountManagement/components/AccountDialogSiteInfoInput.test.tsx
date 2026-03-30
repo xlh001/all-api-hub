@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event"
+import type { ComponentProps } from "react"
 import { describe, expect, it, vi } from "vitest"
 
 import { SUB2API } from "~/constants/siteType"
@@ -7,7 +8,7 @@ import { AuthTypeEnum } from "~/types"
 import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 describe("AccountDialog SiteInfoInput", () => {
-  const createProps = () => ({
+  const createProps = (): ComponentProps<typeof SiteInfoInput> => ({
     url: "https://api.example.com",
     onUrlChange: vi.fn(),
     isDetected: false,

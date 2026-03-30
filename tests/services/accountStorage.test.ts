@@ -1642,7 +1642,6 @@ describe("accountStorage core behaviors", () => {
       last_sync_time: originalSyncTime,
       health: {
         status: SiteHealthStatus.Healthy,
-        message: "",
       },
     })
     seedStorage([account])
