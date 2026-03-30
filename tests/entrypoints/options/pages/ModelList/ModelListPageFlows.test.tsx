@@ -1,0 +1,454 @@
+import { TabGroup } from "@headlessui/react"
+import userEvent from "@testing-library/user-event"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+import ModelList from "~/entrypoints/options/pages/ModelList"
+import {
+  createAccountSource,
+  createAllAccountsSource,
+  createProfileSource,
+} from "~/features/ModelList/modelManagementSources"
+import { API_TYPES } from "~/services/verification/aiApiVerification"
+import { AuthTypeEnum } from "~/types"
+import { render, screen } from "~~/tests/test-utils/render"
+
+const mockUseModelListData = vi.fn()
+const mockSetAllAccountsFilterAccountId = vi.fn()
+
+vi.mock("~/features/ModelList/hooks/useModelListData", () => ({
+  useModelListData: (...args: any[]) => mockUseModelListData(...args),
+}))
+
+vi.mock("~/services/models/utils/modelProviders", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("~/services/models/utils/modelProviders")
+    >()
+  return {
+    ...actual,
+    getAllProviders: () => ["provider-a"],
+  }
+})
+
+vi.mock("~/services/verification/verificationResultHistory", () => ({
+  createAccountModelVerificationHistoryTarget: vi.fn(() => "account-target"),
+  createProfileModelVerificationHistoryTarget: vi.fn(() => "profile-target"),
+  useVerificationResultHistorySummaries: vi.fn(() => ({
+    summariesByKey: {},
+  })),
+}))
+
+const ACCOUNT = {
+  id: "acc-1",
+  name: "Primary Account",
+  username: "tester",
+  siteType: "new-api",
+  baseUrl: "https://example.com",
+  token: "token",
+  userId: 1,
+  authType: AuthTypeEnum.AccessToken,
+  checkIn: { enableDetection: false },
+} as any
+
+const SECOND_ACCOUNT = {
+  ...ACCOUNT,
+  id: "acc-2",
+  name: "Backup Account",
+  baseUrl: "https://backup.example.com",
+} as any
+
+const PROFILE = {
+  id: "profile-1",
+  name: "Reusable Key",
+  apiType: API_TYPES.OPENAI_COMPATIBLE,
+  baseUrl: "https://profile.example.com",
+  apiKey: "sk-secret",
+  tagIds: [],
+  notes: "",
+  createdAt: 1,
+  updatedAt: 2,
+} as any
+
+const ACCOUNT_SOURCE = createAccountSource(ACCOUNT)
+const ALL_ACCOUNTS_SOURCE = createAllAccountsSource()
+const PROFILE_SOURCE = createProfileSource(PROFILE)
+
+vi.mock("~/features/ModelList/components/AccountSelector", () => ({
+  AccountSelector: () => <div>Account Selector</div>,
+}))
+
+vi.mock("~/features/ModelList/components/StatusIndicator", () => ({
+  StatusIndicator: ({ selectedSource, loadPricingData }: any) => (
+    <div>
+      <div>Status Indicator: {selectedSource?.kind ?? "none"}</div>
+      <button type="button" onClick={() => loadPricingData()}>
+        Retry load
+      </button>
+    </div>
+  ),
+}))
+
+vi.mock("~/features/ModelList/components/AccountSummaryBar", () => ({
+  AccountSummaryBar: ({ items, activeAccountId, onAccountClick }: any) => (
+    <div>
+      <div>Account Summary Bar active:{activeAccountId ?? "none"}</div>
+      {items.map((item: any) => (
+        <button
+          key={item.accountId}
+          type="button"
+          onClick={() => onAccountClick(item.accountId)}
+        >
+          Summary {item.name}:{item.count}
+        </button>
+      ))}
+    </div>
+  ),
+}))
+
+vi.mock("~/features/ModelList/components/ControlPanel", () => ({
+  ControlPanel: ({ totalModels, filteredModels }: any) => (
+    <div>
+      Control Panel total:{totalModels} filtered:{filteredModels.length}
+    </div>
+  ),
+}))
+
+vi.mock("~/features/ModelList/components/Footer", () => ({
+  Footer: ({ showPricingNote }: any) => (
+    <div>Footer pricing:{String(showPricingNote)}</div>
+  ),
+}))
+
+vi.mock("~/features/ModelList/components/ProviderTabs", () => ({
+  ProviderTabs: ({ children }: any) => <TabGroup>{children}</TabGroup>,
+}))
+
+vi.mock("~/features/ModelList/components/ModelDisplay", () => ({
+  ModelDisplay: ({
+    onVerifyModel,
+    onVerifyCliSupport,
+    onOpenModelKeyDialog,
+  }: any) => (
+    <div>
+      <button
+        type="button"
+        onClick={() => onVerifyModel(ACCOUNT_SOURCE, "gpt-4")}
+      >
+        Verify API account
+      </button>
+      <button
+        type="button"
+        onClick={() => onVerifyModel(PROFILE_SOURCE, "claude-3-5-sonnet")}
+      >
+        Verify API profile
+      </button>
+      <button
+        type="button"
+        onClick={() => onVerifyCliSupport(ACCOUNT_SOURCE, "gpt-4")}
+      >
+        Verify CLI account
+      </button>
+      <button
+        type="button"
+        onClick={() => onVerifyCliSupport(PROFILE_SOURCE, "claude-3-5-sonnet")}
+      >
+        Verify CLI profile
+      </button>
+      <button
+        type="button"
+        onClick={() => onOpenModelKeyDialog(ACCOUNT, "gpt-4", ["vip"])}
+      >
+        Open key dialog
+      </button>
+    </div>
+  ),
+}))
+
+vi.mock("~/components/dialogs/VerifyApiDialog", () => ({
+  VerifyApiDialog: ({ account, initialModelId, onClose }: any) => (
+    <div>
+      <div>
+        Verify API Dialog {account.id}:{initialModelId}
+      </div>
+      <button type="button" onClick={onClose}>
+        Close verify API
+      </button>
+    </div>
+  ),
+}))
+
+vi.mock("~/components/dialogs/VerifyCliSupportDialog", () => ({
+  VerifyCliSupportDialog: ({
+    account,
+    profile,
+    initialModelId,
+    onClose,
+  }: any) => (
+    <div>
+      <div>
+        Verify CLI Dialog{" "}
+        {account ? `account:${account.id}` : `profile:${profile.id}`}:
+        {initialModelId}
+      </div>
+      <button type="button" onClick={onClose}>
+        Close verify CLI
+      </button>
+    </div>
+  ),
+}))
+
+vi.mock(
+  "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog",
+  () => ({
+    VerifyApiCredentialProfileDialog: ({
+      profile,
+      initialModelId,
+      onClose,
+    }: any) => (
+      <div>
+        <div>
+          Verify Profile Dialog {profile.id}:{initialModelId}
+        </div>
+        <button type="button" onClick={onClose}>
+          Close verify profile
+        </button>
+      </div>
+    ),
+  }),
+)
+
+vi.mock("~/features/ModelList/components/ModelKeyDialog", () => ({
+  default: ({ account, modelId, modelEnableGroups, onClose }: any) => (
+    <div>
+      <div>
+        Model Key Dialog {account.id}:{modelId}:{modelEnableGroups.join(",")}
+      </div>
+      <button type="button" onClick={onClose}>
+        Close key dialog
+      </button>
+    </div>
+  ),
+}))
+
+/**
+ *
+ */
+function buildState(overrides: Record<string, any> = {}) {
+  return {
+    accounts: [ACCOUNT, SECOND_ACCOUNT],
+    profiles: [PROFILE],
+    selectedSource: ACCOUNT_SOURCE,
+    currentAccount: ACCOUNT,
+    sourceCapabilities: ACCOUNT_SOURCE.capabilities,
+
+    selectedSourceValue: ACCOUNT_SOURCE.value,
+    setSelectedSourceValue: vi.fn(),
+    searchTerm: "",
+    setSearchTerm: vi.fn(),
+    selectedProvider: "all",
+    setSelectedProvider: vi.fn(),
+    selectedGroup: "default",
+    setSelectedGroup: vi.fn(),
+
+    showRealPrice: false,
+    setShowRealPrice: vi.fn(),
+    showRatioColumn: false,
+    setShowRatioColumn: vi.fn(),
+    showEndpointTypes: false,
+    setShowEndpointTypes: vi.fn(),
+
+    pricingData: { data: [{ model_name: "gpt-4" }] },
+    pricingContexts: [],
+    isLoading: false,
+    dataFormatError: false,
+    loadErrorMessage: null,
+    accountFallback: null,
+    isFallbackCatalogActive: false,
+
+    filteredModels: [
+      {
+        model: { model_name: "gpt-4" },
+        source: ACCOUNT_SOURCE,
+      },
+    ],
+    baseFilteredModels: [
+      {
+        model: { model_name: "gpt-4" },
+        source: ACCOUNT_SOURCE,
+      },
+    ],
+    availableGroups: [],
+
+    loadPricingData: vi.fn(),
+    getProviderFilteredCount: vi.fn(() => 0),
+    accountQueryStates: [],
+    allAccountsFilterAccountId: null,
+    setAllAccountsFilterAccountId: mockSetAllAccountsFilterAccountId,
+    ...overrides,
+  }
+}
+
+describe("ModelList page flows", () => {
+  beforeEach(() => {
+    mockSetAllAccountsFilterAccountId.mockReset()
+    mockUseModelListData.mockReset()
+  })
+
+  it("renders the status indicator when a source is selected but model data is still missing", async () => {
+    const loadPricingData = vi.fn()
+    mockUseModelListData.mockReturnValue(
+      buildState({
+        pricingData: null,
+        loadPricingData,
+      }),
+    )
+
+    const user = userEvent.setup()
+
+    render(<ModelList />)
+
+    expect(
+      await screen.findByText("Status Indicator: account"),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Control Panel total:/)).toBeNull()
+
+    await user.click(screen.getByRole("button", { name: "Retry load" }))
+    expect(loadPricingData).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows the fallback notice and toggles the all-accounts summary filter", async () => {
+    const user = userEvent.setup()
+
+    mockUseModelListData.mockReturnValue(
+      buildState({
+        selectedSource: ALL_ACCOUNTS_SOURCE,
+        selectedSourceValue: ALL_ACCOUNTS_SOURCE.value,
+        currentAccount: null,
+        sourceCapabilities: ALL_ACCOUNTS_SOURCE.capabilities,
+        pricingData: null,
+        pricingContexts: [{ accountId: ACCOUNT.id }],
+        isFallbackCatalogActive: true,
+        baseFilteredModels: [
+          {
+            model: { model_name: "gpt-4" },
+            source: createAccountSource(ACCOUNT),
+          },
+          {
+            model: { model_name: "claude-3-5-sonnet" },
+            source: createAccountSource(ACCOUNT),
+          },
+          {
+            model: { model_name: "gpt-4o-mini" },
+            source: createAccountSource(SECOND_ACCOUNT),
+          },
+        ],
+        accountQueryStates: [
+          { account: ACCOUNT, errorType: null },
+          { account: SECOND_ACCOUNT, errorType: "load_failed" },
+        ],
+      }),
+    )
+
+    const { rerender } = render(<ModelList />)
+
+    expect(
+      await screen.findByText("modelList:fallbackSourceNotice.title"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("Account Summary Bar active:none"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", { name: "Summary Primary Account:2" }),
+    )
+    expect(mockSetAllAccountsFilterAccountId).toHaveBeenCalledWith("acc-1")
+
+    mockUseModelListData.mockReturnValue(
+      buildState({
+        selectedSource: ALL_ACCOUNTS_SOURCE,
+        selectedSourceValue: ALL_ACCOUNTS_SOURCE.value,
+        currentAccount: null,
+        sourceCapabilities: ALL_ACCOUNTS_SOURCE.capabilities,
+        pricingData: null,
+        pricingContexts: [{ accountId: ACCOUNT.id }],
+        isFallbackCatalogActive: true,
+        baseFilteredModels: [
+          {
+            model: { model_name: "gpt-4" },
+            source: createAccountSource(ACCOUNT),
+          },
+        ],
+        accountQueryStates: [{ account: ACCOUNT, errorType: null }],
+        allAccountsFilterAccountId: "acc-1",
+      }),
+    )
+
+    rerender(<ModelList />)
+
+    expect(
+      await screen.findByText("Account Summary Bar active:acc-1"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", { name: "Summary Primary Account:1" }),
+    )
+    expect(mockSetAllAccountsFilterAccountId).toHaveBeenCalledWith(null)
+  })
+
+  it("routes account verification and model-key actions through the page dialogs", async () => {
+    const user = userEvent.setup()
+    mockUseModelListData.mockReturnValue(buildState())
+
+    render(<ModelList />)
+
+    await user.click(
+      await screen.findByRole("button", { name: "Verify API account" }),
+    )
+    expect(
+      await screen.findByText("Verify API Dialog acc-1:gpt-4"),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Close verify API" }))
+    expect(screen.queryByText("Verify API Dialog acc-1:gpt-4")).toBeNull()
+
+    await user.click(screen.getByRole("button", { name: "Open key dialog" }))
+    expect(
+      await screen.findByText("Model Key Dialog acc-1:gpt-4:vip"),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Close key dialog" }))
+    expect(screen.queryByText("Model Key Dialog acc-1:gpt-4:vip")).toBeNull()
+  })
+
+  it("routes profile verification and CLI verification to the correct dialog variants", async () => {
+    const user = userEvent.setup()
+    mockUseModelListData.mockReturnValue(buildState())
+
+    render(<ModelList />)
+
+    await user.click(
+      await screen.findByRole("button", { name: "Verify API profile" }),
+    )
+    expect(
+      await screen.findByText(
+        "Verify Profile Dialog profile-1:claude-3-5-sonnet",
+      ),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole("button", { name: "Close verify profile" }),
+    )
+
+    await user.click(screen.getByRole("button", { name: "Verify CLI account" }))
+    expect(
+      await screen.findByText("Verify CLI Dialog account:acc-1:gpt-4"),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Close verify CLI" }))
+
+    await user.click(screen.getByRole("button", { name: "Verify CLI profile" }))
+    expect(
+      await screen.findByText(
+        "Verify CLI Dialog profile:profile-1:claude-3-5-sonnet",
+      ),
+    ).toBeInTheDocument()
+  })
+})

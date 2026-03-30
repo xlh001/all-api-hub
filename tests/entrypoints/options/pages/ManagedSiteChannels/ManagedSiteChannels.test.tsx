@@ -4,9 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ChannelDialogContainer } from "~/components/dialogs/ChannelDialog"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
-import { DONE_HUB, NEW_API, VELOERA } from "~/constants/siteType"
+import { DONE_HUB, NEW_API, OCTOPUS, VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ManagedSiteChannels from "~/entrypoints/options/pages/ManagedSiteChannels"
+import { fetchChannelFilters } from "~/features/ManagedSiteChannels/utils/channelFilters"
 import {
   getManagedSiteService,
   getManagedSiteServiceForType,
@@ -72,6 +73,15 @@ vi.mock("react-hot-toast", () => ({
   },
 }))
 
+const { mockFetchChannelFilters } = vi.hoisted(() => ({
+  mockFetchChannelFilters: vi.fn(),
+}))
+
+vi.mock("~/features/ManagedSiteChannels/utils/channelFilters", async () => ({
+  fetchChannelFilters: mockFetchChannelFilters,
+  saveChannelFilters: vi.fn(),
+}))
+
 const waitForRowText = (text: string) =>
   waitFor(() => expect(screen.getByText(text)).toBeInTheDocument(), {
     timeout: 3000,
@@ -84,29 +94,93 @@ const waitForRowText = (text: string) =>
  * menu did not open.
  */
 const openRowActionsMenu = async (row: HTMLElement) => {
-  const user = userEvent.setup()
   const trigger = within(row).getByRole("button", {
     name: "managedSiteChannels:table.columns.actions",
   })
+  const knownRowActionNames = [
+    "managedSiteChannels:table.rowActions.edit",
+    "managedSiteChannels:table.rowActions.view",
+    "managedSiteChannels:table.rowActions.sync",
+    "managedSiteChannels:table.rowActions.filters",
+    "managedSiteChannels:table.rowActions.openSync",
+    "managedSiteChannels:table.rowActions.migrate",
+  ]
+  const hasRowActionContent = () =>
+    knownRowActionNames.some(
+      (name) => screen.queryByRole("menuitem", { name }) !== null,
+    )
 
-  fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
+  const openAttempts = [
+    async () => {
+      fireEvent.pointerDown(trigger, {
+        button: 0,
+        buttons: 1,
+        ctrlKey: false,
+        pointerType: "mouse",
+        isPrimary: true,
+      })
+      fireEvent.pointerUp(trigger, {
+        button: 0,
+        buttons: 0,
+        pointerType: "mouse",
+        isPrimary: true,
+      })
+    },
+    async () => {
+      fireEvent.mouseDown(trigger, { button: 0 })
+      fireEvent.mouseUp(trigger, { button: 0 })
+    },
+    async () => {
+      fireEvent.click(trigger)
+    },
+    async () => {
+      trigger.click()
+    },
+    async () => {
+      trigger.focus()
+      fireEvent.keyDown(trigger, { key: "Enter" })
+    },
+    async () => {
+      trigger.focus()
+      fireEvent.keyDown(trigger, { key: " " })
+    },
+    async () => {
+      trigger.focus()
+      fireEvent.keyDown(trigger, { key: "ArrowDown" })
+    },
+  ]
 
-  if (trigger.getAttribute("aria-expanded") !== "true") {
-    await user.click(trigger)
+  for (const attempt of openAttempts) {
+    if (hasRowActionContent()) {
+      return
+    }
+
+    await attempt()
+    try {
+      await waitFor(
+        () => {
+          expect(hasRowActionContent()).toBe(true)
+        },
+        { timeout: 250 },
+      )
+      return
+    } catch {
+      // Fall through to the next open strategy when Radix ignores the event.
+    }
   }
 
-  if (trigger.getAttribute("aria-expanded") !== "true") {
-    fireEvent.keyDown(trigger, { key: "Enter" })
-  }
-
-  await waitFor(() => {
-    expect(trigger).toHaveAttribute("aria-expanded", "true")
-  })
+  await waitFor(
+    () => {
+      expect(hasRowActionContent()).toBe(true)
+    },
+    { timeout: 1500 },
+  )
 }
 
 describe("ManagedSiteChannels", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(fetchChannelFilters).mockResolvedValue([])
   })
 
   const buildPreferences = (options?: {
@@ -254,6 +328,34 @@ describe("ManagedSiteChannels", () => {
     })
   })
 
+  it("uses routeParams.channelId to focus a channel and restores the full list when cleared", async () => {
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://site-a.example" },
+      { id: 21, name: "Twenty One", base_url: "https://site-b.example" },
+    ])
+
+    render(<ManagedSiteChannels routeParams={{ channelId: "21" }} />)
+
+    await waitForRowText("Twenty One")
+
+    const input = screen.getByRole("textbox") as HTMLInputElement
+    expect(input.value).toBe("21")
+
+    await waitFor(() => {
+      expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+    })
+
+    fireEvent.change(input, { target: { value: "" } })
+
+    await waitFor(() => {
+      expect(screen.getByText("Alpha")).toBeInTheDocument()
+      expect(navigateWithinOptionsPage).toHaveBeenCalledWith(
+        "#managedSiteChannels",
+        {},
+      )
+    })
+  })
+
   it("sorts channels by id descending by default", async () => {
     mockChannels([
       { id: 1, name: "Alpha", base_url: "https://alpha.example" },
@@ -341,6 +443,87 @@ describe("ManagedSiteChannels", () => {
     )
   })
 
+  it("reloads the channel list when refreshKey changes to a truthy value", async () => {
+    mockChannels([{ id: 1, name: "Alpha", base_url: "https://alpha.example" }])
+    vi.mocked(sendRuntimeMessage)
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          items: [{ id: 1, name: "Alpha", base_url: "https://alpha.example" }],
+        },
+      } as any)
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          items: [{ id: 2, name: "Beta", base_url: "https://beta.example" }],
+        },
+      } as any)
+
+    const { rerender } = render(<ManagedSiteChannels refreshKey={0} />)
+
+    await waitForRowText("Alpha")
+
+    rerender(<ManagedSiteChannels refreshKey={1} />)
+
+    await waitFor(() => {
+      expect(screen.getByText("Beta")).toBeInTheDocument()
+      expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+    })
+
+    expect(vi.mocked(sendRuntimeMessage)).toHaveBeenCalledTimes(2)
+  })
+
+  it("shows a config warning and skips the channel query when managed-site config is missing", async () => {
+    const preferences = buildPreferences({ managedSiteType: NEW_API })
+
+    vi.mocked(useUserPreferencesContext).mockReturnValue({
+      preferences,
+      managedSiteType: NEW_API,
+      newApiBaseUrl: preferences.newApi.baseUrl,
+      newApiUserId: preferences.newApi.userId,
+      newApiUsername: preferences.newApi.username,
+      newApiPassword: preferences.newApi.password,
+      newApiTotpSecret: preferences.newApi.totpSecret,
+    } as any)
+
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: NEW_API,
+      messagesKey: "newapi",
+      getConfig: vi.fn().mockResolvedValue(null),
+    } as any)
+
+    render(<ManagedSiteChannels />)
+
+    expect(
+      await screen.findByText("managedSiteChannels:alerts.configMissing.title"),
+    ).toBeInTheDocument()
+    expect(sendRuntimeMessage).not.toHaveBeenCalled()
+    expect(toast.error).not.toHaveBeenCalled()
+    expect(
+      screen.getByText("managedSiteChannels:table.empty"),
+    ).toBeInTheDocument()
+  })
+
+  it("shows a load error alert when fetching channels fails", async () => {
+    mockChannels([])
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: false,
+      error: "backend exploded",
+    } as any)
+
+    render(<ManagedSiteChannels />)
+
+    expect(
+      await screen.findByText("managedSiteChannels:alerts.loadError.title"),
+    ).toBeInTheDocument()
+    expect(toast.error).toHaveBeenCalledWith(
+      "managedSiteChannels:alerts.loadError.description",
+    )
+    expect(sendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.ModelSyncListChannels,
+    })
+  })
+
   it("renders base_url as a clickable link", async () => {
     mockChannels([{ id: 1, name: "Alpha", base_url: "https://click.me" }])
 
@@ -370,6 +553,199 @@ describe("ManagedSiteChannels", () => {
     })
   })
 
+  it("does not push a duplicate search navigation when the route param already matches", async () => {
+    mockChannels([{ id: 1, name: "Alpha", base_url: "https://example.com" }])
+
+    render(<ManagedSiteChannels routeParams={{ search: "Alpha" }} />)
+
+    await waitForRowText("Alpha")
+
+    const input = screen.getByRole("textbox") as HTMLInputElement
+    fireEvent.change(input, { target: { value: "Alpha" } })
+
+    expect(navigateWithinOptionsPage).not.toHaveBeenCalled()
+  })
+
+  it("clears the search input from the dedicated clear button", async () => {
+    const user = userEvent.setup()
+
+    mockChannels([{ id: 1, name: "Alpha", base_url: "https://example.com" }])
+
+    render(<ManagedSiteChannels routeParams={{ search: "Alpha" }} />)
+
+    await waitForRowText("Alpha")
+
+    const input = screen.getByRole("textbox") as HTMLInputElement
+    expect(input.value).toBe("Alpha")
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.clearSearch",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(input.value).toBe("")
+      expect(navigateWithinOptionsPage).toHaveBeenCalledWith(
+        "#managedSiteChannels",
+        {},
+      )
+    })
+  })
+
+  it("filters rows by status from the toolbar and shows the active filter count", async () => {
+    const user = userEvent.setup()
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", status: 1 },
+      { id: 2, name: "Beta", base_url: "https://beta.example", status: 2 },
+    ])
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+    await waitForRowText("Beta")
+
+    const statusButton = screen.getByRole("button", {
+      name: "managedSiteChannels:toolbar.status",
+    })
+
+    await user.click(statusButton)
+    await user.click(
+      await screen.findByRole("checkbox", {
+        name: "managedSiteChannels:statusLabels.manualPause",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+    })
+
+    expect(screen.getByText("Beta")).toBeInTheDocument()
+    expect(statusButton).toHaveTextContent("(1)")
+  })
+
+  it("clears the last active status filter when the same option is unchecked", async () => {
+    const user = userEvent.setup()
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", status: 1 },
+      { id: 2, name: "Beta", base_url: "https://beta.example", status: 2 },
+    ])
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+    await waitForRowText("Beta")
+
+    const statusButton = screen.getByRole("button", {
+      name: "managedSiteChannels:toolbar.status",
+    })
+
+    await user.click(statusButton)
+
+    const manualPauseCheckbox = await screen.findByRole("checkbox", {
+      name: "managedSiteChannels:statusLabels.manualPause",
+    })
+
+    await user.click(manualPauseCheckbox)
+
+    await waitFor(() => {
+      expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+      expect(screen.getByText("Beta")).toBeInTheDocument()
+    })
+    expect(statusButton).toHaveTextContent("(1)")
+
+    await user.click(manualPauseCheckbox)
+
+    await waitFor(() => {
+      expect(screen.getByText("Alpha")).toBeInTheDocument()
+      expect(screen.getByText("Beta")).toBeInTheDocument()
+    })
+    expect(statusButton).not.toHaveTextContent("(1)")
+  })
+
+  it("uses Octopus-specific column visibility and type labels", async () => {
+    mockChannels(
+      [
+        {
+          id: 1,
+          name: "Alpha",
+          base_url: "https://octopus.example",
+          type: 1,
+          models: "gpt-4o,gpt-4o-mini",
+          group: "default",
+          status: 1,
+          priority: 8,
+          weight: 5,
+        },
+      ],
+      { managedSiteType: OCTOPUS },
+    )
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    expect(
+      screen.queryByText("managedSiteChannels:table.columns.group"),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("managedSiteChannels:table.columns.priority"),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("managedSiteChannels:table.columns.weight"),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText("OpenAI Response")).toBeInTheDocument()
+    expect(screen.getByText("2")).toBeInTheDocument()
+  })
+
+  it("toggles hideable columns from the toolbar menu without closing the menu", async () => {
+    const user = userEvent.setup()
+
+    mockChannels([
+      {
+        id: 1,
+        name: "Alpha",
+        base_url: "https://alpha.example",
+        status: 1,
+      },
+    ])
+
+    const { container } = render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.columns",
+      }),
+    )
+
+    const statusToggle = await screen.findByRole("menuitemcheckbox", {
+      name: "managedSiteChannels:table.columns.status",
+    })
+    expect(statusToggle).toHaveAttribute("data-state", "checked")
+
+    await user.click(statusToggle)
+
+    await waitFor(() => {
+      const table = container.querySelector("table")
+      expect(table).toBeTruthy()
+      expect(
+        within(table as HTMLTableElement).queryByText(
+          "managedSiteChannels:table.columns.status",
+        ),
+      ).not.toBeInTheDocument()
+    })
+
+    expect(
+      screen.getByRole("menuitemcheckbox", {
+        name: "managedSiteChannels:table.columns.status",
+      }),
+    ).toBeInTheDocument()
+  })
+
   it("opens the row actions menu from the trigger", async () => {
     mockChannels([
       { id: 1, name: "Alpha", base_url: "https://example.com", key: "k" },
@@ -389,6 +765,285 @@ describe("ManagedSiteChannels", () => {
         name: "managedSiteChannels:table.rowActions.edit",
       }),
     ).toBeInTheDocument()
+  })
+
+  it("sends a targeted sync request from row actions and reports backend failures", async () => {
+    const user = userEvent.setup()
+    const channels = [
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+    ]
+
+    mockChannels(channels)
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (payload: any) => {
+      if (payload.action === RuntimeActionIds.ModelSyncListChannels) {
+        return {
+          success: true,
+          data: { items: channels },
+        } as any
+      }
+
+      if (payload.action === RuntimeActionIds.ModelSyncTriggerSelected) {
+        return {
+          success: false,
+          error: "sync failed",
+        } as any
+      }
+
+      return { success: true } as any
+    })
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    const row = screen.getByText("Alpha").closest("tr")
+    expect(row).toBeTruthy()
+    await openRowActionsMenu(row!)
+
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.sync",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(sendRuntimeMessage).toHaveBeenCalledWith({
+        action: RuntimeActionIds.ModelSyncTriggerSelected,
+        channelIds: [1],
+      })
+    })
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "managedSiteChannels:toasts.syncFailed",
+    )
+  })
+
+  it("opens the filter dialog from row actions and loads channel-specific filters", async () => {
+    const user = userEvent.setup()
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+    ])
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    const row = screen.getByText("Alpha").closest("tr")
+    expect(row).toBeTruthy()
+    await openRowActionsMenu(row!)
+
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.filters",
+      }),
+    )
+
+    const dialog = await screen.findByRole("dialog")
+    expect(
+      within(dialog).getByText("managedSiteChannels:filters.title"),
+    ).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(fetchChannelFilters).toHaveBeenCalledWith(1)
+    })
+  })
+
+  it("removes successfully deleted channels and reports partial delete failures", async () => {
+    const user = userEvent.setup()
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+      { id: 2, name: "Beta", base_url: "https://beta.example", key: "b" },
+    ])
+
+    const deleteChannel = vi
+      .fn()
+      .mockImplementation(
+        (
+          _baseUrl: string,
+          _token: string,
+          _userId: string,
+          channelId: number,
+        ) =>
+          channelId === 1
+            ? Promise.resolve({ success: true })
+            : Promise.reject(new Error("delete beta failed")),
+      )
+
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: NEW_API,
+      messagesKey: "newapi",
+      getConfig: vi.fn().mockResolvedValue({
+        baseUrl: "https://admin.example",
+        token: "t",
+        userId: "1",
+      }),
+      deleteChannel,
+    } as any)
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+    await waitForRowText("Beta")
+
+    const alphaRow = screen.getByText("Alpha").closest("tr")
+    const betaRow = screen.getByText("Beta").closest("tr")
+    expect(alphaRow).toBeTruthy()
+    expect(betaRow).toBeTruthy()
+
+    await user.click(
+      within(alphaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    )
+    await user.click(
+      within(betaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.deleteSelected",
+      }),
+    )
+
+    const dialog = await screen.findByRole("dialog")
+    expect(
+      within(dialog).getByText("managedSiteChannels:dialog.deleteTitlePlural"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: "managedSiteChannels:dialog.confirm",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(deleteChannel).toHaveBeenCalledTimes(2)
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+    })
+
+    expect(screen.getByText("Beta")).toBeInTheDocument()
+    expect(toast.success).toHaveBeenCalledWith(
+      "managedSiteChannels:toasts.channelDeleted",
+    )
+    expect(toast.error).toHaveBeenCalledWith("delete beta failed")
+  })
+
+  it("syncs the selected rows from the toolbar", async () => {
+    const user = userEvent.setup()
+    const channels = [
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+      { id: 2, name: "Beta", base_url: "https://beta.example", key: "b" },
+    ]
+
+    mockChannels(channels)
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (payload: any) => {
+      if (payload.action === RuntimeActionIds.ModelSyncListChannels) {
+        return {
+          success: true,
+          data: { items: channels },
+        } as any
+      }
+
+      if (payload.action === RuntimeActionIds.ModelSyncTriggerSelected) {
+        return {
+          success: true,
+          data: {
+            statistics: {
+              successCount: 1,
+            },
+          },
+        } as any
+      }
+
+      return { success: true } as any
+    })
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+    await waitForRowText("Beta")
+
+    const alphaRow = screen.getByText("Alpha").closest("tr")
+    const betaRow = screen.getByText("Beta").closest("tr")
+    expect(alphaRow).toBeTruthy()
+    expect(betaRow).toBeTruthy()
+
+    await user.click(
+      within(alphaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    )
+    await user.click(
+      within(betaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.syncSelected",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(sendRuntimeMessage).toHaveBeenCalledWith({
+        action: RuntimeActionIds.ModelSyncTriggerSelected,
+        channelIds: [1, 2],
+      })
+    })
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "managedSiteChannels:toasts.syncCompleted",
+    )
+  })
+
+  it("uses the select-all checkbox to open a migration preview for the whole page", async () => {
+    const user = userEvent.setup()
+
+    mockChannels(
+      [
+        { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+        { id: 2, name: "Beta", base_url: "https://beta.example", key: "b" },
+      ],
+      { withMigrationTarget: true },
+    )
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+    await waitForRowText("Beta")
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /managedSiteChannels:toolbar.enterMigrationMode/,
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectAll",
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.migrateSelected",
+      }),
+    )
+
+    const dialog = await screen.findByRole("dialog")
+    expect(
+      within(dialog).getByText("managedSiteChannels:migration.title"),
+    ).toBeInTheDocument()
+    expect(within(dialog).getByText("Alpha")).toBeInTheDocument()
+    expect(within(dialog).getByText("Beta")).toBeInTheDocument()
   })
 
   it("loads the real channel key from the edit dialog", async () => {
@@ -912,5 +1567,149 @@ describe("ManagedSiteChannels", () => {
     ).toBeDisabled()
 
     expect(getManagedSiteServiceForType).toHaveBeenCalledWith("done-hub")
+  })
+
+  it("updates pagination controls when the rows-per-page size changes", async () => {
+    const user = userEvent.setup()
+
+    mockChannels(
+      Array.from({ length: 30 }, (_, index) => ({
+        id: index + 1,
+        name: `Channel ${index + 1}`,
+        base_url: `https://site-${index + 1}.example`,
+      })),
+    )
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Channel 30")
+    expect(screen.queryByText("Channel 12")).not.toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("combobox", {
+        name: "managedSiteChannels:table.rowsPerPage",
+      }),
+    )
+    await user.click(screen.getByRole("option", { name: "25" }))
+
+    await waitFor(() => {
+      expect(screen.getByText("Channel 12")).toBeInTheDocument()
+      expect(screen.queryByText("Channel 5")).not.toBeInTheDocument()
+    })
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:table.paginationNext",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("Channel 5")).toBeInTheDocument()
+      expect(screen.queryByText("Channel 12")).not.toBeInTheDocument()
+    })
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:table.paginationPrev",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("Channel 12")).toBeInTheDocument()
+      expect(screen.queryByText("Channel 5")).not.toBeInTheDocument()
+    })
+  })
+
+  it("lets the user cancel the delete dialog before deletion starts", async () => {
+    const user = userEvent.setup()
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+    ])
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    const alphaRow = screen.getByText("Alpha").closest("tr")
+    expect(alphaRow).toBeTruthy()
+
+    await user.click(
+      within(alphaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.deleteSelected",
+      }),
+    )
+
+    const dialog = await screen.findByRole("dialog")
+    expect(
+      within(dialog).getByText("managedSiteChannels:dialog.deleteTitle"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: "managedSiteChannels:dialog.cancel",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+
+    expect(screen.getByText("Alpha")).toBeInTheDocument()
+  })
+
+  it("reports a config-missing error when deletion is confirmed after config becomes unavailable", async () => {
+    const user = userEvent.setup()
+    const deleteChannel = vi.fn()
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+    ])
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    const alphaRow = screen.getByText("Alpha").closest("tr")
+    expect(alphaRow).toBeTruthy()
+
+    await user.click(
+      within(alphaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.deleteSelected",
+      }),
+    )
+
+    const dialog = await screen.findByRole("dialog")
+
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: NEW_API,
+      messagesKey: "newapi",
+      getConfig: vi.fn().mockResolvedValue(null),
+      deleteChannel,
+    } as any)
+
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: "managedSiteChannels:dialog.confirm",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("messages:newapi.configMissing")
+    })
+    expect(deleteChannel).not.toHaveBeenCalled()
+    expect(screen.getByText("Alpha")).toBeInTheDocument()
   })
 })

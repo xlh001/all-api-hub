@@ -1238,4 +1238,428 @@ describe("useKeyManagement enabled account filtering", () => {
     )
     expect(getManagedSiteTokenChannelStatusMock).toHaveBeenCalledTimes(1)
   })
+
+  it("selects routeParams.accountId when it points to an enabled account", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "route-acc",
+      name: "Route Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([])
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result } = renderHook(
+      () => useKeyManagement({ accountId: account.id }),
+      {
+        wrapper: createWrapper(),
+      },
+    )
+
+    await waitFor(() => expect(result.current.selectedAccount).toBe(account.id))
+    await waitFor(() => expect(fetchAccountTokens).toHaveBeenCalledTimes(1))
+  })
+
+  it("clears all-accounts selection when enabled accounts disappear", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "vanish-acc",
+      name: "Vanishing Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([])
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result, rerender } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE)
+    })
+
+    await waitFor(() =>
+      expect(result.current.selectedAccount).toBe(
+        KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE,
+      ),
+    )
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [],
+    } as any)
+    rerender()
+
+    await waitFor(() => expect(result.current.selectedAccount).toBe(""))
+  })
+
+  it("clears the all-accounts filter when switching back to a single account", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "filter-acc",
+      name: "Filter Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([
+      createToken({
+        id: 901,
+        key: "token-901",
+        name: "Token 901",
+        expired_time: 0,
+      }),
+    ])
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE)
+    })
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(1))
+
+    act(() => {
+      result.current.setAllAccountsFilterAccountId(account.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.allAccountsFilterAccountId).toBe(account.id),
+    )
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.allAccountsFilterAccountId).toBeNull(),
+    )
+  })
+
+  it("treats non-array token payloads as a load failure with the fallback toast", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "invalid-payload-acc",
+      name: "Invalid Payload Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue({
+      items: [],
+    })
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() => {
+      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+        "keyManagement:messages.loadFailed",
+      )
+    })
+    expect(result.current.tokens).toEqual([])
+  })
+
+  it("copies a resolved token secret to the clipboard and shows success feedback", async () => {
+    const account = createDisplayAccount({
+      id: "copy-acc",
+      name: "Copy Account",
+    })
+    const token = createToken({
+      id: 902,
+      accountId: account.id,
+      accountName: account.name,
+      key: "masked-token",
+      name: "Copy Token",
+    })
+
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
+
+    vi.mocked(getApiService).mockReturnValue({
+      resolveApiTokenKey: vi.fn().mockResolvedValue("resolved-token-secret"),
+    } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.copyKey(account, token)
+    })
+
+    expect(writeText).toHaveBeenCalledWith("resolved-token-secret")
+    expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+      "keyManagement:messages.keyCopied",
+    )
+  })
+
+  it("shows copy failure feedback when writing to the clipboard fails", async () => {
+    const account = createDisplayAccount({
+      id: "copy-fail-acc",
+      name: "Copy Fail Account",
+    })
+    const token = createToken({
+      id: 903,
+      accountId: account.id,
+      accountName: account.name,
+      key: "masked-token",
+      name: "Copy Fail Token",
+    })
+
+    const writeText = vi.fn().mockRejectedValue(new Error("denied"))
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
+
+    vi.mocked(getApiService).mockReturnValue({
+      resolveApiTokenKey: vi.fn().mockResolvedValue("resolved-token-secret"),
+    } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.copyKey(account, token)
+    })
+
+    expect(writeText).toHaveBeenCalledWith("resolved-token-secret")
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      "keyManagement:messages.copyFailed",
+    )
+  })
+
+  it("deduplicates reveal requests while a key is already resolving", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "resolve-acc",
+      name: "Resolve Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    let resolveApiTokenKeyPromise: (value: string) => void = () => {}
+    const resolveApiTokenKey = vi.fn().mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveApiTokenKeyPromise = resolve
+        }),
+    )
+    const fetchAccountTokens = vi.fn().mockResolvedValue([
+      createToken({
+        id: 904,
+        key: "masked-token",
+        name: "Resolve Token",
+        accountId: account.id,
+        accountName: account.name,
+        expired_time: 0,
+      }),
+    ])
+    vi.mocked(getApiService).mockReturnValue({
+      fetchAccountTokens,
+      resolveApiTokenKey,
+    } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(1))
+    const token = result.current.tokens[0]!
+    const tokenIdentityKey = buildTokenIdentityKey(token.accountId, token.id)
+
+    let firstReveal!: Promise<void>
+    act(() => {
+      firstReveal = result.current.toggleKeyVisibility(account, token)
+    })
+    await waitFor(() =>
+      expect(result.current.resolvingVisibleKeys.has(tokenIdentityKey)).toBe(
+        true,
+      ),
+    )
+
+    await act(async () => {
+      await result.current.toggleKeyVisibility(account, token)
+    })
+
+    expect(resolveApiTokenKey).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      resolveApiTokenKeyPromise("resolved-token-secret")
+      await firstReveal
+    })
+
+    await waitFor(() =>
+      expect(result.current.visibleKeys.has(tokenIdentityKey)).toBe(true),
+    )
+    expect(result.current.getVisibleTokenKey(token)).toBe(
+      "resolved-token-secret",
+    )
+  })
+
+  it("opens add-token state, edits a token, and reloads the current inventory on close", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "dialog-acc",
+      name: "Dialog Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const token = createToken({
+      id: 905,
+      key: "token-905",
+      name: "Dialog Token",
+      accountId: account.id,
+      accountName: account.name,
+      expired_time: 0,
+    })
+    const fetchAccountTokens = vi
+      .fn()
+      .mockResolvedValueOnce([token])
+      .mockResolvedValueOnce([token])
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(1))
+
+    act(() => {
+      result.current.handleAddToken()
+    })
+
+    expect(result.current.isAddTokenOpen).toBe(true)
+    expect(result.current.editingToken).toBeNull()
+
+    act(() => {
+      result.current.handleEditToken(token)
+    })
+
+    expect(result.current.isAddTokenOpen).toBe(true)
+    expect(result.current.editingToken).toEqual(token)
+
+    act(() => {
+      result.current.handleCloseAddToken()
+    })
+
+    await waitFor(() => expect(result.current.isAddTokenOpen).toBe(false))
+    expect(result.current.editingToken).toBeNull()
+    await waitFor(() => expect(fetchAccountTokens).toHaveBeenCalledTimes(2))
+  })
+
+  it("shows an account-not-found error when deleting a token for a missing account", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [],
+    } as any)
+
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.handleDeleteToken(
+        createToken({
+          id: 906,
+          name: "Missing Account Token",
+          accountId: "missing-acc",
+          accountName: "Missing Account",
+        }),
+      )
+    })
+
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      "keyManagement:messages.accountNotFound",
+    )
+
+    confirmSpy.mockRestore()
+  })
+
+  it("shows the delete error when token deletion fails", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "delete-fail-acc",
+      name: "Delete Fail Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const token = createToken({
+      id: 907,
+      key: "token-907",
+      name: "Delete Fail Token",
+      accountId: account.id,
+      accountName: account.name,
+      expired_time: 0,
+    })
+    const fetchAccountTokens = vi.fn().mockResolvedValue([token])
+    const deleteApiToken = vi.fn().mockRejectedValue(new Error("delete boom"))
+    vi.mocked(getApiService).mockReturnValue({
+      fetchAccountTokens,
+      deleteApiToken,
+    } as any)
+
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(1))
+
+    await act(async () => {
+      await result.current.handleDeleteToken(token)
+    })
+
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith("delete boom")
+
+    confirmSpy.mockRestore()
+  })
 })

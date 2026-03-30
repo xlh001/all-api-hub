@@ -1,5 +1,6 @@
 import userEvent from "@testing-library/user-event"
 import type { ReactNode } from "react"
+import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { echarts } from "~/components/charts/echarts"
@@ -15,7 +16,17 @@ import {
 import { dailyBalanceHistoryStorage } from "~/services/history/dailyBalanceHistory/storage"
 import { tagStorage } from "~/services/tags/tagStorage"
 import { DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION } from "~/types/dailyBalanceHistory"
+import { sendRuntimeMessage } from "~/utils/browser/browserApi"
+import { navigateWithinOptionsPage } from "~/utils/navigation"
 import { render, screen, waitFor } from "~~/tests/test-utils/render"
+
+vi.mock("react-hot-toast", () => ({
+  default: {
+    loading: vi.fn(() => "toast-id"),
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
 
 vi.mock("~/components/charts/echarts", async () => {
   return {
@@ -55,6 +66,14 @@ vi.mock("~/utils/browser/browserApi", async () => {
     ...actual,
     hasAlarmsAPI: vi.fn(() => true),
     sendRuntimeMessage: vi.fn(),
+  }
+})
+
+vi.mock("~/utils/navigation", async () => {
+  const actual = await vi.importActual<any>("~/utils/navigation")
+  return {
+    ...actual,
+    navigateWithinOptionsPage: vi.fn(),
   }
 })
 
@@ -622,6 +641,299 @@ describe("BalanceHistory options page", () => {
         )
         expect(numericValues).toEqual([30])
       })
+    } finally {
+      dateNowSpy.mockRestore()
+    }
+  })
+
+  it("refreshes the selected accounts and reloads history after a successful runtime refresh", async () => {
+    const factor = UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+    const FIXED_NOW = new Date(2026, 1, 7, 12, 0, 0)
+    const fixedNowMs = FIXED_NOW.getTime()
+    const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(fixedNowMs)
+
+    try {
+      const todayKey = getDayKeyFromUnixSeconds(Math.floor(fixedNowMs / 1000))
+
+      vi.mocked(accountStorage.getEnabledAccounts).mockResolvedValue([
+        {
+          id: "a1",
+          site_name: "Site A",
+          site_url: "https://a.example.com",
+          site_type: ONE_API,
+          account_info: { username: "User A" },
+        },
+        {
+          id: "a2",
+          site_name: "Site B",
+          site_url: "https://b.example.com",
+          site_type: ONE_API,
+          account_info: { username: "User B" },
+        },
+      ] as any)
+
+      vi.mocked(dailyBalanceHistoryStorage.getStore).mockResolvedValue({
+        schemaVersion: DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+        snapshotsByAccountId: {
+          a1: {
+            [todayKey]: {
+              quota: 10 * factor,
+              today_income: 2 * factor,
+              today_quota_consumption: 1 * factor,
+              capturedAt: 0,
+              source: "refresh",
+            },
+          },
+          a2: {
+            [todayKey]: {
+              quota: 20 * factor,
+              today_income: 4 * factor,
+              today_quota_consumption: 3 * factor,
+              capturedAt: 0,
+              source: "refresh",
+            },
+          },
+        },
+      } as any)
+      vi.mocked(sendRuntimeMessage).mockResolvedValue({ success: true } as any)
+
+      render(<BalanceHistory />)
+
+      expect(await screen.findByText(PAGE_TITLE)).toBeInTheDocument()
+
+      const user = userEvent.setup()
+      await user.click(screen.getByRole("button", { name: "Site A" }))
+      await user.click(
+        screen.getByRole("button", {
+          name: "balanceHistory:actions.refreshNow",
+        }),
+      )
+
+      await waitFor(() => {
+        expect(vi.mocked(sendRuntimeMessage)).toHaveBeenCalledWith({
+          action: "balanceHistory:refreshNow",
+          accountIds: ["a1"],
+        })
+      })
+
+      expect(
+        vi.mocked(dailyBalanceHistoryStorage.getStore).mock.calls.length,
+      ).toBe(2)
+      expect(vi.mocked(toast.loading)).toHaveBeenCalledWith(
+        "balanceHistory:messages.loading.refreshing",
+      )
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+        "balanceHistory:messages.success.refreshCompleted",
+        { id: "toast-id" },
+      )
+    } finally {
+      dateNowSpy.mockRestore()
+    }
+  })
+
+  it("shows a fallback runtime error when refresh fails without a server message", async () => {
+    const factor = UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+    const FIXED_NOW = new Date(2026, 1, 7, 12, 0, 0)
+    const fixedNowMs = FIXED_NOW.getTime()
+    const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(fixedNowMs)
+
+    try {
+      const todayKey = getDayKeyFromUnixSeconds(Math.floor(fixedNowMs / 1000))
+
+      vi.mocked(accountStorage.getEnabledAccounts).mockResolvedValue([
+        {
+          id: "a1",
+          site_name: "Site A",
+          site_url: "https://a.example.com",
+          site_type: ONE_API,
+          account_info: { username: "User A" },
+        },
+      ] as any)
+
+      vi.mocked(dailyBalanceHistoryStorage.getStore).mockResolvedValue({
+        schemaVersion: DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+        snapshotsByAccountId: {
+          a1: {
+            [todayKey]: {
+              quota: 10 * factor,
+              capturedAt: 0,
+              source: "refresh",
+            },
+          },
+        },
+      } as any)
+      vi.mocked(sendRuntimeMessage).mockResolvedValue({ success: false } as any)
+
+      render(<BalanceHistory />)
+
+      expect(await screen.findByText(PAGE_TITLE)).toBeInTheDocument()
+
+      const user = userEvent.setup()
+      await user.click(
+        screen.getByRole("button", {
+          name: "balanceHistory:actions.refreshNow",
+        }),
+      )
+
+      await waitFor(() => {
+        expect(vi.mocked(sendRuntimeMessage)).toHaveBeenCalledWith({
+          action: "balanceHistory:refreshNow",
+        })
+      })
+
+      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+        "balanceHistory:messages.error.refreshFailed",
+        { id: "toast-id" },
+      )
+    } finally {
+      dateNowSpy.mockRestore()
+    }
+  })
+
+  it("opens Balance History settings from the disabled hint CTA", async () => {
+    vi.mocked(useUserPreferencesContext).mockReturnValue(
+      createMockUserPreferencesContext({ enabled: false }),
+    )
+
+    render(<BalanceHistory />)
+
+    expect(await screen.findByText(DISABLED_HINT_TITLE)).toBeInTheDocument()
+
+    const user = userEvent.setup()
+    await user.click(
+      screen.getByRole("button", {
+        name: "balanceHistory:hints.disabled.actions.openSettings",
+      }),
+    )
+
+    expect(vi.mocked(navigateWithinOptionsPage)).toHaveBeenCalledWith(
+      "#basic",
+      {
+        tab: "balanceHistory",
+        anchor: "balance-history",
+      },
+    )
+  })
+
+  it("switches metrics across income, outcome, and net and forces histogram mode for negative net values", async () => {
+    const factor = UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+    const FIXED_NOW = new Date(2026, 1, 7, 12, 0, 0)
+    const fixedNowMs = FIXED_NOW.getTime()
+    const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(fixedNowMs)
+
+    try {
+      const todayKey = getDayKeyFromUnixSeconds(Math.floor(fixedNowMs / 1000))
+
+      vi.mocked(accountStorage.getEnabledAccounts).mockResolvedValue([
+        {
+          id: "a1",
+          site_name: "Site A",
+          site_url: "https://a.example.com",
+          site_type: ONE_API,
+          account_info: { username: "User A" },
+        },
+      ] as any)
+
+      vi.mocked(dailyBalanceHistoryStorage.getStore).mockResolvedValue({
+        schemaVersion: DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+        snapshotsByAccountId: {
+          a1: {
+            [todayKey]: {
+              quota: 10 * factor,
+              today_income: 1 * factor,
+              today_quota_consumption: 4 * factor,
+              capturedAt: 0,
+              source: "refresh",
+            },
+          },
+        },
+      } as any)
+
+      render(<BalanceHistory />)
+
+      expect(await screen.findByText(PAGE_TITLE)).toBeInTheDocument()
+
+      const user = userEvent.setup()
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "balanceHistory:breakdown.title: balanceHistory:metrics.balance",
+        }),
+      )
+      await user.click(
+        await screen.findByRole("menuitemradio", {
+          name: "balanceHistory:metrics.outcome",
+        }),
+      )
+      expect(
+        screen.getByRole("button", {
+          name: "balanceHistory:breakdown.title: balanceHistory:metrics.outcome",
+        }),
+      ).toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "balanceHistory:breakdown.title: balanceHistory:metrics.outcome",
+        }),
+      )
+      await user.click(
+        await screen.findByRole("menuitemradio", {
+          name: "balanceHistory:metrics.net",
+        }),
+      )
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", {
+            name: "balanceHistory:breakdown.title: balanceHistory:metrics.net",
+          }),
+        ).toBeInTheDocument()
+      })
+
+      expect(
+        screen.getByText(
+          "balanceHistory:breakdown.hints.pieDisabledForNegative",
+        ),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", {
+          name: "balanceHistory:breakdown.chartTypes.pie",
+        }),
+      ).toBeDisabled()
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "balanceHistory:trend.title: balanceHistory:metrics.balance",
+        }),
+      )
+      await user.click(
+        await screen.findByRole("menuitemradio", {
+          name: "balanceHistory:metrics.income",
+        }),
+      )
+
+      expect(
+        screen.getByRole("button", {
+          name: "balanceHistory:trend.title: balanceHistory:metrics.income",
+        }),
+      ).toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "balanceHistory:trend.title: balanceHistory:metrics.income",
+        }),
+      )
+      await user.click(
+        await screen.findByRole("menuitemradio", {
+          name: "balanceHistory:metrics.net",
+        }),
+      )
+
+      expect(
+        screen.getByRole("button", {
+          name: "balanceHistory:trend.title: balanceHistory:metrics.net",
+        }),
+      ).toBeInTheDocument()
     } finally {
       dateNowSpy.mockRestore()
     }
