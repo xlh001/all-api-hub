@@ -548,6 +548,180 @@ describe("KiloCodeExportDialog", () => {
     })
   })
 
+  it("reapplies initial selections after the dialog closes and reopens from a different entry point", async () => {
+    const accountA = createDisplayAccount({
+      id: "a",
+      name: "Site A",
+      baseUrl: "https://a.test",
+    })
+    const accountB = createDisplayAccount({
+      id: "b",
+      name: "Site B",
+      baseUrl: "https://b.test",
+    })
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [],
+      enabledDisplayData: [accountA, accountB],
+    })
+
+    mockFetchAccountTokens
+      .mockResolvedValueOnce([{ id: 1, name: "Token A", key: "sk-a" }])
+      .mockResolvedValueOnce([{ id: 2, name: "Token B", key: "sk-b" }])
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+
+    const { rerender } = render(
+      <KiloCodeExportDialog
+        isOpen={true}
+        onClose={() => {}}
+        initialSelectedSiteIds={["a"]}
+        initialSelectedTokenIdsBySite={{ a: ["1"] }}
+      />,
+    )
+
+    expect((await screen.findAllByText("Site A")).length).toBeGreaterThan(0)
+
+    await waitFor(() => {
+      expect(mockFetchAccountTokens).toHaveBeenCalledWith(
+        expect.objectContaining({ accountId: "a", baseUrl: "https://a.test" }),
+      )
+    })
+
+    rerender(
+      <KiloCodeExportDialog
+        isOpen={false}
+        onClose={() => {}}
+        initialSelectedSiteIds={["a"]}
+        initialSelectedTokenIdsBySite={{ a: ["1"] }}
+      />,
+    )
+
+    rerender(
+      <KiloCodeExportDialog
+        isOpen={true}
+        onClose={() => {}}
+        initialSelectedSiteIds={["b"]}
+        initialSelectedTokenIdsBySite={{ b: ["2"] }}
+      />,
+    )
+
+    expect((await screen.findAllByText("Site B")).length).toBeGreaterThan(0)
+
+    await waitFor(() => {
+      expect(mockFetchAccountTokens).toHaveBeenCalledWith(
+        expect.objectContaining({ accountId: "b", baseUrl: "https://b.test" }),
+      )
+    })
+
+    expect(screen.queryAllByText("Site A")).toHaveLength(0)
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "ui:dialog.kiloCode.actions.copyApiConfigs",
+        }),
+      ).toBeEnabled()
+    })
+  })
+
+  it("prunes stale selected sites when live account data no longer includes them", async () => {
+    const site = createDisplayAccount({
+      id: "b",
+      name: "Site B",
+      baseUrl: "https://b.test",
+    })
+    let currentAccountData = {
+      enabledAccounts: [],
+      enabledDisplayData: [site],
+    }
+
+    mockUseAccountData.mockImplementation(() => currentAccountData)
+
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      { id: 1, name: "Default", key: "sk-test" },
+    ])
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+
+    const { rerender } = render(
+      <KiloCodeExportDialog
+        isOpen={true}
+        onClose={() => {}}
+        initialSelectedSiteIds={["b"]}
+        initialSelectedTokenIdsBySite={{ b: ["1"] }}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "ui:dialog.kiloCode.actions.copyApiConfigs",
+        }),
+      ).toBeEnabled()
+    })
+
+    currentAccountData = {
+      enabledAccounts: [],
+      enabledDisplayData: [],
+    }
+
+    rerender(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    await waitFor(() => {
+      expect(screen.queryByText("Site B")).not.toBeInTheDocument()
+    })
+
+    expect(
+      screen.getByText("ui:dialog.kiloCode.messages.nothingToExportTitle"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "ui:dialog.kiloCode.actions.copyApiConfigs",
+      }),
+    ).toBeDisabled()
+  })
+
+  it("shows hostname and token fallback labels when site or token names are blank", async () => {
+    const site = createDisplayAccount({
+      id: "b",
+      name: "   ",
+      baseUrl: "https://fallback.example.com/openai/v1",
+    })
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [],
+      enabledDisplayData: [site],
+    })
+
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      { id: 7, name: "   ", key: "sk-test" },
+    ])
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+
+    render(
+      <KiloCodeExportDialog
+        isOpen={true}
+        onClose={() => {}}
+        initialSelectedSiteIds={["b"]}
+      />,
+    )
+
+    expect(
+      (await screen.findAllByText("fallback.example.com")).length,
+    ).toBeGreaterThan(0)
+    expect(
+      (await screen.findAllByText("common:labels.token #7")).length,
+    ).toBeGreaterThan(0)
+  })
+
   it("uses the resolved single Sub2API group when creating a token for export", async () => {
     const user = userEvent.setup()
     const site = createDisplayAccount({
@@ -716,6 +890,172 @@ describe("KiloCodeExportDialog", () => {
         name: "Older",
         key: "sk-older",
         created_time: 100,
+      },
+    ])
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+    mockResolveSub2ApiQuickCreateResolution.mockResolvedValueOnce({
+      kind: "selection_required",
+      allowedGroups: ["default", "vip"],
+    })
+
+    render(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    const sitePicker = await screen.findByPlaceholderText(
+      "ui:dialog.kiloCode.placeholders.selectSites",
+    )
+    await user.click(sitePicker)
+    await user.clear(sitePicker)
+    await user.type(sitePicker, "Site B")
+    await user.keyboard("{ArrowDown}")
+    await user.click(await screen.findByRole("option", { name: "Site B" }))
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.kiloCode.actions.createDefaultToken",
+      }),
+    )
+
+    await user.click(
+      await screen.findByRole("button", { name: "mock-add-token-success" }),
+    )
+
+    const copyButton = await screen.findByRole("button", {
+      name: "ui:dialog.kiloCode.actions.copyApiConfigs",
+    })
+
+    await waitFor(() => {
+      expect(copyButton).toBeEnabled()
+    })
+
+    await user.click(copyButton)
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledTimes(1)
+    })
+
+    const copiedPayload = String(writeText.mock.calls[0]?.[0] ?? "")
+    expect(copiedPayload).toContain("sk-newest")
+    expect(copiedPayload).not.toContain("sk-older")
+  })
+
+  it("selects the newest refreshed token when upstream creation timestamps arrive as strings or ISO dates", async () => {
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+    const site = createDisplayAccount({
+      id: "b",
+      name: "Site B",
+      baseUrl: "https://b.test",
+      siteType: "sub2api",
+    })
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [createSiteAccount(site)],
+      enabledDisplayData: [site],
+    })
+
+    mockFetchAccountTokens.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        id: 11,
+        name: "Numeric String",
+        key: "sk-older",
+        createdAt: "1711929600000",
+      },
+      {
+        id: 22,
+        name: "ISO Newest",
+        key: "sk-newest",
+        created_at: "2024-04-02T00:00:00.000Z",
+      },
+      {
+        id: 15,
+        name: "ISO Older",
+        key: "sk-oldest",
+        created_at: "2024-04-01T00:00:00.000Z",
+      },
+    ])
+    mockGetApiService.mockReturnValue({
+      fetchAccountTokens: mockFetchAccountTokens,
+      resolveApiTokenKey: mockResolveApiTokenKey,
+    })
+    mockResolveSub2ApiQuickCreateResolution.mockResolvedValueOnce({
+      kind: "selection_required",
+      allowedGroups: ["default", "vip"],
+    })
+
+    render(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    const sitePicker = await screen.findByPlaceholderText(
+      "ui:dialog.kiloCode.placeholders.selectSites",
+    )
+    await user.click(sitePicker)
+    await user.clear(sitePicker)
+    await user.type(sitePicker, "Site B")
+    await user.keyboard("{ArrowDown}")
+    await user.click(await screen.findByRole("option", { name: "Site B" }))
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.kiloCode.actions.createDefaultToken",
+      }),
+    )
+
+    await user.click(
+      await screen.findByRole("button", { name: "mock-add-token-success" }),
+    )
+
+    const copyButton = await screen.findByRole("button", {
+      name: "ui:dialog.kiloCode.actions.copyApiConfigs",
+    })
+
+    await waitFor(() => {
+      expect(copyButton).toBeEnabled()
+    })
+
+    await user.click(copyButton)
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledTimes(1)
+    })
+
+    const copiedPayload = String(writeText.mock.calls[0]?.[0] ?? "")
+    expect(copiedPayload).toContain("sk-newest")
+    expect(copiedPayload).not.toContain("sk-older")
+    expect(copiedPayload).not.toContain("sk-oldest")
+  })
+
+  it("falls back to the highest token id when refreshed tokens have unusable creation timestamps", async () => {
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+    const site = createDisplayAccount({
+      id: "b",
+      name: "Site B",
+      baseUrl: "https://b.test",
+      siteType: "sub2api",
+    })
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [createSiteAccount(site)],
+      enabledDisplayData: [site],
+    })
+
+    mockFetchAccountTokens.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        id: 11,
+        name: "Invalid Timestamp",
+        key: "sk-older",
+        createdAt: "not-a-timestamp",
+      },
+      {
+        id: 22,
+        name: "Higher Id",
+        key: "sk-newest",
       },
     ])
     mockGetApiService.mockReturnValue({

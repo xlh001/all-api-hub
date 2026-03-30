@@ -448,6 +448,84 @@ describe("navigation utilities", () => {
     expect(result).toEqual({ openedCount: 2, failedCount: 0 })
   })
 
+  it("openCheckInPages should fall back to a normal tab when grouped reuse returns no tab and window recreation has no id", async () => {
+    mockedHasWindowsAPI.mockReturnValue(true)
+    mockedCreateWindow
+      .mockResolvedValueOnce({ id: 88 } as any)
+      .mockResolvedValueOnce({} as any)
+    mockedCreateTab
+      .mockResolvedValueOnce(undefined as any)
+      .mockResolvedValueOnce({ id: 55 } as any)
+
+    const result = await openCheckInPages(
+      [
+        {
+          baseUrl: "https://example.com",
+          siteType: "one-api",
+        } as any,
+        {
+          baseUrl: "https://example.org",
+          siteType: "one-api",
+        } as any,
+      ],
+      { openInNewWindow: true },
+    )
+
+    expect(mockedCreateTab).toHaveBeenNthCalledWith(
+      1,
+      "https://example.org/checkin",
+      true,
+      { windowId: 88 },
+    )
+    expect(mockedCreateWindow).toHaveBeenNthCalledWith(2, {
+      url: "https://example.org/checkin",
+      focused: true,
+    })
+    expect(mockedCreateTab).toHaveBeenNthCalledWith(
+      2,
+      "https://example.org/checkin",
+      true,
+    )
+    expect(result).toEqual({ openedCount: 2, failedCount: 0 })
+  })
+
+  it("openCheckInPages should report a failed url when grouped fallbacks still cannot open the page", async () => {
+    mockedHasWindowsAPI.mockReturnValue(true)
+    mockedCreateWindow
+      .mockResolvedValueOnce({ id: 88 } as any)
+      .mockResolvedValueOnce({} as any)
+    mockedCreateTab
+      .mockResolvedValueOnce(undefined as any)
+      .mockRejectedValueOnce(new Error("tab failed"))
+
+    const result = await openCheckInPages(
+      [
+        {
+          baseUrl: "https://example.com",
+          siteType: "one-api",
+        } as any,
+        {
+          baseUrl: "https://example.org",
+          siteType: "one-api",
+        } as any,
+      ],
+      { openInNewWindow: true },
+    )
+
+    expect(mockedCreateTab).toHaveBeenNthCalledWith(
+      1,
+      "https://example.org/checkin",
+      true,
+      { windowId: 88 },
+    )
+    expect(mockedCreateTab).toHaveBeenNthCalledWith(
+      2,
+      "https://example.org/checkin",
+      true,
+    )
+    expect(result).toEqual({ openedCount: 1, failedCount: 1 })
+  })
+
   it("openCheckInPages should report failed urls when opening returns no tab", async () => {
     mockedCreateTab
       .mockResolvedValueOnce({ id: 41 } as any)
@@ -576,6 +654,20 @@ describe("navigation utilities", () => {
     )
     expect(mockedCreateTab).toHaveBeenCalledWith(
       "https://extension.local/options.html?channelId=100&tab=manual#managedSiteModelSync",
+      true,
+    )
+  })
+
+  it("opens managed-site pages without empty query params when no filters are provided", async () => {
+    await openManagedSiteChannelsPage()
+    await openManagedSiteModelSyncPage()
+
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html#managedSiteChannels",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://extension.local/options.html#managedSiteModelSync",
       true,
     )
   })

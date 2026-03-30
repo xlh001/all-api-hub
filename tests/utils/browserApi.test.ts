@@ -659,6 +659,28 @@ describe("browserApi getSidePanelSupport", () => {
     expect(queryTabs).not.toHaveBeenCalled()
   })
 
+  it("opens the Chromium side panel by tab id when no window id is available", async () => {
+    const queryTabs = vi.fn().mockRejectedValue(new Error("should not query"))
+    const open = vi.fn().mockResolvedValue(undefined)
+    ;(globalThis as any).browser = {
+      tabs: {
+        query: queryTabs,
+      },
+    }
+    ;(globalThis as any).chrome = {
+      sidePanel: {
+        open,
+      },
+    }
+
+    const { openSidePanel } = await import("~/utils/browser/browserApi")
+
+    await openSidePanel({ id: 7 } as browser.tabs.Tab)
+
+    expect(open).toHaveBeenCalledWith({ tabId: 7 })
+    expect(queryTabs).not.toHaveBeenCalled()
+  })
+
   it("looks up the active tab and falls back from windowId to tabId when Chromium rejects the first open attempt", async () => {
     const queryTabs = vi.fn().mockResolvedValue([{ id: 11, windowId: 12 }])
     const open = vi
@@ -867,6 +889,19 @@ describe("browserApi window and manifest helpers", () => {
     await expect(
       createWindow({ url: "https://example.com" } as any),
     ).resolves.toBeNull()
+  })
+
+  it("delegates createWindow to browser.windows.create when supported", async () => {
+    const createWindowMock = vi.fn().mockResolvedValue({ id: 23 })
+    ;(globalThis as any).browser.windows.create = createWindowMock
+
+    await expect(
+      createWindow({ url: "https://example.com" } as any),
+    ).resolves.toEqual({ id: 23 })
+
+    expect(createWindowMock).toHaveBeenCalledWith({
+      url: "https://example.com",
+    })
   })
 
   it("focuses the tab window before activating the tab", async () => {

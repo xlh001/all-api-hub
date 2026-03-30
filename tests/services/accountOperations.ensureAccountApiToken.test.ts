@@ -207,6 +207,30 @@ describe("accountOperations Sub2API token creation guards", () => {
       allowedGroups: ["default", "vip"],
     })
   })
+
+  it("resolves a ready state when Sub2API quick-create has exactly one unique group", async () => {
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      " vip ": { desc: "VIP", ratio: 2 },
+      vip: { desc: "VIP duplicate", ratio: 3 },
+    })
+
+    await expect(
+      resolveSub2ApiQuickCreateResolution(DISPLAY_ACCOUNT),
+    ).resolves.toEqual({
+      kind: "ready",
+      group: "vip",
+    })
+  })
+
+  it("rejects quick-create resolution for non-Sub2API accounts", async () => {
+    const { displayAccount } = createNonSub2ApiAccounts()
+
+    await expect(
+      resolveSub2ApiQuickCreateResolution(displayAccount as any),
+    ).rejects.toThrow("sub2api_quick_create_not_applicable")
+
+    expect(fetchUserGroupsMock).not.toHaveBeenCalled()
+  })
 })
 
 describe("ensureDefaultApiTokenForAccount non-Sub2API branches", () => {

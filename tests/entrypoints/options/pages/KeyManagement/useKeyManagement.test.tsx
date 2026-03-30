@@ -78,6 +78,25 @@ const createWrapper = () => {
   )
 }
 
+type ManagedSiteContextValue = {
+  managedSiteType: string
+  newApiBaseUrl: string
+  newApiAdminToken: string
+  newApiUserId: string
+  newApiUsername: string
+  newApiPassword: string
+  newApiTotpSecret: string
+  doneHubBaseUrl: string | undefined
+  doneHubAdminToken: string | undefined
+  doneHubUserId: string | undefined
+  veloeraBaseUrl: string
+  veloeraAdminToken: string
+  veloeraUserId: string
+  octopusBaseUrl: string | undefined
+  octopusUsername: string | undefined
+  octopusPassword: string | undefined
+}
+
 describe("useKeyManagement enabled account filtering", () => {
   beforeEach(() => {
     vi.mocked(toast.success).mockReset()
@@ -1039,6 +1058,62 @@ describe("useKeyManagement enabled account filtering", () => {
     ).toBe(false)
   })
 
+  it("passes resolved channel keys through single-token managed-site refreshes", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "resolved-refresh-acc",
+      name: "Resolved Refresh Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([
+      createToken({
+        id: 603,
+        key: "token-603",
+        name: "Token 603",
+        expired_time: 0,
+      }),
+    ])
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(getManagedSiteTokenChannelStatusMock).toHaveBeenCalledTimes(1),
+    )
+
+    await act(async () => {
+      await result.current.refreshManagedSiteTokenStatusForToken(
+        result.current.tokens[0]!,
+        {
+          resolvedChannelKeysById: {
+            55: "resolved-channel-key",
+          },
+        },
+      )
+    })
+
+    await waitFor(() =>
+      expect(getManagedSiteTokenChannelStatusMock).toHaveBeenCalledTimes(2),
+    )
+    expect(getManagedSiteTokenChannelStatusMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        resolvedChannelKeysById: {
+          55: "resolved-channel-key",
+        },
+      }),
+    )
+  })
+
   it("invalidates managed-site status when a token is deleted", async () => {
     const mockedUseAccountData = vi.mocked(useAccountData)
     const account = createDisplayAccount({
@@ -1151,6 +1226,136 @@ describe("useKeyManagement enabled account filtering", () => {
     )
 
     managedSiteContextValue.newApiBaseUrl = "https://managed-2.example"
+    rerender()
+
+    await waitFor(() =>
+      expect(getManagedSiteTokenChannelStatusMock).toHaveBeenCalledTimes(2),
+    )
+  })
+
+  it("invalidates cached managed-site status when DoneHub credentials change", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "done-hub-acc",
+      name: "DoneHub Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const managedSiteContextValue: ManagedSiteContextValue = {
+      managedSiteType: "done-hub",
+      newApiBaseUrl: "",
+      newApiAdminToken: "",
+      newApiUserId: "",
+      newApiUsername: "",
+      newApiPassword: "",
+      newApiTotpSecret: "",
+      doneHubBaseUrl: undefined,
+      doneHubAdminToken: undefined,
+      doneHubUserId: undefined,
+      veloeraBaseUrl: "",
+      veloeraAdminToken: "",
+      veloeraUserId: "",
+      octopusBaseUrl: "",
+      octopusUsername: "",
+      octopusPassword: "",
+    }
+    mockedUseUserPreferencesContext.mockImplementation(
+      () => managedSiteContextValue,
+    )
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([
+      createToken({
+        id: 408,
+        key: "token-408",
+        name: "Token 408",
+        expired_time: 0,
+      }),
+    ])
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result, rerender } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(getManagedSiteTokenChannelStatusMock).toHaveBeenCalledTimes(1),
+    )
+
+    managedSiteContextValue.doneHubBaseUrl = "https://done-hub.example"
+    managedSiteContextValue.doneHubAdminToken = "done-hub-admin-token"
+    managedSiteContextValue.doneHubUserId = "7"
+    rerender()
+
+    await waitFor(() =>
+      expect(getManagedSiteTokenChannelStatusMock).toHaveBeenCalledTimes(2),
+    )
+  })
+
+  it("invalidates cached managed-site status when Octopus credentials change", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const account = createDisplayAccount({
+      id: "octopus-acc",
+      name: "Octopus Account",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const managedSiteContextValue: ManagedSiteContextValue = {
+      managedSiteType: "octopus",
+      newApiBaseUrl: "",
+      newApiAdminToken: "",
+      newApiUserId: "",
+      newApiUsername: "",
+      newApiPassword: "",
+      newApiTotpSecret: "",
+      doneHubBaseUrl: "",
+      doneHubAdminToken: "",
+      doneHubUserId: "",
+      veloeraBaseUrl: "",
+      veloeraAdminToken: "",
+      veloeraUserId: "",
+      octopusBaseUrl: undefined,
+      octopusUsername: undefined,
+      octopusPassword: undefined,
+    }
+    mockedUseUserPreferencesContext.mockImplementation(
+      () => managedSiteContextValue,
+    )
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([
+      createToken({
+        id: 409,
+        key: "token-409",
+        name: "Token 409",
+        expired_time: 0,
+      }),
+    ])
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result, rerender } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(getManagedSiteTokenChannelStatusMock).toHaveBeenCalledTimes(1),
+    )
+
+    managedSiteContextValue.octopusBaseUrl = "https://octopus.example"
+    managedSiteContextValue.octopusUsername = "octopus-user"
+    managedSiteContextValue.octopusPassword = "octopus-password"
     rerender()
 
     await waitFor(() =>
@@ -1345,6 +1550,59 @@ describe("useKeyManagement enabled account filtering", () => {
 
     await waitFor(() =>
       expect(result.current.allAccountsFilterAccountId).toBeNull(),
+    )
+  })
+
+  it("clears the all-accounts filter when the filtered account disappears", async () => {
+    const mockedUseAccountData = vi.mocked(useAccountData)
+    const accountA = createDisplayAccount({
+      id: "filter-a",
+      name: "Filter Account A",
+    })
+    const accountB = createDisplayAccount({
+      id: "filter-b",
+      name: "Filter Account B",
+    })
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [accountA, accountB],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([])
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result, rerender } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE)
+    })
+
+    await waitFor(() =>
+      expect(result.current.selectedAccount).toBe(
+        KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE,
+      ),
+    )
+
+    act(() => {
+      result.current.setAllAccountsFilterAccountId(accountA.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.allAccountsFilterAccountId).toBe(accountA.id),
+    )
+
+    mockedUseAccountData.mockReturnValue({
+      enabledDisplayData: [accountB],
+    } as any)
+    rerender()
+
+    await waitFor(() =>
+      expect(result.current.allAccountsFilterAccountId).toBeNull(),
+    )
+    expect(result.current.selectedAccount).toBe(
+      KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE,
     )
   })
 
@@ -1586,6 +1844,33 @@ describe("useKeyManagement enabled account filtering", () => {
     await waitFor(() => expect(fetchAccountTokens).toHaveBeenCalledTimes(2))
   })
 
+  it("closes add-token state without reloading when no account is selected", () => {
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [],
+    } as any)
+
+    const fetchAccountTokens = vi.fn()
+    vi.mocked(getApiService).mockReturnValue({ fetchAccountTokens } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.handleAddToken()
+    })
+
+    expect(result.current.isAddTokenOpen).toBe(true)
+
+    act(() => {
+      result.current.handleCloseAddToken()
+    })
+
+    expect(result.current.isAddTokenOpen).toBe(false)
+    expect(result.current.editingToken).toBeNull()
+    expect(fetchAccountTokens).not.toHaveBeenCalled()
+  })
+
   it("shows an account-not-found error when deleting a token for a missing account", async () => {
     const mockedUseAccountData = vi.mocked(useAccountData)
     mockedUseAccountData.mockReturnValue({
@@ -1612,6 +1897,54 @@ describe("useKeyManagement enabled account filtering", () => {
     expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
       "keyManagement:messages.accountNotFound",
     )
+
+    confirmSpy.mockRestore()
+  })
+
+  it("does not delete a token when the confirmation dialog is cancelled", async () => {
+    const account = createDisplayAccount({
+      id: "cancel-delete-acc",
+      name: "Cancel Delete Account",
+    })
+    const token = createToken({
+      id: 908,
+      key: "token-908",
+      name: "Cancel Delete Token",
+      accountId: account.id,
+      accountName: account.name,
+      expired_time: 0,
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([token])
+    const deleteApiToken = vi.fn()
+    vi.mocked(getApiService).mockReturnValue({
+      fetchAccountTokens,
+      deleteApiToken,
+    } as any)
+
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(1))
+
+    await act(async () => {
+      await result.current.handleDeleteToken(token)
+    })
+
+    expect(deleteApiToken).not.toHaveBeenCalled()
+    expect(vi.mocked(toast.success)).not.toHaveBeenCalled()
+    expect(vi.mocked(toast.error)).not.toHaveBeenCalled()
 
     confirmSpy.mockRestore()
   })

@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
@@ -11,26 +11,32 @@ import { render } from "~~/tests/test-utils/render"
 
 const {
   mockHandleSetAccountDisabled,
+  mockTogglePinAccount,
   fetchAccountTokensMock,
   getManagedSiteServiceMock,
   openManagedSiteChannelsForChannelMock,
   openManagedSiteChannelsPageMock,
   sendRuntimeMessageMock,
   loadAccountDataMock,
+  exportShareSnapshotWithToastMock,
   userPreferencesContextValue,
+  accountDataContextValue,
   toastDismissMock,
   toastLoadingMock,
   toastSuccessMock,
   toastErrorMock,
   hasValidManagedSiteConfigMock,
+  clipboardWriteTextMock,
 } = vi.hoisted(() => ({
   mockHandleSetAccountDisabled: vi.fn(),
+  mockTogglePinAccount: vi.fn(),
   fetchAccountTokensMock: vi.fn(),
   getManagedSiteServiceMock: vi.fn(),
   openManagedSiteChannelsForChannelMock: vi.fn(),
   openManagedSiteChannelsPageMock: vi.fn(),
   sendRuntimeMessageMock: vi.fn(),
   loadAccountDataMock: vi.fn(),
+  exportShareSnapshotWithToastMock: vi.fn(),
   userPreferencesContextValue: {
     currencyType: "USD",
     showTodayCashflow: true,
@@ -43,11 +49,18 @@ const {
       },
     } as Partial<UserPreferences>,
   },
+  accountDataContextValue: {
+    isAccountPinned: vi.fn(() => false),
+    togglePinAccount: vi.fn(),
+    isPinFeatureEnabled: false,
+    loadAccountData: vi.fn(),
+  },
   toastDismissMock: vi.fn(),
   toastLoadingMock: vi.fn(),
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
   hasValidManagedSiteConfigMock: vi.fn(() => true),
+  clipboardWriteTextMock: vi.fn(),
 }))
 
 vi.mock("react-hot-toast", () => ({
@@ -90,12 +103,7 @@ vi.mock("~/features/AccountManagement/hooks/AccountActionsContext", () => ({
 }))
 
 vi.mock("~/features/AccountManagement/hooks/AccountDataContext", () => ({
-  useAccountDataContext: () => ({
-    isAccountPinned: () => false,
-    togglePinAccount: vi.fn(),
-    isPinFeatureEnabled: false,
-    loadAccountData: loadAccountDataMock,
-  }),
+  useAccountDataContext: () => accountDataContextValue,
 }))
 
 vi.mock("~/features/AccountManagement/hooks/DialogStateContext", () => ({
@@ -118,7 +126,33 @@ vi.mock("~/utils/navigation", () => ({
   openUsagePage: vi.fn(),
 }))
 
+vi.mock("~/features/ShareSnapshots/utils/exportShareSnapshotWithToast", () => ({
+  exportShareSnapshotWithToast: exportShareSnapshotWithToastMock,
+}))
+
+vi.mock("~/services/accounts/utils/apiServiceRequest", () => ({
+  resolveDisplayAccountTokenForSecret: vi.fn(
+    async (_site: unknown, token: { key: string }) => token,
+  ),
+}))
+
 describe("AccountActionButtons", () => {
+  beforeEach(() => {
+    Object.defineProperty(window.navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: clipboardWriteTextMock,
+      },
+    })
+
+    mockTogglePinAccount.mockResolvedValue(true)
+    accountDataContextValue.isAccountPinned.mockReturnValue(false)
+    accountDataContextValue.togglePinAccount = mockTogglePinAccount
+    accountDataContextValue.isPinFeatureEnabled = false
+    accountDataContextValue.loadAccountData = loadAccountDataMock
+    clipboardWriteTextMock.mockResolvedValue(undefined)
+  })
+
   afterEach(() => {
     vi.clearAllMocks()
     userPreferencesContextValue.preferences = {
@@ -129,6 +163,7 @@ describe("AccountActionButtons", () => {
         userId: "1",
       },
     } as Partial<UserPreferences>
+    userPreferencesContextValue.showTodayCashflow = true
     hasValidManagedSiteConfigMock.mockReturnValue(true)
   })
 
@@ -324,6 +359,100 @@ describe("AccountActionButtons", () => {
     )
   })
 
+  it("copies a single token directly when smart copy finds exactly one key", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([{ key: "sk-single" }])
+
+    const user = userEvent.setup()
+    const onCopyKey = vi.fn()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-single-key",
+          disabled: false,
+          name: "Site",
+        })}
+        onCopyKey={onCopyKey}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "account:actions.copyKey" }),
+    )
+
+    await waitFor(() => {
+      expect(fetchAccountTokensMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accountId: "acc-single-key",
+        }),
+      )
+      expect(toastSuccessMock).toHaveBeenCalledWith("account:actions.keyCopied")
+    })
+    expect(onCopyKey).not.toHaveBeenCalled()
+  })
+
+  it("shows a fetch-info error when the token probe returns a non-array payload", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce({ invalid: true } as any)
+
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-non-array",
+          disabled: false,
+          name: "Site",
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "account:actions.copyKey" }),
+    )
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "account:actions.fetchKeyInfoFailed",
+      )
+    })
+    expect(clipboardWriteTextMock).not.toHaveBeenCalled()
+  })
+
+  it("falls back to the copy dialog when the token probe throws", async () => {
+    fetchAccountTokensMock.mockRejectedValueOnce(new Error("probe failed"))
+
+    const user = userEvent.setup()
+    const onCopyKey = vi.fn()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-probe-failed",
+          disabled: false,
+          name: "Site",
+        })}
+        onCopyKey={onCopyKey}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "account:actions.copyKey" }),
+    )
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "account:actions.fetchKeyListFailed",
+      )
+      expect(onCopyKey).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "acc-probe-failed" }),
+      )
+    })
+  })
+
   it("sends a targeted autoCheckin:runNow payload when Quick check-in is clicked", async () => {
     toastLoadingMock.mockReturnValue("toast-quick-checkin")
     sendRuntimeMessageMock
@@ -382,6 +511,178 @@ describe("AccountActionButtons", () => {
       )
       expect(loadAccountDataMock).toHaveBeenCalled()
     })
+  })
+
+  it("shows a completion fallback toast when quick check-in finishes without a per-account result", async () => {
+    toastLoadingMock.mockReturnValue("toast-quick-checkin-fallback")
+    sendRuntimeMessageMock
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: true, data: { perAccount: {} } })
+
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-quick-fallback",
+          disabled: false,
+          name: "Fallback Site",
+          checkIn: { enableDetection: true },
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText("account:actions.quickCheckin")
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    await waitFor(() => {
+      expect(toastDismissMock).toHaveBeenCalledWith(
+        "toast-quick-checkin-fallback",
+      )
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "autoCheckin:messages.success.runCompleted",
+      )
+    })
+  })
+
+  it("shows a quick-checkin failure toast when the background run fails", async () => {
+    toastLoadingMock.mockReturnValue("toast-quick-checkin-error")
+    sendRuntimeMessageMock.mockResolvedValueOnce({
+      success: false,
+      error: "background failed",
+    })
+
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-quick-failed",
+          disabled: false,
+          name: "Failed Site",
+          checkIn: { enableDetection: true },
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText("account:actions.quickCheckin")
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    await waitFor(() => {
+      expect(toastDismissMock).toHaveBeenCalledWith("toast-quick-checkin-error")
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "autoCheckin:messages.error.runFailed",
+      )
+    })
+  })
+
+  it("shows a pin toggle when the feature is enabled and confirms successful pinning", async () => {
+    accountDataContextValue.isPinFeatureEnabled = true
+    accountDataContextValue.isAccountPinned.mockReturnValue(false)
+    mockTogglePinAccount.mockResolvedValueOnce(true)
+
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-pin",
+          disabled: false,
+          name: "Pinned Site",
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText("account:actions.pin")
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    await waitFor(() => {
+      expect(mockTogglePinAccount).toHaveBeenCalledWith("acc-pin")
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "messages:toast.success.accountPinned",
+      )
+    })
+  })
+
+  it("shares a sanitized snapshot using only visible cashflow data", async () => {
+    userPreferencesContextValue.showTodayCashflow = false
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-share",
+          disabled: false,
+          name: "Share Site",
+          baseUrl: "https://api.example.com/v1/chat/completions",
+          balance: { USD: 12, CNY: 0 },
+          todayIncome: { USD: 8, CNY: 0 },
+          todayConsumption: { USD: 4, CNY: 0 },
+          last_sync_time: 0,
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText(
+      "shareSnapshots:actions.shareAccountSnapshot",
+    )
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    await waitFor(() => {
+      expect(exportShareSnapshotWithToastMock).toHaveBeenCalledTimes(1)
+    })
+
+    const payload = exportShareSnapshotWithToastMock.mock.calls[0]?.[0]?.payload
+    expect(payload).toEqual(
+      expect.objectContaining({
+        siteName: "Share Site",
+        originUrl: "https://api.example.com",
+        currencyType: "USD",
+        balance: 12,
+      }),
+    )
+    expect(payload).not.toHaveProperty("todayIncome")
+    expect(payload).not.toHaveProperty("todayOutcome")
   })
 
   it("navigates to managed site channels focused by channelId when an exact match is found", async () => {

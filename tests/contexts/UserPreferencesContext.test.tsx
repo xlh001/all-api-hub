@@ -26,6 +26,8 @@ import {
 import { DEFAULT_SORTING_PRIORITY_CONFIG } from "~/services/preferences/utils/sortingPriority"
 import { DEFAULT_BALANCE_HISTORY_PREFERENCES } from "~/types/dailyBalanceHistory"
 import { DEFAULT_DONE_HUB_CONFIG } from "~/types/doneHubConfig"
+import { DEFAULT_OCTOPUS_CONFIG } from "~/types/octopusConfig"
+import { SortingCriteriaType } from "~/types/sorting"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 
 const { loggerMocks } = vi.hoisted(() => ({
@@ -444,6 +446,80 @@ describe("UserPreferencesContext", () => {
     })
   })
 
+  it("persists active tab changes through both tab update helpers", async () => {
+    const preferences = clonePreferences()
+    preferences.activeTab = DATA_TYPE_BALANCE
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      expect(await context.updateActiveTab(DATA_TYPE_CASHFLOW)).toBe(true)
+    })
+
+    expect(mockedUserPreferences.updateActiveTab).toHaveBeenCalledWith(
+      DATA_TYPE_CASHFLOW,
+    )
+    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+      DATA_TYPE_CASHFLOW,
+    )
+    expect((latestContext as any)?.preferences.activeTab).toBe(
+      DATA_TYPE_CASHFLOW,
+    )
+
+    await act(async () => {
+      expect(await context.updateDefaultTab(DATA_TYPE_BALANCE)).toBe(true)
+    })
+
+    expect(mockedUserPreferences.updateActiveTab).toHaveBeenLastCalledWith(
+      DATA_TYPE_BALANCE,
+    )
+    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+      DATA_TYPE_BALANCE,
+    )
+    expect((latestContext as any)?.preferences.activeTab).toBe(
+      DATA_TYPE_BALANCE,
+    )
+  })
+
+  it("updates the sorting priority config in context when persistence succeeds", async () => {
+    const context = await renderProvider()
+    const updatedConfig = structuredClone(DEFAULT_SORTING_PRIORITY_CONFIG)
+
+    updatedConfig.criteria = updatedConfig.criteria.map((criterion) => {
+      if (criterion.id === SortingCriteriaType.DISABLED_ACCOUNT) {
+        return {
+          ...criterion,
+          enabled: false,
+          priority: 9,
+        }
+      }
+
+      if (criterion.id === SortingCriteriaType.CUSTOM_REDEEM_URL) {
+        return {
+          ...criterion,
+          priority: 0,
+        }
+      }
+
+      return criterion
+    })
+    updatedConfig.lastModified = 1_700_000_000_000
+
+    await act(async () => {
+      expect(await context.updateSortingPriorityConfig(updatedConfig)).toBe(
+        true,
+      )
+    })
+
+    expect(mockedUserPreferences.setSortingPriorityConfig).toHaveBeenCalledWith(
+      updatedConfig,
+    )
+    expect((latestContext as any)?.sortingPriorityConfig).toEqual(updatedConfig)
+    expect((latestContext as any)?.preferences.sortingPriorityConfig).toEqual(
+      updatedConfig,
+    )
+  })
+
   it("merges missing nested sections with defaults when runtime-backed updates arrive", async () => {
     const preferences = clonePreferences()
     delete (preferences as Partial<UserPreferences>).autoCheckin
@@ -827,6 +903,102 @@ describe("UserPreferencesContext", () => {
     expect(mockedSendRuntimeMessage).not.toHaveBeenCalled()
   })
 
+  it("keeps stored backend credentials untouched when credential writes fail", async () => {
+    const preferences = clonePreferences()
+    preferences.newApi = {
+      ...preferences.newApi,
+      adminToken: "stored-new-api-admin",
+      userId: "stored-new-api-user-id",
+      username: "stored-new-api-user",
+      password: "stored-new-api-password",
+      totpSecret: "stored-new-api-totp",
+    }
+    preferences.doneHub = {
+      ...(preferences.doneHub ?? DEFAULT_DONE_HUB_CONFIG),
+      adminToken: "stored-donehub-admin",
+      userId: "stored-donehub-user-id",
+    }
+    preferences.veloera = {
+      ...preferences.veloera,
+      adminToken: "stored-veloera-admin",
+      userId: "stored-veloera-user-id",
+    }
+    preferences.octopus = {
+      ...(preferences.octopus ?? DEFAULT_OCTOPUS_CONFIG),
+      username: "stored-octopus-user",
+      password: "stored-octopus-password",
+    }
+
+    mockedUserPreferences.savePreferences.mockResolvedValue(false)
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      expect(await context.updateNewApiAdminToken("next-new-api-admin")).toBe(
+        false,
+      )
+      expect(await context.updateNewApiUserId("next-new-api-user-id")).toBe(
+        false,
+      )
+      expect(await context.updateNewApiUsername("next-new-api-user")).toBe(
+        false,
+      )
+      expect(await context.updateNewApiPassword("next-new-api-password")).toBe(
+        false,
+      )
+      expect(await context.updateNewApiTotpSecret("next-new-api-totp")).toBe(
+        false,
+      )
+      expect(await context.updateDoneHubAdminToken("next-donehub-admin")).toBe(
+        false,
+      )
+      expect(await context.updateDoneHubUserId("next-donehub-user-id")).toBe(
+        false,
+      )
+      expect(await context.updateVeloeraAdminToken("next-veloera-admin")).toBe(
+        false,
+      )
+      expect(await context.updateVeloeraUserId("next-veloera-user-id")).toBe(
+        false,
+      )
+      expect(await context.updateOctopusUsername("next-octopus-user")).toBe(
+        false,
+      )
+      expect(await context.updateOctopusPassword("next-octopus-password")).toBe(
+        false,
+      )
+    })
+
+    expect((latestContext as any)?.preferences.newApi).toEqual(
+      expect.objectContaining({
+        adminToken: "stored-new-api-admin",
+        userId: "stored-new-api-user-id",
+        username: "stored-new-api-user",
+        password: "stored-new-api-password",
+        totpSecret: "stored-new-api-totp",
+      }),
+    )
+    expect((latestContext as any)?.preferences.doneHub).toEqual(
+      expect.objectContaining({
+        adminToken: "stored-donehub-admin",
+        userId: "stored-donehub-user-id",
+      }),
+    )
+    expect((latestContext as any)?.preferences.veloera).toEqual(
+      expect.objectContaining({
+        adminToken: "stored-veloera-admin",
+        userId: "stored-veloera-user-id",
+      }),
+    )
+    expect((latestContext as any)?.preferences.octopus).toEqual(
+      expect.objectContaining({
+        username: "stored-octopus-user",
+        password: "stored-octopus-password",
+      }),
+    )
+    expect(mockedSendRuntimeMessage).not.toHaveBeenCalled()
+  })
+
   it("keeps the current state when reset helpers fail and skips reset broadcasts", async () => {
     const preferences = clonePreferences()
     preferences.activeTab = DATA_TYPE_BALANCE
@@ -1106,6 +1278,7 @@ describe("UserPreferencesContext", () => {
     const preferences = clonePreferences()
     delete (preferences as Partial<UserPreferences>).activeTab
     delete (preferences as Partial<UserPreferences>).currencyType
+    delete (preferences as Partial<UserPreferences>).showTodayCashflow
     delete (preferences as Partial<UserPreferences>).sortField
     delete (preferences as Partial<UserPreferences>).sortOrder
     delete (preferences as Partial<UserPreferences>).accountAutoRefresh
@@ -1124,6 +1297,7 @@ describe("UserPreferencesContext", () => {
 
     expect((latestContext as any)?.activeTab).toBe(DATA_TYPE_CASHFLOW)
     expect((latestContext as any)?.currencyType).toBe("USD")
+    expect((latestContext as any)?.showTodayCashflow).toBe(true)
     expect((latestContext as any)?.sortField).toBe(DATA_TYPE_BALANCE)
     expect((latestContext as any)?.sortOrder).toBe("desc")
     expect((latestContext as any)?.autoRefresh).toBe(
