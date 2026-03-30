@@ -93,15 +93,50 @@ vi.mock("~/components/SettingSection", () => ({
 vi.mock("~/components/ChannelFiltersEditor", () => ({
   default: ({
     filters,
+    viewMode,
     jsonText,
     onAddFilter,
+    onRemoveFilter,
+    onFieldChange,
     onChangeJsonText,
     onClickViewJson,
     onClickViewVisual,
   }: any) => (
     <div>
+      <div data-testid="filter-view-mode">{viewMode}</div>
       <div data-testid="filter-count">{filters.length}</div>
       <button onClick={onAddFilter}>add-filter</button>
+      <button onClick={() => filters[0] && onRemoveFilter(filters[0].id)}>
+        remove-filter
+      </button>
+      <button
+        onClick={() =>
+          filters[0] && onFieldChange(filters[0].id, "name", "Rule")
+        }
+      >
+        set-first-name
+      </button>
+      <button
+        onClick={() =>
+          filters[0] && onFieldChange(filters[0].id, "pattern", "[")
+        }
+      >
+        set-invalid-pattern
+      </button>
+      <button
+        onClick={() =>
+          filters[0] && onFieldChange(filters[0].id, "pattern", "^gpt")
+        }
+      >
+        set-valid-pattern
+      </button>
+      <button
+        onClick={() =>
+          filters[0] && onFieldChange(filters[0].id, "isRegex", true)
+        }
+      >
+        enable-regex
+      </button>
       <button onClick={onClickViewJson}>view-json</button>
       <button onClick={onClickViewVisual}>view-visual</button>
       <textarea
@@ -196,14 +231,17 @@ vi.mock("~/components/ui", () => ({
     children,
     footer,
     header,
+    onClose,
   }: {
     isOpen: boolean
     children: ReactNode
     footer?: ReactNode
     header?: ReactNode
+    onClose?: () => void
   }) =>
     isOpen ? (
       <div role="dialog">
+        <button onClick={() => onClose?.()}>modal-close</button>
         {header}
         {children}
         {footer}
@@ -251,6 +289,17 @@ const createContextValue = (overrides: Record<string, unknown> = {}) => ({
   resetNewApiModelSyncConfig: mockResetNewApiModelSyncConfig,
   ...overrides,
 })
+
+const createDeferred = <T,>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+
+  return { promise, resolve, reject }
+}
 
 describe("ManagedSiteModelSyncSettings", () => {
   beforeEach(() => {
@@ -347,6 +396,263 @@ describe("ManagedSiteModelSyncSettings", () => {
     )
   })
 
+  it("falls back to legacy newApiModelSync preferences when managedSiteModelSync is absent", async () => {
+    mockedUseUserPreferencesContext.mockReturnValue(
+      createContextValue({
+        preferences: {
+          newApiModelSync: {
+            enabled: false,
+            interval: 6 * 60 * 60 * 1000,
+            concurrency: 4,
+            maxRetries: 1,
+            rateLimit: { requestsPerMinute: 35, burst: 9 },
+            allowedModels: ["legacy-model"],
+            globalChannelModelFilters: [
+              {
+                id: "legacy-filter",
+                name: "Legacy",
+                pattern: "^legacy",
+                isRegex: true,
+                action: "include",
+                enabled: true,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            ],
+          },
+        },
+      }),
+    )
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    await waitFor(() => {
+      expect(mockedSendRuntimeMessage).toHaveBeenCalled()
+    })
+
+    expect(
+      screen.getByRole("checkbox", { name: "managed-site-sync-enabled" }),
+    ).not.toBeChecked()
+    expect(screen.getByDisplayValue("6")).toBeInTheDocument()
+    expect(screen.getByDisplayValue("4")).toBeInTheDocument()
+    expect(screen.getByDisplayValue("1")).toBeInTheDocument()
+    expect(screen.getByDisplayValue("35")).toBeInTheDocument()
+    expect(screen.getByDisplayValue("9")).toBeInTheDocument()
+    expect(screen.getByTestId("allowed-model-selected")).toHaveTextContent(
+      "legacy-model",
+    )
+  })
+
+  it("falls back to model metadata when the runtime response is unsuccessful", async () => {
+    mockedSendRuntimeMessage.mockResolvedValue({
+      success: false,
+      error: "runtime unavailable",
+    })
+    mockedModelMetadataService.getAllMetadata.mockReturnValue([
+      { id: "zeta-model" },
+      { id: "alpha-model" },
+    ])
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    await waitFor(() => {
+      expect(mockedModelMetadataService.initialize).toHaveBeenCalledTimes(1)
+    })
+
+    expect(screen.getByTestId("allowed-model-options")).toHaveTextContent(
+      "alpha-model,zeta-model",
+    )
+    expect(
+      screen.queryByText(
+        "managedSiteModelSync:settings.allowedModelsLoadFailed",
+      ),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows a load error when both runtime and metadata fallback fail", async () => {
+    mockedSendRuntimeMessage.mockRejectedValue(new Error("runtime down"))
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "managedSiteModelSync:settings.allowedModelsLoadFailed",
+        ),
+      ).toBeInTheDocument()
+    })
+
+    expect(screen.getByTestId("allowed-model-options")).toHaveTextContent("")
+  })
+
+  it("ignores invalid numeric values outside the supported ranges", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    await waitFor(() => {
+      expect(mockedSendRuntimeMessage).toHaveBeenCalled()
+    })
+
+    vi.clearAllMocks()
+
+    const inputs = screen.getAllByRole("spinbutton")
+    const [
+      intervalInput,
+      concurrencyInput,
+      retriesInput,
+      rpmInput,
+      burstInput,
+    ] = inputs
+
+    fireEvent.change(intervalInput, { target: { value: "0" } })
+    fireEvent.change(concurrencyInput, { target: { value: "11" } })
+    fireEvent.change(retriesInput, { target: { value: "6" } })
+    fireEvent.change(rpmInput, { target: { value: "4" } })
+    fireEvent.change(burstInput, { target: { value: "21" } })
+
+    expect(mockUpdateNewApiModelSync).not.toHaveBeenCalled()
+  })
+
+  it("persists valid numeric updates for concurrency, retries, and rate limits", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    await waitFor(() => {
+      expect(mockedSendRuntimeMessage).toHaveBeenCalled()
+    })
+
+    vi.clearAllMocks()
+
+    const inputs = screen.getAllByRole("spinbutton")
+    const [, concurrencyInput, retriesInput, rpmInput, burstInput] = inputs
+
+    fireEvent.change(concurrencyInput, { target: { value: "4" } })
+    fireEvent.change(retriesInput, { target: { value: "3" } })
+    fireEvent.change(rpmInput, { target: { value: "30" } })
+    fireEvent.change(burstInput, { target: { value: "8" } })
+
+    await waitFor(() => {
+      expect(mockUpdateNewApiModelSync).toHaveBeenCalledWith({
+        concurrency: 4,
+      })
+      expect(mockUpdateNewApiModelSync).toHaveBeenCalledWith({
+        maxRetries: 3,
+      })
+      expect(mockUpdateNewApiModelSync).toHaveBeenCalledWith({
+        rateLimit: {
+          requestsPerMinute: 30,
+          burst: 5,
+        },
+      })
+      expect(mockUpdateNewApiModelSync).toHaveBeenCalledWith({
+        rateLimit: {
+          requestsPerMinute: 20,
+          burst: 8,
+        },
+      })
+    })
+  })
+
+  it("shows a save error when preference updates return false", async () => {
+    mockUpdateNewApiModelSync.mockResolvedValue(false)
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "managed-site-sync-enabled" }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "settings:messages.saveSettingsFailed",
+      )
+    })
+
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
+  it("shows a save error when preference updates throw", async () => {
+    mockUpdateNewApiModelSync.mockRejectedValue(new Error("write failed"))
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "managed-site-sync-enabled" }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "settings:messages.saveSettingsFailed",
+      )
+    })
+
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
+  it("validates regex errors in the visual global filters editor before saving", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "add-filter" }))
+    fireEvent.click(screen.getByRole("button", { name: "set-first-name" }))
+    fireEvent.click(screen.getByRole("button", { name: "set-invalid-pattern" }))
+    fireEvent.click(screen.getByRole("button", { name: "enable-regex" }))
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:filters.messages.validationRegex",
+      )
+    })
+
+    expect(mockUpdateNewApiModelSync).not.toHaveBeenCalled()
+  })
+
+  it("validates missing visual filter fields before saving", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "add-filter" }))
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:filters.messages.validationName",
+      )
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "set-first-name" }))
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:filters.messages.validationPattern",
+      )
+    })
+
+    expect(mockUpdateNewApiModelSync).not.toHaveBeenCalled()
+  })
+
   it("validates and saves global channel filters from the JSON editor", async () => {
     render(<ManagedSiteModelSyncSettings />)
 
@@ -417,6 +723,542 @@ describe("ManagedSiteModelSyncSettings", () => {
     expect(toast.success).toHaveBeenCalledWith(
       "managedSiteChannels:filters.messages.saved",
     )
+  })
+
+  it("keeps the global filters dialog open when saving preferences fails", async () => {
+    mockUpdateNewApiModelSync.mockResolvedValue(false)
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "view-json" }))
+    fireEvent.change(screen.getByLabelText("json-text"), {
+      target: {
+        value: JSON.stringify([
+          {
+            name: "Rule",
+            pattern: "^gpt",
+          },
+        ]),
+      },
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "settings:messages.saveSettingsFailed",
+      )
+    })
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(toast.success).not.toHaveBeenCalledWith(
+      "managedSiteChannels:filters.messages.saved",
+    )
+  })
+
+  it("keeps JSON mode active when switching back with invalid JSON", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "view-json" }))
+    fireEvent.change(screen.getByLabelText("json-text"), {
+      target: {
+        value: "{invalid json",
+      },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "view-visual" }))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:filters.messages.jsonInvalid",
+      )
+    })
+
+    expect(screen.getByTestId("filter-view-mode")).toHaveTextContent("json")
+  })
+
+  it("closes the global filters dialog when cancel is clicked outside a save", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.cancel",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+  })
+
+  it("falls back to empty JSON text when existing filters cannot be stringified", async () => {
+    const circularFilter: any = {
+      id: "circular-filter",
+      name: "Rule",
+      pattern: "^gpt",
+      isRegex: true,
+      action: "include",
+      enabled: true,
+      createdAt: 1,
+      updatedAt: 1,
+      description: "keep",
+    }
+    circularFilter.self = circularFilter
+
+    mockedUseUserPreferencesContext.mockReturnValue(
+      createContextValue({
+        preferences: {
+          managedSiteModelSync: {
+            enabled: true,
+            interval: 24 * 60 * 60 * 1000,
+            concurrency: 2,
+            maxRetries: 2,
+            rateLimit: { requestsPerMinute: 20, burst: 5 },
+            allowedModels: ["existing-model"],
+            globalChannelModelFilters: [circularFilter],
+          },
+        },
+      }),
+    )
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+    expect(screen.getByLabelText("json-text")).toHaveValue("")
+    expect(screen.getByTestId("filter-count")).toHaveTextContent("1")
+  })
+
+  it("falls back to empty JSON text when switching the dialog draft to JSON fails to stringify", async () => {
+    const circularFilter: any = {
+      id: "circular-filter",
+      name: "Rule",
+      pattern: "^gpt",
+      isRegex: true,
+      action: "include",
+      enabled: true,
+      createdAt: 1,
+      updatedAt: 1,
+      description: "keep",
+    }
+    circularFilter.self = circularFilter
+
+    mockedUseUserPreferencesContext.mockReturnValue(
+      createContextValue({
+        preferences: {
+          managedSiteModelSync: {
+            enabled: true,
+            interval: 24 * 60 * 60 * 1000,
+            concurrency: 2,
+            maxRetries: 2,
+            rateLimit: { requestsPerMinute: 20, burst: 5 },
+            allowedModels: ["existing-model"],
+            globalChannelModelFilters: [circularFilter],
+          },
+        },
+      }),
+    )
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "view-json" }))
+
+    expect(screen.getByTestId("filter-view-mode")).toHaveTextContent("json")
+    expect(screen.getByLabelText("json-text")).toHaveValue("")
+  })
+
+  it("removes an existing visual filter and persists an empty filter set", async () => {
+    mockedUseUserPreferencesContext.mockReturnValue(
+      createContextValue({
+        preferences: {
+          managedSiteModelSync: {
+            enabled: true,
+            interval: 24 * 60 * 60 * 1000,
+            concurrency: 2,
+            maxRetries: 2,
+            rateLimit: { requestsPerMinute: 20, burst: 5 },
+            allowedModels: ["existing-model"],
+            globalChannelModelFilters: [
+              {
+                id: "existing-filter",
+                name: "Rule",
+                pattern: "^gpt",
+                isRegex: true,
+                action: "include",
+                enabled: true,
+                createdAt: 1,
+                updatedAt: 1,
+                description: "keep",
+              },
+            ],
+          },
+        },
+      }),
+    )
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+    expect(screen.getByTestId("filter-count")).toHaveTextContent("1")
+
+    fireEvent.click(screen.getByRole("button", { name: "remove-filter" }))
+
+    expect(screen.getByTestId("filter-count")).toHaveTextContent("0")
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockUpdateNewApiModelSync).toHaveBeenCalledWith({
+        globalChannelModelFilters: [],
+      })
+    })
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "managedSiteChannels:filters.messages.saved",
+    )
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+  })
+
+  it("keeps the dialog open when close is requested during an in-flight save", async () => {
+    const deferredSave = createDeferred<boolean>()
+    mockUpdateNewApiModelSync.mockReturnValue(deferredSave.promise)
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "add-filter" }))
+    fireEvent.click(screen.getByRole("button", { name: "set-first-name" }))
+    fireEvent.click(screen.getByRole("button", { name: "set-valid-pattern" }))
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "managedSiteChannels:filters.actions.cancel",
+        }),
+      ).toBeDisabled()
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "modal-close" }))
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+
+    deferredSave.resolve(true)
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+  })
+
+  it("switches blank JSON back to visual mode as an empty filter set", async () => {
+    mockedUseUserPreferencesContext.mockReturnValue(
+      createContextValue({
+        preferences: {
+          managedSiteModelSync: {
+            enabled: true,
+            interval: 24 * 60 * 60 * 1000,
+            concurrency: 2,
+            maxRetries: 2,
+            rateLimit: { requestsPerMinute: 20, burst: 5 },
+            allowedModels: ["existing-model"],
+            globalChannelModelFilters: [
+              {
+                id: "existing-filter",
+                name: "Rule",
+                pattern: "^gpt",
+                isRegex: true,
+                action: "include",
+                enabled: true,
+                createdAt: 1,
+                updatedAt: 1,
+                description: "keep",
+              },
+            ],
+          },
+        },
+      }),
+    )
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "view-json" }))
+    fireEvent.change(screen.getByLabelText("json-text"), {
+      target: {
+        value: "   ",
+      },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "view-visual" }))
+
+    expect(screen.getByTestId("filter-view-mode")).toHaveTextContent("visual")
+    expect(screen.getByTestId("filter-count")).toHaveTextContent("0")
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockUpdateNewApiModelSync).toHaveBeenCalledWith({
+        globalChannelModelFilters: [],
+      })
+    })
+  })
+
+  it("saves an empty filter set when the JSON editor contains only whitespace", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "view-json" }))
+    fireEvent.change(screen.getByLabelText("json-text"), {
+      target: {
+        value: "   ",
+      },
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockUpdateNewApiModelSync).toHaveBeenCalledWith({
+        globalChannelModelFilters: [],
+      })
+    })
+  })
+
+  it("shows a save-failed toast when malformed persisted filter data breaks payload serialization", async () => {
+    mockedUseUserPreferencesContext.mockReturnValue(
+      createContextValue({
+        preferences: {
+          managedSiteModelSync: {
+            enabled: true,
+            interval: 24 * 60 * 60 * 1000,
+            concurrency: 2,
+            maxRetries: 2,
+            rateLimit: { requestsPerMinute: 20, burst: 5 },
+            allowedModels: ["existing-model"],
+            globalChannelModelFilters: [
+              {
+                id: "broken-filter",
+                name: "Rule",
+                pattern: "^gpt",
+                isRegex: true,
+                action: "include",
+                enabled: true,
+                createdAt: 1,
+                updatedAt: 1,
+                description: {
+                  trim: () => {
+                    throw new Error("description exploded")
+                  },
+                },
+              },
+            ],
+          },
+        },
+      }),
+    )
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:filters.messages.saveFailed",
+      )
+    })
+
+    expect(mockUpdateNewApiModelSync).not.toHaveBeenCalled()
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+
+  it("rejects JSON arrays that contain non-object items", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "view-json" }))
+    fireEvent.change(screen.getByLabelText("json-text"), {
+      target: {
+        value: "[null]",
+      },
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:filters.messages.jsonInvalid",
+      )
+    })
+
+    expect(mockUpdateNewApiModelSync).not.toHaveBeenCalled()
+  })
+
+  it("rejects JSON items that omit the pattern field", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "view-json" }))
+    fireEvent.change(screen.getByLabelText("json-text"), {
+      target: {
+        value: '[{"name":"Rule"}]',
+      },
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:filters.messages.jsonInvalid",
+      )
+    })
+
+    expect(mockUpdateNewApiModelSync).not.toHaveBeenCalled()
+  })
+
+  it("rejects non-array JSON filter payloads before saving", async () => {
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "view-json" }))
+    fireEvent.change(screen.getByLabelText("json-text"), {
+      target: {
+        value: '{"name":"Rule","pattern":"^gpt"}',
+      },
+    })
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:filters.messages.jsonInvalid",
+      )
+    })
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(mockUpdateNewApiModelSync).not.toHaveBeenCalled()
   })
 
   it("navigates to the execution page and resets the section through SettingSection", async () => {

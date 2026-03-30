@@ -194,14 +194,17 @@ export default function ManagedSiteModelSyncSettings() {
 
       if (!success) {
         toast.error(t("settings:messages.saveSettingsFailed"))
+        return false
       } else if (!updates.globalChannelModelFilters) {
         // Avoid double toast when saving from the global filters dialog,
         // which already shows a dedicated success message.
         toast.success(t("managedSiteModelSync:messages.success.settingsSaved"))
       }
+      return true
     } catch (error) {
       logger.error("Failed to save preferences", error)
       toast.error(t("settings:messages.saveSettingsFailed"))
+      return false
     } finally {
       setIsSaving(false)
     }
@@ -329,7 +332,12 @@ export default function ManagedSiteModelSyncSettings() {
         description: filter.description?.trim() || undefined,
       }))
 
-      await savePreferences({ globalChannelModelFilters: payload })
+      const success = await savePreferences({
+        globalChannelModelFilters: payload,
+      })
+      if (!success) {
+        return
+      }
       setGlobalChannelModelFiltersDraft(rulesToSave)
       toast.success(t("managedSiteChannels:filters.messages.saved"))
       setIsGlobalChannelModelFiltersDialogOpen(false)
@@ -371,7 +379,9 @@ export default function ManagedSiteModelSyncSettings() {
             rightContent={
               <Switch
                 checked={preferences.enableSync}
-                onChange={(checked) => savePreferences({ enableSync: checked })}
+                onChange={(checked) =>
+                  void savePreferences({ enableSync: checked })
+                }
                 disabled={isSaving}
               />
             }
@@ -391,7 +401,7 @@ export default function ManagedSiteModelSyncSettings() {
                   onChange={(e) => {
                     const hours = parseFloat(e.target.value)
                     if (hours > 0) {
-                      savePreferences({
+                      void savePreferences({
                         intervalMs: hours * 60 * 60 * 1000,
                       })
                     }
@@ -423,7 +433,7 @@ export default function ManagedSiteModelSyncSettings() {
                     concurrency >= 1 &&
                     concurrency <= 10
                   ) {
-                    savePreferences({ concurrency })
+                    void savePreferences({ concurrency })
                   }
                 }}
                 disabled={isSaving}
@@ -449,7 +459,7 @@ export default function ManagedSiteModelSyncSettings() {
                     maxRetries >= 0 &&
                     maxRetries <= 5
                   ) {
-                    savePreferences({ maxRetries })
+                    void savePreferences({ maxRetries })
                   }
                 }}
                 disabled={isSaving}
@@ -473,7 +483,7 @@ export default function ManagedSiteModelSyncSettings() {
                 onChange={(e) => {
                   const value = parseInt(e.target.value)
                   if (Number.isFinite(value) && value >= 5 && value <= 120) {
-                    savePreferences({
+                    void savePreferences({
                       rateLimit: {
                         ...preferences.rateLimit,
                         requestsPerMinute: value,
@@ -500,7 +510,7 @@ export default function ManagedSiteModelSyncSettings() {
                 onChange={(e) => {
                   const value = parseInt(e.target.value)
                   if (Number.isFinite(value) && value >= 1 && value <= 20) {
-                    savePreferences({
+                    void savePreferences({
                       rateLimit: {
                         ...preferences.rateLimit,
                         burst: value,
