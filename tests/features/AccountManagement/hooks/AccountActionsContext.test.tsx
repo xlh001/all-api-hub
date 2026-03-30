@@ -1,6 +1,6 @@
 import { act, render, waitFor } from "@testing-library/react"
 import { useEffect } from "react"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
@@ -8,17 +8,30 @@ import {
   useAccountActionsContext,
 } from "~/features/AccountManagement/hooks/AccountActionsContext"
 
-// Verifies bulk external check-in behavior (unchecked-only vs open-all) and toast feedback.
-const { mockLoadAccountData, mockSendRuntimeMessage, mockToast } = vi.hoisted(
-  () => ({
-    mockLoadAccountData: vi.fn(),
-    mockSendRuntimeMessage: vi.fn(),
-    mockToast: {
-      success: vi.fn(),
-      error: vi.fn(),
-    },
-  }),
-)
+// Verifies account action flows through the public context API, including
+// refresh, enable/disable, copy URL, custom check-in state, and external
+// check-in feedback.
+const {
+  mockLoadAccountData,
+  mockSendRuntimeMessage,
+  mockToast,
+  mockRefreshAccount,
+  mockSetAccountDisabled,
+  mockMarkAccountAsCustomCheckedIn,
+  mockLoggerError,
+} = vi.hoisted(() => ({
+  mockLoadAccountData: vi.fn(),
+  mockSendRuntimeMessage: vi.fn(),
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    promise: vi.fn(),
+  },
+  mockRefreshAccount: vi.fn(),
+  mockSetAccountDisabled: vi.fn(),
+  mockMarkAccountAsCustomCheckedIn: vi.fn(),
+  mockLoggerError: vi.fn(),
+}))
 
 vi.mock("react-hot-toast", () => ({
   default: mockToast,
@@ -26,7 +39,9 @@ vi.mock("react-hot-toast", () => ({
 
 vi.mock("~/services/accounts/accountStorage", () => ({
   accountStorage: {
-    refreshAccount: vi.fn(),
+    refreshAccount: mockRefreshAccount,
+    setAccountDisabled: mockSetAccountDisabled,
+    markAccountAsCustomCheckedIn: mockMarkAccountAsCustomCheckedIn,
   },
 }))
 
@@ -39,6 +54,12 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
 vi.mock("~/features/AccountManagement/hooks/AccountDataContext", () => ({
   useAccountDataContext: () => ({
     loadAccountData: mockLoadAccountData,
+  }),
+}))
+
+vi.mock("~/utils/core/logger", () => ({
+  createLogger: () => ({
+    error: mockLoggerError,
   }),
 }))
 
@@ -57,22 +78,52 @@ function ContextProbe({
   return null
 }
 
+const createAccount = (overrides: Record<string, unknown> = {}) =>
+  ({
+    id: "account-1",
+    name: "Account One",
+    baseUrl: "https://account.example.com",
+    disabled: false,
+    checkIn: { customCheckIn: { isCheckedInToday: false } },
+    ...overrides,
+  }) as any
+
+const renderContext = async () => {
+  let captured: ReturnType<typeof useAccountActionsContext> | undefined
+  render(
+    <AccountActionsProvider>
+      <ContextProbe onReady={(ctx) => (captured = ctx)} />
+    </AccountActionsProvider>,
+  )
+
+  await waitFor(() => {
+    expect(captured).toBeDefined()
+  })
+
+  return {
+    getContext: () => captured!,
+  }
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  mockToast.promise.mockImplementation(
+    async (promise: Promise<unknown>) => promise,
+  )
+  Object.assign(navigator, {
+    clipboard: {
+      writeText: vi.fn(),
+    },
+  })
+})
+
 afterEach(() => {
   vi.clearAllMocks()
 })
 
 describe("AccountActionsContext", () => {
   it("opens only unchecked external check-ins by default", async () => {
-    let captured: ReturnType<typeof useAccountActionsContext> | undefined
-    render(
-      <AccountActionsProvider>
-        <ContextProbe onReady={(ctx) => (captured = ctx)} />
-      </AccountActionsProvider>,
-    )
-
-    await waitFor(() => {
-      expect(captured).toBeDefined()
-    })
+    const { getContext } = await renderContext()
 
     const accounts = [
       {
@@ -100,7 +151,7 @@ describe("AccountActionsContext", () => {
           totalCount: 2,
         },
       })
-      await captured!.handleOpenExternalCheckIns(accounts)
+      await getContext().handleOpenExternalCheckIns(accounts)
     })
 
     expect(mockSendRuntimeMessage).toHaveBeenCalledTimes(1)
@@ -114,16 +165,7 @@ describe("AccountActionsContext", () => {
   })
 
   it("opens all external check-ins when openAll is true", async () => {
-    let captured: ReturnType<typeof useAccountActionsContext> | undefined
-    render(
-      <AccountActionsProvider>
-        <ContextProbe onReady={(ctx) => (captured = ctx)} />
-      </AccountActionsProvider>,
-    )
-
-    await waitFor(() => {
-      expect(captured).toBeDefined()
-    })
+    const { getContext } = await renderContext()
 
     const accounts = [
       {
@@ -147,7 +189,7 @@ describe("AccountActionsContext", () => {
           totalCount: 2,
         },
       })
-      await captured!.handleOpenExternalCheckIns(accounts, { openAll: true })
+      await getContext().handleOpenExternalCheckIns(accounts, { openAll: true })
     })
 
     expect(mockSendRuntimeMessage).toHaveBeenCalledTimes(1)
@@ -161,16 +203,7 @@ describe("AccountActionsContext", () => {
   })
 
   it("forwards openInNewWindow to background handler", async () => {
-    let captured: ReturnType<typeof useAccountActionsContext> | undefined
-    render(
-      <AccountActionsProvider>
-        <ContextProbe onReady={(ctx) => (captured = ctx)} />
-      </AccountActionsProvider>,
-    )
-
-    await waitFor(() => {
-      expect(captured).toBeDefined()
-    })
+    const { getContext } = await renderContext()
 
     const accounts = [
       {
@@ -194,7 +227,7 @@ describe("AccountActionsContext", () => {
           totalCount: 1,
         },
       })
-      await captured!.handleOpenExternalCheckIns(accounts, {
+      await getContext().handleOpenExternalCheckIns(accounts, {
         openInNewWindow: true,
       })
     })
@@ -210,16 +243,7 @@ describe("AccountActionsContext", () => {
   })
 
   it("shows a toast when no unchecked external check-ins remain", async () => {
-    let captured: ReturnType<typeof useAccountActionsContext> | undefined
-    render(
-      <AccountActionsProvider>
-        <ContextProbe onReady={(ctx) => (captured = ctx)} />
-      </AccountActionsProvider>,
-    )
-
-    await waitFor(() => {
-      expect(captured).toBeDefined()
-    })
+    const { getContext } = await renderContext()
 
     const accounts = [
       {
@@ -233,13 +257,241 @@ describe("AccountActionsContext", () => {
     ] as any
 
     await act(async () => {
-      await captured!.handleOpenExternalCheckIns(accounts)
+      await getContext().handleOpenExternalCheckIns(accounts)
     })
 
     expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
     expect(mockLoadAccountData).not.toHaveBeenCalled()
     expect(mockToast.error).toHaveBeenCalledWith(
       "messages:toast.error.externalCheckInNonePending",
+    )
+  })
+
+  it("refreshes enabled accounts, exposes the in-flight id, and skips concurrent refreshes", async () => {
+    const { getContext } = await renderContext()
+    let resolveRefresh: ((value: { refreshed: boolean }) => void) | undefined
+    const refreshResult = new Promise<{ refreshed: boolean }>((resolve) => {
+      resolveRefresh = resolve
+    })
+    const account = createAccount({ id: "refresh-1", name: "Refresh Me" })
+
+    mockRefreshAccount.mockReturnValueOnce(refreshResult)
+
+    act(() => {
+      void getContext().handleRefreshAccount(account, false)
+    })
+
+    await waitFor(() => {
+      expect(getContext().refreshingAccountId).toBe("refresh-1")
+    })
+
+    await act(async () => {
+      await getContext().handleRefreshAccount(
+        createAccount({ id: "refresh-2", name: "Skipped" }),
+      )
+    })
+
+    expect(mockRefreshAccount).toHaveBeenCalledTimes(1)
+    expect(mockRefreshAccount).toHaveBeenCalledWith("refresh-1", false)
+
+    const refreshToastPromise = mockToast.promise.mock.calls[0]?.[0]
+    const toastConfig = mockToast.promise.mock.calls[0]?.[1]
+    expect(mockToast.promise).toHaveBeenCalledTimes(1)
+    expect(toastConfig.loading).toBe("messages:toast.loading.refreshingAccount")
+    expect(toastConfig.error).toBe("messages:toast.error.refreshAccount")
+    expect(toastConfig.success("resolved-message")).toBe("resolved-message")
+
+    await act(async () => {
+      resolveRefresh?.({ refreshed: false })
+      await refreshResult
+    })
+
+    await expect(refreshToastPromise).resolves.toBe(
+      "messages:toast.success.refreshSkipped",
+    )
+    await waitFor(() => {
+      expect(getContext().refreshingAccountId).toBeNull()
+    })
+    expect(mockLoadAccountData).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses the refreshed success message when account data actually changes", async () => {
+    const { getContext } = await renderContext()
+
+    mockRefreshAccount.mockResolvedValueOnce({ refreshed: true })
+
+    await act(async () => {
+      await getContext().handleRefreshAccount(
+        createAccount({ id: "refresh-success", name: "Fresh Account" }),
+      )
+    })
+
+    await expect(mockToast.promise.mock.calls[0][0]).resolves.toBe(
+      "messages:toast.success.refreshAccount",
+    )
+    expect(mockLoadAccountData).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not attempt to refresh disabled accounts", async () => {
+    const { getContext } = await renderContext()
+
+    await act(async () => {
+      await getContext().handleRefreshAccount(
+        createAccount({ id: "disabled-refresh", disabled: true }),
+      )
+    })
+
+    expect(mockRefreshAccount).not.toHaveBeenCalled()
+    expect(mockToast.promise).not.toHaveBeenCalled()
+    expect(mockLoadAccountData).not.toHaveBeenCalled()
+  })
+
+  it("shows success feedback for both disabling and enabling accounts", async () => {
+    const { getContext } = await renderContext()
+    const account = createAccount({ id: "toggle-1", name: "Toggle Account" })
+
+    mockSetAccountDisabled
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(true)
+
+    await act(async () => {
+      await getContext().handleSetAccountDisabled(account, true)
+      await getContext().handleSetAccountDisabled(account, false)
+    })
+
+    expect(mockSetAccountDisabled).toHaveBeenNthCalledWith(1, "toggle-1", true)
+    expect(mockSetAccountDisabled).toHaveBeenNthCalledWith(2, "toggle-1", false)
+    expect(mockLoadAccountData).toHaveBeenCalledTimes(2)
+    expect(mockToast.success).toHaveBeenNthCalledWith(
+      1,
+      "messages:toast.success.accountDisabled",
+    )
+    expect(mockToast.success).toHaveBeenNthCalledWith(
+      2,
+      "messages:toast.success.accountEnabled",
+    )
+  })
+
+  it("shows a fallback error when account disable updates fail", async () => {
+    const { getContext } = await renderContext()
+
+    mockSetAccountDisabled.mockResolvedValueOnce(false)
+
+    await act(async () => {
+      await getContext().handleSetAccountDisabled(
+        createAccount({ id: "toggle-fail" }),
+        true,
+      )
+    })
+
+    expect(mockLoadAccountData).not.toHaveBeenCalled()
+    expect(mockToast.error).toHaveBeenCalledWith(
+      "messages:toast.error.operationFailed",
+    )
+  })
+
+  it("copies account URLs to the clipboard and reports success", async () => {
+    const { getContext } = await renderContext()
+    const writeTextMock = vi.mocked(navigator.clipboard.writeText)
+
+    await act(async () => {
+      getContext().handleCopyUrl(
+        createAccount({
+          id: "copy-url",
+          name: "Copy URL",
+          baseUrl: "https://copied.example.com",
+        }),
+      )
+    })
+
+    expect(writeTextMock).toHaveBeenCalledWith("https://copied.example.com")
+    expect(mockToast.success).toHaveBeenCalledWith(
+      "messages:toast.success.urlCopied",
+    )
+  })
+
+  it("marks custom check-ins only for enabled accounts and reloads only on successful updates", async () => {
+    const { getContext } = await renderContext()
+
+    await act(async () => {
+      await getContext().handleMarkCustomCheckInAsCheckedIn(
+        createAccount({ id: "checked-disabled", disabled: true }),
+      )
+    })
+
+    expect(mockMarkAccountAsCustomCheckedIn).not.toHaveBeenCalled()
+
+    mockMarkAccountAsCustomCheckedIn
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false)
+
+    await act(async () => {
+      await getContext().handleMarkCustomCheckInAsCheckedIn(
+        createAccount({ id: "checked-success" }),
+      )
+      await getContext().handleMarkCustomCheckInAsCheckedIn(
+        createAccount({ id: "checked-noop" }),
+      )
+    })
+
+    expect(mockMarkAccountAsCustomCheckedIn).toHaveBeenNthCalledWith(
+      1,
+      "checked-success",
+    )
+    expect(mockMarkAccountAsCustomCheckedIn).toHaveBeenNthCalledWith(
+      2,
+      "checked-noop",
+    )
+    expect(mockLoadAccountData).toHaveBeenCalledTimes(1)
+  })
+
+  it("reports partial external check-in failures after reloading account data", async () => {
+    const { getContext } = await renderContext()
+
+    await act(async () => {
+      mockSendRuntimeMessage.mockResolvedValueOnce({
+        success: true,
+        data: {
+          results: [],
+          openedCount: 1,
+          markedCount: 1,
+          failedCount: 1,
+          totalCount: 2,
+        },
+      })
+      await getContext().handleOpenExternalCheckIns([
+        createAccount({ id: "open-1" }),
+        createAccount({ id: "open-2" }),
+      ])
+    })
+
+    expect(mockLoadAccountData).toHaveBeenCalled()
+    expect(mockToast.error).toHaveBeenCalledWith(
+      "messages:errors.operation.failed",
+    )
+    expect(mockToast.success).not.toHaveBeenCalled()
+  })
+
+  it("falls back to runtime errors when external check-in open responses are empty", async () => {
+    const { getContext } = await renderContext()
+
+    await act(async () => {
+      mockSendRuntimeMessage.mockResolvedValueOnce({
+        success: false,
+        error: "Background unavailable",
+      })
+      await getContext().handleOpenExternalCheckIns([
+        createAccount({ id: "e1" }),
+      ])
+    })
+
+    expect(mockLoadAccountData).not.toHaveBeenCalled()
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      "Error opening external check-ins",
+      expect.any(Error),
+    )
+    expect(mockToast.error).toHaveBeenCalledWith(
+      "messages:errors.operation.failed",
     )
   })
 })

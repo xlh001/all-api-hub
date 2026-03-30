@@ -441,6 +441,16 @@ describe("accountStorage core behaviors", () => {
     expect(await accountStorage.getPinnedList()).toEqual([])
   })
 
+  it("getOrderedList should keep a safe default when reading storage fails", async () => {
+    storageHooks.beforeGet = async (key) => {
+      if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+        throw new Error("storage get failed")
+      }
+    }
+
+    expect(await accountStorage.getOrderedList()).toEqual([])
+  })
+
   it("setOrderedList should dedupe and drop invalid ids then persist", async () => {
     const accounts = [
       createAccount({ id: "a-1" }),
@@ -791,6 +801,13 @@ describe("accountStorage core behaviors", () => {
     expect(miss).toBeNull()
   })
 
+  it("checkUrlExists should fail closed for blank and malformed URLs", async () => {
+    seedStorage([createAccount({ id: "origin-match" })])
+
+    await expect(accountStorage.checkUrlExists("")).resolves.toBeNull()
+    await expect(accountStorage.checkUrlExists("not a url")).resolves.toBeNull()
+  })
+
   it("getAccountByBaseUrlAndUserId should find matching account and return null otherwise", async () => {
     const targetAccount = createAccount({
       id: "target",
@@ -849,6 +866,147 @@ describe("accountStorage core behaviors", () => {
     expect(config?.pinnedAccountIds).toEqual([])
   })
 
+  it("deleteAccount should surface a missing-account error", async () => {
+    seedStorage([createAccount({ id: "present" })])
+
+    await expect(accountStorage.deleteAccount("missing")).rejects.toThrow(
+      "messages:storage.accountNotFound",
+    )
+  })
+
+  it("deleteAccounts should de-dupe ids and prune pinned and ordered references", async () => {
+    const accounts = [
+      createAccount({ id: "bulk-a" }),
+      createAccount({ id: "bulk-b" }),
+      createAccount({ id: "bulk-c" }),
+    ]
+    storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+      accounts,
+      bookmarks: [],
+      pinnedAccountIds: ["bulk-b", "bulk-c", "missing"],
+      orderedAccountIds: ["bulk-a", "bulk-b", "bulk-c", "missing"],
+      last_updated: Date.now(),
+    } satisfies AccountStorageConfig)
+
+    const result = await accountStorage.deleteAccounts([
+      "bulk-b",
+      "bulk-c",
+      "bulk-b",
+      "",
+    ])
+
+    expect(result).toEqual({ deletedCount: 2 })
+
+    const config = storageData.get(
+      ACCOUNT_STORAGE_KEYS.ACCOUNTS,
+    ) as AccountStorageConfig
+    expect(config.accounts.map((account) => account.id)).toEqual(["bulk-a"])
+    expect(config.pinnedAccountIds).toEqual(["missing"])
+    expect(config.orderedAccountIds).toEqual(["bulk-a", "missing"])
+  })
+
+  it("deleteAccounts should no-op when no surviving account ids match", async () => {
+    const accounts = [createAccount({ id: "bulk-a" })]
+    const existingConfig: AccountStorageConfig = {
+      accounts,
+      bookmarks: [],
+      pinnedAccountIds: ["bulk-a"],
+      orderedAccountIds: ["bulk-a"],
+      last_updated: 123,
+    }
+    storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, existingConfig)
+
+    const result = await accountStorage.deleteAccounts(["missing", "missing"])
+
+    expect(result).toEqual({ deletedCount: 0 })
+    expect(storageData.get(ACCOUNT_STORAGE_KEYS.ACCOUNTS)).toEqual(
+      existingConfig,
+    )
+  })
+
+  it("setAccountDisabled should persist disable and re-enable state", async () => {
+    const account = createAccount({
+      id: "toggle-disabled",
+      disabled: false,
+    })
+    seedStorage([account])
+
+    expect(
+      await accountStorage.setAccountDisabled("toggle-disabled", true),
+    ).toBe(true)
+    expect(
+      (await accountStorage.getAccountById("toggle-disabled"))?.disabled,
+    ).toBe(true)
+
+    expect(
+      await accountStorage.setAccountDisabled("toggle-disabled", false),
+    ).toBe(true)
+    expect(
+      (await accountStorage.getAccountById("toggle-disabled"))?.disabled,
+    ).toBe(false)
+  })
+
+  it("setAccountDisabled should fail closed for missing accounts", async () => {
+    seedStorage([createAccount({ id: "present" })])
+
+    await expect(
+      accountStorage.setAccountDisabled("missing", true),
+    ).resolves.toBe(false)
+  })
+
+  it("updateSyncTime should persist a fresh last_sync_time for the target account", async () => {
+    vi.useFakeTimers()
+    const fixedNow = new Date("2026-03-30T12:34:56.000Z")
+
+    try {
+      const account = createAccount({
+        id: "sync-target",
+        last_sync_time: 1000,
+        updated_at: 2000,
+      })
+      const otherAccount = createAccount({
+        id: "sync-other",
+        last_sync_time: 3000,
+        updated_at: 4000,
+      })
+      seedStorage([account, otherAccount])
+
+      vi.setSystemTime(fixedNow)
+
+      expect(await accountStorage.updateSyncTime("sync-target")).toBe(true)
+
+      const updatedTarget = await accountStorage.getAccountById("sync-target")
+      const untouchedOther = await accountStorage.getAccountById("sync-other")
+
+      expect(updatedTarget?.last_sync_time).toBe(fixedNow.getTime())
+      expect(updatedTarget?.updated_at).toBe(fixedNow.getTime())
+      expect(untouchedOther?.last_sync_time).toBe(3000)
+      expect(untouchedOther?.updated_at).toBe(4000)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("getAllAccounts should fail closed when storage reads throw", async () => {
+    storageHooks.beforeGet = async (key) => {
+      if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+        throw new Error("read failed")
+      }
+    }
+
+    await expect(accountStorage.getAllAccounts()).resolves.toEqual([])
+  })
+
+  it("getAccountById should return null when the underlying read fails", async () => {
+    storageHooks.beforeGet = async (key) => {
+      if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+        throw new Error("read failed")
+      }
+    }
+
+    await expect(accountStorage.getAccountById("missing")).resolves.toBeNull()
+  })
+
   it("isPinned should reflect pinned state after setPinnedList changes", async () => {
     const account = createAccount({ id: "pinned" })
     seedStorage([account])
@@ -860,6 +1018,19 @@ describe("accountStorage core behaviors", () => {
 
     await accountStorage.unpinAccount("pinned")
     expect(await accountStorage.isPinned("pinned")).toBe(false)
+  })
+
+  it("unpinAccount should be a no-op when the account is already absent from the pinned list", async () => {
+    storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+      accounts: [createAccount({ id: "a-1" }), createAccount({ id: "a-2" })],
+      bookmarks: [],
+      pinnedAccountIds: ["a-1"],
+      orderedAccountIds: [],
+      last_updated: Date.now(),
+    } satisfies AccountStorageConfig)
+
+    await expect(accountStorage.unpinAccount("a-2")).resolves.toBe(true)
+    expect(await accountStorage.getPinnedList()).toEqual(["a-1"])
   })
 
   it("resetExpiredCheckIns should clear outdated custom check-in flags", async () => {
@@ -956,6 +1127,41 @@ describe("accountStorage core behaviors", () => {
     expect(mockFetchSupportCheckIn).not.toHaveBeenCalled()
     expect(mockRefreshAccountData).not.toHaveBeenCalled()
     expect(mockFetchTodayIncome).not.toHaveBeenCalled()
+  })
+
+  it("refreshAccount should skip network refreshes when the min interval has not elapsed", async () => {
+    const fixedNow = new Date("2026-03-30T12:00:00.000Z")
+    vi.useFakeTimers()
+
+    try {
+      vi.setSystemTime(fixedNow)
+      storageData.set(USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES, {
+        ...DEFAULT_PREFERENCES,
+        accountAutoRefresh: {
+          ...DEFAULT_PREFERENCES.accountAutoRefresh,
+          minInterval: 60,
+        },
+      })
+
+      const account = createAccount({
+        id: "too-soon",
+        last_sync_time: fixedNow.getTime() - 15_000,
+      })
+      seedStorage([account])
+
+      const result = await accountStorage.refreshAccount("too-soon", false)
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          refreshed: false,
+          account: expect.objectContaining({ id: "too-soon" }),
+        }),
+      )
+      expect(mockRefreshAccountData).not.toHaveBeenCalled()
+      expect(mockFetchTodayIncome).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("refreshAccount should skip re-detection when site metadata is complete", async () => {
@@ -1428,6 +1634,39 @@ describe("accountStorage core behaviors", () => {
     const stored = storageData.get(STORAGE_KEYS.DAILY_BALANCE_HISTORY_STORE)
     expect(stored).toBeUndefined()
   })
+
+  it("refreshAccount marks the account health as unknown when refresh throws", async () => {
+    const originalSyncTime = 1_700_000_000_000
+    const account = createAccount({
+      id: "refresh-throws",
+      last_sync_time: originalSyncTime,
+      health: {
+        status: SiteHealthStatus.Healthy,
+        message: "",
+      },
+    })
+    seedStorage([account])
+
+    mockRefreshAccountData.mockRejectedValueOnce(new Error("network down"))
+
+    const result = await accountStorage.refreshAccount("refresh-throws", true)
+
+    expect(result).toBeNull()
+
+    const stored = storageData.get(ACCOUNT_STORAGE_KEYS.ACCOUNTS) as
+      | AccountStorageConfig
+      | undefined
+    const updated = stored?.accounts.find(
+      (item) => item.id === "refresh-throws",
+    )
+
+    expect(updated?.health).toEqual({
+      status: SiteHealthStatus.Unknown,
+      reason: "network down",
+      code: undefined,
+    })
+    expect(updated?.last_sync_time).toBeGreaterThan(originalSyncTime)
+  })
 })
 
 describe("accountStorage bookmarks", () => {
@@ -1518,6 +1757,42 @@ describe("accountStorage bookmarks", () => {
         url: "   ",
       }),
     ).rejects.toThrow("messages:errors.validation.bookmarkUrlRequired")
+  })
+
+  it("addBookmark regenerates the id when the first generated bookmark id already exists", async () => {
+    seedStorage([createAccount({ id: "a-1" })])
+
+    storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+      accounts: [createAccount({ id: "a-1" })],
+      bookmarks: [createBookmark({ id: "bookmark-existing" })],
+      pinnedAccountIds: [],
+      orderedAccountIds: [],
+      last_updated: Date.now(),
+    } satisfies AccountStorageConfig)
+
+    const generateBookmarkIdSpy = vi
+      .spyOn(accountStorage as never, "generateBookmarkId" as never)
+      .mockReturnValueOnce("bookmark-existing" as never)
+      .mockReturnValueOnce("bookmark-new" as never)
+
+    try {
+      const id = await accountStorage.addBookmark({
+        name: "Console",
+        url: "https://example.com/console",
+      })
+
+      expect(id).toBe("bookmark-new")
+
+      const saved = storageData.get(ACCOUNT_STORAGE_KEYS.ACCOUNTS) as
+        | AccountStorageConfig
+        | undefined
+      expect(saved?.bookmarks.map((bookmark) => bookmark.id)).toEqual([
+        "bookmark-existing",
+        "bookmark-new",
+      ])
+    } finally {
+      generateBookmarkIdSpy.mockRestore()
+    }
   })
 
   it("updateBookmark preserves created_at and updates updated_at", async () => {
@@ -1663,6 +1938,34 @@ describe("accountStorage bookmarks", () => {
       "b-2",
       "a-2",
       "b-1",
+    ])
+  })
+
+  it("setPinnedListSubset updates account pinned order while preserving bookmark pinned order", async () => {
+    storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+      accounts: [
+        createAccount({ id: "a-1" }),
+        createAccount({ id: "a-2" }),
+        createAccount({ id: "a-3" }),
+      ],
+      bookmarks: [createBookmark({ id: "b-1" }), createBookmark({ id: "b-2" })],
+      pinnedAccountIds: ["a-1", "b-1", "a-2", "b-2", "a-3"],
+      orderedAccountIds: [],
+      last_updated: Date.now(),
+    } satisfies AccountStorageConfig)
+
+    const success = await accountStorage.setPinnedListSubset({
+      entryType: "account",
+      ids: ["a-3", "a-1"],
+    })
+
+    expect(success).toBe(true)
+    expect(await accountStorage.getPinnedList()).toEqual([
+      "a-3",
+      "b-1",
+      "a-1",
+      "b-2",
+      "a-2",
     ])
   })
 
@@ -1974,5 +2277,18 @@ describe("accountStorage bookmarks", () => {
         "bookmark-2",
       ])
     })
+  })
+
+  it("clearAllData returns false when storage removal fails", async () => {
+    seedStorage([createAccount({ id: "to-clear" })])
+
+    storageHooks.beforeRemove = async (key) => {
+      if (key === ACCOUNT_STORAGE_KEYS.ACCOUNTS) {
+        throw new Error("remove failed")
+      }
+    }
+
+    await expect(accountStorage.clearAllData()).resolves.toBe(false)
+    expect(storageData.get(ACCOUNT_STORAGE_KEYS.ACCOUNTS)).toBeDefined()
   })
 })

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { FormEvent, ReactNode } from "react"
 import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -12,10 +12,12 @@ import { act, renderHook, waitFor } from "~~/tests/test-utils/render"
 
 const {
   mockValidateAndSaveAccount,
+  mockValidateAndUpdateAccount,
   mockOpenWithAccount,
   mockOpenSub2ApiTokenCreationDialog,
 } = vi.hoisted(() => ({
   mockValidateAndSaveAccount: vi.fn(),
+  mockValidateAndUpdateAccount: vi.fn(),
   mockOpenWithAccount: vi.fn(),
   mockOpenSub2ApiTokenCreationDialog: vi.fn(),
 }))
@@ -45,6 +47,7 @@ vi.mock("~/services/accounts/accountOperations", async (importOriginal) => {
   return {
     ...actual,
     validateAndSaveAccount: mockValidateAndSaveAccount,
+    validateAndUpdateAccount: mockValidateAndUpdateAccount,
   }
 })
 
@@ -71,6 +74,9 @@ describe("useAccountDialog save and auto-config flows", () => {
       accountId: "saved-account-id",
       message: "Saved successfully",
     })
+    mockValidateAndUpdateAccount.mockResolvedValue({
+      success: true,
+    })
   })
 
   const renderAddHook = (options?: { onSuccess?: ReturnType<typeof vi.fn> }) =>
@@ -82,6 +88,29 @@ describe("useAccountDialog save and auto-config flows", () => {
         onSuccess: options?.onSuccess ?? vi.fn(),
       }),
     )
+
+  const renderEditHook = (options?: {
+    account?: any
+    onSuccess?: ReturnType<typeof vi.fn>
+  }) => {
+    const accountValue =
+      options?.account ??
+      ({
+        id: "existing-account-id",
+        siteUrl: "https://edit.example.com",
+        siteName: "Edit Example",
+      } as any)
+
+    return renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.EDIT,
+        account: accountValue,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: options?.onSuccess ?? vi.fn(),
+      }),
+    )
+  }
 
   it("passes trimmed Sub2API refresh-token auth into save and opens the post-save token dialog when display data is available", async () => {
     const savedDisplayData = {
@@ -141,6 +170,86 @@ describe("useAccountDialog save and auto-config flows", () => {
       savedDisplayData,
     )
     expect(toast.success).toHaveBeenCalledWith("Saved successfully")
+  })
+
+  it("updates an existing account with trimmed values and uses the default update success toast", async () => {
+    const { result } = renderEditHook({
+      account: {
+        id: "existing-account-id",
+      },
+    })
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl(" https://edit.example.com/path ")
+      result.current.setters.setSiteName(" Example Account ")
+      result.current.setters.setUsername(" updated-user ")
+      result.current.setters.setAccessToken(" updated-token ")
+      result.current.setters.setUserId(" 42 ")
+      result.current.setters.setExchangeRate("7")
+      result.current.setters.setNotes("  updated notes  ")
+      result.current.setters.setTagIds(["tag-a"])
+      result.current.setters.setExcludeFromTotalBalance(true)
+      result.current.setters.setSiteType("one-api")
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleSaveAccount()
+    })
+
+    expect(mockValidateAndUpdateAccount).toHaveBeenCalledWith(
+      "existing-account-id",
+      "https://edit.example.com/path",
+      "Example Account",
+      "updated-user",
+      "updated-token",
+      "42",
+      "7",
+      "updated notes",
+      ["tag-a"],
+      expect.any(Object),
+      "one-api",
+      AuthTypeEnum.AccessToken,
+      "",
+      "",
+      true,
+      undefined,
+    )
+    expect(toast.success).toHaveBeenCalledWith(
+      "accountDialog:messages.updateSuccess",
+    )
+  })
+
+  it("prevents the native form submit and delegates to the normal save flow", async () => {
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://api.example.com")
+      result.current.setters.setSiteName("Example")
+      result.current.setters.setUsername("user")
+      result.current.setters.setAccessToken("token")
+      result.current.setters.setUserId("1")
+      result.current.setters.setExchangeRate("7")
+      result.current.setters.setSiteType("one-api")
+    })
+
+    const preventDefault = vi.fn()
+
+    await act(async () => {
+      result.current.handlers.handleSubmit({
+        preventDefault,
+      } as unknown as FormEvent)
+    })
+
+    expect(preventDefault).toHaveBeenCalledTimes(1)
+    expect(mockValidateAndSaveAccount).toHaveBeenCalledTimes(1)
   })
 
   it("keeps Sub2API saves successful even when the post-save token dialog fails", async () => {
@@ -226,6 +335,46 @@ describe("useAccountDialog save and auto-config flows", () => {
     )
   })
 
+  it("opens channel auto-config directly for an existing edit-mode account without saving again", async () => {
+    const onSuccess = vi.fn()
+    const existingAccount = {
+      id: "existing-display-id",
+      siteUrl: "https://edit.example.com",
+      siteName: "Edit Example",
+    } as any
+
+    mockOpenWithAccount.mockImplementationOnce(
+      async (
+        _displaySiteData: any,
+        _channelId: any,
+        onCompleted?: () => void,
+      ) => {
+        onCompleted?.()
+      },
+    )
+
+    const { result } = renderEditHook({
+      account: existingAccount,
+      onSuccess,
+    })
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleAutoConfig()
+    })
+
+    expect(mockValidateAndSaveAccount).not.toHaveBeenCalled()
+    expect(mockOpenWithAccount).toHaveBeenCalledWith(
+      existingAccount,
+      null,
+      expect.any(Function),
+    )
+    expect(onSuccess).toHaveBeenCalledWith(existingAccount)
+  })
+
   it("falls back to converted display data during auto-config when persisted display data is unavailable", async () => {
     const savedSiteAccount = buildSiteAccount({
       id: "saved-account-id",
@@ -296,6 +445,37 @@ describe("useAccountDialog save and auto-config flows", () => {
     await act(async () => {
       result.current.setters.setUrl("https://api.example.com")
       result.current.setters.setSiteName("Example")
+      result.current.setters.setUsername("user")
+      result.current.setters.setAccessToken("token")
+      result.current.setters.setUserId("1")
+      result.current.setters.setExchangeRate("7")
+      result.current.setters.setSiteType("one-api")
+    })
+
+    await expect(
+      act(async () => {
+        await result.current.handlers.handleSaveAccount()
+      }),
+    ).rejects.toThrow("accountDialog:messages.saveFailed")
+
+    expect(toast.success).not.toHaveBeenCalled()
+    expect(result.current.state.isSaving).toBe(false)
+  })
+
+  it("uses the saveFailed fallback when edit-mode updates return unsuccessful without a message", async () => {
+    mockValidateAndUpdateAccount.mockResolvedValueOnce({
+      success: false,
+    })
+
+    const { result } = renderEditHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://edit.example.com")
+      result.current.setters.setSiteName("Edit Example")
       result.current.setters.setUsername("user")
       result.current.setters.setAccessToken("token")
       result.current.setters.setUserId("1")

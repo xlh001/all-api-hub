@@ -81,7 +81,11 @@ describe("useAccountDialog duplicate account warning", () => {
       expect(hook.result.current.state).toBeTruthy()
     })
 
-    return hook
+    return {
+      ...hook,
+      onClose,
+      onSuccess,
+    }
   }
 
   it("warns when entering manual add flow if duplicate site exists (default enabled)", async () => {
@@ -299,6 +303,91 @@ describe("useAccountDialog duplicate account warning", () => {
     expect(result.current.state.showManualForm).toBe(false)
   })
 
+  it("cancels a pending duplicate warning and closes the dialog cleanly", async () => {
+    await accountStorage.addAccount(
+      buildSiteAccount({
+        site_name: "Existing",
+        site_url: "https://api.example.com",
+      }),
+    )
+
+    const { result, onClose } = await renderDuplicateWarningHook()
+
+    await act(async () => {
+      result.current.handlers.handleUrlChange("https://api.example.com")
+    })
+
+    let manualAddPromise!: Promise<void>
+    act(() => {
+      manualAddPromise = result.current.handlers.handleShowManualForm()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.duplicateAccountWarning.isOpen).toBe(true)
+    })
+
+    await act(async () => {
+      result.current.handlers.handleClose()
+      await manualAddPromise
+    })
+
+    expect(result.current.state.duplicateAccountWarning.isOpen).toBe(false)
+    expect(result.current.state.showManualForm).toBe(false)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it("closes an open duplicate warning when the parent closes the dialog", async () => {
+    await accountStorage.addAccount(
+      buildSiteAccount({
+        site_name: "Existing",
+        site_url: "https://api.example.com",
+      }),
+    )
+
+    const onClose = vi.fn()
+    const onSuccess = vi.fn()
+
+    const { result, rerender } = renderHook(
+      ({ isOpen }: { isOpen: boolean }) =>
+        useAccountDialog({
+          mode: DIALOG_MODES.ADD,
+          isOpen,
+          onClose,
+          onSuccess,
+        }),
+      {
+        initialProps: { isOpen: true },
+      },
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.handlers.handleUrlChange("https://api.example.com")
+    })
+
+    let manualAddPromise!: Promise<void>
+    act(() => {
+      manualAddPromise = result.current.handlers.handleShowManualForm()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.duplicateAccountWarning.isOpen).toBe(true)
+    })
+
+    rerender({ isOpen: false })
+
+    await waitFor(() => {
+      expect(result.current.state.duplicateAccountWarning.isOpen).toBe(false)
+    })
+
+    await act(async () => {
+      await manualAddPromise
+    })
+  })
+
   it("suppresses repeated duplicate prompts for the same normalized URL until the URL changes", async () => {
     await accountStorage.addAccount(
       buildSiteAccount({
@@ -364,6 +453,25 @@ describe("useAccountDialog duplicate account warning", () => {
       result.current.handlers.handleDuplicateAccountWarningCancel()
       await secondManualAddPromise
     })
+  })
+
+  it("preserves invalid manual URL input and clears the site name when the URL becomes blank", async () => {
+    const { result } = await renderDuplicateWarningHook()
+
+    await act(async () => {
+      result.current.setters.setSiteName("Detected Site")
+      result.current.handlers.handleUrlChange("not a valid url")
+    })
+
+    expect(result.current.state.url).toBe("not a valid url")
+    expect(result.current.state.siteName).toBe("Detected Site")
+
+    await act(async () => {
+      result.current.handlers.handleUrlChange("   ")
+    })
+
+    expect(result.current.state.url).toBe("")
+    expect(result.current.state.siteName).toBe("")
   })
 
   it("shows exact duplicate metadata only when the user id matches an existing account", async () => {

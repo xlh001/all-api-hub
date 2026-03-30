@@ -1,13 +1,15 @@
 import { act, render, waitFor } from "@testing-library/react"
 import { useEffect } from "react"
 import { I18nextProvider } from "react-i18next"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { DATA_TYPE_BALANCE, DATA_TYPE_CONSUMPTION } from "~/constants"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   AccountDataProvider,
   useAccountDataContext,
 } from "~/features/AccountManagement/hooks/AccountDataContext"
+import { SortingCriteriaType } from "~/types/sorting"
 import { testI18n } from "~~/tests/test-utils/i18n"
 
 const {
@@ -24,6 +26,21 @@ const {
   mockSetPinnedListSubset,
   mockSetOrderedListSubset,
   mockGetTagStore,
+  mockCreateTag,
+  mockRenameTag,
+  mockDeleteTag,
+  mockPinAccount,
+  mockUnpinAccount,
+  mockRefreshAllAccounts,
+  mockToastPromise,
+  mockGetActiveTabs,
+  mockGetAllTabs,
+  mockOnRuntimeMessage,
+  mockOnTabActivated,
+  mockOnTabRemoved,
+  mockOnTabUpdated,
+  mockSearchAccounts,
+  mockUpdateSortConfig,
 } = vi.hoisted(() => ({
   mockGetAllAccounts: vi.fn(),
   mockGetAllBookmarks: vi.fn(),
@@ -38,6 +55,50 @@ const {
   mockSetPinnedListSubset: vi.fn(),
   mockSetOrderedListSubset: vi.fn(),
   mockGetTagStore: vi.fn(),
+  mockCreateTag: vi.fn(),
+  mockRenameTag: vi.fn(),
+  mockDeleteTag: vi.fn(),
+  mockPinAccount: vi.fn(),
+  mockUnpinAccount: vi.fn(),
+  mockRefreshAllAccounts: vi.fn(),
+  mockToastPromise: vi.fn(),
+  mockGetActiveTabs: vi.fn(async () => []),
+  mockGetAllTabs: vi.fn(async () => []),
+  mockOnRuntimeMessage: vi.fn((listener: any) => {
+    ;(globalThis as any).__accountDataContextRuntimeListener = listener
+    return () => {
+      ;(globalThis as any).__accountDataContextRuntimeListener = undefined
+    }
+  }),
+  mockOnTabActivated: vi.fn(() => () => {}),
+  mockOnTabRemoved: vi.fn(() => () => {}),
+  mockOnTabUpdated: vi.fn(() => () => {}),
+  mockSearchAccounts: vi.fn(() => []),
+  mockUpdateSortConfig: vi.fn(),
+}))
+
+const mockUserPreferencesContext = vi.hoisted(() => ({
+  current: {
+    currencyType: "USD",
+    sortField: "name",
+    sortOrder: "asc",
+    updateSortConfig: mockUpdateSortConfig,
+    refreshOnOpen: false,
+    sortingPriorityConfig: {
+      lastModified: Date.now(),
+      criteria: [
+        { id: "pinned", enabled: true, priority: 0 },
+        { id: "manual_order", enabled: true, priority: 1 },
+      ],
+    },
+    showTodayCashflow: true,
+  },
+}))
+
+vi.mock("react-hot-toast", () => ({
+  default: {
+    promise: mockToastPromise,
+  },
 }))
 
 vi.mock("~/services/accounts/accountStorage", () => ({
@@ -54,6 +115,9 @@ vi.mock("~/services/accounts/accountStorage", () => ({
     setOrderedList: mockSetOrderedList,
     setPinnedListSubset: mockSetPinnedListSubset,
     setOrderedListSubset: mockSetOrderedListSubset,
+    pinAccount: mockPinAccount,
+    unpinAccount: mockUnpinAccount,
+    refreshAllAccounts: mockRefreshAllAccounts,
     checkUrlExists: vi.fn(async () => null),
   },
 }))
@@ -61,45 +125,27 @@ vi.mock("~/services/accounts/accountStorage", () => ({
 vi.mock("~/services/tags/tagStorage", () => ({
   tagStorage: {
     getTagStore: mockGetTagStore,
-    createTag: vi.fn(),
-    renameTag: vi.fn(),
-    deleteTag: vi.fn(),
+    createTag: mockCreateTag,
+    renameTag: mockRenameTag,
+    deleteTag: mockDeleteTag,
   },
 }))
 
 vi.mock("~/contexts/UserPreferencesContext", () => ({
-  useUserPreferencesContext: () => ({
-    currencyType: "USD",
-    sortField: "name",
-    sortOrder: "asc",
-    updateSortConfig: vi.fn(),
-    refreshOnOpen: false,
-    sortingPriorityConfig: {
-      lastModified: Date.now(),
-      criteria: [
-        { id: "pinned", enabled: true, priority: 0 },
-        { id: "manual_order", enabled: true, priority: 1 },
-      ],
-    },
-  }),
+  useUserPreferencesContext: () => mockUserPreferencesContext.current,
 }))
 
 vi.mock("~/utils/browser/browserApi", () => ({
-  getActiveTabs: vi.fn(async () => []),
-  getAllTabs: vi.fn(async () => []),
-  onRuntimeMessage: vi.fn((listener: any) => {
-    ;(globalThis as any).__accountDataContextRuntimeListener = listener
-    return () => {
-      ;(globalThis as any).__accountDataContextRuntimeListener = undefined
-    }
-  }),
-  onTabActivated: vi.fn(() => () => {}),
-  onTabRemoved: vi.fn(() => () => {}),
-  onTabUpdated: vi.fn(() => () => {}),
+  getActiveTabs: mockGetActiveTabs,
+  getAllTabs: mockGetAllTabs,
+  onRuntimeMessage: mockOnRuntimeMessage,
+  onTabActivated: mockOnTabActivated,
+  onTabRemoved: mockOnTabRemoved,
+  onTabUpdated: mockOnTabUpdated,
 }))
 
 vi.mock("~/services/search/accountSearch", () => ({
-  searchAccounts: vi.fn(() => []),
+  searchAccounts: mockSearchAccounts,
 }))
 
 afterEach(() => {
@@ -112,6 +158,107 @@ afterEach(() => {
    */
   delete (globalThis as any).__accountDataContextRuntimeListener
 })
+
+beforeEach(() => {
+  vi.clearAllMocks()
+
+  mockUserPreferencesContext.current = {
+    currencyType: "USD",
+    sortField: "name",
+    sortOrder: "asc",
+    updateSortConfig: mockUpdateSortConfig,
+    refreshOnOpen: false,
+    sortingPriorityConfig: {
+      lastModified: Date.now(),
+      criteria: [
+        { id: "pinned", enabled: true, priority: 0 },
+        { id: "manual_order", enabled: true, priority: 1 },
+      ],
+    },
+    showTodayCashflow: true,
+  }
+
+  mockResetExpiredCheckIns.mockResolvedValue(undefined)
+  mockGetTagStore.mockResolvedValue({ version: 1, tagsById: {} })
+  mockGetAllAccounts.mockResolvedValue([])
+  mockGetAllBookmarks.mockResolvedValue([])
+  mockGetOrderedList.mockResolvedValue([])
+  mockGetPinnedList.mockResolvedValue([])
+  mockGetAccountStats.mockResolvedValue(createEmptyStats())
+  mockConvertToDisplayData.mockImplementation((input: any) => {
+    const accounts = Array.isArray(input) ? input : [input]
+    const display = accounts.map((account: any) => ({
+      ...account,
+      id: account.id,
+      tagIds: account.tagIds ?? [],
+    }))
+    return Array.isArray(input) ? display : display[0]
+  })
+  mockRefreshAllAccounts.mockResolvedValue({
+    success: 0,
+    failed: 0,
+    refreshedCount: 0,
+    latestSyncTime: 0,
+  })
+  mockToastPromise.mockImplementation((promise: Promise<any>) => promise)
+  mockGetActiveTabs.mockResolvedValue([])
+  mockGetAllTabs.mockResolvedValue([])
+  mockOnRuntimeMessage.mockImplementation((listener: any) => {
+    ;(globalThis as any).__accountDataContextRuntimeListener = listener
+    return () => {
+      ;(globalThis as any).__accountDataContextRuntimeListener = undefined
+    }
+  })
+  mockOnTabActivated.mockImplementation(() => () => {})
+  mockOnTabRemoved.mockImplementation(() => () => {})
+  mockOnTabUpdated.mockImplementation(() => () => {})
+  mockPinAccount.mockResolvedValue(true)
+  mockUnpinAccount.mockResolvedValue(true)
+  mockSearchAccounts.mockReturnValue([])
+  mockUpdateSortConfig.mockResolvedValue(true)
+  ;(globalThis as any).browser = {
+    ...(globalThis as any).browser,
+    tabs: {
+      ...((globalThis as any).browser?.tabs ?? {}),
+      sendMessage: vi.fn(),
+    },
+  }
+})
+
+/**
+ *
+ */
+function createEmptyStats() {
+  return {
+    total_quota: 0,
+    today_total_consumption: 0,
+    today_total_requests: 0,
+    today_total_prompt_tokens: 0,
+    today_total_completion_tokens: 0,
+    today_total_income: 0,
+  }
+}
+
+/**
+ *
+ */
+async function renderAccountDataProvider() {
+  let latestCtx: ReturnType<typeof useAccountDataContext> | null = null
+
+  render(
+    <I18nextProvider i18n={testI18n}>
+      <AccountDataProvider>
+        <ContextProbe onChange={(ctx) => (latestCtx = ctx)} />
+      </AccountDataProvider>
+    </I18nextProvider>,
+  )
+
+  await waitFor(() => {
+    expect(latestCtx).not.toBeNull()
+  })
+
+  return () => latestCtx as ReturnType<typeof useAccountDataContext>
+}
 
 /**
  * Captures the latest AccountDataContext value for assertions in tests.
@@ -234,6 +381,831 @@ describe("AccountDataContext handleReorder", () => {
   })
 })
 
+describe("AccountDataContext actions", () => {
+  it("hydrates tags, filters stale ordering ids, and keeps the latest sync timestamp", async () => {
+    const accountA = {
+      id: "acc-1",
+      site_url: "https://api.example.com/a",
+      account_info: { id: 1 },
+      last_sync_time: 1_710_000_000_000,
+      tagIds: ["tag-2", "missing"],
+    }
+    const accountB = {
+      id: "acc-2",
+      site_url: "https://api.example.com/b",
+      account_info: { id: 2 },
+      last_sync_time: 1_710_000_100_000,
+      tagIds: ["tag-1", "tag-2"],
+    }
+
+    mockGetAllAccounts.mockResolvedValue([accountA, accountB])
+    mockGetAllBookmarks.mockResolvedValue([{ id: "bookmark-1" }])
+    mockGetOrderedList.mockResolvedValue([
+      "missing-entry",
+      "acc-2",
+      "bookmark-1",
+      "acc-1",
+    ])
+    mockGetPinnedList.mockResolvedValue(["missing-pin", "bookmark-1", "acc-1"])
+    mockGetTagStore.mockResolvedValue({
+      version: 1,
+      tagsById: {
+        "tag-1": { id: "tag-1", name: "Beta" },
+        "tag-2": { id: "tag-2", name: "alpha" },
+      },
+    })
+    mockConvertToDisplayData.mockImplementation((input: any) => {
+      const accounts = Array.isArray(input) ? input : [input]
+      const display = accounts.map((account: any) => ({
+        id: account.id,
+        name: account.id,
+        site_url: account.site_url,
+        tagIds: account.tagIds ?? [],
+        tags: ["legacy-tag"],
+        balance: { USD: 0, CNY: 0 },
+        todayConsumption: { USD: 0, CNY: 0 },
+        todayIncome: { USD: 0, CNY: 0 },
+      }))
+      return Array.isArray(input) ? display : display[0]
+    })
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().orderedAccountIds).toEqual([
+        "acc-2",
+        "bookmark-1",
+        "acc-1",
+      ])
+      expect(getLatestCtx().pinnedAccountIds).toEqual(["bookmark-1", "acc-1"])
+      expect(getLatestCtx().tags).toEqual([
+        { id: "tag-2", name: "alpha" },
+        { id: "tag-1", name: "Beta" },
+      ])
+      expect(getLatestCtx().tagCountsById).toEqual({
+        missing: 1,
+        "tag-1": 1,
+        "tag-2": 2,
+      })
+      expect(getLatestCtx().displayData).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "acc-1",
+            tags: ["alpha"],
+          }),
+          expect.objectContaining({
+            id: "acc-2",
+            tags: ["Beta", "alpha"],
+          }),
+        ]),
+      )
+      expect(getLatestCtx().lastUpdateTime?.getTime()).toBe(1_710_000_100_000)
+      expect(getLatestCtx().isInitialLoad).toBe(false)
+    })
+  })
+
+  it("reloads tag data after create, rename, and delete operations", async () => {
+    let currentTagStore = {
+      version: 1,
+      tagsById: {},
+    }
+
+    mockResetExpiredCheckIns.mockResolvedValue(undefined)
+    mockGetAllAccounts.mockResolvedValue([])
+    mockGetAllBookmarks.mockResolvedValue([])
+    mockGetOrderedList.mockResolvedValue([])
+    mockGetPinnedList.mockResolvedValue([])
+    mockGetAccountStats.mockResolvedValue(createEmptyStats())
+    mockGetTagStore.mockImplementation(async () => currentTagStore as any)
+
+    mockCreateTag.mockImplementation(async (name: string) => {
+      const created = { id: "tag-1", name }
+      currentTagStore = {
+        version: 1,
+        tagsById: { "tag-1": created },
+      }
+      return created
+    })
+    mockRenameTag.mockImplementation(async (tagId: string, name: string) => {
+      const updated = { id: tagId, name }
+      currentTagStore = {
+        version: 1,
+        tagsById: { [tagId]: updated },
+      }
+      return updated
+    })
+    mockDeleteTag.mockImplementation(async () => {
+      currentTagStore = {
+        version: 1,
+        tagsById: {},
+      }
+      return { updatedAccounts: 2 }
+    })
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().tags).toEqual([])
+    })
+
+    await act(async () => {
+      await expect(getLatestCtx().createTag("Work")).resolves.toEqual({
+        id: "tag-1",
+        name: "Work",
+      })
+    })
+    await waitFor(() => {
+      expect(getLatestCtx().tags).toEqual([{ id: "tag-1", name: "Work" }])
+    })
+
+    await act(async () => {
+      await expect(
+        getLatestCtx().renameTag("tag-1", "Office"),
+      ).resolves.toEqual({
+        id: "tag-1",
+        name: "Office",
+      })
+    })
+    await waitFor(() => {
+      expect(getLatestCtx().tags).toEqual([{ id: "tag-1", name: "Office" }])
+    })
+
+    await act(async () => {
+      await expect(getLatestCtx().deleteTag("tag-1")).resolves.toEqual({
+        updatedAccounts: 2,
+      })
+    })
+    await waitFor(() => {
+      expect(getLatestCtx().tags).toEqual([])
+    })
+  })
+
+  it("reorders bookmarks with bookmark-scoped pinned persistence", async () => {
+    mockResetExpiredCheckIns.mockResolvedValue(undefined)
+    mockGetTagStore.mockResolvedValue({ version: 1, tagsById: {} })
+    mockGetAllAccounts.mockResolvedValue([])
+    mockGetAllBookmarks.mockResolvedValue([
+      { id: "b1" },
+      { id: "b2" },
+      { id: "b3" },
+    ])
+    mockGetOrderedList.mockResolvedValue(["b1", "b2", "b3"])
+    mockGetPinnedList.mockResolvedValue(["b1", "b2"])
+    mockGetAccountStats.mockResolvedValue(createEmptyStats())
+    mockSetPinnedListSubset.mockResolvedValue(true)
+    mockSetOrderedListSubset.mockResolvedValue(true)
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().pinnedAccountIds).toEqual(["b1", "b2"])
+    })
+
+    mockGetPinnedList.mockResolvedValueOnce(["b2", "b1"])
+    mockGetOrderedList.mockResolvedValueOnce(["b2", "b1", "b3"])
+
+    await act(async () => {
+      await getLatestCtx().handleBookmarkReorder(["b2", "b1", "b3"])
+    })
+
+    expect(mockSetPinnedListSubset).toHaveBeenCalledWith({
+      entryType: "bookmark",
+      ids: ["b2", "b1"],
+    })
+    expect(mockSetOrderedListSubset).toHaveBeenCalledWith({
+      entryType: "bookmark",
+      ids: ["b2", "b1", "b3"],
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().pinnedAccountIds).toEqual(["b2", "b1"])
+      expect(getLatestCtx().orderedAccountIds).toEqual(["b2", "b1", "b3"])
+    })
+  })
+
+  it("toggles pin state through the provider and keeps local pinned ids in sync", async () => {
+    mockResetExpiredCheckIns.mockResolvedValue(undefined)
+    mockGetTagStore.mockResolvedValue({ version: 1, tagsById: {} })
+    mockGetAllAccounts.mockResolvedValue([])
+    mockGetAllBookmarks.mockResolvedValue([{ id: "acc-1" }])
+    mockGetOrderedList.mockResolvedValue(["acc-1"])
+    mockGetPinnedList.mockResolvedValue([])
+    mockGetAccountStats.mockResolvedValue(createEmptyStats())
+    mockPinAccount.mockResolvedValue(true)
+    mockUnpinAccount.mockResolvedValue(true)
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().pinnedAccountIds).toEqual([])
+      expect(getLatestCtx().orderedAccountIds).toEqual(["acc-1"])
+    })
+
+    await act(async () => {
+      await expect(getLatestCtx().togglePinAccount("acc-1")).resolves.toBe(true)
+    })
+
+    expect(mockPinAccount).toHaveBeenCalledWith("acc-1")
+    await waitFor(() => {
+      expect(getLatestCtx().pinnedAccountIds).toEqual(["acc-1"])
+      expect(getLatestCtx().isAccountPinned("acc-1")).toBe(true)
+    })
+
+    await act(async () => {
+      await expect(getLatestCtx().togglePinAccount("acc-1")).resolves.toBe(true)
+    })
+
+    expect(mockUnpinAccount).toHaveBeenCalledWith("acc-1")
+    await waitFor(() => {
+      expect(getLatestCtx().pinnedAccountIds).toEqual([])
+      expect(getLatestCtx().isAccountPinned("acc-1")).toBe(false)
+    })
+  })
+
+  it("keeps local pin state unchanged when pin and unpin persistence fail", async () => {
+    mockGetAllBookmarks.mockResolvedValue([{ id: "acc-1" }])
+    mockGetOrderedList.mockResolvedValue(["acc-1"])
+    mockGetPinnedList.mockResolvedValue([])
+    mockPinAccount.mockResolvedValue(false)
+    mockUnpinAccount.mockResolvedValue(false)
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().pinnedAccountIds).toEqual([])
+    })
+
+    await act(async () => {
+      await expect(getLatestCtx().pinAccount("acc-1")).resolves.toBe(false)
+    })
+
+    expect(getLatestCtx().pinnedAccountIds).toEqual([])
+    expect(getLatestCtx().isAccountPinned("acc-1")).toBe(false)
+
+    mockGetPinnedList.mockResolvedValue(["acc-1"])
+    const repinnedCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(repinnedCtx().pinnedAccountIds).toEqual(["acc-1"])
+    })
+
+    await act(async () => {
+      await expect(repinnedCtx().unpinAccount("acc-1")).resolves.toBe(false)
+    })
+
+    expect(repinnedCtx().pinnedAccountIds).toEqual(["acc-1"])
+    expect(repinnedCtx().isAccountPinned("acc-1")).toBe(true)
+  })
+})
+
+describe("AccountDataContext current tab detection", () => {
+  it("detects same-origin accounts and matches the active website user to a specific stored account", async () => {
+    const matchingAccount = {
+      id: "acc-2",
+      site_url: "https://api.example.com/v1",
+      account_info: { id: 42 },
+      last_sync_time: 0,
+    }
+    const sameSiteDifferentUser = {
+      id: "acc-1",
+      site_url: "https://api.example.com/dashboard",
+      account_info: { id: 7 },
+      last_sync_time: 0,
+    }
+    const otherSite = {
+      id: "acc-3",
+      site_url: "https://other.example.com",
+      account_info: { id: 99 },
+      last_sync_time: 0,
+    }
+
+    mockGetAllAccounts.mockResolvedValue([
+      sameSiteDifferentUser,
+      matchingAccount,
+      otherSite,
+    ])
+    mockGetActiveTabs.mockResolvedValue([
+      { id: 7, url: "https://api.example.com/settings" },
+    ])
+    vi.mocked(globalThis.browser.tabs.sendMessage).mockResolvedValue({
+      success: true,
+      data: { userId: 42 },
+    } as any)
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(
+        getLatestCtx().detectedSiteAccounts.map((account) => account.id),
+      ).toEqual(["acc-1", "acc-2"])
+      expect(getLatestCtx().detectedAccount?.id).toBe("acc-2")
+    })
+
+    expect(globalThis.browser.tabs.sendMessage).toHaveBeenCalledWith(7, {
+      action: RuntimeActionIds.ContentGetUserFromLocalStorage,
+      url: "https://api.example.com",
+    })
+  })
+
+  it("keeps site-level detection but clears the exact account when user verification fails", async () => {
+    const sameSiteAccount = {
+      id: "acc-1",
+      site_url: "https://api.example.com/v1",
+      account_info: { id: 7 },
+      last_sync_time: 0,
+    }
+
+    mockGetAllAccounts.mockResolvedValue([sameSiteAccount])
+    mockGetActiveTabs.mockResolvedValue([
+      { id: 8, url: "https://api.example.com/settings" },
+    ])
+    vi.mocked(globalThis.browser.tabs.sendMessage).mockRejectedValue(
+      new Error("content script unavailable"),
+    )
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(
+        getLatestCtx().detectedSiteAccounts.map((account) => account.id),
+      ).toEqual(["acc-1"])
+      expect(getLatestCtx().detectedAccount).toBeNull()
+      expect(getLatestCtx().isDetecting).toBe(false)
+    })
+  })
+
+  it("ignores non-web active tabs and clears any existing detection hints", async () => {
+    mockGetAllAccounts.mockResolvedValue([
+      {
+        id: "acc-1",
+        site_url: "https://api.example.com",
+        account_info: { id: 7 },
+        last_sync_time: 0,
+      },
+    ])
+    mockGetActiveTabs.mockResolvedValue([{ id: 9, url: "chrome://extensions" }])
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().detectedSiteAccounts).toEqual([])
+      expect(getLatestCtx().detectedAccount).toBeNull()
+      expect(getLatestCtx().isDetecting).toBe(false)
+    })
+
+    expect(globalThis.browser.tabs.sendMessage).not.toHaveBeenCalled()
+  })
+
+  it("clears previously detected hints when the active tab context disappears", async () => {
+    const matchingAccount = {
+      id: "acc-1",
+      site_url: "https://api.example.com/v1",
+      account_info: { id: 7 },
+      last_sync_time: 0,
+    }
+
+    let activeTabs: Array<{ id?: number; url?: string }> = [
+      { id: 7, url: "https://api.example.com/settings" },
+    ]
+    const activatedListeners: Array<() => void | Promise<void>> = []
+
+    mockGetAllAccounts.mockResolvedValue([matchingAccount])
+    mockGetActiveTabs.mockImplementation(async () => activeTabs as any)
+    mockOnTabActivated.mockImplementation((listener: any) => {
+      activatedListeners.push(listener)
+      return () => {
+        const index = activatedListeners.indexOf(listener)
+        if (index >= 0) {
+          activatedListeners.splice(index, 1)
+        }
+      }
+    })
+    vi.mocked(globalThis.browser.tabs.sendMessage).mockResolvedValue({
+      success: true,
+      data: { userId: 7 },
+    } as any)
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(
+        getLatestCtx().detectedSiteAccounts.map((account) => account.id),
+      ).toEqual(["acc-1"])
+      expect(getLatestCtx().detectedAccount?.id).toBe("acc-1")
+    })
+
+    activeTabs = []
+
+    await act(async () => {
+      for (const listener of activatedListeners) {
+        await listener()
+      }
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().detectedSiteAccounts).toEqual([])
+      expect(getLatestCtx().detectedAccount).toBeNull()
+      expect(getLatestCtx().isDetecting).toBe(false)
+    })
+
+    expect(globalThis.browser.tabs.sendMessage).toHaveBeenCalledTimes(1)
+  })
+
+  it("rechecks only when the updated tab is still active", async () => {
+    const matchingAccount = {
+      id: "acc-1",
+      site_url: "https://api.example.com/v1",
+      account_info: { id: 7 },
+      last_sync_time: 0,
+    }
+
+    let activeTabs: Array<{ id: number; url: string }> = [
+      { id: 7, url: "https://api.example.com/settings" },
+    ]
+    const updatedListeners: Array<(tabId: number) => void | Promise<void>> = []
+
+    mockGetAllAccounts.mockResolvedValue([matchingAccount])
+    mockGetActiveTabs.mockImplementation(async () => activeTabs as any)
+    mockOnTabUpdated.mockImplementation((listener: any) => {
+      updatedListeners.push(listener)
+      return () => {
+        const index = updatedListeners.indexOf(listener)
+        if (index >= 0) {
+          updatedListeners.splice(index, 1)
+        }
+      }
+    })
+    vi.mocked(globalThis.browser.tabs.sendMessage).mockResolvedValue({
+      success: true,
+      data: { userId: 7 },
+    } as any)
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().detectedAccount?.id).toBe("acc-1")
+    })
+
+    activeTabs = [{ id: 7, url: "https://api.example.com/profile" }]
+
+    await act(async () => {
+      for (const listener of updatedListeners) {
+        await listener(999)
+      }
+    })
+
+    expect(globalThis.browser.tabs.sendMessage).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      for (const listener of updatedListeners) {
+        await listener(7)
+      }
+    })
+
+    await waitFor(() => {
+      expect(globalThis.browser.tabs.sendMessage).toHaveBeenCalledTimes(2)
+      expect(getLatestCtx().detectedAccount?.id).toBe("acc-1")
+    })
+  })
+})
+
+describe("AccountDataContext refresh orchestration", () => {
+  it("refreshes data on demand, exposes the pending state, and stores the returned sync time", async () => {
+    let resolveRefresh!: (value: any) => void
+    const refreshPromise = new Promise((resolve) => {
+      resolveRefresh = resolve
+    })
+
+    mockGetAllAccounts.mockResolvedValue([
+      {
+        id: "acc-1",
+        site_url: "https://api.example.com",
+        account_info: { id: 1 },
+        last_sync_time: 0,
+      },
+    ])
+    mockRefreshAllAccounts.mockReturnValueOnce(refreshPromise)
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await act(async () => {
+      void getLatestCtx().handleRefresh(true)
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().isRefreshing).toBe(true)
+    })
+
+    resolveRefresh({
+      success: 1,
+      failed: 0,
+      refreshedCount: 1,
+      latestSyncTime: 1_710_123_456_789,
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().isRefreshing).toBe(false)
+      expect(getLatestCtx().lastUpdateTime?.getTime()).toBe(1_710_123_456_789)
+    })
+
+    expect(mockRefreshAllAccounts).toHaveBeenCalledWith(true)
+  })
+
+  it("reloads account data after refresh failures and clears the refreshing state", async () => {
+    mockGetAllAccounts.mockResolvedValue([{ id: "acc-1" }])
+    mockRefreshAllAccounts.mockRejectedValueOnce(new Error("refresh failed"))
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().isInitialLoad).toBe(false)
+    })
+
+    const initialLoadCalls = mockGetAllAccounts.mock.calls.length
+
+    await act(async () => {
+      await expect(getLatestCtx().handleRefresh()).rejects.toThrow(
+        "refresh failed",
+      )
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().isRefreshing).toBe(false)
+      expect(mockGetAllAccounts.mock.calls.length).toBeGreaterThan(
+        initialLoadCalls,
+      )
+    })
+  })
+
+  it("announces refresh-on-open through toast.promise and exposes the partial-skip message path", async () => {
+    mockUserPreferencesContext.current = {
+      ...mockUserPreferencesContext.current,
+      refreshOnOpen: true,
+    }
+    mockGetAllAccounts.mockResolvedValue([
+      {
+        id: "acc-1",
+        site_url: "https://api.example.com",
+        account_info: { id: 1 },
+        last_sync_time: 1_710_000_000_000,
+      },
+    ])
+    mockRefreshAllAccounts.mockResolvedValue({
+      success: 2,
+      failed: 0,
+      refreshedCount: 1,
+      latestSyncTime: 1_710_000_000_000,
+    })
+
+    await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(mockToastPromise).toHaveBeenCalledTimes(1)
+      expect(mockRefreshAllAccounts).toHaveBeenCalledWith(false)
+    })
+
+    const [, toastOptions] = mockToastPromise.mock.calls[0]
+    const t = testI18n.getFixedT(null, "account")
+    expect(
+      toastOptions.success({ success: 2, failed: 0, refreshedCount: 1 }),
+    ).toBe(
+      t("refresh.refreshPartialSkipped", {
+        success: 1,
+        skipped: 1,
+      }),
+    )
+  })
+
+  it("uses the zero-result and failed-result refresh-on-open toast branches", async () => {
+    mockUserPreferencesContext.current = {
+      ...mockUserPreferencesContext.current,
+      refreshOnOpen: true,
+    }
+    mockGetAllAccounts.mockResolvedValue([
+      {
+        id: "acc-1",
+        site_url: "https://api.example.com",
+        account_info: { id: 1 },
+        last_sync_time: 0,
+      },
+    ])
+    mockRefreshAllAccounts.mockResolvedValue({
+      success: 0,
+      failed: 0,
+      refreshedCount: 0,
+      latestSyncTime: 0,
+    })
+
+    await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(mockToastPromise).toHaveBeenCalledTimes(1)
+    })
+
+    const [, toastOptions] = mockToastPromise.mock.calls[0]
+    const t = testI18n.getFixedT(null, "account")
+
+    expect(
+      toastOptions.success({ success: 0, failed: 0, refreshedCount: 0 }),
+    ).toBeNull()
+    expect(
+      toastOptions.success({ success: 1, failed: 2, refreshedCount: 1 }),
+    ).toBe(
+      t("refresh.refreshComplete", {
+        success: 1,
+        failed: 2,
+      }),
+    )
+  })
+
+  it("reloads account data when background refresh and tag-store runtime messages arrive", async () => {
+    mockGetAllAccounts.mockResolvedValue([{ id: "acc-1", last_sync_time: 0 }])
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().isInitialLoad).toBe(false)
+      expect(mockGetAllAccounts.mock.calls.length).toBeGreaterThan(0)
+    })
+
+    const initialLoadCalls = mockGetAllAccounts.mock.calls.length
+    const listener = (globalThis as any).__accountDataContextRuntimeListener as
+      | ((message: any) => void)
+      | undefined
+    expect(listener).toBeTypeOf("function")
+
+    await act(async () => {
+      listener!({
+        type: "AUTO_REFRESH_UPDATE",
+        payload: { type: "refresh_completed" },
+      })
+      listener!({
+        type: "TAG_STORE_UPDATE",
+      })
+    })
+
+    await waitFor(() => {
+      expect(mockGetAllAccounts.mock.calls.length).toBeGreaterThanOrEqual(2)
+    })
+
+    expect(initialLoadCalls).toBeGreaterThan(0)
+  })
+})
+
+describe("AccountDataContext sorting behavior", () => {
+  it("ignores hidden today-cashflow sorts and falls back invalid saved selections to balance", async () => {
+    mockUserPreferencesContext.current = {
+      ...mockUserPreferencesContext.current,
+      showTodayCashflow: false,
+      sortField: DATA_TYPE_CONSUMPTION,
+      sortOrder: "asc",
+    }
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().sortField).toBe(DATA_TYPE_BALANCE)
+    })
+
+    expect(mockUpdateSortConfig).toHaveBeenCalledWith(DATA_TYPE_BALANCE, "asc")
+
+    mockUpdateSortConfig.mockClear()
+
+    act(() => {
+      getLatestCtx().handleSort(DATA_TYPE_CONSUMPTION)
+    })
+
+    expect(getLatestCtx().sortField).toBe(DATA_TYPE_BALANCE)
+    expect(mockUpdateSortConfig).not.toHaveBeenCalled()
+  })
+
+  it("toggles sort order when the same field is selected twice", async () => {
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().sortField).toBe("name")
+      expect(getLatestCtx().sortOrder).toBe("asc")
+    })
+
+    act(() => {
+      getLatestCtx().handleSort(DATA_TYPE_BALANCE)
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().sortField).toBe(DATA_TYPE_BALANCE)
+      expect(getLatestCtx().sortOrder).toBe("asc")
+    })
+
+    act(() => {
+      getLatestCtx().handleSort(DATA_TYPE_BALANCE)
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().sortField).toBe(DATA_TYPE_BALANCE)
+      expect(getLatestCtx().sortOrder).toBe("desc")
+    })
+
+    expect(mockUpdateSortConfig).toHaveBeenNthCalledWith(
+      1,
+      DATA_TYPE_BALANCE,
+      "asc",
+    )
+    expect(mockUpdateSortConfig).toHaveBeenNthCalledWith(
+      2,
+      DATA_TYPE_BALANCE,
+      "desc",
+    )
+  })
+
+  it("prioritizes accounts matched by open tabs when that sorting criterion is enabled", async () => {
+    mockUserPreferencesContext.current = {
+      ...mockUserPreferencesContext.current,
+      sortField: "name",
+      sortOrder: "asc",
+      sortingPriorityConfig: {
+        lastModified: Date.now(),
+        criteria: [
+          {
+            id: SortingCriteriaType.MATCHED_OPEN_TABS,
+            enabled: true,
+            priority: 0,
+          },
+          {
+            id: SortingCriteriaType.USER_SORT_FIELD,
+            enabled: true,
+            priority: 1,
+          },
+        ],
+      },
+    }
+
+    mockGetAllAccounts.mockResolvedValue([
+      {
+        id: "acc-a",
+        site_url: "https://a.example.com",
+        account_info: { id: 1 },
+        last_sync_time: 0,
+      },
+      {
+        id: "acc-b",
+        site_url: "https://b.example.com",
+        account_info: { id: 2 },
+        last_sync_time: 0,
+      },
+    ])
+    mockConvertToDisplayData.mockReturnValue([
+      {
+        id: "acc-a",
+        name: "Alpha",
+        balance: { USD: 0, CNY: 0 },
+        todayConsumption: { USD: 0, CNY: 0 },
+        todayIncome: { USD: 0, CNY: 0 },
+      },
+      {
+        id: "acc-b",
+        name: "Beta",
+        balance: { USD: 0, CNY: 0 },
+        todayConsumption: { USD: 0, CNY: 0 },
+        todayIncome: { USD: 0, CNY: 0 },
+      },
+    ])
+    mockGetAllTabs.mockResolvedValue([
+      {
+        id: 10,
+        url: "https://b.example.com/dashboard",
+        title: "Beta workspace",
+      },
+    ])
+    mockSearchAccounts.mockImplementation((_displayData, query: string) => {
+      if (query === "https://b.example.com/dashboard") {
+        return [{ account: { id: "acc-b" }, score: 4 }]
+      }
+      if (query === "Beta workspace") {
+        return [{ account: { id: "acc-b" }, score: 2 }]
+      }
+      return []
+    })
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().sortedData.map((item) => item.id)).toEqual([
+        "acc-b",
+        "acc-a",
+      ])
+    })
+
+    expect(mockSearchAccounts).toHaveBeenCalledWith(
+      expect.any(Array),
+      "https://b.example.com/dashboard",
+    )
+    expect(mockSearchAccounts).toHaveBeenCalledWith(
+      expect.any(Array),
+      "Beta workspace",
+    )
+  })
+})
+
 describe("AccountDataContext auto-checkin runCompleted handling", () => {
   it("updates only accounts listed in updatedAccountIds", async () => {
     mockResetExpiredCheckIns.mockResolvedValue(undefined)
@@ -313,6 +1285,88 @@ describe("AccountDataContext auto-checkin runCompleted handling", () => {
 
     expect(mockGetAccountById).toHaveBeenCalledTimes(1)
     expect(mockGetAccountById).toHaveBeenCalledWith("a")
+  })
+
+  it("skips reload work when auto-checkin completion does not include any valid account ids", async () => {
+    mockGetAllAccounts.mockResolvedValue([{ id: "a" }])
+
+    await renderAccountDataProvider()
+
+    mockGetAllAccounts.mockClear()
+
+    const listener = (globalThis as any).__accountDataContextRuntimeListener as
+      | ((message: any) => void)
+      | undefined
+    expect(listener).toBeTypeOf("function")
+
+    mockGetAllAccounts.mockClear()
+
+    await act(async () => {
+      listener!({
+        action: RuntimeActionIds.AutoCheckinRunCompleted,
+        updatedAccountIds: ["", null, 0, undefined],
+      })
+    })
+
+    await waitFor(() => {
+      expect(mockGetAccountById).not.toHaveBeenCalled()
+    })
+  })
+
+  it("appends newly reloaded accounts that were not in the previous snapshot", async () => {
+    mockResetExpiredCheckIns.mockResolvedValue(undefined)
+    mockGetTagStore.mockResolvedValue({ version: 1, tagsById: {} })
+
+    const accountA: any = {
+      id: "a",
+      checkIn: { siteStatus: { isCheckedInToday: false } },
+    }
+
+    mockGetAllAccounts.mockResolvedValue([accountA])
+    mockGetAllBookmarks.mockResolvedValue([])
+    mockGetOrderedList.mockResolvedValue(["a"])
+    mockGetPinnedList.mockResolvedValue([])
+    mockGetAccountStats.mockResolvedValue(createEmptyStats())
+
+    mockConvertToDisplayData.mockImplementation((input: any) => {
+      const accounts = Array.isArray(input) ? input : [input]
+      const display = accounts.map((account: any) => ({
+        id: account.id,
+        name: account.id,
+        checkIn: account.checkIn,
+      }))
+      return Array.isArray(input) ? display : display[0]
+    })
+
+    mockGetAccountById.mockResolvedValue({
+      id: "b",
+      checkIn: { siteStatus: { isCheckedInToday: true } },
+    })
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().displayData.map((item) => item.id)).toEqual(["a"])
+    })
+
+    const listener = (globalThis as any).__accountDataContextRuntimeListener as
+      | ((message: any) => void)
+      | undefined
+    expect(listener).toBeTypeOf("function")
+
+    await act(async () => {
+      listener!({
+        action: RuntimeActionIds.AutoCheckinRunCompleted,
+        updatedAccountIds: ["b"],
+      })
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().displayData.map((item) => item.id)).toEqual([
+        "a",
+        "b",
+      ])
+    })
   })
 
   it("falls back to loadAccountData() when a targeted reload fails", async () => {

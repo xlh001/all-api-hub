@@ -336,6 +336,191 @@ describe("useAccountDialog Sub2API constraints", () => {
     expect(mockToastError).toHaveBeenCalled()
   })
 
+  it("hydrates Sub2API session fields from the background fallback when tab import cannot provide them", async () => {
+    const { getAllTabs, sendRuntimeMessage } = await import(
+      "~/utils/browser/browserApi"
+    )
+    vi.mocked(getAllTabs).mockResolvedValue([
+      {
+        id: 41,
+        url: "https://sub2.example.com/dashboard",
+        active: true,
+      } as any,
+    ])
+    vi.mocked(globalThis.browser.tabs.sendMessage).mockRejectedValue(
+      new Error("content script unavailable"),
+    )
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      data: {
+        accessToken: "jwt-from-background",
+        userId: 7,
+        user: { username: "bg-user" },
+        sub2apiAuth: {
+          refreshToken: "refresh-from-background",
+          tokenExpiresAt: 987654,
+        },
+      },
+    } as any)
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://sub2.example.com")
+      result.current.setters.setSiteType(SUB2API)
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleImportSub2apiSession()
+    })
+
+    expect(sendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.AutoDetectSite,
+        url: "https://sub2.example.com",
+      }),
+    )
+    expect(result.current.state.sub2apiRefreshToken).toBe(
+      "refresh-from-background",
+    )
+    expect(result.current.state.sub2apiTokenExpiresAt).toBe(987654)
+    expect(result.current.state.accessToken).toBe("jwt-from-background")
+    expect(result.current.state.userId).toBe("7")
+    expect(result.current.state.username).toBe("bg-user")
+    expect(mockToastSuccess).toHaveBeenCalled()
+  })
+
+  it("keeps existing JWT fields when the imported optional Sub2API values are malformed", async () => {
+    const { getAllTabs, sendRuntimeMessage } = await import(
+      "~/utils/browser/browserApi"
+    )
+    vi.mocked(getAllTabs).mockResolvedValue([
+      {
+        id: 51,
+        url: "https://sub2.example.com/dashboard",
+        active: true,
+      } as any,
+    ])
+    vi.mocked(globalThis.browser.tabs.sendMessage).mockRejectedValue(
+      new Error("content script unavailable"),
+    )
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      data: {
+        accessToken: "   ",
+        userId: Number.NaN,
+        user: { username: "   " },
+        sub2apiAuth: {
+          refreshToken: "refresh-from-background",
+          tokenExpiresAt: Number.POSITIVE_INFINITY,
+        },
+      },
+    } as any)
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://sub2.example.com")
+      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setAccessToken("existing-jwt")
+      result.current.setters.setUserId("99")
+      result.current.setters.setUsername("existing-user")
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleImportSub2apiSession()
+    })
+
+    expect(result.current.state.sub2apiRefreshToken).toBe(
+      "refresh-from-background",
+    )
+    expect(result.current.state.sub2apiTokenExpiresAt).toBeNull()
+    expect(result.current.state.accessToken).toBe("existing-jwt")
+    expect(result.current.state.userId).toBe("99")
+    expect(result.current.state.username).toBe("")
+    expect(mockToastSuccess).toHaveBeenCalled()
+  })
+
+  it("falls back to background auto-detect when enumerating tabs fails entirely", async () => {
+    const { getAllTabs, sendRuntimeMessage } = await import(
+      "~/utils/browser/browserApi"
+    )
+    vi.mocked(getAllTabs).mockRejectedValue(
+      new Error("tab enumeration unavailable"),
+    )
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      data: {
+        accessToken: "jwt-from-background",
+        userId: 77,
+        user: { username: "bg-user" },
+        sub2apiAuth: {
+          refreshToken: "refresh-from-background",
+          tokenExpiresAt: 222333,
+        },
+      },
+    } as any)
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://sub2.example.com")
+      result.current.setters.setSiteType(SUB2API)
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleImportSub2apiSession()
+    })
+
+    expect(sendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.AutoDetectSite,
+        url: "https://sub2.example.com",
+      }),
+    )
+    expect(result.current.state.sub2apiRefreshToken).toBe(
+      "refresh-from-background",
+    )
+    expect(result.current.state.sub2apiTokenExpiresAt).toBe(222333)
+    expect(result.current.state.accessToken).toBe("jwt-from-background")
+    expect(result.current.state.userId).toBe("77")
+    expect(result.current.state.username).toBe("bg-user")
+    expect(mockToastSuccess).toHaveBeenCalled()
+  })
+
   it("surfaces background fallback failures during Sub2API session import and resets the loading state", async () => {
     const { getAllTabs, sendRuntimeMessage } = await import(
       "~/utils/browser/browserApi"

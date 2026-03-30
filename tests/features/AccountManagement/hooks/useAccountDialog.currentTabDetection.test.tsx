@@ -139,6 +139,33 @@ describe("useAccountDialog current tab detection", () => {
     })
   })
 
+  it("clears current-tab detection when the active tab URL cannot be parsed", async () => {
+    const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
+      typeof vi.fn
+    >
+    tabsQueryMock.mockResolvedValue([
+      {
+        id: 5,
+        url: "not a url",
+      },
+    ])
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBeNull()
+      expect(result.current.state.siteName).toBe("")
+    })
+    expect(mockGetSiteName).not.toHaveBeenCalled()
+  })
+
   it("ignores non-http tabs and only refreshes on tab updates for the active tab", async () => {
     const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
       typeof vi.fn
@@ -203,6 +230,87 @@ describe("useAccountDialog current tab detection", () => {
     await waitFor(() => {
       expect(result.current.state.currentTabUrl).toBe(
         "https://active.example.com",
+      )
+      expect(result.current.state.siteName).toBe("Detected Site")
+    })
+  })
+
+  it("reuses the detected current-tab origin when the user chooses it", async () => {
+    const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
+      typeof vi.fn
+    >
+    tabsQueryMock.mockResolvedValue([
+      {
+        id: 6,
+        url: "https://picked.example.com/path?q=1",
+      },
+    ])
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBe(
+        "https://picked.example.com",
+      )
+    })
+
+    await act(async () => {
+      result.current.handlers.handleUseCurrentTabUrl()
+    })
+
+    expect(result.current.state.url).toBe("https://picked.example.com")
+  })
+
+  it("refreshes current-tab detection when the active tab changes", async () => {
+    const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
+      typeof vi.fn
+    >
+    let activeUrl = "https://initial.example.com/path"
+    tabsQueryMock.mockImplementation(async () => [
+      {
+        id: 7,
+        url: activeUrl,
+      },
+    ])
+
+    let activatedListener: (() => void | Promise<void>) | undefined
+    onTabActivatedMock.mockImplementation((listener) => {
+      activatedListener = listener
+      return () => {}
+    })
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBe(
+        "https://initial.example.com",
+      )
+      expect(result.current.state.siteName).toBe("Detected Site")
+    })
+
+    activeUrl = "https://activated.example.com/path"
+
+    await act(async () => {
+      await activatedListener?.()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBe(
+        "https://activated.example.com",
       )
       expect(result.current.state.siteName).toBe("Detected Site")
     })
