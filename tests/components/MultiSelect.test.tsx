@@ -15,9 +15,6 @@ vi.mock("react-hot-toast", () => ({
   default: toastMocks,
 }))
 
-/**
- *
- */
 function Harness(props: {
   initialSelected?: string[]
   allowCustom?: boolean

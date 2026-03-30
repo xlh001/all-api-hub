@@ -48,9 +48,6 @@ vi.mock("~/utils/browser/browserApi", () => ({
   sendRuntimeMessage: mockSendRuntimeMessage,
 }))
 
-/**
- *
- */
 function render(ui: ReactNode) {
   return rtlRender(<I18nextProvider i18n={testI18n}>{ui}</I18nextProvider>)
 }

@@ -53,9 +53,6 @@ vi.mock("~/components/ManagedSiteChannelLinkButton", () => ({
   ),
 }))
 
-/**
- *
- */
 function render(ui: ReactNode) {
   return rtlRender(<I18nextProvider i18n={testI18n}>{ui}</I18nextProvider>)
 }

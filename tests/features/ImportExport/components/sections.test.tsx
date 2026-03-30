@@ -24,9 +24,6 @@ vi.mock("~/features/ImportExport/utils", () => ({
   handleExportPreferences: mockHandleExportPreferences,
 }))
 
-/**
- *
- */
 function render(ui: ReactNode) {
   return rtlRender(<I18nextProvider i18n={testI18n}>{ui}</I18nextProvider>)
 }

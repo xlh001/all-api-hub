@@ -149,9 +149,6 @@ describe("setupRuntimeMessageListeners additional routing", () => {
     vi.restoreAllMocks()
   })
 
-  /**
-   *
-   */
   async function loadListener() {
     const { setupRuntimeMessageListeners } = await import(
       "~/entrypoints/background/runtimeMessages"
@@ -162,9 +159,6 @@ describe("setupRuntimeMessageListeners additional routing", () => {
     return runtimeMessageListener!
   }
 
-  /**
-   *
-   */
   async function waitForAsyncResponse() {
     await new Promise((resolve) => setTimeout(resolve, 0))
   }

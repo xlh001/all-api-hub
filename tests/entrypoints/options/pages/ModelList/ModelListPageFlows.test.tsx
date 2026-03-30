@@ -230,9 +230,6 @@ vi.mock("~/features/ModelList/components/ModelKeyDialog", () => ({
   ),
 }))
 
-/**
- *
- */
 function buildState(overrides: Record<string, any> = {}) {
   return {
     accounts: [ACCOUNT, SECOND_ACCOUNT],

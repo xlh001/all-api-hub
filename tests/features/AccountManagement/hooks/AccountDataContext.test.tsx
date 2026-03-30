@@ -256,9 +256,6 @@ beforeEach(() => {
   }
 })
 
-/**
- *
- */
 function createEmptyStats() {
   return {
     total_quota: 0,
@@ -270,9 +267,6 @@ function createEmptyStats() {
   }
 }
 
-/**
- *
- */
 function createBrowserTab(
   overrides: Partial<browser.tabs.Tab> = {},
 ): browser.tabs.Tab {
@@ -288,9 +282,6 @@ function createBrowserTab(
   } as browser.tabs.Tab
 }
 
-/**
- *
- */
 async function renderAccountDataProvider() {
   let latestCtx: ReturnType<typeof useAccountDataContext> | null = null
 

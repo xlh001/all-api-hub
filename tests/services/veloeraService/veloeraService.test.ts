@@ -70,9 +70,6 @@ function createMockUserPreferencesWithVeloera(
   }
 }
 
-/**
- *
- */
 function createMockDisplaySiteData(
   overrides: Partial<DisplaySiteData> = {},
 ): DisplaySiteData {
@@ -97,9 +94,6 @@ function createMockDisplaySiteData(
   }
 }
 
-/**
- *
- */
 function createMockApiToken(overrides: Partial<ApiToken> = {}): ApiToken {
   return {
     id: 1,

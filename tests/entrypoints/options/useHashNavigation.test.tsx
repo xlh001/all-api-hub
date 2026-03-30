@@ -14,9 +14,6 @@ vi.mock("~/utils/navigation", async (importOriginal) => {
   }
 })
 
-/**
- *
- */
 function Probe() {
   const { activeMenuItem, handleMenuItemChange, refreshKey, routeParams } =
     useHashNavigation()

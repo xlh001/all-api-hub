@@ -63,9 +63,6 @@ vi.mock(
   }),
 )
 
-/**
- *
- */
 function RegistryProbe({
   mountApiContent = true,
 }: {
@@ -102,9 +99,6 @@ function RegistryProbe({
   )
 }
 
-/**
- *
- */
 function DeferredApiMountProbe() {
   const registry = usePopupViewRegistry()
   const [showApiContent, setShowApiContent] = useState(false)

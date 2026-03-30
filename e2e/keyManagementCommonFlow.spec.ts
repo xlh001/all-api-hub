@@ -17,9 +17,6 @@ import {
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
-/**
- *
- */
 function createStubApiToken(overrides: Partial<ApiToken> = {}): ApiToken {
   const nowSeconds = Math.floor(Date.now() / 1000)
 
@@ -43,9 +40,6 @@ function createStubApiToken(overrides: Partial<ApiToken> = {}): ApiToken {
   }
 }
 
-/**
- *
- */
 async function readStoredApiCredentialProfiles(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
 ): Promise<

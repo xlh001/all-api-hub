@@ -26,9 +26,6 @@ type AutoCheckinRuntimeSnapshot = AutoCheckinRuntimeStubState & {
   runNowActionCount: number
 }
 
-/**
- *
- */
 async function readAutoCheckinRuntimeSnapshot(
   page: Page,
 ): Promise<AutoCheckinRuntimeSnapshot> {

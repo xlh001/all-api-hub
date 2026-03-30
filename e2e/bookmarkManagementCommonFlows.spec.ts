@@ -18,9 +18,6 @@ import {
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
-/**
- *
- */
 async function readStoredBookmarks(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
 ): Promise<SiteBookmark[]> {
@@ -39,9 +36,6 @@ async function readStoredBookmarks(
   }
 }
 
-/**
- *
- */
 async function readStoredBookmarkState(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
 ): Promise<{
@@ -78,18 +72,12 @@ async function readStoredBookmarkState(
   }
 }
 
-/**
- *
- */
 function getBookmarkRow(page: Page, name: string) {
   return page
     .getByRole("button", { name })
     .locator("xpath=ancestor::div[contains(@class, 'group')][1]")
 }
 
-/**
- *
- */
 async function getBookmarkButtonY(page: Page, name: string) {
   const box = await page.getByRole("button", { name }).first().boundingBox()
 
@@ -100,18 +88,12 @@ async function getBookmarkButtonY(page: Page, name: string) {
   return box.y
 }
 
-/**
- *
- */
 async function openBookmarkActionsMenu(page: Page, name: string) {
   const row = getBookmarkRow(page, name)
   await row.hover()
   await row.getByRole("button", { name: "More" }).click()
 }
 
-/**
- *
- */
 async function dragBookmarkHandle(
   page: Page,
   sourceIndex: number,
@@ -144,9 +126,6 @@ async function dragBookmarkHandle(
   await page.mouse.up()
 }
 
-/**
- *
- */
 async function seedStoredTagStore(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
   tagStore: TagStore,

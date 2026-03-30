@@ -38,9 +38,6 @@ type RuntimeLike = {
   sendMessage?: (message: unknown) => Promise<unknown>
 }
 
-/**
- *
- */
 async function readStoredAccountConfig(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
 ): Promise<AccountStorageConfig> {
@@ -60,9 +57,6 @@ async function readStoredAccountConfig(
   }
 }
 
-/**
- *
- */
 async function readStoredAccounts(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
 ): Promise<SiteAccount[]> {
@@ -70,9 +64,6 @@ async function readStoredAccounts(
   return Array.isArray(config.accounts) ? config.accounts : []
 }
 
-/**
- *
- */
 async function seedStoredAccountConfig(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
   config: Partial<AccountStorageConfig>,
@@ -91,18 +82,12 @@ async function seedStoredAccountConfig(
   )
 }
 
-/**
- *
- */
 function getAccountRow(page: Page, accountName: string) {
   return page
     .getByRole("button", { name: accountName })
     .locator("xpath=ancestor::div[contains(@class, 'group')][1]")
 }
 
-/**
- *
- */
 async function getAccountButtonY(page: Page, accountName: string) {
   const box = await page
     .getByRole("button", { name: accountName })
@@ -116,18 +101,12 @@ async function getAccountButtonY(page: Page, accountName: string) {
   return box.y
 }
 
-/**
- *
- */
 async function openAccountActionsMenu(page: Page, accountName: string) {
   const row = getAccountRow(page, accountName)
   await row.hover()
   await row.getByRole("button", { name: "More" }).click()
 }
 
-/**
- *
- */
 async function readAccountQuickCheckinRuntimeState(
   page: Page,
 ): Promise<AccountQuickCheckinRuntimeState> {

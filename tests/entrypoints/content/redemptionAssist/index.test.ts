@@ -54,9 +54,6 @@ vi.mock(
   }),
 )
 
-/**
- *
- */
 function makeClipboardEvent(type: "copy" | "cut", clipboardText: string) {
   const event = new Event(type, { bubbles: true, cancelable: true }) as any
   event.clipboardData = {
