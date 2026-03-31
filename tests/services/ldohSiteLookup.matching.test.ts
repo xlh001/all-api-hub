@@ -6,6 +6,26 @@ import {
 } from "~/services/integrations/ldohSiteLookup/matching"
 
 describe("ldohSiteLookup matching", () => {
+  it("skips invalid directory URLs when building the lookup index", () => {
+    const index = buildLdohSiteLookupIndex([
+      { id: "valid", apiBaseUrl: "https://api.example.com/" },
+      { id: "invalid", apiBaseUrl: "not a valid url" },
+    ])
+
+    expect(Array.from(index.byOrigin.entries())).toEqual([
+      [
+        "https://api.example.com",
+        [{ id: "valid", apiBaseUrl: "https://api.example.com/" }],
+      ],
+    ])
+    expect(Array.from(index.byHostname.entries())).toEqual([
+      [
+        "api.example.com",
+        [{ id: "valid", apiBaseUrl: "https://api.example.com/" }],
+      ],
+    ])
+  })
+
   it("prefers exact origin matches", () => {
     const index = buildLdohSiteLookupIndex([
       { id: "https", apiBaseUrl: "https://api.example.com/" },
@@ -46,5 +66,15 @@ describe("ldohSiteLookup matching", () => {
 
     const match = matchLdohSiteForAccount(index, "https://api.example.com/path")
     expect(match?.id).toBe("a")
+  })
+
+  it("treats multiple exact-origin matches as no match", () => {
+    const index = buildLdohSiteLookupIndex([
+      { id: "a", apiBaseUrl: "https://api.example.com/" },
+      { id: "b", apiBaseUrl: "https://api.example.com/v1" },
+    ])
+
+    const match = matchLdohSiteForAccount(index, "https://api.example.com/path")
+    expect(match).toBeNull()
   })
 })

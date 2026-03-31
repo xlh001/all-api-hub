@@ -28,6 +28,7 @@ vi.mock("@plasmohq/storage", () => {
 describe("dailyBalanceHistoryStorage", () => {
   beforeEach(() => {
     storageData.clear()
+    vi.restoreAllMocks()
   })
 
   it("sanitizes invalid stored payloads", async () => {
@@ -88,6 +89,146 @@ describe("dailyBalanceHistoryStorage", () => {
           source: "refresh",
         }),
       )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("drops malformed account buckets and snapshot rows while preserving null optional fields", async () => {
+    storageData.set(STORAGE_KEYS.DAILY_BALANCE_HISTORY_STORE, {
+      schemaVersion: 999,
+      snapshotsByAccountId: {
+        "": {
+          "2026-02-07": {
+            quota: 1,
+            today_income: 0,
+            today_quota_consumption: 0,
+            capturedAt: 1,
+            source: "refresh",
+          },
+        },
+        badBucket: "invalid",
+        accountInvalidSnapshots: {
+          "bad-day-key": {
+            quota: 1,
+            today_income: 0,
+            today_quota_consumption: 0,
+            capturedAt: 1,
+            source: "refresh",
+          },
+          "2026-02-07": null,
+          "2026-02-08": {
+            quota: "bad",
+            capturedAt: 1,
+            source: "refresh",
+          },
+          "2026-02-09": {
+            quota: 1,
+            capturedAt: "bad",
+            source: "refresh",
+          },
+          "2026-02-10": {
+            quota: 1,
+            capturedAt: 1,
+            source: "manual",
+          },
+        },
+        accountValid: {
+          "2026-02-11": {
+            quota: 8,
+            today_income: null,
+            today_quota_consumption: null,
+            capturedAt: 123,
+            source: "alarm",
+          },
+        },
+      },
+    })
+
+    const store = await dailyBalanceHistoryStorage.getStore()
+
+    expect(store).toEqual({
+      schemaVersion: DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+      snapshotsByAccountId: {
+        accountValid: {
+          "2026-02-11": {
+            quota: 8,
+            today_income: null,
+            today_quota_consumption: null,
+            capturedAt: 123,
+            source: "alarm",
+          },
+        },
+      },
+    })
+  })
+
+  it("prunes all accounts that become empty and returns false for invalid day keys", async () => {
+    vi.useFakeTimers()
+    const fixedNow = new Date(Date.UTC(2026, 1, 7, 12, 0, 0))
+    vi.setSystemTime(fixedNow)
+
+    try {
+      storageData.set(STORAGE_KEYS.DAILY_BALANCE_HISTORY_STORE, {
+        schemaVersion: DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+        snapshotsByAccountId: {
+          pruneMe: {
+            "2026-02-04": {
+              quota: 1,
+              today_income: 0,
+              today_quota_consumption: 0,
+              capturedAt: fixedNow.getTime(),
+              source: "refresh",
+            },
+          },
+          keepMe: {
+            "2026-02-07": {
+              quota: 2,
+              today_income: 1,
+              today_quota_consumption: 1,
+              capturedAt: fixedNow.getTime(),
+              source: "alarm",
+            },
+          },
+        },
+      })
+
+      await expect(
+        dailyBalanceHistoryStorage.pruneAll({
+          retentionDays: 1,
+          timeZone: "UTC",
+        }),
+      ).resolves.toBe(true)
+
+      const prunedStore = await dailyBalanceHistoryStorage.getStore()
+      expect(prunedStore.snapshotsByAccountId.pruneMe).toBeUndefined()
+      expect(prunedStore.snapshotsByAccountId.keepMe?.["2026-02-07"]).toEqual(
+        expect.objectContaining({
+          quota: 2,
+          source: "alarm",
+        }),
+      )
+
+      await expect(
+        dailyBalanceHistoryStorage.upsertSnapshot({
+          accountId: "keepMe",
+          dayKey: "not-a-day-key",
+          snapshot: {
+            quota: 10,
+            today_income: 2,
+            today_quota_consumption: 3,
+            capturedAt: fixedNow.getTime(),
+            source: "refresh",
+          },
+          retentionDays: 1,
+          timeZone: "UTC",
+        }),
+      ).resolves.toBe(false)
+
+      expect(
+        (await dailyBalanceHistoryStorage.getStore()).snapshotsByAccountId
+          .keepMe,
+      ).not.toHaveProperty("not-a-day-key")
     } finally {
       vi.useRealTimers()
     }

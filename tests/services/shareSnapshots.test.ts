@@ -7,7 +7,11 @@ import {
 } from "~/services/sharing/shareSnapshots"
 import {
   createShareSnapshotSeed,
+  formatAsOfTimestamp,
+  formatCurrencyAmount,
+  formatSignedCurrencyAmount,
   redactShareSecrets,
+  relativeLuminanceFromRgb,
 } from "~/services/sharing/shareSnapshots/utils"
 
 describe("shareSnapshots", () => {
@@ -21,6 +25,27 @@ describe("shareSnapshots", () => {
       expect(seed).toBeLessThanOrEqual(UINT32_MAX)
       expect(seed >>> 0).toBe(seed)
     })
+
+    it("falls back to Math.random when crypto.getRandomValues is unavailable", () => {
+      const originalCrypto = globalThis.crypto
+
+      Object.defineProperty(globalThis, "crypto", {
+        value: undefined,
+        configurable: true,
+      })
+
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.5)
+
+      try {
+        expect(createShareSnapshotSeed()).toBe(2147483648)
+      } finally {
+        randomSpy.mockRestore()
+        Object.defineProperty(globalThis, "crypto", {
+          value: originalCrypto,
+          configurable: true,
+        })
+      }
+    })
   })
 
   describe("redactShareSecrets", () => {
@@ -33,6 +58,43 @@ describe("shareSnapshots", () => {
     it("redacts JWT-like tokens", () => {
       const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.aaaaa.bbbbb"
       expect(redactShareSecrets(`token=${jwt}`)).toBe("token=[REDACTED_JWT]")
+    })
+  })
+
+  describe("formatting helpers", () => {
+    it("preserves negative signs for account balances and explicit signs for cashflow values", () => {
+      expect(formatCurrencyAmount(-12.34, "USD")).toBe("-$12.34")
+      expect(formatSignedCurrencyAmount(12.34, "USD")).toBe("+$12.34")
+      expect(formatSignedCurrencyAmount(-12.34, "USD")).toBe("-$12.34")
+    })
+
+    it("falls back to the current time when formatting an invalid as-of timestamp", () => {
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(new Date("2026-02-10T12:34:56.000Z"))
+
+        expect(formatAsOfTimestamp(0, "en-US")).toBe(
+          new Date(Date.now()).toLocaleString("en-US"),
+        )
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it("uses the runtime locale when no explicit locale is provided", () => {
+      const timestamp = Date.parse("2026-02-10T12:34:56.000Z")
+      expect(formatAsOfTimestamp(timestamp)).toBe(
+        new Date(timestamp).toLocaleString(),
+      )
+    })
+
+    it("computes luminance for both dark and bright RGB ranges", () => {
+      const dark = relativeLuminanceFromRgb({ r: 10, g: 10, b: 10 })
+      const bright = relativeLuminanceFromRgb({ r: 255, g: 255, b: 255 })
+
+      expect(dark).toBeGreaterThanOrEqual(0)
+      expect(bright).toBeLessThanOrEqual(1)
+      expect(bright).toBeGreaterThan(dark)
     })
   })
 

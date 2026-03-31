@@ -160,6 +160,64 @@ describe("apiService doneHub channel APIs", () => {
     ).resolves.toBeNull()
   })
 
+  it("searchChannel should normalize string fields and preserve explicit channel info", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: 1,
+      },
+    }
+
+    mockFetchApiData.mockResolvedValueOnce({
+      data: [
+        {
+          id: "42",
+          type: "7",
+          status: "2",
+          weight: "3",
+          priority: "4",
+          balance: "12.5",
+          used_quota: "bad-number",
+          auto_ban: "1",
+          channel_info: {
+            is_multi_key: 1,
+            multi_key_size: "2",
+            multi_key_status_list: ["ready"],
+            multi_key_polling_index: "3",
+            multi_key_mode: "round_robin",
+          },
+        },
+      ],
+      page: 1,
+      size: 100,
+    })
+
+    const result = await searchChannel(request as any, "https://up.example.com")
+
+    expect(result).not.toBeNull()
+    expect(result!.total).toBe(1)
+    expect(result!.type_counts).toEqual({ "7": 1 })
+    expect(result!.items[0]).toMatchObject({
+      id: 42,
+      type: 7,
+      status: 2,
+      weight: 3,
+      priority: 4,
+      balance: 12.5,
+      used_quota: 0,
+      auto_ban: 1,
+      channel_info: {
+        is_multi_key: true,
+        multi_key_size: 2,
+        multi_key_status_list: ["ready"],
+        multi_key_polling_index: 3,
+        multi_key_mode: "round_robin",
+      },
+    })
+  })
+
   it("createChannel should post flat payload with group string", async () => {
     const request = {
       baseUrl: "https://example.com",
@@ -242,6 +300,42 @@ describe("apiService doneHub channel APIs", () => {
     expect(body.model_mapping).toBe("{}")
   })
 
+  it("createChannel should prefer an explicit group over derived groups", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: 1,
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({ success: true, message: "ok" })
+
+    await createChannel(request as any, {
+      mode: "none" as any,
+      channel: {
+        name: "n",
+        type: 1 as any,
+        key: "k",
+        base_url: "https://upstream.example.com",
+        models: "gpt-4",
+        group: "manual",
+        groups: ["default", "vip"],
+        model_mapping: '{"gpt-4":"OpenAI/gpt-4"}',
+        priority: 0,
+        weight: 0,
+        status: 1 as any,
+      },
+    })
+
+    const body = JSON.parse(
+      mockFetchApi.mock.calls[0][1].options?.body as string,
+    )
+    expect(body.group).toBe("manual")
+    expect(body.model_mapping).toBe('{"gpt-4":"OpenAI/gpt-4"}')
+  })
+
   it("createChannel should wrap request failures in a user-facing error", async () => {
     const request = {
       baseUrl: "https://example.com",
@@ -304,6 +398,32 @@ describe("apiService doneHub channel APIs", () => {
       group: "default",
     })
     expect(body.groups).toBeUndefined()
+  })
+
+  it("updateChannel should prefer an explicit group over derived groups", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: 1,
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({ success: true, message: "ok" })
+
+    await updateChannel(request as any, {
+      id: 1,
+      name: "Updated Channel",
+      models: "gpt-4",
+      group: "manual",
+      groups: ["default", "vip"],
+    })
+
+    const body = JSON.parse(
+      mockFetchApi.mock.calls[0][1].options?.body as string,
+    )
+    expect(body.group).toBe("manual")
   })
 
   it("updateChannel should wrap request failures in a user-facing error", async () => {
@@ -623,6 +743,40 @@ describe("apiService doneHub channel APIs", () => {
         '{"gpt-4":"OpenAI/gpt-4"}',
       ),
     ).rejects.toThrow("mapping rejected")
+  })
+
+  it("updateChannelModelMapping should use a fallback error when DoneHub returns an empty failure message", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: 1,
+      },
+    }
+
+    mockFetchApiData.mockResolvedValueOnce({
+      id: 2,
+      type: 8,
+      key: "secret-2",
+      name: "c2",
+      base_url: "https://up.example.com",
+      models: "old-model",
+      group: "default",
+    })
+    mockFetchApi.mockResolvedValueOnce({
+      success: false,
+      message: "",
+    })
+
+    await expect(
+      updateChannelModelMapping(
+        request as any,
+        2,
+        "gpt-4",
+        '{"gpt-4":"OpenAI/gpt-4"}',
+      ),
+    ).rejects.toThrow("Failed to update channel model mapping")
   })
 
   it("fetchSiteUserGroups should paginate /api/group/ and return symbols", async () => {

@@ -397,6 +397,121 @@ describe("newApiProvider", () => {
       })
     })
 
+    it("returns already-checked when assisted success payload still shows a non-token-obtained Turnstile status", async () => {
+      const { fetchApi, fetchApiData } = await import(
+        "~/services/apiService/common/utils"
+      )
+      const { tempWindowTurnstileFetch } = await import(
+        "~/utils/browser/tempWindowFetch"
+      )
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "Turnstile verify failed",
+        data: null,
+      })
+
+      vi.mocked(tempWindowTurnstileFetch).mockResolvedValueOnce({
+        success: true,
+        status: 200,
+        headers: {},
+        data: {
+          success: false,
+          message: "manual confirmation",
+          data: { checkin_date: "2026-01-01" },
+        },
+        turnstile: { status: "timeout", hasTurnstile: true },
+      })
+
+      vi.mocked(fetchApiData).mockResolvedValueOnce({
+        stats: { checked_in_today: true },
+      } as any)
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "already_checked",
+        messageKey: "autoCheckin:providerFallback.alreadyCheckedToday",
+        data: {
+          success: false,
+          message: "manual confirmation",
+          data: { checkin_date: "2026-01-01" },
+        },
+      })
+    })
+
+    it("surfaces the assisted backend failure when Turnstile replay returns a concrete rejection without widget status", async () => {
+      const { fetchApi, fetchApiData } = await import(
+        "~/services/apiService/common/utils"
+      )
+      const { tempWindowTurnstileFetch } = await import(
+        "~/utils/browser/tempWindowFetch"
+      )
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "Turnstile verify failed",
+        data: null,
+      })
+
+      vi.mocked(tempWindowTurnstileFetch).mockResolvedValueOnce({
+        success: true,
+        status: 200,
+        headers: {},
+        data: {
+          success: false,
+          message: "daily quota exhausted",
+          data: null,
+        },
+      } as any)
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        rawMessage: "daily quota exhausted",
+        messageKey: undefined,
+        data: {
+          success: false,
+          message: "daily quota exhausted",
+          data: null,
+        },
+      })
+      expect(fetchApiData).not.toHaveBeenCalled()
+    })
+
+    it("falls back to the generic failure key when assisted replay returns no usable payload", async () => {
+      const { fetchApi, fetchApiData } = await import(
+        "~/services/apiService/common/utils"
+      )
+      const { tempWindowTurnstileFetch } = await import(
+        "~/utils/browser/tempWindowFetch"
+      )
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "Turnstile verify failed",
+        data: null,
+      })
+
+      vi.mocked(tempWindowTurnstileFetch).mockResolvedValueOnce({
+        success: true,
+        status: 200,
+        headers: {},
+        data: undefined,
+      } as any)
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        rawMessage: undefined,
+        messageKey: "autoCheckin:providerFallback.checkinFailed",
+        data: undefined,
+      })
+      expect(fetchApiData).not.toHaveBeenCalled()
+    })
+
     it("falls back to a generic failure when assisted Turnstile fetch fails after token capture without an explicit error", async () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
       const { tempWindowTurnstileFetch } = await import(
@@ -422,6 +537,38 @@ describe("newApiProvider", () => {
         messageKey: "autoCheckin:providerFallback.checkinFailed",
         data: {
           success: false,
+          turnstile: { status: "token_obtained", hasTurnstile: true },
+        },
+      })
+    })
+
+    it("uses the assisted error directly when token capture succeeds but replay still fails", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      const { tempWindowTurnstileFetch } = await import(
+        "~/utils/browser/tempWindowFetch"
+      )
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "Turnstile token invalid",
+        data: null,
+      })
+
+      vi.mocked(tempWindowTurnstileFetch).mockResolvedValueOnce({
+        success: false,
+        error: "server rejected assisted replay",
+        turnstile: { status: "token_obtained", hasTurnstile: true },
+      })
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        rawMessage: "server rejected assisted replay",
+        messageKey: undefined,
+        data: {
+          success: false,
+          error: "server rejected assisted replay",
           turnstile: { status: "token_obtained", hasTurnstile: true },
         },
       })
@@ -477,6 +624,55 @@ describe("newApiProvider", () => {
         2,
         expect.objectContaining({ useIncognito: true }),
       )
+    })
+
+    it("falls back to manual verification when the incognito retry still cannot complete the assisted request", async () => {
+      const { fetchApi, fetchApiData } = await import(
+        "~/services/apiService/common/utils"
+      )
+      const { tempWindowTurnstileFetch } = await import(
+        "~/utils/browser/tempWindowFetch"
+      )
+      const { isAllowedIncognitoAccess } = await import(
+        "~/utils/browser/browserApi"
+      )
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "Turnstile token 为空",
+        data: null,
+      })
+
+      vi.mocked(tempWindowTurnstileFetch)
+        .mockResolvedValueOnce({
+          success: false,
+          error: "Turnstile token not available",
+          turnstile: { status: "not_present", hasTurnstile: false },
+        })
+        .mockResolvedValueOnce({
+          success: false,
+          error: "incognito replay failed",
+          turnstile: { status: "error", hasTurnstile: true },
+        })
+
+      vi.mocked(fetchApiData).mockResolvedValueOnce({
+        stats: { checked_in_today: false },
+      } as any)
+      vi.mocked(isAllowedIncognitoAccess).mockResolvedValueOnce(true)
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        messageKey: "autoCheckin:providerFallback.turnstileManualRequired",
+        messageParams: { checkInUrl: "https://test.com/console/personal" },
+        rawMessage: "Turnstile token not available",
+        data: {
+          success: false,
+          error: "Turnstile token not available",
+          turnstile: { status: "not_present", hasTurnstile: false },
+        },
+      })
     })
 
     it("prompts to enable incognito access when incognito retry is needed but extension is not allowed in incognito", async () => {
@@ -538,6 +734,33 @@ describe("newApiProvider", () => {
       expect(tempWindowTurnstileFetch).not.toHaveBeenCalled()
     })
 
+    it("does not treat every Turnstile mention as a Turnstile-required failure", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+      const { tempWindowTurnstileFetch } = await import(
+        "~/utils/browser/tempWindowFetch"
+      )
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "Turnstile challenge rendered on page",
+        data: { reason: "manual step still needed" },
+      })
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        rawMessage: "Turnstile challenge rendered on page",
+        messageKey: undefined,
+        data: {
+          success: false,
+          message: "Turnstile challenge rendered on page",
+          data: { reason: "manual step still needed" },
+        },
+      })
+      expect(tempWindowTurnstileFetch).not.toHaveBeenCalled()
+    })
+
     it("maps endpoint-style errors from the direct request to endpoint-not-supported", async () => {
       const { fetchApi } = await import("~/services/apiService/common/utils")
 
@@ -574,6 +797,29 @@ describe("newApiProvider", () => {
         messageKey: "autoCheckin:providerFallback.checkinFailed",
         rawMessage: "Turnstile token invalid",
         data: undefined,
+      })
+    })
+
+    it("uses the generic failure key when the direct request fails without any upstream message", async () => {
+      const { fetchApi } = await import("~/services/apiService/common/utils")
+
+      vi.mocked(fetchApi).mockResolvedValueOnce({
+        success: false,
+        message: "",
+        data: { details: "unknown failure" },
+      })
+
+      const result = await newApiProvider.checkIn(mockAccount)
+
+      expect(result).toEqual({
+        status: "failed",
+        rawMessage: undefined,
+        messageKey: "autoCheckin:providerFallback.checkinFailed",
+        data: {
+          success: false,
+          message: "",
+          data: { details: "unknown failure" },
+        },
       })
     })
   })

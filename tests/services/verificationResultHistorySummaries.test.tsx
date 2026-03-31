@@ -284,4 +284,70 @@ describe("useVerificationResultHistorySummaries", () => {
       expect(getLatestSummariesMock).toHaveBeenCalledTimes(2)
     })
   })
+
+  it("deduplicates repeated targets and sorts them before loading summaries", async () => {
+    const alpha = requireHistoryTarget(
+      createProfileVerificationHistoryTarget("profile-a"),
+    )
+    const beta = requireHistoryTarget(
+      createProfileVerificationHistoryTarget("profile-b"),
+    )
+
+    getLatestSummariesMock.mockResolvedValue({})
+
+    renderHook(() => useVerificationResultHistorySummaries([beta, alpha, beta]))
+
+    await waitFor(() => {
+      expect(getLatestSummariesMock).toHaveBeenCalledTimes(1)
+    })
+
+    const callTargets = getLatestSummariesMock.mock.calls[0]?.[0] as
+      | ApiVerificationHistoryTarget[]
+      | undefined
+    expect(callTargets?.map(serializeVerificationHistoryTarget)).toEqual([
+      serializeVerificationHistoryTarget(alpha),
+      serializeVerificationHistoryTarget(beta),
+    ])
+  })
+
+  it("ignores stale successful reloads after the target set is cleared", async () => {
+    const target = requireHistoryTarget(
+      createProfileVerificationHistoryTarget("profile-stale"),
+    )
+    const targetKey = serializeVerificationHistoryTarget(target)
+    const firstRequest =
+      createDeferred<Record<string, ApiVerificationHistorySummary>>()
+
+    getLatestSummariesMock.mockReturnValueOnce(firstRequest.promise)
+
+    const { result, rerender } = renderHook(
+      ({ targets }: { targets: ApiVerificationHistoryTarget[] }) =>
+        useVerificationResultHistorySummaries(targets),
+      {
+        initialProps: {
+          targets: [target],
+        },
+      },
+    )
+
+    await waitFor(() => {
+      expect(getLatestSummariesMock).toHaveBeenCalledTimes(1)
+    })
+
+    rerender({ targets: [] })
+
+    await waitFor(() => {
+      expect(result.current.summariesByKey).toEqual({})
+    })
+
+    await act(async () => {
+      firstRequest.resolve({
+        [targetKey]: buildSummary(target, 3),
+      })
+      await Promise.resolve()
+    })
+
+    expect(result.current.summariesByKey).toEqual({})
+    expect(loggerErrorMock).not.toHaveBeenCalled()
+  })
 })

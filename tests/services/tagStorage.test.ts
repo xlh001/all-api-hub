@@ -5,6 +5,7 @@ import { API_CREDENTIAL_PROFILES_STORAGE_KEYS } from "~/services/core/storageKey
 import { tagStorage } from "~/services/tags/tagStorage"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import type { AccountStorageConfig } from "~/types"
+import * as browserApi from "~/utils/browser/browserApi"
 
 const storageData = new Map<string, any>()
 
@@ -85,6 +86,29 @@ describe("tagStorage", () => {
         },
       },
     })
+  })
+
+  it("createTag restores a legacy falsy store version and still succeeds when runtime notify is unavailable", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(456)
+    vi.spyOn(browserApi, "sendRuntimeMessage").mockReturnValue(undefined as any)
+
+    storageData.set("global_tag_store", {
+      version: 0,
+      tagsById: {},
+    })
+
+    const created = await tagStorage.createTag("Focus")
+
+    expect(created).toEqual({
+      id: expect.any(String),
+      name: "Focus",
+      createdAt: 456,
+      updatedAt: 456,
+    })
+
+    const savedStore = storageData.get("global_tag_store")
+    expect(savedStore.version).toBeGreaterThan(0)
+    expect(savedStore.tagsById[created.id]).toEqual(created)
   })
 
   it("ensureLegacyMigration converts account.tags -> account.tagIds and creates global tags", async () => {
@@ -273,6 +297,133 @@ describe("tagStorage", () => {
     expect(savedAccounts.bookmarks[0].tagIds).toEqual([])
     expect(savedAccounts.bookmarks[1].tagIds).toEqual([])
     const savedStore = storageData.get("global_tag_store") as any
+    expect(savedStore.tagsById.t1).toBeUndefined()
+  })
+
+  it("deleteTag keeps untouched account and bookmark tag lists while normalizing a legacy store version", async () => {
+    storageData.set("global_tag_store", {
+      version: 0,
+      tagsById: {
+        t1: { id: "t1", name: "Work", createdAt: 1, updatedAt: 1 },
+      },
+    })
+    storageData.set("site_accounts", {
+      accounts: [
+        {
+          id: "a-hit",
+          site_name: "Site",
+          site_url: "https://example.com",
+          health: { status: "healthy" },
+          site_type: "test",
+          exchange_rate: 7,
+          account_info: { id: 1, access_token: "token" },
+          last_sync_time: 0,
+          updated_at: 0,
+          created_at: 0,
+          authType: "access_token",
+          checkIn: { enableDetection: false },
+          tagIds: ["t1", "keep"],
+        },
+        {
+          id: "a-empty",
+          site_name: "Site",
+          site_url: "https://example.com/empty",
+          health: { status: "healthy" },
+          site_type: "test",
+          exchange_rate: 7,
+          account_info: { id: 2, access_token: "token" },
+          last_sync_time: 0,
+          updated_at: 0,
+          created_at: 0,
+          authType: "access_token",
+          checkIn: { enableDetection: false },
+          tagIds: [],
+        },
+        {
+          id: "a-miss",
+          site_name: "Site",
+          site_url: "https://example.com/miss",
+          health: { status: "healthy" },
+          site_type: "test",
+          exchange_rate: 7,
+          account_info: { id: 3, access_token: "token" },
+          last_sync_time: 0,
+          updated_at: 0,
+          created_at: 0,
+          authType: "access_token",
+          checkIn: { enableDetection: false },
+          tagIds: ["keep"],
+        },
+        {
+          id: "a-none",
+          site_name: "Site",
+          site_url: "https://example.com/none",
+          health: { status: "healthy" },
+          site_type: "test",
+          exchange_rate: 7,
+          account_info: { id: 4, access_token: "token" },
+          last_sync_time: 0,
+          updated_at: 0,
+          created_at: 0,
+          authType: "access_token",
+          checkIn: { enableDetection: false },
+        },
+      ],
+      bookmarks: [
+        {
+          id: "b-hit",
+          name: "Docs",
+          url: "https://example.com/docs",
+          tagIds: ["t1"],
+          notes: "",
+          created_at: 0,
+          updated_at: 0,
+        },
+        {
+          id: "b-miss",
+          name: "Home",
+          url: "https://example.com",
+          tagIds: ["keep"],
+          notes: "",
+          created_at: 0,
+          updated_at: 0,
+        },
+        {
+          id: "b-empty",
+          name: "Blank",
+          url: "https://example.com/blank",
+          tagIds: [],
+          notes: "",
+          created_at: 0,
+          updated_at: 0,
+        },
+      ],
+      pinnedAccountIds: [],
+      orderedAccountIds: [],
+      last_updated: 0,
+    } satisfies AccountStorageConfig)
+
+    const result = await tagStorage.deleteTag("t1")
+
+    expect(result).toEqual({
+      updatedAccounts: 1,
+      updatedBookmarks: 1,
+      updatedApiCredentialProfiles: 0,
+    })
+
+    const savedAccounts = storageData.get(
+      "site_accounts",
+    ) as AccountStorageConfig
+    expect(savedAccounts.accounts[0].tagIds).toEqual(["keep"])
+    expect(savedAccounts.accounts[1].tagIds).toEqual([])
+    expect(savedAccounts.accounts[2].tagIds).toEqual(["keep"])
+    expect(savedAccounts.accounts[3].tagIds).toBeUndefined()
+    expect(savedAccounts.bookmarks[0].tagIds).toEqual([])
+    expect(savedAccounts.bookmarks[1].tagIds).toEqual(["keep"])
+    expect(savedAccounts.bookmarks[2].tagIds).toEqual([])
+
+    const savedStore = storageData.get("global_tag_store") as any
+    expect(savedStore.version).toBeGreaterThan(0)
     expect(savedStore.tagsById.t1).toBeUndefined()
   })
 

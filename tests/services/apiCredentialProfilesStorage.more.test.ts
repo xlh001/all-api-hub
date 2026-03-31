@@ -35,6 +35,8 @@ describe("apiCredentialProfilesStorage additional flows", () => {
   let removeListenerMock: ReturnType<typeof vi.fn>
 
   beforeEach(async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-03-30T00:00:00.000Z"))
     storageData.clear()
     await apiCredentialProfilesStorage.clearAllData()
 
@@ -51,7 +53,46 @@ describe("apiCredentialProfilesStorage additional flows", () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     ;(globalThis as any).browser = originalBrowser
+  })
+
+  it("falls back to JSON cloning when structuredClone is unavailable during writes", async () => {
+    const originalStructuredClone = globalThis.structuredClone
+    ;(globalThis as any).structuredClone = undefined
+
+    try {
+      await apiCredentialProfilesStorage.importConfig({
+        profiles: [
+          {
+            id: "fallback-clone",
+            name: "Fallback Clone",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://clone.example.com/v1/models",
+            apiKey: "sk-clone",
+            tagIds: ["tag-a"],
+            notes: "persisted",
+          },
+        ],
+      })
+
+      const created = await apiCredentialProfilesStorage.createProfile({
+        name: "New Profile",
+        apiType: API_TYPES.OPENAI_COMPATIBLE,
+        baseUrl: "https://new.example.com/v1/models",
+        apiKey: "sk-new",
+      })
+
+      expect(created.id).toBeTruthy()
+      await expect(
+        apiCredentialProfilesStorage.listProfiles(),
+      ).resolves.toEqual([
+        expect.objectContaining({ id: "fallback-clone" }),
+        expect.objectContaining({ name: "New Profile" }),
+      ])
+    } finally {
+      ;(globalThis as any).structuredClone = originalStructuredClone
+    }
   })
 
   it("coerces imported configs by dropping invalid rows and normalizing names", () => {
@@ -95,6 +136,46 @@ describe("apiCredentialProfilesStorage additional flows", () => {
       }),
     ])
     expect(coerced.lastUpdated).toBe(12345)
+  })
+
+  it("coerces malformed rows with generated ids, fallback timestamps, and trimmed notes", () => {
+    const coerced = coerceApiCredentialProfilesConfig(
+      {
+        version: "bad",
+        lastUpdated: 0,
+        profiles: [
+          null,
+          {
+            id: "   ",
+            apiType: API_TYPES.ANTHROPIC,
+            baseUrl: "https://anthropic.example.com/v1/messages",
+            apiKey: " sk-anthropic ",
+            name: 42,
+            notes: null,
+            createdAt: "bad",
+            updatedAt: "bad",
+            tagIds: [" team-a ", 7, "team-a", "team-b"],
+          },
+        ],
+      },
+      { now: 54321 },
+    )
+
+    expect(coerced.version).toBe(2)
+    expect(coerced.lastUpdated).toBe(54321)
+    expect(coerced.profiles).toEqual([
+      expect.objectContaining({
+        id: expect.any(String),
+        apiType: API_TYPES.ANTHROPIC,
+        baseUrl: "https://anthropic.example.com",
+        apiKey: "sk-anthropic",
+        name: "https://anthropic.example.com",
+        notes: "",
+        createdAt: 54321,
+        updatedAt: 54321,
+        tagIds: ["team-a", "team-b"],
+      }),
+    ])
   })
 
   it("merges incoming configs using identity de-dupe and refreshes lastUpdated", () => {
@@ -202,6 +283,145 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     expect(merged.profiles[0]?.tagIds).toEqual(["t2", "t1"])
   })
 
+  it("returns the existing profile instead of creating a duplicate identity", async () => {
+    const existing = await apiCredentialProfilesStorage.createProfile({
+      name: "Original",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://example.com/v1/models",
+      apiKey: " sk-duplicate ",
+      tagIds: ["t1"],
+      notes: "primary",
+    })
+
+    const duplicate = await apiCredentialProfilesStorage.createProfile({
+      name: "Duplicate",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://example.com",
+      apiKey: "sk-duplicate",
+      tagIds: ["t2"],
+      notes: "secondary",
+    })
+
+    expect(duplicate).toEqual(existing)
+    await expect(apiCredentialProfilesStorage.listProfiles()).resolves.toEqual([
+      existing,
+    ])
+  })
+
+  it("returns the newer identity winner when an update collides with an existing profile", async () => {
+    await apiCredentialProfilesStorage.importConfig({
+      profiles: [
+        {
+          id: "older",
+          name: "Older Profile",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://older.example.com",
+          apiKey: "sk-old",
+          tagIds: ["legacy"],
+          notes: "old notes",
+          createdAt: 1000,
+          updatedAt: 1000,
+        },
+        {
+          id: "winner",
+          name: "Winner Profile",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://shared.example.com",
+          apiKey: "sk-shared",
+          tagIds: ["remote"],
+          notes: "keep me",
+          createdAt: 3000,
+          updatedAt: 5000,
+        },
+      ],
+    })
+
+    vi.setSystemTime(new Date("1970-01-01T00:00:02.000Z"))
+
+    const updated = await apiCredentialProfilesStorage.updateProfile("older", {
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://shared.example.com/v1/models",
+      apiKey: "sk-shared",
+      tagIds: ["local", "remote"],
+      notes: "updated locally",
+    })
+
+    expect(updated).toEqual(
+      expect.objectContaining({
+        id: "winner",
+        name: "Winner Profile",
+        tagIds: ["remote", "local"],
+        createdAt: 1000,
+        updatedAt: 5000,
+      }),
+    )
+
+    await expect(apiCredentialProfilesStorage.listProfiles()).resolves.toEqual([
+      expect.objectContaining({
+        id: "winner",
+        tagIds: ["remote", "local"],
+      }),
+    ])
+  })
+
+  it("sorts profiles by name when updatedAt timestamps are equal", async () => {
+    await apiCredentialProfilesStorage.importConfig({
+      profiles: [
+        {
+          id: "beta",
+          name: "Beta",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://beta.example.com",
+          apiKey: "sk-beta",
+          createdAt: 1,
+          updatedAt: 10,
+        },
+        {
+          id: "alpha",
+          name: "Alpha",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://alpha.example.com",
+          apiKey: "sk-alpha",
+          createdAt: 2,
+          updatedAt: 10,
+        },
+      ],
+    })
+
+    const profiles = await apiCredentialProfilesStorage.listProfiles()
+
+    expect(profiles.map((profile) => profile.id)).toEqual(["alpha", "beta"])
+  })
+
+  it("sorts profiles by newest updatedAt before falling back to name order", async () => {
+    await apiCredentialProfilesStorage.importConfig({
+      profiles: [
+        {
+          id: "older",
+          name: "Zulu",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://older.example.com",
+          apiKey: "sk-older",
+          createdAt: 1,
+          updatedAt: 10,
+        },
+        {
+          id: "newer",
+          name: "Alpha",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://newer.example.com",
+          apiKey: "sk-newer",
+          createdAt: 2,
+          updatedAt: 20,
+        },
+      ],
+    })
+
+    const profiles = await apiCredentialProfilesStorage.listProfiles()
+
+    expect(profiles.map((profile) => profile.id)).toEqual(["newer", "older"])
+  })
+
   it("validates update operations and removes tag ids from matching profiles only", async () => {
     const first = await apiCredentialProfilesStorage.createProfile({
       name: "Profile A",
@@ -256,6 +476,28 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     await expect(
       apiCredentialProfilesStorage.deleteProfile("missing"),
     ).resolves.toBe(false)
+  })
+
+  it("returns null when looking up a missing profile id", async () => {
+    await expect(
+      apiCredentialProfilesStorage.getProfileById("missing"),
+    ).resolves.toBeNull()
+  })
+
+  it("falls back to an empty default config when the storage read fails", async () => {
+    const getSpy = vi
+      .spyOn((apiCredentialProfilesStorage as any).storage, "get")
+      .mockRejectedValueOnce(new Error("storage unavailable"))
+
+    const config = await apiCredentialProfilesStorage.getConfig()
+
+    expect(config).toEqual({
+      version: 2,
+      profiles: [],
+      lastUpdated: Date.now(),
+    })
+
+    getSpy.mockRestore()
   })
 
   it("subscribes only to local storage changes affecting the profile key", () => {
