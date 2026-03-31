@@ -200,6 +200,85 @@ describe("ApiCheckModalHost", () => {
     })
   })
 
+  it("switches api types, clears stale probe results, and refetches provider models", async () => {
+    const user = userEvent.setup()
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
+      if (message.action === RuntimeActionIds.ApiCheckFetchModels) {
+        return {
+          success: true,
+          modelIds:
+            message.apiType === "anthropic"
+              ? ["claude-3-5-sonnet"]
+              : ["gpt-4o-mini"],
+        }
+      }
+
+      if (message.action === RuntimeActionIds.ApiCheckRunProbe) {
+        return {
+          success: true,
+          result: {
+            id: message.probeId,
+            status: "pass",
+            latencyMs: 5,
+            summary: "OpenAI result",
+          },
+        }
+      }
+
+      return { success: false }
+    })
+
+    await openModal()
+
+    const baseUrlInput = await screen.findByPlaceholderText(
+      "https://example.com/api",
+    )
+    const apiKeyInput = await screen.findByPlaceholderText("sk-...")
+
+    await user.click(baseUrlInput)
+    await user.paste("https://proxy.example.com/api")
+    await user.click(apiKeyInput)
+    await user.paste("sk-secret-xyz")
+
+    await waitFor(() => {
+      expect(screen.getByTestId("api-check-model-id")).toHaveTextContent(
+        "gpt-4o-mini",
+      )
+    })
+
+    const probeCard = await screen.findByTestId(
+      "api-check-probe-text-generation",
+    )
+    await user.click(
+      within(probeCard).getByRole("button", {
+        name: "webAiApiCheck:modal.actions.runOne",
+      }),
+    )
+
+    expect(await within(probeCard).findByText("OpenAI result")).toBeVisible()
+
+    await user.selectOptions(
+      screen.getByDisplayValue("OpenAI-compatible"),
+      "anthropic",
+    )
+
+    await waitFor(() => {
+      expect(sendRuntimeMessage).toHaveBeenCalledWith({
+        action: RuntimeActionIds.ApiCheckFetchModels,
+        apiType: "anthropic",
+        baseUrl: "https://proxy.example.com/api",
+        apiKey: "sk-secret-xyz",
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId("api-check-model-id")).toHaveTextContent(
+        "claude-3-5-sonnet",
+      )
+    })
+    expect(screen.queryByText("OpenAI result")).not.toBeInTheDocument()
+  })
+
   it("test displays sanitized errors returned from background", async () => {
     const user = userEvent.setup()
     vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
@@ -613,6 +692,27 @@ describe("ApiCheckModalHost", () => {
     await user.click(
       screen.getByRole("button", {
         name: "webAiApiCheck:modal.actions.fetchModels",
+      }),
+    )
+
+    expect(
+      await screen.findByText("webAiApiCheck:modal.errors.missingBaseUrlOrKey"),
+    ).toBeInTheDocument()
+    expect(sendRuntimeMessage).not.toHaveBeenCalled()
+  })
+
+  it("shows validation error instead of running a probe without credentials", async () => {
+    const user = userEvent.setup()
+
+    await openModal()
+
+    const probeCard = await screen.findByTestId(
+      "api-check-probe-text-generation",
+    )
+
+    await user.click(
+      within(probeCard).getByRole("button", {
+        name: "webAiApiCheck:modal.actions.runOne",
       }),
     )
 

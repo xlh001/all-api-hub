@@ -356,6 +356,114 @@ describe("ChannelDialog advisory verification action", () => {
     ).toBeNull()
   })
 
+  it("shows the verification CTA when a verified session is already active", async () => {
+    isNewApiVerifiedSessionActiveMock.mockReturnValue(true)
+
+    render(
+      <ChannelDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        advisoryWarning={{
+          kind: "verificationRequired",
+          title: "channelDialog:warnings.verificationRequired.title",
+          description:
+            "channelDialog:warnings.verificationRequired.description",
+          assessment: {
+            url: {
+              matched: true,
+              candidateCount: 1,
+              channel: {
+                id: 7,
+                name: "Existing channel",
+              },
+            },
+            key: {
+              comparable: false,
+              matched: false,
+              reason: "comparison-unavailable",
+            },
+            models: {
+              comparable: true,
+              matched: true,
+              reason: "exact",
+              channel: {
+                id: 7,
+                name: "Existing channel",
+              },
+              similarityScore: 1,
+            },
+          },
+        }}
+      />,
+    )
+
+    expect(
+      await screen.findByRole("button", {
+        name: "channelDialog:warnings.verificationRequired.actions.verifyNow",
+      }),
+    ).toBeInTheDocument()
+    expect(hasNewApiAuthenticatedBrowserSessionMock).not.toHaveBeenCalled()
+  })
+
+  it("hides the verification CTA when browser-session recovery lookup fails", async () => {
+    mockUserPreferences.newApiUsername = ""
+    mockUserPreferences.newApiPassword = ""
+    hasNewApiAuthenticatedBrowserSessionMock.mockRejectedValue(
+      new Error("lookup failed"),
+    )
+
+    render(
+      <ChannelDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        advisoryWarning={{
+          kind: "verificationRequired",
+          title: "channelDialog:warnings.verificationRequired.title",
+          description:
+            "channelDialog:warnings.verificationRequired.description",
+          assessment: {
+            url: {
+              matched: true,
+              candidateCount: 1,
+              channel: {
+                id: 7,
+                name: "Existing channel",
+              },
+            },
+            key: {
+              comparable: false,
+              matched: false,
+              reason: "comparison-unavailable",
+            },
+            models: {
+              comparable: true,
+              matched: true,
+              reason: "exact",
+              channel: {
+                id: 7,
+                name: "Existing channel",
+              },
+              similarityScore: 1,
+            },
+          },
+        }}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(hasNewApiAuthenticatedBrowserSessionMock).toHaveBeenCalledWith({
+        baseUrl: "https://managed.example.com",
+        userId: "1",
+      })
+    })
+
+    expect(
+      screen.queryByRole("button", {
+        name: "channelDialog:warnings.verificationRequired.actions.verifyNow",
+      }),
+    ).toBeNull()
+  })
+
   it("shows a non-blocking warning when automatic model prefill failed", async () => {
     render(
       <ChannelDialog

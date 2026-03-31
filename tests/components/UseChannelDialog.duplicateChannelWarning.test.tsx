@@ -15,6 +15,12 @@ import {
 import * as managedSiteService from "~/services/managedSites/managedSiteService"
 import type { ManagedSiteService } from "~/services/managedSites/managedSiteService"
 import {
+  MANAGED_SITE_TOKEN_CHANNEL_STATUS_UNKNOWN_REASONS,
+  MANAGED_SITE_TOKEN_CHANNEL_STATUSES,
+  type ManagedSiteTokenChannelAssessment,
+  type ManagedSiteTokenChannelStatus,
+} from "~/services/managedSites/tokenChannelStatus"
+import {
   AuthTypeEnum,
   SiteHealthStatus,
   type ApiToken,
@@ -138,6 +144,92 @@ const buildManagedSiteChannel = (
     ...overrides,
   }) as ManagedSiteChannel
 
+const buildPreparedFormData = (
+  overrides: Partial<
+    ChannelFormData & { modelPrefillFetchFailed?: boolean }
+  > = {},
+) =>
+  ({
+    name: "Auto channel",
+    type: ChannelType.OpenAI,
+    key: "sk-test",
+    base_url: "https://upstream.example.com",
+    models: ["gpt-4"],
+    groups: ["default"],
+    priority: 0,
+    weight: 0,
+    status: 1,
+    ...overrides,
+  }) satisfies ChannelFormData & { modelPrefillFetchFailed?: boolean }
+
+const buildManagedSiteAssessment = (
+  overrides: Partial<ManagedSiteTokenChannelAssessment> = {},
+): ManagedSiteTokenChannelAssessment => {
+  const matchedChannel = {
+    id: 11,
+    name: "Existing channel",
+  }
+
+  return {
+    searchBaseUrl: "https://upstream.example.com",
+    searchCompleted: true,
+    url: {
+      matched: true,
+      candidateCount: 1,
+      channel: matchedChannel,
+      ...(overrides.url ?? {}),
+    },
+    key: {
+      comparable: true,
+      matched: false,
+      reason: "no-match",
+      ...(overrides.key ?? {}),
+    },
+    models: {
+      comparable: true,
+      matched: true,
+      reason: "exact",
+      channel: matchedChannel,
+      similarityScore: 1,
+      ...(overrides.models ?? {}),
+    },
+    ...overrides,
+  }
+}
+
+const buildManagedSiteServiceMock = (
+  overrides: Partial<ManagedSiteService> = {},
+): Partial<ManagedSiteService> => ({
+  siteType: "new-api",
+  messagesKey: "newapi",
+  getConfig: vi.fn(async () => ({
+    baseUrl: "https://managed.example.com",
+    token: "admin-token",
+    userId: "1",
+  })),
+  prepareChannelFormData: vi.fn(async () => buildPreparedFormData()),
+  searchChannel: vi.fn(async () => ({
+    items: [],
+    total: 0,
+    type_counts: {},
+  })),
+  findMatchingChannel: vi.fn(async () => null),
+  ...overrides,
+})
+
+const renderChannelDialogHook = async () => {
+  const rendered = renderHook(() => ({
+    dialog: useChannelDialog(),
+    context: useChannelDialogContext(),
+  }))
+
+  await waitFor(() => {
+    expect(rendered.result.current).not.toBeNull()
+  })
+
+  return rendered
+}
+
 vi.mock("react-hot-toast", () => ({
   default: {
     loading: mockToastLoading,
@@ -158,7 +250,7 @@ vi.mock("~/services/apiService", async (importOriginal) => {
   }
 })
 
-describe("useChannelDialog duplicate channel warning", () => {
+describe("useChannelDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
@@ -639,5 +731,474 @@ describe("useChannelDialog duplicate channel warning", () => {
     expect(resolveSub2ApiQuickCreateResolutionSpy).toHaveBeenCalledTimes(1)
     expect(ensureAccountApiTokenSpy).not.toHaveBeenCalled()
     expect(mockFetchAccountTokens).toHaveBeenCalledTimes(2)
+  })
+
+  it("does not open the Sub2API quick-create dialog when tokens already exist", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([buildApiToken()])
+
+    const { result } = await renderChannelDialogHook()
+
+    let didOpen = false
+    await act(async () => {
+      didOpen = await result.current.dialog.openSub2ApiTokenCreationDialog(
+        buildDisplaySiteData({ siteType: "sub2api" }),
+      )
+    })
+
+    expect(didOpen).toBe(false)
+    expect(resolveSub2ApiQuickCreateResolutionSpy).not.toHaveBeenCalled()
+    expect(result.current.context.sub2apiTokenDialog.isOpen).toBe(false)
+  })
+
+  it("surfaces blocked Sub2API quick-create resolutions without opening the dialog", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([])
+    resolveSub2ApiQuickCreateResolutionSpy.mockResolvedValueOnce({
+      kind: "blocked",
+      message: "No valid upstream groups are available",
+    })
+
+    const { result } = await renderChannelDialogHook()
+
+    let didOpen = true
+    await act(async () => {
+      didOpen = await result.current.dialog.openSub2ApiTokenCreationDialog(
+        buildDisplaySiteData({ siteType: "sub2api" }),
+      )
+    })
+
+    expect(didOpen).toBe(false)
+    expect(mockToastError).toHaveBeenCalledWith(
+      "No valid upstream groups are available",
+    )
+    expect(result.current.context.sub2apiTokenDialog.isOpen).toBe(false)
+  })
+
+  it("opens the Sub2API quick-create dialog with the default notice and resumes the caller callback", async () => {
+    const onSuccess = vi.fn(async () => {})
+
+    mockFetchAccountTokens.mockResolvedValueOnce([])
+    resolveSub2ApiQuickCreateResolutionSpy.mockResolvedValueOnce({
+      kind: "selection_required",
+      allowedGroups: ["default", "vip"],
+    })
+
+    const { result } = await renderChannelDialogHook()
+
+    let didOpen = false
+    await act(async () => {
+      didOpen = await result.current.dialog.openSub2ApiTokenCreationDialog(
+        buildDisplaySiteData({ siteType: "sub2api" }),
+        { onSuccess },
+      )
+    })
+
+    expect(didOpen).toBe(true)
+    expect(result.current.context.sub2apiTokenDialog).toMatchObject({
+      isOpen: true,
+      allowedGroups: ["default", "vip"],
+      notice: "messages:sub2api.createRequiresGroupSelection",
+    })
+
+    await act(async () => {
+      await result.current.context.handleSub2ApiTokenSuccess()
+    })
+
+    expect(onSuccess).toHaveBeenCalledTimes(1)
+  })
+
+  it("opens the Sub2API quick-create dialog with a resolved single group and preserves a custom notice", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([])
+    resolveSub2ApiQuickCreateResolutionSpy.mockResolvedValueOnce({
+      kind: "ready",
+      group: "ops",
+    })
+
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openSub2ApiTokenCreationDialog(
+        buildDisplaySiteData({ siteType: "sub2api" }),
+        { notice: "Use the audited group" },
+      )
+    })
+
+    expect(result.current.context.sub2apiTokenDialog).toMatchObject({
+      isOpen: true,
+      allowedGroups: ["ops"],
+      notice: "Use the audited group",
+    })
+  })
+
+  it("shows an operation failure toast when the account details cannot be loaded", async () => {
+    getAccountByIdSpy.mockResolvedValueOnce(null)
+
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openWithAccount(
+        buildDisplaySiteData(),
+        buildApiToken(),
+      )
+    })
+
+    expect(getManagedSiteServiceSpy).not.toHaveBeenCalled()
+    expect(mockToastError).toHaveBeenCalledWith(expect.any(String), {
+      id: "toast-id",
+    })
+    expect(result.current.context.state.isOpen).toBe(false)
+  })
+
+  it("shows the managed-site configuration error and aborts opening from an account", async () => {
+    const mockService = buildManagedSiteServiceMock({
+      getConfig: vi.fn(async () => null),
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openWithAccount(
+        buildDisplaySiteData(),
+        buildApiToken(),
+      )
+    })
+
+    expect(mockToastError).toHaveBeenCalledWith(expect.any(String), {
+      id: "toast-id",
+    })
+    expect(result.current.context.state.isOpen).toBe(false)
+  })
+
+  it("uses an explicit managed-site duplicate status without re-running channel search", async () => {
+    const searchChannelMock = vi.fn(async () => ({
+      items: [buildManagedSiteChannel()],
+      total: 1,
+      type_counts: {},
+    }))
+    const mockService = buildManagedSiteServiceMock({
+      searchChannel: searchChannelMock,
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+
+    const managedSiteStatus: ManagedSiteTokenChannelStatus = {
+      status: MANAGED_SITE_TOKEN_CHANNEL_STATUSES.ADDED,
+      matchedChannel: {
+        id: 11,
+        name: "Existing channel",
+      },
+      assessment: buildManagedSiteAssessment(),
+    }
+
+    const { result } = await renderChannelDialogHook()
+
+    const openPromise = result.current.dialog.openWithAccount(
+      buildDisplaySiteData(),
+      buildApiToken(),
+      undefined,
+      { managedSiteStatus },
+    )
+
+    await waitFor(() => {
+      expect(result.current.context.duplicateChannelWarning).toEqual({
+        isOpen: true,
+        existingChannelName: "Existing channel",
+      })
+    })
+
+    await act(async () => {
+      result.current.context.resolveDuplicateChannelWarning(false)
+      await openPromise
+    })
+
+    expect(searchChannelMock).not.toHaveBeenCalled()
+    expect(result.current.context.state.isOpen).toBe(false)
+  })
+
+  it("opens with a review advisory when the managed-site status requires confirmation", async () => {
+    const searchChannelMock = vi.fn()
+    const mockService = buildManagedSiteServiceMock({
+      searchChannel: searchChannelMock,
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+
+    const managedSiteStatus: ManagedSiteTokenChannelStatus = {
+      status: MANAGED_SITE_TOKEN_CHANNEL_STATUSES.UNKNOWN,
+      reason:
+        MANAGED_SITE_TOKEN_CHANNEL_STATUS_UNKNOWN_REASONS.MATCH_REQUIRES_CONFIRMATION,
+      assessment: buildManagedSiteAssessment(),
+    }
+
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openWithAccount(
+        buildDisplaySiteData(),
+        buildApiToken(),
+        undefined,
+        { managedSiteStatus },
+      )
+    })
+
+    expect(searchChannelMock).not.toHaveBeenCalled()
+    expect(result.current.context.duplicateChannelWarning.isOpen).toBe(false)
+    expect(result.current.context.state).toMatchObject({
+      isOpen: true,
+      advisoryWarning: {
+        kind: "reviewSuggested",
+        title: "channelDialog:warnings.reviewSuggested.title",
+        description: "channelDialog:warnings.reviewSuggested.description",
+      },
+    })
+  })
+
+  it("opens with a verification advisory when exact comparison is explicitly unavailable", async () => {
+    const searchChannelMock = vi.fn()
+    const mockService = buildManagedSiteServiceMock({
+      searchChannel: searchChannelMock,
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+
+    const managedSiteStatus: ManagedSiteTokenChannelStatus = {
+      status: MANAGED_SITE_TOKEN_CHANNEL_STATUSES.UNKNOWN,
+      reason:
+        MANAGED_SITE_TOKEN_CHANNEL_STATUS_UNKNOWN_REASONS.EXACT_VERIFICATION_UNAVAILABLE,
+      assessment: buildManagedSiteAssessment({
+        key: {
+          comparable: false,
+          matched: false,
+          reason: "comparison-unavailable",
+        },
+      }),
+    }
+
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openWithAccount(
+        buildDisplaySiteData(),
+        buildApiToken(),
+        undefined,
+        { managedSiteStatus },
+      )
+    })
+
+    expect(searchChannelMock).not.toHaveBeenCalled()
+    expect(result.current.context.state).toMatchObject({
+      isOpen: true,
+      advisoryWarning: {
+        kind: "verificationRequired",
+        title: "channelDialog:warnings.verificationRequired.title",
+        description: "channelDialog:warnings.verificationRequired.description",
+      },
+    })
+  })
+
+  it("falls back to ensuring an account token when token discovery returns an unexpected payload", async () => {
+    const prepareChannelFormDataMock = vi.fn(
+      async (_account: DisplaySiteData, token: ApiToken) =>
+        buildPreparedFormData({
+          key: token.key,
+        }),
+    )
+    const mockService = buildManagedSiteServiceMock({
+      prepareChannelFormData: prepareChannelFormDataMock,
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+    mockFetchAccountTokens.mockResolvedValueOnce({ items: [] })
+    ensureAccountApiTokenSpy.mockResolvedValueOnce(
+      buildApiToken({
+        key: "ensured-token",
+      }),
+    )
+
+    const onSuccess = vi.fn()
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openWithAccount(
+        buildDisplaySiteData(),
+        null,
+        onSuccess,
+      )
+    })
+
+    expect(ensureAccountApiTokenSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "account-id",
+      }),
+      expect.objectContaining({
+        id: "account-id",
+      }),
+      "toast-id",
+    )
+    expect(prepareChannelFormDataMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "account-id",
+      }),
+      expect.objectContaining({
+        key: "ensured-token",
+      }),
+    )
+    expect(result.current.context.state).toMatchObject({
+      isOpen: true,
+      initialValues: {
+        key: "ensured-token",
+      },
+    })
+
+    await act(async () => {
+      result.current.context.handleSuccess({
+        success: true,
+        message: "saved",
+      })
+    })
+
+    expect(onSuccess).toHaveBeenCalledWith({
+      success: true,
+      message: "saved",
+    })
+    expect(result.current.context.state.isOpen).toBe(false)
+  })
+
+  it("shows a duplicate warning when opening from raw credentials and aborts on cancel", async () => {
+    const existingChannel = buildManagedSiteChannel({
+      key: "sk-credential",
+    })
+    const mockService = buildManagedSiteServiceMock({
+      searchChannel: vi.fn(async () => ({
+        items: [existingChannel],
+        total: 1,
+        type_counts: {},
+      })),
+      prepareChannelFormData: vi.fn(async () =>
+        buildPreparedFormData({
+          key: "sk-credential",
+        }),
+      ),
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+
+    const { result } = await renderChannelDialogHook()
+
+    const openPromise = result.current.dialog.openWithCredentials({
+      name: "Saved credential",
+      baseUrl: "https://upstream.example.com",
+      apiKey: "sk-credential",
+    })
+
+    await waitFor(() => {
+      expect(result.current.context.duplicateChannelWarning).toEqual({
+        isOpen: true,
+        existingChannelName: "Existing channel",
+      })
+    })
+
+    await act(async () => {
+      result.current.context.resolveDuplicateChannelWarning(false)
+      await openPromise
+    })
+
+    expect(result.current.context.state.isOpen).toBe(false)
+  })
+
+  it("shows the managed-site configuration error and aborts opening from raw credentials", async () => {
+    const mockService = buildManagedSiteServiceMock({
+      getConfig: vi.fn(async () => null),
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openWithCredentials({
+        name: "Saved credential",
+        baseUrl: "https://upstream.example.com",
+        apiKey: "sk-credential",
+      })
+    })
+
+    expect(mockToastError).toHaveBeenCalledWith(expect.any(String), {
+      id: "toast-id",
+    })
+    expect(result.current.context.state.isOpen).toBe(false)
+  })
+
+  it("opens from raw credentials and forwards the caller success callback", async () => {
+    const prepareChannelFormDataMock = vi.fn(
+      async (account: DisplaySiteData, token: ApiToken) => {
+        expect(account).toMatchObject({
+          id: "api-credential-profile:Saved credential",
+          name: "Saved credential",
+          baseUrl: "https://upstream.example.com",
+        })
+        expect(token).toMatchObject({
+          name: "Saved credential",
+          key: "sk-credential",
+        })
+
+        return buildPreparedFormData({
+          key: token.key,
+          base_url: account.baseUrl,
+        })
+      },
+    )
+    const mockService = buildManagedSiteServiceMock({
+      prepareChannelFormData: prepareChannelFormDataMock,
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+
+    const onSuccess = vi.fn()
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openWithCredentials(
+        {
+          name: "Saved credential",
+          baseUrl: "https://upstream.example.com",
+          apiKey: "sk-credential",
+        },
+        onSuccess,
+      )
+    })
+
+    expect(prepareChannelFormDataMock).toHaveBeenCalledTimes(1)
+    expect(result.current.context.state).toMatchObject({
+      isOpen: true,
+      initialValues: {
+        key: "sk-credential",
+        base_url: "https://upstream.example.com",
+      },
+      initialModels: ["gpt-4"],
+      initialGroups: ["default"],
+    })
+
+    await act(async () => {
+      result.current.context.handleSuccess({
+        success: true,
+        message: "credential saved",
+      })
+    })
+
+    expect(onSuccess).toHaveBeenCalledWith({
+      success: true,
+      message: "credential saved",
+    })
+    expect(result.current.context.state.isOpen).toBe(false)
   })
 })

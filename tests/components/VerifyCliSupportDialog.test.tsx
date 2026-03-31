@@ -215,6 +215,34 @@ describe("VerifyCliSupportDialog", () => {
     ).toBeInTheDocument()
   })
 
+  it("does not load account tokens until the dialog is opened", async () => {
+    render(
+      <VerifyCliSupportDialog
+        isOpen={false}
+        onClose={() => {}}
+        account={{
+          id: "a1",
+          name: "Account",
+          username: "u",
+          balance: { USD: 0, CNY: 0 },
+          todayConsumption: { USD: 0, CNY: 0 },
+          todayIncome: { USD: 0, CNY: 0 },
+          todayTokens: { upload: 0, download: 0 },
+          health: { status: "healthy" as any },
+          siteType: "newapi",
+          baseUrl: "https://example.com",
+          token: "t",
+          userId: 1,
+          authType: "access_token" as any,
+          checkIn: { enableDetection: false } as any,
+        }}
+        initialModelId="gpt-test"
+      />,
+    )
+
+    expect(mockFetchAccountTokens).not.toHaveBeenCalled()
+  })
+
   it("runs and retries a single tool and shows collapsible input/output", async () => {
     mockFetchAccountTokens.mockResolvedValueOnce([
       {
@@ -309,6 +337,79 @@ describe("VerifyCliSupportDialog", () => {
     expect(await within(toolCard).findByText(/"bar": 2/)).toBeInTheDocument()
   })
 
+  it("renders raw summaries and only the available details sections", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      {
+        id: 1,
+        user_id: 1,
+        key: "secret",
+        status: 1,
+        name: "token-1",
+        models: "",
+        model_limits: "",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: 0,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ])
+    mockRunCliSupportTool.mockResolvedValueOnce({
+      id: "gemini",
+      probeId: "tool-calling",
+      status: "pass",
+      latencyMs: 4,
+      summary: "Custom summary",
+      input: { modelId: "gpt-test" },
+    })
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{
+          id: "a1",
+          name: "Account",
+          username: "u",
+          balance: { USD: 0, CNY: 0 },
+          todayConsumption: { USD: 0, CNY: 0 },
+          todayIncome: { USD: 0, CNY: 0 },
+          todayTokens: { upload: 0, download: 0 },
+          health: { status: "healthy" as any },
+          siteType: "newapi",
+          baseUrl: "https://example.com",
+          token: "t",
+          userId: 1,
+          authType: "access_token" as any,
+          checkIn: { enableDetection: false } as any,
+        }}
+        initialModelId="gpt-test"
+      />,
+    )
+
+    const toolCard = await screen.findByTestId("verify-cli-gemini")
+    const runButton = within(toolCard).getByRole("button", {
+      name: "cliSupportVerification:verifyDialog.actions.runOne",
+    })
+    await waitFor(() => expect(runButton).toBeEnabled())
+    fireEvent.click(runButton)
+
+    expect(
+      await within(toolCard).findByText("Custom summary"),
+    ).toBeInTheDocument()
+    expect(
+      within(toolCard).getByRole("button", {
+        name: "cliSupportVerification:verifyDialog.details.input",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      within(toolCard).queryByRole("button", {
+        name: "cliSupportVerification:verifyDialog.details.output",
+      }),
+    ).not.toBeInTheDocument()
+  })
+
   it("disables tool runs when no model id is available", async () => {
     mockFetchAccountTokens.mockResolvedValueOnce([
       {
@@ -363,6 +464,128 @@ describe("VerifyCliSupportDialog", () => {
       name: "cliSupportVerification:verifyDialog.actions.runOne",
     })
     expect(runButton).toBeDisabled()
+  })
+
+  it("uses the first available token and its model hint when no enabled token exists", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      {
+        id: 7,
+        user_id: 1,
+        key: "disabled-secret",
+        status: 0,
+        name: "disabled-token",
+        models: "claude-3-5-sonnet",
+        model_limits: "",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: 0,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ])
+    mockRunCliSupportTool.mockResolvedValueOnce({
+      id: "codex",
+      probeId: "tool-calling",
+      status: "pass",
+      latencyMs: 8,
+      summary: "Supported",
+      input: { modelId: "claude-3-5-sonnet" },
+      output: { ok: true },
+    })
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{
+          id: "a1",
+          name: "Account",
+          username: "u",
+          balance: { USD: 0, CNY: 0 },
+          todayConsumption: { USD: 0, CNY: 0 },
+          todayIncome: { USD: 0, CNY: 0 },
+          todayTokens: { upload: 0, download: 0 },
+          health: { status: "healthy" as any },
+          siteType: "newapi",
+          baseUrl: "https://example.com",
+          token: "t",
+          userId: 1,
+          authType: "access_token" as any,
+          checkIn: { enableDetection: false } as any,
+        }}
+        initialModelId=""
+      />,
+    )
+
+    expect(
+      await screen.findByText("cliSupportVerification:verifyDialog.modelHint"),
+    ).toBeInTheDocument()
+
+    const toolCard = await screen.findByTestId("verify-cli-codex")
+    const runButton = within(toolCard).getByRole("button", {
+      name: "cliSupportVerification:verifyDialog.actions.runOne",
+    })
+    await waitFor(() => expect(runButton).toBeEnabled())
+    fireEvent.click(runButton)
+
+    await waitFor(() => {
+      expect(mockRunCliSupportTool).toHaveBeenCalledWith({
+        toolId: "codex",
+        baseUrl: "https://example.com",
+        apiKey: "disabled-secret",
+        modelId: "claude-3-5-sonnet",
+      })
+    })
+  })
+
+  it("hides the token-derived model hint when an explicit model id is provided", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      {
+        id: 9,
+        user_id: 1,
+        key: "secret",
+        status: 1,
+        name: "token-1",
+        models: "claude-3-5-sonnet",
+        model_limits: "",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: 0,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ])
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{
+          id: "a1",
+          name: "Account",
+          username: "u",
+          balance: { USD: 0, CNY: 0 },
+          todayConsumption: { USD: 0, CNY: 0 },
+          todayIncome: { USD: 0, CNY: 0 },
+          todayTokens: { upload: 0, download: 0 },
+          health: { status: "healthy" as any },
+          siteType: "newapi",
+          baseUrl: "https://example.com",
+          token: "t",
+          userId: 1,
+          authType: "access_token" as any,
+          checkIn: { enableDetection: false } as any,
+        }}
+        initialModelId="gpt-explicit"
+      />,
+    )
+
+    await screen.findByTestId("verify-cli-claude")
+    expect(
+      screen.queryByText("cliSupportVerification:verifyDialog.modelHint"),
+    ).not.toBeInTheDocument()
   })
 
   it("runs account-mode verification with a fully redacted token after resolving the secret", async () => {
@@ -449,6 +672,312 @@ describe("VerifyCliSupportDialog", () => {
         apiKey: "resolved-secret",
         modelId: "gpt-test",
       })
+    })
+  })
+
+  it("shows the profile model fetch error when loading stored profile models fails", async () => {
+    mockFetchApiCredentialModelIds.mockRejectedValueOnce(
+      new Error("model catalog unavailable"),
+    )
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        profile={{
+          id: "p1",
+          name: "Profile",
+          apiType: "openai-compatible" as any,
+          baseUrl: "https://example.com",
+          apiKey: "profile-secret",
+          tagIds: [],
+          notes: "",
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        initialModelId=""
+      />,
+    )
+
+    expect(
+      await screen.findByText("model catalog unavailable"),
+    ).toBeInTheDocument()
+    expect(mockFetchAccountTokens).not.toHaveBeenCalled()
+  })
+
+  it("falls back to the generic profile model error when the fetch error has no message", async () => {
+    mockFetchApiCredentialModelIds.mockRejectedValueOnce(new Error(""))
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        profile={{
+          id: "p1",
+          name: "Profile",
+          apiType: "openai-compatible" as any,
+          baseUrl: "https://example.com",
+          apiKey: "profile-secret",
+          tagIds: [],
+          notes: "",
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        initialModelId=""
+      />,
+    )
+
+    expect(
+      await screen.findByText(
+        "cliSupportVerification:verifyDialog.modelsFetchFailed",
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it("keeps account-mode actions disabled when token loading fails", async () => {
+    mockFetchAccountTokens.mockRejectedValueOnce(new Error("token list failed"))
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{
+          id: "a1",
+          name: "Account",
+          username: "u",
+          balance: { USD: 0, CNY: 0 },
+          todayConsumption: { USD: 0, CNY: 0 },
+          todayIncome: { USD: 0, CNY: 0 },
+          todayTokens: { upload: 0, download: 0 },
+          health: { status: "healthy" as any },
+          siteType: "newapi",
+          baseUrl: "https://example.com",
+          token: "t",
+          userId: 1,
+          authType: "access_token" as any,
+          checkIn: { enableDetection: false } as any,
+        }}
+        initialModelId="gpt-test"
+      />,
+    )
+
+    const runAllButton = await screen.findByRole("button", {
+      name: "cliSupportVerification:verifyDialog.actions.run",
+    })
+    expect(runAllButton).toBeDisabled()
+
+    const toolCard = await screen.findByTestId("verify-cli-claude")
+    expect(
+      within(toolCard).getByRole("button", {
+        name: "cliSupportVerification:verifyDialog.actions.runOne",
+      }),
+    ).toBeDisabled()
+  })
+
+  it("keeps account-mode actions disabled when the account has no tokens", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([])
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{
+          id: "a1",
+          name: "Account",
+          username: "u",
+          balance: { USD: 0, CNY: 0 },
+          todayConsumption: { USD: 0, CNY: 0 },
+          todayIncome: { USD: 0, CNY: 0 },
+          todayTokens: { upload: 0, download: 0 },
+          health: { status: "healthy" as any },
+          siteType: "newapi",
+          baseUrl: "https://example.com",
+          token: "t",
+          userId: 1,
+          authType: "access_token" as any,
+          checkIn: { enableDetection: false } as any,
+        }}
+        initialModelId="gpt-test"
+      />,
+    )
+
+    const runAllButton = await screen.findByRole("button", {
+      name: "cliSupportVerification:verifyDialog.actions.run",
+    })
+    expect(runAllButton).toBeDisabled()
+  })
+
+  it("surfaces HTTP failure summaries and retry state when a tool run throws", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      {
+        id: 1,
+        user_id: 1,
+        key: "secret",
+        status: 1,
+        name: "token-1",
+        models: "",
+        model_limits: "",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: 0,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ])
+    mockRunCliSupportTool.mockRejectedValueOnce({
+      statusCode: 401,
+      message: "Unauthorized",
+    })
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{
+          id: "a1",
+          name: "Account",
+          username: "u",
+          balance: { USD: 0, CNY: 0 },
+          todayConsumption: { USD: 0, CNY: 0 },
+          todayIncome: { USD: 0, CNY: 0 },
+          todayTokens: { upload: 0, download: 0 },
+          health: { status: "healthy" as any },
+          siteType: "newapi",
+          baseUrl: "https://example.com",
+          token: "t",
+          userId: 1,
+          authType: "access_token" as any,
+          checkIn: { enableDetection: false } as any,
+        }}
+        initialModelId="gpt-test"
+      />,
+    )
+
+    const toolCard = await screen.findByTestId("verify-cli-claude")
+    const runButton = within(toolCard).getByRole("button", {
+      name: "cliSupportVerification:verifyDialog.actions.runOne",
+    })
+    await waitFor(() => expect(runButton).toBeEnabled())
+    fireEvent.click(runButton)
+
+    expect(
+      await within(toolCard).findByText(
+        "cliSupportVerification:verifyDialog.summaries.unauthorized",
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(toolCard).getByRole("button", {
+        name: "cliSupportVerification:verifyDialog.actions.retry",
+      }),
+    ).toBeInTheDocument()
+
+    const outputToggle = within(toolCard).getByRole("button", {
+      name: "cliSupportVerification:verifyDialog.details.output",
+    })
+    fireEvent.click(outputToggle)
+    expect(await within(toolCard).findByText(/401/)).toBeInTheDocument()
+  })
+
+  it("surfaces generic unexpected failures when no HTTP status can be inferred", async () => {
+    mockFetchAccountTokens.mockResolvedValueOnce([
+      {
+        id: 1,
+        user_id: 1,
+        key: "secret",
+        status: 1,
+        name: "token-1",
+        models: "",
+        model_limits: "",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: 0,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ])
+    mockRunCliSupportTool.mockRejectedValueOnce(new Error("socket closed"))
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{
+          id: "a1",
+          name: "Account",
+          username: "u",
+          balance: { USD: 0, CNY: 0 },
+          todayConsumption: { USD: 0, CNY: 0 },
+          todayIncome: { USD: 0, CNY: 0 },
+          todayTokens: { upload: 0, download: 0 },
+          health: { status: "healthy" as any },
+          siteType: "newapi",
+          baseUrl: "https://example.com",
+          token: "t",
+          userId: 1,
+          authType: "access_token" as any,
+          checkIn: { enableDetection: false } as any,
+        }}
+        initialModelId="gpt-test"
+      />,
+    )
+
+    const toolCard = await screen.findByTestId("verify-cli-codex")
+    const runButton = within(toolCard).getByRole("button", {
+      name: "cliSupportVerification:verifyDialog.actions.runOne",
+    })
+    await waitFor(() => expect(runButton).toBeEnabled())
+    fireEvent.click(runButton)
+
+    expect(
+      await within(toolCard).findByText(
+        "cliSupportVerification:verifyDialog.summaries.unexpectedError",
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it("runs all CLI tools sequentially from a stored profile", async () => {
+    mockRunCliSupportTool.mockImplementation(async ({ toolId }) => ({
+      id: toolId,
+      probeId: "tool-calling",
+      status: "pass",
+      latencyMs: 5,
+      summary: "Supported",
+      summaryKey: "verifyDialog.summaries.supported",
+      input: { toolId },
+      output: { ok: true },
+    }))
+
+    render(
+      <VerifyCliSupportDialog
+        isOpen={true}
+        onClose={() => {}}
+        profile={{
+          id: "p1",
+          name: "Profile",
+          apiType: "openai-compatible" as any,
+          baseUrl: "https://example.com",
+          apiKey: "profile-secret",
+          tagIds: [],
+          notes: "",
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        initialModelId="gpt-test"
+      />,
+    )
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "cliSupportVerification:verifyDialog.actions.run",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        mockRunCliSupportTool.mock.calls.map((call) => call[0].toolId),
+      ).toEqual(["claude", "codex", "gemini"])
     })
   })
 })

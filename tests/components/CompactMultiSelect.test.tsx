@@ -1,9 +1,16 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react"
+import {
+  fireEvent,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useState } from "react"
+import { I18nextProvider } from "react-i18next"
 import { describe, expect, it, vi } from "vitest"
 
 import { CompactMultiSelect } from "~/components/ui/CompactMultiSelect"
+import { testI18n } from "~~/tests/test-utils/i18n"
 import { render } from "~~/tests/test-utils/render"
 
 describe("CompactMultiSelect", () => {
@@ -201,5 +208,269 @@ describe("CompactMultiSelect", () => {
     })
 
     expect(onChange).toHaveBeenCalledWith(["alpha", "beta", "gamma"])
+  })
+
+  it("commits a single custom value on Enter when no option matches", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <CompactMultiSelect
+        displayMode="chips"
+        allowCustom
+        options={[{ value: "alpha", label: "Alpha" }]}
+        selected={[]}
+        onChange={onChange}
+        placeholder="Pick"
+      />,
+    )
+
+    const input = await screen.findByPlaceholderText("Pick")
+    await user.click(input)
+    await user.type(input, "gamma")
+    fireEvent.keyDown(input, { key: "Enter" })
+
+    expect(onChange).toHaveBeenCalledWith(["gamma"])
+  })
+
+  it("lets Enter select the matching option instead of committing the raw query", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <CompactMultiSelect
+        displayMode="chips"
+        allowCustom
+        options={[{ value: "gamma", label: "Gamma" }]}
+        selected={[]}
+        onChange={onChange}
+        placeholder="Pick"
+      />,
+    )
+
+    const input = await screen.findByPlaceholderText("Pick")
+    await user.click(input)
+    await user.type(input, "gam")
+    fireEvent.keyDown(input, { key: "Enter" })
+
+    expect(onChange).toHaveBeenCalledWith(["gamma"])
+  })
+
+  it("ignores pasted text without separators when custom parsing is enabled", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <CompactMultiSelect
+        displayMode="chips"
+        allowCustom
+        options={[]}
+        selected={[]}
+        onChange={onChange}
+        placeholder="Pick"
+      />,
+    )
+
+    const input = await screen.findByPlaceholderText("Pick")
+    await user.click(input)
+
+    fireEvent.paste(input, {
+      clipboardData: {
+        getData: () => "singlevalue",
+      },
+    })
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it("hides the summary clear button when clearing is disabled or the control is disabled", () => {
+    const firstRender = render(
+      <CompactMultiSelect
+        displayMode="summary"
+        clearable={false}
+        options={[{ value: "a", label: "Alpha" }]}
+        selected={["a"]}
+        onChange={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.queryByRole("button", { name: "ui:multiSelect.clearSelected" }),
+    ).toBeNull()
+
+    firstRender.unmount()
+
+    render(
+      <CompactMultiSelect
+        displayMode="summary"
+        disabled
+        options={[{ value: "a", label: "Alpha" }]}
+        selected={["a"]}
+        onChange={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.queryByRole("button", { name: "ui:multiSelect.clearSelected" }),
+    ).toBeNull()
+  })
+
+  it("renders labeled summary selections with fallback text, overflow, and a working clear action", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    rtlRender(
+      <I18nextProvider i18n={testI18n}>
+        <div>
+          <span id="external-summary-label">External summary label</span>
+          <CompactMultiSelect
+            label="Models"
+            displayMode="summary"
+            size="lg"
+            maxDisplayValues={1}
+            aria-labelledby="external-summary-label"
+            options={[{ value: "alpha", label: "Alpha" }]}
+            selected={["missing-model", "alpha"]}
+            onChange={onChange}
+          />
+        </div>
+      </I18nextProvider>,
+    )
+
+    const trigger = screen.getByRole("combobox")
+    expect(screen.getByText("Models")).toBeInTheDocument()
+    expect(trigger).toHaveAttribute("aria-labelledby", "external-summary-label")
+    expect(trigger).toHaveTextContent("missing-model +1")
+    expect(screen.getByText("2")).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", { name: "ui:multiSelect.clearSelected" }),
+    )
+
+    expect(onChange).toHaveBeenCalledWith([])
+  })
+
+  it("shows a custom summary option and lets a selected option toggle off", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <CompactMultiSelect
+        displayMode="summary"
+        allowCustom
+        options={[
+          { value: "alpha", label: "Alpha" },
+          { value: "beta", label: "Beta" },
+        ]}
+        selected={["alpha"]}
+        onChange={onChange}
+      />,
+    )
+
+    await user.click(await screen.findByRole("combobox"))
+    const input = await screen.findByPlaceholderText(
+      "ui:searchableSelect.searchPlaceholder",
+    )
+
+    await user.type(input, "gamma")
+    expect(screen.getByRole("option", { name: "gamma" })).toBeInTheDocument()
+
+    await user.clear(input)
+    await user.click(screen.getByRole("option", { name: "Alpha" }))
+
+    expect(onChange).toHaveBeenCalledWith([])
+  })
+
+  it("keeps duplicate custom batches as a no-op and clears the search term", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <CompactMultiSelect
+        displayMode="summary"
+        allowCustom
+        options={[]}
+        selected={["alpha"]}
+        onChange={onChange}
+      />,
+    )
+
+    await user.click(await screen.findByRole("combobox"))
+    const input = await screen.findByPlaceholderText(
+      "ui:searchableSelect.searchPlaceholder",
+    )
+
+    await user.type(input, "alpha,alpha")
+    fireEvent.keyDown(input, { key: "Enter" })
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(input).toHaveValue("")
+  })
+
+  it("renders unknown chips as values, filters them out of search results, and uses vertical bulk actions when space allows", async () => {
+    const user = userEvent.setup()
+    const getBoundingClientRectSpy = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const slot = this?.getAttribute?.("data-slot")
+        let height = 30
+
+        if (slot === "combobox-chips") height = 80
+        if (this?.tagName === "BUTTON") height = 30
+
+        return {
+          x: 0,
+          y: 0,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: height,
+          width: 0,
+          height,
+          toJSON: () => "",
+        } as DOMRect
+      })
+
+    try {
+      rtlRender(
+        <I18nextProvider i18n={testI18n}>
+          <div>
+            <span id="external-chips-label">External chips label</span>
+            <CompactMultiSelect
+              label="Tags"
+              displayMode="chips"
+              allowCustom
+              aria-label="Tag picker"
+              aria-labelledby="external-chips-label"
+              options={[{ value: "alpha", label: "Alpha" }]}
+              selected={["ghost-tag"]}
+              onChange={vi.fn()}
+              placeholder="Pick"
+            />
+          </div>
+        </I18nextProvider>,
+      )
+
+      expect(screen.getByText("Tags")).toBeInTheDocument()
+      expect(screen.getByText("ghost-tag")).toBeInTheDocument()
+
+      const input = await screen.findByPlaceholderText(
+        "ui:searchableSelect.searchPlaceholder",
+      )
+      expect(input).toHaveAttribute("aria-label", "Tag picker")
+      expect(input).toHaveAttribute("aria-labelledby", "external-chips-label")
+
+      await user.click(input)
+      await user.type(input, "ghost")
+
+      expect(
+        screen.queryByRole("option", { name: "ghost-tag" }),
+      ).not.toBeInTheDocument()
+      expect(
+        await screen.findByTestId("compact-multiselect-bulk-actions"),
+      ).toHaveAttribute("data-orientation", "vertical")
+    } finally {
+      getBoundingClientRectSpy.mockRestore()
+    }
   })
 })
