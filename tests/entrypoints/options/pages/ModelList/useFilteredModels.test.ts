@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { useFilteredModels } from "~/features/ModelList/hooks/useFilteredModels"
 import {
+  createAccountSource,
   createAllAccountsSource,
   createProfileSource,
 } from "~/features/ModelList/modelManagementSources"
@@ -30,19 +31,32 @@ const createDisplayAccount = (
   ...overrides,
 })
 
-const createPricingResponse = (modelNames: string[]): PricingResponse => ({
-  data: modelNames.map((model_name) => ({
-    model_name,
-    quota_type: 0,
-    model_ratio: 0,
-    model_price: 0,
-    completion_ratio: 1,
-    enable_groups: [],
-    supported_endpoint_types: [],
-  })),
+const createPricingModel = (
+  overrides: Partial<PricingResponse["data"][number]>,
+): PricingResponse["data"][number] => ({
+  model_name: "gpt-4o-mini",
+  quota_type: 0,
+  model_ratio: 0,
+  model_price: 0,
+  completion_ratio: 1,
+  enable_groups: [],
+  supported_endpoint_types: [],
+  ...overrides,
+})
+
+const createPricingResponse = (
+  models: Array<string | Partial<PricingResponse["data"][number]>>,
+  overrides: Partial<PricingResponse> = {},
+): PricingResponse => ({
+  data: models.map((model) =>
+    typeof model === "string"
+      ? createPricingModel({ model_name: model })
+      : createPricingModel(model),
+  ),
   group_ratio: {},
   success: true,
   usable_group: {},
+  ...overrides,
 })
 
 describe("useFilteredModels", () => {
@@ -121,5 +135,163 @@ describe("useFilteredModels", () => {
     expect(result.current.getProviderFilteredCount("OpenAI")).toBe(1)
     expect(result.current.getProviderFilteredCount("Claude")).toBe(1)
     expect(result.current.getProviderFilteredCount("Gemini")).toBe(0)
+  })
+
+  it("applies single-account group pricing and exposes available account groups", async () => {
+    const account = createDisplayAccount({
+      id: "account-pricing",
+      balance: { USD: 10, CNY: 70 },
+    })
+
+    const source = createAccountSource(account)
+
+    const { result } = renderHook(() =>
+      useFilteredModels({
+        pricingData: createPricingResponse(
+          [
+            {
+              model_name: "gpt-4o-mini",
+              model_ratio: 1,
+              completion_ratio: 1,
+              enable_groups: ["vip"],
+            },
+            {
+              model_name: "claude-3-5-sonnet",
+              model_ratio: 2,
+              completion_ratio: 1,
+              enable_groups: ["default"],
+            },
+          ],
+          {
+            group_ratio: { vip: 2, "": 5 },
+          },
+        ),
+        pricingContexts: [],
+        selectedSource: source,
+        selectedGroup: "vip",
+        searchTerm: "",
+        selectedProvider: "all",
+      }),
+    )
+
+    await waitFor(() => expect(result.current.availableGroups).toEqual(["vip"]))
+
+    expect(result.current.baseFilteredModels).toHaveLength(1)
+    expect(result.current.filteredModels).toHaveLength(1)
+    const pricedSource = result.current.filteredModels[0]?.source
+    expect(pricedSource?.kind).toBe("account")
+    if (!pricedSource || pricedSource.kind !== "account") {
+      throw new Error("Expected an account-backed filtered model")
+    }
+    expect(pricedSource.account.id).toBe("account-pricing")
+    expect(result.current.filteredModels[0]?.calculatedPrice).toMatchObject({
+      inputUSD: 4,
+      outputUSD: 4,
+      inputCNY: 28,
+      outputCNY: 28,
+    })
+  })
+
+  it("searches model descriptions before applying provider filters", async () => {
+    const account = createDisplayAccount({
+      id: "account-search",
+      balance: { USD: 5, CNY: 35 },
+    })
+
+    const { result } = renderHook(() =>
+      useFilteredModels({
+        pricingData: createPricingResponse([
+          {
+            model_name: "claude-3-5-sonnet",
+            model_description: "Batch summarizer",
+            enable_groups: ["default"],
+          },
+          {
+            model_name: "gemini-1.5-pro",
+            model_description: "Batch multimodal pipeline",
+            enable_groups: ["default"],
+          },
+          {
+            model_name: "gpt-4o-mini",
+            enable_groups: ["default"],
+          },
+        ]),
+        pricingContexts: [],
+        selectedSource: createAccountSource(account),
+        selectedGroup: "all",
+        searchTerm: "batch",
+        selectedProvider: "Claude",
+      }),
+    )
+
+    await waitFor(() =>
+      expect(result.current.baseFilteredModels).toHaveLength(2),
+    )
+
+    expect(
+      result.current.baseFilteredModels.map((item) => item.model.model_name),
+    ).toEqual(["claude-3-5-sonnet", "gemini-1.5-pro"])
+    expect(
+      result.current.filteredModels.map((item) => item.model.model_name),
+    ).toEqual(["claude-3-5-sonnet"])
+    expect(result.current.getProviderFilteredCount("Claude")).toBe(1)
+    expect(result.current.getProviderFilteredCount("Gemini")).toBe(1)
+  })
+
+  it("skips malformed account pricing payloads while keeping valid account models and groups", async () => {
+    const accountA = createDisplayAccount({
+      id: "account-valid",
+      name: "Valid Account",
+      balance: { USD: 2, CNY: 14 },
+    })
+    const accountB = createDisplayAccount({
+      id: "account-invalid",
+      name: "Invalid Account",
+      balance: { USD: 0, CNY: 0 },
+    })
+
+    const { result } = renderHook(() =>
+      useFilteredModels({
+        pricingData: null,
+        pricingContexts: [
+          {
+            account: accountA,
+            pricing: createPricingResponse([
+              {
+                model_name: "gemini-1.5-pro",
+                enable_groups: ["default"],
+              },
+            ]),
+          },
+          {
+            account: accountB,
+            pricing: {
+              data: null,
+              success: true,
+              usable_group: {},
+            } as any,
+          },
+        ],
+        selectedSource: createAllAccountsSource(),
+        selectedGroup: "all",
+        searchTerm: "",
+        selectedProvider: "Gemini",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        result.current.filteredModels.map((item) => item.model.model_name),
+      ).toEqual(["gemini-1.5-pro"])
+    })
+
+    expect(result.current.availableGroups).toEqual([])
+    const filteredSource = result.current.filteredModels[0]?.source
+    expect(filteredSource?.kind).toBe("account")
+    if (!filteredSource || filteredSource.kind !== "account") {
+      throw new Error("Expected a valid account-backed filtered model")
+    }
+    expect(filteredSource.account.id).toBe("account-valid")
+    expect(result.current.getProviderFilteredCount("Gemini")).toBe(1)
   })
 })

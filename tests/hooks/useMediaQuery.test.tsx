@@ -14,17 +14,21 @@ describe("useMediaQuery", () => {
   let matchMediaMock: any
   let addEventListenerMock: ReturnType<typeof vi.fn>
   let removeEventListenerMock: ReturnType<typeof vi.fn>
+  let addListenerMock: ReturnType<typeof vi.fn>
+  let removeListenerMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     addEventListenerMock = vi.fn()
     removeEventListenerMock = vi.fn()
+    addListenerMock = vi.fn()
+    removeListenerMock = vi.fn()
     matchMediaMock = vi.fn((query: string) => ({
       matches: false,
       media: query,
       addEventListener: addEventListenerMock,
       removeEventListener: removeEventListenerMock,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
+      addListener: addListenerMock,
+      removeListener: removeListenerMock,
       dispatchEvent: vi.fn(),
     }))
     window.matchMedia = matchMediaMock
@@ -82,6 +86,36 @@ describe("useMediaQuery", () => {
     })
 
     expect(result.current).toBe(true)
+  })
+
+  it("falls back to legacy media query listeners when addEventListener is unavailable", async () => {
+    matchMediaMock.mockReturnValue({
+      matches: false,
+      media: "(max-width: 1px)",
+      addEventListener: undefined,
+      removeEventListener: undefined,
+      addListener: addListenerMock,
+      removeListener: removeListenerMock,
+      dispatchEvent: vi.fn(),
+    })
+
+    const { result, unmount } = renderHook(() =>
+      useMediaQuery("(max-width: 1px)"),
+    )
+
+    expect(addListenerMock).toHaveBeenCalledWith(expect.any(Function))
+
+    const changeHandler = addListenerMock.mock.calls[0][0]
+
+    await act(async () => {
+      changeHandler({ matches: true } as MediaQueryListEvent)
+    })
+
+    expect(result.current).toBe(true)
+
+    unmount()
+
+    expect(removeListenerMock).toHaveBeenCalledWith(changeHandler)
   })
 
   describe("predefined breakpoint hooks", () => {

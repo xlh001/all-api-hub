@@ -10,6 +10,7 @@ import {
   createAllAccountsSource,
   createProfileSource,
 } from "~/features/ModelList/modelManagementSources"
+import { InvalidTokenPayloadError } from "~/services/accounts/utils/apiServiceRequest"
 import { getApiService } from "~/services/apiService"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
@@ -615,5 +616,227 @@ describe("useModelData all-accounts loading", () => {
         usable_group: {},
       })
     })
+  })
+
+  it("shows the fallback key-load error when token payload normalization fails", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn().mockRejectedValue(new Error("boom"))
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+    mockFetchDisplayAccountTokens.mockRejectedValueOnce(
+      new InvalidTokenPayloadError({
+        accountId: "invalid-token-account",
+        baseUrl: "https://invalid-token.example.com",
+        siteType: "default",
+        responseType: "object",
+      }),
+    )
+
+    const account = createDisplayAccount({
+      id: "invalid-token-account",
+      baseUrl: "https://invalid-token.example.com",
+      userId: 31,
+    })
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAccountSource(account),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(mockFetchDisplayAccountTokens).toHaveBeenCalledTimes(1)
+      },
+      { timeout: 3000 },
+    )
+    await waitFor(
+      () => {
+        expect(result.current.accountFallback?.tokenLoadErrorMessage).toBe(
+          "modelList:status.fallback.loadKeysFailedFallback",
+        )
+      },
+      { timeout: 3000 },
+    )
+    expect(result.current.accountFallback?.tokens).toEqual([])
+  })
+
+  it("shows a generic fallback-model error when the fallback catalog load fails without details", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn().mockRejectedValue(new Error("boom"))
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const fallbackToken = {
+      id: 5,
+      user_id: 41,
+      key: "sk-only",
+      status: 1,
+      name: "Only key",
+      created_time: 0,
+      accessed_time: 0,
+      expired_time: -1,
+      remain_quota: 0,
+      unlimited_quota: true,
+      used_quota: 0,
+    }
+
+    mockFetchDisplayAccountTokens.mockResolvedValueOnce([fallbackToken])
+    mockLoadAccountTokenFallbackPricingResponse.mockRejectedValueOnce(
+      new Error(""),
+    )
+
+    const account = createDisplayAccount({
+      id: "catalog-error-account",
+      baseUrl: "https://catalog-error.example.com",
+      userId: 41,
+    })
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAccountSource(account),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(mockFetchDisplayAccountTokens).toHaveBeenCalledTimes(1)
+      },
+      { timeout: 3000 },
+    )
+    await waitFor(
+      () => {
+        expect(result.current.accountFallback?.selectedTokenId).toBe(5)
+      },
+      { timeout: 3000 },
+    )
+
+    await act(async () => {
+      await result.current.accountFallback?.loadCatalog()
+    })
+
+    await waitFor(
+      () => {
+        expect(result.current.accountFallback?.catalogLoadErrorMessage).toBe(
+          "modelList:status.fallback.loadModelsFailedFallback",
+        )
+      },
+      { timeout: 3000 },
+    )
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      "modelList:status.fallback.loadModelsFailedFallback",
+    )
+  })
+
+  it("reports mixed invalid-format and load-failed states in all-accounts mode", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn().mockImplementation(({ accountId }) => {
+      if (accountId === "bad-format") {
+        return Promise.resolve({
+          data: null,
+          group_ratio: {},
+          success: true,
+          usable_group: {},
+        })
+      }
+
+      return Promise.reject(new Error("boom"))
+    })
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const accounts = [
+      createDisplayAccount({
+        id: "bad-format",
+        baseUrl: "https://bad-format.example.com",
+        userId: 51,
+      }),
+      createDisplayAccount({
+        id: "load-failed",
+        baseUrl: "https://load-failed.example.com",
+        userId: 52,
+      }),
+    ]
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts,
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(result.current.dataFormatError).toBe(true)
+        expect(result.current.loadErrorMessage).toBe(
+          "modelList:status.loadFailed",
+        )
+        expect(result.current.accountQueryStates).toEqual([
+          expect.objectContaining({
+            account: expect.objectContaining({ id: "bad-format" }),
+            hasData: false,
+            hasError: true,
+            errorType: "invalid-format",
+          }),
+          expect.objectContaining({
+            account: expect.objectContaining({ id: "load-failed" }),
+            hasData: false,
+            hasError: true,
+            errorType: "load-failed",
+          }),
+        ])
+      },
+      { timeout: 3000 },
+    )
+  })
+
+  it("sanitizes profile load failures into a user-visible profile error", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+    mockFetchApiCredentialModelIds.mockRejectedValue(new Error(""))
+
+    const profileSource = createProfileSource({
+      id: "profile-error",
+      name: "Reusable Key",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://profile.example.com",
+      apiKey: "sk-secret",
+      tagIds: [],
+      notes: "",
+      createdAt: 1,
+      updatedAt: 2,
+    })
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: profileSource,
+          accounts: [],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(result.current.loadErrorMessage).toBe(
+          "modelList:status.loadFailed",
+        )
+      },
+      { timeout: 3000 },
+    )
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      "modelList:status.profileLoadFailed",
+    )
   })
 })

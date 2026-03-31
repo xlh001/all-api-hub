@@ -790,6 +790,64 @@ describe("BalanceHistory options page", () => {
     }
   })
 
+  it("prunes balance history and reloads the page after a successful runtime request", async () => {
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({ success: true } as any)
+
+    render(<BalanceHistory />)
+
+    expect(await screen.findByText(PAGE_TITLE)).toBeInTheDocument()
+
+    const user = userEvent.setup()
+    await user.click(
+      screen.getByRole("button", {
+        name: "balanceHistory:actions.prune",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(vi.mocked(sendRuntimeMessage)).toHaveBeenCalledWith({
+        action: "balanceHistory:prune",
+      })
+    })
+
+    expect(
+      vi.mocked(dailyBalanceHistoryStorage.getStore).mock.calls.length,
+    ).toBe(2)
+    expect(vi.mocked(toast.loading)).toHaveBeenCalledWith(
+      "balanceHistory:messages.loading.pruning",
+    )
+    expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+      "balanceHistory:messages.success.pruneCompleted",
+      { id: "toast-id" },
+    )
+  })
+
+  it("shows a fallback runtime error when prune fails without a server message", async () => {
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({ success: false } as any)
+
+    render(<BalanceHistory />)
+
+    expect(await screen.findByText(PAGE_TITLE)).toBeInTheDocument()
+
+    const user = userEvent.setup()
+    await user.click(
+      screen.getByRole("button", {
+        name: "balanceHistory:actions.prune",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(vi.mocked(sendRuntimeMessage)).toHaveBeenCalledWith({
+        action: "balanceHistory:prune",
+      })
+    })
+
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      "balanceHistory:messages.error.pruneFailed",
+      { id: "toast-id" },
+    )
+  })
+
   it("opens Balance History settings from the disabled hint CTA", async () => {
     vi.mocked(useUserPreferencesContext).mockReturnValue(
       createMockUserPreferencesContext({ enabled: false }),

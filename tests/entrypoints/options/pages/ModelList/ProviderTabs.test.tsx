@@ -9,27 +9,52 @@ const TABLIST_CLIENT_WIDTH_PX = 100
 const TABLIST_SCROLL_WIDTH_PX = 300
 const BASE_FILTERED_MODELS_COUNT = 10
 const PROVIDER_FILTERED_MODELS_COUNT = 1
+const DEFAULT_PROVIDER_COUNTS = {
+  OpenAI: 2,
+  Claude: 1,
+  Gemini: 1,
+} as const
+
+const renderProviderTabs = ({
+  providerCounts = DEFAULT_PROVIDER_COUNTS,
+  selectedProvider = "all",
+  baseFilteredModelsCount = BASE_FILTERED_MODELS_COUNT,
+  setSelectedProvider = vi.fn(),
+}: {
+  providerCounts?: Record<string, number>
+  selectedProvider?: "all" | "OpenAI" | "Claude" | "Gemini"
+  baseFilteredModelsCount?: number
+  setSelectedProvider?: ReturnType<typeof vi.fn>
+} = {}) => {
+  render(
+    <ProviderTabs
+      providers={createProviders()}
+      selectedProvider={selectedProvider}
+      setSelectedProvider={setSelectedProvider}
+      baseFilteredModelsCount={baseFilteredModelsCount}
+      getProviderFilteredCount={(provider) => providerCounts[provider] ?? 0}
+    >
+      <Tab.Panels>
+        <Tab.Panel>All</Tab.Panel>
+        <Tab.Panel>OpenAI</Tab.Panel>
+        <Tab.Panel>Claude</Tab.Panel>
+        <Tab.Panel>Gemini</Tab.Panel>
+      </Tab.Panels>
+    </ProviderTabs>,
+  )
+
+  return { setSelectedProvider }
+}
 
 describe("ProviderTabs scroll arrows", () => {
   it("enables right arrow when tab list overflows", async () => {
-    const setSelectedProvider = vi.fn()
-
-    render(
-      <ProviderTabs
-        providers={createProviders()}
-        selectedProvider="all"
-        setSelectedProvider={setSelectedProvider}
-        baseFilteredModelsCount={BASE_FILTERED_MODELS_COUNT}
-        getProviderFilteredCount={() => PROVIDER_FILTERED_MODELS_COUNT}
-      >
-        <Tab.Panels>
-          <Tab.Panel>All</Tab.Panel>
-          <Tab.Panel>OpenAI</Tab.Panel>
-          <Tab.Panel>Claude</Tab.Panel>
-          <Tab.Panel>Gemini</Tab.Panel>
-        </Tab.Panels>
-      </ProviderTabs>,
-    )
+    renderProviderTabs({
+      providerCounts: {
+        OpenAI: PROVIDER_FILTERED_MODELS_COUNT,
+        Claude: PROVIDER_FILTERED_MODELS_COUNT,
+        Gemini: PROVIDER_FILTERED_MODELS_COUNT,
+      },
+    })
 
     const tabList = await screen.findByRole("tablist")
     Object.defineProperty(tabList, "clientWidth", {
@@ -58,24 +83,13 @@ describe("ProviderTabs scroll arrows", () => {
   })
 
   it("scrolls the tab list when clicking arrows", async () => {
-    const setSelectedProvider = vi.fn()
-
-    render(
-      <ProviderTabs
-        providers={createProviders()}
-        selectedProvider="all"
-        setSelectedProvider={setSelectedProvider}
-        baseFilteredModelsCount={BASE_FILTERED_MODELS_COUNT}
-        getProviderFilteredCount={() => PROVIDER_FILTERED_MODELS_COUNT}
-      >
-        <Tab.Panels>
-          <Tab.Panel>All</Tab.Panel>
-          <Tab.Panel>OpenAI</Tab.Panel>
-          <Tab.Panel>Claude</Tab.Panel>
-          <Tab.Panel>Gemini</Tab.Panel>
-        </Tab.Panels>
-      </ProviderTabs>,
-    )
+    renderProviderTabs({
+      providerCounts: {
+        OpenAI: PROVIDER_FILTERED_MODELS_COUNT,
+        Claude: PROVIDER_FILTERED_MODELS_COUNT,
+        Gemini: PROVIDER_FILTERED_MODELS_COUNT,
+      },
+    })
 
     const tabList = await screen.findByRole("tablist")
     Object.defineProperty(tabList, "clientWidth", {
@@ -114,5 +128,62 @@ describe("ProviderTabs scroll arrows", () => {
       }),
     )
     expect(callArg.left).toBeGreaterThan(0)
+  })
+})
+
+describe("ProviderTabs selection", () => {
+  it("filters out zero-count providers and falls back to the all tab when the selected provider is unavailable", async () => {
+    renderProviderTabs({
+      selectedProvider: "Claude",
+      baseFilteredModelsCount: 3,
+      providerCounts: {
+        OpenAI: 2,
+        Claude: 0,
+        Gemini: 1,
+      },
+    })
+
+    const allProvidersTab = await screen.findByRole("tab", {
+      name: /allProviders.*\(3\)/,
+    })
+    const openAiTab = screen.getByRole("tab", {
+      name: /OpenAI \(2\)/,
+    })
+
+    expect(screen.queryByRole("tab", { name: /Claude/ })).toBeNull()
+    expect(allProvidersTab).toHaveAttribute("aria-selected", "true")
+    expect(allProvidersTab).toHaveClass("text-blue-700")
+    expect(openAiTab).toHaveAttribute("aria-selected", "false")
+    expect(openAiTab).toHaveClass("text-gray-700")
+  })
+
+  it("selects a provider tab and reports the chosen provider", async () => {
+    const { setSelectedProvider } = renderProviderTabs()
+
+    fireEvent.click(await screen.findByRole("tab", { name: /Claude \(1\)/ }))
+
+    expect(setSelectedProvider).toHaveBeenCalledWith("Claude")
+  })
+
+  it("keeps a provider tab selected when a non-all provider is active and lets users switch back to all", async () => {
+    const { setSelectedProvider } = renderProviderTabs({
+      selectedProvider: "OpenAI",
+    })
+
+    const allProvidersTab = await screen.findByRole("tab", {
+      name: /allProviders.*\(10\)/,
+    })
+    const openAiTab = screen.getByRole("tab", {
+      name: /OpenAI \(2\)/,
+    })
+
+    expect(openAiTab).toHaveAttribute("aria-selected", "true")
+    expect(openAiTab).toHaveClass("text-blue-700")
+    expect(allProvidersTab).toHaveAttribute("aria-selected", "false")
+    expect(allProvidersTab).toHaveClass("text-gray-700")
+
+    fireEvent.click(allProvidersTab)
+
+    expect(setSelectedProvider).toHaveBeenCalledWith("all")
   })
 })

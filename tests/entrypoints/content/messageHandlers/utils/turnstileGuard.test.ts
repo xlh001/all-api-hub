@@ -164,6 +164,31 @@ describe("turnstileGuard", () => {
       expect(result.token).toBe("token-1")
     })
 
+    it("ignores invalid and empty response fields before using the first real token", async () => {
+      const nonInput = document.createElement("div")
+      nonInput.setAttribute("name", "cf-turnstile-response")
+
+      const emptyTextarea = document.createElement("textarea")
+      emptyTextarea.setAttribute("name", "cf-turnstile-response")
+      emptyTextarea.value = "   "
+
+      const tokenInput = document.createElement("input")
+      tokenInput.setAttribute("name", "cf-turnstile-response")
+      tokenInput.value = "token-from-later-field"
+
+      document.body.appendChild(nonInput)
+      document.body.appendChild(emptyTextarea)
+      document.body.appendChild(tokenInput)
+
+      const result = await waitForTurnstileToken({
+        requestId: "req-mixed-fields",
+        timeoutMs: 500,
+      })
+
+      expect(result.status).toBe("token_obtained")
+      expect(result.token).toBe("token-from-later-field")
+    })
+
     it("returns not_present quickly when no turnstile markers exist", async () => {
       const result = await waitForTurnstileToken({
         requestId: "req-none",
@@ -300,6 +325,57 @@ describe("turnstileGuard", () => {
       expect(actionable.click).toHaveBeenCalledTimes(1)
     })
 
+    it("uses a custom clickText candidate selector and skips non-actionable matches", async () => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+      svg.setAttribute("class", "turnstile-candidate")
+      svg.textContent = "Check in from svg"
+
+      const empty = createMockElement("button", (el) => {
+        el.className = "turnstile-candidate"
+        el.textContent = "   "
+        el.click = vi.fn()
+      })
+
+      const completed = createMockElement("button", (el) => {
+        el.className = "turnstile-candidate"
+        el.textContent = "Already check in"
+        el.click = vi.fn()
+      })
+
+      const actionable = createMockElement("button", (el) => {
+        el.className = "turnstile-candidate"
+        el.textContent = "Check in now"
+        el.click = vi.fn(() => {
+          const input = document.createElement("input")
+          input.setAttribute("name", "cf-turnstile-response")
+          input.value = "token-custom-candidates"
+          document.body.appendChild(input)
+        })
+      })
+
+      document.body.appendChild(svg)
+      document.body.appendChild(empty)
+      document.body.appendChild(completed)
+      document.body.appendChild(actionable)
+
+      const result = await waitForTurnstileToken({
+        requestId: "req-click-text-candidates",
+        timeoutMs: 1500,
+        preTrigger: {
+          kind: "clickText",
+          positivePattern: "check\\s*in",
+          negativePattern: "already",
+          candidateSelector: ".turnstile-candidate",
+        },
+      })
+
+      expect(result.status).toBe("token_obtained")
+      expect(result.token).toBe("token-custom-candidates")
+      expect(empty.click).not.toHaveBeenCalled()
+      expect(completed.click).not.toHaveBeenCalled()
+      expect(actionable.click).toHaveBeenCalledTimes(1)
+    })
+
     it("falls back to the default check-in patterns when custom preTrigger patterns are invalid", async () => {
       const button = createMockElement("button", (el) => {
         el.textContent = "签到"
@@ -327,6 +403,32 @@ describe("turnstileGuard", () => {
       expect(button.click).toHaveBeenCalledTimes(1)
     })
 
+    it("accepts a string timeout from runtime messages", async () => {
+      const trigger = createMockElement("button", (el) => {
+        el.className = "turnstile-string-timeout"
+        el.click = vi.fn(() => {
+          const input = document.createElement("input")
+          input.setAttribute("name", "cf-turnstile-response")
+          input.value = "token-string-timeout"
+          document.body.appendChild(input)
+        })
+      })
+      document.body.appendChild(trigger)
+
+      const result = await waitForTurnstileToken({
+        requestId: "req-string-timeout",
+        timeoutMs: "1500",
+        preTrigger: {
+          kind: "clickSelector",
+          selector: ".turnstile-string-timeout",
+        },
+      })
+
+      expect(result.status).toBe("token_obtained")
+      expect(result.token).toBe("token-string-timeout")
+      expect(trigger.click).toHaveBeenCalledTimes(1)
+    })
+
     it("respects a zero-attempt preTrigger throttle and does not click even when a target exists", async () => {
       const button = createMockElement("button", (el) => {
         el.textContent = "签到"
@@ -349,6 +451,42 @@ describe("turnstileGuard", () => {
       expect(result.status).toBe("not_present")
       expect(result.token).toBeNull()
       expect(button.click).not.toHaveBeenCalled()
+    })
+
+    it("does not pre-trigger when requestId is blank even if a target exists", async () => {
+      const button = createMockElement("button", (el) => {
+        el.textContent = "签到"
+        el.click = vi.fn()
+      })
+      document.body.appendChild(button)
+
+      const result = await waitForTurnstileToken({
+        requestId: "   ",
+        timeoutMs: 500,
+        preTrigger: { kind: "checkinButton" },
+      })
+
+      expect(result.status).toBe("not_present")
+      expect(result.token).toBeNull()
+      expect(button.click).not.toHaveBeenCalled()
+    })
+
+    it("throttles repeated preTrigger clicks when the widget never appears", async () => {
+      const button = createMockElement("button", (el) => {
+        el.textContent = "签到"
+        el.click = vi.fn()
+      })
+      document.body.appendChild(button)
+
+      const result = await waitForTurnstileToken({
+        requestId: "req-pretrigger-throttle",
+        timeoutMs: 1000,
+        preTrigger: { kind: "checkinButton" },
+      })
+
+      expect(result.status).toBe("not_present")
+      expect(result.token).toBeNull()
+      expect(button.click).toHaveBeenCalledTimes(1)
     })
 
     it("returns not_present after timeout when preTrigger is enabled but no target can be found", async () => {

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { AccountSelector } from "~/features/ModelList/components/AccountSelector"
-import { render, screen } from "~~/tests/test-utils/render"
 import { testI18n } from "~~/tests/test-utils/i18n"
+import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 describe("AccountSelector", () => {
   beforeEach(() => {
@@ -49,5 +49,44 @@ describe("AccountSelector", () => {
     expect(combobox).toHaveTextContent(
       "API Credential: Reusable Key · profile.example.com",
     )
+  })
+
+  it("falls back to the raw profile URL and empty selection state when parsing fails or no source is selected", async () => {
+    render(
+      <AccountSelector
+        selectedSourceValue={undefined as any}
+        setSelectedSourceValue={vi.fn()}
+        accounts={[
+          {
+            id: "account-1",
+            name: "Primary Account",
+          } as any,
+        ]}
+        profiles={[
+          {
+            id: "profile-bad-url",
+            name: "Broken Endpoint",
+            apiType: "openai-compatible",
+            baseUrl: "not-a-valid-url",
+            apiKey: "sk-secret",
+            tagIds: [],
+            notes: "",
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ]}
+      />,
+    )
+
+    const combobox = await screen.findByRole("combobox")
+    expect(combobox).toHaveTextContent("Please select a source")
+
+    fireEvent.click(combobox)
+
+    expect(await screen.findByText("All accounts")).toBeInTheDocument()
+    expect(screen.getByText("Primary Account")).toBeInTheDocument()
+    expect(
+      screen.getByText("API Credential: Broken Endpoint · not-a-valid-url"),
+    ).toBeInTheDocument()
   })
 })
