@@ -2,7 +2,10 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { RedemptionBatchResultToast } from "~/entrypoints/content/redemptionAssist/components/RedemptionBatchResultToast"
+import {
+  RedemptionBatchResultToast,
+  type RedemptionBatchResultItem,
+} from "~/entrypoints/content/redemptionAssist/components/RedemptionBatchResultToast"
 
 const { loggerErrorMock } = vi.hoisted(() => ({
   loggerErrorMock: vi.fn(),
@@ -122,10 +125,10 @@ describe("RedemptionBatchResultToast", () => {
   })
 
   it("retries a failed code, shows the loading state, and replaces the row with the successful retry result", async () => {
-    let resolveRetry: ((value: unknown) => void) | undefined
-    const onRetry = vi.fn(
+    let resolveRetry: ((value: RedemptionBatchResultItem) => void) | undefined
+    const onRetry = vi.fn<(code: string) => Promise<RedemptionBatchResultItem>>(
       () =>
-        new Promise((resolve) => {
+        new Promise<RedemptionBatchResultItem>((resolve) => {
           resolveRetry = resolve
         }),
     )

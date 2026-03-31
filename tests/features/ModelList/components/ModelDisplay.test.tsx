@@ -5,10 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { UI_CONSTANTS } from "~/constants/ui"
 import { ModelDisplay } from "~/features/ModelList/components/ModelDisplay"
+import type { CalculatedModelItem } from "~/features/ModelList/hooks/useFilteredModels"
+import type { ModelPricing } from "~/services/apiService/common/type"
+import type { CalculatedPrice } from "~/services/models/utils/modelPricing"
 import {
   createAccountModelVerificationHistoryTarget,
   createProfileModelVerificationHistoryTarget,
   serializeVerificationHistoryTarget,
+  type ApiVerificationHistoryTarget,
 } from "~/services/verification/verificationResultHistory"
 
 const { modelItemSpy } = vi.hoisted(() => ({
@@ -125,23 +129,52 @@ const PROFILE_SOURCE = {
   },
 } as any
 
-const createCalculatedModel = (overrides: Record<string, unknown>) => ({
-  model: {
+type CalculatedModelOverrides = {
+  model?: Partial<ModelPricing>
+  calculatedPrice?: Partial<CalculatedPrice>
+  source?: CalculatedModelItem["source"]
+}
+
+function requireHistoryTarget(
+  target: ApiVerificationHistoryTarget | null,
+): ApiVerificationHistoryTarget {
+  if (!target) {
+    throw new Error("Expected verification history target to be created")
+  }
+
+  return target
+}
+
+const createCalculatedModel = (
+  overrides: CalculatedModelOverrides,
+): CalculatedModelItem => {
+  const model: ModelPricing = {
     model_name: "gpt-4o-mini",
+    model_description: "Test model",
+    quota_type: 0,
+    model_ratio: 1,
+    model_price: 0,
+    owner_by: "test-owner",
+    completion_ratio: 1,
     enable_groups: ["default", "vip"],
     supported_endpoint_types: ["chat"],
-    ...overrides.model,
-  },
-  calculatedPrice: {
+    ...(overrides.model ?? {}),
+  }
+
+  const calculatedPrice: CalculatedPrice = {
     inputUSD: 1,
     outputUSD: 2,
     inputCNY: 7,
     outputCNY: 14,
-    ...overrides.calculatedPrice,
-  },
-  source: overrides.source ?? ACCOUNT_SOURCE,
-  ...overrides,
-})
+    ...(overrides.calculatedPrice ?? {}),
+  }
+
+  return {
+    model,
+    calculatedPrice,
+    source: overrides.source ?? ACCOUNT_SOURCE,
+  }
+}
 
 describe("ModelDisplay", () => {
   beforeEach(() => {
@@ -174,9 +207,11 @@ describe("ModelDisplay", () => {
     const onVerifyCliSupport = vi.fn()
     const onOpenModelKeyDialog = vi.fn()
     const handleGroupClick = vi.fn()
-    const accountSummaryKey = serializeVerificationHistoryTarget(
+    const accountSummaryTarget = requireHistoryTarget(
       createAccountModelVerificationHistoryTarget("account-1", "gpt-4o-mini"),
     )
+    const accountSummaryKey =
+      serializeVerificationHistoryTarget(accountSummaryTarget)
 
     render(
       <ModelDisplay
@@ -247,12 +282,14 @@ describe("ModelDisplay", () => {
   })
 
   it("uses profile verification summaries and preserves non-all group selection for profile-backed items", () => {
-    const profileSummaryKey = serializeVerificationHistoryTarget(
+    const profileSummaryTarget = requireHistoryTarget(
       createProfileModelVerificationHistoryTarget(
         "profile-1",
         "claude-3-5-sonnet",
       ),
     )
+    const profileSummaryKey =
+      serializeVerificationHistoryTarget(profileSummaryTarget)
 
     render(
       <ModelDisplay

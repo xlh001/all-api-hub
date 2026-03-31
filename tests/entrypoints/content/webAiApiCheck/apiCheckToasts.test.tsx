@@ -2,6 +2,16 @@ import { waitFor } from "@testing-library/react"
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import type { ApiCheckConfirmToastAction } from "~/entrypoints/content/webAiApiCheck/components/ApiCheckConfirmToast"
+
+type ApiCheckConfirmToastProps = {
+  onAction: (action: ApiCheckConfirmToastAction) => void
+}
+
+type ToastInstance = {
+  id: string
+}
+
 const { toastCustomMock, toastDismissMock, ensureRedemptionToastUiMock } =
   vi.hoisted(() => ({
     toastCustomMock: vi.fn(),
@@ -23,8 +33,8 @@ vi.mock("~/entrypoints/content/shared/uiRoot", () => ({
 vi.mock(
   "~/entrypoints/content/webAiApiCheck/components/ApiCheckConfirmToast",
   () => ({
-    ApiCheckConfirmToast: (props: unknown) =>
-      React.createElement("mock-api-check-confirm-toast", props),
+    ApiCheckConfirmToast: (props: ApiCheckConfirmToastProps) =>
+      React.createElement("mock-api-check-confirm-toast", props as any),
   }),
 )
 
@@ -36,13 +46,20 @@ describe("apiCheckToasts", () => {
   })
 
   it("shows the confirm toast with infinite duration and resolves true only once for confirm actions", async () => {
-    let renderedElement: React.ReactElement | null = null
+    let renderedElement: React.ReactElement<ApiCheckConfirmToastProps> | null =
+      null
 
-    toastCustomMock.mockImplementation((renderer) => {
-      const element = renderer({ id: "api-check-toast-id" })
-      renderedElement = element as React.ReactElement
-      return "api-check-toast-return"
-    })
+    toastCustomMock.mockImplementation(
+      (
+        renderer: (
+          toastInstance: ToastInstance,
+        ) => React.ReactElement<ApiCheckConfirmToastProps>,
+      ) => {
+        const element = renderer({ id: "api-check-toast-id" })
+        renderedElement = element
+        return "api-check-toast-return"
+      },
+    )
 
     const { showApiCheckConfirmToast } = await import(
       "~/entrypoints/content/webAiApiCheck/utils/apiCheckToasts"
@@ -79,8 +96,10 @@ describe("apiCheckToasts", () => {
       expect(toastCustomMock).toHaveBeenCalledTimes(1)
     })
 
-    const renderer = toastCustomMock.mock.calls[0]?.[0]
-    const element = renderer({ id: "api-check-toast-id" }) as React.ReactElement
+    const renderer = toastCustomMock.mock.calls[0]?.[0] as (
+      toastInstance: ToastInstance,
+    ) => React.ReactElement<ApiCheckConfirmToastProps>
+    const element = renderer({ id: "api-check-toast-id" })
 
     element.props.onAction("cancel")
     element.props.onAction("confirm")

@@ -60,15 +60,19 @@ describe("uiRoot", () => {
 
   it("mounts the shared content UI once, skips repeat mounts while active, and remounts after removal", async () => {
     const container = document.createElement("div")
+    type MockRoot = {
+      render: ReturnType<typeof vi.fn>
+      unmount: ReturnType<typeof vi.fn>
+    }
     const root = {
       render: vi.fn(),
       unmount: vi.fn(),
-    }
+    } satisfies MockRoot
     const mountMock = vi.fn()
-    let removeHandler: ((root: typeof root | undefined) => void) | undefined
+    let removeHandler: ((root: MockRoot | undefined) => void) | undefined
 
     createRootMock.mockReturnValue(root)
-    createShadowRootUiMock.mockImplementation(async (ctx, options) => {
+    createShadowRootUiMock.mockImplementation(async (_ctx, options) => {
       removeHandler = options.onRemove
       mountMock.mockImplementation(() => {
         options.onMount(container)
@@ -124,10 +128,14 @@ describe("uiRoot", () => {
 
   it("reuses the in-flight mounting promise so concurrent callers do not mount twice", async () => {
     const container = document.createElement("div")
+    type MockRoot = {
+      render: ReturnType<typeof vi.fn>
+      unmount: ReturnType<typeof vi.fn>
+    }
     const root = {
       render: vi.fn(),
       unmount: vi.fn(),
-    }
+    } satisfies MockRoot
     const mountMock = vi.fn()
     let releaseUiCreation: (() => void) | undefined
 

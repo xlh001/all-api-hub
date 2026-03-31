@@ -3,6 +3,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RedemptionToaster } from "~/entrypoints/content/redemptionAssist/components/RedemptionToaster"
 
+type ToastStackProps = {
+  children: React.ReactNode
+}
+
+type ToastRegionProps = {
+  children: React.ReactElement<ToastStackProps>
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+}
+
+type ToastCardProps = {
+  className?: string
+  children?: React.ReactNode
+}
+
 const { useToasterMock } = vi.hoisted(() => ({
   useToasterMock: vi.fn(),
 }))
@@ -88,11 +103,11 @@ describe("RedemptionToaster", () => {
 
     expect(React.isValidElement(tree)).toBe(true)
 
-    const toastRegion = tree as React.ReactElement
-    const toastStack = toastRegion.props.children as React.ReactElement
+    const toastRegion = tree as React.ReactElement<ToastRegionProps>
+    const toastStack = toastRegion.props.children
     const visibleToasts = React.Children.toArray(
       toastStack.props.children,
-    ) as React.ReactElement[]
+    ) as React.ReactElement<ToastCardProps>[]
 
     expect(visibleToasts).toHaveLength(4)
 

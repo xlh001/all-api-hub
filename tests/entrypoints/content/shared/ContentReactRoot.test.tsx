@@ -1,5 +1,4 @@
 import { act, render, screen, waitFor } from "@testing-library/react"
-import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 type MatchMediaListener = (event: MediaQueryListEvent) => void

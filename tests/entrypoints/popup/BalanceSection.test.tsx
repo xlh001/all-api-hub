@@ -1,5 +1,4 @@
 import { act, fireEvent } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
 import React from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 

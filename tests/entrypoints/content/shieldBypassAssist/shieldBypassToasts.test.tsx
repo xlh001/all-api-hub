@@ -3,6 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 
+type ShieldBypassPromptToastProps = {
+  onDismiss: () => void
+  onOpenSettings: () => Promise<void> | void
+}
+
 const {
   toastCustomMock,
   toastDismissMock,
@@ -66,12 +71,13 @@ describe("shieldBypassToasts", () => {
       duration: Infinity,
     })
 
-    const renderer = toastCustomMock.mock.calls[0]?.[0]
+    const renderer = toastCustomMock.mock
+      .calls[0]?.[0] as () => React.ReactElement<ShieldBypassPromptToastProps>
     const element = renderer()
 
     expect(React.isValidElement(element)).toBe(true)
 
-    const props = (element as React.ReactElement).props
+    const props = element.props
     props.onDismiss()
 
     expect(toastDismissMock).toHaveBeenCalledWith("shield-bypass-helper")
@@ -93,12 +99,11 @@ describe("shieldBypassToasts", () => {
 
     await showShieldBypassPromptToast()
 
-    const renderer = toastCustomMock.mock.calls[0]?.[0]
+    const renderer = toastCustomMock.mock
+      .calls[0]?.[0] as () => React.ReactElement<ShieldBypassPromptToastProps>
     const element = renderer()
 
-    await expect(
-      (element as React.ReactElement).props.onOpenSettings(),
-    ).resolves.toBeUndefined()
+    await expect(element.props.onOpenSettings()).resolves.toBeUndefined()
 
     expect(loggerErrorMock).toHaveBeenCalledWith(
       "Failed to open settings page",

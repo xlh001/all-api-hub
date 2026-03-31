@@ -2,6 +2,30 @@ import { waitFor } from "@testing-library/react"
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import type { RedemptionAccountSelectToastProps } from "~/entrypoints/content/redemptionAssist/components/RedemptionAccountSelectToast"
+import type {
+  RedemptionBatchResultItem,
+  RedemptionBatchResultToastProps,
+} from "~/entrypoints/content/redemptionAssist/components/RedemptionBatchResultToast"
+import type {
+  RedemptionPromptCodeItem,
+  RedemptionPromptResult,
+} from "~/entrypoints/content/redemptionAssist/components/RedemptionPromptToast"
+
+type LoadingToastProps = {
+  message: string
+}
+
+type PromptToastProps = {
+  message: string
+  codes: RedemptionPromptCodeItem[]
+  onAction: (result: RedemptionPromptResult) => void
+}
+
+type ToastInstance = {
+  id: string
+}
+
 const {
   toastCustomMock,
   toastSuccessMock,
@@ -32,32 +56,32 @@ vi.mock("~/entrypoints/content/shared/uiRoot", () => ({
 vi.mock(
   "~/entrypoints/content/redemptionAssist/components/RedemptionAccountSelectToast",
   () => ({
-    RedemptionAccountSelectToast: (props: unknown) =>
-      React.createElement("mock-account-select-toast", props),
+    RedemptionAccountSelectToast: (props: RedemptionAccountSelectToastProps) =>
+      React.createElement("mock-account-select-toast", props as any),
   }),
 )
 
 vi.mock(
   "~/entrypoints/content/redemptionAssist/components/RedemptionBatchResultToast",
   () => ({
-    RedemptionBatchResultToast: (props: unknown) =>
-      React.createElement("mock-batch-result-toast", props),
+    RedemptionBatchResultToast: (props: RedemptionBatchResultToastProps) =>
+      React.createElement("mock-batch-result-toast", props as any),
   }),
 )
 
 vi.mock(
   "~/entrypoints/content/redemptionAssist/components/RedemptionLoadingToast",
   () => ({
-    RedemptionLoadingToast: (props: unknown) =>
-      React.createElement("mock-loading-toast", props),
+    RedemptionLoadingToast: (props: LoadingToastProps) =>
+      React.createElement("mock-loading-toast", props as any),
   }),
 )
 
 vi.mock(
   "~/entrypoints/content/redemptionAssist/components/RedemptionPromptToast",
   () => ({
-    RedemptionPromptToast: (props: unknown) =>
-      React.createElement("mock-prompt-toast", props),
+    RedemptionPromptToast: (props: PromptToastProps) =>
+      React.createElement("mock-prompt-toast", props as any),
   }),
 )
 
@@ -84,13 +108,12 @@ describe("redemptionToasts", () => {
       duration: Infinity,
     })
 
-    const loadingRenderer = toastCustomMock.mock.calls[0]?.[0]
+    const loadingRenderer = toastCustomMock.mock
+      .calls[0]?.[0] as () => React.ReactElement<LoadingToastProps>
     const loadingElement = loadingRenderer()
 
     expect(React.isValidElement(loadingElement)).toBe(true)
-    expect((loadingElement as React.ReactElement).props.message).toBe(
-      "Redeeming now",
-    )
+    expect(loadingElement.props.message).toBe("Redeeming now")
   })
 
   it("passes toast ids through to dismissToast", async () => {
@@ -125,16 +148,23 @@ describe("redemptionToasts", () => {
   })
 
   it("resolves account selection exactly once and dismisses the owning toast", async () => {
-    let renderedElement: React.ReactElement | null = null
+    let renderedElement: React.ReactElement<RedemptionAccountSelectToastProps> | null =
+      null
 
-    toastCustomMock.mockImplementation((renderer) => {
-      const element = renderer({ id: "account-toast-id" })
-      expect(React.isValidElement(element)).toBe(true)
-      renderedElement = element as React.ReactElement
-      expect(renderedElement.props.title).toBe("Pick account")
-      expect(renderedElement.props.message).toBe("Choose one")
-      return "account-toast-return"
-    })
+    toastCustomMock.mockImplementation(
+      (
+        renderer: (
+          toastInstance: ToastInstance,
+        ) => React.ReactElement<RedemptionAccountSelectToastProps>,
+      ) => {
+        const element = renderer({ id: "account-toast-id" })
+        expect(React.isValidElement(element)).toBe(true)
+        renderedElement = element
+        expect(renderedElement.props.title).toBe("Pick account")
+        expect(renderedElement.props.message).toBe("Choose one")
+        return "account-toast-return"
+      },
+    )
 
     const { showAccountSelectToast } = await import(
       "~/entrypoints/content/redemptionAssist/utils/redemptionToasts"
@@ -177,19 +207,22 @@ describe("redemptionToasts", () => {
       expect(toastCustomMock).toHaveBeenCalledTimes(1)
     })
 
-    const promptRenderer = toastCustomMock.mock.calls[0]?.[0]
+    const promptRenderer = toastCustomMock.mock.calls[0]?.[0] as (
+      toastInstance: ToastInstance,
+    ) => React.ReactElement<PromptToastProps>
     const promptElement = promptRenderer({ id: "prompt-toast-id" })
-    const firstResult = { action: "auto", selectedCodes: ["code-a"] }
+    const firstResult: RedemptionPromptResult = {
+      action: "auto",
+      selectedCodes: ["code-a"],
+    }
 
-    expect((promptElement as React.ReactElement).props.message).toBe(
-      "Prompt message",
-    )
-    expect((promptElement as React.ReactElement).props.codes).toEqual([
+    expect(promptElement.props.message).toBe("Prompt message")
+    expect(promptElement.props.codes).toEqual([
       { code: "code-a", preview: "AA**" },
       { code: "code-b", preview: "BB**" },
     ])
-    ;(promptElement as React.ReactElement).props.onAction(firstResult)
-    ;(promptElement as React.ReactElement).props.onAction({
+    promptElement.props.onAction(firstResult)
+    promptElement.props.onAction({
       action: "cancel",
       selectedCodes: [],
     })
@@ -206,7 +239,7 @@ describe("redemptionToasts", () => {
       "~/entrypoints/content/redemptionAssist/utils/redemptionToasts"
     )
 
-    const results = [
+    const results: RedemptionBatchResultItem[] = [
       {
         code: "code-a",
         preview: "AA**",
@@ -214,7 +247,8 @@ describe("redemptionToasts", () => {
         message: "Failed",
       },
     ]
-    const onRetry = vi.fn()
+    const onRetry =
+      vi.fn<(code: string) => Promise<RedemptionBatchResultItem>>()
 
     await expect(showRedeemBatchResultToast(results, onRetry)).resolves.toBe(
       "batch-toast-return",
@@ -229,12 +263,14 @@ describe("redemptionToasts", () => {
       expect(toastCustomMock).toHaveBeenCalledTimes(1)
     })
 
-    const batchRenderer = toastCustomMock.mock.calls[0]?.[0]
+    const batchRenderer = toastCustomMock.mock.calls[0]?.[0] as (
+      toastInstance: ToastInstance,
+    ) => React.ReactElement<RedemptionBatchResultToastProps>
     const batchElement = batchRenderer({ id: "batch-toast-id" })
 
-    expect((batchElement as React.ReactElement).props.results).toEqual(results)
-    expect((batchElement as React.ReactElement).props.onRetry).toBe(onRetry)
-    ;(batchElement as React.ReactElement).props.onClose()
+    expect(batchElement.props.results).toEqual(results)
+    expect(batchElement.props.onRetry).toBe(onRetry)
+    batchElement.props.onClose()
 
     expect(toastDismissMock).toHaveBeenCalledWith("batch-toast-id")
   })
