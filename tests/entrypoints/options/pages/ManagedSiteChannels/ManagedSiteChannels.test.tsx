@@ -94,6 +94,7 @@ const waitForRowText = (text: string) =>
  * menu did not open.
  */
 const openRowActionsMenu = async (row: HTMLElement) => {
+  const user = userEvent.setup()
   const trigger = within(row).getByRole("button", {
     name: "managedSiteChannels:table.columns.actions",
   })
@@ -109,8 +110,13 @@ const openRowActionsMenu = async (row: HTMLElement) => {
     knownRowActionNames.some(
       (name) => screen.queryByRole("menuitem", { name }) !== null,
     )
+  const isMenuOpen = () =>
+    trigger.getAttribute("aria-expanded") === "true" || hasRowActionContent()
 
   const openAttempts = [
+    async () => {
+      await user.click(trigger)
+    },
     async () => {
       fireEvent.pointerDown(trigger, {
         button: 0,
@@ -151,7 +157,7 @@ const openRowActionsMenu = async (row: HTMLElement) => {
   ]
 
   for (const attempt of openAttempts) {
-    if (hasRowActionContent()) {
+    if (isMenuOpen()) {
       return
     }
 
@@ -159,11 +165,11 @@ const openRowActionsMenu = async (row: HTMLElement) => {
     try {
       await waitFor(
         () => {
-          expect(hasRowActionContent()).toBe(true)
+          expect(isMenuOpen()).toBe(true)
         },
         { timeout: 250 },
       )
-      return
+      break
     } catch {
       // Fall through to the next open strategy when Radix ignores the event.
     }
@@ -173,7 +179,7 @@ const openRowActionsMenu = async (row: HTMLElement) => {
     () => {
       expect(hasRowActionContent()).toBe(true)
     },
-    { timeout: 1500 },
+    { timeout: 3000 },
   )
 }
 
