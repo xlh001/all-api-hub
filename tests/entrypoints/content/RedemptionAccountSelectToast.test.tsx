@@ -1,7 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import {
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 import type { ReactElement } from "react"
 import { I18nextProvider } from "react-i18next"
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RedemptionAccountSelectToast } from "~/entrypoints/content/redemptionAssist/components/RedemptionAccountSelectToast"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
@@ -32,6 +38,13 @@ const renderWithI18n = (ui: ReactElement) => {
 }
 
 describe("RedemptionAccountSelectToast", () => {
+  const scrollIntoViewMock = vi.fn()
+
+  beforeEach(() => {
+    scrollIntoViewMock.mockReset()
+    Element.prototype.scrollIntoView = scrollIntoViewMock
+  })
+
   it("allows ArrowUp/ArrowDown to change selection even when search input is focused", async () => {
     const accounts = [
       makeAccount({ id: "acc-1", name: "Account 1" }),
@@ -91,5 +104,141 @@ describe("RedemptionAccountSelectToast", () => {
     expect(onSelect).toHaveBeenCalledWith(
       expect.objectContaining({ id: "acc-2" }),
     )
+  })
+
+  it("uses the provided title/message, shows custom check-in urls, and handles confirm and cancel clicks", async () => {
+    const accounts = [
+      makeAccount({
+        id: "acc-1",
+        name: "Account 1",
+        baseUrl: "https://base.example.com",
+        checkIn: {
+          enableDetection: false,
+          customCheckIn: {
+            url: "https://custom.example.com/check-in",
+          },
+        } as any,
+      }),
+      makeAccount({ id: "acc-2", name: "Account 2" }),
+    ]
+    const onSelect = vi.fn()
+
+    renderWithI18n(
+      <RedemptionAccountSelectToast
+        title="Choose account"
+        message="Select a target account."
+        accounts={accounts}
+        onSelect={onSelect}
+      />,
+    )
+
+    expect(screen.getByText("Choose account")).toBeInTheDocument()
+    expect(screen.getByText("Select a target account.")).toBeInTheDocument()
+    expect(
+      screen.getByText("https://custom.example.com/check-in"),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:actions.cancel" }),
+    )
+    expect(onSelect).toHaveBeenNthCalledWith(1, null)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "redemptionAssist:accountSelect.confirm",
+      }),
+    )
+    expect(onSelect).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ id: "acc-1" }),
+    )
+  })
+
+  it("filters accounts, resets selection to the first visible result, and shows the no-results state", async () => {
+    const onSelect = vi.fn()
+    const accounts = [
+      makeAccount({ id: "acc-1", name: "Alpha Account" }),
+      makeAccount({ id: "acc-2", name: "Beta Account" }),
+      makeAccount({ id: "acc-3", name: "Gamma Account" }),
+    ]
+
+    renderWithI18n(
+      <RedemptionAccountSelectToast accounts={accounts} onSelect={onSelect} />,
+    )
+
+    const input = screen.getByRole("textbox")
+
+    fireEvent.click(screen.getByRole("radio", { name: /Gamma Account/ }))
+    expect(screen.getByRole("radio", { name: /Gamma Account/ })).toBeChecked()
+
+    fireEvent.change(input, { target: { value: "beta" } })
+
+    await waitFor(() => {
+      expect(screen.getByRole("radio", { name: /Beta Account/ })).toBeChecked()
+    })
+    expect(
+      screen.queryByRole("radio", { name: /Gamma Account/ }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "redemptionAssist:accountSelect.confirm",
+      }),
+    )
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "acc-2" }),
+    )
+
+    fireEvent.change(input, { target: { value: "missing" } })
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("redemptionAssist:accountSelect.noResults"),
+      ).toBeInTheDocument()
+    })
+    expect(
+      screen.getByRole("button", {
+        name: "redemptionAssist:accountSelect.confirm",
+      }),
+    ).toBeDisabled()
+  })
+
+  it("ignores handled or modified keyboard shortcuts and safely no-ops when nothing is selectable", async () => {
+    const onSelect = vi.fn()
+
+    renderWithI18n(
+      <RedemptionAccountSelectToast
+        accounts={[makeAccount({ id: "acc-1", name: "Solo Account" })]}
+        onSelect={onSelect}
+      />,
+    )
+
+    const input = screen.getByRole("textbox")
+    const preventedArrowDown = createEvent.keyDown(input, {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    })
+    preventedArrowDown.preventDefault()
+    fireEvent(input, preventedArrowDown)
+
+    expect(screen.getByRole("radio", { name: /Solo Account/ })).toBeChecked()
+
+    fireEvent.keyDown(input, { key: "ArrowDown", altKey: true })
+    fireEvent.keyDown(input, { key: "Enter", ctrlKey: true })
+
+    expect(onSelect).not.toHaveBeenCalled()
+
+    fireEvent.change(input, { target: { value: "missing" } })
+    await waitFor(() => {
+      expect(
+        screen.getByText("redemptionAssist:accountSelect.noResults"),
+      ).toBeInTheDocument()
+    })
+
+    fireEvent.keyDown(input, { key: "ArrowDown" })
+    fireEvent.keyDown(input, { key: "Enter" })
+
+    expect(onSelect).not.toHaveBeenCalled()
   })
 })

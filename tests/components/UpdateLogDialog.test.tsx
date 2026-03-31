@@ -164,4 +164,70 @@ describe("UpdateLogDialog", () => {
       }),
     ).toBeVisible()
   })
+
+  it("keeps the fallback hidden after the iframe loads before the timeout elapses", async () => {
+    vi.useFakeTimers()
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
+      buildUserPreferences({ openChangelogOnUpdate: true }),
+    )
+
+    render(<UpdateLogDialog isOpen onClose={() => {}} version="2.39.0" />)
+
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    const iframe = screen.getByTitle("ui:dialog.updateLog.title")
+    fireEvent.load(iframe)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000)
+    })
+
+    expect(
+      screen.queryByText("ui:dialog.updateLog.missingSection", {
+        exact: false,
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("ui:dialog.updateLog.loading"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("ignores repeat auto-open toggles while a save is already in flight and re-enables the control after it settles", async () => {
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
+      buildUserPreferences({ openChangelogOnUpdate: true }),
+    )
+
+    let resolveUpdate: ((value: boolean) => void) | undefined
+    const updateSpy = vi
+      .spyOn(userPreferences, "updateOpenChangelogOnUpdate")
+      .mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveUpdate = resolve
+          }),
+      )
+
+    render(<UpdateLogDialog isOpen onClose={() => {}} version="2.39.0" />)
+
+    const toggleButton = await screen.findByTestId(
+      "update-log-dialog-auto-open-toggle",
+    )
+
+    fireEvent.click(toggleButton)
+    fireEvent.click(toggleButton)
+
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+    expect(updateSpy).toHaveBeenCalledWith(false)
+    expect(toggleButton).toBeDisabled()
+
+    resolveUpdate?.(true)
+
+    await waitFor(() => {
+      expect(toggleButton).not.toBeDisabled()
+    })
+    expect(toggleButton).toHaveTextContent("ui:dialog.updateLog.enableAutoOpen")
+  })
 })
