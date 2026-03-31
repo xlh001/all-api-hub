@@ -239,7 +239,7 @@ describe("UsageHistorySyncTab", () => {
       await screen.findByText("usageAnalytics:settings.alarmUnsupported"),
     ).toBeInTheDocument()
     expect(
-      screen.getByText("usageAnalytics:syncTab.noAccounts"),
+      await screen.findByText("usageAnalytics:syncTab.noAccounts"),
     ).toBeInTheDocument()
 
     const switches = screen.getAllByRole("switch")
