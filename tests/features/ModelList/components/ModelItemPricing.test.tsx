@@ -32,8 +32,10 @@ vi.mock("~/services/models/utils/modelPricing", async (importOriginal) => {
 
   return {
     ...actual,
-    formatPriceCompact: (...args: unknown[]) => formatPriceCompactMock(...args),
-    isTokenBillingType: (...args: unknown[]) => isTokenBillingTypeMock(...args),
+    formatPriceCompact: (price: number, currency?: string) =>
+      formatPriceCompactMock(price, currency),
+    isTokenBillingType: (quotaType: number) =>
+      isTokenBillingTypeMock(quotaType),
   }
 })
 

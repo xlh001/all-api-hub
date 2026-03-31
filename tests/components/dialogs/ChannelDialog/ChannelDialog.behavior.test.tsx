@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import type { ReactNode } from "react"
+import type { MouseEvent, ReactNode } from "react"
 import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -124,11 +124,15 @@ vi.mock("~/components/dialogs/ChannelDialog/hooks/useChannelForm", async () => {
 
   return {
     useChannelForm: () => {
-      const [formData, setFormData] = React.useState<ChannelFormData>(() => ({
-        ...channelFormScenario.formData,
-        models: [...channelFormScenario.formData.models],
-        groups: [...channelFormScenario.formData.groups],
-      }))
+      const [formData, setFormData] = React.useState<ChannelFormData>(() => {
+        const initialFormData = channelFormScenario.formData as ChannelFormData
+
+        return {
+          ...initialFormData,
+          models: [...initialFormData.models],
+          groups: [...initialFormData.groups],
+        }
+      })
 
       const updateField = (
         field: keyof ChannelFormData,
@@ -184,8 +188,6 @@ vi.mock("~/components/ManagedSiteChannelAssessmentSignals", () => ({
 }))
 
 vi.mock("~/components/ui", async () => {
-  const React = await import("react")
-
   const Button = ({
     children,
     disabled,
@@ -194,7 +196,7 @@ vi.mock("~/components/ui", async () => {
   }: {
     children: ReactNode
     disabled?: boolean
-    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
+    onClick?: (event: MouseEvent<HTMLButtonElement>) => void
     type?: "button" | "submit"
   }) => (
     <button disabled={disabled} onClick={onClick} type={type}>

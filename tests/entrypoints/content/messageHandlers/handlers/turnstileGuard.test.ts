@@ -36,7 +36,7 @@ describe("content turnstile guard handler", () => {
         score: 5,
       },
     }
-    const preTrigger = { clickSelector: "#submit" }
+    const preTrigger = { kind: "clickSelector", selector: "#submit" } as const
 
     waitForTurnstileTokenMock.mockResolvedValue(result)
 

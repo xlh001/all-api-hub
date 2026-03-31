@@ -323,7 +323,7 @@ describe("tagStorage", () => {
           authType: "access_token",
           checkIn: { enableDetection: false },
           tagIds: ["t1", "keep"],
-        },
+        } as any,
         {
           id: "a-empty",
           site_name: "Site",
@@ -338,7 +338,7 @@ describe("tagStorage", () => {
           authType: "access_token",
           checkIn: { enableDetection: false },
           tagIds: [],
-        },
+        } as any,
         {
           id: "a-miss",
           site_name: "Site",
@@ -353,7 +353,7 @@ describe("tagStorage", () => {
           authType: "access_token",
           checkIn: { enableDetection: false },
           tagIds: ["keep"],
-        },
+        } as any,
         {
           id: "a-none",
           site_name: "Site",
@@ -367,7 +367,7 @@ describe("tagStorage", () => {
           created_at: 0,
           authType: "access_token",
           checkIn: { enableDetection: false },
-        },
+        } as any,
       ],
       bookmarks: [
         {

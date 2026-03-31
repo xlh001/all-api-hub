@@ -15,7 +15,7 @@ vi.mock("~/utils/core/logger", () => ({
 }))
 
 vi.mock("~/utils/i18n/core", () => ({
-  t: (...args: unknown[]) => tMock(...args),
+  t: (key: string) => tMock(key),
 }))
 
 function createLocalStorageMock() {

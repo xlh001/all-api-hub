@@ -19,7 +19,7 @@ const {
     changeLanguage: vi.fn(),
     on: vi.fn(),
     language: "en",
-    resolvedLanguage: "en",
+    resolvedLanguage: "en" as string | undefined,
   },
   languageDetectorPlugin: { type: "languageDetector" },
   mapToDayjsLocaleMock: vi.fn(),

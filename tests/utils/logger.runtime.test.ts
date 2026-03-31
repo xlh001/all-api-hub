@@ -398,7 +398,7 @@ describe("unified logger runtime/bootstrap behavior", () => {
       when: new Date("2024-01-02T03:04:05.000Z"),
       endpoint: new URL("https://example.com/api?secret=1"),
       failure: new TypeError("boom"),
-      entries: new Map([
+      entries: new Map<string, unknown>([
         ["alpha", 1],
         ["beta", "https://example.com/other?q=1"],
       ]),

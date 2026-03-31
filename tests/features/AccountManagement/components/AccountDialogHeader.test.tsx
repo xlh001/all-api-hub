@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react"
+import type { ReactNode } from "react"
 import { describe, expect, it, vi } from "vitest"
 
 import { DIALOG_MODES } from "~/constants/dialogModes"
@@ -9,7 +10,7 @@ vi.mock("@headlessui/react", () => ({
     children,
     className,
   }: {
-    children: unknown
+    children: ReactNode
     className?: string
   }) => <div className={className}>{children}</div>,
 }))

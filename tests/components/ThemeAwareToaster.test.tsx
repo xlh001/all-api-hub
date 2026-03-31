@@ -29,8 +29,6 @@ vi.mock("~/contexts/ThemeContext", () => ({
 }))
 
 vi.mock("react-hot-toast", async () => {
-  const React = await import("react")
-
   return {
     default: {
       dismiss: dismissMock,

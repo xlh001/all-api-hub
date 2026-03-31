@@ -24,7 +24,7 @@ const buildRow = (
     group: "default, vip",
     ...overrides.original,
   }
-  const values = {
+  const values: Record<string, unknown> = {
     status: "enabled",
     id: original.id,
     ...overrides.values,
@@ -37,33 +37,42 @@ const buildRow = (
 }
 
 describe("filterFns", () => {
+  const addMeta = vi.fn()
+
   it("matches multi-column search terms across id, name, base URL, and groups", () => {
     const row = buildRow()
 
-    expect(multiColumnFilterFn(row, "name", "  ")).toBe(true)
-    expect(multiColumnFilterFn(row, "name", "alpha")).toBe(true)
-    expect(multiColumnFilterFn(row, "name", "GATEWAY.EXAMPLE.COM")).toBe(true)
-    expect(multiColumnFilterFn(row, "name", "vip")).toBe(true)
-    expect(multiColumnFilterFn(row, "name", "42")).toBe(true)
-    expect(multiColumnFilterFn(row, "name", "beta")).toBe(false)
+    expect(multiColumnFilterFn(row, "name", "  ", addMeta)).toBe(true)
+    expect(multiColumnFilterFn(row, "name", "alpha", addMeta)).toBe(true)
+    expect(
+      multiColumnFilterFn(row, "name", "GATEWAY.EXAMPLE.COM", addMeta),
+    ).toBe(true)
+    expect(multiColumnFilterFn(row, "name", "vip", addMeta)).toBe(true)
+    expect(multiColumnFilterFn(row, "name", "42", addMeta)).toBe(true)
+    expect(multiColumnFilterFn(row, "name", "beta", addMeta)).toBe(false)
   })
 
   it("treats status filters as opt-in and compares against the column value", () => {
     const row = buildRow({ values: { status: 1 } })
 
-    expect(statusFilterFn(row, "status", [])).toBe(true)
-    expect(statusFilterFn(row, "status", ["1", "2"])).toBe(true)
-    expect(statusFilterFn(row, "status", ["2", "3"])).toBe(false)
+    expect(statusFilterFn(row, "status", [], addMeta)).toBe(true)
+    expect(statusFilterFn(row, "status", ["1", "2"], addMeta)).toBe(true)
+    expect(statusFilterFn(row, "status", ["2", "3"], addMeta)).toBe(false)
   })
 
   it("requires exact trimmed channel id matches when a filter is provided", () => {
     const row = buildRow({ values: { id: "  84  " } })
 
-    expect(channelIdFilterFn(row, "id", "")).toBe(true)
-    expect(channelIdFilterFn(row, "id", " 84 ")).toBe(true)
-    expect(channelIdFilterFn(row, "id", "85")).toBe(false)
+    expect(channelIdFilterFn(row, "id", "", addMeta)).toBe(true)
+    expect(channelIdFilterFn(row, "id", " 84 ", addMeta)).toBe(true)
+    expect(channelIdFilterFn(row, "id", "85", addMeta)).toBe(false)
     expect(
-      channelIdFilterFn(buildRow({ values: { id: null } }), "id", "84"),
+      channelIdFilterFn(
+        buildRow({ values: { id: null } }),
+        "id",
+        "84",
+        addMeta,
+      ),
     ).toBe(false)
   })
 })
