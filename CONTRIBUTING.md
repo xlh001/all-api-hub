@@ -74,7 +74,7 @@ pnpm test:ci
 
 Coverage reports are automatically generated when running `pnpm test:ci`. You can view detailed coverage reports in the `coverage/` directory after running tests.
 
-The project aims for reasonable test coverage targets (currently set to 5% globally as a baseline). These can be adjusted in `vitest.config.ts` as the project grows.
+The repository enforces global Vitest coverage thresholds in CI. Treat `vitest.config.ts` as the source of truth for the current required values rather than copying them into this document.
 
 ### Writing Tests
 
