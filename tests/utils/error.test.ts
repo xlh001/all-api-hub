@@ -63,12 +63,12 @@ describe("getErrorMessage", () => {
 
     it("should handle message property with null", () => {
       const errorObj = { message: null }
-      expect(getErrorMessage(errorObj)).toBe("null")
+      expect(getErrorMessage(errorObj)).toBe("")
     })
 
     it("should handle message property with undefined", () => {
       const errorObj = { message: undefined }
-      expect(getErrorMessage(errorObj)).toBe("undefined")
+      expect(getErrorMessage(errorObj)).toBe("")
     })
 
     it("should handle nested object in message", () => {
@@ -99,12 +99,26 @@ describe("getErrorMessage", () => {
     })
 
     it("should serialize null to string", () => {
-      expect(getErrorMessage(null)).toBe("null")
+      expect(getErrorMessage(null)).toBe("")
     })
 
     it("should serialize undefined to string", () => {
       const result = getErrorMessage(undefined)
-      expect(result).toBe("undefined")
+      expect(result).toBe("")
+    })
+
+    it("should use fallback for nullish error values", () => {
+      expect(getErrorMessage(undefined, "Unknown error")).toBe("Unknown error")
+      expect(getErrorMessage(null, "Unknown error")).toBe("Unknown error")
+    })
+
+    it("should use fallback for nullish message properties", () => {
+      expect(getErrorMessage({ message: undefined }, "Unknown error")).toBe(
+        "Unknown error",
+      )
+      expect(getErrorMessage({ message: null }, "Unknown error")).toBe(
+        "Unknown error",
+      )
     })
   })
 
