@@ -38,7 +38,12 @@ vi.mock("~/utils/i18n/resources", () => ({
 
 describe("initBackgroundI18n", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    i18nCoreMock.init.mockReset()
+    i18nCoreMock.changeLanguage.mockReset()
+    i18nCoreMock.on.mockReset()
+    getLanguageMock.mockReset()
+    resolveInitialAppLanguageMock.mockReset()
+    mapToDayjsLocaleMock.mockReset()
     vi.resetModules()
   })
 
@@ -94,5 +99,39 @@ describe("initBackgroundI18n", () => {
     expect(localeSpy).toHaveBeenCalledWith("zh-tw")
 
     localeSpy.mockRestore()
+  })
+
+  it("resolves the initial language without navigator when the background runtime has no browser language", async () => {
+    const originalNavigator = globalThis.navigator
+    const localeSpy = vi.spyOn(dayjs, "locale").mockReturnValue("en")
+    getLanguageMock.mockResolvedValueOnce(undefined)
+    resolveInitialAppLanguageMock.mockReturnValueOnce("en")
+    mapToDayjsLocaleMock.mockReturnValue("en")
+
+    Object.defineProperty(globalThis, "navigator", {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    })
+
+    try {
+      const { initBackgroundI18n } = await import("~/utils/i18n/background")
+
+      await initBackgroundI18n()
+
+      expect(resolveInitialAppLanguageMock).toHaveBeenCalledWith({
+        userPreferenceLanguage: undefined,
+        detectedLanguage: undefined,
+      })
+      expect(i18nCoreMock.changeLanguage).toHaveBeenCalledWith("en")
+      expect(localeSpy).toHaveBeenCalledWith("en")
+    } finally {
+      Object.defineProperty(globalThis, "navigator", {
+        value: originalNavigator,
+        configurable: true,
+        writable: true,
+      })
+      localeSpy.mockRestore()
+    }
   })
 })

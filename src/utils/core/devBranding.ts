@@ -22,8 +22,8 @@ type DevBuildInfo = {
  * Kept short because it appears in browser extension UIs.
  */
 export function formatDevVersionName(info: DevBuildInfo): string {
-  const branch = (info.branch || "unknown").trim()
-  const sha = (info.sha || "unknown").trim()
+  const branch = info.branch?.trim() || "unknown"
+  const sha = info.sha?.trim() || "unknown"
   const dirtySuffix = info.dirty ? "+dirty" : ""
   return `dev ${branch}@${sha}${dirtySuffix}`
 }
@@ -33,8 +33,8 @@ export function formatDevVersionName(info: DevBuildInfo): string {
  * This is only intended for development builds (WXT `serve`).
  */
 export function formatDevManifestName(baseName: string, versionName: string) {
-  const safeBase = (baseName || APP_SHORT_NAME).trim()
-  const safeVersion = (versionName || "dev").trim()
+  const safeBase = baseName?.trim() || APP_SHORT_NAME
+  const safeVersion = versionName?.trim() || "dev"
   return `${safeBase} [${safeVersion}]`
 }
 
@@ -46,8 +46,8 @@ export function formatDevManifestDescription(
   baseDescription: string,
   versionName: string,
 ) {
-  const safeBase = (baseDescription || "").trim()
-  const safeVersion = (versionName || "dev").trim()
+  const safeBase = baseDescription?.trim() || ""
+  const safeVersion = versionName?.trim() || "dev"
   return safeBase ? `${safeBase} | ${safeVersion}` : safeVersion
 }
 
@@ -63,8 +63,8 @@ export function getDevBadgeText() {
  * Creates a dev-only tooltip title for the toolbar action.
  */
 export function formatDevActionTitle(baseTitle: string, versionName?: string) {
-  const safeBase = (baseTitle || APP_SHORT_NAME).trim()
-  const safeVersion = (versionName || "").trim()
+  const safeBase = baseTitle?.trim() || APP_SHORT_NAME
+  const safeVersion = versionName?.trim() || ""
   if (!safeVersion) return `${safeBase} (dev)`
   return safeBase.includes(safeVersion)
     ? safeBase

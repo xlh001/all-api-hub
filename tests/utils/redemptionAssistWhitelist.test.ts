@@ -70,5 +70,25 @@ describe("redemptionAssistWhitelist", () => {
     it("returns false when url is empty", () => {
       expect(isUrlAllowedByRegexList("", [".*"])).toBe(false)
     })
+
+    it("returns false when the candidate url is missing", () => {
+      expect(isUrlAllowedByRegexList(undefined as any, [".*"])).toBe(false)
+    })
+
+    it("returns false when the pattern list is missing", () => {
+      expect(
+        isUrlAllowedByRegexList("https://example.com", undefined as any),
+      ).toBe(false)
+    })
+
+    it("skips null and blank pattern entries before matching later valid rules", () => {
+      expect(
+        isUrlAllowedByRegexList("https://example.com", [
+          null as any,
+          "   ",
+          "^https://example\\.com$",
+        ]),
+      ).toBe(true)
+    })
   })
 })

@@ -1,12 +1,40 @@
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   detectExtensionStore,
   getDeviceTypeInfo,
   isEdgeByUA,
+  isExtensionBackground,
+  isExtensionPopup,
+  isExtensionSidePanel,
+  isFirefoxByUA,
 } from "~/utils/browser"
 
 describe("browser", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  describe("isFirefoxByUA", () => {
+    it("detects Firefox-like user agents from the global navigator", () => {
+      vi.stubGlobal("navigator", {
+        userAgent: "Mozilla/5.0 Firefox/123.0",
+      })
+      expect(isFirefoxByUA()).toBe(true)
+
+      vi.stubGlobal("navigator", {
+        userAgent: "Mozilla/5.0 Gecko/20100101",
+      })
+      expect(isFirefoxByUA()).toBe(true)
+
+      vi.stubGlobal("navigator", {
+        userAgent: "Mozilla/5.0 Chrome/123.0.0.0",
+      })
+      expect(isFirefoxByUA()).toBe(false)
+    })
+  })
+
   describe("isEdgeByUA", () => {
     it("detects Edge desktop UA", () => {
       expect(isEdgeByUA("Mozilla/5.0 Edg/120.0.0.0")).toBe(true)
@@ -14,6 +42,14 @@ describe("browser", () => {
 
     it("returns false for Chrome UA", () => {
       expect(isEdgeByUA("Mozilla/5.0 Chrome/120.0.0.0")).toBe(false)
+    })
+
+    it("falls back to navigator.userAgent when no UA override is provided", () => {
+      vi.stubGlobal("navigator", {
+        userAgent: "Mozilla/5.0 EdgiOS/120.0.0.0",
+      })
+
+      expect(isEdgeByUA()).toBe(true)
     })
   })
 
@@ -117,6 +153,64 @@ describe("browser", () => {
         isMobile: false,
         isTablet: false,
       })
+    })
+  })
+
+  describe("extension page detection", () => {
+    it("detects popup and sidepanel extension URLs from window.location", () => {
+      vi.stubGlobal("window", {
+        location: {
+          href: "moz-extension://abc/popup.html",
+        },
+      })
+      expect(isExtensionPopup()).toBe(true)
+      expect(isExtensionSidePanel()).toBe(false)
+
+      vi.stubGlobal("window", {
+        location: {
+          href: "moz-extension://abc/sidepanel.html",
+        },
+      })
+      expect(isExtensionPopup()).toBe(false)
+      expect(isExtensionSidePanel()).toBe(true)
+    })
+
+    it("returns false when the current page is not an extension page", () => {
+      vi.stubGlobal("window", {
+        location: {
+          href: "https://example.com/dashboard",
+        },
+      })
+      expect(isExtensionPopup()).toBe(false)
+      expect(isExtensionSidePanel()).toBe(false)
+    })
+  })
+
+  describe("isExtensionBackground", () => {
+    it("detects a service-worker background context", () => {
+      class FakeServiceWorkerGlobalScope {}
+
+      vi.stubGlobal("ServiceWorkerGlobalScope", FakeServiceWorkerGlobalScope)
+      vi.stubGlobal("self", new FakeServiceWorkerGlobalScope())
+
+      expect(isExtensionBackground()).toBe(true)
+    })
+
+    it("detects legacy background pages by pathname and returns false otherwise", () => {
+      vi.stubGlobal("location", {
+        pathname: "/_generated_background_page.html",
+      })
+      expect(isExtensionBackground()).toBe(true)
+
+      vi.stubGlobal("window", {
+        location: {
+          href: "https://example.com/options.html",
+        },
+      })
+      vi.stubGlobal("location", {
+        pathname: "/options.html",
+      })
+      expect(isExtensionBackground()).toBe(false)
     })
   })
 })

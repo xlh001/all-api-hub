@@ -20,6 +20,12 @@ describe("devBranding", () => {
     ).toBe("dev feat/x@abc1234")
   })
 
+  it("falls back to unknown branch and sha when inputs are blank", () => {
+    expect(formatDevVersionName({ branch: "  ", sha: "", dirty: false })).toBe(
+      "dev unknown@unknown",
+    )
+  })
+
   it("adds +dirty when working tree is dirty", () => {
     expect(
       formatDevVersionName({ branch: "main", sha: "abc1234", dirty: true }),
@@ -32,10 +38,18 @@ describe("devBranding", () => {
     )
   })
 
+  it("falls back to the short app name and default dev label for blank manifest inputs", () => {
+    expect(formatDevManifestName("   ", "   ")).toBe(`${APP_SHORT_NAME} [dev]`)
+  })
+
   it("appends version label to manifest description", () => {
     expect(formatDevManifestDescription("Desc", "dev main@abc")).toBe(
       "Desc | dev main@abc",
     )
+  })
+
+  it("uses the version label alone when the base description is blank", () => {
+    expect(formatDevManifestDescription("   ", "   ")).toBe("dev")
   })
 
   it("uses DEV as badge text", () => {
@@ -52,5 +66,9 @@ describe("devBranding", () => {
     expect(
       formatDevActionTitle(`${APP_SHORT_NAME} [dev main@abc]`, "dev main@abc"),
     ).toBe(`${APP_SHORT_NAME} [dev main@abc]`)
+  })
+
+  it("falls back to the app short name and generic dev suffix when the title inputs are blank", () => {
+    expect(formatDevActionTitle("   ", "   ")).toBe(`${APP_SHORT_NAME} (dev)`)
   })
 })

@@ -7,12 +7,23 @@ import {
   TEMP_WINDOW_DNR_RULE_ID_BASE,
 } from "~/utils/browser/dnrCookieInjector"
 
+const { loggerWarnMock } = vi.hoisted(() => ({
+  loggerWarnMock: vi.fn(),
+}))
+
+vi.mock("~/utils/core/logger", () => ({
+  createLogger: () => ({
+    warn: loggerWarnMock,
+  }),
+}))
+
 describe("dnrCookieInjector", () => {
   let originalChrome: unknown
 
   beforeEach(() => {
     originalChrome = (globalThis as any).chrome
     vi.restoreAllMocks()
+    loggerWarnMock.mockReset()
   })
 
   afterEach(() => {
@@ -42,6 +53,17 @@ describe("dnrCookieInjector", () => {
     expect(rule.condition.urlFilter).toBe("||example.com/")
   })
 
+  it("buildTempWindowCookieRule falls back to the base rule id when tab id is unavailable", () => {
+    const rule = buildTempWindowCookieRule({
+      tabId: Number.NaN as number,
+      url: "https://example.com/api/user/self",
+      cookieHeader: "cf_clearance=abc",
+    })
+
+    expect(rule.id).toBe(TEMP_WINDOW_DNR_RULE_ID_BASE)
+    expect(rule.condition.urlFilter).toBe("||example.com/")
+  })
+
   it("applyTempWindowCookieRule should call updateSessionRules with remove+add", async () => {
     const updateSessionRules = vi.fn().mockResolvedValue(undefined)
 
@@ -63,6 +85,57 @@ describe("dnrCookieInjector", () => {
     expect(call.addRules?.[0]?.id).toBe(TEMP_WINDOW_DNR_RULE_ID_BASE + 5)
   })
 
+  it("applyTempWindowCookieRule returns null when no cookie header is available", async () => {
+    const updateSessionRules = vi.fn().mockResolvedValue(undefined)
+
+    ;(globalThis as any).chrome = {
+      declarativeNetRequest: { updateSessionRules },
+    }
+
+    const ruleId = await applyTempWindowCookieRule({
+      tabId: 5,
+      url: "https://example.com/api",
+      cookieHeader: "",
+    })
+
+    expect(ruleId).toBeNull()
+    expect(updateSessionRules).not.toHaveBeenCalled()
+  })
+
+  it("applyTempWindowCookieRule returns null when the DNR API is unavailable", async () => {
+    ;(globalThis as any).chrome = {}
+
+    const ruleId = await applyTempWindowCookieRule({
+      tabId: 5,
+      url: "https://example.com/api",
+      cookieHeader: "cf_clearance=abc",
+    })
+
+    expect(ruleId).toBeNull()
+  })
+
+  it("applyTempWindowCookieRule logs and returns null when session rule installation fails", async () => {
+    const updateSessionRules = vi
+      .fn()
+      .mockRejectedValue(new Error("DNR backend unavailable"))
+
+    ;(globalThis as any).chrome = {
+      declarativeNetRequest: { updateSessionRules },
+    }
+
+    const ruleId = await applyTempWindowCookieRule({
+      tabId: 5,
+      url: "https://example.com/api",
+      cookieHeader: "cf_clearance=abc",
+    })
+
+    expect(ruleId).toBeNull()
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      "Failed to install temp-window cookie rule",
+      expect.any(Error),
+    )
+  })
+
   it("removeTempWindowCookieRule should call updateSessionRules with remove only", async () => {
     const updateSessionRules = vi.fn().mockResolvedValue(undefined)
 
@@ -74,5 +147,29 @@ describe("dnrCookieInjector", () => {
 
     expect(updateSessionRules).toHaveBeenCalledTimes(1)
     expect(updateSessionRules).toHaveBeenCalledWith({ removeRuleIds: [42] })
+  })
+
+  it("removeTempWindowCookieRule no-ops when the DNR API is unavailable", async () => {
+    ;(globalThis as any).chrome = {}
+
+    await expect(removeTempWindowCookieRule(42)).resolves.toBeUndefined()
+    expect(loggerWarnMock).not.toHaveBeenCalled()
+  })
+
+  it("removeTempWindowCookieRule logs cleanup failures without throwing", async () => {
+    const updateSessionRules = vi
+      .fn()
+      .mockRejectedValue(new Error("cleanup failed"))
+
+    ;(globalThis as any).chrome = {
+      declarativeNetRequest: { updateSessionRules },
+    }
+
+    await expect(removeTempWindowCookieRule(42)).resolves.toBeUndefined()
+
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      "Failed to remove temp-window cookie rule",
+      expect.any(Error),
+    )
   })
 })
