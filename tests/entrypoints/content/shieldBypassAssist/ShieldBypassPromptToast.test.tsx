@@ -1,9 +1,19 @@
 import { waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ShieldBypassPromptToast } from "~/entrypoints/content/shieldBypassAssist/components/ShieldBypassPromptToast"
 import { render, screen } from "~~/tests/test-utils/render"
+
+const { translationMap } = vi.hoisted(() => ({
+  translationMap: {
+    titlePrefix: "Shield Mode",
+    "toast.title": "Shield Prompt",
+    "toast.body": "Complete the browser verification first.",
+    "toast.actions.dismiss": "Dismiss",
+    "toast.actions.openSettings": "Open settings",
+  } as Record<string, string>,
+}))
 
 vi.mock("react-i18next", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-i18next")>()
@@ -11,21 +21,20 @@ vi.mock("react-i18next", async (importOriginal) => {
   return {
     ...actual,
     useTranslation: () => ({
-      t: (key: string) => {
-        const map: Record<string, string> = {
-          titlePrefix: "Shield Mode",
-          "toast.title": "Shield Prompt",
-          "toast.body": "Complete the browser verification first.",
-          "toast.actions.dismiss": "Dismiss",
-          "toast.actions.openSettings": "Open settings",
-        }
-        return map[key] ?? key
-      },
+      t: (key: string) => translationMap[key] ?? key,
     }),
   }
 })
 
 describe("ShieldBypassPromptToast", () => {
+  beforeEach(() => {
+    translationMap.titlePrefix = "Shield Mode"
+    translationMap["toast.title"] = "Shield Prompt"
+    translationMap["toast.body"] = "Complete the browser verification first."
+    translationMap["toast.actions.dismiss"] = "Dismiss"
+    translationMap["toast.actions.openSettings"] = "Open settings"
+  })
+
   it("prefixes and keeps the document title in sync with host-page updates, then restores the base title on cleanup", async () => {
     document.title = "Original Title"
 
@@ -80,5 +89,39 @@ describe("ShieldBypassPromptToast", () => {
     unmount()
 
     expect(document.title).toBe("Existing Title")
+  })
+
+  it("uses the prefix alone when the page starts without a title and leaves it unchanged on cleanup", async () => {
+    document.title = ""
+
+    const { unmount } = render(
+      <ShieldBypassPromptToast onDismiss={vi.fn()} onOpenSettings={vi.fn()} />,
+    )
+
+    await waitFor(() => {
+      expect(document.title).toBe("Shield Mode")
+    })
+
+    unmount()
+
+    expect(document.title).toBe("Shield Mode")
+  })
+
+  it("does not modify the document title when the translated prefix is blank", async () => {
+    translationMap.titlePrefix = "   "
+    document.title = "Unchanged Title"
+
+    const { unmount } = render(
+      <ShieldBypassPromptToast onDismiss={vi.fn()} onOpenSettings={vi.fn()} />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("Shield Prompt")).toBeInTheDocument()
+    })
+    expect(document.title).toBe("Unchanged Title")
+
+    unmount()
+
+    expect(document.title).toBe("Unchanged Title")
   })
 })

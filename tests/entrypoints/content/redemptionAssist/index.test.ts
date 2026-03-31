@@ -69,6 +69,7 @@ describe("setupRedemptionAssistContent", () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+    document.body.innerHTML = ""
 
     window.history.replaceState({}, "", "/redeem")
     ;(globalThis as any).browser = {
@@ -96,6 +97,67 @@ describe("setupRedemptionAssistContent", () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+  })
+
+  it("ignores unrelated runtime messages in the context-menu listener", async () => {
+    const { setupRedemptionAssistContent } = await import(
+      "~/entrypoints/content/redemptionAssist"
+    )
+
+    const cleanup = setupRedemptionAssistContent({
+      enableDetection: false,
+      enableContextMenu: true,
+    })
+
+    const addListener = globalThis.browser.runtime.onMessage
+      .addListener as ReturnType<typeof vi.fn>
+    const removeListener = globalThis.browser.runtime.onMessage
+      .removeListener as ReturnType<typeof vi.fn>
+    const listener = addListener.mock.calls[0]?.[0]
+
+    await listener({
+      action: "unrelated-action",
+      selectionText: codeA,
+      pageUrl: "https://example.com/redeem",
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
+    expect(mockShowRedeemResultToast).not.toHaveBeenCalled()
+
+    cleanup()
+
+    expect(removeListener).toHaveBeenCalledWith(listener)
+  })
+
+  it("logs debug when removing the context-menu listener fails", async () => {
+    const removeListenerError = new Error("remove failed")
+    ;(globalThis as any).browser = {
+      runtime: {
+        onMessage: {
+          addListener: vi.fn(),
+          removeListener: vi.fn(() => {
+            throw removeListenerError
+          }),
+        },
+      },
+    }
+
+    const { setupRedemptionAssistContent } = await import(
+      "~/entrypoints/content/redemptionAssist"
+    )
+
+    const cleanup = setupRedemptionAssistContent({
+      enableDetection: false,
+      enableContextMenu: true,
+    })
+
+    expect(() => cleanup()).not.toThrow()
+    expect(logger.debug).toHaveBeenCalledWith(
+      "Failed to remove redemption context menu listener",
+      removeListenerError,
+    )
   })
 
   it("deduplicates repeated clipboard scans and auto-redeems a single selected code", async () => {
@@ -158,6 +220,81 @@ describe("setupRedemptionAssistContent", () => {
     expect(mockShowRedeemResultToast).toHaveBeenCalledWith(true, "redeemed")
     expect(mockShowRedeemBatchResultToast).not.toHaveBeenCalled()
     expect(mockDismissToast).toHaveBeenCalledWith("loading-toast-id")
+
+    cleanup()
+  })
+
+  it("prefers selected text over clipboard reads on click", async () => {
+    const readText = vi.fn().mockResolvedValue(codeB)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        readText,
+      },
+    })
+
+    vi.spyOn(window, "getSelection").mockReturnValue({
+      toString: () => codeA,
+    } as any)
+
+    mockSendRuntimeMessage.mockImplementation(async (message: any) => {
+      if (message.action === RuntimeActionIds.RedemptionAssistShouldPrompt) {
+        return {
+          success: true,
+          promptableCodes: [codeA],
+        }
+      }
+
+      if (message.action === RuntimeActionIds.RedemptionAssistAutoRedeemByUrl) {
+        return {
+          data: {
+            success: true,
+            message: "redeemed-from-selection",
+          },
+        }
+      }
+
+      return { success: false }
+    })
+
+    const { setupRedemptionAssistContent } = await import(
+      "~/entrypoints/content/redemptionAssist"
+    )
+
+    const cleanup = setupRedemptionAssistContent({
+      enableDetection: true,
+      enableContextMenu: false,
+    })
+
+    const button = document.createElement("button")
+    button.textContent = `Copy ${codeB}`
+    button.setAttribute("aria-label", "Copy code")
+    document.body.appendChild(button)
+
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+
+    await waitFor(
+      () => {
+        expect(mockShowRedeemResultToast).toHaveBeenCalledWith(
+          true,
+          "redeemed-from-selection",
+        )
+      },
+      { timeout: 2500 },
+    )
+
+    expect(mockCheckPermissionViaMessage).not.toHaveBeenCalled()
+    expect(readText).not.toHaveBeenCalled()
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.RedemptionAssistShouldPrompt,
+      url: window.location.href,
+      codes: [codeA],
+    })
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.RedemptionAssistAutoRedeemByUrl,
+      url: window.location.href,
+      code: codeA,
+    })
 
     cleanup()
   })
@@ -231,6 +368,75 @@ describe("setupRedemptionAssistContent", () => {
     cleanup()
   })
 
+  it("logs clipboard read failures and falls back to clicked element text", async () => {
+    const clipboardError = new Error("clipboard blocked")
+    const readText = vi.fn().mockRejectedValue(clipboardError)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        readText,
+      },
+    })
+
+    mockCheckPermissionViaMessage.mockResolvedValue(true)
+    mockSendRuntimeMessage.mockImplementation(async (message: any) => {
+      if (message.action === RuntimeActionIds.RedemptionAssistShouldPrompt) {
+        return {
+          success: true,
+          promptableCodes: [codeA],
+        }
+      }
+
+      if (message.action === RuntimeActionIds.RedemptionAssistAutoRedeemByUrl) {
+        return {
+          data: {
+            success: true,
+            message: "redeemed-after-read-failure",
+          },
+        }
+      }
+
+      return { success: false }
+    })
+
+    const { setupRedemptionAssistContent } = await import(
+      "~/entrypoints/content/redemptionAssist"
+    )
+
+    const cleanup = setupRedemptionAssistContent({
+      enableDetection: true,
+      enableContextMenu: false,
+    })
+
+    const button = document.createElement("button")
+    button.textContent = `Copy ${codeA}`
+    button.setAttribute("aria-label", "Copy code")
+    document.body.appendChild(button)
+
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+
+    await waitFor(
+      () => {
+        expect(logger.warn).toHaveBeenCalledWith(
+          "Clipboard read failed",
+          clipboardError,
+        )
+      },
+      { timeout: 2500 },
+    )
+
+    expect(readText).toHaveBeenCalledTimes(1)
+    expect(mockCheckPermissionViaMessage).toHaveBeenCalledWith({
+      permissions: ["clipboardRead"],
+    })
+    expect(mockShowRedeemResultToast).toHaveBeenCalledWith(
+      true,
+      "redeemed-after-read-failure",
+    )
+
+    cleanup()
+  })
+
   it("does not show prompts or redeem when the background vetoes promptable codes", async () => {
     mockSendRuntimeMessage.mockResolvedValue({
       success: true,
@@ -268,6 +474,34 @@ describe("setupRedemptionAssistContent", () => {
     cleanup()
   })
 
+  it("logs an error when detected redemption scanning fails", async () => {
+    const backgroundError = new Error("background unavailable")
+    mockSendRuntimeMessage.mockRejectedValue(backgroundError)
+
+    const { setupRedemptionAssistContent } = await import(
+      "~/entrypoints/content/redemptionAssist"
+    )
+
+    const cleanup = setupRedemptionAssistContent({
+      enableDetection: true,
+      enableContextMenu: false,
+    })
+
+    document.dispatchEvent(makeClipboardEvent("copy", codeA))
+
+    await waitFor(() => {
+      expect(logger.error).toHaveBeenCalledWith(
+        "Redemption scan failed",
+        backgroundError,
+      )
+    })
+
+    expect(mockShowRedemptionPromptToast).not.toHaveBeenCalled()
+    expect(mockShowRedeemLoadingToast).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
   it("ignores clicks that originate from the content UI host to avoid self-triggered scans", async () => {
     mockCheckPermissionViaMessage.mockResolvedValue(true)
 
@@ -293,6 +527,43 @@ describe("setupRedemptionAssistContent", () => {
     expect(mockCheckPermissionViaMessage).not.toHaveBeenCalled()
     expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
     expect(mockShowRedemptionPromptToast).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
+  it("logs an error when the context-menu flow throws before redeeming", async () => {
+    const flowError = new Error("toast mount failed")
+    mockShowRedeemLoadingToast.mockRejectedValueOnce(flowError)
+
+    const { setupRedemptionAssistContent } = await import(
+      "~/entrypoints/content/redemptionAssist"
+    )
+
+    const cleanup = setupRedemptionAssistContent({
+      enableDetection: false,
+      enableContextMenu: true,
+    })
+
+    const addListener = globalThis.browser.runtime.onMessage
+      .addListener as ReturnType<typeof vi.fn>
+    const listener = addListener.mock.calls[0]?.[0]
+
+    listener({
+      action: RuntimeActionIds.RedemptionAssistContextMenuTrigger,
+      selectionText: codeA,
+      pageUrl: "https://example.com/redeem",
+    })
+
+    await waitFor(() => {
+      expect(logger.error).toHaveBeenCalledWith(
+        "Context menu flow failed",
+        flowError,
+      )
+    })
+
+    expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
+    expect(mockShowRedeemResultToast).not.toHaveBeenCalled()
+    expect(mockShowRedeemBatchResultToast).not.toHaveBeenCalled()
 
     cleanup()
   })

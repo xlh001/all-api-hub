@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { handleGetUserFromLocalStorage } from "~/entrypoints/content/messageHandlers/handlers/storage"
+import {
+  handleGetLocalStorage,
+  handleGetUserFromLocalStorage,
+} from "~/entrypoints/content/messageHandlers/handlers/storage"
 
 const { mockFetchUserInfo } = vi.hoisted(() => ({
   mockFetchUserInfo: vi.fn(),
@@ -12,12 +15,60 @@ vi.mock("~/services/apiService", () => ({
   })),
 }))
 
+vi.mock("~/utils/i18n/core", () => ({
+  t: vi.fn((key: string) => key),
+}))
+
 describe("content storage handler", () => {
   beforeEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
     localStorage.clear()
     vi.clearAllMocks()
+  })
+
+  it("returns a single localStorage key when requested directly", () => {
+    localStorage.setItem("theme", "dark")
+
+    const sendResponse = vi.fn()
+
+    expect(handleGetLocalStorage({ key: "theme" }, sendResponse)).toBe(true)
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        theme: "dark",
+      },
+    })
+  })
+
+  it("returns every localStorage entry when no specific key is requested", () => {
+    localStorage.setItem("theme", "dark")
+    localStorage.setItem("language", "zh-CN")
+
+    const sendResponse = vi.fn()
+
+    expect(handleGetLocalStorage({}, sendResponse)).toBe(true)
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        theme: "dark",
+        language: "zh-CN",
+      },
+    })
+  })
+
+  it("returns a structured error when localStorage access throws", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("storage blocked")
+    })
+
+    const sendResponse = vi.fn()
+
+    expect(handleGetLocalStorage({ key: "theme" }, sendResponse)).toBe(true)
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "storage blocked",
+    })
   })
 
   it("returns Sub2API user payload when auth_token + auth_user exist", async () => {
@@ -44,6 +95,25 @@ describe("content storage handler", () => {
     expect(response.data?.accessToken).toBe("jwt-token")
     expect(response.data?.siteTypeHint).toBe("sub2api")
     expect(response.data?.sub2apiAuth).toBeUndefined()
+    expect(mockFetchUserInfo).not.toHaveBeenCalled()
+  })
+
+  it("returns loginRequired when the saved Sub2API access token is blank", async () => {
+    localStorage.setItem("auth_token", "   ")
+    localStorage.setItem(
+      "auth_user",
+      JSON.stringify({ id: 123, username: "alice", balance: 1.5 }),
+    )
+
+    const response = await new Promise<any>((resolve) => {
+      handleGetUserFromLocalStorage(
+        { url: "https://sub2.example.com" },
+        resolve,
+      )
+    })
+
+    expect(response.success).toBe(false)
+    expect(response.error).toBe("messages:sub2api.loginRequired")
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
   })
 
@@ -100,6 +170,57 @@ describe("content storage handler", () => {
       tokenExpiresAt: now + 3600 * 1000,
     })
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
+
+    nowSpy.mockRestore()
+  })
+
+  it("uses the relative refresh endpoint when Sub2API baseUrl is unavailable", async () => {
+    const now = 1_700_000_000_000
+    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(now)
+
+    localStorage.setItem("auth_token", "old-token")
+    localStorage.setItem(
+      "auth_user",
+      JSON.stringify({ id: 123, username: "alice", balance: 1.5 }),
+    )
+    localStorage.setItem("refresh_token", "old-refresh")
+    localStorage.setItem("token_expires_at", String(now + 60_000))
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          code: 0,
+          data: {
+            access_token: "new-token",
+            refresh_token: "new-refresh",
+            expires_in: 1800,
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    vi.stubGlobal("fetch", fetchMock as any)
+
+    const response = await new Promise<any>((resolve) => {
+      handleGetUserFromLocalStorage({}, resolve)
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/auth/refresh",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          Authorization: "Bearer old-token",
+        }),
+      }),
+    )
+    expect(response.success).toBe(true)
+    expect(response.data?.accessToken).toBe("new-token")
+    expect(response.data?.sub2apiAuth).toEqual({
+      refreshToken: "new-refresh",
+      tokenExpiresAt: now + 1800 * 1000,
+    })
 
     nowSpy.mockRestore()
   })
@@ -182,6 +303,34 @@ describe("content storage handler", () => {
     nowSpy.mockRestore()
   })
 
+  it("skips refresh when token_expires_at is invalid and keeps the stored refresh token", async () => {
+    localStorage.setItem("auth_token", "old-token")
+    localStorage.setItem(
+      "auth_user",
+      JSON.stringify({ id: 123, username: "alice", balance: 1.5 }),
+    )
+    localStorage.setItem("refresh_token", "old-refresh")
+    localStorage.setItem("token_expires_at", "not-a-number")
+
+    const fetchMock = vi.fn()
+    vi.stubGlobal("fetch", fetchMock as any)
+
+    const response = await new Promise<any>((resolve) => {
+      handleGetUserFromLocalStorage(
+        { url: "https://sub2.example.com" },
+        resolve,
+      )
+    })
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(response.success).toBe(true)
+    expect(response.data?.accessToken).toBe("old-token")
+    expect(response.data?.sub2apiAuth).toEqual({
+      refreshToken: "old-refresh",
+    })
+    expect(response.data?.sub2apiAuth?.tokenExpiresAt).toBeUndefined()
+  })
+
   it("falls back to Sub2API email local-part when username is missing", async () => {
     localStorage.setItem("auth_token", "jwt-token")
     localStorage.setItem(
@@ -223,6 +372,30 @@ describe("content storage handler", () => {
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
   })
 
+  it("returns the standard local user payload when a non-Sub2API user exists", async () => {
+    localStorage.setItem(
+      "user",
+      JSON.stringify({ id: "user-1", username: "alice", role: "admin" }),
+    )
+
+    const response = await new Promise<any>((resolve) => {
+      handleGetUserFromLocalStorage({ url: "https://example.com" }, resolve)
+    })
+
+    expect(response).toEqual({
+      success: true,
+      data: {
+        userId: "user-1",
+        user: {
+          id: "user-1",
+          username: "alice",
+          role: "admin",
+        },
+      },
+    })
+    expect(mockFetchUserInfo).not.toHaveBeenCalled()
+  })
+
   it("returns userInfoNotFound when no user payload exists", async () => {
     const response = await new Promise<any>((resolve) => {
       handleGetUserFromLocalStorage({ url: "https://example.com" }, resolve)
@@ -230,6 +403,22 @@ describe("content storage handler", () => {
 
     expect(response.success).toBe(false)
     expect(response.error).toBe("messages:content.userInfoNotFound")
+    expect(mockFetchUserInfo).not.toHaveBeenCalled()
+  })
+
+  it("returns a structured error when reading localStorage throws during user lookup", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("localStorage unavailable")
+    })
+
+    const response = await new Promise<any>((resolve) => {
+      handleGetUserFromLocalStorage({ url: "https://example.com" }, resolve)
+    })
+
+    expect(response).toEqual({
+      success: false,
+      error: "localStorage unavailable",
+    })
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
   })
 })

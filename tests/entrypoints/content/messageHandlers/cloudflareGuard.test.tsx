@@ -108,6 +108,23 @@ describe("cloudflare guard utilities and handlers", () => {
     })
   })
 
+  it("tolerates synchronous relay failures while still logging locally", async () => {
+    sendRuntimeMessageMock.mockImplementationOnce(() => {
+      throw new Error("sync relay failed")
+    })
+
+    expect(() => logCloudflareGuard("heartbeat")).not.toThrow()
+
+    await Promise.resolve()
+
+    expect(loggerMocks.debug).toHaveBeenCalledWith("heartbeat", undefined)
+    expect(sendRuntimeMessageMock).toHaveBeenCalledWith({
+      action: RuntimeActionIds.CloudflareGuardLog,
+      event: "heartbeat",
+      details: null,
+    })
+  })
+
   it("detects strong and support Cloudflare challenge markers", () => {
     document.title = "Just a moment..."
     document.body.innerHTML = `
@@ -145,6 +162,18 @@ describe("cloudflare guard utilities and handlers", () => {
       ]),
     )
     expect(detection.url).toContain("/cdn-cgi/challenge-platform")
+  })
+
+  it("treats localized title plus cf query markers as a challenge once support markers reach the threshold", () => {
+    document.title = "请稍候"
+    window.history.replaceState(null, "", "/dashboard?__cf_chl_rt_tk=abc")
+
+    const detection = detectCloudflareChallengePage()
+
+    expect(detection.isChallenge).toBe(true)
+    expect(detection.score).toBe(3)
+    expect(detection.reasons).toEqual(["cf-url", "title"])
+    expect(detection.url).toContain("__cf_chl_rt_tk=abc")
   })
 
   it("returns non-challenge when support markers do not reach the threshold", () => {
@@ -189,6 +218,27 @@ describe("cloudflare guard utilities and handlers", () => {
     })
   })
 
+  it("handles guard checks without request context and skips request-scoped logging", () => {
+    document.title = "Attention Required"
+    document.body.innerHTML = `<div id="cf-wrapper"></div>`
+
+    const sendResponse = vi.fn()
+    const keepAlive = handleCheckCloudflareGuard({}, sendResponse)
+
+    expect(keepAlive).toBe(true)
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        passed: false,
+        detection: expect.objectContaining({
+          isChallenge: true,
+        }),
+      }),
+    )
+    expect(loggerMocks.debug).not.toHaveBeenCalled()
+    expect(loggerMocks.error).not.toHaveBeenCalled()
+  })
+
   it("returns an error response when detection throws", () => {
     const titleGetter = vi
       .spyOn(document, "title", "get")
@@ -207,6 +257,25 @@ describe("cloudflare guard utilities and handlers", () => {
       requestId: "req-error",
       error: "boom",
     })
+
+    titleGetter.mockRestore()
+  })
+
+  it("returns an error response without request-scoped logging when detection throws without requestId", () => {
+    const titleGetter = vi
+      .spyOn(document, "title", "get")
+      .mockImplementation(() => {
+        throw new Error("boom")
+      })
+
+    const sendResponse = vi.fn()
+    handleCheckCloudflareGuard({}, sendResponse)
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "boom",
+    })
+    expect(loggerMocks.error).not.toHaveBeenCalled()
 
     titleGetter.mockRestore()
   })

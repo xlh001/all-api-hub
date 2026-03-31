@@ -19,6 +19,14 @@ import {
   buildApiKey,
 } from "~~/tests/test-utils/factories"
 
+const { logger } = vi.hoisted(() => ({
+  logger: {
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("~/utils/browser/browserApi")>()
@@ -35,6 +43,10 @@ vi.mock("~/entrypoints/content/webAiApiCheck/utils/apiCheckToasts", () => ({
 
 vi.mock("~/entrypoints/content/shared/uiRoot", () => ({
   ensureRedemptionToastUi: vi.fn(),
+}))
+
+vi.mock("~/utils/core/logger", () => ({
+  createLogger: vi.fn(() => logger),
 }))
 
 vi.mock(
@@ -63,8 +75,16 @@ function makeClipboardEvent(type: "copy" | "cut", clipboardText: string) {
   return event as ClipboardEvent
 }
 
+async function flushMicrotasks(iterations = 4) {
+  for (let index = 0; index < iterations; index += 1) {
+    await Promise.resolve()
+  }
+}
+
 describe("setupWebAiApiCheckContent", () => {
   beforeEach(() => {
+    vi.clearAllMocks()
+    document.body.innerHTML = ""
     ;(globalThis as any).browser = {
       runtime: {
         onMessage: {
@@ -85,6 +105,60 @@ describe("setupWebAiApiCheckContent", () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+  })
+
+  it("ignores unrelated runtime messages in the context-menu listener", async () => {
+    const addListener = vi.fn()
+    const removeListener = vi.fn()
+    ;(globalThis as any).browser = {
+      runtime: {
+        onMessage: {
+          addListener,
+          removeListener,
+        },
+      },
+    }
+
+    const cleanup = setupWebAiApiCheckContent({ enableDetection: false })
+
+    const listener = addListener.mock.calls[0]?.[0]
+    expect(listener).toEqual(expect.any(Function))
+
+    await listener({
+      action: "unrelated-action",
+      selectionText: buildApiCheckClipboardText({ apiKey: buildApiKey() }),
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+    expect(removeListener).toHaveBeenCalledWith(listener)
+  })
+
+  it("logs debug when removing the context-menu listener fails", () => {
+    const addListener = vi.fn()
+    const removeListenerError = new Error("remove failed")
+    const removeListener = vi.fn(() => {
+      throw removeListenerError
+    })
+    ;(globalThis as any).browser = {
+      runtime: {
+        onMessage: {
+          addListener,
+          removeListener,
+        },
+      },
+    }
+
+    const cleanup = setupWebAiApiCheckContent({ enableDetection: false })
+
+    expect(() => cleanup()).not.toThrow()
+    expect(logger.debug).toHaveBeenCalledWith(
+      "Failed to remove ApiCheck context menu listener",
+      removeListenerError,
+    )
   })
 
   it("opens modal from auto-detect on copy when whitelisted + confirmed", async () => {
@@ -112,6 +186,27 @@ describe("setupWebAiApiCheckContent", () => {
     cleanup()
   })
 
+  it("does not open modal when the auto-detect confirmation toast is dismissed", async () => {
+    const apiKey = buildApiKey()
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      shouldPrompt: true,
+    })
+    vi.mocked(showApiCheckConfirmToast).mockResolvedValue(false)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    document.dispatchEvent(
+      makeClipboardEvent("copy", buildApiCheckClipboardText({ apiKey })),
+    )
+
+    await waitFor(() => expect(showApiCheckConfirmToast).toHaveBeenCalled())
+
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
   it("does not open modal when background vetoes shouldPrompt", async () => {
     const apiKey = buildApiKey()
     vi.mocked(sendRuntimeMessage).mockResolvedValue({
@@ -133,6 +228,35 @@ describe("setupWebAiApiCheckContent", () => {
 
     await waitFor(() => expect(sendRuntimeMessage).toHaveBeenCalled())
     await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(showApiCheckConfirmToast).not.toHaveBeenCalled()
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
+  it("logs warn and skips auto-detect when shouldPrompt lookup fails", async () => {
+    const lookupError = new Error("storage unavailable")
+    vi.mocked(sendRuntimeMessage).mockRejectedValue(lookupError)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    document.dispatchEvent(
+      makeClipboardEvent(
+        "copy",
+        buildApiCheckClipboardText({
+          baseUrl: "https://proxy.example.com/api",
+          apiKey: buildApiKey(),
+        }),
+      ),
+    )
+
+    await waitFor(() =>
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to read ApiCheck shouldPrompt state",
+        lookupError,
+      ),
+    )
 
     expect(showApiCheckConfirmToast).not.toHaveBeenCalled()
     expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
@@ -176,6 +300,55 @@ describe("setupWebAiApiCheckContent", () => {
         ),
       { timeout: 2500 },
     )
+
+    cleanup()
+  })
+
+  it("prefers selected text over clipboard reads on click", async () => {
+    vi.useFakeTimers()
+
+    const selectedText = buildApiCheckClipboardText({
+      baseUrl: "https://proxy.example.com/api",
+      apiKey: buildApiKey(),
+    })
+    const readText = vi.fn().mockResolvedValue("should not be used")
+
+    vi.spyOn(window, "getSelection").mockReturnValue({
+      toString: () => selectedText,
+    } as any)
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      shouldPrompt: true,
+    })
+    vi.mocked(showApiCheckConfirmToast).mockResolvedValue(true)
+
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        readText,
+      },
+    })
+
+    const button = document.createElement("button")
+    button.textContent = "Copy"
+    document.body.appendChild(button)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+
+    await vi.advanceTimersByTimeAsync(500)
+    await flushMicrotasks()
+
+    expect(dispatchOpenApiCheckModal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceText: selectedText,
+        trigger: "autoDetect",
+      }),
+    )
+
+    expect(checkPermissionViaMessage).not.toHaveBeenCalled()
+    expect(readText).not.toHaveBeenCalled()
 
     cleanup()
   })
@@ -248,6 +421,46 @@ describe("setupWebAiApiCheckContent", () => {
     expect(removeListener).toHaveBeenCalledWith(listener)
   })
 
+  it("logs warn and does not open modal when clipboard reads fail", async () => {
+    vi.useFakeTimers()
+
+    const clipboardError = new Error("clipboard read blocked")
+    const readText = vi.fn().mockRejectedValue(clipboardError)
+
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      shouldPrompt: true,
+    })
+    vi.mocked(checkPermissionViaMessage).mockResolvedValue(true)
+
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        readText,
+      },
+    })
+
+    const button = document.createElement("button")
+    button.textContent = "Copy"
+    document.body.appendChild(button)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+
+    await vi.advanceTimersByTimeAsync(500)
+    await flushMicrotasks()
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Clipboard read failed",
+      clipboardError,
+    )
+
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
   it("does not read clipboard when clipboard permission is denied", async () => {
     vi.useFakeTimers()
 
@@ -288,6 +501,88 @@ describe("setupWebAiApiCheckContent", () => {
     expect(readText).not.toHaveBeenCalled()
     expect(showApiCheckConfirmToast).not.toHaveBeenCalled()
     expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
+  it("deduplicates repeated identical clipboard scans within the scan interval", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"))
+
+    const clipboardText = buildApiCheckClipboardText({
+      baseUrl: "https://proxy.example.com/api",
+      apiKey: buildApiKey(),
+    })
+
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      shouldPrompt: false,
+    })
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    document.dispatchEvent(makeClipboardEvent("copy", clipboardText))
+    await flushMicrotasks()
+    expect(sendRuntimeMessage).toHaveBeenCalledTimes(1)
+
+    vi.setSystemTime(new Date("2025-01-01T00:00:00.500Z"))
+    document.dispatchEvent(makeClipboardEvent("copy", clipboardText))
+    await flushMicrotasks()
+    expect(sendRuntimeMessage).toHaveBeenCalledTimes(1)
+
+    expect(showApiCheckConfirmToast).not.toHaveBeenCalled()
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
+  it("allows retrying after a modal-open failure once cooldown has passed", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"))
+
+    const openError = new Error("host mount failed")
+
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      shouldPrompt: true,
+    })
+    vi.mocked(showApiCheckConfirmToast).mockResolvedValue(true)
+    vi.mocked(ensureRedemptionToastUi).mockRejectedValueOnce(openError)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    document.dispatchEvent(
+      makeClipboardEvent(
+        "copy",
+        buildApiCheckClipboardText({
+          baseUrl: "https://proxy.example.com/api",
+          apiKey: buildApiKey(),
+        }),
+      ),
+    )
+
+    await flushMicrotasks()
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Auto-detect flow failed",
+      openError,
+    )
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    vi.setSystemTime(new Date("2025-01-01T00:00:03.000Z"))
+    document.dispatchEvent(
+      makeClipboardEvent(
+        "copy",
+        buildApiCheckClipboardText({
+          baseUrl: "https://proxy.example.com/api",
+          apiKey: buildApiKey(),
+        }),
+      ),
+    )
+
+    await flushMicrotasks()
+    expect(dispatchOpenApiCheckModal).toHaveBeenCalledWith(
+      expect.objectContaining({ trigger: "autoDetect" }),
+    )
 
     cleanup()
   })

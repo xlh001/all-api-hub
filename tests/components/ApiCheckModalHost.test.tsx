@@ -200,6 +200,50 @@ describe("ApiCheckModalHost", () => {
     })
   })
 
+  it("does not refetch for unchanged trimmed credentials until the modal is reopened", async () => {
+    const user = userEvent.setup()
+    const detail: ApiCheckOpenModalDetail = {
+      sourceText:
+        "Base URL: https://proxy.example.com/api\nAPI Key: sk-secret-xyz",
+      pageUrl: "https://example.com",
+      trigger: "contextMenu",
+    }
+
+    await openModal(detail)
+
+    await waitFor(() => {
+      expect(sendRuntimeMessage).toHaveBeenCalledWith({
+        action: RuntimeActionIds.ApiCheckFetchModels,
+        apiType: "openai-compatible",
+        baseUrl: "https://proxy.example.com/api",
+        apiKey: "sk-secret-xyz",
+      })
+    })
+    expect(sendRuntimeMessage).toHaveBeenCalledTimes(1)
+
+    const baseUrlInput = screen.getByPlaceholderText(
+      "https://example.com/api",
+    ) as HTMLInputElement
+
+    await user.type(baseUrlInput, "  ")
+
+    await waitFor(() => {
+      expect(sendRuntimeMessage).toHaveBeenCalledTimes(1)
+    })
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.close" }),
+    )
+
+    await act(async () => {
+      dispatchOpenApiCheckModal(detail)
+    })
+
+    await waitFor(() => {
+      expect(sendRuntimeMessage).toHaveBeenCalledTimes(2)
+    })
+  })
+
   it("switches api types, clears stale probe results, and refetches provider models", async () => {
     const user = userEvent.setup()
     vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
@@ -503,6 +547,79 @@ describe("ApiCheckModalHost", () => {
     expect(toast.dismiss).toHaveBeenCalledWith("toast-1")
   })
 
+  it("still dismisses the success toast when opening profiles from the toast fails", async () => {
+    const user = userEvent.setup()
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
+      if (message.action === RuntimeActionIds.ApiCheckFetchModels) {
+        return { success: true, modelIds: [] }
+      }
+      if (message.action === RuntimeActionIds.ApiCheckSaveProfile) {
+        return {
+          success: true,
+          profileId: "p-1",
+          name: "proxy.example.com",
+          apiType: message.apiType,
+          baseUrl: "https://proxy.example.com/api",
+        }
+      }
+      if (
+        message.action === RuntimeActionIds.OpenSettingsApiCredentialProfiles
+      ) {
+        throw new Error("settings page failed")
+      }
+      return { success: false }
+    })
+
+    await openModal()
+
+    const baseUrlInput = await screen.findByPlaceholderText(
+      "https://example.com/api",
+    )
+    const apiKeyInput = await screen.findByPlaceholderText("sk-...")
+
+    await user.click(baseUrlInput)
+    await user.paste("https://proxy.example.com/api")
+    await user.click(apiKeyInput)
+    await user.paste("sk-secret-xyz")
+
+    const saveButton = await screen.findByRole("button", {
+      name: "webAiApiCheck:modal.actions.saveToProfiles",
+    })
+
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled()
+    })
+
+    await user.click(saveButton)
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalled()
+    })
+
+    const toastRenderer = (toast.success as any).mock.calls[0]?.[0]
+    expect(toastRenderer).toEqual(expect.any(Function))
+
+    const toastInstance = { id: "toast-open-settings-fail" } as any
+    const { container: toastContainer } = renderRtl(
+      toastRenderer(toastInstance),
+    )
+
+    await user.click(
+      within(toastContainer).getByRole("button", {
+        name: "webAiApiCheck:modal.actions.openApiProfiles",
+      }),
+    )
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(sendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.OpenSettingsApiCredentialProfiles,
+    })
+    expect(toast.dismiss).toHaveBeenCalledWith("toast-open-settings-fail")
+  })
+
   it("falls back to the local save-profile error when the background call throws", async () => {
     const user = userEvent.setup()
     vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
@@ -786,6 +903,69 @@ describe("ApiCheckModalHost", () => {
       expect(toast.error).toHaveBeenCalledWith(
         "webAiApiCheck:modal.errors.saveToProfilesFailed",
       )
+    })
+  })
+
+  it("dispatches a completed close event after a probe result succeeds without fetched models", async () => {
+    const user = userEvent.setup()
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
+      if (message.action === RuntimeActionIds.ApiCheckFetchModels) {
+        return { success: true, modelIds: [] }
+      }
+      if (message.action === RuntimeActionIds.ApiCheckRunProbe) {
+        return {
+          success: true,
+          result: {
+            id: message.probeId,
+            status: "pass",
+            latencyMs: 5,
+            summary: "Probe OK",
+          },
+        }
+      }
+      return { success: false }
+    })
+
+    const closedDetailPromise = new Promise<any>((resolve) => {
+      window.addEventListener(
+        API_CHECK_MODAL_CLOSED_EVENT,
+        (event) => resolve((event as CustomEvent).detail),
+        { once: true },
+      )
+    })
+
+    await openModal()
+
+    const baseUrlInput = await screen.findByPlaceholderText(
+      "https://example.com/api",
+    )
+    const apiKeyInput = await screen.findByPlaceholderText("sk-...")
+
+    await user.click(baseUrlInput)
+    await user.paste("https://proxy.example.com/api")
+    await user.click(apiKeyInput)
+    await user.paste("sk-secret-xyz")
+
+    const probeCard = await screen.findByTestId(
+      "api-check-probe-text-generation",
+    )
+
+    await user.click(
+      within(probeCard).getByRole("button", {
+        name: "webAiApiCheck:modal.actions.runOne",
+      }),
+    )
+
+    expect(await within(probeCard).findByText("Probe OK")).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.close" }),
+    )
+
+    await expect(closedDetailPromise).resolves.toEqual({
+      pageUrl: "https://example.com",
+      trigger: "contextMenu",
+      reason: "completed",
     })
   })
 

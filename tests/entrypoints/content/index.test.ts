@@ -289,6 +289,59 @@ describe("content entrypoint", () => {
     onInvalidated.mock.calls[0]?.[0]()
   })
 
+  it("ignores user-preference changes from non-local storage areas", async () => {
+    const preferences = {
+      redemptionAssist: {
+        enabled: true,
+        contextMenu: { enabled: true },
+      },
+      webAiApiCheck: {
+        enabled: false,
+        contextMenu: { enabled: true },
+        autoDetect: { enabled: false },
+      },
+    }
+
+    setupRedemptionAssistContentMock.mockReturnValue(vi.fn())
+    setupWebAiApiCheckContentMock.mockReturnValue(vi.fn())
+    storageGetMock.mockResolvedValueOnce(wrapPreferences(preferences))
+
+    const module = await import("~/entrypoints/content/index")
+    const onInvalidated = vi.fn()
+
+    await module.default.main({ onInvalidated } as any)
+
+    await waitFor(() => {
+      expect(setupRedemptionAssistContentMock).toHaveBeenCalledTimes(1)
+      expect(setupWebAiApiCheckContentMock).toHaveBeenCalledTimes(1)
+    })
+
+    const handleStorageChanged =
+      addStorageChangedListenerMock.mock.calls[0]?.[0]
+    expect(handleStorageChanged).toBeTypeOf("function")
+
+    handleStorageChanged(
+      {
+        [USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES]: {
+          newValue: {
+            redemptionAssist: {
+              enabled: false,
+            },
+          },
+        },
+      },
+      "sync",
+    )
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(storageGetMock).toHaveBeenCalledTimes(1)
+    expect(setupRedemptionAssistContentMock).toHaveBeenCalledTimes(1)
+    expect(setupWebAiApiCheckContentMock).toHaveBeenCalledTimes(1)
+
+    onInvalidated.mock.calls[0]?.[0]()
+  })
+
   it("does not apply preferences after cleanup when a pending read resolves late", async () => {
     const onInvalidated = vi.fn()
     let resolveStorageRead:

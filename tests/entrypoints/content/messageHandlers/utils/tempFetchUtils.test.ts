@@ -70,6 +70,34 @@ describe("tempFetchUtils", () => {
     })
   })
 
+  it("stringifies non-nullish object header values and keeps headerless options untouched", async () => {
+    const { normalizeFetchOptions } = await import(
+      "~/entrypoints/content/messageHandlers/utils/tempFetchUtils"
+    )
+
+    const headerlessOptions: RequestInit = {
+      method: "GET",
+      credentials: "include",
+    }
+    const headerlessNormalized = normalizeFetchOptions(headerlessOptions)
+    const withMixedObjectHeaders = normalizeFetchOptions({
+      headers: {
+        "x-number": 42 as unknown as string,
+        "x-bool": false as unknown as string,
+        "x-empty": "",
+        "x-undefined": undefined as unknown as string,
+      },
+    })
+
+    expect(headerlessNormalized).toEqual(headerlessOptions)
+    expect(headerlessNormalized).not.toBe(headerlessOptions)
+    expect(withMixedObjectHeaders.headers).toEqual({
+      "x-number": "42",
+      "x-bool": "false",
+      "x-empty": "",
+    })
+  })
+
   it("parses arrayBuffer and blob responses into serializable payloads", async () => {
     const { parseResponseData } = await import(
       "~/entrypoints/content/messageHandlers/utils/tempFetchUtils"
@@ -109,5 +137,36 @@ describe("tempFetchUtils", () => {
       "Failed to parse JSON response, fallback to text",
       expect.any(SyntaxError),
     )
+  })
+
+  it("returns plain text responses without logging warnings", async () => {
+    const { parseResponseData } = await import(
+      "~/entrypoints/content/messageHandlers/utils/tempFetchUtils"
+    )
+
+    const response = new Response("plain-text-body")
+
+    await expect(parseResponseData(response, "text")).resolves.toBe(
+      "plain-text-body",
+    )
+    expect(logger.warn).not.toHaveBeenCalled()
+  })
+
+  it("parses valid json through the default branch without warnings", async () => {
+    const { parseResponseData } = await import(
+      "~/entrypoints/content/messageHandlers/utils/tempFetchUtils"
+    )
+
+    const response = new Response(JSON.stringify({ ok: true, count: 2 }), {
+      headers: { "content-type": "application/json" },
+    })
+
+    await expect(
+      parseResponseData(response, undefined as any),
+    ).resolves.toEqual({
+      ok: true,
+      count: 2,
+    })
+    expect(logger.warn).not.toHaveBeenCalled()
   })
 })

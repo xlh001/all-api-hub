@@ -152,6 +152,80 @@ describe("handlePerformTempWindowFetch", () => {
     )
   })
 
+  it("uses a response message field as the structured error for non-ok json responses", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: "upstream denied" }), {
+        status: 429,
+        headers: { "content-type": "application/json" },
+      }),
+    )
+    vi.stubGlobal("fetch", fetchMock as typeof fetch)
+
+    const { handlePerformTempWindowFetch } = await import(
+      "~/entrypoints/content/messageHandlers/handlers/tempWindowFetch"
+    )
+
+    const sendResponse = vi.fn()
+    handlePerformTempWindowFetch(
+      {
+        fetchUrl: "https://example.com/rate-limited",
+        responseType: "json",
+      },
+      sendResponse,
+    )
+
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        status: 429,
+        headers: {
+          "content-type": "application/json",
+        },
+        data: { message: "upstream denied" },
+        error: "upstream denied",
+      })
+    })
+
+    expect(mockLogCloudflareGuard).not.toHaveBeenCalled()
+  })
+
+  it("falls back to serializing a non-ok object response when no message field exists", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ code: "E_BAD_GATEWAY" }), {
+        status: 502,
+        headers: { "content-type": "application/json" },
+      }),
+    )
+    vi.stubGlobal("fetch", fetchMock as typeof fetch)
+
+    const { handlePerformTempWindowFetch } = await import(
+      "~/entrypoints/content/messageHandlers/handlers/tempWindowFetch"
+    )
+
+    const sendResponse = vi.fn()
+    handlePerformTempWindowFetch(
+      {
+        fetchUrl: "https://example.com/gateway",
+        responseType: "json",
+      },
+      sendResponse,
+    )
+
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        status: 502,
+        headers: {
+          "content-type": "application/json",
+        },
+        data: { code: "E_BAD_GATEWAY" },
+        error: '{"code":"E_BAD_GATEWAY"}',
+      })
+    })
+
+    expect(mockLogCloudflareGuard).not.toHaveBeenCalled()
+  })
+
   it("keeps the response structured when parsing the body fails", async () => {
     const response = {
       ok: false,
@@ -194,6 +268,51 @@ describe("handlePerformTempWindowFetch", () => {
       "Failed to parse response",
       expect.any(Error),
     )
+  })
+
+  it("keeps a successful response successful when parsing fails", async () => {
+    const response = {
+      ok: true,
+      status: 204,
+      headers: new Headers({ "x-edge": "cache" }),
+      blob: vi.fn().mockResolvedValue({
+        type: "application/octet-stream",
+        arrayBuffer: vi.fn().mockRejectedValue(new Error("blob-read-failed")),
+      }),
+    }
+    const fetchMock = vi.fn().mockResolvedValue(response)
+    vi.stubGlobal("fetch", fetchMock as typeof fetch)
+
+    const { handlePerformTempWindowFetch } = await import(
+      "~/entrypoints/content/messageHandlers/handlers/tempWindowFetch"
+    )
+
+    const sendResponse = vi.fn()
+    handlePerformTempWindowFetch(
+      {
+        fetchUrl: "https://example.com/empty-success",
+        responseType: "blob",
+      },
+      sendResponse,
+    )
+
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: true,
+        status: 204,
+        headers: {
+          "x-edge": "cache",
+        },
+        data: null,
+        error: undefined,
+      })
+    })
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Failed to parse response",
+      expect.any(Error),
+    )
+    expect(mockLogCloudflareGuard).not.toHaveBeenCalled()
   })
 
   it("returns a structured failure when the request is invalid before fetch starts", async () => {
