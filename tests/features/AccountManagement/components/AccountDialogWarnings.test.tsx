@@ -1,0 +1,261 @@
+import { fireEvent, render, screen } from "@testing-library/react"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+import AutoDetectErrorAlert from "~/features/AccountManagement/components/AccountDialog/AutoDetectErrorAlert"
+import { DuplicateAccountWarningDialog } from "~/features/AccountManagement/components/AccountDialog/DuplicateAccountWarningDialog"
+import { AutoDetectErrorType } from "~/services/accounts/utils/autoDetectUtils"
+
+const { openLoginTabMock, reloadCurrentTabMock } = vi.hoisted(() => ({
+  openLoginTabMock: vi.fn(),
+  reloadCurrentTabMock: vi.fn(),
+}))
+
+vi.mock("~/services/accounts/utils/autoDetectUtils", async () => {
+  const actual = await vi.importActual<
+    typeof import("~/services/accounts/utils/autoDetectUtils")
+  >("~/services/accounts/utils/autoDetectUtils")
+
+  return {
+    ...actual,
+    openLoginTab: openLoginTabMock,
+    reloadCurrentTab: reloadCurrentTabMock,
+  }
+})
+
+vi.mock("react-i18next", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-i18next")>()
+
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string, options?: Record<string, unknown>) =>
+        options ? JSON.stringify({ key, options }) : key,
+    }),
+  }
+})
+
+describe("AccountDialog warnings", () => {
+  beforeEach(() => {
+    openLoginTabMock.mockReset()
+    reloadCurrentTabMock.mockReset()
+    ;(browser.tabs as any).create = vi.fn()
+  })
+
+  it("shows only the message when no action or help recovery is available", () => {
+    render(
+      <AutoDetectErrorAlert
+        error={{
+          type: AutoDetectErrorType.UNKNOWN,
+          message: "Detection failed",
+        }}
+      />,
+    )
+
+    expect(screen.getByText("Detection failed")).toBeInTheDocument()
+    expect(screen.queryByRole("button")).not.toBeInTheDocument()
+  })
+
+  it("prefers custom action and help handlers over default recovery behavior", () => {
+    const onActionClick = vi.fn()
+    const onHelpClick = vi.fn()
+
+    render(
+      <AutoDetectErrorAlert
+        error={{
+          type: AutoDetectErrorType.UNAUTHORIZED,
+          message: "Please log in",
+          actionText: "Retry login",
+          helpDocUrl: "https://docs.example.com/autodetect",
+        }}
+        siteUrl="https://site.example.com"
+        onActionClick={onActionClick}
+        onHelpClick={onHelpClick}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Retry login" }))
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "actions.helpDocument",
+      }),
+    )
+
+    expect(onActionClick).toHaveBeenCalledTimes(1)
+    expect(onHelpClick).toHaveBeenCalledTimes(1)
+    expect(openLoginTabMock).not.toHaveBeenCalled()
+    expect(reloadCurrentTabMock).not.toHaveBeenCalled()
+    expect(browser.tabs.create).not.toHaveBeenCalled()
+  })
+
+  it("uses the default login redirect for unauthorized errors when a site URL is available", () => {
+    render(
+      <AutoDetectErrorAlert
+        error={{
+          type: AutoDetectErrorType.UNAUTHORIZED,
+          message: "Please log in",
+          actionText: "Retry login",
+        }}
+        siteUrl="https://site.example.com"
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Retry login" }))
+
+    expect(openLoginTabMock).toHaveBeenCalledWith("https://site.example.com")
+    expect(reloadCurrentTabMock).not.toHaveBeenCalled()
+  })
+
+  it("does nothing for unauthorized recovery when the site URL is missing", () => {
+    render(
+      <AutoDetectErrorAlert
+        error={{
+          type: AutoDetectErrorType.UNAUTHORIZED,
+          message: "Please log in",
+          actionText: "Retry login",
+        }}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Retry login" }))
+
+    expect(openLoginTabMock).not.toHaveBeenCalled()
+    expect(reloadCurrentTabMock).not.toHaveBeenCalled()
+  })
+
+  it("reloads the current tab for reload-required errors", () => {
+    render(
+      <AutoDetectErrorAlert
+        error={{
+          type: AutoDetectErrorType.CURRENT_TAB_RELOAD_REQUIRED,
+          message: "Reload required",
+          actionText: "Reload this page",
+        }}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Reload this page" }))
+
+    expect(reloadCurrentTabMock).toHaveBeenCalledTimes(1)
+    expect(openLoginTabMock).not.toHaveBeenCalled()
+  })
+
+  it("opens the help document in a new tab when no custom help handler is provided", () => {
+    render(
+      <AutoDetectErrorAlert
+        error={{
+          type: AutoDetectErrorType.UNKNOWN,
+          message: "Need help",
+          helpDocUrl: "https://docs.example.com/autodetect",
+        }}
+      />,
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "actions.helpDocument",
+      }),
+    )
+
+    expect(browser.tabs.create).toHaveBeenCalledWith({
+      url: "https://docs.example.com/autodetect",
+      active: true,
+    })
+  })
+
+  it("renders the exact-match duplicate warning for numeric user ids and stringifies missing usernames", () => {
+    const onCancel = vi.fn()
+    const onContinue = vi.fn()
+
+    render(
+      <DuplicateAccountWarningDialog
+        isOpen
+        siteUrl="https://site.example.com"
+        existingAccountsCount={2}
+        existingUserId={42}
+        existingUsername={null}
+        onCancel={onCancel}
+        onContinue={onContinue}
+      />,
+    )
+
+    expect(
+      screen.getByText(
+        JSON.stringify({
+          key: "accountDialog:warnings.duplicateAccount.descriptionExact",
+          options: {
+            siteUrl: "https://site.example.com",
+            userId: "42",
+            username: "",
+          },
+        }),
+      ),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "common:actions.cancel",
+      }),
+    )
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "accountDialog:warnings.duplicateAccount.actions.continue",
+      }),
+    )
+
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onContinue).toHaveBeenCalledTimes(1)
+  })
+
+  it("renders the exact-match duplicate warning for non-empty string user ids", () => {
+    render(
+      <DuplicateAccountWarningDialog
+        isOpen
+        siteUrl="https://site.example.com"
+        existingAccountsCount={5}
+        existingUserId="user-7"
+        existingUsername="alice"
+        onCancel={vi.fn()}
+        onContinue={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByText(
+        JSON.stringify({
+          key: "accountDialog:warnings.duplicateAccount.descriptionExact",
+          options: {
+            siteUrl: "https://site.example.com",
+            userId: "user-7",
+            username: "alice",
+          },
+        }),
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it("falls back to the generic duplicate warning when the existing user id is blank", () => {
+    render(
+      <DuplicateAccountWarningDialog
+        isOpen
+        siteUrl="https://site.example.com"
+        existingAccountsCount={3}
+        existingUserId="   "
+        existingUsername="alice"
+        onCancel={vi.fn()}
+        onContinue={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByText(
+        JSON.stringify({
+          key: "accountDialog:warnings.duplicateAccount.description",
+          options: {
+            siteUrl: "https://site.example.com",
+            count: 3,
+          },
+        }),
+      ),
+    ).toBeInTheDocument()
+  })
+})

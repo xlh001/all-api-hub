@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { createInstance } from "i18next"
 import type { ReactNode } from "react"
@@ -23,10 +23,17 @@ const preferenceMocks = vi.hoisted(() => ({
   setLanguage: vi.fn(),
 }))
 
+const toastHelperMocks = vi.hoisted(() => ({
+  showResultToast: vi.fn(),
+}))
+
 vi.mock("~/services/permissions/permissionManager", () => {
   const OPTIONAL_PERMISSIONS = [
     "cookies",
     "declarativeNetRequestWithHostAccess",
+    "webRequest",
+    "webRequestBlocking",
+    "clipboardRead",
   ] as const
 
   return {
@@ -97,7 +104,7 @@ vi.mock("~/entrypoints/options/components/ThemeToggle", () => ({
 }))
 
 vi.mock("~/utils/core/toastHelpers", () => ({
-  showResultToast: vi.fn(),
+  showResultToast: toastHelperMocks.showResultToast,
 }))
 
 const SETTINGS_RESOURCES = {
@@ -161,6 +168,7 @@ describe("PermissionOnboardingDialog language selection", () => {
     permissionMocks.hasPermission.mockReset()
     permissionMocks.onOptionalPermissionsChanged.mockReset()
     preferenceMocks.setLanguage.mockReset()
+    toastHelperMocks.showResultToast.mockReset()
   })
 
   it("renders the onboarding selector and updates onboarding copy immediately when the language changes", async () => {
@@ -319,5 +327,202 @@ describe("PermissionOnboardingDialog language selection", () => {
     ).toBeInTheDocument()
     expect(persistedLanguage).toBe("ja")
     expect(preferenceMocks.setLanguage).toHaveBeenCalledWith("ja")
+  })
+
+  it("skips loading permission statuses while the dialog is closed", async () => {
+    const i18n = await createSettingsI18n("en")
+
+    renderWithI18n(
+      <PermissionOnboardingDialog open={false} onClose={vi.fn()} />,
+      i18n,
+    )
+
+    expect(permissionMocks.hasPermission).not.toHaveBeenCalled()
+  })
+
+  it("loads permission statuses on open and refreshes them when optional permissions change", async () => {
+    const i18n = await createSettingsI18n("en")
+    let permissionChangeHandler: (() => void) | undefined
+    const permissionStates: Record<string, boolean> = {
+      cookies: true,
+      declarativeNetRequestWithHostAccess: false,
+      webRequest: false,
+      webRequestBlocking: false,
+      clipboardRead: false,
+    }
+
+    permissionMocks.hasPermission.mockImplementation(
+      async (id: string) => permissionStates[id] ?? false,
+    )
+    permissionMocks.onOptionalPermissionsChanged.mockImplementation(
+      (handler: () => void) => {
+        permissionChangeHandler = handler
+        return () => {}
+      },
+    )
+
+    renderWithI18n(<PermissionOnboardingDialog open onClose={vi.fn()} />, i18n)
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByText(i18n.t("permissions.status.granted")),
+      ).toHaveLength(1)
+      expect(
+        screen.getAllByText(i18n.t("permissions.status.denied")),
+      ).toHaveLength(4)
+    })
+
+    permissionStates.cookies = false
+    permissionStates.declarativeNetRequestWithHostAccess = true
+    permissionStates.clipboardRead = true
+
+    await act(async () => {
+      permissionChangeHandler?.()
+    })
+
+    await waitFor(() => {
+      expect(permissionMocks.hasPermission).toHaveBeenCalledTimes(10)
+      expect(
+        screen.getAllByText(i18n.t("permissions.status.granted")),
+      ).toHaveLength(2)
+      expect(
+        screen.getAllByText(i18n.t("permissions.status.denied")),
+      ).toHaveLength(3)
+    })
+  })
+
+  it("requests all optional permissions, reloads statuses, and closes after a successful grant", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const i18n = await createSettingsI18n("en")
+
+    renderWithI18n(<PermissionOnboardingDialog open onClose={onClose} />, i18n)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: i18n.t("permissionsOnboarding.actions.allowAll"),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(permissionMocks.ensurePermissions).toHaveBeenCalledWith([
+        "cookies",
+        "declarativeNetRequestWithHostAccess",
+        "webRequest",
+        "webRequestBlocking",
+        "clipboardRead",
+      ])
+    })
+
+    expect(toastHelperMocks.showResultToast).toHaveBeenCalledWith(
+      true,
+      i18n.t("permissionsOnboarding.toasts.success"),
+      i18n.t("permissionsOnboarding.toasts.error"),
+    )
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps the dialog open and shows the error toast when granting permissions fails", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const i18n = await createSettingsI18n("en")
+
+    permissionMocks.ensurePermissions.mockRejectedValueOnce(
+      new Error("permission boom"),
+    )
+
+    renderWithI18n(<PermissionOnboardingDialog open onClose={onClose} />, i18n)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: i18n.t("permissionsOnboarding.actions.allowAll"),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toastHelperMocks.showResultToast).toHaveBeenCalledWith(
+        false,
+        i18n.t("permissionsOnboarding.toasts.error"),
+      )
+    })
+
+    expect(onClose).not.toHaveBeenCalled()
+    expect(
+      screen.getByRole("button", {
+        name: i18n.t("permissionsOnboarding.actions.maybeLater"),
+      }),
+    ).toBeEnabled()
+  })
+
+  it("disables the secondary actions while a permission request is in progress", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const i18n = await createSettingsI18n("en")
+    let resolveRequest: (value: boolean) => void
+    const ensurePromise = new Promise<boolean>((resolve) => {
+      resolveRequest = resolve
+    })
+
+    permissionMocks.ensurePermissions.mockReturnValueOnce(ensurePromise)
+
+    renderWithI18n(<PermissionOnboardingDialog open onClose={onClose} />, i18n)
+
+    const allowAllButton = await screen.findByRole("button", {
+      name: i18n.t("permissionsOnboarding.actions.allowAll"),
+    })
+    const maybeLaterButton = screen.getByRole("button", {
+      name: i18n.t("permissionsOnboarding.actions.maybeLater"),
+    })
+    const starButton = screen.getByRole("button", {
+      name: i18n.t("permissionsOnboarding.project.starCta"),
+    })
+
+    await user.click(allowAllButton)
+
+    await waitFor(() => {
+      expect(maybeLaterButton).toBeDisabled()
+      expect(starButton).toBeDisabled()
+    })
+
+    resolveRequest!(true)
+
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it("shows the new-permissions warning and opens the project page from the CTA", async () => {
+    const user = userEvent.setup()
+    const i18n = await createSettingsI18n("en")
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null)
+
+    renderWithI18n(
+      <PermissionOnboardingDialog
+        open
+        onClose={vi.fn()}
+        reason="new-permissions"
+      />,
+      i18n,
+    )
+
+    expect(
+      await screen.findByText(
+        i18n.t("permissionsOnboarding.reason.newPermissions"),
+      ),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", {
+        name: i18n.t("permissionsOnboarding.project.starCta"),
+      }),
+    )
+
+    expect(openSpy).toHaveBeenCalledWith(
+      expect.stringContaining("github.com"),
+      "_blank",
+      "noopener,noreferrer",
+    )
+
+    openSpy.mockRestore()
   })
 })

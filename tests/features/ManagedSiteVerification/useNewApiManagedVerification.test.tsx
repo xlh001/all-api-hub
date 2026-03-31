@@ -13,10 +13,12 @@ const {
   ensureNewApiManagedSessionMock,
   submitNewApiLoginTwoFactorCodeMock,
   submitNewApiSecureVerificationCodeMock,
+  createTabMock,
 } = vi.hoisted(() => ({
   ensureNewApiManagedSessionMock: vi.fn(),
   submitNewApiLoginTwoFactorCodeMock: vi.fn(),
   submitNewApiSecureVerificationCodeMock: vi.fn(),
+  createTabMock: vi.fn(),
 }))
 
 vi.mock("react-hot-toast", () => ({
@@ -44,6 +46,10 @@ vi.mock("~/services/managedSites/providers/newApiSession", async () => {
   }
 })
 
+vi.mock("~/utils/browser/browserApi", () => ({
+  createTab: (...args: unknown[]) => createTabMock(...args),
+}))
+
 const BASE_REQUEST = {
   kind: "token" as const,
   label: "Token A",
@@ -61,6 +67,7 @@ describe("useNewApiManagedVerification", () => {
     ensureNewApiManagedSessionMock.mockReset()
     submitNewApiLoginTwoFactorCodeMock.mockReset()
     submitNewApiSecureVerificationCodeMock.mockReset()
+    createTabMock.mockReset()
     vi.mocked(toast.success).mockReset()
     vi.mocked(toast.error).mockReset()
   })
@@ -383,6 +390,292 @@ describe("useNewApiManagedVerification", () => {
     })
 
     expect(ensureNewApiManagedSessionMock).not.toHaveBeenCalled()
+  })
+
+  it("fails immediately when the managed base URL is missing and does not attempt to open it", async () => {
+    const windowOpenSpy = vi
+      .spyOn(window, "open")
+      .mockImplementation(() => null as any)
+
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        config: {
+          ...BASE_REQUEST.config,
+          baseUrl: "   ",
+        },
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.dialogState.step).toBe(
+        NEW_API_MANAGED_VERIFICATION_STEPS.FAILURE,
+      )
+      expect(result.current.dialogState.errorMessage).toBe(
+        "newApiManagedVerification:dialog.messages.missingBaseUrl",
+      )
+    })
+
+    await act(async () => {
+      await result.current.openBaseUrl()
+    })
+
+    expect(ensureNewApiManagedSessionMock).not.toHaveBeenCalled()
+    expect(createTabMock).not.toHaveBeenCalled()
+    expect(windowOpenSpy).not.toHaveBeenCalled()
+
+    windowOpenSpy.mockRestore()
+  })
+
+  it("falls back to window.open when opening the managed base URL in a browser tab fails", async () => {
+    createTabMock.mockRejectedValueOnce(new Error("popup blocked"))
+
+    const windowOpenSpy = vi
+      .spyOn(window, "open")
+      .mockImplementation(() => null as any)
+
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        initialFailureMessage: "messages:background.windowCreationUnavailable",
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.dialogState.step).toBe(
+        NEW_API_MANAGED_VERIFICATION_STEPS.FAILURE,
+      )
+    })
+
+    await act(async () => {
+      await result.current.openBaseUrl()
+    })
+
+    expect(createTabMock).toHaveBeenCalledWith("https://managed.example", true)
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      "https://managed.example",
+      "_blank",
+      "noopener,noreferrer",
+    )
+
+    windowOpenSpy.mockRestore()
+  })
+
+  it("submits secure verification codes and keeps returned inline guidance", async () => {
+    submitNewApiSecureVerificationCodeMock.mockResolvedValueOnce({
+      status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+      errorMessage: "verification code still pending",
+      automaticAttempted: false,
+      methods: {
+        twoFactorEnabled: true,
+        passkeyEnabled: false,
+      },
+    })
+
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        initialSessionResult: {
+          status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+          errorMessage: "check your inbox",
+          automaticAttempted: false,
+          methods: {
+            twoFactorEnabled: true,
+            passkeyEnabled: false,
+          },
+        },
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.dialogState.step).toBe(
+        NEW_API_MANAGED_VERIFICATION_STEPS.SECURE_VERIFICATION,
+      )
+      expect(result.current.dialogState.errorMessage).toBe("check your inbox")
+    })
+
+    act(() => {
+      result.current.setCode(" 654321 ")
+    })
+
+    act(() => {
+      void result.current.submitCode()
+    })
+
+    await waitFor(() => {
+      expect(submitNewApiSecureVerificationCodeMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: "https://managed.example",
+        }),
+        "654321",
+      )
+      expect(result.current.dialogState.errorMessage).toBe(
+        "verification code still pending",
+      )
+      expect(result.current.dialogState.code).toBe("")
+    })
+  })
+
+  it("shows a missing-code error instead of submitting an empty secure verification code", async () => {
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        initialSessionResult: {
+          status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+          automaticAttempted: false,
+          methods: {
+            twoFactorEnabled: true,
+            passkeyEnabled: false,
+          },
+        },
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.dialogState.step).toBe(
+        NEW_API_MANAGED_VERIFICATION_STEPS.SECURE_VERIFICATION,
+      )
+    })
+
+    act(() => {
+      void result.current.submitCode()
+    })
+
+    await waitFor(() => {
+      expect(result.current.dialogState.errorMessage).toBe(
+        "newApiManagedVerification:dialog.messages.missingCode",
+      )
+    })
+
+    expect(submitNewApiSecureVerificationCodeMock).not.toHaveBeenCalled()
+  })
+
+  it("ignores submit, retry, and patch actions before a verification request exists", async () => {
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      void result.current.submitCode()
+      void result.current.retryVerification()
+      result.current.patchRequestConfig({
+        username: "should-not-apply",
+      })
+    })
+
+    await act(async () => {
+      await result.current.openBaseUrl()
+    })
+
+    expect(ensureNewApiManagedSessionMock).not.toHaveBeenCalled()
+    expect(submitNewApiLoginTwoFactorCodeMock).not.toHaveBeenCalled()
+    expect(submitNewApiSecureVerificationCodeMock).not.toHaveBeenCalled()
+    expect(createTabMock).not.toHaveBeenCalled()
+    expect(result.current.dialogState).toMatchObject({
+      isOpen: false,
+      code: "",
+      request: null,
+    })
+  })
+
+  it("runs the channel onVerified flow before showing the success toast", async () => {
+    const onVerified = vi.fn().mockResolvedValue(undefined)
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        kind: "channel",
+        label: "Channel A",
+        onVerified,
+        initialSessionResult: {
+          status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+          methods: {
+            twoFactorEnabled: true,
+            passkeyEnabled: false,
+          },
+        },
+      })
+    })
+
+    await waitFor(() => {
+      expect(onVerified).toHaveBeenCalledTimes(1)
+      expect(toast.success).toHaveBeenCalledTimes(1)
+      expect(result.current.dialogState.isOpen).toBe(false)
+    })
+  })
+
+  it("shows the finishing busy state while settings verification waits for onVerified", async () => {
+    let resolveVerified: (() => void) | null = null
+    const onVerified = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveVerified = resolve
+        }),
+    )
+
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        kind: "settings",
+        onVerified,
+        initialSessionResult: {
+          status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+          methods: {
+            twoFactorEnabled: true,
+            passkeyEnabled: false,
+          },
+        },
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.dialogState.isBusy).toBe(true)
+      expect(result.current.dialogState.busyMessage).toBe(
+        "newApiManagedVerification:dialog.messages.finishing",
+      )
+      expect(onVerified).toHaveBeenCalledTimes(1)
+    })
+
+    act(() => {
+      resolveVerified?.()
+    })
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledTimes(1)
+      expect(result.current.dialogState.isOpen).toBe(false)
+    })
+  })
+
+  it("shows the settings success state without requiring a follow-up callback", async () => {
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        kind: "settings",
+        initialSessionResult: {
+          status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+          methods: {
+            twoFactorEnabled: true,
+            passkeyEnabled: false,
+          },
+        },
+      })
+    })
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledTimes(1)
+      expect(result.current.dialogState.isOpen).toBe(false)
+    })
   })
 
   it("maps unsupported temp-window errors to localized verification guidance", async () => {

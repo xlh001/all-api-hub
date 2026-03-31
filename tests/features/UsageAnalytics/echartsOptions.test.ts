@@ -13,9 +13,11 @@ import {
   getSlowModelRows,
   getSlowTokenRows,
   getTokenTotalsRows,
+  resolveFusedDailyByModelForTokens,
   resolveFusedDailyForTokens,
   resolveFusedHourlyForTokens,
   resolveLatencyAggregateForSelection,
+  resolveLatencyDailyForTokens,
   topNWithOther,
 } from "~/features/UsageAnalytics/charts/echartsOptions"
 import { computeUsageHistoryExport } from "~/services/history/usageHistory/analytics"
@@ -110,6 +112,129 @@ describe("feature UsageAnalytics echartsOptions", () => {
       modelName: "missing-model",
     })
     expect(missingModel).toEqual(createEmptyUsageHistoryLatencyAggregate())
+  })
+
+  it("ignores missing token ids across token-filtered aggregate helpers", () => {
+    const accountStore = createEmptyUsageHistoryAccountStore()
+    const dayKey = "2026-01-01"
+
+    accountStore.dailyByToken["token-1"] = {
+      [dayKey]: {
+        requests: 2,
+        promptTokens: 1,
+        completionTokens: 3,
+        totalTokens: 4,
+        quotaConsumed: 2,
+      },
+    }
+    accountStore.hourlyByToken["token-1"] = {
+      [dayKey]: {
+        "09": {
+          requests: 2,
+          promptTokens: 1,
+          completionTokens: 3,
+          totalTokens: 4,
+          quotaConsumed: 2,
+        },
+      },
+    }
+    accountStore.dailyByTokenByModel["token-1"] = {
+      "gpt-4": {
+        [dayKey]: {
+          requests: 2,
+          promptTokens: 1,
+          completionTokens: 3,
+          totalTokens: 4,
+          quotaConsumed: 2,
+        },
+      },
+    }
+
+    const latency = createEmptyUsageHistoryLatencyAggregate()
+    latency.count = 1
+    latency.sum = 2
+    latency.max = 2
+    latency.slowCount = 1
+    latency.buckets = [0, 1]
+
+    accountStore.latencyDailyByToken["token-1"] = { [dayKey]: latency }
+    accountStore.latencyDailyByTokenByModel["token-1"] = {
+      "gpt-4": { [dayKey]: latency },
+    }
+
+    const exportData = buildExportData({ account: accountStore }, dayKey)
+
+    expect(
+      resolveFusedDailyForTokens(exportData, ["missing-token", "token-1"]),
+    ).toMatchObject({
+      [dayKey]: { requests: 2, totalTokens: 4, quotaConsumed: 2 },
+    })
+    expect(
+      resolveFusedHourlyForTokens(exportData, ["missing-token", "token-1"]),
+    ).toMatchObject({
+      [dayKey]: { "09": { requests: 2, totalTokens: 4 } },
+    })
+    expect(
+      resolveFusedDailyByModelForTokens(exportData, [
+        "missing-token",
+        "token-1",
+      ]),
+    ).toMatchObject({
+      "gpt-4": { [dayKey]: { requests: 2, totalTokens: 4 } },
+    })
+    expect(
+      resolveLatencyAggregateForSelection({
+        exportData,
+        tokenIds: ["missing-token", "token-1"],
+        modelName: "gpt-4",
+      }),
+    ).toMatchObject({
+      count: 1,
+      sum: 2,
+      max: 2,
+      slowCount: 1,
+    })
+    expect(
+      resolveLatencyDailyForTokens(exportData, ["missing-token", "token-1"]),
+    ).toMatchObject({
+      [dayKey]: { count: 1, sum: 2, max: 2, slowCount: 1 },
+    })
+  })
+
+  it("pads merged latency histograms when later token buckets are longer", () => {
+    const accountStore = createEmptyUsageHistoryAccountStore()
+    const dayKey = "2026-01-01"
+
+    const shortBuckets = createEmptyUsageHistoryLatencyAggregate()
+    shortBuckets.count = 1
+    shortBuckets.sum = 1
+    shortBuckets.max = 1
+    shortBuckets.buckets = [1]
+
+    const longBuckets = createEmptyUsageHistoryLatencyAggregate()
+    longBuckets.count = 2
+    longBuckets.sum = 5
+    longBuckets.max = 4
+    longBuckets.slowCount = 1
+    longBuckets.buckets = [0, 1, 1]
+
+    accountStore.latencyDailyByToken["token-1"] = { [dayKey]: shortBuckets }
+    accountStore.latencyDailyByToken["token-2"] = { [dayKey]: longBuckets }
+
+    const exportData = buildExportData({ account: accountStore }, dayKey)
+    const merged = resolveLatencyDailyForTokens(exportData, [
+      "token-1",
+      "token-2",
+    ])[dayKey]
+
+    expect(merged).toMatchObject({
+      count: 3,
+      sum: 6,
+      max: 4,
+      slowCount: 1,
+    })
+    expect(merged.buckets.slice(0, 3)).toEqual([1, 1, 1])
+    expect(merged.buckets.slice(3).every((value) => value === 0)).toBe(true)
   })
 
   it("formats token totals with known, unknown, unlabeled, and Other buckets", () => {
@@ -373,6 +498,12 @@ describe("feature UsageAnalytics echartsOptions", () => {
     )
     expect(resolveFusedHourlyForTokens(exportData, [])).toBe(
       exportData.fused.hourly,
+    )
+    expect(resolveFusedDailyByModelForTokens(exportData, [])).toBe(
+      exportData.fused.dailyByModel,
+    )
+    expect(resolveLatencyDailyForTokens(exportData, [])).toBe(
+      exportData.fused.latencyDaily,
     )
     expect(
       getModelTotalsRows({
