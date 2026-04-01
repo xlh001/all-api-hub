@@ -76,6 +76,9 @@ def get_translation_prompt(target_language: str, content: str) -> str:
 6. Front matter (YAML 头部) 中的内容需要翻译
 7. 保持原文的语气和风格
 8. 对于特殊的专有名词（如产品名 "New API"、"Cherry Studio" 等），保持不变
+9. YAML front matter 的键名、层级结构与列表缩进必须保持不变
+10. YAML front matter 中所有字符串值必须保留或改写为双引号包裹的形式，尤其是 title、tagline、heroText、footer、actions[*].text、actions[*].link、actions[*].type、features[*].title、features[*].details
+11. 不要输出未加引号且包含 ":"、"#"、"["、"]"、"{"、"}" 的 YAML 字符串值
 
 术语表（不要放在翻译内容中）：
 

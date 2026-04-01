@@ -39,7 +39,7 @@ features:
   - title: データバックアップと復元
     details: JSON形式でのインポート/エクスポート、およびWebDavによるクラウドバックアップをサポートし、クロスデバイスでのデータ同期を実現します。
   - title: 全プラットフォーム対応
-    details: Chrome、Edge、Firefoxなどのブラウザと互換性があり、モバイル/スマートフォンブラウザ（例: Mobile Edge、Firefox for Android、Kiwiなど）でも使用できます。ダークモードにも対応しています。
+    details: "Chrome、Edge、Firefoxなどのブラウザと互換性があり、モバイル/スマートフォンブラウザ（例: Mobile Edge、Firefox for Android、Kiwiなど）でも使用できます。ダークモードにも対応しています。"
   - title: プライバシーとセキュリティ
     details: 完全オフラインで動作し、すべてのデータはローカルに保存されます。インターネット接続なしで、すべてのコア機能を使用できます。
   - title: Cloudflare保護ページバイパスアシスタント

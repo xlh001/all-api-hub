@@ -1,51 +1,51 @@
 ---
 home: true
-title: 首页
-heroImage: /512.png
-heroText: All API Hub - AI 聚合中转站管理器
+title: "首页"
+heroImage: "/512.png"
+heroText: "All API Hub - AI 聚合中转站管理器"
 tagline: "开源浏览器插件，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、查看余额、同步模型、管理密钥，并支持跨平台与云端备份"
 actions:
-  - text: 开始使用
-    link: /get-started.html # 建议修改为您的实际文档路径，例如 /guide/
-    type: primary
+  - text: "开始使用"
+    link: "/get-started.html" # 建议修改为您的实际文档路径，例如 /guide/
+    type: "primary"
     
-  - text: Chrome 商店
-    link: https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo
-    type: secondary
+  - text: "Chrome 商店"
+    link: "https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo"
+    type: "secondary"
 
-  - text: Edge 商店
-    link: https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa
-    type: secondary
+  - text: "Edge 商店"
+    link: "https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa"
+    type: "secondary"
 
-  - text: FireFox 商店
-    link: https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}
-    type: secondary
+  - text: "FireFox 商店"
+    link: "https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}"
+    type: "secondary"
 
 features:
-  - title: 智能站点管理
-    details: 自动识别 AI 聚合中转站点并创建访问令牌，智能获取站点名称和充值比例，支持重复检测和手动添加。
-  - title: 多账号体系
-    details: 支持每个站点添加多个账号，账号分组与快速切换，实时查看余额和详细使用日志。
-  - title: 令牌与密钥管理
-    details: 便捷管理所有 API Key，支持查看、复制、刷新和批量操作。
-  - title: 模型信息查看
-    details: 清晰展示站点支持的模型列表和价格信息。
-  - title: 签到状态监控
-    details: 自动检测哪些站点支持签到，并标记当天尚未签到的账号，让你在一个面板里按顺序完成多站点签到，减少因为忘记签到而浪费的免费额度。
-  - title: 快速导出集成
-    details: 一键导出配置到 CherryStudio、CC Switch、Kilo Code、CLIProxyAPI、Claude Code Router 以及自建托管站点。
-  - title: 自建站点后台联动
-    details: 支持对自建 New API、DoneHub、Veloera 与 Octopus 实例进行后台联动与渠道相关操作。
-  - title: 数据备份恢复
-    details: 支持 JSON 格式导入导出和 WebDav 云端备份，实现跨设备数据同步。
-  - title: 全平台支持
-    details: 兼容 Chrome、Edge、Firefox 等浏览器，也支持移动端 / 手机端浏览器使用，例如手机 Edge、Firefox for Android、Kiwi 等，适配深色模式。
-  - title: 隐私与安全
-    details: 完全离线运行，所有数据本地存储，无需联网即可使用全部核心功能。
-  - title: Cloudflare 过盾助手
-    details: 遇到五秒盾自动弹窗过盾，确保站点可被识别和记录。
+  - title: "智能站点管理"
+    details: "自动识别 AI 聚合中转站点并创建访问令牌，智能获取站点名称和充值比例，支持重复检测和手动添加。"
+  - title: "多账号体系"
+    details: "支持每个站点添加多个账号，账号分组与快速切换，实时查看余额和详细使用日志。"
+  - title: "令牌与密钥管理"
+    details: "便捷管理所有 API Key，支持查看、复制、刷新和批量操作。"
+  - title: "模型信息查看"
+    details: "清晰展示站点支持的模型列表和价格信息。"
+  - title: "签到状态监控"
+    details: "自动检测哪些站点支持签到，并标记当天尚未签到的账号，让你在一个面板里按顺序完成多站点签到，减少因为忘记签到而浪费的免费额度。"
+  - title: "快速导出集成"
+    details: "一键导出配置到 CherryStudio、CC Switch、Kilo Code、CLIProxyAPI、Claude Code Router 以及自建托管站点。"
+  - title: "自建站点后台联动"
+    details: "支持对自建 New API、DoneHub、Veloera 与 Octopus 实例进行后台联动与渠道相关操作。"
+  - title: "数据备份恢复"
+    details: "支持 JSON 格式导入导出和 WebDav 云端备份，实现跨设备数据同步。"
+  - title: "全平台支持"
+    details: "兼容 Chrome、Edge、Firefox 等浏览器，也支持移动端 / 手机端浏览器使用，例如手机 Edge、Firefox for Android、Kiwi 等，适配深色模式。"
+  - title: "隐私与安全"
+    details: "完全离线运行，所有数据本地存储，无需联网即可使用全部核心功能。"
+  - title: "Cloudflare 过盾助手"
+    details: "遇到五秒盾自动弹窗过盾，确保站点可被识别和记录。"
 
-footer: AGPL-3.0 Licensed | Copyright 2025-present All API Hub
+footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 ---
 
 ## 介绍
