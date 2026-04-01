@@ -8,6 +8,7 @@ import os
 import sys
 import logging
 import time
+import re
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openai import OpenAI
@@ -60,6 +61,17 @@ client = OpenAI(
     base_url=OPENAI_BASE_URL
 )
 
+MARKDOWN_IMAGE_PATTERN = re.compile(r'!\[([^\]]*)\]\(([^)\n]+)\)')
+HTML_IMAGE_SRC_PATTERN = re.compile(
+    r'(<img\b[^>]*\bsrc=)(["\'])([^"\']+)(\2)',
+    re.IGNORECASE,
+)
+URL_SUFFIX_PATTERN = re.compile(r'^([^?#]+)([?#].*)?$')
+OUTER_CODE_FENCE_PATTERN = re.compile(
+    r'^\s*```(?:markdown|md|yaml|yml)?\s*\r?\n([\s\S]*?)\r?\n```\s*$',
+    re.IGNORECASE,
+)
+
 
 def get_translation_prompt(target_language: str, content: str) -> str:
     """构建翻译提示词"""
@@ -79,6 +91,9 @@ def get_translation_prompt(target_language: str, content: str) -> str:
 9. YAML front matter 的键名、层级结构与列表缩进必须保持不变
 10. YAML front matter 中所有字符串值必须保留或改写为双引号包裹的形式，尤其是 title、tagline、heroText、footer、actions[*].text、actions[*].link、actions[*].type、features[*].title、features[*].details
 11. 不要输出未加引号且包含 ":"、"#"、"["、"]"、"{"、"}" 的 YAML 字符串值
+12. Markdown 图片 `![alt](...)` 和 HTML `<img src="...">` 中的本地相对路径必须逐字符原样保留，不要翻译、不要改写、不要自行补 `../` 或删减层级
+13. 远程图片 URL、站外链接、站内绝对路径（以 `/` 开头）也必须原样保留
+14. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块；输出必须直接从 YAML front matter 的 `---` 或正文第一行开始
 
 术语表（不要放在翻译内容中）：
 
@@ -98,6 +113,138 @@ def get_translation_prompt(target_language: str, content: str) -> str:
 """
     
     return prompt
+
+
+def strip_outer_code_fence(content: str) -> str:
+    """Remove an accidental outer fenced-code wrapper from the whole document."""
+    match = OUTER_CODE_FENCE_PATTERN.match(content)
+    if not match:
+        return content
+
+    return match.group(1).strip()
+
+
+def is_local_relative_url(url: str) -> bool:
+    """Return True when the URL is a local relative path we should relocate."""
+    lowered = url.lower()
+
+    if (
+        lowered.startswith('http://')
+        or lowered.startswith('https://')
+        or lowered.startswith('/')
+        or lowered.startswith('#')
+        or lowered.startswith('data:')
+        or lowered.startswith('mailto:')
+        or lowered.startswith('tel:')
+        or lowered.startswith('javascript:')
+    ):
+        return False
+
+    return True
+
+
+def split_url_suffix(url: str):
+    """Split a URL into its path and query/hash suffix."""
+    match = URL_SUFFIX_PATTERN.match(url)
+    if not match:
+        return url, ''
+
+    return match.group(1), match.group(2) or ''
+
+
+def resolve_localized_image_target(asset_path: Path, target_language: str) -> Path:
+    """Prefer localized image variants when they exist for translated docs."""
+    if target_language not in LANGUAGES:
+        return asset_path
+
+    static_image_root = DOCS_DIR / 'static' / 'image'
+
+    try:
+        relative = asset_path.relative_to(static_image_root)
+    except ValueError:
+        return asset_path
+
+    if not relative.parts or relative.parts[0] == 'en':
+        return asset_path
+
+    localized_candidate = static_image_root / 'en' / relative
+    if localized_candidate.exists():
+        return localized_candidate
+
+    return asset_path
+
+
+def rewrite_local_image_url(
+    original_url: str,
+    source_file: Path,
+    target_file: Path,
+    target_language: str,
+) -> str:
+    """Rewrite a local image URL so it stays valid from the translated file."""
+    path_part, suffix = split_url_suffix(original_url)
+
+    if not is_local_relative_url(path_part):
+        return original_url
+
+    source_asset = (source_file.parent / path_part).resolve(strict=False)
+    target_asset = resolve_localized_image_target(source_asset, target_language)
+    relocated = os.path.relpath(target_asset, start=target_file.parent)
+    relocated = relocated.replace('\\', '/')
+
+    return f'{relocated}{suffix}'
+
+
+def collect_image_url_mapping(
+    source_content: str,
+    source_file: Path,
+    target_file: Path,
+    target_language: str,
+):
+    """Build a mapping from source image URLs to translated-file-relative URLs."""
+    image_urls = set()
+
+    for match in MARKDOWN_IMAGE_PATTERN.finditer(source_content):
+        image_urls.add(match.group(2))
+
+    for match in HTML_IMAGE_SRC_PATTERN.finditer(source_content):
+        image_urls.add(match.group(3))
+
+    mapping = {}
+    for url in image_urls:
+        rewritten = rewrite_local_image_url(
+            url,
+            source_file=source_file,
+            target_file=target_file,
+            target_language=target_language,
+        )
+        if rewritten != url:
+            mapping[url] = rewritten
+
+    return mapping
+
+
+def rewrite_translated_image_paths(translated_content: str, image_url_mapping: dict) -> str:
+    """Rewrite image paths in translated markdown using the deterministic mapping."""
+    if not image_url_mapping:
+        return translated_content
+
+    def replace_markdown(match: re.Match[str]) -> str:
+        alt_text = match.group(1)
+        image_url = match.group(2)
+        rewritten = image_url_mapping.get(image_url, image_url)
+        return f'![{alt_text}]({rewritten})'
+
+    def replace_html(match: re.Match[str]) -> str:
+        prefix = match.group(1)
+        quote = match.group(2)
+        image_url = match.group(3)
+        rewritten = image_url_mapping.get(image_url, image_url)
+        return f'{prefix}{quote}{rewritten}{quote}'
+
+    translated_content = MARKDOWN_IMAGE_PATTERN.sub(replace_markdown, translated_content)
+    translated_content = HTML_IMAGE_SRC_PATTERN.sub(replace_html, translated_content)
+
+    return translated_content
 
 
 def translate_content(content: str, target_language: str) -> str:
@@ -129,6 +276,7 @@ def translate_content(content: str, target_language: str) -> str:
             )
             
             translated_content = response.choices[0].message.content.strip()
+            translated_content = strip_outer_code_fence(translated_content)
             logger.info(f"翻译完成 ({LANGUAGES[target_language]['native_name']})")
             
             return translated_content
@@ -194,6 +342,12 @@ def translate_file(source_file: Path, file_index: int = 0, total_files: int = 0,
         try:
             # 构建目标文件路径
             target_file = DOCS_DIR / lang_info['dir'] / rel_path
+            image_url_mapping = collect_image_url_mapping(
+                content,
+                source_file=source_file,
+                target_file=target_file,
+                target_language=lang_code,
+            )
             
             # 检查是否有手动翻译
             if str(target_file) in manual_translations:
@@ -211,6 +365,10 @@ def translate_file(source_file: Path, file_index: int = 0, total_files: int = 0,
             
             # 翻译内容
             translated_content = translate_content(content, lang_code)
+            translated_content = rewrite_translated_image_paths(
+                translated_content,
+                image_url_mapping,
+            )
             
             # 确保目标目录存在
             target_file.parent.mkdir(parents=True, exist_ok=True)
