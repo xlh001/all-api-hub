@@ -9,7 +9,7 @@
     },
     "community": {
       "button": "查看交流渠道",
-      "description": "查看微信群二维码、Telegram 群和其他社区交流入口，适合快速提问或交流使用经验。"
+      "description": "查看微信群二维码、Discord 多语言社区、Telegram 群和其他交流入口，适合提问、交流使用经验和排查问题。"
     },
     "discussion": {
       "button": "打开讨论区",

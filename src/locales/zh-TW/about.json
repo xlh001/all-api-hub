@@ -9,7 +9,7 @@
     },
     "community": {
       "button": "檢視交流渠道",
-      "description": "檢視微信群二維碼、Telegram 群和其他社羣交流入口，適合快速提問或交流使用經驗。"
+      "description": "檢視微信群二維碼、Discord 多語言社羣、Telegram 群和其他交流入口，適合提問、交流使用經驗與排查問題。"
     },
     "discussion": {
       "button": "開啟討論區",

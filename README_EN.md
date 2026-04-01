@@ -41,6 +41,9 @@
   <a href="./resources/wechat_group.png">
     <img alt="WeChat-Chinese Group" src="https://img.shields.io/badge/WeChat-Chinese%20Group-green" />
   </a>
+  <a href="https://discord.gg/RmFXZ577ZQ">
+    <img alt="Discord-Multilingual Community" src="https://img.shields.io/badge/Discord-Multilingual%20Community-5865F2?logo=discord&logoColor=white">
+  </a>
   <a href="https://t.me/qixing_chat">
     <img alt="Telegram-Multilingual Group" src="https://img.shields.io/badge/Telegram-Multilingual%20Group-blue?logo=telegram">
   </a>
