@@ -72,7 +72,7 @@
   },
   "infoPanel": {
     "autoDetect": "自动识别",
-    "autoDetectInfo": "请先在目标站点进行登录，插件将自动检测站点类型，并自动获取访问令牌",
+    "autoDetectInfo": "请先在目标站点登录，插件会自动识别并补全添加账号所需信息",
     "confirmAddInfo": "请确认账号信息无误后点击\"确认添加\"按钮",
     "confirmation": "账号信息确认",
     "editInfo": "编辑账号信息",

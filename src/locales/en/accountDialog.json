@@ -73,7 +73,7 @@
   },
   "infoPanel": {
     "autoDetect": "Auto Detect",
-    "autoDetectInfo": "Please log in to the target site first, the extension will automatically detect the site type and automatically get the access token",
+    "autoDetectInfo": "Please log in to the target site first. The extension will automatically detect and fill in the information needed to add the account.",
     "confirmAddInfo": "Please confirm that the account information is correct before clicking the 'Confirm Add' button",
     "confirmation": "Account Information Confirmation",
     "editInfo": "Edit Account Information",

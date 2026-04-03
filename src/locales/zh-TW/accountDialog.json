@@ -72,7 +72,7 @@
   },
   "infoPanel": {
     "autoDetect": "自動識別",
-    "autoDetectInfo": "請先在目標站點進行登入，外掛將自動檢測站點型別，並自動獲取訪問令牌",
+    "autoDetectInfo": "請先在目標站點登入，外掛會自動識別並補全新增帳號所需資訊",
     "confirmAddInfo": "請確認帳號資訊無誤後點擊\"確認新增\"按鈕",
     "confirmation": "帳號資訊確認",
     "editInfo": "編輯帳號資訊",
