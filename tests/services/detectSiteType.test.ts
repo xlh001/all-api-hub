@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TITLE_RULES, UNKNOWN_SITE } from "~/constants/siteType"
 import {
@@ -7,6 +7,17 @@ import {
   getSiteType,
 } from "~/services/siteDetection/detectSiteType"
 import { server } from "~~/tests/msw/server"
+
+vi.mock("~/utils/browser/tempWindowFetch", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("~/utils/browser/tempWindowFetch")>()
+
+  return {
+    ...actual,
+    canUseTempWindowFetch: vi.fn().mockResolvedValue(false),
+    tempWindowFetch: vi.fn(),
+  }
+})
 
 describe("detectSiteType", () => {
   beforeEach(() => {
