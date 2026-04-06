@@ -194,7 +194,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
+          node-version-file: source/.nvmrc
           cache: "pnpm"
           cache-dependency-path: source/pnpm-lock.yaml
 
