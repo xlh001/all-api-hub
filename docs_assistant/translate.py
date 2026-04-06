@@ -85,12 +85,12 @@ def get_translation_prompt(target_language: str, content: str) -> str:
 3. 专业术语使用行业标准翻译
 4. 保持技术准确性和专业性
 5. 图片路径、链接路径保持不变（如果路径中包含中文目录，保持原样）
-6. Front matter (YAML 头部) 中的内容需要翻译
+6. 如果原文包含 Front matter (YAML 头部)，则其中内容需要翻译；如果原文没有 Front matter，不要新增任何 YAML 头部，也不要自行补充 `title`、`tagline`、`heroText`、`features` 等字段
 7. 保持原文的语气和风格
 8. 对于特殊的专有名词（如产品名 "New API"、"Cherry Studio" 等），保持不变
-9. YAML front matter 的键名、层级结构与列表缩进必须保持不变
-10. YAML front matter 中所有字符串值必须保留或改写为双引号包裹的形式，尤其是 title、tagline、heroText、footer、actions[*].text、actions[*].link、actions[*].type、features[*].title、features[*].details
-11. 不要输出未加引号且包含 ":"、"#"、"["、"]"、"{"、"}" 的 YAML 字符串值
+9. 如果原文包含 YAML front matter，则键名、层级结构与列表缩进必须保持不变
+10. 如果原文包含 YAML front matter，则其中所有字符串值必须保留或改写为双引号包裹的形式，尤其是 title、tagline、heroText、footer、actions[*].text、actions[*].link、actions[*].type、features[*].title、features[*].details
+11. 如果原文包含 YAML front matter，不要输出未加引号且包含 ":"、"#"、"["、"]"、"{"、"}" 的 YAML 字符串值
 12. Markdown 图片 `![alt](...)` 和 HTML `<img src="...">` 中的本地相对路径必须逐字符原样保留，不要翻译、不要改写、不要自行补 `../` 或删减层级
 13. 远程图片 URL、站外链接、站内绝对路径（以 `/` 开头）也必须原样保留
 14. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块；输出必须直接从 YAML front matter 的 `---` 或正文第一行开始
@@ -512,4 +512,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
