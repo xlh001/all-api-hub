@@ -8,6 +8,23 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.32.0
+- **New Features:**
+  - Automatic Check-in: Each row in the results table can now open its corresponding site directly. If the current site type does not support automatic check-in, the extension now shows a clearer message so you can decide whether to handle it manually or check the site's rules first.
+  - New API Hosted Site Verification: If verification finds that `Base URL`, username, or password is missing, you can now fill them in directly inside the verification dialog and continue with `Save and Retry`, without leaving the dialog to go back to the settings page.
+- **Experience Optimizations:**
+  - Account List Sorting: The default sort priority now gives precedence to the field you actively choose in the list. For example, when sorting by `Balance`, `Spend`, or `Income`, that selection now takes effect before the old manual order. Existing preferences are migrated automatically, so no reconfiguration is required.
+- **Bug Fixes:**
+  - Account Management: When cookie import runs into missing permissions, the account dialog no longer closes early when redirecting you to `Permission Settings`; after handling permissions, you can continue the current input flow.
+  - Automatic Recognition: If the current tab was already open before the extension was installed or updated, automatic recognition now clearly prompts you to refresh the page and provides a one-click refresh action, reducing failures that looked random.
+  - Temporary Page / Window Flows: Fixed cases where context was released too early in flows that rely on temporary pages, reducing mid-process failures, closed-page issues, and errors like `No tab with id`.
+
+**Location Hints:**
+- Automatic Check-in result quick actions: In each row of the results table under "Settings → Automatic Check-in".
+- New API quick config completion: In "Settings → Self-Hosted Site Management" and related `New API` verification dialogs.
+- Cookie import permission hints / automatic recognition refresh hints: In the new or edit account dialogs under "Settings → Account Management".
+- Sorting priority settings: In "Settings → Account Management → Sorting Priority Settings".
+
 ## 3.31.0
 - **New Features:**
   - Safari Support: Added Safari installation documentation and release packages for easier installation and use on macOS via Xcode.
