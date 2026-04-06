@@ -30,6 +30,15 @@ export const RedemptionAccountSelectToast: React.FC<
     displayedAccounts[0]?.id ?? null,
   )
 
+  const selectedAccount = useMemo(() => {
+    if (!selectedId) return displayedAccounts[0] ?? null
+    return (
+      displayedAccounts.find((account) => account.id === selectedId) ??
+      displayedAccounts[0] ??
+      null
+    )
+  }, [displayedAccounts, selectedId])
+
   const accountRefs = useRef(new Map<string, HTMLLabelElement>())
 
   useEffect(() => {
@@ -39,20 +48,21 @@ export const RedemptionAccountSelectToast: React.FC<
   }, [displayedAccounts, selectedId])
 
   useEffect(() => {
-    if (!selectedId) return
-    const el = accountRefs.current.get(selectedId)
+    if (!selectedAccount) return
+    const el = accountRefs.current.get(selectedAccount.id)
     el?.scrollIntoView?.({ block: "nearest" })
-  }, [selectedId])
+  }, [selectedAccount])
 
   const confirmSelected = () => {
-    const account = accounts.find((a) => a.id === selectedId) || null
-    onSelect(account)
+    onSelect(selectedAccount)
   }
 
   const moveSelection = (direction: -1 | 1) => {
     if (displayedAccounts.length === 0) return
 
-    const currentIndex = displayedAccounts.findIndex((a) => a.id === selectedId)
+    const currentIndex = displayedAccounts.findIndex(
+      (account) => account.id === selectedAccount?.id,
+    )
     const startIndex = currentIndex >= 0 ? currentIndex : 0
     const nextIndex =
       (startIndex + direction + displayedAccounts.length) %
@@ -79,7 +89,7 @@ export const RedemptionAccountSelectToast: React.FC<
       return
     }
 
-    if (e.key === "Enter" && selectedId) {
+    if (e.key === "Enter" && selectedAccount) {
       e.preventDefault()
       e.stopPropagation()
       confirmSelected()
@@ -143,7 +153,7 @@ export const RedemptionAccountSelectToast: React.FC<
                   <input
                     type="radio"
                     className="h-3 w-3"
-                    checked={selectedId === account.id}
+                    checked={selectedAccount?.id === account.id}
                     onChange={() => setSelectedId(account.id)}
                   />
                   <span className="text-foreground font-medium">
@@ -165,7 +175,7 @@ export const RedemptionAccountSelectToast: React.FC<
         <Button variant="secondary" onClick={handleCancel}>
           {t("common:actions.cancel")}
         </Button>
-        <Button disabled={!selectedId} onClick={handleConfirm}>
+        <Button disabled={!selectedAccount} onClick={handleConfirm}>
           {t("accountSelect.confirm")}
         </Button>
       </div>
