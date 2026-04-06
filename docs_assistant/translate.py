@@ -9,6 +9,7 @@ import sys
 import logging
 import time
 import re
+import subprocess
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openai import OpenAI
@@ -21,6 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 配置
+REPO_ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = Path(__file__).parent.parent / 'docs/docs'
 LANGUAGES = {
     'en': {
@@ -50,6 +52,8 @@ MAX_WORKERS = int(os.environ.get('MAX_WORKERS', '3'))  # 最大并发数
 
 # 强制翻译配置
 FORCE_TRANSLATE = os.environ.get('FORCE_TRANSLATE', 'false').lower() == 'true'  # 是否强制重新翻译已存在的文件
+TRANSLATE_DIFF_BASE = os.environ.get('TRANSLATE_DIFF_BASE', 'HEAD~1')
+TRANSLATE_DIFF_HEAD = os.environ.get('TRANSLATE_DIFF_HEAD', 'HEAD')
 
 if not OPENAI_API_KEY:
     logger.error("错误: 未设置 OPENAI_API_KEY 环境变量")
@@ -75,8 +79,6 @@ OUTER_CODE_FENCE_PATTERN = re.compile(
 
 def get_translation_prompt(target_language: str, content: str) -> str:
     """构建翻译提示词"""
-    language_name = LANGUAGES[target_language]['name']
-    
     prompt = f"""你是一个专业的技术文档翻译专家。请将以下 Markdown 格式的技术文档从中文翻译为{LANGUAGES[target_language]['native_name']}。
 
 翻译要求：
@@ -112,6 +114,61 @@ def get_translation_prompt(target_language: str, content: str) -> str:
 {content}
 """
     
+    return prompt
+
+
+def get_incremental_translation_prompt(
+    target_language: str,
+    new_source_content: str,
+    existing_translation_content: str,
+    source_diff: str,
+) -> str:
+    """构建基于旧译文和 diff 的最小修改翻译提示词"""
+    prompt = f"""你正在基于已有译文做增量更新，而不是重新翻译整份文档。请根据中文源文的变更 diff，在已有{LANGUAGES[target_language]['native_name']}译文上做最小必要修改，并返回完整的更新后文档。
+
+核心目标：
+1. 优先保证“最小修改”，不是追求整篇文风统一
+2. 只更新受本次 diff 影响的翻译内容
+3. 未受本次 diff 影响的已有译文应尽量逐字保持不变，不要顺手重写历史段落
+
+翻译要求：
+1. 返回完整的更新后{LANGUAGES[target_language]['native_name']}文档，不要只返回 diff，也不要添加解释
+2. 保持 Markdown 格式完整，包括标题、列表、代码块、链接、admonition 等
+3. 代码块内容不要翻译
+4. 专业术语使用行业标准翻译；产品名如 "New API"、"Cherry Studio" 保持不变
+5. 如果中文原文没有 Front matter (YAML 头部)，不要新增任何 YAML 头部，也不要自行补充 `title`、`tagline`、`heroText`、`features` 等字段
+6. 如果中文原文包含 YAML front matter，则键名、层级结构、列表缩进和字符串引号规则必须保持正确
+7. Markdown 图片 `![alt](...)`、HTML `<img src="...">`、本地路径、远程 URL、站内绝对路径都必须保持可用，不要擅自改写
+8. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块
+9. 对于本次新增或修改的自然语言内容，必须翻译成目标语言；不要把新增正文直接保留为中文
+10. 如果旧译文中存在与本次 diff 无关的瑕疵，也不要顺手大范围改写；除非 diff 直接涉及该处
+
+术语表（不要放在翻译内容中）：
+
+| 中文 | English | 说明 | Description |
+|------|---------|------|-------------|
+| 倍率 | Ratio | 用于计算价格的乘数因子 | Multiplier factor used for price calculation |
+| 令牌 | Token | API访问凭证，也指模型处理的文本单元 | API access credentials or text units processed by models |
+| 渠道 | Channel | API服务提供商的接入通道 | Access channel for API service providers |
+| 分组 | Group | 用户或令牌的分类，影响价格倍率 | Classification of users or tokens, affecting price ratios |
+| 额度 | Quota | 用户可用的服务额度 | Available service quota for users |
+
+输入一：最新中文源文
+<latest_source_markdown>
+{new_source_content}
+</latest_source_markdown>
+
+输入二：上一版{LANGUAGES[target_language]['native_name']}译文
+<previous_translation_markdown>
+{existing_translation_content}
+</previous_translation_markdown>
+
+输入三：中文源文 diff（仅用于定位改动范围，请不要把 diff 标记带进输出）
+<source_diff>
+{source_diff}
+</source_diff>
+"""
+
     return prompt
 
 
@@ -247,7 +304,46 @@ def rewrite_translated_image_paths(translated_content: str, image_url_mapping: d
     return translated_content
 
 
-def translate_content(content: str, target_language: str) -> str:
+def get_repo_relative_posix_path(file_path: Path) -> str:
+    """Return a repository-relative POSIX path for git commands."""
+    return file_path.resolve().relative_to(REPO_ROOT).as_posix()
+
+
+def get_source_diff(source_file: Path) -> str:
+    """Read the source-file unified diff between the configured revisions."""
+    repo_relative_path = get_repo_relative_posix_path(source_file)
+
+    result = subprocess.run(
+        [
+            'git',
+            'diff',
+            '--no-color',
+            '--unified=3',
+            TRANSLATE_DIFF_BASE,
+            TRANSLATE_DIFF_HEAD,
+            '--',
+            repo_relative_path,
+        ],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+    )
+
+    if result.returncode != 0:
+        logger.warning(
+            f"读取源文 diff 失败 {repo_relative_path}: {result.stderr.strip() or result.returncode}"
+        )
+        return ''
+
+    return result.stdout.strip()
+
+
+def translate_content(
+    content: str,
+    target_language: str,
+    existing_translation_content: str = '',
+    source_diff: str = '',
+) -> str:
     """使用 OpenAI API 翻译内容（带重试机制）"""
     retry_count = 0
     last_error = None
@@ -268,7 +364,16 @@ def translate_content(content: str, target_language: str) -> str:
                     },
                     {
                         "role": "user",
-                        "content": get_translation_prompt(target_language, content)
+                        "content": (
+                            get_incremental_translation_prompt(
+                                target_language,
+                                content,
+                                existing_translation_content,
+                                source_diff,
+                            )
+                            if existing_translation_content and source_diff
+                            else get_translation_prompt(target_language, content)
+                        )
                     }
                 ],
                 temperature=0.3,  # 较低的温度以获得更一致的翻译
@@ -336,12 +441,17 @@ def translate_file(source_file: Path, file_index: int = 0, total_files: int = 0,
     
     translated_count = 0
     skipped_count = 0
+    source_diff = get_source_diff(source_file)
     
     # 翻译到各个目标语言
     for lang_code, lang_info in LANGUAGES.items():
         try:
             # 构建目标文件路径
             target_file = DOCS_DIR / lang_info['dir'] / rel_path
+            existing_translation_content = ''
+            if target_file.exists():
+                existing_translation_content = target_file.read_text(encoding='utf-8')
+
             image_url_mapping = collect_image_url_mapping(
                 content,
                 source_file=source_file,
@@ -364,7 +474,12 @@ def translate_file(source_file: Path, file_index: int = 0, total_files: int = 0,
                 logger.info(f"{prefix}🔄 强制重新翻译 {lang_info['native_name']}（文件已存在）")
             
             # 翻译内容
-            translated_content = translate_content(content, lang_code)
+            translated_content = translate_content(
+                content,
+                lang_code,
+                existing_translation_content=existing_translation_content,
+                source_diff=source_diff,
+            )
             translated_content = rewrite_translated_image_paths(
                 translated_content,
                 image_url_mapping,
@@ -396,12 +511,11 @@ def detect_manual_translations():
     
     try:
         # 获取当前提交中修改的文件列表
-        import subprocess
         result = subprocess.run(
-            ['git', 'diff', '--name-only', 'HEAD~1', 'HEAD'],
+            ['git', 'diff', '--name-only', TRANSLATE_DIFF_BASE, TRANSLATE_DIFF_HEAD],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent
+            cwd=REPO_ROOT
         )
         
         if result.returncode == 0:

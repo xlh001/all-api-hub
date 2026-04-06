@@ -109,6 +109,8 @@ jobs:
           RETRY_BACKOFF: ${{ secrets.RETRY_BACKOFF || '2.0' }}
           MAX_WORKERS: ${{ secrets.MAX_WORKERS || '10' }}
           FORCE_TRANSLATE: ${{ github.event_name == 'push' && 'true' || 'false' }}
+          TRANSLATE_DIFF_BASE: ${{ github.event.before }}
+          TRANSLATE_DIFF_HEAD: ${{ github.sha }}
         run: |
           echo "手动翻译文件: ${{ steps.changed-files.outputs.manual_translations }}"
           python docs_assistant/translate.py ${{ steps.changed-files.outputs.files }}
