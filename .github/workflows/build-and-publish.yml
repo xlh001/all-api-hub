@@ -225,7 +225,7 @@ jobs:
             args=(--dry-run "${args[@]}")
           fi
 
-          pnpm wxt submit "${args[@]}"
+          pnpm exec publish-extension "${args[@]}"
         env:
           WXT_SUBMIT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
           CHROME_SKIP_SUBMIT_REVIEW: ${{ github.event.inputs.review_chrome == 'false' }}

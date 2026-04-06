@@ -142,6 +142,7 @@
     "knip": "^6.0.4",
     "lint-staged": "^16.2.6",
     "msw": "^2.11.6",
+    "publish-browser-extension": "^4.0.4",
     "prettier": "3.2.4",
     "prettier-plugin-tailwindcss": "^0.7.1",
     "react-devtools": "^7.0.1",

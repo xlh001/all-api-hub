@@ -252,6 +252,9 @@ importers:
       prettier-plugin-tailwindcss:
         specifier: ^0.7.1
         version: 0.7.1(@ianvs/prettier-plugin-sort-imports@4.1.1(@vue/compiler-sfc@3.3.4)(prettier@3.2.4))(prettier@3.2.4)
+      publish-browser-extension:
+        specifier: ^4.0.4
+        version: 4.0.4
       react-devtools:
         specifier: ^7.0.1
         version: 7.0.1
@@ -15233,7 +15236,7 @@ snapshots:
 
   is-fullwidth-code-point@5.1.0:
     dependencies:
-      get-east-asian-width: 1.4.0
+      get-east-asian-width: 1.5.0
 
   is-generator-function@1.1.2:
     dependencies:
@@ -16159,7 +16162,7 @@ snapshots:
 
   micromark-extension-cjk-friendly-util@2.1.0(micromark-util-types@2.0.2):
     dependencies:
-      get-east-asian-width: 1.4.0
+      get-east-asian-width: 1.5.0
       micromark-util-character: 2.1.1
       micromark-util-symbol: 2.0.1
     optionalDependencies:
@@ -16820,7 +16823,7 @@ snapshots:
       ky: 1.11.0
       registry-auth-token: 5.1.0
       registry-url: 6.0.1
-      semver: 7.7.3
+      semver: 7.7.4
 
   package-json@4.0.1:
     dependencies:
