@@ -84,6 +84,7 @@
       "onlyJsonSupported": "Only JSON responses are supported"
     },
     "operation": {
+      "accountDataFetchTimeout": "Timed out while fetching account data ({{seconds}}s)",
       "failed": "Operation failed: {{error}}",
       "saveFailed": "Save failed: {{error}}"
     },

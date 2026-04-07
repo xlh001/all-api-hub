@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SUB2API } from "~/constants/siteType"
-import { validateAndSaveAccount } from "~/services/accounts/accountOperations"
+import {
+  MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS,
+  validateAndSaveAccount,
+} from "~/services/accounts/accountOperations"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import {
   DEFAULT_PREFERENCES,
@@ -178,6 +181,58 @@ describe("accountOperations validateAndSaveAccount", () => {
         quota: 0,
       },
     })
+  })
+
+  it("falls back to partial save when manual-add data refresh times out", async () => {
+    vi.useFakeTimers()
+    fetchAccountDataMock.mockImplementationOnce(
+      () => new Promise(() => undefined),
+    )
+
+    try {
+      const resultPromise = validateAndSaveAccount(
+        "https://api.example.com",
+        "Test Site",
+        "tester",
+        "token",
+        "1",
+        "7.0",
+        "",
+        [],
+        CHECK_IN_DISABLED,
+        "unknown",
+        AuthTypeEnum.AccessToken,
+        "",
+      )
+
+      await vi.advanceTimersByTimeAsync(
+        MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS + 1,
+      )
+
+      const result = await resultPromise
+
+      expect(result).toMatchObject({
+        success: true,
+        message: "messages:warnings.accountSavedWithoutDataRefresh",
+      })
+
+      const saved = await accountStorage.getAccountById(result.accountId!)
+      expect(saved).not.toBeNull()
+      expect(saved).toMatchObject({
+        health: {
+          status: SiteHealthStatus.Warning,
+          reason: "messages:errors.operation.accountDataFetchTimeout",
+        },
+        account_info: {
+          id: 1,
+          username: "tester",
+          access_token: "token",
+          quota: 0,
+        },
+      })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("returns a stable save failure when the fallback persistence also fails", async () => {

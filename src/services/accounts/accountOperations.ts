@@ -44,6 +44,48 @@ import { t } from "~/utils/i18n/core"
 
 const logger = createLogger("AccountOperations")
 
+export const MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS = 20000
+
+/**
+ *
+ */
+function createAccountDataFetchTimeoutError(timeoutMs: number): Error {
+  const error = new Error(
+    t("messages:errors.operation.accountDataFetchTimeout", {
+      seconds: Math.ceil(timeoutMs / 1000),
+    }),
+  )
+  error.name = "AccountDataFetchTimeoutError"
+  return error
+}
+
+/**
+ * Guards the manual-add refresh path so a hung upstream request cannot block
+ * account creation indefinitely. This does not cancel the underlying request.
+ */
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  createTimeoutError: () => Error,
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(createTimeoutError())
+        }, timeoutMs)
+      }),
+    ])
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+
 /**
  * Parses a manual balance in USD from a string value and converts it to quota
  * units.
@@ -522,21 +564,28 @@ export async function validateAndSaveAccount(
       authType,
       userId: parsedUserId,
     })
-    const freshAccountData = await getApiService(siteType).fetchAccountData({
-      baseUrl: url.trim(),
-      checkIn: checkInConfig,
-      accountId: undefined, // New account, no ID yet
-      includeTodayCashflow,
-      auth: {
-        authType,
-        userId: parsedUserId,
-        accessToken: accessToken.trim(),
-        cookie:
-          authType === AuthTypeEnum.Cookie
-            ? sessionCookieHeader.trim()
-            : undefined,
-      },
-    })
+    const freshAccountData = await withTimeout(
+      getApiService(siteType).fetchAccountData({
+        baseUrl: url.trim(),
+        checkIn: checkInConfig,
+        accountId: undefined, // New account, no ID yet
+        includeTodayCashflow,
+        auth: {
+          authType,
+          userId: parsedUserId,
+          accessToken: accessToken.trim(),
+          cookie:
+            authType === AuthTypeEnum.Cookie
+              ? sessionCookieHeader.trim()
+              : undefined,
+        },
+      }),
+      MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS,
+      () =>
+        createAccountDataFetchTimeoutError(
+          MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS,
+        ),
+    )
 
     const normalizedTagIds = normalizeTagIdsInput(tagIds)
 

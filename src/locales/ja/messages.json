@@ -84,6 +84,7 @@
       "onlyJsonSupported": "JSON 応答のみサポートしています"
     },
     "operation": {
+      "accountDataFetchTimeout": "アカウントデータの取得がタイムアウトしました（{{seconds}} 秒）",
       "failed": "操作に失敗しました: {{error}}",
       "saveFailed": "保存に失敗しました: {{error}}"
     },

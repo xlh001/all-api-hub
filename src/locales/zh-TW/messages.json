@@ -84,6 +84,7 @@
       "onlyJsonSupported": "僅支援 JSON 響應資料"
     },
     "operation": {
+      "accountDataFetchTimeout": "取得帳號資料逾時（{{seconds}} 秒）",
       "failed": "操作失敗：{{error}}",
       "saveFailed": "儲存失敗：{{error}}"
     },
