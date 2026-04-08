@@ -103,6 +103,60 @@ jobs:
 
           echo "built_at=$BUILT_AT" >> "$GITHUB_OUTPUT"
 
+      - name: Summarize changes since latest release tag
+        id: changelog
+        working-directory: source
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          LAST_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+          LIMIT=15
+
+          if [ -z "$LAST_TAG" ]; then
+            {
+              echo "last_tag="
+              echo "commit_count=0"
+              echo "summary<<EOF"
+              echo "No previous semver tag found."
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          mapfile -t commits < <(
+            git log \
+              --first-parent \
+              --no-merges \
+              --pretty=format:'- %s ([%h](https://github.com/'"$REPOSITORY"'/commit/%H))' \
+              "${LAST_TAG}..HEAD"
+          )
+
+          total_commits="${#commits[@]}"
+          shown_commits="$total_commits"
+          if [ "$shown_commits" -gt "$LIMIT" ]; then
+            shown_commits="$LIMIT"
+          fi
+
+          {
+            echo "last_tag=$LAST_TAG"
+            echo "commit_count=$total_commits"
+            echo "summary<<EOF"
+
+            if [ "$total_commits" -eq 0 ]; then
+              echo "No commits since $LAST_TAG."
+            else
+              printf '%s\n' "${commits[@]:0:$shown_commits}"
+
+              if [ "$total_commits" -gt "$LIMIT" ]; then
+                remaining_commits=$((total_commits - LIMIT))
+                echo
+                echo "- ... and $remaining_commits more commit(s)"
+              fi
+            fi
+
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Prepare stable nightly asset names
         run: |
           shopt -s nullglob
@@ -142,6 +196,10 @@ jobs:
           if-no-files-found: error
 
       - name: Write nightly release notes
+        env:
+          CHANGELOG_COMMIT_COUNT: ${{ steps.changelog.outputs.commit_count }}
+          CHANGELOG_LAST_TAG: ${{ steps.changelog.outputs.last_tag }}
+          CHANGELOG_SUMMARY: ${{ steps.changelog.outputs.summary }}
         run: |
           cat <<EOF > "$RUNNER_TEMP/nightly-notes.md"
           Rolling prerelease build for commit \`${{ steps.commit.outputs.short_sha }}\`.
@@ -152,6 +210,22 @@ jobs:
           - Source branch: \`${{ steps.target.outputs.branch }}\`
           - Trigger: \`${{ github.event_name }}\`
           EOF
+
+          {
+            echo
+            echo "<details>"
+
+            if [ -n "$CHANGELOG_LAST_TAG" ]; then
+              echo "<summary>Changes since \`$CHANGELOG_LAST_TAG\` ($CHANGELOG_COMMIT_COUNT commit(s))</summary>"
+            else
+              echo "<summary>Changes included in this nightly build</summary>"
+            fi
+
+            echo
+            printf '%s\n' "$CHANGELOG_SUMMARY"
+            echo
+            echo "</details>"
+          } >> "$RUNNER_TEMP/nightly-notes.md"
 
       - name: Move nightly tag
         working-directory: source
