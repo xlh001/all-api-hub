@@ -216,7 +216,7 @@ jobs:
             echo "<details>"
 
             if [ -n "$CHANGELOG_LAST_TAG" ]; then
-              echo "<summary>Changes since \`$CHANGELOG_LAST_TAG\` ($CHANGELOG_COMMIT_COUNT commit(s))</summary>"
+              echo "<summary>Changes since $CHANGELOG_LAST_TAG ($CHANGELOG_COMMIT_COUNT commit(s))</summary>"
             else
               echo "<summary>Changes included in this nightly build</summary>"
             fi
