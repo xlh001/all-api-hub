@@ -1,4 +1,8 @@
-import { KeyIcon, PlusIcon } from "@heroicons/react/24/outline"
+import {
+  ArrowTopRightOnSquareIcon,
+  KeyIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline"
 import { useEffect, useId, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -16,6 +20,7 @@ import {
 } from "~/components/ui"
 import AddTokenDialog from "~/features/KeyManagement/components/AddTokenDialog"
 import type { DisplaySiteData } from "~/types"
+import { openKeysPage } from "~/utils/navigation"
 
 import { useModelKeyDialog } from "./hooks/useModelKeyDialog"
 
@@ -110,9 +115,12 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
 
   const handleOpenAddTokenDialog = () => setIsAddTokenDialogOpen(true)
   const handleCloseAddTokenDialog = () => setIsAddTokenDialogOpen(false)
+  const handleOpenKeysPage = () => {
+    void openKeysPage(account.id)
+  }
 
   const header = (
-    <div className="min-w-0">
+    <div className="min-w-0 pr-10">
       <h2 className="dark:text-dark-text-primary truncate text-base font-semibold text-gray-900 sm:text-lg">
         {t("modelList:keyDialog.title")}
       </h2>
@@ -122,6 +130,18 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
           modelId,
         })}
       </p>
+      <Button
+        onClick={handleOpenKeysPage}
+        variant="link"
+        className="mt-1 h-auto px-0 py-0 text-sm"
+        rightIcon={
+          <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
+        }
+      >
+        {t("modelList:keyDialog.openKeyManagement", {
+          accountName: account.name,
+        })}
+      </Button>
     </div>
   )
 

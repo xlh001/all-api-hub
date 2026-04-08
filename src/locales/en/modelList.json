@@ -58,6 +58,7 @@
     "noCompatibleDescription": "Create a key for this model, or adjust existing key model limits.",
     "noCompatibleFoundAfterCreate": "Key created, but no compatible key was found for {{modelId}}.",
     "noCompatibleTitle": "No compatible keys for {{modelId}}",
+    "openKeyManagement": "Open key management for {{accountName}}",
     "selectHint": "Select which key you want to use for this model.",
     "selectLabel": "Compatible key",
     "selectPlaceholder": "Select a key",

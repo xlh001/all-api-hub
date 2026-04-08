@@ -57,6 +57,7 @@
     "noCompatibleDescription": "為該模型建立一個金鑰，或調整已有金鑰的模型限制。",
     "noCompatibleFoundAfterCreate": "金鑰建立成功，但仍未找到可用於 {{modelId}} 的金鑰。",
     "noCompatibleTitle": "{{modelId}} 無可用金鑰",
+    "openKeyManagement": "前往 {{accountName}} 的金鑰管理",
     "selectHint": "請選擇要用於該模型的金鑰。",
     "selectLabel": "可用金鑰",
     "selectPlaceholder": "請選擇金鑰",

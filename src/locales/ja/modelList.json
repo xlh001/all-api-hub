@@ -57,6 +57,7 @@
     "noCompatibleDescription": "このモデル用のキーを作成するか、既存キーのモデル制限を調整してください。",
     "noCompatibleFoundAfterCreate": "キーは作成されましたが、{{modelId}} に対応するキーは見つかりませんでした。",
     "noCompatibleTitle": "{{modelId}} に対応するキーがありません",
+    "openKeyManagement": "{{accountName}} のキー管理を開く",
     "selectHint": "このモデルに使用するキーを選択してください。",
     "selectLabel": "対応キー",
     "selectPlaceholder": "キーを選択",

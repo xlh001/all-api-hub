@@ -11,12 +11,14 @@ const {
   toastSuccessMock,
   toastErrorMock,
   resolveDisplayAccountTokenForSecretMock,
+  openKeysPageMock,
 } = vi.hoisted(() => ({
   fetchAccountTokensMock: vi.fn(),
   createApiTokenMock: vi.fn(),
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
   resolveDisplayAccountTokenForSecretMock: vi.fn(),
+  openKeysPageMock: vi.fn(),
 }))
 
 vi.mock("react-hot-toast", () => ({
@@ -49,6 +51,10 @@ vi.mock("~/services/apiService", () => ({
     fetchUserGroups: vi.fn(async () => ({})),
     updateApiToken: vi.fn(async () => true),
   }),
+}))
+
+vi.mock("~/utils/navigation", () => ({
+  openKeysPage: (...args: any[]) => openKeysPageMock(...args),
 }))
 
 const ACCOUNT = {
@@ -88,9 +94,34 @@ describe("ModelKeyDialog", () => {
     toastSuccessMock.mockReset()
     toastErrorMock.mockReset()
     resolveDisplayAccountTokenForSecretMock.mockReset()
+    openKeysPageMock.mockReset()
     resolveDisplayAccountTokenForSecretMock.mockImplementation(
       async (_account, token) => token,
     )
+  })
+
+  it("opens the current account in key management", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([TOKEN])
+
+    const user = userEvent.setup()
+
+    render(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={ACCOUNT}
+        modelId="gpt-4"
+        modelEnableGroups={["default"]}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "modelList:keyDialog.openKeyManagement",
+      }),
+    )
+
+    expect(openKeysPageMock).toHaveBeenCalledWith("acc-1")
   })
 
   it("copies selected key when exactly one compatible token exists", async () => {
