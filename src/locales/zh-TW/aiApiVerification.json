@@ -22,8 +22,7 @@
     },
     "history": {
       "clear": "清除歷史",
-      "lastVerified": "最近驗證",
-      "unverified": "尚未驗證"
+      "lastVerified": "最近驗證"
     },
     "idleHint": "請選擇金鑰開始驗證；模型相關探測需要填寫模型 ID。",
     "loadingTokensHint": "正在載入金鑰...",

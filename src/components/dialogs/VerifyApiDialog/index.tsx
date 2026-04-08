@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { ProbeStatusBadge } from "~/components/dialogs/VerifyApiDialog/ProbeStatusBadge"
-import { VerificationStatusBadge } from "~/components/dialogs/VerifyApiDialog/VerificationStatusBadge"
+import { VerificationHistorySummary } from "~/components/dialogs/VerifyApiDialog/VerificationHistorySummary"
 import {
   Alert,
   Badge,
@@ -38,7 +38,6 @@ import {
   verificationResultHistoryStorage,
 } from "~/services/verification/verificationResultHistory"
 import type { ApiToken } from "~/types"
-import { formatLocaleDateTime } from "~/utils/core/formatters"
 import { createLogger } from "~/utils/core/logger"
 
 import { buildProbeState } from "./probeState"
@@ -355,17 +354,7 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
       <div className="space-y-3">
         {historyTarget ? (
           <div className="dark:border-dark-bg-tertiary flex flex-wrap items-center gap-2 rounded-md border border-gray-100 p-3 text-sm">
-            <span className="dark:text-dark-text-tertiary text-gray-500">
-              {t("verifyDialog.history.lastVerified")}
-            </span>
-            <VerificationStatusBadge
-              status={persistedSummary?.status ?? "unverified"}
-            />
-            <span className="dark:text-dark-text-secondary text-gray-600">
-              {persistedSummary
-                ? formatLocaleDateTime(persistedSummary.verifiedAt)
-                : t("verifyDialog.history.unverified")}
-            </span>
+            <VerificationHistorySummary summary={persistedSummary} />
           </div>
         ) : null}
 

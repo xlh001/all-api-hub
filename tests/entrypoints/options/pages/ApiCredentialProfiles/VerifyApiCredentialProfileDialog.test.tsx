@@ -603,7 +603,7 @@ describe("VerifyApiCredentialProfileDialog", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("aiApiVerification:verifyDialog.history.unverified"),
+        screen.getByText("aiApiVerification:verifyDialog.status.unverified"),
       ).toBeInTheDocument()
     })
   })
@@ -697,7 +697,7 @@ describe("VerifyApiCredentialProfileDialog", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("aiApiVerification:verifyDialog.history.unverified"),
+        screen.getByText("aiApiVerification:verifyDialog.status.unverified"),
       ).toBeInTheDocument()
     })
     expect(screen.queryByText("Stored m1 history")).not.toBeInTheDocument()

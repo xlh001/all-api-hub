@@ -7,13 +7,12 @@ import {
 import React from "react"
 import { useTranslation } from "react-i18next"
 
-import { VerificationStatusBadge } from "~/components/dialogs/VerifyApiDialog/VerificationStatusBadge"
+import { VerificationHistorySummary } from "~/components/dialogs/VerifyApiDialog/VerificationHistorySummary"
 import { Badge, IconButton } from "~/components/ui"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import { getBillingModeText } from "~/services/models/utils/modelPricing"
 import { getProviderConfig } from "~/services/models/utils/modelProviders"
 import type { ApiVerificationHistorySummary } from "~/services/verification/verificationResultHistory"
-import { formatLocaleDateTime } from "~/utils/core/formatters"
 
 interface ModelItemHeaderProps {
   model: ModelPricing
@@ -175,19 +174,10 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
       </div>
 
       {onVerifyApi && (
-        <div className="ml-8 flex flex-wrap items-center gap-2 text-[11px] sm:text-xs">
-          <span className="dark:text-dark-text-tertiary text-gray-500">
-            {t("aiApiVerification:verifyDialog.history.lastVerified")}
-          </span>
-          <VerificationStatusBadge
-            status={verificationSummary?.status ?? "unverified"}
-          />
-          <span className="dark:text-dark-text-secondary text-gray-600">
-            {verificationSummary
-              ? formatLocaleDateTime(verificationSummary.verifiedAt)
-              : t("aiApiVerification:verifyDialog.history.unverified")}
-          </span>
-        </div>
+        <VerificationHistorySummary
+          summary={verificationSummary}
+          className="ml-8 flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2"
+        />
       )}
     </div>
   )

@@ -22,8 +22,7 @@
     },
     "history": {
       "clear": "Clear history",
-      "lastVerified": "Last verified",
-      "unverified": "Not verified yet"
+      "lastVerified": "Last verified"
     },
     "idleHint": "Select a token to start verification. Model id is required for model-dependent probes.",
     "loadingTokensHint": "Loading tokens...",

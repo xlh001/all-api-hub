@@ -182,6 +182,55 @@ describe("ModelItem profile actions", () => {
     ).toBeInTheDocument()
   })
 
+  it("avoids rendering duplicate unverified helper copy for rows without verification history", async () => {
+    const profileSource = createProfileSource({
+      id: "profile-1",
+      name: "Reusable Key",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://profile.example.com",
+      apiKey: "sk-secret",
+      tagIds: [],
+      notes: "",
+      createdAt: 1,
+      updatedAt: 2,
+    })
+
+    render(
+      <ModelItem
+        model={{
+          model_name: "gpt-4o-mini",
+          quota_type: 0,
+          model_ratio: 0,
+          model_price: 0,
+          completion_ratio: 1,
+          enable_groups: [],
+          supported_endpoint_types: [],
+        }}
+        calculatedPrice={{
+          inputUSD: 0,
+          outputUSD: 0,
+          inputCNY: 0,
+          outputCNY: 0,
+        }}
+        exchangeRate={1}
+        showRealPrice={false}
+        showRatioColumn={false}
+        showEndpointTypes={true}
+        userGroup="default"
+        availableGroups={[]}
+        source={profileSource}
+        onVerifyModel={() => {}}
+        onVerifyCliSupport={() => {}}
+      />,
+    )
+
+    expect(
+      await screen.findByText(
+        "aiApiVerification:verifyDialog.status.unverified",
+      ),
+    ).toBeInTheDocument()
+  })
+
   it("falls back to the raw profile baseUrl when the URL is malformed", async () => {
     testI18n.addResourceBundle(
       "en",

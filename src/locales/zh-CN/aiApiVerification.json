@@ -22,8 +22,7 @@
     },
     "history": {
       "clear": "清除历史",
-      "lastVerified": "最近验证",
-      "unverified": "尚未验证"
+      "lastVerified": "最近验证"
     },
     "idleHint": "请选择密钥开始验证；模型相关探测需要填写模型 ID。",
     "loadingTokensHint": "正在加载密钥...",

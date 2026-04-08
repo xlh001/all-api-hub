@@ -622,14 +622,25 @@ describe("ApiCredentialProfiles page", () => {
 
     render(<ApiCredentialProfiles />)
 
-    expect(await screen.findByText("History Profile")).toBeInTheDocument()
+    const profileName = await screen.findByText("History Profile")
+    const profileCard = profileName.closest<HTMLElement>(
+      "div.rounded-lg.border",
+    )
+
+    expect(profileName).toBeInTheDocument()
+    expect(profileCard).not.toBeNull()
     expect(
-      await screen.findByText(
+      within(profileCard!).getAllByText(
         "aiApiVerification:verifyDialog.history.lastVerified",
-      ),
-    ).toBeInTheDocument()
+      ).length,
+    ).toBeGreaterThan(0)
     expect(
-      screen.getByText("aiApiVerification:verifyDialog.status.pass"),
-    ).toBeInTheDocument()
+      Array.from(profileCard!.querySelectorAll('[data-slot="badge"]')).some(
+        (badge) =>
+          badge.textContent?.includes(
+            "aiApiVerification:verifyDialog.status.pass",
+          ) ?? false,
+      ),
+    ).toBe(true)
   })
 })

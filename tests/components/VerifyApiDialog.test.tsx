@@ -343,7 +343,7 @@ describe("VerifyApiDialog", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("aiApiVerification:verifyDialog.history.unverified"),
+        screen.getByText("aiApiVerification:verifyDialog.status.unverified"),
       ).toBeInTheDocument()
     })
   })
