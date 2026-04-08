@@ -634,13 +634,15 @@ describe("ApiCredentialProfiles page", () => {
         "aiApiVerification:verifyDialog.history.lastVerified",
       ).length,
     ).toBeGreaterThan(0)
-    expect(
-      Array.from(profileCard!.querySelectorAll('[data-slot="badge"]')).some(
-        (badge) =>
-          badge.textContent?.includes(
-            "aiApiVerification:verifyDialog.status.pass",
-          ) ?? false,
-      ),
-    ).toBe(true)
+    await waitFor(() => {
+      expect(
+        Array.from(profileCard!.querySelectorAll('[data-slot="badge"]')).some(
+          (badge) =>
+            badge.textContent?.includes(
+              "aiApiVerification:verifyDialog.status.pass",
+            ) ?? false,
+        ),
+      ).toBe(true)
+    })
   })
 })
