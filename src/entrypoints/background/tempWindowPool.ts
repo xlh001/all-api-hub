@@ -28,6 +28,7 @@ import {
   onTabRemoved,
   onWindowRemoved,
   removeTabOrWindow,
+  sendTabMessageWithRetry,
   WINDOW_CREATION_FAILURE_REASONS,
   type WindowCreationFailureReason,
 } from "~/utils/browser/browserApi"
@@ -271,7 +272,7 @@ export async function handleTempWindowGetRenderedTitle(
     )
     const { tabId } = context
 
-    const response = await browser.tabs.sendMessage(tabId, {
+    const response = await sendTabMessageWithRetry(tabId, {
       action: RuntimeActionIds.ContentGetRenderedTitle,
       requestId: tempRequestId,
     })
@@ -851,7 +852,7 @@ export async function handleTempWindowFetch(
     }
     effectiveFetchOptions = prepared.effectiveFetchOptions
 
-    const response = await browser.tabs.sendMessage(tabId, {
+    const response = await sendTabMessageWithRetry(tabId, {
       action: RuntimeActionIds.ContentPerformTempWindowFetch,
       requestId: tempRequestId,
       fetchUrl,
@@ -978,7 +979,7 @@ export async function handleTempWindowTurnstileFetch(
       origin: normalizeOrigin(originUrl),
     })
 
-    const turnstileResponse = await browser.tabs.sendMessage(tabId, {
+    const turnstileResponse = await sendTabMessageWithRetry(tabId, {
       action: RuntimeActionIds.ContentWaitForTurnstileToken,
       requestId: tempRequestId,
       timeoutMs: turnstileTimeoutMs,
@@ -1036,7 +1037,7 @@ export async function handleTempWindowTurnstileFetch(
     }
     effectiveFetchOptions = prepared.effectiveFetchOptions
 
-    const response = (await browser.tabs.sendMessage(tabId, {
+    const response = (await sendTabMessageWithRetry(tabId, {
       action: RuntimeActionIds.ContentPerformTempWindowFetch,
       requestId: tempRequestId,
       fetchUrl: fetchUrlWithToken,
@@ -1091,7 +1092,7 @@ async function getSiteDataFromTab(
     const { tabId } = context
 
     // 通过 content script 获取用户信息
-    const userResponse = await browser.tabs.sendMessage(tabId, {
+    const userResponse = await sendTabMessageWithRetry(tabId, {
       action: RuntimeActionIds.ContentGetUserFromLocalStorage,
       url: url,
     })
@@ -2188,11 +2189,11 @@ export async function checkTempContextProtectionGuards(params: {
   requestId?: string
 }): Promise<TempContextProtectionGuardStatus> {
   const [capResult, cloudflareResult] = await Promise.allSettled([
-    browser.tabs.sendMessage(params.tabId, {
+    sendTabMessageWithRetry(params.tabId, {
       action: RuntimeActionIds.ContentCheckCapGuard,
       requestId: params.requestId,
     }),
-    browser.tabs.sendMessage(params.tabId, {
+    sendTabMessageWithRetry(params.tabId, {
       action: RuntimeActionIds.ContentCheckCloudflareGuard,
       requestId: params.requestId,
     }),
