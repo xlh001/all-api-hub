@@ -40,6 +40,7 @@ interface ModelDisplayProps {
   handleGroupClick: (group: string) => void
   availableGroups: string[]
   displayCapabilities?: ModelManagementSourceCapabilities
+  onFilterAccount?: (accountId: string) => void
 }
 
 /**
@@ -61,6 +62,7 @@ export function ModelDisplay(props: ModelDisplayProps) {
     handleGroupClick,
     availableGroups,
     displayCapabilities,
+    onFilterAccount,
   } = props
   const { t } = useTranslation("modelList")
   if (models.length === 0) {
@@ -126,6 +128,7 @@ export function ModelDisplay(props: ModelDisplayProps) {
               source={sourceForModel}
               displayCapabilities={displayCapabilities}
               verificationSummary={verificationSummary}
+              onFilterAccount={onFilterAccount}
               onVerifyModel={onVerifyModel}
               onVerifyCliSupport={onVerifyCliSupport}
               onOpenModelKeyDialog={onOpenModelKeyDialog}

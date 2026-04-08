@@ -32,6 +32,7 @@ interface ModelItemProps {
   source: ModelManagementItemSource
   displayCapabilities?: ModelManagementSourceCapabilities
   verificationSummary?: ApiVerificationHistorySummary | null
+  onFilterAccount?: (accountId: string) => void
   onVerifyModel?: (source: ModelManagementItemSource, modelId: string) => void
   onVerifyCliSupport?: (
     source: ModelManagementItemSource,
@@ -64,6 +65,7 @@ export default function ModelItem(props: ModelItemProps) {
     source,
     displayCapabilities = source.capabilities,
     verificationSummary,
+    onFilterAccount,
     onVerifyModel,
     onVerifyCliSupport,
     onOpenModelKeyDialog,
@@ -126,6 +128,11 @@ export default function ModelItem(props: ModelItemProps) {
             isAvailableForUser={isAvailableForUser}
             handleCopyModelName={handleCopyModelName}
             sourceLabel={sourceLabel}
+            onFilterAccount={
+              source.kind === "account" && onFilterAccount
+                ? () => onFilterAccount(source.account.id)
+                : undefined
+            }
             showPricingMetadata={showPricing}
             showAvailabilityBadge={showGroupDetails}
             verificationSummary={verificationSummary}

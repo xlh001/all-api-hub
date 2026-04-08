@@ -337,6 +337,11 @@ export default function ModelList(props: {
                   onVerifyModel={handleVerifyModel}
                   onVerifyCliSupport={handleVerifyCliSupport}
                   onOpenModelKeyDialog={handleOpenModelKeyDialog}
+                  onFilterAccount={
+                    selectedSource?.kind === "all-accounts"
+                      ? handleAccountSummaryClick
+                      : undefined
+                  }
                   showRealPrice={showRealPrice}
                   showRatioColumn={showRatioColumn}
                   showEndpointTypes={showEndpointTypes}
@@ -354,6 +359,11 @@ export default function ModelList(props: {
                     onVerifyModel={handleVerifyModel}
                     onVerifyCliSupport={handleVerifyCliSupport}
                     onOpenModelKeyDialog={handleOpenModelKeyDialog}
+                    onFilterAccount={
+                      selectedSource?.kind === "all-accounts"
+                        ? handleAccountSummaryClick
+                        : undefined
+                    }
                     showRealPrice={showRealPrice}
                     showRatioColumn={showRatioColumn}
                     showEndpointTypes={showEndpointTypes}

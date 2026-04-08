@@ -33,10 +33,19 @@ export type ModelManagementSource =
       capabilities: ModelManagementSourceCapabilities
     }
 
-export type ModelManagementItemSource = Extract<
+export type ModelManagementAccountSource = Extract<
   ModelManagementSource,
-  { kind: "account" | "profile" }
+  { kind: "account" }
 >
+
+export type ModelManagementProfileSource = Extract<
+  ModelManagementSource,
+  { kind: "profile" }
+>
+
+export type ModelManagementItemSource =
+  | ModelManagementAccountSource
+  | ModelManagementProfileSource
 
 export const EMPTY_MODEL_MANAGEMENT_CAPABILITIES: ModelManagementSourceCapabilities =
   {
@@ -127,7 +136,7 @@ export function createAllAccountsSource(): ModelManagementSource {
  */
 export function createAccountSource(
   account: DisplaySiteData,
-): ModelManagementItemSource {
+): ModelManagementAccountSource {
   return {
     kind: "account",
     value: toAccountSourceValue(account.id),
@@ -141,7 +150,7 @@ export function createAccountSource(
  */
 export function createProfileSource(
   profile: ApiCredentialProfile,
-): ModelManagementItemSource {
+): ModelManagementProfileSource {
   return {
     kind: "profile",
     value: toProfileSourceValue(profile.id),

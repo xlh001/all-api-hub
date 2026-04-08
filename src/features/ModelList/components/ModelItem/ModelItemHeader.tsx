@@ -20,6 +20,7 @@ interface ModelItemHeaderProps {
   isAvailableForUser: boolean
   handleCopyModelName: () => void
   sourceLabel?: string
+  onFilterAccount?: () => void
   showPricingMetadata: boolean
   showAvailabilityBadge: boolean
   verificationSummary?: ApiVerificationHistorySummary | null
@@ -33,6 +34,7 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
   isAvailableForUser,
   handleCopyModelName,
   sourceLabel,
+  onFilterAccount,
   showPricingMetadata,
   showAvailabilityBadge,
   verificationSummary,
@@ -151,11 +153,24 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
           )}
 
           {/* 账号标签 */}
-          {sourceLabel && (
-            <Badge variant="outline" size="default">
-              {sourceLabel}
-            </Badge>
-          )}
+          {sourceLabel &&
+            (onFilterAccount ? (
+              <Badge asChild variant="outline" size="default">
+                <button
+                  type="button"
+                  onClick={onFilterAccount}
+                  title={sourceLabel}
+                  aria-label={sourceLabel}
+                  className="cursor-pointer hover:border-blue-300 hover:text-blue-700 dark:hover:border-blue-400 dark:hover:text-blue-300"
+                >
+                  {sourceLabel}
+                </button>
+              </Badge>
+            ) : (
+              <Badge variant="outline" size="default">
+                {sourceLabel}
+              </Badge>
+            ))}
         </div>
       </div>
 

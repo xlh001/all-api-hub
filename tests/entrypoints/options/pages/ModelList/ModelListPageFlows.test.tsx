@@ -128,6 +128,7 @@ vi.mock("~/features/ModelList/components/ModelDisplay", () => ({
     onVerifyModel,
     onVerifyCliSupport,
     onOpenModelKeyDialog,
+    onFilterAccount,
   }: any) => (
     <div>
       <button
@@ -160,6 +161,11 @@ vi.mock("~/features/ModelList/components/ModelDisplay", () => ({
       >
         Open key dialog
       </button>
+      {onFilterAccount && (
+        <button type="button" onClick={() => onFilterAccount(ACCOUNT.id)}>
+          Filter account
+        </button>
+      )}
     </div>
   ),
 }))
@@ -415,6 +421,37 @@ describe("ModelList page flows", () => {
 
     await user.click(screen.getByRole("button", { name: "Close key dialog" }))
     expect(screen.queryByText("Model Key Dialog acc-1:gpt-4:vip")).toBeNull()
+  })
+
+  it("lets all-accounts rows reuse the top-level account tag filter", async () => {
+    const user = userEvent.setup()
+
+    mockUseModelListData.mockReturnValue(
+      buildState({
+        selectedSource: ALL_ACCOUNTS_SOURCE,
+        selectedSourceValue: ALL_ACCOUNTS_SOURCE.value,
+        currentAccount: null,
+        sourceCapabilities: ALL_ACCOUNTS_SOURCE.capabilities,
+        pricingData: null,
+        pricingContexts: [{ accountId: ACCOUNT.id }],
+      }),
+    )
+
+    render(<ModelList />)
+
+    await user.click(
+      await screen.findByRole("button", { name: "Filter account" }),
+    )
+
+    expect(mockSetAllAccountsFilterAccountId).toHaveBeenCalledWith(ACCOUNT.id)
+  })
+
+  it("does not expose row account filtering outside the all-accounts view", () => {
+    mockUseModelListData.mockReturnValue(buildState())
+
+    render(<ModelList />)
+
+    expect(screen.queryByRole("button", { name: "Filter account" })).toBeNull()
   })
 
   it("routes profile verification and CLI verification to the correct dialog variants", async () => {

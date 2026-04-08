@@ -284,7 +284,68 @@ describe("ModelItem profile actions", () => {
       />,
     )
 
-    expect(await screen.findByText("Example Account")).toBeInTheDocument()
+    const sourceBadge = await screen.findByText("Example Account")
+    expect(sourceBadge).toBeInTheDocument()
+    expect(sourceBadge.closest("button")).toBeNull()
+  })
+
+  it("lets callers reuse the source badge as an account-filter shortcut", async () => {
+    const user = userEvent.setup()
+    const onFilterAccount = vi.fn()
+
+    const accountSource = createAccountSource({
+      id: "account-1",
+      name: "Example Account",
+      username: "tester",
+      balance: { USD: 0, CNY: 0 },
+      todayConsumption: { USD: 0, CNY: 0 },
+      todayIncome: { USD: 0, CNY: 0 },
+      todayTokens: { upload: 0, download: 0 },
+      health: { status: SiteHealthStatus.Healthy },
+      siteType: "new-api",
+      baseUrl: "https://example.com",
+      token: "token",
+      userId: 1,
+      authType: AuthTypeEnum.AccessToken,
+      checkIn: { enableDetection: false },
+    })
+
+    render(
+      <ModelItem
+        model={{
+          model_name: "gpt-4o-mini",
+          quota_type: 0,
+          model_ratio: 0,
+          model_price: 0,
+          completion_ratio: 1,
+          enable_groups: ["default"],
+          supported_endpoint_types: [],
+        }}
+        calculatedPrice={{
+          inputUSD: 0,
+          outputUSD: 0,
+          inputCNY: 0,
+          outputCNY: 0,
+        }}
+        exchangeRate={1}
+        showRealPrice={false}
+        showRatioColumn={false}
+        showEndpointTypes={true}
+        userGroup="default"
+        availableGroups={["default"]}
+        source={accountSource}
+        onFilterAccount={onFilterAccount}
+      />,
+    )
+
+    const sourceBadgeButton = (
+      await screen.findByText("Example Account")
+    ).closest("button")
+    expect(sourceBadgeButton).not.toBeNull()
+
+    await user.click(sourceBadgeButton!)
+
+    expect(onFilterAccount).toHaveBeenCalledWith(accountSource.account.id)
   })
 
   it("renders account-key fallback rows as catalog-only cards", async () => {
