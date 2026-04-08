@@ -92,7 +92,7 @@ export default function ModelItem(props: ModelItemProps) {
           name: source.profile.name,
           host: profileHost,
         })
-      : undefined
+      : source.account.name
 
   // Card rendering follows the active display capabilities so fallback catalogs
   // can keep account ownership while reusing the catalog-only visual treatment.

@@ -239,6 +239,54 @@ describe("ModelItem profile actions", () => {
     ).toBeInTheDocument()
   })
 
+  it("shows the owning account name as the source badge for account-backed rows", async () => {
+    const accountSource = createAccountSource({
+      id: "account-1",
+      name: "Example Account",
+      username: "tester",
+      balance: { USD: 0, CNY: 0 },
+      todayConsumption: { USD: 0, CNY: 0 },
+      todayIncome: { USD: 0, CNY: 0 },
+      todayTokens: { upload: 0, download: 0 },
+      health: { status: SiteHealthStatus.Healthy },
+      siteType: "new-api",
+      baseUrl: "https://example.com",
+      token: "token",
+      userId: 1,
+      authType: AuthTypeEnum.AccessToken,
+      checkIn: { enableDetection: false },
+    })
+
+    render(
+      <ModelItem
+        model={{
+          model_name: "gpt-4o-mini",
+          quota_type: 0,
+          model_ratio: 0,
+          model_price: 0,
+          completion_ratio: 1,
+          enable_groups: ["default"],
+          supported_endpoint_types: [],
+        }}
+        calculatedPrice={{
+          inputUSD: 0,
+          outputUSD: 0,
+          inputCNY: 0,
+          outputCNY: 0,
+        }}
+        exchangeRate={1}
+        showRealPrice={false}
+        showRatioColumn={false}
+        showEndpointTypes={true}
+        userGroup="default"
+        availableGroups={["default"]}
+        source={accountSource}
+      />,
+    )
+
+    expect(await screen.findByText("Example Account")).toBeInTheDocument()
+  })
+
   it("renders account-key fallback rows as catalog-only cards", async () => {
     const accountSource = createAccountSource({
       id: "account-1",
