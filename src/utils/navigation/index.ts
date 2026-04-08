@@ -93,10 +93,16 @@ const buildSearchString = (params?: Record<string, string | undefined>) => {
  * Dispatches a hashchange event when URL remains unchanged to notify listeners.
  * @param hash Target hash (including #).
  * @param searchParams Optional query params to set.
+ * @param options Optional navigation behavior overrides.
+ * @param options.historyMode Choose whether the in-page navigation replaces the
+ * current history entry or pushes a new one that the browser back button can revisit.
  */
 export const navigateWithinOptionsPage = (
   hash: string,
   searchParams?: Record<string, string | undefined>,
+  options?: {
+    historyMode?: "replace" | "push"
+  },
 ) => {
   if (typeof window === "undefined") {
     return
@@ -105,9 +111,7 @@ export const navigateWithinOptionsPage = (
   const currentUrl = new URL(window.location.href)
   const nextUrl = new URL(window.location.href)
 
-  if (searchParams) {
-    nextUrl.search = buildSearchString(searchParams)
-  }
+  nextUrl.search = buildSearchString(searchParams)
 
   nextUrl.hash = hash
 
@@ -116,9 +120,31 @@ export const navigateWithinOptionsPage = (
     return
   }
 
-  window.history.replaceState(null, "", nextUrl.toString())
+  const historyMethod =
+    options?.historyMode === "push" ? "pushState" : "replaceState"
+  window.history[historyMethod](null, "", nextUrl.toString())
   window.dispatchEvent(new Event("hashchange"))
 }
+
+/**
+ * Replaces the current options-page history entry while updating hash/search.
+ * Use this for URL normalization or in-place state sync that should not create
+ * an extra browser back entry.
+ */
+export const replaceWithinOptionsPage = (
+  hash: string,
+  searchParams?: Record<string, string | undefined>,
+) => navigateWithinOptionsPage(hash, searchParams, { historyMode: "replace" })
+
+/**
+ * Pushes a new options-page history entry while updating hash/search.
+ * Use this for user-initiated transitions that leave the current workflow and
+ * should be reversible via the browser back button.
+ */
+export const pushWithinOptionsPage = (
+  hash: string,
+  searchParams?: Record<string, string | undefined>,
+) => navigateWithinOptionsPage(hash, searchParams, { historyMode: "push" })
 
 /**
  * Normalized hash used by account manager navigations to keep routing consistent.
@@ -257,13 +283,24 @@ const withPopupClose = <T extends any[]>(
  * Opens or focuses the account manager page, preferring in-page navigation when already on options.html.
  * @param params Optional query parameters to prefilter accounts.
  * @param params.search Search keyword applied to the manager list.
+ * @param options Optional in-page navigation behavior tweaks.
+ * @param options.preserveHistory When true and already inside options.html,
+ * push a new history entry so users can return to the originating context.
  */
-const _openFullManagerPage = (params?: { search?: string }) => {
+const _openFullManagerPage = (
+  params?: { search?: string },
+  options?: { preserveHistory?: boolean },
+) => {
   const targetHash = getAccountHash()
   const searchParams = params?.search ? { search: params.search } : undefined
 
   if (isOnOptionsPage()) {
-    navigateWithinOptionsPage(targetHash, searchParams)
+    if (options?.preserveHistory) {
+      pushWithinOptionsPage(targetHash, searchParams)
+      return
+    }
+
+    replaceWithinOptionsPage(targetHash, searchParams)
     return
   }
 
@@ -280,7 +317,7 @@ const _openFullBookmarkManagerPage = (params?: { search?: string }) => {
   const searchParams = params?.search ? { search: params.search } : undefined
 
   if (isOnOptionsPage()) {
-    navigateWithinOptionsPage(targetHash, searchParams)
+    replaceWithinOptionsPage(targetHash, searchParams)
     return
   }
 
@@ -290,13 +327,24 @@ const _openFullBookmarkManagerPage = (params?: { search?: string }) => {
 /**
  * Navigates to the basic settings area, optionally focusing a sub-tab.
  * @param tabId Optional tab ID within settings.
+ * @param options Optional in-page navigation behavior tweaks.
+ * @param options.preserveHistory When true and already inside options.html,
+ * push a new history entry so users can return to the originating context.
  */
-const navigateToBasicSettings = (tabId?: string) => {
+const navigateToBasicSettings = (
+  tabId?: string,
+  options?: { preserveHistory?: boolean },
+) => {
   const targetHash = getBasicSettingsHash()
   const searchParams = tabId ? { tab: tabId } : undefined
 
   if (isOnOptionsPage()) {
-    navigateWithinOptionsPage(targetHash, searchParams)
+    if (options?.preserveHistory) {
+      pushWithinOptionsPage(targetHash, searchParams)
+      return
+    }
+
+    replaceWithinOptionsPage(targetHash, searchParams)
     return
   }
 
@@ -324,7 +372,7 @@ const _openManagedSiteChannelsPage = (params?: {
   const resolvedParams = Object.keys(searchParams).length ? searchParams : {}
 
   if (isOnOptionsPage()) {
-    navigateWithinOptionsPage(targetHash, resolvedParams)
+    pushWithinOptionsPage(targetHash, resolvedParams)
     return
   }
 
@@ -354,7 +402,7 @@ const _openManagedSiteModelSyncPage = (params?: {
   const resolvedParams = Object.keys(searchParams).length ? searchParams : {}
 
   if (isOnOptionsPage()) {
-    navigateWithinOptionsPage(targetHash, resolvedParams)
+    replaceWithinOptionsPage(targetHash, resolvedParams)
     return
   }
 
@@ -373,8 +421,11 @@ const _openSettingsPage = () => {
  * Navigates directly to a named settings tab.
  * @param tabId Unique identifier for the tab to activate.
  */
-const _openSettingsTab = (tabId: string) => {
-  return navigateToBasicSettings(tabId)
+const _openSettingsTab = (
+  tabId: string,
+  options?: { preserveHistory?: boolean },
+) => {
+  return navigateToBasicSettings(tabId, options)
 }
 
 /**
@@ -420,7 +471,7 @@ const _openApiCredentialProfilesPage = () => {
   const targetHash = getApiCredentialProfilesHash()
 
   if (isOnOptionsPage()) {
-    navigateWithinOptionsPage(targetHash)
+    replaceWithinOptionsPage(targetHash)
     return
   }
 
@@ -625,7 +676,7 @@ export const openFullAccountManagerPage = withPopupClose(() =>
  * closing the popup, keeping the flow consistent with popup interactions.
  */
 export const openAccountManagerWithSearch = withPopupClose((search: string) =>
-  _openFullManagerPage({ search }),
+  _openFullManagerPage({ search }, { preserveHistory: true }),
 )
 
 /**

@@ -1,4 +1,3 @@
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 import type { TFunction } from "i18next"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
@@ -15,6 +14,7 @@ import {
   Input,
   Modal,
   Switch,
+  WorkflowTransitionButton,
   type CompactMultiSelectOption,
 } from "~/components/ui"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
@@ -29,7 +29,7 @@ import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { safeRandomUUID } from "~/utils/core/identifier"
 import { createLogger } from "~/utils/core/logger"
-import { navigateWithinOptionsPage } from "~/utils/navigation"
+import { pushWithinOptionsPage } from "~/utils/navigation"
 
 type UserManagedSiteModelSyncConfig = NonNullable<
   typeof DEFAULT_PREFERENCES.managedSiteModelSync
@@ -354,7 +354,7 @@ export default function ManagedSiteModelSyncSettings() {
 
   const handleNavigateToExecution = () => {
     // Navigate to the ManagedSiteModelSync page
-    navigateWithinOptionsPage(`#${MENU_ITEM_IDS.MANAGED_SITE_MODEL_SYNC}`)
+    pushWithinOptionsPage(`#${MENU_ITEM_IDS.MANAGED_SITE_MODEL_SYNC}`)
   }
 
   return (
@@ -585,17 +585,16 @@ export default function ManagedSiteModelSyncSettings() {
             title={t("managedSiteModelSync:settings.viewExecution")}
             description={t("managedSiteModelSync:settings.viewExecutionDesc")}
             rightContent={
-              <Button
+              <WorkflowTransitionButton
                 onClick={handleNavigateToExecution}
                 variant="default"
                 size="sm"
                 className="flex items-center gap-2"
-                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}
               >
                 <span>
                   {t("managedSiteModelSync:settings.viewExecutionButton")}
                 </span>
-              </Button>
+              </WorkflowTransitionButton>
             }
           />
         </CardList>

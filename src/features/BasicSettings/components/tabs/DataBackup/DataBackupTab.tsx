@@ -1,14 +1,17 @@
-import {
-  ArrowsRightLeftIcon,
-  ArrowTopRightOnSquareIcon,
-} from "@heroicons/react/24/outline"
+import { ArrowsRightLeftIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
-import { Alert, Button, Card, CardContent, Heading4 } from "~/components/ui"
+import {
+  Alert,
+  Card,
+  CardContent,
+  Heading4,
+  WorkflowTransitionButton,
+} from "~/components/ui"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import WebDAVAutoSyncSettings from "~/features/ImportExport/components/WebDAVAutoSyncSettings"
 import WebDAVSettings from "~/features/ImportExport/components/WebDAVSettings"
-import { navigateWithinOptionsPage } from "~/utils/navigation"
+import { pushWithinOptionsPage } from "~/utils/navigation"
 
 /**
  * Basic Settings tab for data backup/import/export and WebDAV sync settings.
@@ -17,7 +20,7 @@ export default function DataBackupTab() {
   const { t } = useTranslation("settings")
 
   const handleNavigateToImportExport = () => {
-    navigateWithinOptionsPage(`#${MENU_ITEM_IDS.IMPORT_EXPORT}`)
+    pushWithinOptionsPage(`#${MENU_ITEM_IDS.IMPORT_EXPORT}`)
   }
 
   return (
@@ -33,15 +36,14 @@ export default function DataBackupTab() {
               {t("dataBackup.importExport.description")}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
+              <WorkflowTransitionButton
                 onClick={handleNavigateToImportExport}
                 variant="default"
                 className="justify-center"
                 leftIcon={<ArrowsRightLeftIcon className="h-5 w-5" />}
-                rightIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}
               >
                 {t("dataBackup.importExport.openPage")}
-              </Button>
+              </WorkflowTransitionButton>
             </div>
             <Alert variant="info">
               <p className="text-sm">{t("dataBackup.importExport.info")}</p>

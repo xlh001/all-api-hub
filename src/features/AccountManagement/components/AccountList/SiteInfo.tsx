@@ -17,7 +17,14 @@ import { useTranslation } from "react-i18next"
 
 import { LdohIcon } from "~/components/icons/LdohIcon"
 import Tooltip from "~/components/Tooltip"
-import { Badge, BodySmall, Button, Caption, IconButton } from "~/components/ui"
+import {
+  Badge,
+  BodySmall,
+  Button,
+  Caption,
+  IconButton,
+  WorkflowTransitionButton,
+} from "~/components/ui"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -388,18 +395,32 @@ export default function SiteInfo({ site, highlights }: SiteInfoProps) {
                 <p>
                   {t("list.site.reason")}:{" "}
                   {healthSettingsTab ? (
-                    <Button
+                    <WorkflowTransitionButton
                       variant="link"
                       size="sm"
                       className="h-auto p-0 text-left"
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        void openSettingsTab(healthSettingsTab)
+                        void openSettingsTab(healthSettingsTab, {
+                          preserveHistory: true,
+                        }).catch((error) => {
+                          const errorMessage = getErrorMessage(
+                            error,
+                            t("messages:toast.error.operationFailedGeneric"),
+                          )
+                          logger.error("Failed to open health settings tab", {
+                            error,
+                            errorMessage,
+                            accountId: site.id,
+                            healthSettingsTab,
+                          })
+                          toast.error(errorMessage)
+                        })
                       }}
                     >
                       {site.health.reason}
-                    </Button>
+                    </WorkflowTransitionButton>
                   ) : (
                     site.health.reason
                   )}

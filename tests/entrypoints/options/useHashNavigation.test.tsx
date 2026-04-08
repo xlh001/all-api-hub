@@ -3,14 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { useHashNavigation } from "~/entrypoints/options/hooks/useHashNavigation"
-import { navigateWithinOptionsPage } from "~/utils/navigation"
+import { pushWithinOptionsPage } from "~/utils/navigation"
 
 vi.mock("~/utils/navigation", async (importOriginal) => {
   const actual = await importOriginal<typeof import("~/utils/navigation")>()
 
   return {
     ...actual,
-    navigateWithinOptionsPage: vi.fn(),
+    pushWithinOptionsPage: vi.fn(),
   }
 })
 
@@ -92,6 +92,27 @@ describe("useHashNavigation", () => {
     expect(screen.getByTestId("refresh-key")).toHaveTextContent("1")
   })
 
+  it("updates route params on popstate when only the search string changes", () => {
+    window.history.replaceState(null, "", "/options.html?search=alpha#account")
+
+    render(<Probe />)
+
+    expect(screen.getByTestId("active-menu")).toHaveTextContent(
+      MENU_ITEM_IDS.ACCOUNT,
+    )
+    expect(parseRouteParams()).toEqual({ search: "alpha" })
+
+    act(() => {
+      window.history.pushState(null, "", "/options.html?search=beta#account")
+      window.dispatchEvent(new PopStateEvent("popstate"))
+    })
+
+    expect(screen.getByTestId("active-menu")).toHaveTextContent(
+      MENU_ITEM_IDS.ACCOUNT,
+    )
+    expect(parseRouteParams()).toEqual({ search: "beta" })
+  })
+
   it("updates local state and delegates navigation when changing menu items", async () => {
     render(<Probe />)
 
@@ -105,7 +126,7 @@ describe("useHashNavigation", () => {
       )
     })
     expect(parseRouteParams()).toEqual({ foo: "bar" })
-    expect(navigateWithinOptionsPage).toHaveBeenCalledWith("#models", {
+    expect(pushWithinOptionsPage).toHaveBeenCalledWith("#models", {
       foo: "bar",
     })
   })
