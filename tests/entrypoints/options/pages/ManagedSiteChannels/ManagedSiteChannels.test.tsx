@@ -98,6 +98,7 @@ const openRowActionsMenu = async (row: HTMLElement) => {
   const trigger = within(row).getByRole("button", {
     name: "managedSiteChannels:table.columns.actions",
   })
+  const getOpenMenu = () => screen.queryByRole("menu")
   const knownRowActionNames = [
     "managedSiteChannels:table.rowActions.edit",
     "managedSiteChannels:table.rowActions.view",
@@ -107,11 +108,12 @@ const openRowActionsMenu = async (row: HTMLElement) => {
     "managedSiteChannels:table.rowActions.migrate",
   ]
   const hasRowActionContent = () =>
+    getOpenMenu() !== null ||
     knownRowActionNames.some(
       (name) => screen.queryByRole("menuitem", { name }) !== null,
     )
   const isMenuOpen = () =>
-    trigger.getAttribute("aria-expanded") === "true" || hasRowActionContent()
+    trigger.getAttribute("aria-expanded") === "true" || getOpenMenu() !== null
 
   const openAttempts = [
     async () => {
