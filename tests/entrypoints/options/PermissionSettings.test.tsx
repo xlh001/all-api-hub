@@ -1,13 +1,8 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react"
+import { act, cleanup, fireEvent } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import PermissionSettings from "~/features/BasicSettings/components/tabs/Permissions/PermissionSettings"
+import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const {
   changedListenerRef,
@@ -60,21 +55,28 @@ describe("PermissionSettings", () => {
   })
 
   it("loads permission states, refreshes, and toggles grant/remove actions", async () => {
-    render(<PermissionSettings />)
+    render(<PermissionSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     expect(
-      await screen.findByText("permissions.status.granted"),
+      await screen.findByText("settings:permissions.status.granted"),
     ).toBeInTheDocument()
-    expect(screen.getByText("permissions.status.denied")).toBeInTheDocument()
+    expect(
+      screen.getByText("settings:permissions.status.denied"),
+    ).toBeInTheDocument()
 
     const actionButtons = await screen.findAllByRole("button", {
-      name: /permissions\.actions\.(allow|remove)/,
+      name: /settings:permissions\.actions\.(allow|remove)/,
     })
 
     fireEvent.click(actionButtons[0])
     fireEvent.click(actionButtons[1])
     fireEvent.click(
-      screen.getByRole("button", { name: "permissions.actions.refresh" }),
+      screen.getByRole("button", {
+        name: "settings:permissions.actions.refresh",
+      }),
     )
 
     await waitFor(() => {
@@ -83,28 +85,33 @@ describe("PermissionSettings", () => {
     expect(requestPermissionMock).toHaveBeenCalledWith("clipboardRead")
     expect(showResultToastMock).toHaveBeenCalledWith(
       true,
-      "permissions.messages.granted",
-      "permissions.messages.grantFailed",
+      "settings:permissions.messages.granted",
+      "settings:permissions.messages.grantFailed",
     )
     expect(showResultToastMock).toHaveBeenCalledWith(
       false,
-      "permissions.messages.revoked",
-      "permissions.messages.revokeFailed",
+      "settings:permissions.messages.revoked",
+      "settings:permissions.messages.revokeFailed",
     )
     expect(hasPermissionMock).toHaveBeenCalledTimes(4)
   })
 
   it("reloads statuses on external permission change and unsubscribes on cleanup", async () => {
-    const { unmount } = render(<PermissionSettings />)
+    const { unmount } = render(<PermissionSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
-    await screen.findByText("permissions.status.granted")
+    await screen.findByText("settings:permissions.status.granted")
 
     hasPermissionMock.mockResolvedValue(false)
     const listener = changedListenerRef.current
     if (!listener) {
       throw new Error("Expected optional-permissions change listener")
     }
-    await listener()
+    await act(async () => {
+      await listener()
+    })
 
     await waitFor(() => {
       expect(hasPermissionMock).toHaveBeenCalledTimes(4)

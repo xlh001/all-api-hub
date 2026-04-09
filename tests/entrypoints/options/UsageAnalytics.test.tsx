@@ -7,6 +7,11 @@ import { usageHistoryStorage } from "~/services/history/usageHistory/storage"
 import { pushWithinOptionsPage } from "~/utils/navigation"
 import { render, screen } from "~~/tests/test-utils/render"
 
+const { useThemeMock, useUserPreferencesContextMock } = vi.hoisted(() => ({
+  useThemeMock: vi.fn(),
+  useUserPreferencesContextMock: vi.fn(),
+}))
+
 vi.mock("~/components/charts/EChart", () => ({
   EChart: ({ className }: { className?: string }) => (
     <div className={className} data-testid="usage-analytics-chart" />
@@ -29,9 +34,29 @@ vi.mock("~/utils/navigation", async () => {
   }
 })
 
+vi.mock("~/contexts/ThemeContext", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("~/contexts/ThemeContext")>()
+  return {
+    ...actual,
+    useTheme: () => useThemeMock(),
+  }
+})
+
+vi.mock("~/contexts/UserPreferencesContext", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("~/contexts/UserPreferencesContext")>()
+  return {
+    ...actual,
+    useUserPreferencesContext: () => useUserPreferencesContextMock(),
+  }
+})
+
 describe("UsageAnalytics (settings moved)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    useThemeMock.mockReturnValue({ resolvedTheme: "light" })
+    useUserPreferencesContextMock.mockReturnValue({ currencyType: "USD" })
   })
 
   it("does not render sync-now or apply-settings controls", async () => {
@@ -41,7 +66,12 @@ describe("UsageAnalytics (settings moved)", () => {
       accounts: {},
     } as any)
 
-    render(<UsageAnalytics />)
+    render(<UsageAnalytics />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    await screen.findByText("usageAnalytics:empty.title")
 
     // Controls are now hosted in Basic Settings → Sync tab.
     expect(screen.queryByText("usageAnalytics:actions.syncNow")).toBeNull()
@@ -57,13 +87,17 @@ describe("UsageAnalytics (settings moved)", () => {
       accounts: {},
     } as any)
 
-    render(<UsageAnalytics />)
+    render(<UsageAnalytics />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     const user = userEvent.setup()
+    await screen.findByText("usageAnalytics:empty.title")
     await user.click(
-      await screen.findByRole("button", {
+      screen.getAllByRole("button", {
         name: "usageAnalytics:actions.openAccountUsageSettings",
-      }),
+      })[0]!,
     )
 
     expect(vi.mocked(pushWithinOptionsPage)).toHaveBeenCalledWith("#basic", {

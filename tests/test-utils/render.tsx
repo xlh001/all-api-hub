@@ -10,28 +10,85 @@ import { testI18n } from "~~/tests/test-utils/i18n"
 
 interface AppProvidersProps {
   children: ReactNode
+  withUserPreferencesProvider?: boolean
+  withThemeProvider?: boolean
 }
 
-const AppProviders = ({ children }: AppProvidersProps) => {
+function IdentityProvider({ children }: { children: ReactNode }) {
+  return <>{children}</>
+}
+
+const AppProviders = ({
+  children,
+  withUserPreferencesProvider = true,
+  withThemeProvider = true,
+}: AppProvidersProps) => {
+  const PreferencesProvider = withUserPreferencesProvider
+    ? UserPreferencesProvider
+    : IdentityProvider
+  const ActiveThemeProvider = withThemeProvider
+    ? ThemeProvider
+    : IdentityProvider
+
   return (
     <I18nextProvider i18n={testI18n}>
       <DeviceProvider>
-        <UserPreferencesProvider>
+        <PreferencesProvider>
           <ChannelDialogProvider>
-            <ThemeProvider>{children}</ThemeProvider>
+            <ActiveThemeProvider>{children}</ActiveThemeProvider>
           </ChannelDialogProvider>
-        </UserPreferencesProvider>
+        </PreferencesProvider>
       </DeviceProvider>
     </I18nextProvider>
   )
 }
 
-const customRender = (ui: ReactElement, options?: RenderOptions) => {
-  return render(ui, { wrapper: AppProviders, ...options })
+interface AppRenderOptions extends Omit<RenderOptions, "wrapper"> {
+  withUserPreferencesProvider?: boolean
+  withThemeProvider?: boolean
+}
+
+const customRender = (ui: ReactElement, options?: AppRenderOptions) => {
+  const {
+    withUserPreferencesProvider = true,
+    withThemeProvider = true,
+    ...renderOptions
+  } = options ?? {}
+
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <AppProviders
+        withUserPreferencesProvider={withUserPreferencesProvider}
+        withThemeProvider={withThemeProvider}
+      >
+        {children}
+      </AppProviders>
+    ),
+    ...renderOptions,
+  })
 }
 
 const customRenderHook: typeof renderHook = (callback, options) => {
-  return renderHook(callback, { wrapper: AppProviders, ...options })
+  const {
+    withUserPreferencesProvider = true,
+    withThemeProvider = true,
+    ...renderHookOptions
+  } = (options ?? {}) as {
+    withUserPreferencesProvider?: boolean
+    withThemeProvider?: boolean
+  }
+
+  return renderHook(callback, {
+    wrapper: ({ children }) => (
+      <AppProviders
+        withUserPreferencesProvider={withUserPreferencesProvider}
+        withThemeProvider={withThemeProvider}
+      >
+        {children}
+      </AppProviders>
+    ),
+    ...renderHookOptions,
+  })
 }
 
 // eslint-disable-next-line import/export

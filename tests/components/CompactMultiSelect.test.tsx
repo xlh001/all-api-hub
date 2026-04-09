@@ -5,7 +5,7 @@ import {
   waitFor,
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { useState } from "react"
+import { useState, type ReactElement } from "react"
 import { I18nextProvider } from "react-i18next"
 import { describe, expect, it, vi } from "vitest"
 
@@ -13,12 +13,18 @@ import { CompactMultiSelect } from "~/components/ui/CompactMultiSelect"
 import { testI18n } from "~~/tests/test-utils/i18n"
 import { render } from "~~/tests/test-utils/render"
 
+const renderCompact = (ui: ReactElement) =>
+  render(ui, {
+    withUserPreferencesProvider: false,
+    withThemeProvider: false,
+  })
+
 describe("CompactMultiSelect", () => {
   it("uses a dedicated clear button instead of a clear option item", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="chips"
         options={[
@@ -49,7 +55,7 @@ describe("CompactMultiSelect", () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="chips"
         options={[
@@ -79,7 +85,7 @@ describe("CompactMultiSelect", () => {
   it("shows a clear button for the search input", async () => {
     const user = userEvent.setup()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="summary"
         options={[
@@ -157,7 +163,7 @@ describe("CompactMultiSelect", () => {
         )
       }
 
-      render(<Harness />)
+      renderCompact(<Harness />)
 
       const selectAllButton = await screen.findByRole("button", {
         name: "ui:multiSelect.selectAll",
@@ -187,7 +193,7 @@ describe("CompactMultiSelect", () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="chips"
         allowCustom
@@ -214,7 +220,7 @@ describe("CompactMultiSelect", () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="chips"
         allowCustom
@@ -237,7 +243,7 @@ describe("CompactMultiSelect", () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="chips"
         allowCustom
@@ -260,7 +266,7 @@ describe("CompactMultiSelect", () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="chips"
         allowCustom
@@ -284,7 +290,7 @@ describe("CompactMultiSelect", () => {
   })
 
   it("hides the summary clear button when clearing is disabled or the control is disabled", () => {
-    const firstRender = render(
+    const firstRender = renderCompact(
       <CompactMultiSelect
         displayMode="summary"
         clearable={false}
@@ -300,7 +306,7 @@ describe("CompactMultiSelect", () => {
 
     firstRender.unmount()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="summary"
         disabled
@@ -354,7 +360,7 @@ describe("CompactMultiSelect", () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="summary"
         allowCustom
@@ -385,7 +391,7 @@ describe("CompactMultiSelect", () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    render(
+    renderCompact(
       <CompactMultiSelect
         displayMode="summary"
         allowCustom

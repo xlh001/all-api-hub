@@ -308,7 +308,10 @@ describe("ModelList page flows", () => {
 
     const user = userEvent.setup()
 
-    render(<ModelList />)
+    render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     expect(
       await screen.findByText("Status Indicator: account"),
@@ -352,7 +355,10 @@ describe("ModelList page flows", () => {
       }),
     )
 
-    const { rerender } = render(<ModelList />)
+    const { rerender } = render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     expect(
       await screen.findByText("modelList:fallbackSourceNotice.title"),
@@ -402,7 +408,10 @@ describe("ModelList page flows", () => {
     const user = userEvent.setup()
     mockUseModelListData.mockReturnValue(buildState())
 
-    render(<ModelList />)
+    render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     await user.click(
       await screen.findByRole("button", { name: "Verify API account" }),
@@ -437,7 +446,10 @@ describe("ModelList page flows", () => {
       }),
     )
 
-    render(<ModelList />)
+    render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     await user.click(
       await screen.findByRole("button", { name: "Filter account" }),
@@ -449,7 +461,10 @@ describe("ModelList page flows", () => {
   it("does not expose row account filtering outside the all-accounts view", () => {
     mockUseModelListData.mockReturnValue(buildState())
 
-    render(<ModelList />)
+    render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     expect(screen.queryByRole("button", { name: "Filter account" })).toBeNull()
   })
@@ -458,7 +473,10 @@ describe("ModelList page flows", () => {
     const user = userEvent.setup()
     mockUseModelListData.mockReturnValue(buildState())
 
-    render(<ModelList />)
+    render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     await user.click(
       await screen.findByRole("button", { name: "Verify API profile" }),

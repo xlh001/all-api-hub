@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import ShieldSettings from "~/features/BasicSettings/components/tabs/Refresh/ShieldSettings"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const {
   canUseTempWindowFetchMock,
@@ -76,17 +76,24 @@ describe("ShieldSettings", () => {
   it("shows the permission warning when temp-window access is unavailable", async () => {
     canUseTempWindowFetchMock.mockResolvedValue(false)
 
-    render(<ShieldSettings />)
+    render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     expect(
-      await screen.findByText("refresh.shieldPermissionWarningTitle"),
+      await screen.findByText("settings:refresh.shieldPermissionWarningTitle"),
     ).toBeInTheDocument()
 
     fireEvent.click(
-      screen.getByRole("button", { name: "refresh.shieldPermissionAction" }),
+      screen.getByRole("button", {
+        name: "settings:refresh.shieldPermissionAction",
+      }),
     )
     fireEvent.click(
-      screen.getByRole("button", { name: "permissions.actions.refresh" }),
+      screen.getByRole("button", {
+        name: "settings:permissions.actions.refresh",
+      }),
     )
 
     expect(openSettingsTabMock).toHaveBeenCalledWith("permissions", {
@@ -98,14 +105,17 @@ describe("ShieldSettings", () => {
   it("updates fallback methods and contexts, including the firefox-specific branch", async () => {
     isProtectionBypassFirefoxEnvMock.mockReturnValue(true)
 
-    render(<ShieldSettings />)
+    render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     expect(
-      await screen.findByText("refresh.shieldPopupFirefoxNote"),
+      await screen.findByText("settings:refresh.shieldPopupFirefoxNote"),
     ).toBeInTheDocument()
 
     const tabModeButton = screen.getByRole("button", {
-      name: "refresh.shieldMethodTab",
+      name: "settings:refresh.shieldMethodTab",
     })
     await waitFor(() => {
       expect(tabModeButton).toBeEnabled()

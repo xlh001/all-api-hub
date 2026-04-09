@@ -1,4 +1,3 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import AutoCheckinSettings from "~/features/BasicSettings/components/tabs/CheckinRedeem/AutoCheckinSettings"
@@ -6,6 +5,7 @@ import {
   AUTO_CHECKIN_SCHEDULE_MODE,
   type AutoCheckinPreferences,
 } from "~/types/autoCheckin"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const { toastMocks, useUserPreferencesContextMock } = vi.hoisted(() => ({
   toastMocks: {
@@ -77,7 +77,10 @@ describe("AutoCheckinSettings", () => {
   })
 
   it("validates time inputs before saving and reports invalid values", () => {
-    render(<AutoCheckinSettings />)
+    render(<AutoCheckinSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     const timeInputs = screen.getAllByDisplayValue(/^\d{2}:\d{2}$/)
     fireEvent.change(timeInputs[0], { target: { value: "10:00" } })
@@ -100,7 +103,10 @@ describe("AutoCheckinSettings", () => {
   })
 
   it("saves valid schedule and retry changes and navigates to the execution view", async () => {
-    render(<AutoCheckinSettings />)
+    render(<AutoCheckinSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     const timeInputs = screen.getAllByDisplayValue(/^\d{2}:\d{2}$/)
     const numberInputs = screen.getAllByRole("spinbutton")
@@ -140,7 +146,10 @@ describe("AutoCheckinSettings", () => {
   it("reports invalid retry numbers and save failures", async () => {
     updateAutoCheckin.mockResolvedValue(false)
 
-    render(<AutoCheckinSettings />)
+    render(<AutoCheckinSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     const numberInputs = screen.getAllByRole("spinbutton")
     fireEvent.change(numberInputs[0], { target: { value: "0" } })

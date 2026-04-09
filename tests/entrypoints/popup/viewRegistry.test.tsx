@@ -1,8 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react"
 import { forwardRef, Suspense, useImperativeHandle, useState } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { usePopupViewRegistry } from "~/entrypoints/popup/viewRegistry"
+import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 const { handleAddAccountClickMock, openAddBookmarkMock, openAddDialogMock } =
   vi.hoisted(() => ({
@@ -123,7 +123,10 @@ describe("usePopupViewRegistry", () => {
   })
 
   it("builds the default account and bookmark views with their actions", async () => {
-    render(<RegistryProbe />)
+    render(<RegistryProbe />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     expect(screen.getByText("account:addAccount")).toBeInTheDocument()
     expect(screen.getByText("ShareOverviewSnapshotButton")).toBeInTheDocument()
@@ -153,7 +156,10 @@ describe("usePopupViewRegistry", () => {
   })
 
   it("queues the API credential add action until the lazy view mounts", async () => {
-    render(<DeferredApiMountProbe />)
+    render(<DeferredApiMountProbe />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
 
     fireEvent.click(screen.getByRole("button", { name: "queue-api-add" }))
     expect(openAddDialogMock).not.toHaveBeenCalled()
