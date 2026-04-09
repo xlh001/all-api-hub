@@ -1,8 +1,8 @@
 {
   "actions": {
-    "autoConfigAriaLabel": "自动配置到 New API",
-    "autoConfigTitle": "自动配置到 New API",
-    "configToNewApi": "配置到 New API",
+    "autoConfigAriaLabel": "配置到 {{managedSite}}",
+    "autoConfigTitle": "保存账号并继续配置到 {{managedSite}}",
+    "configToManagedSite": "配置到 {{managedSite}}",
     "configuring": "配置中...",
     "confirmAdd": "确认添加",
     "helpDocument": "帮助文档",
@@ -141,6 +141,16 @@
       "descriptionExact": "在 {{siteUrl}} 上，用户 ID {{userId}} 的账号已存在（{{username}}）。继续添加可能会造成重复，是否继续？",
       "title": "重复账号",
       "warningTitle": "该站点已存在账号"
+    },
+    "managedSiteConfig": {
+      "actions": {
+        "later": "稍后再说",
+        "openSettings": "前往设置"
+      },
+      "description": "{{message}}",
+      "guide": "这个功能会自动准备当前账号可用的 API Key，并预填到 {{managedSite}} 的新建渠道中，帮你更快完成渠道创建。完成管理站点配置后即可使用。",
+      "title": "先配置 {{managedSite}}",
+      "warningTitle": "{{managedSite}} 尚未完成配置"
     }
   }
 }

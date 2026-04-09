@@ -1,8 +1,8 @@
 {
   "actions": {
-    "autoConfigAriaLabel": "New API に自動設定",
-    "autoConfigTitle": "New API に自動設定",
-    "configToNewApi": "New API に設定",
+    "autoConfigAriaLabel": "{{managedSite}} に設定",
+    "autoConfigTitle": "アカウントを保存して {{managedSite}} への設定を続ける",
+    "configToManagedSite": "{{managedSite}} に設定",
     "configuring": "設定中...",
     "confirmAdd": "追加を確認",
     "helpDocument": "ヘルプドキュメント",
@@ -141,6 +141,16 @@
       "descriptionExact": "{{siteUrl}} に user ID {{userId}}（{{username}}）のアカウントがすでに存在します。さらに追加すると重複する可能性があります。続行しますか？",
       "title": "重複アカウント",
       "warningTitle": "このサイトにはすでにアカウントがあります"
+    },
+    "managedSiteConfig": {
+      "actions": {
+        "later": "あとで",
+        "openSettings": "設定を開く"
+      },
+      "description": "{{message}}",
+      "guide": "この機能は現在のアカウントで使える API Key を自動で用意し、{{managedSite}} の新規チャネルに事前入力します。より素早くチャネルを作成でき、管理サイト設定の完了後に利用できます。",
+      "title": "先に {{managedSite}} を設定してください",
+      "warningTitle": "{{managedSite}} はまだ設定されていません"
     }
   }
 }

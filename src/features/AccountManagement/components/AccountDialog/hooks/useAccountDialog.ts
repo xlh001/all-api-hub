@@ -21,6 +21,11 @@ import {
   analyzeAutoDetectError,
   AutoDetectError,
 } from "~/services/accounts/utils/autoDetectUtils"
+import { getManagedSiteServiceForType } from "~/services/managedSites/managedSiteService"
+import {
+  getManagedSiteConfigMissingMessage,
+  getManagedSiteLabel,
+} from "~/services/managedSites/utils/managedSite"
 import {
   AuthTypeEnum,
   type CheckInConfig,
@@ -65,6 +70,12 @@ interface UseAccountDialogProps {
   onSuccess?: (data: any) => void
 }
 
+interface ManagedSiteConfigPromptState {
+  isOpen: boolean
+  managedSiteLabel: string
+  missingMessage: string
+}
+
 /**
  * Hook encapsulating the full lifecycle of the account dialog including detection, validation, and persistence logic.
  * @param props Hook configuration supporting add/edit modes and callbacks.
@@ -82,8 +93,9 @@ export function useAccountDialog({
   onClose,
   onSuccess,
 }: UseAccountDialogProps) {
-  const { t } = useTranslation("accountDialog")
-  const { warnOnDuplicateAccountAdd } = useUserPreferencesContext()
+  const { t } = useTranslation(["accountDialog", "settings", "messages"])
+  const { warnOnDuplicateAccountAdd, managedSiteType } =
+    useUserPreferencesContext()
 
   const [url, setUrl] = useState("")
   const [isDetecting, setIsDetecting] = useState(false)
@@ -148,6 +160,12 @@ export function useAccountDialog({
     existingUsername: null,
     existingUserId: null,
   })
+  const [managedSiteConfigPrompt, setManagedSiteConfigPrompt] =
+    useState<ManagedSiteConfigPromptState>({
+      isOpen: false,
+      managedSiteLabel: "",
+      missingMessage: "",
+    })
   const duplicateAccountWarningResolverRef = useRef<
     ((shouldContinue: boolean) => void) | null
   >(null)
@@ -547,6 +565,9 @@ export function useAccountDialog({
   const handleClose = useCallback(() => {
     handleDuplicateAccountWarningCancel()
     cancelPendingDuplicateAccountWarning()
+    setManagedSiteConfigPrompt((prev) =>
+      prev.isOpen ? { ...prev, isOpen: false } : prev,
+    )
     targetAccountRef.current = null
     onClose()
   }, [
@@ -613,6 +634,50 @@ export function useAccountDialog({
       setIsImportingCookies(false)
     }
   }
+
+  const handleManagedSiteConfigPromptClose = useCallback(() => {
+    setManagedSiteConfigPrompt((prev) =>
+      prev.isOpen ? { ...prev, isOpen: false } : prev,
+    )
+  }, [])
+
+  const handleOpenManagedSiteSettings = useCallback(() => {
+    handleManagedSiteConfigPromptClose()
+
+    void openSettingsTab("managedSite", { preserveHistory: true }).catch(
+      (error) => {
+        toast.error(
+          t("messages.operationFailed", {
+            error: getErrorMessage(error),
+          }),
+        )
+        logger.error("Failed to open managed-site settings", {
+          managedSiteType,
+          error: getErrorMessage(error),
+        })
+      },
+    )
+  }, [handleManagedSiteConfigPromptClose, managedSiteType, t])
+
+  const ensureManagedSiteAutoConfigReady = useCallback(async () => {
+    const service = getManagedSiteServiceForType(managedSiteType)
+    const managedConfig = await service.getConfig()
+
+    if (managedConfig) {
+      return true
+    }
+
+    setManagedSiteConfigPrompt({
+      isOpen: true,
+      managedSiteLabel: getManagedSiteLabel(t, managedSiteType),
+      missingMessage: getManagedSiteConfigMissingMessage(
+        t,
+        service.messagesKey,
+      ),
+    })
+
+    return false
+  }, [managedSiteType, t])
 
   /**
    * Import Sub2API dashboard session credentials (including refresh_token) into the form.
@@ -988,6 +1053,27 @@ export function useAccountDialog({
   }
 
   const handleAutoConfig = async () => {
+    try {
+      const isManagedSiteReady = await ensureManagedSiteAutoConfigReady()
+      if (!isManagedSiteReady) {
+        return
+      }
+    } catch (error) {
+      toast.error(
+        t("messages.operationFailed", {
+          error: getErrorMessage(error),
+        }),
+      )
+      logger.error(
+        "Failed to validate managed-site auto-config prerequisites",
+        {
+          managedSiteType,
+          error: getErrorMessage(error),
+        },
+      )
+      return
+    }
+
     setIsAutoConfiguring(true)
     try {
       let targetAccount: DisplaySiteData | null | string | undefined =
@@ -1131,6 +1217,7 @@ export function useAccountDialog({
       showCookiePermissionWarning,
       isImportingSub2apiSession,
       duplicateAccountWarning,
+      managedSiteConfigPrompt,
     },
     setters: {
       setUrl,
@@ -1167,6 +1254,8 @@ export function useAccountDialog({
       handleSub2apiUseRefreshTokenChange,
       handleDuplicateAccountWarningCancel,
       handleDuplicateAccountWarningContinue,
+      handleManagedSiteConfigPromptClose,
+      handleOpenManagedSiteSettings,
     },
   }
 }

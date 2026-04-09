@@ -1,8 +1,8 @@
 {
   "actions": {
-    "autoConfigAriaLabel": "Auto configure to New API",
-    "autoConfigTitle": "Auto configure to New API",
-    "configToNewApi": "Configure to New API",
+    "autoConfigAriaLabel": "Configure to {{managedSite}}",
+    "autoConfigTitle": "Save the account and continue configuring it in {{managedSite}}",
+    "configToManagedSite": "Configure to {{managedSite}}",
     "configuring": "Configuring...",
     "confirmAdd": "Confirm Add",
     "helpDocument": "Help Document",
@@ -143,6 +143,16 @@
       "descriptionExact": "An account for {{siteUrl}} with user ID {{userId}} already exists ({{username}}). Adding another may create duplicates. Do you want to continue?",
       "title": "Duplicate account",
       "warningTitle": "This site already has accounts"
+    },
+    "managedSiteConfig": {
+      "actions": {
+        "later": "Maybe later",
+        "openSettings": "Open settings"
+      },
+      "description": "{{message}}",
+      "guide": "This feature automatically prepares a usable API key for the current account and prefills it into a new channel in {{managedSite}}, helping you finish channel creation faster. It becomes available after the managed-site setup is complete.",
+      "title": "Configure {{managedSite}} first",
+      "warningTitle": "{{managedSite}} is not configured yet"
     }
   }
 }

@@ -8,6 +8,8 @@ import { useTranslation } from "react-i18next"
 
 import { Button } from "~/components/ui"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { getManagedSiteLabel } from "~/services/managedSites/utils/managedSite"
 
 interface ActionButtonsProps {
   mode: DialogMode
@@ -42,8 +44,10 @@ export default function ActionButtons({
   isAutoConfiguring,
   formId,
 }: ActionButtonsProps) {
-  const { t } = useTranslation(["accountDialog", "common"])
+  const { t } = useTranslation(["accountDialog", "common", "settings"])
+  const { managedSiteType } = useUserPreferencesContext()
   const isAddMode = mode === DIALOG_MODES.ADD
+  const managedSiteLabel = getManagedSiteLabel(t, managedSiteType)
 
   if (isAddMode && !isDetected && !isFormValid) {
     return (
@@ -112,8 +116,12 @@ export default function ActionButtons({
           loading={isAutoConfiguring}
           bleed
           className="flex-1"
-          aria-label={t("accountDialog:actions.autoConfigAriaLabel")}
-          title={t("accountDialog:actions.autoConfigTitle")}
+          aria-label={t("accountDialog:actions.autoConfigAriaLabel", {
+            managedSite: managedSiteLabel,
+          })}
+          title={t("accountDialog:actions.autoConfigTitle", {
+            managedSite: managedSiteLabel,
+          })}
           variant="default"
           leftIcon={
             !isAutoConfiguring ? <BoltIcon className="h-4 w-4" /> : undefined
@@ -121,7 +129,9 @@ export default function ActionButtons({
         >
           {isAutoConfiguring
             ? t("accountDialog:actions.configuring")
-            : t("accountDialog:actions.configToNewApi")}
+            : t("accountDialog:actions.configToManagedSite", {
+                managedSite: managedSiteLabel,
+              })}
         </Button>
       )}
 

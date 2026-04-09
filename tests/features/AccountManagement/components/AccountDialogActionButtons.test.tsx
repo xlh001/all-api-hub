@@ -97,7 +97,7 @@ describe("AccountDialog ActionButtons", () => {
     expect(submitButton).toHaveAttribute("form", "account-form")
     expect(
       screen.queryByRole("button", {
-        name: "accountDialog:actions.configToNewApi",
+        name: "accountDialog:actions.configToManagedSite",
       }),
     ).toBeNull()
 

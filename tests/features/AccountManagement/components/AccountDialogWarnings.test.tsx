@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import AutoDetectErrorAlert from "~/features/AccountManagement/components/AccountDialog/AutoDetectErrorAlert"
 import { DuplicateAccountWarningDialog } from "~/features/AccountManagement/components/AccountDialog/DuplicateAccountWarningDialog"
+import { ManagedSiteConfigPromptDialog } from "~/features/AccountManagement/components/AccountDialog/ManagedSiteConfigPromptDialog"
 import { AutoDetectErrorType } from "~/services/accounts/utils/autoDetectUtils"
 
 const { openLoginTabMock, reloadCurrentTabMock } = vi.hoisted(() => ({
@@ -204,6 +205,56 @@ describe("AccountDialog warnings", () => {
 
     expect(onCancel).toHaveBeenCalledTimes(1)
     expect(onContinue).toHaveBeenCalledTimes(1)
+  })
+
+  it("renders managed-site setup guidance and wires both actions", () => {
+    const onClose = vi.fn()
+    const onOpenSettings = vi.fn()
+
+    render(
+      <ManagedSiteConfigPromptDialog
+        isOpen
+        managedSiteLabel="New API"
+        missingMessage="Please configure New API first"
+        onClose={onClose}
+        onOpenSettings={onOpenSettings}
+      />,
+    )
+
+    expect(
+      screen.getByText(
+        JSON.stringify({
+          key: "accountDialog:warnings.managedSiteConfig.warningTitle",
+          options: {
+            managedSite: "New API",
+          },
+        }),
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        JSON.stringify({
+          key: "accountDialog:warnings.managedSiteConfig.description",
+          options: {
+            message: "Please configure New API first",
+          },
+        }),
+      ),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "accountDialog:warnings.managedSiteConfig.actions.later",
+      }),
+    )
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "accountDialog:warnings.managedSiteConfig.actions.openSettings",
+      }),
+    )
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onOpenSettings).toHaveBeenCalledTimes(1)
   })
 
   it("renders the exact-match duplicate warning for non-empty string user ids", () => {

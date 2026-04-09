@@ -13,6 +13,7 @@ import DialogHeader from "./DialogHeader"
 import { DuplicateAccountWarningDialog } from "./DuplicateAccountWarningDialog"
 import { useAccountDialog } from "./hooks/useAccountDialog"
 import InfoPanel from "./InfoPanel"
+import { ManagedSiteConfigPromptDialog } from "./ManagedSiteConfigPromptDialog"
 import SiteInfoInput from "./SiteInfoInput"
 
 interface AccountDialogProps {
@@ -221,6 +222,14 @@ export default function AccountDialog({
         existingUserId={state.duplicateAccountWarning.existingUserId}
         onCancel={handlers.handleDuplicateAccountWarningCancel}
         onContinue={handlers.handleDuplicateAccountWarningContinue}
+      />
+
+      <ManagedSiteConfigPromptDialog
+        isOpen={state.managedSiteConfigPrompt.isOpen}
+        managedSiteLabel={state.managedSiteConfigPrompt.managedSiteLabel}
+        missingMessage={state.managedSiteConfigPrompt.missingMessage}
+        onClose={handlers.handleManagedSiteConfigPromptClose}
+        onOpenSettings={handlers.handleOpenManagedSiteSettings}
       />
     </>
   )

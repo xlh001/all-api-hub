@@ -3,7 +3,7 @@ import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { DIALOG_MODES } from "~/constants/dialogModes"
-import { SUB2API } from "~/constants/siteType"
+import { NEW_API, SUB2API } from "~/constants/siteType"
 import { useAccountDialog } from "~/features/AccountManagement/components/AccountDialog/hooks/useAccountDialog"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { AuthTypeEnum, SiteAccount, SiteHealthStatus } from "~/types"
@@ -15,11 +15,15 @@ const {
   mockValidateAndUpdateAccount,
   mockOpenWithAccount,
   mockOpenSub2ApiTokenCreationDialog,
+  mockGetManagedSiteConfig,
+  mockOpenSettingsTab,
 } = vi.hoisted(() => ({
   mockValidateAndSaveAccount: vi.fn(),
   mockValidateAndUpdateAccount: vi.fn(),
   mockOpenWithAccount: vi.fn(),
   mockOpenSub2ApiTokenCreationDialog: vi.fn(),
+  mockGetManagedSiteConfig: vi.fn(),
+  mockOpenSettingsTab: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock("react-hot-toast", () => ({
@@ -51,6 +55,25 @@ vi.mock("~/services/accounts/accountOperations", async (importOriginal) => {
   }
 })
 
+vi.mock(
+  "~/services/managedSites/managedSiteService",
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import("~/services/managedSites/managedSiteService")
+      >()
+
+    return {
+      ...actual,
+      getManagedSiteServiceForType: vi.fn(() => ({
+        siteType: NEW_API,
+        messagesKey: "newapi",
+        getConfig: mockGetManagedSiteConfig,
+      })),
+    }
+  },
+)
+
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("~/utils/browser/browserApi")>()
@@ -64,6 +87,10 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   }
 })
 
+vi.mock("~/utils/navigation", () => ({
+  openSettingsTab: mockOpenSettingsTab,
+}))
+
 describe("useAccountDialog save and auto-config flows", () => {
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -73,6 +100,11 @@ describe("useAccountDialog save and auto-config flows", () => {
       success: true,
       accountId: "saved-account-id",
       message: "Saved successfully",
+    })
+    mockGetManagedSiteConfig.mockResolvedValue({
+      baseUrl: "https://managed.example.com",
+      token: "admin-token",
+      userId: "1",
     })
     mockValidateAndUpdateAccount.mockResolvedValue({
       success: true,
@@ -111,6 +143,51 @@ describe("useAccountDialog save and auto-config flows", () => {
       }),
     )
   }
+
+  it("shows managed-site setup guidance before saving when auto-config prerequisites are missing", async () => {
+    mockGetManagedSiteConfig.mockResolvedValue(null)
+
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleAutoConfig()
+    })
+
+    expect(mockValidateAndSaveAccount).not.toHaveBeenCalled()
+    expect(mockOpenWithAccount).not.toHaveBeenCalled()
+    expect(result.current.state.managedSiteConfigPrompt).toMatchObject({
+      isOpen: true,
+      managedSiteLabel: "settings:managedSite.newApi",
+      missingMessage: "messages:newapi.configMissing",
+    })
+  })
+
+  it("opens managed-site settings from the setup guidance dialog", async () => {
+    mockGetManagedSiteConfig.mockResolvedValue(null)
+
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleAutoConfig()
+    })
+
+    await act(async () => {
+      result.current.handlers.handleOpenManagedSiteSettings()
+    })
+
+    expect(mockOpenSettingsTab).toHaveBeenCalledWith("managedSite", {
+      preserveHistory: true,
+    })
+    expect(result.current.state.managedSiteConfigPrompt.isOpen).toBe(false)
+  })
 
   it("passes trimmed Sub2API refresh-token auth into save and opens the post-save token dialog when display data is available", async () => {
     const savedDisplayData = {
