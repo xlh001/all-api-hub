@@ -64,7 +64,7 @@ function createMockUserPreferencesWithVeloera(
     veloera: {
       baseUrl: "https://veloera.example.com",
       adminToken: "admin-token-123",
-      userId: "user-123",
+      userId: "123",
     },
     ...overrides,
   }
@@ -151,10 +151,10 @@ describe("veloeraService", () => {
       )
 
       const cases = [
-        { veloera: { adminToken: "token", userId: "user" } },
-        { veloera: { baseUrl: "url", userId: "user" } },
+        { veloera: { adminToken: "token", userId: "123" } },
+        { veloera: { baseUrl: "url", userId: "123" } },
         { veloera: { baseUrl: "url", adminToken: "token" } },
-        { veloera: { baseUrl: "", adminToken: "token", userId: "user" } },
+        { veloera: { baseUrl: "", adminToken: "token", userId: "123" } },
       ]
 
       for (const prefs of cases) {
@@ -182,7 +182,7 @@ describe("veloeraService", () => {
       expect(result).toEqual({
         baseUrl: "https://veloera.example.com",
         token: "admin-token-123",
-        userId: "user-123",
+        userId: "123",
       })
     })
 

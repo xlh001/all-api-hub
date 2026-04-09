@@ -197,7 +197,7 @@ function createMockUserPreferencesWithNewApi(overrides?: any) {
     newApi: {
       baseUrl: "https://new-api.example.com",
       adminToken: "admin-token-123",
-      userId: "user-123",
+      userId: "123",
     },
     managedSiteModelSync: {
       enabled: false,
@@ -606,10 +606,10 @@ describe("newApiService", () => {
       )
 
       const cases = [
-        { newApi: { adminToken: "token", userId: "user" } },
-        { newApi: { baseUrl: "url", userId: "user" } },
+        { newApi: { adminToken: "token", userId: "123" } },
+        { newApi: { baseUrl: "url", userId: "123" } },
         { newApi: { baseUrl: "url", adminToken: "token" } },
-        { newApi: { baseUrl: "", adminToken: "token", userId: "user" } },
+        { newApi: { baseUrl: "", adminToken: "token", userId: "123" } },
       ]
 
       for (const prefs of cases) {
@@ -620,6 +620,24 @@ describe("newApiService", () => {
           }),
         ).toBe(false)
       }
+    })
+
+    it("should return false when the admin user ID is not numeric", async () => {
+      const { hasValidNewApiConfig } = await import(
+        "~/services/managedSites/providers/newApi"
+      )
+
+      expect(
+        hasValidNewApiConfig(
+          createMockUserPreferencesWithNewApi({
+            newApi: {
+              baseUrl: "https://new-api.example.com",
+              adminToken: "admin-token-123",
+              userId: "abc",
+            },
+          }),
+        ),
+      ).toBe(false)
     })
   })
 
@@ -648,6 +666,25 @@ describe("newApiService", () => {
       mockGetPreferences.mockResolvedValueOnce(
         createMockUserPreferencesWithNewApi({
           newApi: { baseUrl: "", adminToken: "", userId: "" },
+        }),
+      )
+
+      const result = await checkValidNewApiConfig()
+
+      expect(result).toBe(false)
+    })
+
+    it("should return false when the stored admin user ID is not numeric", async () => {
+      const { checkValidNewApiConfig } = await import(
+        "~/services/managedSites/providers/newApi"
+      )
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithNewApi({
+          newApi: {
+            baseUrl: "https://new-api.example.com",
+            adminToken: "admin-token-123",
+            userId: "abc",
+          },
         }),
       )
 
@@ -686,7 +723,7 @@ describe("newApiService", () => {
       expect(result).toEqual({
         baseUrl: "https://new-api.example.com",
         token: "admin-token-123",
-        userId: "user-123",
+        userId: "123",
       })
     })
 
@@ -1754,6 +1791,31 @@ describe("newApiService", () => {
       expect(result.message).toContain(
         "messages:errors.validation.newApiBaseUrlRequired",
       )
+    })
+
+    it("should return a numeric validation error when the admin user ID is not numeric", async () => {
+      const { autoConfigToNewApi } = await import(
+        "~/services/managedSites/providers/newApi"
+      )
+      const account = createMockSiteAccount()
+
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithNewApi({
+          newApi: {
+            baseUrl: "https://new-api.example.com",
+            adminToken: "admin-token-123",
+            userId: "abc",
+          },
+        }),
+      )
+
+      const result = await autoConfigToNewApi(account)
+
+      expect(result.success).toBe(false)
+      expect(result.message).toContain(
+        "messages:errors.validation.userIdNumeric",
+      )
+      expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
     })
 
     it("should succeed on first attempt when all goes well", async () => {

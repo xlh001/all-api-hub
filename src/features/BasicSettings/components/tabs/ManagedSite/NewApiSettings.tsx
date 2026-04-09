@@ -16,6 +16,7 @@ import { getSiteApiRouter, NEW_API } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { NewApiManagedVerificationDialog } from "~/features/ManagedSiteVerification/NewApiManagedVerificationDialog"
 import { useNewApiManagedVerification } from "~/features/ManagedSiteVerification/useNewApiManagedVerification"
+import { isManagedSiteAdminUserIdInputValid } from "~/services/managedSites/utils/adminUserId"
 import { createTab } from "~/utils/browser/browserApi"
 import { showUpdateToast } from "~/utils/core/toastHelpers"
 import { joinUrl } from "~/utils/core/url"
@@ -90,8 +91,12 @@ export default function NewApiSettings() {
   }
 
   const handleNewApiUserIdChange = async (id: string) => {
-    if (id === newApiUserId) return
-    const success = await updateNewApiUserId(id)
+    const trimmedId = id.trim()
+    if (!isManagedSiteAdminUserIdInputValid(trimmedId)) return
+
+    setLocalUserId(trimmedId)
+    if (trimmedId === newApiUserId) return
+    const success = await updateNewApiUserId(trimmedId)
     showUpdateToast(success, t("newApi.fields.userIdLabel"))
   }
 
@@ -118,6 +123,11 @@ export default function NewApiSettings() {
   }
 
   const trimmedBaseUrl = localBaseUrl.trim()
+  const userIdError =
+    localUserId.trim() !== "" &&
+    !isManagedSiteAdminUserIdInputValid(localUserId)
+      ? t("messages:errors.validation.userIdNumeric")
+      : undefined
   const shouldShowAdminCredentialsLink = Boolean(trimmedBaseUrl)
   const adminCredentialsUrl = shouldShowAdminCredentialsLink
     ? joinUrl(trimmedBaseUrl, getSiteApiRouter(NEW_API).adminCredentialsPath)
@@ -223,9 +233,13 @@ export default function NewApiSettings() {
             rightContent={
               <Input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={localUserId}
                 onChange={(e) => setLocalUserId(e.target.value)}
                 onBlur={(e) => handleNewApiUserIdChange(e.target.value)}
+                error={userIdError}
+                aria-invalid={Boolean(userIdError)}
               />
             }
           />

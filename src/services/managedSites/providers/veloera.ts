@@ -32,6 +32,7 @@ import {
   UserPreferences,
   userPreferences,
 } from "../../preferences/userPreferences"
+import { isManagedSiteAdminUserId } from "../utils/adminUserId"
 import { resolveDefaultChannelGroups } from "./defaultChannelGroups"
 
 /**
@@ -170,7 +171,11 @@ export function hasValidVeloeraConfig(prefs: UserPreferences | null): boolean {
     return false
   }
 
-  return Boolean(veloera.baseUrl && veloera.adminToken && veloera.userId)
+  return Boolean(
+    veloera.baseUrl &&
+      veloera.adminToken &&
+      isManagedSiteAdminUserId(veloera.userId),
+  )
 }
 
 /**
@@ -437,6 +442,8 @@ async function validateVeloeraConfig(): Promise<{
   }
   if (!userId) {
     errors.push(t("messages:errors.validation.veloeraUserIdRequired"))
+  } else if (!isManagedSiteAdminUserId(userId)) {
+    errors.push(t("messages:errors.validation.userIdNumeric"))
   }
 
   return {

@@ -13,6 +13,7 @@ import {
 } from "~/components/ui"
 import { getSiteApiRouter, VELOERA } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { isManagedSiteAdminUserIdInputValid } from "~/services/managedSites/utils/adminUserId"
 import { createTab } from "~/utils/browser/browserApi"
 import { showUpdateToast } from "~/utils/core/toastHelpers"
 import { joinUrl } from "~/utils/core/url"
@@ -63,12 +64,21 @@ export default function VeloeraSettings() {
   }
 
   const handleVeloeraUserIdChange = async (id: string) => {
-    if (id === veloeraUserId) return
-    const success = await updateVeloeraUserId(id)
+    const trimmedId = id.trim()
+    if (!isManagedSiteAdminUserIdInputValid(trimmedId)) return
+
+    setLocalUserId(trimmedId)
+    if (trimmedId === veloeraUserId) return
+    const success = await updateVeloeraUserId(trimmedId)
     showUpdateToast(success, t("veloera.fields.userIdLabel"))
   }
 
   const trimmedBaseUrl = localBaseUrl.trim()
+  const userIdError =
+    localUserId.trim() !== "" &&
+    !isManagedSiteAdminUserIdInputValid(localUserId)
+      ? t("messages:errors.validation.userIdNumeric")
+      : undefined
   const shouldShowAdminCredentialsLink = Boolean(trimmedBaseUrl)
   const adminCredentialsUrl = shouldShowAdminCredentialsLink
     ? joinUrl(trimmedBaseUrl, getSiteApiRouter(VELOERA).adminCredentialsPath)
@@ -161,9 +171,13 @@ export default function VeloeraSettings() {
             rightContent={
               <Input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={localUserId}
                 onChange={(e) => setLocalUserId(e.target.value)}
                 onBlur={(e) => handleVeloeraUserIdChange(e.target.value)}
+                error={userIdError}
+                aria-invalid={Boolean(userIdError)}
               />
             }
           />

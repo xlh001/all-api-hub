@@ -211,6 +211,25 @@ describe("doneHubService additional flows", () => {
     expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
   })
 
+  it("returns a numeric validation error immediately when the DoneHub admin user ID is invalid", async () => {
+    const { autoConfigToDoneHub } = await import(
+      "~/services/managedSites/providers/doneHubService"
+    )
+    mockGetPreferences.mockResolvedValueOnce({
+      doneHub: {
+        baseUrl: "https://done-hub.example.com",
+        adminToken: "done-hub-token",
+        userId: "abc",
+      },
+    })
+
+    const result = await autoConfigToDoneHub(buildSiteAccount(), "toast-1b")
+
+    expect(result.success).toBe(false)
+    expect(result.message).toContain("messages:errors.validation.userIdNumeric")
+    expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
+  })
+
   it("retries transient network failures and then imports successfully", async () => {
     vi.useFakeTimers()
 
@@ -439,6 +458,24 @@ describe("doneHubService additional flows", () => {
         baseUrl: "",
         adminToken: "",
         userId: "",
+      },
+    })
+    await expect(getDoneHubConfig()).resolves.toBeNull()
+
+    mockGetPreferences.mockResolvedValueOnce({
+      doneHub: {
+        baseUrl: "https://done-hub.example.com",
+        adminToken: "done-hub-token",
+        userId: "abc",
+      },
+    })
+    await expect(checkValidDoneHubConfig()).resolves.toBe(false)
+
+    mockGetPreferences.mockResolvedValueOnce({
+      doneHub: {
+        baseUrl: "https://done-hub.example.com",
+        adminToken: "done-hub-token",
+        userId: "abc",
       },
     })
     await expect(getDoneHubConfig()).resolves.toBeNull()

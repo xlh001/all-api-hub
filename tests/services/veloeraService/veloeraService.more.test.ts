@@ -130,6 +130,30 @@ describe("veloeraService additional flows", () => {
     await expect(getVeloeraConfig()).resolves.toBeNull()
   })
 
+  it("treats non-numeric stored Veloera admin user IDs as invalid config", async () => {
+    const { checkValidVeloeraConfig, getVeloeraConfig } = await import(
+      "~/services/managedSites/providers/veloera"
+    )
+    mockGetPreferences.mockResolvedValueOnce({
+      veloera: {
+        baseUrl: "https://veloera.example.com",
+        adminToken: "veloera-token",
+        userId: "abc",
+      },
+    })
+
+    await expect(checkValidVeloeraConfig()).resolves.toBe(false)
+
+    mockGetPreferences.mockResolvedValueOnce({
+      veloera: {
+        baseUrl: "https://veloera.example.com",
+        adminToken: "veloera-token",
+        userId: "abc",
+      },
+    })
+    await expect(getVeloeraConfig()).resolves.toBeNull()
+  })
+
   it("uses token-model fallback, resolved groups, and model-prefill failure metadata", async () => {
     const { prepareChannelFormData } = await import(
       "~/services/managedSites/providers/veloera"
@@ -216,6 +240,25 @@ describe("veloeraService additional flows", () => {
     expect(result.message).toContain(
       "messages:errors.validation.veloeraUserIdRequired",
     )
+    expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
+  })
+
+  it("returns a numeric validation error immediately when the Veloera admin user ID is invalid", async () => {
+    const { autoConfigToVeloera } = await import(
+      "~/services/managedSites/providers/veloera"
+    )
+    mockGetPreferences.mockResolvedValueOnce({
+      veloera: {
+        baseUrl: "https://veloera.example.com",
+        adminToken: "veloera-token",
+        userId: "abc",
+      },
+    })
+
+    const result = await autoConfigToVeloera(buildSiteAccount(), "toast-6b")
+
+    expect(result.success).toBe(false)
+    expect(result.message).toContain("messages:errors.validation.userIdNumeric")
     expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
   })
 

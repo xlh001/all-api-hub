@@ -44,6 +44,7 @@ import {
   UserPreferences,
   userPreferences,
 } from "../../preferences/userPreferences"
+import { isManagedSiteAdminUserId } from "../utils/adminUserId"
 import { resolveDefaultChannelGroups } from "./defaultChannelGroups"
 
 /**
@@ -182,7 +183,11 @@ export function hasValidNewApiConfig(prefs: UserPreferences | null): boolean {
     return false
   }
 
-  return Boolean(newApi.baseUrl && newApi.adminToken && newApi.userId)
+  return Boolean(
+    newApi.baseUrl &&
+      newApi.adminToken &&
+      isManagedSiteAdminUserId(newApi.userId),
+  )
 }
 
 /**
@@ -569,6 +574,8 @@ async function validateNewApiConfig(): Promise<{
   }
   if (!userId) {
     errors.push(t("messages:errors.validation.newApiUserIdRequired"))
+  } else if (!isManagedSiteAdminUserId(userId)) {
+    errors.push(t("messages:errors.validation.userIdNumeric"))
   }
 
   return {

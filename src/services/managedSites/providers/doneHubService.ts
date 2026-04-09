@@ -36,6 +36,7 @@ import { createLogger } from "~/utils/core/logger"
 import { normalizeList } from "~/utils/core/string"
 import { t } from "~/utils/i18n/core"
 
+import { isManagedSiteAdminUserId } from "../utils/adminUserId"
 import { resolveDefaultChannelGroups } from "./defaultChannelGroups"
 
 /**
@@ -192,7 +193,11 @@ function hasValidDoneHubConfig(
     return false
   }
 
-  return Boolean(doneHub.baseUrl && doneHub.adminToken && doneHub.userId)
+  return Boolean(
+    doneHub.baseUrl &&
+      doneHub.adminToken &&
+      isManagedSiteAdminUserId(doneHub.userId),
+  )
 }
 
 /**
@@ -507,6 +512,8 @@ async function validateDoneHubConfig(): Promise<{
   }
   if (!userId) {
     errors.push(t("messages:errors.validation.doneHubUserIdRequired"))
+  } else if (!isManagedSiteAdminUserId(userId)) {
+    errors.push(t("messages:errors.validation.userIdNumeric"))
   }
 
   return {

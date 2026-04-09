@@ -83,4 +83,32 @@ describe("DoneHubSettings", () => {
     expect(updateDoneHubBaseUrl).not.toHaveBeenCalled()
     expect(vi.mocked(showUpdateToast)).not.toHaveBeenCalled()
   })
+
+  it("shows an inline error and skips persisting when the admin user ID is not numeric", async () => {
+    const updateDoneHubUserId = vi.fn().mockResolvedValue(true)
+    vi.mocked(useUserPreferencesContext).mockReturnValue({
+      doneHubBaseUrl: "https://donehub.example.com",
+      doneHubAdminToken: "",
+      doneHubUserId: "100",
+      updateDoneHubBaseUrl: vi.fn().mockResolvedValue(true),
+      updateDoneHubAdminToken: vi.fn().mockResolvedValue(true),
+      updateDoneHubUserId,
+      resetDoneHubConfig: vi.fn().mockResolvedValue(true),
+    } as any)
+
+    renderSubject()
+
+    const input = screen.getByDisplayValue("100")
+
+    fireEvent.change(input, {
+      target: { value: "abc" },
+    })
+    fireEvent.blur(input)
+
+    expect(updateDoneHubUserId).not.toHaveBeenCalled()
+    expect(
+      await screen.findByText("messages:errors.validation.userIdNumeric"),
+    ).toBeInTheDocument()
+    expect(vi.mocked(showUpdateToast)).not.toHaveBeenCalled()
+  })
 })

@@ -13,6 +13,7 @@ import {
 } from "~/components/ui"
 import { DONE_HUB, getSiteApiRouter } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { isManagedSiteAdminUserIdInputValid } from "~/services/managedSites/utils/adminUserId"
 import { createTab } from "~/utils/browser/browserApi"
 import { showUpdateToast } from "~/utils/core/toastHelpers"
 import { joinUrl } from "~/utils/core/url"
@@ -64,12 +65,21 @@ export default function DoneHubSettings() {
   }
 
   const handleUserIdChange = async (id: string) => {
-    if (id === doneHubUserId) return
-    const success = await updateDoneHubUserId(id)
+    const trimmedId = id.trim()
+    if (!isManagedSiteAdminUserIdInputValid(trimmedId)) return
+
+    setLocalUserId(trimmedId)
+    if (trimmedId === doneHubUserId) return
+    const success = await updateDoneHubUserId(trimmedId)
     showUpdateToast(success, t("doneHub.fields.userIdLabel"))
   }
 
   const trimmedBaseUrl = localBaseUrl.trim()
+  const userIdError =
+    localUserId.trim() !== "" &&
+    !isManagedSiteAdminUserIdInputValid(localUserId)
+      ? t("messages:errors.validation.userIdNumeric")
+      : undefined
   const shouldShowAdminCredentialsLink = Boolean(trimmedBaseUrl)
   const adminCredentialsUrl = shouldShowAdminCredentialsLink
     ? joinUrl(trimmedBaseUrl, getSiteApiRouter(DONE_HUB).adminCredentialsPath)
@@ -162,9 +172,13 @@ export default function DoneHubSettings() {
             rightContent={
               <Input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={localUserId}
                 onChange={(e) => setLocalUserId(e.target.value)}
                 onBlur={(e) => handleUserIdChange(e.target.value)}
+                error={userIdError}
+                aria-invalid={Boolean(userIdError)}
               />
             }
           />

@@ -190,4 +190,24 @@ describe("BasicSettings tab layout", () => {
       expect(contextValue.resetNewApiConfig).toHaveBeenCalledTimes(1),
     )
   })
+
+  it("shows an inline error and skips persisting a non-numeric New API admin user ID", async () => {
+    const contextValue = createContextValue({
+      newApiUserId: "101",
+    })
+    mockedUseUserPreferencesContext.mockReturnValue(contextValue)
+
+    render(<NewApiSettings />)
+
+    const userIdInput = screen.getByDisplayValue("101")
+
+    fireEvent.change(userIdInput, { target: { value: "abc" } })
+    fireEvent.blur(userIdInput)
+
+    expect(contextValue.updateNewApiUserId).not.toHaveBeenCalled()
+    expect(
+      await screen.findByText("messages:errors.validation.userIdNumeric"),
+    ).toBeInTheDocument()
+    expect(showUpdateToastMock).not.toHaveBeenCalled()
+  })
 })
