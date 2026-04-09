@@ -554,13 +554,9 @@ export async function fetchSupportCheckIn(
 }
 
 /**
- * Fetch paginated logs and aggregate results.
- * @param request ApiServiceRequest.
- * @param logTypes Log categories to fetch.
- * @param dataAggregator Reducer to merge items into accumulator.
- * @param initialValue Initial accumulator value.
- * @param errorHandler Optional handler per log type error.
- * @returns Aggregated value after pagination.
+ * Merge backend-specific today-log overrides with the default query config.
+ * @param config Optional endpoint/query customization for backend variants.
+ * @returns Normalized today-log query configuration.
  */
 const resolveTodayLogQueryConfig = (
   config?: TodayLogQueryConfig,
@@ -577,6 +573,8 @@ const resolveTodayLogQueryConfig = (
  * Build a normalized "today logs" query string for compatible backends.
  * @param logType Log category to request.
  * @param params Optional pagination overrides.
+ * @param params.page Page number override.
+ * @param params.pageSize Page size override.
  * @param config Optional endpoint/query customization for backend variants.
  */
 const buildTodayLogQueryParams = (
@@ -724,6 +722,8 @@ const fetchPaginatedLogs = async <T>(
 /**
  * Build "today consume logs" query params using the optional backend override.
  * @param params Optional pagination overrides.
+ * @param params.page Page number override.
+ * @param params.pageSize Page size override.
  * @param queryConfig Optional endpoint/query customization for backend variants.
  */
 const buildTodayConsumeLogParams = (

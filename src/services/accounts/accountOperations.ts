@@ -47,7 +47,8 @@ const logger = createLogger("AccountOperations")
 export const MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS = 20000
 
 /**
- *
+ * Create a localized timeout error for manual account data fetching.
+ * @param timeoutMs Timeout threshold in milliseconds.
  */
 function createAccountDataFetchTimeoutError(timeoutMs: number): Error {
   const error = new Error(
