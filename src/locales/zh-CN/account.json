@@ -44,9 +44,9 @@
   },
   "addAccount": "新增账号",
   "addFirstAccount": "添加你的第一个站点账号",
-  "currentLoginAdded": "⚠️当前登录账号已添加（{{siteName}}）",
-  "currentSiteAdded": "⚠️当前站点 {{siteName}} 已存在已添加账号",
-  "currentSiteAddedCount": "⚠️当前站点已存在已添加账号（{{count}} 个）",
+  "currentLoginAdded": "⚠️{{siteName}} 的当前登录账号已在列表中",
+  "currentSiteAdded": "⚠️{{siteName}} 已有账号",
+  "currentSiteAddedCount": "⚠️当前站点已有 {{count}} 个账号",
   "description": "一键管理所有AI中转站",
   "emptyState": "暂无站点账号",
   "filter": {

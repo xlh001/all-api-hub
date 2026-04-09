@@ -44,9 +44,9 @@
   },
   "addAccount": "アカウントを追加",
   "addFirstAccount": "最初のアカウントを追加",
-  "currentLoginAdded": "⚠️{{siteName}} では現在のログインがすでに追加されています",
+  "currentLoginAdded": "⚠️{{siteName}} の現在のログインは一覧に追加済みです",
   "currentSiteAdded": "⚠️{{siteName}} には保存済みアカウントがあります",
-  "currentSiteAddedCount_other": "⚠️このサイトには保存済みアカウントがあります（{{count}} 件）",
+  "currentSiteAddedCount_other": "⚠️このサイトには保存済みアカウントが {{count}} 件あります",
   "description": "すべての AI 中継サイトをワンクリックで管理",
   "emptyState": "まだアカウントがありません",
   "filter": {
