@@ -16,7 +16,9 @@ import {
   CheckInStatus,
   CreateTokenRequest,
   HealthCheckResult,
+  LogItem,
   LogResponseData,
+  LogStatResponseData,
   LogType,
   PaginatedTokenResponse,
   PaymentResponse,
@@ -25,6 +27,7 @@ import {
   RefreshAccountResult,
   SiteStatusInfo,
   TodayIncomeData,
+  TodayLogQueryConfig,
   TodayUsageData,
   UserGroupInfo,
   UserInfo,
@@ -55,6 +58,28 @@ import { t } from "~/utils/i18n/core"
 const CHANNEL_API_BASE = "/api/channel/"
 
 const logger = createLogger("ApiServiceCommon")
+
+const EMPTY_TODAY_USAGE: TodayUsageData = {
+  today_quota_consumption: 0,
+  today_prompt_tokens: 0,
+  today_completion_tokens: 0,
+  today_requests_count: 0,
+}
+
+const DEFAULT_TODAY_LOG_QUERY_CONFIG: Required<
+  Omit<TodayLogQueryConfig, "extraParams">
+> & {
+  extraParams: Record<string, string>
+} = {
+  endpoint: "/api/log/self",
+  pageParamName: "p",
+  pageSizeParamName: "page_size",
+  logTypeParamName: "type",
+  itemsField: "items",
+  totalField: "total",
+  includeGroupParam: true,
+  extraParams: {},
+}
 
 export {
   fetchTokenSecretKeyById,
@@ -537,42 +562,138 @@ export async function fetchSupportCheckIn(
  * @param errorHandler Optional handler per log type error.
  * @returns Aggregated value after pagination.
  */
+const resolveTodayLogQueryConfig = (
+  config?: TodayLogQueryConfig,
+): typeof DEFAULT_TODAY_LOG_QUERY_CONFIG => ({
+  ...DEFAULT_TODAY_LOG_QUERY_CONFIG,
+  ...config,
+  extraParams: {
+    ...DEFAULT_TODAY_LOG_QUERY_CONFIG.extraParams,
+    ...(config?.extraParams ?? {}),
+  },
+})
+
+/**
+ * Build a normalized "today logs" query string for compatible backends.
+ * @param logType Log category to request.
+ * @param params Optional pagination overrides.
+ * @param config Optional endpoint/query customization for backend variants.
+ */
+const buildTodayLogQueryParams = (
+  logType: LogType,
+  params?: {
+    page?: number
+    pageSize?: number
+  },
+  config?: TodayLogQueryConfig,
+) => {
+  const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
+  const resolvedConfig = resolveTodayLogQueryConfig(config)
+
+  const searchParams = new URLSearchParams({
+    [resolvedConfig.pageParamName]: String(params?.page ?? 1),
+    [resolvedConfig.pageSizeParamName]: String(
+      params?.pageSize ?? REQUEST_CONFIG.DEFAULT_PAGE_SIZE,
+    ),
+    token_name: "",
+    model_name: "",
+    start_timestamp: String(startTimestamp),
+    end_timestamp: String(endTimestamp),
+  })
+
+  if (resolvedConfig.logTypeParamName) {
+    searchParams.set(resolvedConfig.logTypeParamName, String(logType))
+  }
+
+  if (resolvedConfig.includeGroupParam) {
+    searchParams.set("group", "")
+  }
+
+  for (const [key, value] of Object.entries(resolvedConfig.extraParams)) {
+    searchParams.set(key, value)
+  }
+
+  return searchParams
+}
+
+/**
+ * Fetch paginated logs and aggregate results for the current day.
+ * @param request ApiServiceRequest.
+ * @param logTypes Log categories to fetch.
+ * @param dataAggregator Reducer to merge items into accumulator.
+ * @param initialValue Initial accumulator value.
+ * @param errorHandler Optional handler per log type error.
+ * @param queryConfig Optional override for non-standard log pagination APIs.
+ * @returns Aggregated value after pagination.
+ */
 const fetchPaginatedLogs = async <T>(
   request: ApiServiceRequest,
   logTypes: LogType[],
   dataAggregator: (accumulator: T, items: LogResponseData["items"]) => T,
   initialValue: T,
   errorHandler?: (error: unknown, logType: LogType) => void,
+  queryConfig?: TodayLogQueryConfig,
 ): Promise<T> => {
-  const { start: startTimestamp, end: endTimestamp } = getTodayTimestampRange()
   let aggregatedData = initialValue
   let maxPageReached = false
+  const resolvedQueryConfig = resolveTodayLogQueryConfig(queryConfig)
+
+  const normalizeLogResponse = (
+    payload: LogResponseData | LogItem[],
+  ): {
+    items: LogItem[]
+    total: number | null
+  } => {
+    if (Array.isArray(payload)) {
+      return {
+        items: payload,
+        total: null,
+      }
+    }
+
+    const payloadRecord = payload as unknown as Record<string, unknown>
+    const itemsValue = payloadRecord[resolvedQueryConfig.itemsField]
+    const totalValue = payloadRecord[resolvedQueryConfig.totalField]
+
+    return {
+      items: Array.isArray(itemsValue) ? (itemsValue as LogItem[]) : [],
+      total:
+        typeof totalValue === "number" && Number.isFinite(totalValue)
+          ? totalValue
+          : null,
+    }
+  }
 
   for (const logType of logTypes) {
     try {
       let currentPage = 1
       while (currentPage <= REQUEST_CONFIG.MAX_PAGES) {
-        const params = new URLSearchParams({
-          p: currentPage.toString(),
-          page_size: REQUEST_CONFIG.DEFAULT_PAGE_SIZE.toString(),
-          type: String(logType),
-          token_name: "",
-          model_name: "",
-          start_timestamp: startTimestamp.toString(),
-          end_timestamp: endTimestamp.toString(),
-          group: "",
-        })
+        const params = buildTodayLogQueryParams(
+          logType,
+          {
+            page: currentPage,
+            pageSize: REQUEST_CONFIG.DEFAULT_PAGE_SIZE,
+          },
+          resolvedQueryConfig,
+        )
 
-        const logData = await fetchApiData<LogResponseData>(request, {
-          endpoint: `/api/log/self?${params.toString()}`,
-        })
+        const logData = await fetchApiData<LogResponseData | LogItem[]>(
+          request,
+          {
+            endpoint: `${resolvedQueryConfig.endpoint}?${params.toString()}`,
+          },
+        )
 
-        const items = logData.items || []
+        const normalizedLogData = normalizeLogResponse(logData)
+        const items = normalizedLogData.items
         aggregatedData = dataAggregator(aggregatedData, items)
 
-        const totalPages = Math.ceil(
-          (logData.total || 0) / REQUEST_CONFIG.DEFAULT_PAGE_SIZE,
-        )
+        const totalPages =
+          normalizedLogData.total === null
+            ? 1
+            : Math.ceil(
+                normalizedLogData.total / REQUEST_CONFIG.DEFAULT_PAGE_SIZE,
+              )
         if (currentPage >= totalPages) {
           break
         }
@@ -601,26 +722,62 @@ const fetchPaginatedLogs = async <T>(
 }
 
 /**
- * Fetch today's usage (quota + token counts + request count).
- * @param request ApiServiceAccountRequest (uses `includeTodayCashflow` to gate expensive log fetches).
- * @returns Usage totals for the current day.
+ * Build "today consume logs" query params using the optional backend override.
+ * @param params Optional pagination overrides.
+ * @param queryConfig Optional endpoint/query customization for backend variants.
  */
-export async function fetchTodayUsage(
+const buildTodayConsumeLogParams = (
+  params?: {
+    page?: number
+    pageSize?: number
+  },
+  queryConfig?: TodayLogQueryConfig,
+) => buildTodayLogQueryParams(LogType.Consume, params, queryConfig)
+
+/**
+ * Normalize paginated log payloads from either `{ items, total }` or
+ * `{ data, total_count }` response shapes.
+ * @param payload Raw API payload.
+ * @param config Optional response-field overrides for backend variants.
+ */
+const normalizeLogListResponse = (
+  payload: LogResponseData | LogItem[],
+  config?: TodayLogQueryConfig,
+) => {
+  const resolvedConfig = resolveTodayLogQueryConfig(config)
+
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: null,
+    }
+  }
+
+  const payloadRecord = payload as unknown as Record<string, unknown>
+  const itemsValue = payloadRecord[resolvedConfig.itemsField]
+  const totalValue = payloadRecord[resolvedConfig.totalField]
+
+  return {
+    items: Array.isArray(itemsValue) ? (itemsValue as LogItem[]) : [],
+    total:
+      typeof totalValue === "number" && Number.isFinite(totalValue)
+        ? totalValue
+        : null,
+  }
+}
+
+/**
+ * Legacy full aggregation path for today's usage metrics.
+ * @param request ApiServiceAccountRequest.
+ * @param queryConfig Optional override for non-standard log pagination APIs.
+ * @returns Fully aggregated quota, token, and request totals.
+ */
+const fetchTodayUsageFromLogs = async (
   request: ApiServiceAccountRequest,
-): Promise<TodayUsageData> {
-  const initialState = {
-    today_quota_consumption: 0,
-    today_prompt_tokens: 0,
-    today_completion_tokens: 0,
-    today_requests_count: 0,
-  }
-
-  if (request.includeTodayCashflow === false) {
-    return initialState
-  }
-
+  queryConfig?: TodayLogQueryConfig,
+): Promise<TodayUsageData> => {
   const usageAggregator = (
-    accumulator: typeof initialState,
+    accumulator: TodayUsageData,
     items: LogResponseData["items"],
   ) => {
     const pageData = aggregateUsageData(items)
@@ -631,21 +788,111 @@ export async function fetchTodayUsage(
     return accumulator
   }
 
-  return fetchPaginatedLogs(
+  return await fetchPaginatedLogs(
     request,
     [LogType.Consume],
     usageAggregator,
-    initialState,
+    {
+      ...EMPTY_TODAY_USAGE,
+    },
+    undefined,
+    queryConfig,
   )
+}
+
+/**
+ * Lightweight today-usage path.
+ *
+ * Uses the stat endpoint for exact quota and a single-page list request for the
+ * exact request count. Token totals remain zero on this path because supported
+ * backends do not expose an equivalent cumulative token stat endpoint.
+ * @param request ApiServiceAccountRequest.
+ * @param queryConfig Optional override for non-standard log pagination APIs.
+ * @returns Fast today-usage snapshot.
+ */
+const fetchTodayUsageFast = async (
+  request: ApiServiceAccountRequest,
+  queryConfig?: TodayLogQueryConfig,
+): Promise<TodayUsageData> => {
+  const resolvedQueryConfig = resolveTodayLogQueryConfig(queryConfig)
+  const statParams = buildTodayConsumeLogParams(undefined, resolvedQueryConfig)
+  const countParams = buildTodayConsumeLogParams(
+    { pageSize: 1 },
+    resolvedQueryConfig,
+  )
+
+  const [statData, countData] = await Promise.all([
+    fetchApiData<LogStatResponseData>(request, {
+      endpoint: `/api/log/self/stat?${statParams.toString()}`,
+    }),
+    fetchApiData<LogResponseData | LogItem[]>(request, {
+      endpoint: `${resolvedQueryConfig.endpoint}?${countParams.toString()}`,
+    }),
+  ])
+
+  const normalizedCountData = normalizeLogListResponse(
+    countData,
+    resolvedQueryConfig,
+  )
+  if (normalizedCountData.total === null) {
+    throw new ApiError(
+      "Fast today usage count requires paginated log totals",
+      undefined,
+      resolvedQueryConfig.endpoint,
+    )
+  }
+
+  return {
+    ...EMPTY_TODAY_USAGE,
+    today_quota_consumption:
+      typeof statData?.quota === "number" && Number.isFinite(statData.quota)
+        ? statData.quota
+        : 0,
+    today_requests_count: normalizedCountData.total,
+  }
+}
+
+/**
+ * Fetch today's usage.
+ *
+ * Fast path:
+ * - `/api/log/self/stat` for exact quota totals
+ * - a single `/api/log/self?page_size=1` request for exact request count
+ *
+ * This keeps the common "today consumption" UI lightweight. Token totals are
+ * intentionally left at zero on the fast path because upstream stat endpoints
+ * do not provide equivalent day-total token counters across supported variants.
+ * If the lightweight path is unavailable, fall back to the legacy full log
+ * pagination so compatibility is preserved.
+ * @param request ApiServiceAccountRequest (uses `includeTodayCashflow` to gate expensive log fetches).
+ * @param queryConfig Optional override for non-standard log pagination APIs.
+ * @returns Usage totals for the current day.
+ */
+export async function fetchTodayUsage(
+  request: ApiServiceAccountRequest,
+  queryConfig?: TodayLogQueryConfig,
+): Promise<TodayUsageData> {
+  if (request.includeTodayCashflow === false) {
+    return { ...EMPTY_TODAY_USAGE }
+  }
+
+  try {
+    return await fetchTodayUsageFast(request, queryConfig)
+  } catch (error) {
+    logger.warn("今日消费快路径失败，回退到日志聚合", error)
+    return await fetchTodayUsageFromLogs(request, queryConfig)
+  }
 }
 
 /**
  * Fetch today's income (recharge/system logs).
  * @param request ApiServiceAccountRequest (uses `includeTodayCashflow` to gate expensive log fetches).
+ * @param queryConfig Optional override for non-standard log pagination APIs.
  * @returns Total income amount for today.
  */
 export async function fetchTodayIncome(
   request: ApiServiceAccountRequest,
+  queryConfig?: TodayLogQueryConfig,
 ): Promise<TodayIncomeData> {
   if (request.includeTodayCashflow === false) {
     return { today_income: 0 }
@@ -690,6 +937,7 @@ export async function fetchTodayIncome(
       const typeName = logType === LogType.Topup ? "充值" : "签到"
       logger.warn("获取记录失败", { typeName, error })
     },
+    queryConfig,
   )
 
   return { today_income: totalIncome }
