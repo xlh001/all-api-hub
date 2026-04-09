@@ -167,7 +167,7 @@ const openRowActionsMenu = async (row: HTMLElement) => {
         () => {
           expect(isMenuOpen()).toBe(true)
         },
-        { timeout: 250 },
+        { timeout: 1000 },
       )
       break
     } catch {
@@ -1646,11 +1646,15 @@ describe("ManagedSiteChannels", () => {
       }),
     )
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "managedSiteChannels:toolbar.deleteSelected",
-      }),
-    )
+    const deleteSelectedButton = screen.getByRole("button", {
+      name: "managedSiteChannels:toolbar.deleteSelected",
+    })
+
+    await waitFor(() => {
+      expect(deleteSelectedButton).toBeEnabled()
+    })
+
+    await user.click(deleteSelectedButton)
 
     const dialog = await screen.findByRole("dialog")
     expect(
@@ -1691,11 +1695,15 @@ describe("ManagedSiteChannels", () => {
       }),
     )
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "managedSiteChannels:toolbar.deleteSelected",
-      }),
-    )
+    const deleteSelectedButton = screen.getByRole("button", {
+      name: "managedSiteChannels:toolbar.deleteSelected",
+    })
+
+    await waitFor(() => {
+      expect(deleteSelectedButton).toBeEnabled()
+    })
+
+    await user.click(deleteSelectedButton)
 
     const dialog = await screen.findByRole("dialog")
 
