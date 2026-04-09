@@ -4,26 +4,27 @@ import { defineConfig } from "vitest/config"
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 const domOnlyTsTests = [
-  "tests/entrypoints/content/index.test.ts",
-  "tests/entrypoints/content/redemptionAssist/index.test.ts",
-  "tests/entrypoints/content/messageHandlers/utils/capGuard.test.ts",
-  "tests/entrypoints/content/messageHandlers/utils/turnstileGuard.test.ts",
-  "tests/entrypoints/content/webAiApiCheck/index.test.ts",
-  "tests/entrypoints/content/messageHandlers/handlers/storage.test.ts",
-  "tests/entrypoints/options/pages/ModelList/useFilteredModels.test.ts",
-  "tests/services/ldohSiteLookup.background.test.ts",
-  "tests/services/shareSnapshotExport.test.ts",
-  "tests/utils/browserApi.test.ts",
-  "tests/utils/ccSwitch.test.ts",
-  "tests/utils/cherryStudio.test.ts",
-  "tests/utils/documentTitle.test.ts",
-  "tests/utils/importExportUtils.test.ts",
-  "tests/utils/navigation.test.ts",
-  "tests/utils/url.test.ts",
+  "entrypoints/content/index.test.ts",
+  "entrypoints/content/redemptionAssist/index.test.ts",
+  "entrypoints/content/messageHandlers/utils/capGuard.test.ts",
+  "entrypoints/content/messageHandlers/utils/turnstileGuard.test.ts",
+  "entrypoints/content/webAiApiCheck/index.test.ts",
+  "entrypoints/content/messageHandlers/handlers/storage.test.ts",
+  "entrypoints/options/pages/ModelList/useFilteredModels.test.ts",
+  "services/ldohSiteLookup.background.test.ts",
+  "services/shareSnapshotExport.test.ts",
+  "utils/browserApi.test.ts",
+  "utils/ccSwitch.test.ts",
+  "utils/cherryStudio.test.ts",
+  "utils/documentTitle.test.ts",
+  "utils/importExportUtils.test.ts",
+  "utils/navigation.test.ts",
+  "utils/url.test.ts",
 ]
 
 export default defineConfig({
   test: {
+    dir: "tests",
     pool: "threads",
 
     testTimeout: 15_000,
@@ -37,7 +38,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "dom",
-          include: ["tests/**/*.test.tsx", ...domOnlyTsTests],
+          include: ["**/*.test.tsx", ...domOnlyTsTests],
           environment: "jsdom",
           setupFiles: [path.resolve(rootDir, "tests/setup.ts")],
         },
@@ -46,7 +47,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "node",
-          include: ["tests/**/*.test.ts"],
+          include: ["**/*.test.ts"],
           exclude: domOnlyTsTests,
           environment: "node",
           setupFiles: [path.resolve(rootDir, "tests/setup.node.ts")],
