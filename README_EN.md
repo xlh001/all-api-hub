@@ -177,9 +177,25 @@ For the latest compatibility references, see:
 | Chrome Web Store | [Chrome Web Store](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) | [![Chrome version](https://img.shields.io/chrome-web-store/v/lapnciffpekdengooeolaienkeoilfeo?label=Chrome&logo=googlechrome&style=flat)](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) | [![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/lapnciffpekdengooeolaienkeoilfeo?label=Chrome%20Users)](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) |
 | Edge Add-ons | [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) | [![Edge version](https://img.shields.io/badge/dynamic/json?label=Edge&prefix=v&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fpcokpjaffghgipcgjhapgdpeddlhblaa&logo=microsoftedge&style=flat)](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) | [![Edge Add-ons Users](https://img.shields.io/badge/dynamic/json?label=Edge%20Users&query=$.activeInstallCount&url=https://microsoftedge.microsoft.com/addons/getproductdetailsbycrxid/pcokpjaffghgipcgjhapgdpeddlhblaa)](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) |
 | Firefox Add-ons | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Mozilla Add-on Users](https://img.shields.io/amo/users/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox%20Users)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) |
-| GitHub Release | [Release Download](https://github.com/qixing-jk/all-api-hub/releases) | [![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat)](https://github.com/qixing-jk/all-api-hub/releases) | [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/qixing-jk/all-api-hub/total?label=Total%20Downloads)](https://github.com/qixing-jk/all-api-hub/releases) |
+| GitHub Releases | [Browse Releases](https://github.com/qixing-jk/all-api-hub/releases) | [![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat)](https://github.com/qixing-jk/all-api-hub/releases/latest) | [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/qixing-jk/all-api-hub/total?label=Total%20Downloads)](https://github.com/qixing-jk/all-api-hub/releases) |
+
+### GitHub Release Download Options
+
+| Track | Download Link | Best For | Notes |
+|------|----------|----------|-------|
+| Stable | [Download latest stable](https://github.com/qixing-jk/all-api-hub/releases/latest) | Most users | Official release builds with clearer release notes and better day-to-day stability. |
+| Nightly pre-release | [Download Nightly](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) | Users who want early access to features, fixes, or want to help verify/report issues | Built automatically from the latest `main` commit. It updates fastest, but may include changes that have not been fully validated yet. Nightly assets usually include `nightly` in the filename. |
 
 > [!TIP]
+> GitHub Releases provides two download tracks:
+> - Stable: https://github.com/qixing-jk/all-api-hub/releases/latest
+> - Nightly pre-release: https://github.com/qixing-jk/all-api-hub/releases/tag/nightly
+>
+> How to choose:
+> - Stable is the default for most users. It maps to official releases, has clearer release notes, and is the safer daily-use option.
+> - Nightly is built automatically from the latest `main` commit. Use it if you want the newest features or fixes first, or if you are helping verify/report issues.
+> - Store builds are usually delayed by 1-3 days because of review. GitHub stable usually arrives earlier, and Nightly is the earliest but also the riskiest.
+>
 > The extension also works on mobile browsers, such as mobile `Edge`, `Firefox for Android`, and `Kiwi`.
 > See the [mobile usage FAQ](https://all-api-hub.qixing1217.top/en/faq.html#mobile-browser-support) for details.
 
