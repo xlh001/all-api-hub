@@ -289,3 +289,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
+
+  update-release-notes:
+    needs:
+      - build
+      - release-artifacts
+      - safari-release-assets
+    if: ${{ always() && needs.build.outputs.release_ref != '' && needs.release-artifacts.result == 'success' && (needs.safari-release-assets.result == 'success' || needs.safari-release-assets.result == 'failure' || needs.safari-release-assets.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout specific ref
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.release_ref }}
+          path: source
+          fetch-depth: 1
+
+      - name: Append release usage notes
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/update-release-extra-notes.sh "${{ needs.build.outputs.release_ref }}"

@@ -15,6 +15,7 @@ on:
       - "tailwind.config.js"
       - "wxt.config.ts"
       - "scripts/prepare-safari-release-assets.sh"
+      - "scripts/update-release-extra-notes.sh"
       - ".github/actions/package-extension/**"
       - ".github/workflows/nightly-release.yml"
   schedule:
@@ -259,6 +260,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload nightly source/.output/nightly/*.zip --clobber
 
+      - name: Append nightly release usage notes
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/update-release-extra-notes.sh nightly
+
   safari-nightly-assets:
     needs: nightly
     if: ${{ needs.nightly.outputs.commit_ref != '' }}
@@ -296,3 +304,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: gh release upload nightly .output/nightly/*.zip --clobber
+
+      - name: Refresh nightly release usage notes
+        if: ${{ always() }}
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/update-release-extra-notes.sh nightly
