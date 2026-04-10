@@ -81,6 +81,8 @@ function LoadingSkeleton() {
  * @param props.tokens All tokens for the current account.
  * @param props.handleAddToken Callback to open the add-token flow.
  * @param props.displayData Account display data used to determine empty states.
+ * @param props.currentAccountLoadError Error message shown when the selected account fails to load.
+ * @param props.onRetryCurrentAccount Optional callback to retry loading the selected account.
  * @param props.onAddAccount Optional callback to open the add-account flow.
  * @param props.onRequestAccountSelection Optional callback to focus the account selector.
  */
@@ -228,6 +230,12 @@ function TokenEmptyState({
  * @param props.handleAddToken Opens the add-token dialog.
  * @param props.selectedAccount Currently selected account identifier.
  * @param props.displayData Account metadata used to render contextual info.
+ * @param props.currentAccountLoadError Optional load error for the currently selected account.
+ * @param props.onRetryCurrentAccount Optional retry handler for the current account load.
+ * @param props.managedSiteTokenStatuses Optional managed-site channel status by token identity.
+ * @param props.onManagedSiteImportSuccess Optional callback after a managed-site token import succeeds.
+ * @param props.onManagedSiteVerificationRetry Optional callback to retry managed-site token verification.
+ * @param props.allAccountsFilterAccountId Optional account ID filter applied in all-accounts mode.
  */
 export function TokenList(props: TokenListProps) {
   const {

@@ -5,7 +5,7 @@ import * as React from "react"
 import { cn } from "~/lib/utils"
 
 /**
- *
+ * Wraps the base OTP input with shared extension styling and slot metadata.
  */
 function InputOTP({
   className,
@@ -28,7 +28,7 @@ function InputOTP({
 }
 
 /**
- *
+ * Groups OTP slots into a single aligned row.
  */
 function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -41,7 +41,7 @@ function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 /**
- *
+ * Renders a single OTP slot using the current character and caret state from context.
  */
 function InputOTPSlot({
   index,
@@ -74,7 +74,7 @@ function InputOTPSlot({
 }
 
 /**
- *
+ * Displays the visual separator between OTP slot groups.
  */
 function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
   return (
