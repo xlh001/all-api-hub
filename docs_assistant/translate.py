@@ -96,6 +96,10 @@ def get_translation_prompt(target_language: str, content: str) -> str:
 12. Markdown 图片 `![alt](...)` 和 HTML `<img src="...">` 中的本地相对路径必须逐字符原样保留，不要翻译、不要改写、不要自行补 `../` 或删减层级
 13. 远程图片 URL、站外链接、站内绝对路径（以 `/` 开头）也必须原样保留
 14. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块；输出必须直接从 YAML front matter 的 `---` 或正文第一行开始
+15. 标题、表格单元、链接文字、图片 alt、admonition 标题等所有自然语言都属于待翻译内容；除代码、URL、路径、明确要求保留的产品/版本标签外，不要残留中文原文
+16. 译文必须符合目标语言技术文档的自然表达，避免逐词直译和明显的中文句式；必要时可以调整语序以保证流畅
+17. 遇到像“正式版 Stable”“Nightly 预发布”这类中外文混合标签时，可以保留 Stable、Nightly 等产品或渠道标签，但周围说明、链接文本、句子和表格内容必须完整翻译为目标语言，并在同一文档内保持一致
+18. 输出前请自检：除代码、URL、路径、明确保留的专有名词或英文产品标签外，不应残留中文句子、中文链接文字或中文表格单元
 
 术语表（不要放在翻译内容中）：
 
@@ -141,7 +145,11 @@ def get_incremental_translation_prompt(
 7. Markdown 图片 `![alt](...)`、HTML `<img src="...">`、本地路径、远程 URL、站内绝对路径都必须保持可用，不要擅自改写
 8. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块
 9. 对于本次新增或修改的自然语言内容，必须翻译成目标语言；不要把新增正文直接保留为中文
-10. 如果旧译文中存在与本次 diff 无关的瑕疵，也不要顺手大范围改写；除非 diff 直接涉及该处
+10. 标题、表格单元、链接文字、图片 alt、admonition 标题等新增或修改的自然语言都必须翻译；不要把新增链接文字或表格内容直接保留为中文
+11. 译文必须符合目标语言技术文档的自然表达，避免逐词直译和明显的中文句式；必要时可以调整语序以保证流畅
+12. 如果本次改动包含“正式版 Stable”“Nightly 预发布”这类中外文混合标签，可以保留 Stable、Nightly 等产品或渠道标签，但周围说明、链接文字和句子必须完整翻译并保持一致
+13. 输出前请自检：除代码、URL、路径、明确保留的专有名词或英文产品标签外，不应残留中文句子、中文链接文字或中文表格单元
+14. 如果旧译文中存在与本次 diff 无关的瑕疵，也不要顺手大范围改写；除非 diff 直接涉及该处
 
 术语表（不要放在翻译内容中）：
 
@@ -360,7 +368,14 @@ def translate_content(
                 messages=[
                     {
                         "role": "system",
-                        "content": f"You are a professional technical documentation translator. Translate accurately while preserving Markdown formatting, code blocks, and technical terms."
+                        "content": (
+                            "You are a professional technical documentation translator and editor. "
+                            "Translate accurately while preserving Markdown formatting, code blocks, "
+                            "and technical terms. Produce natural, idiomatic target-language prose, "
+                            "and never leave newly added Chinese text untranslated in headings, "
+                            "tables, link text, or admonitions unless it is a proper noun, code, "
+                            "URL, path, or an explicitly preserved product label."
+                        )
                     },
                     {
                         "role": "user",
