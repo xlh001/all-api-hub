@@ -42,6 +42,7 @@ import {
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
+import { showWarningToast } from "~/utils/core/toastHelpers"
 import {
   normalizeUrlForOriginKey,
   tryParseOrigin,
@@ -1009,16 +1010,78 @@ export function useAccountDialog({
         throw new Error(result.message || t("messages.saveFailed"))
       }
 
-      toast.success(
-        result.message ??
-          (mode === DIALOG_MODES.ADD
+      const feedbackMessage =
+        typeof result.message === "string" && result.message.trim().length > 0
+          ? result.message
+          : mode === DIALOG_MODES.ADD
             ? t("messages.addSuccess", {
                 name: siteName,
               })
             : t("messages.updateSuccess", {
                 name: siteName,
-              })),
-      )
+              })
+
+      if (result.feedbackLevel === "warning") {
+        const warningAccountId =
+          typeof result.accountId === "string" && result.accountId.trim()
+            ? result.accountId.trim()
+            : null
+
+        showWarningToast(feedbackMessage, {
+          action: warningAccountId
+            ? {
+                label: t("common:actions.refresh"),
+                onClick: async () => {
+                  const accountName =
+                    siteName.trim() ||
+                    t("messages:toast.success.accountSaveSuccess")
+                  const toastId = toast.loading(
+                    t("messages:toast.loading.refreshingAccount", {
+                      accountName,
+                    }),
+                  )
+
+                  try {
+                    const refreshResult = await accountStorage.refreshAccount(
+                      warningAccountId,
+                      true,
+                    )
+
+                    if (!refreshResult?.refreshed) {
+                      toast.error(
+                        t("messages:toast.error.refreshAccount", {
+                          accountName,
+                        }),
+                        { id: toastId },
+                      )
+                      return
+                    }
+
+                    toast.success(
+                      t("messages:toast.success.refreshAccount", {
+                        accountName,
+                      }),
+                      { id: toastId },
+                    )
+                  } catch (error) {
+                    toast.error(
+                      t("messages:toast.error.refreshAccount", {
+                        accountName,
+                      }),
+                      { id: toastId },
+                    )
+                    logger.error("Post-save warning refresh failed", {
+                      accountId: warningAccountId,
+                      error: getErrorMessage(error),
+                    })
+                  }
+                },
+              }
+            : undefined,
+        })
+      } else {
+        toast.success(feedbackMessage)
+      }
 
       if (
         siteType === SUB2API &&

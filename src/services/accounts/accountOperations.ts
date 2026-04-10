@@ -40,6 +40,7 @@ import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { extractSessionCookieHeader } from "~/utils/browser/cookieString"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
+import { showWarningToast } from "~/utils/core/toastHelpers"
 import { t } from "~/utils/i18n/core"
 
 const logger = createLogger("AccountOperations")
@@ -638,6 +639,7 @@ export async function validateAndSaveAccount(
       success: true,
       message: t("messages:toast.success.accountSaveSuccess"),
       accountId,
+      feedbackLevel: "success",
     }
   } catch (error) {
     // FALLBACK: 即使获取数据失败也要保存配置
@@ -702,6 +704,7 @@ export async function validateAndSaveAccount(
         success: true,
         message: t("messages:warnings.accountSavedWithoutDataRefresh"),
         accountId,
+        feedbackLevel: "warning",
       }
     } catch (saveError) {
       logger.error("Failed to save account", saveError)
@@ -872,6 +875,7 @@ export async function validateAndUpdateAccount(
       success: true,
       message: t("messages:toast.success.accountUpdateSuccess"),
       accountId,
+      feedbackLevel: "success",
     }
   } catch (error) {
     // FALLBACK: 即使获取数据失败也要保存配置
@@ -928,6 +932,7 @@ export async function validateAndUpdateAccount(
       success: true,
       message: t("messages:warnings.accountUpdatedWithoutDataRefresh"),
       accountId,
+      feedbackLevel: "warning",
     }
   }
 }
@@ -1192,15 +1197,19 @@ async function autoProvisionKeyOnAccountAdd(
       displaySiteData,
     })
 
-    toast.success(
-      created
-        ? t("messages:accountOperations.autoProvisionCreated", {
-            accountName: displaySiteData.name || account.site_name,
-          })
-        : t("messages:accountOperations.autoProvisionAlreadyHad", {
-            accountName: displaySiteData.name || account.site_name,
-          }),
-    )
+    if (created) {
+      toast.success(
+        t("messages:accountOperations.autoProvisionCreated", {
+          accountName: displaySiteData.name || account.site_name,
+        }),
+      )
+    } else {
+      showWarningToast(
+        t("messages:accountOperations.autoProvisionAlreadyHad", {
+          accountName: displaySiteData.name || account.site_name,
+        }),
+      )
+    }
   } catch (error) {
     toast.error(
       t("messages:accountOperations.autoProvisionFailed", {

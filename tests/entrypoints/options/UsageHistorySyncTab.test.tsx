@@ -15,13 +15,14 @@ import {
   within,
 } from "~~/tests/test-utils/render"
 
-const { mockToast } = vi.hoisted(() => ({
+const { mockToast, mockShowWarningToast } = vi.hoisted(() => ({
   mockToast: Object.assign(vi.fn(), {
     dismiss: vi.fn(),
     error: vi.fn(),
     loading: vi.fn(),
     success: vi.fn(),
   }),
+  mockShowWarningToast: vi.fn(),
 }))
 
 vi.mock("~/contexts/UserPreferencesContext", async (importOriginal) => {
@@ -53,6 +54,10 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
 
 vi.mock("react-hot-toast", () => ({
   default: mockToast,
+}))
+
+vi.mock("~/utils/core/toastHelpers", () => ({
+  showWarningToast: mockShowWarningToast,
 }))
 
 describe("UsageHistorySyncTab", () => {
@@ -180,7 +185,7 @@ describe("UsageHistorySyncTab", () => {
     )
 
     await waitFor(() => {
-      expect(toast).toHaveBeenCalledWith(
+      expect(mockShowWarningToast).toHaveBeenCalledWith(
         "usageAnalytics:messages.warning.scheduleFallback",
       )
     })
@@ -355,6 +360,56 @@ describe("UsageHistorySyncTab", () => {
 
     expect(accountStorage.getEnabledAccounts).toHaveBeenCalledTimes(2)
     expect(usageHistoryStorage.getStore).toHaveBeenCalledTimes(2)
+  })
+
+  it("uses a warning toast when manual sync finishes with skipped or unsupported accounts", async () => {
+    vi.mocked(sendRuntimeMessage).mockResolvedValueOnce({
+      success: true,
+      data: {
+        totals: { success: 1, skipped: 1, error: 0, unsupported: 1 },
+      },
+    } as any)
+
+    renderSubject()
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "usageAnalytics:actions.syncNow",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockShowWarningToast).toHaveBeenCalledWith(
+        "usageAnalytics:messages.warning.syncCompletedWithIssues",
+        expect.objectContaining({
+          id: "sync-toast",
+          action: expect.objectContaining({
+            label: "usageAnalytics:syncTab.actions.viewStatus",
+          }),
+        }),
+      )
+    })
+
+    const warningOptions = mockShowWarningToast.mock.calls[0]?.[1]
+    const warningAction = warningOptions?.action
+    expect(warningAction).toEqual(
+      expect.objectContaining({
+        label: "usageAnalytics:syncTab.actions.viewStatus",
+      }),
+    )
+
+    const stateSection = document.getElementById("usage-history-sync-state")
+    expect(stateSection).toBeTruthy()
+    const scrollIntoViewMock = vi.fn()
+    stateSection!.scrollIntoView = scrollIntoViewMock
+
+    warningAction?.onClick()
+
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "start",
+    })
+    expect(toast.success).not.toHaveBeenCalled()
   })
 
   it("clears the syncing state and shows an error toast when a full sync fails", async () => {

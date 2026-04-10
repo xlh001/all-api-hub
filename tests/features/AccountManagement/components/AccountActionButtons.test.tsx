@@ -25,6 +25,7 @@ const {
   toastLoadingMock,
   toastSuccessMock,
   toastErrorMock,
+  toastCustomMock,
   hasValidManagedSiteConfigMock,
   clipboardWriteTextMock,
 } = vi.hoisted(() => ({
@@ -59,6 +60,7 @@ const {
   toastLoadingMock: vi.fn(),
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
+  toastCustomMock: vi.fn(),
   hasValidManagedSiteConfigMock: vi.fn(() => true),
   clipboardWriteTextMock: vi.fn(),
 }))
@@ -69,6 +71,7 @@ vi.mock("react-hot-toast", () => ({
     loading: toastLoadingMock,
     success: toastSuccessMock,
     error: toastErrorMock,
+    custom: toastCustomMock,
   },
 }))
 
@@ -1227,10 +1230,14 @@ describe("AccountActionButtons", () => {
       expect(openManagedSiteChannelsPageMock).toHaveBeenCalledWith({
         search: "https://api.example.com",
       })
-      expect(toastSuccessMock).toHaveBeenCalledWith(
-        "account:actions.channelLocateNoKeyFallback",
+      expect(toastCustomMock).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({
+          duration: 5000,
+        }),
       )
     })
+    expect(toastSuccessMock).not.toHaveBeenCalled()
     expect(managedService.prepareChannelFormData).not.toHaveBeenCalled()
   })
 
@@ -1348,10 +1355,14 @@ describe("AccountActionButtons", () => {
       expect(openManagedSiteChannelsPageMock).toHaveBeenCalledWith({
         search: "https://api.example.com",
       })
-      expect(toastSuccessMock).toHaveBeenCalledWith(
-        "account:actions.channelLocateMultipleKeysFallback",
+      expect(toastCustomMock).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({
+          duration: 5000,
+        }),
       )
     })
+    expect(toastSuccessMock).not.toHaveBeenCalled()
     expect(managedService.prepareChannelFormData).not.toHaveBeenCalled()
     expect(managedService.findMatchingChannel).not.toHaveBeenCalled()
   })
@@ -1521,10 +1532,14 @@ describe("AccountActionButtons", () => {
       expect(openManagedSiteChannelsPageMock).toHaveBeenCalledWith({
         search: "https://api.example.com",
       })
-      expect(toastSuccessMock).toHaveBeenCalledWith(
-        "account:actions.channelLocateConfigMissing",
+      expect(toastCustomMock).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({
+          duration: 5000,
+        }),
       )
     })
+    expect(toastSuccessMock).not.toHaveBeenCalled()
     expect(fetchAccountTokensMock).not.toHaveBeenCalled()
     expect(managedService.prepareChannelFormData).not.toHaveBeenCalled()
   })
