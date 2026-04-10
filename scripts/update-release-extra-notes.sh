@@ -109,7 +109,6 @@ lines.push(
   "- Safari：请下载 `*-safari-xcode-bundle.zip`，解压后直接打开其中的 Xcode 工程；不要只下载 `*-safari.zip`。",
   "",
   "### 文档链接",
-  `- 文档首页：${docsBaseUrl}/`,
   `- 快速上手：${docsBaseUrl}/get-started.html`,
   `- 常见问题：${docsBaseUrl}/faq.html`,
   `- Safari 安装指南：${docsBaseUrl}/safari-install.html`,
