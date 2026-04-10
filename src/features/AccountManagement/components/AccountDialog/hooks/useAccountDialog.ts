@@ -1244,6 +1244,8 @@ export function useAccountDialog({
   const isManualBalanceUsdInvalid =
     manualBalanceUsd.trim() !== "" &&
     parseManualQuotaFromUsd(manualBalanceUsd) === undefined
+  const isAccountFormValid =
+    isFormValid && isSub2ApiRefreshTokenValid && !isManualBalanceUsdInvalid
 
   return {
     state: {
@@ -1272,8 +1274,7 @@ export function useAccountDialog({
       sub2apiUseRefreshToken,
       sub2apiRefreshToken,
       sub2apiTokenExpiresAt,
-      isFormValid:
-        isFormValid && isSub2ApiRefreshTokenValid && !isManualBalanceUsdInvalid,
+      isFormValid: isAccountFormValid,
       isAutoConfiguring,
       cookieAuthSessionCookie,
       isImportingCookies,

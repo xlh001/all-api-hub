@@ -1,8 +1,9 @@
 {
   "actions": {
-    "autoConfigAriaLabel": "配置到 {{managedSite}}",
-    "autoConfigTitle": "保存账号并继续配置到 {{managedSite}}",
-    "configToManagedSite": "配置到 {{managedSite}}",
+    "autoConfigAriaLabel": "保存账号并前往 {{managedSite}} 渠道配置",
+    "autoConfigRequiresValidAccount": "请先补全当前账号信息",
+    "autoConfigTitle": "保存当前账号，并打开 {{managedSite}} 的预填渠道配置",
+    "configToManagedSite": "保存并配置到 {{managedSite}}",
     "configuring": "配置中...",
     "confirmAdd": "确认添加",
     "helpDocument": "帮助文档",
@@ -148,7 +149,7 @@
         "openSettings": "前往设置"
       },
       "description": "{{message}}",
-      "guide": "这个功能会自动准备当前账号可用的 API Key，并预填到 {{managedSite}} 的新建渠道中，帮你更快完成渠道创建。完成管理站点配置后即可使用。",
+      "guide": "这个功能会先保存当前账号，再自动准备可用的 API Key，并预填到 {{managedSite}} 的新建渠道中，帮你更快完成渠道创建。完成托管站点配置后即可使用。",
       "title": "先配置 {{managedSite}}",
       "warningTitle": "{{managedSite}} 尚未完成配置"
     }

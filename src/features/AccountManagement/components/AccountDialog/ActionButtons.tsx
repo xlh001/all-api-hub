@@ -48,6 +48,11 @@ export default function ActionButtons({
   const { managedSiteType } = useUserPreferencesContext()
   const isAddMode = mode === DIALOG_MODES.ADD
   const managedSiteLabel = getManagedSiteLabel(t, managedSiteType)
+  const autoConfigTitle = isFormValid
+    ? t("accountDialog:actions.autoConfigTitle", {
+        managedSite: managedSiteLabel,
+      })
+    : t("accountDialog:actions.autoConfigRequiresValidAccount")
 
   if (isAddMode && !isDetected && !isFormValid) {
     return (
@@ -112,16 +117,14 @@ export default function ActionButtons({
         <Button
           type="button"
           onClick={onAutoConfig}
-          disabled={isAutoConfiguring || isSaving}
+          disabled={!isFormValid || isAutoConfiguring || isSaving}
           loading={isAutoConfiguring}
           bleed
           className="flex-1"
           aria-label={t("accountDialog:actions.autoConfigAriaLabel", {
             managedSite: managedSiteLabel,
           })}
-          title={t("accountDialog:actions.autoConfigTitle", {
-            managedSite: managedSiteLabel,
-          })}
+          title={autoConfigTitle}
           variant="default"
           leftIcon={
             !isAutoConfiguring ? <BoltIcon className="h-4 w-4" /> : undefined

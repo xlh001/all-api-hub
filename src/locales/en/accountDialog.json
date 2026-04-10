@@ -1,8 +1,9 @@
 {
   "actions": {
-    "autoConfigAriaLabel": "Configure to {{managedSite}}",
-    "autoConfigTitle": "Save the account and continue configuring it in {{managedSite}}",
-    "configToManagedSite": "Configure to {{managedSite}}",
+    "autoConfigAriaLabel": "Save account and open {{managedSite}} channel setup",
+    "autoConfigRequiresValidAccount": "Complete the account form first",
+    "autoConfigTitle": "Save this account and open a prefilled channel form in {{managedSite}}",
+    "configToManagedSite": "Save and configure in {{managedSite}}",
     "configuring": "Configuring...",
     "confirmAdd": "Confirm Add",
     "helpDocument": "Help Document",
@@ -150,7 +151,7 @@
         "openSettings": "Open settings"
       },
       "description": "{{message}}",
-      "guide": "This feature automatically prepares a usable API key for the current account and prefills it into a new channel in {{managedSite}}, helping you finish channel creation faster. It becomes available after the managed-site setup is complete.",
+      "guide": "This feature first saves the current account, then prepares a usable API key and prefills it into a new channel in {{managedSite}}, helping you finish channel creation faster. It becomes available after the managed-site setup is complete.",
       "title": "Configure {{managedSite}} first",
       "warningTitle": "{{managedSite}} is not configured yet"
     }

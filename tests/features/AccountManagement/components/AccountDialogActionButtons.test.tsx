@@ -142,6 +142,29 @@ describe("AccountDialog ActionButtons", () => {
     expect(props.onAutoConfig).toHaveBeenCalledTimes(1)
   })
 
+  it("disables auto-config and shows the blocking reason when the visible form becomes invalid", async () => {
+    const user = userEvent.setup()
+    const props = createProps()
+    props.isDetected = true
+    props.isFormValid = false
+
+    render(<ActionButtons {...props} />)
+
+    const autoConfigButton = await screen.findByRole("button", {
+      name: "accountDialog:actions.autoConfigAriaLabel",
+    })
+
+    expect(autoConfigButton).toBeDisabled()
+    expect(autoConfigButton).toHaveAttribute(
+      "title",
+      "accountDialog:actions.autoConfigRequiresValidAccount",
+    )
+
+    await user.click(autoConfigButton)
+
+    expect(props.onAutoConfig).not.toHaveBeenCalled()
+  })
+
   it("switches submit labels for detected and saving states and disables submission while busy", async () => {
     const props = createProps()
     props.isDetected = true

@@ -1,8 +1,9 @@
 {
   "actions": {
-    "autoConfigAriaLabel": "{{managedSite}} に設定",
-    "autoConfigTitle": "アカウントを保存して {{managedSite}} への設定を続ける",
-    "configToManagedSite": "{{managedSite}} に設定",
+    "autoConfigAriaLabel": "アカウントを保存して {{managedSite}} のチャネル設定を開く",
+    "autoConfigRequiresValidAccount": "先にアカウント情報を入力してください",
+    "autoConfigTitle": "このアカウントを保存し、{{managedSite}} の事前入力済みチャネル作成フォームを開く",
+    "configToManagedSite": "保存して {{managedSite}} に設定",
     "configuring": "設定中...",
     "confirmAdd": "追加を確認",
     "helpDocument": "ヘルプドキュメント",
@@ -148,7 +149,7 @@
         "openSettings": "設定を開く"
       },
       "description": "{{message}}",
-      "guide": "この機能は現在のアカウントで使える API Key を自動で用意し、{{managedSite}} の新規チャネルに事前入力します。より素早くチャネルを作成でき、管理サイト設定の完了後に利用できます。",
+      "guide": "この機能は現在のアカウントを先に保存し、そのアカウントで使える API Key を自動で用意して {{managedSite}} の新規チャネルに事前入力します。より素早くチャネルを作成でき、管理サイト設定の完了後に利用できます。",
       "title": "先に {{managedSite}} を設定してください",
       "warningTitle": "{{managedSite}} はまだ設定されていません"
     }
