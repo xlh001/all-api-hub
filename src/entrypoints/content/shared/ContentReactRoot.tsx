@@ -18,6 +18,8 @@ const logger = createLogger("ContentReactRoot")
 export const ContentReactRoot: React.FC = () => {
   const [themeMode, setThemeMode] = useState<ThemeMode>("system")
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light")
+  const [hasLoadedThemePreferences, setHasLoadedThemePreferences] =
+    useState(false)
 
   useEffect(() => {
     let active = true
@@ -38,6 +40,10 @@ export const ContentReactRoot: React.FC = () => {
         }
       } catch (error) {
         logger.warn("Failed to load theme preferences", error)
+      } finally {
+        if (active) {
+          setHasLoadedThemePreferences(true)
+        }
       }
     }
 
@@ -49,7 +55,7 @@ export const ContentReactRoot: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    if (themeMode !== "system") {
+    if (!hasLoadedThemePreferences || themeMode !== "system") {
       return
     }
 
@@ -64,7 +70,7 @@ export const ContentReactRoot: React.FC = () => {
     return () => {
       mediaQuery.removeEventListener("change", handleChange)
     }
-  }, [themeMode])
+  }, [hasLoadedThemePreferences, themeMode])
 
   const wrapperClassName =
     resolvedTheme === "dark" ? "dark text-foreground bg-background" : ""

@@ -1,4 +1,4 @@
-import i18next from "i18next"
+import { init, use as registerI18nextPlugin } from "i18next"
 import { initReactI18next } from "react-i18next"
 
 import "whatwg-fetch"
@@ -9,7 +9,9 @@ import { fakeBrowser } from "wxt/testing/fake-browser"
 
 import { server } from "./msw/server"
 
-await i18next.use(initReactI18next).init({
+registerI18nextPlugin(initReactI18next)
+
+await init({
   lng: "en",
   fallbackLng: "en",
   appendNamespaceToMissingKey: true,

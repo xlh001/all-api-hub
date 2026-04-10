@@ -114,6 +114,25 @@ const openRowActionsMenu = async (row: HTMLElement) => {
     )
   const isMenuOpen = () =>
     trigger.getAttribute("aria-expanded") === "true" || getOpenMenu() !== null
+  const resetHalfOpenMenu = async () => {
+    if (!isMenuOpen()) {
+      return
+    }
+
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: "Escape" })
+
+    try {
+      await waitFor(
+        () => {
+          expect(isMenuOpen()).toBe(false)
+        },
+        { timeout: 500 },
+      )
+    } catch {
+      fireEvent.click(document.body)
+    }
+  }
 
   const openAttempts = [
     async () => {
@@ -159,7 +178,7 @@ const openRowActionsMenu = async (row: HTMLElement) => {
   ]
 
   for (const attempt of openAttempts) {
-    if (isMenuOpen()) {
+    if (hasRowActionContent()) {
       return
     }
 
@@ -167,22 +186,19 @@ const openRowActionsMenu = async (row: HTMLElement) => {
     try {
       await waitFor(
         () => {
-          expect(isMenuOpen()).toBe(true)
+          expect(hasRowActionContent()).toBe(true)
         },
         { timeout: 1000 },
       )
-      break
+      return
     } catch {
-      // Fall through to the next open strategy when Radix ignores the event.
+      await resetHalfOpenMenu()
     }
   }
 
-  await waitFor(
-    () => {
-      expect(hasRowActionContent()).toBe(true)
-    },
-    { timeout: 3000 },
-  )
+  await waitFor(() => {
+    expect(hasRowActionContent()).toBe(true)
+  })
 }
 
 describe("ManagedSiteChannels", () => {

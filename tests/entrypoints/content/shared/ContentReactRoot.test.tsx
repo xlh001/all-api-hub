@@ -142,10 +142,8 @@ describe("ContentReactRoot", () => {
     })
 
     expect(container.firstChild).toHaveClass("dark")
-    expect(media.queryList.removeEventListener).toHaveBeenCalledWith(
-      "change",
-      expect.any(Function),
-    )
+    expect(media.queryList.addEventListener).not.toHaveBeenCalled()
+    expect(media.queryList.removeEventListener).not.toHaveBeenCalled()
   })
 
   it("logs and keeps the default light wrapper when preferences fail to load", async () => {

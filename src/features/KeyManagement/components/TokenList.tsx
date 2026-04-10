@@ -71,9 +71,12 @@ function LoadingSkeleton() {
 /**
  * Empty state content for no tokens or filtered results.
  * @param props Component props container.
+ * @param props.selectedAccount Currently selected account identifier.
  * @param props.tokens All tokens for the current account.
  * @param props.handleAddToken Callback to open the add-token flow.
  * @param props.displayData Account display data used to determine empty states.
+ * @param props.onAddAccount Optional callback to open the add-account flow.
+ * @param props.onRequestAccountSelection Optional callback to focus the account selector.
  */
 function TokenEmptyState({
   selectedAccount,

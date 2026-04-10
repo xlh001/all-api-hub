@@ -28,6 +28,9 @@ interface AccountSelectorProps {
  * @param props.setSelectedSourceValue Setter to update the selected source.
  * @param props.accounts Available accounts to display.
  * @param props.profiles Available API credential profiles to display.
+ * @param props.selectorOpen Controlled open state for the selector popover.
+ * @param props.onSelectorOpenChange Callback fired when the selector open state changes.
+ * @param props.selectorTriggerRef Ref forwarded to the selector trigger button.
  * @returns Searchable select control wrapped with heading.
  */
 export function AccountSelector({
