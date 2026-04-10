@@ -1,3 +1,4 @@
+import type { Ref } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Heading3, SearchableSelect } from "~/components/ui"
@@ -15,6 +16,9 @@ interface AccountSelectorProps {
   setSelectedSourceValue: (sourceValue: string) => void
   accounts: DisplaySiteData[]
   profiles: ApiCredentialProfile[]
+  selectorOpen?: boolean
+  onSelectorOpenChange?: (open: boolean) => void
+  selectorTriggerRef?: Ref<HTMLButtonElement>
 }
 
 /**
@@ -31,14 +35,20 @@ export function AccountSelector({
   setSelectedSourceValue,
   accounts,
   profiles,
+  selectorOpen,
+  onSelectorOpenChange,
+  selectorTriggerRef,
 }: AccountSelectorProps) {
   const { t } = useTranslation("modelList")
   return (
     <div className="mb-6">
       <Heading3 className="mb-3">{t("selectSource")}</Heading3>
       <SearchableSelect
+        ref={selectorTriggerRef}
         options={[
-          { value: ALL_ACCOUNTS_SOURCE_VALUE, label: t("allAccounts") },
+          ...(accounts.length > 0
+            ? [{ value: ALL_ACCOUNTS_SOURCE_VALUE, label: t("allAccounts") }]
+            : []),
           ...accounts.map((account) => ({
             value: toAccountSourceValue(account.id),
             label: account.name,
@@ -53,6 +63,8 @@ export function AccountSelector({
         ]}
         value={selectedSourceValue ?? ""}
         onChange={setSelectedSourceValue}
+        open={selectorOpen}
+        onOpenChange={onSelectorOpenChange}
         placeholder={t("pleaseSelectSource")}
       />
     </div>

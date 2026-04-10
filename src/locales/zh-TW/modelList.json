@@ -70,6 +70,8 @@
     "modelNamesCopied": "模型名稱已複製"
   },
   "noMatchingModels": "沒有找到匹配的模型",
+  "noSourcesDescription": "請先新增站點帳號或 API 憑據，然後查看模型列表。",
+  "noSourcesTitle": "暫無可用資料來源",
   "output": "輸出:",
   "output1MTokens": "輸出(1M tokens)",
   "perCall": "每次呼叫:",
@@ -91,6 +93,7 @@
   "searchModels": "搜尋模型",
   "searchPlaceholder": "輸入模型名稱或描述...",
   "selectSource": "選擇資料來源",
+  "selectSourceToContinue": "請先在上方選擇一個資料來源，然後查看模型列表。",
   "showing_other": "顯示 {{count}} 個模型",
   "showRatio": "顯示倍率",
   "sourceLabels": {

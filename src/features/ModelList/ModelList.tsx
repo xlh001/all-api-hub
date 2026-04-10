@@ -1,12 +1,13 @@
 import { Tab } from "@headlessui/react"
 import { Cpu } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { VerifyApiDialog } from "~/components/dialogs/VerifyApiDialog"
 import { VerifyCliSupportDialog } from "~/components/dialogs/VerifyCliSupportDialog"
 import { PageHeader } from "~/components/PageHeader"
-import { Alert } from "~/components/ui"
+import { Alert, EmptyState } from "~/components/ui"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { VerifyApiCredentialProfileDialog } from "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog"
 import { type ModelManagementItemSource } from "~/features/ModelList/modelManagementSources"
 import { getAllProviders } from "~/services/models/utils/modelProviders"
@@ -18,6 +19,7 @@ import {
 } from "~/services/verification/verificationResultHistory"
 import type { DisplaySiteData } from "~/types"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
+import { pushWithinOptionsPage } from "~/utils/navigation"
 
 import { AccountSelector } from "./components/AccountSelector"
 import { AccountSummaryBar } from "./components/AccountSummaryBar"
@@ -39,7 +41,13 @@ export default function ModelList(props: {
   routeParams?: Record<string, string>
 }) {
   const { routeParams } = props
-  const { t } = useTranslation("modelList")
+  const { t } = useTranslation([
+    "modelList",
+    "account",
+    "apiCredentialProfiles",
+  ])
+  const [isSourceSelectorOpen, setIsSourceSelectorOpen] = useState(false)
+  const sourceSelectorTriggerRef = useRef<HTMLButtonElement>(null)
   const {
     accounts,
     profiles,
@@ -86,6 +94,7 @@ export default function ModelList(props: {
   } = useModelListData(routeParams)
 
   const providers = getAllProviders()
+  const hasAnySources = accounts.length > 0 || profiles.length > 0
 
   const sortedProviders = useMemo(
     () =>
@@ -111,6 +120,9 @@ export default function ModelList(props: {
     selectedSource?.kind === "all-accounts"
       ? pricingContexts && pricingContexts.length > 0
       : !!pricingData
+  const shouldShowSourceSetupEmptyState = !hasAnySources
+  const shouldShowSourceSelectionEmptyState =
+    !shouldShowSourceSetupEmptyState && !selectedSource
 
   const accountSummaryItems = useMemo(() => {
     const countMap = new Map<string, number>()
@@ -207,6 +219,28 @@ export default function ModelList(props: {
     modelEnableGroups: string[],
   ) => setModelKeyContext({ account, modelId, modelEnableGroups })
 
+  const handleOpenAccountManagement = useCallback(() => {
+    pushWithinOptionsPage(`#${MENU_ITEM_IDS.ACCOUNT}`)
+  }, [])
+
+  const handleOpenApiCredentialProfiles = useCallback(() => {
+    pushWithinOptionsPage(`#${MENU_ITEM_IDS.API_CREDENTIAL_PROFILES}`)
+  }, [])
+
+  const handleRequestSourceSelection = useCallback(() => {
+    const selectorTrigger = sourceSelectorTriggerRef.current
+
+    if (selectorTrigger) {
+      if (typeof selectorTrigger.scrollIntoView === "function") {
+        selectorTrigger.scrollIntoView({
+          block: "nearest",
+        })
+      }
+    }
+
+    setIsSourceSelectorOpen(true)
+  }, [])
+
   return (
     <div className="p-6">
       <PageHeader
@@ -219,9 +253,45 @@ export default function ModelList(props: {
         setSelectedSourceValue={setSelectedSourceValue}
         accounts={accounts}
         profiles={profiles}
+        selectorOpen={isSourceSelectorOpen}
+        onSelectorOpenChange={setIsSourceSelectorOpen}
+        selectorTriggerRef={sourceSelectorTriggerRef}
       />
 
-      {selectedSourceValue && !hasModelData && (
+      {shouldShowSourceSetupEmptyState ? (
+        <EmptyState
+          icon={<Cpu className="h-12 w-12" />}
+          title={t("modelList:noSourcesTitle")}
+          description={t("modelList:noSourcesDescription")}
+          actions={[
+            {
+              label: t("account:addFirstAccount"),
+              onClick: handleOpenAccountManagement,
+              variant: "default",
+            },
+            {
+              label: t("apiCredentialProfiles:actions.add"),
+              onClick: handleOpenApiCredentialProfiles,
+              variant: "outline",
+            },
+          ]}
+        />
+      ) : null}
+
+      {shouldShowSourceSelectionEmptyState ? (
+        <EmptyState
+          icon={<Cpu className="h-12 w-12" />}
+          title={t("modelList:pleaseSelectSource")}
+          description={t("modelList:selectSourceToContinue")}
+          action={{
+            label: t("modelList:selectSource"),
+            onClick: handleRequestSourceSelection,
+            variant: "default",
+          }}
+        />
+      ) : null}
+
+      {selectedSource && !hasModelData && (
         <StatusIndicator
           selectedSource={selectedSource}
           isLoading={isLoading}
@@ -233,7 +303,7 @@ export default function ModelList(props: {
         />
       )}
 
-      {selectedSourceValue && hasModelData && (
+      {selectedSource && hasModelData && (
         <>
           {isFallbackCatalogActive && (
             <Alert

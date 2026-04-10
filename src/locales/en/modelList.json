@@ -71,6 +71,8 @@
     "modelNamesCopied": "Model names copied"
   },
   "noMatchingModels": "No matching models found",
+  "noSourcesDescription": "Add a site account or API credential profile before viewing the model list.",
+  "noSourcesTitle": "No model sources yet",
   "output": "Output:",
   "output1MTokens": "Output (1M tokens)",
   "perCall": "Per call:",
@@ -92,6 +94,7 @@
   "searchModels": "Search Models",
   "searchPlaceholder": "Enter model name or description...",
   "selectSource": "Select Source",
+  "selectSourceToContinue": "Select a source above before viewing the model list.",
   "showing_one": "Showing {{count}} model",
   "showing_other": "Showing {{count}} models",
   "showRatio": "Show Ratio",

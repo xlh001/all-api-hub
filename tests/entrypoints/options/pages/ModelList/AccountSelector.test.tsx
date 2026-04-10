@@ -89,4 +89,35 @@ describe("AccountSelector", () => {
       screen.getByText("API Credential: Broken Endpoint · not-a-valid-url"),
     ).toBeInTheDocument()
   })
+
+  it("hides the all-accounts option when there are no accounts", async () => {
+    render(
+      <AccountSelector
+        selectedSourceValue=""
+        setSelectedSourceValue={vi.fn()}
+        accounts={[]}
+        profiles={[
+          {
+            id: "profile-1",
+            name: "Reusable Key",
+            apiType: "openai-compatible",
+            baseUrl: "https://profile.example.com/v1",
+            apiKey: "sk-secret",
+            tagIds: [],
+            notes: "",
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ]}
+      />,
+    )
+
+    const combobox = await screen.findByRole("combobox")
+    fireEvent.click(combobox)
+
+    expect(screen.queryByText("All accounts")).toBeNull()
+    expect(
+      screen.getByText("API Credential: Reusable Key · profile.example.com"),
+    ).toBeInTheDocument()
+  })
 })
