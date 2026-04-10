@@ -735,38 +735,6 @@ const buildTodayConsumeLogParams = (
 ) => buildTodayLogQueryParams(LogType.Consume, params, queryConfig)
 
 /**
- * Normalize paginated log payloads from either `{ items, total }` or
- * `{ data, total_count }` response shapes.
- * @param payload Raw API payload.
- * @param config Optional response-field overrides for backend variants.
- */
-const normalizeLogListResponse = (
-  payload: LogResponseData | LogItem[],
-  config?: TodayLogQueryConfig,
-) => {
-  const resolvedConfig = resolveTodayLogQueryConfig(config)
-
-  if (Array.isArray(payload)) {
-    return {
-      items: payload,
-      total: null,
-    }
-  }
-
-  const payloadRecord = payload as unknown as Record<string, unknown>
-  const itemsValue = payloadRecord[resolvedConfig.itemsField]
-  const totalValue = payloadRecord[resolvedConfig.totalField]
-
-  return {
-    items: Array.isArray(itemsValue) ? (itemsValue as LogItem[]) : [],
-    total:
-      typeof totalValue === "number" && Number.isFinite(totalValue)
-        ? totalValue
-        : null,
-  }
-}
-
-/**
  * Legacy full aggregation path for today's usage metrics.
  * @param request ApiServiceAccountRequest.
  * @param queryConfig Optional override for non-standard log pagination APIs.
@@ -803,9 +771,9 @@ const fetchTodayUsageFromLogs = async (
 /**
  * Lightweight today-usage path.
  *
- * Uses the stat endpoint for exact quota and a single-page list request for the
- * exact request count. Token totals remain zero on this path because supported
- * backends do not expose an equivalent cumulative token stat endpoint.
+ * Uses the stat endpoint for exact quota only. Request counts and token totals
+ * remain zero on this path because supported backends do not expose equivalent
+ * lightweight day-total stat endpoints across variants.
  * @param request ApiServiceAccountRequest.
  * @param queryConfig Optional override for non-standard log pagination APIs.
  * @returns Fast today-usage snapshot.
@@ -816,31 +784,9 @@ const fetchTodayUsageFast = async (
 ): Promise<TodayUsageData> => {
   const resolvedQueryConfig = resolveTodayLogQueryConfig(queryConfig)
   const statParams = buildTodayConsumeLogParams(undefined, resolvedQueryConfig)
-  const countParams = buildTodayConsumeLogParams(
-    { pageSize: 1 },
-    resolvedQueryConfig,
-  )
-
-  const [statData, countData] = await Promise.all([
-    fetchApiData<LogStatResponseData>(request, {
-      endpoint: `/api/log/self/stat?${statParams.toString()}`,
-    }),
-    fetchApiData<LogResponseData | LogItem[]>(request, {
-      endpoint: `${resolvedQueryConfig.endpoint}?${countParams.toString()}`,
-    }),
-  ])
-
-  const normalizedCountData = normalizeLogListResponse(
-    countData,
-    resolvedQueryConfig,
-  )
-  if (normalizedCountData.total === null) {
-    throw new ApiError(
-      "Fast today usage count requires paginated log totals",
-      undefined,
-      resolvedQueryConfig.endpoint,
-    )
-  }
+  const statData = await fetchApiData<LogStatResponseData>(request, {
+    endpoint: `/api/log/self/stat?${statParams.toString()}`,
+  })
 
   return {
     ...EMPTY_TODAY_USAGE,
@@ -848,7 +794,6 @@ const fetchTodayUsageFast = async (
       typeof statData?.quota === "number" && Number.isFinite(statData.quota)
         ? statData.quota
         : 0,
-    today_requests_count: normalizedCountData.total,
   }
 }
 
@@ -857,13 +802,12 @@ const fetchTodayUsageFast = async (
  *
  * Fast path:
  * - `/api/log/self/stat` for exact quota totals
- * - a single `/api/log/self?page_size=1` request for exact request count
  *
  * This keeps the common "today consumption" UI lightweight. Token totals are
  * intentionally left at zero on the fast path because upstream stat endpoints
- * do not provide equivalent day-total token counters across supported variants.
- * If the lightweight path is unavailable, fall back to the legacy full log
- * pagination so compatibility is preserved.
+ * do not provide equivalent day-total token counters or request counts across
+ * supported variants. If the lightweight path is unavailable, fall back to the
+ * legacy full log pagination so compatibility is preserved.
  * @param request ApiServiceAccountRequest (uses `includeTodayCashflow` to gate expensive log fetches).
  * @param queryConfig Optional override for non-standard log pagination APIs.
  * @returns Usage totals for the current day.

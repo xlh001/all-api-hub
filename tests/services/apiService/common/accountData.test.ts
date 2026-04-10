@@ -437,24 +437,20 @@ describe("apiService common account-data helpers", () => {
     expect(mockFetchApiData).not.toHaveBeenCalled()
   })
 
-  it("fetchTodayUsage uses the stat endpoint plus a lightweight count query", async () => {
-    mockFetchApiData
-      .mockResolvedValueOnce({
-        quota: 60,
-      })
-      .mockResolvedValueOnce({
-        items: [{ quota: 10, prompt_tokens: 2, completion_tokens: 3 }],
-        total: 3,
-      })
+  it("fetchTodayUsage uses only the stat endpoint on the fast path", async () => {
+    mockFetchApiData.mockResolvedValueOnce({
+      quota: 60,
+    })
 
     await expect(fetchTodayUsage(baseRequest as any)).resolves.toEqual({
       today_quota_consumption: 60,
       today_prompt_tokens: 0,
       today_completion_tokens: 0,
-      today_requests_count: 3,
+      today_requests_count: 0,
     })
 
-    expect(mockFetchApiData).toHaveBeenNthCalledWith(1, baseRequest, {
+    expect(mockFetchApiData).toHaveBeenCalledTimes(1)
+    expect(mockFetchApiData).toHaveBeenCalledWith(baseRequest, {
       endpoint: `/api/log/self/stat?${new URLSearchParams({
         p: "1",
         page_size: "2",
@@ -466,29 +462,12 @@ describe("apiService common account-data helpers", () => {
         group: "",
       }).toString()}`,
     })
-    expect(mockFetchApiData).toHaveBeenNthCalledWith(2, baseRequest, {
-      endpoint: `/api/log/self?${new URLSearchParams({
-        p: "1",
-        page_size: "1",
-        token_name: "",
-        model_name: "",
-        start_timestamp: "111",
-        end_timestamp: "222",
-        type: String(LogType.Consume),
-        group: "",
-      }).toString()}`,
-    })
   })
 
-  it("fetchTodayUsage supports overridden log query params and response fields", async () => {
-    mockFetchApiData
-      .mockResolvedValueOnce({
-        quota: 60,
-      })
-      .mockResolvedValueOnce({
-        data: [{ quota: 10 }],
-        total_count: 3,
-      })
+  it("fetchTodayUsage supports overridden log query params on the fast path", async () => {
+    mockFetchApiData.mockResolvedValueOnce({
+      quota: 60,
+    })
 
     await expect(
       fetchTodayUsage(baseRequest as any, {
@@ -504,24 +483,14 @@ describe("apiService common account-data helpers", () => {
       today_quota_consumption: 60,
       today_prompt_tokens: 0,
       today_completion_tokens: 0,
-      today_requests_count: 3,
+      today_requests_count: 0,
     })
 
-    expect(mockFetchApiData).toHaveBeenNthCalledWith(1, baseRequest, {
+    expect(mockFetchApiData).toHaveBeenCalledTimes(1)
+    expect(mockFetchApiData).toHaveBeenCalledWith(baseRequest, {
       endpoint: `/api/log/self/stat?${new URLSearchParams({
         page: "1",
         size: "2",
-        token_name: "",
-        model_name: "",
-        start_timestamp: "111",
-        end_timestamp: "222",
-        log_type: String(LogType.Consume),
-      }).toString()}`,
-    })
-    expect(mockFetchApiData).toHaveBeenNthCalledWith(2, baseRequest, {
-      endpoint: `/api/log/self?${new URLSearchParams({
-        page: "1",
-        size: "1",
         token_name: "",
         model_name: "",
         start_timestamp: "111",
