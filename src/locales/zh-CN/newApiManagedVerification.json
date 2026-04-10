@@ -21,8 +21,7 @@
       "successToken": "{{label}} 的验证已成功，管理站点状态已刷新。"
     },
     "fields": {
-      "codeLabel": "验证码",
-      "codePlaceholder": "输入验证码"
+      "codeLabel": "验证码"
     },
     "hints": {
       "manualFallback": "即使已配置自动 TOTP，仍然可以手动输入验证码。",

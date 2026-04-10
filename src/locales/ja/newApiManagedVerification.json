@@ -21,8 +21,7 @@
       "successToken": "{{label}} の検証に成功しました。管理対象サイトの状態を更新しました。"
     },
     "fields": {
-      "codeLabel": "認証コード",
-      "codePlaceholder": "コードを入力"
+      "codeLabel": "認証コード"
     },
     "hints": {
       "manualFallback": "自動 TOTP が設定されていても、手動入力は引き続き利用できます。",

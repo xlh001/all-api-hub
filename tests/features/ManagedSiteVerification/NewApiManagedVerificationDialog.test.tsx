@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import type { ComponentProps, ReactNode } from "react"
+import { useState, type ComponentProps, type ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { NewApiManagedVerificationDialog } from "~/features/ManagedSiteVerification/NewApiManagedVerificationDialog"
@@ -39,6 +39,49 @@ vi.mock("~/components/ui", async () => {
 
   return {
     ...actual,
+    InputOTP: ({
+      children,
+      onChange,
+      value,
+      pasteTransformer: _pasteTransformer,
+      containerClassName: _containerClassName,
+      ...props
+    }: {
+      children?: ReactNode
+      onChange?: (value: string) => void
+      value?: string
+      [key: string]: unknown
+    }) => (
+      <div data-slot="input-otp">
+        <input
+          {...props}
+          value={value}
+          onChange={(event) => onChange?.(event.target.value)}
+        />
+        {children}
+      </div>
+    ),
+    InputOTPGroup: ({
+      children,
+      ...props
+    }: {
+      children?: ReactNode
+      [key: string]: unknown
+    }) => (
+      <div data-slot="input-otp-group" {...props}>
+        {children}
+      </div>
+    ),
+    InputOTPSlot: ({
+      index,
+      ...props
+    }: {
+      index: number
+      [key: string]: unknown
+    }) => <div data-slot="input-otp-slot" data-index={index} {...props} />,
+    InputOTPSeparator: ({ ...props }: { [key: string]: unknown }) => (
+      <div data-slot="input-otp-separator" {...props} />
+    ),
     Modal: ({
       isOpen,
       header,
@@ -95,6 +138,8 @@ const createProps = (
 
 describe("NewApiManagedVerificationDialog", () => {
   beforeEach(() => {
+    document.elementFromPoint ??= (() =>
+      null) as typeof document.elementFromPoint
     currentNewApiBaseUrl = "https://managed.example"
     currentNewApiUsername = ""
     currentNewApiPassword = ""
@@ -266,5 +311,86 @@ describe("NewApiManagedVerificationDialog", () => {
         name: "dialog.actions.saveAndRetry",
       }),
     ).toBeNull()
+  })
+
+  it("renders a shadcn-style otp input for verification code entry", () => {
+    const { container } = render(
+      <NewApiManagedVerificationDialog
+        {...createProps({
+          step: NEW_API_MANAGED_VERIFICATION_STEPS.LOGIN_2FA,
+        })}
+      />,
+    )
+
+    expect(screen.getByLabelText("dialog.fields.codeLabel")).toBeInTheDocument()
+    expect(
+      container.querySelectorAll('[data-slot="input-otp-slot"]'),
+    ).toHaveLength(6)
+    expect(
+      container.querySelector('[data-slot="input-otp-separator"]'),
+    ).not.toBeNull()
+  })
+
+  it("normalizes manual code input to six digits", async () => {
+    const onCodeChange = vi.fn()
+
+    function ControlledDialog() {
+      const [code, setCode] = useState("")
+
+      return (
+        <NewApiManagedVerificationDialog
+          {...createProps({
+            step: NEW_API_MANAGED_VERIFICATION_STEPS.LOGIN_2FA,
+            code,
+            onCodeChange: (value) => {
+              setCode(value)
+              onCodeChange(value)
+            },
+          })}
+        />
+      )
+    }
+
+    render(<ControlledDialog />)
+
+    fireEvent.change(screen.getByLabelText("dialog.fields.codeLabel"), {
+      target: {
+        value: "12a3 4-567",
+      },
+    })
+
+    expect(onCodeChange).toHaveBeenLastCalledWith("123456")
+  })
+
+  it("keeps submit disabled until the verification code is complete", () => {
+    const { rerender } = render(
+      <NewApiManagedVerificationDialog
+        {...createProps({
+          step: NEW_API_MANAGED_VERIFICATION_STEPS.SECURE_VERIFICATION,
+          code: "12345",
+        })}
+      />,
+    )
+
+    expect(
+      screen.getByRole("button", {
+        name: "dialog.actions.submitVerificationCode",
+      }),
+    ).toBeDisabled()
+
+    rerender(
+      <NewApiManagedVerificationDialog
+        {...createProps({
+          step: NEW_API_MANAGED_VERIFICATION_STEPS.SECURE_VERIFICATION,
+          code: "123456",
+        })}
+      />,
+    )
+
+    expect(
+      screen.getByRole("button", {
+        name: "dialog.actions.submitVerificationCode",
+      }),
+    ).toBeEnabled()
   })
 })

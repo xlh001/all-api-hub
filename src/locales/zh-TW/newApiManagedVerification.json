@@ -21,8 +21,7 @@
       "successToken": "{{label}} 的驗證已成功，管理站點狀態已重新整理。"
     },
     "fields": {
-      "codeLabel": "驗證碼",
-      "codePlaceholder": "輸入驗證碼"
+      "codeLabel": "驗證碼"
     },
     "hints": {
       "manualFallback": "即使已配置自動 TOTP，仍然可以手動輸入驗證碼。",

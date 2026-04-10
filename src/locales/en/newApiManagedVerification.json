@@ -21,8 +21,7 @@
       "successToken": "Verification succeeded for {{label}}. The managed-site status has been refreshed."
     },
     "fields": {
-      "codeLabel": "Verification code",
-      "codePlaceholder": "Enter code"
+      "codeLabel": "Verification code"
     },
     "hints": {
       "manualFallback": "Manual code entry stays available even when automatic TOTP is configured.",

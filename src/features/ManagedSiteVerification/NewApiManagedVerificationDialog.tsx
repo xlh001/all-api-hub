@@ -1,8 +1,18 @@
 import type { TFunction } from "i18next"
+import { REGEXP_ONLY_DIGITS } from "input-otp"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { Button, Input, Modal, WorkflowTransitionButton } from "~/components/ui"
+import {
+  Button,
+  Input,
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+  Modal,
+  WorkflowTransitionButton,
+} from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import {
   NEW_API_MANAGED_VERIFICATION_STEPS,
@@ -11,6 +21,11 @@ import {
   type OpenNewApiManagedVerificationParams,
 } from "~/features/ManagedSiteVerification/useNewApiManagedVerification"
 import { getErrorMessage } from "~/utils/core/error"
+
+const NEW_API_VERIFICATION_CODE_LENGTH = 6
+
+const normalizeVerificationCode = (value: string) =>
+  value.replace(/\D/g, "").slice(0, NEW_API_VERIFICATION_CODE_LENGTH)
 
 const getDialogTitle = (
   t: TFunction,
@@ -108,6 +123,12 @@ export function NewApiManagedVerificationDialog(
   const isCodeEntryStep =
     props.step === NEW_API_MANAGED_VERIFICATION_STEPS.LOGIN_2FA ||
     props.step === NEW_API_MANAGED_VERIFICATION_STEPS.SECURE_VERIFICATION
+  const normalizedCode = useMemo(
+    () => normalizeVerificationCode(props.code),
+    [props.code],
+  )
+  const isCodeComplete =
+    normalizedCode.length === NEW_API_VERIFICATION_CODE_LENGTH
   const shouldShowSettingsAction =
     props.step === NEW_API_MANAGED_VERIFICATION_STEPS.CREDENTIALS_MISSING ||
     (props.step === NEW_API_MANAGED_VERIFICATION_STEPS.FAILURE &&
@@ -221,7 +242,10 @@ export function NewApiManagedVerificationDialog(
       ) : null}
 
       {isCodeEntryStep ? (
-        <Button onClick={props.onSubmit} disabled={props.isBusy}>
+        <Button
+          onClick={props.onSubmit}
+          disabled={props.isBusy || !isCodeComplete}
+        >
           {props.step === NEW_API_MANAGED_VERIFICATION_STEPS.LOGIN_2FA
             ? t("dialog.actions.submitLoginCode")
             : t("dialog.actions.submitVerificationCode")}
@@ -370,14 +394,42 @@ export function NewApiManagedVerificationDialog(
             >
               {t("dialog.fields.codeLabel")}
             </label>
-            <Input
-              id="new-api-verification-code"
-              type="text"
-              value={props.code}
-              onChange={(event) => props.onCodeChange(event.target.value)}
-              placeholder={t("dialog.fields.codePlaceholder")}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-4 dark:border-gray-800 dark:bg-gray-900/40">
+              <div className="flex justify-center">
+                <InputOTP
+                  id="new-api-verification-code"
+                  value={normalizedCode}
+                  onChange={(value) =>
+                    props.onCodeChange(normalizeVerificationCode(value))
+                  }
+                  maxLength={NEW_API_VERIFICATION_CODE_LENGTH}
+                  pattern={REGEXP_ONLY_DIGITS}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  disabled={props.isBusy}
+                  pasteTransformer={normalizeVerificationCode}
+                  aria-describedby="new-api-verification-code-hint"
+                  aria-label={t("dialog.fields.codeLabel")}
+                  containerClassName="justify-center"
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator className="text-gray-400 dark:text-gray-500" />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+            </div>
+            <p
+              id="new-api-verification-code-hint"
+              className="text-xs text-gray-500 dark:text-gray-400"
+            >
               {t("dialog.hints.manualFallback")}
             </p>
           </div>

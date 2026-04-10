@@ -3,6 +3,12 @@ export { Button, buttonVariants } from "./button"
 export { WorkflowTransitionButton } from "./WorkflowTransitionButton"
 export { Input, inputVariants } from "./input"
 export {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "./input-otp"
+export {
   Card,
   CardHeader,
   CardFooter,
