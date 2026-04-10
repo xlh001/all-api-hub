@@ -185,6 +185,7 @@
   },
   "searchPlaceholder": "搜尋金鑰名稱...",
   "selectAccount": "選擇帳號",
+  "selectAccountToContinue": "請先在上方選擇一個帳號，然後查看或建立金鑰。",
   "showingCount_other": "顯示 {{count}} 個",
   "title": "金鑰管理",
   "totalKeys_other": "總計 {{count}} 個金鑰"

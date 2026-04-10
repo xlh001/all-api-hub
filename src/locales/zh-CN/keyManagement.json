@@ -185,6 +185,7 @@
   },
   "searchPlaceholder": "搜索密钥名称...",
   "selectAccount": "选择账号",
+  "selectAccountToContinue": "请先在上方选择一个账号，然后查看或创建密钥。",
   "showingCount": "显示 {{count}} 个",
   "title": "密钥管理",
   "totalKeys": "总计 {{count}} 个密钥"

@@ -185,6 +185,7 @@
   },
   "searchPlaceholder": "キー名を検索...",
   "selectAccount": "アカウントを選択",
+  "selectAccountToContinue": "上のアカウントを選択してから、キーの確認または作成を行ってください。",
   "showingCount_other": "{{count}} 件を表示中",
   "title": "キー管理",
   "totalKeys_other": "合計 {{count}} キー"

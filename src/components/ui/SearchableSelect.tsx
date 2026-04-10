@@ -77,6 +77,20 @@ export interface SearchableSelectProps
   allowCustomValue?: boolean
 
   /**
+   * Controlled open state for the dropdown.
+   *
+   * When omitted, the component manages its own open state.
+   */
+  open?: boolean
+
+  /**
+   * Callback fired when the dropdown open state changes.
+   *
+   * Useful when an external CTA needs to open the selector explicitly.
+   */
+  onOpenChange?: (open: boolean) => void
+
+  /**
    * Optional portal container for the dropdown.
    *
    * When rendering inside a ShadowRoot (content-script UI), portaling to
@@ -92,22 +106,32 @@ export interface SearchableSelectProps
  * pages like Model List and Key Management, while keeping styling
  * consistent with the existing design system.
  */
-export function SearchableSelect({
-  options,
-  value,
-  onChange,
-  placeholder,
-  searchPlaceholder,
-  emptyMessage,
-  allowCustomValue = false,
-  portalContainer,
-  className,
-  disabled,
-  ...buttonProps
-}: SearchableSelectProps) {
+export const SearchableSelect = React.forwardRef<
+  HTMLButtonElement,
+  SearchableSelectProps
+>(function SearchableSelect(
+  {
+    options,
+    value,
+    onChange,
+    placeholder,
+    searchPlaceholder,
+    emptyMessage,
+    allowCustomValue = false,
+    open,
+    onOpenChange,
+    portalContainer,
+    className,
+    disabled,
+    ...buttonProps
+  },
+  ref,
+) {
   const { t } = useTranslation("ui")
-  const [open, setOpen] = React.useState(false)
+  const [internalOpen, setInternalOpen] = React.useState(false)
   const [searchTerm, setSearchTerm] = React.useState("")
+  const resolvedOpen = open ?? internalOpen
+  const setResolvedOpen = onOpenChange ?? setInternalOpen
 
   const selectedOption = React.useMemo(
     () => options.find((option) => option.value === value),
@@ -135,8 +159,8 @@ export function SearchableSelect({
   const isDisabled = disabled ?? false
 
   React.useEffect(() => {
-    if (!open) setSearchTerm("")
-  }, [open])
+    if (!resolvedOpen) setSearchTerm("")
+  }, [resolvedOpen])
 
   const normalizedSearchTerm = searchTerm.trim()
   const canUseCustomValue =
@@ -145,12 +169,13 @@ export function SearchableSelect({
     !options.some((option) => option.value === normalizedSearchTerm)
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={resolvedOpen} onOpenChange={setResolvedOpen}>
       <PopoverTrigger asChild>
         <Button
+          ref={ref}
           variant="outline"
           role="combobox"
-          aria-expanded={open}
+          aria-expanded={resolvedOpen}
           data-slot="searchable-select-trigger"
           className={cn(
             "dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80 flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm whitespace-nowrap text-gray-900 shadow-xs transition-colors outline-none hover:bg-gray-50 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-500 aria-invalid:focus-visible:ring-red-500/40 data-placeholder:text-gray-400 dark:aria-invalid:border-red-400 dark:aria-invalid:focus-visible:ring-red-400/40 dark:data-placeholder:text-gray-500",
@@ -199,7 +224,7 @@ export function SearchableSelect({
                   value={normalizedSearchTerm}
                   onSelect={() => {
                     onChange(normalizedSearchTerm)
-                    setOpen(false)
+                    setResolvedOpen(false)
                   }}
                 >
                   <span className="truncate">
@@ -217,7 +242,7 @@ export function SearchableSelect({
                   onSelect={() => {
                     if (option.disabled) return
                     onChange(option.value)
-                    setOpen(false)
+                    setResolvedOpen(false)
                   }}
                 >
                   <CheckIcon
@@ -235,4 +260,4 @@ export function SearchableSelect({
       </PopoverContent>
     </Popover>
   )
-}
+})

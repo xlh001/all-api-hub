@@ -32,6 +32,8 @@ interface TokenListProps {
   handleEditToken: (token: AccountToken) => void
   handleDeleteToken: (token: AccountToken) => void
   handleAddToken: () => void
+  onAddAccount?: () => void
+  onRequestAccountSelection?: () => void
   selectedAccount: string
   displayData: DisplaySiteData[]
   managedSiteTokenStatuses?: Record<
@@ -74,23 +76,58 @@ function LoadingSkeleton() {
  * @param props.displayData Account display data used to determine empty states.
  */
 function TokenEmptyState({
+  selectedAccount,
   tokens,
   handleAddToken,
   displayData,
+  onAddAccount,
+  onRequestAccountSelection,
 }: {
+  selectedAccount: string
   tokens: unknown[]
   handleAddToken: () => void
   displayData: { id: string }[]
+  onAddAccount?: () => void
+  onRequestAccountSelection?: () => void
 }) {
-  const { t } = useTranslation("keyManagement")
+  const { t } = useTranslation(["keyManagement", "account"])
 
   // 如果没有账户
   if (displayData.length === 0) {
     return (
       <EmptyState
         icon={<KeyIcon className="h-12 w-12" />}
-        title={tokens.length === 0 ? t("noKeys") : t("noMatchingKeys")}
-        description={t("pleaseAddAccount")}
+        title={t("account:emptyState")}
+        description={t("keyManagement:pleaseAddAccount")}
+        action={
+          onAddAccount
+            ? {
+                label: t("account:addFirstAccount"),
+                onClick: onAddAccount,
+                variant: "default",
+                icon: <PlusIcon className="h-4 w-4" />,
+              }
+            : undefined
+        }
+      />
+    )
+  }
+
+  if (!selectedAccount) {
+    return (
+      <EmptyState
+        icon={<KeyIcon className="h-12 w-12" />}
+        title={t("keyManagement:pleaseSelectAccount")}
+        description={t("keyManagement:selectAccountToContinue")}
+        action={
+          onRequestAccountSelection
+            ? {
+                label: t("keyManagement:selectAccount"),
+                onClick: onRequestAccountSelection,
+                variant: "default",
+              }
+            : undefined
+        }
       />
     )
   }
@@ -151,6 +188,8 @@ export function TokenList(props: TokenListProps) {
     handleEditToken,
     handleDeleteToken,
     handleAddToken,
+    onAddAccount,
+    onRequestAccountSelection,
     selectedAccount,
     displayData,
     managedSiteTokenStatuses,
@@ -272,15 +311,6 @@ export function TokenList(props: TokenListProps) {
     setCCSwitchContext(null)
   }
 
-  if (!selectedAccount) {
-    return (
-      <EmptyState
-        icon={<KeyIcon className="h-12 w-12" />}
-        title={t("noKeys")}
-      />
-    )
-  }
-
   if (isLoading && (!isAllAccountsMode || tokens.length === 0)) {
     return <LoadingSkeleton />
   }
@@ -288,9 +318,12 @@ export function TokenList(props: TokenListProps) {
   if (filteredTokens.length === 0) {
     return (
       <TokenEmptyState
+        selectedAccount={selectedAccount}
         tokens={tokens}
         handleAddToken={handleAddToken}
         displayData={displayData}
+        onAddAccount={onAddAccount}
+        onRequestAccountSelection={onRequestAccountSelection}
       />
     )
   }

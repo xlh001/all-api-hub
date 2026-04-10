@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { NEW_API } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -16,6 +17,7 @@ import {
 } from "~/services/managedSites/tokenChannelStatus"
 import type { AccountToken } from "~/types"
 import { sendRuntimeActionMessage } from "~/utils/browser/browserApi"
+import { pushWithinOptionsPage } from "~/utils/navigation"
 
 import { AccountSelectorPanel } from "./components/AccountSelectorPanel"
 import { AccountSummaryBar } from "./components/AccountSummaryBar"
@@ -89,6 +91,8 @@ export default function KeyManagement(props: {
   const { t } = useTranslation("keyManagement")
   const [isRepairOpen, setIsRepairOpen] = useState(false)
   const [repairStartOnOpen, setRepairStartOnOpen] = useState(false)
+  const [isAccountSelectorOpen, setIsAccountSelectorOpen] = useState(false)
+  const accountSelectorTriggerRef = useRef<HTMLButtonElement>(null)
   const verification = useNewApiManagedVerification()
   const {
     managedSiteType,
@@ -176,6 +180,24 @@ export default function KeyManagement(props: {
       setAllAccountsFilterAccountId(accountId)
     }
   }
+
+  const handleOpenAccountManagement = useCallback(() => {
+    pushWithinOptionsPage(`#${MENU_ITEM_IDS.ACCOUNT}`)
+  }, [])
+
+  const handleRequestAccountSelection = useCallback(() => {
+    const selectorTrigger = accountSelectorTriggerRef.current
+
+    if (selectorTrigger) {
+      if (typeof selectorTrigger.scrollIntoView === "function") {
+        selectorTrigger.scrollIntoView({
+          block: "nearest",
+        })
+      }
+    }
+
+    setIsAccountSelectorOpen(true)
+  }, [])
 
   const handleManagedSiteVerificationRetry = async (
     token: AccountToken,
@@ -274,6 +296,9 @@ export default function KeyManagement(props: {
         selectedAccount={selectedAccount}
         setSelectedAccount={setSelectedAccount}
         displayData={displayData}
+        selectorOpen={isAccountSelectorOpen}
+        onSelectorOpenChange={setIsAccountSelectorOpen}
+        selectorTriggerRef={accountSelectorTriggerRef}
         tokens={tokens}
         filteredTokens={filteredTokens}
         tokenLoadProgress={tokenLoadProgress}
@@ -306,6 +331,8 @@ export default function KeyManagement(props: {
         handleEditToken={handleEditToken}
         handleDeleteToken={handleDeleteToken}
         handleAddToken={handleAddToken}
+        onAddAccount={handleOpenAccountManagement}
+        onRequestAccountSelection={handleRequestAccountSelection}
         selectedAccount={selectedAccount}
         displayData={displayData}
         managedSiteTokenStatuses={managedSiteTokenStatuses}

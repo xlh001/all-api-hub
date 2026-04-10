@@ -191,6 +191,7 @@
   },
   "searchPlaceholder": "Search key name...",
   "selectAccount": "Select Account",
+  "selectAccountToContinue": "Select an account above before viewing or creating keys.",
   "showingCount_one": "Showing {{count}}",
   "showingCount_other": "Showing {{count}}",
   "title": "Key Management",

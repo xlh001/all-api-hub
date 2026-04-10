@@ -1,3 +1,4 @@
+import type { Ref } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Badge, Button, Heading3, SearchableSelect } from "~/components/ui"
@@ -9,6 +10,9 @@ interface AccountSelectorPanelProps {
   selectedAccount: string
   setSelectedAccount: (value: string) => void
   displayData: DisplaySiteData[]
+  selectorOpen?: boolean
+  onSelectorOpenChange?: (open: boolean) => void
+  selectorTriggerRef?: Ref<HTMLButtonElement>
   tokens: AccountToken[]
   filteredTokens: AccountToken[]
   tokenLoadProgress?: {
@@ -32,6 +36,9 @@ export function AccountSelectorPanel({
   selectedAccount,
   setSelectedAccount,
   displayData,
+  selectorOpen,
+  onSelectorOpenChange,
+  selectorTriggerRef,
   tokens,
   filteredTokens,
   tokenLoadProgress,
@@ -52,6 +59,7 @@ export function AccountSelectorPanel({
       <div className="mb-2">
         <Heading3 className="mb-1">{t("selectAccount")}</Heading3>
         <SearchableSelect
+          ref={selectorTriggerRef}
           options={[
             ...(displayData.length > 0
               ? [
@@ -68,6 +76,8 @@ export function AccountSelectorPanel({
           ]}
           value={selectedAccount ?? ""}
           onChange={setSelectedAccount}
+          open={selectorOpen}
+          onOpenChange={onSelectorOpenChange}
           placeholder={t("pleaseSelectAccount")}
         />
       </div>
