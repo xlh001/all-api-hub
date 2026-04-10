@@ -135,7 +135,16 @@ export default function KeyManagement(props: {
     handleCloseAddToken,
     handleEditToken,
     handleDeleteToken,
+    tokenInventories,
   } = useKeyManagement(routeParams)
+
+  const currentAccountLoadError =
+    selectedAccount &&
+    selectedAccount !== KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE &&
+    tokenInventories[selectedAccount]?.status === "error"
+      ? tokenInventories[selectedAccount]?.errorMessage ??
+        t("messages.loadFailed")
+      : null
 
   useEffect(() => {
     let cancelled = false
@@ -335,6 +344,13 @@ export default function KeyManagement(props: {
         onRequestAccountSelection={handleRequestAccountSelection}
         selectedAccount={selectedAccount}
         displayData={displayData}
+        currentAccountLoadError={currentAccountLoadError}
+        onRetryCurrentAccount={
+          selectedAccount &&
+          selectedAccount !== KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE
+            ? () => void loadTokens(selectedAccount)
+            : undefined
+        }
         managedSiteTokenStatuses={managedSiteTokenStatuses}
         onManagedSiteImportSuccess={
           isManagedSiteChannelStatusSupported

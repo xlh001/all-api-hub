@@ -78,6 +78,11 @@
     "remainingQuota": "剩餘額度：",
     "usedQuota": "已用額度："
   },
+  "loadError": {
+    "description": "無法讀取目前帳號的金鑰列表。可能是登入已失效、權限不足，或站點暫時無法連線。請先重新登入站點後再重試。\n\n錯誤資訊：{{error}}",
+    "openSite": "開啟站點",
+    "title": "金鑰列表載入失敗"
+  },
   "managedSiteStatus": {
     "actions": {
       "refresh": "重新整理管理站點渠道狀態",

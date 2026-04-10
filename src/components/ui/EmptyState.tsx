@@ -16,15 +16,30 @@ export type EmptyStateAction = {
 export interface EmptyStateProps {
   icon: React.ReactNode
   title: string
-  description?: string
+  description?: React.ReactNode
   action?: EmptyStateAction
   actions?: EmptyStateAction[]
+  variant?: "default" | "destructive"
   className?: string
+  descriptionClassName?: string
 }
 
 export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
-  ({ icon, title, description, action, actions, className }, ref) => {
+  (
+    {
+      icon,
+      title,
+      description,
+      action,
+      actions,
+      variant = "default",
+      className,
+      descriptionClassName,
+    },
+    ref,
+  ) => {
     const resolvedActions = actions ?? (action ? [action] : [])
+    const isDestructive = variant === "destructive"
 
     return (
       <div
@@ -33,17 +48,34 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           "flex flex-col items-center py-12 text-center",
           className,
         )}
-        role="status"
-        aria-live="polite"
+        role={isDestructive ? "alert" : "status"}
+        aria-live={isDestructive ? "assertive" : "polite"}
       >
-        <div className="mb-4 flex h-12 w-12 items-center justify-center text-gray-300 dark:text-gray-600">
+        <div
+          className={cn(
+            "mb-4 flex h-12 w-12 items-center justify-center text-gray-300 dark:text-gray-600",
+            isDestructive && "text-destructive",
+          )}
+        >
           {icon}
         </div>
-        <p className="dark:text-dark-text-secondary mb-4 text-sm text-gray-500">
+        <p
+          className={cn(
+            "dark:text-dark-text-secondary mb-4 text-sm font-medium text-gray-700",
+            isDestructive &&
+              "dark:text-dark-text-primary font-semibold text-gray-900",
+          )}
+        >
           {title}
         </p>
         {description && (
-          <p className="dark:text-dark-text-tertiary mb-4 text-sm text-gray-400">
+          <p
+            className={cn(
+              "dark:text-dark-text-tertiary mb-4 text-sm text-gray-400",
+              isDestructive && "leading-6",
+              descriptionClassName,
+            )}
+          >
             {description}
           </p>
         )}

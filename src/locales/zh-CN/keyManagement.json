@@ -78,6 +78,11 @@
     "remainingQuota": "剩余额度：",
     "usedQuota": "已用额度："
   },
+  "loadError": {
+    "description": "未能读取当前账号的密钥列表。可能是登录已失效、权限不足，或站点暂时不可访问。请先重新登录站点后再重试。\n\n错误信息：{{error}}",
+    "openSite": "打开站点",
+    "title": "密钥列表加载失败"
+  },
   "managedSiteStatus": {
     "actions": {
       "refresh": "刷新管理站点渠道状态",

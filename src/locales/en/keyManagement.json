@@ -83,6 +83,11 @@
     "remainingQuota": "Remaining Quota:",
     "usedQuota": "Used Quota:"
   },
+  "loadError": {
+    "description": "The extension could not load keys for this account. The session may have expired, permissions may be insufficient, or the site may be temporarily unavailable. Sign in to the site again, then retry.\n\nError: {{error}}",
+    "openSite": "Open site",
+    "title": "Failed to load keys"
+  },
   "managedSiteStatus": {
     "actions": {
       "refresh": "Refresh Managed-Site Channel Status",

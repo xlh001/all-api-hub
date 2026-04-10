@@ -1,6 +1,9 @@
 import {
+  ArrowPathIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  ExclamationTriangleIcon,
+  GlobeAltIcon,
   KeyIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline"
@@ -12,6 +15,7 @@ import { Badge, Button, Card, EmptyState } from "~/components/ui"
 import { cn } from "~/lib/utils"
 import type { ManagedSiteTokenChannelStatus } from "~/services/managedSites/tokenChannelStatus"
 import type { AccountToken, DisplaySiteData } from "~/types"
+import { createTab } from "~/utils/browser/browserApi"
 
 import { KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE } from "../constants"
 import { buildTokenIdentityKey } from "../utils"
@@ -36,6 +40,8 @@ interface TokenListProps {
   onRequestAccountSelection?: () => void
   selectedAccount: string
   displayData: DisplaySiteData[]
+  currentAccountLoadError?: string | null
+  onRetryCurrentAccount?: () => void
   managedSiteTokenStatuses?: Record<
     string,
     {
@@ -83,17 +89,31 @@ function TokenEmptyState({
   tokens,
   handleAddToken,
   displayData,
+  currentAccountLoadError,
+  onRetryCurrentAccount,
   onAddAccount,
   onRequestAccountSelection,
 }: {
   selectedAccount: string
   tokens: unknown[]
   handleAddToken: () => void
-  displayData: { id: string }[]
+  displayData: DisplaySiteData[]
+  currentAccountLoadError?: string | null
+  onRetryCurrentAccount?: () => void
   onAddAccount?: () => void
   onRequestAccountSelection?: () => void
 }) {
   const { t } = useTranslation(["keyManagement", "account"])
+  const currentAccount =
+    selectedAccount && selectedAccount !== KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE
+      ? displayData.find((account) => account.id === selectedAccount) ?? null
+      : null
+
+  const handleOpenCurrentAccountSite = () => {
+    const baseUrl = currentAccount?.baseUrl?.trim()
+    if (!baseUrl) return
+    void createTab(baseUrl, true)
+  }
 
   // 如果没有账户
   if (displayData.length === 0) {
@@ -131,6 +151,37 @@ function TokenEmptyState({
               }
             : undefined
         }
+      />
+    )
+  }
+
+  if (currentAccountLoadError) {
+    return (
+      <EmptyState
+        variant="destructive"
+        icon={<ExclamationTriangleIcon className="h-12 w-12" />}
+        title={t("loadError.title")}
+        description={t("loadError.description", {
+          error: currentAccountLoadError,
+        })}
+        descriptionClassName="max-w-xl whitespace-pre-line"
+        className="mt-4"
+        actions={[
+          {
+            label: t("refreshTokenList"),
+            onClick: () => onRetryCurrentAccount?.(),
+            variant: "default",
+            icon: <ArrowPathIcon className="h-4 w-4" />,
+            disabled: !onRetryCurrentAccount,
+          },
+          {
+            label: t("loadError.openSite"),
+            onClick: handleOpenCurrentAccountSite,
+            variant: "outline",
+            icon: <GlobeAltIcon className="h-4 w-4" />,
+            disabled: !currentAccount?.baseUrl?.trim(),
+          },
+        ]}
       />
     )
   }
@@ -195,6 +246,8 @@ export function TokenList(props: TokenListProps) {
     onRequestAccountSelection,
     selectedAccount,
     displayData,
+    currentAccountLoadError,
+    onRetryCurrentAccount,
     managedSiteTokenStatuses,
     onManagedSiteImportSuccess,
     onManagedSiteVerificationRetry,
@@ -325,6 +378,8 @@ export function TokenList(props: TokenListProps) {
         tokens={tokens}
         handleAddToken={handleAddToken}
         displayData={displayData}
+        currentAccountLoadError={currentAccountLoadError}
+        onRetryCurrentAccount={onRetryCurrentAccount}
         onAddAccount={onAddAccount}
         onRequestAccountSelection={onRequestAccountSelection}
       />
