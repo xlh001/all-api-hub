@@ -27,6 +27,19 @@
 - 商店版本在审核过程中通常会延迟 1-3 天；GitHub 正式版通常会更早，Nightly 则比正式版还要更前沿。
 :::
 
+### Safari 浏览器安装
+
+Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压加载，需通过 Xcode 安装。完整步骤请查看 [Safari 安装指南](./safari-install.md)。
+
+安装方式与 README 保持一致，主要分为两种：
+
+1. 从 GitHub Release 下载 `all-api-hub-<version>-safari-xcode-bundle.zip`，解压后直接打开其中的 Xcode 工程运行。
+2. 从源码构建：`pnpm install` -> `pnpm run build:safari` -> `xcrun safari-web-extension-converter .output/safari-mv2/` -> 用 Xcode 运行。
+
+::: warning Safari 下载注意事项
+请下载 `all-api-hub-<version>-safari-xcode-bundle.zip`，不要单独下载 `all-api-hub-<version>-safari.zip`。前者已经包含可直接打开的 Xcode 工程和运行所需文件，更适合普通安装流程。
+:::
+
 ## 2. 支持的站点
 
 支持基于以下项目部署的中转站：
@@ -168,6 +181,7 @@
 
 - [支持的导出工具与集成目标](./supported-export-tools.md)
 - [支持的站点与系统类型](./supported-sites.md)
+- [Safari 安装指南](./safari-install.md)
 - [Cloudflare 过盾助手](./cloudflare-helper.md)
 - [快速导出站点配置](./quick-export.md)
 - [自动刷新与实时数据](./auto-refresh.md)
