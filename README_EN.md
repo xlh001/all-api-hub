@@ -179,52 +179,66 @@ For the latest compatibility references, see:
 | Firefox Add-ons | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Mozilla Add-on Users](https://img.shields.io/amo/users/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox%20Users)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) |
 | GitHub Releases | [Browse Releases](https://github.com/qixing-jk/all-api-hub/releases) | [![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat)](https://github.com/qixing-jk/all-api-hub/releases/latest) | [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/qixing-jk/all-api-hub/total?label=Total%20Downloads)](https://github.com/qixing-jk/all-api-hub/releases) |
 
-### GitHub Release Download Options
-
-| Track | Download Link | Best For | Notes |
-|------|----------|----------|-------|
-| Stable | [Download latest stable](https://github.com/qixing-jk/all-api-hub/releases/latest) | Most users | Official release builds with clearer release notes and better day-to-day stability. |
-| Nightly pre-release | [Download Nightly](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) | Users who want early access to features, fixes, or want to help verify/report issues | Built automatically from the latest `main` commit. It updates fastest, but may include changes that have not been fully validated yet. Nightly assets usually include `nightly` in the filename. |
-
 > [!TIP]
-> GitHub Releases provides two download tracks:
-> - Stable: https://github.com/qixing-jk/all-api-hub/releases/latest
-> - Nightly pre-release: https://github.com/qixing-jk/all-api-hub/releases/tag/nightly
+> Store builds are the recommended default.
+> - Store builds are better for most users because installation is simpler and updates are usually automatic.
+> - Release builds require manual download, extraction, and manual reinstall or reload when a newer version comes out.
+> - Use a Release build only when you explicitly need earlier access to a new version, want to verify a fix manually, or need to load the extension package yourself.
 >
-> How to choose:
-> - Stable is the default for most users. It maps to official releases, has clearer release notes, and is the safer daily-use option.
-> - Nightly is built automatically from the latest `main` commit. Use it if you want the newest features or fixes first, or if you are helping verify/report issues.
-> - Store builds are usually delayed by 1-3 days because of review. GitHub stable usually arrives earlier, and Nightly is the earliest but also the riskiest.
->
-> The extension also works on mobile browsers, such as mobile `Edge`, `Firefox for Android`, and `Kiwi`.
-> See the [mobile usage FAQ](https://all-api-hub.qixing1217.top/en/faq.html#mobile-browser-support) for details.
+> Mobile note:
+> - In general, if a mobile browser supports extensions, the extension can usually run there, such as `Edge`, `Firefox for Android`, and `Kiwi`.
+> - See the [mobile usage FAQ](https://all-api-hub.qixing1217.top/en/faq.html#mobile-browser-support) for setup notes and limitations.
 
 <details>
-<summary>Manual installation (Load unpacked)</summary>
+<summary>Choosing a Release Track</summary>
 
-1. Download the latest release package.
-2. Open Chrome and navigate to `chrome://extensions/`.
-3. Enable "Developer mode".
-4. Click "Load unpacked".
-5. Select the unzipped extension folder.
+Choose the release track first, then download the matching asset:
+
+| Track | Best For | Download Link | Notes |
+|------|----------|----------|-------|
+| Stable | Everyday use, first-time installs, stability first | [Download latest stable](https://github.com/qixing-jk/all-api-hub/releases/latest) | Official release builds with clearer release notes and better day-to-day stability. |
+| Nightly pre-release | Early access to new features / fixes, or issue verification and feedback | [Download Nightly](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) | Built automatically from the latest `main` commit. It updates faster, but may include changes that have not been fully validated yet. Nightly assets usually include `nightly` in the filename. |
+
+> [!TIP]
+> - If you're unsure, start with Stable.
+> - Choose Nightly when you want to check whether a fix has landed, or when you're willing to help verify and report issues.
+> - Store builds usually lag by 1-3 days because of review. GitHub Stable often appears earlier, and Nightly is the fastest but also the riskiest.
 
 </details>
 
 <details>
-<summary>Safari Installation</summary>
+<summary>Manual install for Chromium browsers (desktop)</summary>
 
-Safari must be installed through Xcode rather than a normal unpacked flow. With a paid Apple Developer Program account, you can properly sign and distribute it through TestFlight / App Store; without one, it is typically limited to local development or personal use. For details, see [Safari Installation Guide](docs/docs/en/safari-install.md).
+Use this when the store version is unavailable, or when you want to load a GitHub Release asset manually.
 
-Installation options:
+1. Download and extract the `*-chrome.zip` package from GitHub Releases.
+2. Open the extensions page: use `chrome://extensions/` in Chrome or `edge://extensions/` in Edge.
+3. Enable "Developer mode".
+4. Click "Load unpacked".
+5. Select the extracted extension directory.
 
-1. Download the GitHub Release asset:
-   open the [latest release](https://github.com/qixing-jk/all-api-hub/releases/latest), download `all-api-hub-<version>-safari-xcode-bundle.zip`, extract it, and open the included Xcode project directly
-2. Build from source:
-   `pnpm install` -> `pnpm run build:safari` -> `xcrun safari-web-extension-converter .output/safari-mv2/` -> run with Xcode
+</details>
 
-This archive already includes the Xcode project and the Safari files needed to run it.
+<details>
+<summary>Safari installation (Xcode required)</summary>
 
-Download `all-api-hub-<version>-safari-xcode-bundle.zip`, not `all-api-hub-<version>-safari.zip`. After extraction, open the project directly.
+Safari cannot use the normal unpacked flow used by Chrome or Edge. It must be installed through Xcode. For step-by-step instructions, see [Safari Installation Guide](docs/docs/en/safari-install.md).
+
+Recommended path:
+
+1. Open the [latest release](https://github.com/qixing-jk/all-api-hub/releases/latest) and download `all-api-hub-<version>-safari-xcode-bundle.zip`.
+2. Extract it and open the included Xcode project directly.
+
+Advanced path:
+
+1. Build from source: `pnpm install` -> `pnpm run build:safari` -> `xcrun safari-web-extension-converter .output/safari-mv2/`.
+2. Open and run the generated Xcode project.
+
+> [!WARNING]
+> Download `all-api-hub-<version>-safari-xcode-bundle.zip`, not `all-api-hub-<version>-safari.zip`.
+> The bundle already includes the Xcode project and Safari files needed for the standard install flow.
+
+With a paid Apple Developer Program account, you can properly sign and distribute it through TestFlight / App Store. Without one, it is usually limited to local development or personal use.
 
 <details>
 <summary>Why this file?</summary>

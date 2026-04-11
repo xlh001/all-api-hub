@@ -1,6 +1,6 @@
 # 开始使用
 
-一个开源的浏览器插件，旨在优化管理 New API 等 AI 中转站账号的体验。用户可以轻松集中管理和查看账户余额、模型及密钥，并自动添加新站点。支持在移动设备上通过 Kiwi 或手机版 Firefox 浏览器使用。
+一个开源的浏览器插件，旨在优化管理 New API 等 AI 中转站账号的体验。用户可以轻松集中管理和查看账户余额、模型及密钥，并自动添加新站点。原则上只要浏览器支持扩展，通常就可以在移动端使用。
 
 ## 1. 下载
 
@@ -14,31 +14,52 @@
 | Firefox 商店 | [Firefox 商店](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Mozilla Add-on Users](https://img.shields.io/amo/users/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox%20Users)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) |
 | GitHub Releases | [查看全部版本](https://github.com/qixing-jk/all-api-hub/releases) | [![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat)](https://github.com/qixing-jk/all-api-hub/releases/latest) | [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/qixing-jk/all-api-hub/total?label=Total%20Downloads)](https://github.com/qixing-jk/all-api-hub/releases) |
 
-### GitHub Release 下载选择
+::: tip 商店版和 Release 版的区别
+- 默认推荐使用商店版。
+- 商店版更适合大多数用户，安装更省事，后续通常可自动更新。
+- Release 版需要手动下载、解压，并在更新后再次手动安装或重新加载。
+- 只有在你明确需要更早获取新版本、手动验证修复，或必须加载扩展包时，再考虑使用 Release 版。
 
-| 类型 | 下载链接 | 适合人群 | 说明 |
+移动端 / 手机端补充说明：
+- 原则上只要浏览器支持扩展，通常就可以使用，例如 `Edge`、`Firefox for Android`、`Kiwi` 等。
+- 更多说明可查看 [常见问题中的移动端使用](./faq.md#mobile-browser-support)。
+:::
+
+<details>
+<summary>Release 类型选择</summary>
+
+先选版本类型，再下载对应附件：
+
+| 类型 | 推荐场景 | 下载链接 | 特点 |
 |------|----------|----------|------|
-| 正式版 Stable | [下载最新正式版](https://github.com/qixing-jk/all-api-hub/releases/latest) | 大多数用户 | 对应正式发布版本，发布说明更完整，稳定性更高，适合日常使用。 |
-| Nightly 预发布 | [下载 Nightly](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) | 想提前体验新功能、验证修复或协助反馈问题的用户 | 基于 `main` 最新提交自动生成，更新速度最快，但可能包含尚未充分验证的改动；附件文件名通常会带 `nightly`。 |
+| 正式版 Stable | 日常使用、首次安装、优先稳定 | [下载最新正式版](https://github.com/qixing-jk/all-api-hub/releases/latest) | 对应正式发布版本，发布说明更完整，稳定性更高。 |
+| Nightly 预发布 | 想尽快获取新功能 / 修复，或协助验证问题 | [下载 Nightly](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) | 基于 `main` 最新提交自动生成，更新更快，但可能包含尚未充分验证的改动；附件文件名通常会带 `nightly`。 |
 
 ::: tip 如何选择
-- 如果你只是想安装一个更稳妥、适合长期使用的版本，优先选择正式版 Stable。
-- 如果你是为了第一时间获取最新修复、确认某个问题是否已解决，或者愿意帮助反馈问题，再选择 Nightly。
-- 商店版本在审核过程中通常会延迟 1-3 天；GitHub 正式版通常会更早，Nightly 则比正式版还要更前沿。
+- 不确定选哪个时，先选正式版 Stable。
+- 如果你是为了确认某个修复是否已经包含，或愿意帮助反馈问题，再选择 Nightly。
+- 商店版本通常会因审核延迟 1-3 天；GitHub 正式版一般更早，Nightly 最快，但风险也更高。
 :::
+
+</details>
 
 ### Safari 浏览器安装
 
-Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压加载，需通过 Xcode 安装。完整步骤请查看 [Safari 安装指南](./safari-install.md)。
+Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压加载，必须通过 Xcode 安装。完整步骤请查看 [Safari 安装指南](./safari-install.md)。
 
-安装方式与 README 保持一致，主要分为两种：
+推荐安装方式：
 
 1. 从 GitHub Release 下载 `all-api-hub-<version>-safari-xcode-bundle.zip`，解压后直接打开其中的 Xcode 工程运行。
-2. 从源码构建：`pnpm install` -> `pnpm run build:safari` -> `xcrun safari-web-extension-converter .output/safari-mv2/` -> 用 Xcode 运行。
+
+高级用法：
+
+1. 从源码构建：`pnpm install` -> `pnpm run build:safari` -> `xcrun safari-web-extension-converter .output/safari-mv2/` -> 用 Xcode 运行。
 
 ::: warning Safari 下载注意事项
 请下载 `all-api-hub-<version>-safari-xcode-bundle.zip`，不要单独下载 `all-api-hub-<version>-safari.zip`。前者已经包含可直接打开的 Xcode 工程和运行所需文件，更适合普通安装流程。
 :::
+
+如需正式签名并通过 TestFlight / App Store 分发，通常还需要 Apple Developer Program 账号；否则一般只适合本机调试或自用。
 
 ## 2. 支持的站点
 
