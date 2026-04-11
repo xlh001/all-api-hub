@@ -107,12 +107,14 @@ Node.js version from `.nvmrc` and pnpm 10+.
 - Prefer `~/` for `src/` imports and `~~/` for repo-root imports such as tests and tooling.
 - Tests typically use `*.test.ts` or `*.test.tsx` and are organized under `tests/`; do not add colocated `__tests__/` directories under `src/`.
 - Keep options-page entrypoints thin; shared logic should not depend on `src/entrypoints/options/pages/**`.
+- Keep `src/services/` free of React UI state wiring. Put React context/provider modules in `src/contexts/`, and place UI-facing hooks outside `services/` unless they are genuinely service-layer logic with no React state ownership.
 
 ## Implementation Expectations
 
 ### Implementation Strategy
 
 - Inspect nearby existing abstractions before planning or implementing new helpers, modules, or UI patterns; prefer reuse or small extensions over parallel implementations.
+- If a string participates in runtime branching, shared protocol values, reusable state mapping, or canonical external URLs, do not duplicate it as a bare literal across modules. Prefer a single runtime constant source, and derive types from that source when both runtime and type-level usage are needed.
 
 ### Progressive Refactoring
 
@@ -155,6 +157,8 @@ Node.js version from `.nvmrc` and pnpm 10+.
 
 - Start with the repo-defined `pre-commit`, affected-file, or `related` validation flow for the touched files, then broaden only if the change is cross-cutting.
 - For TS/TSX edits in this repo, treat `pnpm run validate:staged` / the Husky `pre-commit` path as the default affected validation flow and prefer `vitest related --run` style checks over a manually assembled test file list.
+- When adding or reshaping shared exports, provider/context modules, public test utilities, runtime constant sets, or other structural wiring, prefer `pnpm run validate:push` before handoff instead of manually assembling `compile` + `knip`.
+- Do not default to `pnpm run validate:push` for every small change; use it when the change is structural, cross-cutting, or likely to affect type/dependency/export analysis beyond the touched file.
 
 ### E2E and Broad Validation
 
