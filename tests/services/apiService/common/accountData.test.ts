@@ -152,9 +152,26 @@ const baseRequest = {
 
 describe("apiService common account-data helpers", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    mockFetchApi.mockReset()
+    mockFetchApiData.mockReset()
+    mockAggregateUsageData.mockReset()
+    mockExtractAmount.mockReset()
+    mockGetTodayTimestampRange.mockReset()
+    mockGetAccountById.mockReset()
+    mockGetAccountByBaseUrlAndUserId.mockReset()
+    mockInvalidateResolvedApiTokenKeyCache.mockReset()
+    mockNormalizeApiTokenKey.mockReset()
+    mockSyncResolvedApiTokenKeyCache.mockReset()
+    mockLoggerDebug.mockReset()
+    mockLoggerError.mockReset()
+    mockLoggerInfo.mockReset()
+    mockLoggerWarn.mockReset()
     vi.useRealTimers()
 
+    mockNormalizeApiTokenKey.mockImplementation((token: any) => ({
+      ...token,
+      normalized: true,
+    }))
     mockGetTodayTimestampRange.mockReturnValue({
       start: 111,
       end: 222,
@@ -504,10 +521,6 @@ describe("apiService common account-data helpers", () => {
     mockFetchApiData
       .mockRejectedValueOnce(new Error("stat unavailable"))
       .mockResolvedValueOnce({
-        items: [{ quota: 999 }],
-        total: 999,
-      })
-      .mockResolvedValueOnce({
         items: [{ quota: 10, prompt_tokens: 2, completion_tokens: 3 }],
         total: 99,
       })
@@ -555,7 +568,7 @@ describe("apiService common account-data helpers", () => {
       })
       .mockResolvedValueOnce({
         items: [{ quota: 25 }],
-        total: 3,
+        total: 1,
       })
 
     await expect(
