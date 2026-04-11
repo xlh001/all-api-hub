@@ -498,9 +498,20 @@ describe("useModelData all-accounts loading", () => {
     await waitFor(() => {
       expect(fetchModelPricing).toHaveBeenCalledTimes(1)
     })
-    await waitFor(() => {
-      expect(mockFetchDisplayAccountTokens).toHaveBeenCalledTimes(1)
-    })
+    await waitFor(
+      () => {
+        expect(result.current.loadErrorMessage).toBe(
+          "modelList:status.loadFailed",
+        )
+      },
+      { timeout: 3000 },
+    )
+    await waitFor(
+      () => {
+        expect(mockFetchDisplayAccountTokens).toHaveBeenCalledTimes(1)
+      },
+      { timeout: 3000 },
+    )
     await waitFor(() => {
       expect(result.current.accountFallback?.selectedTokenId).toBe(7)
     })
