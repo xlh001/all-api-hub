@@ -1,15 +1,22 @@
-import { render, renderHook, type RenderOptions } from "@testing-library/react"
+import {
+  render,
+  renderHook,
+  type RenderHookOptions,
+  type RenderOptions,
+} from "@testing-library/react"
 import type { ReactElement, ReactNode } from "react"
 import { I18nextProvider } from "react-i18next"
 
 import { ChannelDialogProvider } from "~/components/dialogs/ChannelDialog"
 import { DeviceProvider } from "~/contexts/DeviceContext"
+import { ReleaseUpdateStatusProvider } from "~/contexts/ReleaseUpdateStatusContext"
 import { ThemeProvider } from "~/contexts/ThemeContext"
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
 import { testI18n } from "~~/tests/test-utils/i18n"
 
 interface AppProvidersProps {
   children: ReactNode
+  withReleaseUpdateStatusProvider?: boolean
   withUserPreferencesProvider?: boolean
   withThemeProvider?: boolean
 }
@@ -20,6 +27,7 @@ function IdentityProvider({ children }: { children: ReactNode }) {
 
 const AppProviders = ({
   children,
+  withReleaseUpdateStatusProvider = true,
   withUserPreferencesProvider = true,
   withThemeProvider = true,
 }: AppProvidersProps) => {
@@ -29,14 +37,19 @@ const AppProviders = ({
   const ActiveThemeProvider = withThemeProvider
     ? ThemeProvider
     : IdentityProvider
+  const ActiveReleaseUpdateStatusProvider = withReleaseUpdateStatusProvider
+    ? ReleaseUpdateStatusProvider
+    : IdentityProvider
 
   return (
     <I18nextProvider i18n={testI18n}>
       <DeviceProvider>
         <PreferencesProvider>
-          <ChannelDialogProvider>
-            <ActiveThemeProvider>{children}</ActiveThemeProvider>
-          </ChannelDialogProvider>
+          <ActiveThemeProvider>
+            <ActiveReleaseUpdateStatusProvider>
+              <ChannelDialogProvider>{children}</ChannelDialogProvider>
+            </ActiveReleaseUpdateStatusProvider>
+          </ActiveThemeProvider>
         </PreferencesProvider>
       </DeviceProvider>
     </I18nextProvider>
@@ -44,50 +57,94 @@ const AppProviders = ({
 }
 
 interface AppRenderOptions extends Omit<RenderOptions, "wrapper"> {
+  withReleaseUpdateStatusProvider?: boolean
   withUserPreferencesProvider?: boolean
   withThemeProvider?: boolean
 }
 
-const customRender = (ui: ReactElement, options?: AppRenderOptions) => {
+interface AppRenderHookOptions<Props>
+  extends Omit<RenderHookOptions<Props>, "wrapper"> {
+  withReleaseUpdateStatusProvider?: boolean
+  withUserPreferencesProvider?: boolean
+  withThemeProvider?: boolean
+}
+
+type ProviderToggleOptions = Pick<
+  AppProvidersProps,
+  | "withReleaseUpdateStatusProvider"
+  | "withUserPreferencesProvider"
+  | "withThemeProvider"
+>
+
+function normalizeProviderOptions<T extends ProviderToggleOptions>(
+  options?: T,
+): {
+  providerOptions: Required<ProviderToggleOptions>
+  remainingOptions: Omit<T, keyof ProviderToggleOptions>
+} {
   const {
+    withReleaseUpdateStatusProvider = true,
     withUserPreferencesProvider = true,
     withThemeProvider = true,
-    ...renderOptions
-  } = options ?? {}
+    ...remainingOptions
+  } = (options ?? {}) as T & ProviderToggleOptions
+
+  return {
+    providerOptions: {
+      withReleaseUpdateStatusProvider,
+      withUserPreferencesProvider,
+      withThemeProvider,
+    },
+    remainingOptions: remainingOptions as Omit<T, keyof ProviderToggleOptions>,
+  }
+}
+
+const customRender = (ui: ReactElement, options?: AppRenderOptions) => {
+  const { providerOptions, remainingOptions } =
+    normalizeProviderOptions(options)
+  const {
+    withReleaseUpdateStatusProvider,
+    withUserPreferencesProvider,
+    withThemeProvider,
+  } = providerOptions
 
   return render(ui, {
     wrapper: ({ children }) => (
       <AppProviders
+        withReleaseUpdateStatusProvider={withReleaseUpdateStatusProvider}
         withUserPreferencesProvider={withUserPreferencesProvider}
         withThemeProvider={withThemeProvider}
       >
         {children}
       </AppProviders>
     ),
-    ...renderOptions,
+    ...remainingOptions,
   })
 }
 
-const customRenderHook: typeof renderHook = (callback, options) => {
+const customRenderHook = <Result, Props>(
+  callback: (initialProps: Props) => Result,
+  options?: AppRenderHookOptions<Props>,
+) => {
+  const { providerOptions, remainingOptions } =
+    normalizeProviderOptions(options)
   const {
-    withUserPreferencesProvider = true,
-    withThemeProvider = true,
-    ...renderHookOptions
-  } = (options ?? {}) as {
-    withUserPreferencesProvider?: boolean
-    withThemeProvider?: boolean
-  }
+    withReleaseUpdateStatusProvider,
+    withUserPreferencesProvider,
+    withThemeProvider,
+  } = providerOptions
 
-  return renderHook(callback, {
+  return renderHook<Result, Props>(callback, {
     wrapper: ({ children }) => (
       <AppProviders
+        withReleaseUpdateStatusProvider={withReleaseUpdateStatusProvider}
         withUserPreferencesProvider={withUserPreferencesProvider}
         withThemeProvider={withThemeProvider}
       >
         {children}
       </AppProviders>
     ),
-    ...renderHookOptions,
+    ...remainingOptions,
   })
 }
 
