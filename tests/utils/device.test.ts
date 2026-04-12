@@ -79,6 +79,48 @@ describe("device helpers", () => {
     expect(isDesktopDevice(options)).toBe(false)
   })
 
+  it("does not let touch heuristics override an explicit non-mobile Chromium hint", () => {
+    const options = {
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      userAgentDataMobile: false,
+      matchMedia: () => ({ matches: true }),
+      maxTouchPoints: 10,
+      screenWidth: 1220,
+      screenHeight: 686,
+    }
+
+    expect(getDeviceTypeInfo(options)).toMatchObject({
+      type: "desktop",
+      isMobile: false,
+      isTablet: false,
+      isDesktop: true,
+      isTouchDevice: true,
+    })
+    expect(isMobileDevice(options)).toBe(false)
+    expect(isTabletDevice(options)).toBe(false)
+    expect(isDesktopDevice(options)).toBe(true)
+  })
+
+  it("still preserves tablet classification when a non-mobile hint accompanies a tablet UA", () => {
+    const options = {
+      userAgent:
+        "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+      userAgentDataMobile: false,
+      matchMedia: () => ({ matches: true }),
+      maxTouchPoints: 5,
+      screenWidth: 1024,
+      screenHeight: 768,
+    }
+
+    expect(getDeviceTypeInfo(options)).toMatchObject({
+      type: "tablet",
+      isMobile: false,
+      isTablet: true,
+      isDesktop: false,
+      isTouchDevice: true,
+    })
+  })
+
   it("classifies touch-first tablets even when matchMedia throws", () => {
     const options = {
       userAgent: "Mozilla/5.0",

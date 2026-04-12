@@ -101,11 +101,30 @@ describe("browser", () => {
       })
     })
 
-    it("classifies touch-first compact runtimes as tablet", () => {
+    it("keeps touch-enabled Windows Chromium classified as desktop when userAgentData says non-mobile", () => {
+      expect(
+        getDeviceTypeInfo({
+          userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+          userAgentDataMobile: false,
+          maxTouchPoints: 10,
+          screenWidth: 1220,
+          screenHeight: 686,
+          matchMedia: () => ({ matches: true }),
+        }),
+      ).toMatchObject({
+        type: "desktop",
+        isMobile: false,
+        isTablet: false,
+        isDesktop: true,
+        isTouchDevice: true,
+      })
+    })
+
+    it("falls back to touch heuristics for tablet classification when userAgentData is unavailable", () => {
       expect(
         getDeviceTypeInfo({
           userAgent: "Mozilla/5.0 (X11; Linux x86_64)",
-          userAgentDataMobile: false,
+          userAgentDataMobile: null,
           maxTouchPoints: 5,
           screenWidth: 800,
           screenHeight: 1280,
@@ -117,6 +136,25 @@ describe("browser", () => {
         isTablet: true,
         isDesktop: false,
         isTouchDevice: true,
+      })
+    })
+
+    it("still allows an explicit non-mobile hint to classify known tablet UAs as tablet", () => {
+      expect(
+        getDeviceTypeInfo({
+          userAgent:
+            "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+          userAgentDataMobile: false,
+          maxTouchPoints: 5,
+          screenWidth: 1024,
+          screenHeight: 768,
+          matchMedia: () => ({ matches: true }),
+        }),
+      ).toMatchObject({
+        type: "tablet",
+        isMobile: false,
+        isTablet: true,
+        isDesktop: false,
       })
     })
 

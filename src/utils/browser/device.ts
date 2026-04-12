@@ -84,8 +84,10 @@ function getScreenDimension(
 /**
  * Detects coarse device form factors using user-agent client hints when
  * available, then pointer/touch/screen heuristics, and finally UA fallback.
- * The screen-size heuristic uses the short side so portrait and landscape
- * tablet layouts classify consistently.
+ * A definitive `userAgentData.mobile` hint is treated as authoritative for the
+ * mobile/non-mobile split so touch-enabled desktop Chromium runtimes do not get
+ * misclassified as phones. The screen-size heuristic uses the short side so
+ * portrait and landscape tablet layouts classify consistently.
  */
 export function getDeviceTypeInfo(
   options?: DeviceDetectionOptions,
@@ -125,11 +127,13 @@ export function getDeviceTypeInfo(
 
   let type: DeviceType = "desktop"
 
-  if (
-    userAgentDataMobile === true ||
-    isPhoneByUA ||
-    (isTouchDevice && shortSide <= 767)
-  ) {
+  if (userAgentDataMobile === true) {
+    type = "mobile"
+  } else if (userAgentDataMobile === false) {
+    if (isTabletByUA) {
+      type = "tablet"
+    }
+  } else if (isPhoneByUA || (isTouchDevice && shortSide <= 767)) {
     type = "mobile"
   } else if (isTabletByUA || (isTouchDevice && shortSide <= 1024)) {
     type = "tablet"
