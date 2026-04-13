@@ -1664,15 +1664,16 @@ describe("ManagedSiteChannels", () => {
       }),
     )
 
-    const deleteSelectedButton = screen.getByRole("button", {
-      name: "managedSiteChannels:toolbar.deleteSelected",
-    })
+    const getDeleteSelectedButton = () =>
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.deleteSelected",
+      })
 
     await waitFor(() => {
-      expect(deleteSelectedButton).toBeEnabled()
+      expect(getDeleteSelectedButton()).toBeEnabled()
     })
 
-    await user.click(deleteSelectedButton)
+    await user.click(getDeleteSelectedButton())
 
     const dialog = await screen.findByRole("dialog")
     expect(
@@ -1713,15 +1714,16 @@ describe("ManagedSiteChannels", () => {
       }),
     )
 
-    const deleteSelectedButton = screen.getByRole("button", {
-      name: "managedSiteChannels:toolbar.deleteSelected",
-    })
+    const getDeleteSelectedButton = () =>
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.deleteSelected",
+      })
 
     await waitFor(() => {
-      expect(deleteSelectedButton).toBeEnabled()
+      expect(getDeleteSelectedButton()).toBeEnabled()
     })
 
-    await user.click(deleteSelectedButton)
+    await user.click(getDeleteSelectedButton())
 
     const dialog = await screen.findByRole("dialog")
 
