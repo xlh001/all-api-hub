@@ -1,6 +1,15 @@
 import { useState } from "react"
 
+import {
+  MODEL_LIST_SORT_MODES,
+  type ModelListSortMode,
+} from "~/features/ModelList/sortModes"
 import type { ProviderType } from "~/services/models/utils/modelProviders"
+
+import {
+  MODEL_LIST_BILLING_MODES,
+  type ModelListBillingMode,
+} from "../billingModes"
 
 /**
  * Manages view state for the model list page.
@@ -14,7 +23,12 @@ export function useModelListState() {
   const [selectedProvider, setSelectedProvider] = useState<
     ProviderType | "all"
   >("all") // 当前选中的模型提供商
-  const [selectedGroup, setSelectedGroup] = useState<string>("default") // 当前选中的用户分组
+  const [sortMode, setSortMode] = useState<ModelListSortMode>(
+    MODEL_LIST_SORT_MODES.DEFAULT,
+  )
+  const [selectedBillingMode, setSelectedBillingMode] =
+    useState<ModelListBillingMode>(MODEL_LIST_BILLING_MODES.ALL)
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]) // 当前选中的候选分组；空数组表示所有分组
   const [allAccountsFilterAccountId, setAllAccountsFilterAccountId] = useState<
     string | null
   >(null) // 在"所有账号"模式下用于临时筛选特定账号
@@ -31,8 +45,12 @@ export function useModelListState() {
     setSearchTerm,
     selectedProvider,
     setSelectedProvider,
-    selectedGroup,
-    setSelectedGroup,
+    sortMode,
+    setSortMode,
+    selectedBillingMode,
+    setSelectedBillingMode,
+    selectedGroups,
+    setSelectedGroups,
     allAccountsFilterAccountId,
     setAllAccountsFilterAccountId,
     showRealPrice,

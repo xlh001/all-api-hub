@@ -3,11 +3,13 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import ModelList from "~/entrypoints/options/pages/ModelList"
+import { MODEL_LIST_BILLING_MODES } from "~/features/ModelList/billingModes"
 import {
   createAccountSource,
   createAllAccountsSource,
   createProfileSource,
 } from "~/features/ModelList/modelManagementSources"
+import { MODEL_LIST_SORT_MODES } from "~/features/ModelList/sortModes"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { AuthTypeEnum } from "~/types"
 import { render, screen } from "~~/tests/test-utils/render"
@@ -250,8 +252,12 @@ function buildState(overrides: Record<string, any> = {}) {
     setSearchTerm: vi.fn(),
     selectedProvider: "all",
     setSelectedProvider: vi.fn(),
-    selectedGroup: "default",
-    setSelectedGroup: vi.fn(),
+    sortMode: MODEL_LIST_SORT_MODES.DEFAULT,
+    setSortMode: vi.fn(),
+    selectedBillingMode: MODEL_LIST_BILLING_MODES.ALL,
+    setSelectedBillingMode: vi.fn(),
+    selectedGroups: [],
+    setSelectedGroups: vi.fn(),
 
     showRealPrice: false,
     setShowRealPrice: vi.fn(),
@@ -447,6 +453,45 @@ describe("ModelList page flows", () => {
     expect(
       await screen.findByText("Control Panel total:3 filtered:2"),
     ).toBeInTheDocument()
+  })
+
+  it("renders the page-level refresh action in the header and triggers reload", async () => {
+    const user = userEvent.setup()
+    const loadPricingData = vi.fn()
+
+    mockUseModelListData.mockReturnValue(
+      buildState({
+        loadPricingData,
+      }),
+    )
+
+    render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    await user.click(
+      await screen.findByRole("button", { name: "modelList:refreshData" }),
+    )
+
+    expect(loadPricingData).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps the page-level refresh action disabled while loading", async () => {
+    mockUseModelListData.mockReturnValue(
+      buildState({
+        isLoading: true,
+      }),
+    )
+
+    render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    expect(
+      await screen.findByRole("button", { name: /modelList:refreshData/i }),
+    ).toBeDisabled()
   })
 
   it("routes account verification and model-key actions through the page dialogs", async () => {

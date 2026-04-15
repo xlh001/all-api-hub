@@ -1,4 +1,5 @@
 import { Tab } from "@headlessui/react"
+import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import { Cpu } from "lucide-react"
 import { useCallback, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -6,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { VerifyApiDialog } from "~/components/dialogs/VerifyApiDialog"
 import { VerifyCliSupportDialog } from "~/components/dialogs/VerifyCliSupportDialog"
 import { PageHeader } from "~/components/PageHeader"
-import { Alert, EmptyState } from "~/components/ui"
+import { Alert, Button, EmptyState } from "~/components/ui"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { VerifyApiCredentialProfileDialog } from "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog"
 import { type ModelManagementItemSource } from "~/features/ModelList/modelManagementSources"
@@ -61,8 +62,12 @@ export default function ModelList(props: {
     setSearchTerm,
     selectedProvider,
     setSelectedProvider,
-    selectedGroup,
-    setSelectedGroup,
+    sortMode,
+    setSortMode,
+    selectedBillingMode,
+    setSelectedBillingMode,
+    selectedGroups,
+    setSelectedGroups,
 
     // Display options
     showRealPrice,
@@ -106,7 +111,7 @@ export default function ModelList(props: {
   )
 
   const handleGroupClick = (group: string) => {
-    setSelectedGroup(group)
+    setSelectedGroups([group])
   }
 
   const handleAccountSummaryClick = (accountId: string) => {
@@ -259,6 +264,19 @@ export default function ModelList(props: {
         icon={Cpu}
         title={t("title")}
         description={t("description")}
+        actions={
+          selectedSource && hasModelData ? (
+            <Button
+              onClick={loadPricingData}
+              variant="secondary"
+              leftIcon={!isLoading && <ArrowPathIcon className="h-4 w-4" />}
+              loading={isLoading}
+              disabled={isLoading}
+            >
+              {t("refreshData")}
+            </Button>
+          ) : undefined
+        }
       />
       <AccountSelector
         selectedSourceValue={selectedSourceValue}
@@ -388,12 +406,14 @@ export default function ModelList(props: {
             sourceCapabilities={sourceCapabilities}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            selectedGroup={selectedGroup}
-            setSelectedGroup={setSelectedGroup}
+            sortMode={sortMode}
+            setSortMode={setSortMode}
+            selectedBillingMode={selectedBillingMode}
+            setSelectedBillingMode={setSelectedBillingMode}
+            selectedGroups={selectedGroups}
+            setSelectedGroups={setSelectedGroups}
             availableGroups={availableGroups}
             pricingData={pricingData}
-            loadPricingData={loadPricingData}
-            isLoading={isLoading}
             showRealPrice={showRealPrice}
             setShowRealPrice={setShowRealPrice}
             showRatioColumn={showRatioColumn}
@@ -427,7 +447,7 @@ export default function ModelList(props: {
                   showRealPrice={showRealPrice}
                   showRatioColumn={showRatioColumn}
                   showEndpointTypes={showEndpointTypes}
-                  selectedGroup={selectedGroup}
+                  selectedGroups={selectedGroups}
                   handleGroupClick={handleGroupClick}
                   availableGroups={availableGroups}
                   displayCapabilities={sourceCapabilities}
@@ -449,7 +469,7 @@ export default function ModelList(props: {
                     showRealPrice={showRealPrice}
                     showRatioColumn={showRatioColumn}
                     showEndpointTypes={showEndpointTypes}
-                    selectedGroup={selectedGroup}
+                    selectedGroups={selectedGroups}
                     handleGroupClick={handleGroupClick}
                     availableGroups={availableGroups}
                     displayCapabilities={sourceCapabilities}

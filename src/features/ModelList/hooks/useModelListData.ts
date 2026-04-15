@@ -12,6 +12,7 @@ import {
   toProfileSourceValue,
   type ModelManagementSource,
 } from "../modelManagementSources"
+import { MODEL_LIST_SORT_MODES } from "../sortModes"
 import { useFilteredModels } from "./useFilteredModels"
 import { useModelData } from "./useModelData"
 import { useModelListState } from "./useModelListState"
@@ -35,9 +36,13 @@ export function useModelListData(routeParams?: Record<string, string>) {
   const {
     selectedSourceValue,
     setSelectedSourceValue,
-    selectedGroup,
+    selectedBillingMode,
+    selectedGroups,
     searchTerm,
     selectedProvider,
+    sortMode,
+    setSortMode,
+    showRealPrice,
     allAccountsFilterAccountId,
     setAllAccountsFilterAccountId,
   } = state
@@ -158,13 +163,37 @@ export function useModelListData(routeParams?: Record<string, string>) {
       : baseCapabilities
   }, [isFallbackCatalogActive, selectedSource?.capabilities])
 
+  useEffect(() => {
+    if (!sourceCapabilities.supportsPricing) {
+      if (sortMode !== MODEL_LIST_SORT_MODES.DEFAULT) {
+        setSortMode(MODEL_LIST_SORT_MODES.DEFAULT)
+      }
+      return
+    }
+
+    if (
+      sortMode === MODEL_LIST_SORT_MODES.MODEL_CHEAPEST_FIRST &&
+      selectedSource?.kind !== "all-accounts"
+    ) {
+      setSortMode(MODEL_LIST_SORT_MODES.DEFAULT)
+    }
+  }, [
+    selectedSource?.kind,
+    setSortMode,
+    sortMode,
+    sourceCapabilities.supportsPricing,
+  ])
+
   const filteredData = useFilteredModels({
     pricingData: modelData.pricingData,
     pricingContexts: modelData.pricingContexts,
     selectedSource,
-    selectedGroup,
+    selectedBillingMode,
+    selectedGroups,
     searchTerm,
     selectedProvider,
+    sortMode,
+    showRealPrice,
     accountFilterAccountId: allAccountsFilterAccountId,
   })
 

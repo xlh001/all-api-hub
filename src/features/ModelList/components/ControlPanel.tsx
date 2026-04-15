@@ -1,6 +1,5 @@
 import {
   AdjustmentsHorizontalIcon,
-  ArrowPathIcon,
   ClipboardDocumentListIcon,
   CpuChipIcon,
   MagnifyingGlassIcon,
@@ -13,28 +12,39 @@ import {
   Button,
   Card,
   CardContent,
+  CompactMultiSelect,
   FormField,
   Input,
   Label,
   SearchableSelect,
   Switch,
 } from "~/components/ui"
+import {
+  MODEL_LIST_BILLING_MODES,
+  type ModelListBillingMode,
+} from "~/features/ModelList/billingModes"
 import type {
   ModelManagementSource,
   ModelManagementSourceCapabilities,
 } from "~/features/ModelList/modelManagementSources"
+import {
+  MODEL_LIST_SORT_MODES,
+  type ModelListSortMode,
+} from "~/features/ModelList/sortModes"
 
 interface ControlPanelProps {
   selectedSource: ModelManagementSource | null
   sourceCapabilities: ModelManagementSourceCapabilities
   searchTerm: string
   setSearchTerm: (term: string) => void
-  selectedGroup: string
-  setSelectedGroup: (group: string) => void
+  sortMode: ModelListSortMode
+  setSortMode: (mode: ModelListSortMode) => void
+  selectedBillingMode: ModelListBillingMode
+  setSelectedBillingMode: (mode: ModelListBillingMode) => void
+  selectedGroups: string[]
+  setSelectedGroups: (groups: string[]) => void
   availableGroups: string[]
   pricingData: any
-  loadPricingData: () => void
-  isLoading: boolean
   showRealPrice: boolean
   setShowRealPrice: (show: boolean) => void
   showRatioColumn: boolean
@@ -46,18 +56,18 @@ interface ControlPanelProps {
 }
 
 /**
- * Top control strip for searching, filtering, and refreshing model pricing data.
+ * Top control strip for searching, filtering, and display options.
  * @param props Component props bundle.
  * @param props.selectedSource Active model-management source.
  * @param props.sourceCapabilities Capability flags for the active source.
  * @param props.searchTerm Current search keyword.
  * @param props.setSearchTerm Setter to update search keyword.
- * @param props.selectedGroup Active user group filter.
- * @param props.setSelectedGroup Setter for user group filter.
+ * @param props.selectedBillingMode Active billing-mode filter value.
+ * @param props.setSelectedBillingMode Setter for billing-mode filter.
+ * @param props.selectedGroups Active candidate group filter set.
+ * @param props.setSelectedGroups Setter for candidate group filter set.
  * @param props.availableGroups Available group options.
  * @param props.pricingData Pricing data used to show ratios.
- * @param props.loadPricingData Callback to refetch pricing data.
- * @param props.isLoading Loading state flag for refresh.
  * @param props.showRealPrice Whether to display real price values.
  * @param props.setShowRealPrice Setter for real price toggle.
  * @param props.showRatioColumn Whether to show ratio column.
@@ -73,12 +83,14 @@ export function ControlPanel({
   sourceCapabilities,
   searchTerm,
   setSearchTerm,
-  selectedGroup,
-  setSelectedGroup,
+  sortMode,
+  setSortMode,
+  selectedBillingMode,
+  setSelectedBillingMode,
+  selectedGroups,
+  setSelectedGroups,
   availableGroups,
   pricingData,
-  loadPricingData,
-  isLoading,
   showRealPrice,
   setShowRealPrice,
   showRatioColumn,
@@ -88,8 +100,49 @@ export function ControlPanel({
   totalModels,
   filteredModels,
 }: ControlPanelProps) {
-  const { t } = useTranslation("modelList")
+  const { t } = useTranslation(["modelList", "ui"])
   const isProfileSource = selectedSource?.kind === "profile"
+  const supportsPriceSorting = sourceCapabilities.supportsPricing
+  const groupOptions = availableGroups.map((group) => ({
+    value: group,
+    label: `${group} (${pricingData?.group_ratio?.[group] || 1}x)`,
+  }))
+  const sortOptions = [
+    {
+      value: MODEL_LIST_SORT_MODES.DEFAULT,
+      label: t("sortOptions.default"),
+    },
+    {
+      value: MODEL_LIST_SORT_MODES.PRICE_ASC,
+      label: t("sortOptions.priceAsc"),
+    },
+    {
+      value: MODEL_LIST_SORT_MODES.PRICE_DESC,
+      label: t("sortOptions.priceDesc"),
+    },
+    ...(selectedSource?.kind === "all-accounts"
+      ? [
+          {
+            value: MODEL_LIST_SORT_MODES.MODEL_CHEAPEST_FIRST,
+            label: t("sortOptions.modelCheapestFirst"),
+          },
+        ]
+      : []),
+  ]
+  const billingModeOptions = [
+    {
+      value: MODEL_LIST_BILLING_MODES.ALL,
+      label: t("allBillingModes"),
+    },
+    {
+      value: MODEL_LIST_BILLING_MODES.TOKEN_BASED,
+      label: t("ui:billing.tokenBased"),
+    },
+    {
+      value: MODEL_LIST_BILLING_MODES.PER_CALL,
+      label: t("ui:billing.perCall"),
+    },
+  ]
 
   const handleCopyModelNames = () => {
     if (filteredModels.length === 0) {
@@ -126,34 +179,45 @@ export function ControlPanel({
             />
           </FormField>
 
-          {sourceCapabilities.supportsGroupFiltering && (
-            <FormField label={t("userGroup")} className="w-full lg:w-64">
+          {supportsPriceSorting && (
+            <FormField label={t("sortBy")} className="w-full lg:w-72">
               <SearchableSelect
-                options={[
-                  { value: "all", label: t("allGroups") },
-                  ...availableGroups.map((group) => ({
-                    value: group,
-                    label: `${group} (${pricingData?.group_ratio?.[group] || 1}x)`,
-                  })),
-                ]}
-                value={selectedGroup ?? ""}
-                onChange={setSelectedGroup}
-                placeholder={t("allGroups")}
+                options={sortOptions}
+                value={sortMode}
+                onChange={(value) => setSortMode(value as ModelListSortMode)}
+                placeholder={t("sortBy")}
               />
             </FormField>
           )}
 
-          <div className="w-full lg:flex lg:w-auto lg:items-end">
-            <Button
-              onClick={loadPricingData}
-              disabled={isLoading}
-              loading={isLoading}
-              className="w-full lg:w-auto"
-              leftIcon={!isLoading && <ArrowPathIcon className="h-4 w-4" />}
-            >
-              {t("refreshData")}
-            </Button>
-          </div>
+          {sourceCapabilities.supportsPricing && (
+            <FormField label={t("billingMode")} className="w-full lg:w-64">
+              <SearchableSelect
+                options={billingModeOptions}
+                value={selectedBillingMode}
+                onChange={(value) =>
+                  setSelectedBillingMode(value as ModelListBillingMode)
+                }
+                placeholder={t("allBillingModes")}
+              />
+            </FormField>
+          )}
+
+          {sourceCapabilities.supportsGroupFiltering && (
+            <FormField label={t("userGroup")} className="w-full lg:w-64">
+              <CompactMultiSelect
+                options={groupOptions}
+                selected={selectedGroups}
+                onChange={setSelectedGroups}
+                displayMode="summary"
+                placeholder={t("allGroups")}
+                emptyMessage={t("allGroups")}
+              />
+              <p className="dark:text-dark-text-tertiary mt-1 text-xs text-gray-500">
+                {t("groupSelectionHint")}
+              </p>
+            </FormField>
+          )}
         </div>
 
         <div className="dark:border-dark-bg-tertiary flex flex-col gap-4 border-t border-gray-100 pt-4 lg:flex-row lg:items-center lg:justify-between">

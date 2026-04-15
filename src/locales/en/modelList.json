@@ -13,10 +13,12 @@
     "verifyCliSupport": "Verify CLI Support"
   },
   "allAccounts": "All accounts",
+  "allBillingModes": "All Billing Modes",
   "allGroups": "All Groups",
   "allProviders": "All Providers",
   "available": "Available",
   "availableGroups": "Available Groups",
+  "billingMode": "Billing Mode",
   "clickSwitchGroup": "Click to switch to {{group}} group",
   "collapseDetails": "Collapse details",
   "copyAllNames": "Copy All Model Names",
@@ -30,6 +32,7 @@
     "description": "This catalog is currently loaded through an account-key fallback, so it only supports model discovery and verification. Refresh Data will retry the direct account route.",
     "title": "Account-key fallback catalog"
   },
+  "groupSelectionHint": "Leave this empty to compare across all groups; price sorting uses the best price within the selected group set",
   "input": "Input:",
   "input1MTokens": "Input (1M tokens)",
   "keyDialog": {
@@ -73,6 +76,9 @@
   "noMatchingModels": "No matching models found",
   "noSourcesDescription": "Add a site account or API credential profile before viewing the model list.",
   "noSourcesTitle": "No model sources yet",
+  "optimalGroup": "Best Group: {{group}}",
+  "optimalGroupLowestPriceWithinBillingMode": "Best group within the selected groups: {{group}}. This row is also the lowest price within the same billing mode.",
+  "optimalGroupWithinSelectedGroups": "Best group within the selected groups: {{group}}",
   "output": "Output:",
   "output1MTokens": "Output (1M tokens)",
   "perCall": "Per call:",
@@ -98,6 +104,13 @@
   "showing_one": "Showing {{count}} model",
   "showing_other": "Showing {{count}} models",
   "showRatio": "Show Ratio",
+  "sortBy": "Sort By",
+  "sortOptions": {
+    "default": "Default Order",
+    "modelCheapestFirst": "Cheapest First Per Model",
+    "priceAsc": "Price: Low to High",
+    "priceDesc": "Price: High to Low"
+  },
   "sourceLabels": {
     "profileBadge": "Profile: {{name}} · {{host}}",
     "profileOption": "API Credential: {{name}} · {{host}}"

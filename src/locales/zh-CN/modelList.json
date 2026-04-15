@@ -12,10 +12,12 @@
     "verifyCliSupport": "验证 CLI 兼容性"
   },
   "allAccounts": "所有账号",
+  "allBillingModes": "所有计费方式",
   "allGroups": "所有分组",
   "allProviders": "所有厂商",
   "available": "可用",
   "availableGroups": "可用分组",
+  "billingMode": "计费方式",
   "clickSwitchGroup": "点击切换到 {{group}} 分组",
   "collapseDetails": "收起详细信息",
   "copyAllNames": "复制所有模型名称",
@@ -29,6 +31,7 @@
     "description": "当前模型目录通过账号密钥回退加载，仅支持模型发现与验证。点击刷新数据会重新尝试账号接口。",
     "title": "账号密钥回退目录"
   },
+  "groupSelectionHint": "留空表示所有分组；价格排序会在已选分组范围内自动取最优价",
   "input": "输入:",
   "input1MTokens": "输入(1M tokens)",
   "keyDialog": {
@@ -72,6 +75,9 @@
   "noMatchingModels": "没有找到匹配的模型",
   "noSourcesDescription": "请先添加站点账号或 API 凭据，然后查看模型列表。",
   "noSourcesTitle": "暂无可用数据源",
+  "optimalGroup": "最优组: {{group}}",
+  "optimalGroupLowestPriceWithinBillingMode": "已在当前筛选分组范围内自动选择最优组: {{group}}；且在相同计费模式下价格最低",
+  "optimalGroupWithinSelectedGroups": "已在当前筛选分组范围内自动选择最优组: {{group}}",
   "output": "输出:",
   "output1MTokens": "输出(1M tokens)",
   "perCall": "每次调用:",
@@ -96,6 +102,13 @@
   "selectSourceToContinue": "请先在上方选择一个数据源，然后查看模型列表。",
   "showing": "显示 {{count}} 个模型",
   "showRatio": "显示倍率",
+  "sortBy": "排序方式",
+  "sortOptions": {
+    "default": "默认顺序",
+    "modelCheapestFirst": "同模型最低价优先",
+    "priceAsc": "价格从低到高",
+    "priceDesc": "价格从高到低"
+  },
   "sourceLabels": {
     "profileBadge": "凭据：{{name}} · {{host}}",
     "profileOption": "API 凭据：{{name}} · {{host}}"
