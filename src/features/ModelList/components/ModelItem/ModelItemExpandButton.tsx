@@ -22,7 +22,6 @@ export const ModelItemExpandButton: React.FC<ModelItemExpandButtonProps> = ({
       title={isExpanded ? t("collapseDetails") : t("expandDetails")}
       aria-label={isExpanded ? t("collapseDetails") : t("expandDetails")}
       aria-expanded={isExpanded}
-      className="ml-4"
     >
       {isExpanded ? (
         <ChevronUpIcon className="h-4 w-4" />

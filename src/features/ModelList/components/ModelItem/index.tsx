@@ -95,6 +95,10 @@ export default function ModelItem(props: ModelItemProps) {
           host: profileHost,
         })
       : source.account.name
+  const handleFilterAccount =
+    source.kind === "account" && onFilterAccount
+      ? () => onFilterAccount(source.account.id)
+      : undefined
 
   // Card rendering follows the active display capabilities so fallback catalogs
   // can keep account ownership while reusing the catalog-only visual treatment.
@@ -110,6 +114,25 @@ export default function ModelItem(props: ModelItemProps) {
       ? availableGroups.some((group) => model.enable_groups.includes(group)) // 所有分组模式：任何一个用户分组可用即可
       : model.enable_groups.includes(userGroup) // 特定分组模式：必须该分组可用
     : true
+  const sourceBadge = sourceLabel ? (
+    handleFilterAccount ? (
+      <Badge asChild variant="outline" size="default" className="max-w-full">
+        <button
+          type="button"
+          onClick={handleFilterAccount}
+          title={sourceLabel}
+          aria-label={sourceLabel}
+          className="max-w-full cursor-pointer hover:border-blue-300 hover:text-blue-700 dark:hover:border-blue-400 dark:hover:text-blue-300"
+        >
+          <span className="truncate">{sourceLabel}</span>
+        </button>
+      </Badge>
+    ) : (
+      <Badge variant="outline" size="default" className="max-w-full">
+        <span className="truncate">{sourceLabel}</span>
+      </Badge>
+    )
+  ) : null
 
   return (
     <Card
@@ -122,17 +145,11 @@ export default function ModelItem(props: ModelItemProps) {
     >
       {/* 主要信息行 */}
       <CardContent padding="default">
-        <div className="flex min-w-0 items-start gap-2">
+        <div className="flex min-w-0 flex-wrap items-start gap-2">
           <ModelItemHeader
             model={model}
             isAvailableForUser={isAvailableForUser}
             handleCopyModelName={handleCopyModelName}
-            sourceLabel={sourceLabel}
-            onFilterAccount={
-              source.kind === "account" && onFilterAccount
-                ? () => onFilterAccount(source.account.id)
-                : undefined
-            }
             showPricingMetadata={showPricing}
             showAvailabilityBadge={showGroupDetails}
             verificationSummary={verificationSummary}
@@ -160,11 +177,16 @@ export default function ModelItem(props: ModelItemProps) {
                 : undefined
             }
           />
-          {canExpand && (
-            <ModelItemExpandButton
-              isExpanded={isExpanded}
-              onToggleExpand={() => setIsExpanded(!isExpanded)}
-            />
+          {(sourceBadge || canExpand) && (
+            <div className="ml-auto flex max-w-full min-w-0 items-center gap-2 self-start">
+              {sourceBadge}
+              {canExpand && (
+                <ModelItemExpandButton
+                  isExpanded={isExpanded}
+                  onToggleExpand={() => setIsExpanded(!isExpanded)}
+                />
+              )}
+            </div>
           )}
         </div>
         <ModelItemDescription
