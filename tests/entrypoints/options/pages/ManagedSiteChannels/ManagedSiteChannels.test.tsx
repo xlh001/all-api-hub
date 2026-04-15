@@ -136,9 +136,6 @@ const openRowActionsMenu = async (row: HTMLElement) => {
 
   const openAttempts = [
     async () => {
-      await user.click(trigger)
-    },
-    async () => {
       fireEvent.pointerDown(trigger, {
         button: 0,
         buttons: 1,
@@ -156,6 +153,9 @@ const openRowActionsMenu = async (row: HTMLElement) => {
     async () => {
       fireEvent.mouseDown(trigger, { button: 0 })
       fireEvent.mouseUp(trigger, { button: 0 })
+    },
+    async () => {
+      await user.click(trigger)
     },
     async () => {
       fireEvent.click(trigger)
