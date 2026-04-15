@@ -242,6 +242,17 @@ export default function ModelList(props: {
     setIsSourceSelectorOpen(true)
   }, [])
 
+  const totalModels = useMemo(() => {
+    if (selectedSource?.kind === "all-accounts") {
+      return pricingContexts.reduce((count, context) => {
+        const models = context.pricing?.data
+        return count + (Array.isArray(models) ? models.length : 0)
+      }, 0)
+    }
+
+    return Array.isArray(pricingData?.data) ? pricingData.data.length : 0
+  }, [pricingContexts, pricingData, selectedSource?.kind])
+
   return (
     <div className="p-6">
       <PageHeader
@@ -389,7 +400,7 @@ export default function ModelList(props: {
             setShowRatioColumn={setShowRatioColumn}
             showEndpointTypes={showEndpointTypes}
             setShowEndpointTypes={setShowEndpointTypes}
-            totalModels={pricingData?.data?.length || 0}
+            totalModels={totalModels}
             filteredModels={filteredModels}
           />
 

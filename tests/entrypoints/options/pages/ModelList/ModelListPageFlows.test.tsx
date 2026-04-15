@@ -404,6 +404,51 @@ describe("ModelList page flows", () => {
     expect(mockSetAllAccountsFilterAccountId).toHaveBeenCalledWith(null)
   })
 
+  it("aggregates total model count from all account pricing contexts", async () => {
+    mockUseModelListData.mockReturnValue(
+      buildState({
+        selectedSource: ALL_ACCOUNTS_SOURCE,
+        selectedSourceValue: ALL_ACCOUNTS_SOURCE.value,
+        currentAccount: null,
+        sourceCapabilities: ALL_ACCOUNTS_SOURCE.capabilities,
+        pricingData: null,
+        pricingContexts: [
+          {
+            account: ACCOUNT,
+            pricing: {
+              data: [{ model_name: "gpt-4" }, { model_name: "gpt-4o-mini" }],
+            },
+          },
+          {
+            account: SECOND_ACCOUNT,
+            pricing: {
+              data: [{ model_name: "claude-3-5-sonnet" }],
+            },
+          },
+        ],
+        filteredModels: [
+          {
+            model: { model_name: "gpt-4" },
+            source: createAccountSource(ACCOUNT),
+          },
+          {
+            model: { model_name: "gpt-4o-mini" },
+            source: createAccountSource(ACCOUNT),
+          },
+        ],
+      }),
+    )
+
+    render(<ModelList />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    expect(
+      await screen.findByText("Control Panel total:3 filtered:2"),
+    ).toBeInTheDocument()
+  })
+
   it("routes account verification and model-key actions through the page dialogs", async () => {
     const user = userEvent.setup()
     mockUseModelListData.mockReturnValue(buildState())
