@@ -132,6 +132,7 @@ describe("useFilteredModels", () => {
     await waitFor(() => expect(result.current).not.toBeNull())
 
     expect(result.current.filteredModels).toHaveLength(2)
+    expect(result.current.allProvidersFilteredCount).toBe(2)
     expect(result.current.getProviderFilteredCount("OpenAI")).toBe(1)
     expect(result.current.getProviderFilteredCount("Claude")).toBe(1)
     expect(result.current.getProviderFilteredCount("Gemini")).toBe(0)

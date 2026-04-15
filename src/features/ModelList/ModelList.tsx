@@ -83,6 +83,7 @@ export default function ModelList(props: {
 
     filteredModels,
     baseFilteredModels,
+    allProvidersFilteredCount,
     availableGroups,
 
     // Operations
@@ -396,7 +397,7 @@ export default function ModelList(props: {
             providers={sortedProviders}
             selectedProvider={selectedProvider}
             setSelectedProvider={setSelectedProvider}
-            baseFilteredModelsCount={baseFilteredModels.length}
+            allProvidersFilteredCount={allProvidersFilteredCount}
             getProviderFilteredCount={getProviderFilteredCount}
           >
             <Tab.Panels>

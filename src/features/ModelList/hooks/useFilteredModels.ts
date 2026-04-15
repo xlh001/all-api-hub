@@ -241,6 +241,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
   return {
     filteredModels,
     baseFilteredModels,
+    allProvidersFilteredCount: accountFilteredBaseModels.length,
     getProviderFilteredCount,
     availableGroups,
   }

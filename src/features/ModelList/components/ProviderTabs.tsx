@@ -16,7 +16,7 @@ interface ProviderTabsProps {
   providers: ProviderType[]
   selectedProvider: ProviderType | "all"
   setSelectedProvider: (provider: ProviderType | "all") => void
-  baseFilteredModelsCount: number
+  allProvidersFilteredCount: number
   getProviderFilteredCount: (provider: ProviderType) => number
   children: ReactNode
 }
@@ -24,7 +24,7 @@ interface ProviderTabsProps {
 interface ProviderTabListProps {
   providers: ProviderType[]
   selectedIndex: number
-  baseFilteredModelsCount: number
+  allProvidersFilteredCount: number
   getProviderFilteredCount: (provider: ProviderType) => number
 }
 
@@ -34,7 +34,7 @@ interface ProviderTabListProps {
 function ProviderTabList({
   providers,
   selectedIndex,
-  baseFilteredModelsCount,
+  allProvidersFilteredCount,
   getProviderFilteredCount,
 }: ProviderTabListProps) {
   const { t } = useTranslation("modelList")
@@ -86,7 +86,7 @@ function ProviderTabList({
           <div className="flex items-center justify-center space-x-2">
             <CpuChipIcon className="dark:text-dark-text-secondary h-4 w-4 text-gray-600" />
             <span>
-              {t("allProviders")} ({baseFilteredModelsCount})
+              {t("allProviders")} ({allProvidersFilteredCount})
             </span>
           </div>
         </Tab>
@@ -138,7 +138,7 @@ function ProviderTabList({
  * @param props.providers Provider list with available models.
  * @param props.selectedProvider Currently selected provider or "all".
  * @param props.setSelectedProvider Setter to change provider filter.
- * @param props.baseFilteredModelsCount Count of models before provider filter.
+ * @param props.allProvidersFilteredCount Count of models after non-provider filters.
  * @param props.getProviderFilteredCount Helper to get count per provider.
  * @param props.children Tab panels content to render.
  * @returns Headless UI Tab group with provider tabs.
@@ -147,7 +147,7 @@ export function ProviderTabs({
   providers,
   selectedProvider,
   setSelectedProvider,
-  baseFilteredModelsCount,
+  allProvidersFilteredCount,
   getProviderFilteredCount,
   children,
 }: ProviderTabsProps) {
@@ -175,7 +175,7 @@ export function ProviderTabs({
       <ProviderTabList
         providers={filteredProviders}
         selectedIndex={selectedIndex}
-        baseFilteredModelsCount={baseFilteredModelsCount}
+        allProvidersFilteredCount={allProvidersFilteredCount}
         getProviderFilteredCount={getProviderFilteredCount}
       />
       {children}

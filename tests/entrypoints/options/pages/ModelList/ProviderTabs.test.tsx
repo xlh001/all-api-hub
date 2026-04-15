@@ -18,12 +18,12 @@ const DEFAULT_PROVIDER_COUNTS = {
 const renderProviderTabs = ({
   providerCounts = DEFAULT_PROVIDER_COUNTS,
   selectedProvider = "all",
-  baseFilteredModelsCount = BASE_FILTERED_MODELS_COUNT,
+  allProvidersFilteredCount = BASE_FILTERED_MODELS_COUNT,
   setSelectedProvider = vi.fn(),
 }: {
   providerCounts?: Record<string, number>
   selectedProvider?: "all" | "OpenAI" | "Claude" | "Gemini"
-  baseFilteredModelsCount?: number
+  allProvidersFilteredCount?: number
   setSelectedProvider?: ReturnType<typeof vi.fn>
 } = {}) => {
   render(
@@ -31,7 +31,7 @@ const renderProviderTabs = ({
       providers={createProviders()}
       selectedProvider={selectedProvider}
       setSelectedProvider={setSelectedProvider}
-      baseFilteredModelsCount={baseFilteredModelsCount}
+      allProvidersFilteredCount={allProvidersFilteredCount}
       getProviderFilteredCount={(provider) => providerCounts[provider] ?? 0}
     >
       <Tab.Panels>
@@ -135,7 +135,7 @@ describe("ProviderTabs selection", () => {
   it("filters out zero-count providers and falls back to the all tab when the selected provider is unavailable", async () => {
     renderProviderTabs({
       selectedProvider: "Claude",
-      baseFilteredModelsCount: 3,
+      allProvidersFilteredCount: 3,
       providerCounts: {
         OpenAI: 2,
         Claude: 0,
