@@ -33,7 +33,13 @@ import {
   RefreshCcw,
   Trash2,
 } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -267,6 +273,13 @@ export default function ManagedSiteChannels({
       setIsLoading(false)
     }
   }, [t])
+
+  useLayoutEffect(() => {
+    setChannels([])
+    setError(null)
+    setConfigMissing(false)
+    setConfigMissingMessage(null)
+  }, [managedSiteType])
 
   useEffect(() => {
     void refreshChannels()
@@ -939,6 +952,9 @@ export default function ManagedSiteChannels({
     statusColumn?.setFilterValue(next.length ? next : undefined)
   }
 
+  const isInitialLoading =
+    isLoading && channels.length === 0 && !error && !configMissing
+
   return (
     <div className="space-y-6 p-6">
       <PageHeader
@@ -957,6 +973,8 @@ export default function ManagedSiteChannels({
             <Button
               variant="outline"
               onClick={() => void refreshChannels()}
+              disabled={isLoading}
+              loading={isLoading && channels.length > 0}
               leftIcon={<RefreshCcw className="h-4 w-4" />}
             >
               {t("toolbar.refresh")}
@@ -1212,7 +1230,7 @@ export default function ManagedSiteChannels({
               ))}
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isInitialLoading ? (
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
