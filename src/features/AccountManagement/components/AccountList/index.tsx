@@ -42,6 +42,7 @@ import {
   useAccountSearch,
   type SearchResultWithHighlight,
 } from "~/features/AccountManagement/hooks/useAccountSearch"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import { getHealthStatusDisplay } from "~/features/AccountManagement/utils/healthStatusUtils"
 import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
 import { useIsDesktop, useIsSmallScreen } from "~/hooks/useMediaQuery"
@@ -561,7 +562,10 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
 
   if (!hasAccounts) {
     return (
-      <div className="space-y-2" data-testid="account-list-view">
+      <div
+        className="space-y-2"
+        data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListView}
+      >
         <NewcomerSupportCard />
         <EmptyState
           icon={<InboxIcon className="h-12 w-12" />}
@@ -621,7 +625,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     <Card
       padding="none"
       className="flex flex-col overflow-hidden"
-      data-testid="account-list-view"
+      data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListView}
     >
       <CardContent padding={"none"} spacing={"none"}>
         {/* Search + Filters */}

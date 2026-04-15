@@ -1,5 +1,9 @@
 import { defineConfig } from "@playwright/test"
 
+import { loadPlaywrightEnvFiles } from "./e2e/utils/playwrightEnv"
+
+loadPlaywrightEnvFiles()
+
 const isCI = !!process.env.CI
 
 export default defineConfig({
