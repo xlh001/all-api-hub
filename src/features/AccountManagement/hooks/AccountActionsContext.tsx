@@ -34,6 +34,13 @@ interface AccountActionsContextType {
     account: DisplaySiteData,
     disabled: boolean,
   ) => Promise<void>
+  handleSetAccountsDisabled: (
+    accounts: DisplaySiteData[],
+    disabled: boolean,
+  ) => Promise<{ updatedCount: number; updatedIds: string[] }>
+  handleDeleteAccounts: (
+    accounts: DisplaySiteData[],
+  ) => Promise<{ deletedCount: number; deletedIds: string[] }>
   handleDeleteAccount: (account: DisplaySiteData) => void
   handleCopyUrl: (account: DisplaySiteData) => void
   handleMarkCustomCheckInAsCheckedIn: (
@@ -137,6 +144,82 @@ export const AccountActionsProvider = ({
               accountName: account.name,
             }),
       )
+    },
+    [loadAccountData],
+  )
+
+  const handleSetAccountsDisabled = useCallback(
+    async (accounts: DisplaySiteData[], disabled: boolean) => {
+      const uniqueAccounts = Array.from(
+        new Map(accounts.map((account) => [account.id, account])).values(),
+      )
+
+      const accountIds = uniqueAccounts
+        .filter((account) => account.disabled !== disabled)
+        .map((account) => account.id)
+
+      if (accountIds.length === 0) {
+        return { updatedCount: 0, updatedIds: [] }
+      }
+
+      const result = await accountStorage.setAccountsDisabled(
+        accountIds,
+        disabled,
+      )
+      const { updatedCount } = result
+
+      if (updatedCount === 0) {
+        toast.error(t("messages:toast.error.operationFailedGeneric"))
+        return result
+      }
+
+      await loadAccountData()
+
+      toast.success(
+        disabled
+          ? t("messages:toast.success.accountsDisabled", {
+              count: updatedCount,
+            })
+          : t("messages:toast.success.accountsEnabled", {
+              count: updatedCount,
+            }),
+      )
+
+      return result
+    },
+    [loadAccountData],
+  )
+
+  const handleDeleteAccounts = useCallback(
+    async (accounts: DisplaySiteData[]) => {
+      const uniqueAccounts = Array.from(
+        new Map(accounts.map((account) => [account.id, account])).values(),
+      )
+      const accountIds = uniqueAccounts
+        .map((account) => account.id)
+        .filter(Boolean)
+
+      if (accountIds.length === 0) {
+        return { deletedCount: 0, deletedIds: [] }
+      }
+
+      const result = await toast.promise(
+        accountStorage.deleteAccounts(accountIds),
+        {
+          loading: t("account:bulk.deleting", { count: accountIds.length }),
+          success: (deleteResult) =>
+            t("account:bulk.deleteSuccess", {
+              count: deleteResult.deletedCount,
+            }),
+          error: (error) =>
+            t("ui:dialog.delete.deleteFailed", {
+              error: getErrorMessage(error),
+            }),
+        },
+      )
+
+      await loadAccountData()
+      return result
     },
     [loadAccountData],
   )
@@ -248,6 +331,8 @@ export const AccountActionsProvider = ({
       refreshingAccountId,
       handleRefreshAccount,
       handleSetAccountDisabled,
+      handleSetAccountsDisabled,
+      handleDeleteAccounts,
       handleDeleteAccount,
       handleCopyUrl,
       handleMarkCustomCheckInAsCheckedIn,
@@ -257,6 +342,8 @@ export const AccountActionsProvider = ({
       refreshingAccountId,
       handleRefreshAccount,
       handleSetAccountDisabled,
+      handleSetAccountsDisabled,
+      handleDeleteAccounts,
       handleDeleteAccount,
       handleCopyUrl,
       handleMarkCustomCheckInAsCheckedIn,
@@ -278,6 +365,8 @@ export const useAccountActionsContext = () => {
     context === undefined ||
     !context.handleRefreshAccount ||
     !context.handleSetAccountDisabled ||
+    !context.handleSetAccountsDisabled ||
+    !context.handleDeleteAccounts ||
     !context.handleDeleteAccount ||
     !context.handleCopyUrl ||
     !context.handleMarkCustomCheckInAsCheckedIn

@@ -15,8 +15,10 @@ const {
   mockLoadAccountData,
   mockSendRuntimeMessage,
   mockToast,
+  mockDeleteAccounts,
   mockRefreshAccount,
   mockSetAccountDisabled,
+  mockSetAccountsDisabled,
   mockMarkAccountAsCustomCheckedIn,
   mockLoggerError,
 } = vi.hoisted(() => ({
@@ -27,8 +29,10 @@ const {
     error: vi.fn(),
     promise: vi.fn(),
   },
+  mockDeleteAccounts: vi.fn(),
   mockRefreshAccount: vi.fn(),
   mockSetAccountDisabled: vi.fn(),
+  mockSetAccountsDisabled: vi.fn(),
   mockMarkAccountAsCustomCheckedIn: vi.fn(),
   mockLoggerError: vi.fn(),
 }))
@@ -39,8 +43,10 @@ vi.mock("react-hot-toast", () => ({
 
 vi.mock("~/services/accounts/accountStorage", () => ({
   accountStorage: {
+    deleteAccounts: mockDeleteAccounts,
     refreshAccount: mockRefreshAccount,
     setAccountDisabled: mockSetAccountDisabled,
+    setAccountsDisabled: mockSetAccountsDisabled,
     markAccountAsCustomCheckedIn: mockMarkAccountAsCustomCheckedIn,
   },
 }))
@@ -388,6 +394,126 @@ describe("AccountActionsContext", () => {
     expect(mockToast.error).toHaveBeenCalledWith(
       "messages:toast.error.operationFailed",
     )
+  })
+
+  it("bulk-disables only accounts that still need updates and reports the updated count", async () => {
+    const { getContext } = await renderContext()
+
+    mockSetAccountsDisabled.mockResolvedValueOnce({
+      updatedCount: 2,
+      updatedIds: ["bulk-a", "bulk-c"],
+    })
+
+    await act(async () => {
+      await getContext().handleSetAccountsDisabled(
+        [
+          createAccount({ id: "bulk-a", disabled: false }),
+          createAccount({ id: "bulk-b", disabled: true }),
+          createAccount({ id: "bulk-c", disabled: false }),
+          createAccount({ id: "bulk-a", disabled: false }),
+        ],
+        true,
+      )
+    })
+
+    expect(mockSetAccountsDisabled).toHaveBeenCalledWith(
+      ["bulk-a", "bulk-c"],
+      true,
+    )
+    expect(mockLoadAccountData).toHaveBeenCalledTimes(1)
+    expect(mockToast.success).toHaveBeenCalledWith(
+      "messages:toast.success.accountsDisabled",
+    )
+  })
+
+  it("bulk-re-enables only accounts that still need updates and reports the updated count", async () => {
+    const { getContext } = await renderContext()
+
+    mockSetAccountsDisabled.mockResolvedValueOnce({
+      updatedCount: 2,
+      updatedIds: ["enable-a", "enable-c"],
+    })
+
+    await act(async () => {
+      await getContext().handleSetAccountsDisabled(
+        [
+          createAccount({ id: "enable-a", disabled: true }),
+          createAccount({ id: "enable-b", disabled: false }),
+          createAccount({ id: "enable-c", disabled: true }),
+          createAccount({ id: "enable-a", disabled: true }),
+        ],
+        false,
+      )
+    })
+
+    expect(mockSetAccountsDisabled).toHaveBeenCalledWith(
+      ["enable-a", "enable-c"],
+      false,
+    )
+    expect(mockLoadAccountData).toHaveBeenCalledTimes(1)
+    expect(mockToast.success).toHaveBeenCalledWith(
+      "messages:toast.success.accountsEnabled",
+    )
+  })
+
+  it("shows a generic failure toast when bulk disable returns no updates", async () => {
+    const { getContext } = await renderContext()
+
+    mockSetAccountsDisabled.mockResolvedValueOnce({
+      updatedCount: 0,
+      updatedIds: [],
+    })
+
+    await act(async () => {
+      await getContext().handleSetAccountsDisabled(
+        [createAccount({ id: "bulk-noop", disabled: false })],
+        true,
+      )
+    })
+
+    expect(mockLoadAccountData).not.toHaveBeenCalled()
+    expect(mockToast.error).toHaveBeenCalledWith(
+      "messages:toast.error.operationFailedGeneric",
+    )
+  })
+
+  it("bulk-deletes deduped accounts, reloads data, and reports success", async () => {
+    const { getContext } = await renderContext()
+
+    mockDeleteAccounts.mockResolvedValueOnce({
+      deletedCount: 2,
+      deletedIds: ["delete-a", "delete-b"],
+    })
+
+    await act(async () => {
+      await expect(
+        getContext().handleDeleteAccounts([
+          createAccount({ id: "delete-a" }),
+          createAccount({ id: "delete-b" }),
+          createAccount({ id: "delete-a" }),
+        ]),
+      ).resolves.toEqual({
+        deletedCount: 2,
+        deletedIds: ["delete-a", "delete-b"],
+      })
+    })
+
+    expect(mockDeleteAccounts).toHaveBeenCalledWith(["delete-a", "delete-b"])
+    expect(mockLoadAccountData).toHaveBeenCalledTimes(1)
+    expect(mockToast.promise).toHaveBeenCalledTimes(1)
+  })
+
+  it("skips bulk-delete side effects when no account ids are provided", async () => {
+    const { getContext } = await renderContext()
+
+    await expect(getContext().handleDeleteAccounts([])).resolves.toEqual({
+      deletedCount: 0,
+      deletedIds: [],
+    })
+
+    expect(mockDeleteAccounts).not.toHaveBeenCalled()
+    expect(mockLoadAccountData).not.toHaveBeenCalled()
+    expect(mockToast.promise).not.toHaveBeenCalled()
   })
 
   it("copies account URLs to the clipboard and reports success", async () => {

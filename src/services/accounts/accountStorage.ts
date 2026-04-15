@@ -30,6 +30,7 @@ import { safeRandomUUID } from "~/utils/core/identifier"
 import { createLogger } from "~/utils/core/logger"
 import { t } from "~/utils/i18n/core"
 
+import { autoCheckinStorage } from "../checkin/autoCheckin/storage"
 import { userPreferences } from "../preferences/userPreferences"
 import { getSiteType } from "../siteDetection/detectSiteType"
 import {
@@ -340,22 +341,15 @@ class AccountStorageService {
     updates: DeepPartial<SiteAccount>,
   ): Promise<boolean> {
     try {
-      return await this.mutateStorageConfig((config) => {
-        const accounts = config.accounts
-        const index = accounts.findIndex((account) => account.id === id)
-
-        if (index === -1) {
-          throw new Error(t("messages:storage.accountNotFound", { id }))
-        }
-
-        accounts[index] = applySiteAccountUpdates({
-          account: accounts[index],
+      return await this.mutateAccountById(id, ({ account }) => ({
+        nextAccount: applySiteAccountUpdates({
+          account,
           updates,
           now: Date.now(),
-        })
-        config.accounts = accounts
-        return { result: true, changed: true }
-      })
+        }),
+        result: true,
+        changed: true,
+      }))
     } catch (error) {
       logger.error(t("messages:storage.updateFailed", { error: "" }), error)
       return false
@@ -370,7 +364,129 @@ class AccountStorageService {
    */
   async setAccountDisabled(id: string, disabled: boolean): Promise<boolean> {
     const normalized = Boolean(disabled)
-    return this.updateAccount(id, { disabled: normalized })
+
+    try {
+      const { updated, didDisable } = await this.mutateAccountById(
+        id,
+        ({ account }) => ({
+          nextAccount: applySiteAccountUpdates({
+            account,
+            updates: { disabled: normalized },
+            now: Date.now(),
+          }),
+          result: {
+            updated: true,
+            didDisable: normalized && account.disabled !== normalized,
+          },
+          changed: true,
+        }),
+      )
+
+      if (didDisable) {
+        const marked = await autoCheckinStorage.markAccountDisabledInStatus(id)
+        if (!marked) {
+          logger.warn("禁用账号后更新自动签到状态失败", { accountId: id })
+        }
+      }
+
+      return updated
+    } catch (error) {
+      logger.error(t("messages:storage.updateFailed", { error: "" }), error)
+      return false
+    }
+  }
+
+  private async mutateAccountById<T>(
+    id: string,
+    mutation: (input: { account: SiteAccount }) => {
+      nextAccount: SiteAccount
+      result: T
+      changed: boolean
+    },
+  ): Promise<T> {
+    return this.mutateStorageConfig((config) => {
+      const accounts = config.accounts
+      const index = accounts.findIndex((account) => account.id === id)
+
+      if (index === -1) {
+        throw new Error(t("messages:storage.accountNotFound", { id }))
+      }
+
+      const { nextAccount, result, changed } = mutation({
+        account: accounts[index],
+      })
+
+      accounts[index] = nextAccount
+      config.accounts = accounts
+      return { result, changed }
+    })
+  }
+
+  /**
+   * Bulk enable/disable accounts in one locked write.
+   *
+   * Unknown ids are ignored, and already-matching accounts are treated as
+   * no-ops so callers can safely operate on a mixed selection.
+   */
+  async setAccountsDisabled(
+    ids: string[],
+    disabled: boolean,
+  ): Promise<{ updatedCount: number; updatedIds: string[] }> {
+    const uniqueIds = Array.from(new Set(ids)).filter(Boolean)
+    if (uniqueIds.length === 0) {
+      return { updatedCount: 0, updatedIds: [] }
+    }
+
+    const idSet = new Set(uniqueIds)
+    const normalized = Boolean(disabled)
+
+    try {
+      const changedAccountIds: string[] = []
+
+      const result = await this.mutateStorageConfig((config) => {
+        const now = Date.now()
+        let updatedCount = 0
+
+        config.accounts = config.accounts.map((account) => {
+          if (!idSet.has(account.id) || account.disabled === normalized) {
+            return account
+          }
+
+          updatedCount += 1
+          changedAccountIds.push(account.id)
+          return applySiteAccountUpdates({
+            account,
+            updates: { disabled: normalized },
+            now,
+          })
+        })
+
+        return {
+          result: { updatedCount, updatedIds: changedAccountIds },
+          changed: updatedCount > 0,
+        }
+      })
+
+      if (normalized && changedAccountIds.length > 0) {
+        const marked = await autoCheckinStorage.markAccountsDisabledInStatus(
+          changedAccountIds.map((accountId) => ({ accountId })),
+        )
+        if (!marked) {
+          logger.warn("批量禁用账号后更新自动签到状态失败", {
+            accountIds: changedAccountIds,
+          })
+        }
+      }
+
+      return result
+    } catch (error) {
+      logger.error("批量更新账号禁用状态失败", {
+        accountIds: uniqueIds,
+        disabled: normalized,
+        error,
+      })
+      return { updatedCount: 0, updatedIds: [] }
+    }
   }
 
   /**
@@ -378,7 +494,7 @@ class AccountStorageService {
    */
   async deleteAccount(id: string): Promise<boolean> {
     try {
-      return await this.mutateStorageConfig((config) => {
+      const deleted = await this.mutateStorageConfig((config) => {
         const accounts = config.accounts
         const filteredAccounts = accounts.filter((account) => account.id !== id)
 
@@ -402,6 +518,12 @@ class AccountStorageService {
         )
         return { result: true, changed: true }
       })
+
+      void autoCheckinStorage.pruneStatusForAccountIds([id]).catch((error) => {
+        logger.error("清理自动签到账号状态失败", { accountId: id, error })
+      })
+
+      return deleted
     } catch (error) {
       logger.error("删除账号失败", { accountId: id, error })
       throw error // 重新抛出错误，让调用者处理
@@ -413,24 +535,32 @@ class AccountStorageService {
    *
    * Ignores unknown ids to keep this operation resilient to concurrent changes.
    */
-  async deleteAccounts(ids: string[]): Promise<{ deletedCount: number }> {
+  async deleteAccounts(
+    ids: string[],
+  ): Promise<{ deletedCount: number; deletedIds: string[] }> {
     const uniqueIds = Array.from(new Set(ids)).filter(Boolean)
     if (uniqueIds.length === 0) {
-      return { deletedCount: 0 }
+      return { deletedCount: 0, deletedIds: [] }
     }
 
     const idSet = new Set(uniqueIds)
 
     try {
-      return await this.mutateStorageConfig((config) => {
+      const result = await this.mutateStorageConfig((config) => {
         const accounts = config.accounts
+        const deletedIds = accounts
+          .filter((account) => idSet.has(account.id))
+          .map((account) => account.id)
         const filteredAccounts = accounts.filter(
           (account) => !idSet.has(account.id),
         )
-        const deletedCount = accounts.length - filteredAccounts.length
+        const deletedCount = deletedIds.length
 
         if (deletedCount === 0) {
-          return { result: { deletedCount: 0 }, changed: false }
+          return {
+            result: { deletedCount: 0, deletedIds: [] },
+            changed: false,
+          }
         }
 
         config.accounts = filteredAccounts
@@ -440,8 +570,21 @@ class AccountStorageService {
         config.orderedAccountIds = config.orderedAccountIds.filter(
           (orderedId) => !idSet.has(orderedId),
         )
-        return { result: { deletedCount }, changed: true }
+        return { result: { deletedCount, deletedIds }, changed: true }
       })
+
+      if (result.deletedCount > 0) {
+        void autoCheckinStorage
+          .pruneStatusForAccountIds(result.deletedIds)
+          .catch((error) => {
+            logger.error("批量清理自动签到账号状态失败", {
+              accountIds: result.deletedIds,
+              error,
+            })
+          })
+      }
+
+      return result
     } catch (error) {
       logger.error("批量删除账号失败", { accountIds: uniqueIds, error })
       throw error
