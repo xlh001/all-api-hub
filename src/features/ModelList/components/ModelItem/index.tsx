@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -10,6 +10,7 @@ import type {
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CalculatedPrice } from "~/services/models/utils/modelPricing"
 import type { ApiVerificationHistorySummary } from "~/services/verification/verificationResultHistory"
+import { createLogger } from "~/utils/core/logger"
 import { tryParseUrl } from "~/utils/core/urlParsing"
 
 import { ModelItemDescription } from "./ModelItemDescription"
@@ -17,6 +18,8 @@ import { ModelItemDetails } from "./ModelItemDetails"
 import { ModelItemExpandButton } from "./ModelItemExpandButton"
 import { ModelItemHeader } from "./ModelItemHeader"
 import { ModelItemPricing } from "./ModelItemPricing"
+
+const logger = createLogger("ModelItem")
 
 interface ModelItemProps {
   model: ModelPricing
@@ -47,6 +50,8 @@ interface ModelItemProps {
     modelId: string,
     modelEnableGroups: string[],
   ) => void
+  isExpanded?: boolean
+  onToggleExpand?: () => void
 }
 
 /**
@@ -74,9 +79,41 @@ export default function ModelItem(props: ModelItemProps) {
     onVerifyModel,
     onVerifyCliSupport,
     onOpenModelKeyDialog,
+    isExpanded: controlledIsExpanded,
+    onToggleExpand,
   } = props
   const { t } = useTranslation("modelList")
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [uncontrolledIsExpanded, setUncontrolledIsExpanded] = useState(false)
+  const isExpansionControlled =
+    controlledIsExpanded !== undefined && onToggleExpand !== undefined
+  const hasExpansionPropMismatch =
+    (controlledIsExpanded !== undefined) !== (onToggleExpand !== undefined)
+  const isExpanded = isExpansionControlled
+    ? controlledIsExpanded
+    : uncontrolledIsExpanded
+
+  useEffect(() => {
+    if (!hasExpansionPropMismatch || process.env.NODE_ENV === "production") {
+      return
+    }
+
+    logger.warn(
+      "ModelItem expects isExpanded and onToggleExpand to be provided together. Falling back to uncontrolled expansion state.",
+      {
+        controlledIsExpandedProvided: controlledIsExpanded !== undefined,
+        onToggleExpandProvided: onToggleExpand !== undefined,
+      },
+    )
+  }, [controlledIsExpanded, hasExpansionPropMismatch, onToggleExpand])
+
+  const handleToggleExpand = () => {
+    if (isExpansionControlled) {
+      onToggleExpand()
+      return
+    }
+
+    setUncontrolledIsExpanded((current) => !current)
+  }
 
   const handleCopyModelName = async () => {
     try {
@@ -185,7 +222,7 @@ export default function ModelItem(props: ModelItemProps) {
               {canExpand && (
                 <ModelItemExpandButton
                   isExpanded={isExpanded}
-                  onToggleExpand={() => setIsExpanded(!isExpanded)}
+                  onToggleExpand={handleToggleExpand}
                 />
               )}
             </div>
