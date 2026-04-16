@@ -87,7 +87,7 @@ export default function ModelList(props: {
     isFallbackCatalogActive,
 
     filteredModels,
-    baseFilteredModels,
+    accountSummaryCountsByAccountId,
     allProvidersFilteredCount,
     availableGroups,
 
@@ -95,8 +95,8 @@ export default function ModelList(props: {
     loadPricingData,
     getProviderFilteredCount,
     accountQueryStates,
-    allAccountsFilterAccountId,
-    setAllAccountsFilterAccountId,
+    allAccountsFilterAccountIds,
+    setAllAccountsFilterAccountIds,
   } = useModelListData(routeParams)
 
   const providers = getAllProviders()
@@ -115,11 +115,11 @@ export default function ModelList(props: {
   }
 
   const handleAccountSummaryClick = (accountId: string) => {
-    if (allAccountsFilterAccountId === accountId) {
-      setAllAccountsFilterAccountId(null)
-    } else {
-      setAllAccountsFilterAccountId(accountId)
-    }
+    setAllAccountsFilterAccountIds((currentAccountIds) =>
+      currentAccountIds.includes(accountId)
+        ? currentAccountIds.filter((id) => id !== accountId)
+        : [...currentAccountIds, accountId],
+    )
   }
 
   const hasModelData =
@@ -131,21 +131,13 @@ export default function ModelList(props: {
     !shouldShowSourceSetupEmptyState && !selectedSource
 
   const accountSummaryItems = useMemo(() => {
-    const countMap = new Map<string, number>()
-
-    baseFilteredModels.forEach((item: any) => {
-      if (item.source?.kind !== "account") return
-      const account = item.source.account
-      countMap.set(account.id, (countMap.get(account.id) ?? 0) + 1)
-    })
-
     return (accountQueryStates ?? []).map((state) => ({
       accountId: state.account.id,
       name: state.account.name,
-      count: countMap.get(state.account.id) ?? 0,
+      count: accountSummaryCountsByAccountId.get(state.account.id) ?? 0,
       errorType: state.errorType,
     }))
-  }, [baseFilteredModels, accountQueryStates])
+  }, [accountQueryStates, accountSummaryCountsByAccountId])
 
   const modelVerificationTargets = useMemo(() => {
     return filteredModels.reduce<ApiVerificationHistoryTarget[]>(
@@ -397,7 +389,7 @@ export default function ModelList(props: {
             accountSummaryItems.length > 0 && (
               <AccountSummaryBar
                 items={accountSummaryItems}
-                activeAccountId={allAccountsFilterAccountId}
+                activeAccountIds={allAccountsFilterAccountIds}
                 onAccountClick={handleAccountSummaryClick}
               />
             )}

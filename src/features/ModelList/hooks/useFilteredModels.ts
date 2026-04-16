@@ -35,7 +35,7 @@ interface UseFilteredModelsProps {
   selectedProvider: ProviderType | "all"
   sortMode: ModelListSortMode
   showRealPrice: boolean
-  accountFilterAccountId?: string | null
+  accountFilterAccountIds?: string[]
 }
 
 type BillingMode = "token-based" | "per-call"
@@ -288,6 +288,28 @@ function resolveBestCalculatedItem(
   return bestResult
 }
 
+/** Maps raw priced rows into calculated display rows for the current filters. */
+function resolveCalculatedModels(params: {
+  rawItems: RawModelItem[]
+  groupCandidates: string[]
+  supportsGroupFiltering: boolean
+  showRealPrice: boolean
+}) {
+  const { rawItems, groupCandidates, supportsGroupFiltering, showRealPrice } =
+    params
+
+  return rawItems
+    .map((item) =>
+      resolveBestCalculatedItem(
+        item,
+        groupCandidates,
+        supportsGroupFiltering,
+        showRealPrice,
+      ),
+    )
+    .filter((item): item is CalculatedModelItem => item !== null)
+}
+
 /**
  * Derives filtered model list with pricing and helper metadata for UI controls.
  * Applies group, search, provider, and account filters on priced models.
@@ -299,7 +321,7 @@ function resolveBestCalculatedItem(
  * @param params.selectedGroups Candidate user groups used for filtering/comparison.
  * @param params.searchTerm Search keyword for model name/description.
  * @param params.selectedProvider Provider filter value or "all".
- * @param params.accountFilterAccountId Optional account id filter in all-accounts mode.
+ * @param params.accountFilterAccountIds Optional account id filters in all-accounts mode.
  * @returns Filtered models plus counts and available groups metadata.
  */
 export function useFilteredModels(params: UseFilteredModelsProps) {
@@ -313,7 +335,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     selectedProvider,
     sortMode,
     showRealPrice,
-    accountFilterAccountId,
+    accountFilterAccountIds = [],
   } = params
 
   const rawModelItems = useMemo<RawModelItem[]>(() => {
@@ -451,37 +473,58 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
   ])
 
   const accountFilteredBaseRawModels = useMemo(() => {
-    if (!accountFilterAccountId) {
+    if (
+      selectedSource?.kind !== "all-accounts" ||
+      accountFilterAccountIds.length === 0
+    ) {
       return baseFilteredRawModels
     }
+
+    const selectedAccountIds = new Set(accountFilterAccountIds)
 
     return baseFilteredRawModels.filter(
       (item) =>
         item.source.kind !== "account" ||
-        item.source.account.id === accountFilterAccountId,
+        selectedAccountIds.has(item.source.account.id),
     )
-  }, [accountFilterAccountId, baseFilteredRawModels])
+  }, [accountFilterAccountIds, baseFilteredRawModels, selectedSource?.kind])
 
-  const baseFilteredModels = useMemo(() => {
-    const supportsGroupFiltering =
-      selectedSource?.capabilities.supportsGroupFiltering ?? false
+  const accountSummaryCountsByAccountId = useMemo(() => {
+    if (selectedSource?.kind !== "all-accounts") {
+      return new Map<string, number>()
+    }
 
-    return accountFilteredBaseRawModels
-      .map((item) =>
-        resolveBestCalculatedItem(
-          item,
-          effectiveGroupCandidates,
-          supportsGroupFiltering,
-          showRealPrice,
-        ),
-      )
-      .filter((item): item is CalculatedModelItem => item !== null)
-  }, [
-    accountFilteredBaseRawModels,
-    effectiveGroupCandidates,
-    selectedSource?.capabilities.supportsGroupFiltering,
-    showRealPrice,
-  ])
+    // In all-accounts mode rawModelItems are built only from pricingContexts,
+    // so the filtered summary rows are account-backed by construction.
+    const accountSummaryItems = baseFilteredRawModels as Array<
+      RawModelItem & { source: ReturnType<typeof createAccountSource> }
+    >
+    const countMap = new Map<string, number>()
+
+    accountSummaryItems.forEach((item) => {
+      const accountId = item.source.account.id
+      countMap.set(accountId, (countMap.get(accountId) ?? 0) + 1)
+    })
+
+    return countMap
+  }, [baseFilteredRawModels, selectedSource?.kind])
+
+  const baseFilteredModels = useMemo(
+    () =>
+      resolveCalculatedModels({
+        rawItems: accountFilteredBaseRawModels,
+        groupCandidates: effectiveGroupCandidates,
+        supportsGroupFiltering:
+          selectedSource?.capabilities.supportsGroupFiltering ?? false,
+        showRealPrice,
+      }),
+    [
+      accountFilteredBaseRawModels,
+      effectiveGroupCandidates,
+      selectedSource?.capabilities.supportsGroupFiltering,
+      showRealPrice,
+    ],
+  )
 
   const filteredModels = useMemo(() => {
     const providerFilteredModels =
@@ -649,6 +692,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
 
   return {
     filteredModels,
+    accountSummaryCountsByAccountId,
     baseFilteredModels,
     allProvidersFilteredCount: baseFilteredModels.length,
     getProviderFilteredCount,
