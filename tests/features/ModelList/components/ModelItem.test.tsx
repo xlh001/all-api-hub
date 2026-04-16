@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import ModelItem from "~/features/ModelList/components/ModelItem"
+import { MODEL_LIST_GROUP_SELECTION_SCOPES } from "~/features/ModelList/groupSelectionScopes"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import type { CalculatedPrice } from "~/services/models/utils/modelPricing"
 
@@ -143,8 +144,27 @@ describe("ModelItem", () => {
   it("falls back to the default group label when an unavailable model has no selected or effective group", () => {
     render(<ModelItem {...createDefaultProps()} />)
 
-    expect(screen.getByText("clickSwitchGroup:default")).toBeInTheDocument()
-    expect(screen.getByText("availableGroups: vip")).toBeInTheDocument()
+    expect(
+      screen.getByText("clickSwitchGroup:default (1x)"),
+    ).toBeInTheDocument()
+    expect(screen.getByText("availableGroups: vip (1x)")).toBeInTheDocument()
+  })
+
+  it("does not mark rows as unavailable in all-accounts scope when account-level filtering already resolved eligibility", () => {
+    render(
+      <ModelItem
+        {...createDefaultProps()}
+        groupSelectionScope={MODEL_LIST_GROUP_SELECTION_SCOPES.ALL_ACCOUNTS}
+        isGroupSelectionInteractive={false}
+      />,
+    )
+
+    expect(
+      screen.queryByText("clickSwitchGroup:default (1x)"),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("availableGroups: vip (1x)"),
+    ).not.toBeInTheDocument()
   })
 
   it("uses internal expansion state when expansion props are omitted", async () => {

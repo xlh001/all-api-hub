@@ -3,6 +3,10 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { Badge, Card, CardContent } from "~/components/ui"
+import {
+  MODEL_LIST_GROUP_SELECTION_SCOPES,
+  type ModelListGroupSelectionScope,
+} from "~/features/ModelList/groupSelectionScopes"
 import type {
   ModelManagementItemSource,
   ModelManagementSourceCapabilities,
@@ -13,6 +17,7 @@ import type { ApiVerificationHistorySummary } from "~/services/verification/veri
 import { createLogger } from "~/utils/core/logger"
 import { tryParseUrl } from "~/utils/core/urlParsing"
 
+import { formatGroupLabelFromRatios } from "../../groupLabels"
 import { ModelItemDescription } from "./ModelItemDescription"
 import { ModelItemDetails } from "./ModelItemDetails"
 import { ModelItemExpandButton } from "./ModelItemExpandButton"
@@ -35,6 +40,8 @@ interface ModelItemProps {
   availableGroups?: string[]
   isAllGroupsMode?: boolean
   showsOptimalGroup?: boolean
+  groupSelectionScope?: ModelListGroupSelectionScope
+  isGroupSelectionInteractive?: boolean
   source: ModelManagementItemSource
   displayCapabilities?: ModelManagementSourceCapabilities
   isLowestPrice?: boolean
@@ -71,6 +78,8 @@ export default function ModelItem(props: ModelItemProps) {
     onGroupClick,
     availableGroups = [],
     showsOptimalGroup = false,
+    groupSelectionScope = MODEL_LIST_GROUP_SELECTION_SCOPES.SINGLE_SOURCE,
+    isGroupSelectionInteractive = true,
     source,
     displayCapabilities = source.capabilities,
     isLowestPrice = false,
@@ -150,9 +159,12 @@ export default function ModelItem(props: ModelItemProps) {
 
   const activeGroups =
     selectedGroups.length > 0 ? selectedGroups : availableGroups
-  const isAvailableForUser = showGroupDetails
-    ? activeGroups.some((group) => model.enable_groups.includes(group))
-    : true
+  const isAvailableForUser =
+    groupSelectionScope === MODEL_LIST_GROUP_SELECTION_SCOPES.ALL_ACCOUNTS
+      ? true
+      : showGroupDetails
+        ? activeGroups.some((group) => model.enable_groups.includes(group))
+        : true
 
   const sourceBadge = sourceLabel ? (
     handleFilterAccount ? (
@@ -242,7 +254,9 @@ export default function ModelItem(props: ModelItemProps) {
           isAvailableForUser={isAvailableForUser}
           isLowestPrice={isLowestPrice}
           effectiveGroup={effectiveGroup}
+          groupRatios={groupRatios}
           showsOptimalGroup={showsOptimalGroup}
+          groupSelectionScope={groupSelectionScope}
         />
 
         {isExpanded && source.kind === "account" && (
@@ -255,7 +269,9 @@ export default function ModelItem(props: ModelItemProps) {
               effectiveGroup={effectiveGroup}
               showGroupDetails={showGroupDetails}
               showPricingDetails={showPricing}
-              onGroupClick={onGroupClick}
+              onGroupClick={
+                isGroupSelectionInteractive ? onGroupClick : undefined
+              }
             />
           </div>
         )}
@@ -268,12 +284,18 @@ export default function ModelItem(props: ModelItemProps) {
               </Badge>
               <span>
                 {t("clickSwitchGroup", {
-                  group: effectiveGroup || selectedGroups[0] || "default",
+                  group: formatGroupLabelFromRatios(
+                    effectiveGroup || selectedGroups[0] || "default",
+                    groupRatios,
+                  ),
                 })}
               </span>
             </div>
             <div className="text-sm text-yellow-600 dark:text-yellow-400">
-              {t("availableGroups")}: {model.enable_groups.join(", ")}
+              {t("availableGroups")}:{" "}
+              {model.enable_groups
+                .map((group) => formatGroupLabelFromRatios(group, groupRatios))
+                .join(", ")}
             </div>
           </div>
         )}

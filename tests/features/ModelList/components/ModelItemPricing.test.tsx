@@ -5,6 +5,7 @@ import { ModelItemDescription } from "~/features/ModelList/components/ModelItem/
 import { ModelItemPerCallPricingView } from "~/features/ModelList/components/ModelItem/ModelItemPerCallPricingView"
 import { PriceView } from "~/features/ModelList/components/ModelItem/ModelItemPicingView"
 import { ModelItemPricing } from "~/features/ModelList/components/ModelItem/ModelItemPricing"
+import { MODEL_LIST_GROUP_SELECTION_SCOPES } from "~/features/ModelList/groupSelectionScopes"
 
 const { formatPriceCompactMock, isTokenBillingTypeMock } = vi.hoisted(() => ({
   formatPriceCompactMock: vi.fn(
@@ -19,7 +20,12 @@ vi.mock("react-i18next", async (importOriginal) => {
   return {
     ...actual,
     useTranslation: () => ({
-      t: (key: string) => key,
+      t: (
+        key: string,
+        options?: {
+          group?: string
+        },
+      ) => (options?.group ? `${key}:${options.group}` : key),
     }),
   }
 })
@@ -222,6 +228,7 @@ describe("Model item pricing and description", () => {
           showPricing={false}
           showRatioColumn={true}
           isAvailableForUser={true}
+          groupRatios={{}}
         />,
       )
 
@@ -240,6 +247,7 @@ describe("Model item pricing and description", () => {
           showPricing={true}
           showRatioColumn={true}
           isAvailableForUser={false}
+          groupRatios={{}}
         />,
       )
 
@@ -260,6 +268,7 @@ describe("Model item pricing and description", () => {
           showPricing={true}
           showRatioColumn={true}
           isAvailableForUser={true}
+          groupRatios={{}}
         />,
       )
 
@@ -278,6 +287,7 @@ describe("Model item pricing and description", () => {
           showPricing={true}
           showRatioColumn={false}
           isAvailableForUser={true}
+          groupRatios={{}}
         />,
       )
 
@@ -298,6 +308,7 @@ describe("Model item pricing and description", () => {
           showPricing={true}
           showRatioColumn={false}
           isAvailableForUser={true}
+          groupRatios={{}}
         />,
       )
 
@@ -319,15 +330,16 @@ describe("Model item pricing and description", () => {
           isAvailableForUser={true}
           isLowestPrice={true}
           effectiveGroup="vip"
+          groupRatios={{ vip: 2 }}
           showsOptimalGroup={true}
         />,
       )
 
       expect(screen.getByText("ratio")).toBeInTheDocument()
-      expect(screen.getByText("optimalGroup")).toBeInTheDocument()
-      expect(screen.getByText("optimalGroup")).toHaveAttribute(
+      expect(screen.getByText("optimalGroup:vip (2x)")).toBeInTheDocument()
+      expect(screen.getByText("optimalGroup:vip (2x)")).toHaveAttribute(
         "title",
-        "optimalGroupLowestPriceWithinBillingMode",
+        "optimalGroupLowestPriceWithinBillingMode:vip (2x)",
       )
       expect(screen.queryByText("lowestPrice")).toBeNull()
     })
@@ -346,15 +358,68 @@ describe("Model item pricing and description", () => {
           isAvailableForUser={true}
           isLowestPrice={false}
           effectiveGroup="vip"
+          groupRatios={{ vip: 2 }}
           showsOptimalGroup={true}
         />,
       )
 
-      expect(screen.getByText("optimalGroup")).toHaveAttribute(
+      expect(screen.getByText("optimalGroup:vip (2x)")).toHaveAttribute(
         "title",
-        "optimalGroupWithinSelectedGroups",
+        "optimalGroupWithinSelectedGroups:vip (2x)",
       )
       expect(screen.queryByText("ratio")).toBeNull()
+    })
+
+    it("uses account-filter copy for all-accounts lowest-price metadata", () => {
+      isTokenBillingTypeMock.mockReturnValue(true)
+
+      render(
+        <ModelItemPricing
+          model={createModel({ model_ratio: 2 })}
+          calculatedPrice={createCalculatedPrice()}
+          exchangeRate={7}
+          showRealPrice={false}
+          showPricing={true}
+          showRatioColumn={false}
+          isAvailableForUser={true}
+          isLowestPrice={true}
+          effectiveGroup="vip"
+          groupRatios={{ vip: 2 }}
+          showsOptimalGroup={true}
+          groupSelectionScope={MODEL_LIST_GROUP_SELECTION_SCOPES.ALL_ACCOUNTS}
+        />,
+      )
+
+      expect(screen.getByText("optimalGroup:vip (2x)")).toHaveAttribute(
+        "title",
+        "optimalGroupLowestPriceWithinAccountFilters:vip (2x)",
+      )
+    })
+
+    it("uses account-filter copy for all-accounts auto-picked groups", () => {
+      isTokenBillingTypeMock.mockReturnValue(true)
+
+      render(
+        <ModelItemPricing
+          model={createModel({ model_ratio: 2 })}
+          calculatedPrice={createCalculatedPrice()}
+          exchangeRate={7}
+          showRealPrice={false}
+          showPricing={true}
+          showRatioColumn={false}
+          isAvailableForUser={true}
+          isLowestPrice={false}
+          effectiveGroup="vip"
+          groupRatios={{ vip: 2 }}
+          showsOptimalGroup={true}
+          groupSelectionScope={MODEL_LIST_GROUP_SELECTION_SCOPES.ALL_ACCOUNTS}
+        />,
+      )
+
+      expect(screen.getByText("optimalGroup:vip (2x)")).toHaveAttribute(
+        "title",
+        "optimalGroupWithinAccountFilters:vip (2x)",
+      )
     })
   })
 })

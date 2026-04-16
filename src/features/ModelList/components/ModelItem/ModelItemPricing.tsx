@@ -2,6 +2,11 @@ import React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Badge } from "~/components/ui"
+import { formatGroupLabelFromRatios } from "~/features/ModelList/groupLabels"
+import {
+  MODEL_LIST_GROUP_SELECTION_SCOPES,
+  type ModelListGroupSelectionScope,
+} from "~/features/ModelList/groupSelectionScopes"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import {
   formatPriceCompact,
@@ -22,7 +27,9 @@ interface ModelItemPricingProps {
   isAvailableForUser: boolean
   isLowestPrice?: boolean
   effectiveGroup?: string
+  groupRatios: Record<string, number>
   showsOptimalGroup?: boolean
+  groupSelectionScope?: ModelListGroupSelectionScope
 }
 
 export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
@@ -35,7 +42,9 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
   isAvailableForUser,
   isLowestPrice = false,
   effectiveGroup,
+  groupRatios,
   showsOptimalGroup = false,
+  groupSelectionScope = MODEL_LIST_GROUP_SELECTION_SCOPES.SINGLE_SOURCE,
 }) => {
   const { t } = useTranslation("modelList")
   if (!showPricing) {
@@ -44,16 +53,29 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
 
   const tokenBillingType = isTokenBillingType(model.quota_type)
   const perCallPrice = calculatedPrice.perCallPrice
+  const effectiveGroupLabel = effectiveGroup
+    ? formatGroupLabelFromRatios(effectiveGroup, groupRatios)
+    : undefined
   const shouldShowPriceMeta =
     effectiveGroup && (showsOptimalGroup || isLowestPrice)
   const priceMetaTitle = shouldShowPriceMeta
     ? isLowestPrice
-      ? t("optimalGroupLowestPriceWithinBillingMode", {
-          group: effectiveGroup,
-        })
-      : t("optimalGroupWithinSelectedGroups", {
-          group: effectiveGroup,
-        })
+      ? t(
+          groupSelectionScope === MODEL_LIST_GROUP_SELECTION_SCOPES.ALL_ACCOUNTS
+            ? "optimalGroupLowestPriceWithinAccountFilters"
+            : "optimalGroupLowestPriceWithinBillingMode",
+          {
+            group: effectiveGroupLabel,
+          },
+        )
+      : t(
+          groupSelectionScope === MODEL_LIST_GROUP_SELECTION_SCOPES.ALL_ACCOUNTS
+            ? "optimalGroupWithinAccountFilters"
+            : "optimalGroupWithinSelectedGroups",
+          {
+            group: effectiveGroupLabel,
+          },
+        )
     : undefined
   const priceMeta = shouldShowPriceMeta ? (
     <Badge
@@ -62,7 +84,7 @@ export const ModelItemPricing: React.FC<ModelItemPricingProps> = ({
       className="shrink-0 text-[10px] sm:text-xs"
       title={priceMetaTitle}
     >
-      {t("optimalGroup", { group: effectiveGroup })}
+      {t("optimalGroup", { group: effectiveGroupLabel })}
     </Badge>
   ) : null
 

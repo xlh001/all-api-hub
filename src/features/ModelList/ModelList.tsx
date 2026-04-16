@@ -31,6 +31,7 @@ import { ModelDisplay } from "./components/ModelDisplay"
 import ModelKeyDialog from "./components/ModelKeyDialog"
 import { ProviderTabs } from "./components/ProviderTabs"
 import { StatusIndicator } from "./components/StatusIndicator"
+import { MODEL_LIST_GROUP_SELECTION_SCOPES } from "./groupSelectionScopes"
 import { useModelListData } from "./hooks/useModelListData"
 
 /**
@@ -69,6 +70,8 @@ export default function ModelList(props: {
     setSelectedBillingMode,
     selectedGroups,
     setSelectedGroups,
+    allAccountsExcludedGroupsByAccountId,
+    setAllAccountsExcludedGroupsByAccountId,
 
     // Display options
     showRealPrice,
@@ -91,6 +94,8 @@ export default function ModelList(props: {
     accountSummaryCountsByAccountId,
     allProvidersFilteredCount,
     availableGroups,
+    availableAccountGroupsByAccountId,
+    availableAccountGroupOptionsByAccountId,
 
     // Operations
     loadPricingData,
@@ -123,6 +128,13 @@ export default function ModelList(props: {
   const handleGroupClick = (group: string) => {
     setSelectedGroups([group])
   }
+
+  const isAllAccountsScope = selectedSource?.kind === "all-accounts"
+  const displaySelectedGroups = isAllAccountsScope ? [] : selectedGroups
+  const modelDisplayGroupSelectionScope = isAllAccountsScope
+    ? MODEL_LIST_GROUP_SELECTION_SCOPES.ALL_ACCOUNTS
+    : MODEL_LIST_GROUP_SELECTION_SCOPES.SINGLE_SOURCE
+  const isModelGroupSelectionInteractive = !isAllAccountsScope
 
   const handleAccountSummaryClick = (accountId: string) => {
     setAllAccountsFilterAccountIds((currentAccountIds) =>
@@ -299,6 +311,17 @@ export default function ModelList(props: {
         setSelectedSourceValue={setSelectedSourceValue}
         accounts={sortedAccounts}
         profiles={profiles}
+        showAllAccountsGroupFilter={isAllAccountsScope}
+        availableAccountGroupsByAccountId={availableAccountGroupsByAccountId}
+        availableAccountGroupOptionsByAccountId={
+          availableAccountGroupOptionsByAccountId
+        }
+        allAccountsExcludedGroupsByAccountId={
+          allAccountsExcludedGroupsByAccountId
+        }
+        setAllAccountsExcludedGroupsByAccountId={
+          setAllAccountsExcludedGroupsByAccountId
+        }
         selectorOpen={isSourceSelectorOpen}
         onSelectorOpenChange={setIsSourceSelectorOpen}
         selectorTriggerRef={sourceSelectorTriggerRef}
@@ -463,9 +486,11 @@ export default function ModelList(props: {
                   showRealPrice={showRealPrice}
                   showRatioColumn={showRatioColumn}
                   showEndpointTypes={showEndpointTypes}
-                  selectedGroups={selectedGroups}
+                  selectedGroups={displaySelectedGroups}
                   handleGroupClick={handleGroupClick}
                   availableGroups={availableGroups}
+                  groupSelectionScope={modelDisplayGroupSelectionScope}
+                  isGroupSelectionInteractive={isModelGroupSelectionInteractive}
                   displayCapabilities={sourceCapabilities}
                 />
               </Tab.Panel>
@@ -485,9 +510,13 @@ export default function ModelList(props: {
                     showRealPrice={showRealPrice}
                     showRatioColumn={showRatioColumn}
                     showEndpointTypes={showEndpointTypes}
-                    selectedGroups={selectedGroups}
+                    selectedGroups={displaySelectedGroups}
                     handleGroupClick={handleGroupClick}
                     availableGroups={availableGroups}
+                    groupSelectionScope={modelDisplayGroupSelectionScope}
+                    isGroupSelectionInteractive={
+                      isModelGroupSelectionInteractive
+                    }
                     displayCapabilities={sourceCapabilities}
                   />
                 </Tab.Panel>
