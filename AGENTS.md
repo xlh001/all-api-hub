@@ -115,6 +115,8 @@ Node.js version from `.nvmrc` and pnpm 10+.
 
 - Inspect nearby existing abstractions before planning or implementing new helpers, modules, or UI patterns; prefer reuse or small extensions over parallel implementations.
 - If a string participates in runtime branching, shared protocol values, reusable state mapping, or canonical external URLs, do not duplicate it as a bare literal across modules. Prefer a single runtime constant source, and derive types from that source when both runtime and type-level usage are needed.
+- Normalize data at the highest reliable boundary, then pass the normalized shape downward. Once a contract is established, prefer required types in downstream helpers and components instead of reintroducing optional fallbacks at each leaf.
+- Keep fallback behavior close to the layer that defines the rule or owns the data contract. Do not duplicate the same fallback across multiple consumers merely to compensate for weak typing or incomplete normalization upstream.
 
 ### Progressive Refactoring
 
