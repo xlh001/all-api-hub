@@ -62,7 +62,17 @@ interface PrefilledDialogDuplicateState {
 }
 
 /**
- * Hook to easily trigger channel creation dialog from anywhere
+ * Narrows a display account union to a persisted site account record.
+ */
+function isSiteAccount(
+  account: DisplaySiteData | SiteAccount,
+): account is SiteAccount {
+  return "site_name" in account && "account_info" in account
+}
+
+/**
+ * Exposes helpers for opening channel dialogs from account data,
+ * raw credentials, or custom initial values.
  */
 export function useChannelDialog() {
   const { t } = useTranslation(["messages", "channelDialog"])
@@ -306,7 +316,7 @@ export function useChannelDialog() {
       // Get full account if needed
       let siteAccount: SiteAccount
 
-      if ("created_at" in account) {
+      if (isSiteAccount(account)) {
         siteAccount = account
         displaySiteData =
           (await accountStorage.getDisplayDataById(account.id)) ??
