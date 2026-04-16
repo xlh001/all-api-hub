@@ -87,93 +87,95 @@ const waitForRowText = (text: string) =>
     timeout: 3000,
   })
 
+const rowActionMenuItemNames = [
+  "managedSiteChannels:table.rowActions.edit",
+  "managedSiteChannels:table.rowActions.view",
+  "managedSiteChannels:table.rowActions.sync",
+  "managedSiteChannels:table.rowActions.filters",
+  "managedSiteChannels:table.rowActions.openSync",
+  "managedSiteChannels:table.rowActions.migrate",
+]
+
+const getOpenRowActionItem = () =>
+  rowActionMenuItemNames
+    .map((name) => screen.queryByRole("menuitem", { name }))
+    .find((item) => item !== null) ?? null
+
 /**
- * Radix dropdowns normally open on pointer-down. In the full-suite jsdom run
- * the first pointer event occasionally fails to flip the trigger state, so we
- * keep pointer-down as the primary path and only fall back to a click when the
- * menu did not open.
+ * Open the Radix row-actions dropdown with one user-event instance.
+ *
+ * Full-suite jsdom runs have been flaky when this helper mixed low-level
+ * pointer events with separate user-event instances, so prefer the keyboard
+ * path first and fall back to click-based interactions using the same user.
  */
-const openRowActionsMenu = async (row: HTMLElement) => {
-  const user = userEvent.setup()
-  const trigger = within(row).getByRole("button", {
-    name: "managedSiteChannels:table.columns.actions",
-  })
-  const getOpenMenu = () => screen.queryByRole("menu")
-  const knownRowActionNames = [
-    "managedSiteChannels:table.rowActions.edit",
-    "managedSiteChannels:table.rowActions.view",
-    "managedSiteChannels:table.rowActions.sync",
-    "managedSiteChannels:table.rowActions.filters",
-    "managedSiteChannels:table.rowActions.openSync",
-    "managedSiteChannels:table.rowActions.migrate",
-  ]
-  const hasRowActionContent = () =>
-    getOpenMenu() !== null ||
-    knownRowActionNames.some(
-      (name) => screen.queryByRole("menuitem", { name }) !== null,
-    )
+const openRowActionsMenu = async (
+  row: HTMLElement,
+  user = userEvent.setup(),
+) => {
+  const rowIdentityText =
+    within(row)
+      .queryAllByRole("cell")
+      .map((cell) => cell.textContent?.trim())
+      .find((text) => Boolean(text)) ?? null
+
+  const getCurrentRow = () => {
+    if (!rowIdentityText) {
+      return row
+    }
+
+    return (screen.queryByText(rowIdentityText)?.closest("tr") ??
+      row) as HTMLElement
+  }
+
+  const getTrigger = () =>
+    within(getCurrentRow()).getByRole("button", {
+      name: "managedSiteChannels:table.columns.actions",
+    })
+
+  const hasRowActionContent = () => getOpenRowActionItem() !== null
   const isMenuOpen = () =>
-    trigger.getAttribute("aria-expanded") === "true" || getOpenMenu() !== null
+    getTrigger().getAttribute("aria-expanded") === "true" ||
+    screen.queryByRole("menu") !== null ||
+    hasRowActionContent()
   const resetHalfOpenMenu = async () => {
     if (!isMenuOpen()) {
       return
     }
 
+    const trigger = getTrigger()
     trigger.focus()
-    fireEvent.keyDown(trigger, { key: "Escape" })
+    await user.keyboard("{Escape}")
 
     try {
       await waitFor(
         () => {
           expect(isMenuOpen()).toBe(false)
         },
-        { timeout: 500 },
+        { timeout: 1000 },
       )
     } catch {
-      fireEvent.click(document.body)
+      return
     }
   }
 
   const openAttempts = [
     async () => {
-      fireEvent.pointerDown(trigger, {
-        button: 0,
-        buttons: 1,
-        ctrlKey: false,
-        pointerType: "mouse",
-        isPrimary: true,
-      })
-      fireEvent.pointerUp(trigger, {
-        button: 0,
-        buttons: 0,
-        pointerType: "mouse",
-        isPrimary: true,
-      })
-    },
-    async () => {
-      fireEvent.mouseDown(trigger, { button: 0 })
-      fireEvent.mouseUp(trigger, { button: 0 })
-    },
-    async () => {
-      await user.click(trigger)
-    },
-    async () => {
-      fireEvent.click(trigger)
-    },
-    async () => {
-      trigger.click()
-    },
-    async () => {
+      const trigger = getTrigger()
       trigger.focus()
-      fireEvent.keyDown(trigger, { key: "Enter" })
+      await user.keyboard("{ArrowDown}")
     },
     async () => {
-      trigger.focus()
-      fireEvent.keyDown(trigger, { key: " " })
+      await user.click(getTrigger())
     },
     async () => {
+      const trigger = getTrigger()
       trigger.focus()
-      fireEvent.keyDown(trigger, { key: "ArrowDown" })
+      await user.keyboard("{Enter}")
+    },
+    async () => {
+      const trigger = getTrigger()
+      trigger.focus()
+      await user.keyboard("{Space}")
     },
   ]
 
@@ -905,7 +907,7 @@ describe("ManagedSiteChannels", () => {
 
     const row = screen.getByText("Alpha").closest("tr")
     expect(row).toBeTruthy()
-    await openRowActionsMenu(row!)
+    await openRowActionsMenu(row!, user)
 
     await user.click(
       await screen.findByRole("menuitem", {
@@ -938,7 +940,7 @@ describe("ManagedSiteChannels", () => {
 
     const row = screen.getByText("Alpha").closest("tr")
     expect(row).toBeTruthy()
-    await openRowActionsMenu(row!)
+    await openRowActionsMenu(row!, user)
 
     await user.click(
       await screen.findByRole("menuitem", {
@@ -1188,7 +1190,7 @@ describe("ManagedSiteChannels", () => {
 
     const row = screen.getByText("Alpha").closest("tr")
     expect(row).toBeTruthy()
-    await openRowActionsMenu(row!)
+    await openRowActionsMenu(row!, user)
 
     const editItem = await screen.findByRole("menuitem", {
       name: "managedSiteChannels:table.rowActions.edit",
@@ -1279,7 +1281,7 @@ describe("ManagedSiteChannels", () => {
 
     const alphaRow = screen.getByText("Alpha").closest("tr")
     expect(alphaRow).toBeTruthy()
-    await openRowActionsMenu(alphaRow!)
+    await openRowActionsMenu(alphaRow!, user)
 
     await user.click(
       await screen.findByRole("menuitem", {
@@ -1316,7 +1318,7 @@ describe("ManagedSiteChannels", () => {
 
     const betaRow = screen.getByText("Beta").closest("tr")
     expect(betaRow).toBeTruthy()
-    await openRowActionsMenu(betaRow!)
+    await openRowActionsMenu(betaRow!, user)
 
     await user.click(
       await screen.findByRole("menuitem", {
@@ -1382,7 +1384,7 @@ describe("ManagedSiteChannels", () => {
 
       const row = screen.getByText("Alpha").closest("tr")
       expect(row).toBeTruthy()
-      await openRowActionsMenu(row!)
+      await openRowActionsMenu(row!, user)
 
       await user.click(
         await screen.findByRole("menuitem", {
@@ -1501,7 +1503,7 @@ describe("ManagedSiteChannels", () => {
 
     const betaRow = screen.getByText("Beta").closest("tr")
     expect(betaRow).toBeTruthy()
-    await openRowActionsMenu(betaRow!)
+    await openRowActionsMenu(betaRow!, user)
 
     expect(
       await screen.findByRole("menuitem", {
@@ -1556,7 +1558,7 @@ describe("ManagedSiteChannels", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     })
 
-    await openRowActionsMenu(betaRow!)
+    await openRowActionsMenu(betaRow!, user)
 
     await user.click(
       await screen.findByRole("menuitem", {
