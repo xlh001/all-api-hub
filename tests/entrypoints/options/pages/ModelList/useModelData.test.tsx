@@ -12,6 +12,7 @@ import {
 } from "~/features/ModelList/modelManagementSources"
 import { InvalidTokenPayloadError } from "~/services/accounts/utils/apiServiceRequest"
 import { getApiService } from "~/services/apiService"
+import { modelPricingCache } from "~/services/models/modelPricingCache"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
 import { testI18n } from "~~/tests/test-utils/i18n"
@@ -209,6 +210,172 @@ describe("useModelData all-accounts loading", () => {
       (call) => call[0]?.accountId,
     )
     expect(calledAccountIds).toEqual(expect.arrayContaining(["a", "b"]))
+  })
+
+  it("refetches single-account pricing when site or auth type changes", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [
+          {
+            model_name: "access-token-model",
+            quota_type: 0,
+            model_ratio: 1,
+            model_price: 1,
+            completion_ratio: 1,
+            enable_groups: ["default"],
+            supported_endpoint_types: [],
+          },
+        ],
+        group_ratio: { default: 1 },
+        success: true,
+        usable_group: { default: true },
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            model_name: "cookie-model",
+            quota_type: 0,
+            model_ratio: 1,
+            model_price: 1,
+            completion_ratio: 1,
+            enable_groups: ["default"],
+            supported_endpoint_types: [],
+          },
+        ],
+        group_ratio: { default: 1 },
+        success: true,
+        usable_group: { default: true },
+      })
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const firstAccount = createDisplayAccount({
+      id: "credential-change-account",
+      baseUrl: "https://credential-change.example.com",
+      userId: 61,
+      siteType: "default",
+      authType: AuthTypeEnum.AccessToken,
+    })
+    const secondAccount = createDisplayAccount({
+      id: "credential-change-account",
+      baseUrl: "https://credential-change.example.com",
+      userId: 61,
+      siteType: "new-api",
+      authType: AuthTypeEnum.Cookie,
+      cookieAuthSessionCookie: "session=updated",
+    })
+
+    type HookProps = {
+      selectedSource: ReturnType<typeof createAccountSource>
+      accounts: DisplaySiteData[]
+    }
+
+    const { result, rerender } = renderHook(
+      ({ selectedSource, accounts }: HookProps) =>
+        useModelData({
+          selectedSource,
+          accounts,
+        }),
+      {
+        initialProps: {
+          selectedSource: createAccountSource(firstAccount),
+          accounts: [firstAccount],
+        },
+        wrapper: createWrapper(),
+      },
+    )
+
+    await waitFor(() => {
+      expect(fetchModelPricing).toHaveBeenCalledTimes(1)
+      expect(result.current.pricingData?.data[0]?.model_name).toBe(
+        "access-token-model",
+      )
+    })
+
+    rerender({
+      selectedSource: createAccountSource(secondAccount),
+      accounts: [secondAccount],
+    })
+
+    await waitFor(() => {
+      expect(fetchModelPricing).toHaveBeenCalledTimes(2)
+      expect(fetchModelPricing).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          accountId: "credential-change-account",
+          auth: expect.objectContaining({
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=updated",
+          }),
+        }),
+      )
+      expect(result.current.pricingData?.data[0]?.model_name).toBe(
+        "cookie-model",
+      )
+    })
+  })
+
+  it("uses cached single-account pricing scoped by site and auth type", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn()
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const account = createDisplayAccount({
+      id: "cached-pricing-account",
+      baseUrl: "https://cached-pricing.example.com",
+      userId: 64,
+      siteType: "new-api",
+      authType: AuthTypeEnum.Cookie,
+      cookieAuthSessionCookie: "session=cached",
+    })
+    const cacheKey = [
+      account.id,
+      account.baseUrl,
+      account.userId,
+      account.siteType,
+      account.authType,
+    ].join("|")
+    const cachedPricing = {
+      data: [
+        {
+          model_name: "cached-model",
+          quota_type: 0,
+          model_ratio: 1,
+          model_price: 1,
+          completion_ratio: 1,
+          enable_groups: ["default"],
+          supported_endpoint_types: [],
+        },
+      ],
+      group_ratio: { default: 1 },
+      success: true,
+      usable_group: { default: "default" },
+    }
+
+    await modelPricingCache.invalidate(cacheKey)
+    await modelPricingCache.set(cacheKey, cachedPricing)
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAccountSource(account),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(() => {
+      expect(result.current.pricingData?.data[0]?.model_name).toBe(
+        "cached-model",
+      )
+    })
+    expect(fetchModelPricing).not.toHaveBeenCalled()
+
+    await modelPricingCache.invalidate(cacheKey)
   })
 
   it("marks all-account queries as loading before each account returns data", async () => {
@@ -910,6 +1077,46 @@ describe("useModelData all-accounts loading", () => {
       },
       { timeout: 3000 },
     )
+  })
+
+  it("does not load fallback tokens for single-account invalid-format responses", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn().mockResolvedValue({
+      data: null,
+      group_ratio: {},
+      success: true,
+      usable_group: {},
+    })
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const account = createDisplayAccount({
+      id: "single-invalid-format",
+      baseUrl: "https://single-invalid-format.example.com",
+      userId: 62,
+    })
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAccountSource(account),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(result.current.dataFormatError).toBe(true)
+        expect(result.current.loadErrorMessage).toBeNull()
+      },
+      { timeout: 3000 },
+    )
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      "modelList:status.formatNotStandard",
+    )
+    expect(mockFetchDisplayAccountTokens).not.toHaveBeenCalled()
   })
 
   it("sanitizes profile load failures into a user-visible profile error", async () => {

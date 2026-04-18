@@ -3,7 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import type { ModelManagementSource } from "~/features/ModelList/modelManagementSources"
+import {
+  MODEL_MANAGEMENT_SOURCE_KINDS,
+  type ModelManagementSource,
+} from "~/features/ModelList/modelManagementSources"
 import {
   canManageDisplayAccountTokens,
   fetchDisplayAccountTokens,
@@ -25,6 +28,14 @@ import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerificati
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { getErrorMessage } from "~/utils/core/error"
 
+import {
+  MODEL_LIST_ACCOUNT_ERROR_TYPES,
+  MODEL_LIST_DATA_ERROR_CODES,
+  MODEL_LIST_QUERY_KEYS,
+  MODEL_LIST_QUERY_SCOPE_VALUES,
+  type ModelListAccountErrorType,
+} from "../modelDataStates"
+
 interface UseModelDataProps {
   selectedSource: ModelManagementSource | null
   accounts: DisplaySiteData[]
@@ -35,14 +46,12 @@ export interface AccountPricingContext {
   pricing: PricingResponse
 }
 
-type AccountErrorType = "invalid-format" | "load-failed"
-
 interface AccountQueryState {
   account: DisplaySiteData
   isLoading: boolean
   hasData: boolean
   hasError: boolean
-  errorType?: AccountErrorType
+  errorType?: ModelListAccountErrorType
 }
 
 export interface AccountFallbackControls {
@@ -70,6 +79,68 @@ interface UseModelDataReturn {
   loadPricingData: () => Promise<void>
   loadErrorMessage: string | null
   accountFallback: AccountFallbackControls | null
+}
+
+/** Creates the normalized invalid-format error used by pricing loaders. */
+function createInvalidFormatError() {
+  const error = new Error(MODEL_LIST_DATA_ERROR_CODES.INVALID_FORMAT)
+  ;(error as { code?: string }).code =
+    MODEL_LIST_DATA_ERROR_CODES.INVALID_FORMAT
+  return error
+}
+
+/** Builds the pricing query key from non-secret account identity fields. */
+function createModelPricingQueryKey(
+  account?: Pick<
+    DisplaySiteData,
+    "id" | "baseUrl" | "userId" | "siteType" | "authType"
+  >,
+) {
+  return account
+    ? [
+        MODEL_LIST_QUERY_KEYS.PRICING,
+        account.id,
+        account.baseUrl,
+        account.userId,
+        account.siteType,
+        account.authType,
+      ]
+    : [MODEL_LIST_QUERY_KEYS.PRICING, MODEL_LIST_QUERY_SCOPE_VALUES.NONE]
+}
+
+/** Builds the persisted pricing-cache key from non-secret account fields. */
+function createModelPricingCacheKey(
+  account: Pick<
+    DisplaySiteData,
+    "id" | "baseUrl" | "userId" | "siteType" | "authType"
+  >,
+) {
+  return [
+    account.id,
+    account.baseUrl,
+    account.userId,
+    account.siteType,
+    account.authType,
+  ].join("|")
+}
+
+/** Builds the profile catalog query key from stable profile revision data. */
+function createProfileCatalogQueryKey(profile?: {
+  id: string
+  updatedAt: number
+}) {
+  return profile
+    ? [
+        MODEL_LIST_QUERY_KEYS.CATALOG,
+        MODEL_MANAGEMENT_SOURCE_KINDS.PROFILE,
+        profile.id,
+        profile.updatedAt,
+      ]
+    : [
+        MODEL_LIST_QUERY_KEYS.CATALOG,
+        MODEL_MANAGEMENT_SOURCE_KINDS.PROFILE,
+        MODEL_LIST_QUERY_SCOPE_VALUES.NONE,
+      ]
 }
 
 /**
@@ -101,13 +172,15 @@ function useSingleAccountModelData(params: {
     useState(false)
   const [fallbackCatalogLoadErrorMessage, setFallbackCatalogLoadErrorMessage] =
     useState<string | null>(null)
-  const [fallbackStateScopeKey, setFallbackStateScopeKey] = useState("none")
+  const [fallbackStateScopeKey, setFallbackStateScopeKey] = useState<string>(
+    MODEL_LIST_QUERY_SCOPE_VALUES.NONE,
+  )
 
   const safeDisplayData = useMemo(() => accounts || [], [accounts])
 
   const currentAccount = useMemo(
     () =>
-      selectedSource?.kind === "account"
+      selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT
         ? safeDisplayData.find((acc) => acc.id === selectedSource.account.id)
         : undefined,
     [safeDisplayData, selectedSource],
@@ -116,7 +189,7 @@ function useSingleAccountModelData(params: {
   const resetFallbackState = useCallback(() => {
     fallbackTokensRequestIdRef.current += 1
     fallbackCatalogRequestIdRef.current += 1
-    setFallbackStateScopeKey("none")
+    setFallbackStateScopeKey(MODEL_LIST_QUERY_SCOPE_VALUES.NONE)
     setFallbackPricingData(null)
     setFallbackTokens([])
     setHasLoadedFallbackTokens(false)
@@ -135,7 +208,7 @@ function useSingleAccountModelData(params: {
             currentAccount.baseUrl,
             currentAccount.userId,
           ].join("|")
-        : "none",
+        : MODEL_LIST_QUERY_SCOPE_VALUES.NONE,
     [currentAccount],
   )
 
@@ -226,15 +299,7 @@ function useSingleAccountModelData(params: {
     scopedFallbackState.fallbackCatalogLoadErrorMessage
 
   const queryKey = useMemo(
-    () =>
-      currentAccount
-        ? [
-            "model-pricing",
-            currentAccount.id,
-            currentAccount.baseUrl,
-            currentAccount.userId,
-          ]
-        : ["model-pricing", "none"],
+    () => createModelPricingQueryKey(currentAccount),
     [currentAccount],
   )
 
@@ -249,9 +314,9 @@ function useSingleAccountModelData(params: {
         throw new Error("No account selected")
       }
 
-      const accountId = currentAccount.id
+      const cacheKey = createModelPricingCacheKey(currentAccount)
 
-      const cached = await modelPricingCache.get(accountId)
+      const cached = await modelPricingCache.get(cacheKey)
       if (cached && Array.isArray(cached.data)) {
         return cached
       }
@@ -270,12 +335,10 @@ function useSingleAccountModelData(params: {
       })
 
       if (!Array.isArray(data.data)) {
-        const error = new Error("INVALID_FORMAT")
-        ;(error as { code?: string }).code = "INVALID_FORMAT"
-        throw error
+        throw createInvalidFormatError()
       }
 
-      await modelPricingCache.set(accountId, data)
+      await modelPricingCache.set(cacheKey, data)
 
       return data
     },
@@ -415,14 +478,19 @@ function useSingleAccountModelData(params: {
   ])
 
   useEffect(() => {
-    if (selectedSource?.kind !== "account" || !currentAccount) return
+    if (
+      selectedSource?.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT ||
+      !currentAccount
+    ) {
+      return
+    }
     if (!fallbackAvailable) return
     if (!query.isError) return
 
     const typedError = (query.error ?? undefined) as
       | { code?: string }
       | undefined
-    if (typedError?.code === "INVALID_FORMAT") return
+    if (typedError?.code === MODEL_LIST_DATA_ERROR_CODES.INVALID_FORMAT) return
     if (scopedHasLoadedFallbackTokens || scopedIsLoadingFallbackTokens) return
     if (scopedFallbackTokenLoadErrorMessage) return
 
@@ -442,7 +510,10 @@ function useSingleAccountModelData(params: {
   ])
 
   useEffect(() => {
-    if (selectedSource?.kind !== "account" || !currentAccount) {
+    if (
+      selectedSource?.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT ||
+      !currentAccount
+    ) {
       setDataFormatError(false)
       setLoadErrorMessage(null)
       return
@@ -466,7 +537,7 @@ function useSingleAccountModelData(params: {
         | { code?: string }
         | undefined
 
-      if (typedError?.code === "INVALID_FORMAT") {
+      if (typedError?.code === MODEL_LIST_DATA_ERROR_CODES.INVALID_FORMAT) {
         setDataFormatError(true)
         setLoadErrorMessage(null)
         toast.error(t("status.formatNotStandard"))
@@ -492,7 +563,9 @@ function useSingleAccountModelData(params: {
 
   const loadPricingData = useCallback(async () => {
     if (!currentAccount) return
-    await modelPricingCache.invalidate(currentAccount.id)
+    await modelPricingCache.invalidate(
+      createModelPricingCacheKey(currentAccount),
+    )
     await query.refetch()
   }, [currentAccount, query])
 
@@ -575,7 +648,7 @@ function useAllAccountsModelData(
 
   const queries = useQueries({
     queries: safeDisplayData.map((account) => ({
-      queryKey: ["model-pricing", account.id, account.baseUrl, account.userId],
+      queryKey: createModelPricingQueryKey(account),
       /**
        * Only load pricing when the UI is explicitly in "all accounts" mode.
        * This avoids triggering expensive background fetches while the user is
@@ -586,7 +659,8 @@ function useAllAccountsModelData(
       refetchOnWindowFocus: false,
       retry: 1,
       queryFn: async () => {
-        const cached = await modelPricingCache.get(account.id)
+        const cacheKey = createModelPricingCacheKey(account)
+        const cached = await modelPricingCache.get(cacheKey)
         if (cached && Array.isArray(cached.data)) {
           return cached
         }
@@ -603,12 +677,10 @@ function useAllAccountsModelData(
         })
 
         if (!Array.isArray(data.data)) {
-          const error = new Error("INVALID_FORMAT")
-          ;(error as { code?: string }).code = "INVALID_FORMAT"
-          throw error
+          throw createInvalidFormatError()
         }
 
-        await modelPricingCache.set(account.id, data)
+        await modelPricingCache.set(cacheKey, data)
 
         return data
       },
@@ -632,13 +704,13 @@ function useAllAccountsModelData(
 
   const dataFormatError = queries.some((query) => {
     const error = query.error as { code?: string } | null | undefined
-    return error?.code === "INVALID_FORMAT"
+    return error?.code === MODEL_LIST_DATA_ERROR_CODES.INVALID_FORMAT
   })
 
   const loadPricingData = useCallback(async () => {
     await Promise.all(
       safeDisplayData.map(async (account, index) => {
-        await modelPricingCache.invalidate(account.id)
+        await modelPricingCache.invalidate(createModelPricingCacheKey(account))
         const query = queries[index]
         if (query) {
           await query.refetch()
@@ -657,11 +729,11 @@ function useAllAccountsModelData(
         const isLoading =
           !hasData && Boolean(query?.isPending || query?.isFetching)
 
-        let errorType: AccountErrorType | undefined
-        if (error?.code === "INVALID_FORMAT") {
-          errorType = "invalid-format"
+        let errorType: ModelListAccountErrorType | undefined
+        if (error?.code === MODEL_LIST_DATA_ERROR_CODES.INVALID_FORMAT) {
+          errorType = MODEL_LIST_ACCOUNT_ERROR_TYPES.INVALID_FORMAT
         } else if (hasError) {
-          errorType = "load-failed"
+          errorType = MODEL_LIST_ACCOUNT_ERROR_TYPES.LOAD_FAILED
         }
 
         return {
@@ -700,17 +772,12 @@ function useProfileModelData(
   const { t } = useTranslation("modelList")
 
   const currentProfile =
-    selectedSource?.kind === "profile" ? selectedSource.profile : null
+    selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.PROFILE
+      ? selectedSource.profile
+      : null
 
   const query = useQuery<PricingResponse, Error>({
-    queryKey: currentProfile
-      ? [
-          "model-catalog",
-          "profile",
-          currentProfile.id,
-          currentProfile.updatedAt,
-        ]
-      : ["model-catalog", "profile", "none"],
+    queryKey: createProfileCatalogQueryKey(currentProfile ?? undefined),
     enabled: !!currentProfile,
     staleTime: MODEL_PRICING_CACHE_TTL_MS,
     refetchOnWindowFocus: false,
@@ -794,8 +861,10 @@ function useProfileModelData(
 export function useModelData(params: UseModelDataProps): UseModelDataReturn {
   const { selectedSource, accounts } = params
   const safeDisplayData = useMemo(() => accounts || [], [accounts])
-  const isAllAccounts = selectedSource?.kind === "all-accounts"
-  const isProfileSource = selectedSource?.kind === "profile"
+  const isAllAccounts =
+    selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
+  const isProfileSource =
+    selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.PROFILE
 
   const singleAccountResult = useSingleAccountModelData({
     selectedSource: isAllAccounts || isProfileSource ? null : selectedSource,
