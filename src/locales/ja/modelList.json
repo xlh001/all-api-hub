@@ -29,6 +29,58 @@
   "allProviders": "すべてのプロバイダー",
   "available": "利用可能",
   "availableGroups": "利用可能なグループ",
+  "batchVerify": {
+    "actions": {
+      "open": "一括テスト",
+      "rerun": "再度一括テスト",
+      "start": "一括テストを開始",
+      "stop": "テストを停止"
+    },
+    "apiType": {
+      "auto": "自動判定",
+      "label": "API 種別"
+    },
+    "counts": {
+      "fail": "失敗 {{value}}",
+      "pass": "成功 {{value}}",
+      "skipped": "スキップ {{value}}",
+      "total": "合計 {{value}}"
+    },
+    "idleHint": "選択したテスト項目で、現在フィルターされたモデルを一括検証します。",
+    "messages": {
+      "noApplicableProbes": "選択したテスト項目はこのモデルに適用できません。",
+      "noCompatibleToken": "このモデルに対応する有効なトークンが見つかりません。",
+      "notSelected": "このモデルは選択されていないため、今回の一括テストではスキップされました。",
+      "pending": "テスト待ち",
+      "probeSummary_other": "{{count}} 件実行、成功 {{pass}}、失敗 {{fail}}、非対応 {{unsupported}}",
+      "stopped": "このモデルのテスト開始前に停止しました。",
+      "unexpected": "テストに失敗しました"
+    },
+    "modelSelection": {
+      "clearAll": "選択をクリア",
+      "label": "実行するモデル",
+      "noneSelected": "テストするモデルを少なくとも 1 つ選択してください。",
+      "selectAll": "すべてのモデルを選択",
+      "selectedSummary_other": "{{selected}} / {{total}} 件を選択",
+      "toggle": "モデル {{model}} を選択"
+    },
+    "probes": {
+      "label": "テスト項目",
+      "noneSelected": "少なくとも 1 つのテスト項目を選択してください。"
+    },
+    "status": {
+      "fail": "失敗",
+      "pass": "成功",
+      "pending": "保留中",
+      "running": "テスト中",
+      "skipped": "スキップ"
+    },
+    "subtitle_other": "フィルター済み {{count}} モデル",
+    "summary_other": "完了 {{completed}} / {{count}}、成功 {{pass}}、失敗 {{fail}}、スキップ {{skipped}}",
+    "title": "モデルを一括テスト",
+    "tokenUsed": "トークン: {{name}}",
+    "warning": "一括テストは、各モデルで解決された API 種別に応じて選択項目を実行します。適用できない項目は自動的にスキップされます。結果は参考情報です。最終確認は実際のツール呼び出しで行ってください。"
+  },
   "billingMode": "課金方式",
   "clickSwitchGroup": "{{group}} グループへ切り替える",
   "collapseDetails": "詳細を折りたたむ",
