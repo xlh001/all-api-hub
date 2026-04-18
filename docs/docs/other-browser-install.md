@@ -17,14 +17,14 @@
 
 ## 适用浏览器
 
-| 浏览器 | 推荐安装方式 | 说明 |
-|--------|--------------|------|
-| QQ 浏览器 | GitHub Release Chrome 包 + 解压加载 | 用户量较高，建议单独参考 [QQ 浏览器安装](#qq-browser)。 |
-| 360 安全浏览器 / 360 极速浏览器 | GitHub Release Chrome 包 + 解压加载 | 用户量较高，建议单独参考 [360 系浏览器安装](#browser-360)。 |
-| 猎豹浏览器 | GitHub Release Chrome 包 + 解压加载 | 可通过 `liebao://extensions/` 进入扩展管理页，参考 [猎豹浏览器安装](#liebao-browser)。 |
-| Brave / Vivaldi / Opera | GitHub Release Chrome 包 + 解压加载 | 通常可按通用流程安装。 |
-| 星愿 / 百分 / Cent Browser 等 | GitHub Release Chrome 包 + 解压加载 | 如果浏览器基于 Chromium 内核，且扩展管理页支持“开发者模式”和“加载已解压”，通常可以尝试。 |
-| 移动端 Kiwi / Edge 等 | 视浏览器扩展支持情况而定 | 移动端限制更多，建议先看浏览器自身是否支持安装外部扩展。 |
+| 浏览器 | 扩展管理页入口 | 安装提示 |
+|--------|----------------|----------|
+| QQ 浏览器 | `qqbrowser://extensions`，不可用时尝试 `chrome://extensions/` | 开启开发者模式后加载解压目录；入口可能在扩展管理或应用中心里，详见 [QQ 浏览器安装](#qq-browser)。 |
+| 360 安全浏览器 / 360 极速浏览器 | `chrome://extensions/`，或菜单中的扩展 / 插件管理 | 先确认目标网页使用极速模式，再加载解压目录；安全策略可能会拦截直接拖拽安装，详见 [360 系浏览器安装](#browser-360)。 |
+| 猎豹浏览器 | `liebao://extensions/` | 开启开发者模式后加载解压目录；如果弹出主页 / 标签页变更提示，优先保持当前设置，详见 [猎豹浏览器安装](#liebao-browser)。 |
+| Brave / Vivaldi / Opera | `brave://extensions/`、`vivaldi://extensions/`、`opera://extensions/` | 这些浏览器通常保留开发者模式和加载已解压入口，可按 [其他桌面浏览器通用流程](#其他桌面浏览器通用流程) 安装。 |
+| 星愿 / 百分 / Cent Browser 等 | 优先尝试 `chrome://extensions/` | 如果扩展管理页能开启开发者模式并加载已解压目录，通常可以尝试；否则建议换用 Chrome / Edge / Firefox。 |
+| 移动端 Kiwi / Edge 等 | 以浏览器实际扩展入口为准 | 移动端限制更多，支持情况随浏览器版本变化；如果找不到外部扩展安装入口，建议改用桌面浏览器。 |
 
 如果某个浏览器的扩展管理页没有“开发者模式”或“加载已解压的扩展程序”，说明当前版本可能不支持手动安装外部扩展。此时建议换用 Chrome、Edge、Firefox，或安装对应浏览器的完整版 / 桌面版后再试。
 
