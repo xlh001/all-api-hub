@@ -582,6 +582,89 @@ describe("ManagedSiteChannels", () => {
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
   })
 
+  it("keeps row selection attached to the same channel after refreshed rows reorder", async () => {
+    const user = userEvent.setup()
+    let resolveRefresh:
+      | ((value: { success: boolean; data: { items: any[] } }) => void)
+      | undefined
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+      { id: 2, name: "Beta", base_url: "https://beta.example" },
+    ])
+    vi.mocked(sendRuntimeMessage)
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          items: [
+            { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+            { id: 2, name: "Beta", base_url: "https://beta.example" },
+          ],
+        },
+      } as any)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRefresh = resolve as typeof resolveRefresh
+          }) as any,
+      )
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Beta")
+
+    const betaRow = screen.getByText("Beta").closest("tr")
+    expect(betaRow).toBeTruthy()
+
+    await user.click(
+      within(betaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        within(betaRow!).getByRole("checkbox", {
+          name: "managedSiteChannels:table.selectRow",
+        }),
+      ).toBeChecked()
+    })
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.refresh",
+      }),
+    )
+
+    resolveRefresh?.({
+      success: true,
+      data: {
+        items: [
+          { id: 2, name: "Beta", base_url: "https://beta.example" },
+          { id: 3, name: "Gamma", base_url: "https://gamma.example" },
+        ],
+      },
+    })
+
+    await waitForRowText("Gamma")
+
+    const refreshedBetaRow = screen.getByText("Beta").closest("tr")
+    const gammaRow = screen.getByText("Gamma").closest("tr")
+    expect(refreshedBetaRow).toBeTruthy()
+    expect(gammaRow).toBeTruthy()
+
+    expect(
+      within(refreshedBetaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    ).toBeChecked()
+    expect(
+      within(gammaRow!).getByRole("checkbox", {
+        name: "managedSiteChannels:table.selectRow",
+      }),
+    ).not.toBeChecked()
+  })
+
   it("shows a config warning and skips the channel query when managed-site config is missing", async () => {
     const preferences = buildPreferences({ managedSiteType: NEW_API })
 

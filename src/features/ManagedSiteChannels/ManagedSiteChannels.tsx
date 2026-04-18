@@ -849,6 +849,7 @@ export default function ManagedSiteChannels({
     getPaginationRowModel: getPaginationRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     enableSortingRemoval: false,
+    getRowId: (row) => String(row.id),
   })
 
   useEffect(() => {
