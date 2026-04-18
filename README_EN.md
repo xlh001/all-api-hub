@@ -187,6 +187,7 @@ For the latest compatibility references, see:
 >
 > Mobile note:
 > - In general, if a mobile browser supports extensions, the extension can usually run there, such as `Edge`, `Firefox for Android`, and `Kiwi`.
+> - For QQ Browser, 360 Browser, Liebao Browser, Brave, Vivaldi, Opera, and similar browsers, see the [QQ / 360 and similar browser installation guide](https://all-api-hub.qixing1217.top/en/other-browser-install.html).
 > - See the [mobile usage FAQ](https://all-api-hub.qixing1217.top/en/faq.html#mobile-browser-support) for setup notes and limitations.
 
 <details>
@@ -203,6 +204,19 @@ Choose the release track first, then download the matching asset:
 > - If you're unsure, start with Stable.
 > - Choose Nightly when you want to check whether a fix has landed, or when you're willing to help verify and report issues.
 > - Store builds usually lag by 1-3 days because of review. GitHub Stable often appears earlier, and Nightly is the fastest but also the riskiest.
+
+</details>
+
+<details>
+<summary>Manual installation for QQ / 360 and similar browsers (Load unpacked)</summary>
+
+1. Download the latest release package.
+2. For QQ Browser, 360 Browser, Liebao Browser, Brave, Vivaldi, Opera, and similar browsers, download `all-api-hub-<version>-chrome.zip`.
+3. Extract it to a stable folder, and make sure that folder directly contains `manifest.json`.
+4. Open the extensions management page, such as `chrome://extensions/`, `qqbrowser://extensions`, `liebao://extensions/`, `brave://extensions/`, `vivaldi://extensions/`, or `opera://extensions/`.
+5. Enable "Developer mode".
+6. Click "Load unpacked".
+7. Select the unzipped extension folder.
 
 </details>
 

@@ -132,7 +132,7 @@ Sub2API 站点常见特征：控制台接口在 `/api/v1/*`，并使用 **短期
 | **Firefox Add-ons** | ⚡ 快（几个小时审核）   | [前往安装](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) |
 
 ::: tip 建议
-如果遇到已修复的Bug，建议从 GitHub Releases 下载最新版本手动安装。
+如果遇到已修复的Bug，建议从 GitHub Releases 下载最新版本手动安装。QQ 浏览器、360 系浏览器、猎豹浏览器、Brave、Vivaldi、Opera 等浏览器可参考 [QQ / 360 等浏览器安装指南](./other-browser-install.md)。
 :::
 
 ## ⚙️ 功能使用问题
@@ -288,6 +288,8 @@ WebDAV 备份可以帮你在多设备间同步数据：
 
 插件支持在移动端 / 手机端浏览器中使用，例如手机 `Edge`、`Firefox for Android`、`Kiwi` 等，实际可用性取决于浏览器本身对扩展能力的支持情况。
 
+如果你使用的是 QQ 浏览器、360 系浏览器、猎豹浏览器或其他支持 Chrome 扩展的桌面浏览器，请查看 [QQ / 360 等浏览器安装指南](./other-browser-install.md)。
+
 ### 移动端使用建议
 
 1. **关闭自动刷新**：移动端资源有限，建议关闭自动刷新功能，改为手动刷新。且因为过盾助手的原因会刷新时会创建临时tab影响日常使用体验。
@@ -356,6 +358,7 @@ WebDAV 备份可以帮你在多设备间同步数据：
 ## 📚 相关文档
 
 - [使用教程](./get-started.md)
+- [QQ / 360 等浏览器安装指南](./other-browser-install.md)
 - [GitHub 仓库](https://github.com/qixing-jk/all-api-hub)
 - [问题反馈](https://github.com/qixing-jk/all-api-hub/issues)
 - [更新日志](./changelog.md)

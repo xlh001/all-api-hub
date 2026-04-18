@@ -61,6 +61,10 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 
 如需正式签名并通过 TestFlight / App Store 分发，通常还需要 Apple Developer Program 账号；否则一般只适合本机调试或自用。
 
+### QQ / 360 等浏览器安装
+
+如果你使用 QQ 浏览器、360 安全浏览器、360 极速浏览器、猎豹浏览器、Brave、Vivaldi、Opera 等浏览器，请下载 GitHub Release 中的 Chrome 版本压缩包，并参考 [QQ / 360 等浏览器安装指南](./other-browser-install.md) 进行解压加载。
+
 ## 2. 支持的站点
 
 支持基于以下项目部署的中转站：
@@ -203,6 +207,7 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - [支持的导出工具与集成目标](./supported-export-tools.md)
 - [支持的站点与系统类型](./supported-sites.md)
 - [Safari 安装指南](./safari-install.md)
+- [QQ / 360 等浏览器安装指南](./other-browser-install.md)
 - [Cloudflare 过盾助手](./cloudflare-helper.md)
 - [快速导出站点配置](./quick-export.md)
 - [自动刷新与实时数据](./auto-refresh.md)
