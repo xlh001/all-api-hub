@@ -22,7 +22,7 @@
 | QQ 浏览器 | `qqbrowser://extensions`，不可用时尝试 `chrome://extensions/` | 开启开发者模式后加载解压目录；入口可能在扩展管理或应用中心里，详见 [QQ 浏览器安装](#qq-browser)。 |
 | 360 安全浏览器 / 360 极速浏览器 | `chrome://extensions/`，或菜单中的扩展 / 插件管理 | 先确认目标网页使用极速模式，再加载解压目录；安全策略可能会拦截直接拖拽安装，详见 [360 系浏览器安装](#browser-360)。 |
 | 猎豹浏览器 | `liebao://extensions/` | 开启开发者模式后加载解压目录；如果弹出主页 / 标签页变更提示，优先保持当前设置，详见 [猎豹浏览器安装](#liebao-browser)。 |
-| Brave / Vivaldi / Opera | `brave://extensions/`、`vivaldi://extensions/`、`opera://extensions/` | 这些浏览器通常保留开发者模式和加载已解压入口，可按 [其他桌面浏览器通用流程](#其他桌面浏览器通用流程) 安装。 |
+| Brave / Vivaldi / Opera | `brave://extensions/`、`vivaldi://extensions/`、`opera://extensions/` | 这些浏览器通常保留开发者模式和加载已解压入口，可按 [其他桌面浏览器通用流程](#desktop-browser-common-flow) 安装。 |
 | 星愿 / 百分 / Cent Browser 等 | 优先尝试 `chrome://extensions/` | 如果扩展管理页能开启开发者模式并加载已解压目录，通常可以尝试；否则建议换用 Chrome / Edge / Firefox。 |
 | 移动端 Kiwi / Edge 等 | 以浏览器实际扩展入口为准 | 移动端限制更多，支持情况随浏览器版本变化；如果找不到外部扩展安装入口，建议改用桌面浏览器。 |
 
@@ -49,6 +49,8 @@ all-api-hub-3.32.0-chrome.zip
 ::: tip 目录选择
 加载扩展时要选择包含 `manifest.json` 的那一层目录。如果报错“清单文件缺失”或“manifest.json 不存在”，通常是选到了外层父目录。
 :::
+
+<a id="desktop-browser-common-flow"></a>
 
 ## 其他桌面浏览器通用流程
 
@@ -170,7 +172,7 @@ liebao://extensions/
 | Opera | `opera://extensions/` |
 | 其他 Chromium 浏览器 | 优先尝试 `chrome://extensions/` |
 
-进入扩展管理页后，按 [其他桌面浏览器通用流程](#其他桌面浏览器通用流程) 开启开发者模式并加载解压目录即可。
+进入扩展管理页后，按 [其他桌面浏览器通用流程](#desktop-browser-common-flow) 开启开发者模式并加载解压目录即可。
 
 ## 更新扩展
 
