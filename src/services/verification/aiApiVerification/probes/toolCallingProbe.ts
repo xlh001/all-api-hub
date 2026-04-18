@@ -8,6 +8,7 @@ import type {
 } from "../types"
 import {
   inferHttpStatus,
+  isAbortError,
   summaryKeyFromHttpStatus,
   toSanitizedErrorSummary,
 } from "../utils"
@@ -17,6 +18,7 @@ type RunToolCallingProbeParams = {
   apiKey: string
   apiType: ApiVerificationApiType
   modelId: string
+  abortSignal?: AbortSignal
 }
 
 /**
@@ -65,6 +67,7 @@ export async function runToolCallingProbe(
       prompt,
       tools: { verify_tool: verifyTool },
       toolChoice: "required",
+      abortSignal: params.abortSignal,
     })
 
     if (!toolCalled(result)) {
@@ -119,6 +122,10 @@ export async function runToolCallingProbe(
       },
     }
   } catch (error) {
+    if (isAbortError(error, params.abortSignal)) {
+      throw error
+    }
+
     const summary = toSanitizedErrorSummary(error, secretsToRedact)
     const inferredStatus = inferHttpStatus(error, summary)
     return {

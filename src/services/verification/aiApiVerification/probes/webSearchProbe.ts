@@ -6,13 +6,14 @@ import type {
   ApiVerificationApiType,
   ApiVerificationProbeResult,
 } from "../types"
-import { toSanitizedErrorSummary } from "../utils"
+import { isAbortError, toSanitizedErrorSummary } from "../utils"
 
 type RunWebSearchProbeParams = {
   baseUrl: string
   apiKey: string
   apiType: ApiVerificationApiType
   modelId: string
+  abortSignal?: AbortSignal
 }
 
 /**
@@ -57,6 +58,7 @@ export async function runWebSearchProbe(
           }),
         },
         toolChoice: { type: "tool", toolName: "web_search" },
+        abortSignal: params.abortSignal,
       })
 
       const searched =
@@ -102,6 +104,7 @@ export async function runWebSearchProbe(
           google_search: google.tools.googleSearch({}),
         },
         toolChoice: { type: "tool", toolName: "google_search" },
+        abortSignal: params.abortSignal,
       })
 
       const searched =
@@ -147,6 +150,10 @@ export async function runWebSearchProbe(
       },
     }
   } catch (error) {
+    if (isAbortError(error, params.abortSignal)) {
+      throw error
+    }
+
     return {
       id: "web-search",
       status: "fail",
