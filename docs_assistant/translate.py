@@ -66,8 +66,17 @@ client = OpenAI(
 )
 
 MARKDOWN_IMAGE_PATTERN = re.compile(r'!\[([^\]]*)\]\(([^)\n]+)\)')
+MARKDOWN_LINK_PATTERN = re.compile(r'(?<!!)\[([^\]]*)\]\(([^)\n]+)\)')
 HTML_IMAGE_SRC_PATTERN = re.compile(
     r'(<img\b[^>]*\bsrc=)(["\'])([^"\']+)(\2)',
+    re.IGNORECASE,
+)
+HTML_LINK_HREF_PATTERN = re.compile(
+    r'(<a\b[^>]*\bhref=)(["\'])([^"\']+)(\2)',
+    re.IGNORECASE,
+)
+HTML_ANCHOR_ID_PATTERN = re.compile(
+    r'(<a\b[^>]*\bid=)(["\'])([^"\']+)(\2)',
     re.IGNORECASE,
 )
 URL_SUFFIX_PATTERN = re.compile(r'^([^?#]+)([?#].*)?$')
@@ -95,11 +104,12 @@ def get_translation_prompt(target_language: str, content: str) -> str:
 11. 如果原文包含 YAML front matter，不要输出未加引号且包含 ":"、"#"、"["、"]"、"{"、"}" 的 YAML 字符串值
 12. Markdown 图片 `![alt](...)` 和 HTML `<img src="...">` 中的本地相对路径必须逐字符原样保留，不要翻译、不要改写、不要自行补 `../` 或删减层级
 13. 远程图片 URL、站外链接、站内绝对路径（以 `/` 开头）也必须原样保留
-14. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块；输出必须直接从 YAML front matter 的 `---` 或正文第一行开始
-15. 标题、表格单元、链接文字、图片 alt、admonition 标题等所有自然语言都属于待翻译内容；除代码、URL、路径、明确要求保留的产品/版本标签外，不要残留中文原文
-16. 译文必须符合目标语言技术文档的自然表达，避免逐词直译和明显的中文句式；必要时可以调整语序以保证流畅
-17. 遇到像“正式版 Stable”“Nightly 预发布”这类中外文混合标签时，可以保留 Stable、Nightly 等产品或渠道标签，但周围说明、链接文本、句子和表格内容必须完整翻译为目标语言，并在同一文档内保持一致
-18. 输出前请自检：除代码、URL、路径、明确保留的专有名词或英文产品标签外，不应残留中文句子、中文链接文字或中文表格单元
+14. Markdown 链接目标 `(...)`、HTML `<a href="...">`、显式锚点 `<a id="..."></a>` 中的 URL、路径、`#fragment` 和 `id` 必须逐字符原样保留；只翻译链接文字，不要翻译或根据标题改写锚点
+15. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块；输出必须直接从 YAML front matter 的 `---` 或正文第一行开始
+16. 标题、表格单元、链接文字、图片 alt、admonition 标题等所有自然语言都属于待翻译内容；除代码、URL、路径、明确要求保留的产品/版本标签外，不要残留中文原文
+17. 译文必须符合目标语言技术文档的自然表达，避免逐词直译和明显的中文句式；必要时可以调整语序以保证流畅
+18. 遇到像“正式版 Stable”“Nightly 预发布”这类中外文混合标签时，可以保留 Stable、Nightly 等产品或渠道标签，但周围说明、链接文本、句子和表格内容必须完整翻译为目标语言，并在同一文档内保持一致
+19. 输出前请自检：除代码、URL、路径、明确保留的专有名词或英文产品标签外，不应残留中文句子、中文链接文字或中文表格单元
 
 术语表（不要放在翻译内容中）：
 
@@ -143,13 +153,14 @@ def get_incremental_translation_prompt(
 5. 如果中文原文没有 Front matter (YAML 头部)，不要新增任何 YAML 头部，也不要自行补充 `title`、`tagline`、`heroText`、`features` 等字段
 6. 如果中文原文包含 YAML front matter，则键名、层级结构、列表缩进和字符串引号规则必须保持正确
 7. Markdown 图片 `![alt](...)`、HTML `<img src="...">`、本地路径、远程 URL、站内绝对路径都必须保持可用，不要擅自改写
-8. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块
-9. 对于本次新增或修改的自然语言内容，必须翻译成目标语言；不要把新增正文直接保留为中文
-10. 标题、表格单元、链接文字、图片 alt、admonition 标题等新增或修改的自然语言都必须翻译；不要把新增链接文字或表格内容直接保留为中文
-11. 译文必须符合目标语言技术文档的自然表达，避免逐词直译和明显的中文句式；必要时可以调整语序以保证流畅
-12. 如果本次改动包含“正式版 Stable”“Nightly 预发布”这类中外文混合标签，可以保留 Stable、Nightly 等产品或渠道标签，但周围说明、链接文字和句子必须完整翻译并保持一致
-13. 输出前请自检：除代码、URL、路径、明确保留的专有名词或英文产品标签外，不应残留中文句子、中文链接文字或中文表格单元
-14. 如果旧译文中存在与本次 diff 无关的瑕疵，也不要顺手大范围改写；除非 diff 直接涉及该处
+8. Markdown 链接目标 `(...)`、HTML `<a href="...">`、显式锚点 `<a id="..."></a>` 中的 URL、路径、`#fragment` 和 `id` 必须逐字符原样保留；只翻译链接文字，不要翻译或根据标题改写锚点
+9. 不要在整篇输出外层包裹 ```markdown、```md、```yaml、```yml 或 ``` 代码块
+10. 对于本次新增或修改的自然语言内容，必须翻译成目标语言；不要把新增正文直接保留为中文
+11. 标题、表格单元、链接文字、图片 alt、admonition 标题等新增或修改的自然语言都必须翻译；不要把新增链接文字或表格内容直接保留为中文
+12. 译文必须符合目标语言技术文档的自然表达，避免逐词直译和明显的中文句式；必要时可以调整语序以保证流畅
+13. 如果本次改动包含“正式版 Stable”“Nightly 预发布”这类中外文混合标签，可以保留 Stable、Nightly 等产品或渠道标签，但周围说明、链接文字和句子必须完整翻译并保持一致
+14. 输出前请自检：除代码、URL、路径、明确保留的专有名词或英文产品标签外，不应残留中文句子、中文链接文字或中文表格单元
+15. 如果旧译文中存在与本次 diff 无关的瑕疵，也不要顺手大范围改写；除非 diff 直接涉及该处
 
 术语表（不要放在翻译内容中）：
 
@@ -187,6 +198,78 @@ def strip_outer_code_fence(content: str) -> str:
         return content
 
     return match.group(1).strip()
+
+
+def _replace_ordered_matches(
+    translated_content: str,
+    source_matches: list[str],
+    translated_pattern: re.Pattern,
+    replacement_factory,
+    label: str,
+) -> str:
+    """Restore ordered, non-translatable Markdown/HTML attributes after LLM output."""
+    translated_matches = list(translated_pattern.finditer(translated_content))
+
+    if len(source_matches) != len(translated_matches):
+        logger.warning(
+            "跳过%s恢复：源文数量 %s 与译文数量 %s 不一致",
+            label,
+            len(source_matches),
+            len(translated_matches),
+        )
+        return translated_content
+
+    source_index = 0
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal source_index
+        source_value = source_matches[source_index]
+        source_index += 1
+        return replacement_factory(match, source_value)
+
+    return translated_pattern.sub(replace, translated_content)
+
+
+def preserve_translated_link_targets(source_content: str, translated_content: str) -> str:
+    """Keep link targets and explicit anchor ids stable across translated docs."""
+    markdown_link_targets = [
+        match.group(2) for match in MARKDOWN_LINK_PATTERN.finditer(source_content)
+    ]
+    translated_content = _replace_ordered_matches(
+        translated_content,
+        markdown_link_targets,
+        MARKDOWN_LINK_PATTERN,
+        lambda match, source_target: f"[{match.group(1)}]({source_target})",
+        "Markdown 链接目标",
+    )
+
+    html_link_hrefs = [
+        match.group(3) for match in HTML_LINK_HREF_PATTERN.finditer(source_content)
+    ]
+    translated_content = _replace_ordered_matches(
+        translated_content,
+        html_link_hrefs,
+        HTML_LINK_HREF_PATTERN,
+        lambda match, source_href: (
+            f"{match.group(1)}{match.group(2)}{source_href}{match.group(4)}"
+        ),
+        "HTML 链接 href",
+    )
+
+    html_anchor_ids = [
+        match.group(3) for match in HTML_ANCHOR_ID_PATTERN.finditer(source_content)
+    ]
+    translated_content = _replace_ordered_matches(
+        translated_content,
+        html_anchor_ids,
+        HTML_ANCHOR_ID_PATTERN,
+        lambda match, source_id: (
+            f"{match.group(1)}{match.group(2)}{source_id}{match.group(4)}"
+        ),
+        "HTML 锚点 id",
+    )
+
+    return translated_content
 
 
 def is_local_relative_url(url: str) -> bool:
@@ -397,6 +480,10 @@ def translate_content(
             
             translated_content = response.choices[0].message.content.strip()
             translated_content = strip_outer_code_fence(translated_content)
+            translated_content = preserve_translated_link_targets(
+                content,
+                translated_content,
+            )
             logger.info(f"翻译完成 ({LANGUAGES[target_language]['native_name']})")
             
             return translated_content
