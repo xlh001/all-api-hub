@@ -87,6 +87,18 @@ const waitForRowText = (text: string) =>
     timeout: 3000,
   })
 
+const waitForChannelsRefreshIdle = () =>
+  waitFor(
+    () => {
+      expect(
+        screen.getByRole("button", {
+          name: "managedSiteChannels:toolbar.refresh",
+        }),
+      ).toBeEnabled()
+    },
+    { timeout: 3000 },
+  )
+
 const rowActionMenuItemNames = [
   "managedSiteChannels:table.rowActions.edit",
   "managedSiteChannels:table.rowActions.view",
@@ -612,6 +624,7 @@ describe("ManagedSiteChannels", () => {
     render(<ManagedSiteChannels />)
 
     await waitForRowText("Beta")
+    await waitForChannelsRefreshIdle()
 
     const betaRow = screen.getByText("Beta").closest("tr")
     expect(betaRow).toBeTruthy()
@@ -623,8 +636,10 @@ describe("ManagedSiteChannels", () => {
     )
 
     await waitFor(() => {
+      const currentBetaRow = screen.getByText("Beta").closest("tr")
+      expect(currentBetaRow).toBeTruthy()
       expect(
-        within(betaRow!).getByRole("checkbox", {
+        within(currentBetaRow!).getByRole("checkbox", {
           name: "managedSiteChannels:table.selectRow",
         }),
       ).toBeChecked()
@@ -705,9 +720,14 @@ describe("ManagedSiteChannels", () => {
 
     render(<ManagedSiteChannels />)
 
-    expect(
-      await screen.findByText("managedSiteChannels:alerts.loadError.title"),
-    ).toBeInTheDocument()
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText("managedSiteChannels:alerts.loadError.title"),
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 },
+    )
     expect(toast.error).toHaveBeenCalledWith(
       "managedSiteChannels:alerts.loadError.description",
     )
