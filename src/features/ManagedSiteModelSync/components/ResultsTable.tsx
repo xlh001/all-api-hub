@@ -99,7 +99,7 @@ export default function ResultsTable({
                   {t("execution.table.finishedAt")}
                 </th>
               )}
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+              <th className="sticky right-0 z-20 border-l border-gray-200 bg-gray-50 px-4 py-3 text-right text-sm font-medium text-gray-700 shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.45)] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
                 {t("execution.table.actions")}
               </th>
             </tr>
@@ -111,7 +111,7 @@ export default function ResultsTable({
               return (
                 <tr
                   key={item.channelId}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="group hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   <td className="px-4 py-3">
                     <input
@@ -179,7 +179,7 @@ export default function ResultsTable({
                         : "—"}
                     </td>
                   )}
-                  <td className="px-4 py-3 text-right">
+                  <td className="sticky right-0 z-10 border-l border-gray-100 bg-white px-4 py-3 text-right shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.45)] group-hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:group-hover:bg-gray-800">
                     <Button
                       size="sm"
                       variant="ghost"
