@@ -1842,15 +1842,27 @@ describe("ManagedSiteChannels", () => {
     render(<ManagedSiteChannels />)
 
     await waitForRowText("Alpha")
+    await waitForChannelsRefreshIdle()
 
-    const alphaRow = screen.getByText("Alpha").closest("tr")
-    expect(alphaRow).toBeTruthy()
+    const getAlphaRow = () => screen.getByText("Alpha").closest("tr")
+
+    await waitFor(() => {
+      expect(getAlphaRow()).toBeTruthy()
+    })
 
     await user.click(
-      within(alphaRow!).getByRole("checkbox", {
+      within(getAlphaRow()!).getByRole("checkbox", {
         name: "managedSiteChannels:table.selectRow",
       }),
     )
+
+    await waitFor(() => {
+      expect(
+        within(getAlphaRow()!).getByRole("checkbox", {
+          name: "managedSiteChannels:table.selectRow",
+        }),
+      ).toBeChecked()
+    })
 
     const getDeleteSelectedButton = () =>
       screen.getByRole("button", {
@@ -1892,15 +1904,27 @@ describe("ManagedSiteChannels", () => {
     render(<ManagedSiteChannels />)
 
     await waitForRowText("Alpha")
+    await waitForChannelsRefreshIdle()
 
-    const alphaRow = screen.getByText("Alpha").closest("tr")
-    expect(alphaRow).toBeTruthy()
+    const getAlphaRow = () => screen.getByText("Alpha").closest("tr")
+
+    await waitFor(() => {
+      expect(getAlphaRow()).toBeTruthy()
+    })
 
     await user.click(
-      within(alphaRow!).getByRole("checkbox", {
+      within(getAlphaRow()!).getByRole("checkbox", {
         name: "managedSiteChannels:table.selectRow",
       }),
     )
+
+    await waitFor(() => {
+      expect(
+        within(getAlphaRow()!).getByRole("checkbox", {
+          name: "managedSiteChannels:table.selectRow",
+        }),
+      ).toBeChecked()
+    })
 
     const getDeleteSelectedButton = () =>
       screen.getByRole("button", {
