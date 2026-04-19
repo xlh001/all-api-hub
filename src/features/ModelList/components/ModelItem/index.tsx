@@ -242,18 +242,20 @@ export default function ModelItem(props: ModelItemProps) {
                 ? () => onVerifyCliSupport(source, model.model_name)
                 : undefined
             }
+            trailingContent={
+              sourceBadge || canExpand ? (
+                <>
+                  {sourceBadge}
+                  {canExpand && (
+                    <ModelItemExpandButton
+                      isExpanded={isExpanded}
+                      onToggleExpand={handleToggleExpand}
+                    />
+                  )}
+                </>
+              ) : undefined
+            }
           />
-          {(sourceBadge || canExpand) && (
-            <div className="flex w-full max-w-full min-w-0 items-center justify-between gap-2 self-start sm:ml-auto sm:w-auto sm:justify-start">
-              {sourceBadge}
-              {canExpand && (
-                <ModelItemExpandButton
-                  isExpanded={isExpanded}
-                  onToggleExpand={handleToggleExpand}
-                />
-              )}
-            </div>
-          )}
         </div>
         <ModelItemDescription
           model={model}

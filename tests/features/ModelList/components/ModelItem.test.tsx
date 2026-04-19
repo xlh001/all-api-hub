@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import type React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import ModelItem from "~/features/ModelList/components/ModelItem"
@@ -47,8 +48,21 @@ vi.mock("react-i18next", async (importOriginal) => {
 })
 
 vi.mock("~/features/ModelList/components/ModelItem/ModelItemHeader", () => ({
-  ModelItemHeader: ({ model }: { model: { model_name: string } }) => (
-    <div>{model.model_name}</div>
+  ModelItemHeader: ({
+    model,
+    trailingContent,
+  }: {
+    model: { model_name: string }
+    trailingContent?: React.ReactNode
+  }) => (
+    <div>
+      {model.model_name}
+      {trailingContent ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:ml-auto">
+          {trailingContent}
+        </div>
+      ) : null}
+    </div>
   ),
 }))
 
@@ -188,16 +202,15 @@ describe("ModelItem", () => {
     )
   })
 
-  it("wraps source controls below the header on narrow screens", () => {
+  it("keeps source controls in the header trailing area", () => {
     render(<ModelItem {...createDefaultProps()} />)
 
     const sourceBadge = screen.getByText("Account One").closest("[data-slot]")
     expect(sourceBadge).toHaveClass("max-w-full", "min-w-0")
     expect(sourceBadge?.parentElement).toHaveClass(
-      "w-full",
-      "justify-between",
+      "flex-wrap",
+      "items-center",
       "sm:ml-auto",
-      "sm:w-auto",
     )
   })
 

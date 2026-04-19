@@ -24,6 +24,7 @@ interface ModelItemHeaderProps {
   onOpenKeyDialog?: () => void
   onVerifyApi?: () => void
   onVerifyCliSupport?: () => void
+  trailingContent?: React.ReactNode
 }
 
 export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
@@ -36,6 +37,7 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
   onOpenKeyDialog,
   onVerifyApi,
   onVerifyCliSupport,
+  trailingContent,
 }) => {
   const { t } = useTranslation(["modelList", "aiApiVerification"])
   const providerConfig = getProviderConfig(model.model_name)
@@ -48,8 +50,8 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
 
   return (
     <div className="min-w-0 flex-1 space-y-1.5">
-      <div className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1.5 sm:flex-nowrap sm:items-center sm:gap-3">
-        <div className="flex min-w-0 flex-[1_1_100%] items-center gap-2 sm:flex-1 sm:gap-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 flex-[1_1_10rem] items-center gap-2 sm:gap-3">
           <div
             className={`shrink-0 rounded-lg p-1.5 ${providerConfig.bgColor}`}
           >
@@ -144,6 +146,12 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
             </Badge>
           )}
         </div>
+
+        {trailingContent ? (
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:ml-auto">
+            {trailingContent}
+          </div>
+        ) : null}
       </div>
 
       {onVerifyApi && (
