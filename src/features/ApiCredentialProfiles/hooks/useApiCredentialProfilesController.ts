@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { useChannelDialog } from "~/components/dialogs/ChannelDialog"
 import { RuntimeMessageTypes } from "~/constants/runtimeActions"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { refreshApiCredentialProfileTelemetry } from "~/services/apiCredentialProfiles/telemetry"
 import { OpenInCherryStudio } from "~/services/integrations/cherryStudio"
 import { getManagedSiteLabel } from "~/services/managedSites/utils/managedSite"
 import { tagStorage } from "~/services/tags/tagStorage"
@@ -17,6 +18,7 @@ import {
 import type { Tag } from "~/types"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
 import { onRuntimeMessage } from "~/utils/browser/browserApi"
+import { createLogger } from "~/utils/core/logger"
 import { showResultToast } from "~/utils/core/toastHelpers"
 import { openModelsPage } from "~/utils/navigation"
 
@@ -37,6 +39,8 @@ type SaveApiCredentialProfileInput = {
 type RuntimeBroadcastMessage = {
   type?: (typeof RuntimeMessageTypes)[keyof typeof RuntimeMessageTypes]
 }
+
+const logger = createLogger("ApiCredentialProfilesController")
 
 /**
  * Controller hook for managing API credential profiles, including CRUD operations,
@@ -247,6 +251,9 @@ export function useApiCredentialProfilesController() {
     useState<ApiCredentialProfile | null>(null)
   const [cliVerifyingProfile, setCliVerifyingProfile] =
     useState<ApiCredentialProfile | null>(null)
+  const refreshingTelemetryProfileIdsRef = useRef(new Set<string>())
+  const [refreshingTelemetryProfileIds, setRefreshingTelemetryProfileIds] =
+    useState<string[]>([])
 
   const [ccSwitchProfile, setCCSwitchProfile] =
     useState<ApiCredentialProfile | null>(null)
@@ -326,6 +333,33 @@ export function useApiCredentialProfilesController() {
     ],
   )
 
+  const handleRefreshTelemetry = useCallback(
+    async (profile: ApiCredentialProfile) => {
+      if (refreshingTelemetryProfileIdsRef.current.has(profile.id)) return
+
+      refreshingTelemetryProfileIdsRef.current.add(profile.id)
+      setRefreshingTelemetryProfileIds([
+        ...refreshingTelemetryProfileIdsRef.current,
+      ])
+      try {
+        await toast.promise(refreshApiCredentialProfileTelemetry(profile.id), {
+          loading: t("apiCredentialProfiles:telemetry.messages.refreshing"),
+          success: t("apiCredentialProfiles:telemetry.messages.refreshed"),
+          error: (error) => {
+            logger.warn("Telemetry refresh failed", error)
+            return t("apiCredentialProfiles:telemetry.messages.refreshFailed")
+          },
+        })
+      } finally {
+        refreshingTelemetryProfileIdsRef.current.delete(profile.id)
+        setRefreshingTelemetryProfileIds([
+          ...refreshingTelemetryProfileIdsRef.current,
+        ])
+      }
+    },
+    [t],
+  )
+
   const [deletingProfile, setDeletingProfile] =
     useState<ApiCredentialProfile | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -383,6 +417,8 @@ export function useApiCredentialProfilesController() {
     setVerifyingProfile,
     cliVerifyingProfile,
     setCliVerifyingProfile,
+    refreshingTelemetryProfileIds,
+    handleRefreshTelemetry,
 
     ccSwitchProfile,
     setCCSwitchProfile,
