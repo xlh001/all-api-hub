@@ -3,9 +3,9 @@ import {
   CheckIcon,
   ChevronDownIcon,
   ChevronUpDownIcon,
-  DocumentDuplicateIcon,
   XMarkIcon,
 } from "@heroicons/react/20/solid"
+import { Copy } from "lucide-react"
 import React, {
   Fragment,
   useEffect,
@@ -457,7 +457,7 @@ export function MultiSelect({
               title={t("multiSelect.copySelectedValues")}
               aria-label={t("multiSelect.copySelectedValues")}
             >
-              <DocumentDuplicateIcon className="h-4 w-4" />
+              <Copy className="h-4 w-4" />
             </button>
           </div>
 

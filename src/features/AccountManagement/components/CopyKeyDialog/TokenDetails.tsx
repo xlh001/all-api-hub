@@ -1,8 +1,5 @@
-import {
-  CheckIcon,
-  ClockIcon,
-  DocumentDuplicateIcon,
-} from "@heroicons/react/24/outline"
+import { CheckIcon, ClockIcon } from "@heroicons/react/24/outline"
+import { Copy } from "lucide-react"
 import { MouseEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -200,7 +197,7 @@ export function TokenDetails({
               {copiedTokenId === token.id ? (
                 <CheckIcon className="h-4 w-4 text-green-500" />
               ) : (
-                <DocumentDuplicateIcon className="dark:text-dark-text-tertiary h-4 w-4 text-gray-500" />
+                <Copy className="dark:text-dark-text-tertiary h-4 w-4 text-gray-500" />
               )}
             </IconButton>
             <IconButton

@@ -1,9 +1,9 @@
 import {
   CommandLineIcon,
-  DocumentDuplicateIcon,
   KeyIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline"
+import { Copy } from "lucide-react"
 import React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -78,7 +78,7 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
             aria-label={t("modelList:actions.copyModelName")}
             className="shrink-0"
           >
-            <DocumentDuplicateIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           </IconButton>
 
           {onOpenKeyDialog && (

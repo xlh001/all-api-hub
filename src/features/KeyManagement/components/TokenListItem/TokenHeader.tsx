@@ -1,11 +1,11 @@
 import {
   ArrowPathIcon,
-  DocumentDuplicateIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline"
 import type { TFunction } from "i18next"
+import { Copy } from "lucide-react"
 import { useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -405,7 +405,7 @@ function TokenActionButtons({
         variant="ghost"
         onClick={() => void copyKey(account, token)}
       >
-        <DocumentDuplicateIcon className="dark:text-dark-text-tertiary h-4 w-4 text-gray-500" />
+        <Copy className="dark:text-dark-text-tertiary h-4 w-4 text-gray-500" />
       </IconButton>
       <IconButton
         aria-label={t("keyManagement:actions.saveToApiProfiles")}

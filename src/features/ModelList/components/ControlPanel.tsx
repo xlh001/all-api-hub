@@ -1,10 +1,10 @@
 import {
   AdjustmentsHorizontalIcon,
   BeakerIcon,
-  ClipboardDocumentListIcon,
   CpuChipIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline"
+import { Copy } from "lucide-react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -284,7 +284,7 @@ export function ControlPanel({
               variant="ghost"
               size="sm"
               onClick={handleCopyModelNames}
-              leftIcon={<ClipboardDocumentListIcon className="h-4 w-4" />}
+              leftIcon={<Copy className="h-4 w-4" />}
             >
               {t("copyAllNames")}
             </Button>
