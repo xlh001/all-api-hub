@@ -71,4 +71,16 @@ describe("ModelItemHeader", () => {
     expect(billingBadge).toHaveClass("bg-primary/10")
     expect(billingBadge).not.toHaveClass("bg-secondary")
   })
+
+  it("keeps the model name in a shrinkable full-width row on narrow screens", () => {
+    renderModelItemHeader(0)
+
+    const modelName = screen.getByText("per-call-model")
+    expect(modelName).toHaveClass("min-w-0", "flex-1", "truncate")
+    expect(modelName.parentElement).toHaveClass(
+      "min-w-0",
+      "flex-[1_1_100%]",
+      "sm:flex-1",
+    )
+  })
 })

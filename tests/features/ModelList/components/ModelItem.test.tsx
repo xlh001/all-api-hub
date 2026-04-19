@@ -188,6 +188,19 @@ describe("ModelItem", () => {
     )
   })
 
+  it("wraps source controls below the header on narrow screens", () => {
+    render(<ModelItem {...createDefaultProps()} />)
+
+    const sourceBadge = screen.getByText("Account One").closest("[data-slot]")
+    expect(sourceBadge).toHaveClass("max-w-full", "min-w-0")
+    expect(sourceBadge?.parentElement).toHaveClass(
+      "w-full",
+      "justify-between",
+      "sm:ml-auto",
+      "sm:w-auto",
+    )
+  })
+
   it("treats expansion as controlled only when both props are provided", async () => {
     const user = userEvent.setup()
     const onToggleExpand = vi.fn()

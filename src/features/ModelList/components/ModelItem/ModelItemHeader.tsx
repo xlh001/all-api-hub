@@ -48,24 +48,28 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
 
   return (
     <div className="min-w-0 flex-1 space-y-1.5">
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className={`shrink-0 rounded-lg p-1.5 ${providerConfig.bgColor}`}>
-          <IconComponent
-            className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${providerConfig.color}`}
-          />
+      <div className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1.5 sm:flex-nowrap sm:items-center sm:gap-3">
+        <div className="flex min-w-0 flex-[1_1_100%] items-center gap-2 sm:flex-1 sm:gap-3">
+          <div
+            className={`shrink-0 rounded-lg p-1.5 ${providerConfig.bgColor}`}
+          >
+            <IconComponent
+              className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${providerConfig.color}`}
+            />
+          </div>
+
+          <h3
+            className={`min-w-0 flex-1 truncate text-sm font-semibold sm:text-base md:text-lg ${
+              isAvailableForUser
+                ? "dark:text-dark-text-primary text-gray-900"
+                : "dark:text-dark-text-tertiary text-gray-500"
+            }`}
+          >
+            {model.model_name}
+          </h3>
         </div>
 
-        <h3
-          className={`truncate text-sm font-semibold sm:text-base md:text-lg ${
-            isAvailableForUser
-              ? "dark:text-dark-text-primary text-gray-900"
-              : "dark:text-dark-text-tertiary text-gray-500"
-          }`}
-        >
-          {model.model_name}
-        </h3>
-
-        <div className="flex items-center gap-1">
+        <div className="ml-8 flex shrink-0 items-center gap-1 sm:ml-0">
           <IconButton
             variant="ghost"
             size="sm"

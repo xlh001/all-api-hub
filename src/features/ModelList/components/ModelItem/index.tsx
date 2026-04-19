@@ -178,20 +178,25 @@ export default function ModelItem(props: ModelItemProps) {
 
   const sourceBadge = sourceLabel ? (
     handleFilterAccount ? (
-      <Badge asChild variant="outline" size="default" className="max-w-full">
+      <Badge
+        asChild
+        variant="outline"
+        size="default"
+        className="max-w-full min-w-0"
+      >
         <button
           type="button"
           onClick={handleFilterAccount}
           title={sourceLabel}
           aria-label={sourceLabel}
-          className="max-w-full cursor-pointer hover:border-blue-300 hover:text-blue-700 dark:hover:border-blue-400 dark:hover:text-blue-300"
+          className="max-w-full min-w-0 cursor-pointer hover:border-blue-300 hover:text-blue-700 dark:hover:border-blue-400 dark:hover:text-blue-300"
         >
-          <span className="truncate">{sourceLabel}</span>
+          <span className="min-w-0 truncate">{sourceLabel}</span>
         </button>
       </Badge>
     ) : (
-      <Badge variant="outline" size="default" className="max-w-full">
-        <span className="truncate">{sourceLabel}</span>
+      <Badge variant="outline" size="default" className="max-w-full min-w-0">
+        <span className="min-w-0 truncate">{sourceLabel}</span>
       </Badge>
     )
   ) : null
@@ -239,7 +244,7 @@ export default function ModelItem(props: ModelItemProps) {
             }
           />
           {(sourceBadge || canExpand) && (
-            <div className="ml-auto flex max-w-full min-w-0 items-center gap-2 self-start">
+            <div className="flex w-full max-w-full min-w-0 items-center justify-between gap-2 self-start sm:ml-auto sm:w-auto sm:justify-start">
               {sourceBadge}
               {canExpand && (
                 <ModelItemExpandButton
