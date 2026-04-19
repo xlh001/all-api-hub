@@ -3,7 +3,6 @@ import {
   ArrowUpTrayIcon,
   CommandLineIcon,
   CpuChipIcon,
-  DocumentDuplicateIcon,
   EyeIcon,
   EyeSlashIcon,
   PencilIcon,
@@ -11,6 +10,7 @@ import {
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline"
 import type { TFunction } from "i18next"
+import { Copy } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { VerificationHistorySummary } from "~/components/dialogs/VerifyApiDialog/VerificationHistorySummary"
@@ -181,27 +181,38 @@ export function ApiCredentialProfileListItem({
   return (
     <Card>
       <CardContent padding="md" spacing="sm">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-stretch sm:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <Heading6 className="min-w-0 truncate">{profile.name}</Heading6>
-              <Badge variant="outline" size="sm">
+              <Heading6 className="max-w-full min-w-0 truncate">
+                {profile.name}
+              </Heading6>
+              <Badge
+                variant="outline"
+                size="sm"
+                className="max-w-full truncate"
+              >
                 {getApiVerificationApiTypeLabel(t, profile.apiType)}
               </Badge>
               {tagNames.map((tag) => (
-                <Badge key={tag} variant="secondary" size="sm">
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  size="sm"
+                  className="max-w-full truncate"
+                >
                   {tag}
                 </Badge>
               ))}
             </div>
 
-            <div className="space-y-2 text-xs">
-              <div className="flex min-w-0 items-center gap-2">
+            <div className="flex flex-1 flex-col gap-2 text-xs">
+              <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                 <span className="dark:text-dark-text-tertiary shrink-0 whitespace-nowrap text-gray-500">
                   {t("apiCredentialProfiles:list.baseUrl")}
                 </span>
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <code className="dark:bg-dark-bg-tertiary dark:text-dark-text-secondary inline-block max-w-full truncate rounded bg-gray-100 px-2 py-1 font-mono text-[10px] text-gray-800 sm:text-xs">
+                <div className="flex w-full min-w-0 items-center gap-0.5 sm:flex-1">
+                  <code className="dark:bg-dark-bg-tertiary dark:text-dark-text-secondary min-w-0 flex-1 truncate rounded bg-gray-100 px-2 py-1 font-mono text-[10px] text-gray-800 sm:text-xs">
                     {profile.baseUrl}
                   </code>
                   <IconButton
@@ -211,17 +222,17 @@ export function ApiCredentialProfileListItem({
                     aria-label={t("apiCredentialProfiles:actions.copyBaseUrl")}
                     className="shrink-0"
                   >
-                    <DocumentDuplicateIcon className="h-4 w-4" />
+                    <Copy className="h-4 w-4" />
                   </IconButton>
                 </div>
               </div>
 
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                 <span className="dark:text-dark-text-tertiary shrink-0 whitespace-nowrap text-gray-500">
                   {t("apiCredentialProfiles:list.apiKey")}
                 </span>
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <code className="dark:bg-dark-bg-tertiary dark:text-dark-text-secondary inline-block max-w-full truncate rounded bg-gray-100 px-2 py-1 font-mono text-[10px] text-gray-800 sm:text-xs">
+                <div className="flex w-full min-w-0 items-center gap-0.5 sm:flex-1">
+                  <code className="dark:bg-dark-bg-tertiary dark:text-dark-text-secondary min-w-0 flex-1 truncate rounded bg-gray-100 px-2 py-1 font-mono text-[10px] text-gray-800 sm:text-xs">
                     {formatSecret(profile.apiKey, profile.id, visibleKeys)}
                   </code>
                   <IconButton
@@ -248,12 +259,12 @@ export function ApiCredentialProfileListItem({
                     aria-label={t("apiCredentialProfiles:actions.copyApiKey")}
                     className="shrink-0"
                   >
-                    <DocumentDuplicateIcon className="h-4 w-4" />
+                    <Copy className="h-4 w-4" />
                   </IconButton>
                 </div>
               </div>
 
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                 <span className="dark:text-dark-text-tertiary shrink-0 whitespace-nowrap text-gray-500">
                   {t("aiApiVerification:verifyDialog.history.lastVerified")}
                 </span>
@@ -263,9 +274,9 @@ export function ApiCredentialProfileListItem({
                 />
               </div>
 
-              <div className="dark:bg-dark-bg-tertiary/60 rounded-lg border border-gray-100 bg-gray-50 p-2 dark:border-gray-800">
-                <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
+              <div className="dark:bg-dark-bg-tertiary/60 flex flex-1 flex-col rounded-lg border border-gray-100 bg-gray-50 p-2 sm:p-3 dark:border-gray-800">
+                <div className="mb-2 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <span
                       className={`h-2 w-2 shrink-0 rounded-full ${getHealthIndicatorColor(
                         health?.status,
@@ -278,7 +289,11 @@ export function ApiCredentialProfileListItem({
                       {t("apiCredentialProfiles:telemetry.title")}
                     </span>
                     {telemetry?.source ? (
-                      <Badge variant="outline" size="sm">
+                      <Badge
+                        variant="outline"
+                        size="sm"
+                        className="max-w-full truncate"
+                      >
                         {getTelemetrySourceLabel(t, telemetry.source)}
                       </Badge>
                     ) : null}
@@ -303,8 +318,8 @@ export function ApiCredentialProfileListItem({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
-                  <div>
+                <div className="grid flex-1 auto-rows-max grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] content-evenly gap-2 text-xs sm:grid-cols-4">
+                  <div className="flex min-w-0 flex-col gap-1">
                     <div className="dark:text-dark-text-tertiary text-gray-500">
                       {t("apiCredentialProfiles:telemetry.balance")}
                     </div>
@@ -322,7 +337,7 @@ export function ApiCredentialProfileListItem({
                           : missingTelemetryValue}
                     </div>
                   </div>
-                  <div>
+                  <div className="flex min-w-0 flex-col gap-1">
                     <div className="dark:text-dark-text-tertiary text-gray-500">
                       {t("apiCredentialProfiles:telemetry.todayUsage")}
                     </div>
@@ -338,7 +353,7 @@ export function ApiCredentialProfileListItem({
                         : missingTelemetryValue}
                     </div>
                   </div>
-                  <div>
+                  <div className="flex min-w-0 flex-col gap-1">
                     <div className="dark:text-dark-text-tertiary text-gray-500">
                       {t("apiCredentialProfiles:telemetry.todayRequests")}
                     </div>
@@ -351,7 +366,7 @@ export function ApiCredentialProfileListItem({
                         : missingTelemetryValue}
                     </div>
                   </div>
-                  <div>
+                  <div className="flex min-w-0 flex-col gap-1">
                     <div className="dark:text-dark-text-tertiary text-gray-500">
                       {t("apiCredentialProfiles:telemetry.models")}
                     </div>
@@ -369,7 +384,7 @@ export function ApiCredentialProfileListItem({
                   </div>
                 </div>
 
-                <div className="dark:text-dark-text-tertiary mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+                <div className="dark:text-dark-text-tertiary mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-2 text-xs text-gray-500">
                   <span>
                     {t("apiCredentialProfiles:telemetry.lastSync")}:{" "}
                     {formatLocaleDateTime(
@@ -396,20 +411,33 @@ export function ApiCredentialProfileListItem({
             </div>
 
             {profile.notes?.trim() ? (
-              <div className="dark:text-dark-text-secondary text-xs text-gray-600">
-                {profile.notes}
+              <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-tertiary/40 dark:text-dark-text-secondary border-l-2 border-blue-200 bg-blue-50/60 px-3 py-2 text-xs text-gray-600">
+                <div className="mb-1 text-[11px] font-medium tracking-wide text-blue-600 dark:text-blue-300">
+                  {t("apiCredentialProfiles:dialog.fields.notes")}
+                </div>
+                <div className="max-h-24 overflow-y-auto leading-relaxed break-words whitespace-pre-wrap">
+                  {profile.notes.trim()}
+                </div>
               </div>
             ) : null}
           </div>
 
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0 sm:flex-col sm:items-end sm:justify-start">
             <IconButton
               aria-label={t("apiCredentialProfiles:actions.copyBundle")}
               size="sm"
               variant="ghost"
               onClick={() => onCopyBundle(profile)}
             >
-              <DocumentDuplicateIcon className="h-4 w-4" />
+              <Copy className="h-4 w-4" />
+            </IconButton>
+            <IconButton
+              aria-label={t("common:actions.edit")}
+              size="sm"
+              variant="ghost"
+              onClick={() => onEdit(profile)}
+            >
+              <PencilIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             </IconButton>
             <IconButton
               aria-label={t("apiCredentialProfiles:actions.verifyApi")}
@@ -502,14 +530,6 @@ export function ApiCredentialProfileListItem({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <IconButton
-              aria-label={t("common:actions.edit")}
-              size="sm"
-              variant="outline"
-              onClick={() => onEdit(profile)}
-            >
-              <PencilIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-            </IconButton>
             <IconButton
               aria-label={t("common:actions.delete")}
               size="sm"
