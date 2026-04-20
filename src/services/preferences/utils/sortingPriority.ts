@@ -148,7 +148,7 @@ function compareByUserSortField(
  * @param currencyType Currency type referenced by balance/consumption fields.
  * @param sortOrder Sort direction (`asc` or `desc`).
  * @param matchedAccountScores Map of account IDs to open-tab match scores.
- * @param pinnedAccountIds List of pinned account IDs ordered by priority.
+ * @param pinnedAccountIndices Map of pinned account IDs to their priority index.
  * @param manualOrderIndices Optional map of manual order positions by account ID.
  */
 function applySortingCriteria(
@@ -160,7 +160,7 @@ function applySortingCriteria(
   currencyType: CurrencyType,
   sortOrder: "asc" | "desc",
   matchedAccountScores: Record<string, number>,
-  pinnedAccountIds: string[],
+  pinnedAccountIndices: Record<string, number>,
   manualOrderIndices?: Record<string, number>,
 ): number {
   switch (criteriaId) {
@@ -172,10 +172,10 @@ function applySortingCriteria(
     }
 
     case SortingCriteriaType.PINNED: {
-      const indexA = pinnedAccountIds.indexOf(a.id)
-      const indexB = pinnedAccountIds.indexOf(b.id)
-      const isPinnedA = indexA !== -1
-      const isPinnedB = indexB !== -1
+      const indexA = pinnedAccountIndices[a.id]
+      const indexB = pinnedAccountIndices[b.id]
+      const isPinnedA = typeof indexA === "number"
+      const isPinnedB = typeof indexB === "number"
 
       if (isPinnedA && isPinnedB) {
         return indexA - indexB
@@ -298,6 +298,16 @@ export function createDynamicSortComparator(
   const enabledCriteria = config.criteria
     .filter((c) => c.enabled)
     .sort((c1, c2) => c1.priority - c2.priority)
+  const pinnedAccountIndices = pinnedAccountIds.reduce<Record<string, number>>(
+    (indices, id, index) => {
+      if (typeof indices[id] !== "number") {
+        indices[id] = index
+      }
+      return indices
+    },
+    {},
+  )
+
   return (a: DisplaySiteData, b: DisplaySiteData): number => {
     for (const criteria of enabledCriteria) {
       const comparison = applySortingCriteria(
@@ -309,7 +319,7 @@ export function createDynamicSortComparator(
         currencyType,
         sortOrder,
         matchedAccountScores,
-        pinnedAccountIds,
+        pinnedAccountIndices,
         manualOrderIndices,
       )
       if (comparison !== 0) return comparison

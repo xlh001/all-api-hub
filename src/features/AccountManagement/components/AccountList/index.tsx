@@ -1,24 +1,11 @@
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core"
-import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
+import type { DragEndEvent } from "@dnd-kit/core"
 import {
   ChevronDownIcon,
   ChevronUpIcon,
   InboxIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -63,8 +50,9 @@ import CopyKeyDialog from "../CopyKeyDialog"
 import DelAccountDialog from "../DelAccountDialog"
 import { NewcomerSupportCard } from "../NewcomerSupportCard"
 import AccountFilterBar from "./AccountFilterBar"
+import { NonSortableAccountListItem } from "./AccountListBaseItem"
+import { AccountListInitialLoadingState } from "./AccountListLoadingState"
 import AccountSearchInput from "./AccountSearchInput"
-import SortableAccountListItem from "./SortableAccountListItem"
 
 interface AccountListProps {
   initialSearchQuery?: string
@@ -88,6 +76,16 @@ type AccountCheckInFilterValue =
   | "outdated"
   | "unsupported"
 
+/**
+ * Moves an account id within the manual ordering array.
+ */
+function moveAccountId(ids: string[], fromIndex: number, toIndex: number) {
+  const nextIds = ids.slice()
+  const [movedId] = nextIds.splice(fromIndex, 1)
+  nextIds.splice(toIndex, 0, movedId)
+  return nextIds
+}
+
 interface AccountListFilterState {
   disabledFilter: AccountDisabledFilterValue | null
   siteTypeFilter: string | null
@@ -95,6 +93,40 @@ interface AccountListFilterState {
   checkInFilter: AccountCheckInFilterValue | null
   selectedTagIds: string[]
 }
+
+interface AccountListFilterAggregation {
+  displayedResults: AccountListResultItem[]
+  disabledCounts: {
+    enabled: number
+    disabled: number
+    total: number
+  }
+  siteTypeCounts: Map<string, number>
+  refreshCounts: Map<AccountRefreshFilterValue, number>
+  checkInCounts: Map<AccountCheckInFilterValue, number>
+}
+
+type DndLoadState = "inactive" | "loading" | "ready"
+type RequestIdleCallbackHandle = number
+type RequestIdleCallbackDeadline = {
+  didTimeout: boolean
+  timeRemaining: () => number
+}
+type RequestIdleCallbackFn = (
+  callback: (deadline: RequestIdleCallbackDeadline) => void,
+) => RequestIdleCallbackHandle
+type CancelIdleCallbackFn = (handle: RequestIdleCallbackHandle) => void
+
+/**
+ * Lazily loads the account list drag-and-drop runtime for manual ordering mode.
+ */
+function loadAccountListDndRuntime() {
+  return import("./AccountListDndRuntime")
+}
+
+type AccountListDndRuntime = Awaited<
+  ReturnType<typeof loadAccountListDndRuntime>
+>
 
 const ACCOUNT_REFRESH_FILTER_OPTION_ORDER: AccountRefreshFilterValue[] = [
   "never-synced",
@@ -211,69 +243,94 @@ function getAccountCheckInFilterValue(
 }
 
 /**
- * Applies the account-list filters to a result set while allowing faceted counts
- * to ignore one dimension at a time.
+ * Aggregates displayed results and per-filter faceted counts in one pass.
  */
-function applyAccountListFilters(
+function aggregateAccountListFilters(
   results: AccountListResultItem[],
   filters: AccountListFilterState,
-  options?: {
-    skipDisabled?: boolean
-    skipSiteType?: boolean
-    skipRefresh?: boolean
-    skipCheckIn?: boolean
-    skipTags?: boolean
-  },
-) {
-  const {
-    skipDisabled = false,
-    skipSiteType = false,
-    skipRefresh = false,
-    skipCheckIn = false,
-    skipTags = false,
-  } = options ?? {}
-
-  const disabledFilteredResults =
-    skipDisabled || filters.disabledFilter === null
-      ? results
-      : results.filter(({ account }) =>
-          filters.disabledFilter === "disabled"
-            ? account.disabled === true
-            : account.disabled !== true,
-        )
-
-  const siteTypeFilteredResults =
-    skipSiteType || filters.siteTypeFilter === null
-      ? disabledFilteredResults
-      : disabledFilteredResults.filter(
-          ({ account }) => account.siteType === filters.siteTypeFilter,
-        )
-
-  const refreshFilteredResults =
-    skipRefresh || filters.refreshStatusFilter === null
-      ? siteTypeFilteredResults
-      : siteTypeFilteredResults.filter(
-          ({ account }) =>
-            getAccountRefreshFilterValue(account) ===
-            filters.refreshStatusFilter,
-        )
-
-  const checkInFilteredResults =
-    skipCheckIn || filters.checkInFilter === null
-      ? refreshFilteredResults
-      : refreshFilteredResults.filter(
-          ({ account }) =>
-            getAccountCheckInFilterValue(account) === filters.checkInFilter,
-        )
-
-  if (skipTags || filters.selectedTagIds.length === 0) {
-    return checkInFilteredResults
+): AccountListFilterAggregation {
+  const aggregation: AccountListFilterAggregation = {
+    displayedResults: [],
+    disabledCounts: {
+      enabled: 0,
+      disabled: 0,
+      total: 0,
+    },
+    siteTypeCounts: new Map<string, number>(),
+    refreshCounts: new Map<AccountRefreshFilterValue, number>(),
+    checkInCounts: new Map<AccountCheckInFilterValue, number>(),
   }
 
-  return checkInFilteredResults.filter(({ account }) => {
-    const ids = account.tagIds || []
-    return filters.selectedTagIds.some((tagId) => ids.includes(tagId))
-  })
+  for (const result of results) {
+    const { account } = result
+    const refreshValue = getAccountRefreshFilterValue(account)
+    const checkInValue = getAccountCheckInFilterValue(account)
+    const accountTagIds = account.tagIds || []
+    const matchesDisabled =
+      filters.disabledFilter === null
+        ? true
+        : filters.disabledFilter === "disabled"
+          ? account.disabled === true
+          : account.disabled !== true
+    const matchesSiteType =
+      filters.siteTypeFilter === null
+        ? true
+        : account.siteType === filters.siteTypeFilter
+    const matchesRefresh =
+      filters.refreshStatusFilter === null
+        ? true
+        : refreshValue === filters.refreshStatusFilter
+    const matchesCheckIn =
+      filters.checkInFilter === null
+        ? true
+        : checkInValue === filters.checkInFilter
+    const matchesTags =
+      filters.selectedTagIds.length === 0
+        ? true
+        : filters.selectedTagIds.some((tagId) => accountTagIds.includes(tagId))
+
+    if (matchesSiteType && matchesRefresh && matchesCheckIn && matchesTags) {
+      aggregation.disabledCounts.total += 1
+      if (account.disabled === true) {
+        aggregation.disabledCounts.disabled += 1
+      } else {
+        aggregation.disabledCounts.enabled += 1
+      }
+    }
+
+    if (matchesDisabled && matchesRefresh && matchesCheckIn && matchesTags) {
+      aggregation.siteTypeCounts.set(
+        account.siteType,
+        (aggregation.siteTypeCounts.get(account.siteType) ?? 0) + 1,
+      )
+    }
+
+    if (matchesDisabled && matchesSiteType && matchesCheckIn && matchesTags) {
+      aggregation.refreshCounts.set(
+        refreshValue,
+        (aggregation.refreshCounts.get(refreshValue) ?? 0) + 1,
+      )
+    }
+
+    if (matchesDisabled && matchesSiteType && matchesRefresh && matchesTags) {
+      aggregation.checkInCounts.set(
+        checkInValue,
+        (aggregation.checkInCounts.get(checkInValue) ?? 0) + 1,
+      )
+    }
+
+    if (
+      matchesDisabled &&
+      matchesSiteType &&
+      matchesRefresh &&
+      matchesCheckIn &&
+      matchesTags
+    ) {
+      aggregation.displayedResults.push(result)
+    }
+  }
+
+  return aggregation
 }
 
 /**
@@ -287,6 +344,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const {
     sortedData,
     displayData,
+    isInitialLoad,
     handleSort,
     sortField,
     sortOrder,
@@ -294,6 +352,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     tags,
     tagCountsById,
     isManualSortFeatureEnabled,
+    detectedAccount,
   } = useAccountDataContext()
   const { handleAddAccountClick } = useAddAccountHandler()
   const {
@@ -301,8 +360,6 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     handleDeleteAccounts,
     handleSetAccountsDisabled,
   } = useAccountActionsContext()
-  const { detectedAccount } = useAccountDataContext()
-
   const [deleteDialogAccount, setDeleteDialogAccount] =
     useState<DisplaySiteData | null>(null)
   const [copyKeyDialogAccount, setCopyKeyDialogAccount] =
@@ -320,13 +377,19 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     useState<AccountCheckInFilterValue | null>(null)
   const [disabledFilter, setDisabledFilter] =
     useState<AccountDisabledFilterValue | null>(null)
+  const [dndLoadState, setDndLoadState] = useState<DndLoadState>("inactive")
+  const dndLoadPromiseRef = useRef<Promise<AccountListDndRuntime> | null>(null)
+  const dndRuntimeRef = useRef<AccountListDndRuntime | null>(null)
+  const isMountedRef = useRef(true)
 
   const { query, setQuery, clearSearch, searchResults, inSearchMode } =
     useAccountSearch(displayData, initialSearchQuery)
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor),
-  )
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const handleDeleteWithDialog = (site: DisplaySiteData) => {
     setDeleteDialogAccount(site)
@@ -364,10 +427,11 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     ],
   )
 
-  const displayedResults = useMemo(
-    () => applyAccountListFilters(baseResults, filterState),
+  const filterAggregation = useMemo(
+    () => aggregateAccountListFilters(baseResults, filterState),
     [baseResults, filterState],
   )
+  const displayedResults = filterAggregation.displayedResults
 
   const allAccountIdSet = useMemo(
     () => new Set(displayData.map((account) => account.id)),
@@ -387,30 +451,6 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     }
   }, [displayData.length])
 
-  const disabledCountResults = useMemo(
-    () =>
-      applyAccountListFilters(baseResults, filterState, { skipDisabled: true }),
-    [baseResults, filterState],
-  )
-
-  const siteTypeCountResults = useMemo(
-    () =>
-      applyAccountListFilters(baseResults, filterState, { skipSiteType: true }),
-    [baseResults, filterState],
-  )
-
-  const refreshCountResults = useMemo(
-    () =>
-      applyAccountListFilters(baseResults, filterState, { skipRefresh: true }),
-    [baseResults, filterState],
-  )
-
-  const checkInCountResults = useMemo(
-    () =>
-      applyAccountListFilters(baseResults, filterState, { skipCheckIn: true }),
-    [baseResults, filterState],
-  )
-
   const tagFilterOptions = useMemo(() => {
     if (tags.length === 0) {
       return []
@@ -424,14 +464,6 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   }, [tags, tagCountsById])
 
   const siteTypeFilterOptions = useMemo(() => {
-    const siteTypeCounts = siteTypeCountResults.reduce(
-      (counts, { account }) => {
-        counts.set(account.siteType, (counts.get(account.siteType) ?? 0) + 1)
-        return counts
-      },
-      new Map<string, number>(),
-    )
-
     const availableSiteTypes = Array.from(
       new Set(displayData.map((account) => account.siteType)),
     )
@@ -446,28 +478,28 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
       {
         value: "all",
         label: t("filter.siteType.all"),
-        count: siteTypeCountResults.length,
+        count: Array.from(filterAggregation.siteTypeCounts.values()).reduce(
+          (sum, count) => sum + count,
+          0,
+        ),
       },
       ...[...knownSiteTypes, ...extraSiteTypes].map((siteType) => ({
         value: siteType,
         label: siteType,
-        count: siteTypeCounts.get(siteType) ?? 0,
+        count: filterAggregation.siteTypeCounts.get(siteType) ?? 0,
       })),
     ]
-  }, [displayData, siteTypeCountResults, t])
+  }, [displayData, filterAggregation.siteTypeCounts, t])
 
   const refreshFilterOptions = useMemo(() => {
-    const refreshCounts = refreshCountResults.reduce((counts, { account }) => {
-      const refreshStatus = getAccountRefreshFilterValue(account)
-      counts.set(refreshStatus, (counts.get(refreshStatus) ?? 0) + 1)
-      return counts
-    }, new Map<AccountRefreshFilterValue, number>())
-
     return [
       {
         value: "all",
         label: t("filter.refresh.all"),
-        count: refreshCountResults.length,
+        count: Array.from(filterAggregation.refreshCounts.values()).reduce(
+          (sum, count) => sum + count,
+          0,
+        ),
       },
       ...ACCOUNT_REFRESH_FILTER_OPTION_ORDER.map((refreshStatus) => ({
         value: refreshStatus,
@@ -475,18 +507,12 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
           refreshStatus === "never-synced"
             ? t("account:filter.refresh.neverSynced")
             : getHealthStatusDisplay(refreshStatus, t).text,
-        count: refreshCounts.get(refreshStatus) ?? 0,
+        count: filterAggregation.refreshCounts.get(refreshStatus) ?? 0,
       })),
     ]
-  }, [refreshCountResults, t])
+  }, [filterAggregation.refreshCounts, t])
 
   const checkInFilterOptions = useMemo(() => {
-    const checkInCounts = checkInCountResults.reduce((counts, { account }) => {
-      const checkInStatus = getAccountCheckInFilterValue(account)
-      counts.set(checkInStatus, (counts.get(checkInStatus) ?? 0) + 1)
-      return counts
-    }, new Map<AccountCheckInFilterValue, number>())
-
     const getCheckInFilterLabel = (
       checkInStatus: AccountCheckInFilterValue,
     ) => {
@@ -507,40 +533,38 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
       {
         value: "all",
         label: t("filter.checkIn.all"),
-        count: checkInCountResults.length,
+        count: Array.from(filterAggregation.checkInCounts.values()).reduce(
+          (sum, count) => sum + count,
+          0,
+        ),
       },
       ...ACCOUNT_CHECK_IN_FILTER_OPTION_ORDER.map((checkInStatus) => ({
         value: checkInStatus,
         label: getCheckInFilterLabel(checkInStatus),
-        count: checkInCounts.get(checkInStatus) ?? 0,
+        count: filterAggregation.checkInCounts.get(checkInStatus) ?? 0,
       })),
     ]
-  }, [checkInCountResults, t])
+  }, [filterAggregation.checkInCounts, t])
 
   const disabledFilterOptions = useMemo(() => {
-    const enabledCount = disabledCountResults.filter(
-      ({ account }) => account.disabled !== true,
-    ).length
-    const disabledCount = disabledCountResults.length - enabledCount
-
     return [
       {
         value: "all",
         label: t("filter.disabled.all"),
-        count: disabledCountResults.length,
+        count: filterAggregation.disabledCounts.total,
       },
       {
         value: "enabled",
         label: t("common:status.enabled"),
-        count: enabledCount,
+        count: filterAggregation.disabledCounts.enabled,
       },
       {
         value: "disabled",
         label: t("common:status.disabled"),
-        count: disabledCount,
+        count: filterAggregation.disabledCounts.disabled,
       },
     ]
-  }, [disabledCountResults, t])
+  }, [filterAggregation.disabledCounts, t])
 
   const filteredSites = useMemo(
     () => displayedResults.map((item) => item.account),
@@ -602,6 +626,11 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const dragDisabled = inSearchMode || !isManualSortFeatureEnabled || isBulkMode
   const handleLabel = t("account:list.dragHandle")
   const isBulkBusy = isBulkDeleting || isBulkDisabling
+  const shouldRenderSortableList =
+    isManualSortFeatureEnabled &&
+    !dragDisabled &&
+    dndLoadState === "ready" &&
+    dndRuntimeRef.current !== null
 
   const sortedIds = useMemo(
     () => baseResults.map((item) => item.account.id),
@@ -707,11 +736,111 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     const newIndex = sortedIds.indexOf(over.id as string)
     if (oldIndex === -1 || newIndex === -1) return
 
-    const newOrder = arrayMove(sortedIds, oldIndex, newIndex)
+    const newOrder = moveAccountId(sortedIds, oldIndex, newIndex)
     void handleReorder(newOrder)
   }
 
+  const ensureDndReady = useCallback(() => {
+    if (!isManualSortFeatureEnabled) {
+      return Promise.resolve(null)
+    }
+
+    if (dndRuntimeRef.current !== null) {
+      if (dndLoadState !== "ready") {
+        setDndLoadState("ready")
+      }
+      return Promise.resolve(dndRuntimeRef.current)
+    }
+
+    if (dndLoadPromiseRef.current !== null) {
+      if (dndLoadState === "inactive") {
+        setDndLoadState("loading")
+      }
+      return dndLoadPromiseRef.current
+    }
+
+    setDndLoadState("loading")
+
+    const loadPromise = loadAccountListDndRuntime()
+      .then((runtime) => {
+        dndRuntimeRef.current = runtime
+        dndLoadPromiseRef.current = Promise.resolve(runtime)
+        if (isMountedRef.current) {
+          setDndLoadState("ready")
+        }
+        return runtime
+      })
+      .catch((error) => {
+        dndLoadPromiseRef.current = null
+        if (isMountedRef.current) {
+          setDndLoadState("inactive")
+        }
+        throw error
+      })
+
+    dndLoadPromiseRef.current = loadPromise
+    return loadPromise
+  }, [dndLoadState, isManualSortFeatureEnabled])
+
+  const handleActivateDnd = useCallback(() => {
+    if (dragDisabled || !isManualSortFeatureEnabled) {
+      return
+    }
+
+    void ensureDndReady()
+  }, [dragDisabled, ensureDndReady, isManualSortFeatureEnabled])
+
+  useEffect(() => {
+    if (
+      !isManualSortFeatureEnabled ||
+      dragDisabled ||
+      !hasAccounts ||
+      dndLoadState !== "inactive"
+    ) {
+      return
+    }
+
+    const requestIdleCallbackFn = (
+      globalThis as typeof globalThis & {
+        requestIdleCallback?: RequestIdleCallbackFn
+      }
+    ).requestIdleCallback
+    const cancelIdleCallbackFn = (
+      globalThis as typeof globalThis & {
+        cancelIdleCallback?: CancelIdleCallbackFn
+      }
+    ).cancelIdleCallback
+
+    if (typeof requestIdleCallbackFn === "function") {
+      const idleHandle = requestIdleCallbackFn(() => {
+        void ensureDndReady()
+      })
+
+      return () => {
+        cancelIdleCallbackFn?.(idleHandle)
+      }
+    }
+
+    const timeoutHandle = window.setTimeout(() => {
+      void ensureDndReady()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutHandle)
+    }
+  }, [
+    dndLoadState,
+    dragDisabled,
+    ensureDndReady,
+    hasAccounts,
+    isManualSortFeatureEnabled,
+  ])
+
   const maxTagFilterLines = isSmallScreen ? 2 : isDesktop ? 3 : 2
+
+  if (isInitialLoad) {
+    return <AccountListInitialLoadingState label={t("common:status.loading")} />
+  }
 
   if (!hasAccounts) {
     return (
@@ -755,42 +884,66 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
 
   const listContent = (
     <CardList>
-      {displayedResults.map((item) => (
-        <SortableAccountListItem
-          key={item.account.id}
-          site={item.account}
-          showCreatedAt={sortField === DATA_TYPE_CREATED_AT}
-          className={cn(
-            detectedAccount?.id === item.account.id &&
-              "rounded-lg border-l-4 border-l-blue-500 bg-blue-50 dark:border-l-blue-400 dark:bg-blue-900/50",
-          )}
-          highlights={item.highlights}
-          onDeleteWithDialog={handleDeleteWithDialog}
-          onCopyKey={handleCopyKeyWithDialog}
-          isDragDisabled={dragDisabled}
-          handleLabel={handleLabel}
-          showHandle={isManualSortFeatureEnabled && !isBulkMode}
-          selectionControl={
-            isBulkMode ? (
-              <Checkbox
-                checked={selectedIdSet.has(item.account.id)}
-                onCheckedChange={(checked) =>
-                  handleToggleAccountSelection(
-                    item.account.id,
-                    Boolean(checked),
-                  )
-                }
-                aria-label={t("account:bulk.selectAccount", {
-                  accountName: item.account.name,
-                })}
-                disabled={isBulkBusy}
-              />
-            ) : undefined
-          }
-        />
-      ))}
+      {displayedResults.map((item) => {
+        const selectionControl = isBulkMode ? (
+          <Checkbox
+            checked={selectedIdSet.has(item.account.id)}
+            onCheckedChange={(checked) =>
+              handleToggleAccountSelection(item.account.id, Boolean(checked))
+            }
+            aria-label={t("account:bulk.selectAccount", {
+              accountName: item.account.name,
+            })}
+            disabled={isBulkBusy}
+          />
+        ) : undefined
+
+        if (shouldRenderSortableList && dndRuntimeRef.current !== null) {
+          const { SortableAccountListItem } = dndRuntimeRef.current
+
+          return (
+            <SortableAccountListItem
+              key={item.account.id}
+              site={item.account}
+              showCreatedAt={sortField === DATA_TYPE_CREATED_AT}
+              className={cn(
+                detectedAccount?.id === item.account.id &&
+                  "rounded-lg border-l-4 border-l-blue-500 bg-blue-50 dark:border-l-blue-400 dark:bg-blue-900/50",
+              )}
+              highlights={item.highlights}
+              onDeleteWithDialog={handleDeleteWithDialog}
+              onCopyKey={handleCopyKeyWithDialog}
+              isDragDisabled={dragDisabled}
+              handleLabel={handleLabel}
+              showHandle={isManualSortFeatureEnabled && !isBulkMode}
+              selectionControl={selectionControl}
+            />
+          )
+        }
+
+        return (
+          <NonSortableAccountListItem
+            key={item.account.id}
+            site={item.account}
+            showCreatedAt={sortField === DATA_TYPE_CREATED_AT}
+            className={cn(
+              detectedAccount?.id === item.account.id &&
+                "rounded-lg border-l-4 border-l-blue-500 bg-blue-50 dark:border-l-blue-400 dark:bg-blue-900/50",
+            )}
+            highlights={item.highlights}
+            onDeleteWithDialog={handleDeleteWithDialog}
+            onCopyKey={handleCopyKeyWithDialog}
+            isDragDisabled={dragDisabled}
+            handleLabel={handleLabel}
+            showHandle={isManualSortFeatureEnabled && !isBulkMode}
+            onActivateDnd={handleActivateDnd}
+            selectionControl={selectionControl}
+          />
+        )
+      })}
     </CardList>
   )
+  const DndWrapper = dndRuntimeRef.current?.AccountListDndWrapper
 
   return (
     <Card
@@ -1036,19 +1189,10 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
             icon={<InboxIcon className="h-12 w-12" />}
             title={t("account:search.noResults")}
           />
-        ) : isManualSortFeatureEnabled ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={onDragEnd}
-          >
-            <SortableContext
-              items={sortedIds}
-              strategy={verticalListSortingStrategy}
-            >
-              {listContent}
-            </SortableContext>
-          </DndContext>
+        ) : shouldRenderSortableList && DndWrapper ? (
+          <DndWrapper sortedIds={sortedIds} onDragEnd={onDragEnd}>
+            {listContent}
+          </DndWrapper>
         ) : (
           listContent
         )}

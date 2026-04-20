@@ -1,11 +1,22 @@
+import { CSS, type Transform } from "@dnd-kit/utilities"
 import userEvent from "@testing-library/user-event"
 import React from "react"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import { SiteHealthStatus } from "~/types"
 import { buildDisplaySiteData, buildTag } from "~~/tests/test-utils/factories"
-import { render, screen } from "~~/tests/test-utils/render"
+import { act, render, screen, waitFor } from "~~/tests/test-utils/render"
+
+type SortableMockState = {
+  attributes: Record<string, unknown>
+  listeners: Record<string, unknown>
+  setNodeRef: ReturnType<typeof vi.fn>
+  setActivatorNodeRef: ReturnType<typeof vi.fn>
+  transform: Transform | null
+  transition: string | undefined
+  isDragging: boolean
+}
 
 const {
   mockUseAccountDataContext,
@@ -14,6 +25,11 @@ const {
   handleDeleteAccountMock,
   handleDeleteAccountsMock,
   handleSetAccountsDisabledMock,
+  dndState,
+  sortableKeyboardCoordinatesMock,
+  sortableReturnState,
+  useSensorMock,
+  useSortableMock,
 } = vi.hoisted(() => ({
   mockUseAccountDataContext: vi.fn(),
   mockUseUserPreferencesContext: vi.fn(),
@@ -21,6 +37,66 @@ const {
   handleDeleteAccountMock: vi.fn(),
   handleDeleteAccountsMock: vi.fn(),
   handleSetAccountsDisabledMock: vi.fn(),
+  dndState: {
+    onDragEnd: undefined as ((event: any) => void) | undefined,
+  },
+  sortableKeyboardCoordinatesMock: vi.fn(),
+  sortableReturnState: {
+    current: {
+      attributes: {},
+      listeners: {},
+      setNodeRef: vi.fn(),
+      setActivatorNodeRef: vi.fn(),
+      transform: null,
+      transition: undefined,
+      isDragging: false,
+    } as SortableMockState,
+  },
+  useSensorMock: vi.fn(),
+  useSortableMock: vi.fn(),
+}))
+
+const idleCallbackState = {
+  callback: null as
+    | ((deadline: { didTimeout: boolean; timeRemaining: () => number }) => void)
+    | null,
+  handle: 0,
+}
+
+vi.mock("@dnd-kit/core", () => ({
+  closestCenter: vi.fn(),
+  DndContext: ({
+    children,
+    onDragEnd,
+  }: {
+    children: React.ReactNode
+    onDragEnd: (event: any) => void
+  }) => {
+    dndState.onDragEnd = onDragEnd
+    return <div data-testid="dnd-context">{children}</div>
+  },
+  KeyboardSensor: vi.fn(),
+  PointerSensor: vi.fn(),
+  useSensor: useSensorMock,
+  useSensors: () => [],
+}))
+
+vi.mock("@dnd-kit/sortable", () => ({
+  arrayMove: (array: any[], from: number, to: number) => {
+    const next = array.slice()
+    const [item] = next.splice(from, 1)
+    next.splice(to, 0, item)
+    return next
+  },
+  SortableContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="sortable-context">{children}</div>
+  ),
+  sortableKeyboardCoordinates: sortableKeyboardCoordinatesMock,
+  verticalListSortingStrategy: vi.fn(),
+  useSortable: (options: any) => {
+    useSortableMock(options)
+    return sortableReturnState.current
+  },
 }))
 
 vi.mock("~/components/ui", () => {
@@ -162,13 +238,10 @@ vi.mock("~/hooks/useMediaQuery", () => ({
 }))
 
 vi.mock(
-  "~/features/AccountManagement/components/AccountList/SortableAccountListItem",
+  "~/features/AccountManagement/components/AccountList/AccountListItem",
   () => ({
-    default: ({ site, selectionControl }: any) => (
-      <div data-testid="account-row">
-        {selectionControl}
-        <span>{site.name}</span>
-      </div>
+    default: ({ site }: any) => (
+      <div data-testid="account-row">{site.name}</div>
     ),
   }),
 )
@@ -247,7 +320,9 @@ vi.mock(
 /**
  * Creates an account data context value for tests.
  */
-function createAccountDataContextValue() {
+function createAccountDataContextValue(
+  overrides: Record<string, unknown> = {},
+) {
   const enabledAlpha = buildDisplaySiteData({
     id: "enabled-alpha",
     name: "Enabled Alpha",
@@ -324,6 +399,7 @@ function createAccountDataContextValue() {
   return {
     sortedData: [enabledAlpha, disabledBeta, enabledGamma, unsyncedDelta],
     displayData: [enabledAlpha, disabledBeta, enabledGamma, unsyncedDelta],
+    isInitialLoad: false,
     handleSort: vi.fn(),
     sortField: "name",
     sortOrder: "asc",
@@ -338,12 +414,34 @@ function createAccountDataContextValue() {
     },
     isManualSortFeatureEnabled: false,
     detectedAccount: null,
+    ...overrides,
   }
 }
 
 describe("AccountList", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    dndState.onDragEnd = undefined
+    idleCallbackState.callback = null
+    idleCallbackState.handle = 0
+    sortableReturnState.current = {
+      attributes: {},
+      listeners: {},
+      setNodeRef: vi.fn(),
+      setActivatorNodeRef: vi.fn(),
+      transform: null,
+      transition: undefined,
+      isDragging: false,
+    }
+    vi.stubGlobal(
+      "requestIdleCallback",
+      vi.fn((callback: NonNullable<typeof idleCallbackState.callback>) => {
+        idleCallbackState.callback = callback
+        idleCallbackState.handle += 1
+        return idleCallbackState.handle
+      }),
+    )
+    vi.stubGlobal("cancelIdleCallback", vi.fn())
     handleDeleteAccountsMock.mockResolvedValue({
       deletedCount: 0,
       deletedIds: [],
@@ -358,6 +456,25 @@ describe("AccountList", () => {
     mockUseAccountDataContext.mockReturnValue(createAccountDataContextValue())
   })
 
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("shows a loading skeleton instead of the empty state during the initial load", () => {
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        sortedData: [],
+        displayData: [],
+        isInitialLoad: true,
+      }),
+    )
+
+    render(<AccountList />)
+
+    expect(screen.getByText("common:status.loading")).toBeInTheDocument()
+    expect(screen.queryByText("account:emptyState")).not.toBeInTheDocument()
+  })
+
   it("renders the created-time sort control", () => {
     render(<AccountList />)
 
@@ -366,6 +483,243 @@ describe("AccountList", () => {
         name: "account:list.sort account:list.header.createdAt",
       }),
     ).toBeInTheDocument()
+  })
+
+  it("auto-loads dnd during idle time after the first render settles", async () => {
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        isManualSortFeatureEnabled: true,
+      }),
+    )
+
+    render(<AccountList />)
+
+    expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("sortable-context")).not.toBeInTheDocument()
+    expect(useSortableMock).not.toHaveBeenCalled()
+
+    await act(async () => {
+      idleCallbackState.callback?.({
+        didTimeout: false,
+        timeRemaining: () => 50,
+      })
+    })
+
+    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+    expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+    expect(useSensorMock).toHaveBeenCalledWith(expect.any(Function))
+    expect(useSensorMock).toHaveBeenCalledWith(expect.any(Function), {
+      coordinateGetter: sortableKeyboardCoordinatesMock,
+    })
+    expect(useSortableMock).toHaveBeenCalledTimes(4)
+  })
+
+  it("falls back to timeout-based dnd loading when requestIdleCallback is unavailable", async () => {
+    vi.stubGlobal("requestIdleCallback", undefined)
+    vi.useFakeTimers()
+    try {
+      mockUseAccountDataContext.mockReturnValue(
+        createAccountDataContextValue({
+          isManualSortFeatureEnabled: true,
+        }),
+      )
+
+      render(<AccountList />)
+
+      expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
+
+      await act(async () => {
+        await vi.runOnlyPendingTimersAsync()
+      })
+
+      vi.useRealTimers()
+      expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+      expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("cancels the pending idle callback when the list unmounts before dnd preload runs", () => {
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        isManualSortFeatureEnabled: true,
+      }),
+    )
+
+    const { unmount } = render(<AccountList />)
+
+    unmount()
+
+    expect(globalThis.cancelIdleCallback).toHaveBeenCalledWith(1)
+  })
+
+  it("uses the drag handle as a manual fallback before idle loading finishes", async () => {
+    const user = userEvent.setup()
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        isManualSortFeatureEnabled: true,
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "account:list.dragHandle",
+      })[0],
+    )
+
+    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+    expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+    expect(useSortableMock).toHaveBeenCalledTimes(4)
+  })
+
+  it("keeps the existing reorder flow after dnd activation", async () => {
+    const user = userEvent.setup()
+    const handleReorder = vi.fn()
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        isManualSortFeatureEnabled: true,
+        handleReorder,
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "account:list.dragHandle",
+      })[0],
+    )
+
+    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+    expect(dndState.onDragEnd).toBeTypeOf("function")
+
+    dndState.onDragEnd?.({
+      active: { id: "enabled-alpha" },
+      over: { id: "enabled-gamma" },
+    })
+
+    expect(handleReorder).toHaveBeenCalledWith([
+      "disabled-beta",
+      "enabled-gamma",
+      "enabled-alpha",
+      "unsynced-delta",
+    ])
+  })
+
+  it("does not activate dnd from disabled search handles or bulk mode", async () => {
+    const user = userEvent.setup()
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        isManualSortFeatureEnabled: true,
+      }),
+    )
+
+    const { unmount } = render(<AccountList initialSearchQuery="Alpha" />)
+
+    const searchHandle = screen.getByRole("button", {
+      name: "account:list.dragHandle",
+    })
+    expect(searchHandle).toBeDisabled()
+
+    await user.click(searchHandle)
+
+    expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
+    expect(useSortableMock).not.toHaveBeenCalled()
+
+    unmount()
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.manage" }),
+    )
+
+    expect(
+      screen.queryByRole("button", { name: "account:list.dragHandle" }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
+    expect(useSortableMock).not.toHaveBeenCalled()
+  })
+
+  it("falls back to non-sortable rows when search disables drag after dnd is ready", async () => {
+    const user = userEvent.setup()
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        isManualSortFeatureEnabled: true,
+      }),
+    )
+
+    const { rerender } = render(<AccountList />)
+
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "account:list.dragHandle",
+      })[0],
+    )
+
+    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+    expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+
+    rerender(<AccountList initialSearchQuery="Alpha" />)
+
+    await waitFor(() => {
+      expect(screen.getByRole("textbox")).toHaveValue("Alpha")
+      expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
+      expect(screen.queryByTestId("sortable-context")).not.toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: "account:list.dragHandle" }),
+      ).toBeDisabled()
+    })
+  })
+
+  it("applies sortable dragging styles when dnd-kit marks a row as dragging", async () => {
+    const user = userEvent.setup()
+
+    sortableReturnState.current = {
+      attributes: {},
+      listeners: {},
+      setNodeRef: vi.fn(),
+      setActivatorNodeRef: vi.fn(),
+      transform: { x: 8, y: 12, scaleX: 1, scaleY: 1 },
+      transition: "transform 150ms ease",
+      isDragging: true,
+    }
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        isManualSortFeatureEnabled: true,
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "account:list.dragHandle",
+      })[0],
+    )
+
+    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+    expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+    expect(useSortableMock).toHaveBeenCalled()
+
+    const sortableHandle = screen.getAllByRole("button", {
+      name: "account:list.dragHandle",
+    })[0]
+    const sortableWrapper = sortableHandle.closest("div[style]")
+
+    expect(sortableWrapper).toHaveClass("relative", "z-10")
+    expect(sortableWrapper).toHaveStyle({
+      transform: CSS.Transform.toString(sortableReturnState.current.transform),
+      transition: sortableReturnState.current.transition,
+    })
   })
 
   it("filters accounts by enabled state and combines with tag filters", async () => {

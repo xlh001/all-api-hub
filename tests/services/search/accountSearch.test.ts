@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  buildAccountSearchIndex,
   normalizeSearchText,
   normalizeSearchUrl,
   searchAccounts,
+  searchAccountSearchIndex,
 } from "~/services/search/accountSearch"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
 
@@ -200,6 +202,21 @@ describe("accountSearch", () => {
 
     it("returns empty for no matches", () => {
       const results = searchAccounts(mockAccounts, "nonexistent")
+      expect(results).toEqual([])
+    })
+
+    it("returns the same results when searching a prebuilt index", () => {
+      const index = buildAccountSearchIndex(mockAccounts)
+      const query = "openai user1"
+
+      expect(searchAccountSearchIndex(index, query)).toEqual(
+        searchAccounts(mockAccounts, query),
+      )
+    })
+
+    it("does not treat query-only url fragments as a match for every account url", () => {
+      const results = searchAccounts(mockAccounts, "?unmatched")
+
       expect(results).toEqual([])
     })
 
