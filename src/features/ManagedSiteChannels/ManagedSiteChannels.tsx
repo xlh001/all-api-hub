@@ -961,14 +961,7 @@ export default function ManagedSiteChannels({
         title={t("title")}
         description={t("description")}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <ManagedSiteTypeSwitcher
-              ariaLabel={t("settings:managedSite.siteTypeLabel")}
-              configuredOnly
-              hideWhenSingleOption
-              size="sm"
-              triggerClassName="w-auto min-w-[172px]"
-            />
+          <>
             {!isConfigMissing && (
               <>
                 <Button
@@ -996,7 +989,13 @@ export default function ManagedSiteChannels({
                 </Button>
               </>
             )}
-          </div>
+            <ManagedSiteTypeSwitcher
+              ariaLabel={t("settings:managedSite.siteTypeLabel")}
+              hideWhenSingleOption
+              size="sm"
+              triggerClassName="w-auto min-w-[172px]"
+            />
+          </>
         }
       />
 

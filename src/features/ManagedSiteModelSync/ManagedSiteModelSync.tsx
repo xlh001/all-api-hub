@@ -752,7 +752,6 @@ export default function ManagedSiteModelSync({
         actions={
           <ManagedSiteTypeSwitcher
             ariaLabel={t("settings:managedSite.siteTypeLabel")}
-            configuredOnly
             hideWhenSingleOption
             size="sm"
             triggerClassName="w-auto min-w-[172px]"
