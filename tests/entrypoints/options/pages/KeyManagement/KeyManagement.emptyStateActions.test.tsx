@@ -2,6 +2,7 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import KeyManagement from "~/entrypoints/options/pages/KeyManagement"
+import { KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE } from "~/features/KeyManagement/constants"
 import { render, screen, waitFor } from "~~/tests/test-utils/render"
 import { createAccount } from "~~/tests/utils/keyManagementFactories"
 
@@ -11,12 +12,14 @@ const {
   useKeyManagementMock,
   pushWithinOptionsPageMock,
   mockedUseUserPreferencesContext,
+  addTokenDialogPropsSpy,
 } = vi.hoisted(() => ({
   sendRuntimeActionMessageMock: vi.fn(),
   tokenListPropsSpy: vi.fn(),
   useKeyManagementMock: vi.fn(),
   pushWithinOptionsPageMock: vi.fn(),
   mockedUseUserPreferencesContext: vi.fn(),
+  addTokenDialogPropsSpy: vi.fn(),
 }))
 
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
@@ -128,7 +131,10 @@ vi.mock("~/features/KeyManagement/components/Footer", () => ({
 }))
 
 vi.mock("~/features/KeyManagement/components/AddTokenDialog", () => ({
-  default: () => null,
+  default: (props: any) => {
+    addTokenDialogPropsSpy(props)
+    return null
+  },
 }))
 
 vi.mock("~/features/KeyManagement/components/RepairMissingKeysDialog", () => ({
@@ -178,6 +184,7 @@ describe("KeyManagement empty-state actions", () => {
     tokenListPropsSpy.mockReset()
     useKeyManagementMock.mockReset()
     pushWithinOptionsPageMock.mockReset()
+    addTokenDialogPropsSpy.mockReset()
     mockedUseUserPreferencesContext.mockReturnValue({
       managedSiteType: "new-api",
       newApiBaseUrl: "https://managed.example",
@@ -233,5 +240,30 @@ describe("KeyManagement empty-state actions", () => {
     await waitFor(() =>
       expect(selectorTrigger).toHaveAttribute("aria-expanded", "true"),
     )
+  })
+
+  it("preselects the filtered account in the add-token dialog while viewing all accounts", async () => {
+    const account = createAccount({
+      id: "acc-1",
+      name: "Account 1",
+    })
+
+    useKeyManagementMock.mockReturnValue(
+      createHookResult({
+        displayData: [account],
+        selectedAccount: KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE,
+        allAccountsFilterAccountId: account.id,
+        isAddTokenOpen: true,
+      }),
+    )
+
+    render(<KeyManagement />)
+
+    await waitFor(() => expect(addTokenDialogPropsSpy).toHaveBeenCalled())
+
+    expect(addTokenDialogPropsSpy.mock.lastCall?.[0]).toMatchObject({
+      isOpen: true,
+      preSelectedAccountId: account.id,
+    })
   })
 })

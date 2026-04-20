@@ -275,6 +275,13 @@ export default function KeyManagement(props: {
     await refreshManagedSiteTokenStatusForToken(token)
   }
 
+  const addTokenPreSelectedAccountId =
+    selectedAccount === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE
+      ? displayData.some((account) => account.id === allAccountsFilterAccountId)
+        ? allAccountsFilterAccountId
+        : null
+      : selectedAccount || null
+
   return (
     <div className="p-6">
       <Header
@@ -371,11 +378,7 @@ export default function KeyManagement(props: {
         isOpen={isAddTokenOpen}
         onClose={handleCloseAddToken}
         availableAccounts={displayData}
-        preSelectedAccountId={
-          selectedAccount === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE
-            ? null
-            : selectedAccount || null
-        }
+        preSelectedAccountId={addTokenPreSelectedAccountId}
         editingToken={editingToken}
       />
 
