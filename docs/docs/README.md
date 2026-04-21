@@ -3,7 +3,7 @@ home: true
 title: "首页"
 heroImage: "/512.png"
 heroText: "All API Hub - AI 聚合中转站管理器"
-tagline: "开源浏览器插件，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、查看余额、同步模型、管理密钥，并支持跨平台与云端备份"
+tagline: "开源浏览器插件，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、比对模型价格、验证 API/CLI 兼容性、同步模型与渠道，并支持跨平台与加密 WebDAV 备份"
 actions:
   - text: "开始使用"
     link: "./get-started.html"
@@ -26,37 +26,41 @@ actions:
     type: "secondary"
 
 features:
-  - title: "智能站点管理"
-    details: "自动识别 AI 聚合中转站点并创建访问令牌，智能获取站点名称和充值比例，支持重复检测和手动添加。"
-  - title: "多账号体系"
-    details: "支持每个站点添加多个账号，账号分组与快速切换，实时查看余额和详细使用日志。"
-  - title: "令牌与密钥管理"
-    details: "便捷管理所有 API Key，支持查看、复制、刷新和批量操作。"
-  - title: "模型信息查看"
-    details: "清晰展示站点支持的模型列表和价格信息。"
-  - title: "签到状态监控"
-    details: "自动检测哪些站点支持签到，并标记当天尚未签到的账号，让你在一个面板里按顺序完成多站点签到，减少因为忘记签到而浪费的免费额度。"
+  - title: "智能站点识别"
+    details: "登录后粘贴站点地址即可添加账号，自动识别站点名称、充值比例等信息；识别失败可手动补录，并会提示重复添加。"
+  - title: "多账号总览"
+    details: "把多个站点与账号集中在一个面板里，余额、用量与健康状态一眼看清，并支持自动刷新。"
+  - title: "独立 API 凭证档案"
+    details: "可脱离站点账号单独保存 baseUrl 与 API Key，按标签筛选，并复用到模型查看、接口验证和状态统计。"
+  - title: "模型与价格比对"
+    details: "不仅能看模型列表，还支持按来源、计费方式、分组和账号筛选，对比价格、倍率与实际成本，并标出最低价或最优组。"
+  - title: "模型与接口验证"
+    details: "支持模型可用性验证、批量验证、Token 兼容性判断，以及 CLI 兼容性检查，适合排查“站点可用但工具不可用”的问题。"
+  - title: "用量分析与延迟排查"
+    details: "按站点、账号、Token、日期筛选与对比用量、花费、模型分布和趋势，并提供热力图、延迟与慢请求视图辅助排查。"
+  - title: "自动签到与兑换跳转"
+    details: "集中识别支持签到的站点并处理签到状态，支持自动签到、自定义签到 URL 与充值 / 兑换页跳转。"
   - title: "快速导出集成"
-    details: "一键导出配置到 CherryStudio、CC Switch、Kilo Code、CLIProxyAPI、Claude Code Router 以及自建托管站点。"
+    details: "一键导出到 CherryStudio、CC Switch、CLIProxyAPI、Claude Code Router、Kilo Code，以及当前选择的自建托管站点。"
   - title: "自建站点后台联动"
-    details: "支持对自建 New API、DoneHub、Veloera 与 Octopus 实例进行后台联动与渠道相关操作。"
-  - title: "数据备份恢复"
-    details: "支持 JSON 格式导入导出和 WebDav 云端备份，实现跨设备数据同步。"
-  - title: "全平台支持"
-    details: "兼容 Chrome、Edge、Firefox 等浏览器，也支持移动端 / 手机端浏览器使用，例如手机 Edge、Firefox for Android、Kiwi 等，适配深色模式。"
-  - title: "隐私与安全"
-    details: "完全离线运行，所有数据本地存储，无需联网即可使用全部核心功能。"
+    details: "支持对自建 New API、DoneHub、Veloera 与 Octopus 实例进行渠道导入、模型同步、模型重定向与后台联动。"
+  - title: "WebDAV 备份与同步"
+    details: "支持 JSON 导入导出、WebDAV 自动同步、选择性同步与备份加密，实现跨设备与多浏览器迁移。"
   - title: "Cloudflare 过盾助手"
-    details: "遇到五秒盾自动弹窗过盾，确保站点可被识别和记录。"
+    details: "遇到 Cloudflare 挑战时自动弹出协助窗口，验证完成后继续原有识别、刷新或签到流程。"
+  - title: "全平台支持"
+    details: "兼容 Chrome、Edge、Firefox、Safari 与移动端 / 手机端浏览器，例如手机 Edge、Firefox for Android、Kiwi 等，适配深色模式。"
+  - title: "隐私优先"
+    details: "默认本地优先存储，无遥测数据收集；只有在你配置 WebDAV 或外部接口时，才会访问对应服务。"
 
 footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 ---
 
 ## 介绍
 
-现在 AI 生态里有越来越多基于 New API 系列的聚合中转站和自建面板，要同时管理各站点的余额、模型列表和 API 密钥，往往既分散又费时。
+现在 AI 生态里有越来越多基于 New API 系列的聚合中转站和自建面板，要同时管理各站点的余额、用量、模型价格和 API 密钥可用性，往往既分散又费时。
 
-All API Hub 作为浏览器插件，可以自动识别这些站点的账号，并一键查看余额、管理模型、密钥与自动签到，并为自建 New API、DoneHub、Veloera 与 Octopus 提供后台联动和渠道相关工具。当前已支持基于以下项目的中转站账号：
+All API Hub 作为浏览器插件，可以自动识别这些站点的账号，并一键查看余额、用量、模型价格、管理模型与密钥、执行自动签到，还支持独立 API 凭证管理，以及为自建 New API、DoneHub、Veloera 与 Octopus 提供后台联动和渠道相关工具。当前已支持基于以下项目的中转站账号：
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)

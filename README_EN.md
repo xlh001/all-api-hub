@@ -9,7 +9,7 @@
 
 # All API Hub – AI Relay & New API Manager
 
-**One-stop management for New API-compatible relay accounts: balance/usage dashboard, automatic check-in, one-click key export to popular apps, in-page API availability testing, and channel/model sync & redirect**
+**One-stop management for New API-compatible relay accounts: balance/usage dashboards, model price comparison, automatic check-in, site keys and standalone API credential management, in-page API availability testing, and channel/model sync & redirect**
 
 <p align="center">
 <a href="https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo">
@@ -56,9 +56,9 @@
 <a id="introduction"></a>
 ## 📖 Introduction
 
-Nowadays, within the AI ecosystem, there's a growing number of aggregated relay stations and custom dashboards built upon the New API series. Checking balances and model lists across these platforms, while also managing and quickly using API keys, is often fragmented and time-consuming.
+Nowadays, within the AI ecosystem, there's a growing number of aggregated relay stations and custom dashboards built upon the New API series. Checking balances, usage, model prices, and key availability across these platforms, while also managing and quickly using API keys, is often fragmented and time-consuming.
 
-All API Hub is a browser extension for one-stop management of New API-style relay accounts: balance/usage dashboard, automatic check-in, one-click key export to popular apps, in-page API availability testing, and channel/model sync & redirect. It currently supports relay station accounts from projects such as:
+All API Hub is a browser extension for one-stop management of New API-style relay accounts and standalone API credentials: balance/usage dashboards, model price comparison, automatic check-in, one-click key export to popular apps, in-page API availability testing, and channel/model sync & redirect. It currently supports relay station accounts from projects such as:
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)
@@ -93,26 +93,29 @@ For the latest compatibility references, see:
 - 🔑 **Token & Key Management**  
   Inspect, copy, and manage API keys per site, with bulk actions.
 
-- 🤖 **Model Information & Pricing**  
-  View per‑site model lists and pricing details for comparison.
+- 🗂️ **Standalone API Credential Profiles**  
+  Store reusable `baseUrl + API Key` profiles outside site accounts, filter them by tags, and reuse them for model browsing, verification, and usage/status tracking.
+
+- 🤖 **Model Catalog, Grouping & Price Comparison**  
+  Go beyond simple model viewing with source, billing-mode, group, and account filters, then compare pricing, ratios, and effective costs while highlighting the cheapest or optimal group.
 
 - 🧪 **Model & API Verification**  
-  Verify whether a key/model works and check common capabilities, including CLI compatibility, for troubleshooting.
+  Verify whether a key/model works, batch-check displayed models, evaluate token compatibility, and inspect CLI compatibility for troubleshooting.
 
 - 📊 **Usage Analytics & Visualization**  
-  Aggregate usage across multiple sites/accounts: filter by site, account, token, and date range, compare usage/cost/model breakdowns and trends, and inspect latency/slow requests when needed.
+  Aggregate usage across multiple sites/accounts: filter by site, account, token, and date range, compare usage/cost/model breakdowns and trends, and inspect heatmaps, latency, and slow requests when needed.
 
 - 🚀 **Quick Export Integration**  
   Export configuration to CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code, and the currently selected managed site target (New API / DoneHub / Veloera / Octopus).
 
 - 🔄 **Self-Hosted Site Management**  
-  For your self-hosted New API, DoneHub, Veloera, and Octopus instances: channel import, management workflows, and managed-site integrations.
+  For your self-hosted New API, DoneHub, Veloera, and Octopus instances: channel import, model sync, model redirect, management workflows, and managed-site integrations.
 
 - 🛡️ **Cloudflare Bypass Assistant**  
   Opens a helper window when Cloudflare challenges block detection or refresh, then continues after you complete the challenge.
 
 - ☁️ **Data Backup and Synchronization**  
-  Import/export and WebDAV sync for backup and migration across devices.
+  Import/export plus WebDAV backup, auto sync, selective sync, and backup encryption for migration across devices and browsers.
 
 - 🌐 **Cross‑Platform Compatible**
   Works on Chrome, Edge, Firefox, Safari, and mobile browsers such as mobile Edge, Firefox for Android, and Kiwi, with dark mode.
