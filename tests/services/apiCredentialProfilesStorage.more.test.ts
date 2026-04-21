@@ -6,6 +6,7 @@ import {
   mergeApiCredentialProfilesConfigs,
   subscribeToApiCredentialProfilesChanges,
 } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
+import { isSupportedApiCredentialTelemetryEndpoint } from "~/services/apiCredentialProfiles/telemetryConfig"
 import { API_CREDENTIAL_PROFILES_STORAGE_KEYS } from "~/services/core/storageKeys"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { SiteHealthStatus } from "~/types"
@@ -313,6 +314,124 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     )
   })
 
+  it("normalizes valid custom telemetry endpoint details with shared helpers", () => {
+    const coerced = coerceApiCredentialProfilesConfig(
+      {
+        profiles: [
+          {
+            id: "profile-custom-normalized",
+            name: "Normalized Custom",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com/v1/models",
+            apiKey: "sk-custom",
+            telemetryConfig: {
+              mode: "customReadOnlyEndpoint",
+              customEndpoint: {
+                endpoint: " https://example.com/usage?cursor=1 ",
+                jsonPaths: {
+                  balanceUsd: " data. balance ",
+                },
+              },
+            },
+          },
+        ],
+      },
+      { now: 12345 },
+    )
+
+    expect(coerced.profiles[0]).toEqual(
+      expect.objectContaining({
+        baseUrl: "https://example.com",
+        telemetryConfig: {
+          mode: "customReadOnlyEndpoint",
+          customEndpoint: {
+            endpoint: "https://example.com/usage?cursor=1",
+            jsonPaths: {
+              balanceUsd: "data.balance",
+            },
+          },
+        },
+      }),
+    )
+  })
+
+  it("drops cross-origin custom telemetry endpoint details while keeping the selected mode", () => {
+    const coerced = coerceApiCredentialProfilesConfig(
+      {
+        profiles: [
+          {
+            id: "profile-custom-cross-origin",
+            name: "Cross Origin Custom",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com",
+            apiKey: "sk-custom",
+            telemetryConfig: {
+              mode: "customReadOnlyEndpoint",
+              customEndpoint: {
+                endpoint: "https://evil.example.com/usage",
+                jsonPaths: {
+                  balanceUsd: "data.balance",
+                },
+              },
+            },
+          },
+        ],
+      },
+      { now: 12345 },
+    )
+
+    expect(coerced.profiles[0]).toEqual(
+      expect.objectContaining({
+        telemetryConfig: {
+          mode: "customReadOnlyEndpoint",
+        },
+      }),
+    )
+  })
+
+  it("drops incomplete custom telemetry endpoint details while keeping the selected mode", () => {
+    const coerced = coerceApiCredentialProfilesConfig(
+      {
+        profiles: [
+          {
+            id: "profile-custom-incomplete",
+            name: "Incomplete Custom",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com",
+            apiKey: "sk-custom",
+            telemetryConfig: {
+              mode: "customReadOnlyEndpoint",
+              customEndpoint: {
+                endpoint: "   ",
+                jsonPaths: {
+                  balanceUsd: "   ",
+                },
+              },
+            },
+          },
+        ],
+      },
+      { now: 12345 },
+    )
+
+    expect(coerced.profiles[0]).toEqual(
+      expect.objectContaining({
+        telemetryConfig: {
+          mode: "customReadOnlyEndpoint",
+        },
+      }),
+    )
+  })
+
+  it("rejects custom telemetry endpoints when the profile origin is not HTTP(S)", () => {
+    expect(
+      isSupportedApiCredentialTelemetryEndpoint(
+        "ftp://example.com/root",
+        "/usage/read-only",
+      ),
+    ).toBe(false)
+  })
+
   it("merges telemetry snapshots by newest successful query without changing identity winner", () => {
     const merged = mergeApiCredentialProfilesConfigs({
       now: 67890,
@@ -584,6 +703,44 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     const profiles = await apiCredentialProfilesStorage.listProfiles()
 
     expect(profiles.map((profile) => profile.id)).toEqual(["newer", "older"])
+  })
+
+  it("re-coerces stored telemetry config when the profile base URL changes", async () => {
+    const profile = await apiCredentialProfilesStorage.createProfile({
+      name: "Custom telemetry profile",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://old.example.com/v1/models",
+      apiKey: "sk-old",
+      telemetryConfig: {
+        mode: "customReadOnlyEndpoint",
+        customEndpoint: {
+          endpoint: "https://old.example.com/usage/read-only",
+          jsonPaths: {
+            balanceUsd: "data.balance",
+          },
+        },
+      },
+    })
+
+    const updated = await apiCredentialProfilesStorage.updateProfile(
+      profile.id,
+      {
+        baseUrl: "https://new.example.com/v1/models",
+      },
+    )
+
+    expect(updated.telemetryConfig).toEqual({
+      mode: "customReadOnlyEndpoint",
+    })
+    await expect(
+      apiCredentialProfilesStorage.getProfileById(profile.id),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        telemetryConfig: {
+          mode: "customReadOnlyEndpoint",
+        },
+      }),
+    )
   })
 
   it("validates update operations and removes tag ids from matching profiles only", async () => {
