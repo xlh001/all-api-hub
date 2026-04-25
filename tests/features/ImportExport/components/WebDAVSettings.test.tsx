@@ -9,7 +9,12 @@ import toast from "react-hot-toast"
 import { I18nextProvider } from "react-i18next"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
 import WebDAVSettings from "~/features/ImportExport/components/WebDAVSettings"
+import {
+  DEFAULT_PREFERENCES,
+  type UserPreferences,
+} from "~/services/preferences/userPreferences"
 import { testI18n } from "~~/tests/test-utils/i18n"
 
 const {
@@ -32,7 +37,7 @@ const {
 } = vi.hoisted(() => ({
   mockUserPreferences: {
     getPreferences: vi.fn(),
-    updateWebdavSettings: vi.fn(),
+    savePreferences: vi.fn(),
     exportPreferences: vi.fn(),
   },
   mockAccountStorage: { exportData: vi.fn() },
@@ -68,9 +73,19 @@ vi.mock("~/utils/core/logger", () => ({
   createLogger: () => loggerMocks,
 }))
 
-vi.mock("~/services/preferences/userPreferences", () => ({
-  userPreferences: mockUserPreferences,
-}))
+vi.mock("~/services/preferences/userPreferences", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("~/services/preferences/userPreferences")
+    >()
+  return {
+    ...actual,
+    userPreferences: {
+      ...actual.userPreferences,
+      ...mockUserPreferences,
+    },
+  }
+})
 
 vi.mock("~/services/accounts/accountStorage", () => ({
   accountStorage: mockAccountStorage,
@@ -120,28 +135,47 @@ vi.mock("~/features/ImportExport/utils", async (importOriginal) => {
 })
 
 function render(ui: ReactNode) {
-  return rtlRender(<I18nextProvider i18n={testI18n}>{ui}</I18nextProvider>)
+  return rtlRender(
+    <I18nextProvider i18n={testI18n}>
+      <UserPreferencesProvider>{ui}</UserPreferencesProvider>
+    </I18nextProvider>,
+  )
 }
+
+const createPreferencesFixture = (): UserPreferences => ({
+  ...structuredClone(DEFAULT_PREFERENCES),
+  showTodayCashflow: true,
+  webdav: {
+    ...structuredClone(DEFAULT_PREFERENCES.webdav),
+    url: "https://dav.example.com/backup.json",
+    username: "alice",
+    password: "pw",
+    backupEncryptionEnabled: true,
+    backupEncryptionPassword: "stored-secret",
+    syncData: {
+      accounts: true,
+      bookmarks: true,
+      apiCredentialProfiles: true,
+      preferences: true,
+    },
+  },
+})
+
+const ENCRYPTED_BACKUP_ENVELOPE = {
+  version: 1,
+  algorithm: "aes-gcm",
+  salt: "salt",
+  iv: "iv",
+  ciphertext: "cipher",
+} as const
 
 describe("WebDAVSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUserPreferences.getPreferences.mockResolvedValue({
-      webdav: {
-        url: "https://dav.example.com/backup.json",
-        username: "alice",
-        password: "pw",
-        backupEncryptionEnabled: true,
-        backupEncryptionPassword: "stored-secret",
-        syncData: {
-          accounts: true,
-          bookmarks: true,
-          apiCredentialProfiles: true,
-          preferences: true,
-        },
-      },
-    })
-    mockUserPreferences.updateWebdavSettings.mockResolvedValue(true)
+    mockUserPreferences.getPreferences.mockResolvedValue(
+      createPreferencesFixture(),
+    )
+    mockUserPreferences.savePreferences.mockResolvedValue(true)
     mockUserPreferences.exportPreferences.mockResolvedValue({
       themeMode: "dark",
     })
@@ -183,7 +217,21 @@ describe("WebDAVSettings", () => {
       screen.getByRole("button", { name: "importExport:webdav.saveConfig" }),
     )
     await waitFor(() => {
-      expect(mockUserPreferences.updateWebdavSettings).toHaveBeenCalled()
+      expect(mockUserPreferences.savePreferences).toHaveBeenCalledWith({
+        webdav: {
+          url: "https://dav.example.com/backup.json",
+          username: "alice",
+          password: "pw",
+          backupEncryptionEnabled: true,
+          backupEncryptionPassword: "stored-secret",
+          syncData: {
+            accounts: true,
+            bookmarks: true,
+            apiCredentialProfiles: true,
+            preferences: true,
+          },
+        },
+      })
     })
     expect(toast.success).toHaveBeenCalledWith(
       "settings:messages.updateSuccess",
@@ -237,13 +285,9 @@ describe("WebDAVSettings", () => {
 
   it("prompts for a decrypt password, imports the decrypted backup, and stores the password", async () => {
     mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
-    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue({
-      version: 1,
-      algorithm: "aes-gcm",
-      salt: "salt",
-      iv: "iv",
-      ciphertext: "cipher",
-    })
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+      ENCRYPTED_BACKUP_ENVELOPE,
+    )
 
     render(<WebDAVSettings />)
 
@@ -284,11 +328,451 @@ describe("WebDAVSettings", () => {
         { preserveWebdav: true },
       )
     })
-    expect(mockUserPreferences.updateWebdavSettings).toHaveBeenCalledWith({
-      backupEncryptionPassword: "manual-secret",
+    expect(mockUserPreferences.savePreferences).toHaveBeenCalledWith({
+      webdav: {
+        backupEncryptionPassword: "manual-secret",
+      },
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "importExport:webdav.saveConfig" }),
+    )
+
+    await waitFor(() => {
+      expect(mockUserPreferences.savePreferences).toHaveBeenLastCalledWith({
+        webdav: {
+          url: "https://dav.example.com/backup.json",
+          username: "alice",
+          password: "pw",
+          backupEncryptionEnabled: true,
+          backupEncryptionPassword: "manual-secret",
+          syncData: {
+            accounts: true,
+            bookmarks: true,
+            apiCredentialProfiles: true,
+            preferences: true,
+          },
+        },
+      })
     })
     expect(toast.success).toHaveBeenCalledWith(
       "importExport:import.importSuccess",
     )
+  })
+
+  it("surfaces the save failure message when saving the WebDAV config fails", async () => {
+    mockUserPreferences.savePreferences.mockResolvedValue(false)
+
+    render(<WebDAVSettings />)
+
+    expect(
+      await screen.findByDisplayValue("https://dav.example.com/backup.json"),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "importExport:webdav.saveConfig" }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "settings:messages.saveSettingsFailed",
+      )
+    })
+    expect(loggerMocks.error).toHaveBeenCalledWith(
+      "Failed to save WebDAV settings",
+      expect.any(Error),
+    )
+  })
+
+  it("shows the action-specific connection failure message when persisting settings fails", async () => {
+    mockUserPreferences.savePreferences.mockResolvedValue(false)
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.testConnection",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("importExport:webdav.testFailed")
+    })
+    expect(mockTestWebdavConnection).not.toHaveBeenCalled()
+  })
+
+  it("blocks download/import when the sync-data selection is empty", async () => {
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    screen
+      .getAllByRole("checkbox")
+      .slice(0, 4)
+      .forEach((checkbox) => fireEvent.click(checkbox))
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "importExport:webdav.syncData.selectionRequired",
+      )
+    })
+    expect(mockDownloadBackupRaw).not.toHaveBeenCalled()
+  })
+
+  it("uploads a new backup when the remote WebDAV file does not exist", async () => {
+    const missingBackupError = new Error("missing backup")
+    mockDownloadBackup.mockRejectedValueOnce(missingBackupError)
+    mockIsWebdavFileNotFoundError.mockImplementation(
+      (error) => error === missingBackupError,
+    )
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "importExport:webdav.uploadBackup" }),
+    )
+
+    await waitFor(() => {
+      expect(mockMergeWebdavBackupPayloadBySelection).toHaveBeenCalledWith(
+        expect.objectContaining({
+          remoteBackup: null,
+        }),
+      )
+      expect(mockUploadBackup).toHaveBeenCalled()
+    })
+    expect(toast.success).toHaveBeenCalledWith(
+      "importExport:export.dataExported",
+    )
+  })
+
+  it("surfaces the upload failure when fetching the remote backup fails unexpectedly", async () => {
+    const downloadError = new Error("download failed")
+    mockDownloadBackup.mockRejectedValueOnce(downloadError)
+    mockIsWebdavFileNotFoundError.mockReturnValue(false)
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "importExport:webdav.uploadBackup" }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("download failed")
+    })
+    expect(mockUploadBackup).not.toHaveBeenCalled()
+  })
+
+  it("imports an unencrypted WebDAV backup without opening the decrypt dialog", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce('{"version":2,"accounts":[]}')
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockBuildWebdavImportPayloadBySelection).toHaveBeenCalledWith(
+        expect.objectContaining({
+          rawBackup: {
+            version: 2,
+            accounts: [],
+          },
+        }),
+      )
+      expect(mockImportFromBackupObject).toHaveBeenCalledWith(
+        { imported: true },
+        { preserveWebdav: true },
+      )
+      expect(toast.success).toHaveBeenCalledWith(
+        "importExport:import.importSuccess",
+      )
+    })
+    expect(
+      screen.queryByText("importExport:webdav.encryption.decryptDialogTitle"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows the download/import failure message when importing the backup fails", async () => {
+    mockImportFromBackupObject.mockRejectedValueOnce(new Error("import failed"))
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("import failed")
+    })
+  })
+
+  it("reopens the decrypt dialog with the stored password when automatic decrypt fails", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+      ENCRYPTED_BACKUP_ENVELOPE,
+    )
+    mockDecryptWebdavBackupEnvelope.mockRejectedValueOnce(
+      new Error("stored password failed"),
+    )
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("stored-secret")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(document.getElementById("decryptPassword")).toBeTruthy()
+    })
+    const decryptPasswordInput = document.getElementById(
+      "decryptPassword",
+    ) as HTMLInputElement
+
+    expect(decryptPasswordInput.id).toBe("decryptPassword")
+    expect(decryptPasswordInput.value).toBe("stored-secret")
+    expect(toast.error).toHaveBeenCalledWith(
+      "importExport:webdav.encryption.decryptPrompt",
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:actions.cancel" }),
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("importExport:webdav.encryption.decryptDialogTitle"),
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it("shows the decrypt failure message when manual decrypt/import fails", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+      ENCRYPTED_BACKUP_ENVELOPE,
+    )
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
+      target: { value: "" },
+    })
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(document.getElementById("decryptPassword")).toBeTruthy()
+    })
+    const decryptPasswordInput = document.getElementById(
+      "decryptPassword",
+    ) as HTMLInputElement
+    fireEvent.change(decryptPasswordInput, {
+      target: { value: "manual-secret" },
+    })
+
+    mockDecryptWebdavBackupEnvelope.mockRejectedValueOnce(
+      new Error("manual decrypt failed"),
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("manual decrypt failed")
+    })
+  })
+
+  it("shows both import success and save-settings failure when persisting the decrypt password fails", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+      ENCRYPTED_BACKUP_ENVELOPE,
+    )
+    mockUserPreferences.savePreferences.mockResolvedValueOnce(true)
+    mockUserPreferences.savePreferences.mockResolvedValueOnce(false)
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
+      target: { value: "" },
+    })
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(document.getElementById("decryptPassword")).toBeTruthy()
+    })
+    fireEvent.change(
+      document.getElementById("decryptPassword") as HTMLInputElement,
+      {
+        target: { value: "manual-secret" },
+      },
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(
+        "importExport:import.importSuccess",
+      )
+      expect(toast.error).toHaveBeenCalledWith(
+        "settings:messages.saveSettingsFailed",
+      )
+    })
+  })
+
+  it("blocks manual decrypt/import when sync data becomes empty", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+      ENCRYPTED_BACKUP_ENVELOPE,
+    )
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
+      target: { value: "" },
+    })
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(document.getElementById("decryptPassword")).toBeTruthy()
+    })
+
+    screen
+      .getAllByRole("checkbox")
+      .slice(0, 4)
+      .forEach((checkbox) => fireEvent.click(checkbox))
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "importExport:webdav.syncData.selectionRequired",
+      )
+    })
+    expect(mockDecryptWebdavBackupEnvelope).not.toHaveBeenCalled()
+  })
+
+  it("updates the editable fields and toggles password visibility in both forms", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+      ENCRYPTED_BACKUP_ENVELOPE,
+    )
+
+    render(<WebDAVSettings />)
+
+    const urlInput = (await screen.findByDisplayValue(
+      "https://dav.example.com/backup.json",
+    )) as HTMLInputElement
+    const usernameInput = screen.getByDisplayValue("alice") as HTMLInputElement
+    const webdavPasswordInput = screen.getByDisplayValue(
+      "pw",
+    ) as HTMLInputElement
+    const backupPasswordInput = screen.getAllByDisplayValue(
+      "stored-secret",
+    )[0] as HTMLInputElement
+
+    fireEvent.change(urlInput, {
+      target: { value: "https://dav.example.com/backup-2.json" },
+    })
+    fireEvent.change(usernameInput, {
+      target: { value: "bob" },
+    })
+    fireEvent.change(webdavPasswordInput, {
+      target: { value: "pw-2" },
+    })
+
+    expect(urlInput.value).toBe("https://dav.example.com/backup-2.json")
+    expect(usernameInput.value).toBe("bob")
+    expect(webdavPasswordInput.value).toBe("pw-2")
+
+    fireEvent.click(
+      screen.getAllByRole("button", {
+        name: /importExport:webdav\.(show|hide)Password/,
+      })[0],
+    )
+    fireEvent.click(
+      screen.getAllByRole("button", {
+        name: /importExport:webdav\.(show|hide)Password/,
+      })[1],
+    )
+
+    expect(webdavPasswordInput).toHaveAttribute("type", "text")
+    expect(backupPasswordInput).toHaveAttribute("type", "text")
+
+    fireEvent.change(backupPasswordInput, {
+      target: { value: "" },
+    })
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    expect(
+      await screen.findByText(
+        "importExport:webdav.encryption.decryptDialogTitle",
+      ),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getAllByRole("button", {
+        name: /importExport:webdav\.(show|hide)Password/,
+      })[2],
+    )
+
+    expect(
+      document.getElementById("decryptPassword") as HTMLInputElement,
+    ).toHaveAttribute("type", "text")
   })
 })
