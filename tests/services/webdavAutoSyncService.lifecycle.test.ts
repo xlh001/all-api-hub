@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   isMessageReceiverUnavailableError: vi.fn(),
   getPreferences: vi.fn(),
   savePreferences: vi.fn(),
+  savePreferencesWithResult: vi.fn(),
 }))
 
 vi.mock("~/utils/core/error", () => ({
@@ -51,6 +52,7 @@ vi.mock("~/services/preferences/userPreferences", async (importOriginal) => {
       ...actual.userPreferences,
       getPreferences: mocks.getPreferences,
       savePreferences: mocks.savePreferences,
+      savePreferencesWithResult: mocks.savePreferencesWithResult,
     },
   }
 })
@@ -113,6 +115,22 @@ describe("webdavAutoSyncService lifecycle", () => {
     })
     mocks.sendRuntimeMessage.mockResolvedValue(undefined)
     mocks.isMessageReceiverUnavailableError.mockReturnValue(false)
+    mocks.savePreferences.mockResolvedValue(true)
+    mocks.savePreferencesWithResult.mockImplementation(
+      async (updates, options) => {
+        const success = await mocks.savePreferences(updates, options)
+        return success
+          ? {
+              lastUpdated: 1,
+              webdav: {
+                autoSync: false,
+                syncInterval: 3600,
+                syncStrategy: "merge",
+              },
+            }
+          : null
+      },
+    )
   })
 
   it("initializes once and only reacts to the WebDAV alarm", async () => {
@@ -297,7 +315,17 @@ describe("webdavAutoSyncService lifecycle", () => {
       .mockResolvedValue(undefined)
     const updateSpy = vi
       .spyOn(webdavAutoSyncService, "updateSettings")
-      .mockResolvedValue(undefined)
+      .mockResolvedValue({
+        ok: true,
+        savedPreferences: {
+          lastUpdated: 1,
+          webdav: {
+            autoSync: false,
+            syncInterval: 3600,
+            syncStrategy: "merge",
+          },
+        },
+      } as any)
     vi.spyOn(webdavAutoSyncService, "getStatus").mockReturnValue({
       isRunning: true,
       isInitialized: true,
@@ -325,7 +353,17 @@ describe("webdavAutoSyncService lifecycle", () => {
           action: RuntimeActionIds.WebdavAutoSyncUpdateSettings,
           settings: { autoSync: false },
         },
-        expected: { success: true },
+        expected: {
+          success: true,
+          data: {
+            lastUpdated: 1,
+            webdav: {
+              autoSync: false,
+              syncInterval: 3600,
+              syncStrategy: "merge",
+            },
+          },
+        },
       },
       {
         request: { action: RuntimeActionIds.WebdavAutoSyncGetStatus },
@@ -356,7 +394,7 @@ describe("webdavAutoSyncService lifecycle", () => {
     expect(setupSpy).toHaveBeenCalledTimes(1)
     expect(syncNowSpy).toHaveBeenCalledTimes(1)
     expect(stopSpy).toHaveBeenCalledTimes(1)
-    expect(updateSpy).toHaveBeenCalledWith({ autoSync: false })
+    expect(updateSpy).toHaveBeenCalledWith({ autoSync: false }, undefined)
 
     setupSpy.mockRejectedValueOnce(new Error("handler exploded"))
     const sendResponse = vi.fn()
@@ -368,6 +406,21 @@ describe("webdavAutoSyncService lifecycle", () => {
       success: false,
       error: "handler exploded",
     })
+  })
+
+  it("stops auto-sync alarms and clears the scheduled flag when an alarm was active", async () => {
+    const service = createService()
+    ;(service as any).isScheduled = true
+    mocks.clearAlarm.mockResolvedValueOnce(true).mockResolvedValueOnce(true)
+
+    await expect(service.stopAutoSync()).resolves.toBeUndefined()
+
+    expect(mocks.clearAlarm).toHaveBeenNthCalledWith(1, "webdavAutoSync")
+    expect(mocks.clearAlarm).toHaveBeenNthCalledWith(
+      2,
+      "webdavAutoSyncBestEffortUpload",
+    )
+    expect(service.getStatus().isRunning).toBe(false)
   })
 
   it("persists updated settings and re-runs scheduler setup", async () => {
@@ -382,14 +435,133 @@ describe("webdavAutoSyncService lifecycle", () => {
       syncStrategy: "merge",
     })
 
-    expect(mocks.savePreferences).toHaveBeenCalledWith({
-      webdav: {
-        autoSync: true,
-        syncInterval: 1800,
-        syncStrategy: "merge",
+    expect(mocks.savePreferences).toHaveBeenCalledWith(
+      {
+        webdav: {
+          autoSync: true,
+          syncInterval: 1800,
+          syncStrategy: "merge",
+        },
+      },
+      undefined,
+    )
+    expect(setupSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it("returns a conflict result when guarded settings persistence is rejected as stale", async () => {
+    const service = createService()
+    const setupSpy = vi
+      .spyOn(service, "setupAutoSync")
+      .mockResolvedValue(undefined)
+
+    mocks.savePreferencesWithResult.mockResolvedValueOnce(null)
+
+    await expect(
+      service.updateSettings(
+        { autoSync: false, syncInterval: 900 },
+        { expectedLastUpdated: 7 },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "conflict",
+    })
+
+    expect(setupSpy).not.toHaveBeenCalled()
+    expect(mocks.savePreferencesWithResult).toHaveBeenCalledWith(
+      {
+        webdav: {
+          autoSync: false,
+          syncInterval: 900,
+        },
+      },
+      {
+        expectedLastUpdated: 7,
+      },
+    )
+  })
+
+  it("maps update-settings conflict and generic failures to distinct response messages", async () => {
+    const updateSpy = vi
+      .spyOn(webdavAutoSyncService, "updateSettings")
+      .mockResolvedValueOnce({
+        ok: false,
+        reason: "conflict",
+      } as any)
+      .mockResolvedValueOnce({
+        ok: false,
+        reason: "error",
+      } as any)
+
+    const conflictResponse = vi.fn()
+    await handleWebdavAutoSyncMessage(
+      {
+        action: RuntimeActionIds.WebdavAutoSyncUpdateSettings,
+        settings: { autoSync: false },
+      },
+      conflictResponse,
+    )
+
+    const errorResponse = vi.fn()
+    await handleWebdavAutoSyncMessage(
+      {
+        action: RuntimeActionIds.WebdavAutoSyncUpdateSettings,
+        settings: { autoSync: true },
+      },
+      errorResponse,
+    )
+
+    expect(conflictResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "settings:messages.preferencesChangedExternally",
+    })
+    expect(errorResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "settings:messages.saveSettingsFailed",
+    })
+    expect(updateSpy).toHaveBeenNthCalledWith(1, { autoSync: false }, undefined)
+    expect(updateSpy).toHaveBeenNthCalledWith(2, { autoSync: true }, undefined)
+  })
+
+  it("forwards optimistic concurrency hints through the WebDAV settings message handler", async () => {
+    const updateSpy = vi
+      .spyOn(webdavAutoSyncService, "updateSettings")
+      .mockResolvedValueOnce({
+        ok: true,
+        savedPreferences: {
+          lastUpdated: 9,
+          webdav: {
+            autoSync: false,
+            syncInterval: 900,
+            syncStrategy: "merge",
+          },
+        },
+      } as any)
+
+    const sendResponse = vi.fn()
+    await handleWebdavAutoSyncMessage(
+      {
+        action: RuntimeActionIds.WebdavAutoSyncUpdateSettings,
+        settings: { autoSync: false, syncInterval: 900 },
+        expectedLastUpdated: 7,
+      },
+      sendResponse,
+    )
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      { autoSync: false, syncInterval: 900 },
+      { expectedLastUpdated: 7 },
+    )
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        lastUpdated: 9,
+        webdav: {
+          autoSync: false,
+          syncInterval: 900,
+          syncStrategy: "merge",
+        },
       },
     })
-    expect(setupSpy).toHaveBeenCalledTimes(1)
   })
 
   it("swallows settings persistence failures without re-running scheduler setup", async () => {
@@ -398,11 +570,16 @@ describe("webdavAutoSyncService lifecycle", () => {
       .spyOn(service, "setupAutoSync")
       .mockResolvedValue(undefined)
 
-    mocks.savePreferences.mockRejectedValueOnce(new Error("save failed"))
+    mocks.savePreferencesWithResult.mockRejectedValueOnce(
+      new Error("save failed"),
+    )
 
     await expect(
       service.updateSettings({ autoSync: false, syncInterval: 900 }),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({
+      ok: false,
+      reason: "error",
+    })
 
     expect(setupSpy).not.toHaveBeenCalled()
   })

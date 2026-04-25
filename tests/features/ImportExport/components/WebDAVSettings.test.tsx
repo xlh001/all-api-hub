@@ -11,13 +11,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
 import WebDAVSettings from "~/features/ImportExport/components/WebDAVSettings"
-import {
-  DEFAULT_PREFERENCES,
-  type UserPreferences,
-} from "~/services/preferences/userPreferences"
 import { testI18n } from "~~/tests/test-utils/i18n"
+import {
+  createPersistedPreferencesFixture,
+  setupMockPreferencePersistence,
+} from "~~/tests/test-utils/mockPreferencePersistence"
 
 const {
+  mockApplyPreferenceLanguage,
   mockUserPreferences,
   mockAccountStorage,
   mockTagStorage,
@@ -35,9 +36,12 @@ const {
   mockImportFromBackupObject,
   loggerMocks,
 } = vi.hoisted(() => ({
+  mockApplyPreferenceLanguage: vi.fn(),
   mockUserPreferences: {
     getPreferences: vi.fn(),
+    getLanguage: vi.fn(),
     savePreferences: vi.fn(),
+    savePreferencesWithResult: vi.fn(),
     exportPreferences: vi.fn(),
   },
   mockAccountStorage: { exportData: vi.fn() },
@@ -71,6 +75,11 @@ vi.mock("react-hot-toast", () => ({
 
 vi.mock("~/utils/core/logger", () => ({
   createLogger: () => loggerMocks,
+}))
+
+vi.mock("~/utils/i18n/applyPreferenceLanguage", () => ({
+  applyPreferenceLanguage: (...args: unknown[]) =>
+    mockApplyPreferenceLanguage(...args),
 }))
 
 vi.mock("~/services/preferences/userPreferences", async (importOriginal) => {
@@ -142,25 +151,6 @@ function render(ui: ReactNode) {
   )
 }
 
-const createPreferencesFixture = (): UserPreferences => ({
-  ...structuredClone(DEFAULT_PREFERENCES),
-  showTodayCashflow: true,
-  webdav: {
-    ...structuredClone(DEFAULT_PREFERENCES.webdav),
-    url: "https://dav.example.com/backup.json",
-    username: "alice",
-    password: "pw",
-    backupEncryptionEnabled: true,
-    backupEncryptionPassword: "stored-secret",
-    syncData: {
-      accounts: true,
-      bookmarks: true,
-      apiCredentialProfiles: true,
-      preferences: true,
-    },
-  },
-})
-
 const ENCRYPTED_BACKUP_ENVELOPE = {
   version: 1,
   algorithm: "aes-gcm",
@@ -172,10 +162,26 @@ const ENCRYPTED_BACKUP_ENVELOPE = {
 describe("WebDAVSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUserPreferences.getPreferences.mockResolvedValue(
-      createPreferencesFixture(),
+    setupMockPreferencePersistence(
+      mockUserPreferences,
+      createPersistedPreferencesFixture({
+        showTodayCashflow: true,
+        webdav: {
+          url: "https://dav.example.com/backup.json",
+          username: "alice",
+          password: "pw",
+          backupEncryptionEnabled: true,
+          backupEncryptionPassword: "stored-secret",
+          syncData: {
+            accounts: true,
+            bookmarks: true,
+            apiCredentialProfiles: true,
+            preferences: true,
+          },
+        },
+      }),
     )
-    mockUserPreferences.savePreferences.mockResolvedValue(true)
+    mockUserPreferences.getLanguage.mockResolvedValue("ja")
     mockUserPreferences.exportPreferences.mockResolvedValue({
       themeMode: "dark",
     })
@@ -192,6 +198,7 @@ describe("WebDAVSettings", () => {
       imported: true,
     })
     mockImportFromBackupObject.mockResolvedValue({ allImported: true })
+    mockApplyPreferenceLanguage.mockResolvedValue(true)
     mockDecryptWebdavBackupEnvelope.mockResolvedValue('{"version":2}')
     mockTestWebdavConnection.mockResolvedValue(undefined)
     mockUploadBackup.mockResolvedValue(undefined)
@@ -217,21 +224,28 @@ describe("WebDAVSettings", () => {
       screen.getByRole("button", { name: "importExport:webdav.saveConfig" }),
     )
     await waitFor(() => {
-      expect(mockUserPreferences.savePreferences).toHaveBeenCalledWith({
-        webdav: {
-          url: "https://dav.example.com/backup.json",
-          username: "alice",
-          password: "pw",
-          backupEncryptionEnabled: true,
-          backupEncryptionPassword: "stored-secret",
-          syncData: {
-            accounts: true,
-            bookmarks: true,
-            apiCredentialProfiles: true,
-            preferences: true,
+      expect(
+        mockUserPreferences.savePreferencesWithResult,
+      ).toHaveBeenCalledWith(
+        {
+          webdav: {
+            url: "https://dav.example.com/backup.json",
+            username: "alice",
+            password: "pw",
+            backupEncryptionEnabled: true,
+            backupEncryptionPassword: "stored-secret",
+            syncData: {
+              accounts: true,
+              bookmarks: true,
+              apiCredentialProfiles: true,
+              preferences: true,
+            },
           },
         },
-      })
+        {
+          expectedLastUpdated: 0,
+        },
+      )
     })
     expect(toast.success).toHaveBeenCalledWith(
       "settings:messages.updateSuccess",
@@ -327,33 +341,50 @@ describe("WebDAVSettings", () => {
         { imported: true },
         { preserveWebdav: true },
       )
+      expect(mockUserPreferences.getLanguage).toHaveBeenCalledTimes(1)
+      expect(mockApplyPreferenceLanguage).toHaveBeenCalledWith("ja")
     })
-    expect(mockUserPreferences.savePreferences).toHaveBeenCalledWith({
-      webdav: {
-        backupEncryptionPassword: "manual-secret",
+    expect(
+      mockUserPreferences.savePreferencesWithResult,
+    ).toHaveBeenNthCalledWith(
+      2,
+      {
+        webdav: {
+          backupEncryptionPassword: "manual-secret",
+        },
       },
-    })
+      {
+        expectedLastUpdated: expect.any(Number),
+      },
+    )
 
     fireEvent.click(
       screen.getByRole("button", { name: "importExport:webdav.saveConfig" }),
     )
 
     await waitFor(() => {
-      expect(mockUserPreferences.savePreferences).toHaveBeenLastCalledWith({
-        webdav: {
-          url: "https://dav.example.com/backup.json",
-          username: "alice",
-          password: "pw",
-          backupEncryptionEnabled: true,
-          backupEncryptionPassword: "manual-secret",
-          syncData: {
-            accounts: true,
-            bookmarks: true,
-            apiCredentialProfiles: true,
-            preferences: true,
+      expect(
+        mockUserPreferences.savePreferencesWithResult,
+      ).toHaveBeenLastCalledWith(
+        {
+          webdav: {
+            url: "https://dav.example.com/backup.json",
+            username: "alice",
+            password: "pw",
+            backupEncryptionEnabled: true,
+            backupEncryptionPassword: "manual-secret",
+            syncData: {
+              accounts: true,
+              bookmarks: true,
+              apiCredentialProfiles: true,
+              preferences: true,
+            },
           },
         },
-      })
+        {
+          expectedLastUpdated: expect.any(Number),
+        },
+      )
     })
     expect(toast.success).toHaveBeenCalledWith(
       "importExport:import.importSuccess",
@@ -361,7 +392,7 @@ describe("WebDAVSettings", () => {
   })
 
   it("surfaces the save failure message when saving the WebDAV config fails", async () => {
-    mockUserPreferences.savePreferences.mockResolvedValue(false)
+    mockUserPreferences.savePreferencesWithResult.mockResolvedValue(null)
 
     render(<WebDAVSettings />)
 
@@ -385,7 +416,7 @@ describe("WebDAVSettings", () => {
   })
 
   it("shows the action-specific connection failure message when persisting settings fails", async () => {
-    mockUserPreferences.savePreferences.mockResolvedValue(false)
+    mockUserPreferences.savePreferencesWithResult.mockResolvedValue(null)
 
     render(<WebDAVSettings />)
 
@@ -500,6 +531,9 @@ describe("WebDAVSettings", () => {
         { imported: true },
         { preserveWebdav: true },
       )
+      expect(mockUserPreferences.getLanguage).toHaveBeenCalledTimes(1)
+      expect(mockApplyPreferenceLanguage).toHaveBeenCalledWith("ja")
+      expect(mockUserPreferences.getPreferences).toHaveBeenCalledTimes(2)
       expect(toast.success).toHaveBeenCalledWith(
         "importExport:import.importSuccess",
       )
@@ -619,8 +653,12 @@ describe("WebDAVSettings", () => {
     mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
       ENCRYPTED_BACKUP_ENVELOPE,
     )
-    mockUserPreferences.savePreferences.mockResolvedValueOnce(true)
-    mockUserPreferences.savePreferences.mockResolvedValueOnce(false)
+    const defaultSavePreferencesWithResult =
+      mockUserPreferences.savePreferencesWithResult.getMockImplementation()
+    mockUserPreferences.savePreferencesWithResult.mockImplementationOnce(
+      defaultSavePreferencesWithResult!,
+    )
+    mockUserPreferences.savePreferencesWithResult.mockResolvedValueOnce(null)
 
     render(<WebDAVSettings />)
 
@@ -659,6 +697,74 @@ describe("WebDAVSettings", () => {
         "settings:messages.saveSettingsFailed",
       )
     })
+  })
+
+  it("persists the decrypt password with the current draft version when the imported backup excludes preferences", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+      ENCRYPTED_BACKUP_ENVELOPE,
+    )
+    mockImportFromBackupObject.mockResolvedValueOnce({
+      allImported: false,
+      sections: {
+        accounts: true,
+      },
+    })
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
+      target: { value: "" },
+    })
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImport",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(document.getElementById("decryptPassword")).toBeTruthy()
+    })
+    fireEvent.change(
+      document.getElementById("decryptPassword") as HTMLInputElement,
+      {
+        target: { value: "manual-secret" },
+      },
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockImportFromBackupObject).toHaveBeenCalledWith(
+        { imported: true },
+        { preserveWebdav: true },
+      )
+      expect(
+        mockUserPreferences.savePreferencesWithResult,
+      ).toHaveBeenNthCalledWith(
+        2,
+        {
+          webdav: {
+            backupEncryptionPassword: "manual-secret",
+          },
+        },
+        {
+          expectedLastUpdated: 1,
+        },
+      )
+    })
+
+    expect(mockUserPreferences.getLanguage).not.toHaveBeenCalled()
+    expect(mockApplyPreferenceLanguage).not.toHaveBeenCalled()
+    expect(toast.success).not.toHaveBeenCalledWith(
+      "importExport:import.importSuccess",
+    )
   })
 
   it("blocks manual decrypt/import when sync data becomes empty", async () => {
@@ -753,6 +859,7 @@ describe("WebDAVSettings", () => {
     fireEvent.change(backupPasswordInput, {
       target: { value: "" },
     })
+    fireEvent.click(screen.getByRole("switch"))
     fireEvent.click(
       screen.getByRole("button", {
         name: "importExport:webdav.downloadImport",
@@ -774,5 +881,6 @@ describe("WebDAVSettings", () => {
     expect(
       document.getElementById("decryptPassword") as HTMLInputElement,
     ).toHaveAttribute("type", "text")
+    expect(screen.getByRole("switch")).toHaveAttribute("aria-checked", "false")
   })
 })

@@ -30,6 +30,7 @@ describe("DoneHubSettings", () => {
   it("trims the base URL before persisting", async () => {
     const updateDoneHubBaseUrl = vi.fn().mockResolvedValue(true)
     vi.mocked(useUserPreferencesContext).mockReturnValue({
+      preferences: { lastUpdated: 1 },
       doneHubBaseUrl: "https://api.example.com",
       doneHubAdminToken: "",
       doneHubUserId: "",
@@ -53,6 +54,9 @@ describe("DoneHubSettings", () => {
     await waitFor(() => {
       expect(updateDoneHubBaseUrl).toHaveBeenCalledWith(
         "https://donehub.example.com",
+        {
+          expectedLastUpdated: 1,
+        },
       )
     })
   })
@@ -60,6 +64,7 @@ describe("DoneHubSettings", () => {
   it("skips persisting when the trimmed base URL is unchanged", () => {
     const updateDoneHubBaseUrl = vi.fn().mockResolvedValue(true)
     vi.mocked(useUserPreferencesContext).mockReturnValue({
+      preferences: { lastUpdated: 1 },
       doneHubBaseUrl: "https://donehub.example.com",
       doneHubAdminToken: "",
       doneHubUserId: "",
@@ -87,6 +92,7 @@ describe("DoneHubSettings", () => {
   it("shows an inline error and skips persisting when the admin user ID is not numeric", async () => {
     const updateDoneHubUserId = vi.fn().mockResolvedValue(true)
     vi.mocked(useUserPreferencesContext).mockReturnValue({
+      preferences: { lastUpdated: 1 },
       doneHubBaseUrl: "https://donehub.example.com",
       doneHubAdminToken: "",
       doneHubUserId: "100",
@@ -109,6 +115,82 @@ describe("DoneHubSettings", () => {
     expect(
       await screen.findByText("messages:errors.validation.userIdNumeric"),
     ).toBeInTheDocument()
+    expect(vi.mocked(showUpdateToast)).not.toHaveBeenCalled()
+  })
+
+  it("persists admin token and numeric user ID updates with the current preferences version", async () => {
+    const updateDoneHubAdminToken = vi.fn().mockResolvedValue(true)
+    const updateDoneHubUserId = vi.fn().mockResolvedValue(true)
+    vi.mocked(useUserPreferencesContext).mockReturnValue({
+      preferences: { lastUpdated: 2 },
+      doneHubBaseUrl: "https://donehub.example.com",
+      doneHubAdminToken: "old-token",
+      doneHubUserId: "100",
+      updateDoneHubBaseUrl: vi.fn().mockResolvedValue(true),
+      updateDoneHubAdminToken,
+      updateDoneHubUserId,
+      resetDoneHubConfig: vi.fn().mockResolvedValue(true),
+    } as any)
+
+    renderSubject()
+
+    const adminTokenInput = screen.getByDisplayValue("old-token")
+    const userIdInput = screen.getByDisplayValue("100")
+
+    fireEvent.change(adminTokenInput, {
+      target: { value: "next-token" },
+    })
+    fireEvent.blur(adminTokenInput)
+
+    fireEvent.change(userIdInput, {
+      target: { value: " 200 " },
+    })
+    fireEvent.blur(userIdInput)
+
+    await waitFor(() => {
+      expect(updateDoneHubAdminToken).toHaveBeenCalledWith("next-token", {
+        expectedLastUpdated: 2,
+      })
+      expect(updateDoneHubUserId).toHaveBeenCalledWith("200", {
+        expectedLastUpdated: 2,
+      })
+    })
+
+    expect(vi.mocked(showUpdateToast)).toHaveBeenCalledWith(
+      true,
+      "settings:doneHub.fields.adminTokenLabel",
+    )
+    expect(vi.mocked(showUpdateToast)).toHaveBeenCalledWith(
+      true,
+      "settings:doneHub.fields.userIdLabel",
+    )
+  })
+
+  it("skips persisting unchanged admin token and trimmed user ID values", () => {
+    const contextValue = {
+      preferences: { lastUpdated: 2 },
+      doneHubBaseUrl: "https://donehub.example.com",
+      doneHubAdminToken: "same-token",
+      doneHubUserId: "100",
+      updateDoneHubBaseUrl: vi.fn().mockResolvedValue(true),
+      updateDoneHubAdminToken: vi.fn().mockResolvedValue(true),
+      updateDoneHubUserId: vi.fn().mockResolvedValue(true),
+      resetDoneHubConfig: vi.fn().mockResolvedValue(true),
+    } as any
+    vi.mocked(useUserPreferencesContext).mockReturnValue(contextValue)
+
+    renderSubject()
+
+    fireEvent.blur(screen.getByDisplayValue("same-token"))
+
+    const userIdInput = screen.getByDisplayValue("100")
+    fireEvent.change(userIdInput, {
+      target: { value: " 100 " },
+    })
+    fireEvent.blur(userIdInput)
+
+    expect(contextValue.updateDoneHubAdminToken).not.toHaveBeenCalled()
+    expect(contextValue.updateDoneHubUserId).not.toHaveBeenCalled()
     expect(vi.mocked(showUpdateToast)).not.toHaveBeenCalled()
   })
 })

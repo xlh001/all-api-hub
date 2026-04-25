@@ -26,6 +26,7 @@ import {
   Switch,
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { usePreferenceDraft } from "~/hooks/usePreferenceDraft"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
 import { channelConfigStorage } from "~/services/managedSites/channelConfigStorage"
@@ -53,9 +54,9 @@ import {
   WEBDAV_SYNC_DATA_KEYS,
   type WebDAVSettings,
   type WebDAVSyncDataKey,
-  type WebDAVSyncDataSelection,
 } from "~/types/webdav"
 import { createLogger } from "~/utils/core/logger"
+import { applyPreferenceLanguage } from "~/utils/i18n/applyPreferenceLanguage"
 
 import {
   BACKUP_VERSION,
@@ -104,30 +105,48 @@ function getWebdavSyncDataLabel(t: TFunction, key: WebDAVSyncDataKey) {
  */
 export default function WebDAVSettings() {
   const { t } = useTranslation("importExport")
-  const { preferences, updateWebdavSettings } = useUserPreferencesContext()
+  const { preferences, updateWebdavSettings, loadPreferences } =
+    useUserPreferencesContext()
   const persistedWebdavSettings = preferences.webdav
 
-  // 配置表单
-  const [webdavUrl, setWebdavUrl] = useState(persistedWebdavSettings.url ?? "")
-  const [webdavUsername, setWebdavUsername] = useState(
-    persistedWebdavSettings.username ?? "",
+  const savedConfig = useMemo(
+    () => ({
+      url: persistedWebdavSettings.url ?? "",
+      username: persistedWebdavSettings.username ?? "",
+      password: persistedWebdavSettings.password ?? "",
+      syncData: resolveWebdavSyncDataSelection(
+        persistedWebdavSettings.syncData,
+      ),
+      backupEncryptionEnabled: Boolean(
+        persistedWebdavSettings.backupEncryptionEnabled,
+      ),
+      backupEncryptionPassword:
+        persistedWebdavSettings.backupEncryptionPassword ?? "",
+    }),
+    [
+      persistedWebdavSettings.backupEncryptionEnabled,
+      persistedWebdavSettings.backupEncryptionPassword,
+      persistedWebdavSettings.password,
+      persistedWebdavSettings.syncData,
+      persistedWebdavSettings.url,
+      persistedWebdavSettings.username,
+    ],
   )
-  const [webdavPassword, setWebdavPassword] = useState(
-    persistedWebdavSettings.password ?? "",
-  )
+  const {
+    draft: localConfig,
+    setDraft: setLocalConfig,
+    expectedLastUpdated,
+  } = usePreferenceDraft({
+    savedValue: savedConfig,
+    savedVersion: preferences.lastUpdated,
+  })
+  const webdavUrl = localConfig.url
+  const webdavUsername = localConfig.username
+  const webdavPassword = localConfig.password
+  const syncDataSelection = localConfig.syncData
+  const backupEncryptionEnabled = localConfig.backupEncryptionEnabled
+  const backupEncryptionPassword = localConfig.backupEncryptionPassword
   const [showPassword, setShowPassword] = useState(false)
-
-  const [syncDataSelection, setSyncDataSelection] =
-    useState<WebDAVSyncDataSelection>(() =>
-      resolveWebdavSyncDataSelection(persistedWebdavSettings.syncData),
-    )
-
-  const [backupEncryptionEnabled, setBackupEncryptionEnabled] = useState(
-    Boolean(persistedWebdavSettings.backupEncryptionEnabled),
-  )
-  const [backupEncryptionPassword, setBackupEncryptionPassword] = useState(
-    persistedWebdavSettings.backupEncryptionPassword ?? "",
-  )
   const [showBackupEncryptionPassword, setShowBackupEncryptionPassword] =
     useState(false)
 
@@ -163,9 +182,12 @@ export default function WebDAVSettings() {
     key: WebDAVSyncDataKey,
     checked: boolean | "indeterminate",
   ) => {
-    setSyncDataSelection((previousSelection) => ({
-      ...previousSelection,
-      [key]: checked === true,
+    setLocalConfig((previousConfig) => ({
+      ...previousConfig,
+      syncData: {
+        ...previousConfig.syncData,
+        [key]: checked === true,
+      },
     }))
   }
 
@@ -189,8 +211,13 @@ export default function WebDAVSettings() {
 
   const persistWebdavConfig = async (
     updates: Partial<WebDAVSettings> = webdavConfig,
+    options?: {
+      expectedLastUpdated?: number
+    },
   ) => {
-    const success = await updateWebdavSettings(updates)
+    const success = await updateWebdavSettings(updates, {
+      expectedLastUpdated: options?.expectedLastUpdated ?? expectedLastUpdated,
+    })
     if (!success) {
       throw new PersistWebdavConfigError()
     }
@@ -355,6 +382,10 @@ export default function WebDAVSettings() {
 
       const data = JSON.parse(content)
       const result = await handleImportWithSelection(data)
+      if (result.allImported || result.sections?.preferences) {
+        await loadPreferences()
+        await applyPreferenceLanguage(await userPreferences.getLanguage())
+      }
       if (result.allImported) {
         toast.success(t("importExport:import.importSuccess"))
       }
@@ -394,20 +425,39 @@ export default function WebDAVSettings() {
 
       const data = JSON.parse(content)
       const result = await handleImportWithSelection(data)
-      if (result.allImported) {
-        toast.success(t("importExport:import.importSuccess"))
+      let importedPreferencesLastUpdated: number | null = null
+
+      if (result.allImported || result.sections?.preferences) {
+        const refreshedPreferences = await userPreferences.getPreferences()
+        importedPreferencesLastUpdated = refreshedPreferences.lastUpdated
+        await loadPreferences()
+        await applyPreferenceLanguage(await userPreferences.getLanguage())
       }
 
       if (saveDecryptPassword) {
         try {
-          await persistWebdavConfig({
+          await persistWebdavConfig(
+            {
+              backupEncryptionPassword: pwd,
+            },
+            importedPreferencesLastUpdated === null
+              ? undefined
+              : {
+                  expectedLastUpdated: importedPreferencesLastUpdated,
+                },
+          )
+          setLocalConfig((prev) => ({
+            ...prev,
             backupEncryptionPassword: pwd,
-          })
-          setBackupEncryptionPassword(pwd)
+          }))
         } catch (error) {
           logger.error("Failed to persist WebDAV decrypt password", error)
           toast.error(t("settings:messages.saveSettingsFailed"))
         }
+      }
+
+      if (result.allImported) {
+        toast.success(t("importExport:import.importSuccess"))
       }
 
       setDecryptDialogOpen(false)
@@ -448,7 +498,12 @@ export default function WebDAVSettings() {
                   type="url"
                   placeholder={t("webdav.webdavUrlExample")}
                   value={webdavUrl}
-                  onChange={(e) => setWebdavUrl(e.target.value)}
+                  onChange={(e) =>
+                    setLocalConfig((prev) => ({
+                      ...prev,
+                      url: e.target.value,
+                    }))
+                  }
                 />
               </FormField>
             </div>
@@ -460,7 +515,12 @@ export default function WebDAVSettings() {
                 type="text"
                 placeholder={t("webdav.username")}
                 value={webdavUsername}
-                onChange={(e) => setWebdavUsername(e.target.value)}
+                onChange={(e) =>
+                  setLocalConfig((prev) => ({
+                    ...prev,
+                    username: e.target.value,
+                  }))
+                }
               />
             </FormField>
 
@@ -472,7 +532,12 @@ export default function WebDAVSettings() {
                   type={showPassword ? "text" : "password"}
                   placeholder={t("webdav.password")}
                   value={webdavPassword}
-                  onChange={(e) => setWebdavPassword(e.target.value)}
+                  onChange={(e) =>
+                    setLocalConfig((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }))
+                  }
                   rightIcon={
                     <IconButton
                       variant="ghost"
@@ -538,7 +603,12 @@ export default function WebDAVSettings() {
               </div>
               <Switch
                 checked={backupEncryptionEnabled}
-                onChange={setBackupEncryptionEnabled}
+                onChange={(checked) =>
+                  setLocalConfig((prev) => ({
+                    ...prev,
+                    backupEncryptionEnabled: checked,
+                  }))
+                }
               />
             </div>
 
@@ -553,7 +623,12 @@ export default function WebDAVSettings() {
                   type={showBackupEncryptionPassword ? "text" : "password"}
                   placeholder={t("webdav.encryption.passwordPlaceholder")}
                   value={backupEncryptionPassword}
-                  onChange={(e) => setBackupEncryptionPassword(e.target.value)}
+                  onChange={(e) =>
+                    setLocalConfig((prev) => ({
+                      ...prev,
+                      backupEncryptionPassword: e.target.value,
+                    }))
+                  }
                   rightIcon={
                     <IconButton
                       variant="ghost"

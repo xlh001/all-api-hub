@@ -4,6 +4,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import type { ReactNode } from "react"
 import toast from "react-hot-toast"
 import { I18nextProvider } from "react-i18next"
@@ -72,6 +73,7 @@ describe("WebDAVAutoSyncSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockUserPreferences.getPreferences.mockResolvedValue({
+      lastUpdated: 1,
       webdav: {
         autoSync: true,
         syncInterval: 1800,
@@ -123,6 +125,7 @@ describe("WebDAVAutoSyncSettings", () => {
     await waitFor(() => {
       expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
         action: RuntimeActionIds.WebdavAutoSyncUpdateSettings,
+        expectedLastUpdated: 1,
         settings: {
           autoSync: false,
           syncInterval: 1800,
@@ -215,6 +218,86 @@ describe("WebDAVAutoSyncSettings", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("settings:messages.updateFailed")
+    })
+  })
+
+  it("surfaces thrown save failures and unsuccessful sync responses", async () => {
+    mockSendRuntimeMessage.mockImplementation(async (message: any) => {
+      switch (message.action) {
+        case RuntimeActionIds.WebdavAutoSyncGetStatus:
+          return { success: true, data: null }
+        case RuntimeActionIds.WebdavAutoSyncUpdateSettings:
+          throw new Error("save exploded")
+        case RuntimeActionIds.WebdavAutoSyncSyncNow:
+          return { success: false, message: "sync rejected" }
+        default:
+          return { success: true }
+      }
+    })
+
+    render(<WebDAVAutoSyncSettings />)
+
+    expect(
+      await screen.findByRole("button", {
+        name: "importExport:webdav.autoSync.saveSettings",
+      }),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.autoSync.saveSettings",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("save exploded")
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.autoSync.syncNow",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("sync rejected")
+    })
+  })
+
+  it("saves edited interval and strategy values from the local draft", async () => {
+    const user = userEvent.setup()
+
+    render(<WebDAVAutoSyncSettings />)
+
+    const syncIntervalInput = await screen.findByDisplayValue("1800")
+    expect(syncIntervalInput).toBeInTheDocument()
+
+    await user.clear(syncIntervalInput)
+    await user.type(syncIntervalInput, "900")
+
+    await user.click(screen.getByRole("combobox"))
+    await user.click(
+      screen.getByRole("option", {
+        name: "importExport:webdav.autoSync.strategyMerge",
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.autoSync.saveSettings",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
+        action: RuntimeActionIds.WebdavAutoSyncUpdateSettings,
+        expectedLastUpdated: 1,
+        settings: {
+          autoSync: true,
+          syncInterval: 900,
+          syncStrategy: WEBDAV_SYNC_STRATEGIES.MERGE,
+        },
+      })
     })
   })
 })

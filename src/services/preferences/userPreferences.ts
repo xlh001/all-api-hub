@@ -612,6 +612,63 @@ class UserPreferencesService {
   }
 
   /**
+   * Save partial user preferences (deep merge) and return the stamped snapshot.
+   */
+  async savePreferencesWithResult(
+    preferences: DeepPartial<UserPreferences>,
+    options?: {
+      expectedLastUpdated?: number
+    },
+  ): Promise<UserPreferences | null> {
+    const updatedPreferences = await this.withStorageWriteLock(async () => {
+      const currentPreferences = await this.getPreferences()
+      if (
+        typeof options?.expectedLastUpdated === "number" &&
+        Number.isFinite(options.expectedLastUpdated) &&
+        currentPreferences.lastUpdated !== options.expectedLastUpdated
+      ) {
+        return null
+      }
+
+      const timestamp = Date.now()
+      const sharedPreferencesLastUpdated = patchTouchesSharedPreferences(
+        preferences,
+      )
+        ? timestamp
+        : getSharedPreferencesLastUpdated(currentPreferences)
+
+      const nextPreferences = stampPreferencesMetadata(
+        deepOverride(currentPreferences, preferences),
+        {
+          lastUpdated: timestamp,
+          sharedPreferencesLastUpdated,
+        },
+      )
+
+      await this.storage.set(
+        USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES,
+        nextPreferences,
+      )
+
+      return nextPreferences
+    })
+    if (!updatedPreferences) {
+      logger.debug("跳过过期的偏好设置写入", {
+        expectedLastUpdated: options?.expectedLastUpdated,
+      })
+      return null
+    }
+
+    logger.debug("偏好设置保存成功", {
+      lastUpdated: updatedPreferences.lastUpdated,
+      sharedPreferencesLastUpdated:
+        updatedPreferences.sharedPreferencesLastUpdated,
+      preferencesVersion: updatedPreferences.preferencesVersion,
+    })
+    return updatedPreferences
+  }
+
+  /**
    * Save partial user preferences (deep merge) and stamp timestamps/version.
    */
   async savePreferences(
@@ -621,52 +678,11 @@ class UserPreferencesService {
     },
   ): Promise<boolean> {
     try {
-      const updatedPreferences = await this.withStorageWriteLock(async () => {
-        const currentPreferences = await this.getPreferences()
-        if (
-          typeof options?.expectedLastUpdated === "number" &&
-          Number.isFinite(options.expectedLastUpdated) &&
-          currentPreferences.lastUpdated !== options.expectedLastUpdated
-        ) {
-          return null
-        }
-
-        const timestamp = Date.now()
-        const sharedPreferencesLastUpdated = patchTouchesSharedPreferences(
-          preferences,
-        )
-          ? timestamp
-          : getSharedPreferencesLastUpdated(currentPreferences)
-
-        const nextPreferences = stampPreferencesMetadata(
-          deepOverride(currentPreferences, preferences),
-          {
-            lastUpdated: timestamp,
-            sharedPreferencesLastUpdated,
-          },
-        )
-
-        await this.storage.set(
-          USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES,
-          nextPreferences,
-        )
-
-        return nextPreferences
-      })
-      if (!updatedPreferences) {
-        logger.debug("跳过过期的偏好设置写入", {
-          expectedLastUpdated: options?.expectedLastUpdated,
-        })
-        return false
-      }
-
-      logger.debug("偏好设置保存成功", {
-        lastUpdated: updatedPreferences.lastUpdated,
-        sharedPreferencesLastUpdated:
-          updatedPreferences.sharedPreferencesLastUpdated,
-        preferencesVersion: updatedPreferences.preferencesVersion,
-      })
-      return true
+      const updatedPreferences = await this.savePreferencesWithResult(
+        preferences,
+        options,
+      )
+      return updatedPreferences !== null
     } catch (error) {
       logger.error("保存偏好设置失败", error)
       return false
