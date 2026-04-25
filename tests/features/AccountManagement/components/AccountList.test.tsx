@@ -471,7 +471,6 @@ describe("AccountList", () => {
 
     render(<AccountList />)
 
-    expect(screen.getByText("common:status.loading")).toBeInTheDocument()
     expect(screen.queryByText("account:emptyState")).not.toBeInTheDocument()
   })
 

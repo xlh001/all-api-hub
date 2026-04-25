@@ -839,7 +839,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const maxTagFilterLines = isSmallScreen ? 2 : isDesktop ? 3 : 2
 
   if (isInitialLoad) {
-    return <AccountListInitialLoadingState label={t("common:status.loading")} />
+    return <AccountListInitialLoadingState />
   }
 
   if (!hasAccounts) {

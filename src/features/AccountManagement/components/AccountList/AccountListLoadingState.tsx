@@ -30,16 +30,10 @@ function AccountListLoadingPlaceholderRows({
   )
 }
 
-interface AccountListInitialLoadingStateProps {
-  label: string
-}
-
 /**
  * Renders the initial loading skeleton for the account list view.
  */
-export function AccountListInitialLoadingState({
-  label,
-}: AccountListInitialLoadingStateProps) {
+export function AccountListInitialLoadingState() {
   return (
     <Card
       padding="none"
@@ -50,13 +44,6 @@ export function AccountListInitialLoadingState({
       <CardContent padding="none" spacing="none">
         <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-primary border-b border-gray-200 bg-white px-3 py-3 sm:px-5">
           <div className="animate-pulse space-y-3">
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-300">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-70" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-blue-500" />
-              </span>
-              <span>{label}</span>
-            </div>
             <div className="grid gap-3 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
               <div className="dark:bg-dark-bg-tertiary h-10 rounded bg-gray-200" />
               <div className="dark:bg-dark-bg-tertiary h-10 rounded bg-gray-200" />
