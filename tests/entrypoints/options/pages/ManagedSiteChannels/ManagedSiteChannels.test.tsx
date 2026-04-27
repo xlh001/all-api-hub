@@ -4,7 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ChannelDialogContainer } from "~/components/dialogs/ChannelDialog"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
-import { DONE_HUB, NEW_API, OCTOPUS, VELOERA } from "~/constants/siteType"
+import {
+  AXON_HUB,
+  DONE_HUB,
+  NEW_API,
+  OCTOPUS,
+  VELOERA,
+} from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ManagedSiteChannels from "~/entrypoints/options/pages/ManagedSiteChannels"
 import { fetchChannelFilters } from "~/features/ManagedSiteChannels/utils/channelFilters"
@@ -19,7 +25,11 @@ import {
   NEW_API_MANAGED_SESSION_STATUSES,
 } from "~/services/managedSites/providers/newApiSession"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
-import { navigateWithinOptionsPage, openSettingsTab } from "~/utils/navigation"
+import {
+  navigateWithinOptionsPage,
+  openManagedSiteModelSyncForChannel,
+  openSettingsTab,
+} from "~/utils/navigation"
 import {
   fireEvent,
   render,
@@ -65,6 +75,7 @@ vi.mock("~/utils/navigation", async (importActual) => {
   return {
     ...actual,
     navigateWithinOptionsPage: vi.fn(),
+    openManagedSiteModelSyncForChannel: vi.fn(),
     openSettingsTab: vi.fn(),
   }
 })
@@ -278,6 +289,18 @@ describe("ManagedSiteChannels", () => {
               username: "",
               password: "",
             },
+      axonHub:
+        managedSiteType === AXON_HUB
+          ? {
+              baseUrl: "https://axonhub.example",
+              email: "admin@example.com",
+              password: "axonhub-password",
+            }
+          : {
+              baseUrl: "",
+              email: "",
+              password: "",
+            },
     }
   }
 
@@ -297,7 +320,9 @@ describe("ManagedSiteChannels", () => {
         ? "donehub"
         : managedSiteType === VELOERA
           ? "veloera"
-          : "newapi")
+          : managedSiteType === AXON_HUB
+            ? "axonhub"
+            : "newapi")
     const preferences = buildPreferences({
       managedSiteType,
       withMigrationTarget: options?.withMigrationTarget,
@@ -921,6 +946,9 @@ describe("ManagedSiteChannels", () => {
     render(<ManagedSiteChannels />)
 
     await waitForRowText("Alpha")
+    const row = screen.getByText("Alpha").closest("tr")
+
+    expect(row).toBeTruthy()
 
     expect(
       screen.queryByText("managedSiteChannels:table.columns.group"),
@@ -932,7 +960,75 @@ describe("ManagedSiteChannels", () => {
       screen.queryByText("managedSiteChannels:table.columns.weight"),
     ).not.toBeInTheDocument()
     expect(screen.getByText("OpenAI Response")).toBeInTheDocument()
-    expect(screen.getByText("2")).toBeInTheDocument()
+    expect(within(row!).getByText("2")).toBeInTheDocument()
+  })
+
+  it("uses AxonHub-specific columns, string type labels, row actions, and migration availability", async () => {
+    const user = userEvent.setup()
+
+    mockChannels(
+      [
+        {
+          id: 1,
+          name: "Alpha",
+          base_url: "https://axon-source.example",
+          type: "anthropic_aws",
+          models: "claude-3-5-sonnet,gpt-4o",
+          group: "default",
+          key: "test-key",
+          status: 1,
+          priority: 8,
+          weight: 5,
+        },
+      ],
+      { managedSiteType: AXON_HUB },
+    )
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    expect(
+      screen.queryByText("managedSiteChannels:table.columns.group"),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("managedSiteChannels:table.columns.priority"),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("managedSiteChannels:table.columns.weight"),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText("Anthropic AWS")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", {
+        name: /managedSiteChannels:toolbar.enterMigrationMode/,
+      }),
+    ).not.toBeInTheDocument()
+
+    const row = screen.getByText("Alpha").closest("tr")
+    expect(row).toBeTruthy()
+    expect(within(row!).getByText("2")).toBeInTheDocument()
+    await openRowActionsMenu(row!, user)
+
+    expect(
+      await screen.findByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.edit",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.filters",
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.openSync",
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.sync",
+      }),
+    ).not.toBeInTheDocument()
   })
 
   it("toggles hideable columns from the toolbar menu without closing the menu", async () => {
@@ -1053,6 +1149,30 @@ describe("ManagedSiteChannels", () => {
     )
   })
 
+  it("opens the per-channel model sync view from row actions", async () => {
+    const user = userEvent.setup()
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+    ])
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    const row = screen.getByText("Alpha").closest("tr")
+    expect(row).toBeTruthy()
+    await openRowActionsMenu(row!, user)
+
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.openSync",
+      }),
+    )
+
+    expect(openManagedSiteModelSyncForChannel).toHaveBeenCalledWith(1)
+  })
+
   it("opens the filter dialog from row actions and loads channel-specific filters", async () => {
     const user = userEvent.setup()
 
@@ -1082,6 +1202,68 @@ describe("ManagedSiteChannels", () => {
     await waitFor(() => {
       expect(fetchChannelFilters).toHaveBeenCalledWith(1)
     })
+  })
+
+  it("opens the row-action delete flow for a single channel", async () => {
+    const user = userEvent.setup()
+    const deleteChannel = vi.fn().mockResolvedValue({ success: true })
+
+    mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
+    ])
+
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: NEW_API,
+      messagesKey: "newapi",
+      getConfig: vi.fn().mockResolvedValue({
+        baseUrl: "https://admin.example",
+        token: "t",
+        userId: "1",
+      }),
+      deleteChannel,
+    } as any)
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    const row = screen.getByText("Alpha").closest("tr")
+    expect(row).toBeTruthy()
+    await openRowActionsMenu(row!, user)
+
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "managedSiteChannels:table.rowActions.delete",
+      }),
+    )
+
+    const dialog = await screen.findByRole("dialog")
+    expect(
+      within(dialog).getByText("managedSiteChannels:dialog.deleteTitle"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: "managedSiteChannels:dialog.confirm",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(deleteChannel).toHaveBeenCalledWith(
+        "https://admin.example",
+        "t",
+        "1",
+        1,
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
+    })
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "managedSiteChannels:toasts.channelDeleted",
+    )
   })
 
   it("removes successfully deleted channels and reports partial delete failures", async () => {

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { useChannelForm } from "~/components/dialogs/ChannelDialog/hooks/useChannelForm"
 import { DIALOG_MODES } from "~/constants/dialogModes"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
-import { NEW_API } from "~/constants/siteType"
+import { AXON_HUB, NEW_API } from "~/constants/siteType"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
 import type {
   CreateChannelPayload,
@@ -190,6 +190,69 @@ describe("useChannelForm", () => {
     expect(mockBuildChannelPayload).not.toHaveBeenCalled()
     expect(mockCreateChannel).not.toHaveBeenCalled()
     expect(mockUpdateChannel).not.toHaveBeenCalled()
+  })
+
+  it("preserves AxonHub string channel types and skips New API group loading", async () => {
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: AXON_HUB,
+      messagesKey: "axonhub",
+      checkValidConfig: mockCheckValidConfig,
+      getConfig: mockGetConfig,
+      buildChannelPayload: mockBuildChannelPayload,
+      createChannel: mockCreateChannel,
+      updateChannel: mockUpdateChannel,
+    } as any)
+
+    const channel = buildManagedSiteChannel({
+      type: "anthropic_aws",
+      group: "",
+    })
+
+    const { result } = renderHook(() =>
+      useChannelForm({
+        mode: DIALOG_MODES.EDIT,
+        channel,
+        isOpen: true,
+        onClose: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.formData.type).toBe("anthropic_aws")
+    })
+
+    expect(result.current.isBaseUrlRequired).toBe(true)
+    expect(result.current.availableGroups).toEqual([])
+    expect(mockCheckValidConfig).not.toHaveBeenCalled()
+    expect(mockGetConfig).not.toHaveBeenCalled()
+
+    await act(async () => {
+      result.current.handleTypeChange("custom-provider")
+    })
+
+    expect(result.current.formData.type).toBe("custom-provider")
+  })
+
+  it("does not require base_url for incidental string types outside AxonHub", async () => {
+    const { result } = renderHook(() =>
+      useChannelForm({
+        mode: DIALOG_MODES.ADD,
+        channel: null,
+        isOpen: true,
+        onClose: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.formData.name).toBe("")
+    })
+
+    await act(async () => {
+      result.current.handleTypeChange("custom-provider")
+    })
+
+    expect(result.current.formData.type).toBe("custom-provider")
+    expect(result.current.isBaseUrlRequired).toBe(false)
   })
 
   it("adds a fallback success message when channel creation succeeds with an empty message", async () => {

@@ -5,9 +5,10 @@ import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ChannelDialog } from "~/components/dialogs/ChannelDialog"
+import { AXON_HUB_CHANNEL_TYPE } from "~/constants/axonHub"
 import { DIALOG_MODES } from "~/constants/dialogModes"
 import { ChannelType } from "~/constants/managedSite"
-import { NEW_API, OCTOPUS } from "~/constants/siteType"
+import { AXON_HUB, NEW_API, OCTOPUS } from "~/constants/siteType"
 import { CHANNEL_STATUS, type ChannelFormData } from "~/types/managedSite"
 
 const {
@@ -29,7 +30,7 @@ const {
       priority: 2,
       weight: 3,
       status: 1,
-    },
+    } as ChannelFormData,
     isFormValid: true,
     isSaving: false,
     isLoadingGroups: false,
@@ -145,11 +146,11 @@ vi.mock("~/components/dialogs/ChannelDialog/hooks/useChannelForm", async () => {
         }))
       }
 
-      const handleTypeChange = (value: number) => {
+      const handleTypeChange = (value: number | string) => {
         handleTypeChangeMock(value)
         setFormData((current) => ({
           ...current,
-          type: value as ChannelType,
+          type: value as ChannelFormData["type"],
         }))
       }
 
@@ -329,7 +330,26 @@ vi.mock("~/components/ui", async () => {
           {footer}
         </div>
       ) : null,
-    Select: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    Select: ({
+      children,
+      onValueChange,
+    }: {
+      children: ReactNode
+      onValueChange?: (value: string) => void
+    }) => (
+      <div>
+        <button onClick={() => onValueChange?.("1")} type="button">
+          select-one
+        </button>
+        <button
+          onClick={() => onValueChange?.(AXON_HUB_CHANNEL_TYPE.OPENAI)}
+          type="button"
+        >
+          select-openai
+        </button>
+        {children}
+      </div>
+    ),
     SelectContent: ({ children }: { children: ReactNode }) => (
       <div>{children}</div>
     ),
@@ -676,5 +696,52 @@ describe("ChannelDialog behavior", () => {
     expect(screen.queryByTestId("groups-multi-select")).toBeNull()
     expect(screen.queryByText("channelDialog:fields.priority.label")).toBeNull()
     expect(screen.queryByText("channelDialog:fields.weight.label")).toBeNull()
+  })
+
+  it("uses AxonHub string channel types and hides New API-only fields", () => {
+    mockUserPreferences.managedSiteType = AXON_HUB
+    channelFormScenario.formData = buildFormData({
+      type: "custom_axonhub_type",
+    })
+
+    render(<ChannelDialog isOpen={true} onClose={vi.fn()} />)
+
+    expect(
+      screen.getByTestId(`select-item-${AXON_HUB_CHANNEL_TYPE.OPENAI}`),
+    ).toHaveTextContent("OpenAI")
+    expect(
+      screen.getByTestId("select-item-custom_axonhub_type"),
+    ).toHaveTextContent("custom_axonhub_type")
+    expect(screen.getByTestId("models-multi-select")).toBeInTheDocument()
+    expect(screen.queryByTestId("groups-multi-select")).toBeNull()
+    expect(screen.queryByText("channelDialog:fields.priority.label")).toBeNull()
+    expect(screen.queryByText("channelDialog:fields.weight.label")).toBeNull()
+  })
+
+  it("coerces selected channel types based on the active managed-site backend", async () => {
+    const user = userEvent.setup()
+
+    const firstRender = render(
+      <ChannelDialog isOpen={true} onClose={vi.fn()} />,
+    )
+
+    await user.click(screen.getAllByRole("button", { name: "select-one" })[0])
+
+    expect(handleTypeChangeMock).toHaveBeenCalledWith(1)
+
+    firstRender.unmount()
+    vi.clearAllMocks()
+    resetChannelFormScenario()
+    mockUserPreferences.managedSiteType = AXON_HUB
+
+    render(<ChannelDialog isOpen={true} onClose={vi.fn()} />)
+
+    await user.click(
+      screen.getAllByRole("button", { name: "select-openai" })[0],
+    )
+
+    expect(handleTypeChangeMock).toHaveBeenCalledWith(
+      AXON_HUB_CHANNEL_TYPE.OPENAI,
+    )
   })
 })

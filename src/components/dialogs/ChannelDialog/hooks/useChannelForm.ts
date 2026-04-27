@@ -6,6 +6,7 @@ import { mergeUniqueOptions } from "~/components/dialogs/ChannelDialog/utils/sel
 import type { CompactMultiSelectOption } from "~/components/ui"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
+import { AXON_HUB } from "~/constants/siteType"
 import { getApiService } from "~/services/apiService"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
 import { getManagedSiteConfigMissingMessage } from "~/services/managedSites/utils/managedSite"
@@ -102,6 +103,7 @@ export function useChannelForm({
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingGroups, setIsLoadingGroups] = useState(false)
   const [isLoadingModels, setIsLoadingModels] = useState(false)
+  const [managedSiteType, setManagedSiteType] = useState<string | null>(null)
   const [availableGroups, setAvailableGroups] = useState<
     CompactMultiSelectOption[]
   >([])
@@ -109,14 +111,23 @@ export function useChannelForm({
     CompactMultiSelectOption[]
   >([])
 
+  const loadManagedSiteType = useCallback(async () => {
+    const service = await getManagedSiteService()
+    setManagedSiteType(service.siteType)
+    return service
+  }, [])
+
   // Load groups and model suggestions on mount
   useEffect(() => {
     if (isOpen) {
-      loadGroups()
-      loadModels()
+      void (async () => {
+        const service = await loadManagedSiteType()
+        await loadGroups(service)
+        await loadModels()
+      })()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, initialValues, initialModels, initialGroups])
+  }, [isOpen, initialValues, initialModels, initialGroups, loadManagedSiteType])
 
   // Load form data when dialog opens
   useEffect(() => {
@@ -145,10 +156,16 @@ export function useChannelForm({
     setFormData(buildInitialFormData())
   }, [buildInitialFormData])
 
-  const loadGroups = async () => {
+  const loadGroups = async (
+    serviceOverride?: Awaited<ReturnType<typeof getManagedSiteService>>,
+  ) => {
     setIsLoadingGroups(true)
     try {
-      const service = await getManagedSiteService()
+      const service = serviceOverride ?? (await loadManagedSiteType())
+      if (service.siteType === AXON_HUB) {
+        setAvailableGroups([])
+        return
+      }
       const hasConfig = await service.checkValidConfig()
       const preselectedGroups = (
         initialValues?.groups ??
@@ -246,7 +263,9 @@ export function useChannelForm({
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleTypeChange = (newType: ChannelType | OctopusOutboundType) => {
+  const handleTypeChange = (
+    newType: ChannelType | OctopusOutboundType | string,
+  ) => {
     setFormData((prev) => ({
       ...prev,
       type: newType,
@@ -258,6 +277,7 @@ export function useChannelForm({
   const isKeyFieldRequired = mode === DIALOG_MODES.ADD
 
   const isBaseUrlRequired =
+    managedSiteType === AXON_HUB ||
     formData.type === ChannelType.VolcEngine ||
     formData.type === ChannelType.SunoAPI
 

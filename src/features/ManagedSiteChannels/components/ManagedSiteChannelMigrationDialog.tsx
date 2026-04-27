@@ -23,6 +23,7 @@ import {
   executeManagedSiteChannelMigration,
   prepareManagedSiteChannelMigrationPreview,
 } from "~/services/managedSites/channelMigration"
+import { getNumericChannelType } from "~/services/managedSites/utils/channelType"
 import {
   getManagedSiteLabel,
   type ManagedSiteTargetOption,
@@ -709,13 +710,13 @@ export function ManagedSiteChannelMigrationDialog({
                             label={t("channelDialog:fields.type.label")}
                             sourceValue={getChannelTypeText(
                               sourceSiteType,
-                              item.sourceChannel.type,
+                              getNumericChannelType(item.sourceChannel.type),
                             )}
                             targetValue={
                               item.draft
                                 ? getChannelTypeText(
                                     preview.targetSiteType,
-                                    item.draft.type,
+                                    getNumericChannelType(item.draft.type),
                                   )
                                 : "—"
                             }

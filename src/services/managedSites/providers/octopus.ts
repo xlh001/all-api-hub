@@ -12,6 +12,7 @@ import type { ApiResponse } from "~/services/apiService/common/type"
 import * as octopusApi from "~/services/apiService/octopus"
 import type { ManagedSiteConfig } from "~/services/managedSites/managedSiteService"
 import { findManagedSiteChannelByComparableInputs } from "~/services/managedSites/utils/channelMatching"
+import { getNumericChannelType } from "~/services/managedSites/utils/channelType"
 import { fetchManagedSiteAvailableModels } from "~/services/managedSites/utils/fetchManagedSiteAvailableModels"
 import { fetchTokenScopedModels } from "~/services/managedSites/utils/fetchTokenScopedModels"
 import {
@@ -279,7 +280,10 @@ export async function createChannel(
     const request: OctopusCreateChannelRequest = {
       name: channel.name || "",
       // Octopus 表单使用 OctopusTypeSelector，type 已经是 OctopusOutboundType
-      type: mapChannelTypeToOctopusOutboundType(channel.type, true),
+      type: mapChannelTypeToOctopusOutboundType(
+        getNumericChannelType(channel.type),
+        true,
+      ),
       enabled: channel.status === 1,
       base_urls: [{ url: channel.base_url || "" }],
       keys: [{ enabled: true, channel_key: channel.key || "" }],
@@ -324,7 +328,10 @@ export async function updateChannel(
       // Octopus 表单使用 OctopusTypeSelector，type 已经是 OctopusOutboundType
       type:
         channelData.type !== undefined
-          ? mapChannelTypeToOctopusOutboundType(channelData.type, true)
+          ? mapChannelTypeToOctopusOutboundType(
+              getNumericChannelType(channelData.type),
+              true,
+            )
           : undefined,
       enabled: channelData.status === 1,
       base_urls: channelData.base_url

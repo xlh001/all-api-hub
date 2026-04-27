@@ -22,12 +22,16 @@ interface RowActionsProps {
   onFilters: (channel: ChannelRow) => void
   canMigrate: boolean
   showMigrationAction: boolean
+  showNewApiOnlyActions?: boolean
   isSyncing: boolean
   labels: RowActionsLabels
 }
 
 /**
- * Dropdown actions available for each channel row (edit, filters, sync, delete).
+ * Dropdown actions available for each channel row.
+ * - Migration mode renders view + migrate.
+ * - Standard mode renders edit + delete, with filters/sync controls gated by
+ *   `showNewApiOnlyActions`.
  */
 export default function RowActions({
   channel,
@@ -40,6 +44,7 @@ export default function RowActions({
   onFilters,
   canMigrate,
   showMigrationAction,
+  showNewApiOnlyActions = true,
   isSyncing,
   labels,
 }: RowActionsProps) {
@@ -74,19 +79,23 @@ export default function RowActions({
             <DropdownMenuItem onClick={() => onEdit(channel)}>
               {labels.edit}
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onFilters(channel)}>
-              {labels.filters}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void onOpenSync(channel.id)}>
-              {labels.openSync}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onSync([channel.id])}
-              disabled={isSyncing}
-            >
-              {isSyncing ? labels.syncing : labels.sync}
-            </DropdownMenuItem>
+            {showNewApiOnlyActions ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onFilters(channel)}>
+                  {labels.filters}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void onOpenSync(channel.id)}>
+                  {labels.openSync}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onSync([channel.id])}
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? labels.syncing : labels.sync}
+                </DropdownMenuItem>
+              </>
+            ) : null}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"

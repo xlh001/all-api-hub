@@ -1,9 +1,8 @@
 /**
- * Octopus 渠道与 ManagedSiteChannel 的复合类型
- * 用于在 ManagedSiteChannel 基础上附加原始 Octopus 渠道数据
- *
- * 注意：此类型扩展 ManagedSiteChannel 的所有字段，并添加必填的 _octopusData 字段
+ * ManagedSiteChannel 的站点增强复合类型。
+ * 用于在通用渠道字段基础上附加站点原始数据，例如 _octopusData 或 _axonHubData。
  */
+import type { AxonHubChannel } from "./axonHub"
 import type { NewApiChannel } from "./newApi"
 import type { OctopusChannel } from "./octopus"
 
@@ -29,4 +28,9 @@ export type {
 export type OctopusChannelWithData = NewApiChannel & {
   /** 原始 Octopus 渠道数据 (必填) */
   _octopusData: OctopusChannel
+}
+
+export type AxonHubChannelWithData = NewApiChannel & {
+  /** Raw AxonHub GraphQL channel data. */
+  _axonHubData: AxonHubChannel
 }
