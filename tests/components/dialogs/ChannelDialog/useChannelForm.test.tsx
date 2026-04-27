@@ -3,9 +3,10 @@ import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { useChannelForm } from "~/components/dialogs/ChannelDialog/hooks/useChannelForm"
+import { DEFAULT_CLAUDE_CODE_HUB_CHANNEL_FIELDS } from "~/constants/claudeCodeHub"
 import { DIALOG_MODES } from "~/constants/dialogModes"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
-import { AXON_HUB, NEW_API } from "~/constants/siteType"
+import { AXON_HUB, CLAUDE_CODE_HUB, NEW_API } from "~/constants/siteType"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
 import type {
   CreateChannelPayload,
@@ -317,5 +318,148 @@ describe("useChannelForm", () => {
       }),
     )
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not require a real provider key when editing a Claude Code Hub channel", async () => {
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: CLAUDE_CODE_HUB,
+      messagesKey: "claudecodehub",
+      checkValidConfig: mockCheckValidConfig.mockResolvedValue(true),
+      getConfig: mockGetConfig,
+      buildChannelPayload: mockBuildChannelPayload,
+      createChannel: mockCreateChannel,
+      updateChannel: mockUpdateChannel,
+    } as any)
+
+    mockGetConfig.mockResolvedValue({
+      baseUrl: "https://managed.example.com",
+      token: "admin-token",
+      userId: "1",
+    })
+    mockUpdateChannel.mockResolvedValue({ success: true, message: "success" })
+
+    const onClose = vi.fn()
+    const onSuccess = vi.fn()
+    const preventDefault = vi.fn()
+    const channel = buildManagedSiteChannel({
+      type: "openai-compatible",
+      key: "sk-***",
+      group: "default",
+    })
+
+    const { result } = renderHook(() =>
+      useChannelForm({
+        mode: DIALOG_MODES.EDIT,
+        channel,
+        isOpen: true,
+        onClose,
+        onSuccess,
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.formData.key).toBe("sk-***")
+    })
+
+    expect(result.current.isFormValid).toBe(true)
+
+    await act(async () => {
+      await result.current.handleSubmit({
+        preventDefault,
+      } as unknown as FormEvent)
+    })
+
+    expect(preventDefault).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(toast.error)).not.toHaveBeenCalled()
+    expect(mockBuildChannelPayload).not.toHaveBeenCalled()
+    expect(mockUpdateChannel).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        message: "success",
+      }),
+    )
+  })
+
+  it("prefers the Claude Code Hub specific key toast in add mode", async () => {
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: CLAUDE_CODE_HUB,
+      messagesKey: "claudecodehub",
+      checkValidConfig: mockCheckValidConfig.mockResolvedValue(true),
+      getConfig: mockGetConfig,
+      buildChannelPayload: mockBuildChannelPayload,
+      createChannel: mockCreateChannel,
+      updateChannel: mockUpdateChannel,
+    } as any)
+
+    const preventDefault = vi.fn()
+
+    const { result } = renderHook(() =>
+      useChannelForm({
+        mode: DIALOG_MODES.ADD,
+        channel: null,
+        isOpen: true,
+        onClose: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.formData.type).toBe(
+        DEFAULT_CLAUDE_CODE_HUB_CHANNEL_FIELDS.type,
+      )
+    })
+
+    await act(async () => {
+      result.current.updateField("name", "Claude Provider")
+      result.current.updateField("models", ["claude-sonnet"])
+      result.current.updateField("key", "   ")
+    })
+
+    await act(async () => {
+      await result.current.handleSubmit({
+        preventDefault,
+      } as unknown as FormEvent)
+    })
+
+    expect(preventDefault).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      "messages:claudecodehub.realProviderKeyRequired",
+    )
+    expect(vi.mocked(toast.error)).not.toHaveBeenCalledWith(
+      "channelDialog:validation.keyRequired",
+    )
+    expect(mockCreateChannel).not.toHaveBeenCalled()
+  })
+
+  it("applies Claude Code Hub add defaults from the open effect", async () => {
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: CLAUDE_CODE_HUB,
+      messagesKey: "claudecodehub",
+      checkValidConfig: mockCheckValidConfig.mockResolvedValue(true),
+      getConfig: mockGetConfig,
+      buildChannelPayload: mockBuildChannelPayload,
+      createChannel: mockCreateChannel,
+      updateChannel: mockUpdateChannel,
+    } as any)
+
+    const { result } = renderHook(() =>
+      useChannelForm({
+        mode: DIALOG_MODES.ADD,
+        channel: null,
+        isOpen: true,
+        onClose: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.formData.type).toBe(
+        DEFAULT_CLAUDE_CODE_HUB_CHANNEL_FIELDS.type,
+      )
+    })
+
+    expect(result.current.formData.weight).toBe(
+      DEFAULT_CLAUDE_CODE_HUB_CHANNEL_FIELDS.weight,
+    )
   })
 })

@@ -4,12 +4,16 @@ import { useTranslation } from "react-i18next"
 
 import { mergeUniqueOptions } from "~/components/dialogs/ChannelDialog/utils/selectOptions"
 import type { CompactMultiSelectOption } from "~/components/ui"
+import { DEFAULT_CLAUDE_CODE_HUB_CHANNEL_FIELDS } from "~/constants/claudeCodeHub"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
-import { AXON_HUB } from "~/constants/siteType"
+import { AXON_HUB, CLAUDE_CODE_HUB } from "~/constants/siteType"
 import { getApiService } from "~/services/apiService"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
-import { getManagedSiteConfigMissingMessage } from "~/services/managedSites/utils/managedSite"
+import {
+  getManagedSiteConfigMissingMessage,
+  hasUsableManagedSiteChannelKey,
+} from "~/services/managedSites/utils/managedSite"
 import { AuthTypeEnum } from "~/types"
 import type {
   ChannelFormData,
@@ -76,6 +80,25 @@ export function useChannelForm({
     return groups.length > 0 ? groups : [...DEFAULT_CHANNEL_FIELDS.groups]
   }
 
+  const applyManagedSiteDefaults = useCallback(
+    (data: ChannelFormData, siteType: string): ChannelFormData => {
+      if (
+        siteType === CLAUDE_CODE_HUB &&
+        mode === DIALOG_MODES.ADD &&
+        !initialValues?.type
+      ) {
+        return {
+          ...data,
+          type: DEFAULT_CLAUDE_CODE_HUB_CHANNEL_FIELDS.type,
+          weight: DEFAULT_CLAUDE_CODE_HUB_CHANNEL_FIELDS.weight,
+        }
+      }
+
+      return data
+    },
+    [initialValues?.type, mode],
+  )
+
   const buildInitialFormData = useCallback(
     (): ChannelFormData => ({
       name: initialValues?.name ?? "",
@@ -135,6 +158,8 @@ export function useChannelForm({
       return
     }
 
+    let cancelled = false
+
     if ((mode === DIALOG_MODES.EDIT || mode === DIALOG_MODES.VIEW) && channel) {
       setFormData({
         name: channel.name,
@@ -148,9 +173,26 @@ export function useChannelForm({
         status: channel.status ?? DEFAULT_CHANNEL_FIELDS.status,
       })
     } else {
-      setFormData(buildInitialFormData())
+      void (async () => {
+        const service = await loadManagedSiteType()
+        if (cancelled) return
+        setFormData(
+          applyManagedSiteDefaults(buildInitialFormData(), service.siteType),
+        )
+      })()
     }
-  }, [isOpen, mode, channel, buildInitialFormData])
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    isOpen,
+    mode,
+    channel,
+    buildInitialFormData,
+    loadManagedSiteType,
+    applyManagedSiteDefaults,
+  ])
 
   const resetForm = useCallback(() => {
     setFormData(buildInitialFormData())
@@ -164,6 +206,16 @@ export function useChannelForm({
       const service = serviceOverride ?? (await loadManagedSiteType())
       if (service.siteType === AXON_HUB) {
         setAvailableGroups([])
+        return
+      }
+      if (service.siteType === CLAUDE_CODE_HUB) {
+        const fallback = [{ label: "default", value: "default" }]
+        const preselectedGroups = (
+          initialValues?.groups ??
+          initialGroups ??
+          []
+        ).map((value) => ({ label: value, value }))
+        setAvailableGroups(mergeUniqueOptions(fallback, preselectedGroups))
         return
       }
       const hasConfig = await service.checkValidConfig()
@@ -275,9 +327,12 @@ export function useChannelForm({
   }
 
   const isKeyFieldRequired = mode === DIALOG_MODES.ADD
+  const requiresRealClaudeCodeHubKey =
+    managedSiteType === CLAUDE_CODE_HUB && mode === DIALOG_MODES.ADD
 
   const isBaseUrlRequired =
     managedSiteType === AXON_HUB ||
+    managedSiteType === CLAUDE_CODE_HUB ||
     formData.type === ChannelType.VolcEngine ||
     formData.type === ChannelType.SunoAPI
 
@@ -291,6 +346,14 @@ export function useChannelForm({
     // Validation
     if (!formData.name.trim()) {
       toast.error(t("channelDialog:validation.nameRequired"))
+      return
+    }
+
+    if (
+      requiresRealClaudeCodeHubKey &&
+      !hasUsableManagedSiteChannelKey(formData.key)
+    ) {
+      toast.error(t("messages:claudecodehub.realProviderKeyRequired"))
       return
     }
 
@@ -320,9 +383,6 @@ export function useChannelForm({
         )
       }
 
-      // Build payload
-      const payload = service.buildChannelPayload(formData)
-
       let response
       if (mode === DIALOG_MODES.EDIT && channel) {
         const channelId = channel.id
@@ -346,6 +406,7 @@ export function useChannelForm({
           updatePayload,
         )
       } else {
+        const payload = service.buildChannelPayload(formData)
         response = await service.createChannel(
           apiConfig.baseUrl,
           apiConfig.token,
@@ -387,6 +448,8 @@ export function useChannelForm({
     formData.name.trim() &&
       formData.models.length > 0 &&
       (!isKeyFieldRequired || formData.key.trim()) &&
+      (!requiresRealClaudeCodeHubKey ||
+        hasUsableManagedSiteChannelKey(formData.key)) &&
       (!isBaseUrlRequired || formData?.base_url?.trim()),
   )
 

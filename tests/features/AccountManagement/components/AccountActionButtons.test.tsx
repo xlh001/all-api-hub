@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
+import { CLAUDE_CODE_HUB, VELOERA } from "~/constants/siteType"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import type { UserPreferences } from "~/services/preferences/userPreferences"
 import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
@@ -1401,60 +1402,81 @@ describe("AccountActionButtons", () => {
     ).toBeNull()
   })
 
-  it("shows a disabled locate action with visible Veloera guidance", async () => {
-    userPreferencesContextValue.preferences = {
-      managedSiteType: "Veloera",
-      veloera: {
-        baseUrl: "https://veloera-admin.example",
-        adminToken: "veloera-admin-token",
-        userId: "1",
+  it.each([
+    [
+      "Veloera",
+      {
+        managedSiteType: VELOERA,
+        veloera: {
+          baseUrl: "https://veloera-admin.example",
+          adminToken: "veloera-admin-token",
+          userId: "1",
+        },
       },
-    } as Partial<UserPreferences>
+      "Veloera Site",
+    ],
+    [
+      "Claude Code Hub",
+      {
+        managedSiteType: CLAUDE_CODE_HUB,
+        claudeCodeHub: {
+          baseUrl: "https://cch-admin.example",
+          adminToken: "cch-admin-token",
+        },
+      },
+      "Claude Code Hub Site",
+    ],
+  ])(
+    "shows a disabled locate action with visible unsupported guidance for %s",
+    async (_label, preferences, siteName) => {
+      userPreferencesContextValue.preferences =
+        preferences as Partial<UserPreferences>
 
-    const user = userEvent.setup()
+      const user = userEvent.setup()
 
-    render(
-      <AccountActionButtons
-        site={buildDisplaySiteData({
-          id: "acc-8c",
-          disabled: false,
-          name: "Veloera Site",
-          baseUrl: "https://api.example.com/v1/",
-        })}
-        onCopyKey={vi.fn()}
-        onDeleteAccount={vi.fn()}
-      />,
-    )
+      render(
+        <AccountActionButtons
+          site={buildDisplaySiteData({
+            id: "acc-8c",
+            disabled: false,
+            name: siteName,
+            baseUrl: "https://api.example.com/v1/",
+          })}
+          onCopyKey={vi.fn()}
+          onDeleteAccount={vi.fn()}
+        />,
+      )
 
-    await user.click(
-      screen.getByRole("button", { name: "common:actions.more" }),
-    )
+      await user.click(
+        screen.getByRole("button", { name: "common:actions.more" }),
+      )
 
-    const menu = await screen.findByRole("menu")
-    const label = await within(menu).findByText(
-      "account:actions.locateManagedSiteChannel",
-    )
-    const button = label.closest("button")
-    expect(button).not.toBeNull()
-    expect(button!).toBeDisabled()
-    const hint = within(menu).getByText(
-      "account:actions.locateManagedSiteChannelUnsupportedHint",
-    )
-    expect(hint).toBeInTheDocument()
-    const description = within(menu).getByText(
-      "account:actions.locateManagedSiteChannelUnsupported",
-    )
-    expect(button!).toHaveAttribute(
-      "title",
-      "account:actions.locateManagedSiteChannelUnsupported",
-    )
-    expect(button!).toHaveAttribute("aria-describedby", description.id)
+      const menu = await screen.findByRole("menu")
+      const label = await within(menu).findByText(
+        "account:actions.locateManagedSiteChannel",
+      )
+      const button = label.closest("button")
+      expect(button).not.toBeNull()
+      expect(button!).toBeDisabled()
+      const hint = within(menu).getByText(
+        "account:actions.locateManagedSiteChannelUnsupportedHint",
+      )
+      expect(hint).toBeInTheDocument()
+      const description = within(menu).getByText(
+        "account:actions.locateManagedSiteChannelUnsupported",
+      )
+      expect(button!).toHaveAttribute(
+        "title",
+        "account:actions.locateManagedSiteChannelUnsupported",
+      )
+      expect(button!).toHaveAttribute("aria-describedby", description.id)
 
-    await user.click(button!)
+      await user.click(button!)
 
-    expect(getManagedSiteServiceMock).not.toHaveBeenCalled()
-    expect(openManagedSiteChannelsPageMock).not.toHaveBeenCalled()
-  })
+      expect(getManagedSiteServiceMock).not.toHaveBeenCalled()
+      expect(openManagedSiteChannelsPageMock).not.toHaveBeenCalled()
+    },
+  )
 
   it("hides the locate action when managed site config is missing", async () => {
     hasValidManagedSiteConfigMock.mockReturnValue(false)
