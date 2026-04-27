@@ -73,6 +73,7 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - [Veloera](https://github.com/Veloera/Veloera)
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
+- [AxonHub](https://github.com/looplj/axonhub)
 - WONG公益站
 - [Sub2API](https://github.com/Wei-Shaw/sub2api)
 - [AnyRouter](https://anyrouter.top)
@@ -144,7 +145,7 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - **CherryStudio / CC Switch**：保持目标客户端可用，便于通过 Deeplink 唤起导入。
 - **Kilo Code / Roo Code**：建议提前确认每个密钥对应的模型 ID。
 - **CLIProxyAPI / Claude Code Router**：在基础设置中填写对应的管理地址与凭证。
-- **自建托管站点（New API / DoneHub / Veloera / Octopus）**：在 `设置 -> 基础设置 -> 自建站点管理` 中完成后台配置。
+- **自建托管站点（New API / DoneHub / Veloera / Octopus / AxonHub）**：在 `设置 -> 基础设置 -> 自建站点管理` 中完成后台配置。
 
 ### 4.2 导出流程
 

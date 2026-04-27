@@ -58,13 +58,14 @@
 
 Nowadays, within the AI ecosystem, there's a growing number of aggregated relay stations and custom dashboards built upon the New API series. Checking balances, usage, model prices, and key availability across these platforms, while also managing and quickly using API keys, is often fragmented and time-consuming.
 
-All API Hub is a browser extension for one-stop management of New API-style relay accounts and standalone API credentials: balance/usage dashboards, model price comparison, automatic check-in, one-click key export to popular apps, in-page API availability testing, and channel/model sync & redirect. It currently supports relay station accounts from projects such as:
+All API Hub is a browser extension for one-stop management of New API-style relay accounts and standalone API credentials: balance/usage dashboards, model price comparison, automatic check-in, one-click key export to popular apps, in-page API availability testing, and channel/model sync & redirect, with managed-site integrations for self-hosted New API, DoneHub, Veloera, Octopus, and AxonHub. It currently supports relay station accounts from projects such as:
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)
 - [Veloera](https://github.com/Veloera/Veloera)
 - [one-hub](https://github.com/MartialBE/one-hub)
 - [done-hub](https://github.com/deanxv/done-hub)
+- [AxonHub](https://github.com/looplj/axonhub)
 - [Sub2API](https://github.com/Wei-Shaw/sub2api)
 - [AnyRouter](https://anyrouter.top)
 - WONG Public Welfare Site
@@ -106,10 +107,10 @@ For the latest compatibility references, see:
   Aggregate usage across multiple sites/accounts: filter by site, account, token, and date range, compare usage/cost/model breakdowns and trends, and inspect heatmaps, latency, and slow requests when needed.
 
 - 🚀 **Quick Export Integration**  
-  Export configuration to CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code, and the currently selected managed site target (New API / DoneHub / Veloera / Octopus).
+  Export configuration to CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code, and the currently selected managed site target (New API / DoneHub / Veloera / Octopus / AxonHub).
 
 - 🔄 **Self-Hosted Site Management**  
-  For your self-hosted New API, DoneHub, Veloera, and Octopus instances: channel import, model sync, model redirect, management workflows, and managed-site integrations.
+  For your self-hosted New API, DoneHub, Veloera, Octopus, and AxonHub instances: management workflows and managed-site integrations.
 
 - 🛡️ **Cloudflare Bypass Assistant**  
   Opens a helper window when Cloudflare challenges block detection or refresh, then continues after you complete the challenge.
