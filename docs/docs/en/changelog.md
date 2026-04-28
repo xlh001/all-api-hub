@@ -8,6 +8,24 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.35.0
+- **New Features:**
+  - Hosted Sites: Added `AxonHub` integration settings. You can configure `Base URL`, administrator email, and password within the extension. After verifying the connection, you can directly read, create, edit, and delete AxonHub channels, and import existing accounts/keys as AxonHub channels.
+  - Hosted Sites: Added `Claude Code Hub` integration settings. You can configure `Base URL` and administrator token to directly manage the `Provider` list. It also supports importing existing accounts/keys as Claude Code Hub providers, reducing duplicate entries across multiple backends.
+- **Bug Fixes:**
+  - Import/Export: After importing a backup containing preference settings, the settings state will now be immediately refreshed, and the interface language from the backup will be applied. This reduces instances where old settings or languages are still displayed after import, requiring a manual page reload.
+  - Account Management: The descriptions and actual behavior of the `Prioritize Current Login Account` and `Match Open Tabs` sorting/matching rules have been aligned. When you search for an account using a full URL, tab title, or current page related content, relevant accounts are more likely to be correctly identified and ranked higher.
+
+::: tip Scope of Use
+`Claude Code Hub` currently does not support `Channel Migration`, `Model Sync`, `Model Redirect`, or full key viewing. `AxonHub` currently only covers basic channel management and import processes, not migration or model synchronization capabilities.
+:::
+
+**Location Hints:**
+- `AxonHub` / `Claude Code Hub` Integration Settings and Verification: In "Settings → Basic Settings → Self-Hosted Site Management".
+- `AxonHub` Channel Management, `Claude Code Hub` Provider Management, and Import to Target Backend: In "Settings → Channel Management" and related import processes.
+- Preference Backup Import: In "Settings → Import/Export".
+- Account Sorting Priority and Account Search: In "Settings → Account Management".
+
 ## 3.34.0
 - **New Features:**
   - Model List: Added price comparison capabilities, allowing filtering by billing method, sorting by price, and in the "All Accounts" view, supporting "cheapest first for the same model" to find low-priced models more directly with multiple accounts.
@@ -582,26 +600,26 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Added validation information for refresh interval settings.
   - Fixed development dependency issues.
 
-## 3.32.0
+## 2.32.0
 - **New Features:**
   - Model redirects are now smarter, supporting version numbers represented by hyphens and dots.
   - Added the ability to redeem directly through the right-click menu after selecting text.
   - Automatic check-in is enabled by default, and the check-in time window has been extended.
 
-## 3.31.0
+## 2.31.0
 - **New Features:**
   - Enhanced Cookie isolation for temporary windows, improving security.
   - Check-in operations can now be quickly performed within the popup.
   - The Redemption Assistant now includes a URL whitelist feature, giving you better control over which websites can use it.
 
-## 3.30.0
+## 2.30.0
 - **New Features:**
   - Added check-in support for Wong sites.
   - Added check-in support for AnyRouter sites.
   - Optimized detection capabilities for Cloudflare challenge pages.
   - WebDAV backups now support encryption, and recovery includes a decryption retry popup. Your WebDAV configuration will be preserved.
 
-## 3.29.0
+## 2.29.0
 - **New Features:**
   - Integrated Claude Code Router.
 - **Bug Fixes:**
@@ -609,7 +627,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Optimized the centering of blank status content in Firefox.
   - Migrated the Switch component to a custom implementation for improved compatibility and stability.
 
-## 3.28.0
+## 2.28.0
 - **New Features:**
   - Introduced the "Hosted Site" service, laying the groundwork for future site integrations.
   - Added support for Veloera sites.
@@ -617,7 +635,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Bug Fixes:**
   - Optimized translation text and removed redundant fallback strings.
 
-## 3.27.0
+## 2.27.0
 - **New Features:**
   - Account health status now includes more detailed codes to help you understand specific issues.
   - Temporary window bypass feature now includes a health status indicator.
@@ -629,7 +647,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Performance Optimizations:**
   - Improved the performance of the sorting function.
 
-## 3.26.0
+## 2.26.0
 - **New Features:**
   - Added a model pricing cache service to speed up data loading.
   - Added an account overview bar at the top of the model list for quick viewing.
@@ -639,7 +657,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Bug Fixes:**
   - Added a customizable loading animation (spinner) property to the button component.
 
-## 3.25.0
+## 2.25.0
 - **New Features:**
   - Added a new user guide card when the account list is empty.
   - When the pin/manual sort feature is disabled, related UI elements will be automatically hidden.
@@ -647,7 +665,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Bug Fixes:**
   - Fixed an issue where the tag array could be empty when updating an account.
 
-## 3.24.0
+## 2.24.0
 - **New Features:**
   - Updated application description and about page content.
   - Extension name now includes a subtitle.
@@ -656,18 +674,18 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Bug Fixes:**
   - Removed extraneous periods from the end of JSON strings.
 
-## 3.23.0
+## 2.23.0
 - **New Features:**
   - Enhanced account tagging functionality.
   - Temporary window bypass feature now supports more intelligent judgment based on error codes.
 
-## 3.22.0
+## 2.22.0
 - **New Features:**
   - Account management now includes a tagging feature for classifying accounts.
   - The Redemption Assistant popup UI now supports lazy loading and fixes issues that could cause website style conflicts.
   - Added global channel filters and JSON editing mode.
 
-## 3.21.0
+## 2.21.0
 - **New Features:**
   - Integrated CLIProxyAPI and related settings.
 - **Bug Fixes:**
@@ -675,7 +693,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Simplified and fixed the temporary window capture logic.
   - Restored parsing of search parameters in URL query strings.
 
-## 3.20.0
+## 2.20.0
 - **New Features:**
   - Added permission guidance upon first installation for easier understanding of required permissions.
   - Cookie interceptor headers can now be controlled via optional permissions, improving cross-browser compatibility.
@@ -684,7 +702,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Redemption amount conversion coefficients now use constants for improved accuracy.
   - Limited the Cookie interceptor to use only in Firefox browsers.
 
-## 3.19.0
+## 2.19.0
 - **New Features:**
   - Added loading status and prompts during the redemption process.
   - Removed clipboard reading functionality from the Redemption Assistant.
@@ -694,7 +712,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Resolved intermittent "Unable to establish connection" errors.
   - Prevented race conditions during the destruction of temporary window pools.
 
-## 3.18.0
+## 2.18.0
 - **New Features:**
   - Added protection settings for the temporary window bypass feature.
   - Added documentation for the Redemption Assistant feature.
@@ -704,17 +722,17 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Bug Fixes:**
   - Fixed path issues with Tailwind CSS files.
 
-## 3.17.0
+## 2.17.0
 - **New Features:**
   - Added an automatic pop-up prompt for one-click redemption.
   - Unified the data format for import/export and WebDAV backups using a V2 versioning scheme for improved compatibility and stability.
 
-## 3.16.0
+## 2.16.0
 - **New Features:**
   - Added a warning prompt when creating accounts on Firefox desktop.
   - API model synchronization now supports a channel filtering system.
 
-## 3.15.0
+## 2.15.0
 - **New Features:**
   - The MultiSelect component now supports parsing comma-separated strings.
 - **Bug Fixes:**
@@ -722,7 +740,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Performance Optimizations:**
   - Optimized upstream model caching logic.
 
-## 3.14.0
+## 2.14.0
 - **New Features:**
   - Site metadata is now automatically detected during refresh.
   - When automatic check-in fails, retry and manual check-in options are now available.
@@ -731,7 +749,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Bug Fixes:**
   - Fixed the default behavior issue with the `autoCheckInEnabled` flag.
 
-## 3.13.0
+## 2.13.0
 - **New Features:**
   - Added "New API Channel Management" functionality.
   - Added a "Warning" button style.
@@ -739,57 +757,57 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 - **Bug Fixes:**
   - Fixed incorrect display and sorting of model counts in the channel table.
 
-## 3.12.1
+## 2.12.1
 - **Bug Fixes:**
   - Fixed unnecessary reloading of channels when manually selecting tabs.
   - The "New API Model Sync" option is now hidden in the sidebar when the configuration is invalid.
 
-## 3.12.0
+## 2.12.0
 - **New Features:**
   - "New API Model Sync" now includes an allowlist filtering feature for models.
   - The sidebar now supports collapsing/expanding with smooth animations.
 
-## 3.11.0
+## 2.11.0
 - **New Features:**
   - Account management functionality has been enhanced with search and navigation optimizations.
   - Added CC Switch export functionality.
 - **Bug Fixes:**
   - Fixed logical errors in automatic check-in status.
 
-## 3.10.0
+## 2.10.0
 - **New Features:**
   - Browser messages now support exponential backoff retry mechanisms for improved communication stability.
   - Model synchronization now includes a manual execution tab and supports channel selection.
 - **Bug Fixes:**
   - Ensured that missing fields in user preferences are populated with default values.
 
-## 3.9.0
+## 2.9.0
 - **New Features:**
   - Added Cloudflare challenge detection and automatic temporary window bypass attempts when encountering protection.
   - Introduced a temporary context management system.
 
-## 3.8.1
+## 2.8.1
 - **Bug Fixes:**
   - Model names now support date suffix patterns like "month-day" and "month_day".
   - Optimized the positioning and accessibility of dropdown menus in multi-select components.
 
-## 3.8.0
+## 2.8.0
 - **New Features:**
   - Added fault tolerance mechanisms for partial account updates.
   - Account information can now be saved even if data retrieval fails during manual account addition.
   - The settings page now includes a "Settings Section" feature, allowing settings to be reset by section.
 
-## 3.7.1
+## 2.7.1
 - **Bug Fixes:**
   - Fixed an issue where redirected models were not appearing in the model list during API sync.
 
-## 3.7.0
+## 2.7.0
 - **New Features:**
   - The account dialog can now dynamically update site data for new accounts.
 - **Bug Fixes:**
   - Hidden the password visibility button in Edge/IE browsers.
 
-## 3.6.1
+## 2.6.1
 - **Important Update (Internal):**
   - User preferences like `newApiModelSync`, `autoCheckin`, and `modelRedirect` are now mandatory to ensure completeness of default configurations.
 - **Bug Fixes:**
@@ -798,7 +816,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Corrected the sorting logic for check-in requirements.
   - Prevented unnecessary WebDAV configuration resets during configuration migration.
 
-## 3.6.0
+## 2.6.0
 - **New Features:**
   - The user interface for "New API Channel Import" has been optimized, supporting key switching and batch model selection.
   - Model mapping now uses a multi-stage standardization process for improved accuracy.
@@ -806,18 +824,18 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Model name standardization is now consistent with the Veloera backend and preserves hyphens.
   - Resolved browser storage quota issues and improved model matching.
 
-## 3.5.0
+## 2.5.0
 - **New Features:**
   - Added support for the Neo-API site type.
 - **Bug Fixes:**
   - Fixed Base64 encoding issues when generating CherryStudio URLs.
   - Removed redundant account fetching and token verification from the channel dialog for improved efficiency.
 
-## 3.4.1
+## 2.4.1
 - **Bug Fixes:**
   - Ensured that the settings page always opens in a new tab.
 
-## 3.4.0
+## 2.4.0
 - **New Features:**
   - The auto-import feature now integrates the "New API Channel" dialog.
   - Added basic support for RIX_API.
@@ -826,20 +844,20 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Optimized the retry mechanism and added user feedback.
   - Optimized the performance of the multi-select component with a large number of selections.
 
-## 3.3.0
+## 2.3.0
 - **New Features:**
   - Added account pinning and unpinning functionality, with pinned accounts prioritized in sorting.
 - **Bug Fixes:**
   - Reduced the size of the pin icon and fixed configuration migration version issues.
   - Optimized sorting configuration by increasing the priority of the current site condition.
 
-## 3.2.1
+## 2.2.1
 - **Bug Fixes:**
   - Removed the `isDetected` check for the auto-configuration button.
   - Ensured that the account detection correctly refreshes when displayed data changes.
   - Fixed an issue where Access Tokens were no longer required for Cookie authentication types.
 
-## 3.2.0
+## 2.2.0
 - **New Features:**
   - The Automatic Check-in feature now includes a results/history interface and optimized default settings and user experience.
   - Implemented daily site automatic check-in, supporting time window settings and status display.
@@ -847,14 +865,14 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
   - Fixed case sensitivity issues in automatic check-in status detection.
   - Handled edge cases in check-in time window calculations.
 
-## 3.1.0
+## 2.1.0
 - **New Features:**
   - The account list now includes username search and highlighting functionality.
 - **Bug Fixes:**
   - Added configuration validation warnings when API settings are missing.
   - "New API" functionality now includes configuration validation assistance and internationalized error messages.
 
-## 3.0.0
+## 2.0.0
 - **New Features:**
   - The "New API Model Sync" filter bar now includes execution statistics.
   - Each row in the results table now includes a sync operation button.
