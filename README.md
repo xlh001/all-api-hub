@@ -7,7 +7,7 @@
 <div align="center">
   <img src="src/assets/icon.png" alt="All API Hub Logo" width="128" height="128">
 
-# All API Hub – AI 中转站 & New API 管理器
+# All API Hub – 你的全能 AI 资产管家
 
 **一站式管理 New API 兼容中转站账号：余额/用量看板、模型价格比对、自动签到、密钥与独立 API 凭证管理、网页内 API 可用性测试、渠道与模型同步/重定向**
 
@@ -28,7 +28,7 @@
 
 ---
 
-**[文档教程](https://all-api-hub.qixing1217.top/) | [支持的工具](https://all-api-hub.qixing1217.top/supported-export-tools.html) | [支持的站点](https://all-api-hub.qixing1217.top/supported-sites.html) | [快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [常见问题](https://all-api-hub.qixing1217.top/faq.html) | [更新日志](https://all-api-hub.qixing1217.top/changelog.html) | [贡献指南](CONTRIBUTING.md)**
+**[⚡ 快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [📚 文档中心](https://all-api-hub.qixing1217.top/) | [🔌 集成工具](https://all-api-hub.qixing1217.top/supported-export-tools.html) | [🌐 支持站点](https://all-api-hub.qixing1217.top/supported-sites.html) | [❓ 常见问题](https://all-api-hub.qixing1217.top/faq.html) | [📜 更新日志](https://all-api-hub.qixing1217.top/changelog.html)**
 
 <p align="center">
   <strong>📢 讨论帖：</strong>
@@ -54,77 +54,52 @@
 </div>
 
 <a id="introduction"></a>
-## 📖 介绍
+## ❓ 为什么需要 All API Hub？
 
-现在 AI 生态里有越来越多基于 New API 系列的聚合中转站和自建面板，要查看各站点的余额、用量、模型价格和密钥可用性，并管理和快速使用 API 密钥，往往既分散又费时。
+在 AI 生态中，为了追求性价比或模型多样性，我们往往拥有多个基于 New API / Sub2API 系列的中转站。但这通常会带来一些管理效率上的挑战：
 
-All API Hub 作为浏览器扩展，一站式管理 New API 等中转站账号与独立 API 凭证：余额/用量看板、模型价格比对、自动签到、密钥一键导出到常用应用、网页内 API 可用性测试、渠道与模型同步/重定向，并为自建 New API、DoneHub、Veloera、Octopus、AxonHub 与 Claude Code Hub 提供后台联动和渠道相关工具。当前已支持基于以下项目的中转站账号：
-- [one-api](https://github.com/songquanpeng/one-api)
-- [new-api](https://github.com/QuantumNous/new-api)
-- [Veloera](https://github.com/Veloera/Veloera)
-- [one-hub](https://github.com/MartialBE/one-hub)
-- [done-hub](https://github.com/deanxv/done-hub)
-- [AxonHub](https://github.com/looplj/axonhub)
-- [Sub2API](https://github.com/Wei-Shaw/sub2api)
-- [AnyRouter](https://anyrouter.top)
-- WONG公益站
-- Neo-API（闭源）
-- Super-API（闭源）
-- RIX_API（闭源，基本功能支持）
-- VoAPI（闭源，老版本支持）
+- 📂 **多站点管理困难**：余额、用量和模型价格分散在不同后台，难以快速掌握全局资产状态。
+- 💲 **价格对比不便**：不同站点的计费倍率差异显著，缺乏直观的工具来快速锁定性价比最优方案。
+- ✅ **签到维护繁琐**：手动维护多个站点的每日签到费时费力，极易因遗忘导致赠送额度流失。
+- 🔌 **工具配置繁琐**：将 API Key 配置到不同 AI 工具时，频繁的复制粘贴操作导致效率低下。
 
-完整站点兼容列表与导出工具列表请查看：
+**All API Hub 为提升这些环节的效率而生。** 它是你的 AI 资产管理中心，将零散的中转站账号聚合为一站式、可视化的管理台。
 
-- [支持的站点](https://all-api-hub.qixing1217.top/supported-sites.html)
-- [支持的工具](https://all-api-hub.qixing1217.top/supported-export-tools.html)
+### 🧩 强大的兼容性
+不论你用的是哪种架构，我们基本都支持：     
+- **主流开源**：[one-api](https://github.com/songquanpeng/one-api)、[new-api](https://github.com/QuantumNous/new-api)、[Sub2API](https://github.com/Wei-Shaw/sub2api)、[one-hub](https://github.com/MartialBE/one-hub)、[done-hub](https://github.com/deanxv/done-hub)、[Veloera](https://github.com/Veloera/Veloera)
+- **特色架构**：[AnyRouter](https://anyrouter.top)、Neo-API、Super-API 等
+- **查看完整列表**：👉 [支持的站点](https://all-api-hub.qixing1217.top/supported-sites.html)
 
 <a id="features"></a>
-## ✨ 功能特性
+## ✨ 核心价值与功能特性
 
-- 🔍 **智能站点识别**  
-  登录后粘贴站点地址即可添加账号，自动识别站点名称、充值比例等信息；识别失败可手动补录，并会提示重复添加。
+### 📊 多站点统一看板
+- **多账号资产总览**：在一个面板内集中查看所有站点的余额、总用量与健康状态。
+- **智能站点识别**：只需粘贴地址，自动识别架构类型、计费比例并完成添加。
+- **独立凭证档案**：直接管理 `URL + Key` 组合，支持标签分类，像管理收藏夹一样简单。
 
-- 👥 **多账号总览面板**  
-  把多个站点与账号集中在一个面板里，余额、用量与健康状态一眼看清，并支持自动刷新数据。
+### 💰 智能省钱与自动收益
+- **模型价格比对**：自动计算各站点模型的实际折合单价，锁定当前最实惠的分组与站点。
+- **全自动签到流**：一键处理或定时执行所有支持站点的签到，确保存储额度不中断。
+- **用量深度统计**：按站点、账号、模型、日期生成报表，包含热力图与慢请求分析。
 
-- 📆 **自动签到**  
-  识别支持签到的站点并集中处理，支持自动签到与执行记录，避免忘记签到浪费额度。
+### 🚀 极速生态集成
+- **一键快捷导出**：深度适配并一键同步到 **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code** 等。
+- **后台联动工具**：为自建站点管理员提供渠道管理、模型重定向、渠道同步等后台效率增强功能。
+- **查看集成列表**：👉 [支持的工具](https://all-api-hub.qixing1217.top/supported-export-tools.html)
 
-- 🔑 **令牌与密钥管理**  
-  集中查看、复制和批量管理 API Key，减少来回切站点后台。
+### 🧪 稳定性护航
+- **多维度接口验证**：支持批量测试模型可用性、Token 兼容性及 CLI 代理可用性。
+- **CF 过盾助手**：自动协助通过 Cloudflare 挑战，确保数据刷新与接口调用不中断。
 
-- 🗂️ **独立 API 凭证档案**  
-  可脱离站点账号单独保存 `baseUrl + API Key`，按标签筛选并复用到模型查看、接口验证和使用统计，适合管理第三方 API 凭证。
+### 🔒 隐私与同步
+- **隐私优先**：默认数据存储于本地，无使用行为上报。
+- **加密同步**：支持 WebDAV 加密备份与同步，确保多设备间的数据无缝迁移。
 
-- 🤖 **模型目录、分组与价格比对**  
-  不只是查看模型列表，还支持按来源、计费方式、分组和账号筛选，对比模型价格、倍率与实际成本，并标出最低价/最优组。
-
-- 🧪 **模型与接口验证**  
-  对指定密钥与模型做可用性验证，支持批量验证、Token 兼容性判断，以及 CLI 兼容性检查，适合排查“看起来能用但在工具中使用失败”的情况。
-
-- 📊 **用量分析与可视化**  
-  面向多站点/多账号的用量报表：按站点、账号、Token、日期筛选与对比，查看用量、花费、模型分布与趋势，并提供热力图、延迟与慢请求视图辅助排查。
-
-- 🚀 **快速导出集成**  
-  一键导出到 CherryStudio、CC Switch、CLIProxyAPI、Claude Code Router、Kilo Code，以及当前选择的自建托管站点（New API / DoneHub / Veloera / Octopus / AxonHub / Claude Code Hub），减少复制粘贴与重复配置。
-
-- 🔄 **自建站点后台联动**  
-  面向自建 New API、DoneHub、Veloera、Octopus、AxonHub 与 Claude Code Hub 的站点管理员，提供后台联动与渠道相关工具，减少频繁进后台操作。
-
-- 🛡️ **Cloudflare 过盾助手**  
-  遇到 Cloudflare 挑战时自动弹出临时窗口协助通过，验证成功后继续原有流程。
-
-- ☁️ **数据备份与同步**  
-  支持数据导入导出，以及 WebDAV 备份、自动同步、选择性同步与备份加密，便于换设备或多浏览器使用。
-
-- 🌐 **全平台支持**
-  兼容 Chrome、Edge、Firefox、Safari 与移动端 / 手机端浏览器，例如手机 Edge、Firefox for Android、Kiwi 等，适配深色模式。
-
-- 🔒 **隐私优先的本地存储**  
-  默认离线本地存储，无使用行为上报；需要同步时才配置 WebDAV 等外部服务。
 
 > [!NOTE]
-> 最初基于 [One API Hub](https://github.com/fxaxg/one-api-hub) 开发，现已大幅重构扩展。数据格式保持兼容，支持直接导入
+> 觉得原本的 [One API Hub](https://github.com/fxaxg/one-api-hub) 好用？你会更爱现在的 All API Hub。我们大幅重构并保持了数据兼容，支持无缝一键导入。
 
 
 <a id="ui-preview"></a>

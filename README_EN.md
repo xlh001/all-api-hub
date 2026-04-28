@@ -7,7 +7,7 @@
 <div align="center">
   <img src="src/assets/icon.png" alt="All API Hub Logo" width="128" height="128">
 
-# All API Hub – AI Relay & New API Manager
+# All API Hub – Your All-in-One AI Asset Manager
 
 **One-stop management for New API-compatible relay accounts: balance/usage dashboards, model price comparison, automatic check-in, site keys and standalone API credential management, in-page API availability testing, and channel/model sync & redirect**
 
@@ -28,7 +28,7 @@
 
 ---
 
-**[Documentation](https://all-api-hub.qixing1217.top/en/) | [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html) | [Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html) | [Getting Started](https://all-api-hub.qixing1217.top/en/get-started.html) | [FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [Changelog](https://all-api-hub.qixing1217.top/en/changelog.html) | [Contributing](CONTRIBUTING.md)**
+**[⚡ Quick Start](https://all-api-hub.qixing1217.top/en/get-started.html) | [📚 Docs](https://all-api-hub.qixing1217.top/en/) | [🔌 Integrations](https://all-api-hub.qixing1217.top/en/supported-export-tools.html) | [🌐 Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html) | [❓ FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [📜 Changelog](https://all-api-hub.qixing1217.top/en/changelog.html)**
 
 <p align="center">
   <strong>📢 Discussion:</strong>
@@ -54,78 +54,52 @@
 </div>
 
 <a id="introduction"></a>
-## 📖 Introduction
+## ❓ Why All API Hub?
 
-Nowadays, within the AI ecosystem, there's a growing number of aggregated relay stations and custom dashboards built upon the New API series. Checking balances, usage, model prices, and key availability across these platforms, while also managing and quickly using API keys, is often fragmented and time-consuming.
+In the AI ecosystem, many of us use multiple relay sites based on the New API / Sub2API family to balance cost and model variety. However, this often brings several management challenges:
 
-All API Hub is a browser extension for one-stop management of New API-style relay accounts and standalone API credentials: balance/usage dashboards, model price comparison, automatic check-in, one-click key export to popular apps, in-page API availability testing, and channel/model sync & redirect, with managed-site integrations for self-hosted New API, DoneHub, Veloera, Octopus, AxonHub, and Claude Code Hub. It currently supports relay station accounts from projects such as:
+- 📂 **Multi-site Management Difficulty**: Balances, usage, and pricing are scattered across different panels, making it hard to track total assets at a glance.
+- 💲 **Inconvenient Price Comparison**: Billing ratios vary significantly by site, making it difficult to find the most cost-effective option efficiently.
+- ✅ **Tedious Check-in Maintenance**: Manually handling daily check-ins for multiple sites is time-consuming and prone to forgetfulness, leading to expired credits.
+- 🔌 **Tedious Tool Configuration**: Copying API keys into various AI tools over and over is inefficient and manual-intensive.
 
-- [one-api](https://github.com/songquanpeng/one-api)
-- [new-api](https://github.com/QuantumNous/new-api)
-- [Veloera](https://github.com/Veloera/Veloera)
-- [one-hub](https://github.com/MartialBE/one-hub)
-- [done-hub](https://github.com/deanxv/done-hub)
-- [AxonHub](https://github.com/looplj/axonhub)
-- [Sub2API](https://github.com/Wei-Shaw/sub2api)
-- [AnyRouter](https://anyrouter.top)
-- WONG Public Welfare Site
-- Neo-API (closed source)
-- Super-API (closed source)
-- RIX_API (closed source, basic functionality supported)
-- VoAPI (closed source, old versions supported)
+**All API Hub was built to streamline these workflows.** It turns scattered relay accounts into a centralized, visual management console for your AI assets.
 
-For the latest compatibility references, see:
-
-- [Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html)
-- [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html)
+### 🧩 Broad Compatibility
+We support almost all mainstream relay architectures:
+- **Mainstream open source**: [one-api](https://github.com/songquanpeng/one-api), [new-api](https://github.com/QuantumNous/new-api), [Sub2API](https://github.com/Wei-Shaw/sub2api), [one-hub](https://github.com/MartialBE/one-hub), [done-hub](https://github.com/deanxv/done-hub), [Veloera](https://github.com/Veloera/Veloera)
+- **Specialized architectures**: [AnyRouter](https://anyrouter.top), Neo-API, Super-API, and others
+- **Full list**: 👉 [Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html)
 
 <a id="features"></a>
-## ✨ Features
+## ✨ Core Values & Features
 
-- 🔍 **Smart Site Detection**  
-  Paste the site URL after signing in to add an account; basic account info is filled automatically, with duplicate protection and a manual fallback.
+### 📊 Unified Multi-site Dashboard
+- **Multi-account asset overview**: See balances, total usage, and health status for all sites in one panel.
+- **Smart site detection**: Paste a site URL and let the extension automatically identify the architecture type and billing ratio during setup.
+- **Standalone credential profiles**: Manage `URL + Key` pairs directly with tags, making it as easy as managing browser bookmarks.
 
-- 👥 **Multi‑Account Dashboard**  
-  Manage multiple sites and accounts in one place, with balances, usage, health, and auto refresh.
+### 💰 Smarter Savings and Automatic Gains
+- **Model price comparison**: Automatically calculate each site's effective model pricing so you can lock onto the most cost-effective group and site.
+- **Fully automated check-in flow**: Handle check-ins for all supported sites with one click or on a schedule, so stored quota does not go unused.
+- **Deep usage statistics**: Generate reports by site, account, model, and date, including heatmaps and slow-request analysis.
 
-- 📆 **Automatic Check‑in**  
-  Detects which sites support daily check‑in, can run automatically, and keeps run records.
+### 🚀 Fast Ecosystem Integration
+- **One-click quick export**: Deep integration for instant sync to **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code**, and more.
+- **Admin workflow tools**: Productivity features for self-hosted site admins, including channel management, model redirection, and channel syncing.
+- **Supported integrations**: 👉 [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html)
 
-- 🔑 **Token & Key Management**  
-  Inspect, copy, and manage API keys per site, with bulk actions.
+### 🧪 Reliability Safeguards
+- **Multi-dimensional API verification**: Batch test model availability, token compatibility, and CLI proxy availability.
+- **Cloudflare challenge assistant**: Helps you pass Cloudflare checks automatically so refreshes and API calls are less likely to be interrupted.
 
-- 🗂️ **Standalone API Credential Profiles**  
-  Store reusable `baseUrl + API Key` profiles outside site accounts, filter them by tags, and reuse them for model browsing, verification, and usage/status tracking.
+### 🔒 Privacy & Sync
+- **Privacy first**: Data stays in local storage by default, with no usage telemetry uploaded.
+- **Encrypted sync**: Supports encrypted WebDAV backup and sync for seamless migration across multiple devices.
 
-- 🤖 **Model Catalog, Grouping & Price Comparison**  
-  Go beyond simple model viewing with source, billing-mode, group, and account filters, then compare pricing, ratios, and effective costs while highlighting the cheapest or optimal group.
-
-- 🧪 **Model & API Verification**  
-  Verify whether a key/model works, batch-check displayed models, evaluate token compatibility, and inspect CLI compatibility for troubleshooting.
-
-- 📊 **Usage Analytics & Visualization**  
-  Aggregate usage across multiple sites/accounts: filter by site, account, token, and date range, compare usage/cost/model breakdowns and trends, and inspect heatmaps, latency, and slow requests when needed.
-
-- 🚀 **Quick Export Integration**  
-  Export configuration to CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code, and the currently selected managed site target (New API / DoneHub / Veloera / Octopus / AxonHub / Claude Code Hub).
-
-- 🔄 **Self-Hosted Site Management**  
-  For your self-hosted New API, DoneHub, Veloera, Octopus, AxonHub, and Claude Code Hub instances: management workflows and managed-site integrations.
-
-- 🛡️ **Cloudflare Bypass Assistant**  
-  Opens a helper window when Cloudflare challenges block detection or refresh, then continues after you complete the challenge.
-
-- ☁️ **Data Backup and Synchronization**  
-  Import/export plus WebDAV backup, auto sync, selective sync, and backup encryption for migration across devices and browsers.
-
-- 🌐 **Cross‑Platform Compatible**
-  Works on Chrome, Edge, Firefox, Safari, and mobile browsers such as mobile Edge, Firefox for Android, and Kiwi, with dark mode.
-
-- 🔒 **Privacy‑First Local Storage**  
-  Local‑first by default with no telemetry; WebDAV and external APIs are only used when configured.
 
 > [!NOTE]
-> Originally based on [One API Hub](https://github.com/fxaxg/one-api-hub), now significantly refactored and expanded. Data format remains compatible, supporting direct import
+> Used to love [One API Hub](https://github.com/fxaxg/one-api-hub)? You’ll love All API Hub even more. We’ve significantly refactored it while maintaining full data compatibility for a seamless one-click import.
 
 <a id="ui-preview"></a>
 ## 🖼️ UI Preview
