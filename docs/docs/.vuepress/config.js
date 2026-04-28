@@ -43,7 +43,6 @@ export default defineUserConfig({
         navbar: [
           "/",
           "/get-started",
-          "/changelog",
           "/faq",
           {
             text: '专题指南',
@@ -68,7 +67,8 @@ export default defineUserConfig({
               { text: '排序优先级设置', link: '/sorting-priority' },
               { text: '权限管理', link: '/permissions' }
             ]
-          }
+          },
+          "/changelog"
         ],
       },
       '/en/': {
@@ -77,7 +77,6 @@ export default defineUserConfig({
         navbar: [
           "/en/",
           "/en/get-started",
-          "/en/changelog",
           "/en/faq",
           {
             text: 'Guides',
@@ -102,7 +101,8 @@ export default defineUserConfig({
               { text: 'Sorting Priority', link: '/en/sorting-priority' },
               { text: 'Permissions', link: '/en/permissions' }
             ]
-          }
+          },
+          "/en/changelog"
         ],
       },
       '/ja/': {
@@ -111,7 +111,6 @@ export default defineUserConfig({
         navbar: [
           "/ja/",
           "/ja/get-started",
-          "/ja/changelog",
           "/ja/faq",
           {
             text: '機能ガイド',
@@ -136,7 +135,8 @@ export default defineUserConfig({
               { text: '並び順優先度設定', link: '/ja/sorting-priority' },
               { text: '権限管理', link: '/ja/permissions' }
             ]
-          }
+          },
+          "/ja/changelog"
         ],
       }
     }
