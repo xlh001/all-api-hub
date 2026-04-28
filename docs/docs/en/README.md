@@ -2,7 +2,7 @@
 home: true
 title: "Homepage"
 heroImage: "/512.png"
-heroText: "All API Hub - AI Aggregation Relay Manager"
+heroText: "All API Hub - Your All-in-One AI Asset Manager"
 tagline: "Open-source browser extension to unify the management of third-party AI aggregation relays and self-built New APIs: automatically identify accounts, compare model prices, verify API/CLI compatibility, synchronize models and channels, and support cross-platform and encrypted WebDAV backups."
 actions:
   - text: "Get Started"

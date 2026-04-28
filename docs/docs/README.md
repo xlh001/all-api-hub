@@ -2,7 +2,7 @@
 home: true
 title: "首页"
 heroImage: "/512.png"
-heroText: "All API Hub - AI 聚合中转站管理器"
+heroText: "All API Hub - 你的全能 AI 资产管家"
 tagline: "开源浏览器插件，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、比对模型价格、验证 API/CLI 兼容性、同步模型与渠道，并支持跨平台与加密 WebDAV 备份"
 actions:
   - text: "开始使用"

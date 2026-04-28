@@ -2,7 +2,7 @@
 home: true
 title: "ホーム"
 heroImage: "/512.png"
-heroText: "All API Hub - AI集約中継ステーションマネージャー"
+heroText: "All API Hub - あなたの万能 AI 資産マネージャー"
 tagline: "オープンソースのブラウザ拡張機能。サードパーティ製AI集約中継ステーションと自社構築のNew APIを一元管理。アカウントの自動認識、モデル価格の比較、API/CLI互換性の検証、モデルとチャネルの同期をサポートし、クロスプラットフォームと暗号化されたWebDAVバックアップに対応。"
 actions:
   - text: "利用開始"
