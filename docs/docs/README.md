@@ -43,7 +43,7 @@ features:
   - title: "快速导出集成"
     details: "一键导出到 CherryStudio、CC Switch、CLIProxyAPI、Claude Code Router、Kilo Code，以及当前选择的自建托管站点。"
   - title: "自建站点后台联动"
-    details: "支持对自建 New API、DoneHub、Veloera、Octopus 与 AxonHub 实例进行后台联动。"
+    details: "支持对自建 New API、DoneHub、Veloera、Octopus、AxonHub 与 Claude Code Hub 实例进行后台联动。"
   - title: "WebDAV 备份与同步"
     details: "支持 JSON 导入导出、WebDAV 自动同步、选择性同步与备份加密，实现跨设备与多浏览器迁移。"
   - title: "Cloudflare 过盾助手"
@@ -60,7 +60,7 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 现在 AI 生态里有越来越多基于 New API 系列的聚合中转站和自建面板，要同时管理各站点的余额、用量、模型价格和 API 密钥可用性，往往既分散又费时。
 
-All API Hub 作为浏览器插件，可以自动识别这些站点的账号，并一键查看余额、用量、模型价格、管理模型与密钥、执行自动签到，还支持独立 API 凭证管理，以及为自建 New API、DoneHub、Veloera、Octopus 与 AxonHub 提供后台联动和渠道相关工具。当前已支持基于以下项目的中转站账号：
+All API Hub 作为浏览器插件，可以自动识别这些站点的账号，并一键查看余额、用量、模型价格、管理模型与密钥、执行自动签到，还支持独立 API 凭证管理，以及为自建 New API、DoneHub、Veloera、Octopus、AxonHub 与 Claude Code Hub 提供后台联动和渠道相关工具。当前已支持基于以下项目的中转站账号：
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)
