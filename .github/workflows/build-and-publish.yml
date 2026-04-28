@@ -29,6 +29,11 @@ on:
         required: false
         type: boolean
         default: true
+      publish_firefox:
+        description: "Publish Firefox build to AMO"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write # 上传构建产物到 Release 需要写权限
@@ -251,15 +256,23 @@ jobs:
       - name: Submit browser platform builds
         working-directory: source
         run: |
+          shopt -s nullglob
+
           echo "Chrome review: $([ "$CHROME_SKIP_SUBMIT_REVIEW" = "true" ] && echo skipped || echo submitted)"
           echo "Edge review: $([ "$EDGE_SKIP_SUBMIT_REVIEW" = "true" ] && echo skipped || echo submitted)"
+          echo "Firefox publish: $([ "$PUBLISH_FIREFOX" = "true" ] && echo enabled || echo skipped)"
 
           args=(
             --chrome-zip .output/*-chrome.zip
-            --firefox-zip .output/*-firefox.zip
-            --firefox-sources-zip .output/*-sources.zip
             --edge-zip .output/*-chrome.zip
           )
+
+          if [ "$PUBLISH_FIREFOX" = "true" ]; then
+            args+=(
+              --firefox-zip .output/*-firefox.zip
+              --firefox-sources-zip .output/*-sources.zip
+            )
+          fi
 
           if [ "$WXT_SUBMIT_DRY_RUN" = "true" ]; then
             args=(--dry-run "${args[@]}")
@@ -270,6 +283,7 @@ jobs:
           WXT_SUBMIT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
           CHROME_SKIP_SUBMIT_REVIEW: ${{ github.event.inputs.review_chrome == 'false' }}
           EDGE_SKIP_SUBMIT_REVIEW: ${{ github.event.inputs.review_edge == 'false' }}
+          PUBLISH_FIREFOX: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.publish_firefox != 'false' }}
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
