@@ -38,7 +38,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       package_version: ${{ steps.package.outputs.package-version }}
-      release_ref: ${{ steps.get_ref.outputs.ref }}
+      checkout_ref: ${{ steps.get_ref.outputs.checkout_ref }}
+      release_tag: ${{ steps.get_ref.outputs.release_tag }}
 
     steps:
       # 先 checkout 完整仓库，后面要用 git 命令找 tag
@@ -51,54 +52,76 @@ jobs:
       # 决定要 checkout 的 ref（tag 或 commit）
       - name: Determine ref (tag or commit)
         id: get_ref
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EVENT_RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
+          INPUT_REF: ${{ github.event.inputs.ref || '' }}
+          IS_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
         run: |
-          # 支持的 ref 示例：
-          # - v3.30.0（tag）
-          # - main / feat/safari-support（branch）
-          # - a1b2c3d 或完整 40 位 commit SHA
-          # - latest（默认分支最新 commit）
-          # 优先级：workflow 输入 ref > release tag > 自动找最新 tag
-          REF="${{ github.event.inputs.ref || github.event.release.tag_name }}"
+          # 构建来源（checkout_ref）和发布目标（release_tag）不能混为一谈：
+          # - release 事件或显式输入的已存在 tag => 允许作为 release 目标
+          # - 未提供 ref 时只自动选择 stable semver tag
+          # - branch / commit / latest => 仅作为构建来源，可继续用于手动商店提交
+          BRANCH="${DEFAULT_BRANCH:-main}"
+          STABLE_TAG_REGEX='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          CHECKOUT_REF=""
+          RELEASE_TAG=""
 
-          if [ "$REF" = "latest" ]; then
-            # 特殊值 latest → 使用默认分支最新 commit
-            REF=$(git rev-parse origin/main)
-            echo "ℹ️ Using latest commit from main: $REF"
-          elif [ -z "$REF" ]; then
-            # 如果没有提供任何输入，就找最新语义化版本的 tag
-            REF=$(git tag --sort=-v:refname | head -n 1)
-            if [ -n "$REF" ]; then
-              echo "⚠️ No ref provided. Using latest tag: $REF"
+          if [ -n "$EVENT_RELEASE_TAG" ]; then
+            CHECKOUT_REF="$EVENT_RELEASE_TAG"
+            RELEASE_TAG="$EVENT_RELEASE_TAG"
+            echo "ℹ️ Release event detected. Using release tag: $RELEASE_TAG"
+          elif [ "$INPUT_REF" = "latest" ]; then
+            CHECKOUT_REF="$(git rev-parse "origin/$BRANCH")"
+            echo "ℹ️ Using latest commit from $BRANCH: $CHECKOUT_REF"
+          elif [ -z "$INPUT_REF" ]; then
+            CHECKOUT_REF="$(git tag --sort=-v:refname | grep -E "$STABLE_TAG_REGEX" | head -n 1 || true)"
+
+            if [ -n "$CHECKOUT_REF" ]; then
+              RELEASE_TAG="$CHECKOUT_REF"
+              echo "⚠️ No ref provided. Using latest stable tag: $RELEASE_TAG"
             else
-              echo "❌ No tag found in repo and no input ref. Skipping build."
-              echo "ref=" >> $GITHUB_OUTPUT
+              echo "❌ No stable tag found in repo and no input ref. Skipping build."
+              echo "checkout_ref=" >> "$GITHUB_OUTPUT"
+              echo "release_tag=" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           else
-            echo "ℹ️ Using provided ref (tag or commit): $REF"
+            CHECKOUT_REF="$INPUT_REF"
+
+            if git rev-parse -q --verify "refs/tags/$INPUT_REF" >/dev/null 2>&1; then
+              RELEASE_TAG="$INPUT_REF"
+              echo "ℹ️ Using explicit release tag target: $RELEASE_TAG"
+            else
+              echo "ℹ️ Using non-tag build source: $CHECKOUT_REF"
+            fi
           fi
 
-          # 输出 ref 给后续步骤使用
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$IS_DRY_RUN" != "true" ] && [ -z "$RELEASE_TAG" ]; then
+            echo "ℹ️ Non-tag build source detected. Release asset upload and release-note update will be skipped, but browser-store publish can continue."
+          fi
+
+          echo "checkout_ref=$CHECKOUT_REF" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
       # 3️⃣ Checkout 到指定的 ref（tag 或 commit hash）
       - name: Checkout specific ref
-        if: ${{ steps.get_ref.outputs.ref != '' }}
+        if: ${{ steps.get_ref.outputs.checkout_ref != '' }}
         uses: actions/checkout@v5
         with:
-          ref: ${{ steps.get_ref.outputs.ref }}
+          ref: ${{ steps.get_ref.outputs.checkout_ref }}
           path: source
           fetch-depth: 0 # 确保获取完整历史，以便 tag、commit 都能找到
 
       - name: Package extension
         id: package
-        if: ${{ steps.get_ref.outputs.ref != '' }}
+        if: ${{ steps.get_ref.outputs.checkout_ref != '' }}
         uses: ./.github/actions/package-extension
         with:
           working-directory: source
 
       - name: Validate Safari build inputs
-        if: ${{ steps.get_ref.outputs.ref != '' }}
+        if: ${{ steps.get_ref.outputs.checkout_ref != '' }}
         working-directory: source
         run: |
           shopt -s nullglob
@@ -123,7 +146,7 @@ jobs:
           fi
 
       - name: Upload Safari build inputs
-        if: ${{ steps.get_ref.outputs.ref != '' }}
+        if: ${{ steps.get_ref.outputs.checkout_ref != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: safari-build-inputs
@@ -134,7 +157,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload packaged archives
-        if: ${{ steps.get_ref.outputs.ref != '' }}
+        if: ${{ steps.get_ref.outputs.checkout_ref != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: packaged-archives
@@ -144,10 +167,18 @@ jobs:
 
   release-artifacts:
     needs: build
-    if: ${{ needs.build.outputs.release_ref != '' }}
+    if: ${{ needs.build.outputs.checkout_ref != '' }}
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout workflow tools
+        if: ${{ needs.build.outputs.release_tag != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: workflow-tools
+          fetch-depth: 1
+
       - name: Download packaged archives
         uses: actions/download-artifact@v7
         with:
@@ -164,24 +195,33 @@ jobs:
           if-no-files-found: error
 
       - name: Upload release artifacts
-        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
+        if: ${{ needs.build.outputs.release_tag != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
         run: |
-          echo "Uploading .output/*.zip to release ${{ needs.build.outputs.release_ref }}"
-          gh release upload "${{ needs.build.outputs.release_ref }}" .output/*.zip --clobber
+          shopt -s nullglob
+          assets=(.output/*.zip)
+
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "No packaged archives found under .output."
+            exit 1
+          fi
+
+          bash workflow-tools/scripts/upload-release-assets-if-missing.sh \
+            "${{ needs.build.outputs.release_tag }}" \
+            "${assets[@]}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
 
   browser-platform-publish:
     needs: build
-    if: ${{ needs.build.outputs.release_ref != '' && !github.event.repository.fork }}
+    if: ${{ needs.build.outputs.checkout_ref != '' && !github.event.repository.fork }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout specific ref
         uses: actions/checkout@v5
         with:
-          ref: ${{ needs.build.outputs.release_ref }}
+          ref: ${{ needs.build.outputs.checkout_ref }}
           path: source
           fetch-depth: 0
 
@@ -243,14 +283,14 @@ jobs:
 
   safari-release-assets:
     needs: build
-    if: ${{ needs.build.outputs.release_ref != '' }}
+    if: ${{ needs.build.outputs.checkout_ref != '' }}
     runs-on: macos-latest
 
     steps:
       - name: Checkout specific ref
         uses: actions/checkout@v5
         with:
-          ref: ${{ needs.build.outputs.release_ref }}
+          ref: ${{ needs.build.outputs.checkout_ref }}
           path: source
           fetch-depth: 0
 
@@ -259,6 +299,14 @@ jobs:
         with:
           name: safari-build-inputs
           path: source/.output
+
+      - name: Checkout workflow tools
+        if: ${{ needs.build.outputs.release_tag != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: workflow-tools
+          fetch-depth: 1
 
       - name: Prepare Safari release assets
         working-directory: source
@@ -280,12 +328,21 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Safari Release Artifact
-        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
+        if: ${{ needs.build.outputs.release_tag != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
         continue-on-error: true
         working-directory: source
         run: |
-          echo "Uploading .output/release-assets/*.zip to release ${{ needs.build.outputs.release_ref }}"
-          gh release upload "${{ needs.build.outputs.release_ref }}" .output/release-assets/*.zip --clobber
+          shopt -s nullglob
+          assets=(.output/release-assets/*.zip)
+
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "No Safari release assets found under .output/release-assets."
+            exit 1
+          fi
+
+          bash ../workflow-tools/scripts/upload-release-assets-if-missing.sh \
+            "${{ needs.build.outputs.release_tag }}" \
+            "${assets[@]}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -295,14 +352,14 @@ jobs:
       - build
       - release-artifacts
       - safari-release-assets
-    if: ${{ always() && needs.build.outputs.release_ref != '' && needs.release-artifacts.result == 'success' && (needs.safari-release-assets.result == 'success' || needs.safari-release-assets.result == 'failure' || needs.safari-release-assets.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
+    if: ${{ always() && needs.build.outputs.release_tag != '' && needs.release-artifacts.result == 'success' && (needs.safari-release-assets.result == 'success' || needs.safari-release-assets.result == 'failure' || needs.safari-release-assets.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true') }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout specific ref
         uses: actions/checkout@v5
         with:
-          ref: ${{ needs.build.outputs.release_ref }}
+          ref: ${{ needs.build.outputs.checkout_ref }}
           path: source
           fetch-depth: 1
 
@@ -311,4 +368,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: bash scripts/update-release-extra-notes.sh "${{ needs.build.outputs.release_ref }}"
+        run: bash scripts/update-release-extra-notes.sh "${{ needs.build.outputs.release_tag }}"
