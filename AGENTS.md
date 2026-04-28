@@ -36,6 +36,7 @@ When working on a site type:
 - **DoneHub (`done-hub`)** is downstream of OneHub and currently layers `src/services/apiService/doneHub/` on top of `src/services/apiService/oneHub/` in `src/services/apiService/index.ts`.
 - **Octopus (`octopus`)** has dedicated managed-site logic and API overrides in `src/services/apiService/octopus/` plus related provider logic under `src/services/managedSites/providers/`.
 - **AxonHub (`axonhub`)** is not One-API/New-API compatible; it uses dedicated GraphQL admin integration in `src/services/apiService/axonHub/` plus a managed-site provider in `src/services/managedSites/providers/axonHub.ts`.
+- **Claude Code Hub (`claude-code-hub`)** is not One-API/New-API compatible; it uses dedicated admin/provider integration in `src/services/apiService/claudeCodeHub/` plus a managed-site provider in `src/services/managedSites/providers/claudeCodeHub.ts`.
 - **AnyRouter (`anyrouter`)** and **WONG公益站 (`wong-gongyi`)** have custom check-in handling.
 - **Sub2API (`sub2api`)** is not One-API/New-API compatible; it has a different auth model and API surface.
 
@@ -48,6 +49,7 @@ When working on a site type:
 - `done-hub`
 - `octopus`
 - `axonhub`
+- `claude-code-hub`
 
 Do not assume `one-hub` or every New-API-like deployment is a managed site without checking the current type definition.
 
@@ -56,6 +58,7 @@ Do not assume `one-hub` or every New-API-like deployment is a managed site witho
 - Shared One-API/New-API-family helpers live in `src/services/apiService/common/`.
 - Compatible user-id headers are handled in `src/services/apiService/common/utils.ts` and related helpers.
 - AxonHub keeps its own admin integration under `src/services/apiService/axonHub/` and managed-site provider logic under `src/services/managedSites/providers/axonHub.ts`.
+- Claude Code Hub keeps its own admin/provider integration under `src/services/apiService/claudeCodeHub/` and managed-site provider logic under `src/services/managedSites/providers/claudeCodeHub.ts`.
 - Some adapter directories under `src/services/apiService/` are provider-specific integrations rather than `siteType` values, so check `src/constants/siteType.ts` before documenting behavior.
 
 ### Default Upstream References
@@ -68,6 +71,7 @@ When the user names a backend without a deployment URL or fork, treat these as t
 - OneHub: `https://github.com/MartialBE/one-hub`
 - DoneHub: `https://github.com/deanxv/done-hub`
 - AxonHub: `https://github.com/looplj/axonhub`
+- Claude Code Hub: `https://github.com/ding113/claude-code-hub`
 - Sub2API: `https://github.com/Wei-Shaw/sub2api`
 
 If the user's reported behavior differs from upstream, ask for the exact deployment, fork, or version before concluding the repo is wrong.
