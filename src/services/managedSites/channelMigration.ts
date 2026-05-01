@@ -59,6 +59,10 @@ interface SourceKeyResolutionResult {
 const parseDelimitedValues = (value: string | null | undefined) =>
   normalizeList(value?.split(",") ?? [])
 
+const areStringArraysEqual = (left: string[], right: string[]): boolean =>
+  left.length === right.length &&
+  left.every((item, index) => item === right[index])
+
 const hasMeaningfulValue = (value: string | null | undefined) =>
   Boolean(value?.trim())
 
@@ -91,6 +95,28 @@ const AXON_HUB_TO_SHARED_CHANNEL_TYPE: Partial<Record<string, ChannelType>> = {
   [AXON_HUB_CHANNEL_TYPE.OLLAMA]: ChannelType.Ollama,
   [AXON_HUB_CHANNEL_TYPE.GITHUB_COPILOT]: ChannelType.OpenAI,
   [AXON_HUB_CHANNEL_TYPE.NANOGPT]: ChannelType.OpenAI,
+}
+
+const SHARED_TO_AXON_HUB_CHANNEL_TYPE: Partial<Record<ChannelType, string>> = {
+  [ChannelType.Unknown]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.OpenAI]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.Azure]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.OpenAIMax]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.OhMyGPT]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.Custom]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.AILS]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.AIProxy]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.API2GPT]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.AIGC2D]: AXON_HUB_CHANNEL_TYPE.OPENAI,
+  [ChannelType.Anthropic]: AXON_HUB_CHANNEL_TYPE.ANTHROPIC,
+  [ChannelType.OpenRouter]: AXON_HUB_CHANNEL_TYPE.OPENROUTER,
+  [ChannelType.Gemini]: AXON_HUB_CHANNEL_TYPE.GEMINI,
+  [ChannelType.VertexAi]: AXON_HUB_CHANNEL_TYPE.GEMINI,
+  [ChannelType.SiliconFlow]: AXON_HUB_CHANNEL_TYPE.SILICONFLOW,
+  [ChannelType.DeepSeek]: AXON_HUB_CHANNEL_TYPE.DEEPSEEK,
+  [ChannelType.VolcEngine]: AXON_HUB_CHANNEL_TYPE.VOLCENGINE,
+  [ChannelType.Xai]: AXON_HUB_CHANNEL_TYPE.XAI,
+  [ChannelType.Ollama]: AXON_HUB_CHANNEL_TYPE.OLLAMA,
 }
 
 const mapWithConcurrency = async <TItem, TResult>(
@@ -155,6 +181,15 @@ const getTargetChannelType = (
     return mapChannelTypeToOctopusOutboundType(sharedType)
   }
 
+  if (targetSiteType === AXON_HUB) {
+    // AxonHub rejects New API numeric channel types. Unknown or unsupported
+    // shared types fall back to OpenAI-compatible with a preview remap warning.
+    return (
+      SHARED_TO_AXON_HUB_CHANNEL_TYPE[sharedType] ??
+      AXON_HUB_CHANNEL_TYPE.OPENAI
+    )
+  }
+
   return sharedType
 }
 
@@ -197,6 +232,7 @@ const collectItemWarningCodes = (params: {
     if (
       sourceSiteType === OCTOPUS ||
       targetSiteType === OCTOPUS ||
+      targetSiteType === AXON_HUB ||
       (sourceSiteType === AXON_HUB && typeof channel.type === "string")
     ) {
       warnings.add(
@@ -239,6 +275,28 @@ const collectItemWarningCodes = (params: {
     }
   }
 
+  if (targetSiteType === AXON_HUB) {
+    const sourceGroups = parseDelimitedValues(channel.group)
+    const emittedGroups = [...DEFAULT_CHANNEL_FIELDS.groups]
+    if (!areStringArraysEqual(sourceGroups, emittedGroups)) {
+      warnings.add(
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_FORCES_DEFAULT_GROUP,
+      )
+    }
+
+    if ((channel.priority ?? DEFAULT_CHANNEL_FIELDS.priority) !== 0) {
+      warnings.add(
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_IGNORES_PRIORITY,
+      )
+    }
+
+    if (![1, 2].includes(channel.status ?? DEFAULT_CHANNEL_FIELDS.status)) {
+      warnings.add(
+        MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES.TARGET_SIMPLIFIES_STATUS,
+      )
+    }
+  }
+
   return Array.from(warnings)
 }
 
@@ -252,7 +310,7 @@ const buildDraftFromSourceChannel = (params: {
   const groups = parseDelimitedValues(channel.group)
   const models = parseDelimitedValues(channel.models)
   const targetStatus =
-    targetSiteType === OCTOPUS
+    targetSiteType === OCTOPUS || targetSiteType === AXON_HUB
       ? channel.status === 1
         ? 1
         : 2
@@ -268,13 +326,13 @@ const buildDraftFromSourceChannel = (params: {
         : (channel.base_url ?? "").trim(),
     models,
     groups:
-      targetSiteType === OCTOPUS
+      targetSiteType === OCTOPUS || targetSiteType === AXON_HUB
         ? [...DEFAULT_CHANNEL_FIELDS.groups]
         : groups.length > 0
           ? groups
           : [...DEFAULT_CHANNEL_FIELDS.groups],
     priority:
-      targetSiteType === OCTOPUS
+      targetSiteType === OCTOPUS || targetSiteType === AXON_HUB
         ? DEFAULT_CHANNEL_FIELDS.priority
         : channel.priority ?? DEFAULT_CHANNEL_FIELDS.priority,
     weight:

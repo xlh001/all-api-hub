@@ -1,7 +1,8 @@
 import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { NEW_API, OCTOPUS } from "~/constants/siteType"
+import { AXON_HUB_CHANNEL_TYPE } from "~/constants/axonHub"
+import { AXON_HUB, NEW_API, OCTOPUS } from "~/constants/siteType"
 import { ManagedSiteChannelMigrationDialog } from "~/features/ManagedSiteChannels/components/ManagedSiteChannelMigrationDialog"
 import {
   executeManagedSiteChannelMigration,
@@ -12,7 +13,13 @@ import {
   MANAGED_SITE_CHANNEL_MIGRATION_GENERAL_WARNING_CODES,
   MANAGED_SITE_CHANNEL_MIGRATION_ITEM_WARNING_CODES,
 } from "~/types/managedSiteMigration"
-import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "~~/tests/test-utils/render"
 
 const { mockPreparePreview, mockExecuteMigration } = vi.hoisted(() => ({
   mockPreparePreview: vi.fn(),
@@ -304,6 +311,75 @@ describe("ManagedSiteChannelMigrationDialog", () => {
     expect(screen.getAllByText("Need a source key").length).toBeGreaterThan(0)
     expect(screen.getByText("site:new-api")).toBeInTheDocument()
     expect(screen.getAllByText("site:done-hub").length).toBeGreaterThan(0)
+  })
+
+  it("renders AxonHub string channel type labels and unknown type fallbacks", async () => {
+    mockedPreparePreview.mockResolvedValueOnce({
+      ...previewPayload,
+      targetSiteType: AXON_HUB,
+      items: [
+        {
+          ...previewPayload.items[0],
+          draft: {
+            ...previewPayload.items[0].draft,
+            type: AXON_HUB_CHANNEL_TYPE.ANTHROPIC,
+          },
+        },
+        {
+          ...previewPayload.items[1],
+          draft: {
+            ...previewPayload.items[1].draft,
+            type: "future-provider",
+          },
+        },
+        {
+          channelId: 3,
+          channelName: "Missing Type",
+          status: "ready",
+          blockingReasonCode: undefined,
+          blockingMessage: undefined,
+          warningCodes: [],
+          sourceChannel: {
+            base_url: "https://missing-type.example",
+            type: 1,
+            models: "gpt-4o",
+            group: "default",
+            priority: 0,
+            weight: 0,
+            status: 1,
+          },
+          draft: {
+            base_url: "https://missing-type.example/v1",
+            type: undefined,
+            models: ["gpt-4o"],
+            groups: ["default"],
+            priority: 0,
+            weight: 0,
+            status: 1,
+          },
+        },
+      ],
+    })
+
+    render(
+      <ManagedSiteChannelMigrationDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        channels={channels}
+        preferences={{} as any}
+        sourceSiteType={NEW_API}
+        availableTargets={[{ siteType: AXON_HUB, label: "AxonHub" }] as any}
+      />,
+    )
+
+    expect(await screen.findByText("Anthropic")).toBeInTheDocument()
+    expect(screen.getByText("future-provider")).toBeInTheDocument()
+
+    const missingTypeSection = screen
+      .getByText("Missing Type")
+      .closest("section")
+    expect(missingTypeSection).toBeTruthy()
+    expect(within(missingTypeSection!).getByText("—")).toBeInTheDocument()
   })
 
   it("shows preview errors and allows refreshing the preview", async () => {
