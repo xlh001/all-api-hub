@@ -63,7 +63,7 @@ interface TokenListProps {
     token: AccountToken,
     managedSiteStatus: ManagedSiteTokenChannelStatus,
   ) => void | Promise<void>
-  allAccountsFilterAccountId?: string | null
+  allAccountsFilterAccountIds?: string[]
 }
 
 /**
@@ -244,7 +244,7 @@ function TokenEmptyState({
  * @param props.managedSiteTokenStatuses Optional managed-site channel status by token identity.
  * @param props.onManagedSiteImportSuccess Optional callback after a managed-site token import succeeds.
  * @param props.onManagedSiteVerificationRetry Optional callback to retry managed-site token verification.
- * @param props.allAccountsFilterAccountId Optional account ID filter applied in all-accounts mode.
+ * @param props.allAccountsFilterAccountIds Optional account ID filters applied in all-accounts mode.
  */
 export function TokenList(props: TokenListProps) {
   const {
@@ -268,7 +268,7 @@ export function TokenList(props: TokenListProps) {
     managedSiteTokenStatuses,
     onManagedSiteImportSuccess,
     onManagedSiteVerificationRetry,
-    allAccountsFilterAccountId,
+    allAccountsFilterAccountIds = [],
   } = props
   const { t } = useTranslation(["keyManagement", "settings"])
   const { managedSiteType } = useUserPreferencesContext()
@@ -313,17 +313,24 @@ export function TokenList(props: TokenListProps) {
 
   useEffect(() => {
     if (!isAllAccountsMode) return
-    if (!allAccountsFilterAccountId) return
+    if (allAccountsFilterAccountIds.length === 0) return
 
-    // When the user filters to a single account via AccountSummaryBar, ensure the
-    // corresponding group is expanded so the tokens are immediately visible.
+    // When the user filters via AccountSummaryBar, ensure matching groups are
+    // expanded so the tokens are immediately visible.
     setCollapsedAccountIds((prev) => {
-      if (!prev.has(allAccountsFilterAccountId)) return prev
       const next = new Set(prev)
-      next.delete(allAccountsFilterAccountId)
+      let didChange = false
+
+      for (const accountId of allAccountsFilterAccountIds) {
+        if (!next.has(accountId)) continue
+        next.delete(accountId)
+        didChange = true
+      }
+
+      if (!didChange) return prev
       return next
     })
-  }, [allAccountsFilterAccountId, isAllAccountsMode])
+  }, [allAccountsFilterAccountIds, isAllAccountsMode])
 
   const groupedTokens = useMemo(() => {
     if (!isAllAccountsMode) return null
@@ -458,6 +465,30 @@ export function TokenList(props: TokenListProps) {
           next.add(tokenIdentityKey)
         }
       }
+      return next
+    })
+  }
+
+  const toggleGroupSelection = (
+    groupTokens: AccountToken[],
+    checked: boolean | "indeterminate",
+  ) => {
+    setSelectedTokenIds((prev) => {
+      const next = new Set(prev)
+      const shouldSelect = checked === true
+
+      for (const token of groupTokens) {
+        const tokenIdentityKey = buildTokenIdentityKey(
+          token.accountId,
+          token.id,
+        )
+        if (shouldSelect) {
+          next.add(tokenIdentityKey)
+        } else {
+          next.delete(tokenIdentityKey)
+        }
+      }
+
       return next
     })
   }
@@ -597,6 +628,18 @@ export function TokenList(props: TokenListProps) {
               const isCollapsed = collapsedAccountIds.has(account.id)
               const shouldShowShowingCount =
                 group.showingCount !== group.totalCount
+              const selectedGroupVisibleCount = group.filteredTokens.filter(
+                (token) =>
+                  selectedTokenIds.has(
+                    buildTokenIdentityKey(token.accountId, token.id),
+                  ),
+              ).length
+              const groupSelectionChecked =
+                selectedGroupVisibleCount === 0
+                  ? false
+                  : selectedGroupVisibleCount === group.filteredTokens.length
+                    ? true
+                    : "indeterminate"
 
               return (
                 <Card
@@ -604,40 +647,64 @@ export function TokenList(props: TokenListProps) {
                   variant="outlined"
                   className="overflow-hidden"
                 >
-                  <button
-                    type="button"
+                  <div
                     className={cn(
                       "dark:hover:bg-dark-bg-tertiary flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-gray-50",
                       isCollapsed
                         ? "rounded-lg"
                         : "dark:border-dark-bg-tertiary border-b border-gray-200",
                     )}
-                    onClick={() => toggleGroup(account.id)}
-                    aria-expanded={!isCollapsed}
                   >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <span className="truncate font-medium">
-                        {account.name}
-                      </span>
-                      <Badge variant="secondary" size="sm" className="shrink-0">
-                        {t("accountSummary.keys", { count: group.totalCount })}
-                      </Badge>
-                      <Badge variant="outline" size="sm" className="shrink-0">
-                        {t("enabledCount", { count: group.enabledCount })}
-                      </Badge>
-                      {shouldShowShowingCount ? (
-                        <Badge variant="outline" size="sm" className="shrink-0">
-                          {t("showingCount", { count: group.showingCount })}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <ChevronDownIcon
-                      className={cn(
-                        "dark:text-dark-text-tertiary h-4 w-4 shrink-0 text-gray-500 transition-transform",
-                        isCollapsed ? "rotate-0" : "rotate-180",
+                    <Checkbox
+                      checked={groupSelectionChecked}
+                      aria-label={t(
+                        "batchManagedSiteExport.selection.accountGroup",
+                        { name: account.name },
                       )}
+                      onCheckedChange={(checked) =>
+                        toggleGroupSelection(group.filteredTokens, checked)
+                      }
                     />
-                  </button>
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                      onClick={() => toggleGroup(account.id)}
+                      aria-expanded={!isCollapsed}
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="truncate font-medium">
+                          {account.name}
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          size="sm"
+                          className="shrink-0"
+                        >
+                          {t("accountSummary.keys", {
+                            count: group.totalCount,
+                          })}
+                        </Badge>
+                        <Badge variant="outline" size="sm" className="shrink-0">
+                          {t("enabledCount", { count: group.enabledCount })}
+                        </Badge>
+                        {shouldShowShowingCount ? (
+                          <Badge
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                          >
+                            {t("showingCount", { count: group.showingCount })}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <ChevronDownIcon
+                        className={cn(
+                          "dark:text-dark-text-tertiary h-4 w-4 shrink-0 text-gray-500 transition-transform",
+                          isCollapsed ? "rotate-0" : "rotate-180",
+                        )}
+                      />
+                    </button>
+                  </div>
 
                   {!isCollapsed ? (
                     <div className="space-y-3 p-3">

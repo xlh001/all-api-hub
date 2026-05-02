@@ -13,6 +13,7 @@ const {
   pushWithinOptionsPageMock,
   mockedUseUserPreferencesContext,
   addTokenDialogPropsSpy,
+  accountSummaryBarPropsSpy,
 } = vi.hoisted(() => ({
   sendRuntimeActionMessageMock: vi.fn(),
   tokenListPropsSpy: vi.fn(),
@@ -20,6 +21,7 @@ const {
   pushWithinOptionsPageMock: vi.fn(),
   mockedUseUserPreferencesContext: vi.fn(),
   addTokenDialogPropsSpy: vi.fn(),
+  accountSummaryBarPropsSpy: vi.fn(),
 }))
 
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
@@ -130,6 +132,26 @@ vi.mock("~/features/KeyManagement/components/Footer", () => ({
   Footer: () => null,
 }))
 
+vi.mock("~/features/KeyManagement/components/AccountSummaryBar", () => ({
+  AccountSummaryBar: (props: any) => {
+    accountSummaryBarPropsSpy(props)
+
+    return (
+      <div>
+        {props.items.map((item: any) => (
+          <button
+            key={item.accountId}
+            type="button"
+            onClick={() => props.onAccountClick?.(item.accountId)}
+          >
+            Summary {item.name}:{item.count}
+          </button>
+        ))}
+      </div>
+    )
+  },
+}))
+
 vi.mock("~/features/KeyManagement/components/AddTokenDialog", () => ({
   default: (props: any) => {
     addTokenDialogPropsSpy(props)
@@ -161,8 +183,8 @@ const createHookResult = (
   managedSiteTokenStatuses: {},
   isManagedSiteChannelStatusSupported: true,
   isManagedSiteStatusRefreshing: false,
-  allAccountsFilterAccountId: null,
-  setAllAccountsFilterAccountId: vi.fn(),
+  allAccountsFilterAccountIds: [],
+  setAllAccountsFilterAccountIds: vi.fn(),
   loadTokens: vi.fn(),
   filteredTokens: [],
   getVisibleTokenKey: vi.fn(),
@@ -185,6 +207,7 @@ describe("KeyManagement empty-state actions", () => {
     useKeyManagementMock.mockReset()
     pushWithinOptionsPageMock.mockReset()
     addTokenDialogPropsSpy.mockReset()
+    accountSummaryBarPropsSpy.mockReset()
     mockedUseUserPreferencesContext.mockReturnValue({
       managedSiteType: "new-api",
       newApiBaseUrl: "https://managed.example",
@@ -252,7 +275,7 @@ describe("KeyManagement empty-state actions", () => {
       createHookResult({
         displayData: [account],
         selectedAccount: KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE,
-        allAccountsFilterAccountId: account.id,
+        allAccountsFilterAccountIds: [account.id],
         isAddTokenOpen: true,
       }),
     )
@@ -265,5 +288,74 @@ describe("KeyManagement empty-state actions", () => {
       isOpen: true,
       preSelectedAccountId: account.id,
     })
+  })
+
+  it("does not preselect an account in the add-token dialog when multiple accounts are filtered", async () => {
+    const accountA = createAccount({
+      id: "acc-1",
+      name: "Account 1",
+    })
+    const accountB = createAccount({
+      id: "acc-2",
+      name: "Account 2",
+    })
+
+    useKeyManagementMock.mockReturnValue(
+      createHookResult({
+        displayData: [accountA, accountB],
+        selectedAccount: KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE,
+        allAccountsFilterAccountIds: [accountA.id, accountB.id],
+        isAddTokenOpen: true,
+      }),
+    )
+
+    render(<KeyManagement />)
+
+    await waitFor(() => expect(addTokenDialogPropsSpy).toHaveBeenCalled())
+
+    expect(addTokenDialogPropsSpy.mock.lastCall?.[0]).toMatchObject({
+      isOpen: true,
+      preSelectedAccountId: null,
+    })
+  })
+
+  it("toggles the all-accounts summary filter for the clicked account", async () => {
+    const user = userEvent.setup()
+    const account = createAccount({
+      id: "acc-1",
+      name: "Account 1",
+    })
+    const setAllAccountsFilterAccountIds = vi.fn()
+
+    useKeyManagementMock.mockReturnValue(
+      createHookResult({
+        displayData: [account],
+        selectedAccount: KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE,
+        accountSummaryItems: [
+          {
+            accountId: account.id,
+            name: account.name,
+            count: 2,
+          },
+        ],
+        setAllAccountsFilterAccountIds,
+      }),
+    )
+
+    render(<KeyManagement />)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Summary ${account.name}:2`,
+      }),
+    )
+
+    expect(setAllAccountsFilterAccountIds).toHaveBeenCalledWith(
+      expect.any(Function),
+    )
+
+    const toggleFilter = setAllAccountsFilterAccountIds.mock.lastCall?.[0]
+    expect(toggleFilter([])).toEqual([account.id])
+    expect(toggleFilter([account.id])).toEqual([])
   })
 })
