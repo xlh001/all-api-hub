@@ -59,11 +59,11 @@ All API Hub, as a browser extension, can automatically identify accounts on thes
 Find the documentation you need based on your role:
 
 ### I am an AI Tool User
-- **Quick Start**: [Download & Install](./get-started.md) -> [Add My First Account](./get-started.md#3-adding-a-site)
+- **Quick Start**: [Download & Install](./get-started.md) -> [Add My First Account](./get-started.md#add-site)
 - **Asset Management**: [View Balance History](./balance-history.md) -> [Analyze Usage](./usage-analytics.md)
 - **Account Maintenance**: [Organize & Clean Up Accounts](./account-management.md)
 - **Cost Saving**: [Cross-site Price Comparison](./model-list.md) -> [Auto Check-in](./auto-checkin.md)
-- **One-click Export**: [Sync to CherryStudio / CC Switch](./get-started.md#4-quick-export-and-integration)
+- **One-click Export**: [Sync to CherryStudio / CC Switch](./get-started.md#quick-export-sites)
 
 ### I have multiple Standalone API Keys
 - **Credential Management**: [Save URL+Key as Credentials](./api-credential-profiles.md)
