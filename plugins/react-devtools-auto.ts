@@ -5,6 +5,7 @@ import path from "path"
 import type { PluginOption, ResolvedConfig, ViteDevServer } from "vite"
 
 interface ReactDevToolsOptions {
+  enabled?: boolean // 是否启用整个 React DevTools 插件
   autoStart?: boolean // 是否自动启动 standalone
   port?: number // DevTools 端口
   maxWait?: number // 最大等待时间(ms)
@@ -26,6 +27,7 @@ export function reactDevToolsAuto(
 
   // ======== 参数合并与优先级 ========
   const config = {
+    enabled: options.enabled ?? boolEnv(env.REACT_DEVTOOLS_ENABLED, true),
     autoStart:
       options.autoStart ?? boolEnv(env.REACT_DEVTOOLS_AUTO_START, true),
     port: options.port ?? numEnv(env.REACT_DEVTOOLS_PORT, 8097),
@@ -195,6 +197,10 @@ export function reactDevToolsAuto(
         console.log("⏭️  React DevTools skipped (not in development mode)")
         return
       }
+      if (!config.enabled) {
+        console.log("⏭️  React DevTools skipped (disabled by env)")
+        return
+      }
 
       let backendContent = await getDevToolsBackend(true)
 
@@ -252,6 +258,7 @@ export function reactDevToolsAuto(
     transformIndexHtml: {
       order: "pre",
       handler(html: string) {
+        if (!config.enabled) return html
         if (html.includes("react-devtools-backend.js")) return html
         return [
           {
