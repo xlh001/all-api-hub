@@ -79,27 +79,27 @@ All API Hub 几乎支持市面上所有主流的 AI 中转站架构，包括：
 ## 5. 核心功能深入指南
 
 ### 📊 资产看板与统计
-- **5.1 [资产总览与实时刷新](./auto-refresh.md)**：集中查看多站余额、用量与健康状态。
-- **5.2 [余额历史记录](./balance-history.md)**：直观呈现资产变动趋势。
-- **5.3 [用量统计分析](./usage-analytics.md)**：多维度分析消耗、模型分布与延迟。
+- **[资产总览与实时刷新](./auto-refresh.md)**：集中查看多站余额、用量与健康状态。
+- **[余额历史记录](./balance-history.md)**：直观呈现资产变动趋势。
+- **[用量统计分析](./usage-analytics.md)**：多维度分析消耗、模型分布与延迟。
 
 ### 🔑 密钥管理与快捷集成
-- **5.4 [令牌管理](./key-management.md)**：集中管理站点令牌，支持一键补全。
-- **5.5 [独立 API 凭证](./api-credential-profiles.md)**：无需账号保存 URL+Key，支持批量验证。
-- **5.6 [网页 API 嗅探](./web-ai-api-check.md)**：在网页内快速识别并测试 API 配置。
+- **[令牌管理](./key-management.md)**：集中管理站点令牌，支持一键补全。
+- **[独立 API 凭证](./api-credential-profiles.md)**：无需账号保存 URL+Key，支持批量验证。
+- **[网页 API 嗅探](./web-ai-api-check.md)**：在网页内快速识别并测试 API 配置。
 
 ### ⚡ 自动化与额度收益
-- **5.7 [自动签到流](./auto-checkin.md)**：每天自动帮你完成所有站点的签到。
-- **5.8 [兑换助手](./redemption-assist.md)**：自动识别网页兑换码并一键领取。
-- **5.9 [书签收纳管理](./bookmark-management.md)**：集中收藏控制台、文档、充值入口。
+- **[自动签到流](./auto-checkin.md)**：每天自动帮你完成所有站点的签到。
+- **[兑换助手](./redemption-assist.md)**：自动识别网页兑换码并一键领取。
+- **[书签收纳管理](./bookmark-management.md)**：集中收藏控制台、文档、充值入口。
 
 ### 🛡️ 稳定性与安全防护
-- **5.10 [Cloudflare 过盾助手](./cloudflare-helper.md)**：协助通过验证，确保刷新、签到不中断。
-- **5.11 [WebDAV 同步与加密](./webdav-sync.md)**：支持跨设备加密备份，数据永不丢失。
+- **[Cloudflare 过盾助手](./cloudflare-helper.md)**：协助通过验证，确保刷新、签到不中断。
+- **[WebDAV 同步与加密](./webdav-sync.md)**：支持跨设备加密备份，数据永不丢失。
 
 ### 🛠️ 自建站点运营工具
-- **5.12 [自建站点管理](./self-hosted-site-management.md)**：在插件内直接对渠道进行增删改查。
-- **5.13 [模型同步与重定向](./managed-site-model-sync.md)**：批量同步上游模型，配置映射逻辑。
+- **[自建站点管理](./self-hosted-site-management.md)**：在插件内直接对渠道进行增删改查。
+- **[模型同步与重定向](./managed-site-model-sync.md)**：批量同步上游模型，配置映射逻辑。
 
 ---
 

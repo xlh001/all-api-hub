@@ -79,27 +79,27 @@ After adding an account, you can "push" these configurations to other AI tools w
 ## 5. In-depth Guide to Core Features
 
 ### 📊 Asset Dashboard & Statistics
-- **5.1 [Overview & Real-time Refresh](./auto-refresh.md)**: Centrally view balances, usage, and health status across multiple sites.
-- **5.2 [Balance History](./balance-history.md)**: Visualize asset change trends with historical data.
-- **5.3 [Usage Analytics](./usage-analytics.md)**: Multi-dimensional analysis of consumption, model distribution, and latency.
+- **[Overview & Real-time Refresh](./auto-refresh.md)**: Centrally view balances, usage, and health status across multiple sites.
+- **[Balance History](./balance-history.md)**: Visualize asset change trends with historical data.
+- **[Usage Analytics](./usage-analytics.md)**: Multi-dimensional analysis of consumption, model distribution, and latency.
 
 ### 🔑 Key Management & Quick Integration
-- **5.4 [Token Management](./key-management.md)**: Centrally manage site tokens, with support for one-click completion.
-- **5.5 [API Credential Profiles](./api-credential-profiles.md)**: Save URL+Key without needing an account, supporting batch validation.
-- **5.6 [Web API Sniffing](./web-ai-api-check.md)**: Quickly identify and test API configurations within a webpage.
+- **[Token Management](./key-management.md)**: Centrally manage site tokens, with support for one-click completion.
+- **[API Credential Profiles](./api-credential-profiles.md)**: Save URL+Key without needing an account, supporting batch validation.
+- **[Web API Sniffing](./web-ai-api-check.md)**: Quickly identify and test API configurations within a webpage.
 
 ### ⚡ Automation & Quota Benefits
-- **5.7 [Auto Check-in Flow](./auto-checkin.md)**: Automatically complete check-ins for all sites daily.
-- **5.8 [Redemption Assistant](./redemption-assist.md)**: Automatically recognize redemption codes on webpages and claim them with one click.
-- **5.9 [Bookmark Management](./bookmark-management.md)**: Centrally collect console links, documentation, recharge portals, and more.
+- **[Auto Check-in Flow](./auto-checkin.md)**: Automatically complete check-ins for all sites daily.
+- **[Redemption Assistant](./redemption-assist.md)**: Automatically recognize redemption codes on webpages and claim them with one click.
+- **[Bookmark Management](./bookmark-management.md)**: Centrally collect console links, documentation, recharge portals, and more.
 
 ### 🛡️ Stability & Security Protection
-- **5.10 [Cloudflare Bypass Assistant](./cloudflare-helper.md)**: Assist in passing verification to ensure uninterrupted refreshes and check-ins.
-- **5.11 [WebDAV Sync & Encryption](./webdav-sync.md)**: Supports cross-device encrypted backups, ensuring data is never lost.
+- **[Cloudflare Bypass Assistant](./cloudflare-helper.md)**: Assist in passing verification to ensure uninterrupted refreshes and check-ins.
+- **[WebDAV Sync & Encryption](./webdav-sync.md)**: Supports cross-device encrypted backups, ensuring data is never lost.
 
 ### 🛠️ Self-hosted Site Operation Tools
-- **5.12 [Self-hosted Site Management](./self-hosted-site-management.md)**: Directly add, delete, modify, and query channels within the plugin.
-- **5.13 [Model Sync & Redirection](./managed-site-model-sync.md)**: Batch sync upstream models and configure mapping logic.
+- **[Self-hosted Site Management](./self-hosted-site-management.md)**: Directly add, delete, modify, and query channels within the plugin.
+- **[Model Sync & Redirection](./managed-site-model-sync.md)**: Batch sync upstream models and configure mapping logic.
 
 ---
 
