@@ -47,6 +47,8 @@ jobs:
         id: changed-files
         run: |
           MODE="${{ github.event.inputs.mode }}"
+          DOCS_ROOT='docs/docs'
+          MISSING_FILES_OUTPUT="${RUNNER_TEMP}/missing_files.txt"
 
           # 如果是 push 触发，默认为 changed 模式
           if [ -z "$MODE" ]; then
@@ -57,7 +59,12 @@ jobs:
 
           # 检测手动翻译文件
           echo "🔍 检测手动翻译文件..."
-          MANUAL_TRANSLATIONS=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^docs/(en|ja)/.*\.md$' | tr '\n' ' ')
+          MANUAL_TRANSLATIONS=$(
+            {
+              git diff --name-only --diff-filter=AMR --find-renames ${{ github.event.before }} ${{ github.sha }} -- "$DOCS_ROOT/en" "$DOCS_ROOT/ja" \
+                || true
+            } | tr '\n' ' '
+          )
           if [ -n "$MANUAL_TRANSLATIONS" ]; then
             echo "📝 检测到手动翻译文件: $MANUAL_TRANSLATIONS"
           else
@@ -67,39 +74,68 @@ jobs:
           if [ "$MODE" = "force_all" ]; then
             # 强制翻译所有文档
             echo "📚 获取所有文档文件..."
-            CHANGED_FILES=$(find docs -name "*.md" -type f ! -path "docs/en/*" ! -path "docs/ja/*" | tr '\n' ' ')
+            CHANGED_FILES=$(
+              find "$DOCS_ROOT" -name "*.md" -type f ! -path "$DOCS_ROOT/en/*" ! -path "$DOCS_ROOT/ja/*" | tr '\n' ' '
+            )
+            SOURCE_CHANGE_COUNT=$(find "$DOCS_ROOT" -name "*.md" -type f ! -path "$DOCS_ROOT/en/*" ! -path "$DOCS_ROOT/ja/*" | wc -l | tr -d ' ')
 
           elif [ "$MODE" = "missing_only" ]; then
             # 只翻译缺失的文档
             echo "🔍 检测缺失的翻译文件..."
-            python docs_assistant/find_missing.py
-            if [ -f /tmp/missing_files.txt ]; then
-              CHANGED_FILES=$(cat /tmp/missing_files.txt | tr '\n' ' ')
+            MISSING_FILES_OUTPUT="$MISSING_FILES_OUTPUT" python docs_assistant/find_missing.py
+            if [ -f "$MISSING_FILES_OUTPUT" ]; then
+              CHANGED_FILES=$(cat "$MISSING_FILES_OUTPUT" | tr '\n' ' ')
             else
               CHANGED_FILES=""
             fi
+            SOURCE_CHANGE_COUNT=$(printf '%s' "$CHANGED_FILES" | wc -w | tr -d ' ')
 
           else
             # 正常模式：只翻译变更的文件
             echo "📝 获取变更的文件..."
-            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^docs/.*\.md$' | grep -v '^docs/en/' | grep -v '^docs/ja/' | tr '\n' ' ')
+            CHANGED_FILES=$(
+              {
+                git diff --name-only --diff-filter=AMR --find-renames ${{ github.event.before }} ${{ github.sha }} -- "$DOCS_ROOT" \
+                  | grep '^docs/docs/.*\.md$' \
+                  | grep -v '^docs/docs/en/' \
+                  | grep -v '^docs/docs/ja/' \
+                  || true
+              } | tr '\n' ' '
+            )
+            SOURCE_CHANGE_COUNT=$(
+              {
+                git diff --name-only --diff-filter=AMRD --find-renames ${{ github.event.before }} ${{ github.sha }} -- "$DOCS_ROOT" \
+                  | grep '^docs/docs/.*\.md$' \
+                  | grep -v '^docs/docs/en/' \
+                  | grep -v '^docs/docs/ja/' \
+                  || true
+              } | wc -l | tr -d ' '
+            )
           fi
 
           echo "待翻译文件: $CHANGED_FILES"
           echo "files=$CHANGED_FILES" >> $GITHUB_OUTPUT
           echo "manual_translations=$MANUAL_TRANSLATIONS" >> $GITHUB_OUTPUT
+          echo "has_translate_files=$([ -n "$CHANGED_FILES" ] && echo true || echo false)" >> $GITHUB_OUTPUT
 
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "✅ 没有需要翻译的文档文件"
+          if [ "${SOURCE_CHANGE_COUNT:-0}" -eq 0 ]; then
+            echo "✅ 没有需要处理的源文档变更"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            FILE_COUNT=$(echo "$CHANGED_FILES" | wc -w | tr -d ' ')
-            echo "📊 共 $FILE_COUNT 个文件需要翻译"
+            FILE_COUNT=$(printf '%s' "$CHANGED_FILES" | wc -w | tr -d ' ')
+            echo "📊 共检测到 $SOURCE_CHANGE_COUNT 个源文档变更，其中 $FILE_COUNT 个需要翻译"
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Translate documents
+      - name: Sync translated docs for deletes and renames
         if: steps.changed-files.outputs.has_changes == 'true'
+        env:
+          TRANSLATE_DIFF_BASE: ${{ github.event.before }}
+          TRANSLATE_DIFF_HEAD: ${{ github.sha }}
+        run: python docs_assistant/sync_translations.py
+
+      - name: Translate documents
+        if: steps.changed-files.outputs.has_translate_files == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
