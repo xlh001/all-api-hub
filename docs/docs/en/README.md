@@ -60,19 +60,20 @@ Find the documentation you need based on your role:
 
 ### I am an AI Tool User
 - **Quick Start**: [Download & Install](./get-started.md) -> [Add My First Account](./get-started.md#3-adding-a-site)
-- **Asset Management**: [View Balance History](../balance-history.md) -> [Analyze Usage](../usage-analytics.md)
-- **Cost Saving**: [Cross-site Price Comparison](../model-list.md) -> [Auto Check-in](../auto-checkin.md)
+- **Asset Management**: [View Balance History](./balance-history.md) -> [Analyze Usage](./usage-analytics.md)
+- **Account Maintenance**: [Organize & Clean Up Accounts](./account-management.md)
+- **Cost Saving**: [Cross-site Price Comparison](./model-list.md) -> [Auto Check-in](./auto-checkin.md)
 - **One-click Export**: [Sync to CherryStudio / CC Switch](./get-started.md#4-quick-export-and-integration)
 
 ### I have multiple Standalone API Keys
-- **Credential Management**: [Save URL+Key as Credentials](../api-credential-profiles.md)
-- **Connectivity Testing**: [Batch Verify API & CLI Compatibility](../web-ai-api-check.md)
-- **Bookmark Collection**: [Manage Docs & Redemption Pages](../bookmark-management.md)
+- **Credential Management**: [Save URL+Key as Credentials](./api-credential-profiles.md)
+- **Connectivity Testing**: [Batch Verify API & CLI Compatibility](./web-ai-api-check.md)
+- **Bookmark Collection**: [Manage Docs & Redemption Pages](./bookmark-management.md)
 
 ### I am a Self-hosted Admin (New API, etc.)
-- **Efficiency Tools**: [Manage Channels within the Extension](../self-hosted-site-management.md) -> [Batch Sync Models](../managed-site-model-sync.md)
-- **Configuration Optimization**: [Setup Model Redirection](../model-redirect.md)
-- **Security**: [Handle 2FA / OTP Verification](../new-api-security-verification.md)
+- **Efficiency Tools**: [Manage Channels within the Extension](./self-hosted-site-management.md) -> [Batch Sync Models](./managed-site-model-sync.md)
+- **Configuration Optimization**: [Setup Model Redirection](./model-redirect.md)
+- **Security**: [Handle 2FA / OTP Verification](./new-api-security-verification.md)
 
 ---
 

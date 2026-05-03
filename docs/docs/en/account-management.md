@@ -56,7 +56,7 @@ As the number of accounts increases, you can keep the list tidy in the following
 - Pinned accounts will always be displayed at the top of the list.
 
 ### 4.3 Sorting Priority
-- In **"Settings -> Sorting Priority"**, you can customize global sorting logic.
+- In **"Settings -> Sorting Priority"**, you can customize global sorting logic. For details, see [Sorting Priority Settings](./sorting-priority.md).
 - Supports multi-level sorting by dimensions such as balance, creation time, health status, and check-in status.
 - You can also manually adjust the order by dragging in the account list (requires switching to manual sorting mode).
 
@@ -70,7 +70,7 @@ The extension monitors account connectivity in real-time. If an account card sho
 - **429 Too Many Requests**: Triggered site rate limits; the extension will automatically queue and retry.
 - **403 Forbidden**: Usually indicates Cloudflare protection has been triggered; please refer to [Cloudflare Bypass Assistant](./cloudflare-helper.md).
 
-You can click the health status icon on the card to view detailed error messages and handling suggestions.
+You can click the health status icon on the card to view detailed error messages. For more common error handling, please refer to the [FAQ](./faq.md).
 
 ---
 

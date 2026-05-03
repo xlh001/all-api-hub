@@ -61,6 +61,7 @@ export default defineUserConfig({
             text: '🔑 账号与凭证',
             collapsible: true,
             children: [
+              '/account-management',
               '/api-credential-profiles',
               '/key-management',
               '/bookmark-management',
@@ -84,6 +85,7 @@ export default defineUserConfig({
             children: [
               '/auto-checkin',
               '/redemption-assist',
+              '/web-ai-api-check',
               '/cloudflare-helper',
             ]
           },
@@ -105,6 +107,7 @@ export default defineUserConfig({
               '/managed-site-model-sync',
               '/self-hosted-site-management',
               '/model-redirect',
+              '/new-api-security-verification',
             ]
           },
           {
@@ -115,6 +118,7 @@ export default defineUserConfig({
               '/webdav-sync',
               '/privacy',
               '/auto-detect',
+              '/developer-tools',
               '/faq',
             ]
           },
@@ -145,6 +149,7 @@ export default defineUserConfig({
             text: '🔑 Accounts & Credentials',
             collapsible: true,
             children: [
+              '/en/account-management',
               '/en/api-credential-profiles',
               '/en/key-management',
               '/en/bookmark-management',
@@ -168,6 +173,7 @@ export default defineUserConfig({
             children: [
               '/en/auto-checkin',
               '/en/redemption-assist',
+              '/en/web-ai-api-check',
               '/en/cloudflare-helper',
             ]
           },
@@ -189,6 +195,7 @@ export default defineUserConfig({
               '/en/managed-site-model-sync',
               '/en/self-hosted-site-management',
               '/en/model-redirect',
+              '/en/new-api-security-verification',
             ]
           },
           {
@@ -199,6 +206,7 @@ export default defineUserConfig({
               '/en/webdav-sync',
               '/en/privacy',
               '/en/auto-detect',
+              '/en/developer-tools',
               '/en/faq',
             ]
           },
@@ -229,6 +237,7 @@ export default defineUserConfig({
             text: '🔑 アカウントと認証情報',
             collapsible: true,
             children: [
+              '/ja/account-management',
               '/ja/api-credential-profiles',
               '/ja/key-management',
               '/ja/bookmark-management',
@@ -252,6 +261,7 @@ export default defineUserConfig({
             children: [
               '/ja/auto-checkin',
               '/ja/redemption-assist',
+              '/ja/web-ai-api-check',
               '/ja/cloudflare-helper',
             ]
           },
@@ -273,6 +283,7 @@ export default defineUserConfig({
               '/ja/managed-site-model-sync',
               '/ja/self-hosted-site-management',
               '/ja/model-redirect',
+              '/ja/new-api-security-verification',
             ]
           },
           {
@@ -283,6 +294,7 @@ export default defineUserConfig({
               '/ja/webdav-sync',
               '/ja/privacy',
               '/ja/auto-detect',
+              '/ja/developer-tools',
               '/ja/faq',
             ]
           },
