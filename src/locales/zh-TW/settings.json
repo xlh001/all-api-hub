@@ -322,7 +322,7 @@
       },
       "declarativeNetRequestWithHostAccess": {
         "description": "允許在臨時視窗過盾期間按 Tab 應用請求頭規則，為不同帳號附加正確的 Cookie，避免多帳號下的資料異常問題。",
-        "title": "Declarative Net Request"
+        "title": "宣告式網路請求"
       },
       "webRequest": {
         "description": "僅在臨時視窗過盾或自動重新整理需要時，監聽請求並追加必要的請求頭。",

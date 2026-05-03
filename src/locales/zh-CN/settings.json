@@ -322,7 +322,7 @@
       },
       "declarativeNetRequestWithHostAccess": {
         "description": "允许在临时窗口过盾期间按 Tab 应用请求头规则，为不同账号附加正确的 Cookie，避免多账号下的数据异常问题。",
-        "title": "Declarative Net Request"
+        "title": "声明式网络请求"
       },
       "webRequest": {
         "description": "仅在临时窗口过盾或自动刷新需要时，监听请求并追加必要的请求头。",

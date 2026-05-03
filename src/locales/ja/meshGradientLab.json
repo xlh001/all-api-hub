@@ -10,7 +10,7 @@
     "layout": "レイアウト",
     "overlay": "オーバーレイ",
     "palette": "パレット",
-    "seed": "Seed",
+    "seed": "シード",
     "view": "表示"
   },
   "summary": "{{paletteCount}} パレット・{{layoutCount}} レイアウト",
