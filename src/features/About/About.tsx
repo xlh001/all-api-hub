@@ -6,7 +6,7 @@ import {
   GlobeAltIcon,
   LightBulbIcon,
   StarIcon,
-  UserGroupIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline"
 import type { TFunction } from "i18next"
 import { Info } from "lucide-react"
@@ -156,7 +156,7 @@ export default function About() {
               iconClass="text-amber-500 dark:text-amber-400"
             />
             <LinkCard
-              Icon={UserGroupIcon}
+              Icon={UsersIcon}
               title={t("ui:feedback.community")}
               description={t("feedbackSection.community.description")}
               href={feedbackDestinations.community}

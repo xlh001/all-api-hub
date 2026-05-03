@@ -2,6 +2,7 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 
 import iconImage from "~/assets/icon.png"
+import { FeedbackDropdownMenu } from "~/components/FeedbackDropdownMenu"
 import { LanguageSwitcher } from "~/components/LanguageSwitcher"
 import { BodySmall, Heading5, IconButton } from "~/components/ui"
 import { VersionBadge } from "~/components/VersionBadge"
@@ -29,7 +30,7 @@ function Header({
   onMenuToggle,
   isMobileSidebarOpen,
 }: HeaderProps) {
-  const { t } = useTranslation("ui")
+  const { t, i18n } = useTranslation("ui")
   const repositoryUrl = getRepository()
 
   return (
@@ -92,6 +93,7 @@ function Header({
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <HeaderThemeSwitcher />
+            <FeedbackDropdownMenu language={i18n.language} />
             <LanguageSwitcher variant="icon-dropdown" />
           </div>
         </div>

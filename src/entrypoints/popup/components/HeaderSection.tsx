@@ -2,10 +2,7 @@ import {
   ArrowPathIcon,
   ArrowsPointingOutIcon,
   BugAntIcon,
-  ChatBubbleLeftEllipsisIcon,
   Cog6ToothIcon,
-  LightBulbIcon,
-  UserGroupIcon,
 } from "@heroicons/react/24/outline"
 import { PanelRightClose } from "lucide-react"
 import { useCallback } from "react"
@@ -14,14 +11,9 @@ import { useTranslation } from "react-i18next"
 
 import iconImage from "~/assets/icon.png"
 import { useUpdateLogDialogContext } from "~/components/dialogs/UpdateLogDialog"
+import { FeedbackDropdownMenu } from "~/components/FeedbackDropdownMenu"
 import Tooltip from "~/components/Tooltip"
 import { BodySmall, Caption, IconButton } from "~/components/ui"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu"
 import { VersionBadge } from "~/components/VersionBadge"
 import { COLORS } from "~/constants/designTokens"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -32,9 +24,6 @@ import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 import {
   openApiCredentialProfilesPage,
-  openBugReportPage,
-  openCommunityPage,
-  openFeatureRequestPage,
   openFullAccountManagerPage,
   openFullBookmarkManagerPage,
   openSettingsPage,
@@ -187,36 +176,7 @@ export default function HeaderSection({
           <DevTriggerUpdateLogButton />
         )}
 
-        <DropdownMenu>
-          <Tooltip content={t("ui:feedback.triggerTooltip")}>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                variant="outline"
-                size="sm"
-                aria-label={t("ui:feedback.trigger")}
-                className="touch-manipulation"
-              >
-                <ChatBubbleLeftEllipsisIcon className="h-4 w-4" />
-              </IconButton>
-            </DropdownMenuTrigger>
-          </Tooltip>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem onClick={() => void openBugReportPage()}>
-              <BugAntIcon className="h-4 w-4" />
-              {t("ui:feedback.bugReport")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void openFeatureRequestPage()}>
-              <LightBulbIcon className="h-4 w-4" />
-              {t("ui:feedback.featureRequest")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => void openCommunityPage(i18n.language)}
-            >
-              <UserGroupIcon className="h-4 w-4" />
-              {t("ui:feedback.community")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <FeedbackDropdownMenu language={i18n.language} />
 
         {showRefresh && (
           <Tooltip content={t("common:actions.refresh")}>
