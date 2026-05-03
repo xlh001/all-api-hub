@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
     paths:
       - "docs/docs/**"
+      - "docs/scripts/**"
       - "docs/package.json"
       - "docs/pnpm-lock.yaml"
       - "resources/wechat_group.png"
