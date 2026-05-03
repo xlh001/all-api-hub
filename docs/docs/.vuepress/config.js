@@ -49,6 +49,10 @@ export default defineUserConfig({
             children: [
               { text: '支持的工具', link: '/supported-export-tools' },
               { text: '支持的站点', link: '/supported-sites' },
+              { text: '书签管理', link: '/bookmark-management' },
+              { text: 'API 凭证', link: '/api-credential-profiles' },
+              { text: '余额历史', link: '/balance-history' },
+              { text: '用量分析', link: '/usage-analytics' },
               { text: 'Safari 安装', link: '/safari-install' },
               { text: 'QQ / 360 等浏览器安装', link: '/other-browser-install' },
               { text: 'Cloudflare 过盾助手', link: '/cloudflare-helper' },
@@ -83,6 +87,10 @@ export default defineUserConfig({
             children: [
               { text: 'Supported Tools', link: '/en/supported-export-tools' },
               { text: 'Supported Sites', link: '/en/supported-sites' },
+              { text: 'Bookmark Management', link: '/en/bookmark-management' },
+              { text: 'API Credentials', link: '/en/api-credential-profiles' },
+              { text: 'Balance History', link: '/en/balance-history' },
+              { text: 'Usage Analytics', link: '/en/usage-analytics' },
               { text: 'Safari Install', link: '/en/safari-install' },
               { text: 'QQ / 360 and Similar Browser Install', link: '/en/other-browser-install' },
               { text: 'Cloudflare Helper', link: '/en/cloudflare-helper' },
@@ -117,6 +125,10 @@ export default defineUserConfig({
             children: [
               { text: '対応ツール', link: '/ja/supported-export-tools' },
               { text: '対応サイト', link: '/ja/supported-sites' },
+              { text: 'ブックマーク管理', link: '/ja/bookmark-management' },
+              { text: 'API 認証情報', link: '/ja/api-credential-profiles' },
+              { text: '残高履歴', link: '/ja/balance-history' },
+              { text: '使用量分析', link: '/ja/usage-analytics' },
               { text: 'Safari インストール', link: '/ja/safari-install' },
               { text: 'QQ / 360 などのブラウザのインストール', link: '/ja/other-browser-install' },
               { text: 'Cloudflare ヘルパー', link: '/ja/cloudflare-helper' },

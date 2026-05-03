@@ -189,16 +189,40 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - 在 **设置 → 数据与备份** 中的“导入与导出”区域，可一键导出当前所有账号配置为 JSON。
 - 支持导入旧版本或其他设备导出的数据，便于快速迁移或恢复。
 
-### 5.6 New API 模型列表同步
+### 5.6 API 凭证
+
+- 在 **设置 → API 凭证** 中可单独保存 `Base URL`、API Key、标签与备注，适合“没有站点账号、只有接口配置”的场景。
+- 支持查看余额与今日用量概览、验证接口 / CLI 兼容性，并可直接在模型列表中打开当前凭证。
+- 还能从单个凭证直接导出到 CherryStudio、CC Switch、Kilo Code、CLIProxyAPI、Claude Code Router 或当前自建托管站点。
+
+### 5.7 书签管理
+
+- 在 **设置 → 书签** 中可保存控制台、文档、充值页、兑换页等快捷链接。
+- 支持搜索、标签过滤、置顶和拖拽排序；弹窗顶部也能快速切换到 `书签` 视图。
+- 适合还不想创建完整账号，但希望先把常用入口集中收纳的场景。
+
+### 5.8 余额历史
+
+- 在 **设置 → 基本设置 → 余额历史** 中启用后，可按天记录余额、收入、支出快照。
+- 在 **设置 → 余额历史** 页面查看概览、趋势图、账户分布和账户汇总表。
+- 适合长期看余额变化、充值消耗节奏，或做简单对账。
+
+### 5.9 用量分析
+
+- 先在 **设置 → 基本设置 → 账号用量** 中开启用量历史同步，再进入 **设置 → 用量分析** 查看图表。
+- 支持按站点、账号、Token、日期筛选，查看请求量、Token 消耗、模型分布、花费和延迟趋势。
+- 适合回答“最近哪里用得最多、花得最多、哪条链路最慢”这类问题。
+
+### 5.10 New API 模型列表同步
 
 关于 New API 模型列表同步功能的详细文档，请参阅 [New API 模型列表同步](./new-api-model-sync.md)。
 
-### 5.7 New API 渠道管理（Beta）
+### 5.11 New API 渠道管理（Beta）
 
 在插件内直接创建/编辑/删除渠道，搭配模型白名单和单通道同步调试，可大幅减少往返 New API 后台的频次。参见 [New API 渠道管理](./new-api-channel-management.md) 了解详细操作与注意事项。
 
 <a id="cloudflare-window-downgrade"></a>
-### 5.8 Cloudflare 防护与临时窗口降级
+### 5.12 Cloudflare 防护与临时窗口降级
 
 - 识别或 API 调用被 Cloudflare 拦截（常见状态码 401/403/429）时，会自动切换到临时窗口重试，保持目标域 Cookie，一般无需手动操作；原理详见 [Cloudflare 过盾助手](./cloudflare-helper.md)。
 - 如遇需要人机验证的场景，请在弹出的协助窗口中完成挑战；若频繁失败可尝试更换网络或降低请求频率。
@@ -209,18 +233,22 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - [支持的站点与系统类型](./supported-sites.md)
 - [Safari 安装指南](./safari-install.md)
 - [QQ / 360 等浏览器安装指南](./other-browser-install.md)
+- [书签管理](./bookmark-management.md)
+- [API 凭证](./api-credential-profiles.md)
+- [余额历史](./balance-history.md)
+- [用量分析](./usage-analytics.md)
 - [Cloudflare 过盾助手](./cloudflare-helper.md)
 - [快速导出站点配置](./quick-export.md)
 - [自动刷新与实时数据](./auto-refresh.md)
 - [自动签到与签到监控](./auto-checkin.md)
 - [WebDAV 备份与自动同步](./webdav-sync.md)
-- [数据导入导出](./data-management.md)
 - [New API 模型列表同步](./new-api-model-sync.md)
 - [New API 渠道管理](./new-api-channel-management.md)
 - [CLIProxyAPI 集成](./cliproxyapi-integration.md)
 - [模型重定向](./model-redirect.md)
 - [排序优先级设置](./sorting-priority.md)
 - [权限管理（可选权限）](./permissions.md)
+- [数据导入导出](./data-management.md)
 
 ## 7. 常见问题与支持
 
