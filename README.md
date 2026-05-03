@@ -26,9 +26,7 @@
 </a>
 </p>
 
----
-
-**[⚡ 快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [📚 文档中心](https://all-api-hub.qixing1217.top/) | [🔌 集成工具](https://all-api-hub.qixing1217.top/supported-export-tools.html) | [🌐 支持站点](https://all-api-hub.qixing1217.top/supported-sites.html) | [❓ 常见问题](https://all-api-hub.qixing1217.top/faq.html) | [📜 更新日志](https://all-api-hub.qixing1217.top/changelog.html)**
+**[⚡ 快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [📚 文档中心](https://all-api-hub.qixing1217.top/) | [💬 社区交流](https://all-api-hub.qixing1217.top/#community) | [🔌 集成工具](https://all-api-hub.qixing1217.top/supported-export-tools.html) | [🌐 支持站点](https://all-api-hub.qixing1217.top/supported-sites.html) | [❓ 常见问题](https://all-api-hub.qixing1217.top/faq.html) | [📜 更新日志](https://all-api-hub.qixing1217.top/changelog.html)**
 
 <p align="center">
   <strong>📢 讨论帖：</strong>
@@ -49,30 +47,23 @@
   </a>
 </p>
 
----
-
 </div>
 
 <a id="introduction"></a>
 ## ❓ 为什么需要 All API Hub？
 
-在 AI 生态中，为了追求性价比或模型多样性，我们往往拥有多个基于 New API / Sub2API 系列的中转站。但这通常会带来一些管理效率上的挑战：
+**简单来说**：AI 中转站就像是“AI 充值卡超市”，让你能以极低的价格（甚至免费）在一个地方用上 ChatGPT、Claude、Midjourney 等各种顶尖模型。
 
-- 📂 **多站点管理困难**：余额、用量和模型价格分散在不同后台，难以快速掌握全局资产状态。
-- 💲 **价格对比不便**：不同站点的计费倍率差异显著，缺乏直观的工具来快速锁定性价比最优方案。
-- ✅ **签到维护繁琐**：手动维护多个站点的每日签到费时费力，极易因遗忘导致赠送额度流失。
-- 🔌 **工具配置繁琐**：将 API Key 配置到不同 AI 工具时，频繁的复制粘贴操作导致效率低下。
+但如果你有多个账号，管理起来会很头疼：
+- 📂 **资产太乱**：余额多少、钱花哪了，得一个一个网站去登录看。
+- 💲 **价格太杂**：每个站点计费倍率不同，到底哪家最划算？
+- ✅ **福利漏领**：很多站点每天签到送额度，但手动签到太累，容易忘。
+- 🔌 **配置麻烦**：把 API 填到各种 AI 工具（如沉浸式翻译、Cherry Studio）里，复制粘贴太心累。
 
-**All API Hub 为提升这些环节的效率而生。** 它是你的 AI 资产管理中心，将零散的中转站账号聚合为一站式、可视化的管理台。
-
-### 🧩 强大的兼容性
-不论你用的是哪种架构，我们基本都支持：     
-- **主流开源**：[one-api](https://github.com/songquanpeng/one-api)、[new-api](https://github.com/QuantumNous/new-api)、[Sub2API](https://github.com/Wei-Shaw/sub2api)、[one-hub](https://github.com/MartialBE/one-hub)、[done-hub](https://github.com/deanxv/done-hub)、[Veloera](https://github.com/Veloera/Veloera)
-- **特色架构**：[AnyRouter](https://anyrouter.top)、Neo-API、Super-API 等
-- **查看完整列表**：👉 [支持的站点](https://all-api-hub.qixing1217.top/supported-sites.html)
+**All API Hub 就是你的“AI 资产全能管家”**。你只需要把站点地址填进来，剩下的交给我们。
 
 <a id="features"></a>
-## ✨ 核心价值与功能特性
+## ✨ 它能为你做什么？
 
 ### 📊 多站点统一看板
 - **多账号资产总览**：在一个面板内集中查看所有站点的余额、总用量与健康状态。
@@ -94,14 +85,59 @@
 - **多维度接口验证**：支持批量测试模型可用性、Token 兼容性及 CLI 代理可用性。
 - **CF 过盾助手**：自动协助通过 Cloudflare 挑战，确保数据刷新与接口调用不中断。
 
-### 🔒 隐私与同步
-- **隐私优先**：默认数据存储于本地，无使用行为上报。
-- **加密同步**：支持 WebDAV 加密备份与同步，确保多设备间的数据无缝迁移。
-
+### 🔒 保护隐私与安全
+- **数据本地化**：你的 Key 和账号信息只存在你自己的电脑里，不上传服务器。
+- **加密同步**：支持 WebDAV 加密备份，换台电脑也能瞬间找回所有数据。
 
 > [!NOTE]
 > 觉得原本的 [One API Hub](https://github.com/fxaxg/one-api-hub) 好用？你会更爱现在的 All API Hub。我们大幅重构并保持了数据兼容，支持无缝一键导入。
 
+
+
+<a id="installation"></a>
+## 🚀 快速安装
+
+> [!IMPORTANT]
+> **90% 的用户请直接选择商店安装**。商店版安装最简单，且支持自动更新，省心稳定。
+
+| 渠道 | 安装链接                                                                                          | 当前版本 | 用户数                                                                                                                                                                                                                     |
+|------|-----------------------------------------------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Chrome 商店 | [Chrome 商店](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo)        | [![Chrome version](https://img.shields.io/chrome-web-store/v/lapnciffpekdengooeolaienkeoilfeo?label=Chrome&logo=googlechrome&style=flat)](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) | [![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/lapnciffpekdengooeolaienkeoilfeo?label=Chrome%20Users)](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) |
+| Edge 商店 | [Edge 商店](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) | [![Edge version](https://img.shields.io/badge/dynamic/json?label=Edge&prefix=v&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fpcokpjaffghgipcgjhapgdpeddlhblaa&logo=microsoftedge&style=flat)](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) | [![Edge Add-ons Users](https://img.shields.io/badge/dynamic/json?label=Edge%20Users&query=$.activeInstallCount&url=https://microsoftedge.microsoft.com/addons/getproductdetailsbycrxid/pcokpjaffghgipcgjhapgdpeddlhblaa)](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) |
+| Firefox 商店 | [Firefox 商店](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Mozilla Add-on Users](https://img.shields.io/amo/users/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox%20Users)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) |
+| GitHub Releases | [查看全部版本](https://github.com/qixing-jk/all-api-hub/releases)                                   | [![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat)](https://github.com/qixing-jk/all-api-hub/releases/latest) | [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/qixing-jk/all-api-hub/total?label=Total%20Downloads)](https://github.com/qixing-jk/all-api-hub/releases) |
+
+<details>
+<summary>📦 需要手动安装或测试版？（点击展开）</summary>
+
+| 渠道 | 下载链接 | 适用场景 |
+|------|----------|----------|
+| GitHub 正式版 | [下载 Stable](https://github.com/qixing-jk/all-api-hub/releases/latest) | 无法访问商店，或想手动管理版本 |
+| Nightly 预发布 | [下载 Nightly](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) | 想抢先体验新功能，协助测试 |
+
+**其他环境支持：**
+- **手机端**：支持 Edge 手机版、Firefox Android、Kiwi 等浏览器，详见 [移动端使用指南](https://all-api-hub.qixing1217.top/faq.html#mobile-browser-support)。
+- **QQ / 360 等**：详见 [手动加载指南](https://all-api-hub.qixing1217.top/other-browser-install.html)。
+- **Safari (Mac)**：需要 Xcode 编译，详详见 [Safari 安装指南](https://all-api-hub.qixing1217.top/safari-install.html)。
+
+</details>
+
+<a id="quick-start"></a>
+## 🧑‍🚀 30 秒上手指南
+
+1. **安装插件**：从上方商店链接点击安装。
+2. **登录站点**：在浏览器里登录你常用的 AI 中转站。
+3. **点击识别**：点击插件图标 -> `新增账号` -> 输入网址 -> 点击 `自动识别`。
+4. **开始享受**：查看余额、配置自动签到，或者将账号导出到你的 AI 客户端。
+
+👉 **[点击查看：更详细的图文新手教程](https://all-api-hub.qixing1217.top/get-started.html)**
+
+<a id="introduction-tech"></a>
+### 🧩 强大的兼容性
+不论你用的是哪种架构，我们基本都支持：     
+- **主流开源**：[one-api](https://github.com/songquanpeng/one-api)、[new-api](https://github.com/QuantumNous/new-api)、[Sub2API](https://github.com/Wei-Shaw/sub2api)、[one-hub](https://github.com/MartialBE/one-hub)、[done-hub](https://github.com/deanxv/done-hub)、[Veloera](https://github.com/Veloera/Veloera)
+- **特色架构**：[AnyRouter](https://anyrouter.top)、Neo-API、Super-API 等
+- **查看完整列表**：👉 [支持的站点](https://all-api-hub.qixing1217.top/supported-sites.html)
 
 <a id="ui-preview"></a>
 ## 🖼️ 界面预览
@@ -149,111 +185,6 @@
   </tr>
 </table>
 
-<a id="installation"></a>
-## 🚀 安装使用
-
-| 渠道 | 下载链接 | 当前版本 | 用户数                                                                                                                                                                                                                     |
-|------|----------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Chrome 商店 | [Chrome 商店](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) | [![Chrome version](https://img.shields.io/chrome-web-store/v/lapnciffpekdengooeolaienkeoilfeo?label=Chrome&logo=googlechrome&style=flat)](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) | [![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/lapnciffpekdengooeolaienkeoilfeo?label=Chrome%20Users)](https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo) |
-| Edge 商店 | [Edge 商店](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) | [![Edge version](https://img.shields.io/badge/dynamic/json?label=Edge&prefix=v&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fpcokpjaffghgipcgjhapgdpeddlhblaa&logo=microsoftedge&style=flat)](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) | [![Edge Add-ons Users](https://img.shields.io/badge/dynamic/json?label=Edge%20Users&query=$.activeInstallCount&url=https://microsoftedge.microsoft.com/addons/getproductdetailsbycrxid/pcokpjaffghgipcgjhapgdpeddlhblaa)](https://microsoftedge.microsoft.com/addons/detail/pcokpjaffghgipcgjhapgdpeddlhblaa) |
-| Firefox 商店 | [Firefox 商店](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Firefox version](https://img.shields.io/amo/v/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox&logo=firefoxbrowser&style=flat)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) | [![Mozilla Add-on Users](https://img.shields.io/amo/users/%7Bbc73541a-133d-4b50-b261-36ea20df0d24%7D?label=Firefox%20Users)](https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}) |
-| GitHub Releases | [查看全部版本](https://github.com/qixing-jk/all-api-hub/releases) | [![GitHub version](https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat)](https://github.com/qixing-jk/all-api-hub/releases/latest) | [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/qixing-jk/all-api-hub/total?label=Total%20Downloads)](https://github.com/qixing-jk/all-api-hub/releases) |
-
-> [!TIP]
-> 默认推荐使用商店版。
-> - 商店版更适合大多数用户，安装更省事，后续通常可自动更新。
-> - Release 版需要手动下载、解压，并在更新后再次手动安装或重新加载。
-> - 只有在你明确需要更早获取新版本、手动验证修复，或必须加载扩展包时，再考虑使用 Release 版。
->
-> 移动端 / 手机端支持情况：
-> - 原则上只要浏览器支持扩展，通常就可以使用，例如 `Edge`、`Firefox for Android`、`Kiwi` 等。
-> - QQ 浏览器、360 系浏览器、猎豹浏览器、Brave、Vivaldi、Opera 等浏览器可参考[QQ / 360 等浏览器安装指南](https://all-api-hub.qixing1217.top/other-browser-install.html)。
-> - 更多说明可查看[常见问题中的移动端使用](https://all-api-hub.qixing1217.top/faq.html#mobile-browser-support)。
-
-<details>
-<summary>Release 版本选择</summary>
-
-先选版本类型，再下载对应附件：
-
-| 类型 | 推荐场景 | 下载链接 | 特点 |
-|------|----------|----------|------|
-| 正式版 Stable | 日常使用、首次安装、优先稳定 | [下载最新正式版](https://github.com/qixing-jk/all-api-hub/releases/latest) | 对应正式发布版本，发布说明更完整，稳定性更高。 |
-| Nightly 预发布 | 想尽快获取新功能 / 修复，或协助验证问题 | [下载 Nightly](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) | 基于 `main` 最新提交自动生成，更新更快，但可能包含尚未充分验证的改动；附件文件名通常会带 `nightly`。 |
-
-> [!TIP]
-> - 不确定选哪个时，先选正式版 Stable。
-> - 如果你是为了确认某个修复是否已经包含，或愿意帮助反馈问题，再选择 Nightly。
-> - 商店版本通常会因审核延迟 1-3 天；GitHub 正式版一般更早，Nightly 最快，但风险也更高。
-
-</details>
-
-<details>
-<summary>QQ / 360 等浏览器手动安装（解压加载）</summary>
-
-1. 下载最新版本的扩展包
-2. 如果使用 QQ、360、猎豹、Brave、Vivaldi、Opera 等浏览器，请下载 `all-api-hub-<version>-chrome.zip`
-3. 解压到固定目录，并确认目录中能直接看到 `manifest.json`
-4. 打开扩展管理页，例如 `chrome://extensions/`、`qqbrowser://extensions`、`liebao://extensions/`、`brave://extensions/`、`vivaldi://extensions/` 或 `opera://extensions/`
-5. 开启 "开发者模式"
-6. 点击 "加载已解压的扩展程序"
-7. 选择解压后的扩展文件夹
-
-</details>
-
-<details>
-<summary>Chromium 浏览器手动安装（桌面端）</summary>
-
-适用于无法使用商店安装，或需要手动加载 GitHub Release 附件的场景。
-
-1. 从 GitHub Release 下载 `*-chrome.zip` 扩展包并解压。
-2. 打开浏览器扩展管理页：Chrome 可进入 `chrome://extensions/`，Edge 可进入 `edge://extensions/`。
-3. 开启“开发者模式”。
-4. 点击“加载已解压的扩展程序”。
-5. 选择解压后的扩展目录完成安装。
-
-</details>
-
-<details>
-<summary>Safari 安装（需 Xcode）</summary>
-
-Safari 不能像 Chrome、Edge 那样直接解压加载，必须通过 Xcode 安装。详细步骤请查看 [Safari 安装指南](docs/docs/safari-install.md)。
-
-推荐安装方式：
-
-1. 打开 [最新版本 Release](https://github.com/qixing-jk/all-api-hub/releases/latest)，下载 `all-api-hub-<version>-safari-xcode-bundle.zip`。
-2. 解压后直接打开其中的 Xcode 工程运行。
-
-高级用法：
-
-1. 从源码构建：`pnpm install` -> `pnpm run build:safari` -> `xcrun safari-web-extension-converter .output/safari-mv2/`。
-2. 用 Xcode 打开并运行生成的工程。
-
-> [!WARNING]
-> 请下载 `all-api-hub-<version>-safari-xcode-bundle.zip`，不要单独下载 `all-api-hub-<version>-safari.zip`。
-> 前者已经包含可直接打开的 Xcode 工程和所需的 Safari 文件，更适合普通安装流程。
-
-有 Apple Developer Program 付费账号时，可进一步做正式签名并通过 TestFlight / App Store 分发；没有则通常只适合本机调试或自用。
-
-<details>
-<summary>为什么要下载这个文件？</summary>
-
-`all-api-hub-<version>-safari-xcode-bundle.zip` 里通常会同时包含：
-
-- `all-api-hub-<version>-safari.zip`
-- `safari-mv2/`
-- 转换器生成的 Xcode 工程目录
-
-这样解压后就可以直接用 Xcode 打开工程，不需要自己再补齐工程引用的 Safari 文件。
-
-</details>
-
-</details>
-
-<a id="quick-start"></a>
-## 🧑‍🚀 新手快速上手
-
-[快速上手指南](https://all-api-hub.qixing1217.top/get-started.html)。
-
 <a id="development-guide"></a>
 ## 🛠️ 开发指南
 
@@ -275,8 +206,6 @@ Safari 不能像 Chrome、Edge 那样直接解压加载，必须通过 Xcode 安
 - 感谢 [@AngleNaris](https://github.com/AngleNaris) 设计了项目 Logo 🎨
 - 感谢 [Linux.do 社区](https://linux.do) 提供的反馈、测试和传播支持，尤其是 [All-API-Hub 主题帖](https://linux.do/t/topic/1001042) 中持续的讨论与建议
 - [WXT](https://wxt.dev) - 现代化的浏览器扩展开发框架
-
----
 
 <div align="center">
   <strong>⭐ 如果这个项目对你有帮助，请考虑给它一个星标！</strong>
