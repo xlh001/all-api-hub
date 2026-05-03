@@ -296,6 +296,19 @@ If you are using QQ Browser, 360 Series Browsers, Cheetah Browser, or other desk
 2. **Adjust Anti-Bot Helper Settings**: If the site frequently triggers anti-bot measures, you can adjust the trigger conditions in "Settings" → "Anti-Bot Helper", such as increasing the trigger threshold or disabling certain trigger conditions, to reduce the frequency of anti-bot pop-ups.
 3. **Configure WebDAV Synchronization**: Synchronize data between your computer and phone.
 
+## 🛠️ Advanced & Developer Tools
+
+### What is the Mesh Gradient Lab?
+
+The **Mesh Gradient Lab** is a built-in developer tool primarily used for debugging and previewing the dynamic backgrounds used in the [Share Snapshot](./share-snapshot.md) feature.
+
+- **Functionality**: You can manually adjust the Seed, Palette Index, and Layout Index to preview visual effects under different combinations in real-time.
+- **How to Access**: Enter the extension's options page URL in the browser address bar and append the `#mesh-gradient-lab` anchor (e.g., `chrome-extension://<id>/options.html#mesh-gradient-lab`).
+
+::: info Note
+This tool is primarily intended for developers or advanced users interested in visual customization. Ordinary users do not need to worry about it for daily use.
+:::
+
 ## 🔒 Data Security
 
 ### Where is the data stored?

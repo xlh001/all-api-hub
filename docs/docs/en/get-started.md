@@ -226,6 +226,24 @@ Create/edit/delete channels directly within the extension. Combined with model w
 - When Cloudflare intercepts requests (common status codes 401/403/429), the extension will automatically switch to a temporary window for retries, preserving the target domain's cookies. Generally, no manual operation is required; see [Cloudflare Bypass Assistant](./cloudflare-helper.md) for the underlying principles.
 - If a scenario requiring human-machine verification occurs, please complete the challenge in the pop-up assistance window. If failures are frequent, try changing networks or reducing request frequency.
 
+### 5.13 Key Management
+
+- Centrally view all tokens under all accounts on the **Key Management** page, supporting search and one-click copying.
+- For New API sites, it supports **"Repair Missing Keys"**, automatically completing full keys that are invisible in the backend.
+- Supports quickly saving tokens as independent API credentials or batch-verifying CLI compatibility. See [Key Management](./key-management.md).
+
+### 5.14 Share Snapshot
+
+- Supports generating privacy-redacted beautiful images of the overview panel or individual account status.
+- Automatically hides sensitive information like API Keys and features a built-in dynamic mesh gradient background, suitable for community sharing.
+- See [Share Snapshot](./share-snapshot.md).
+
+### 5.15 LDOH Site Lookup
+
+- Automatically matches your site with community discussion posts based on [Linux.do](https://linux.do) community data.
+- Helps you quickly understand the reputation, reviews, and latest dynamics of relay stations.
+- See [LDOH Site Lookup](./ldoh-site-lookup.md).
+
 ## 6. In-depth Documentation
 
 - [Supported Export Tools and Integration Targets](./supported-export-tools.md)
@@ -234,8 +252,11 @@ Create/edit/delete channels directly within the extension. Combined with model w
 - [QQ / 360 and Other Browser Installation Guide](./other-browser-install.md)
 - [Bookmark Management](./bookmark-management.md)
 - [API Credential Profiles](./api-credential-profiles.md)
+- [Key Management](./key-management.md)
+- [Share Snapshot](./share-snapshot.md)
 - [Balance History](./balance-history.md)
 - [Usage Analysis](./usage-analytics.md)
+- [LDOH Site Lookup](./ldoh-site-lookup.md)
 - [Cloudflare Bypass Assistant](./cloudflare-helper.md)
 - [Quick Export Site Configurations](./quick-export.md)
 - [Automatic Refresh and Real-time Data](./auto-refresh.md)

@@ -62,6 +62,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/api-credential-profiles',
+              '/key-management',
               '/bookmark-management',
               '/sorting-priority',
             ]
@@ -72,6 +73,7 @@ export default defineUserConfig({
             children: [
               '/balance-history',
               '/usage-analytics',
+              '/share-snapshot',
               '/model-list',
               '/auto-refresh',
             ]
@@ -90,6 +92,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/supported-sites',
+              '/ldoh-site-lookup',
               '/supported-export-tools',
               '/quick-export',
               '/cliproxyapi-integration',
@@ -143,6 +146,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/en/api-credential-profiles',
+              '/en/key-management',
               '/en/bookmark-management',
               '/en/sorting-priority',
             ]
@@ -153,6 +157,7 @@ export default defineUserConfig({
             children: [
               '/en/balance-history',
               '/en/usage-analytics',
+              '/en/share-snapshot',
               '/en/model-list',
               '/en/auto-refresh',
             ]
@@ -171,6 +176,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/en/supported-sites',
+              '/en/ldoh-site-lookup',
               '/en/supported-export-tools',
               '/en/quick-export',
               '/en/cliproxyapi-integration',
@@ -224,6 +230,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/ja/api-credential-profiles',
+              '/ja/key-management',
               '/ja/bookmark-management',
               '/ja/sorting-priority',
             ]
@@ -234,6 +241,7 @@ export default defineUserConfig({
             children: [
               '/ja/balance-history',
               '/ja/usage-analytics',
+              '/ja/share-snapshot',
               '/ja/model-list',
               '/ja/auto-refresh',
             ]
@@ -252,6 +260,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/ja/supported-sites',
+              '/ja/ldoh-site-lookup',
               '/ja/supported-export-tools',
               '/ja/quick-export',
               '/ja/cliproxyapi-integration',

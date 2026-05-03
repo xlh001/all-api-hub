@@ -227,6 +227,24 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - 识别或 API 调用被 Cloudflare 拦截（常见状态码 401/403/429）时，会自动切换到临时窗口重试，保持目标域 Cookie，一般无需手动操作；原理详见 [Cloudflare 过盾助手](./cloudflare-helper.md)。
 - 如遇需要人机验证的场景，请在弹出的协助窗口中完成挑战；若频繁失败可尝试更换网络或降低请求频率。
 
+### 5.13 密钥管理
+
+- 在 **密钥管理** 页面集中查看所有账号下的 Token，支持搜索、一键复制。
+- 针对 New API 站点，支持 **“修复缺失的 Key”**，自动补全那些在后台不可见的完整 Key。
+- 支持将 Token 快速保存为独立的 API 凭证，或批量验证 CLI 兼容性。详见 [密钥管理](./key-management.md)。
+
+### 5.14 分享快照
+
+- 支持将总览面板或单个账号状态生成隐私脱敏的精美图片。
+- 自动隐藏 API Key 等敏感信息，内置动态网格渐变背景，适合分享到社区。
+- 详见 [分享快照](./share-snapshot.md)。
+
+### 5.15 LDOH 站点查找
+
+- 基于 [Linux.do](https://linux.do) 社区数据，自动为你的站点匹配社区讨论帖。
+- 帮助你快速了解中转站的信誉、评价与最新动态。
+- 详见 [LDOH 站点查找](./ldoh-site-lookup.md)。
+
 ## 6. 深入文档
 
 - [支持的导出工具与集成目标](./supported-export-tools.md)
@@ -235,8 +253,11 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - [QQ / 360 等浏览器安装指南](./other-browser-install.md)
 - [书签管理](./bookmark-management.md)
 - [API 凭证](./api-credential-profiles.md)
+- [密钥管理](./key-management.md)
+- [分享快照](./share-snapshot.md)
 - [余额历史](./balance-history.md)
 - [用量分析](./usage-analytics.md)
+- [LDOH 站点查找](./ldoh-site-lookup.md)
 - [Cloudflare 过盾助手](./cloudflare-helper.md)
 - [快速导出站点配置](./quick-export.md)
 - [自动刷新与实时数据](./auto-refresh.md)
