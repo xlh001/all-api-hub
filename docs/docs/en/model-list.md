@@ -46,7 +46,7 @@ Click the verification icons on the right side of the model card:
 
 - **Verify Model**: Sends a lightweight request to confirm if the model is currently truly available.
 - **Verify CLI Compatibility**: Tests if the model supports streaming output and can be normally called by command-line tools.
-- **Batch Verification**: Click "Batch Verify" in the toolbar to queue tests for all currently filtered models.
+- **Batch Verification**: Click **"Batch Verify"** in the toolbar to queue tests for all currently filtered models. You can also manually select multiple models via checkboxes to perform verification only on the selected set.
 
 ## List Control Options
 

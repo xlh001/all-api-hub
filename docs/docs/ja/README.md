@@ -61,6 +61,7 @@ All API Hubはブラウザ拡張機能として、これらのサイトのアカ
 ### AI ツールの利用者
 - **クイックスタート**: [拡張機能のインストール](./get-started.md) -> [最初のアカウントを追加](./get-started.md#3-サイトの追加)
 - **資産管理**: [残高履歴を確認](./balance-history.md) -> [使用量を分析](./usage-analytics.md)
+- **アカウントの維持**: [アカウントの整理とクリーンアップ](./account-management.md)
 - **コスト削減**: [クロスサイトでの価格比較](./model-list.md) -> [自動サインインで額度獲得](./auto-checkin.md)
 - **一括エクスポート**: [CherryStudio / CC Switch との同期](./get-started.md#4-クイックエクスポートと統合)
 

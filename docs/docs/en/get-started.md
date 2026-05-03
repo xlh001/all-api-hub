@@ -196,6 +196,7 @@ Through these integration capabilities, you can synchronize the same upstream si
 - [Supported Sites and System Types](./supported-sites.md)
 - [Safari Installation Guide](./safari-install.md)
 - [QQ / 360 and Other Browser Installation Guide](./other-browser-install.md)
+- [Account Management and Maintenance](./account-management.md)
 - [Bookmark Management](./bookmark-management.md)
 - [API Credential Profiles](./api-credential-profiles.md)
 - [Key Management](./key-management.md)

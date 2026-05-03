@@ -198,6 +198,7 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - [支持的站点与系统类型](./supported-sites.md)
 - [Safari 安装指南](./safari-install.md)
 - [QQ / 360 等浏览器安装指南](./other-browser-install.md)
+- [账号管理与维护](./account-management.md)
 - [书签管理](./bookmark-management.md)
 - [API 凭证](./api-credential-profiles.md)
 - [密钥管理](./key-management.md)
