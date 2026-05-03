@@ -48,6 +48,8 @@ features:
     details: "Supports JSON import/export, automatic WebDAV synchronization, selective synchronization, and backup encryption for cross-device and multi-browser migration."
   - title: "Cloudflare Anti-Bot Assistant"
     details: "Automatically pops up an assistance window when encountering a Cloudflare challenge; continues with the original identification, refresh, or check-in process after verification."
+  - title: "Web AI API Sniffing and Verification"
+    details: "Supports identifying Base URL and API Key on webpages via right-click menu or automatic detection, providing instant verification, model retrieval, and one-click saving."
   - title: "Full Platform Support"
     details: "Compatible with Chrome, Edge, Firefox, Safari, and mobile/phone browsers such as Mobile Edge, Firefox for Android, Kiwi, etc., with dark mode adaptation."
   - title: "Privacy First"

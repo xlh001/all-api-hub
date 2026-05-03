@@ -245,6 +245,18 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - 帮助你快速了解中转站的信誉、评价与最新动态。
 - 详见 [LDOH 站点查找](./ldoh-site-lookup.md)。
 
+### 5.16 New API 安全验证 (2FA / OTP)
+
+- 当你在自建站点管理中查看敏感信息或执行高级操作时，插件会引导你完成 OTP 验证。
+- 支持 2FA、安全验证码及 Passkey 手动引导。
+- 详见 [New API 安全验证](./new-api-security-verification.md)。
+
+### 5.16 网页 API 嗅探与验证
+
+- 在网页上选中 Base URL 或 API Key 即可通过右键菜单直接测试接口可用性。
+- 在白名单站点支持后台自动探测与快捷验证。
+- 详见 [网页 API 嗅探与验证](./web-ai-api-check.md)。
+
 ## 6. 深入文档
 
 - [支持的导出工具与集成目标](./supported-export-tools.md)
@@ -258,6 +270,8 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - [余额历史](./balance-history.md)
 - [用量分析](./usage-analytics.md)
 - [LDOH 站点查找](./ldoh-site-lookup.md)
+- [网页 API 嗅探与验证](./web-ai-api-check.md)
+- [New API 安全验证 (2FA / OTP)](./new-api-security-verification.md)
 - [Cloudflare 过盾助手](./cloudflare-helper.md)
 - [快速导出站点配置](./quick-export.md)
 - [自动刷新与实时数据](./auto-refresh.md)
@@ -280,3 +294,4 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 ::: tip 下一步
 完成基础设置后，您可以继续配置自动刷新、签到检测或 WebDAV 同步，以获得更完整的使用体验。
 :::
+

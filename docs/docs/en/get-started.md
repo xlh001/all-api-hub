@@ -244,6 +244,18 @@ Create/edit/delete channels directly within the extension. Combined with model w
 - Helps you quickly understand the reputation, reviews, and latest dynamics of relay stations.
 - See [LDOH Site Lookup](./ldoh-site-lookup.md).
 
+### 5.16 New API Security Verification (2FA / OTP)
+
+- When you view sensitive information or perform advanced operations in self-hosted site management, the extension will guide you through OTP verification.
+- Supports 2FA, secure verification codes, and Passkey manual guidance.
+- See [New API Security Verification](./new-api-security-verification.md).
+
+### 5.16 Web AI API Sniffing and Verification
+
+- Select a Base URL or API Key on a webpage to directly test interface availability via the right-click menu.
+- Supports background automatic detection and quick verification on whitelisted sites.
+- See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
+
 ## 6. In-depth Documentation
 
 - [Supported Export Tools and Integration Targets](./supported-export-tools.md)
@@ -257,6 +269,8 @@ Create/edit/delete channels directly within the extension. Combined with model w
 - [Balance History](./balance-history.md)
 - [Usage Analysis](./usage-analytics.md)
 - [LDOH Site Lookup](./ldoh-site-lookup.md)
+- [Web AI API Sniffing and Verification](./web-ai-api-check.md)
+- [New API Security Verification (2FA / OTP)](./new-api-security-verification.md)
 - [Cloudflare Bypass Assistant](./cloudflare-helper.md)
 - [Quick Export Site Configurations](./quick-export.md)
 - [Automatic Refresh and Real-time Data](./auto-refresh.md)

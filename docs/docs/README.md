@@ -48,6 +48,8 @@ features:
     details: "支持 JSON 导入导出、WebDAV 自动同步、选择性同步与备份加密，实现跨设备与多浏览器迁移。"
   - title: "Cloudflare 过盾助手"
     details: "遇到 Cloudflare 挑战时自动弹出协助窗口，验证完成后继续原有识别、刷新或签到流程。"
+  - title: "网页 API 嗅探与验证"
+    details: "支持在网页上通过右键菜单或自动探测识别 Base URL 与 API Key，并提供即时验证、模型获取与一键保存功能。"
   - title: "全平台支持"
     details: "兼容 Chrome、Edge、Firefox、Safari 与移动端 / 手机端浏览器，例如手机 Edge、Firefox for Android、Kiwi 等，适配深色模式。"
   - title: "隐私优先"

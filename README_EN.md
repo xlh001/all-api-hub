@@ -87,6 +87,7 @@ We support almost all mainstream relay architectures:
 ### 🚀 Fast Ecosystem Integration
 - **One-click quick export**: Deep integration for instant sync to **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code**, and more.
 - **Admin workflow tools**: Productivity features for self-hosted site admins, including channel management, model redirection, and channel syncing.
+- **Web Sniffing & Quick Entry**: Select a Base URL or API Key on any webpage to quickly test and save, see [Web AI API Sniffing & Verification](https://all-api-hub.qixing1217.top/en/web-ai-api-check.html) for details.
 - **Supported integrations**: 👉 [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html)
 
 ### 🧪 Reliability Safeguards

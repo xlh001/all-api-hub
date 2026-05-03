@@ -45,19 +45,14 @@ Navigate to **`Settings → Basic Settings → Account Usage`**. You will see tw
 
 If the browser does not support the `Alarms API`, the plugin will automatically degrade and will not force the use of unavailable scheduling methods.
 
-### What Can Be Viewed on the Synchronization Status Page
+### Sync Status Management (Sync Status)
 
-You can view by account:
+In **`Settings → Basic Settings → Account Usage → Sync Status`**, you can manage usage synchronization much like "download tasks":
 
-- Current Status: Success / Failure / Never / Not Supported
-- Last Synchronization Time
-- Recent Error or Warning Messages
-
-You can also:
-
-- Synchronize a single account
-- Batch synchronize selected accounts
-- Refresh the status list
+- **Status Overview**: Quickly see which accounts synced successfully and which failed due to permission or network issues.
+- **Differentiated Sync**: Supports syncing only for a specific time period or triggering a forced sync for specific accounts.
+- **One-click Cleanup**: If local data is excessive or an anomaly occurs, you can clear the local usage cache for specific accounts with one click.
+- **Error Troubleshooting**: If synchronization fails, click the status icon to view specific API error details (e.g., `401 Unauthorized` indicates an invalid Admin Token).
 
 ## Step 2: Access the Usage Analysis Page
 

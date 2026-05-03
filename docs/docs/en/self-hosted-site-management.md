@@ -55,7 +55,11 @@ Select **"Self-Hosted Site Management"** at the top of the settings page (or cli
    - **AxonHub**: Supports rapid configuration of model lists.
 3. After saving, the system will directly call the backend API to complete synchronization.
 
-### 3. Channel Migration (Beta)
+### 3. Security Verification (2FA / OTP)
+When performing sensitive operations (e.g., viewing a channel's real key), if the system has secondary verification enabled, the extension will pop up a verification window.
+- For details, see: [New API Security Verification (2FA / OTP)](./new-api-security-verification.md)
+
+### 4. Channel Migration (Beta)
 This is an advanced feature that allows you to quickly convert existing accounts from **"Account Management"** into channels for your self-hosted site.
 
 1. Click **"Channel Migration"** on the channel list page.

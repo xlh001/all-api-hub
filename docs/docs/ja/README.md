@@ -48,6 +48,8 @@ features:
     details: "JSONインポート・エクスポート、WebDAV自動同期、選択的同期、バックアップ暗号化をサポートし、クロスデバイスとマルチブラウザ移行を実現します。"
   - title: "Cloudflare盾越えアシスタント"
     details: "Cloudflareのチャレンジに遭遇した場合、自動的にヘルプウィンドウをポップアップ表示し、検証完了後に元の認識、リフレッシュ、またはサインインプロセスを続行します。"
+  - title: "Web AI API スニッフィングと検証"
+    details: "ウェブページ上で右クリックメニューや自動検出を通じて Base URL と API Key を識別し、即時検証、モデル取得、ワンクリック保存機能を提供します。"
   - title: "全プラットフォーム対応"
     details: "Chrome、Edge、Firefox、Safari、およびモバイル/スマートフォンブラウザ（例：Mobile Edge、Firefox for Android、Kiwiなど）と互換性があります。ダークモードにも対応しています。"
   - title: "プライバシー優先"

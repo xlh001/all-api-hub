@@ -87,6 +87,7 @@
 ### 🚀 极速生态集成
 - **一键快捷导出**：深度适配并一键同步到 **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code** 等。
 - **后台联动工具**：为自建站点管理员提供渠道管理、模型重定向、渠道同步等后台效率增强功能。
+- **网页嗅探与快速录入**：在网页上选中 Base URL 或 API Key 即可快速弹出测试窗并保存，详情见 [网页 API 嗅探与验证](https://all-api-hub.qixing1217.top/web-ai-api-check.html)。
 - **查看集成列表**：👉 [支持的工具](https://all-api-hub.qixing1217.top/supported-export-tools.html)
 
 ### 🧪 稳定性护航
