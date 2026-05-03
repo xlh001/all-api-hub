@@ -2,8 +2,6 @@
 <a href="./README.md">简体中文</a> | English
 </h4>
 
-<hr/>
-
 <div align="center">
   <img src="src/assets/icon.png" alt="All API Hub Logo" width="128" height="128">
 
