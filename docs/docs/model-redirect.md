@@ -11,7 +11,7 @@
   - 基于渠道上报的 `models` 列表和一组“标准模型清单”，自动计算最合适的对应关系。
   - 支持按渠道增量合并，保留你手工配置的部分映射。
 - **结合模型同步与渠道管理使用**
-  - 通常与 **New API 模型列表同步** 和 **New API 渠道管理** 搭配使用：
+  - 通常与 **自建站点模型同步** 和 **自建站点管理** 搭配使用：
     - 模型同步负责把上游可用模型列表拉到 New API。
     - 模型重定向负责把这些模型对齐到一组“标准模型”。
 
@@ -105,6 +105,6 @@
 
 ## 相关文档
 
-- [New API 模型列表同步](./new-api-model-sync.md)
-- [New API 渠道管理](./new-api-channel-management.md)
+- [自建站点模型同步](./managed-site-model-sync.md)
+- [自建站点管理](./self-hosted-site-management.md)
 - [快速导出站点配置](./quick-export.md)

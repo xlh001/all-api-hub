@@ -213,13 +213,13 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - 支持按站点、账号、Token、日期筛选，查看请求量、Token 消耗、模型分布、花费和延迟趋势。
 - 适合回答“最近哪里用得最多、花得最多、哪条链路最慢”这类问题。
 
-### 5.10 New API 模型列表同步
+### 5.10 自建站点模型同步
 
-关于 New API 模型列表同步功能的详细文档，请参阅 [New API 模型列表同步](./new-api-model-sync.md)。
+关于 自建站点模型同步功能的详细文档，请参阅 [自建站点模型同步](./managed-site-model-sync.md)。
 
-### 5.11 New API 渠道管理（Beta）
+### 5.11 自建站点管理（Beta）
 
-在插件内直接创建/编辑/删除渠道，搭配模型白名单和单通道同步调试，可大幅减少往返 New API 后台的频次。参见 [New API 渠道管理](./new-api-channel-management.md) 了解详细操作与注意事项。
+在插件内直接创建/编辑/删除渠道，搭配模型白名单和单通道同步调试，可大幅减少往返 New API 后台的频次。参见 [自建站点管理](./self-hosted-site-management.md) 了解详细操作与注意事项。
 
 <a id="cloudflare-window-downgrade"></a>
 ### 5.12 Cloudflare 防护与临时窗口降级
@@ -242,8 +242,8 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - [自动刷新与实时数据](./auto-refresh.md)
 - [自动签到与签到监控](./auto-checkin.md)
 - [WebDAV 备份与自动同步](./webdav-sync.md)
-- [New API 模型列表同步](./new-api-model-sync.md)
-- [New API 渠道管理](./new-api-channel-management.md)
+- [自建站点模型同步](./managed-site-model-sync.md)
+- [自建站点管理](./self-hosted-site-management.md)
 - [CLIProxyAPI 集成](./cliproxyapi-integration.md)
 - [模型重定向](./model-redirect.md)
 - [排序优先级设置](./sorting-priority.md)

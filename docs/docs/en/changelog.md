@@ -273,7 +273,7 @@ This page records major updates for general users (feature changes / experience 
   - Key Management: Added an `All Accounts` view, aggregating keys by account group for easier cross-account searching and copying.
   - Model Redirect: Added a `Clear Model Redirect Mappings` batch operation, allowing you to select by channel and confirm a quick reset of `model_mapping` (irreversible).
 - **Experience Optimizations:**
-  - New API Channel Management: URLs in the channel list are now clickable and search experience has been optimized.
+  - Self-Hosted Site Management: URLs in the channel list are now clickable and search experience has been optimized.
 - **Bug Fixes:**
   - Channel Management: Fixed an issue with inaccurate prompt copy for `Priority` in the channel dialog.
   - Model Redirect: Automatic mapping generation now includes a "version guard" to prevent cross-version mismatches.
@@ -436,7 +436,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 
 ## 3.11.0
 - **New Features:**
-  - New API Channel Management: Added "Duplicate Channel" reminder. When a duplicate/similar channel is detected, a warning dialog will pop up, allowing you to choose to continue creation or cancel (no longer blocking creation with error toasts).
+  - Self-Hosted Site Management: Added "Duplicate Channel" reminder. When a duplicate/similar channel is detected, a warning dialog will pop up, allowing you to choose to continue creation or cancel (no longer blocking creation with error toasts).
 - **Bug Fixes:**
   - Account Management: Fixed layout overflow issues caused by excessively long text in site names, now automatically truncated.
 
@@ -751,7 +751,7 @@ v3.15.0 **has forcibly modified auto-refresh configurations**:
 
 ## 2.13.0
 - **New Features:**
-  - Added "New API Channel Management" functionality.
+  - Added "Self-Hosted Site Management" functionality.
   - Added a "Warning" button style.
   - Introduced Radix UI components and Tanstack Table for improved interface aesthetics and functionality.
 - **Bug Fixes:**

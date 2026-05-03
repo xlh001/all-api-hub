@@ -46,5 +46,5 @@
 
 - [サポートされているエクスポートツールのリスト](./supported-export-tools.md)
 - [サイト構成のエクスポートを迅速に行う](./quick-export.md)
-- [New API チャネル管理](./new-api-channel-management.md)
-- [Octopus チャネル管理](./octopus-channel-management.md)
+- [セルフホスト型サイト管理](./self-hosted-site-management.md)
+- [セルフホスト型サイト管理](./self-hosted-site-management.md)

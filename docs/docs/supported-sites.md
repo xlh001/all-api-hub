@@ -46,6 +46,6 @@
 
 - [支持的导出工具列表](./supported-export-tools.md)
 - [快速导出站点配置](./quick-export.md)
-- [New API 渠道管理](./new-api-channel-management.md)
-- [Octopus 渠道管理](./octopus-channel-management.md)
+- [自建站点管理](./self-hosted-site-management.md)
+- [自建站点模型同步](./managed-site-model-sync.md)
 

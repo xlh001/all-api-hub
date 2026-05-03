@@ -72,6 +72,7 @@ export default defineUserConfig({
             children: [
               '/balance-history',
               '/usage-analytics',
+              '/model-list',
               '/auto-refresh',
             ]
           },
@@ -98,9 +99,8 @@ export default defineUserConfig({
             text: '🛠️ 站长管理工具',
             collapsible: true,
             children: [
-              '/new-api-model-sync',
-              '/new-api-channel-management',
-              '/octopus-channel-management',
+              '/managed-site-model-sync',
+              '/self-hosted-site-management',
               '/model-redirect',
             ]
           },
@@ -153,6 +153,7 @@ export default defineUserConfig({
             children: [
               '/en/balance-history',
               '/en/usage-analytics',
+              '/en/model-list',
               '/en/auto-refresh',
             ]
           },
@@ -179,9 +180,8 @@ export default defineUserConfig({
             text: '🛠️ Admin Management',
             collapsible: true,
             children: [
-              '/en/new-api-model-sync',
-              '/en/new-api-channel-management',
-              '/en/octopus-channel-management',
+              '/en/managed-site-model-sync',
+              '/en/self-hosted-site-management',
               '/en/model-redirect',
             ]
           },
@@ -234,6 +234,7 @@ export default defineUserConfig({
             children: [
               '/ja/balance-history',
               '/ja/usage-analytics',
+              '/ja/model-list',
               '/ja/auto-refresh',
             ]
           },
@@ -260,9 +261,8 @@ export default defineUserConfig({
             text: '🛠️ 管理者向けツール',
             collapsible: true,
             children: [
-              '/ja/new-api-model-sync',
-              '/ja/new-api-channel-management',
-              '/ja/octopus-channel-management',
+              '/ja/managed-site-model-sync',
+              '/ja/self-hosted-site-management',
               '/ja/model-redirect',
             ]
           },

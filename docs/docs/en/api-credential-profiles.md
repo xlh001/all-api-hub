@@ -72,22 +72,35 @@ You can choose the balance/usage query method for each credential:
 - **Custom Read-only Endpoint**: Suitable for sites with custom read-only query endpoints.
 - **Disabled**: Does not query balance and usage, only retains the credential itself.
 
+### Detailed Telemetry Metrics
+
+After enabling telemetry, the extension will attempt to retrieve the following metrics:
+- **Real-time Balance**
+- **Today Cost**
+- **Today Requests**
+- **Today Prompt/Completion Tokens**
+- **Total Used/Total Granted/Total Available Quota**
+- **Expiration Time** (Expires At)
+
 ### Custom Read-only Query
 
 If the automatic method is not compatible with the current site, you can use a custom read-only query:
 
 1. Select **`Custom Read-only Endpoint`**.
-2. Enter the query address.
-3. Configure the path mapping for each field in the returned JSON.
+2. Enter the query address (must be from the same origin as the `Base URL`, supports root-relative paths like `/usage`).
+3. **Configure Field Mapping**: Supports configuring JSON Paths for all telemetry metrics mentioned above.
+   - JSON Path uses a dot-separated format, e.g., `data.today_total_tokens`.
+   - The extension will automatically parse and convert it into a unified display format.
 
-Limitations:
+## Stability and Rate Limiting
 
-- Only read-only GET endpoints from the same origin as the current `Base URL` are allowed.
-- The query address can be a root-relative path, e.g., `/usage`, or a complete same-origin URL.
-- JSON Path uses dot-separated fields, e.g., `data.balance`.
-- At least one resolvable field mapping must be configured.
+To protect your account from being judged as abnormal by upstream sites, All API Hub has a built-in **Smart Request Limiter**:
 
-This type of configuration is suitable for scenarios where "the site is not in the standard New API / OpenAI Billing return format, but you still want to see the balance and today's usage on the card."
+- **Concurrency Control**: Defaults to limiting the number of concurrent requests to a single site to 2.
+- **Rate Control**: Limits the request rate to a single site to approximately 18 times per minute (supports small bursts).
+- **Auto-Queueing**: When refreshing multiple accounts or performing batch verification, requests exceeding the limit will automatically enter a queue to avoid triggering 429 Too Many Requests errors.
+
+> 💡 **Note**: This limit is primarily for refresh and verification actions in the extension background and does not affect the performance of direct interface calls via other tools (such as CherryStudio).
 
 ## Common Operations
 

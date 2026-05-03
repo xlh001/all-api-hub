@@ -46,5 +46,5 @@ If you are also building your own backend system, All API Hub supports importing
 
 - [Supported Export Tools List](./supported-export-tools.md)
 - [Quick Export Site Configuration](./quick-export.md)
-- [New API Channel Management](./new-api-channel-management.md)
-- [Octopus Channel Management](./octopus-channel-management.md)
+- [Self-Hosted Site Management](./self-hosted-site-management.md)
+- [Self-Hosted Site Management](./self-hosted-site-management.md)

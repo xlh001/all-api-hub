@@ -50,7 +50,7 @@
 
 ## 相关文档
 
-- [New API 渠道管理](./new-api-channel-management.md)
-- [New API 模型列表同步](./new-api-model-sync.md)
+- [自建站点管理](./self-hosted-site-management.md)
+- [自建站点模型同步](./managed-site-model-sync.md)
 - [Cloudflare 过盾助手](./cloudflare-helper.md)
 - [CLIProxyAPI 集成](./cliproxyapi-integration.md)

@@ -31,5 +31,4 @@
 - [サポートされているサイトリスト](./supported-sites.md)
 - [サイト設定のエクスポートを迅速化](./quick-export.md)
 - [CLIProxyAPI の統合](./cliproxyapi-integration.md)
-- [New API チャネル管理](./new-api-channel-management.md)
-- [Octopus チャネル管理](./octopus-channel-management.md)
+- [セルフホスト型サイト管理](./self-hosted-site-management.md)

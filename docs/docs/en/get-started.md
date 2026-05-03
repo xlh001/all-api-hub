@@ -212,13 +212,13 @@ Through these integration capabilities, you can synchronize the same upstream si
 - Supports filtering by site, account, Token, and date to view request volume, Token consumption, model distribution, expenses, and latency trends.
 - Suitable for answering questions like "Where have I used the most recently, spent the most, or which link is the slowest?"
 
-### 5.10 New API Model List Synchronization
+### 5.10 Managed Site Model Synchronization
 
-For detailed documentation on the New API model list synchronization feature, please refer to [New API Model List Synchronization](./new-api-model-sync.md).
+For detailed documentation on the New API model list synchronization feature, please refer to [Managed Site Model Synchronization](./managed-site-model-sync.md).
 
-### 5.11 New API Channel Management (Beta)
+### 5.11 Self-Hosted Site Management (Beta)
 
-Create/edit/delete channels directly within the extension. Combined with model whitelisting and single-channel synchronization debugging, this can significantly reduce the frequency of back-and-forth operations with the New API backend. Refer to [New API Channel Management](./new-api-channel-management.md) for detailed operations and precautions.
+Create/edit/delete channels directly within the extension. Combined with model whitelisting and single-channel synchronization debugging, this can significantly reduce the frequency of back-and-forth operations with the New API backend. Refer to [Self-Hosted Site Management](./self-hosted-site-management.md) for detailed operations and precautions.
 
 <a id="cloudflare-window-downgrade"></a>
 ### 5.12 Cloudflare Protection and Temporary Window Downgrade
@@ -241,8 +241,8 @@ Create/edit/delete channels directly within the extension. Combined with model w
 - [Automatic Refresh and Real-time Data](./auto-refresh.md)
 - [Automatic Check-in and Check-in Monitoring](./auto-checkin.md)
 - [WebDAV Backup and Automatic Synchronization](./webdav-sync.md)
-- [New API Model List Synchronization](./new-api-model-sync.md)
-- [New API Channel Management](./new-api-channel-management.md)
+- [Managed Site Model Synchronization](./managed-site-model-sync.md)
+- [Self-Hosted Site Management](./self-hosted-site-management.md)
 - [CLIProxyAPI Integration](./cliproxyapi-integration.md)
 - [Model Redirection](./model-redirect.md)
 - [Sorting Priority Settings](./sorting-priority.md)

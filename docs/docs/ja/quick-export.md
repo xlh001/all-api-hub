@@ -50,7 +50,7 @@
 
 ## 関連ドキュメント
 
-- [New API チャネル管理](./new-api-channel-management.md)
-- [New API モデルリスト同期](./new-api-model-sync.md)
+- [セルフホスト型サイト管理](./self-hosted-site-management.md)
+- [セルフホスト型サイトモデル同期](./managed-site-model-sync.md)
 - [Cloudflare シールド回避アシスタント](./cloudflare-helper.md)
 - [CLIProxyAPI 統合](./cliproxyapi-integration.md)

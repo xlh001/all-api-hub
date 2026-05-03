@@ -31,5 +31,4 @@ If you have also set up an AI relay or aggregation backend, All API Hub can dire
 - [Supported Site List](./supported-sites.md)
 - [Quick Export Site Configuration](./quick-export.md)
 - [CLIProxyAPI Integration](./cliproxyapi-integration.md)
-- [New API Channel Management](./new-api-channel-management.md)
-- [Octopus Channel Management](./octopus-channel-management.md)
+- [Self-Hosted Site Management](./self-hosted-site-management.md)
