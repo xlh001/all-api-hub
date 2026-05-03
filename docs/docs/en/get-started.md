@@ -157,104 +157,38 @@ Before using the export/integration features, complete the corresponding configu
 
 Through these integration capabilities, you can synchronize the same upstream site to multiple downstream tools or backend systems without manual copy-pasting.
 
-## 5. Feature Overview
+## 5. Core Features at a Glance
 
-### 5.1 Automatic Refresh and Health Status
+### 📊 Dashboard & Analytics
+- **5.1 Overview & Real-time Refresh**: Centrally view balances, usage, and health status for all sites with automatic syncing.
+- **5.2 Balance History**: Record daily snapshots of balances, income, and expenditure to visualize trends.
+- **5.3 Usage Analytics**: In-depth analysis of Token consumption, model distribution, costs, and request latency.
 
-- Enable **Settings → Auto Refresh** to activate periodic refreshing of account data. The default interval is 6 minutes (360 seconds), with a minimum supported interval of 60 seconds.
-- Checking **"Auto refresh when opening the extension"** will synchronize data when the popup is opened.
-- With **"Display Health Status"** enabled, account cards will show health status indicators (Normal/Warning/Error/Unknown).
+### 🔑 Keys & Integration
+- **5.4 Key Management (Tokens)**: Centrally manage site tokens with support for **"One-click Repair"** of hidden keys.
+- **5.5 Independent API Credentials**: Save URL+Key independently of site accounts with tag support and batch validation.
+- **5.6 Quick Export & Integration**: Instant sync to CherryStudio, CC Switch, Kilo Code, CLIProxyAPI, and more.
+- **5.7 Web API Sniffing**: Quickly identify and test API configurations within any webpage via right-click or detection.
 
-### 5.2 Check-in Detection
+### ⚡ Automation & Rewards
+- **5.8 Auto Check-in Assistant**: Handle multi-site check-ins automatically with scheduled tasks and custom URL jumps.
+- **5.9 Redemption Assist**: Automatically recognize redemption codes on webpages for one-click redemption with a floating window.
+- **5.10 Bookmark Management**: Centrally manage AI-related consoles, documentation, recharge pages, and redemption portals.
 
-- Check **"Enable Check-in Detection"** in the account information to track site check-in status.
-- Supports setting **Custom Check-in URL** and **Custom Top-up URL** to adapt to modified sites.
-- Accounts requiring check-in will display a prompt in the list, which can be clicked to jump to the check-in page.
+### 🛡️ Stability & Security
+- **5.11 Cloudflare Assistant**: Automatically assist with Cloudflare challenges to ensure uninterrupted refreshes and API calls.
+- **5.12 New API Security Verification (2FA)**: Handle OTP / 2FA / Passkey challenges for management backends seamlessly.
+- **5.13 WebDAV Sync & Encryption**: Encrypted multi-device backup and sync to ensure your configurations are never lost.
 
-### 5.3 WebDAV Backup and Multi-device Synchronization
+### 🛠️ Admin Workflow (Self-hosted)
+- **5.14 Site Management**: Directly manage channels (Create/Edit/Delete) for New API, AxonHub, and more within the extension.
+- **5.15 Model Sync & Redirection**: Batch sync models from upstream providers and configure "Standard -> Actual" mappings.
 
-- Go to **Settings → WebDAV Backup**, and configure the WebDAV address, username, and password.
-- You can choose synchronization strategies (Merge/Upload Only/Download Only) and set the automatic synchronization interval.
-- It is recommended to use JSON import/export in conjunction for double backup.
-
-### 5.4 Sorting Priority
-
-- Adjust account sorting logic in **Settings → Sorting Priority Settings**.
-- Supports combining conditions such as current site, health status, check-in requirements, and custom fields.
-- Drag and drop to adjust priority and disable unwanted sorting rules at any time.
-
-### 5.5 Data Import and Export
-
-- In the **Settings → Data and Backup** section, under "Import and Export," you can export all current account configurations to JSON with one click.
-- Supports importing data exported from previous versions or other devices for quick migration or restoration.
-
-### 5.6 API Credential Profiles
-
-- In **Settings → API Credential Profiles**, you can separately save `Base URL`, API Key, tags, and notes, suitable for scenarios where you "don't have a site account but only interface configurations."
-- Supports viewing balance and daily usage overview, verifying interface/CLI compatibility, and directly opening the current credential in the model list.
-- You can also export directly from an individual credential to CherryStudio, CC Switch, Kilo Code, CLIProxyAPI, Claude Code Router, or the current self-hosted site.
-
-### 5.7 Bookmark Management
-
-- In **Settings → Bookmarks**, you can save shortcuts to consoles, documentation, top-up pages, redemption pages, etc.
-- Supports searching, tag filtering, pinning, and drag-and-drop sorting; you can also quickly switch to the `Bookmarks` view at the top of the popup.
-- Suitable for scenarios where you don't want to create a full account yet but want to centralize frequently used entry points.
-
-### 5.8 Balance History
-
-- After enabling in **Settings → Basic Settings → Balance History**, you can record daily snapshots of balance, income, and expenses.
-- View the overview, trend charts, account distribution, and summary tables on the **Settings → Balance History** page.
-- Suitable for long-term tracking of balance changes, top-up consumption patterns, or simple reconciliation.
-
-### 5.9 Usage Analysis
-
-- First, enable usage history synchronization in **Settings → Basic Settings → Account Usage**, then go to **Settings → Usage Analysis** to view charts.
-- Supports filtering by site, account, Token, and date to view request volume, Token consumption, model distribution, expenses, and latency trends.
-- Suitable for answering questions like "Where have I used the most recently, spent the most, or which link is the slowest?"
-
-### 5.10 Managed Site Model Synchronization
-
-For detailed documentation on the New API model list synchronization feature, please refer to [Managed Site Model Synchronization](./managed-site-model-sync.md).
-
-### 5.11 Self-Hosted Site Management (Beta)
-
-Create/edit/delete channels directly within the extension. Combined with model whitelisting and single-channel synchronization debugging, this can significantly reduce the frequency of back-and-forth operations with the New API backend. Refer to [Self-Hosted Site Management](./self-hosted-site-management.md) for detailed operations and precautions.
-
-<a id="cloudflare-window-downgrade"></a>
-### 5.12 Cloudflare Protection and Temporary Window Downgrade
-
-- When Cloudflare intercepts requests (common status codes 401/403/429), the extension will automatically switch to a temporary window for retries, preserving the target domain's cookies. Generally, no manual operation is required; see [Cloudflare Bypass Assistant](./cloudflare-helper.md) for the underlying principles.
-- If a scenario requiring human-machine verification occurs, please complete the challenge in the pop-up assistance window. If failures are frequent, try changing networks or reducing request frequency.
-
-### 5.13 Key Management
-
-- Centrally view all tokens under all accounts on the **Key Management** page, supporting search and one-click copying.
-- For New API sites, it supports **"Repair Missing Keys"**, automatically completing full keys that are invisible in the backend.
-- Supports quickly saving tokens as independent API credentials or batch-verifying CLI compatibility. See [Key Management](./key-management.md).
-
-### 5.14 Share Snapshot
-
-- Supports generating privacy-redacted beautiful images of the overview panel or individual account status.
-- Automatically hides sensitive information like API Keys and features a built-in dynamic mesh gradient background, suitable for community sharing.
-- See [Share Snapshot](./share-snapshot.md).
-
-### 5.15 LDOH Site Lookup
-
-- Automatically matches your site with community discussion posts based on [Linux.do](https://linux.do) community data.
-- Helps you quickly understand the reputation, reviews, and latest dynamics of relay stations.
-- See [LDOH Site Lookup](./ldoh-site-lookup.md).
-
-### 5.16 New API Security Verification (2FA / OTP)
-
-- When you view sensitive information or perform advanced operations in self-hosted site management, the extension will guide you through OTP verification.
-- Supports 2FA, secure verification codes, and Passkey manual guidance.
-- See [New API Security Verification](./new-api-security-verification.md).
-
-### 5.16 Web AI API Sniffing and Verification
-
-- Select a Base URL or API Key on a webpage to directly test interface availability via the right-click menu.
-- Supports background automatic detection and quick verification on whitelisted sites.
-- See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
+### 🎨 Personalization & Advanced
+- **5.16 Sorting Priority Settings**: Customize account display order based on balance, health, or check-in requirements.
+- **5.17 Share Snapshot**: Generate beautiful, privacy-desensitized status images with dynamic mesh gradient backgrounds.
+- **5.18 LDOH Site Lookup**: Automatically match site discussion threads on Linux.do to check reputation and reviews.
+- **5.19 Developer Tools (Mesh Gradient Lab)**: Visual debugging and background customization. See [Developer Tools](./developer-tools.md).
 
 ## 6. In-depth Documentation
 

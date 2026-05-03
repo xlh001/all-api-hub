@@ -26,34 +26,24 @@ actions:
     type: "secondary"
 
 features:
-  - title: "智能站点识别"
-    details: "登录后粘贴站点地址即可添加账号，自动识别站点名称、充值比例等信息；识别失败可手动补录，并会提示重复添加。"
-  - title: "多账号总览"
-    details: "把多个站点与账号集中在一个面板里，余额、用量与健康状态一眼看清，并支持自动刷新。"
-  - title: "独立 API 凭证档案"
-    details: "可脱离站点账号单独保存 baseUrl 与 API Key，按标签筛选，并复用到模型查看、接口验证和状态统计。"
-  - title: "模型与价格比对"
-    details: "不仅能看模型列表，还支持按来源、计费方式、分组和账号筛选，对比价格、倍率与实际成本，并标出最低价或最优组。"
-  - title: "模型与接口验证"
-    details: "支持模型可用性验证、批量验证、Token 兼容性判断，以及 CLI 兼容性检查，适合排查“站点可用但工具不可用”的问题。"
-  - title: "用量分析与延迟排查"
-    details: "按站点、账号、Token、日期筛选与对比用量、花费、模型分布和趋势，并提供热力图、延迟与慢请求视图辅助排查。"
-  - title: "自动签到与兑换跳转"
-    details: "集中识别支持签到的站点并处理签到状态，支持自动签到、自定义签到 URL 与充值 / 兑换页跳转。"
-  - title: "快速导出集成"
-    details: "一键导出到 CherryStudio、CC Switch、CLIProxyAPI、Claude Code Router、Kilo Code，以及当前选择的自建托管站点。"
-  - title: "自建站点后台联动"
-    details: "支持对自建 New API、DoneHub、Veloera、Octopus、AxonHub 与 Claude Code Hub 实例进行后台联动。"
-  - title: "WebDAV 备份与同步"
-    details: "支持 JSON 导入导出、WebDAV 自动同步、选择性同步与备份加密，实现跨设备与多浏览器迁移。"
-  - title: "Cloudflare 过盾助手"
-    details: "遇到 Cloudflare 挑战时自动弹出协助窗口，验证完成后继续原有识别、刷新或签到流程。"
-  - title: "网页 API 嗅探与验证"
-    details: "支持在网页上通过右键菜单或自动探测识别 Base URL 与 API Key，并提供即时验证、模型获取与一键保存功能。"
-  - title: "全平台支持"
-    details: "兼容 Chrome、Edge、Firefox、Safari 与移动端 / 手机端浏览器，例如手机 Edge、Firefox for Android、Kiwi 等，适配深色模式。"
-  - title: "隐私优先"
-    details: "默认本地优先存储，无遥测数据收集；只有在你配置 WebDAV 或外部接口时，才会访问对应服务。"
+  - title: "📦 资产统一看板"
+    details: "把多个站点与账号集中在一个面板里，余额、用量与健康状态一眼看清，支持智能识别地址自动添加。"
+  - title: "🏷️ 独立 API 凭证"
+    details: "无需账号，直接保存 Base URL + Key，支持标签分类，完美复用模型查看与接口验证功能。"
+  - title: "💰 模型价格比对"
+    details: "跨站对比各模型实际折合单价，自动锁定当前最优分组，助你寻找最实惠的调用路径。"
+  - title: "✅ 深度接口验证"
+    details: "批量测试模型可用性、Token 兼容性及 CLI 代理连通性，轻松排查“站点能通、工具报错”的问题。"
+  - title: "📈 用量深度统计"
+    details: "按日期、账号、模型多维分析用量与花费，提供热力图、延迟视图与慢请求分析。"
+  - title: "📅 自动签到辅助"
+    details: "集中识别并处理支持签到的站点，支持定时自动签到、自定义 URL 与充值/兑换页面跳转。"
+  - title: "🚀 极速生态集成"
+    details: "一键同步到 CherryStudio、CC Switch、Kilo Code 等，或直接将账号推送到自建管理后台。"
+  - title: "🛠️ 自建站点联动"
+    details: "深度适配 New API、AxonHub、Claude Code Hub 等，实现渠道管理、模型同步与重定向。"
+  - title: "🔒 隐私与安全同步"
+    details: "默认本地存储，支持加密 WebDAV 自动同步与备份，遇到 Cloudflare 挑战时可自动协助过盾。"
 
 footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 ---
@@ -62,7 +52,31 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 现在 AI 生态里有越来越多基于 New API 系列的聚合中转站和自建面板，要同时管理各站点的余额、用量、模型价格和 API 密钥可用性，往往既分散又费时。
 
-All API Hub 作为浏览器插件，可以自动识别这些站点的账号，并一键查看余额、用量、模型价格、管理模型与密钥、执行自动签到，还支持独立 API 凭证管理，以及为自建 New API、DoneHub、Veloera、Octopus、AxonHub 与 Claude Code Hub 提供后台联动和渠道相关工具。当前已支持基于以下项目的中转站账号：
+All API Hub 作为浏览器插件，可以自动识别这些站点的账号，并一键查看余额、用量、模型价格、管理模型与密钥、执行自动签到，还支持独立 API 凭证管理，以及为自建 New API、DoneHub、Veloera、Octopus、AxonHub 与 Claude Code Hub 提供后台联动和渠道相关工具。
+
+## 🎯 你的使用场景
+
+根据你的身份和需求，快速找到对应文档：
+
+### 我是 AI 工具的使用者
+- **快速开始**：[下载并安装扩展](./get-started.md) -> [添加我的第一个账号](./get-started.md#3-添加站点)
+- **资产管理**：[查看余额历史](./balance-history.md) -> [分析我的用量消耗](./usage-analytics.md)
+- **省钱方案**：[跨站模型价格比对](./model-list.md) -> [自动签到获取额度](./auto-checkin.md)
+- **一键导出**：[同步站点到 CherryStudio / CC Switch](./get-started.md#4-快速导出与集成)
+
+### 我拥有很多独立 API Key
+- **凭证管理**：[将 URL+Key 保存为独立凭证](./api-credential-profiles.md)
+- **可用性测试**：[批量验证接口与 CLI 兼容性](./web-ai-api-check.md)
+- **书签收纳**：[集中管理文档与兑换页](./bookmark-management.md)
+
+### 我是自建站点（New API 等）的管理员
+- **效率工具**：[在插件内管理渠道](./self-hosted-site-management.md) -> [批量同步模型](./managed-site-model-sync.md)
+- **配置优化**：[设置模型重定向](./model-redirect.md)
+- **安全保障**：[处理 2FA / OTP 验证](./new-api-security-verification.md)
+
+---
+
+## 支持的站点系统
 
 - [one-api](https://github.com/songquanpeng/one-api)
 - [new-api](https://github.com/QuantumNous/new-api)
