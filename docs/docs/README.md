@@ -5,7 +5,7 @@ heroImage: "/512.png"
 heroText: "All API Hub - 你的全能 AI 资产管家"
 tagline: "开源浏览器插件，统一管理第三方 AI 聚合中转站与自建 New API：自动识别账号、比对模型价格、验证 API/CLI 兼容性、同步模型与渠道，并支持跨平台与加密 WebDAV 备份"
 actions:
-  - text: "开始使用"
+  - text: "🚀 开始使用"
     link: "./get-started.html"
     type: "primary"
 
@@ -50,62 +50,45 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 ## 介绍
 
-现在 AI 生态里有越来越多基于 New API 系列的聚合中转站和自建面板，要同时管理各站点的余额、用量、模型价格和 API 密钥可用性，往往既分散又费时。
+在 AI 时代，为了省钱或体验不同模型，我们往往拥有多个中转站账号。但管理起来却很头疼：余额分散、价格混乱、每天手动签到太累...
 
-All API Hub 作为浏览器插件，可以自动识别这些站点的账号，并一键查看余额、用量、模型价格、管理模型与密钥、执行自动签到，还支持独立 API 凭证管理，以及为自建 New API、DoneHub、Veloera、Octopus、AxonHub 与 Claude Code Hub 提供后台联动和渠道相关工具。
+**All API Hub 为解决这些问题而生。** 它是你的 AI 资产中心，让管理变得简单、直观且自动化。
 
 ## 🎯 你的使用场景
 
-根据你的身份和需求，快速找到对应文档：
+### 👤 我是普通 AI 用户 (新手推荐)
+- **我该怎么用？**：[下载并安装扩展](./get-started.md) -> [添加第一个账号](./get-started.md#add-site)
+- **我想省钱**：[自动签到获取额度](./auto-checkin.md) -> [跨站模型价格比对](./model-list.md)
+- **我想更省事**：[资产变动一眼看清](./balance-history.md) -> [同步账号到其它 AI 工具](./get-started.md#quick-export-sites)
 
-### 我是 AI 工具的使用者
-- **快速开始**：[下载并安装扩展](./get-started.md) -> [添加我的第一个账号](./get-started.md#add-site)
-- **资产管理**：[查看余额历史](./balance-history.md) -> [分析我的用量消耗](./usage-analytics.md)
-- **账号维护**：[组织与清理账号](./account-management.md)
-- **省钱方案**：[跨站模型价格比对](./model-list.md) -> [自动签到获取额度](./auto-checkin.md)
-- **一键导出**：[同步站点到 CherryStudio / CC Switch](./get-started.md#quick-export-sites)
-
-### 我拥有很多独立 API Key
-- **凭证管理**：[将 URL+Key 保存为独立凭证](./api-credential-profiles.md)
+### 🛠️ 我是进阶玩家 (Key 收藏家)
+- **密钥管理**：[将独立 URL+Key 保存为凭证](./api-credential-profiles.md)
 - **可用性测试**：[批量验证接口与 CLI 兼容性](./web-ai-api-check.md)
-- **书签收纳**：[集中管理文档与兑换页](./bookmark-management.md)
+- **跨端同步**：[配置 WebDAV 加密备份](./webdav-sync.md)
 
-### 我是自建站点（New API 等）的管理员
-- **效率工具**：[在插件内管理渠道](./self-hosted-site-management.md) -> [批量同步模型](./managed-site-model-sync.md)
+### 👑 我是站点管理员 (站长专区)
+- **效率工具**：[在插件内直接管理渠道](./self-hosted-site-management.md) -> [批量同步模型](./managed-site-model-sync.md)
 - **配置优化**：[设置模型重定向](./model-redirect.md)
 - **安全保障**：[处理 2FA / OTP 验证](./new-api-security-verification.md)
 
----
+## 🧩 支持的系统架构
 
-## 支持的站点系统
+All API Hub 深度兼容以下开源及闭源系统：
+- **开源架构**：One API, New API, Sub2API, Veloera, AxonHub, One-Hub, Done-Hub 等。
+- **特色架构**：AnyRouter, Neo-API, Super-API, VoAPI 等。
 
-- [one-api](https://github.com/songquanpeng/one-api)
-- [new-api](https://github.com/QuantumNous/new-api)
-- [Veloera](https://github.com/Veloera/Veloera)
-- [one-hub](https://github.com/MartialBE/one-hub)
-- [done-hub](https://github.com/deanxv/done-hub)
-- [AxonHub](https://github.com/looplj/axonhub)
-- [Sub2API](https://github.com/Wei-Shaw/sub2api)
-- [AnyRouter](https://anyrouter.top)
-- WONG公益站
-- Neo-API（闭源）
-- Super-API（闭源）
-- RIX_API（闭源，基本功能支持）
-- VoAPI（闭源，老版本支持）
-
-如果你在 macOS 上通过 Safari 使用扩展，请先查看 [Safari 安装指南](./safari-install.md)。Safari 需要通过 Xcode 安装，和 Chrome / Edge / Firefox 的商店安装或解压加载方式不同。
-
-如果你使用 QQ 浏览器、360 安全浏览器、360 极速浏览器、猎豹浏览器、Brave、Vivaldi、Opera 等浏览器，请查看 [QQ / 360 等浏览器安装指南](./other-browser-install.md)。
+> 如果你在 macOS 上使用 Safari，请先查看 [Safari 安装指南](./safari-install.md)。
+> 如果你使用 QQ/360/Brave 等浏览器，请查看 [手动安装指南](./other-browser-install.md)。
 
 <a id="community"></a>
 ## 💬 社区交流
 
-如果你想更快地交流使用问题、排查配置、分享兼容站点，推荐使用下面这些社区渠道：
+遇到问题？想分享好用的站点？加入我们的社区：
 
-- [GitHub Discussions](https://github.com/qixing-jk/all-api-hub/discussions)：适合整理问题、沉淀经验和长期讨论。
-- [Discord 社区](https://discord.gg/RmFXZ577ZQ)：面向多语言用户，功能多样，适合讨论和问题排查。
-- [Telegram 群](https://t.me/qixing_chat)：适合多语言用户快速交流。
-- 微信群：扫描下方二维码加入中文交流群。
+- [GitHub Discussions](https://github.com/qixing-jk/all-api-hub/discussions)：经验沉淀。
+- [Discord 社区](https://discord.gg/RmFXZ577ZQ)：多语言实时交流。
+- [Telegram 群](https://t.me/qixing_chat)：极速响应。
+- **微信群**：扫描下方二维码加入中文群。
 
 <img
   src="../../resources/wechat_group.png"
