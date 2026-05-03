@@ -85,9 +85,9 @@ All API Hub 深度兼容以下开源及闭源系统：
 
 遇到问题？想分享好用的站点？加入我们的社区：
 
-- [GitHub Discussions](https://github.com/qixing-jk/all-api-hub/discussions)：经验沉淀。
-- [Discord 社区](https://discord.gg/RmFXZ577ZQ)：多语言实时交流。
-- [Telegram 群](https://t.me/qixing_chat)：极速响应。
+- [GitHub Discussions](https://github.com/qixing-jk/all-api-hub/discussions)
+- [Discord 社区](https://discord.gg/RmFXZ577ZQ)
+- [Telegram 群](https://t.me/qixing_chat)
 - **微信群**：扫描下方二维码加入中文群。
 
 <img
