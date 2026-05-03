@@ -44,36 +44,79 @@ export default defineUserConfig({
           "/",
           "/get-started",
           "/faq",
-          {
-            text: '专题指南',
-            children: [
-              { text: '支持的工具', link: '/supported-export-tools' },
-              { text: '支持的站点', link: '/supported-sites' },
-              { text: '书签管理', link: '/bookmark-management' },
-              { text: 'API 凭证', link: '/api-credential-profiles' },
-              { text: '余额历史', link: '/balance-history' },
-              { text: '用量分析', link: '/usage-analytics' },
-              { text: 'Safari 安装', link: '/safari-install' },
-              { text: 'QQ / 360 等浏览器安装', link: '/other-browser-install' },
-              { text: 'Cloudflare 过盾助手', link: '/cloudflare-helper' },
-              { text: '快速导出站点', link: '/quick-export' },
-              { text: '自动刷新', link: '/auto-refresh' },
-              { text: '自动签到', link: '/auto-checkin' },
-              { text: '自动识别排查', link: '/auto-detect' },
-              { text: '兑换助手', link: '/redemption-assist' },
-              { text: 'WebDAV 同步', link: '/webdav-sync' },
-              { text: '数据导入导出', link: '/data-management' },
-              { text: 'New API 模型同步', link: '/new-api-model-sync' },
-              { text: 'New API 渠道管理', link: '/new-api-channel-management' },
-              { text: 'Octopus 渠道管理', link: '/octopus-channel-management' },
-              { text: 'CLIProxyAPI 集成', link: '/cliproxyapi-integration' },
-              { text: '模型重定向', link: '/model-redirect' },
-              { text: '排序优先级设置', link: '/sorting-priority' },
-              { text: '权限管理', link: '/permissions' }
-            ]
-          },
           "/changelog"
         ],
+        sidebar: [
+          {
+            text: '🚀 快速上手',
+            collapsible: true,
+            children: [
+              '/get-started',
+              '/permissions',
+              '/safari-install',
+              '/other-browser-install',
+            ]
+          },
+          {
+            text: '🔑 账号与凭证',
+            collapsible: true,
+            children: [
+              '/api-credential-profiles',
+              '/bookmark-management',
+              '/sorting-priority',
+            ]
+          },
+          {
+            text: '📊 统计与看板',
+            collapsible: true,
+            children: [
+              '/balance-history',
+              '/usage-analytics',
+              '/auto-refresh',
+            ]
+          },
+          {
+            text: '🤖 自动化助手',
+            collapsible: true,
+            children: [
+              '/auto-checkin',
+              '/redemption-assist',
+              '/cloudflare-helper',
+            ]
+          },
+          {
+            text: '🔌 生态与集成',
+            collapsible: true,
+            children: [
+              '/supported-sites',
+              '/supported-export-tools',
+              '/quick-export',
+              '/cliproxyapi-integration',
+            ]
+          },
+          {
+            text: '🛠️ 站长管理工具',
+            collapsible: true,
+            children: [
+              '/new-api-model-sync',
+              '/new-api-channel-management',
+              '/octopus-channel-management',
+              '/model-redirect',
+            ]
+          },
+          {
+            text: '🛡️ 数据隐私与支持',
+            collapsible: true,
+            children: [
+              '/data-management',
+              '/webdav-sync',
+              '/privacy',
+              '/auto-detect',
+              '/faq',
+            ]
+          },
+          '/changelog'
+        ]
       },
       '/en/': {
         selectLanguageText: 'Languages',
@@ -82,36 +125,79 @@ export default defineUserConfig({
           "/en/",
           "/en/get-started",
           "/en/faq",
-          {
-            text: 'Guides',
-            children: [
-              { text: 'Supported Tools', link: '/en/supported-export-tools' },
-              { text: 'Supported Sites', link: '/en/supported-sites' },
-              { text: 'Bookmark Management', link: '/en/bookmark-management' },
-              { text: 'API Credentials', link: '/en/api-credential-profiles' },
-              { text: 'Balance History', link: '/en/balance-history' },
-              { text: 'Usage Analytics', link: '/en/usage-analytics' },
-              { text: 'Safari Install', link: '/en/safari-install' },
-              { text: 'QQ / 360 and Similar Browser Install', link: '/en/other-browser-install' },
-              { text: 'Cloudflare Helper', link: '/en/cloudflare-helper' },
-              { text: 'Quick Export', link: '/en/quick-export' },
-              { text: 'Auto Refresh', link: '/en/auto-refresh' },
-              { text: 'Auto Check-in', link: '/en/auto-checkin' },
-              { text: 'Auto Detect', link: '/en/auto-detect' },
-              { text: 'Redemption Assistant', link: '/en/redemption-assist' },
-              { text: 'WebDAV Sync', link: '/en/webdav-sync' },
-              { text: 'Data Management', link: '/en/data-management' },
-              { text: 'New API Model Sync', link: '/en/new-api-model-sync' },
-              { text: 'New API Channel Mgmt', link: '/en/new-api-channel-management' },
-              { text: 'Octopus Channel Mgmt', link: '/en/octopus-channel-management' },
-              { text: 'CLIProxyAPI Integration', link: '/en/cliproxyapi-integration' },
-              { text: 'Model Redirect', link: '/en/model-redirect' },
-              { text: 'Sorting Priority', link: '/en/sorting-priority' },
-              { text: 'Permissions', link: '/en/permissions' }
-            ]
-          },
           "/en/changelog"
         ],
+        sidebar: [
+          {
+            text: '🚀 Getting Started',
+            collapsible: true,
+            children: [
+              '/en/get-started',
+              '/en/permissions',
+              '/en/safari-install',
+              '/en/other-browser-install',
+            ]
+          },
+          {
+            text: '🔑 Accounts & Credentials',
+            collapsible: true,
+            children: [
+              '/en/api-credential-profiles',
+              '/en/bookmark-management',
+              '/en/sorting-priority',
+            ]
+          },
+          {
+            text: '📊 Analytics & Dashboard',
+            collapsible: true,
+            children: [
+              '/en/balance-history',
+              '/en/usage-analytics',
+              '/en/auto-refresh',
+            ]
+          },
+          {
+            text: '🤖 Automation Helpers',
+            collapsible: true,
+            children: [
+              '/en/auto-checkin',
+              '/en/redemption-assist',
+              '/en/cloudflare-helper',
+            ]
+          },
+          {
+            text: '🔌 Ecosystem & Integrations',
+            collapsible: true,
+            children: [
+              '/en/supported-sites',
+              '/en/supported-export-tools',
+              '/en/quick-export',
+              '/en/cliproxyapi-integration',
+            ]
+          },
+          {
+            text: '🛠️ Admin Management',
+            collapsible: true,
+            children: [
+              '/en/new-api-model-sync',
+              '/en/new-api-channel-management',
+              '/en/octopus-channel-management',
+              '/en/model-redirect',
+            ]
+          },
+          {
+            text: '🛡️ Data & Support',
+            collapsible: true,
+            children: [
+              '/en/data-management',
+              '/en/webdav-sync',
+              '/en/privacy',
+              '/en/auto-detect',
+              '/en/faq',
+            ]
+          },
+          '/en/changelog'
+        ]
       },
       '/ja/': {
         selectLanguageText: '言語選択',
@@ -120,36 +206,79 @@ export default defineUserConfig({
           "/ja/",
           "/ja/get-started",
           "/ja/faq",
-          {
-            text: '機能ガイド',
-            children: [
-              { text: '対応ツール', link: '/ja/supported-export-tools' },
-              { text: '対応サイト', link: '/ja/supported-sites' },
-              { text: 'ブックマーク管理', link: '/ja/bookmark-management' },
-              { text: 'API 認証情報', link: '/ja/api-credential-profiles' },
-              { text: '残高履歴', link: '/ja/balance-history' },
-              { text: '使用量分析', link: '/ja/usage-analytics' },
-              { text: 'Safari インストール', link: '/ja/safari-install' },
-              { text: 'QQ / 360 などのブラウザのインストール', link: '/ja/other-browser-install' },
-              { text: 'Cloudflare ヘルパー', link: '/ja/cloudflare-helper' },
-              { text: 'クイックエクスポート', link: '/ja/quick-export' },
-              { text: '自動更新', link: '/ja/auto-refresh' },
-              { text: '自動サインイン', link: '/ja/auto-checkin' },
-              { text: '自動検出', link: '/ja/auto-detect' },
-              { text: '引き換えアシスタント', link: '/ja/redemption-assist' },
-              { text: 'WebDAV 同期', link: '/ja/webdav-sync' },
-              { text: 'データ管理', link: '/ja/data-management' },
-              { text: 'New API モデル同期', link: '/ja/new-api-model-sync' },
-              { text: 'New API チャネル管理', link: '/ja/new-api-channel-management' },
-              { text: 'Octopus チャネル管理', link: '/ja/octopus-channel-management' },
-              { text: 'CLIProxyAPI 連携', link: '/ja/cliproxyapi-integration' },
-              { text: 'モデルリダイレクト', link: '/ja/model-redirect' },
-              { text: '並び順優先度設定', link: '/ja/sorting-priority' },
-              { text: '権限管理', link: '/ja/permissions' }
-            ]
-          },
           "/ja/changelog"
         ],
+        sidebar: [
+          {
+            text: '🚀 導入ガイド',
+            collapsible: true,
+            children: [
+              '/ja/get-started',
+              '/ja/permissions',
+              '/ja/safari-install',
+              '/ja/other-browser-install',
+            ]
+          },
+          {
+            text: '🔑 アカウントと認証情報',
+            collapsible: true,
+            children: [
+              '/ja/api-credential-profiles',
+              '/ja/bookmark-management',
+              '/ja/sorting-priority',
+            ]
+          },
+          {
+            text: '📊 統計とダッシュボード',
+            collapsible: true,
+            children: [
+              '/ja/balance-history',
+              '/ja/usage-analytics',
+              '/ja/auto-refresh',
+            ]
+          },
+          {
+            text: '🤖 自動化アシスタント',
+            collapsible: true,
+            children: [
+              '/ja/auto-checkin',
+              '/ja/redemption-assist',
+              '/ja/cloudflare-helper',
+            ]
+          },
+          {
+            text: '🔌 エコシステムと連携',
+            collapsible: true,
+            children: [
+              '/ja/supported-sites',
+              '/ja/supported-export-tools',
+              '/ja/quick-export',
+              '/ja/cliproxyapi-integration',
+            ]
+          },
+          {
+            text: '🛠️ 管理者向けツール',
+            collapsible: true,
+            children: [
+              '/ja/new-api-model-sync',
+              '/ja/new-api-channel-management',
+              '/ja/octopus-channel-management',
+              '/ja/model-redirect',
+            ]
+          },
+          {
+            text: '🛡️ データとサポート',
+            collapsible: true,
+            children: [
+              '/ja/data-management',
+              '/ja/webdav-sync',
+              '/ja/privacy',
+              '/ja/auto-detect',
+              '/ja/faq',
+            ]
+          },
+          '/ja/changelog'
+        ]
       }
     }
   }),
