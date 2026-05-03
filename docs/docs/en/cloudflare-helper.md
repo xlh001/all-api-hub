@@ -33,7 +33,6 @@
 
 ## Related Documents
 
-- [Cloudflare Protection and Temporary Window Degradation (Quick Start)](./get-started.md#cloudflare-window-downgrade)
 - [Quick Site Export](./quick-export.md)
 - [Self-Hosted Site Management](./self-hosted-site-management.md)
 - [Permission Management (Optional Permissions)](./permissions.md)

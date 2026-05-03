@@ -88,6 +88,7 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 如果站点进行了二次开发导致一些关键接口（例如 `/api/user`）发生了改变，则插件可能无法正常添加此站点。
 :::
 
+<a id="add-site"></a>
 ## 3. 添加站点
 
 ::: info 提示
@@ -121,7 +122,7 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 
 - 识别到 Cloudflare 五秒盾时，插件会自动拉起一个临时窗口帮助完成校验；若挑战需要人工干预，请在弹窗内点击验证即可。
 - 校验通过后会自动回到原始流程，继续获取 Access Token 和站点信息。
-- 更多细节可参考 [Cloudflare 防护与临时窗口降级](#cloudflare-window-downgrade)。
+- 更多细节可参考 [Cloudflare 过盾助手](./cloudflare-helper.md)。
 
 <a id="manual-addition"></a>
 ### 3.3 手动添加
@@ -167,14 +168,14 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 - **5.4 [账号管理与维护](./account-management.md)**：高效地添加、组织（标签/置顶）与清理重复账号。
 
 ### 🔑 密钥管理与快捷集成
-- **5.5 [令牌管理 (Tokens)](./key-management.md)**：集中管理站点令牌，支持一键补全后台隐藏的 Key。
+- **5.5 [令牌管理](./key-management.md)**：集中管理站点令牌，支持一键补全后台隐藏的 Key。
 - **5.6 [独立 API 凭证](./api-credential-profiles.md)**：无需账号即可保存 URL+Key，支持标签分类与批量可用性验证。
 - **5.7 [快捷导出功能](./quick-export.md)**：将配置快速推送到 CherryStudio、CC Switch、Kilo Code 等 [第三方工具](./supported-export-tools.md)。
 - **5.8 [网页 API 嗅探](./web-ai-api-check.md)**：在网页内通过右键或探测功能，快速识别并测试 API 配置。
 
 ### ⚡ 自动化与额度收益
 - **5.9 [自动签到流](./auto-checkin.md)**：一键处理支持签到的站点，支持定时任务与自定义页面跳转。
-- **5.10 [兑换助手 (Redemption Assist)](./redemption-assist.md)**：自动识别网页兑换码，弹出悬浮窗匹配账号并一键领取。
+- **5.10 [兑换助手](./redemption-assist.md)**：自动识别网页兑换码，弹出悬浮窗匹配账号并一键领取。
 - **5.11 [书签收纳管理](./bookmark-management.md)**：集中收藏 AI 相关的控制台、文档、充值页与兑换入口。
 
 ### 🛡️ 稳定性与安全防护

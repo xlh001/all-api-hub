@@ -33,7 +33,6 @@
 
 ## 相关文档
 
-- [Cloudflare 防护与临时窗口降级（快速上手）](./get-started.md#cloudflare-window-downgrade)
 - [快速导出站点](./quick-export.md)
 - [自建站点管理](./self-hosted-site-management.md)
 - [权限管理（可选权限）](./permissions.md)

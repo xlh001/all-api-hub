@@ -87,6 +87,7 @@ For a complete list of compatible sites, please refer to [Supported Sites and Sy
 If a site has undergone secondary development that alters key interfaces (e.g., `/api/user`), the extension may not be able to add the site correctly.
 :::
 
+<a id="add-site"></a>
 ## 3. Adding a Site
 
 ::: info Tip
@@ -120,7 +121,7 @@ The extension will automatically recognize various information about your accoun
 
 - When Cloudflare's 5-second protection is detected, the extension will automatically launch a temporary window to help complete the verification. If manual intervention is required for the challenge, click to verify within the pop-up window.
 - After successful verification, the process will return to the original flow to continue obtaining the Access Token and site information.
-- For more details, refer to [Cloudflare Protection and Temporary Window Downgrade](#cloudflare-window-downgrade).
+- For more details, refer to [Cloudflare Shield Bypass Assistant](./cloudflare-helper.md).
 
 <a id="manual-addition"></a>
 ### 3.3 Manual Addition

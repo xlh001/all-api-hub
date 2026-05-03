@@ -65,28 +65,28 @@
 
 你可以为每个凭证选择余额/用量的查询方式：
 
-- **Auto（自动探测）**：按内置顺序尝试兼容方式。
+- **自动探测**：按内置顺序尝试兼容方式。
 - **NewAPI Token**：适合兼容 New API 的 token 用量查询。
 - **OpenAI Billing**：适合标准 OpenAI Billing 查询。
 - **Sub2API**：适合 Sub2API 风格接口。
-- **Custom Read-only Endpoint**：适合站点有自定义只读查询接口。
-- `Disabled（禁用）`：不查询余额与用量，只保留凭证本身。
+- **自定义只读查询**：适合站点有自定义只读查询接口。
+- `禁用`：不查询余额与用量，只保留凭证本身。
 
 ### 详细遥测指标
 
 开启遥测后，插件会尝试获取以下指标：
-- **实时余额** (Balance)
-- **今日花费** (Today Cost)
-- **今日请求数** (Today Requests)
+- **实时余额**
+- **今日花费**
+- **今日请求数**
 - **今日 Prompt/Completion Tokens**
 - **总已用/总赠送/总可用额度**
-- **过期时间** (Expires At)
+- **过期时间**
 
 ### 自定义只读查询
 
 如果自动方式不适配当前站点，可改用自定义只读查询：
 
-1. 选择 **`Custom Read-only Endpoint`**。
+1. 选择 **`自定义只读查询`**。
 2. 填写查询地址（必须与 `Base URL` 同源，支持 `/usage` 这种根相对路径）。
 3. **配置字段映射**：支持为上述所有遥测指标配置 JSON Path。
    - JSON Path 采用点分隔形式，例如 `data.today_total_tokens`。
