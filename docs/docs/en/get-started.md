@@ -157,67 +157,47 @@ Before using the export/integration features, complete the corresponding configu
 
 Through these integration capabilities, you can synchronize the same upstream site to multiple downstream tools or backend systems without manual copy-pasting.
 
-## 5. Core Features at a Glance
+## 5. Core Features In-depth Guide
 
 ### 📊 Dashboard & Analytics
-- **5.1 Overview & Real-time Refresh**: Centrally view balances, usage, and health status for all sites with automatic syncing.
-- **5.2 Balance History**: Record daily snapshots of balances, income, and expenditure to visualize trends.
-- **5.3 Usage Analytics**: In-depth analysis of Token consumption, model distribution, costs, and request latency.
+- **5.1 [Overview & Real-time Refresh](./auto-refresh.md)**: Centrally view balances, usage, and health status for all sites with automatic syncing.
+- **5.2 [Balance History](./balance-history.md)**: Record daily snapshots of balances, income, and expenditure to visualize trends.
+- **5.3 [Usage Analytics](./usage-analytics.md)**: In-depth analysis of Token consumption, model distribution, costs, and request latency.
+- **5.4 [Account Management and Maintenance](./account-management.md)**: Efficiently add, organize (tags/pinning), and clean up duplicate accounts.
 
 ### 🔑 Keys & Integration
-- **5.4 Key Management (Tokens)**: Centrally manage site tokens with support for **"One-click Repair"** of hidden keys.
-- **5.5 Independent API Credentials**: Save URL+Key independently of site accounts with tag support and batch validation.
-- **5.6 Quick Export & Integration**: Instant sync to CherryStudio, CC Switch, Kilo Code, CLIProxyAPI, and more.
-- **5.7 Web API Sniffing**: Quickly identify and test API configurations within any webpage via right-click or detection.
+- **5.5 [Key Management (Tokens)](./key-management.md)**: Centrally manage site tokens with support for "One-click Repair" of hidden keys.
+- **5.6 [API Credential Profiles](./api-credential-profiles.md)**: Save URL+Key independently of site accounts with tag support and batch validation.
+- **5.7 [Quick Export & Integration](./quick-export.md)**: Instant sync to CherryStudio, CC Switch, Kilo Code, and more [third-party tools](./supported-export-tools.md).
+- **5.8 [Web API Sniffing](./web-ai-api-check.md)**: Quickly identify and test API configurations within any webpage via right-click or detection.
 
 ### ⚡ Automation & Rewards
-- **5.8 Auto Check-in Assistant**: Handle multi-site check-ins automatically with scheduled tasks and custom URL jumps.
-- **5.9 Redemption Assist**: Automatically recognize redemption codes on webpages for one-click redemption with a floating window.
-- **5.10 Bookmark Management**: Centrally manage AI-related consoles, documentation, recharge pages, and redemption portals.
+- **5.9 [Auto Check-in Assistant](./auto-checkin.md)**: Handle multi-site check-ins automatically with scheduled tasks and custom URL jumps.
+- **5.10 [Redemption Assist](./redemption-assist.md)**: Automatically recognize redemption codes on webpages for one-click redemption.
+- **5.11 [Bookmark Management](./bookmark-management.md)**: Centrally manage AI-related consoles, documentation, recharge pages, and redemption portals.
 
 ### 🛡️ Stability & Security
-- **5.11 Cloudflare Assistant**: Automatically assist with Cloudflare challenges to ensure uninterrupted refreshes and API calls.
-- **5.12 New API Security Verification (2FA)**: Handle OTP / 2FA / Passkey challenges for management backends seamlessly.
-- **5.13 WebDAV Sync & Encryption**: Encrypted multi-device backup and sync to ensure your configurations are never lost.
+- **5.12 [Cloudflare Assistant](./cloudflare-helper.md)**: Automatically assist with Cloudflare challenges to ensure uninterrupted refreshes and API calls.
+- **5.13 [New API Security Verification (2FA)](./new-api-security-verification.md)**: Handle OTP / 2FA / Passkey challenges for management backends seamlessly.
+- **5.14 [WebDAV Sync & Encryption](./webdav-sync.md)**: Encrypted multi-device backup and sync to ensure your configurations are never lost.
 
 ### 🛠️ Admin Workflow (Self-hosted)
-- **5.14 Site Management**: Directly manage channels (Create/Edit/Delete) for New API, AxonHub, and more within the extension.
-- **5.15 Model Sync & Redirection**: Batch sync models from upstream providers and configure "Standard -> Actual" mappings.
+- **5.15 [Site Management](./self-hosted-site-management.md)**: Directly manage channels (Create/Edit/Delete) for New API, AxonHub, and more within the extension.
+- **5.16 [Model Sync](./managed-site-model-sync.md) & [Redirection](./model-redirect.md)**: Batch sync models from upstream providers and configure "Standard -> Actual" mappings.
 
 ### 🎨 Personalization & Advanced
-- **5.16 Sorting Priority Settings**: Customize account display order based on balance, health, or check-in requirements.
-- **5.17 Share Snapshot**: Generate beautiful, privacy-desensitized status images with dynamic mesh gradient backgrounds.
-- **5.18 LDOH Site Lookup**: Automatically match site discussion threads on Linux.do to check reputation and reviews.
-- **5.19 Developer Tools (Mesh Gradient Lab)**: Visual debugging and background customization. See [Developer Tools](./developer-tools.md).
+- **5.17 [Sorting Priority Settings](./sorting-priority.md)**: Customize account display order based on balance, health, or check-in requirements.
+- **5.18 [Share Snapshot](./share-snapshot.md)**: Generate beautiful, privacy-desensitized status images with dynamic mesh gradient backgrounds.
+- **5.19 [LDOH Site Lookup](./ldoh-site-lookup.md)**: Automatically match site discussion threads on Linux.do to check reputation.
+- **5.20 [Developer Tools](./developer-tools.md)**: Visual debugging and background customization (Mesh Gradient Lab).
 
-## 6. In-depth Documentation
+## 6. Installation & Data Management
 
-- [Supported Export Tools and Integration Targets](./supported-export-tools.md)
-- [Supported Sites and System Types](./supported-sites.md)
 - [Safari Installation Guide](./safari-install.md)
 - [QQ / 360 and Other Browser Installation Guide](./other-browser-install.md)
-- [Account Management and Maintenance](./account-management.md)
-- [Bookmark Management](./bookmark-management.md)
-- [API Credential Profiles](./api-credential-profiles.md)
-- [Key Management](./key-management.md)
-- [Share Snapshot](./share-snapshot.md)
-- [Balance History](./balance-history.md)
-- [Usage Analysis](./usage-analytics.md)
-- [LDOH Site Lookup](./ldoh-site-lookup.md)
-- [Web AI API Sniffing and Verification](./web-ai-api-check.md)
-- [New API Security Verification (2FA / OTP)](./new-api-security-verification.md)
-- [Cloudflare Bypass Assistant](./cloudflare-helper.md)
-- [Quick Export Site Configurations](./quick-export.md)
-- [Automatic Refresh and Real-time Data](./auto-refresh.md)
-- [Automatic Check-in and Check-in Monitoring](./auto-checkin.md)
-- [WebDAV Backup and Automatic Synchronization](./webdav-sync.md)
-- [Managed Site Model Synchronization](./managed-site-model-sync.md)
-- [Self-Hosted Site Management](./self-hosted-site-management.md)
-- [CLIProxyAPI Integration](./cliproxyapi-integration.md)
-- [Model Redirection](./model-redirect.md)
-- [Sorting Priority Settings](./sorting-priority.md)
 - [Permissions Management (Optional Permissions)](./permissions.md)
 - [Data Import and Export](./data-management.md)
+- [Supported Sites and System Types](./supported-sites.md)
 
 ## 7. FAQ and Support
 

@@ -158,68 +158,46 @@ Safari 不能像 Chrome、Edge、Firefox 一样直接通过商店安装或解压
 
 通过这些集成能力，您可以把同一个上游站点同步到多个下游工具或后台系统，无需手动重复粘贴。
 
-## 5. 核心功能速览
+## 5. 核心功能深入指南
 
 ### 📊 资产看板与统计
-- **5.1 资产总览与实时刷新**：集中查看多站余额、用量与健康状态，支持定时自动同步。
-- **5.2 余额历史**：按天记录余额、收入与支出快照，直观呈现资产变动趋势。
-- **5.3 用量统计分析**：多维度分析 Token 消耗、模型分布、费用支出及响应延迟。
+- **5.1 [资产总览与实时刷新](./auto-refresh.md)**：集中查看多站余额、用量与健康状态，支持定时自动同步。
+- **5.2 [余额历史记录](./balance-history.md)**：按天记录余额、收入与支出快照，直观呈现资产变动趋势。
+- **5.3 [用量统计分析](./usage-analytics.md)**：多维度分析 Token 消耗、模型分布、费用支出及响应延迟。
+- **5.4 [账号管理与维护](./account-management.md)**：高效地添加、组织（标签/置顶）与清理重复账号。
 
 ### 🔑 密钥管理与快捷集成
-- **5.4 令牌管理 (Tokens)**：集中管理站点令牌，支持一键补全后台隐藏的 Key。
-- **5.5 独立 API 凭证**：无需账号即可保存 URL+Key，支持标签分类与批量可用性验证。
-- **5.6 快捷导出功能**：将配置快速推送到 CherryStudio、CC Switch、Kilo Code 等第三方工具。
-- **5.7 网页 API 嗅探**：在网页内通过右键或探测功能，快速识别并测试 API 配置。
+- **5.5 [令牌管理 (Tokens)](./key-management.md)**：集中管理站点令牌，支持一键补全后台隐藏的 Key。
+- **5.6 [独立 API 凭证](./api-credential-profiles.md)**：无需账号即可保存 URL+Key，支持标签分类与批量可用性验证。
+- **5.7 [快捷导出功能](./quick-export.md)**：将配置快速推送到 CherryStudio、CC Switch、Kilo Code 等 [第三方工具](./supported-export-tools.md)。
+- **5.8 [网页 API 嗅探](./web-ai-api-check.md)**：在网页内通过右键或探测功能，快速识别并测试 API 配置。
 
 ### ⚡ 自动化与额度收益
-- **5.8 自动签到流**：一键处理支持签到的站点，支持定时任务与自定义页面跳转。
-- **5.9 兑换助手 (Redemption Assist)**：自动识别网页兑换码，弹出悬浮窗匹配账号并一键领取。
-- **5.10 书签收纳管理**：集中收藏 AI 相关的控制台、文档、充值页与兑换入口。
+- **5.9 [自动签到流](./auto-checkin.md)**：一键处理支持签到的站点，支持定时任务与自定义页面跳转。
+- **5.10 [兑换助手 (Redemption Assist)](./redemption-assist.md)**：自动识别网页兑换码，弹出悬浮窗匹配账号并一键领取。
+- **5.11 [书签收纳管理](./bookmark-management.md)**：集中收藏 AI 相关的控制台、文档、充值页与兑换入口。
 
 ### 🛡️ 稳定性与安全防护
-- **5.11 Cloudflare 过盾助手**：协助通过五秒盾挑战，确保数据刷新、签到与 API 调用不中断。
-- **5.12 账号安全验证 (2FA)**：支持自建站点管理中的 OTP、两步验证与 Passkey 挑战。
-- **5.13 WebDAV 同步与加密**：支持跨设备加密备份，确保配置数据安全且永不丢失。
+- **5.12 [Cloudflare 过盾助手](./cloudflare-helper.md)**：协助通过五秒盾挑战，确保数据刷新、签到与 API 调用不中断。
+- **5.13 [账号安全验证 (2FA)](./new-api-security-verification.md)**：支持自建站点管理中的 OTP、两步验证与 Passkey 挑战。
+- **5.14 [WebDAV 同步与加密](./webdav-sync.md)**：支持跨设备加密备份，确保配置数据安全且永不丢失。
 
 ### 🛠️ 自建站点运营工具
-- **5.14 渠道后台管理**：在插件内直接对 New API、AxonHub 等系统的渠道进行增删改查。
-- **5.15 模型同步与重定向**：批量同步上游模型，并配置“标准模型”到“实际模型”的映射逻辑。
+- **5.15 [自建站点管理](./self-hosted-site-management.md)**：在插件内直接对 New API、AxonHub 等系统的渠道进行增删改查。
+- **5.16 [模型同步](./managed-site-model-sync.md) 与 [重定向](./model-redirect.md)**：批量同步上游模型，并配置“标准模型”到“实际模型”的映射逻辑。
 
 ### 🎨 个性化定制与进阶
-- **5.16 账号排序设置**：按余额、健康度或签到需求自定义账号显示的先后顺序。
-- **5.17 分享快照**：生成隐藏敏感信息的精美看板图片，内置动态背景，方便分享。
-- **5.18 站点背景查找**：基于 Linux.do 社区数据自动匹配讨论帖，了解站点口碑。
-- **5.19 开发者实验室**：视觉调试与背景自定义。详见 [开发者工具](./developer-tools.md)。
+- **5.17 [排序优先级设置](./sorting-priority.md)**：按余额、健康度或签到需求自定义账号显示的先后顺序。
+- **5.18 [分享快照](./share-snapshot.md)**：生成隐藏敏感信息的精美看板图片，内置动态背景，方便分享。
+- **5.19 [LDOH 站点信誉查找](./ldoh-site-lookup.md)**：基于 Linux.do 社区数据自动匹配讨论帖，了解站点口碑。
+- **5.20 [开发者实验室](./developer-tools.md)**：视觉调试与背景自定义。
 
-## 6. 深入文档
+## 6. 安装与数据管理
 
-
-- [支持的导出工具与集成目标](./supported-export-tools.md)
-- [支持的站点与系统类型](./supported-sites.md)
-- [Safari 安装指南](./safari-install.md)
+- [Safari 浏览器安装指南](./safari-install.md)
 - [QQ / 360 等浏览器安装指南](./other-browser-install.md)
-- [账号管理与维护](./account-management.md)
-- [书签管理](./bookmark-management.md)
-- [API 凭证](./api-credential-profiles.md)
-- [密钥管理](./key-management.md)
-- [分享快照](./share-snapshot.md)
-- [余额历史](./balance-history.md)
-- [用量分析](./usage-analytics.md)
-- [LDOH 站点查找](./ldoh-site-lookup.md)
-- [网页 API 嗅探与验证](./web-ai-api-check.md)
-- [New API 安全验证 (2FA / OTP)](./new-api-security-verification.md)
-- [Cloudflare 过盾助手](./cloudflare-helper.md)
-- [快速导出站点配置](./quick-export.md)
-- [自动刷新与实时数据](./auto-refresh.md)
-- [自动签到与签到监控](./auto-checkin.md)
-- [WebDAV 备份与自动同步](./webdav-sync.md)
-- [自建站点模型同步](./managed-site-model-sync.md)
-- [自建站点管理](./self-hosted-site-management.md)
-- [CLIProxyAPI 集成](./cliproxyapi-integration.md)
-- [模型重定向](./model-redirect.md)
-- [排序优先级设置](./sorting-priority.md)
-- [权限管理（可选权限）](./permissions.md)
-- [数据导入导出](./data-management.md)
+- [权限管理 (可选权限)](./permissions.md)
+- [数据导入与导出](./data-management.md)
 
 ## 7. 常见问题与支持
 
