@@ -712,6 +712,143 @@ describe("accountStorage core behaviors", () => {
     }
   })
 
+  it("refreshDisabledAccounts only probes disabled accounts and summarizes restored results", async () => {
+    seedStorage([
+      createAccount({ id: "disabled-a", disabled: true }),
+      createAccount({ id: "enabled-b", disabled: false }),
+      createAccount({ id: "disabled-c", disabled: true }),
+    ])
+    storageData.set(USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES, {
+      showTodayCashflow: true,
+    })
+
+    const refreshAccountSpy = vi
+      .spyOn(accountStorage, "refreshAccount")
+      .mockResolvedValueOnce({
+        refreshed: true,
+        reEnabled: true,
+        account: { last_sync_time: 111 },
+      } as any)
+      .mockResolvedValueOnce({
+        refreshed: true,
+        reEnabled: false,
+        account: { last_sync_time: 222 },
+      } as any)
+
+    try {
+      const result = await accountStorage.refreshDisabledAccounts(true)
+
+      expect(refreshAccountSpy).toHaveBeenCalledTimes(2)
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(1, "disabled-a", true, {
+        includeTodayCashflow: true,
+        allowDisabled: true,
+        reEnableOnSuccess: true,
+      })
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(2, "disabled-c", true, {
+        includeTodayCashflow: true,
+        allowDisabled: true,
+        reEnableOnSuccess: true,
+      })
+      expect(result).toEqual({
+        processedCount: 2,
+        failedCount: 0,
+        reEnabledCount: 1,
+        latestSyncTime: 222,
+      })
+    } finally {
+      refreshAccountSpy.mockRestore()
+    }
+  })
+
+  it("refreshDisabledAccounts counts failed probes separately from restored accounts", async () => {
+    seedStorage([
+      createAccount({ id: "disabled-a", disabled: true }),
+      createAccount({ id: "enabled-b", disabled: false }),
+      createAccount({ id: "disabled-c", disabled: true }),
+    ])
+    storageData.set(USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES, {
+      showTodayCashflow: false,
+    })
+
+    const refreshAccountSpy = vi
+      .spyOn(accountStorage, "refreshAccount")
+      .mockResolvedValueOnce({
+        refreshed: true,
+        reEnabled: false,
+        account: { last_sync_time: 111 },
+      } as any)
+      .mockRejectedValueOnce(new Error("probe failed"))
+
+    try {
+      const result = await accountStorage.refreshDisabledAccounts(true)
+
+      expect(refreshAccountSpy).toHaveBeenCalledTimes(2)
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(1, "disabled-a", true, {
+        includeTodayCashflow: false,
+        allowDisabled: true,
+        reEnableOnSuccess: true,
+      })
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(2, "disabled-c", true, {
+        includeTodayCashflow: false,
+        allowDisabled: true,
+        reEnableOnSuccess: true,
+      })
+      expect(result).toEqual({
+        processedCount: 1,
+        failedCount: 1,
+        reEnabledCount: 0,
+        latestSyncTime: 111,
+      })
+    } finally {
+      refreshAccountSpy.mockRestore()
+    }
+  })
+
+  it("refreshDisabledAccounts defaults cashflow inclusion and ignores skipped probes", async () => {
+    seedStorage([
+      createAccount({ id: "disabled-a", disabled: true }),
+      createAccount({ id: "enabled-b", disabled: false }),
+      createAccount({ id: "disabled-c", disabled: true }),
+    ])
+
+    const refreshAccountSpy = vi
+      .spyOn(accountStorage, "refreshAccount")
+      .mockResolvedValueOnce({
+        refreshed: false,
+        reEnabled: false,
+        account: { last_sync_time: 999 },
+      } as any)
+      .mockResolvedValueOnce({
+        refreshed: true,
+        reEnabled: true,
+        account: { last_sync_time: 222 },
+      } as any)
+
+    try {
+      const result = await accountStorage.refreshDisabledAccounts()
+
+      expect(refreshAccountSpy).toHaveBeenCalledTimes(2)
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(1, "disabled-a", false, {
+        includeTodayCashflow: true,
+        allowDisabled: true,
+        reEnableOnSuccess: true,
+      })
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(2, "disabled-c", false, {
+        includeTodayCashflow: true,
+        allowDisabled: true,
+        reEnableOnSuccess: true,
+      })
+      expect(result).toEqual({
+        processedCount: 1,
+        failedCount: 0,
+        reEnabledCount: 1,
+        latestSyncTime: 222,
+      })
+    } finally {
+      refreshAccountSpy.mockRestore()
+    }
+  })
+
   it("getAccountStats should aggregate numeric fields across accounts", async () => {
     const accountA = createAccount({
       id: "stats-a",
@@ -1263,6 +1400,85 @@ describe("accountStorage core behaviors", () => {
     expect(mockFetchSupportCheckIn).not.toHaveBeenCalled()
     expect(mockRefreshAccountData).not.toHaveBeenCalled()
     expect(mockFetchTodayIncome).not.toHaveBeenCalled()
+  })
+
+  it("refreshAccount should probe disabled accounts when explicitly allowed and re-enable them on success", async () => {
+    const account = createAccount({
+      id: "disabled-revive",
+      disabled: true,
+      site_url: "https://revive.example.com",
+      site_type: "test",
+    })
+    seedStorage([account])
+
+    const result = await accountStorage.refreshAccount(
+      "disabled-revive",
+      true,
+      {
+        allowDisabled: true,
+        reEnableOnSuccess: true,
+      },
+    )
+
+    expect(mockFetchSupportCheckIn).toHaveBeenCalledWith({
+      baseUrl: "https://revive.example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        userId: 1,
+        accessToken: "token",
+        cookie: undefined,
+        refreshToken: undefined,
+        tokenExpiresAt: undefined,
+      },
+    })
+    expect(mockRefreshAccountData).toHaveBeenCalledTimes(1)
+    expect(result).toEqual(
+      expect.objectContaining({
+        refreshed: true,
+        reEnabled: true,
+      }),
+    )
+    const updatedAccount =
+      await accountStorage.getAccountById("disabled-revive")
+    expect(updatedAccount?.disabled).toBe(false)
+  })
+
+  it("refreshAccount should not report re-enabled when the persistence write fails", async () => {
+    const account = createAccount({
+      id: "disabled-persist-fail",
+      disabled: true,
+      site_url: "https://persist.example.com",
+      site_type: "test",
+    })
+    seedStorage([account])
+
+    const updateAccountSpy = vi
+      .spyOn(accountStorage, "updateAccount")
+      .mockResolvedValueOnce(false)
+
+    try {
+      const result = await accountStorage.refreshAccount(
+        "disabled-persist-fail",
+        true,
+        {
+          allowDisabled: true,
+          reEnableOnSuccess: true,
+        },
+      )
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          refreshed: true,
+          reEnabled: false,
+        }),
+      )
+      expect(
+        (await accountStorage.getAccountById("disabled-persist-fail"))
+          ?.disabled,
+      ).toBe(true)
+    } finally {
+      updateAccountSpy.mockRestore()
+    }
   })
 
   it("refreshAccount should skip network refreshes when the min interval has not elapsed", async () => {
