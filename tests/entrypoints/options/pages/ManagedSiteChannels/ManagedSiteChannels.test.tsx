@@ -150,6 +150,10 @@ const openRowActionsMenu = async (
       .find((text) => Boolean(text)) ?? null
 
   const getCurrentRow = () => {
+    if (row.isConnected) {
+      return row
+    }
+
     if (!rowIdentityText) {
       return row
     }
@@ -1891,11 +1895,7 @@ describe("ManagedSiteChannels", () => {
 
     const row = screen.getByText("Axon Alpha").closest("tr")
     expect(row).toBeTruthy()
-    await user.click(
-      within(row!).getByRole("button", {
-        name: "managedSiteChannels:table.columns.actions",
-      }),
-    )
+    await openRowActionsMenu(row!, user)
 
     expect(
       await screen.findByRole("menuitem", {
