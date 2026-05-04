@@ -7,11 +7,20 @@ import {
 import userEvent from "@testing-library/user-event"
 import { useState, type ReactElement } from "react"
 import { I18nextProvider } from "react-i18next"
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { CompactMultiSelect } from "~/components/ui/CompactMultiSelect"
 import { testI18n } from "~~/tests/test-utils/i18n"
 import { render } from "~~/tests/test-utils/render"
+
+const toastMocks = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+}))
+
+vi.mock("react-hot-toast", () => ({
+  default: toastMocks,
+}))
 
 const renderCompact = (ui: ReactElement) =>
   render(ui, {
@@ -20,6 +29,24 @@ const renderCompact = (ui: ReactElement) =>
   })
 
 describe("CompactMultiSelect", () => {
+  beforeEach(() => {
+    toastMocks.success.mockReset()
+    toastMocks.error.mockReset()
+    testI18n.addResourceBundle(
+      "en",
+      "ui",
+      {
+        multiSelect: {
+          chipCopied: "Copied: {{value}}",
+          copyChipValue: "Copy {{value}}",
+          copyError: "Copy failed, please try again",
+        },
+      },
+      true,
+      true,
+    )
+  })
+
   it("uses a dedicated clear button instead of a clear option item", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
@@ -80,6 +107,70 @@ describe("CompactMultiSelect", () => {
 
     await user.click(screen.getByRole("option", { name: "Alpha" }))
     expect(onChange).toHaveBeenCalledWith(["id-alpha"])
+  })
+
+  it("copies chip text when the selected chip label is clicked", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+
+    Object.defineProperty(globalThis.navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
+
+    renderCompact(
+      <CompactMultiSelect
+        displayMode="chips"
+        options={[
+          { value: "id-alpha", label: "Alpha" },
+          { value: "id-beta", label: "Beta" },
+        ]}
+        selected={["id-alpha"]}
+        onChange={onChange}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Copy Alpha",
+      }),
+    )
+
+    expect(writeText).toHaveBeenCalledWith("Alpha")
+    expect(onChange).not.toHaveBeenCalled()
+    expect(toastMocks.success).toHaveBeenCalledWith("Copied: Alpha")
+  })
+
+  it("shows an error toast when chip text copying fails", async () => {
+    const user = userEvent.setup()
+    const writeText = vi.fn().mockRejectedValue(new Error("clipboard blocked"))
+
+    Object.defineProperty(globalThis.navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
+
+    renderCompact(
+      <CompactMultiSelect
+        displayMode="chips"
+        options={[{ value: "id-alpha", label: "Alpha" }]}
+        selected={["id-alpha"]}
+        onChange={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Copy Alpha",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toastMocks.error).toHaveBeenCalledWith(
+        "Copy failed, please try again",
+      )
+    })
   })
 
   it("shows a clear button for the search input", async () => {

@@ -335,8 +335,10 @@
   },
   "multiSelect": {
     "cancelSelected": "選択をキャンセル",
+    "chipCopied": "コピーしました: {{value}}",
     "clearInput": "入力をクリア",
     "clearSelected": "選択済みの値をすべてクリア",
+    "copyChipValue": "{{value}} をコピー",
     "copyError": "コピーに失敗しました。再試行してください",
     "copySelectedValues": "選択した値をコピー",
     "copySuccess": "選択した値をコピーしました",

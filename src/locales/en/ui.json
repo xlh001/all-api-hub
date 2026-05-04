@@ -340,8 +340,10 @@
   },
   "multiSelect": {
     "cancelSelected": "Cancel selection",
+    "chipCopied": "Copied: {{value}}",
     "clearInput": "Clear input",
     "clearSelected": "Clear all selected values",
+    "copyChipValue": "Copy {{value}}",
     "copyError": "Copy failed, please try again",
     "copySelectedValues": "Copy selected values",
     "copySuccess": "Selected values copied",

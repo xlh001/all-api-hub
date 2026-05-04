@@ -335,8 +335,10 @@
   },
   "multiSelect": {
     "cancelSelected": "取消當前選中",
+    "chipCopied": "已複製：{{value}}",
     "clearInput": "清空輸入",
     "clearSelected": "清空所有已選項",
+    "copyChipValue": "複製 {{value}}",
     "copyError": "複製失敗，請重試",
     "copySelectedValues": "複製已選項",
     "copySuccess": "已複製已選擇的內容",

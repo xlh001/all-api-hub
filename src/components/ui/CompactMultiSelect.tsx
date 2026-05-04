@@ -6,9 +6,11 @@ import {
   XIcon,
 } from "lucide-react"
 import * as React from "react"
+import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { cn } from "~/lib/utils"
+import { createLogger } from "~/utils/core/logger"
 
 import { Badge } from "./badge"
 import { Button } from "./button"
@@ -33,6 +35,8 @@ import {
   CommandList,
 } from "./command"
 import { Popover, PopoverContent, PopoverTrigger } from "./popover"
+
+const logger = createLogger("CompactMultiSelect")
 
 export interface CompactMultiSelectOption {
   value: string
@@ -384,6 +388,52 @@ export function CompactMultiSelect({
     [allowCustom, commitCustomValues, disabled, parseCommaStrings],
   )
 
+  const copyChipText = React.useCallback(
+    async (text: string) => {
+      if (typeof navigator === "undefined") return
+      if (!navigator.clipboard?.writeText) {
+        toast.error(t("ui:multiSelect.copyError"))
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(text)
+        toast.success(
+          t("ui:multiSelect.chipCopied", {
+            value: text,
+          }),
+        )
+      } catch (error) {
+        logger.warn("Failed to copy selected chip text", error)
+        toast.error(t("ui:multiSelect.copyError"))
+      }
+    },
+    [t],
+  )
+
+  const handleChipTextClick = React.useCallback(
+    (event: React.MouseEvent<HTMLSpanElement>, text: string) => {
+      event.stopPropagation()
+
+      const selectedText = window.getSelection()?.toString().trim()
+      if (selectedText) return
+
+      void copyChipText(text)
+    },
+    [copyChipText],
+  )
+
+  const handleChipTextKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLSpanElement>, text: string) => {
+      if (event.key !== "Enter" && event.key !== " ") return
+
+      event.preventDefault()
+      event.stopPropagation()
+      void copyChipText(text)
+    },
+    [copyChipText],
+  )
+
   if (displayMode === "chips") {
     const chipsControl = (
       <div className="flex w-full items-center gap-2">
@@ -418,8 +468,19 @@ export function CompactMultiSelect({
                     ? values.map((item: ChipsItem) => (
                         <ComboboxChip key={item.value} showRemove={!disabled}>
                           <span
-                            className="max-w-48 truncate"
+                            className="max-w-48 cursor-copy truncate select-text"
                             title={item.label}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={t("ui:multiSelect.copyChipValue", {
+                              value: item.label,
+                            })}
+                            onClick={(event) =>
+                              handleChipTextClick(event, item.label)
+                            }
+                            onKeyDown={(event) =>
+                              handleChipTextKeyDown(event, item.label)
+                            }
                           >
                             {item.label}
                           </span>
