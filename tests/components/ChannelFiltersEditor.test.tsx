@@ -74,6 +74,26 @@ vi.mock("~/components/ui", async (importOriginal) => {
         ) : null}
       </div>
     ),
+    CompactMultiSelect: ({
+      selected,
+      onChange,
+      placeholder,
+      disabled,
+    }: {
+      selected: string[]
+      onChange: (values: string[]) => void
+      placeholder?: string
+      disabled?: boolean
+    }) => (
+      <button
+        type="button"
+        aria-label={placeholder}
+        disabled={disabled}
+        onClick={() => onChange([...selected, "tool-calling"])}
+      >
+        {selected.join(",")}
+      </button>
+    ),
   }
 })
 
@@ -132,7 +152,11 @@ vi.mock("~/components/ui/select", () => ({
     children: ReactNode
   }) => (
     <select
-      aria-label="filter-action"
+      aria-label={
+        value === "pattern" || value === "probe"
+          ? "filter-kind"
+          : "filter-action"
+      }
       value={value}
       onChange={(event) => onValueChange(event.target.value)}
     >
@@ -211,7 +235,7 @@ describe("ChannelFiltersEditor", () => {
 
     expect(screen.getByText("filters.loading")).toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: "filters.addRule" }),
+      screen.queryByRole("button", { name: "filters.addPatternRule" }),
     ).not.toBeInTheDocument()
     expect(
       screen.queryByText("filters.viewMode.visual"),
@@ -232,9 +256,25 @@ describe("ChannelFiltersEditor", () => {
       screen.getByRole("button", { name: "filters.viewMode.json" }),
     ).toHaveAttribute("data-variant", "ghost")
 
-    await user.click(screen.getByRole("button", { name: "filters.addRule" }))
+    await user.click(
+      screen.getByRole("button", { name: "filters.addPatternRule" }),
+    )
 
-    expect(props.onAddFilter).toHaveBeenCalledTimes(1)
+    expect(props.onAddFilter).toHaveBeenCalledWith("pattern")
+  })
+
+  it("shows unsupported probe messaging in the empty state and disables probe creation", () => {
+    renderEditor({
+      probeRulesSupported: false,
+      probeRulesUnsupportedMessage: "Probe rules are unsupported here.",
+    })
+
+    expect(
+      screen.getByText("Probe rules are unsupported here."),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "filters.addProbeRule" }),
+    ).toBeDisabled()
   })
 
   it("edits and removes a populated visual rule with substring matching", async () => {
@@ -332,9 +372,57 @@ describe("ChannelFiltersEditor", () => {
       screen.getByDisplayValue("Use a stricter regex exclusion"),
     ).toBeInTheDocument()
 
-    await user.click(screen.getByRole("button", { name: "filters.addRule" }))
+    await user.click(
+      screen.getByRole("button", { name: "filters.addPatternRule" }),
+    )
 
-    expect(props.onAddFilter).toHaveBeenCalledTimes(1)
+    expect(props.onAddFilter).toHaveBeenCalledWith("pattern")
+  })
+
+  it("edits probe rule selections without showing credential fields", async () => {
+    const user = userEvent.setup()
+    const { props } = renderEditor({
+      filters: [
+        buildFilter({
+          kind: "probe",
+          probeIds: ["text-generation"],
+          match: "all",
+        }),
+      ],
+    })
+
+    expect(screen.getByText("filters.hints.probesAllPass")).toBeInTheDocument()
+    expect(
+      screen.queryByText("apiKey", { exact: false }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByLabelText("filters.placeholders.probes"))
+
+    expect(props.onFieldChange).toHaveBeenCalledWith("rule-1", "probeIds", [
+      "text-generation",
+      "tool-calling",
+    ])
+  })
+
+  it("shows unsupported probe messaging for saved probe rules and disables the probe picker", () => {
+    renderEditor({
+      probeRulesSupported: false,
+      probeRulesUnsupportedMessage: "Probe rules are unsupported here.",
+      filters: [
+        buildFilter({
+          kind: "probe",
+          probeIds: ["text-generation"],
+          match: "all",
+        }),
+      ],
+    })
+
+    expect(
+      screen.getAllByText("Probe rules are unsupported here.").length,
+    ).toBeGreaterThan(0)
+    expect(
+      screen.getByRole("button", { name: "filters.placeholders.probes" }),
+    ).toBeDisabled()
   })
 
   it("clears a populated visual rule description", async () => {

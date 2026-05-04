@@ -3,9 +3,16 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import ChannelFiltersEditor from "~/components/ChannelFiltersEditor"
+import type { EditableFilterField } from "~/components/ChannelFiltersEditor"
 import { Modal } from "~/components/ui"
 import { Button } from "~/components/ui/button"
+import { normalizeChannelFilters } from "~/services/managedSites/channelModelFilterRules"
+import { resolveApiVerificationTypeForChannelType } from "~/services/models/modelSync/channelModelFilterEvaluator"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
+import {
+  DEFAULT_CHANNEL_MODEL_FILTER_PROBE_IDS,
+  isProbeChannelModelFilterRule,
+} from "~/types/channelModelFilters"
 import { getErrorMessage } from "~/utils/core/error"
 import { safeRandomUUID } from "~/utils/core/identifier"
 
@@ -78,40 +85,87 @@ export default function ChannelFilterDialog({
   if (!channel) {
     return null
   }
+  const probeRulesSupported = Boolean(
+    resolveApiVerificationTypeForChannelType(channel.type),
+  )
 
   const handleFieldChange = (
     filterId: string,
-    field: keyof EditableFilter,
-    value: EditableFilter[typeof field],
+    field: EditableFilterField,
+    value: any,
   ) => {
     setFilters((prev) =>
-      prev.map((filter) =>
-        filter.id === filterId
-          ? {
-              ...filter,
-              [field]: value,
+      prev.map((filter) => {
+        if (filter.id !== filterId) {
+          return filter
+        }
+
+        if (field === "kind") {
+          if (value === "probe") {
+            return {
+              id: filter.id,
+              name: filter.name,
+              description: filter.description,
+              kind: "probe",
+              probeIds: [...DEFAULT_CHANNEL_MODEL_FILTER_PROBE_IDS],
+              match: "all",
+              action: filter.action,
+              enabled: filter.enabled,
+              createdAt: filter.createdAt,
               updatedAt: Date.now(),
             }
-          : filter,
-      ),
+          }
+
+          return {
+            id: filter.id,
+            name: filter.name,
+            description: filter.description,
+            kind: "pattern",
+            pattern: "",
+            isRegex: false,
+            action: filter.action,
+            enabled: filter.enabled,
+            createdAt: filter.createdAt,
+            updatedAt: Date.now(),
+          }
+        }
+
+        return {
+          ...filter,
+          [field]: value,
+          updatedAt: Date.now(),
+        }
+      }),
     )
   }
 
-  const handleAddFilter = () => {
+  const handleAddFilter = (kind: "pattern" | "probe" = "pattern") => {
     const timestamp = Date.now()
+    const base = {
+      id: safeRandomUUID("channel-filter"),
+      name: "",
+      description: "",
+      action: "include" as const,
+      enabled: true,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    }
+
     setFilters((prev) => [
       ...prev,
-      {
-        id: safeRandomUUID("channel-filter"),
-        name: "",
-        description: "",
-        pattern: "",
-        isRegex: false,
-        action: "include",
-        enabled: true,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      },
+      kind === "probe"
+        ? {
+            ...base,
+            kind: "probe",
+            probeIds: [...DEFAULT_CHANNEL_MODEL_FILTER_PROBE_IDS],
+            match: "all",
+          }
+        : {
+            ...base,
+            kind: "pattern",
+            pattern: "",
+            isRegex: false,
+          },
     ])
   }
 
@@ -124,6 +178,13 @@ export default function ChannelFilterDialog({
       if (!filter.name.trim()) {
         return t("filters.messages.validationName")
       }
+      if (isProbeChannelModelFilterRule(filter)) {
+        if (filter.probeIds.length === 0) {
+          return t("filters.messages.validationProbeIds")
+        }
+        continue
+      }
+
       if (!filter.pattern.trim()) {
         return t("filters.messages.validationPattern")
       }
@@ -157,49 +218,14 @@ export default function ChannelFilterDialog({
       throw new Error(t("filters.messages.jsonArrayRequired"))
     }
 
-    const now = Date.now()
-
-    return parsed.map((item, index) => {
+    parsed.forEach((item, index) => {
       if (!item || typeof item !== "object") {
         throw new Error(t("filters.messages.jsonItemNotObject", { index }))
       }
+    })
 
-      const anyItem = item as any
-      const name = typeof anyItem.name === "string" ? anyItem.name.trim() : ""
-      const pattern =
-        typeof anyItem.pattern === "string" ? anyItem.pattern.trim() : ""
-
-      if (!name) {
-        throw new Error(t("filters.messages.jsonMissingName", { index }))
-      }
-
-      if (!pattern) {
-        throw new Error(t("filters.messages.jsonMissingPattern", { index }))
-      }
-
-      return {
-        id:
-          typeof anyItem.id === "string" && anyItem.id.trim()
-            ? anyItem.id.trim()
-            : safeRandomUUID("channel-filter"),
-        name,
-        description:
-          typeof anyItem.description === "string"
-            ? anyItem.description
-            : anyItem.description ?? "",
-        pattern,
-        isRegex: Boolean(anyItem.isRegex),
-        action: anyItem.action === "exclude" ? "exclude" : "include",
-        enabled: anyItem.enabled !== false,
-        createdAt:
-          typeof anyItem.createdAt === "number" && anyItem.createdAt > 0
-            ? anyItem.createdAt
-            : now,
-        updatedAt:
-          typeof anyItem.updatedAt === "number" && anyItem.updatedAt > 0
-            ? anyItem.updatedAt
-            : now,
-      }
+    return normalizeChannelFilters(parsed as any[], {
+      idPrefix: "channel-filter",
     })
   }
 
@@ -226,16 +252,20 @@ export default function ChannelFilterDialog({
     }
     setIsSaving(true)
     try {
-      const payload = rulesToSave.map((filter) => ({
-        ...filter,
-        name: filter.name.trim(),
-        description: filter.description?.trim() || undefined,
-        pattern: filter.pattern.trim(),
-      }))
+      const payload = normalizeChannelFilters(
+        rulesToSave.map((filter) => ({
+          ...filter,
+          name: filter.name.trim(),
+          description: filter.description?.trim() || undefined,
+        })),
+        {
+          idPrefix: "channel-filter",
+        },
+      )
       await saveChannelFilters(channel.id, payload)
-      setFilters(rulesToSave)
+      setFilters(payload)
       try {
-        setJsonText(JSON.stringify(rulesToSave, null, 2))
+        setJsonText(JSON.stringify(payload, null, 2))
       } catch {
         // ignore serialization errors
       }
@@ -285,6 +315,8 @@ export default function ChannelFilterDialog({
         viewMode={viewMode}
         jsonText={jsonText}
         isLoading={isLoading}
+        probeRulesSupported={probeRulesSupported}
+        probeRulesUnsupportedMessage={t("filters.hints.unsupportedChannelType")}
         onAddFilter={handleAddFilter}
         onRemoveFilter={handleRemoveFilter}
         onFieldChange={handleFieldChange}

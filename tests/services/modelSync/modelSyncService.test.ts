@@ -1,14 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { ChannelType } from "~/constants/newApi"
 import { VELOERA } from "~/constants/siteType"
 import { getApiService } from "~/services/apiService"
+import { matchesProbeFilterRule } from "~/services/models/modelSync/channelModelFilterEvaluator"
 import { ModelSyncService } from "~/services/models/modelSync/modelSyncService"
-import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
+import type {
+  ChannelModelFilterRule,
+  ChannelModelPatternFilterRule,
+  ChannelModelProbeFilterRule,
+} from "~/types/channelModelFilters"
 
-const listAllChannelsMock = vi.fn()
-const fetchChannelModelsMock = vi.fn()
-const updateChannelModelsMock = vi.fn()
-const updateChannelModelMappingMock = vi.fn()
+const {
+  listAllChannelsMock,
+  fetchChannelModelsMock,
+  updateChannelModelsMock,
+  updateChannelModelMappingMock,
+  fetchChannelSecretKeyMock,
+  getManagedSiteServiceForTypeMock,
+  runApiVerificationProbeMock,
+} = vi.hoisted(() => ({
+  listAllChannelsMock: vi.fn(),
+  fetchChannelModelsMock: vi.fn(),
+  updateChannelModelsMock: vi.fn(),
+  updateChannelModelMappingMock: vi.fn(),
+  fetchChannelSecretKeyMock: vi.fn(),
+  getManagedSiteServiceForTypeMock: vi.fn(),
+  runApiVerificationProbeMock: vi.fn(),
+}))
 
 vi.mock("~/services/apiService", () => ({
   getApiService: vi.fn(() => ({
@@ -19,10 +38,26 @@ vi.mock("~/services/apiService", () => ({
   })),
 }))
 
+vi.mock("~/services/managedSites/managedSiteService", () => ({
+  getManagedSiteServiceForType: getManagedSiteServiceForTypeMock,
+}))
+
+vi.mock("~/services/verification/aiApiVerification", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("~/services/verification/aiApiVerification")
+    >()
+  return {
+    ...actual,
+    runApiVerificationProbe: runApiVerificationProbeMock,
+  }
+})
+
 const makeFilterRule = (
-  partial: Partial<ChannelModelFilterRule>,
+  partial: Partial<ChannelModelPatternFilterRule>,
 ): ChannelModelFilterRule => ({
   id: partial.id ?? "id",
+  kind: "pattern",
   name: partial.name ?? "rule",
   pattern: partial.pattern ?? "",
   isRegex: partial.isRegex ?? false,
@@ -33,8 +68,33 @@ const makeFilterRule = (
   description: partial.description,
 })
 
+const makeProbeRule = (
+  partial: Partial<ChannelModelProbeFilterRule> = {},
+): ChannelModelProbeFilterRule => ({
+  id: partial.id ?? "probe-rule",
+  kind: "probe",
+  name: partial.name ?? "probe rule",
+  probeIds: partial.probeIds ?? ["text-generation"],
+  match: partial.match ?? "all",
+  action: partial.action ?? "include",
+  enabled: partial.enabled ?? true,
+  createdAt: partial.createdAt ?? Date.now(),
+  updatedAt: partial.updatedAt ?? Date.now(),
+  description: partial.description,
+})
+
 beforeEach(() => {
   vi.clearAllMocks()
+  getManagedSiteServiceForTypeMock.mockReturnValue({
+    fetchChannelSecretKey: fetchChannelSecretKeyMock,
+  })
+  fetchChannelSecretKeyMock.mockResolvedValue("sk-resolved-channel-key")
+  runApiVerificationProbeMock.mockResolvedValue({
+    id: "text-generation",
+    status: "pass",
+    latencyMs: 1,
+    summary: "ok",
+  })
 })
 
 describe("ModelSyncService - allowed model filtering", () => {
@@ -117,17 +177,17 @@ describe("ModelSyncService - global and channel filters", () => {
   const callApplyFilters = (
     rules: ChannelModelFilterRule[] | null | undefined,
     models: string[],
-  ): string[] => {
+  ): Promise<string[]> => {
     const service = new ModelSyncService("https://example.com", "token")
     return (service as any).applyFilters(rules, models)
   }
 
-  it("returns normalized models when no filters are provided", () => {
-    const result = callApplyFilters(undefined, [" gpt-4o ", "gpt-4o", ""])
+  it("returns normalized models when no filters are provided", async () => {
+    const result = await callApplyFilters(undefined, [" gpt-4o ", "gpt-4o", ""])
     expect(result).toEqual(["gpt-4o"])
   })
 
-  it("applies include-then-exclude logic correctly", () => {
+  it("applies include-then-exclude logic correctly", async () => {
     const rules: ChannelModelFilterRule[] = [
       makeFilterRule({
         id: "include-openai",
@@ -145,11 +205,11 @@ describe("ModelSyncService - global and channel filters", () => {
       }),
     ]
 
-    const result = callApplyFilters(rules, baseModels)
+    const result = await callApplyFilters(rules, baseModels)
     expect(result).toEqual(["gpt-4o"])
   })
 
-  it("supports regex patterns in filters", () => {
+  it("supports regex patterns in filters", async () => {
     const rules: ChannelModelFilterRule[] = [
       makeFilterRule({
         id: "include-gpt",
@@ -160,11 +220,11 @@ describe("ModelSyncService - global and channel filters", () => {
       }),
     ]
 
-    const result = callApplyFilters(rules, baseModels)
+    const result = await callApplyFilters(rules, baseModels)
     expect(result.sort()).toEqual(["gpt-4o", "gpt-4o-mini"].sort())
   })
 
-  it("returns an empty result when regex filters are invalid", () => {
+  it("returns an empty result when regex filters are invalid", async () => {
     const rules: ChannelModelFilterRule[] = [
       makeFilterRule({
         id: "broken",
@@ -174,7 +234,7 @@ describe("ModelSyncService - global and channel filters", () => {
       }),
     ]
 
-    const result = callApplyFilters(rules, baseModels)
+    const result = await callApplyFilters(rules, baseModels)
     expect(result).toEqual([])
   })
 })
@@ -357,6 +417,393 @@ describe("ModelSyncService - channel execution", () => {
       message: "Unknown error",
       oldModels: ["gpt-4o"],
     })
+  })
+})
+
+describe("ModelSyncService - probe-backed filters", () => {
+  it("passes channel credentials and model ids to selected probes", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce(["model-a", "model-b"])
+    runApiVerificationProbeMock.mockImplementation(async ({ modelId }) => ({
+      id: "text-generation",
+      status: modelId === "model-a" ? "pass" : "fail",
+      latencyMs: 1,
+      summary: "ok",
+    }))
+
+    const service = new ModelSyncService(
+      "https://managed.example.com",
+      "admin-token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      [makeProbeRule()],
+    )
+    const channel = {
+      id: 77,
+      name: "Probe Channel",
+      type: ChannelType.OpenAI,
+      base_url: "https://channel.example.com",
+      key: "sk-channel-key",
+      models: "model-a,model-b",
+    } as any
+
+    const result = await service.runForChannel(channel, 0)
+
+    expect(runApiVerificationProbeMock).toHaveBeenCalledWith({
+      baseUrl: "https://channel.example.com",
+      apiKey: "sk-channel-key",
+      apiType: "openai-compatible",
+      modelId: "model-a",
+      probeId: "text-generation",
+      abortSignal: expect.any(AbortSignal),
+    })
+    expect(runApiVerificationProbeMock).toHaveBeenCalledWith({
+      baseUrl: "https://channel.example.com",
+      apiKey: "sk-channel-key",
+      apiType: "openai-compatible",
+      modelId: "model-b",
+      probeId: "text-generation",
+      abortSignal: expect.any(AbortSignal),
+    })
+    expect(updateChannelModelsMock).toHaveBeenCalledWith(
+      expect.anything(),
+      77,
+      "model-a",
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      newModels: ["model-a"],
+    })
+  })
+
+  it("resolves hidden channel keys through the managed-site provider", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce(["model-a"])
+
+    const service = new ModelSyncService(
+      "https://managed.example.com",
+      "admin-token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      [makeProbeRule()],
+    )
+    const channel = {
+      id: 78,
+      name: "Hidden Key",
+      type: ChannelType.OpenAI,
+      base_url: "https://channel.example.com",
+      key: "",
+      models: "",
+    } as any
+
+    await service.runForChannel(channel, 0)
+
+    expect(fetchChannelSecretKeyMock).toHaveBeenCalledWith(
+      "https://managed.example.com",
+      "admin-token",
+      "1",
+      78,
+    )
+    expect(runApiVerificationProbeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKey: "sk-resolved-channel-key",
+        modelId: "model-a",
+        abortSignal: expect.any(AbortSignal),
+      }),
+    )
+  })
+
+  it("caches duplicate probe checks across global and channel rules", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce(["model-a", "model-b"])
+
+    const duplicateRule = makeProbeRule({ id: "duplicate" })
+    const service = new ModelSyncService(
+      "https://managed.example.com",
+      "admin-token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      [duplicateRule],
+    )
+    service.setChannelConfigs({
+      79: {
+        modelFilterSettings: {
+          rules: [makeProbeRule({ id: "channel-duplicate" })],
+        },
+      },
+    } as any)
+
+    const channel = {
+      id: 79,
+      name: "Cached",
+      type: ChannelType.OpenAI,
+      base_url: "https://channel.example.com",
+      key: "sk-channel-key",
+      models: "",
+    } as any
+
+    await service.runForChannel(channel, 0)
+
+    expect(runApiVerificationProbeMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("includes a model when any selected probe passes under match:any", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce(["model-a"])
+    runApiVerificationProbeMock.mockImplementation(
+      async ({ probeId }: { probeId: string }) => ({
+        id: probeId,
+        status: probeId === "text-generation" ? "pass" : "fail",
+        latencyMs: 1,
+        summary: "ok",
+      }),
+    )
+
+    const service = new ModelSyncService(
+      "https://managed.example.com",
+      "admin-token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      [
+        makeProbeRule({
+          probeIds: ["text-generation", "tool-calling"],
+          match: "any",
+        }),
+      ],
+    )
+    const channel = {
+      id: 99,
+      name: "Any Mode",
+      type: ChannelType.OpenAI,
+      base_url: "https://channel.example.com",
+      key: "sk-key",
+      models: "",
+    } as any
+
+    const result = await service.runForChannel(channel, 0)
+
+    expect(result).toMatchObject({
+      ok: true,
+      newModels: ["model-a"],
+    })
+    expect(updateChannelModelsMock).toHaveBeenCalledWith(
+      expect.anything(),
+      99,
+      "model-a",
+    )
+  })
+
+  it("marks a model as unmatched when probe execution throws", async () => {
+    const context = {
+      channel: {
+        id: 92,
+        type: ChannelType.OpenAI,
+        base_url: "https://channel.example.com",
+        key: "sk-channel-key",
+      },
+      siteType: VELOERA,
+      managedSiteBaseUrl: "https://managed.example.com",
+      adminToken: "admin-token",
+      cache: new Map<string, boolean>(),
+    } as any
+    runApiVerificationProbeMock.mockRejectedValueOnce(
+      new Error("probe failed with sk-channel-key"),
+    )
+
+    await expect(
+      matchesProbeFilterRule(makeProbeRule(), "model-a", context),
+    ).resolves.toBe(false)
+
+    expect(context.cache.size).toBe(1)
+  })
+
+  it("rejects probe filtering when the channel base URL is missing", async () => {
+    const context = {
+      channel: {
+        id: 93,
+        type: ChannelType.OpenAI,
+        base_url: "   ",
+        key: "sk-channel-key",
+      },
+      siteType: VELOERA,
+      managedSiteBaseUrl: "https://managed.example.com",
+      adminToken: "admin-token",
+      cache: new Map<string, boolean>(),
+    } as any
+
+    await expect(
+      matchesProbeFilterRule(makeProbeRule(), "model-a", context),
+    ).rejects.toMatchObject({
+      reason: "base-url-missing",
+      message:
+        "Probe filtering could not run because the channel base URL is missing.",
+    })
+  })
+
+  it("maps supported string and numeric channel types to verification api types", async () => {
+    const { resolveApiVerificationTypeForChannelType } = await import(
+      "~/services/models/modelSync/channelModelFilterEvaluator"
+    )
+
+    expect(
+      resolveApiVerificationTypeForChannelType(String(ChannelType.Anthropic)),
+    ).toBe("anthropic")
+    expect(resolveApiVerificationTypeForChannelType(ChannelType.PaLM)).toBe(
+      "google",
+    )
+    expect(resolveApiVerificationTypeForChannelType("anthropic")).toBe(
+      "anthropic",
+    )
+    expect(resolveApiVerificationTypeForChannelType("gemini")).toBe("google")
+  })
+
+  it("does not update models when probe filtering cannot resolve a hidden key", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce(["model-a"])
+    getManagedSiteServiceForTypeMock.mockReturnValue({})
+
+    const service = new ModelSyncService(
+      "https://managed.example.com",
+      "admin-token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      [makeProbeRule()],
+    )
+    const channel = {
+      id: 80,
+      name: "Unsupported Provider",
+      type: ChannelType.OpenAI,
+      base_url: "https://channel.example.com",
+      key: "",
+      models: "model-a",
+    } as any
+
+    const result = await service.runForChannel(channel, 0)
+
+    expect(result).toMatchObject({
+      ok: false,
+      oldModels: ["model-a"],
+    })
+    expect(updateChannelModelsMock).not.toHaveBeenCalled()
+    expect(runApiVerificationProbeMock).not.toHaveBeenCalled()
+  })
+
+  it("does not update models for unsupported channel types", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce(["model-a"])
+
+    const service = new ModelSyncService(
+      "https://managed.example.com",
+      "admin-token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      [makeProbeRule()],
+    )
+    const channel = {
+      id: 81,
+      name: "Unsupported Type",
+      type: ChannelType.Midjourney,
+      base_url: "https://channel.example.com",
+      key: "sk-channel-key",
+      models: "model-a",
+    } as any
+
+    const result = await service.runForChannel(channel, 0)
+
+    expect(result).toMatchObject({
+      ok: false,
+      message: "Probe filtering is unsupported for this channel type.",
+    })
+    expect(updateChannelModelsMock).not.toHaveBeenCalled()
+    expect(runApiVerificationProbeMock).not.toHaveBeenCalled()
+  })
+
+  it("keeps key-resolution failure messages secret-safe", async () => {
+    fetchChannelModelsMock.mockResolvedValueOnce(["model-a"])
+    fetchChannelSecretKeyMock.mockRejectedValueOnce(
+      new Error("failed with admin-token sk-hidden-channel-key 123456"),
+    )
+
+    const service = new ModelSyncService(
+      "https://managed.example.com",
+      "admin-token",
+      "1",
+      undefined,
+      undefined,
+      undefined,
+      [makeProbeRule()],
+    )
+    const channel = {
+      id: 82,
+      name: "Secret Safe",
+      type: ChannelType.OpenAI,
+      base_url: "https://channel.example.com",
+      key: "",
+      models: "model-a",
+    } as any
+
+    const result = await service.runForChannel(channel, 0)
+
+    expect(result.message).not.toContain("admin-token")
+    expect(result.message).not.toContain("sk-hidden-channel-key")
+    expect(result.message).not.toContain("123456")
+    expect(updateChannelModelsMock).not.toHaveBeenCalled()
+  })
+
+  it("resolves a hidden key only once across repeated probe evaluations", async () => {
+    const context = {
+      channel: {
+        id: 90,
+        type: ChannelType.OpenAI,
+        base_url: "https://channel.example.com",
+        key: "",
+      },
+      siteType: VELOERA,
+      managedSiteBaseUrl: "https://managed.example.com",
+      adminToken: "admin-token",
+      userId: "1",
+      cache: new Map<string, boolean>(),
+    } as any
+
+    await matchesProbeFilterRule(makeProbeRule(), "model-a", context)
+    await matchesProbeFilterRule(
+      makeProbeRule({ id: "other-rule" }),
+      "model-b",
+      context,
+    )
+
+    expect(fetchChannelSecretKeyMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("treats empty probe rules as non-matches", async () => {
+    const context = {
+      channel: {
+        id: 91,
+        type: ChannelType.OpenAI,
+        base_url: "https://channel.example.com",
+        key: "sk-channel-key",
+      },
+      siteType: VELOERA,
+      managedSiteBaseUrl: "https://managed.example.com",
+      adminToken: "admin-token",
+      cache: new Map<string, boolean>(),
+    } as any
+
+    await expect(
+      matchesProbeFilterRule(
+        makeProbeRule({ probeIds: [] }),
+        "model-a",
+        context,
+      ),
+    ).resolves.toBe(false)
+
+    expect(runApiVerificationProbeMock).not.toHaveBeenCalled()
   })
 })
 
