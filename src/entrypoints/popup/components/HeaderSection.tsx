@@ -13,7 +13,7 @@ import iconImage from "~/assets/icon.png"
 import { useUpdateLogDialogContext } from "~/components/dialogs/UpdateLogDialog"
 import { FeedbackDropdownMenu } from "~/components/FeedbackDropdownMenu"
 import Tooltip from "~/components/Tooltip"
-import { BodySmall, Caption, IconButton } from "~/components/ui"
+import { BodySmall, IconButton } from "~/components/ui"
 import { VersionBadge } from "~/components/VersionBadge"
 import { COLORS } from "~/constants/designTokens"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
@@ -162,9 +162,6 @@ export default function HeaderSection({
             {/* Current extension version (links to the changelog). */}
             <VersionBadge size="sm" className="shrink-0" />
           </div>
-          <Caption className="xs:block hidden truncate">
-            {t("ui:app.description")}
-          </Caption>
         </div>
       </div>
 

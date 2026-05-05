@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import iconImage from "~/assets/icon.png"
 import { FeedbackDropdownMenu } from "~/components/FeedbackDropdownMenu"
 import { LanguageSwitcher } from "~/components/LanguageSwitcher"
-import { BodySmall, Heading5, IconButton } from "~/components/ui"
+import { Heading5, IconButton } from "~/components/ui"
 import { VersionBadge } from "~/components/VersionBadge"
 import { Z_INDEX } from "~/constants/designTokens"
 import { cn } from "~/lib/utils"
@@ -86,9 +86,6 @@ function Header({
                 {/* Current extension version (links to the changelog). */}
                 <VersionBadge className="text-xs" />
               </div>
-              <BodySmall className="dark:text-dark-text-tertiary hidden text-xs text-gray-500 sm:block sm:text-sm">
-                {t("app.description")}
-              </BodySmall>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
