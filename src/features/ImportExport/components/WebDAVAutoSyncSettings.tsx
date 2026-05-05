@@ -33,6 +33,8 @@ import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { formatTimestamp } from "~/utils/core/formatters"
 import { createLogger } from "~/utils/core/logger"
 
+import { WEBDAV_AUTO_SYNC_TARGET_IDS } from "../searchTargets"
+
 /**
  * Unified logger scoped to WebDAV auto-sync settings UI.
  */
@@ -191,7 +193,7 @@ export default function WebDAVAutoSyncSettings() {
   }
 
   return (
-    <Card padding="none">
+    <Card id={WEBDAV_AUTO_SYNC_TARGET_IDS.root} padding="none">
       <CardHeader>
         <div className="mb-1 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -209,7 +211,10 @@ export default function WebDAVAutoSyncSettings() {
           label={t("webdav.autoSync.enable")}
           description={t("webdav.autoSync.enableDesc")}
         >
-          <div className="flex items-center gap-2">
+          <div
+            id={WEBDAV_AUTO_SYNC_TARGET_IDS.enable}
+            className="flex items-center gap-2"
+          >
             <Switch
               checked={autoSyncEnabled}
               onChange={(checked) =>
@@ -235,6 +240,7 @@ export default function WebDAVAutoSyncSettings() {
               description={t("webdav.autoSync.intervalDesc")}
             >
               <Input
+                id={WEBDAV_AUTO_SYNC_TARGET_IDS.interval}
                 type="number"
                 min={60}
                 max={86400}
@@ -266,10 +272,10 @@ export default function WebDAVAutoSyncSettings() {
                   setLocalConfig((prev) => ({
                     ...prev,
                     syncStrategy: value as WebDAVSettings["syncStrategy"],
-                  }))
-                }
-              >
-                <SelectTrigger>
+                }))
+              }
+            >
+                <SelectTrigger id={WEBDAV_AUTO_SYNC_TARGET_IDS.strategy}>
                   <SelectValue placeholder={t("webdav.autoSync.strategy")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -311,6 +317,7 @@ export default function WebDAVAutoSyncSettings() {
         {/* Actions */}
         <div className="flex gap-3">
           <Button
+            id={WEBDAV_AUTO_SYNC_TARGET_IDS.saveSettings}
             onClick={handleSaveSettings}
             disabled={savingSettings}
             loading={savingSettings}
@@ -324,6 +331,7 @@ export default function WebDAVAutoSyncSettings() {
           </Button>
 
           <Button
+            id={WEBDAV_AUTO_SYNC_TARGET_IDS.syncNow}
             onClick={handleSyncNow}
             disabled={syncing || isSyncing}
             loading={syncing || isSyncing}

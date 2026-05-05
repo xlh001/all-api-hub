@@ -19,6 +19,8 @@ import {
 } from "~/services/preferences/userPreferences"
 import { createLogger } from "~/utils/core/logger"
 
+import { WEB_AI_API_CHECK_TARGET_IDS } from "./searchTargets"
+
 /**
  * Unified logger scoped to the Basic Settings Web AI API Check section.
  */
@@ -120,6 +122,7 @@ export default function WebAiApiCheckSettings() {
       <Card padding="none">
         <CardList>
           <CardItem
+            id={WEB_AI_API_CHECK_TARGET_IDS.contextMenu}
             title={t("webAiApiCheck:settings.contextMenu.enable")}
             description={t("webAiApiCheck:settings.contextMenu.enableDesc")}
             rightContent={
@@ -138,6 +141,7 @@ export default function WebAiApiCheckSettings() {
             }
           />
           <CardItem
+            id={WEB_AI_API_CHECK_TARGET_IDS.autoDetect}
             title={t("webAiApiCheck:settings.autoDetect.enable")}
             description={t("webAiApiCheck:settings.autoDetect.enableDesc")}
             rightContent={
@@ -170,6 +174,7 @@ export default function WebAiApiCheckSettings() {
             </div>
 
             <Textarea
+              id={WEB_AI_API_CHECK_TARGET_IDS.whitelistPatterns}
               value={patternsDraft}
               onChange={(event) => setPatternsDraft(event.target.value)}
               placeholder={t(
@@ -205,6 +210,7 @@ export default function WebAiApiCheckSettings() {
 
             <div className="flex justify-end">
               <Button
+                id={WEB_AI_API_CHECK_TARGET_IDS.savePatterns}
                 type="button"
                 variant="outline"
                 disabled={isSaving}
