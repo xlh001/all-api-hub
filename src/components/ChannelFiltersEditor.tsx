@@ -268,6 +268,7 @@ export default function ChannelFiltersEditor(props: ChannelFiltersEditorProps) {
                           onChange={(value) =>
                             onFieldChange(filter.id, "probeIds", value)
                           }
+                          bulkActionsMinOptions={5}
                           placeholder={t("filters.placeholders.probes")}
                           searchPlaceholder={t(
                             "filters.placeholders.probeSearch",

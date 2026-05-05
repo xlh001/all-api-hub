@@ -280,6 +280,33 @@ describe("CompactMultiSelect", () => {
     }
   })
 
+  it("hides chips bulk action buttons when the option count is below the configured threshold", async () => {
+    renderCompact(
+      <CompactMultiSelect
+        displayMode="chips"
+        options={[
+          { value: "a", label: "Alpha" },
+          { value: "b", label: "Beta" },
+          { value: "c", label: "Gamma" },
+          { value: "d", label: "Delta" },
+        ]}
+        selected={["a"]}
+        onChange={vi.fn()}
+        bulkActionsMinOptions={5}
+      />,
+    )
+
+    expect(
+      screen.queryByTestId("compact-multiselect-bulk-actions"),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "ui:multiSelect.selectAll" }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "ui:multiSelect.cancelSelected" }),
+    ).not.toBeInTheDocument()
+  })
+
   it("splits pasted custom values on newlines when allowCustom is enabled", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()

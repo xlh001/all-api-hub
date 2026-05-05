@@ -85,6 +85,11 @@ export interface CompactMultiSelectProps
    * Trigger button size. Defaults to "sm" to keep the control compact.
    */
   size?: React.ComponentProps<typeof Button>["size"]
+  /**
+   * Minimum selectable option count required before rendering chips-mode bulk action buttons.
+   * Defaults to `0` to preserve the current always-visible behavior.
+   */
+  bulkActionsMinOptions?: number
 }
 
 /**
@@ -110,6 +115,7 @@ export function CompactMultiSelect({
   searchPlaceholder,
   emptyMessage,
   size = "sm",
+  bulkActionsMinOptions = 0,
   className,
   ...buttonProps
 }: CompactMultiSelectProps) {
@@ -162,6 +168,7 @@ export function CompactMultiSelect({
 
   const hasSelection = selected.length > 0
   const selectAllButtonLabel = t("ui:multiSelect.selectAll")
+  const showBulkActions = selectableOptionValues.length >= bulkActionsMinOptions
 
   const triggerText = React.useMemo(() => {
     if (!hasSelection) return localizedPlaceholder
@@ -516,46 +523,48 @@ export function CompactMultiSelect({
           </ComboboxContent>
         </Combobox>
 
-        <div
-          ref={actionsRef}
-          data-testid="compact-multiselect-bulk-actions"
-          data-orientation={actionsOrientation}
-          className={cn(
-            "shrink-0",
-            actionsOrientation === "vertical"
-              ? "flex flex-col items-start gap-2 self-stretch"
-              : "flex flex-row items-center gap-2",
-          )}
-        >
-          <Button
-            type="button"
-            variant="outline"
-            size={clearButtonSize}
-            onClick={selectAllSelectableOptions}
-            aria-label={selectAllButtonLabel}
-            title={selectAllButtonLabel}
-            disabled={
-              disabled ||
-              selectableOptionValues.length === 0 ||
-              allSelectableOptionsSelected
-            }
-            className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80"
+        {showBulkActions ? (
+          <div
+            ref={actionsRef}
+            data-testid="compact-multiselect-bulk-actions"
+            data-orientation={actionsOrientation}
+            className={cn(
+              "shrink-0",
+              actionsOrientation === "vertical"
+                ? "flex flex-col items-start gap-2 self-stretch"
+                : "flex flex-row items-center gap-2",
+            )}
           >
-            <ListChecksIcon className="size-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size={clearButtonSize}
-            onClick={clearSelection}
-            aria-label={t("multiSelect.cancelSelected")}
-            title={t("multiSelect.cancelSelected")}
-            disabled={disabled || !hasSelection || !clearable}
-            className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80"
-          >
-            <ListXIcon className="size-4" />
-          </Button>
-        </div>
+            <Button
+              type="button"
+              variant="outline"
+              size={clearButtonSize}
+              onClick={selectAllSelectableOptions}
+              aria-label={selectAllButtonLabel}
+              title={selectAllButtonLabel}
+              disabled={
+                disabled ||
+                selectableOptionValues.length === 0 ||
+                allSelectableOptionsSelected
+              }
+              className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80"
+            >
+              <ListChecksIcon className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size={clearButtonSize}
+              onClick={clearSelection}
+              aria-label={t("multiSelect.cancelSelected")}
+              title={t("multiSelect.cancelSelected")}
+              disabled={disabled || !hasSelection || !clearable}
+              className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary dark:hover:bg-dark-bg-secondary/80"
+            >
+              <ListXIcon className="size-4" />
+            </Button>
+          </div>
+        ) : null}
       </div>
     )
 
