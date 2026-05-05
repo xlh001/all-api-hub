@@ -1,4 +1,7 @@
-import { BugAntIcon } from "@heroicons/react/24/outline"
+import {
+  AdjustmentsHorizontalIcon,
+  CommandLineIcon,
+} from "@heroicons/react/24/outline"
 import type { TFunction } from "i18next"
 import { useTranslation } from "react-i18next"
 
@@ -70,7 +73,7 @@ export default function LoggingSettings() {
         <CardList>
           <CardItem
             icon={
-              <BugAntIcon className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+              <CommandLineIcon className="h-5 w-5 text-slate-600 dark:text-slate-300" />
             }
             title={t("logging.consoleEnabled")}
             description={t("logging.consoleEnabledDesc")}
@@ -84,7 +87,7 @@ export default function LoggingSettings() {
 
           <CardItem
             icon={
-              <BugAntIcon className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+              <AdjustmentsHorizontalIcon className="h-5 w-5 text-slate-600 dark:text-slate-300" />
             }
             title={t("logging.minLevel")}
             description={t("logging.minLevelDesc")}
