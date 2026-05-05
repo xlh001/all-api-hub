@@ -97,6 +97,7 @@ vi.mock("~/components/ChannelFiltersEditor", () => ({
     jsonText,
     probeRulesSupported,
     onAddFilter,
+    onMoveFilter,
     onRemoveFilter,
     onFieldChange,
     onChangeJsonText,
@@ -111,6 +112,9 @@ vi.mock("~/components/ChannelFiltersEditor", () => ({
       </div>
       <button onClick={onAddFilter}>add-filter</button>
       <button onClick={() => onAddFilter("probe")}>add-probe-filter</button>
+      <button onClick={() => filters[0] && onMoveFilter(filters[0].id, "down")}>
+        move-first-down
+      </button>
       <button onClick={() => filters[0] && onRemoveFilter(filters[0].id)}>
         remove-filter
       </button>
@@ -1050,6 +1054,84 @@ describe("ManagedSiteModelSyncSettings", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     })
+  })
+
+  it("persists reordered global visual filters in user-defined order", async () => {
+    mockedUseUserPreferencesContext.mockReturnValue(
+      createContextValue({
+        preferences: {
+          managedSiteModelSync: {
+            enabled: true,
+            interval: 24 * 60 * 60 * 1000,
+            concurrency: 2,
+            maxRetries: 2,
+            rateLimit: { requestsPerMinute: 20, burst: 5 },
+            allowedModels: ["existing-model"],
+            globalChannelModelFilters: [
+              {
+                id: "rule-1",
+                name: "First",
+                pattern: "^first",
+                isRegex: true,
+                action: "include",
+                enabled: true,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+              {
+                id: "rule-2",
+                name: "Second",
+                pattern: "^second",
+                isRegex: true,
+                action: "exclude",
+                enabled: true,
+                createdAt: 2,
+                updatedAt: 2,
+              },
+            ],
+          },
+        },
+      }),
+    )
+
+    render(<ManagedSiteModelSyncSettings />)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteModelSync:settings.globalChannelModelFiltersButton",
+      }),
+    )
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+    expect(screen.getByTestId("filter-count")).toHaveTextContent("2")
+
+    fireEvent.click(screen.getByRole("button", { name: "move-first-down" }))
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockUpdateNewApiModelSync).toHaveBeenCalledWith({
+        globalChannelModelFilters: [
+          expect.objectContaining({
+            id: "rule-2",
+            name: "Second",
+            pattern: "^second",
+          }),
+          expect.objectContaining({
+            id: "rule-1",
+            name: "First",
+            pattern: "^first",
+          }),
+        ],
+      })
+    })
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "managedSiteChannels:filters.messages.saved",
+    )
   })
 
   it("keeps the dialog open when close is requested during an in-flight save", async () => {

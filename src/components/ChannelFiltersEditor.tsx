@@ -1,4 +1,11 @@
-import { Loader2, Plus, Settings2, Trash2 } from "lucide-react"
+import {
+  ArrowDown,
+  ArrowUp,
+  Loader2,
+  Plus,
+  Settings2,
+  Trash2,
+} from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { CompactMultiSelect, Input, Textarea } from "~/components/ui"
@@ -36,6 +43,7 @@ interface ChannelFiltersEditorProps {
   probeRulesSupported?: boolean
   probeRulesUnsupportedMessage?: string
   onAddFilter: (kind?: ChannelModelFilterRuleKind) => void
+  onMoveFilter: (id: string, direction: "up" | "down") => void
   onRemoveFilter: (id: string) => void
   onFieldChange: (id: string, field: EditableFilterField, value: any) => void
   onClickViewVisual: () => void
@@ -68,6 +76,7 @@ export default function ChannelFiltersEditor(props: ChannelFiltersEditorProps) {
     probeRulesSupported = true,
     probeRulesUnsupportedMessage,
     onAddFilter,
+    onMoveFilter,
     onRemoveFilter,
     onFieldChange,
     onClickViewVisual,
@@ -147,7 +156,7 @@ export default function ChannelFiltersEditor(props: ChannelFiltersEditorProps) {
           </div>
         ) : (
           <>
-            {filters.map((filter) => (
+            {filters.map((filter, index) => (
               <div
                 key={filter.id}
                 className="border-border space-y-5 rounded-lg border p-5"
@@ -182,7 +191,29 @@ export default function ChannelFiltersEditor(props: ChannelFiltersEditorProps) {
                       />
                     </div>
                   </div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => onMoveFilter(filter.id, "up")}
+                      aria-label={t("filters.actions.moveUp")}
+                      disabled={index === 0}
+                      className="text-muted-foreground"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => onMoveFilter(filter.id, "down")}
+                      aria-label={t("filters.actions.moveDown")}
+                      disabled={index === filters.length - 1}
+                      className="text-muted-foreground"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
                     <Button
                       type="button"
                       size="icon"

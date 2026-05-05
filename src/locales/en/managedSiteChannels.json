@@ -23,6 +23,8 @@
     },
     "actions": {
       "cancel": "Cancel",
+      "moveDown": "Move filter down",
+      "moveUp": "Move filter up",
       "save": "Save filters"
     },
     "addPatternRule": "Add pattern rule",

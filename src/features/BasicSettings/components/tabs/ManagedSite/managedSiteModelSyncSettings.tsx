@@ -44,6 +44,29 @@ type UserManagedSiteModelSyncConfig = NonNullable<
 type EditableFilter = ChannelModelFilterRule
 
 /**
+ *
+ */
+function moveFilterById(
+  filters: EditableFilter[],
+  filterId: string,
+  direction: "up" | "down",
+) {
+  const index = filters.findIndex((filter) => filter.id === filterId)
+  if (index < 0) {
+    return filters
+  }
+
+  const targetIndex = direction === "up" ? index - 1 : index + 1
+  if (targetIndex < 0 || targetIndex >= filters.length) {
+    return filters
+  }
+
+  const next = [...filters]
+  ;[next[index], next[targetIndex]] = [next[targetIndex], next[index]]
+  return next
+}
+
+/**
  * Unified logger scoped to the Managed Site model sync settings section.
  */
 const logger = createLogger("ManagedSiteModelSyncSettings")
@@ -316,6 +339,12 @@ export default function ManagedSiteModelSyncSettings() {
   const handleRemoveGlobalFilter = (id: string) => {
     setGlobalChannelModelFiltersDraft((prev) =>
       prev.filter((filter) => filter.id !== id),
+    )
+  }
+
+  const handleMoveGlobalFilter = (id: string, direction: "up" | "down") => {
+    setGlobalChannelModelFiltersDraft((prev) =>
+      moveFilterById(prev, id, direction),
     )
   }
 
@@ -706,6 +735,7 @@ export default function ManagedSiteModelSyncSettings() {
           jsonText={jsonText}
           isLoading={false}
           onAddFilter={handleAddGlobalFilter}
+          onMoveFilter={handleMoveGlobalFilter}
           onRemoveFilter={handleRemoveGlobalFilter}
           onFieldChange={handleGlobalFilterFieldChange}
           onClickViewVisual={() => {

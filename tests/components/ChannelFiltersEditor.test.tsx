@@ -215,6 +215,7 @@ const renderEditor = (overrides: Record<string, unknown> = {}) => {
     jsonText: "",
     isLoading: false,
     onAddFilter: vi.fn(),
+    onMoveFilter: vi.fn(),
     onRemoveFilter: vi.fn(),
     onFieldChange: vi.fn(),
     onClickViewVisual: vi.fn(),
@@ -290,6 +291,13 @@ describe("ChannelFiltersEditor", () => {
     await user.click(screen.getByLabelText("filter-enabled-rule-1"))
     expect(props.onFieldChange).toHaveBeenCalledWith("rule-1", "enabled", false)
 
+    expect(
+      screen.getByRole("button", { name: "filters.actions.moveUp" }),
+    ).toBeDisabled()
+    expect(
+      screen.getByRole("button", { name: "filters.actions.moveDown" }),
+    ).toBeDisabled()
+
     fireEvent.change(screen.getByPlaceholderText("filters.placeholders.name"), {
       target: { value: "Block Anthropic" },
     })
@@ -351,6 +359,38 @@ describe("ChannelFiltersEditor", () => {
       screen.getByRole("button", { name: "filters.labels.delete" }),
     )
     expect(props.onRemoveFilter).toHaveBeenCalledWith("rule-1")
+  })
+
+  it("renders move controls and propagates reorder actions for multi-rule lists", async () => {
+    const user = userEvent.setup()
+    const { props } = renderEditor({
+      filters: [
+        buildFilter(),
+        buildFilter({
+          id: "rule-2",
+          name: "Block Claude",
+          pattern: "claude",
+        }),
+      ],
+    })
+
+    const moveUpButtons = screen.getAllByRole("button", {
+      name: "filters.actions.moveUp",
+    })
+    const moveDownButtons = screen.getAllByRole("button", {
+      name: "filters.actions.moveDown",
+    })
+
+    expect(moveUpButtons[0]).toBeDisabled()
+    expect(moveDownButtons[0]).not.toBeDisabled()
+    expect(moveUpButtons[1]).not.toBeDisabled()
+    expect(moveDownButtons[1]).toBeDisabled()
+
+    await user.click(moveDownButtons[0])
+    await user.click(moveUpButtons[1])
+
+    expect(props.onMoveFilter).toHaveBeenNthCalledWith(1, "rule-1", "down")
+    expect(props.onMoveFilter).toHaveBeenNthCalledWith(2, "rule-2", "up")
   })
 
   it("renders disabled regex rules and keeps add-rule actions available", async () => {

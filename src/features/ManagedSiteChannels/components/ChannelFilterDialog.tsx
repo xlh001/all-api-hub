@@ -31,6 +31,29 @@ interface ChannelFilterDialogProps {
 type EditableFilter = ChannelModelFilterRule
 
 /**
+ *
+ */
+function moveFilterById(
+  filters: EditableFilter[],
+  filterId: string,
+  direction: "up" | "down",
+) {
+  const index = filters.findIndex((filter) => filter.id === filterId)
+  if (index < 0) {
+    return filters
+  }
+
+  const targetIndex = direction === "up" ? index - 1 : index + 1
+  if (targetIndex < 0 || targetIndex >= filters.length) {
+    return filters
+  }
+
+  const next = [...filters]
+  ;[next[index], next[targetIndex]] = [next[targetIndex], next[index]]
+  return next
+}
+
+/**
  * Dialog for editing channel model filters via visual builder or raw JSON input.
  */
 export default function ChannelFilterDialog({
@@ -171,6 +194,10 @@ export default function ChannelFilterDialog({
 
   const handleRemoveFilter = (filterId: string) => {
     setFilters((prev) => prev.filter((filter) => filter.id !== filterId))
+  }
+
+  const handleMoveFilter = (filterId: string, direction: "up" | "down") => {
+    setFilters((prev) => moveFilterById(prev, filterId, direction))
   }
 
   const validateFilters = (rules: EditableFilter[]) => {
@@ -318,6 +345,7 @@ export default function ChannelFilterDialog({
         probeRulesSupported={probeRulesSupported}
         probeRulesUnsupportedMessage={t("filters.hints.unsupportedChannelType")}
         onAddFilter={handleAddFilter}
+        onMoveFilter={handleMoveFilter}
         onRemoveFilter={handleRemoveFilter}
         onFieldChange={handleFieldChange}
         onClickViewVisual={() => {

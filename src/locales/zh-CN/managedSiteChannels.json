@@ -23,6 +23,8 @@
     },
     "actions": {
       "cancel": "取消",
+      "moveDown": "下移规则",
+      "moveUp": "上移规则",
       "save": "保存规则"
     },
     "addPatternRule": "新增模式规则",

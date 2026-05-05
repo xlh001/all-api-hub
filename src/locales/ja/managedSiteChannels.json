@@ -23,6 +23,8 @@
     },
     "actions": {
       "cancel": "キャンセル",
+      "moveDown": "フィルターを下へ移動",
+      "moveUp": "フィルターを上へ移動",
       "save": "フィルターを保存"
     },
     "addPatternRule": "パターンルールを追加",

@@ -75,6 +75,7 @@ vi.mock("~/components/ChannelFiltersEditor", () => ({
     isLoading,
     probeRulesSupported,
     onAddFilter,
+    onMoveFilter,
     onRemoveFilter,
     onFieldChange,
     onClickViewVisual,
@@ -91,6 +92,9 @@ vi.mock("~/components/ChannelFiltersEditor", () => ({
       </div>
       <button onClick={onAddFilter}>add-filter</button>
       <button onClick={() => onAddFilter("probe")}>add-probe-filter</button>
+      <button onClick={() => filters[0] && onMoveFilter(filters[0].id, "down")}>
+        move-first-down
+      </button>
       <button onClick={() => filters[0] && onRemoveFilter(filters[0].id)}>
         remove-filter
       </button>
@@ -463,6 +467,73 @@ describe("ChannelFilterDialog", () => {
     })
 
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it("preserves user-defined visual rule order when saving", async () => {
+    const onClose = vi.fn()
+    mockedFetchChannelFilters.mockResolvedValue([
+      {
+        id: "rule-1",
+        name: "First",
+        description: "",
+        pattern: "first",
+        isRegex: false,
+        action: "include",
+        enabled: true,
+        createdAt: 100,
+        updatedAt: 200,
+      },
+      {
+        id: "rule-2",
+        name: "Second",
+        description: "",
+        pattern: "second",
+        isRegex: false,
+        action: "exclude",
+        enabled: true,
+        createdAt: 101,
+        updatedAt: 201,
+      },
+    ])
+
+    render(
+      <ChannelFilterDialog
+        channel={sampleChannel}
+        open={true}
+        onClose={onClose}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId("filter-count")).toHaveTextContent("2")
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "move-first-down" }))
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:filters.actions.save",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockedSaveChannelFilters).toHaveBeenCalledWith(42, [
+        expect.objectContaining({
+          id: "rule-2",
+          name: "Second",
+          pattern: "second",
+        }),
+        expect.objectContaining({
+          id: "rule-1",
+          name: "First",
+          pattern: "first",
+        }),
+      ])
+    })
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "managedSiteChannels:filters.messages.saved",
+    )
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 
   it("keeps JSON mode active and reports invalid JSON when switching back to visual", async () => {
