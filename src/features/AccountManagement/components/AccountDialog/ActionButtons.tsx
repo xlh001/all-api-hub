@@ -12,13 +12,21 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import { getManagedSiteLabel } from "~/services/managedSites/utils/managedSite"
 
+import {
+  ACCOUNT_DIALOG_FORM_SOURCES,
+  ACCOUNT_DIALOG_PHASES,
+  type AccountDialogFormSource,
+  type AccountDialogPhase,
+} from "./models"
+
 interface ActionButtonsProps {
   mode: DialogMode
   url: string
+  phase: AccountDialogPhase
+  formSource: AccountDialogFormSource
   isDetecting: boolean
   isSaving: boolean
   isFormValid: boolean
-  isDetected?: boolean
   onAutoDetect: () => void
   onShowManualForm: () => void
   onClose: () => void
@@ -34,10 +42,11 @@ interface ActionButtonsProps {
 export default function ActionButtons({
   mode,
   url,
+  phase,
+  formSource,
   isDetecting,
   isSaving,
   isFormValid,
-  isDetected,
   onAutoDetect,
   onShowManualForm,
   onClose,
@@ -48,6 +57,8 @@ export default function ActionButtons({
   const { t } = useTranslation(["accountDialog", "common", "settings"])
   const { managedSiteType } = useUserPreferencesContext()
   const isAddMode = mode === DIALOG_MODES.ADD
+  const isPreForm = isAddMode && phase === ACCOUNT_DIALOG_PHASES.SITE_INPUT
+  const isDetected = formSource === ACCOUNT_DIALOG_FORM_SOURCES.DETECTED
   const managedSiteLabel = getManagedSiteLabel(t, managedSiteType)
   const autoConfigTitle = isFormValid
     ? t("accountDialog:actions.autoConfigTitle", {
@@ -55,7 +66,7 @@ export default function ActionButtons({
       })
     : t("accountDialog:actions.autoConfigRequiresValidAccount")
 
-  if (isAddMode && !isDetected && !isFormValid) {
+  if (isPreForm) {
     return (
       <div className="flex flex-wrap gap-2">
         <Button

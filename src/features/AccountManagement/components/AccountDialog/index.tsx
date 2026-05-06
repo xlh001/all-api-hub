@@ -15,6 +15,7 @@ import { DuplicateAccountWarningDialog } from "./DuplicateAccountWarningDialog"
 import { useAccountDialog } from "./hooks/useAccountDialog"
 import InfoPanel from "./InfoPanel"
 import { ManagedSiteConfigPromptDialog } from "./ManagedSiteConfigPromptDialog"
+import { ACCOUNT_DIALOG_PHASES } from "./models"
 import SiteInfoInput from "./SiteInfoInput"
 
 interface AccountDialogProps {
@@ -96,13 +97,14 @@ export default function AccountDialog({
           <ActionButtons
             mode={mode}
             url={state.url}
+            phase={state.phase}
+            formSource={state.formSource}
             isDetecting={state.isDetecting}
             onAutoDetect={handlers.handleAutoDetect}
             onShowManualForm={handlers.handleShowManualForm}
             onClose={handlers.handleClose}
             isFormValid={state.isFormValid}
             isSaving={state.isSaving}
-            isDetected={state.isDetected}
             onAutoConfig={handlers.handleAutoConfig}
             isAutoConfiguring={state.isAutoConfiguring}
             // ensure submit button in footer can submit the form by linking via form id
@@ -145,19 +147,10 @@ export default function AccountDialog({
               })}
             />
 
-            {(state.isDetected || state.showManualForm) && (
+            {state.phase === ACCOUNT_DIALOG_PHASES.ACCOUNT_FORM && (
               <AccountForm
-                authType={state.authType}
-                siteName={state.siteName}
-                username={state.username}
-                userId={state.userId}
-                accessToken={state.accessToken}
-                sub2apiUseRefreshToken={state.sub2apiUseRefreshToken}
-                sub2apiRefreshToken={state.sub2apiRefreshToken}
-                sub2apiTokenExpiresAt={state.sub2apiTokenExpiresAt}
+                draft={state.draft}
                 isImportingSub2apiSession={state.isImportingSub2apiSession}
-                exchangeRate={state.exchangeRate}
-                manualBalanceUsd={state.manualBalanceUsd}
                 isManualBalanceUsdInvalid={state.isManualBalanceUsdInvalid}
                 showAccessToken={state.showAccessToken}
                 onSiteNameChange={setters.setSiteName}
@@ -174,11 +167,8 @@ export default function AccountDialog({
                 onToggleShowAccessToken={() =>
                   setters.setShowAccessToken(!state.showAccessToken)
                 }
-                notes={state.notes}
                 onNotesChange={setters.setNotes}
-                selectedTagIds={state.tagIds}
                 onSelectedTagIdsChange={setters.setTagIds}
-                excludeFromTotalBalance={state.excludeFromTotalBalance}
                 onExcludeFromTotalBalanceChange={
                   setters.setExcludeFromTotalBalance
                 }
@@ -187,11 +177,8 @@ export default function AccountDialog({
                 createTag={createTag}
                 renameTag={renameTag}
                 deleteTag={deleteTag}
-                checkIn={state.checkIn}
                 onCheckInChange={setters.setCheckIn}
-                siteType={state.siteType}
                 onSiteTypeChange={setters.setSiteType}
-                cookieAuthSessionCookie={state.cookieAuthSessionCookie}
                 isImportingCookies={state.isImportingCookies}
                 showCookiePermissionWarning={state.showCookiePermissionWarning}
                 onCookieAuthSessionCookieChange={
@@ -210,8 +197,8 @@ export default function AccountDialog({
 
         <InfoPanel
           mode={mode}
-          isDetected={state.isDetected}
-          showManualForm={state.showManualForm}
+          phase={state.phase}
+          formSource={state.formSource}
         />
       </Modal>
 
