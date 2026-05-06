@@ -498,11 +498,11 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
             const resultSummary = isDisabledForModel
               ? t("verifyDialog.requiresModelId")
               : result?.summaryKey
-                ? (translateCliSupportSummary(
+                ? translateCliSupportSummary(
                     t,
                     result.summaryKey,
                     result.summaryParams,
-                  ) ?? result.summary)
+                  ) ?? result.summary
                 : result
                   ? result.summary
                   : t("verifyDialog.notRunYet")

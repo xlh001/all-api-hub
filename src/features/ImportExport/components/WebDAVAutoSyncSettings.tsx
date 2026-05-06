@@ -272,9 +272,9 @@ export default function WebDAVAutoSyncSettings() {
                   setLocalConfig((prev) => ({
                     ...prev,
                     syncStrategy: value as WebDAVSettings["syncStrategy"],
-                }))
-              }
-            >
+                  }))
+                }
+              >
                 <SelectTrigger id={WEBDAV_AUTO_SYNC_TARGET_IDS.strategy}>
                   <SelectValue placeholder={t("webdav.autoSync.strategy")} />
                 </SelectTrigger>

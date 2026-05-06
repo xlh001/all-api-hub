@@ -83,7 +83,7 @@ export const AccountActionMenuItem: React.FC<AccountActionMenuItemProps> = ({
               <span className="truncate">{label}</span>
               {hint ? (
                 <span
-                  className="shrink-0 rounded-full border border-gray-300 px-1.5 py-0.5 text-[11px] font-medium leading-none text-gray-500 dark:border-dark-bg-quaternary dark:text-dark-text-tertiary"
+                  className="dark:border-dark-bg-quaternary dark:text-dark-text-tertiary shrink-0 rounded-full border border-gray-300 px-1.5 py-0.5 text-[11px] leading-none font-medium text-gray-500"
                   aria-hidden="true"
                 >
                   {hint}

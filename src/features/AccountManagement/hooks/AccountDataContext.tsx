@@ -596,7 +596,8 @@ export const AccountDataProvider = ({
     async (force: boolean = false) => {
       setIsRefreshingDisabledAccounts(true)
       try {
-        const refreshResult = await accountStorage.refreshDisabledAccounts(force)
+        const refreshResult =
+          await accountStorage.refreshDisabledAccounts(force)
         await loadAccountData()
         if (refreshResult.latestSyncTime > 0) {
           setLastUpdateTime(new Date(refreshResult.latestSyncTime))

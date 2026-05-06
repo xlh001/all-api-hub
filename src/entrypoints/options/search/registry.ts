@@ -85,10 +85,7 @@ export const OPTIONS_SEARCH_REGISTRY = [
 /**
  * Resolves synthetic page title tokens into translated menu labels.
  */
-export function resolveSyntheticPageTitle(
-  titleKey: string,
-  t: TFunction,
-) {
+export function resolveSyntheticPageTitle(titleKey: string, t: TFunction) {
   if (!titleKey.startsWith("__page:")) {
     return t(titleKey)
   }

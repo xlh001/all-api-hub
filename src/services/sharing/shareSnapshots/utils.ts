@@ -15,7 +15,6 @@ export const redactShareSecrets = (value: string): string =>
     .replace(BEARER_PATTERN, "Bearer [REDACTED]")
     .replace(JWT_PATTERN, "[REDACTED_JWT]")
 
-
 /**
  * Formats a numeric amount into a currency string (e.g. `$12.34`), always using
  * fixed decimals and keeping the sign.

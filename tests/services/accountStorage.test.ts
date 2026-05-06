@@ -828,16 +828,26 @@ describe("accountStorage core behaviors", () => {
       const result = await accountStorage.refreshDisabledAccounts()
 
       expect(refreshAccountSpy).toHaveBeenCalledTimes(2)
-      expect(refreshAccountSpy).toHaveBeenNthCalledWith(1, "disabled-a", false, {
-        includeTodayCashflow: true,
-        allowDisabled: true,
-        reEnableOnSuccess: true,
-      })
-      expect(refreshAccountSpy).toHaveBeenNthCalledWith(2, "disabled-c", false, {
-        includeTodayCashflow: true,
-        allowDisabled: true,
-        reEnableOnSuccess: true,
-      })
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(
+        1,
+        "disabled-a",
+        false,
+        {
+          includeTodayCashflow: true,
+          allowDisabled: true,
+          reEnableOnSuccess: true,
+        },
+      )
+      expect(refreshAccountSpy).toHaveBeenNthCalledWith(
+        2,
+        "disabled-c",
+        false,
+        {
+          includeTodayCashflow: true,
+          allowDisabled: true,
+          reEnableOnSuccess: true,
+        },
+      )
       expect(result).toEqual({
         processedCount: 1,
         failedCount: 0,

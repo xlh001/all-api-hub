@@ -1,7 +1,7 @@
+import { act } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import type { ReactNode } from "react"
 import { lazy } from "react"
-import userEvent from "@testing-library/user-event"
-import { act } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
@@ -99,7 +99,9 @@ vi.mock("~/entrypoints/options/search/OptionsSearchDialog", () => ({
         >
           navigate bookmark
         </button>
-        <button onClick={() => (props.onOpenChange as (open: boolean) => void)(false)}>
+        <button
+          onClick={() => (props.onOpenChange as (open: boolean) => void)(false)}
+        >
           close dialog
         </button>
       </div>

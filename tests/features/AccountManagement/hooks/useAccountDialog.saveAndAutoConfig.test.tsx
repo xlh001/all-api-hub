@@ -1069,7 +1069,11 @@ describe("useAccountDialog save and auto-config flows", () => {
         feedbackLevel: "success",
       })
     mockOpenWithAccount.mockImplementation(
-      async (_displaySiteData: any, _channelId: any, onCompleted?: () => void) => {
+      async (
+        _displaySiteData: any,
+        _channelId: any,
+        onCompleted?: () => void,
+      ) => {
         onCompleted?.()
       },
     )
