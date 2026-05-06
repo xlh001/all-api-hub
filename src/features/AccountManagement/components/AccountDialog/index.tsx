@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react"
+
 import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
 import { Modal } from "~/components/ui/Dialog/Modal"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
@@ -79,6 +81,40 @@ export default function AccountDialog({
 
   const detectedDisplayAccount =
     displayData.find((acc) => acc.id === detectedAccount?.id) ?? null
+  const showEntryAuthTypeSelector =
+    mode === DIALOG_MODES.ADD &&
+    state.phase === ACCOUNT_DIALOG_PHASES.SITE_INPUT
+  const addModeSiteInfoProps =
+    mode === DIALOG_MODES.ADD
+      ? {
+          currentTabUrl: state.currentTabUrl,
+          isCurrentSiteAdded: detectedSiteAccounts.length > 0,
+          detectedAccount: detectedDisplayAccount,
+          onUseCurrentTab: handlers.handleUseCurrentTabUrl,
+          onEditAccount: openEditAccount,
+        }
+      : {}
+  const siteInfoInputProps: ComponentProps<typeof SiteInfoInput> =
+    showEntryAuthTypeSelector
+      ? {
+          url: state.url,
+          onUrlChange: handlers.handleUrlChange,
+          isDetected: state.isDetected,
+          onClearUrl: handlers.handleClearUrl,
+          siteType: state.siteType,
+          showAuthTypeSelector: true,
+          authType: state.authType,
+          onAuthTypeChange: setters.setAuthType,
+          ...addModeSiteInfoProps,
+        }
+      : {
+          url: state.url,
+          onUrlChange: handlers.handleUrlChange,
+          isDetected: state.isDetected,
+          onClearUrl: handlers.handleClearUrl,
+          siteType: state.siteType,
+          ...addModeSiteInfoProps,
+        }
 
   return (
     <>
@@ -130,26 +166,12 @@ export default function AccountDialog({
               <AutoDetectSlowHintAlert />
             )}
 
-            <SiteInfoInput
-              url={state.url}
-              onUrlChange={handlers.handleUrlChange}
-              isDetected={state.isDetected}
-              onClearUrl={handlers.handleClearUrl}
-              siteType={state.siteType}
-              authType={state.authType}
-              onAuthTypeChange={setters.setAuthType}
-              {...(mode === DIALOG_MODES.ADD && {
-                currentTabUrl: state.currentTabUrl,
-                isCurrentSiteAdded: detectedSiteAccounts.length > 0,
-                detectedAccount: detectedDisplayAccount,
-                onUseCurrentTab: handlers.handleUseCurrentTabUrl,
-                onEditAccount: openEditAccount,
-              })}
-            />
+            <SiteInfoInput {...siteInfoInputProps} />
 
             {state.phase === ACCOUNT_DIALOG_PHASES.ACCOUNT_FORM && (
               <AccountForm
                 draft={state.draft}
+                isDetected={state.isDetected}
                 isImportingSub2apiSession={state.isImportingSub2apiSession}
                 isManualBalanceUsdInvalid={state.isManualBalanceUsdInvalid}
                 showAccessToken={state.showAccessToken}
@@ -179,6 +201,7 @@ export default function AccountDialog({
                 deleteTag={deleteTag}
                 onCheckInChange={setters.setCheckIn}
                 onSiteTypeChange={setters.setSiteType}
+                onAuthTypeChange={setters.setAuthType}
                 isImportingCookies={state.isImportingCookies}
                 showCookiePermissionWarning={state.showCookiePermissionWarning}
                 onCookieAuthSessionCookieChange={

@@ -8,7 +8,12 @@ import { AuthTypeEnum } from "~/types"
 import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 describe("AccountDialog SiteInfoInput", () => {
-  const createProps = (): ComponentProps<typeof SiteInfoInput> => ({
+  type AddModeSiteInfoInputProps = Extract<
+    ComponentProps<typeof SiteInfoInput>,
+    { showAuthTypeSelector: true }
+  >
+
+  const createAddModeProps = (): AddModeSiteInfoInputProps => ({
     url: "https://api.example.com",
     onUrlChange: vi.fn(),
     isDetected: false,
@@ -16,6 +21,7 @@ describe("AccountDialog SiteInfoInput", () => {
     siteType: "new-api",
     authType: AuthTypeEnum.AccessToken,
     onAuthTypeChange: vi.fn(),
+    showAuthTypeSelector: true,
     currentTabUrl: "https://current.example.com",
     isCurrentSiteAdded: false,
     detectedAccount: null,
@@ -23,9 +29,9 @@ describe("AccountDialog SiteInfoInput", () => {
     onEditAccount: vi.fn(),
   })
 
-  it("propagates URL edits, clears the field, changes auth type, and reuses the current tab URL", async () => {
+  it("propagates URL edits, clears the field, and reuses the current tab URL", async () => {
     const user = userEvent.setup()
-    const props = createProps()
+    const props = createAddModeProps()
 
     render(<SiteInfoInput {...props} />)
 
@@ -47,18 +53,6 @@ describe("AccountDialog SiteInfoInput", () => {
     )
     expect(props.onClearUrl).toHaveBeenCalledTimes(1)
 
-    await user.click(
-      screen.getByRole("combobox", {
-        name: "accountDialog:siteInfo.authMethod",
-      }),
-    )
-    await user.click(
-      await screen.findByRole("option", {
-        name: "accountDialog:siteInfo.authType.cookieAuth",
-      }),
-    )
-    expect(props.onAuthTypeChange).toHaveBeenCalledWith(AuthTypeEnum.Cookie)
-
     const useCurrentButton = screen.getByRole("button", {
       name: "accountDialog:siteInfo.useCurrent",
     })
@@ -68,8 +62,30 @@ describe("AccountDialog SiteInfoInput", () => {
     expect(props.onUseCurrentTab).toHaveBeenCalledTimes(1)
   })
 
+  it("lets users choose auth type before entering the form", async () => {
+    const user = userEvent.setup()
+    const props = createAddModeProps()
+
+    render(<SiteInfoInput {...props} />)
+
+    expect(
+      await screen.findByLabelText("accountDialog:siteInfo.authMethod"),
+    ).toBeEnabled()
+
+    await user.click(
+      await screen.findByTestId("account-management-auth-type-trigger"),
+    )
+    await user.click(
+      await screen.findByRole("option", {
+        name: "accountDialog:siteInfo.authType.cookieAuth",
+      }),
+    )
+
+    expect(props.onAuthTypeChange).toHaveBeenCalledWith(AuthTypeEnum.Cookie)
+  })
+
   it("shows the generic already-added warning and disables current-tab reuse when the tab URL is unavailable", async () => {
-    const props = createProps()
+    const props = createAddModeProps()
     props.currentTabUrl = null
     props.isCurrentSiteAdded = true
 
@@ -94,7 +110,7 @@ describe("AccountDialog SiteInfoInput", () => {
   })
 
   it("locks the site fields for detected Sub2API sites and hides the add-mode current-tab helper", async () => {
-    const props = createProps()
+    const props = createAddModeProps()
     props.isDetected = true
     props.siteType = SUB2API
 
@@ -107,11 +123,6 @@ describe("AccountDialog SiteInfoInput", () => {
       screen.getByLabelText("accountDialog:siteInfo.siteUrl"),
     ).toBeDisabled()
     expect(
-      screen.getByRole("combobox", {
-        name: "accountDialog:siteInfo.authMethod",
-      }),
-    ).toBeDisabled()
-    expect(
       screen.queryByRole("button", { name: "common:actions.clear" }),
     ).toBeNull()
     expect(
@@ -119,11 +130,28 @@ describe("AccountDialog SiteInfoInput", () => {
         name: "accountDialog:siteInfo.useCurrent",
       }),
     ).not.toBeInTheDocument()
+    expect(
+      screen.queryByTestId("account-management-auth-type-trigger"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("keeps the entry auth selector visible but locked for add-mode Sub2API", async () => {
+    const props = createAddModeProps()
+    props.siteType = SUB2API
+
+    render(<SiteInfoInput {...props} />)
+
+    expect(
+      await screen.findByText("accountDialog:siteInfo.sub2apiHint"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByLabelText("accountDialog:siteInfo.authMethod"),
+    ).toBeDisabled()
   })
 
   it("shows the current-login warning and forwards edit requests for the detected account", async () => {
     const user = userEvent.setup()
-    const props = createProps()
+    const props = createAddModeProps()
     const detectedAccount = {
       id: "account-1",
       name: "Existing Account",
@@ -149,5 +177,36 @@ describe("AccountDialog SiteInfoInput", () => {
     )
 
     expect(props.onEditAccount).toHaveBeenCalledWith(detectedAccount)
+  })
+
+  it("renders the plain URL-only layout when the entry auth selector is disabled", async () => {
+    const props: ComponentProps<typeof SiteInfoInput> = {
+      url: "https://api.example.com",
+      onUrlChange: vi.fn(),
+      isDetected: false,
+      onClearUrl: vi.fn(),
+      siteType: "new-api",
+      currentTabUrl: "https://current.example.com",
+      isCurrentSiteAdded: false,
+      detectedAccount: null,
+      onUseCurrentTab: vi.fn(),
+      onEditAccount: vi.fn(),
+    }
+
+    render(<SiteInfoInput {...props} />)
+
+    const urlInput = await screen.findByLabelText(
+      "accountDialog:siteInfo.siteUrl",
+    )
+    fireEvent.change(urlInput, {
+      target: { value: "https://manual.example.com" },
+    })
+
+    expect(props.onUrlChange).toHaveBeenLastCalledWith(
+      "https://manual.example.com",
+    )
+    expect(
+      screen.queryByTestId("account-management-auth-type-trigger"),
+    ).not.toBeInTheDocument()
   })
 })

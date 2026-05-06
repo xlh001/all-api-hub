@@ -2,8 +2,10 @@ import {
   ExclamationTriangleIcon,
   GlobeAltIcon,
   InformationCircleIcon,
+  KeyIcon,
   PencilIcon,
 } from "@heroicons/react/24/outline"
+import { Cookie } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
@@ -20,14 +22,12 @@ import { SUB2API } from "~/constants/siteType"
 import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import { AuthTypeEnum, type DisplaySiteData } from "~/types"
 
-interface SiteInfoInputProps {
+interface SiteInfoInputBaseProps {
   url: string
   onUrlChange: (url: string) => void
   isDetected: boolean
   onClearUrl: () => void
   siteType?: string
-  authType: AuthTypeEnum
-  onAuthTypeChange: (authType: AuthTypeEnum) => void
   // Props for "add" mode
   currentTabUrl?: string | null
   isCurrentSiteAdded?: boolean
@@ -36,36 +36,50 @@ interface SiteInfoInputProps {
   onEditAccount?: (account: DisplaySiteData) => void
 }
 
+type SiteInfoInputWithAuthSelectorProps = SiteInfoInputBaseProps & {
+  showAuthTypeSelector: true
+  authType: AuthTypeEnum
+  onAuthTypeChange: (value: AuthTypeEnum) => void
+}
+
+type SiteInfoInputWithoutAuthSelectorProps = SiteInfoInputBaseProps & {
+  showAuthTypeSelector?: false
+}
+
+type SiteInfoInputProps =
+  | SiteInfoInputWithAuthSelectorProps
+  | SiteInfoInputWithoutAuthSelectorProps
+
 /**
- * Site information section displaying URL input and auth selector with contextual helpers.
+ * Site information section displaying the URL input with contextual helpers
+ * such as current-tab reuse, already-added warnings, and the sub2api hint.
  * @param props Component props defining field values, detection state, and callbacks.
  * @param props.url Current site URL value.
  * @param props.onUrlChange Handler updating the site URL.
  * @param props.isDetected Whether the site info was auto-detected (locks inputs when true).
  * @param props.onClearUrl Clears the URL field.
  * @param props.siteType Detected or selected site type, used for contextual hints.
- * @param props.authType Selected authentication method.
- * @param props.onAuthTypeChange Handler updating the authentication method.
+ * @param props.showAuthTypeSelector Whether to show the auth selector in the add-mode entry flow.
+ * When true, authType and onAuthTypeChange are required.
  * @param props.currentTabUrl URL detected from the active browser tab.
  * @param props.isCurrentSiteAdded Indicates if the current site already exists.
  * @param props.detectedAccount Account info detected from the site.
  * @param props.onUseCurrentTab Handler to reuse the current tab URL.
  * @param props.onEditAccount Handler to edit the detected account entry.
  */
-export default function SiteInfoInput({
-  url,
-  onUrlChange,
-  isDetected,
-  onClearUrl,
-  siteType,
-  authType,
-  onAuthTypeChange,
-  currentTabUrl,
-  isCurrentSiteAdded,
-  detectedAccount,
-  onUseCurrentTab,
-  onEditAccount,
-}: SiteInfoInputProps) {
+export default function SiteInfoInput(props: SiteInfoInputProps) {
+  const {
+    url,
+    onUrlChange,
+    isDetected,
+    onClearUrl,
+    siteType,
+    currentTabUrl,
+    isCurrentSiteAdded,
+    detectedAccount,
+    onUseCurrentTab,
+    onEditAccount,
+  } = props
   const { t } = useTranslation(["accountDialog", "common"])
   const isSub2Api = siteType === SUB2API
 
@@ -77,67 +91,100 @@ export default function SiteInfoInput({
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-between">
-        <label
-          htmlFor="site-url"
-          className="dark:text-dark-text-secondary block text-sm font-medium text-gray-700"
-        >
-          {t("siteInfo.siteUrl")}
-        </label>
-        <label
-          htmlFor="auth-type"
-          className="dark:text-dark-text-secondary block text-sm font-medium text-gray-700"
-        >
-          {t("siteInfo.authMethod")}
-        </label>
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="relative grow">
-          <Input
-            id="site-url"
-            type="text"
-            value={url}
-            onChange={(e) => onUrlChange(e.target.value)}
-            placeholder="https://example.com"
-            disabled={isDetected}
-            data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.siteUrlInput}
-            onClear={onClearUrl}
-            clearButtonLabel={t("common:actions.clear")}
-          />
-        </div>
-        <Tooltip
-          content={
-            isSub2Api
-              ? t("siteInfo.sub2apiAuthOnly")
-              : t("siteInfo.cookieWarning")
-          }
-        >
-          <Select
-            value={authType}
-            onValueChange={(value) => onAuthTypeChange(value as AuthTypeEnum)}
-            disabled={isDetected || isSub2Api}
-          >
-            <SelectTrigger
-              id="auth-type"
-              className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary dark:text-dark-text-primary w-full"
-              data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.authTypeTrigger}
-              data-auth-type={authType}
+      {!isDetected && props.showAuthTypeSelector === true ? (
+        <>
+          <div className="flex justify-between gap-2">
+            <label
+              htmlFor="site-url"
+              className="dark:text-dark-text-secondary block text-sm font-medium text-gray-700"
             >
-              <SelectValue placeholder={t("siteInfo.authMethodPlaceholder")} />
-            </SelectTrigger>
-            <SelectContent align="end" className="min-w-48">
-              <SelectItem value={AuthTypeEnum.AccessToken}>
-                {t("siteInfo.authType.accessToken")}
-              </SelectItem>
-              {!isSub2Api && (
-                <SelectItem value={AuthTypeEnum.Cookie}>
-                  {t("siteInfo.authType.cookieAuth")}
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </Tooltip>
-      </div>
+              {t("siteInfo.siteUrl")}
+            </label>
+            <label className="dark:text-dark-text-secondary block text-sm font-medium text-gray-700">
+              {t("siteInfo.authMethod")}
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative grow">
+              <Input
+                id="site-url"
+                type="text"
+                value={url}
+                onChange={(e) => onUrlChange(e.target.value)}
+                placeholder="https://example.com"
+                disabled={isDetected}
+                data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.siteUrlInput}
+                onClear={onClearUrl}
+                clearButtonLabel={t("common:actions.clear")}
+              />
+            </div>
+            <Tooltip
+              content={
+                isSub2Api
+                  ? t("siteInfo.sub2apiAuthOnly")
+                  : t("siteInfo.cookieWarning")
+              }
+            >
+              <Select
+                value={props.authType}
+                onValueChange={(value) =>
+                  props.onAuthTypeChange(value as AuthTypeEnum)
+                }
+                disabled={isSub2Api}
+              >
+                <SelectTrigger
+                  className="w-full"
+                  aria-label={t("siteInfo.authMethod")}
+                  data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.authTypeTrigger}
+                  data-auth-type={props.authType}
+                >
+                  <SelectValue
+                    placeholder={t("siteInfo.authMethodPlaceholder")}
+                  />
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-48">
+                  <SelectItem value={AuthTypeEnum.AccessToken}>
+                    <div className="flex items-center gap-2">
+                      <KeyIcon className="h-4 w-4" />
+                      <span>{t("siteInfo.authType.accessToken")}</span>
+                    </div>
+                  </SelectItem>
+                  {!isSub2Api && (
+                    <SelectItem value={AuthTypeEnum.Cookie}>
+                      <div className="flex items-center gap-2">
+                        <Cookie className="h-4 w-4" />
+                        <span>{t("siteInfo.authType.cookieAuth")}</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </Tooltip>
+          </div>
+        </>
+      ) : (
+        <>
+          <label
+            htmlFor="site-url"
+            className="dark:text-dark-text-secondary block text-sm font-medium text-gray-700"
+          >
+            {t("siteInfo.siteUrl")}
+          </label>
+          <div className="relative grow">
+            <Input
+              id="site-url"
+              type="text"
+              value={url}
+              onChange={(e) => onUrlChange(e.target.value)}
+              placeholder="https://example.com"
+              disabled={isDetected}
+              data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.siteUrlInput}
+              onClear={onClearUrl}
+              clearButtonLabel={t("common:actions.clear")}
+            />
+          </div>
+        </>
+      )}
       <div className="flex flex-col justify-between gap-y-2 text-xs">
         {isSub2Api && (
           <div className="flex w-full items-start gap-2 rounded-md bg-blue-50 p-2 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
