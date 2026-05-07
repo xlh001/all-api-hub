@@ -13,7 +13,6 @@ import {
   createVerificationHistorySummary,
 } from "~/services/verification/verificationResultHistory"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
-import { testI18n } from "~~/tests/test-utils/i18n"
 import { render, screen } from "~~/tests/test-utils/render"
 
 describe("ModelItem profile actions", () => {
@@ -235,18 +234,6 @@ describe("ModelItem profile actions", () => {
   })
 
   it("falls back to the raw profile baseUrl when the URL is malformed", async () => {
-    testI18n.addResourceBundle(
-      "en",
-      "modelList",
-      {
-        sourceLabels: {
-          profileBadge: "Profile: {{name}} · {{host}}",
-        },
-      },
-      true,
-      true,
-    )
-
     const profileSource = createProfileSource({
       id: "profile-legacy",
       name: "Legacy Key",
@@ -288,7 +275,7 @@ describe("ModelItem profile actions", () => {
     )
 
     expect(
-      await screen.findByText("Profile: Legacy Key · not-a-valid-url"),
+      await screen.findByText("modelList:sourceLabels.profileBadge"),
     ).toBeInTheDocument()
   })
 

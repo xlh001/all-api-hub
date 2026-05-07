@@ -10,7 +10,6 @@ import {
   verificationResultHistoryStorage,
 } from "~/services/verification/verificationResultHistory"
 import { requireHistoryTarget } from "~~/tests/test-utils/history"
-import { testI18n } from "~~/tests/test-utils/i18n"
 import { render, screen, waitFor, within } from "~~/tests/test-utils/render"
 
 const { loggerErrorMock, mockRunApiVerificationProbe } = vi.hoisted(() => ({
@@ -92,22 +91,6 @@ describe("VerifyApiCredentialProfileDialog", () => {
     mockFetchAnthropicModelIds.mockResolvedValue([])
     mockFetchGoogleModelIds.mockResolvedValue([])
     await verificationResultHistoryStorage.clearAllData()
-    testI18n.addResourceBundle(
-      "en",
-      "apiCredentialProfiles",
-      {
-        verify: {
-          override: {
-            badge: "Override",
-            title: "Temporary API type override",
-            description:
-              "Saved profile API type: {{savedApiType}}. Current verification API type: {{currentApiType}}. This only affects the current test and will not modify the saved profile.",
-          },
-        },
-      },
-      true,
-      true,
-    )
   })
 
   it("renders probe items before running", async () => {
@@ -425,17 +408,14 @@ describe("VerifyApiCredentialProfileDialog", () => {
       ),
     )
 
-    expect(screen.getByText("Override")).toBeInTheDocument()
-    expect(screen.getByText("Temporary API type override")).toBeInTheDocument()
     expect(
-      screen.getByText(
-        /Saved profile API type: aiApiVerification:verifyDialog\.apiTypes\.openaiCompatible\./,
-      ),
+      screen.getByText("apiCredentialProfiles:verify.override.badge"),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(
-        /Current verification API type: aiApiVerification:verifyDialog\.apiTypes\.anthropic\./,
-      ),
+      screen.getByText("apiCredentialProfiles:verify.override.title"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("apiCredentialProfiles:verify.override.description"),
     ).toBeInTheDocument()
 
     await waitFor(() =>

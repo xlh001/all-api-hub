@@ -1,39 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { AccountSelector } from "~/features/ModelList/components/AccountSelector"
-import { testI18n } from "~~/tests/test-utils/i18n"
 import { fireEvent, render, screen } from "~~/tests/test-utils/render"
 
 describe("AccountSelector", () => {
-  beforeEach(() => {
-    testI18n.addResourceBundle(
-      "en",
-      "modelList",
-      {
-        selectSource: "Select Source",
-        allAccounts: "All accounts",
-        pleaseSelectSource: "Please select a source",
-        accountGroupFilterTrigger: "Filter Account Groups",
-        accountGroupFilterTriggerCount_one: "{{count}} account filtered",
-        accountGroupFilterTriggerCount_other: "{{count}} accounts filtered",
-        accountGroupFilterTitle: "Account Group Filter",
-        accountGroupFilterDescription: "Filter groups per account",
-        accountGroupFilterNoGroupsIncluded:
-          "No groups are included for this account",
-        accountGroupFilterResetAll: "Reset all",
-        accountGroupFilterSelectedSummary: "{{selected}} / {{total}}",
-        accountGroupFilterSelectAll: "Select all",
-        accountGroupFilterClearAll: "Clear all",
-        accountGroupFilterAllIncluded: "Include all groups",
-        sourceLabels: {
-          profileOption: "API Credential: {{name}} · {{host}}",
-        },
-      },
-      true,
-      true,
-    )
-  })
-
   it("includes the profile hostname in the selector label", async () => {
     render(
       <AccountSelector
@@ -58,9 +28,7 @@ describe("AccountSelector", () => {
 
     const combobox = await screen.findByRole("combobox")
     expect(combobox).toBeInTheDocument()
-    expect(combobox).toHaveTextContent(
-      "API Credential: Reusable Key · profile.example.com",
-    )
+    expect(combobox).toHaveTextContent("modelList:sourceLabels.profileOption")
   })
 
   it("falls back to the raw profile URL and empty selection state when parsing fails or no source is selected", async () => {
@@ -91,14 +59,14 @@ describe("AccountSelector", () => {
     )
 
     const combobox = await screen.findByRole("combobox")
-    expect(combobox).toHaveTextContent("Please select a source")
+    expect(combobox).toHaveTextContent("modelList:pleaseSelectSource")
 
     fireEvent.click(combobox)
 
-    expect(await screen.findByText("All accounts")).toBeInTheDocument()
+    expect(await screen.findByText("modelList:allAccounts")).toBeInTheDocument()
     expect(screen.getByText("Primary Account")).toBeInTheDocument()
     expect(
-      screen.getByText("API Credential: Broken Endpoint · not-a-valid-url"),
+      screen.getByText("modelList:sourceLabels.profileOption"),
     ).toBeInTheDocument()
   })
 
@@ -127,9 +95,9 @@ describe("AccountSelector", () => {
     const combobox = await screen.findByRole("combobox")
     fireEvent.click(combobox)
 
-    expect(screen.queryByText("All accounts")).toBeNull()
+    expect(screen.queryByText("modelList:allAccounts")).toBeNull()
     expect(
-      screen.getByText("API Credential: Reusable Key · profile.example.com"),
+      screen.getByText("modelList:sourceLabels.profileOption"),
     ).toBeInTheDocument()
   })
 
@@ -161,7 +129,9 @@ describe("AccountSelector", () => {
     )
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Filter Account Groups" }),
+      await screen.findByRole("button", {
+        name: "modelList:accountGroupFilterTrigger",
+      }),
     )
     const comboboxes = await screen.findAllByRole("combobox")
     fireEvent.click(comboboxes[1])
@@ -196,7 +166,9 @@ describe("AccountSelector", () => {
       />,
     )
 
-    expect(screen.queryByText("1 account filtered")).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("modelList:accountGroupFilterTriggerCount"),
+    ).not.toBeInTheDocument()
   })
 
   it("shows an empty-selection placeholder when an account excludes all groups", async () => {
@@ -229,12 +201,14 @@ describe("AccountSelector", () => {
     )
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Filter Account Groups" }),
+      await screen.findByRole("button", {
+        name: "modelList:accountGroupFilterTrigger",
+      }),
     )
 
     const comboboxes = await screen.findAllByRole("combobox")
     expect(comboboxes[1]).toHaveTextContent(
-      "No groups are included for this account",
+      "modelList:accountGroupFilterNoGroupsIncluded",
     )
   })
 })

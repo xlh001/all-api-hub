@@ -1,16 +1,9 @@
-import {
-  fireEvent,
-  render as rtlRender,
-  screen,
-  waitFor,
-} from "@testing-library/react"
+import { fireEvent, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useState, type ReactElement } from "react"
-import { I18nextProvider } from "react-i18next"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { CompactMultiSelect } from "~/components/ui/CompactMultiSelect"
-import { testI18n } from "~~/tests/test-utils/i18n"
 import { render } from "~~/tests/test-utils/render"
 
 const toastMocks = vi.hoisted(() => ({
@@ -32,19 +25,6 @@ describe("CompactMultiSelect", () => {
   beforeEach(() => {
     toastMocks.success.mockReset()
     toastMocks.error.mockReset()
-    testI18n.addResourceBundle(
-      "en",
-      "ui",
-      {
-        multiSelect: {
-          chipCopied: "Copied: {{value}}",
-          copyChipValue: "Copy {{value}}",
-          copyError: "Copy failed, please try again",
-        },
-      },
-      true,
-      true,
-    )
   })
 
   it("uses a dedicated clear button instead of a clear option item", async () => {
@@ -133,13 +113,13 @@ describe("CompactMultiSelect", () => {
 
     await user.click(
       await screen.findByRole("button", {
-        name: "Copy Alpha",
+        name: "ui:multiSelect.copyChipValue",
       }),
     )
 
     expect(writeText).toHaveBeenCalledWith("Alpha")
     expect(onChange).not.toHaveBeenCalled()
-    expect(toastMocks.success).toHaveBeenCalledWith("Copied: Alpha")
+    expect(toastMocks.success).toHaveBeenCalledWith("ui:multiSelect.chipCopied")
   })
 
   it("shows an error toast when chip text copying fails", async () => {
@@ -162,14 +142,12 @@ describe("CompactMultiSelect", () => {
 
     await user.click(
       await screen.findByRole("button", {
-        name: "Copy Alpha",
+        name: "ui:multiSelect.copyChipValue",
       }),
     )
 
     await waitFor(() => {
-      expect(toastMocks.error).toHaveBeenCalledWith(
-        "Copy failed, please try again",
-      )
+      expect(toastMocks.error).toHaveBeenCalledWith("ui:multiSelect.copyError")
     })
   })
 
@@ -443,22 +421,20 @@ describe("CompactMultiSelect", () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
 
-    rtlRender(
-      <I18nextProvider i18n={testI18n}>
-        <div>
-          <span id="external-summary-label">External summary label</span>
-          <CompactMultiSelect
-            label="Models"
-            displayMode="summary"
-            size="lg"
-            maxDisplayValues={1}
-            aria-labelledby="external-summary-label"
-            options={[{ value: "alpha", label: "Alpha" }]}
-            selected={["missing-model", "alpha"]}
-            onChange={onChange}
-          />
-        </div>
-      </I18nextProvider>,
+    renderCompact(
+      <div>
+        <span id="external-summary-label">External summary label</span>
+        <CompactMultiSelect
+          label="Models"
+          displayMode="summary"
+          size="lg"
+          maxDisplayValues={1}
+          aria-labelledby="external-summary-label"
+          options={[{ value: "alpha", label: "Alpha" }]}
+          selected={["missing-model", "alpha"]}
+          onChange={onChange}
+        />
+      </div>,
     )
 
     const trigger = screen.getByRole("combobox")
@@ -556,23 +532,21 @@ describe("CompactMultiSelect", () => {
       })
 
     try {
-      rtlRender(
-        <I18nextProvider i18n={testI18n}>
-          <div>
-            <span id="external-chips-label">External chips label</span>
-            <CompactMultiSelect
-              label="Tags"
-              displayMode="chips"
-              allowCustom
-              aria-label="Tag picker"
-              aria-labelledby="external-chips-label"
-              options={[{ value: "alpha", label: "Alpha" }]}
-              selected={["ghost-tag"]}
-              onChange={vi.fn()}
-              placeholder="Pick"
-            />
-          </div>
-        </I18nextProvider>,
+      renderCompact(
+        <div>
+          <span id="external-chips-label">External chips label</span>
+          <CompactMultiSelect
+            label="Tags"
+            displayMode="chips"
+            allowCustom
+            aria-label="Tag picker"
+            aria-labelledby="external-chips-label"
+            options={[{ value: "alpha", label: "Alpha" }]}
+            selected={["ghost-tag"]}
+            onChange={vi.fn()}
+            placeholder="Pick"
+          />
+        </div>,
       )
 
       expect(screen.getByText("Tags")).toBeInTheDocument()

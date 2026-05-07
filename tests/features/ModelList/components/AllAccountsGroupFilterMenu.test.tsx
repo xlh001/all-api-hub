@@ -1,9 +1,8 @@
 import userEvent from "@testing-library/user-event"
 import type { ComponentProps } from "react"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { AccountSelector } from "~/features/ModelList/components/AccountSelector"
-import { testI18n } from "~~/tests/test-utils/i18n"
 import { render, screen, within } from "~~/tests/test-utils/render"
 
 const primaryAccount = {
@@ -59,36 +58,13 @@ async function openAccountGroupFilterMenu(
   user: ReturnType<typeof userEvent.setup>,
 ) {
   await user.click(
-    await screen.findByRole("button", { name: "Filter Account Groups" }),
+    await screen.findByRole("button", {
+      name: "modelList:accountGroupFilterTrigger",
+    }),
   )
 }
 
 describe("AllAccountsGroupFilterMenu", () => {
-  beforeEach(() => {
-    testI18n.addResourceBundle(
-      "en",
-      "modelList",
-      {
-        accountGroupFilterAllIncluded: "Include all groups",
-        accountGroupFilterClearAll: "Clear all",
-        accountGroupFilterDescription: "Filter groups per account",
-        accountGroupFilterNoGroups:
-          "No account groups are available to filter right now.",
-        accountGroupFilterNoGroupsIncluded:
-          "No groups are included for this account",
-        accountGroupFilterResetAll: "Reset all",
-        accountGroupFilterSelectAll: "Select all",
-        accountGroupFilterSelectedSummary: "{{selected}} / {{total}}",
-        accountGroupFilterTitle: "Account Group Filter",
-        accountGroupFilterTrigger: "Filter Account Groups",
-        accountGroupFilterTriggerCount_one: "{{count}} account filtered",
-        accountGroupFilterTriggerCount_other: "{{count}} accounts filtered",
-      },
-      true,
-      true,
-    )
-  })
-
   it("renders an empty state and keeps reset disabled when no account has groups", async () => {
     const user = userEvent.setup()
     const { onExcludedGroupsChange } = renderMenu({
@@ -100,9 +76,13 @@ describe("AllAccountsGroupFilterMenu", () => {
     await openAccountGroupFilterMenu(user)
 
     expect(
-      screen.getByText("No account groups are available to filter right now."),
+      screen.getByText("modelList:accountGroupFilterNoGroups"),
     ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Reset all" })).toBeDisabled()
+    expect(
+      screen.getByRole("button", {
+        name: "modelList:accountGroupFilterResetAll",
+      }),
+    ).toBeDisabled()
     expect(onExcludedGroupsChange).not.toHaveBeenCalled()
   })
 
@@ -173,14 +153,14 @@ describe("AllAccountsGroupFilterMenu", () => {
     await openAccountGroupFilterMenu(user)
     await user.click(
       getAccountSection("Secondary Account").getByRole("button", {
-        name: "Select all",
+        name: "modelList:accountGroupFilterSelectAll",
       }),
     )
     expect(onExcludedGroupsChange).not.toHaveBeenCalled()
 
     await user.click(
       getAccountSection("Primary Account").getByRole("button", {
-        name: "Select all",
+        name: "modelList:accountGroupFilterSelectAll",
       }),
     )
     expect(onExcludedGroupsChange).toHaveBeenCalledWith({})
@@ -195,7 +175,11 @@ describe("AllAccountsGroupFilterMenu", () => {
     })
 
     await openAccountGroupFilterMenu(user)
-    await user.click(screen.getByRole("button", { name: "Clear all" }))
+    await user.click(
+      screen.getByRole("button", {
+        name: "modelList:accountGroupFilterClearAll",
+      }),
+    )
 
     expect(onExcludedGroupsChange).toHaveBeenCalledWith({
       "account-1": ["vip", "default"],
@@ -211,7 +195,11 @@ describe("AllAccountsGroupFilterMenu", () => {
     })
 
     await openAccountGroupFilterMenu(user)
-    await user.click(screen.getByRole("button", { name: "Reset all" }))
+    await user.click(
+      screen.getByRole("button", {
+        name: "modelList:accountGroupFilterResetAll",
+      }),
+    )
 
     expect(onExcludedGroupsChange).toHaveBeenCalledWith({})
   })
@@ -228,7 +216,9 @@ describe("AllAccountsGroupFilterMenu", () => {
 
     expect(
       getAccountSection("Primary Account").getByRole("combobox"),
-    ).toHaveTextContent("No groups are included for this account")
-    expect(screen.getByText("0 / 2")).toBeInTheDocument()
+    ).toHaveTextContent("modelList:accountGroupFilterNoGroupsIncluded")
+    expect(
+      screen.getByText("modelList:accountGroupFilterSelectedSummary"),
+    ).toBeInTheDocument()
   })
 })
