@@ -8,6 +8,29 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.37.0
+- **New Features:**
+  - Settings Page: Added global settings search. You can search pages, settings tabs, and individual settings from the top search box or with `Ctrl+K` / `Cmd+K`; recently visited items are also remembered so configuration is easier to find.
+  - Notifications: Added completion notifications for background scheduled tasks. You can control Auto Check-in, `WebDAV` Auto Sync, Model Sync, Usage History Sync, and Balance History Capture separately, and send a test notification to confirm the permission is working.
+  - Model Sync: Channel filter rules now support verification probe-based matching, so models can be synced to channels based on capabilities such as text generation, tool calling, web search, and structured output.
+  - Bookmarks: When adding a bookmark, you can fill in the current page title and URL with one click, making it easier to save site consoles, docs, or admin pages.
+- **Experience Optimizations:**
+  - Account Management: The add/edit account form is now split into sections for site information, account authentication, tags and notes, check-in configuration, and balance statistics. On small screens, sections can be collapsed to make long forms easier to complete.
+  - Settings Navigation: On desktop, extra settings tabs are automatically collected into a "More" menu, reducing horizontal scrolling and making tabs easier to find.
+  - Settings Search: On mobile, the search entry expands after scrolling, making it easier to find settings on small screens.
+  - Model Sync: Channel filter rules can now be reordered, making it easier to control matching priority when multiple rules are combined.
+  - Multi-select Controls: Multi-select chips support copying text, and large option sets collapse into a bulk action entry to avoid overcrowding rule-editing and similar screens.
+- **Bug Fixes:**
+  - Channel Management: After starting Model Sync from the channel list, successfully synced channels now immediately refresh their model lists, so you no longer need to manually refresh the page to see the latest results.
+  - Auto Detection: Improved site type detection based on login-state error messages and made fallback from background detection to direct detection more stable, reducing cases where compatible sites are incorrectly detected as unknown.
+
+**Location Hints:**
+- Settings Search: In the top search box on the settings page, or use `Ctrl+K` / `Cmd+K` to open it.
+- Task Notifications: In "Settings → General → Notifications" and "Settings → Permission Management".
+- Model Sync Filter Rules: In the global channel filter rules under "Settings → Self-Hosted Site Management → Model Sync Settings", and in per-channel filter rules under "Settings → Channel Management".
+- Bookmark Current Page Fill: In the add bookmark dialog under "Settings → Site Bookmarks".
+- Account Form Sections: In the add or edit account dialog under "Settings → Account Management".
+
 ## 3.36.0
 - **New Features:**
   - Account Management: Added a "One-Click Refresh" function for disabled accounts, making it easier to quickly check if accounts have become available again.
