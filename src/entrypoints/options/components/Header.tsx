@@ -75,12 +75,12 @@ function Header({
               <img
                 src={iconImage}
                 alt={t("app.name")}
-                className="h-7 w-7 rounded-lg shadow-sm sm:h-8 sm:w-8"
+                className="h-7.5 w-7.5 rounded-lg shadow-sm sm:h-8.5 sm:w-8.5"
               />
             </button>
             <div className="xs:block hidden">
-              <div className="flex items-center gap-2">
-                <Heading5 className="dark:text-dark-text-primary text-base font-semibold text-gray-900 sm:text-xl">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <Heading5 className="dark:text-dark-text-primary text-sm leading-tight font-semibold text-gray-900 sm:text-lg">
                   <a
                     href={repositoryUrl}
                     target="_blank"
@@ -91,7 +91,10 @@ function Header({
                   </a>
                 </Heading5>
                 {/* Current extension version (links to the changelog). */}
-                <VersionBadge className="text-xs" />
+                <VersionBadge
+                  size="sm"
+                  className="w-fit self-start px-1.5 py-0 text-[0.65rem] leading-tight [&>a]:gap-1 [&>a]:leading-tight [&>a>svg]:size-3"
+                />
               </div>
             </div>
           </div>

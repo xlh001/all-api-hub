@@ -446,7 +446,7 @@
 }
 
 html {
-  --options-header-height: 4rem;
+  --options-header-height: 3.75rem;
   transition:
     background-color 0.3s ease,
     color 0.3s ease;

@@ -148,19 +148,22 @@ export default function HeaderSection({
       className={`flex items-center justify-between px-3 py-2 sm:px-5 sm:py-3 ${COLORS.background.primary} ${COLORS.border.default} shrink-0 border-b`}
     >
       {/* Logo and Title Section */}
-      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
         <img
           src={iconImage}
           alt={t("ui:app.name")}
-          className="h-6 w-6 shrink-0 rounded-lg shadow-sm sm:h-7 sm:w-7"
+          className="h-7 w-7 shrink-0 rounded-lg shadow-sm sm:h-8 sm:w-8"
         />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-w-0 items-center gap-2">
-            <BodySmall weight="semibold" className="truncate">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <BodySmall weight="semibold" className="truncate leading-tight">
               {t("ui:app.name")}
             </BodySmall>
             {/* Current extension version (links to the changelog). */}
-            <VersionBadge size="sm" className="shrink-0" />
+            <VersionBadge
+              size="sm"
+              className="w-fit self-start px-1.5 py-0 text-[0.65rem] leading-tight [&>a]:gap-1 [&>a]:leading-tight [&>a>svg]:size-3"
+            />
           </div>
         </div>
       </div>
