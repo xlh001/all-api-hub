@@ -11,6 +11,7 @@ import {
   ManagedSiteMessagesKey,
 } from "~/services/managedSites/utils/managedSite"
 import { ModelRedirectService } from "~/services/models/modelRedirect"
+import { notifyTaskResult } from "~/services/notifications/taskNotificationService"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type {
   ManagedSiteChannel,
@@ -25,6 +26,11 @@ import {
   ExecutionResult,
 } from "~/types/managedSiteModelSync"
 import type { OctopusConfig } from "~/types/octopusConfig"
+import {
+  getTaskNotificationStatusFromCounts,
+  TASK_NOTIFICATION_STATUSES,
+  TASK_NOTIFICATION_TASKS,
+} from "~/types/taskNotifications"
 import {
   clearAlarm,
   createAlarm,
@@ -116,9 +122,26 @@ class ModelSyncScheduler {
           if (alarm.name === ModelSyncScheduler.ALARM_NAME) {
             try {
               // Await to keep the MV3 service worker alive while the sync runs.
-              await this.executeSync()
+              const result = await this.executeSync()
+              await notifyTaskResult({
+                task: TASK_NOTIFICATION_TASKS.ManagedSiteModelSync,
+                status: getTaskNotificationStatusFromCounts({
+                  successCount: result.statistics.successCount,
+                  failedCount: result.statistics.failureCount,
+                }),
+                counts: {
+                  total: result.statistics.total,
+                  success: result.statistics.successCount,
+                  failed: result.statistics.failureCount,
+                },
+              })
             } catch (error) {
               logger.error("Scheduled execution failed", error)
+              await notifyTaskResult({
+                task: TASK_NOTIFICATION_TASKS.ManagedSiteModelSync,
+                status: TASK_NOTIFICATION_STATUSES.Failure,
+                message: getErrorMessage(error),
+              })
             }
           }
         })

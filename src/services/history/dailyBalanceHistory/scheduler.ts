@@ -1,11 +1,17 @@
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import { notifyTaskResult } from "~/services/notifications/taskNotificationService"
 import { userPreferences } from "~/services/preferences/userPreferences"
 import {
   DEFAULT_BALANCE_HISTORY_PREFERENCES,
   type BalanceHistoryPreferences,
   type DailyBalanceHistoryCaptureSource,
 } from "~/types/dailyBalanceHistory"
+import {
+  getTaskNotificationStatusFromCounts,
+  TASK_NOTIFICATION_STATUSES,
+  TASK_NOTIFICATION_TASKS,
+} from "~/types/taskNotifications"
 import {
   clearAlarm,
   createAlarm,
@@ -21,6 +27,7 @@ import { dailyBalanceHistoryStorage } from "./storage"
 import { clampBalanceHistoryRetentionDays } from "./utils"
 
 const logger = createLogger("DailyBalanceHistoryScheduler")
+const BALANCE_HISTORY_ALARM_TRIGGER: DailyBalanceHistoryCaptureSource = "alarm"
 
 const END_OF_DAY_CAPTURE_TIME = {
   hour: 23,
@@ -67,7 +74,31 @@ class DailyBalanceHistoryScheduler {
       }
 
       // Await to keep the MV3 service worker alive for the duration of the capture run.
-      await this.runEndOfDayCapture({ trigger: "alarm" })
+      const result = await this.runEndOfDayCapture({
+        trigger: BALANCE_HISTORY_ALARM_TRIGGER,
+      })
+      if (!result?.started || !result.totals) {
+        return
+      }
+
+      const totals = result.totals
+      if (totals.success + totals.failed === 0) {
+        return
+      }
+
+      await notifyTaskResult({
+        task: TASK_NOTIFICATION_TASKS.BalanceHistoryCapture,
+        status: getTaskNotificationStatusFromCounts({
+          successCount: totals.success,
+          failedCount: totals.failed,
+        }),
+        counts: {
+          total: totals.success + totals.failed,
+          success: totals.success,
+          failed: totals.failed,
+          skipped: 0,
+        },
+      })
     })
 
     await this.applyScheduleFromPreferences({ preserveExisting: true })
@@ -249,6 +280,17 @@ class DailyBalanceHistoryScheduler {
       }
     } catch (error) {
       logger.error("End-of-day capture run failed", error)
+      if (params.trigger === BALANCE_HISTORY_ALARM_TRIGGER) {
+        try {
+          await notifyTaskResult({
+            task: TASK_NOTIFICATION_TASKS.BalanceHistoryCapture,
+            status: TASK_NOTIFICATION_STATUSES.Failure,
+            message: getErrorMessage(error),
+          })
+        } catch (notifyError) {
+          logger.error("Failed to send task notification", notifyError)
+        }
+      }
       return null
     } finally {
       this.isRunning = false

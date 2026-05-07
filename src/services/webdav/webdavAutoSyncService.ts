@@ -8,6 +8,7 @@ import {
   normalizeBackupForMerge,
   type BackupFullV2,
 } from "~/services/importExport/importExportService"
+import { notifyTaskResult } from "~/services/notifications/taskNotificationService"
 import {
   getSharedPreferencesLastUpdated,
   restoreWebdavLocalOnlyPreferences,
@@ -24,6 +25,10 @@ import {
   type ApiCredentialProfilesConfig,
 } from "~/types/apiCredentialProfiles"
 import type { ChannelConfigMap } from "~/types/channelConfig"
+import {
+  TASK_NOTIFICATION_STATUSES,
+  TASK_NOTIFICATION_TASKS,
+} from "~/types/taskNotifications"
 import {
   isWebdavSyncDataSelectionEmpty,
   resolveWebdavSyncDataSelection,
@@ -285,11 +290,20 @@ class WebdavAutoSyncService {
       this.notifyFrontend("sync_completed", {
         timestamp: this.lastSyncTime,
       })
+      await notifyTaskResult({
+        task: TASK_NOTIFICATION_TASKS.WebdavAutoSync,
+        status: TASK_NOTIFICATION_STATUSES.Success,
+      })
     } catch (error) {
       logger.error("后台同步失败", error)
       this.lastSyncStatus = "error"
       this.lastSyncError = getErrorMessage(error)
       this.notifyFrontend("sync_error", { error: getErrorMessage(error) })
+      await notifyTaskResult({
+        task: TASK_NOTIFICATION_TASKS.WebdavAutoSync,
+        status: TASK_NOTIFICATION_STATUSES.Failure,
+        message: getErrorMessage(error),
+      })
     } finally {
       this.isSyncing = false
     }
