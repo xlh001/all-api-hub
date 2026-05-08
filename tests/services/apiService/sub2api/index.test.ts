@@ -9,11 +9,19 @@ import { fetchApi } from "~/services/apiService/common/utils"
 import {
   createApiToken,
   deleteApiToken,
+  fetchAccountAvailableModels,
   fetchAccountData,
   fetchAccountTokens,
+  fetchCheckInStatus,
   fetchCurrentUser,
   fetchSiteStatus,
+  fetchSub2ApiAnnouncements,
+  fetchSupportCheckIn,
+  fetchTodayIncome,
+  fetchTodayUsage,
+  fetchTokenById,
   fetchUserGroups,
+  markSub2ApiAnnouncementRead,
   refreshAccountData,
   updateApiToken,
 } from "~/services/apiService/sub2api"
@@ -30,6 +38,10 @@ import {
   translateSub2ApiUpdateTokenRequest,
 } from "~/services/apiService/sub2api/parsing"
 import { resyncSub2ApiAuthToken } from "~/services/apiService/sub2api/tokenResync"
+import type {
+  Sub2ApiAnnouncementListData,
+  Sub2ApiEnvelope,
+} from "~/services/apiService/sub2api/type"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 
 const { mockGetAccountById, mockUpdateAccount } = vi.hoisted(() => ({
@@ -200,6 +212,96 @@ describe("apiService sub2api parsing", () => {
         balance: 0,
       }),
     ).toThrow("messages:errors.api.invalidResponseFormat")
+  })
+
+  it("fetchSub2ApiAnnouncements requests unread-only notices when asked", async () => {
+    const announcementsResponse: Sub2ApiEnvelope<Sub2ApiAnnouncementListData> =
+      {
+        code: 0,
+        message: "ok",
+        data: [
+          {
+            id: 1,
+            title: "Notice",
+            content: "Body",
+          },
+        ],
+      }
+
+    vi.mocked(fetchApi).mockResolvedValueOnce(announcementsResponse as any)
+
+    await expect(
+      fetchSub2ApiAnnouncements(
+        {
+          baseUrl: "https://example.com",
+          accountId: "account-1",
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: "token",
+          },
+        },
+        { unreadOnly: true },
+      ),
+    ).resolves.toMatchObject([
+      {
+        id: 1,
+        title: "Notice",
+        content: "Body",
+      },
+    ])
+
+    expect(fetchApi).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        endpoint: expect.stringContaining("unread_only=1"),
+        options: expect.objectContaining({
+          method: "GET",
+          cache: "no-store",
+        }),
+      }),
+      true,
+    )
+  })
+
+  it("markSub2ApiAnnouncementRead returns false when the upstream call fails", async () => {
+    vi.mocked(fetchApi).mockRejectedValueOnce(new Error("read failed"))
+
+    await expect(
+      markSub2ApiAnnouncementRead(
+        {
+          baseUrl: "https://example.com",
+          accountId: "account-1",
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: "token",
+          },
+        },
+        "announcement-1",
+      ),
+    ).resolves.toBe(false)
+  })
+
+  it("returns the fixed unsupported check-in and zero-usage defaults", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      accountId: "account-1",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+      },
+    }
+
+    await expect(fetchSupportCheckIn(request as any)).resolves.toBe(false)
+    await expect(fetchCheckInStatus(request as any)).resolves.toBeUndefined()
+    await expect(fetchTodayUsage(request as any)).resolves.toEqual({
+      today_quota_consumption: 0,
+      today_prompt_tokens: 0,
+      today_completion_tokens: 0,
+      today_requests_count: 0,
+    })
+    await expect(fetchTodayIncome(request as any)).resolves.toEqual({
+      today_income: 0,
+    })
   })
 
   it("parseSub2ApiKey normalizes quota, dates, group aliases, and fallback user ids", () => {
@@ -1179,6 +1281,71 @@ describe("apiService sub2api exported operations", () => {
     expect(
       (vi.mocked(fetchApi).mock.calls[0]?.[1] as any)?.options?.method,
     ).toBe("DELETE")
+  })
+
+  it("rethrows update-token failures after logging the Sub2API context", async () => {
+    vi.mocked(fetchApi).mockResolvedValueOnce({
+      code: 0,
+      message: "ok",
+      data: {
+        id: 9,
+        user_id: 7,
+        key: "sub2api-token",
+        status: 1,
+        name: "Token",
+        created_at: 0,
+        updated_at: 0,
+        expires_at: null,
+        quota: 5,
+        quota_used: 1.5,
+        ip_whitelist: [],
+        group: { name: "default" },
+      },
+    } as any)
+    vi.mocked(fetchApi).mockResolvedValueOnce({
+      code: 0,
+      message: "ok",
+      data: [{ id: 2, name: "vip" }],
+    } as any)
+    vi.mocked(fetchApi).mockRejectedValueOnce(new Error("put failed"))
+
+    await expect(
+      updateApiToken(
+        baseRequest as any,
+        9,
+        createOperationTokenRequest({
+          group: "vip",
+          unlimited_quota: false,
+        }),
+      ),
+    ).rejects.toThrow("put failed")
+  })
+
+  it("rethrows delete-token failures after the upstream delete call rejects", async () => {
+    vi.mocked(fetchApi).mockRejectedValueOnce(new Error("delete failed"))
+
+    await expect(deleteApiToken(baseRequest as any, 12)).rejects.toThrow(
+      "delete failed",
+    )
+  })
+
+  it("rethrows token-detail and group-fetch failures after logging the Sub2API context", async () => {
+    vi.mocked(fetchApi).mockRejectedValueOnce(new Error("detail failed"))
+
+    await expect(fetchTokenById(baseRequest as any, 9)).rejects.toThrow(
+      "detail failed",
+    )
+
+    vi.mocked(fetchApi).mockRejectedValueOnce(new Error("groups failed"))
+    await expect(fetchUserGroups(baseRequest as any)).rejects.toThrow(
+      "groups failed",
+    )
+  })
+
+  it("returns an empty model list for Sub2API managed accounts", async () => {
+    await expect(
+      fetchAccountAvailableModels(baseRequest as any),
+    ).resolves.toEqual([])
   })
 
   it("reuses newer stored auth instead of refreshing again when account storage already rotated the JWT", async () => {

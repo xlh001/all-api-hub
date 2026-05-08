@@ -28,6 +28,7 @@ import { DEFAULT_AXON_HUB_CONFIG } from "~/types/axonHubConfig"
 import { DEFAULT_BALANCE_HISTORY_PREFERENCES } from "~/types/dailyBalanceHistory"
 import { DEFAULT_DONE_HUB_CONFIG } from "~/types/doneHubConfig"
 import { DEFAULT_OCTOPUS_CONFIG } from "~/types/octopusConfig"
+import { DEFAULT_SITE_ANNOUNCEMENT_PREFERENCES } from "~/types/siteAnnouncements"
 import { SortingCriteriaType } from "~/types/sorting"
 import { DEFAULT_TASK_NOTIFICATION_PREFERENCES } from "~/types/taskNotifications"
 import { deepOverride } from "~/utils"
@@ -1947,6 +1948,119 @@ describe("UserPreferencesContext", () => {
       syncInterval: 600,
       syncStrategy: "merge",
     })
+    expect((latestContext as any)?.preferences.lastUpdated).toBe(
+      preferences.lastUpdated,
+    )
+  })
+
+  it("hydrates site announcement preferences from the saved snapshot returned by background updates", async () => {
+    const preferences = clonePreferences()
+    const savedPreferences = deepOverride(preferences, {
+      siteAnnouncementNotifications: {
+        enabled: false,
+      },
+      lastUpdated: preferences.lastUpdated + 10,
+    })
+    mockedSendRuntimeMessage.mockResolvedValue({
+      success: true,
+      data: savedPreferences,
+    })
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateSiteAnnouncementNotifications({
+        enabled: false,
+        notificationEnabled: false,
+        intervalMinutes: 120,
+      })
+    })
+
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.SiteAnnouncementsUpdatePreferences,
+      settings: {
+        enabled: false,
+        notificationEnabled: false,
+        intervalMinutes: 120,
+      },
+    })
+    expect((latestContext as any)?.preferences).toEqual({
+      ...savedPreferences,
+      siteAnnouncementNotifications: {
+        enabled: false,
+        notificationEnabled:
+          DEFAULT_SITE_ANNOUNCEMENT_PREFERENCES.notificationEnabled,
+        intervalMinutes: DEFAULT_SITE_ANNOUNCEMENT_PREFERENCES.intervalMinutes,
+      },
+    })
+  })
+
+  it("merges site announcement preference updates locally when background omits a saved snapshot", async () => {
+    const preferences = clonePreferences()
+    preferences.siteAnnouncementNotifications = {
+      enabled: true,
+    } as typeof preferences.siteAnnouncementNotifications
+    mockedSendRuntimeMessage.mockResolvedValue({
+      success: true,
+    })
+
+    const context = await renderProvider(preferences)
+
+    await act(async () => {
+      await context.updateSiteAnnouncementNotifications({
+        notificationEnabled: false,
+        intervalMinutes: 120,
+      })
+    })
+
+    expect(
+      (latestContext as any)?.preferences.siteAnnouncementNotifications,
+    ).toEqual({
+      enabled: true,
+      notificationEnabled: false,
+      intervalMinutes: 120,
+    })
+    expect((latestContext as any)?.preferences.lastUpdated).toBeGreaterThan(
+      preferences.lastUpdated,
+    )
+    expect((latestContext as any)?.siteAnnouncementNotifications).toEqual({
+      enabled: true,
+      notificationEnabled: false,
+      intervalMinutes: 120,
+    })
+  })
+
+  it("keeps site announcement preferences unchanged when the background update fails", async () => {
+    const preferences = clonePreferences()
+    const originalSiteAnnouncementNotifications = structuredClone(
+      preferences.siteAnnouncementNotifications,
+    )
+    mockedSendRuntimeMessage.mockResolvedValue({
+      success: false,
+    })
+
+    const context = await renderProvider(preferences)
+
+    let success = true
+    await act(async () => {
+      success = await context.updateSiteAnnouncementNotifications({
+        enabled: false,
+      })
+    })
+
+    expect(success).toBe(false)
+    expect(mockedSendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.SiteAnnouncementsUpdatePreferences,
+      settings: {
+        enabled: false,
+      },
+    })
+    expect(
+      (latestContext as any)?.preferences.siteAnnouncementNotifications,
+    ).toEqual(originalSiteAnnouncementNotifications)
+    expect((latestContext as any)?.siteAnnouncementNotifications).toEqual(
+      originalSiteAnnouncementNotifications,
+    )
     expect((latestContext as any)?.preferences.lastUpdated).toBe(
       preferences.lastUpdated,
     )

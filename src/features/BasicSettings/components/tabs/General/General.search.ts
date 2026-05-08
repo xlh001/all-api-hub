@@ -11,6 +11,12 @@ const TASK_NOTIFICATION_BREADCRUMBS = [
   "settings:taskNotifications.title",
 ]
 
+const SITE_ANNOUNCEMENT_BREADCRUMBS = [
+  ...DEFAULT_BREADCRUMBS,
+  "settings:tabs.general",
+  "settings:siteAnnouncementNotifications.title",
+]
+
 const TASK_NOTIFICATION_CONTROL_ORDER_START = 509
 
 const TASK_NOTIFICATION_SEARCH_CONTROLS = [
@@ -53,6 +59,13 @@ const TASK_NOTIFICATION_SEARCH_CONTROLS = [
       "settings:taskNotifications.taskDescriptions.balanceHistoryCapture",
     keywords: ["notification", "balance history", "capture"],
   },
+  {
+    searchId: "control:task-notifications-site-announcements",
+    targetId: "task-notifications-site-announcements",
+    labelKey: "settings:taskNotifications.siteAnnouncements.enable",
+    descriptionKey: "settings:taskNotifications.siteAnnouncements.enableDesc",
+    keywords: ["notification", "site announcement", "notice"],
+  },
 ] as const
 
 export const generalSearchSections: OptionsSearchItemDefinition[] = [
@@ -89,25 +102,36 @@ export const generalSearchSections: OptionsSearchItemDefinition[] = [
     },
   ),
   buildSectionDefinition(
+    "section:site-announcements",
+    "general",
+    "site-announcement-notifications",
+    "settings:siteAnnouncementNotifications.title",
+    204,
+    {
+      descriptionKey: "settings:siteAnnouncementNotifications.description",
+      keywords: ["announcement", "notice", "polling"],
+    },
+  ),
+  buildSectionDefinition(
     "section:changelog",
     "general",
     "changelog-on-update",
     "settings:changelogOnUpdate.title",
-    204,
+    205,
   ),
   buildSectionDefinition(
     "section:logging",
     "general",
     "logging",
     "settings:logging.title",
-    205,
+    206,
   ),
   buildSectionDefinition(
     "section:danger",
     "general",
     "dangerous-zone",
     "settings:danger.title",
-    206,
+    207,
   ),
 ]
 
@@ -265,11 +289,36 @@ export const generalSearchControls: OptionsSearchItemDefinition[] = [
     ),
   ),
   buildControlDefinition(
+    "control:site-announcements-polling",
+    "general",
+    "site-announcement-notifications-enabled",
+    "settings:siteAnnouncementNotifications.polling.enable",
+    515,
+    {
+      descriptionKey:
+        "settings:siteAnnouncementNotifications.polling.enableDesc",
+      breadcrumbsKeys: SITE_ANNOUNCEMENT_BREADCRUMBS,
+      keywords: ["announcement", "notice", "polling", "background check"],
+    },
+  ),
+  buildControlDefinition(
+    "control:site-announcements-page",
+    "general",
+    "site-announcement-notifications-page",
+    "settings:siteAnnouncementNotifications.page.title",
+    516,
+    {
+      descriptionKey: "settings:siteAnnouncementNotifications.page.description",
+      breadcrumbsKeys: SITE_ANNOUNCEMENT_BREADCRUMBS,
+      keywords: ["announcement", "notice", "records", "page"],
+    },
+  ),
+  buildControlDefinition(
     "control:changelog-on-update",
     "general",
     "changelog-on-update-toggle",
     "settings:changelogOnUpdate.toggleLabel",
-    514,
+    517,
     {
       descriptionKey: "settings:changelogOnUpdate.toggleDesc",
       breadcrumbsKeys: [
@@ -285,7 +334,7 @@ export const generalSearchControls: OptionsSearchItemDefinition[] = [
     "general",
     "logging-console-enabled",
     "settings:logging.consoleEnabled",
-    515,
+    518,
     {
       descriptionKey: "settings:logging.consoleEnabledDesc",
       breadcrumbsKeys: [
@@ -301,7 +350,7 @@ export const generalSearchControls: OptionsSearchItemDefinition[] = [
     "general",
     "logging-min-level",
     "settings:logging.minLevel",
-    516,
+    519,
     {
       descriptionKey: "settings:logging.minLevelDesc",
       breadcrumbsKeys: [
@@ -317,7 +366,7 @@ export const generalSearchControls: OptionsSearchItemDefinition[] = [
     "general",
     "danger-reset-settings",
     "settings:danger.resetSettings",
-    517,
+    520,
     {
       descriptionKey: "settings:danger.resetDesc",
       breadcrumbsKeys: [
