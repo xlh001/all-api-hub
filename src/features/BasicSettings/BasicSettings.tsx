@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import {
   clearHighlightSearchParam,
@@ -51,6 +52,7 @@ import GeneralTab from "./components/tabs/General/GeneralTab"
 
 type TabId =
   | "general"
+  | "notifications"
   | "balanceHistory"
   | "accountManagement"
   | "refresh"
@@ -100,6 +102,9 @@ const DataBackupTab = createLazyTabComponent(
 const ManagedSiteTab = createLazyTabComponent(
   () => import("./components/tabs/ManagedSite/ManagedSiteTab"),
 )
+const NotificationsTab = createLazyTabComponent(
+  () => import("./components/tabs/Notifications/NotificationsTab"),
+)
 const PermissionsTab = createLazyTabComponent(
   () => import("./components/tabs/Permissions/PermissionsTab"),
 )
@@ -120,6 +125,7 @@ const PERMISSIONS_TAB_CONFIG: TabConfig = {
 
 const TAB_CONFIGS = [
   { id: "general", component: GeneralTab },
+  { id: "notifications", component: NotificationsTab },
   { id: "accountManagement", component: AccountManagementTab },
   { id: "refresh", component: AutoRefreshTab },
   { id: "checkinRedeem", component: CheckinRedeemTab },
@@ -138,6 +144,20 @@ const ANCHOR_TO_TAB: Record<string, TabId> = {
   display: "general",
   appearance: "general",
   theme: "general",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS]: "notifications",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_ENABLED]: "notifications",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_PERMISSION]: "notifications",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_AUTO_CHECKIN]: "notifications",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_WEBDAV_AUTO_SYNC]: "notifications",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_MANAGED_SITE_MODEL_SYNC]:
+    "notifications",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_USAGE_HISTORY_SYNC]: "notifications",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_BALANCE_HISTORY_CAPTURE]:
+    "notifications",
+  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_SITE_ANNOUNCEMENTS]: "notifications",
+  [SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS]: "general",
+  [SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED]: "general",
+  [SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_PAGE]: "general",
   "balance-history": "balanceHistory",
   "account-management": "accountManagement",
   "auto-provision-key-on-account-add": "accountManagement",
@@ -235,6 +255,8 @@ function getSettingsTabLabel(t: TFunction, tabId: TabId): string {
   switch (tabId) {
     case "general":
       return t("settings:tabs.general")
+    case "notifications":
+      return t("settings:tabs.notifications")
     case "balanceHistory":
       return t("settings:tabs.balanceHistory")
     case "accountManagement":
