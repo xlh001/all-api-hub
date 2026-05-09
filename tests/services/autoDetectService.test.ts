@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { AUTO_DETECT_ERROR_CODES } from "~/constants/autoDetect"
+import { SITE_TYPES } from "~/constants/siteType"
 import { autoDetectSmart } from "~/services/siteDetection/autoDetectService"
 
 const {
@@ -56,7 +57,7 @@ describe("autoDetectSmart", () => {
       sendMessage: vi.fn(),
     }
 
-    mockGetSiteType.mockResolvedValue("new-api")
+    mockGetSiteType.mockResolvedValue(SITE_TYPES.NEW_API)
     mockGetActiveOrAllTabs.mockResolvedValue([])
     mockGetActiveTabs.mockResolvedValue([])
     mockIsMessageReceiverUnavailableError.mockReturnValue(false)
@@ -87,7 +88,7 @@ describe("autoDetectSmart", () => {
         userId: 12,
         user: { id: 12, username: "alice" },
         accessToken: "current-tab-token",
-        siteTypeHint: "veloera",
+        siteTypeHint: SITE_TYPES.VELOERA,
       },
     })
 
@@ -98,7 +99,7 @@ describe("autoDetectSmart", () => {
       data: {
         userId: 12,
         user: { id: 12, username: "alice" },
-        siteType: "veloera",
+        siteType: SITE_TYPES.VELOERA,
         accessToken: "current-tab-token",
         sub2apiAuth: undefined,
       },
@@ -145,7 +146,7 @@ describe("autoDetectSmart", () => {
         userId: 88,
         user: { id: 88, username: "background-user" },
         accessToken: "background-token",
-        siteTypeHint: "new-api",
+        siteTypeHint: SITE_TYPES.NEW_API,
       },
     })
 
@@ -156,7 +157,7 @@ describe("autoDetectSmart", () => {
       data: {
         userId: 88,
         user: { id: 88, username: "background-user" },
-        siteType: "new-api",
+        siteType: SITE_TYPES.NEW_API,
         accessToken: "background-token",
         sub2apiAuth: undefined,
       },
@@ -191,7 +192,7 @@ describe("autoDetectSmart", () => {
           id: 9,
           username: "api-user",
         },
-        siteType: "new-api",
+        siteType: SITE_TYPES.NEW_API,
         accessToken: undefined,
         sub2apiAuth: undefined,
       },
@@ -208,7 +209,7 @@ describe("autoDetectSmart", () => {
     ])
     mockGetSiteType
       .mockRejectedValueOnce(new Error("background detect failed"))
-      .mockResolvedValueOnce("new-api")
+      .mockResolvedValueOnce(SITE_TYPES.NEW_API)
     mockFetchUserInfo.mockResolvedValue({
       id: 21,
       username: "direct-user",
@@ -224,7 +225,7 @@ describe("autoDetectSmart", () => {
           id: 21,
           username: "direct-user",
         },
-        siteType: "new-api",
+        siteType: SITE_TYPES.NEW_API,
         accessToken: undefined,
         sub2apiAuth: undefined,
       },
@@ -255,7 +256,7 @@ describe("autoDetectSmart", () => {
           id: 22,
           username: "direct-after-background-failure",
         },
-        siteType: "new-api",
+        siteType: SITE_TYPES.NEW_API,
         accessToken: undefined,
         sub2apiAuth: undefined,
       },

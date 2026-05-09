@@ -7,7 +7,7 @@ import {
   openCommunityPage,
   openFeatureRequestPage,
 } from "~/utils/navigation"
-import { render, screen } from "~~/tests/test-utils/render"
+import { act, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("~/contexts/ReleaseUpdateStatusContext", async (importOriginal) => {
   const actual =
@@ -133,7 +133,7 @@ describe("options Header", () => {
   })
 
   it("switches to the expanded mobile search trigger after scrolling", async () => {
-    window.scrollY = 48
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener")
 
     const { container } = render(
       <Header
@@ -144,17 +144,27 @@ describe("options Header", () => {
       />,
     )
 
-    window.dispatchEvent(new Event("scroll"))
+    await waitFor(() => {
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        "scroll",
+        expect.any(Function),
+        { passive: true },
+      )
+    })
 
-    expect(
-      await screen.findByText("ui:optionsSearch.placeholder"),
-    ).toBeInTheDocument()
-    expect(
-      container.textContent?.match(/ui:optionsSearch\.placeholder/g)?.length ??
-        0,
-    ).toBe(2)
-    expect(
-      screen.queryByRole("link", { name: "ui:app.name" }),
-    ).not.toBeInTheDocument()
+    act(() => {
+      window.scrollY = 48
+      window.dispatchEvent(new Event("scroll"))
+    })
+
+    await waitFor(() => {
+      expect(
+        container.textContent?.match(/ui:optionsSearch\.placeholder/g)
+          ?.length ?? 0,
+      ).toBe(2)
+      expect(
+        screen.queryByRole("link", { name: "ui:app.name" }),
+      ).not.toBeInTheDocument()
+    })
   })
 })

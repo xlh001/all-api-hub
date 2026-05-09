@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { DIALOG_MODES } from "~/constants/dialogModes"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
-import { SUB2API, UNKNOWN_SITE } from "~/constants/siteType"
+import { SITE_TYPES } from "~/constants/siteType"
 import { useAccountDialog } from "~/features/AccountManagement/components/AccountDialog/hooks/useAccountDialog"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { AuthTypeEnum } from "~/types"
@@ -79,7 +79,7 @@ describe("useAccountDialog Sub2API constraints", () => {
         autoCheckInEnabled: true,
         siteStatus: { isCheckedInToday: true },
       } as any)
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
     })
 
     await waitFor(() => {
@@ -105,14 +105,14 @@ describe("useAccountDialog Sub2API constraints", () => {
     })
 
     await act(async () => {
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
       result.current.handlers.handleSub2apiUseRefreshTokenChange(true)
       result.current.setters.setSub2apiRefreshToken("refresh-token")
       result.current.setters.setSub2apiTokenExpiresAt(123456)
     })
 
     await waitFor(() => {
-      expect(result.current.state.siteType).toBe(SUB2API)
+      expect(result.current.state.siteType).toBe(SITE_TYPES.SUB2API)
       expect(result.current.state.sub2apiUseRefreshToken).toBe(true)
       expect(result.current.state.sub2apiRefreshToken).toBe("refresh-token")
       expect(result.current.state.sub2apiTokenExpiresAt).toBe(123456)
@@ -144,7 +144,7 @@ describe("useAccountDialog Sub2API constraints", () => {
     })
 
     await act(async () => {
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
       result.current.setters.setSub2apiRefreshToken("refresh-token")
       result.current.setters.setSub2apiTokenExpiresAt(654321)
     })
@@ -173,7 +173,7 @@ describe("useAccountDialog Sub2API constraints", () => {
     })
 
     await act(async () => {
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
       result.current.setters.setSiteName("Sub2API")
       result.current.setters.setUsername("user")
       result.current.setters.setUserId("1")
@@ -250,12 +250,12 @@ describe("useAccountDialog Sub2API constraints", () => {
 
     await act(async () => {
       result.current.setters.setUrl("https://sub2.example.com")
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
     })
 
     await waitFor(() => {
       expect(result.current.state.url).toBe("https://sub2.example.com")
-      expect(result.current.state.siteType).toBe(SUB2API)
+      expect(result.current.state.siteType).toBe(SITE_TYPES.SUB2API)
     })
 
     await act(async () => {
@@ -313,12 +313,12 @@ describe("useAccountDialog Sub2API constraints", () => {
 
     await act(async () => {
       result.current.setters.setUrl("https://sub2.example.com")
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
     })
 
     await waitFor(() => {
       expect(result.current.state.url).toBe("https://sub2.example.com")
-      expect(result.current.state.siteType).toBe(SUB2API)
+      expect(result.current.state.siteType).toBe(SITE_TYPES.SUB2API)
     })
 
     await act(async () => {
@@ -379,7 +379,7 @@ describe("useAccountDialog Sub2API constraints", () => {
 
     await act(async () => {
       result.current.setters.setUrl("https://sub2.example.com")
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
     })
 
     await act(async () => {
@@ -445,7 +445,7 @@ describe("useAccountDialog Sub2API constraints", () => {
 
     await act(async () => {
       result.current.setters.setUrl("https://sub2.example.com")
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
       result.current.setters.setAccessToken("existing-jwt")
       result.current.setters.setUserId("99")
       result.current.setters.setUsername("existing-user")
@@ -528,13 +528,83 @@ describe("useAccountDialog Sub2API constraints", () => {
 
     expect(result.current.state.phase).toBe("account-form")
     expect(result.current.state.formSource).toBe("existing-account")
-    expect(result.current.state.siteType).toBe(SUB2API)
+    expect(result.current.state.siteType).toBe(SITE_TYPES.SUB2API)
     expect(result.current.state.sub2apiUseRefreshToken).toBe(true)
     expect(result.current.state.sub2apiRefreshToken).toBe(
       "stored-refresh-token",
     )
     expect(result.current.state.sub2apiTokenExpiresAt).toBe(654321)
     expect(result.current.state.authType).toBe(AuthTypeEnum.AccessToken)
+    getAccountByIdSpy.mockRestore()
+  })
+
+  it("normalizes invalid stored site types when loading edit-mode accounts with Sub2API auth", async () => {
+    const getAccountByIdSpy = vi
+      .spyOn(accountStorage, "getAccountById")
+      .mockResolvedValueOnce({
+        id: "invalid-site-type-sub2api-account",
+        site_name: "Invalid Site Type Sub2API Account",
+        site_url: "https://sub2.example.com",
+        site_type: "legacy-invalid-site",
+        exchange_rate: 7,
+        notes: "",
+        tagIds: [],
+        disabled: false,
+        excludeFromTotalBalance: false,
+        checkIn: {
+          enableDetection: true,
+          autoCheckInEnabled: true,
+          siteStatus: { isCheckedInToday: false },
+          customCheckIn: {
+            url: "",
+            redeemUrl: "",
+            openRedeemWithCheckIn: true,
+            isCheckedInToday: false,
+          },
+        },
+        health: { status: "healthy" },
+        authType: AuthTypeEnum.AccessToken,
+        sub2apiAuth: {
+          refreshToken: "stored-refresh-token",
+          tokenExpiresAt: 654321,
+        },
+        account_info: {
+          id: 88,
+          access_token: "stored-jwt",
+          username: "stored-user",
+          quota: 0,
+          today_prompt_tokens: 0,
+          today_completion_tokens: 0,
+          today_quota_consumption: 0,
+          today_requests_count: 0,
+          today_income: 0,
+        },
+        last_sync_time: 0,
+        created_at: 0,
+        updated_at: 0,
+      } as any)
+    const account = { id: "invalid-site-type-sub2api-account" } as any
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.EDIT,
+        account,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.url).toBe("https://sub2.example.com")
+    })
+
+    expect(result.current.state.siteType).toBe(SITE_TYPES.SUB2API)
+    expect(result.current.state.sub2apiUseRefreshToken).toBe(true)
+    expect(result.current.state.sub2apiRefreshToken).toBe(
+      "stored-refresh-token",
+    )
+    expect(result.current.state.sub2apiTokenExpiresAt).toBe(654321)
     getAccountByIdSpy.mockRestore()
   })
 
@@ -598,7 +668,7 @@ describe("useAccountDialog Sub2API constraints", () => {
       expect(result.current.state.url).toBe("https://unknown.example.com")
     })
 
-    expect(result.current.state.siteType).toBe(UNKNOWN_SITE)
+    expect(result.current.state.siteType).toBe(SITE_TYPES.UNKNOWN)
     expect(result.current.state.sub2apiUseRefreshToken).toBe(false)
     expect(result.current.state.sub2apiRefreshToken).toBe("")
     expect(result.current.state.sub2apiTokenExpiresAt).toBeNull()
@@ -642,7 +712,7 @@ describe("useAccountDialog Sub2API constraints", () => {
 
     await act(async () => {
       result.current.setters.setUrl("https://sub2.example.com")
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
     })
 
     await act(async () => {
@@ -698,7 +768,7 @@ describe("useAccountDialog Sub2API constraints", () => {
 
     await act(async () => {
       result.current.setters.setUrl("https://sub2.example.com")
-      result.current.setters.setSiteType(SUB2API)
+      result.current.setters.setSiteType(SITE_TYPES.SUB2API)
     })
 
     await act(async () => {

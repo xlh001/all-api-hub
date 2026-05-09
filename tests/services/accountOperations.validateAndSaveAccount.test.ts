@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { SUB2API } from "~/constants/siteType"
+import { SITE_TYPES } from "~/constants/siteType"
 import {
   MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS,
   validateAndSaveAccount,
@@ -28,9 +28,9 @@ vi.mock("react-hot-toast", () => ({
 }))
 
 vi.mock("~/services/apiService", () => ({
-  getApiService: () => ({
+  getApiService: vi.fn(() => ({
     fetchAccountData: fetchAccountDataMock,
-  }),
+  })),
 }))
 
 vi.mock(
@@ -147,7 +147,7 @@ describe("accountOperations validateAndSaveAccount", () => {
       "",
       [" group-a ", "", "group-b", "group-a"],
       CHECK_IN_DISABLED,
-      SUB2API,
+      SITE_TYPES.SUB2API,
       AuthTypeEnum.AccessToken,
       "",
       undefined,
@@ -168,7 +168,7 @@ describe("accountOperations validateAndSaveAccount", () => {
     expect(saved).not.toBeNull()
     expect(saved).toMatchObject({
       site_name: "Sub2 Portal",
-      site_type: SUB2API,
+      site_type: SITE_TYPES.SUB2API,
       excludeFromTotalBalance: true,
       tagIds: ["group-a", "group-b"],
       sub2apiAuth: { refreshToken: "refresh-token" },
@@ -183,6 +183,40 @@ describe("accountOperations validateAndSaveAccount", () => {
         quota: 0,
       },
     })
+  })
+
+  it("normalizes unsupported site types before saving", async () => {
+    const { getApiService } = await import("~/services/apiService")
+    fetchAccountDataMock.mockResolvedValueOnce({
+      quota: 12,
+      today_prompt_tokens: 0,
+      today_completion_tokens: 0,
+      today_quota_consumption: 0,
+      today_requests_count: 0,
+      today_income: 0,
+      checkIn: CHECK_IN_DISABLED,
+    })
+
+    const result = await validateAndSaveAccount(
+      "https://legacy.example.com",
+      "Legacy Site",
+      "legacy-user",
+      "token",
+      "5",
+      "7.0",
+      "",
+      [],
+      CHECK_IN_DISABLED,
+      "legacy-invalid-site",
+      AuthTypeEnum.AccessToken,
+      "",
+    )
+
+    expect(result.success).toBe(true)
+    expect(getApiService).toHaveBeenCalledWith(SITE_TYPES.UNKNOWN)
+
+    const saved = await accountStorage.getAccountById(result.accountId!)
+    expect(saved?.site_type).toBe(SITE_TYPES.UNKNOWN)
   })
 
   it("falls back to partial save when manual-add data refresh times out", async () => {

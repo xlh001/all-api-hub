@@ -1,15 +1,4 @@
-import {
-  ANYROUTER,
-  AXON_HUB,
-  DONE_HUB,
-  NEW_API,
-  OCTOPUS,
-  ONE_HUB,
-  SUB2API,
-  VELOERA,
-  WONG_GONGYI,
-  type SiteType,
-} from "~/constants/siteType"
+import { SITE_TYPES } from "~/constants/siteType"
 
 import * as anyrouterAPI from "./anyrouter"
 import * as axonHubAPI from "./axonHub"
@@ -25,21 +14,25 @@ type ApiOverrideModule = Record<string, unknown>
 
 // 映射表,只放需要覆盖的站点
 const siteOverrideMap = {
-  [ONE_HUB]: [oneHubAPI],
-  [DONE_HUB]: [doneHubAPI, oneHubAPI],
-  [VELOERA]: [veloeraAPI],
-  [ANYROUTER]: [anyrouterAPI],
-  [NEW_API]: [commonAPI],
-  [WONG_GONGYI]: [wongAPI],
-  [SUB2API]: [sub2apiAPI],
-  [OCTOPUS]: [octopusAPI],
-  [AXON_HUB]: [axonHubAPI],
+  [SITE_TYPES.ONE_HUB]: [oneHubAPI],
+  [SITE_TYPES.DONE_HUB]: [doneHubAPI, oneHubAPI],
+  [SITE_TYPES.VELOERA]: [veloeraAPI],
+  [SITE_TYPES.ANYROUTER]: [anyrouterAPI],
+  [SITE_TYPES.NEW_API]: [commonAPI],
+  [SITE_TYPES.WONG_GONGYI]: [wongAPI],
+  [SITE_TYPES.SUB2API]: [sub2apiAPI],
+  [SITE_TYPES.OCTOPUS]: [octopusAPI],
+  [SITE_TYPES.AXON_HUB]: [axonHubAPI],
 } as const
 
 // 添加类型定义
 type SiteOverrideMap = typeof siteOverrideMap
 
 export type ApiOverrideSite = keyof SiteOverrideMap
+
+const hasOwnOverrideSite = (value: unknown): value is ApiOverrideSite =>
+  typeof value === "string" &&
+  Object.prototype.hasOwnProperty.call(siteOverrideMap, value)
 
 /**
  * Append an optional SiteType hint to a function signature.
@@ -59,13 +52,11 @@ type WithSiteHint<F> = F extends (...args: infer A) => infer R
  */
 function getApiFunc<T extends keyof typeof commonAPI>(
   funcName: T,
-  currentSite: SiteType = "default",
+  currentSite: ApiOverrideSite | null = null,
 ): (typeof commonAPI)[T] {
   const overrideModules =
-    currentSite in siteOverrideMap
-      ? (siteOverrideMap[
-          currentSite as keyof SiteOverrideMap
-        ] as readonly ApiOverrideModule[])
+    currentSite && hasOwnOverrideSite(currentSite)
+      ? (siteOverrideMap[currentSite] as readonly ApiOverrideModule[])
       : null
 
   if (overrideModules) {
@@ -90,18 +81,18 @@ function createWrappedFunction<T extends (...args: any[]) => any>(
   funcName: keyof typeof commonAPI,
 ): T {
   return ((...args: any[]) => {
-    let currentSite: SiteType = "default"
+    let currentSite: ApiOverrideSite | null = null
     const lastArg = args[args.length - 1]
 
-    if (typeof lastArg === "string" && lastArg in siteOverrideMap) {
-      currentSite = lastArg as SiteType
+    if (hasOwnOverrideSite(lastArg)) {
+      currentSite = lastArg
       args.pop()
     } else {
       for (const arg of args) {
         if (arg && typeof arg === "object" && "siteType" in arg) {
           const candidate = arg.siteType
-          if (typeof candidate === "string" && candidate in siteOverrideMap) {
-            currentSite = candidate as SiteType
+          if (hasOwnOverrideSite(candidate)) {
+            currentSite = candidate
             break
           }
         }
@@ -146,7 +137,7 @@ const apiForSite = (site: ApiOverrideSite) => {
 }
 
 const isApiOverrideSite = (value: unknown): value is ApiOverrideSite =>
-  typeof value === "string" && value in siteOverrideMap
+  hasOwnOverrideSite(value)
 
 export const getApiService = (site: unknown) =>
   (isApiOverrideSite(site)

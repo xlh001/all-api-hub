@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { SUB2API } from "~/constants/siteType"
+import { SITE_TYPES } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
 import {
   extractDomainPrefix,
@@ -182,6 +182,44 @@ describe("accountOperations", () => {
         message: "messages:errors.validation.updateAccountFailed",
       })
     })
+
+    it("normalizes unsupported site types before updating", async () => {
+      mockFetchAccountData.mockResolvedValueOnce({
+        quota: 1,
+        today_prompt_tokens: 0,
+        today_completion_tokens: 0,
+        today_quota_consumption: 0,
+        today_requests_count: 0,
+        today_income: 0,
+        checkIn: { enableDetection: false },
+      })
+      mockUpdateAccount.mockResolvedValueOnce(true)
+
+      const result = await validateAndUpdateAccount(
+        "account-1",
+        "https://api.example.com",
+        "Test Site",
+        "user",
+        "token",
+        "1",
+        "7.0",
+        "notes",
+        [],
+        { enableDetection: false },
+        "legacy-invalid-site",
+        AuthTypeEnum.AccessToken,
+        "",
+      )
+
+      expect(result.success).toBe(true)
+      expect(vi.mocked(getApiService)).toHaveBeenCalledWith(SITE_TYPES.UNKNOWN)
+      expect(mockUpdateAccount).toHaveBeenCalledWith(
+        "account-1",
+        expect.objectContaining({
+          site_type: SITE_TYPES.UNKNOWN,
+        }),
+      )
+    })
   })
 
   describe("isValidAccount", () => {
@@ -224,13 +262,27 @@ describe("accountOperations", () => {
       ).toBe(false)
     })
 
+    it("does not treat invalid site types as Sub2API username exemptions", () => {
+      expect(
+        isValidAccount({
+          siteName: "Legacy",
+          username: "",
+          userId: "123",
+          siteType: "legacy-sub2api" as any,
+          authType: AuthTypeEnum.AccessToken,
+          accessToken: "token",
+          exchangeRate: "7.0",
+        }),
+      ).toBe(false)
+    })
+
     it("allows empty username for Sub2API accounts", () => {
       expect(
         isValidAccount({
           siteName: "Test",
           username: "",
           userId: "123",
-          siteType: SUB2API,
+          siteType: SITE_TYPES.SUB2API,
           authType: AuthTypeEnum.AccessToken,
           accessToken: "token",
           exchangeRate: "7.0",
@@ -396,11 +448,11 @@ describe("accountOperations", () => {
 
       const result = await getSiteName(
         "https://sub2.example.com/console",
-        SUB2API,
+        SITE_TYPES.SUB2API,
       )
 
       expect(result).toBe("Sub2 Portal")
-      expect(vi.mocked(getApiService)).toHaveBeenCalledWith(SUB2API)
+      expect(vi.mocked(getApiService)).toHaveBeenCalledWith(SITE_TYPES.SUB2API)
     })
 
     it("falls back to system_name when a default tab title is paired with a site-type hint", async () => {

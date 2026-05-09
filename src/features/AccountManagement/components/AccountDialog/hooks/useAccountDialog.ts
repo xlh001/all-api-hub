@@ -6,7 +6,7 @@ import { useChannelDialog } from "~/components/dialogs/ChannelDialog"
 import { COOKIE_IMPORT_FAILURE_REASONS } from "~/constants/cookieImport"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
-import { SUB2API, UNKNOWN_SITE } from "~/constants/siteType"
+import { isSiteType, SITE_TYPES, type SiteType } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import {
   autoDetectAccount,
@@ -251,7 +251,10 @@ export function useAccountDialog({
   )
   const setSiteType = useCallback(
     (value: string) => {
-      updateDraft((prev) => ({ ...prev, siteType: value }))
+      updateDraft((prev) => ({
+        ...prev,
+        siteType: isSiteType(value) ? value : SITE_TYPES.UNKNOWN,
+      }))
     },
     [updateDraft],
   )
@@ -421,13 +424,13 @@ export function useAccountDialog({
 
   // Enforce Sub2API constraints: JWT-only (access token), no built-in check-in.
   useEffect(() => {
-    if (siteType !== SUB2API) return
+    if (siteType !== SITE_TYPES.SUB2API) return
 
     updateDraft((prev) => applySub2ApiDraftConstraints(prev))
   }, [siteType, updateDraft])
 
   useEffect(() => {
-    if (siteType === SUB2API) return
+    if (siteType === SITE_TYPES.SUB2API) return
 
     updateDraft((prev) => clearSub2ApiRefreshTokenState(prev))
   }, [siteType, updateDraft])
@@ -468,9 +471,10 @@ export function useAccountDialog({
         if (siteAccount) {
           setUrl(siteAccount.site_url)
           const refreshToken = siteAccount.sub2apiAuth?.refreshToken ?? ""
-          const normalizedSiteType =
-            siteAccount.site_type ||
-            (siteAccount.sub2apiAuth ? SUB2API : UNKNOWN_SITE)
+          const normalizedSiteType = resolveStoredSiteType(
+            siteAccount.site_type,
+            Boolean(siteAccount.sub2apiAuth),
+          )
           setDraft({
             siteName: siteAccount.site_name,
             username: siteAccount.account_info.username,
@@ -511,11 +515,12 @@ export function useAccountDialog({
             cookieAuthSessionCookie:
               siteAccount.cookieAuth?.sessionCookie || "",
             sub2apiUseRefreshToken:
-              normalizedSiteType === SUB2API && Boolean(refreshToken.trim()),
+              normalizedSiteType === SITE_TYPES.SUB2API &&
+              Boolean(refreshToken.trim()),
             sub2apiRefreshToken:
-              normalizedSiteType === SUB2API ? refreshToken : "",
+              normalizedSiteType === SITE_TYPES.SUB2API ? refreshToken : "",
             sub2apiTokenExpiresAt:
-              normalizedSiteType === SUB2API
+              normalizedSiteType === SITE_TYPES.SUB2API
                 ? siteAccount.sub2apiAuth?.tokenExpiresAt ?? null
                 : null,
           })
@@ -950,9 +955,11 @@ export function useAccountDialog({
           mode === DIALOG_MODES.EDIT ||
           formSource !== ACCOUNT_DIALOG_FORM_SOURCES.DETECTED
 
-        const nextSiteType = resultData.siteType || siteType
+        const nextSiteType = isSiteType(resultData.siteType)
+          ? resultData.siteType
+          : siteType
         const nextCheckIn =
-          nextSiteType === SUB2API
+          nextSiteType === SITE_TYPES.SUB2API
             ? {
                 ...detectedCheckIn,
                 enableDetection: false,
@@ -974,7 +981,7 @@ export function useAccountDialog({
         // Attempt to auto-import session cookies after detection for cookie-auth accounts.
         if (
           authType === AuthTypeEnum.Cookie &&
-          resultData.siteType !== SUB2API &&
+          resultData.siteType !== SITE_TYPES.SUB2API &&
           !cookieAuthSessionCookie.trim() &&
           url.trim()
         ) {
@@ -1046,7 +1053,7 @@ export function useAccountDialog({
     try {
       setIsSaving(true)
       const sub2apiAuth: Sub2ApiAuthConfig | undefined =
-        siteType === SUB2API &&
+        siteType === SITE_TYPES.SUB2API &&
         sub2apiUseRefreshToken &&
         sub2apiRefreshToken.trim()
           ? {
@@ -1173,7 +1180,7 @@ export function useAccountDialog({
       }
 
       if (
-        siteType === SUB2API &&
+        siteType === SITE_TYPES.SUB2API &&
         !options?.skipSub2ApiKeyPrompt &&
         typeof result.accountId === "string" &&
         result.accountId.trim().length > 0
@@ -1317,18 +1324,21 @@ export function useAccountDialog({
     }
   }
 
+  const normalizedFormSiteType = isSiteType(siteType)
+    ? siteType
+    : SITE_TYPES.UNKNOWN
   const isFormValid = isValidAccount({
     siteName,
     username,
     userId,
-    siteType,
+    siteType: normalizedFormSiteType,
     authType,
     accessToken,
     cookieAuthSessionCookie,
     exchangeRate,
   })
   const isSub2ApiRefreshTokenValid =
-    siteType !== SUB2API ||
+    siteType !== SITE_TYPES.SUB2API ||
     !sub2apiUseRefreshToken ||
     !!sub2apiRefreshToken.trim()
   const isManualBalanceUsdInvalid =
@@ -1503,7 +1513,7 @@ function clearSub2ApiRefreshTokenState(
 function buildDraftFromAutoDetectResult(params: {
   draft: AccountDialogDraft
   resultData: NonNullable<Awaited<ReturnType<typeof autoDetectAccount>>["data"]>
-  nextSiteType: string
+  nextSiteType: SiteType
   nextCheckIn: CheckInConfig
   preserveExistingCheckIn: boolean
   mode: DialogMode
@@ -1530,23 +1540,25 @@ function buildDraftFromAutoDetectResult(params: {
         : draft.exchangeRate,
     siteType: nextSiteType,
     authType:
-      nextSiteType === SUB2API ? AuthTypeEnum.AccessToken : draft.authType,
+      nextSiteType === SITE_TYPES.SUB2API
+        ? AuthTypeEnum.AccessToken
+        : draft.authType,
     cookieAuthSessionCookie:
-      nextSiteType === SUB2API ? "" : draft.cookieAuthSessionCookie,
+      nextSiteType === SITE_TYPES.SUB2API ? "" : draft.cookieAuthSessionCookie,
     checkIn: preserveExistingCheckIn
       ? deepOverride(nextCheckIn, draft.checkIn)
       : nextCheckIn,
     sub2apiRefreshToken:
-      resultData.siteType === SUB2API && resultData.sub2apiAuth
+      resultData.siteType === SITE_TYPES.SUB2API && resultData.sub2apiAuth
         ? resultData.sub2apiAuth.refreshToken
         : draft.sub2apiRefreshToken,
     sub2apiTokenExpiresAt:
-      resultData.siteType === SUB2API && resultData.sub2apiAuth
+      resultData.siteType === SITE_TYPES.SUB2API && resultData.sub2apiAuth
         ? resultData.sub2apiAuth.tokenExpiresAt ?? null
         : draft.sub2apiTokenExpiresAt,
   }
 
-  return nextSiteType === SUB2API
+  return nextSiteType === SITE_TYPES.SUB2API
     ? applySub2ApiDraftConstraints(nextDraft)
     : nextDraft
 }
@@ -1567,4 +1579,18 @@ function areDraftsEquivalent(
     left.sub2apiRefreshToken === right.sub2apiRefreshToken &&
     left.sub2apiTokenExpiresAt === right.sub2apiTokenExpiresAt
   )
+}
+
+/**
+ * Normalizes legacy persisted site types before hydrating edit-mode draft state.
+ */
+function resolveStoredSiteType(
+  value: unknown,
+  hasSub2ApiAuth: boolean,
+): SiteType {
+  if (isSiteType(value)) {
+    return value
+  }
+
+  return hasSub2ApiAuth ? SITE_TYPES.SUB2API : SITE_TYPES.UNKNOWN
 }
