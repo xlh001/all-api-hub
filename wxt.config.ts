@@ -84,7 +84,7 @@ export default defineConfig({
         },
       },
       build: {
-        sourcemap: env.mode === "development" ? "inline" : false,
+        sourcemap: getBuildSourcemap(env.mode),
         minify: env.mode !== "development",
       },
     }
@@ -126,6 +126,17 @@ function buildDevManifestDescription(projectPath: string) {
   const maxPathLen = MANIFEST_DESCRIPTION_MAX_LEN - prefix.length
   const shortPath = shortenPathForManifestDescription(projectPath, maxPathLen)
   return `${prefix}${shortPath}`
+}
+
+function getBuildSourcemap(mode: string) {
+  if (mode === "development") return "inline"
+
+  return isBuildSourcemapEnabled() ? true : false
+}
+
+function isBuildSourcemapEnabled() {
+  const value = process.env.AAH_BUILD_SOURCEMAP?.trim().toLowerCase()
+  return value === "1" || value === "true"
 }
 
 /**
