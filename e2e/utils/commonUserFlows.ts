@@ -11,6 +11,8 @@ import {
   I18NEXT_LANGUAGE_STORAGE_KEY,
   STORAGE_KEYS,
 } from "~/services/core/storageKeys"
+import { USAGE_HISTORY_STORAGE_KEYS } from "~/services/history/usageHistory/constants"
+import { SITE_ANNOUNCEMENTS_STORE_SCHEMA_VERSION } from "~/services/siteAnnouncements/constants"
 import { API_TYPES } from "~/services/verification/aiApiVerification/types"
 import {
   AuthTypeEnum,
@@ -24,6 +26,16 @@ import {
   API_CREDENTIAL_PROFILES_CONFIG_VERSION,
   type ApiCredentialProfile,
 } from "~/types/apiCredentialProfiles"
+import {
+  DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+  type DailyBalanceHistoryStore,
+} from "~/types/dailyBalanceHistory"
+import type { SiteAnnouncementStoreState } from "~/types/siteAnnouncements"
+import {
+  USAGE_HISTORY_STORE_SCHEMA_VERSION,
+  type UsageHistoryAccountStore,
+  type UsageHistoryStore,
+} from "~/types/usageHistory"
 import type { DeepPartial } from "~/types/utils"
 import { deepOverride } from "~/utils"
 
@@ -230,6 +242,114 @@ export async function seedStoredBookmarks(
   )
 
   await setPlasmoStorageValue(serviceWorker, STORAGE_KEYS.ACCOUNTS, config)
+}
+
+/**
+ * Persist the global tag store used by account/bookmark filter chips.
+ */
+export async function seedTagStore(
+  serviceWorker: Worker,
+  tags: Array<{ id: string; name: string }>,
+) {
+  const now = Date.now()
+  await setPlasmoStorageValue(serviceWorker, STORAGE_KEYS.TAG_STORE, {
+    version: 1,
+    tagsById: Object.fromEntries(
+      tags.map((tag) => [
+        tag.id,
+        {
+          id: tag.id,
+          name: tag.name,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]),
+    ),
+  })
+}
+
+/**
+ * Persist daily balance snapshots for Balance History E2E scenarios.
+ */
+export async function seedDailyBalanceHistoryStore(
+  serviceWorker: Worker,
+  snapshotsByAccountId: DailyBalanceHistoryStore["snapshotsByAccountId"],
+) {
+  await setPlasmoStorageValue(
+    serviceWorker,
+    STORAGE_KEYS.DAILY_BALANCE_HISTORY_STORE,
+    {
+      schemaVersion: DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+      snapshotsByAccountId,
+    } satisfies DailyBalanceHistoryStore,
+  )
+}
+
+function createEmptyUsageHistoryAccountStore(
+  overrides: Partial<UsageHistoryAccountStore> = {},
+): UsageHistoryAccountStore {
+  return {
+    cursor: {
+      lastSeenCreatedAt: 0,
+      fingerprintsAtLastSeenCreatedAt: [],
+    },
+    status: {
+      state: "success",
+      lastSyncAt: Date.now(),
+      lastSuccessAt: Date.now(),
+    },
+    daily: {},
+    hourly: {},
+    dailyByModel: {},
+    tokenNamesById: {},
+    dailyByToken: {},
+    hourlyByToken: {},
+    dailyByTokenByModel: {},
+    latencyDaily: {},
+    latencyDailyByModel: {},
+    latencyDailyByToken: {},
+    latencyDailyByTokenByModel: {},
+    ...overrides,
+  }
+}
+
+/**
+ * Build a complete per-account usage-history store while keeping scenarios terse.
+ */
+export function createUsageHistoryAccountStore(
+  overrides: Partial<UsageHistoryAccountStore> = {},
+): UsageHistoryAccountStore {
+  return createEmptyUsageHistoryAccountStore(overrides)
+}
+
+/**
+ * Persist usage analytics aggregates for Usage Analytics E2E scenarios.
+ */
+export async function seedUsageHistoryStore(
+  serviceWorker: Worker,
+  accounts: Record<string, UsageHistoryAccountStore>,
+) {
+  await setPlasmoStorageValue(serviceWorker, USAGE_HISTORY_STORAGE_KEYS.STORE, {
+    schemaVersion: USAGE_HISTORY_STORE_SCHEMA_VERSION,
+    accounts,
+  } satisfies UsageHistoryStore)
+}
+
+/**
+ * Persist cached provider-site announcements for Site Announcements E2E scenarios.
+ */
+export async function seedSiteAnnouncementsStore(
+  serviceWorker: Worker,
+  sites: SiteAnnouncementStoreState["sites"],
+) {
+  await setPlasmoStorageValue(
+    serviceWorker,
+    STORAGE_KEYS.SITE_ANNOUNCEMENTS_STORE,
+    {
+      schemaVersion: SITE_ANNOUNCEMENTS_STORE_SCHEMA_VERSION,
+      sites,
+    } satisfies SiteAnnouncementStoreState,
+  )
 }
 
 /**
