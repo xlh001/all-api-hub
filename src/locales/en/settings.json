@@ -512,6 +512,34 @@
         "description": "Send through browser system notifications. Requires the notifications permission.",
         "title": "Browser system notifications"
       },
+      "dingtalk": {
+        "description": "Send task notifications through a DingTalk group custom bot. Pasting the full webhook URL from DingTalk is recommended, and the access_token value is still supported.",
+        "docsLink": "View setup docs",
+        "secret": "Signing secret (optional)",
+        "secretPlaceholder": "SECxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "title": "DingTalk Bot",
+        "webhookKey": "Webhook URL or access_token",
+        "webhookKeyDescription": "Copy the webhook URL from the DingTalk custom bot settings page and paste it here. If you enter only the value after `access_token=`, All API Hub will complete the URL automatically. If signed security is enabled, enter the secret as well.",
+        "webhookKeyPlaceholder": "https://oapi.dingtalk.com/robot/send?access_token=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "feishu": {
+        "description": "Send task notifications through a Feishu custom bot. Pasting the full webhook URL from Feishu is recommended, and the final key segment is still supported.",
+        "docsLink": "View setup docs",
+        "title": "Feishu Bot",
+        "webhookKey": "Webhook URL or key",
+        "webhookKeyDescription": "Copy the webhook URL from the Feishu custom bot settings page and paste it here. If you enter only the key after `/hook/`, All API Hub will complete the URL automatically.",
+        "webhookKeyPlaceholder": "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      },
+      "ntfy": {
+        "accessToken": "Access token (optional)",
+        "accessTokenPlaceholder": "tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "description": "Send task notifications through an ntfy topic, using ntfy.sh or a self-hosted ntfy server.",
+        "docsLink": "View setup docs",
+        "title": "ntfy",
+        "topicUrl": "Topic URL or topic name",
+        "topicUrlDescription": "Enter a full topic URL such as `https://ntfy.sh/mytopic`, or enter only an ntfy.sh topic name. Add an access token when your self-hosted server or private topic requires one.",
+        "topicUrlPlaceholder": "https://ntfy.sh/mytopic"
+      },
       "telegram": {
         "botToken": "Bot token",
         "botTokenPlaceholder": "123456:ABC-DEF...",
@@ -525,13 +553,21 @@
         "title": "Generic webhook",
         "url": "Webhook URL",
         "urlPlaceholder": "https://example.com/webhook"
+      },
+      "wecom": {
+        "description": "Send task notifications through WeCom group message push. Pasting the full webhook URL from WeCom is recommended, and the key value is still supported.",
+        "docsLink": "View setup docs",
+        "title": "WeCom Bot",
+        "webhookKey": "Webhook URL or key",
+        "webhookKeyDescription": "Copy the webhook URL from the WeCom group's message push settings and paste it here. If you enter only the key after `key=`, All API Hub will complete the URL automatically.",
+        "webhookKeyPlaceholder": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       }
     },
     "enable": "Enable task notifications",
     "enableDesc": "When enabled, selected tasks send success, partial success, or failure notifications after scheduled runs finish.",
     "groups": {
       "channels": {
-        "description": "Choose where notifications are delivered. Browser notifications need permission, while Telegram and webhook channels can be configured and tested separately.",
+        "description": "Choose where notifications are delivered. Browser notifications need permission, while Telegram, Feishu, DingTalk, WeCom, ntfy, and webhook channels can be configured and tested separately.",
         "title": "Notification channels"
       },
       "setup": {
@@ -586,15 +622,20 @@
       "action": "Send test notification",
       "browserFailed": "Browser notification test failed. Make sure the browser notification channel is enabled and notification permission is granted.",
       "channelDisabled": "Failed to send the test notification. Enable and configure this notification channel first.",
+      "dingtalkMissingConfig": "DingTalk Bot webhook URL or access_token is not configured.",
       "failed": "Failed to send the test notification. Check this notification channel configuration.",
+      "feishuMissingConfig": "Feishu Bot webhook URL or key is not configured.",
       "httpError": "{{label}} returned HTTP {{status}}.",
       "httpErrorWithDetail": "{{label}} returned HTTP {{status}}: {{detail}}",
       "message": "This is an All API Hub task notification test.",
+      "ntfyInvalidUrl": "The ntfy topic must be an http:// or https:// URL, or a valid ntfy.sh topic name.",
+      "ntfyMissingConfig": "The ntfy topic URL or topic name is not configured.",
       "sent": "Test notification sent",
       "telegramMissingConfig": "Telegram Bot token or Chat ID is not configured.",
       "title": "All API Hub test notification",
       "webhookInvalidUrl": "Webhook URL must use http:// or https://.",
-      "webhookMissingConfig": "Webhook URL is not configured."
+      "webhookMissingConfig": "Webhook URL is not configured.",
+      "wecomMissingConfig": "WeCom Bot webhook URL or key is not configured."
     }
   },
   "theme": {

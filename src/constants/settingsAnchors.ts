@@ -9,6 +9,18 @@ export const SETTINGS_ANCHORS = {
   TASK_NOTIFICATIONS_TELEGRAM_BOT_TOKEN:
     "task-notifications-telegram-bot-token",
   TASK_NOTIFICATIONS_TELEGRAM_CHAT_ID: "task-notifications-telegram-chat-id",
+  TASK_NOTIFICATIONS_CHANNEL_FEISHU: "task-notifications-channel-feishu",
+  TASK_NOTIFICATIONS_FEISHU_WEBHOOK_KEY:
+    "task-notifications-feishu-webhook-key",
+  TASK_NOTIFICATIONS_CHANNEL_DINGTALK: "task-notifications-channel-dingtalk",
+  TASK_NOTIFICATIONS_DINGTALK_WEBHOOK_KEY:
+    "task-notifications-dingtalk-webhook-key",
+  TASK_NOTIFICATIONS_DINGTALK_SECRET: "task-notifications-dingtalk-secret",
+  TASK_NOTIFICATIONS_CHANNEL_WECOM: "task-notifications-channel-wecom",
+  TASK_NOTIFICATIONS_WECOM_WEBHOOK_KEY: "task-notifications-wecom-webhook-key",
+  TASK_NOTIFICATIONS_CHANNEL_NTFY: "task-notifications-channel-ntfy",
+  TASK_NOTIFICATIONS_NTFY_TOPIC_URL: "task-notifications-ntfy-topic-url",
+  TASK_NOTIFICATIONS_NTFY_ACCESS_TOKEN: "task-notifications-ntfy-access-token",
   TASK_NOTIFICATIONS_CHANNEL_WEBHOOK: "task-notifications-channel-webhook",
   TASK_NOTIFICATIONS_WEBHOOK_URL: "task-notifications-webhook-url",
   TASK_NOTIFICATIONS_AUTO_CHECKIN: "task-notifications-autoCheckin",

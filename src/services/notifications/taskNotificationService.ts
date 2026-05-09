@@ -68,6 +68,42 @@ interface TaskNotificationDeliveryOptions {
   surfaceErrors?: boolean
 }
 
+interface FeishuWebhookResponseBody {
+  code?: unknown
+  msg?: unknown
+  StatusCode?: unknown
+  StatusMessage?: unknown
+}
+
+interface DingtalkWebhookResponseBody {
+  errcode?: unknown
+  errmsg?: unknown
+}
+
+interface DingtalkTextMessageBody {
+  msgtype: "text"
+  text: {
+    content: string
+  }
+  at: {
+    isAtAll: false
+  }
+}
+
+interface WecomWebhookResponseBody {
+  errcode?: unknown
+  errmsg?: unknown
+}
+
+const FEISHU_CUSTOM_BOT_WEBHOOK_PREFIX =
+  "https://open.feishu.cn/open-apis/bot/v2/hook/"
+const DINGTALK_CUSTOM_BOT_WEBHOOK_PREFIX =
+  "https://oapi.dingtalk.com/robot/send?access_token="
+const WECOM_BOT_WEBHOOK_PREFIX =
+  "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
+const NTFY_DEFAULT_SERVER_URL = "https://ntfy.sh"
+const ASCII_HEADER_VALUE_PATTERN = /^[\x20-\x7e]*$/
+
 const TASK_LABEL_KEYS: Record<TaskNotificationTask, string> = {
   [TASK_NOTIFICATION_TASKS.AutoCheckin]:
     "settings:taskNotifications.tasks.autoCheckin",
@@ -248,9 +284,16 @@ async function getNotificationResponseErrorDetail(
       const body = (await response.json()) as {
         description?: unknown
         message?: unknown
+        msg?: unknown
+        StatusMessage?: unknown
         error?: unknown
       }
-      const message = body.description ?? body.message ?? body.error
+      const message =
+        body.description ??
+        body.message ??
+        body.msg ??
+        body.StatusMessage ??
+        body.error
       return typeof message === "string" && message.trim()
         ? message.trim()
         : null
@@ -264,6 +307,27 @@ async function getNotificationResponseErrorDetail(
 }
 
 /**
+ * Builds a user-facing failure message from a parsed third-party response body.
+ */
+function getNotificationParsedErrorMessage(
+  labelKey: string,
+  status: number,
+  detail: string | null,
+): string {
+  const label = t(labelKey)
+  return detail
+    ? t("settings:taskNotifications.test.httpErrorWithDetail", {
+        label,
+        status,
+        detail,
+      })
+    : t("settings:taskNotifications.test.httpError", {
+        label,
+        status,
+      })
+}
+
+/**
  * Builds a user-facing HTTP failure message from a third-party response.
  */
 async function getNotificationHttpErrorMessage(
@@ -271,17 +335,7 @@ async function getNotificationHttpErrorMessage(
   response: Response,
 ): Promise<string> {
   const detail = await getNotificationResponseErrorDetail(response)
-  const label = t(labelKey)
-  return detail
-    ? t("settings:taskNotifications.test.httpErrorWithDetail", {
-        label,
-        status: response.status,
-        detail,
-      })
-    : t("settings:taskNotifications.test.httpError", {
-        label,
-        status: response.status,
-      })
+  return getNotificationParsedErrorMessage(labelKey, response.status, detail)
 }
 
 /**
@@ -357,6 +411,313 @@ async function sendTelegramNotification(
         response,
       ),
     )
+  }
+
+  return true
+}
+
+/**
+ * Sends a plain-text Feishu custom bot message.
+ */
+async function sendFeishuNotification(
+  content: TaskNotificationContent,
+  config: TaskNotificationPreferences["channels"][typeof TASK_NOTIFICATION_CHANNELS.Feishu],
+): Promise<boolean> {
+  const webhookInput = config.webhookKey.trim()
+  if (!webhookInput) {
+    throw new Error(t("settings:taskNotifications.test.feishuMissingConfig"))
+  }
+
+  const labelKey = "settings:taskNotifications.channels.feishu.title"
+  const webhookUrl = webhookInput.startsWith("http://")
+    ? webhookInput
+    : webhookInput.startsWith("https://")
+      ? webhookInput
+      : `${FEISHU_CUSTOM_BOT_WEBHOOK_PREFIX}${encodeURIComponent(webhookInput)}`
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      msg_type: "text",
+      content: {
+        text: `${content.title}\n${content.message}`,
+      },
+    }),
+  })
+
+  let body: FeishuWebhookResponseBody | null = null
+
+  try {
+    body = (await response.json()) as FeishuWebhookResponseBody
+  } catch {
+    body = null
+  }
+
+  const detail =
+    typeof body?.msg === "string" && body.msg.trim()
+      ? body.msg.trim()
+      : typeof body?.StatusMessage === "string" && body.StatusMessage.trim()
+        ? body.StatusMessage.trim()
+        : null
+
+  if (!response.ok) {
+    throw new Error(
+      getNotificationParsedErrorMessage(labelKey, response.status, detail),
+    )
+  }
+
+  // Feishu's custom bot docs define `code` as the current success indicator.
+  // `StatusCode` is retained only as a legacy fallback for older responses.
+  const code = typeof body?.code === "number" ? body.code : null
+  const statusCode =
+    typeof body?.StatusCode === "number" ? body.StatusCode : null
+  const isBusinessSuccess = code !== null ? code === 0 : statusCode === 0
+  if (!isBusinessSuccess) {
+    throw new Error(
+      getNotificationParsedErrorMessage(labelKey, response.status, detail),
+    )
+  }
+
+  return true
+}
+
+/**
+ * Normalizes DingTalk webhook response codes returned as numbers or strings.
+ */
+function getDingtalkErrcode(body: DingtalkWebhookResponseBody | null) {
+  if (typeof body?.errcode === "number") {
+    return body.errcode
+  }
+
+  if (typeof body?.errcode === "string") {
+    const parsed = Number(body.errcode)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  return null
+}
+
+/**
+ * Sends a plain-text DingTalk custom bot message.
+ */
+async function sendDingtalkNotification(
+  content: TaskNotificationContent,
+  config: TaskNotificationPreferences["channels"][typeof TASK_NOTIFICATION_CHANNELS.Dingtalk],
+): Promise<boolean> {
+  const webhookInput = config.webhookKey.trim()
+  if (!webhookInput) {
+    throw new Error(t("settings:taskNotifications.test.dingtalkMissingConfig"))
+  }
+
+  const labelKey = "settings:taskNotifications.channels.dingtalk.title"
+  const webhookUrl =
+    webhookInput.startsWith("http://") || webhookInput.startsWith("https://")
+      ? new URL(webhookInput)
+      : new URL(
+          `${DINGTALK_CUSTOM_BOT_WEBHOOK_PREFIX}${encodeURIComponent(webhookInput)}`,
+        )
+
+  const secret = config.secret.trim()
+  if (secret) {
+    const timestamp = Date.now().toString()
+    const signatureBase = `${timestamp}\n${secret}`
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    )
+    const signature = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(signatureBase),
+    )
+    const sign = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    webhookUrl.searchParams.set("timestamp", timestamp)
+    webhookUrl.searchParams.set("sign", sign)
+  }
+
+  const requestBody: DingtalkTextMessageBody = {
+    msgtype: "text",
+    text: {
+      content: `${content.title}\n${content.message}`,
+    },
+    at: {
+      isAtAll: false,
+    },
+  }
+
+  const response = await fetch(webhookUrl.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json;charset=utf-8",
+    },
+    body: JSON.stringify(requestBody),
+  })
+
+  let responseBody: DingtalkWebhookResponseBody | null = null
+
+  try {
+    responseBody = (await response.json()) as DingtalkWebhookResponseBody
+  } catch {
+    responseBody = null
+  }
+
+  const detail =
+    typeof responseBody?.errmsg === "string" && responseBody.errmsg.trim()
+      ? responseBody.errmsg.trim()
+      : null
+
+  if (!response.ok) {
+    throw new Error(
+      getNotificationParsedErrorMessage(labelKey, response.status, detail),
+    )
+  }
+
+  if (getDingtalkErrcode(responseBody) !== 0) {
+    throw new Error(
+      getNotificationParsedErrorMessage(labelKey, response.status, detail),
+    )
+  }
+
+  return true
+}
+
+/**
+ * Sends a plain-text WeCom group bot message.
+ */
+async function sendWecomNotification(
+  content: TaskNotificationContent,
+  config: TaskNotificationPreferences["channels"][typeof TASK_NOTIFICATION_CHANNELS.Wecom],
+): Promise<boolean> {
+  const webhookInput = config.webhookKey.trim()
+  if (!webhookInput) {
+    throw new Error(t("settings:taskNotifications.test.wecomMissingConfig"))
+  }
+
+  const labelKey = "settings:taskNotifications.channels.wecom.title"
+  const webhookUrl =
+    webhookInput.startsWith("http://") || webhookInput.startsWith("https://")
+      ? webhookInput
+      : `${WECOM_BOT_WEBHOOK_PREFIX}${encodeURIComponent(webhookInput)}`
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      msgtype: "text",
+      text: {
+        content: `${content.title}\n${content.message}`,
+      },
+    }),
+  })
+
+  let body: WecomWebhookResponseBody | null = null
+
+  try {
+    body = (await response.json()) as WecomWebhookResponseBody
+  } catch {
+    body = null
+  }
+
+  const detail =
+    typeof body?.errmsg === "string" && body.errmsg.trim()
+      ? body.errmsg.trim()
+      : null
+
+  if (!response.ok) {
+    throw new Error(
+      getNotificationParsedErrorMessage(labelKey, response.status, detail),
+    )
+  }
+
+  if (body?.errcode !== 0) {
+    throw new Error(
+      getNotificationParsedErrorMessage(labelKey, response.status, detail),
+    )
+  }
+
+  return true
+}
+
+/**
+ * Encodes non-ASCII header values for APIs such as ntfy that accept RFC 2047
+ * encoded UTF-8 headers while browser fetch only allows ByteString headers.
+ */
+function encodeNotificationHeaderValue(value: string): string {
+  if (ASCII_HEADER_VALUE_PATTERN.test(value)) {
+    return value
+  }
+
+  const bytes = new TextEncoder().encode(value)
+  let binary = ""
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte)
+  }
+
+  return `=?UTF-8?B?${btoa(binary)}?=`
+}
+
+/**
+ * Sends a plain-text ntfy notification to a topic URL.
+ */
+async function sendNtfyNotification(
+  content: TaskNotificationContent,
+  config: TaskNotificationPreferences["channels"][typeof TASK_NOTIFICATION_CHANNELS.Ntfy],
+): Promise<boolean> {
+  const topicInput = config.topicUrl.trim()
+  if (!topicInput) {
+    throw new Error(t("settings:taskNotifications.test.ntfyMissingConfig"))
+  }
+
+  const labelKey = "settings:taskNotifications.channels.ntfy.title"
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(topicInput)) {
+    if (
+      !topicInput.startsWith("http://") &&
+      !topicInput.startsWith("https://")
+    ) {
+      throw new Error(t("settings:taskNotifications.test.ntfyInvalidUrl"))
+    }
+  }
+  const normalizedTopicInput = topicInput.replace(/^\/+/, "")
+  const parsedUrl =
+    topicInput.startsWith("http://") || topicInput.startsWith("https://")
+      ? new URL(topicInput)
+      : normalizedTopicInput.includes("/")
+        ? new URL(`https://${normalizedTopicInput}`)
+        : new URL(
+            encodeURIComponent(normalizedTopicInput),
+            `${NTFY_DEFAULT_SERVER_URL}/`,
+          )
+
+  if (!parsedUrl.pathname.replace(/^\/+/, "").trim()) {
+    throw new Error(t("settings:taskNotifications.test.ntfyInvalidUrl"))
+  }
+
+  const headers: Record<string, string> = {
+    Title: encodeNotificationHeaderValue(content.title),
+    Priority: "default",
+    Tags: "bell",
+  }
+  const accessToken = config.accessToken.trim()
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
+  }
+
+  const response = await fetch(parsedUrl.toString(), {
+    method: "POST",
+    headers,
+    body: content.message,
+  })
+
+  if (!response.ok) {
+    throw new Error(await getNotificationHttpErrorMessage(labelKey, response))
   }
 
   return true
@@ -466,6 +827,70 @@ async function sendConfiguredChannels(
       )
     } catch (error) {
       handleChannelFailure(TASK_NOTIFICATION_CHANNELS.Telegram, error)
+    }
+  }
+
+  if (
+    shouldSendChannel(TASK_NOTIFICATION_CHANNELS.Feishu) &&
+    channels[TASK_NOTIFICATION_CHANNELS.Feishu].enabled
+  ) {
+    try {
+      deliveryResults.push(
+        await sendFeishuNotification(
+          content,
+          channels[TASK_NOTIFICATION_CHANNELS.Feishu],
+        ),
+      )
+    } catch (error) {
+      handleChannelFailure(TASK_NOTIFICATION_CHANNELS.Feishu, error)
+    }
+  }
+
+  if (
+    shouldSendChannel(TASK_NOTIFICATION_CHANNELS.Dingtalk) &&
+    channels[TASK_NOTIFICATION_CHANNELS.Dingtalk].enabled
+  ) {
+    try {
+      deliveryResults.push(
+        await sendDingtalkNotification(
+          content,
+          channels[TASK_NOTIFICATION_CHANNELS.Dingtalk],
+        ),
+      )
+    } catch (error) {
+      handleChannelFailure(TASK_NOTIFICATION_CHANNELS.Dingtalk, error)
+    }
+  }
+
+  if (
+    shouldSendChannel(TASK_NOTIFICATION_CHANNELS.Wecom) &&
+    channels[TASK_NOTIFICATION_CHANNELS.Wecom].enabled
+  ) {
+    try {
+      deliveryResults.push(
+        await sendWecomNotification(
+          content,
+          channels[TASK_NOTIFICATION_CHANNELS.Wecom],
+        ),
+      )
+    } catch (error) {
+      handleChannelFailure(TASK_NOTIFICATION_CHANNELS.Wecom, error)
+    }
+  }
+
+  if (
+    shouldSendChannel(TASK_NOTIFICATION_CHANNELS.Ntfy) &&
+    channels[TASK_NOTIFICATION_CHANNELS.Ntfy].enabled
+  ) {
+    try {
+      deliveryResults.push(
+        await sendNtfyNotification(
+          content,
+          channels[TASK_NOTIFICATION_CHANNELS.Ntfy],
+        ),
+      )
+    } catch (error) {
+      handleChannelFailure(TASK_NOTIFICATION_CHANNELS.Ntfy, error)
     }
   }
 

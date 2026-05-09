@@ -28,7 +28,7 @@ const TASK_NOTIFICATION_TASK_BREADCRUMBS = [
   "settings:taskNotifications.groups.tasks.title",
 ]
 
-const TASK_NOTIFICATION_TASK_CONTROL_ORDER_START = 612
+const TASK_NOTIFICATION_TASK_CONTROL_ORDER_START = 616
 
 const TASK_NOTIFICATION_TASK_SEARCH_CONTROLS = [
   {
@@ -99,7 +99,20 @@ export const notificationsSearchSections: OptionsSearchItemDefinition[] = [
     304,
     {
       descriptionKey: "settings:taskNotifications.groups.channels.description",
-      keywords: ["notification", "channel", "delivery", "telegram", "webhook"],
+      keywords: [
+        "notification",
+        "channel",
+        "delivery",
+        "telegram",
+        "feishu",
+        "lark",
+        "dingtalk",
+        "钉钉",
+        "wecom",
+        "企业微信",
+        "ntfy",
+        "webhook",
+      ],
     },
   ),
   buildSectionDefinition(
@@ -166,11 +179,60 @@ export const notificationsSearchControls: OptionsSearchItemDefinition[] = [
     },
   ),
   buildControlDefinition(
+    "control:task-notifications-channel-feishu",
+    NOTIFICATIONS_TAB_ID,
+    SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_FEISHU,
+    "settings:taskNotifications.channels.feishu.title",
+    611,
+    {
+      descriptionKey: "settings:taskNotifications.channels.feishu.description",
+      breadcrumbsKeys: TASK_NOTIFICATION_CHANNEL_BREADCRUMBS,
+      keywords: ["notification", "feishu", "lark", "bot"],
+    },
+  ),
+  buildControlDefinition(
+    "control:task-notifications-channel-dingtalk",
+    NOTIFICATIONS_TAB_ID,
+    SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_DINGTALK,
+    "settings:taskNotifications.channels.dingtalk.title",
+    612,
+    {
+      descriptionKey:
+        "settings:taskNotifications.channels.dingtalk.description",
+      breadcrumbsKeys: TASK_NOTIFICATION_CHANNEL_BREADCRUMBS,
+      keywords: ["notification", "dingtalk", "钉钉", "bot"],
+    },
+  ),
+  buildControlDefinition(
+    "control:task-notifications-channel-wecom",
+    NOTIFICATIONS_TAB_ID,
+    SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_WECOM,
+    "settings:taskNotifications.channels.wecom.title",
+    613,
+    {
+      descriptionKey: "settings:taskNotifications.channels.wecom.description",
+      breadcrumbsKeys: TASK_NOTIFICATION_CHANNEL_BREADCRUMBS,
+      keywords: ["notification", "wecom", "wechat work", "企业微信", "bot"],
+    },
+  ),
+  buildControlDefinition(
+    "control:task-notifications-channel-ntfy",
+    NOTIFICATIONS_TAB_ID,
+    SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_NTFY,
+    "settings:taskNotifications.channels.ntfy.title",
+    614,
+    {
+      descriptionKey: "settings:taskNotifications.channels.ntfy.description",
+      breadcrumbsKeys: TASK_NOTIFICATION_CHANNEL_BREADCRUMBS,
+      keywords: ["notification", "ntfy", "push", "topic"],
+    },
+  ),
+  buildControlDefinition(
     "control:task-notifications-channel-webhook",
     NOTIFICATIONS_TAB_ID,
     SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_WEBHOOK,
     "settings:taskNotifications.channels.webhook.title",
-    611,
+    615,
     {
       descriptionKey: "settings:taskNotifications.channels.webhook.description",
       breadcrumbsKeys: TASK_NOTIFICATION_CHANNEL_BREADCRUMBS,

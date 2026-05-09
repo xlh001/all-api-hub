@@ -3,6 +3,10 @@ import { getChangelogAnchorId } from "~/utils/navigation/changelogAnchor"
 import { getHomepage } from "~/utils/navigation/packageMeta"
 
 const DOCS_COMMUNITY_ANCHOR = "community"
+const DOCS_TASK_NOTIFICATIONS_FEISHU_ANCHOR = "feishu"
+const DOCS_TASK_NOTIFICATIONS_DINGTALK_ANCHOR = "dingtalk"
+const DOCS_TASK_NOTIFICATIONS_WECOM_ANCHOR = "wecom"
+const DOCS_TASK_NOTIFICATIONS_NTFY_ANCHOR = "ntfy"
 
 /**
  * Resolve the documentation homepage URL for a given language.
@@ -31,6 +35,33 @@ export const getDocsAutoDetectUrl = (language?: string) =>
 
 export const getDocsGetStartedUrl = (language?: string) =>
   getDocsPageUrl("get-started", language)
+
+export const getDocsTaskNotificationsUrl = (language?: string) =>
+  getDocsPageUrl("task-notifications", language)
+
+export const getDocsTaskNotificationsFeishuUrl = (language?: string) => {
+  const url = new URL(getDocsTaskNotificationsUrl(language))
+  url.hash = DOCS_TASK_NOTIFICATIONS_FEISHU_ANCHOR
+  return url.toString()
+}
+
+export const getDocsTaskNotificationsDingtalkUrl = (language?: string) => {
+  const url = new URL(getDocsTaskNotificationsUrl(language))
+  url.hash = DOCS_TASK_NOTIFICATIONS_DINGTALK_ANCHOR
+  return url.toString()
+}
+
+export const getDocsTaskNotificationsWecomUrl = (language?: string) => {
+  const url = new URL(getDocsTaskNotificationsUrl(language))
+  url.hash = DOCS_TASK_NOTIFICATIONS_WECOM_ANCHOR
+  return url.toString()
+}
+
+export const getDocsTaskNotificationsNtfyUrl = (language?: string) => {
+  const url = new URL(getDocsTaskNotificationsUrl(language))
+  url.hash = DOCS_TASK_NOTIFICATIONS_NTFY_ANCHOR
+  return url.toString()
+}
 
 /**
  * Resolve the shared community hub on the localized docs homepage.
