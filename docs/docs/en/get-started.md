@@ -88,8 +88,9 @@ After adding an account, you can "push" these configurations to other AI tools w
 - **[API Credential Profiles](./api-credential-profiles.md)**: Save URL+Key without needing an account, supporting batch validation.
 - **[Web API Sniffing](./web-ai-api-check.md)**: Quickly identify and test API configurations within a webpage.
 
-### ⚡ Automation & Quota Benefits
+### ⚡ Automation & Information Tracking
 - **[Auto Check-in Flow](./auto-checkin.md)**: Automatically complete check-ins for all sites daily.
+- **[Site Announcements](./site-announcements.md)**: Fetch announcements from saved sites in the background and centrally review maintenance, model changes, pricing updates, and other messages.
 - **[Redemption Assistant](./redemption-assist.md)**: Automatically recognize redemption codes on webpages and claim them with one click.
 - **[Bookmark Management](./bookmark-management.md)**: Centrally collect console links, documentation, recharge portals, and more.
 

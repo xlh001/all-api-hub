@@ -88,8 +88,9 @@ All API Hub 几乎支持市面上所有主流的 AI 中转站架构，包括：
 - **[独立 API 凭证](./api-credential-profiles.md)**：无需账号保存 URL+Key，支持批量验证。
 - **[网页 API 嗅探](./web-ai-api-check.md)**：在网页内快速识别并测试 API 配置。
 
-### ⚡ 自动化与额度收益
+### ⚡ 自动化与信息追踪
 - **[自动签到流](./auto-checkin.md)**：每天自动帮你完成所有站点的签到。
+- **[网站公告](./site-announcements.md)**：后台抓取已添加站点的公告，集中查看维护、模型变更、价格调整等消息。
 - **[兑换助手](./redemption-assist.md)**：自动识别网页兑换码并一键领取。
 - **[书签收纳管理](./bookmark-management.md)**：集中收藏控制台、文档、充值入口。
 

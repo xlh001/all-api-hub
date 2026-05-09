@@ -84,6 +84,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/auto-checkin',
+              '/site-announcements',
               '/task-notifications',
               '/redemption-assist',
               '/web-ai-api-check',
@@ -173,6 +174,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/en/auto-checkin',
+              '/en/site-announcements',
               '/en/task-notifications',
               '/en/redemption-assist',
               '/en/web-ai-api-check',
@@ -262,6 +264,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/ja/auto-checkin',
+              '/ja/site-announcements',
               '/ja/task-notifications',
               '/ja/redemption-assist',
               '/ja/web-ai-api-check',
