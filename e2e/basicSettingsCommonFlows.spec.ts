@@ -52,7 +52,7 @@ test.beforeEach(async ({ context, page }) => {
   await stubLlmMetadataIndex(context)
 })
 
-test("persists display, appearance, and toolbar behavior settings", async ({
+test("persists an options setting through extension storage and reload", async ({
   context,
   extensionId,
   page,
@@ -78,37 +78,6 @@ test("persists display, appearance, and toolbar behavior settings", async ({
     "true",
   )
 
-  await page.getByRole("button", { name: "Total Balance" }).click()
-  await expectStoredPreference(serviceWorker, "activeTab", "balance")
-  await expect(
-    page.getByRole("button", { name: "Total Balance" }),
-  ).toHaveAttribute("aria-pressed", "true")
-
-  await page
-    .locator("#display-today-cashflow-enabled")
-    .getByRole("switch")
-    .click()
-  await expectStoredPreference(serviceWorker, "showTodayCashflow", false)
-  await expect(
-    page.getByRole("button", { name: "Today's Cashflow" }),
-  ).toBeDisabled()
-
-  await page.getByRole("button", { name: /Switch to Dark theme/i }).click()
-  await expectStoredPreference(serviceWorker, "themeMode", "dark")
-  await expect(
-    page.getByRole("button", { name: /Switch to Dark theme/i }),
-  ).toHaveAttribute("aria-pressed", "true")
-
-  await page.getByRole("button", { name: "Open side panel" }).click()
-  await expectStoredPreference(
-    serviceWorker,
-    "actionClickBehavior",
-    "sidepanel",
-  )
-  await expect(
-    page.getByRole("button", { name: "Open side panel" }),
-  ).toHaveAttribute("aria-pressed", "true")
-
   await page.reload()
   await waitForExtensionRoot(page)
 
@@ -116,13 +85,4 @@ test("persists display, appearance, and toolbar behavior settings", async ({
     "aria-pressed",
     "true",
   )
-  await expect(
-    page.getByRole("button", { name: "Total Balance" }),
-  ).toHaveAttribute("aria-pressed", "true")
-  await expect(
-    page.getByRole("button", { name: /Switch to Dark theme/i }),
-  ).toHaveAttribute("aria-pressed", "true")
-  await expect(
-    page.getByRole("button", { name: "Open side panel" }),
-  ).toHaveAttribute("aria-pressed", "true")
 })

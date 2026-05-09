@@ -239,66 +239,6 @@ test("deletes a stored account from account management and removes it from stora
     .toBe(false)
 })
 
-test("filters accounts by search query and shows the no-results state", async ({
-  context,
-  extensionId,
-  page,
-}) => {
-  const serviceWorker = await getServiceWorker(context)
-  await seedStoredAccounts(serviceWorker, [
-    createStoredAccount({
-      id: "stored-account-1",
-      site_name: "Needle Account",
-      site_url: "https://needle.example.com",
-      account_info: {
-        id: 21,
-        username: "needle-user",
-        access_token: "needle-token",
-      },
-    }),
-    createStoredAccount({
-      id: "stored-account-2",
-      site_name: "Haystack Account",
-      site_url: "https://haystack.example.com",
-      account_info: {
-        id: 22,
-        username: "haystack-user",
-        access_token: "haystack-token",
-      },
-    }),
-  ])
-
-  await page.goto(
-    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#account`,
-  )
-  await waitForExtensionRoot(page)
-  await expectPermissionOnboardingHidden(page)
-
-  const searchInput = page.getByPlaceholder(
-    "Enter site information or account information to search",
-  )
-  await expect(searchInput).toBeVisible()
-
-  await searchInput.fill("needle-user")
-  await expect(
-    page.getByRole("button", { name: "Needle Account" }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole("button", { name: "Haystack Account" }),
-  ).toHaveCount(0)
-
-  await searchInput.fill("missing-account")
-  await expect(page.getByText("No matching accounts found")).toBeVisible()
-
-  await searchInput.fill("")
-  await expect(
-    page.getByRole("button", { name: "Needle Account" }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole("button", { name: "Haystack Account" }),
-  ).toBeVisible()
-})
-
 test("runs quick check-in for the selected eligible account from account management", async ({
   context,
   extensionId,

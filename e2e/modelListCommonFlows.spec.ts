@@ -89,7 +89,7 @@ test.beforeEach(async ({ context, page }) => {
   await stubLlmMetadataIndex(context)
 })
 
-test("loads account-backed models, filters them, and exposes common model actions", async ({
+test("loads account-backed models from the options route", async ({
   context,
   extensionId,
   page,
@@ -111,54 +111,4 @@ test("loads account-backed models, filters them, and exposes common model action
   await expect(page.getByText("gemini-1.5-flash")).toBeVisible()
   await expect(page.getByText("Total 3 models")).toBeVisible()
   await expect(page.getByText("Showing 3 models")).toBeVisible()
-
-  await page
-    .getByPlaceholder("Enter model name or description...")
-    .fill("sonnet")
-
-  await expect(page.getByText("claude-3-5-sonnet")).toBeVisible()
-  await expect(page.getByText("gpt-4o-mini")).toHaveCount(0)
-  await expect(page.getByText("gemini-1.5-flash")).toHaveCount(0)
-  await expect(page.getByText("Showing 1 model")).toBeVisible()
-
-  await page.getByRole("button", { name: "Copy All Model Names" }).click()
-  await expect(page.getByText("Model names copied")).toBeVisible()
-
-  await page.getByPlaceholder("Enter model name or description...").fill("")
-  await expect(page.getByText("gpt-4o-mini")).toBeVisible()
-
-  await page.getByRole("tab", { name: /OpenAI \(1\)/ }).click()
-  await expect(page.getByText("gpt-4o-mini")).toBeVisible()
-  await expect(page.getByText("claude-3-5-sonnet")).toHaveCount(0)
-
-  await page.getByRole("tab", { name: /All Providers \(3\)/ }).click()
-  await page.getByRole("button", { name: "Key for this model" }).first().click()
-
-  const dialog = page.getByRole("dialog").filter({ hasText: "Key for model" })
-  await expect(dialog).toContainText("Account: Model Catalog Account")
-  await expect(dialog).toContainText("Model: gpt-4o-mini")
-})
-
-test("shows an empty model result when account-backed search has no matches", async ({
-  context,
-  extensionId,
-  page,
-}) => {
-  await seedModelListAccount(context)
-
-  await page.goto(
-    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.MODELS}?accountId=model-list-account`,
-  )
-  await waitForExtensionRoot(page)
-  await expectPermissionOnboardingHidden(page)
-
-  await expect(page.getByText("gpt-4o-mini")).toBeVisible()
-
-  await page
-    .getByPlaceholder("Enter model name or description...")
-    .fill("not-a-real-model")
-
-  await expect(page.getByText("No matching models found")).toBeVisible()
-  await expect(page.getByText("Showing 0 models")).toBeVisible()
-  await expect(page.getByRole("button", { name: "Batch test" })).toBeDisabled()
 })

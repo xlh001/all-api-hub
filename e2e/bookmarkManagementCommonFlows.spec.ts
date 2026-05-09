@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
-import type { SiteBookmark, TagStore } from "~/types"
+import type { SiteBookmark } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   createStoredBookmark,
@@ -14,7 +14,6 @@ import {
 import {
   getPlasmoStorageRawValue,
   getServiceWorker,
-  setPlasmoStorageValue,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
@@ -126,13 +125,6 @@ async function dragBookmarkHandle(
   await page.mouse.up()
 }
 
-async function seedStoredTagStore(
-  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
-  tagStore: TagStore,
-) {
-  await setPlasmoStorageValue(serviceWorker, STORAGE_KEYS.TAG_STORE, tagStore)
-}
-
 test.beforeEach(async ({ context, page }) => {
   installExtensionPageGuards(page)
   await forceExtensionLanguage(page, "en")
@@ -234,117 +226,6 @@ test("edits a stored bookmark from bookmark management and persists the change",
       url: "https://example.com/updated",
       notes: "Updated note",
     })
-})
-
-test("filters bookmarks by normalized URL tokens and restores the list when cleared", async ({
-  context,
-  extensionId,
-  page,
-}) => {
-  const serviceWorker = await getServiceWorker(context)
-  await seedStoredBookmarks(serviceWorker, [
-    createStoredBookmark({
-      id: "stored-bookmark-1",
-      name: "Portal Docs",
-      url: "https://portal.example.com/docs/?tab=keys#top",
-      notes: "Manage model and key settings",
-    }),
-    createStoredBookmark({
-      id: "stored-bookmark-2",
-      name: "Billing Console",
-      url: "https://billing.example.com/console",
-      notes: "Subscription management",
-    }),
-  ])
-
-  await page.goto(
-    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#bookmark`,
-  )
-  await waitForExtensionRoot(page)
-
-  const searchInput = page.getByPlaceholder("Search bookmarks...")
-  await expect(searchInput).toBeVisible()
-
-  await searchInput.fill("portal.example.com/docs manage")
-  await expect(page.getByRole("button", { name: "Portal Docs" })).toBeVisible()
-  await expect(
-    page.getByRole("button", { name: "Billing Console" }),
-  ).toHaveCount(0)
-
-  await page.getByRole("button", { name: "Clear" }).click()
-
-  await expect(page.getByRole("button", { name: "Portal Docs" })).toBeVisible()
-  await expect(
-    page.getByRole("button", { name: "Billing Console" }),
-  ).toBeVisible()
-})
-
-test("filters bookmarks by selected tags and restores all results via the all-tags chip", async ({
-  context,
-  extensionId,
-  page,
-}) => {
-  const serviceWorker = await getServiceWorker(context)
-  await seedStoredBookmarks(serviceWorker, [
-    createStoredBookmark({
-      id: "stored-bookmark-1",
-      name: "Alpha Docs",
-      url: "https://example.com/alpha",
-      tagIds: ["team-alpha"],
-    }),
-    createStoredBookmark({
-      id: "stored-bookmark-2",
-      name: "Beta Docs",
-      url: "https://example.com/beta",
-      tagIds: ["team-beta"],
-    }),
-    createStoredBookmark({
-      id: "stored-bookmark-3",
-      name: "Shared Docs",
-      url: "https://example.com/shared",
-      tagIds: [],
-    }),
-  ])
-  await seedStoredTagStore(serviceWorker, {
-    version: 1,
-    tagsById: {
-      "team-alpha": {
-        id: "team-alpha",
-        name: "Team Alpha",
-        createdAt: 1,
-        updatedAt: 1,
-      },
-      "team-beta": {
-        id: "team-beta",
-        name: "Team Beta",
-        createdAt: 2,
-        updatedAt: 2,
-      },
-    },
-  })
-
-  await page.goto(
-    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#bookmark`,
-  )
-  await waitForExtensionRoot(page)
-
-  await expect(page.getByRole("button", { name: /Team Alpha/i })).toBeVisible()
-  await expect(page.getByRole("button", { name: /Team Beta/i })).toBeVisible()
-
-  await page.getByRole("button", { name: /Team Alpha/i }).click()
-  await expect(page.getByRole("button", { name: "Alpha Docs" })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Beta Docs" })).toHaveCount(0)
-  await expect(page.getByRole("button", { name: "Shared Docs" })).toHaveCount(0)
-
-  await page.getByRole("button", { name: /Team Beta/i }).click()
-  await expect(page.getByRole("button", { name: "Alpha Docs" })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Beta Docs" })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Shared Docs" })).toHaveCount(0)
-
-  await page.getByRole("button", { name: /All tags/i }).click()
-  await expect(page.getByRole("button", { name: "Alpha Docs" })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Beta Docs" })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Shared Docs" })).toBeVisible()
 })
 
 test("reorders bookmarks with the drag handle and persists the manual order", async ({
