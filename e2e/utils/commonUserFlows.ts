@@ -6,6 +6,7 @@ import {
   normalizeAccountStorageConfigForWrite,
   normalizeSiteAccount,
 } from "~/services/accounts/accountDefaults"
+import type { ModelPricing } from "~/services/apiService/common/type"
 import {
   I18NEXT_LANGUAGE_STORAGE_KEY,
   STORAGE_KEYS,
@@ -52,6 +53,7 @@ type StubNewApiSiteRoutesOptions = {
   username?: string
   accessToken?: string
   models?: string[]
+  pricingModels?: ModelPricing[]
   initialTokens?: ApiToken[]
   groups?: Record<string, { desc: string; ratio: number }>
 }
@@ -404,6 +406,24 @@ function buildStubToken(input: {
 }
 
 /**
+ * Create deterministic pricing rows for the model-management page from the
+ * same model-id list used by key-management mocks.
+ */
+function buildStubPricingModels(models: string[]): ModelPricing[] {
+  return models.map((modelName, index) => ({
+    model_name: modelName,
+    model_description: `E2E model catalog entry for ${modelName}`,
+    quota_type: 0,
+    model_ratio: index + 1,
+    model_price: 0,
+    owner_by: "e2e",
+    completion_ratio: 1,
+    enable_groups: index % 2 === 0 ? ["default", "vip"] : ["default"],
+    supported_endpoint_types: ["chat_completions"],
+  }))
+}
+
+/**
  * Stub the small New-API-compatible surface used by onboarding and key
  * management without replacing the extension's own orchestration logic.
  */
@@ -421,6 +441,7 @@ export async function stubNewApiSiteRoutes(
   const title = options.title ?? "new-api"
   const systemName = options.systemName ?? "E2E New API"
   const models = options.models ?? ["gpt-4o-mini", "gpt-4.1-mini"]
+  const pricingModels = options.pricingModels ?? buildStubPricingModels(models)
   const groups = options.groups ?? {
     default: { desc: "Default", ratio: 1 },
     vip: { desc: "VIP", ratio: 1.5 },
@@ -664,6 +685,24 @@ export async function stubNewApiSiteRoutes(
           success: true,
           message: "ok",
           data: models,
+        }),
+      })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/pricing") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: pricingModels,
+          group_ratio: Object.fromEntries(
+            Object.entries(groups).map(([group, info]) => [group, info.ratio]),
+          ),
+          usable_group: Object.fromEntries(
+            Object.entries(groups).map(([group, info]) => [group, info.desc]),
+          ),
         }),
       })
       return
