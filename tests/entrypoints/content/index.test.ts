@@ -12,6 +12,16 @@ const logger = {
   debug: vi.fn(),
   warn: vi.fn(),
 }
+const storageGetMock = vi.fn()
+const StorageMock = vi.fn(function Storage() {
+  return {
+    get: storageGetMock,
+  }
+})
+
+vi.mock("@plasmohq/storage", () => ({
+  Storage: StorageMock,
+}))
 
 vi.mock("wxt/utils/define-content-script", () => ({
   defineContentScript: defineContentScriptMock,
@@ -38,12 +48,8 @@ vi.mock("~/utils/core/logger", () => ({
 }))
 
 describe("content entrypoint", () => {
-  const storageGetMock = vi.fn()
   const addStorageChangedListenerMock = vi.fn()
   const removeStorageChangedListenerMock = vi.fn()
-  const wrapPreferences = (preferences: unknown) => ({
-    [USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES]: preferences,
-  })
 
   beforeEach(() => {
     vi.resetModules()
@@ -56,6 +62,7 @@ describe("content entrypoint", () => {
     logger.debug.mockReset()
     logger.warn.mockReset()
 
+    StorageMock.mockClear()
     storageGetMock.mockReset()
     addStorageChangedListenerMock.mockReset()
     removeStorageChangedListenerMock.mockReset()
@@ -64,9 +71,6 @@ describe("content entrypoint", () => {
         id: "test-extension-id",
       },
       storage: {
-        local: {
-          get: storageGetMock,
-        },
         onChanged: {
           addListener: addStorageChangedListenerMock,
           removeListener: removeStorageChangedListenerMock,
@@ -115,15 +119,9 @@ describe("content entrypoint", () => {
       .mockReturnValueOnce(firstApiCheckCleanup)
       .mockReturnValueOnce(secondApiCheckCleanup)
     storageGetMock
-      .mockResolvedValueOnce({
-        [USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES]: initialPreferences,
-      })
-      .mockResolvedValueOnce({
-        [USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES]: initialPreferences,
-      })
-      .mockResolvedValueOnce({
-        [USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES]: updatedPreferences,
-      })
+      .mockResolvedValueOnce(initialPreferences)
+      .mockResolvedValueOnce(initialPreferences)
+      .mockResolvedValueOnce(updatedPreferences)
 
     const module = await import("~/entrypoints/content/index")
     const onInvalidated = vi.fn()
@@ -255,7 +253,7 @@ describe("content entrypoint", () => {
 
     setupRedemptionAssistContentMock.mockReturnValue(vi.fn())
     setupWebAiApiCheckContentMock.mockReturnValue(vi.fn())
-    storageGetMock.mockResolvedValueOnce(wrapPreferences(preferences))
+    storageGetMock.mockResolvedValueOnce(preferences)
 
     const module = await import("~/entrypoints/content/index")
     const onInvalidated = vi.fn()
@@ -304,7 +302,7 @@ describe("content entrypoint", () => {
 
     setupRedemptionAssistContentMock.mockReturnValue(vi.fn())
     setupWebAiApiCheckContentMock.mockReturnValue(vi.fn())
-    storageGetMock.mockResolvedValueOnce(wrapPreferences(preferences))
+    storageGetMock.mockResolvedValueOnce(preferences)
 
     const module = await import("~/entrypoints/content/index")
     const onInvalidated = vi.fn()
@@ -368,19 +366,17 @@ describe("content entrypoint", () => {
 
     cleanup()
 
-    resolveStorageRead?.(
-      wrapPreferences({
-        redemptionAssist: {
-          enabled: true,
-          contextMenu: { enabled: true },
-        },
-        webAiApiCheck: {
-          enabled: true,
-          contextMenu: { enabled: true },
-          autoDetect: { enabled: true },
-        },
-      }),
-    )
+    resolveStorageRead?.({
+      redemptionAssist: {
+        enabled: true,
+        contextMenu: { enabled: true },
+      },
+      webAiApiCheck: {
+        enabled: true,
+        contextMenu: { enabled: true },
+        autoDetect: { enabled: true },
+      },
+    })
 
     await new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -443,7 +439,7 @@ describe("content entrypoint", () => {
       .mockReturnValueOnce(secondApiCheckCleanup)
 
     storageGetMock
-      .mockResolvedValueOnce(wrapPreferences(initialPreferences))
+      .mockResolvedValueOnce(initialPreferences)
       .mockImplementationOnce(
         () =>
           new Promise((resolve) => {
@@ -492,7 +488,7 @@ describe("content entrypoint", () => {
       expect(storageGetMock).toHaveBeenCalledTimes(3)
     })
 
-    resolveLatestRead?.(wrapPreferences(latestPreferences))
+    resolveLatestRead?.(latestPreferences)
 
     await waitFor(() => {
       expect(setupRedemptionAssistContentMock).toHaveBeenCalledTimes(2)
@@ -510,7 +506,7 @@ describe("content entrypoint", () => {
     expect(firstRedemptionCleanup).toHaveBeenCalledTimes(1)
     expect(firstApiCheckCleanup).toHaveBeenCalledTimes(1)
 
-    resolveStaleRead?.(wrapPreferences(stalePreferences))
+    resolveStaleRead?.(stalePreferences)
 
     await new Promise((resolve) => setTimeout(resolve, 0))
 

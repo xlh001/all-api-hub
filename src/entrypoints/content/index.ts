@@ -1,5 +1,7 @@
 import { defineContentScript } from "wxt/utils/define-content-script"
 
+import { Storage } from "@plasmohq/storage"
+
 import { setupRedemptionAssistContent } from "~/entrypoints/content/redemptionAssist"
 import { setupWebAiApiCheckContent } from "~/entrypoints/content/webAiApiCheck"
 import { USER_PREFERENCES_STORAGE_KEYS } from "~/services/core/storageKeys"
@@ -18,6 +20,7 @@ import { setContentScriptContext } from "./shared/uiRoot"
  * Unified logger scoped to the content-script entrypoint.
  */
 const logger = createLogger("ContentEntrypoint")
+const contentPreferencesStorage = new Storage({ area: "local" })
 
 /**
  * Shallow compare the listener-toggle preferences that matter to content scripts.
@@ -44,13 +47,12 @@ function areContentFeaturePreferencesEqual(
  */
 async function readContentFeaturePreferences(): Promise<ContentFeaturePreferences> {
   try {
-    const stored = (await browser.storage.local.get(
-      USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES,
-    )) as Record<string, ContentFeaturePreferenceSource | undefined>
+    const preferences =
+      await contentPreferencesStorage.get<ContentFeaturePreferenceSource>(
+        USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES,
+      )
 
-    return resolveContentFeaturePreferences(
-      stored[USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES],
-    )
+    return resolveContentFeaturePreferences(preferences)
   } catch (error) {
     logger.warn("Failed to read content feature preferences", error)
     return DEFAULT_CONTENT_FEATURE_PREFERENCES
