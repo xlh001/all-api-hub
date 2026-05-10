@@ -57,6 +57,7 @@ If auto-recognition fails, or if you want precise control, you can manually ente
 All API Hub supports almost all mainstream AI proxy station architectures on the market, including:
 - **One API / New API** series (most common)
 - **Sub2API**
+- **AIHubMix**
 - **AnyRouter / VoAPI / Super-API** and other specialized architectures
 
 ::: tip Compatibility Tip
