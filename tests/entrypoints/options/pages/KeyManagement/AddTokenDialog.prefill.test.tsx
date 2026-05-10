@@ -2,9 +2,17 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { Z_INDEX } from "~/components/ui"
+import { SITE_TYPES } from "~/constants/siteType"
 import AddTokenDialog from "~/features/KeyManagement/components/AddTokenDialog"
+import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import { AuthTypeEnum } from "~/types"
-import { render, screen, waitFor, within } from "~~/tests/test-utils/render"
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "~~/tests/test-utils/render"
 
 const {
   createApiTokenMock,
@@ -43,7 +51,7 @@ const ACCOUNT = {
   id: "acc-1",
   name: "Example",
   username: "tester",
-  siteType: "new-api",
+  siteType: SITE_TYPES.NEW_API,
   baseUrl: "https://example.com",
   token: "token",
   userId: 1,
@@ -184,6 +192,461 @@ describe("AddTokenDialog prefill", () => {
         "keyManagement:dialog.createFailed",
       )
     })
+  })
+
+  it("falls back to the localized update failure message when the error is blank", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce(["gpt-4", "gpt-3.5"])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "default", ratio: 1 },
+    })
+    updateApiTokenMock.mockRejectedValueOnce(new Error("   "))
+
+    const editingToken = {
+      id: 123,
+      accountId: ACCOUNT.id,
+      accountName: ACCOUNT.name,
+      name: "Existing key",
+      remain_quota: -1,
+      expired_time: -1,
+      unlimited_quota: true,
+      model_limits_enabled: false,
+      model_limits: "",
+      allow_ips: "",
+      group: "default",
+    } as any
+
+    const user = userEvent.setup()
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={() => {}}
+        availableAccounts={[ACCOUNT]}
+        preSelectedAccountId={ACCOUNT.id}
+        editingToken={editingToken}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "keyManagement:dialog.updateToken",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "keyManagement:dialog.updateFailed",
+      )
+    })
+  })
+
+  it("shows a one-time key dialog when create returns a full token", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "default", ratio: 1 },
+    })
+    createApiTokenMock.mockResolvedValueOnce({
+      id: 7,
+      user_id: 1,
+      key: "sk-created-full-secret",
+      status: 1,
+      name: "My Key",
+      created_time: 1,
+      accessed_time: 1,
+      expired_time: -1,
+      remain_quota: -1,
+      unlimited_quota: true,
+      used_quota: 0,
+    })
+
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={() => {}}
+        availableAccounts={[ACCOUNT]}
+        preSelectedAccountId={ACCOUNT.id}
+      />,
+    )
+
+    await user.type(
+      await screen.findByLabelText(/keyManagement:dialog\.tokenName/),
+      "My Key",
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    expect(
+      await screen.findByText("keyManagement:oneTimeKey.title"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByLabelText("keyManagement:oneTimeKey.keyLabel"),
+    ).toHaveValue("sk-created-full-secret")
+    fireEvent.focus(screen.getByLabelText("keyManagement:oneTimeKey.keyLabel"))
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith("sk-created-full-secret")
+    })
+  })
+
+  it("keeps the one-time key dialog open and shows a fallback when clipboard copy fails", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "default", ratio: 1 },
+    })
+    createApiTokenMock.mockResolvedValueOnce({
+      id: 7,
+      user_id: 1,
+      key: "sk-created-full-secret",
+      status: 1,
+      name: "My Key",
+      created_time: 1,
+      accessed_time: 1,
+      expired_time: -1,
+      remain_quota: -1,
+      unlimited_quota: true,
+      used_quota: 0,
+    })
+
+    const user = userEvent.setup()
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(
+      new Error("clipboard denied"),
+    )
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={() => {}}
+        availableAccounts={[ACCOUNT]}
+        preSelectedAccountId={ACCOUNT.id}
+      />,
+    )
+
+    await user.type(
+      await screen.findByLabelText(/keyManagement:dialog\.tokenName/),
+      "My Key",
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    expect(
+      await screen.findByText("keyManagement:oneTimeKey.title"),
+    ).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith("clipboard denied")
+    })
+
+    expect(
+      screen.getByLabelText("keyManagement:oneTimeKey.keyLabel"),
+    ).toHaveValue("sk-created-full-secret")
+  })
+
+  it("does not treat token-shaped create results with invalid secrets as one-time keys", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "default", ratio: 1 },
+    })
+    createApiTokenMock.mockResolvedValueOnce({
+      id: 7,
+      key: null,
+      name: "invalid secret",
+    })
+    const onClose = vi.fn()
+    const onSuccess = vi.fn()
+
+    const user = userEvent.setup()
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={onClose}
+        onSuccess={onSuccess}
+        availableAccounts={[ACCOUNT]}
+        preSelectedAccountId={ACCOUNT.id}
+      />,
+    )
+
+    await user.type(
+      await screen.findByLabelText(/keyManagement:dialog\.tokenName/),
+      "Invalid secret",
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    await waitFor(() => {
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "keyManagement:dialog.createSuccess",
+      )
+      expect(onSuccess).toHaveBeenCalledWith(undefined)
+      expect(onClose).toHaveBeenCalled()
+    })
+
+    expect(
+      screen.queryByText("keyManagement:oneTimeKey.title"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("passes a created one-time token to onSuccess when inline display is disabled", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "default", ratio: 1 },
+    })
+    const createdToken = {
+      id: 7,
+      user_id: 1,
+      key: "sk-created-full-secret",
+      status: 1,
+      name: "My Key",
+      created_time: 1,
+      accessed_time: 1,
+      expired_time: -1,
+      remain_quota: -1,
+      unlimited_quota: true,
+      used_quota: 0,
+    }
+    createApiTokenMock.mockResolvedValueOnce(createdToken)
+    const onClose = vi.fn()
+    const onSuccess = vi.fn()
+
+    const user = userEvent.setup()
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={onClose}
+        onSuccess={onSuccess}
+        availableAccounts={[ACCOUNT]}
+        preSelectedAccountId={ACCOUNT.id}
+        showOneTimeKeyDialog={false}
+      />,
+    )
+
+    await user.type(
+      await screen.findByLabelText(/keyManagement:dialog\.tokenName/),
+      "My Key",
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    await waitFor(() => {
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "keyManagement:dialog.createSuccess",
+      )
+      expect(onSuccess).toHaveBeenCalledWith(createdToken)
+      expect(onClose).toHaveBeenCalled()
+    })
+
+    expect(
+      screen.queryByText("keyManagement:oneTimeKey.title"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("continues closing the dialog when the create onSuccess callback rejects", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "default", ratio: 1 },
+    })
+    createApiTokenMock.mockResolvedValueOnce(true)
+    const onClose = vi.fn()
+    const onSuccess = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("callback failed"))
+
+    const user = userEvent.setup()
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={onClose}
+        onSuccess={onSuccess}
+        availableAccounts={[ACCOUNT]}
+        preSelectedAccountId={ACCOUNT.id}
+      />,
+    )
+
+    await user.type(
+      await screen.findByLabelText(/keyManagement:dialog\.tokenName/),
+      "Callback failure",
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    await waitFor(() => {
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "keyManagement:dialog.createSuccess",
+      )
+      expect(onSuccess).toHaveBeenCalledWith(undefined)
+      expect(onClose).toHaveBeenCalled()
+    })
+  })
+
+  it("closes through the one-time key dialog acknowledgement", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "default", ratio: 1 },
+    })
+    createApiTokenMock.mockResolvedValueOnce({
+      id: 7,
+      user_id: 1,
+      key: "sk-created-full-secret",
+      status: 1,
+      name: "My Key",
+      created_time: 1,
+      accessed_time: 1,
+      expired_time: -1,
+      remain_quota: -1,
+      unlimited_quota: true,
+      used_quota: 0,
+    })
+    const onClose = vi.fn()
+
+    const user = userEvent.setup()
+    vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined)
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={onClose}
+        availableAccounts={[ACCOUNT]}
+        preSelectedAccountId={ACCOUNT.id}
+      />,
+    )
+
+    await user.type(
+      await screen.findByLabelText(/keyManagement:dialog\.tokenName/),
+      "My Key",
+    )
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    expect(
+      await screen.findByText("keyManagement:oneTimeKey.title"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:oneTimeKey.close" }),
+    )
+
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it("creates tokens without rendering or requiring group selection when the site has no groups", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce(["gpt-4"])
+    fetchUserGroupsMock.mockRejectedValueOnce(
+      new ApiError(
+        "aihubmix_user_groups_unsupported",
+        undefined,
+        undefined,
+        API_ERROR_CODES.FEATURE_UNSUPPORTED,
+      ),
+    )
+    createApiTokenMock.mockResolvedValueOnce(true)
+
+    const user = userEvent.setup()
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={() => {}}
+        availableAccounts={[ACCOUNT]}
+        preSelectedAccountId={ACCOUNT.id}
+        createPrefill={{ modelId: "gpt-4", defaultName: "group-less token" }}
+      />,
+    )
+
+    await screen.findByLabelText(/keyManagement:dialog\.tokenName/)
+
+    expect(screen.queryByText("keyManagement:dialog.groupLabel")).toBeNull()
+
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    await waitFor(() => {
+      expect(createApiTokenMock).toHaveBeenCalledTimes(1)
+    })
+
+    expect(createApiTokenMock.mock.calls[0]?.[1]).toMatchObject({
+      name: "group-less token",
+      model_limits_enabled: true,
+      model_limits: "gpt-4",
+    })
+  })
+
+  it("lets AIHubMix submit subnet values for backend validation", async () => {
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockRejectedValueOnce(
+      new ApiError(
+        "aihubmix_user_groups_unsupported",
+        undefined,
+        undefined,
+        API_ERROR_CODES.FEATURE_UNSUPPORTED,
+      ),
+    )
+    createApiTokenMock.mockResolvedValueOnce(true)
+
+    const user = userEvent.setup()
+    const aihubmixAccount = {
+      ...ACCOUNT,
+      id: "aihubmix-1",
+      name: "AIHubMix",
+      siteType: SITE_TYPES.AIHUBMIX,
+      baseUrl: "https://aihubmix.com",
+    }
+
+    render(
+      <AddTokenDialog
+        isOpen={true}
+        onClose={() => {}}
+        availableAccounts={[aihubmixAccount]}
+        preSelectedAccountId={aihubmixAccount.id}
+      />,
+    )
+
+    await user.type(
+      await screen.findByLabelText(/keyManagement:dialog\.tokenName/),
+      "AIHubMix subnet test",
+    )
+    await user.type(
+      screen.getByLabelText("keyManagement:dialog.subnetLimits"),
+      "111",
+    )
+    expect(
+      screen.getByText("keyManagement:dialog.subnetExample"),
+    ).toBeInTheDocument()
+    expect(screen.queryByText("keyManagement:dialog.ipExample")).toBeNull()
+
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    await waitFor(() => {
+      expect(createApiTokenMock).toHaveBeenCalledTimes(1)
+    })
+
+    expect(createApiTokenMock.mock.calls[0]?.[1]).toMatchObject({
+      name: "AIHubMix subnet test",
+      allow_ips: "111",
+    })
+    expect(toastErrorMock).not.toHaveBeenCalledWith(
+      "keyManagement:dialog.validIp",
+    )
   })
 
   it("keeps the group selector popover above the modal and allows changing the group", async () => {

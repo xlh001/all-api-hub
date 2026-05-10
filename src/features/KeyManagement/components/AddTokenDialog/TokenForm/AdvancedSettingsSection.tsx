@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next"
 
+import { SITE_TYPES, type AccountSiteType } from "~/constants/siteType"
 import type { UserGroupInfo } from "~/services/apiService/common/type"
 import { isNotEmptyArray } from "~/utils"
 
@@ -16,6 +17,8 @@ interface AdvancedSettingsSectionProps {
   groups: Record<string, UserGroupInfo>
   allowedGroups?: string[]
   availableModels: string[]
+  showGroupSelection: boolean
+  currentSiteType?: AccountSiteType
   handleInputChange: (
     field: keyof FormData,
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
@@ -32,6 +35,8 @@ interface AdvancedSettingsSectionProps {
  * @param props.groups Available user groups keyed by identifier.
  * @param props.allowedGroups Optional allow-list restricting selectable groups.
  * @param props.availableModels List of model IDs that can be targeted.
+ * @param props.showGroupSelection Whether group selection is supported.
+ * @param props.currentSiteType Site type for site-specific field semantics.
  * @param props.handleInputChange Factory for text input change handlers.
  * @param props.handleSelectChange Factory for select change handlers.
  * @param props.handleModelLimitsChange Emits updated model whitelist.
@@ -44,6 +49,8 @@ export function AdvancedSettingsSection({
   groups,
   allowedGroups,
   availableModels,
+  showGroupSelection,
+  currentSiteType,
   handleInputChange,
   handleSelectChange,
   handleModelLimitsChange,
@@ -52,13 +59,15 @@ export function AdvancedSettingsSection({
 
   return (
     <FormSection title={t("dialog.advancedSettings")}>
-      <GroupSelection
-        group={formData.group}
-        handleSelectChange={handleSelectChange("group")}
-        groups={groups}
-        allowedGroups={allowedGroups}
-        error={errors.group}
-      />
+      {showGroupSelection ? (
+        <GroupSelection
+          group={formData.group}
+          handleSelectChange={handleSelectChange("group")}
+          groups={groups}
+          allowedGroups={allowedGroups}
+          error={errors.group}
+        />
+      ) : null}
       {isNotEmptyArray(availableModels) && (
         <ModelLimits
           modelLimitsEnabled={formData.modelLimitsEnabled}
@@ -70,6 +79,7 @@ export function AdvancedSettingsSection({
       )}
       <IpLimitsInput
         allowIps={formData.allowIps}
+        usesSubnetLimits={currentSiteType === SITE_TYPES.AIHUBMIX}
         handleInputChange={handleInputChange}
         error={errors.allowIps}
       />

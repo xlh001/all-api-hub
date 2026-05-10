@@ -20,6 +20,12 @@ import { createLogger } from "~/utils/core/logger"
  */
 const logger = createLogger("ModelKeyDialogHook")
 
+const isCreatedApiToken = (value: unknown): value is ApiToken =>
+  !!value &&
+  typeof value === "object" &&
+  typeof (value as Partial<ApiToken>).id === "number" &&
+  typeof (value as Partial<ApiToken>).key === "string"
+
 /**
  * Input params for `useModelKeyDialog`.
  */
@@ -45,6 +51,7 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
 
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
+  const [oneTimeToken, setOneTimeToken] = useState<ApiToken | null>(null)
 
   const canCreateToken = useMemo(
     () => canManageDisplayAccountTokens(account),
@@ -114,6 +121,7 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
       setSelectedTokenId(null)
       setIsCreating(false)
       setCreateError(null)
+      setOneTimeToken(null)
       return
     }
 
@@ -158,70 +166,97 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
       await navigator.clipboard.writeText(resolvedToken.key)
       toast.success(t("modelList:keyDialog.keyCopied"))
     } catch (error) {
-      const errorMessage = getErrorMessage(error)
+      const errorMessage = getErrorMessage(
+        error,
+        t("modelList:keyDialog.copyFailed"),
+      )
       logger.error("Failed to copy key to clipboard from model key dialog", {
         message: errorMessage,
       })
-      toast.error(t("modelList:keyDialog.copyFailed"))
+      toast.error(errorMessage)
     }
   }, [account, selectedToken, t])
 
-  const refreshTokensAfterCreate = useCallback(async () => {
-    if (!account) return
+  const refreshTokensAfterCreate = useCallback(
+    async (createdToken?: ApiToken) => {
+      if (!account) return
 
-    if (!canCreateToken) {
-      setCreateError(t("modelList:keyDialog.createNotSupported"))
-      return
-    }
-
-    setCreateError(null)
-    setIsLoading(true)
-
-    try {
-      const refreshedTokens = await fetchDisplayAccountTokens(account)
-      setTokens(refreshedTokens)
-
-      const refreshedCompatible = refreshedTokens.filter((token) =>
-        isTokenCompatibleWithModel(token, modelContext),
-      )
-
-      if (refreshedCompatible.length === 0) {
-        setCreateError(
-          t("modelList:keyDialog.noCompatibleFoundAfterCreate", { modelId }),
-        )
+      if (!canCreateToken) {
+        setCreateError(t("modelList:keyDialog.createNotSupported"))
         return
       }
 
-      toast.success(t("modelList:keyDialog.createSuccess"))
-    } catch (error) {
-      const errorMessage =
-        error instanceof InvalidTokenPayloadError
-          ? t("messages:errors.unknown")
-          : getErrorMessage(error)
-      logger.error(
-        "Failed to refresh token list after create (model key dialog)",
-        {
-          message: errorMessage,
-          accountId: account.id,
-          baseUrl: account.baseUrl,
-          siteType: account.siteType,
-          ...(error instanceof InvalidTokenPayloadError
-            ? {
-                payloadAccountId: error.accountId,
-                payloadBaseUrl: error.baseUrl,
-                payloadSiteType: error.siteType,
-                payloadResponseType: error.responseType,
-              }
-            : {}),
-        },
-      )
-      setCreateError(
-        t("modelList:keyDialog.createFailed", { error: errorMessage }),
-      )
-    } finally {
-      setIsLoading(false)
-    }
-  }, [account, canCreateToken, modelContext, modelId, t])
+      setCreateError(null)
+      setIsLoading(true)
+
+      try {
+        if (createdToken) {
+          setTokens((currentTokens) => {
+            const withoutCreated = currentTokens.filter(
+              (token) => token.id !== createdToken.id,
+            )
+            return [...withoutCreated, createdToken]
+          })
+          if (isTokenCompatibleWithModel(createdToken, modelContext)) {
+            setSelectedTokenId(createdToken.id)
+            setOneTimeToken(createdToken)
+            toast.success(t("modelList:keyDialog.createSuccess"))
+          } else {
+            setCreateError(
+              t("modelList:keyDialog.noCompatibleFoundAfterCreate", {
+                modelId,
+              }),
+            )
+          }
+          return
+        }
+
+        const refreshedTokens = await fetchDisplayAccountTokens(account)
+        setTokens(refreshedTokens)
+
+        const refreshedCompatible = refreshedTokens.filter((token) =>
+          isTokenCompatibleWithModel(token, modelContext),
+        )
+
+        if (refreshedCompatible.length === 0) {
+          setCreateError(
+            t("modelList:keyDialog.noCompatibleFoundAfterCreate", { modelId }),
+          )
+          return
+        }
+
+        toast.success(t("modelList:keyDialog.createSuccess"))
+      } catch (error) {
+        const errorMessage =
+          error instanceof InvalidTokenPayloadError
+            ? t("messages:errors.unknown")
+            : getErrorMessage(error)
+        logger.error(
+          "Failed to refresh token list after create (model key dialog)",
+          {
+            message: errorMessage,
+            accountId: account.id,
+            baseUrl: account.baseUrl,
+            siteType: account.siteType,
+            ...(error instanceof InvalidTokenPayloadError
+              ? {
+                  payloadAccountId: error.accountId,
+                  payloadBaseUrl: error.baseUrl,
+                  payloadSiteType: error.siteType,
+                  payloadResponseType: error.responseType,
+                }
+              : {}),
+          },
+        )
+        setCreateError(
+          t("modelList:keyDialog.createFailed", { error: errorMessage }),
+        )
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [account, canCreateToken, modelContext, modelId, t],
+  )
 
   const createDefaultKey = useCallback(
     async (group: string) => {
@@ -252,7 +287,9 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
           throw new Error("create_token_failed")
         }
 
-        await refreshTokensAfterCreate()
+        await refreshTokensAfterCreate(
+          isCreatedApiToken(created) ? created : undefined,
+        )
       } catch (error) {
         const errorMessage = getErrorMessage(error)
         logger.error("Failed to create default token (model key dialog)", {
@@ -283,9 +320,11 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
     ineligibleDescription,
     isCreating,
     createError,
+    oneTimeToken,
     fetchTokens,
     copySelectedKey,
     createDefaultKey,
     refreshTokensAfterCreate,
+    clearOneTimeToken: () => setOneTimeToken(null),
   }
 }

@@ -14,6 +14,9 @@
     "retrying": "出現錯誤，進行第{{attempt}}次重試",
     "tokenNotFound": "無法建立或找到 API 令牌"
   },
+  "aihubmix": {
+    "createRequiresOneTimeKeyDialog": "AIHubMix 建立的金鑰只能查看一次，請在金鑰管理中手動建立並立即保存完整金鑰。"
+  },
   "autodetect": {
     "currentTabNeedsReload": "當前頁面可能是在安裝或更新擴充套件前開啟的，外掛暫時無法讀取這個標籤頁的資訊。請重新整理當前頁面後再試一次自動識別。",
     "failed": "自動識別失敗：{{error}}",
@@ -104,13 +107,15 @@
   "errors": {
     "api": {
       "invalidResponseFormat": "響應資料格式錯誤",
-      "onlyJsonSupported": "僅支援 JSON 響應資料"
+      "onlyJsonSupported": "僅支援 JSON 響應資料",
+      "requestFailed": "請求失敗：{{status}}"
     },
     "operation": {
       "accountDataFetchTimeout": "取得帳號資料逾時（{{seconds}} 秒）",
       "failed": "操作失敗：{{error}}",
       "saveFailed": "儲存失敗：{{error}}"
     },
+    "tokenSecretUnavailable": "該平台不支援二次查看完整金鑰。請在建立金鑰時立即複製並保存。",
     "unknown": "未知錯誤",
     "validation": {
       "bookmarkNameRequired": "書籤名稱不能為空",

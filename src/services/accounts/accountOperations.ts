@@ -52,6 +52,12 @@ const logger = createLogger("AccountOperations")
 
 export const MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS = 20000
 
+const isCreatedApiToken = (value: unknown): value is ApiToken =>
+  !!value &&
+  typeof value === "object" &&
+  typeof (value as Partial<ApiToken>).id === "number" &&
+  typeof (value as Partial<ApiToken>).key === "string"
+
 /**
  * Create a localized timeout error for manual account data fetching.
  * @param timeoutMs Timeout threshold in milliseconds.
@@ -165,7 +171,14 @@ export async function autoDetectAccount(
 
     const { userId, siteType, sub2apiAuth } = detectResult.data
     const isSub2Api = siteType === SITE_TYPES.SUB2API
-    const effectiveAuthType = isSub2Api ? AuthTypeEnum.AccessToken : authType
+    const isAIHubMix = siteType === SITE_TYPES.AIHUBMIX
+    const effectiveAuthType =
+      isSub2Api || isAIHubMix ? AuthTypeEnum.AccessToken : authType
+    // AIHubMix imports through cookie-authenticated web endpoints, then stores
+    // the retrieved account access token for all normal account/key/model APIs.
+    const detectionAuthType = isAIHubMix
+      ? AuthTypeEnum.Cookie
+      : effectiveAuthType
 
     if (!userId) {
       const detailedError = analyzeAutoDetectError(
@@ -219,7 +232,7 @@ export async function autoDetectAccount(
     const siteStatusPromise = getApiService(siteType).fetchSiteStatus({
       baseUrl: url,
       auth: {
-        authType: effectiveAuthType || AuthTypeEnum.None,
+        authType: detectionAuthType || AuthTypeEnum.None,
       },
     })
 
@@ -244,7 +257,8 @@ export async function autoDetectAccount(
     if (
       // Sub2API 默认可能返回空 username（""），此时不应阻止账号识别；但 AccessToken 仍然必须存在
       (!isSub2Api && !detectedUsername) ||
-      (effectiveAuthType === AuthTypeEnum.AccessToken && !access_token)
+      ((effectiveAuthType === AuthTypeEnum.AccessToken || isAIHubMix) &&
+        !access_token)
     ) {
       const detailedError = analyzeAutoDetectError(
         t("messages:operations.detection.getInfoFailed"),
@@ -270,6 +284,7 @@ export async function autoDetectAccount(
         accessToken: access_token,
         userId: userId.toString(),
         exchangeRate: defaultExchangeRate,
+        authType: effectiveAuthType,
         checkIn: {
           enableDetection: isSub2Api ? false : checkSupport ?? false,
           autoCheckInEnabled: isSub2Api ? false : true,
@@ -1127,6 +1142,10 @@ export async function ensureAccountApiToken(
       newTokenData.group = normalizedGroup
     }
 
+    if (displaySiteData.siteType === SITE_TYPES.AIHUBMIX) {
+      throw new Error(t("messages:aihubmix.createRequiresOneTimeKeyDialog"))
+    }
+
     const createApiTokenResult = await getApiService(
       displaySiteData.siteType,
     ).createApiToken(
@@ -1147,19 +1166,25 @@ export async function ensureAccountApiToken(
       throw new Error(t("messages:accountOperations.createTokenFailed"))
     }
 
-    const updatedTokens = await getApiService(
-      displaySiteData.siteType,
-    ).fetchAccountTokens({
-      baseUrl: displaySiteData.baseUrl,
-      accountId: displaySiteData.id,
-      auth: {
-        authType: displaySiteData.authType,
-        userId: displaySiteData.userId,
-        accessToken: displaySiteData.token,
-        cookie: displaySiteData.cookieAuthSessionCookie,
-      },
-    })
-    apiToken = updatedTokens.at(-1)
+    if (isCreatedApiToken(createApiTokenResult)) {
+      apiToken = createApiTokenResult
+    } else {
+      // Do not assume a created key can be read back in full. AIHubMix returns
+      // complete API keys only at creation time and may list masked keys here.
+      const updatedTokens = await getApiService(
+        displaySiteData.siteType,
+      ).fetchAccountTokens({
+        baseUrl: displaySiteData.baseUrl,
+        accountId: displaySiteData.id,
+        auth: {
+          authType: displaySiteData.authType,
+          userId: displaySiteData.userId,
+          accessToken: displaySiteData.token,
+          cookie: displaySiteData.cookieAuthSessionCookie,
+        },
+      })
+      apiToken = updatedTokens.at(-1)
+    }
   }
 
   if (!apiToken) {
@@ -1193,7 +1218,10 @@ async function autoProvisionKeyOnAccountAdd(
       return
     }
 
-    if (account.site_type === SITE_TYPES.SUB2API) {
+    if (
+      account.site_type === SITE_TYPES.SUB2API ||
+      account.site_type === SITE_TYPES.AIHUBMIX
+    ) {
       return
     }
 

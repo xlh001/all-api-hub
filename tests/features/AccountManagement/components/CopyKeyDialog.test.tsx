@@ -2,6 +2,7 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import CopyKeyDialog from "~/features/AccountManagement/components/CopyKeyDialog"
+import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import { AuthTypeEnum } from "~/types"
 import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
@@ -110,6 +111,149 @@ describe("CopyKeyDialog", () => {
     })
   })
 
+  it("shows a one-time key dialog when create returns a full token", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+    createApiTokenMock.mockResolvedValueOnce({
+      ...TOKEN,
+      id: 9,
+      key: "sk-created-full-secret",
+      name: "aihubmix-default",
+    })
+
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    )
+
+    expect(
+      await screen.findByText("keyManagement:oneTimeKey.title"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByLabelText("keyManagement:oneTimeKey.keyLabel"),
+    ).toHaveValue("sk-created-full-secret")
+
+    await waitFor(() => {
+      expect(fetchAccountTokensMock).toHaveBeenCalledTimes(1)
+      expect(writeText).toHaveBeenCalledWith("sk-created-full-secret")
+    })
+  })
+
+  it("shows the created one-time token without refetching inventory", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+    createApiTokenMock.mockResolvedValueOnce({
+      ...TOKEN,
+      key: "sk-created-full-secret",
+      name: "aihubmix-default",
+    })
+
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    )
+
+    expect(
+      await screen.findByText("keyManagement:oneTimeKey.title"),
+    ).toBeInTheDocument()
+    expect(screen.getByText("aihubmix-default")).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(fetchAccountTokensMock).toHaveBeenCalledTimes(1)
+      expect(writeText).toHaveBeenCalledWith("sk-created-full-secret")
+    })
+  })
+
+  it("refreshes instead of showing a one-time key when create returns a token-shaped object with an invalid secret", async () => {
+    fetchAccountTokensMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([TOKEN])
+    createApiTokenMock.mockResolvedValueOnce({
+      ...TOKEN,
+      id: 9,
+      key: null,
+      name: "invalid-created-token",
+    })
+
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(fetchAccountTokensMock).toHaveBeenCalledTimes(2)
+      expect(writeText).toHaveBeenCalledWith("sk-test")
+    })
+
+    expect(
+      screen.queryByText("keyManagement:oneTimeKey.title"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows a create error when refreshed inventory is not an array", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([]).mockResolvedValueOnce(null)
+    createApiTokenMock.mockResolvedValueOnce(true)
+
+    const user = userEvent.setup()
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    )
+
+    expect(
+      await screen.findByText("ui:dialog.copyKey.createFailed"),
+    ).toBeInTheDocument()
+  })
+
+  it("shows a load error when the initial token inventory request fails", async () => {
+    fetchAccountTokensMock.mockRejectedValueOnce(new Error("load failed"))
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    expect(
+      await screen.findByText("ui:dialog.copyKey.loadFailed"),
+    ).toBeInTheDocument()
+  })
+
+  it("handles a malformed initial token inventory as an empty list", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce(null)
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    expect(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText("default")).not.toBeInTheDocument()
+  })
+
   it("keeps the dialog actionable when create fails (retry works)", async () => {
     fetchAccountTokensMock
       .mockResolvedValueOnce([])
@@ -179,6 +323,98 @@ describe("CopyKeyDialog", () => {
     })
   })
 
+  it("shows a success toast when refreshed inventory contains multiple tokens", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      TOKEN,
+      {
+        ...TOKEN,
+        id: 2,
+        key: "sk-second",
+        name: "second",
+      },
+    ])
+    createApiTokenMock.mockResolvedValueOnce(true)
+
+    const user = userEvent.setup()
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "ui:dialog.copyKey.createSuccess",
+      )
+    })
+    expect(await screen.findByText("default")).toBeInTheDocument()
+    expect(screen.getByText("second")).toBeInTheDocument()
+  })
+
+  it("does not start token creation for accounts without manageable credentials", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+
+    render(
+      <CopyKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{ ...ACCOUNT, token: "", cookieAuthSessionCookie: "" }}
+      />,
+    )
+
+    expect(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    ).toBeDisabled()
+    expect(createApiTokenMock).not.toHaveBeenCalled()
+  })
+
+  it("requires manual Sub2API group selection when quick create cannot pick one", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      vip: { desc: "VIP", ratio: 1 },
+      pro: { desc: "Pro", ratio: 1 },
+    })
+
+    const user = userEvent.setup()
+
+    render(
+      <CopyKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{
+          ...ACCOUNT,
+          siteType: "sub2api",
+          sub2apiAuth: {
+            jwtToken: "jwt",
+            refreshToken: "refresh",
+            user: {
+              id: "sub-user",
+              email: "sub@example.com",
+              displayName: "Sub User",
+              group: "vip",
+              groups: ["vip", "pro"],
+            },
+          },
+        }}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    )
+
+    await screen.findByText("messages:sub2api.createRequiresGroupSelection")
+    expect(fetchUserGroupsMock).toHaveBeenCalled()
+    expect(createApiTokenMock).not.toHaveBeenCalled()
+  })
+
   it("copies the resolved full key when inventory is masked", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([
       {
@@ -206,7 +442,7 @@ describe("CopyKeyDialog", () => {
     })
   })
 
-  it("keeps masked-key copy failures localized to the action", async () => {
+  it("keeps masked-key copy failures localized to the action and shows the error message", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([
       {
         ...TOKEN,
@@ -232,8 +468,43 @@ describe("CopyKeyDialog", () => {
     await waitFor(() => {
       expect(resolveApiTokenKeyMock).toHaveBeenCalled()
       expect(writeText).not.toHaveBeenCalled()
+      expect(toastErrorMock).toHaveBeenCalledWith("masked fetch failed")
+    })
+  })
+
+  it("shows the resolver error message when a saved masked key cannot be copied", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([
+      {
+        ...TOKEN,
+        key: "sk-abcd************wxyz",
+      },
+    ])
+    resolveApiTokenKeyMock.mockRejectedValueOnce(
+      new ApiError(
+        "messages:errors.tokenSecretUnavailable",
+        undefined,
+        undefined,
+        API_ERROR_CODES.TOKEN_SECRET_UNAVAILABLE,
+      ),
+    )
+
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    await user.click(await screen.findByText("default"))
+    await user.click(
+      await screen.findByRole("button", { name: "ui:dialog.copyKey.copy" }),
+    )
+
+    await waitFor(() => {
+      expect(resolveApiTokenKeyMock).toHaveBeenCalled()
+      expect(writeText).not.toHaveBeenCalled()
       expect(toastErrorMock).toHaveBeenCalledWith(
-        "ui:dialog.copyKey.copyFailedManual",
+        "messages:errors.tokenSecretUnavailable",
       )
     })
   })
@@ -284,6 +555,52 @@ describe("CopyKeyDialog", () => {
       model_limits: "",
       allow_ips: "",
       group: "default",
+    })
+  })
+
+  it("shows one-time key dialog for custom AddTokenDialog create returns", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+    fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "default", ratio: 1 },
+    })
+    createApiTokenMock.mockResolvedValueOnce({
+      ...TOKEN,
+      id: 10,
+      key: "sk-custom-full-secret",
+      name: "My Key",
+    })
+
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+
+    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createCustomKey",
+      }),
+    )
+    await user.type(
+      await screen.findByLabelText(/keyManagement:dialog\.tokenName/),
+      "My Key",
+    )
+    await user.click(
+      screen.getByRole("button", { name: "keyManagement:dialog.createToken" }),
+    )
+
+    expect(
+      await screen.findByText("keyManagement:oneTimeKey.title"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByLabelText("keyManagement:oneTimeKey.keyLabel"),
+    ).toHaveValue("sk-custom-full-secret")
+
+    await waitFor(() => {
+      expect(fetchAccountTokensMock).toHaveBeenCalledTimes(1)
+      expect(writeText).toHaveBeenCalledWith("sk-custom-full-secret")
     })
   })
 })

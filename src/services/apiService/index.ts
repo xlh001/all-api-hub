@@ -1,5 +1,6 @@
 import { SITE_TYPES } from "~/constants/siteType"
 
+import * as aihubmixAPI from "./aihubmix"
 import * as anyrouterAPI from "./anyrouter"
 import * as axonHubAPI from "./axonHub"
 import * as commonAPI from "./common"
@@ -23,12 +24,15 @@ const siteOverrideMap = {
   [SITE_TYPES.SUB2API]: [sub2apiAPI],
   [SITE_TYPES.OCTOPUS]: [octopusAPI],
   [SITE_TYPES.AXON_HUB]: [axonHubAPI],
+  [SITE_TYPES.AIHUBMIX]: [aihubmixAPI],
 } as const
 
 // 添加类型定义
 type SiteOverrideMap = typeof siteOverrideMap
 
 export type ApiOverrideSite = keyof SiteOverrideMap
+
+const strictOverrideSites = new Set<ApiOverrideSite>([SITE_TYPES.AIHUBMIX])
 
 const hasOwnOverrideSite = (value: unknown): value is ApiOverrideSite =>
   typeof value === "string" &&
@@ -65,6 +69,12 @@ function getApiFunc<T extends keyof typeof commonAPI>(
         // 使用类型断言避免索引类型错误
         return (overrideModule as any)[funcName] as (typeof commonAPI)[T]
       }
+    }
+
+    if (currentSite && strictOverrideSites.has(currentSite)) {
+      throw new Error(
+        `apiService.${String(funcName)} is not implemented for ${currentSite}`,
+      )
     }
   }
   // eslint-disable-next-line import/namespace

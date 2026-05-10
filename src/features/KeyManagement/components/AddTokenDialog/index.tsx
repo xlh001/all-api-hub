@@ -7,10 +7,11 @@ import { Modal } from "~/components/ui/Dialog/Modal"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { createDisplayAccountApiContext } from "~/services/accounts/utils/apiServiceRequest"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
-import type { AccountToken, DisplaySiteData } from "~/types"
+import type { AccountToken, ApiToken, DisplaySiteData } from "~/types"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 
+import { OneTimeApiKeyDialog } from "../OneTimeApiKeyDialog"
 import { DialogHeader } from "./DialogHeader"
 import { FormActions } from "./FormActions"
 import { useTokenData } from "./hooks/useTokenData"
@@ -23,6 +24,12 @@ import { WarningNote } from "./WarningNote"
  * Unified logger scoped to the Key Management add/edit token dialog.
  */
 const logger = createLogger("AddTokenDialog")
+
+const isCreatedApiToken = (value: unknown): value is ApiToken =>
+  !!value &&
+  typeof value === "object" &&
+  typeof (value as Partial<ApiToken>).id === "number" &&
+  typeof (value as Partial<ApiToken>).key === "string"
 
 interface AddTokenDialogProps {
   isOpen: boolean
@@ -41,7 +48,8 @@ interface AddTokenDialogProps {
     allowedGroups?: string[]
   }
   prefillNotice?: string
-  onSuccess?: () => void | Promise<void>
+  onSuccess?: (createdToken?: ApiToken) => void | Promise<void>
+  showOneTimeKeyDialog?: boolean
 }
 
 /**
@@ -51,8 +59,10 @@ interface AddTokenDialogProps {
  */
 export default function AddTokenDialog(props: AddTokenDialogProps) {
   const { isOpen, onClose, availableAccounts, editingToken, onSuccess } = props
+  const showOneTimeKeyDialog = props.showOneTimeKeyDialog ?? true
   const { t } = useTranslation("keyManagement")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [oneTimeToken, setOneTimeToken] = useState<ApiToken | null>(null)
 
   const { formData, setFormData, errors, validateForm, isEditMode, resetForm } =
     useTokenForm(props)
@@ -67,15 +77,29 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
     setFormData,
     !isEditMode ? props.createPrefill?.allowedGroups : undefined,
   )
+  const showGroupSelection =
+    Object.keys(groups).length > 0 ||
+    (!isEditMode && (props.createPrefill?.allowedGroups?.length ?? 0) > 0)
 
   const handleClose = () => {
     resetForm()
     resetData()
+    setOneTimeToken(null)
     onClose()
   }
 
+  const handleCloseOneTimeKeyDialog = () => {
+    setOneTimeToken(null)
+    handleClose()
+  }
+
   const handleSubmit = async () => {
-    if (!currentAccount || !validateForm()) return
+    if (
+      !currentAccount ||
+      !validateForm({ requireGroup: showGroupSelection })
+    ) {
+      return
+    }
 
     setIsSubmitting(true)
     try {
@@ -103,12 +127,26 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
         await service.updateApiToken(request, editingToken.id, tokenData)
         toast.success(t("dialog.updateSuccess"))
       } else {
-        await service.createApiToken(request, tokenData)
-        toast.success(t("dialog.createSuccess"))
+        const created = await service.createApiToken(request, tokenData)
+        const createdToken = isCreatedApiToken(created) ? created : undefined
+        if (createdToken && showOneTimeKeyDialog) {
+          setOneTimeToken(createdToken)
+        } else {
+          toast.success(t("dialog.createSuccess"))
+        }
+        if (onSuccess) {
+          void Promise.resolve(onSuccess(createdToken)).catch((error) => {
+            logger.error("AddTokenDialog onSuccess callback failed", error)
+          })
+        }
+
+        if (createdToken && showOneTimeKeyDialog) {
+          return
+        }
       }
 
       handleClose()
-      if (onSuccess) {
+      if (isEditMode && onSuccess) {
         void Promise.resolve(onSuccess()).catch((error) => {
           logger.error("AddTokenDialog onSuccess callback failed", error)
         })
@@ -129,46 +167,54 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      size="lg"
-      header={<DialogHeader isEditMode={isEditMode} />}
-      footer={
-        isLoading ? null : (
-          <FormActions
-            isSubmitting={isSubmitting}
-            isEditMode={isEditMode}
-            onClose={handleClose}
-            onSubmit={handleSubmit}
-            canSubmit={!!currentAccount}
-          />
-        )
-      }
-    >
-      {isLoading ? (
-        <LoadingIndicator />
-      ) : (
-        <div className="space-y-4">
-          <TokenForm
-            formData={formData}
-            setFormData={setFormData}
-            errors={errors}
-            isEditMode={isEditMode}
-            availableAccounts={availableAccounts}
-            groups={groups}
-            allowedGroups={
-              !isEditMode ? props.createPrefill?.allowedGroups : undefined
-            }
-            availableModels={availableModels}
-          />
-          {typeof props.prefillNotice === "string" &&
-          props.prefillNotice.trim().length > 0 ? (
-            <Alert variant="info" description={props.prefillNotice} />
-          ) : null}
-          <WarningNote />
-        </div>
-      )}
-    </Modal>
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        size="lg"
+        header={<DialogHeader isEditMode={isEditMode} />}
+        footer={
+          isLoading ? null : (
+            <FormActions
+              isSubmitting={isSubmitting}
+              isEditMode={isEditMode}
+              onClose={handleClose}
+              onSubmit={handleSubmit}
+              canSubmit={!!currentAccount}
+            />
+          )
+        }
+      >
+        {isLoading ? (
+          <LoadingIndicator />
+        ) : (
+          <div className="space-y-4">
+            <TokenForm
+              formData={formData}
+              setFormData={setFormData}
+              errors={errors}
+              isEditMode={isEditMode}
+              availableAccounts={availableAccounts}
+              groups={groups}
+              allowedGroups={
+                !isEditMode ? props.createPrefill?.allowedGroups : undefined
+              }
+              availableModels={availableModels}
+              showGroupSelection={showGroupSelection}
+            />
+            {typeof props.prefillNotice === "string" &&
+            props.prefillNotice.trim().length > 0 ? (
+              <Alert variant="info" description={props.prefillNotice} />
+            ) : null}
+            <WarningNote />
+          </div>
+        )}
+      </Modal>
+      <OneTimeApiKeyDialog
+        isOpen={!!oneTimeToken}
+        token={oneTimeToken}
+        onClose={handleCloseOneTimeKeyDialog}
+      />
+    </>
   )
 }

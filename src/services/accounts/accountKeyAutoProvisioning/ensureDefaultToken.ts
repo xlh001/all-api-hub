@@ -25,6 +25,12 @@ export function generateDefaultTokenRequest(): CreateTokenRequest {
   }
 }
 
+const isCreatedApiToken = (value: unknown): value is ApiToken =>
+  !!value &&
+  typeof value === "object" &&
+  typeof (value as Partial<ApiToken>).id === "number" &&
+  typeof (value as Partial<ApiToken>).key === "string"
+
 /**
  * Ensures that an API token exists for the supplied account by checking the
  * remote token inventory and lazily issuing a default token when none exist.
@@ -58,6 +64,10 @@ export async function ensureDefaultApiTokenForAccount(params: {
     throw new Error(t("messages:sub2api.createRequiresGroup"))
   }
 
+  if (displaySiteData.siteType === SITE_TYPES.AIHUBMIX) {
+    throw new Error(t("messages:aihubmix.createRequiresOneTimeKeyDialog"))
+  }
+
   const newTokenData = generateDefaultTokenRequest()
   const createApiTokenResult = await service.createApiToken(
     {
@@ -77,6 +87,13 @@ export async function ensureDefaultApiTokenForAccount(params: {
     throw new Error("create_token_failed")
   }
 
+  if (isCreatedApiToken(createApiTokenResult)) {
+    return { token: createApiTokenResult, created: true }
+  }
+
+  // Backends such as AIHubMix may only expose the full API key in the create
+  // response; a follow-up inventory fetch can return a masked key that cannot
+  // be revealed later. This helper currently returns inventory data only.
   const updatedTokens = await service.fetchAccountTokens({
     baseUrl: displaySiteData.baseUrl,
     accountId: displaySiteData.id,

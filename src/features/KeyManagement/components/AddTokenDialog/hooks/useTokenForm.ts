@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
+import { SITE_TYPES, type AccountSiteType } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
 import type { AccountToken } from "~/types"
 
@@ -11,6 +12,7 @@ interface Account {
   id: string
   name: string
   baseUrl: string
+  siteType: AccountSiteType
   userId: number
   token: string
 }
@@ -43,6 +45,10 @@ export interface FormData {
   modelLimits: string[]
   allowIps: string
   group: string
+}
+
+interface ValidateFormOptions {
+  requireGroup?: boolean
 }
 
 const initialFormData: FormData = {
@@ -111,6 +117,11 @@ export function useTokenForm({
     () => allowedGroups.length > 0,
     [allowedGroups],
   )
+  const selectedAccount = useMemo(
+    () => availableAccounts.find((acc) => acc.id === formData.accountId),
+    [availableAccounts, formData.accountId],
+  )
+  const shouldValidateIpList = selectedAccount?.siteType !== SITE_TYPES.AIHUBMIX
 
   useEffect(() => {
     if (isOpen) {
@@ -201,7 +212,8 @@ export function useTokenForm({
     hasRestrictedGroupSelection,
   ])
 
-  const validateForm = (): boolean => {
+  const validateForm = (options: ValidateFormOptions = {}): boolean => {
+    const requireGroup = options.requireGroup ?? true
     const newErrors: Record<string, string> = {}
     if (!formData.accountId) {
       newErrors.accountId = t("dialog.selectAccountError")
@@ -221,7 +233,11 @@ export function useTokenForm({
         newErrors.expiredTime = t("dialog.validExpiration")
       }
     }
-    if (formData.allowIps && !isValidIpList(formData.allowIps)) {
+    if (
+      shouldValidateIpList &&
+      formData.allowIps &&
+      !isValidIpList(formData.allowIps)
+    ) {
       newErrors.allowIps = t("dialog.validIp")
     }
     const normalizedSelectedGroup = formData.group.trim()
@@ -229,7 +245,7 @@ export function useTokenForm({
       !hasRestrictedGroupSelection ||
       allowedGroups.includes(normalizedSelectedGroup)
 
-    if (!normalizedSelectedGroup || !isRestrictedGroupValid) {
+    if (requireGroup && (!normalizedSelectedGroup || !isRestrictedGroupValid)) {
       newErrors.group = t("messages:sub2api.createRequiresGroupSelection")
     }
 
