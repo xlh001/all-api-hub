@@ -1,4 +1,4 @@
-import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
+import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
@@ -46,6 +46,49 @@ async function expectStoredPreference(
     .toEqual(value)
 }
 
+function normalizeActionPopupPath(popup: string): string {
+  if (!popup) return ""
+
+  try {
+    const url = new URL(popup)
+    return url.protocol === "chrome-extension:"
+      ? url.pathname.replace(/^\//, "")
+      : popup
+  } catch {
+    return popup
+  }
+}
+
+async function getConfiguredActionPopupPath(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+): Promise<string> {
+  const popup = await serviceWorker.evaluate(async () => {
+    const chromeApi = (globalThis as any).chrome
+
+    return await new Promise<string>((resolve, reject) => {
+      chromeApi.action.getPopup({}, (popup: string) => {
+        const error = chromeApi.runtime?.lastError
+        if (error) {
+          reject(new Error(error.message))
+          return
+        }
+        resolve(popup)
+      })
+    })
+  })
+
+  return normalizeActionPopupPath(popup)
+}
+
+async function expectConfiguredActionPopup(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  expectedPopup: string,
+) {
+  await expect
+    .poll(async () => getConfiguredActionPopupPath(serviceWorker))
+    .toBe(expectedPopup)
+}
+
 test.beforeEach(async ({ context, page }) => {
   installExtensionPageGuards(page)
   await forceExtensionLanguage(page, "en")
@@ -85,4 +128,36 @@ test("persists an options setting through extension storage and reload", async (
     "aria-pressed",
     "true",
   )
+})
+
+test("updates toolbar action behavior from settings into the live extension action", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedUserPreferences(serviceWorker, {
+    actionClickBehavior: "popup",
+  })
+
+  await expectConfiguredActionPopup(serviceWorker, POPUP_PAGE_PATH)
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.BASIC}`,
+  )
+  await waitForExtensionRoot(page)
+
+  await page.getByRole("button", { name: "Side panel" }).click()
+
+  await expectStoredPreference(
+    serviceWorker,
+    "actionClickBehavior",
+    "sidepanel",
+  )
+  await expectConfiguredActionPopup(serviceWorker, "")
+
+  await page.getByRole("button", { name: "Popup" }).click()
+
+  await expectStoredPreference(serviceWorker, "actionClickBehavior", "popup")
+  await expectConfiguredActionPopup(serviceWorker, POPUP_PAGE_PATH)
 })
