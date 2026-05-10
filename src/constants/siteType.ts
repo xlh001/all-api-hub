@@ -22,6 +22,14 @@ export const SITE_TYPES = {
   UNKNOWN: "unknown",
 } as const
 
+export const AIHUBMIX_API_ORIGIN = "https://aihubmix.com"
+export const AIHUBMIX_WEB_ORIGIN = "https://console.aihubmix.com"
+export const AIHUBMIX_HOSTNAMES = [
+  "aihubmix.com",
+  "www.aihubmix.com",
+  "console.aihubmix.com",
+] as const
+
 export const ACCOUNT_SITE_TYPES = [
   SITE_TYPES.ONE_API,
   SITE_TYPES.NEW_API,
@@ -100,7 +108,7 @@ export const ACCOUNT_SITE_DOMAIN_RULES = [
     name: SITE_TYPES.AIHUBMIX,
     // Domain-first detection avoids treating AIHubMix as a generic
     // One-API/New-API compatible site based on page title or fallback probes.
-    hostnames: ["aihubmix.com", "www.aihubmix.com", "console.aihubmix.com"],
+    hostnames: AIHUBMIX_HOSTNAMES,
   },
 ] as const
 
@@ -169,6 +177,12 @@ const SITE_ROUTE_CONFIGS: Partial<
     usagePath: "/usage",
     redeemPath: "/redeem",
     siteAnnouncementsPath: "/dashboard",
+  },
+  [SITE_TYPES.AIHUBMIX]: {
+    usagePath: "/statistics",
+    redeemPath: "/topup",
+    checkInPath: "/",
+    adminCredentialsPath: "/",
   },
   Default: {
     usagePath: DEFAULT_USAGE_PATH,
