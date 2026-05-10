@@ -5,6 +5,12 @@ import { loadPlaywrightEnvFiles } from "./e2e/utils/playwrightEnv"
 loadPlaywrightEnvFiles()
 
 const isCI = !!process.env.CI
+const localWorkerCount = Number(process.env.AAH_E2E_WORKERS ?? 4)
+const workers = isCI
+  ? 1
+  : Number.isFinite(localWorkerCount)
+    ? localWorkerCount
+    : 4
 
 export default defineConfig({
   testDir: "./e2e",
@@ -21,7 +27,10 @@ export default defineConfig({
     timeout: 10_000,
   },
   retries: isCI ? 1 : 0,
-  workers: isCI ? 1 : undefined,
+  // Each E2E worker launches a persistent Chromium context with the extension.
+  // Keeping local concurrency bounded avoids service-worker startup/teardown
+  // timeouts on machines with many logical CPUs.
+  workers,
   reporter: isCI
     ? [
         ["github"],
