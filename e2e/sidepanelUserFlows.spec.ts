@@ -29,6 +29,21 @@ import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 const SIDEPANEL_URL = (extensionId: string) =>
   `chrome-extension://${extensionId}/${SIDEPANEL_PAGE_PATH}`
 
+async function expectBrowserTabOpened(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  url: string,
+) {
+  await expect
+    .poll(async () => {
+      return await serviceWorker.evaluate(async (targetUrl) => {
+        const chromeApi = (globalThis as any).chrome
+        const tabs = await chromeApi.tabs.query({})
+        return tabs.some((tab: { url?: string }) => tab.url === targetUrl)
+      }, url)
+    })
+    .toBe(true)
+}
+
 test.beforeEach(async ({ context, page }) => {
   installExtensionPageGuards(page)
   await forceExtensionLanguage(page, "en")
@@ -139,4 +154,129 @@ test("sidepanel switches common saved-item tabs and opens the matching managemen
   expect(new URL(profilesPage.url()).hash).toBe(
     `#${MENU_ITEM_IDS.API_CREDENTIAL_PROFILES}`,
   )
+})
+
+test("sidepanel opens saved account and bookmark targets in browser tabs", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const now = Date.now()
+  await setPlasmoStorageValue(
+    serviceWorker,
+    STORAGE_KEYS.ACCOUNTS,
+    normalizeAccountStorageConfigForWrite(
+      {
+        ...createDefaultAccountStorageConfig(now),
+        accounts: [
+          createStoredAccount({
+            id: "sidepanel-open-account",
+            site_name: "Sidepanel Open Account",
+            site_url: "https://sidepanel-open-account.example.com",
+            account_info: {
+              id: 41,
+              username: "sidepanel-open-user",
+              access_token: "sidepanel-open-token",
+            },
+          }),
+        ],
+        bookmarks: [
+          createStoredBookmark({
+            id: "sidepanel-open-bookmark",
+            name: "Sidepanel Open Bookmark",
+            url: "https://sidepanel-open-bookmark.example.com/docs",
+          }),
+        ],
+      },
+      now,
+    ),
+  )
+
+  await page.goto(SIDEPANEL_URL(extensionId))
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await page.getByRole("button", { name: "Sidepanel Open Account" }).click()
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://sidepanel-open-account.example.com/",
+  )
+
+  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await page.getByRole("button", { name: "Sidepanel Open Bookmark" }).click()
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://sidepanel-open-bookmark.example.com/docs",
+  )
+})
+
+test("sidepanel opens model management for a saved API credential profile", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  await context.route(
+    "https://sidepanel-model-api.example.com/v1/models",
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [{ id: "gpt-sidepanel-mini" }, { id: "gpt-sidepanel-pro" }],
+        }),
+      }),
+  )
+
+  const serviceWorker = await getServiceWorker(context)
+  await seedApiCredentialProfiles(serviceWorker, [
+    createStoredApiCredentialProfile({
+      id: "sidepanel-model-profile",
+      name: "Sidepanel Model Profile",
+      baseUrl: "https://sidepanel-model-api.example.com",
+      apiKey: "sk-sidepanel-model-profile",
+    }),
+  ])
+
+  await page.goto(SIDEPANEL_URL(extensionId))
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    page.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("heading", { name: "Sidepanel Model Profile" }),
+  ).toBeVisible()
+
+  const modelsPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: OPTIONS_PAGE_PATH,
+    hash: `#${MENU_ITEM_IDS.MODELS}`,
+    searchParams: {
+      profileId: "sidepanel-model-profile",
+    },
+  })
+
+  await page.getByRole("button", { name: "Open in Model Management" }).click()
+
+  const modelsPage = await modelsPagePromise
+  installExtensionPageGuards(modelsPage)
+  await waitForExtensionRoot(modelsPage)
+
+  const targetUrl = new URL(modelsPage.url())
+  expect(targetUrl.hash).toBe(`#${MENU_ITEM_IDS.MODELS}`)
+  expect(targetUrl.searchParams.get("profileId")).toBe(
+    "sidepanel-model-profile",
+  )
+  await expect(modelsPage.getByText("gpt-sidepanel-mini")).toBeVisible()
+  await expect(modelsPage.getByText("gpt-sidepanel-pro")).toBeVisible()
+  await expect(
+    modelsPage
+      .getByText("Profile: Sidepanel Model Profile", { exact: false })
+      .first(),
+  ).toBeVisible()
 })

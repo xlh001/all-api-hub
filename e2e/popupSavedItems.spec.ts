@@ -1,13 +1,16 @@
-import { POPUP_PAGE_PATH } from "~/constants/extensionPages"
+import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { SiteBookmark } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
+  createStoredAccount,
   createStoredApiCredentialProfile,
   createStoredBookmark,
   forceExtensionLanguage,
   installExtensionPageGuards,
   seedApiCredentialProfiles,
+  seedStoredAccounts,
   seedStoredBookmarks,
   stubLlmMetadataIndex,
   waitForExtensionPage,
@@ -34,6 +37,21 @@ async function readStoredBookmarks(
   } catch {
     return []
   }
+}
+
+async function expectBrowserTabOpened(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  url: string,
+) {
+  await expect
+    .poll(async () => {
+      return await serviceWorker.evaluate(async (targetUrl) => {
+        const chromeApi = (globalThis as any).chrome
+        const tabs = await chromeApi.tabs.query({})
+        return tabs.some((tab: { url?: string }) => tab.url === targetUrl)
+      }, url)
+    })
+    .toBe(true)
 }
 
 test.beforeEach(async ({ context, page }) => {
@@ -108,6 +126,81 @@ test("opens the full management page for the active popup tab", async ({
   await expect(profilesPage).toHaveURL(/options\.html#apiCredentialProfiles$/)
 })
 
+test("opens the account manager from the default popup accounts tab", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "popup-account-1",
+      site_name: "Popup Account",
+      site_url: "https://popup-account.example.com",
+      account_info: {
+        id: 501,
+        username: "popup-account-user",
+        access_token: "popup-account-token",
+      },
+    }),
+  ])
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Popup Account" }),
+  ).toBeVisible()
+
+  const accountPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: OPTIONS_PAGE_PATH,
+    hash: `#${MENU_ITEM_IDS.ACCOUNT}`,
+  })
+  await page.getByRole("button", { name: "Account Management" }).click()
+
+  const accountPage = await accountPagePromise
+  installExtensionPageGuards(accountPage)
+  await waitForExtensionRoot(accountPage)
+
+  await expect(accountPage).toHaveURL(/options\.html#account$/)
+  await expect(
+    accountPage.getByRole("button", { name: "Popup Account" }),
+  ).toBeVisible()
+})
+
+test("opens a saved account site from the popup accounts tab", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "popup-open-account",
+      site_name: "Open Account",
+      site_url: "https://account-open.example.com",
+      account_info: {
+        id: 601,
+        username: "open-account-user",
+        access_token: "open-account-token",
+      },
+    }),
+  ])
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await page.getByRole("button", { name: "Open Account" }).click()
+
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://account-open.example.com/",
+  )
+})
+
 test("adds a bookmark from the popup bookmarks tab and keeps it in storage", async ({
   context,
   extensionId,
@@ -154,4 +247,39 @@ test("adds a bookmark from the popup bookmarks tab and keeps it in storage", asy
       url: "https://docs.example.com/popup",
       notes: "Added from the popup",
     })
+})
+
+test("opens a saved bookmark from the popup bookmarks tab", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedStoredBookmarks(serviceWorker, [
+    createStoredBookmark({
+      id: "popup-open-bookmark",
+      name: "Open Bookmark",
+      url: "https://bookmark-open.example.com/docs",
+    }),
+  ])
+  await context.route("https://bookmark-open.example.com/docs", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<!doctype html><title>Opened Bookmark</title><h1>Opened Bookmark</h1>",
+    }),
+  )
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+
+  await page.getByRole("button", { name: "Open Bookmark" }).click()
+
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://bookmark-open.example.com/docs",
+  )
 })

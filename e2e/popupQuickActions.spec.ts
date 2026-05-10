@@ -1,4 +1,5 @@
 import { POPUP_PAGE_PATH } from "~/constants/extensionPages"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   forceExtensionLanguage,
@@ -12,6 +13,34 @@ test.beforeEach(async ({ context, page }) => {
   installExtensionPageGuards(page)
   await forceExtensionLanguage(page, "en")
   await stubLlmMetadataIndex(context)
+})
+
+test("opens basic settings from the popup header", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  const targetPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: "options.html",
+    hash: `#${MENU_ITEM_IDS.BASIC}`,
+  })
+
+  await page.getByRole("button", { name: "Settings" }).click()
+
+  const targetPage = await targetPagePromise
+  installExtensionPageGuards(targetPage)
+  await waitForExtensionRoot(targetPage)
+
+  await expect(targetPage).toHaveURL(/options\.html#basic$/)
+  await expect(
+    targetPage
+      .getByTestId("basic-settings-page")
+      .getByRole("heading", { name: "Settings", exact: true }),
+  ).toBeVisible()
 })
 
 test("opens the key-management destination from the popup quick action", async ({

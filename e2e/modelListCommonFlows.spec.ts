@@ -112,3 +112,40 @@ test("loads account-backed models from the options route", async ({
   await expect(page.getByText("Total 3 models")).toBeVisible()
   await expect(page.getByText("Showing 3 models")).toBeVisible()
 })
+
+test("routes no-source setup CTAs to account and API credential management", async ({
+  extensionId,
+  page,
+}) => {
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.MODELS}`,
+  )
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await expect(page.getByRole("heading", { name: "Model List" })).toBeVisible()
+  await expect(page.getByText("No model sources yet")).toBeVisible()
+  await expect(
+    page.getByText(
+      "Add a site account or API credential profile before viewing the model list.",
+    ),
+  ).toBeVisible()
+
+  await page.getByRole("button", { name: "Add your first account" }).click()
+  await expect(page).toHaveURL(/options\.html#account$/)
+  await expect(
+    page.getByRole("heading", { name: "Account Management" }),
+  ).toBeVisible()
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.MODELS}`,
+  )
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await page.getByRole("button", { name: "Add profile" }).click()
+  await expect(page).toHaveURL(/options\.html#apiCredentialProfiles$/)
+  await expect(
+    page.getByRole("heading", { name: "API credential profiles" }),
+  ).toBeVisible()
+})

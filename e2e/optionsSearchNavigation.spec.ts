@@ -70,6 +70,34 @@ test("opens a common options page from settings search", async ({
   ).toBeVisible()
 })
 
+test("navigates between common options pages from the sidebar", async ({
+  extensionId,
+  page,
+}) => {
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.BASIC}`,
+  )
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await expect(
+    page
+      .getByTestId("basic-settings-page")
+      .getByRole("heading", { name: "Settings", exact: true }),
+  ).toBeVisible()
+
+  await page
+    .getByRole("navigation", { name: "Settings Options" })
+    .getByRole("button", { name: "Import/Export" })
+    .click()
+
+  await expect(page).toHaveURL(/options\.html#importExport$/)
+  await expect(
+    page.getByRole("heading", { name: "Import/Export" }),
+  ).toBeVisible()
+  await expect(page.getByText("Full Export")).toBeVisible()
+})
+
 test("opens a searched settings control and preserves its tab and anchor in the URL", async ({
   context,
   extensionId,

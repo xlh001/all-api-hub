@@ -71,6 +71,21 @@ async function readStoredBookmarkState(
   }
 }
 
+async function expectBrowserTabOpened(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  url: string,
+) {
+  await expect
+    .poll(async () => {
+      return await serviceWorker.evaluate(async (targetUrl) => {
+        const chromeApi = (globalThis as any).chrome
+        const tabs = await chromeApi.tabs.query({})
+        return tabs.some((tab: { url?: string }) => tab.url === targetUrl)
+      }, url)
+    })
+    .toBe(true)
+}
+
 function getBookmarkRow(page: Page, name: string) {
   return page
     .getByRole("button", { name })
@@ -170,6 +185,34 @@ test("adds a bookmark from bookmark management and persists it", async ({
       url: "https://example.com/portal",
       notes: "Primary documentation entrypoint",
     })
+})
+
+test("opens a stored bookmark target from bookmark management", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedStoredBookmarks(serviceWorker, [
+    createStoredBookmark({
+      id: "stored-open-bookmark",
+      name: "Managed Docs",
+      url: "https://managed-docs.example.com/guide",
+    }),
+  ])
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#bookmark`,
+  )
+  await waitForExtensionRoot(page)
+
+  await expect(page.getByRole("button", { name: "Managed Docs" })).toBeVisible()
+  await page.getByRole("button", { name: "Managed Docs" }).click()
+
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://managed-docs.example.com/guide",
+  )
 })
 
 test("edits a stored bookmark from bookmark management and persists the change", async ({
