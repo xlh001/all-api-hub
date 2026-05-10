@@ -16,6 +16,7 @@ import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   createStoredAccount,
   createStoredApiCredentialProfile,
+  createStoredBookmark,
   forceExtensionLanguage,
   installExtensionPageGuards,
   seedApiCredentialProfiles,
@@ -26,6 +27,7 @@ import {
 import {
   getPlasmoStorageRawValue,
   getServiceWorker,
+  setPlasmoStorageValue,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
@@ -211,6 +213,206 @@ test("exports a full backup containing accounts, user preferences, and API crede
       }),
     ]),
   )
+})
+
+test("round-trips a full backup through export download and file import", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const now = Date.parse("2026-03-30T15:00:00.000Z")
+  const roundTripAccount = createStoredAccount({
+    id: "round-trip-account",
+    site_name: "Round Trip Account",
+    site_url: "https://round-trip.example.com",
+    account_info: {
+      id: 701,
+      username: "round-trip-user",
+      access_token: "round-trip-token",
+    },
+  })
+  const roundTripBookmark = createStoredBookmark({
+    id: "round-trip-bookmark",
+    name: "Round Trip Bookmark",
+    url: "https://round-trip.example.com/docs",
+    notes: "Exported and restored from the downloaded backup",
+  })
+  const roundTripProfile = createStoredApiCredentialProfile({
+    id: "round-trip-profile",
+    name: "Round Trip Profile",
+    baseUrl: "https://round-trip-api.example.com",
+    apiKey: "sk-round-trip-profile",
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  await setPlasmoStorageValue(
+    serviceWorker,
+    STORAGE_KEYS.ACCOUNTS,
+    normalizeAccountStorageConfigForWrite(
+      {
+        ...createDefaultAccountStorageConfig(now),
+        accounts: [roundTripAccount],
+        bookmarks: [roundTripBookmark],
+        pinnedAccountIds: [roundTripAccount.id],
+        orderedAccountIds: [roundTripAccount.id],
+        pinnedBookmarkIds: [roundTripBookmark.id],
+        orderedBookmarkIds: [roundTripBookmark.id],
+      } as AccountStorageConfig,
+      now,
+    ),
+  )
+  await seedUserPreferences(serviceWorker, {
+    currencyType: "CNY",
+    actionClickBehavior: "sidepanel",
+    themeMode: "dark",
+  })
+  await seedApiCredentialProfiles(serviceWorker, [roundTripProfile])
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.IMPORT_EXPORT}`,
+  )
+  await waitForExtensionRoot(page)
+
+  const downloadPromise = page.waitForEvent("download")
+  await page
+    .locator("#export-full-backup")
+    .getByRole("button", { name: "Export" })
+    .click()
+
+  const download = await downloadPromise
+  const downloadPath = await download.path()
+  if (!downloadPath) {
+    throw new Error("Round-trip backup did not produce a readable download")
+  }
+
+  const exportedBackupBuffer = await fs.readFile(downloadPath)
+  const exportedBackup = JSON.parse(exportedBackupBuffer.toString("utf8")) as {
+    accounts?: AccountStorageConfig
+    preferences?: Record<string, unknown>
+    apiCredentialProfiles?: ApiCredentialProfilesConfig
+  }
+
+  expect(exportedBackup.accounts?.accounts).toEqual([
+    expect.objectContaining({
+      id: "round-trip-account",
+      site_name: "Round Trip Account",
+    }),
+  ])
+  expect(exportedBackup.accounts?.bookmarks).toEqual([
+    expect.objectContaining({
+      id: "round-trip-bookmark",
+      name: "Round Trip Bookmark",
+    }),
+  ])
+  expect(exportedBackup.preferences).toMatchObject({
+    currencyType: "CNY",
+    actionClickBehavior: "sidepanel",
+    themeMode: "dark",
+  })
+  expect(exportedBackup.apiCredentialProfiles?.profiles).toEqual([
+    expect.objectContaining({
+      id: "round-trip-profile",
+      name: "Round Trip Profile",
+    }),
+  ])
+
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "round-trip-old-account",
+      site_name: "Round Trip Old Account",
+      site_url: "https://round-trip-old.example.com",
+      account_info: {
+        id: 702,
+        username: "round-trip-old-user",
+        access_token: "round-trip-old-token",
+      },
+    }),
+  ])
+  await seedUserPreferences(serviceWorker, {
+    currencyType: "USD",
+    actionClickBehavior: "popup",
+    themeMode: "system",
+  })
+  await seedApiCredentialProfiles(serviceWorker, [
+    createStoredApiCredentialProfile({
+      id: "round-trip-old-profile",
+      name: "Round Trip Old Profile",
+      baseUrl: "https://round-trip-old-api.example.com",
+      apiKey: "sk-round-trip-old-profile",
+    }),
+  ])
+
+  await page.locator("#import-backup-file").setInputFiles({
+    name: download.suggestedFilename(),
+    mimeType: "application/json",
+    buffer: exportedBackupBuffer,
+  })
+
+  await expect(page.getByText("Data format is correct")).toBeVisible()
+  await expect(page.getByText("Contains account data")).toBeVisible()
+  await expect(page.getByText("Contains user settings")).toBeVisible()
+  await expect(page.getByText("Contains API credential profiles")).toBeVisible()
+
+  await page
+    .locator("#import-section")
+    .getByRole("button", { name: "Import" })
+    .click()
+
+  await expect
+    .poll(async () => {
+      const [accountConfig, profileConfig, preferences] = await Promise.all([
+        readStoredAccountConfig(serviceWorker),
+        readStoredApiCredentialProfiles(serviceWorker),
+        readStoredPreferences(serviceWorker),
+      ])
+
+      return {
+        accountIds: accountConfig.accounts.map((account) => account.id),
+        bookmarkIds: accountConfig.bookmarks.map((bookmark) => bookmark.id),
+        profileIds: profileConfig.profiles.map((profile) => profile.id),
+        currencyType: preferences.currencyType,
+        actionClickBehavior: preferences.actionClickBehavior,
+        themeMode: preferences.themeMode,
+      }
+    })
+    .toEqual({
+      accountIds: ["round-trip-account"],
+      bookmarkIds: ["round-trip-bookmark"],
+      profileIds: ["round-trip-old-profile", "round-trip-profile"],
+      currencyType: "CNY",
+      actionClickBehavior: "sidepanel",
+      themeMode: "dark",
+    })
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Round Trip Account" }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Round Trip Old Account" }),
+  ).toHaveCount(0)
+
+  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Round Trip Bookmark" }),
+  ).toBeVisible()
+
+  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    page.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("heading", { name: "Round Trip Profile" }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("heading", { name: "Round Trip Old Profile" }),
+  ).toBeVisible()
 })
 
 test("imports account backup JSON from the preview field and replaces account storage", async ({
@@ -413,6 +615,148 @@ test("imports API credential profiles from backup JSON and restores the popup ta
   ).toBeVisible()
 })
 
+test("restores a full backup and keeps common popup workflows available", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "pre-restore-account",
+      site_name: "Pre Restore Account",
+      site_url: "https://pre-restore.example.com",
+      account_info: {
+        id: 501,
+        username: "pre-restore-user",
+        access_token: "pre-restore-token",
+      },
+    }),
+  ])
+  await seedUserPreferences(serviceWorker, {
+    currencyType: "USD",
+    actionClickBehavior: "popup",
+  })
+
+  const now = Date.parse("2026-03-30T14:00:00.000Z")
+  const restoredAccount = createStoredAccount({
+    id: "full-restore-account",
+    site_name: "Full Restore Account",
+    site_url: "https://full-restore.example.com",
+    account_info: {
+      id: 601,
+      username: "full-restore-user",
+      access_token: "full-restore-token",
+    },
+  })
+  const restoredBookmark = createStoredBookmark({
+    id: "full-restore-bookmark",
+    name: "Full Restore Bookmark",
+    url: "https://full-restore.example.com/docs",
+  })
+  const restoredProfile = createStoredApiCredentialProfile({
+    id: "full-restore-profile",
+    name: "Full Restore Profile",
+    baseUrl: "https://full-restore-api.example.com",
+    apiKey: "sk-full-restore-profile",
+    createdAt: now,
+    updatedAt: now,
+  })
+  const backup = {
+    version: "2.0",
+    timestamp: now,
+    accounts: normalizeAccountStorageConfigForWrite(
+      {
+        ...createDefaultAccountStorageConfig(now),
+        accounts: [restoredAccount],
+        bookmarks: [restoredBookmark],
+        pinnedAccountIds: [restoredAccount.id],
+        orderedAccountIds: [restoredAccount.id],
+        pinnedBookmarkIds: [restoredBookmark.id],
+        orderedBookmarkIds: [restoredBookmark.id],
+      } as AccountStorageConfig,
+      now,
+    ),
+    preferences: {
+      ...(await readStoredPreferences(serviceWorker)),
+      currencyType: "CNY",
+      actionClickBehavior: "sidepanel",
+    },
+    apiCredentialProfiles: {
+      version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+      profiles: [restoredProfile],
+      lastUpdated: now,
+    },
+  }
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.IMPORT_EXPORT}`,
+  )
+  await waitForExtensionRoot(page)
+
+  await page.locator("#import-data-preview").fill(JSON.stringify(backup))
+
+  await expect(page.getByText("Data format is correct")).toBeVisible()
+  await expect(page.getByText("Contains account data")).toBeVisible()
+  await expect(page.getByText("Contains user settings")).toBeVisible()
+  await expect(page.getByText("Contains API credential profiles")).toBeVisible()
+
+  await page
+    .locator("#import-section")
+    .getByRole("button", { name: "Import" })
+    .click()
+
+  await expect
+    .poll(async () => {
+      const [accountConfig, profileConfig, preferences] = await Promise.all([
+        readStoredAccountConfig(serviceWorker),
+        readStoredApiCredentialProfiles(serviceWorker),
+        readStoredPreferences(serviceWorker),
+      ])
+
+      return {
+        accountIds: accountConfig.accounts.map((account) => account.id),
+        bookmarkIds: accountConfig.bookmarks.map((bookmark) => bookmark.id),
+        profileIds: profileConfig.profiles.map((profile) => profile.id),
+        currencyType: preferences.currencyType,
+        actionClickBehavior: preferences.actionClickBehavior,
+      }
+    })
+    .toEqual({
+      accountIds: ["full-restore-account"],
+      bookmarkIds: ["full-restore-bookmark"],
+      profileIds: ["full-restore-profile"],
+      currencyType: "CNY",
+      actionClickBehavior: "sidepanel",
+    })
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Full Restore Account" }),
+  ).toBeVisible()
+  await expect(page.getByText("full-restore-user")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Pre Restore Account" }),
+  ).toHaveCount(0)
+
+  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Full Restore Bookmark" }),
+  ).toBeVisible()
+
+  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    page.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("heading", { name: "Full Restore Profile" }),
+  ).toBeVisible()
+})
+
 test("imports preference backup JSON and applies settings after reload", async ({
   context,
   extensionId,
@@ -475,4 +819,234 @@ test("imports preference backup JSON and applies settings after reload", async (
   await expect(
     page.getByRole("button", { name: "Open side panel" }),
   ).toHaveAttribute("aria-pressed", "true")
+})
+
+test("uploads a WebDAV backup and restores it through the WebDAV download flow", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const now = Date.parse("2026-03-30T18:00:00.000Z")
+  const webdavFileUrl = "https://webdav.example.com/all-api-hub-e2e.json"
+  const uploadedPayloads: unknown[] = []
+  let remoteBackup = ""
+
+  await context.route("https://webdav.example.com/**", async (route) => {
+    const method = route.request().method()
+    const url = new URL(route.request().url())
+    const isBackupFile = url.href === webdavFileUrl
+
+    if (method === "GET" && isBackupFile) {
+      if (!remoteBackup) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: "{}",
+        })
+        return
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: remoteBackup,
+      })
+      return
+    }
+
+    if (method === "PUT" && isBackupFile) {
+      remoteBackup = route.request().postData() ?? ""
+      uploadedPayloads.push(JSON.parse(remoteBackup))
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: "{}",
+      })
+      return
+    }
+
+    await route.fulfill({
+      status: method === "MKCOL" ? 201 : 204,
+      contentType: "text/plain",
+      body: "",
+    })
+  })
+
+  const webdavAccount = createStoredAccount({
+    id: "webdav-account",
+    site_name: "WebDAV Account",
+    site_url: "https://webdav-account.example.com",
+    account_info: {
+      id: 801,
+      username: "webdav-user",
+      access_token: "webdav-token",
+    },
+  })
+  const webdavBookmark = createStoredBookmark({
+    id: "webdav-bookmark",
+    name: "WebDAV Bookmark",
+    url: "https://webdav-account.example.com/docs",
+  })
+  const webdavProfile = createStoredApiCredentialProfile({
+    id: "webdav-profile",
+    name: "WebDAV Profile",
+    baseUrl: "https://webdav-profile.example.com",
+    apiKey: "sk-webdav-profile",
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  await setPlasmoStorageValue(
+    serviceWorker,
+    STORAGE_KEYS.ACCOUNTS,
+    normalizeAccountStorageConfigForWrite(
+      {
+        ...createDefaultAccountStorageConfig(now),
+        accounts: [webdavAccount],
+        bookmarks: [webdavBookmark],
+        pinnedAccountIds: [webdavAccount.id],
+        orderedAccountIds: [webdavAccount.id],
+        pinnedBookmarkIds: [webdavBookmark.id],
+        orderedBookmarkIds: [webdavBookmark.id],
+      } as AccountStorageConfig,
+      now,
+    ),
+  )
+  await seedApiCredentialProfiles(serviceWorker, [webdavProfile])
+  await seedUserPreferences(serviceWorker, {
+    currencyType: "CNY",
+    actionClickBehavior: "sidepanel",
+  })
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.IMPORT_EXPORT}`,
+  )
+  await waitForExtensionRoot(page)
+
+  await page.locator("#webdav-url").fill(webdavFileUrl)
+  await page.locator("#webdav-username").fill("webdav-user")
+  await page.locator("#webdav-password").fill("webdav-password")
+  await page.locator("#webdav-upload-backup").click()
+
+  await expect.poll(() => uploadedPayloads.length).toBe(1)
+  expect(uploadedPayloads[0]).toMatchObject({
+    version: "2.0",
+    accounts: {
+      accounts: [
+        expect.objectContaining({
+          id: "webdav-account",
+          site_name: "WebDAV Account",
+        }),
+      ],
+      bookmarks: [
+        expect.objectContaining({
+          id: "webdav-bookmark",
+          name: "WebDAV Bookmark",
+        }),
+      ],
+    },
+    apiCredentialProfiles: {
+      profiles: [
+        expect.objectContaining({
+          id: "webdav-profile",
+          name: "WebDAV Profile",
+        }),
+      ],
+    },
+    preferences: expect.objectContaining({
+      currencyType: "CNY",
+      actionClickBehavior: "sidepanel",
+    }),
+  })
+
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "webdav-old-account",
+      site_name: "WebDAV Old Account",
+      site_url: "https://webdav-old.example.com",
+      account_info: {
+        id: 802,
+        username: "webdav-old-user",
+        access_token: "webdav-old-token",
+      },
+    }),
+  ])
+  await seedApiCredentialProfiles(serviceWorker, [
+    createStoredApiCredentialProfile({
+      id: "webdav-old-profile",
+      name: "WebDAV Old Profile",
+      baseUrl: "https://webdav-old-profile.example.com",
+      apiKey: "sk-webdav-old-profile",
+    }),
+  ])
+  await seedUserPreferences(serviceWorker, {
+    currencyType: "USD",
+    actionClickBehavior: "popup",
+    webdav: {
+      url: webdavFileUrl,
+      username: "webdav-user",
+      password: "webdav-password",
+    },
+  })
+
+  await page.close()
+  const restorePage = await context.newPage()
+  installExtensionPageGuards(restorePage)
+  await forceExtensionLanguage(restorePage, "en")
+
+  await restorePage.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.IMPORT_EXPORT}`,
+  )
+  await waitForExtensionRoot(restorePage)
+
+  await restorePage.locator("#webdav-url").fill(webdavFileUrl)
+  await restorePage.locator("#webdav-username").fill("webdav-user")
+  await restorePage.locator("#webdav-password").fill("webdav-password")
+  await restorePage.locator("#webdav-download-import").click()
+
+  await expect
+    .poll(async () => {
+      const [accountConfig, profileConfig, preferences] = await Promise.all([
+        readStoredAccountConfig(serviceWorker),
+        readStoredApiCredentialProfiles(serviceWorker),
+        readStoredPreferences(serviceWorker),
+      ])
+
+      return {
+        accountIds: accountConfig.accounts.map((account) => account.id),
+        bookmarkIds: accountConfig.bookmarks.map((bookmark) => bookmark.id),
+        profileIds: profileConfig.profiles.map((profile) => profile.id).sort(),
+        currencyType: preferences.currencyType,
+        actionClickBehavior: preferences.actionClickBehavior,
+      }
+    })
+    .toEqual({
+      accountIds: ["webdav-account"],
+      bookmarkIds: ["webdav-bookmark"],
+      profileIds: ["webdav-old-profile", "webdav-profile"],
+      currencyType: "CNY",
+      actionClickBehavior: "sidepanel",
+    })
+
+  await restorePage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(restorePage)
+
+  await expect(restorePage.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(
+    restorePage.getByRole("button", { name: "WebDAV Account" }),
+  ).toBeVisible()
+  await expect(
+    restorePage.getByRole("button", { name: "WebDAV Old Account" }),
+  ).toHaveCount(0)
+
+  await restorePage.getByRole("tab", { name: "Bookmarks" }).click()
+  await expect(
+    restorePage.getByRole("button", { name: "WebDAV Bookmark" }),
+  ).toBeVisible()
+
+  await restorePage.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    restorePage.getByRole("heading", { name: "WebDAV Profile" }),
+  ).toBeVisible()
 })

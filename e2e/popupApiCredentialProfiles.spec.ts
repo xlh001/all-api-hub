@@ -63,6 +63,117 @@ test("creates an API credential profile from the popup tab", async ({
   ).toBeVisible()
 })
 
+test("creates a popup API credential profile, verifies it, and uses it in Model Management", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    page.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+
+  await page
+    .getByTestId("popup-view-apiCredentialProfiles")
+    .getByRole("button", { name: "Add profile" })
+    .first()
+    .click()
+
+  await page
+    .locator("#api-credential-profile-name")
+    .fill("Popup Journey Profile")
+  await page
+    .locator("#api-credential-profile-baseUrl")
+    .fill("https://api.example.com/v1")
+  await page.locator("#api-credential-profile-apiKey").fill("sk-popup-journey")
+  await page.getByRole("button", { name: "Save" }).click()
+
+  await expect(
+    page.getByRole("heading", { name: "Popup Journey Profile" }),
+  ).toBeVisible()
+
+  let profileId: string | null = null
+  await expect
+    .poll(async () => {
+      const raw = await getPlasmoStorageRawValue<unknown>(
+        serviceWorker,
+        STORAGE_KEYS.API_CREDENTIAL_PROFILES,
+      )
+
+      if (typeof raw !== "string") return null
+
+      try {
+        const parsed = JSON.parse(raw) as {
+          profiles?: Array<{ id?: string; name?: string; baseUrl?: string }>
+        }
+        const profile = parsed.profiles?.find(
+          (candidate) => candidate.name === "Popup Journey Profile",
+        )
+        profileId = profile?.id ?? null
+        return profile
+          ? {
+              baseUrl: profile.baseUrl,
+              id: profile.id,
+            }
+          : null
+      } catch {
+        return null
+      }
+    })
+    .toMatchObject({
+      baseUrl: "https://api.example.com",
+      id: expect.any(String),
+    })
+
+  expect(profileId).toBeTruthy()
+
+  await page.getByRole("button", { name: "Verify API" }).click()
+  const verificationDialog = page
+    .getByRole("heading", { name: "API Verification" })
+    .locator("xpath=ancestor::*[.//button[normalize-space()='Close']][1]")
+  const modelsProbe = page.getByTestId("profile-verify-probe-models")
+  await expect(page.getByTestId("profile-verify-model-id")).toBeVisible()
+
+  await modelsProbe.getByRole("button", { name: "Run" }).click()
+
+  await expect(modelsProbe).toContainText("Pass")
+  await expect(modelsProbe).toContainText("Fetched 2 models.")
+  await verificationDialog.getByText("Close", { exact: true }).click()
+  await expect(verificationDialog).toHaveCount(0)
+
+  const targetPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: "options.html",
+    hash: "#models",
+    searchParams: {
+      profileId: profileId!,
+    },
+  })
+
+  await page.getByRole("button", { name: "Open in Model Management" }).click()
+
+  const targetPage = await targetPagePromise
+  installExtensionPageGuards(targetPage)
+  await waitForExtensionRoot(targetPage)
+
+  const targetUrl = new URL(targetPage.url())
+  expect(targetUrl.hash).toBe("#models")
+  expect(targetUrl.searchParams.get("profileId")).toBe(profileId)
+
+  await expect(targetPage.getByText("gpt-4o-mini")).toBeVisible()
+  await expect(targetPage.getByText("gpt-4.1-mini")).toBeVisible()
+  await expect(
+    targetPage
+      .getByText("Profile: Popup Journey Profile", { exact: false })
+      .first(),
+  ).toBeVisible()
+})
+
 test("verifies a stored popup API credential profile against mocked endpoints", async ({
   context,
   extensionId,

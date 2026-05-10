@@ -1,3 +1,5 @@
+import fs from "node:fs/promises"
+
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import {
@@ -6,6 +8,7 @@ import {
 } from "~/services/history/usageHistory/core"
 import type {
   UsageHistoryAggregate,
+  UsageHistoryExport,
   UsageHistoryLatencyAggregate,
 } from "~/types/usageHistory"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
@@ -52,18 +55,9 @@ const latency = (
   buckets: [0, count, 0, 0, 0, slowCount, 0, 0, 0, 0, 0],
 })
 
-test.beforeEach(async ({ context, page }) => {
-  installExtensionPageGuards(page)
-  await forceExtensionLanguage(page, "en")
-  await stubLlmMetadataIndex(context)
-})
-
-test("filters usage analytics by site, account, token, and opens usage settings", async ({
-  context,
-  extensionId,
-  page,
-}) => {
-  const serviceWorker = await getServiceWorker(context)
+async function seedUsageAnalyticsJourneyData(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+) {
   const todayKey = getDayKeyFromUnixSeconds(Math.floor(Date.now() / 1000))
   const yesterdayKey = subtractDaysFromDayKey(todayKey, 1)
 
@@ -196,6 +190,23 @@ test("filters usage analytics by site, account, token, and opens usage settings"
     }),
   })
 
+  return { todayKey, yesterdayKey }
+}
+
+test.beforeEach(async ({ context, page }) => {
+  installExtensionPageGuards(page)
+  await forceExtensionLanguage(page, "en")
+  await stubLlmMetadataIndex(context)
+})
+
+test("filters usage analytics by site, account, token, and opens usage settings", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedUsageAnalyticsJourneyData(serviceWorker)
+
   await page.goto(USAGE_ANALYTICS_URL(extensionId))
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
@@ -229,4 +240,96 @@ test("filters usage analytics by site, account, token, and opens usage settings"
   expect(url.hash).toBe("#basic")
   expect(url.searchParams.get("tab")).toBe("accountUsage")
   expect(url.searchParams.get("anchor")).toBe("usage-history-sync")
+})
+
+test("exports the selected usage analytics account range as JSON", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const { todayKey, yesterdayKey } =
+    await seedUsageAnalyticsJourneyData(serviceWorker)
+
+  await page.goto(USAGE_ANALYTICS_URL(extensionId))
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await expect(
+    page.getByRole("heading", { name: "Usage Analytics" }),
+  ).toBeVisible()
+  await page.getByRole("button", { name: "Usage Hub A" }).first().click()
+  await expect(
+    page.getByRole("button", { name: "Production key (#101)" }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Sandbox key (#201)" }),
+  ).toHaveCount(0)
+
+  const downloadPromise = page.waitForEvent("download")
+  await page
+    .getByTestId("usage-analytics-page")
+    .getByRole("button", { name: "Export" })
+    .click()
+
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(
+    /^all-api-hub-usage-history-\d{4}-\d{2}-\d{2}\.json$/,
+  )
+
+  const downloadPath = await download.path()
+  if (!downloadPath) {
+    throw new Error("Usage analytics export did not produce a readable file")
+  }
+
+  const exported = JSON.parse(
+    await fs.readFile(downloadPath, "utf8"),
+  ) as UsageHistoryExport
+
+  expect(exported.schemaVersion).toBe(1)
+  expect(exported.selection).toEqual({
+    accountIds: ["usage-account-a"],
+    startDay: yesterdayKey,
+    endDay: todayKey,
+  })
+  expect(Object.keys(exported.accounts)).toEqual(["usage-account-a"])
+  expect(exported.accounts["usage-account-a"].daily).toMatchObject({
+    [yesterdayKey]: {
+      requests: 3,
+      promptTokens: 1_000,
+      completionTokens: 2_000,
+      totalTokens: 3_000,
+      quotaConsumed: 300_000,
+    },
+    [todayKey]: {
+      requests: 5,
+      promptTokens: 2_000,
+      completionTokens: 4_000,
+      totalTokens: 6_000,
+      quotaConsumed: 600_000,
+    },
+  })
+  expect(exported.accounts["usage-account-a"].tokenNamesById).toEqual({
+    "101": "Production key",
+    "102": "Batch key",
+  })
+  expect(exported.fused.daily[todayKey]).toMatchObject({
+    requests: 5,
+    totalTokens: 6_000,
+  })
+  expect(exported.fused.byModel).toMatchObject({
+    "gpt-4o-mini": expect.objectContaining({
+      requests: 4,
+      totalTokens: 4_900,
+    }),
+    "claude-sonnet-4.5": expect.objectContaining({
+      requests: 1,
+      totalTokens: 1_100,
+    }),
+  })
+  expect(exported.fused.tokenNamesById).toEqual({
+    "101": "Production key",
+    "102": "Batch key",
+  })
+  expect(exported.fused.byModel).not.toHaveProperty("gpt-3.5-turbo")
 })

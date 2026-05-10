@@ -94,6 +94,21 @@ async function openAccountActionsMenu(page: Page, accountName: string) {
   await row.getByRole("button", { name: "More" }).click()
 }
 
+async function expectBrowserTabOpened(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  url: string,
+) {
+  await expect
+    .poll(async () => {
+      return await serviceWorker.evaluate(async (targetUrl) => {
+        const chromeApi = (globalThis as any).chrome
+        const tabs = await chromeApi.tabs.query({})
+        return tabs.some((tab: { url?: string }) => tab.url === targetUrl)
+      }, url)
+    })
+    .toBe(true)
+}
+
 test.beforeEach(async ({ context, page }) => {
   installExtensionPageGuards(page)
   await forceExtensionLanguage(page, "en")
@@ -250,4 +265,47 @@ test("opens per-account key and model management from the row menu", async ({
   await expect(
     modelsPage.getByRole("heading", { name: "gpt-shortcut" }),
   ).toBeVisible()
+})
+
+test("opens provider usage and redeem destinations from the account row menu", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "shortcut-routes-account",
+      site_name: "Shortcut Routes Account",
+      site_url: "https://shortcut-routes.example.com",
+      account_info: {
+        id: 201,
+        username: "shortcut-routes-user",
+        access_token: "shortcut-routes-token",
+      },
+    }),
+  ])
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.ACCOUNT}`,
+  )
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await openAccountActionsMenu(page, "Shortcut Routes Account")
+  await page.getByRole("menuitem", { name: "Usage Log" }).click()
+
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://shortcut-routes.example.com/console/log",
+  )
+
+  await page.bringToFront()
+  await openAccountActionsMenu(page, "Shortcut Routes Account")
+  await page.getByRole("menuitem", { name: "Redeem" }).click()
+
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://shortcut-routes.example.com/console/topup",
+  )
 })

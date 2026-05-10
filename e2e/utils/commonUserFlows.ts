@@ -810,6 +810,17 @@ export async function stubNewApiSiteRoutes(
       return
     }
 
+    if (method === "GET" && url.pathname === "/v1/models") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: models.map((id) => ({ id })),
+        }),
+      })
+      return
+    }
+
     if (method === "GET" && url.pathname === "/api/pricing") {
       await route.fulfill({
         status: 200,

@@ -249,6 +249,115 @@ test("adds a bookmark from the popup bookmarks tab and keeps it in storage", asy
     })
 })
 
+test("adds a bookmark from the popup, edits it in management, and opens the updated target", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await context.route("https://docs.example.com/updated", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<!doctype html><title>Updated Docs</title><h1>Updated Docs</h1>",
+    }),
+  )
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+
+  await page
+    .getByTestId("popup-view-bookmarks")
+    .getByRole("button", { name: "Add Bookmark" })
+    .first()
+    .click()
+
+  const addDialog = page.getByRole("dialog")
+  await addDialog.getByPlaceholder("e.g. Admin Console").fill("Journey Docs")
+  await addDialog
+    .getByPlaceholder("https://example.com/...")
+    .fill("https://docs.example.com/start")
+  await addDialog
+    .getByPlaceholder("Optional notes...")
+    .fill("Created from the popup journey")
+  await addDialog.getByRole("button", { name: "Add Bookmark" }).click()
+
+  await expect(page.getByRole("button", { name: "Journey Docs" })).toBeVisible()
+
+  const bookmarkPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: OPTIONS_PAGE_PATH,
+    hash: `#${MENU_ITEM_IDS.BOOKMARK}`,
+  })
+  await page.getByRole("button", { name: "Bookmark Management" }).click()
+
+  const bookmarkPage = await bookmarkPagePromise
+  installExtensionPageGuards(bookmarkPage)
+  await waitForExtensionRoot(bookmarkPage)
+  await expect(
+    bookmarkPage.getByRole("button", { name: "Journey Docs" }),
+  ).toBeVisible()
+
+  await bookmarkPage.getByText("Journey Docs").hover()
+  await bookmarkPage.getByRole("button", { name: "Edit" }).click()
+
+  const editDialog = bookmarkPage.getByRole("dialog")
+  await expect(editDialog.getByPlaceholder("e.g. Admin Console")).toBeVisible()
+  await editDialog
+    .getByPlaceholder("e.g. Admin Console")
+    .fill("Journey Docs Updated")
+  await editDialog
+    .getByPlaceholder("https://example.com/...")
+    .fill("https://docs.example.com/updated")
+  await editDialog
+    .getByPlaceholder("Optional notes...")
+    .fill("Edited from bookmark management")
+  await editDialog.getByRole("button", { name: "Save" }).click()
+
+  await expect(
+    bookmarkPage.getByRole("button", { name: "Journey Docs Updated" }),
+  ).toBeVisible()
+
+  await expect
+    .poll(async () => {
+      const bookmarks = await readStoredBookmarks(serviceWorker)
+      return (
+        bookmarks.find(
+          (bookmark) => bookmark.name === "Journey Docs Updated",
+        ) ?? null
+      )
+    })
+    .toMatchObject({
+      name: "Journey Docs Updated",
+      url: "https://docs.example.com/updated",
+      notes: "Edited from bookmark management",
+    })
+
+  const popupPage = await context.newPage()
+  installExtensionPageGuards(popupPage)
+  await forceExtensionLanguage(popupPage, "en")
+  await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(popupPage)
+
+  await popupPage.getByRole("tab", { name: "Bookmarks" }).click()
+  await expect(popupPage.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(
+    popupPage.getByRole("button", { name: "Journey Docs Updated" }),
+  ).toBeVisible()
+  await expect(
+    popupPage.getByRole("button", { name: "Journey Docs", exact: true }),
+  ).toHaveCount(0)
+
+  await popupPage.getByRole("button", { name: "Journey Docs Updated" }).click()
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://docs.example.com/updated",
+  )
+})
+
 test("opens a saved bookmark from the popup bookmarks tab", async ({
   context,
   extensionId,

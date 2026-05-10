@@ -1,14 +1,18 @@
+import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   forceExtensionLanguage,
   installExtensionPageGuards,
   seedUserPreferences,
+  waitForExtensionPage,
 } from "~~/e2e/utils/commonUserFlows"
 import {
   getPlasmoStorageRawValue,
   getServiceWorker,
 } from "~~/e2e/utils/extensionState"
+import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
 const TEST_PAGE_URL = "https://api-console.example.test/console"
 const API_BASE_URL = "https://api-console.example.test/api"
@@ -50,8 +54,9 @@ test.beforeEach(async ({ context, page }) => {
   })
 })
 
-test("auto-detects selected API credentials on a web page and saves them to profiles", async ({
+test("turns selected web API credentials into a verified profile and model catalog source", async ({
   context,
+  extensionId,
   page,
 }) => {
   const serviceWorker = await getServiceWorker(context)
@@ -110,6 +115,7 @@ test("auto-detects selected API credentials on a web page and saves them to prof
   )
   const profileConfig = JSON.parse(rawProfiles) as {
     profiles: Array<{
+      id: string
       name: string
       baseUrl: string
       apiKey: string
@@ -123,4 +129,62 @@ test("auto-detects selected API credentials on a web page and saves them to prof
       apiKey: API_KEY,
     }),
   ])
+
+  const profileId = profileConfig.profiles[0].id
+  expect(profileId).toBeTruthy()
+
+  const popupPage = await context.newPage()
+  installExtensionPageGuards(popupPage)
+  await forceExtensionLanguage(popupPage, "en")
+  await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(popupPage)
+
+  await popupPage.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    popupPage.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+  await expect(
+    popupPage.getByRole("heading", { name: "api-console.example.test" }),
+  ).toBeVisible()
+
+  await popupPage.getByRole("button", { name: "Verify API" }).click()
+  const verificationDialog = popupPage
+    .getByRole("heading", { name: "API Verification" })
+    .locator("xpath=ancestor::*[.//button[normalize-space()='Close']][1]")
+  const modelsProbe = popupPage.getByTestId("profile-verify-probe-models")
+  await expect(popupPage.getByTestId("profile-verify-model-id")).toBeVisible()
+  await modelsProbe.getByRole("button", { name: "Run" }).click()
+  await expect(modelsProbe).toContainText("Pass")
+  await expect(modelsProbe).toContainText("Fetched 1 model.")
+  await verificationDialog.getByText("Close", { exact: true }).click()
+  await expect(verificationDialog).toHaveCount(0)
+
+  const modelsPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: OPTIONS_PAGE_PATH,
+    hash: `#${MENU_ITEM_IDS.MODELS}`,
+    searchParams: { profileId },
+  })
+
+  await popupPage
+    .getByRole("button", { name: "Open in Model Management" })
+    .click()
+
+  const modelsPage = await modelsPagePromise
+  installExtensionPageGuards(modelsPage)
+  await waitForExtensionRoot(modelsPage)
+
+  const targetUrl = new URL(modelsPage.url())
+  expect(targetUrl.hash).toBe(`#${MENU_ITEM_IDS.MODELS}`)
+  expect(targetUrl.searchParams.get("profileId")).toBe(profileId)
+
+  await expect(
+    modelsPage.getByRole("heading", { name: "Model List" }),
+  ).toBeVisible()
+  await expect(modelsPage.getByText("gpt-4o-mini")).toBeVisible()
+  await expect(
+    modelsPage
+      .getByText("Profile: api-console.example.test", { exact: false })
+      .first(),
+  ).toBeVisible()
 })
