@@ -364,6 +364,15 @@ describe("autoDetectUtils", () => {
       expect(result).toBe("https://api.example.com/login")
     })
 
+    it("should use the AIHubMix console sign-in route", () => {
+      expect(getLoginUrl("https://console.aihubmix.com/statistics")).toBe(
+        "https://console.aihubmix.com/sign-in",
+      )
+      expect(getLoginUrl("https://aihubmix.com")).toBe(
+        "https://console.aihubmix.com/sign-in",
+      )
+    })
+
     it("should return original URL for invalid URL", () => {
       const invalidUrl = "not a valid url"
       const result = getLoginUrl(invalidUrl)

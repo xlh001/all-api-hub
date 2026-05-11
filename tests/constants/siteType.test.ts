@@ -32,6 +32,7 @@ describe("siteType constants", () => {
 
   it("returns default routes for site types without overrides", () => {
     expect(getAccountSiteApiRouter(SITE_TYPES.UNKNOWN)).toMatchObject({
+      loginPath: "/login",
       usagePath: "/console/log",
       checkInPath: "/console/personal",
       redeemPath: "/console/topup",
@@ -41,6 +42,7 @@ describe("siteType constants", () => {
 
   it("returns default routes for AIHubMix account pages", () => {
     expect(getAccountSiteApiRouter(SITE_TYPES.AIHUBMIX)).toMatchObject({
+      loginPath: "/sign-in",
       usagePath: "/statistics",
       checkInPath: "/",
       redeemPath: "/topup",

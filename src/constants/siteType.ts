@@ -24,6 +24,7 @@ export const SITE_TYPES = {
 
 export const AIHUBMIX_API_ORIGIN = "https://aihubmix.com"
 export const AIHUBMIX_WEB_ORIGIN = "https://console.aihubmix.com"
+export const AIHUBMIX_LOGIN_PATH = "/sign-in"
 export const AIHUBMIX_HOSTNAMES = [
   "aihubmix.com",
   "www.aihubmix.com",
@@ -123,6 +124,7 @@ function makeTitleRegex(name: string): RegExp {
 }
 
 // 默认的用量路径
+const DEFAULT_LOGIN_PATH = "/login"
 const DEFAULT_USAGE_PATH = "/console/log"
 const DEFAULT_CHECKIN_PATH = "/console/personal"
 const DEFAULT_REDEEM_PATH = "/console/topup"
@@ -130,6 +132,7 @@ const DEFAULT_ADMIN_CREDENTIALS_PATH = DEFAULT_CHECKIN_PATH
 const DEFAULT_SITE_ANNOUNCEMENTS_PATH = "/"
 
 interface SiteRouteConfig {
+  loginPath: string
   usagePath: string
   checkInPath: string
   adminCredentialsPath: string
@@ -179,12 +182,14 @@ const SITE_ROUTE_CONFIGS: Partial<
     siteAnnouncementsPath: "/dashboard",
   },
   [SITE_TYPES.AIHUBMIX]: {
+    loginPath: AIHUBMIX_LOGIN_PATH,
     usagePath: "/statistics",
     redeemPath: "/topup",
     checkInPath: "/",
     adminCredentialsPath: "/",
   },
   Default: {
+    loginPath: DEFAULT_LOGIN_PATH,
     usagePath: DEFAULT_USAGE_PATH,
     checkInPath: DEFAULT_CHECKIN_PATH,
     adminCredentialsPath: DEFAULT_ADMIN_CREDENTIALS_PATH,

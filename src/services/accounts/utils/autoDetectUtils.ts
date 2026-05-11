@@ -19,7 +19,14 @@ import {
   AUTO_DETECT_ERROR_CODES,
   type AutoDetectErrorCode,
 } from "~/constants/autoDetect"
+import {
+  AIHUBMIX_HOSTNAMES,
+  AIHUBMIX_WEB_ORIGIN,
+  getAccountSiteApiRouter,
+  SITE_TYPES,
+} from "~/constants/siteType"
 import { getErrorMessage } from "~/utils/core/error"
+import { joinUrl } from "~/utils/core/url"
 import { t } from "~/utils/i18n/core"
 import { getDocsAutoDetectUrl } from "~/utils/navigation/docsLinks"
 
@@ -78,6 +85,8 @@ const ERROR_KEYWORDS: Record<string, string[]> = {
   NOT_FOUND: ["404", "未找到", "Not Found"],
   SERVER_ERROR: ["500", "服务器错误", "Internal Server Error", "server crash"],
 }
+
+const AIHUBMIX_HOSTNAME_SET: ReadonlySet<string> = new Set(AIHUBMIX_HOSTNAMES)
 
 /**
  * Builds the structured UI error shown when the active tab likely needs a
@@ -208,8 +217,18 @@ export interface AutoDetectErrorProps {
 export function getLoginUrl(siteUrl: string): string {
   try {
     const url = new URL(siteUrl)
+    if (AIHUBMIX_HOSTNAME_SET.has(url.hostname.toLowerCase())) {
+      return joinUrl(
+        AIHUBMIX_WEB_ORIGIN,
+        getAccountSiteApiRouter(SITE_TYPES.AIHUBMIX).loginPath,
+      )
+    }
+
     // 对于 One API 和 New API，通常登录页面在 /login
-    return `${url.protocol}//${url.host}/login`
+    return joinUrl(
+      `${url.protocol}//${url.host}`,
+      getAccountSiteApiRouter(SITE_TYPES.UNKNOWN).loginPath,
+    )
   } catch {
     // If parsing fails, fall back to the original URL (best-effort)
     return siteUrl
