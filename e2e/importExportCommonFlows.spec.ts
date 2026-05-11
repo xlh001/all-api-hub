@@ -1,6 +1,10 @@
 import fs from "node:fs/promises"
 
-import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
+import {
+  OPTIONS_PAGE_PATH,
+  POPUP_PAGE_PATH,
+  SIDEPANEL_PAGE_PATH,
+} from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import {
   createDefaultAccountStorageConfig,
@@ -23,6 +27,7 @@ import {
   seedStoredAccounts,
   seedUserPreferences,
   stubLlmMetadataIndex,
+  waitForExtensionPage,
 } from "~~/e2e/utils/commonUserFlows"
 import {
   getPlasmoStorageRawValue,
@@ -755,6 +760,162 @@ test("restores a full backup and keeps common popup workflows available", async 
   await expect(
     page.getByRole("heading", { name: "Full Restore Profile" }),
   ).toBeVisible()
+})
+
+test("restores a full backup and keeps the sidepanel model workflow available", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const now = Date.parse("2026-03-30T16:00:00.000Z")
+  const restoredAccount = createStoredAccount({
+    id: "sidepanel-restore-account",
+    site_name: "Sidepanel Restore Account",
+    site_url: "https://sidepanel-restore.example.com",
+    account_info: {
+      id: 901,
+      username: "sidepanel-restore-user",
+      access_token: "sidepanel-restore-token",
+    },
+  })
+  const restoredBookmark = createStoredBookmark({
+    id: "sidepanel-restore-bookmark",
+    name: "Sidepanel Restore Bookmark",
+    url: "https://sidepanel-restore.example.com/docs",
+  })
+  const restoredProfile = createStoredApiCredentialProfile({
+    id: "sidepanel-restore-profile",
+    name: "Sidepanel Restore Profile",
+    baseUrl: "https://sidepanel-restore-api.example.com",
+    apiKey: "sk-sidepanel-restore-profile",
+    createdAt: now,
+    updatedAt: now,
+  })
+  const backup = {
+    version: "2.0",
+    timestamp: now,
+    accounts: normalizeAccountStorageConfigForWrite(
+      {
+        ...createDefaultAccountStorageConfig(now),
+        accounts: [restoredAccount],
+        bookmarks: [restoredBookmark],
+        pinnedAccountIds: [restoredAccount.id],
+        orderedAccountIds: [restoredAccount.id],
+        pinnedBookmarkIds: [restoredBookmark.id],
+        orderedBookmarkIds: [restoredBookmark.id],
+      } as AccountStorageConfig,
+      now,
+    ),
+    preferences: {
+      ...(await readStoredPreferences(serviceWorker)),
+      currencyType: "CNY",
+      actionClickBehavior: "sidepanel",
+    },
+    apiCredentialProfiles: {
+      version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+      profiles: [restoredProfile],
+      lastUpdated: now,
+    },
+  }
+
+  await context.route(
+    "https://sidepanel-restore-api.example.com/v1/models",
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [
+            { id: "gpt-sidepanel-restore-mini" },
+            { id: "gpt-sidepanel-restore-pro" },
+          ],
+        }),
+      }),
+  )
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.IMPORT_EXPORT}`,
+  )
+  await waitForExtensionRoot(page)
+
+  await page.locator("#import-data-preview").fill(JSON.stringify(backup))
+  await expect(page.getByText("Data format is correct")).toBeVisible()
+  await expect(page.getByText("Contains account data")).toBeVisible()
+  await expect(page.getByText("Contains user settings")).toBeVisible()
+  await expect(page.getByText("Contains API credential profiles")).toBeVisible()
+
+  await page
+    .locator("#import-section")
+    .getByRole("button", { name: "Import" })
+    .click()
+
+  await expect
+    .poll(async () => {
+      const [accountConfig, profileConfig, preferences] = await Promise.all([
+        readStoredAccountConfig(serviceWorker),
+        readStoredApiCredentialProfiles(serviceWorker),
+        readStoredPreferences(serviceWorker),
+      ])
+
+      return {
+        accountIds: accountConfig.accounts.map((account) => account.id),
+        bookmarkIds: accountConfig.bookmarks.map((bookmark) => bookmark.id),
+        profileIds: profileConfig.profiles.map((profile) => profile.id),
+        actionClickBehavior: preferences.actionClickBehavior,
+      }
+    })
+    .toEqual({
+      accountIds: ["sidepanel-restore-account"],
+      bookmarkIds: ["sidepanel-restore-bookmark"],
+      profileIds: ["sidepanel-restore-profile"],
+      actionClickBehavior: "sidepanel",
+    })
+
+  await page.goto(`chrome-extension://${extensionId}/${SIDEPANEL_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Sidepanel Restore Account" }),
+  ).toBeVisible()
+
+  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Sidepanel Restore Bookmark" }),
+  ).toBeVisible()
+
+  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    page.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("heading", { name: "Sidepanel Restore Profile" }),
+  ).toBeVisible()
+
+  const modelsPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: OPTIONS_PAGE_PATH,
+    hash: `#${MENU_ITEM_IDS.MODELS}`,
+    searchParams: {
+      profileId: "sidepanel-restore-profile",
+    },
+  })
+
+  await page.getByRole("button", { name: "Open in Model Management" }).click()
+
+  const modelsPage = await modelsPagePromise
+  installExtensionPageGuards(modelsPage)
+  await waitForExtensionRoot(modelsPage)
+
+  const targetUrl = new URL(modelsPage.url())
+  expect(targetUrl.hash).toBe(`#${MENU_ITEM_IDS.MODELS}`)
+  expect(targetUrl.searchParams.get("profileId")).toBe(
+    "sidepanel-restore-profile",
+  )
+  await expect(modelsPage.getByText("gpt-sidepanel-restore-mini")).toBeVisible()
+  await expect(modelsPage.getByText("gpt-sidepanel-restore-pro")).toBeVisible()
 })
 
 test("imports preference backup JSON and applies settings after reload", async ({

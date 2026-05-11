@@ -1,7 +1,9 @@
+import type { Page } from "@playwright/test"
+
 import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
-import type { SiteBookmark } from "~/types"
+import type { SiteAccount, SiteBookmark } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   createStoredAccount,
@@ -12,6 +14,7 @@ import {
   seedApiCredentialProfiles,
   seedStoredAccounts,
   seedStoredBookmarks,
+  seedUserPreferences,
   stubLlmMetadataIndex,
   waitForExtensionPage,
 } from "~~/e2e/utils/commonUserFlows"
@@ -39,6 +42,24 @@ async function readStoredBookmarks(
   }
 }
 
+async function readStoredAccounts(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+): Promise<SiteAccount[]> {
+  const raw = await getPlasmoStorageRawValue<unknown>(
+    serviceWorker,
+    STORAGE_KEYS.ACCOUNTS,
+  )
+
+  if (typeof raw !== "string") return []
+
+  try {
+    const parsed = JSON.parse(raw) as { accounts?: SiteAccount[] }
+    return Array.isArray(parsed.accounts) ? parsed.accounts : []
+  } catch {
+    return []
+  }
+}
+
 async function expectBrowserTabOpened(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
   url: string,
@@ -52,6 +73,12 @@ async function expectBrowserTabOpened(
       }, url)
     })
     .toBe(true)
+}
+
+function getAccountRowByName(page: Page, name: string) {
+  return page
+    .getByRole("button", { name })
+    .locator("xpath=ancestor::div[contains(@class, 'group')][1]")
 }
 
 test.beforeEach(async ({ context, page }) => {
@@ -168,6 +195,110 @@ test("opens the account manager from the default popup accounts tab", async ({
   await expect(
     accountPage.getByRole("button", { name: "Popup Account" }),
   ).toBeVisible()
+})
+
+test("updates popup account totals after disabling an account from management", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedUserPreferences(serviceWorker, {
+    currencyType: "USD",
+    showTodayCashflow: false,
+  })
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "popup-active-account",
+      site_name: "Popup Active Account",
+      site_url: "https://popup-active.example.com",
+      exchange_rate: 7,
+      account_info: {
+        id: 701,
+        username: "popup-active-user",
+        access_token: "popup-active-token",
+        quota: 500000,
+      },
+    }),
+    createStoredAccount({
+      id: "popup-disable-account",
+      site_name: "Popup Disable Account",
+      site_url: "https://popup-disable.example.com",
+      exchange_rate: 7,
+      account_info: {
+        id: 702,
+        username: "popup-disable-user",
+        access_token: "popup-disable-token",
+        quota: 1000000,
+      },
+    }),
+  ])
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Popup Active Account" }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Popup Disable Account" }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Click to switch to CNY" }),
+  ).toContainText("$3.00")
+
+  const accountPagePromise = waitForExtensionPage(context, {
+    extensionId,
+    path: OPTIONS_PAGE_PATH,
+    hash: `#${MENU_ITEM_IDS.ACCOUNT}`,
+  })
+  await page.getByRole("button", { name: "Account Management" }).click()
+
+  const accountPage = await accountPagePromise
+  installExtensionPageGuards(accountPage)
+  await waitForExtensionRoot(accountPage)
+  await expect(
+    accountPage.getByRole("button", { name: "Popup Disable Account" }),
+  ).toBeVisible()
+
+  const accountRow = getAccountRowByName(accountPage, "Popup Disable Account")
+  await accountRow.hover()
+  await accountRow.getByRole("button", { name: "More" }).click()
+  await accountPage.getByText("Disable account", { exact: true }).click()
+
+  await expect
+    .poll(async () => {
+      const accounts = await readStoredAccounts(serviceWorker)
+      return accounts.find((account) => account.id === "popup-disable-account")
+        ?.disabled
+    })
+    .toBe(true)
+
+  const refreshedPopupPage = await context.newPage()
+  installExtensionPageGuards(refreshedPopupPage)
+  await forceExtensionLanguage(refreshedPopupPage, "en")
+  await refreshedPopupPage.goto(
+    `chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`,
+  )
+  await waitForExtensionRoot(refreshedPopupPage)
+
+  await expect(
+    refreshedPopupPage.getByTestId("popup-view-accounts"),
+  ).toBeVisible()
+  await expect(
+    refreshedPopupPage.getByRole("button", { name: "Click to switch to CNY" }),
+  ).toContainText("$1.00")
+  await expect(
+    refreshedPopupPage.getByTestId(
+      "account-management-account-list-item-popup-disable-account",
+    ),
+  ).toHaveAttribute("data-disabled", "true")
+  await expect(
+    refreshedPopupPage.getByTestId(
+      "account-management-account-list-item-popup-disable-account",
+    ),
+  ).toContainText("Disabled")
 })
 
 test("opens a saved account site from the popup accounts tab", async ({
