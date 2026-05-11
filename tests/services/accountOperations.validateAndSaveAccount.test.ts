@@ -63,6 +63,12 @@ const CHECK_IN_DISABLED: CheckInConfig = {
   },
 }
 
+const flushMicrotasks = async () => {
+  await Promise.resolve()
+  await Promise.resolve()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+}
+
 describe("accountOperations validateAndSaveAccount", () => {
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -430,5 +436,131 @@ describe("accountOperations validateAndSaveAccount", () => {
       message: "messages:errors.validation.userIdNumeric",
     })
     expect(fetchAccountDataMock).not.toHaveBeenCalled()
+  })
+
+  it("skips background auto-provisioning after refreshed save when requested by a foreground workflow", async () => {
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValueOnce({
+      ...DEFAULT_PREFERENCES,
+      autoProvisionKeyOnAccountAdd: true,
+      showTodayCashflow: false,
+    })
+    fetchAccountDataMock.mockResolvedValueOnce({
+      quota: 12,
+      today_prompt_tokens: 0,
+      today_completion_tokens: 0,
+      today_quota_consumption: 0,
+      today_requests_count: 0,
+      today_income: 0,
+      checkIn: CHECK_IN_DISABLED,
+    })
+
+    const result = await validateAndSaveAccount(
+      "https://api.example.com",
+      "Example",
+      "user",
+      "token",
+      "1",
+      "7.0",
+      "",
+      [],
+      CHECK_IN_DISABLED,
+      SITE_TYPES.NEW_API,
+      AuthTypeEnum.AccessToken,
+      "",
+      undefined,
+      false,
+      undefined,
+      { skipAutoProvisionKeyOnAccountAdd: true },
+    )
+
+    expect(result.success).toBe(true)
+    await flushMicrotasks()
+    expect(ensureDefaultApiTokenForAccountMock).not.toHaveBeenCalled()
+  })
+
+  it("skips background auto-provisioning after fallback save when requested by a foreground workflow", async () => {
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValueOnce({
+      ...DEFAULT_PREFERENCES,
+      autoProvisionKeyOnAccountAdd: true,
+      showTodayCashflow: false,
+    })
+    fetchAccountDataMock.mockRejectedValueOnce(new Error("quota fetch failed"))
+
+    const result = await validateAndSaveAccount(
+      "https://api.example.com",
+      "Example",
+      "user",
+      "token",
+      "1",
+      "7.0",
+      "",
+      [],
+      CHECK_IN_DISABLED,
+      SITE_TYPES.NEW_API,
+      AuthTypeEnum.AccessToken,
+      "",
+      undefined,
+      false,
+      undefined,
+      { skipAutoProvisionKeyOnAccountAdd: true },
+    )
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "messages:warnings.accountSavedWithoutDataRefresh",
+      feedbackLevel: "warning",
+    })
+    await flushMicrotasks()
+    expect(ensureDefaultApiTokenForAccountMock).not.toHaveBeenCalled()
+  })
+
+  it("runs background auto-provisioning after save when preference is enabled", async () => {
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValueOnce({
+      ...DEFAULT_PREFERENCES,
+      autoProvisionKeyOnAccountAdd: true,
+      showTodayCashflow: false,
+    })
+    fetchAccountDataMock.mockResolvedValueOnce({
+      quota: 12,
+      today_prompt_tokens: 0,
+      today_completion_tokens: 0,
+      today_quota_consumption: 0,
+      today_requests_count: 0,
+      today_income: 0,
+      checkIn: CHECK_IN_DISABLED,
+    })
+    ensureDefaultApiTokenForAccountMock.mockResolvedValueOnce({
+      created: true,
+    })
+
+    const result = await validateAndSaveAccount(
+      "https://api.example.com",
+      "Example",
+      "user",
+      "token",
+      "1",
+      "7.0",
+      "",
+      [],
+      CHECK_IN_DISABLED,
+      SITE_TYPES.NEW_API,
+      AuthTypeEnum.AccessToken,
+      "",
+    )
+
+    expect(result.success).toBe(true)
+    await flushMicrotasks()
+    expect(ensureDefaultApiTokenForAccountMock).toHaveBeenCalledTimes(1)
+    expect(ensureDefaultApiTokenForAccountMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        account: expect.objectContaining({
+          site_name: "Example",
+        }),
+        displaySiteData: expect.objectContaining({
+          name: "Example",
+          baseUrl: "https://api.example.com",
+        }),
+      }),
+    )
   })
 })
