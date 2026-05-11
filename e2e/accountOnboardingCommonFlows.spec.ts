@@ -1,7 +1,8 @@
-import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
+import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { SiteAccount } from "~/types"
+import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   createStoredAccount,
@@ -34,6 +35,24 @@ async function readStoredAccounts(
   try {
     const parsed = JSON.parse(raw) as { accounts?: SiteAccount[] }
     return Array.isArray(parsed.accounts) ? parsed.accounts : []
+  } catch {
+    return []
+  }
+}
+
+async function readStoredApiCredentialProfiles(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+): Promise<ApiCredentialProfile[]> {
+  const raw = await getPlasmoStorageRawValue<unknown>(
+    serviceWorker,
+    STORAGE_KEYS.API_CREDENTIAL_PROFILES,
+  )
+
+  if (typeof raw !== "string") return []
+
+  try {
+    const parsed = JSON.parse(raw) as { profiles?: ApiCredentialProfile[] }
+    return Array.isArray(parsed.profiles) ? parsed.profiles : []
   } catch {
     return []
   }
@@ -126,7 +145,7 @@ test("adds an account through the real add-account auto-detect flow", async ({
   await sitePage.close()
 })
 
-test("enables default-key provisioning in settings, adds an account, and opens the created key", async ({
+test("enables default-key provisioning, adds an account, saves the created key as a reusable API profile, and verifies it from the popup", async ({
   context,
   extensionId,
   page,
@@ -204,6 +223,53 @@ test("enables default-key provisioning in settings, adds an account, and opens t
   ).toBeVisible()
   await expect(page.getByText("Group:")).toBeVisible()
   await expect(page.getByText("default", { exact: true })).toBeVisible()
+
+  await page
+    .getByRole("heading", { name: DEFAULT_AUTO_PROVISION_TOKEN_NAME })
+    .locator(
+      "xpath=ancestor::*[.//button[@aria-label='Save to API profiles']][1]",
+    )
+    .getByRole("button", { name: "Save to API profiles" })
+    .click()
+
+  let savedProfileName = ""
+  await expect
+    .poll(async () => {
+      const profiles = await readStoredApiCredentialProfiles(serviceWorker)
+      const profile =
+        profiles.find((candidate) => candidate.apiKey === "sk-created-1") ??
+        null
+
+      savedProfileName = profile?.name ?? ""
+      return profile
+    })
+    .toMatchObject({
+      baseUrl: "https://example.com",
+      apiKey: "sk-created-1",
+    })
+
+  const popupPage = await context.newPage()
+  installExtensionPageGuards(popupPage)
+  await forceExtensionLanguage(popupPage, "en")
+  await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(popupPage)
+
+  await popupPage.getByRole("tab", { name: "API Credentials" }).click()
+  await expect(
+    popupPage.getByTestId("api-credential-profiles-popup-view"),
+  ).toBeVisible()
+  await expect(
+    popupPage.getByRole("heading", { name: savedProfileName }),
+  ).toBeVisible()
+
+  await popupPage.getByRole("button", { name: "Verify API" }).click()
+  const modelsProbe = popupPage.getByTestId("profile-verify-probe-models")
+  await expect(popupPage.getByTestId("profile-verify-model-id")).toBeVisible()
+
+  await modelsProbe.getByRole("button", { name: "Run" }).click()
+
+  await expect(modelsProbe).toContainText("Pass")
+  await expect(modelsProbe).toContainText("Fetched 2 models.")
 
   await sitePage.close()
 })
