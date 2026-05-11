@@ -1,4 +1,7 @@
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
+import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { STORAGE_KEYS } from "~/services/core/storageKeys"
+import type { SiteAccount } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   createStoredAccount,
@@ -11,9 +14,43 @@ import {
 } from "~~/e2e/utils/commonUserFlows"
 import {
   expectPermissionOnboardingHidden,
+  getPlasmoStorageRawValue,
   getServiceWorker,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
+
+const DEFAULT_AUTO_PROVISION_TOKEN_NAME = "user group (auto)"
+
+async function readStoredAccounts(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+): Promise<SiteAccount[]> {
+  const raw = await getPlasmoStorageRawValue<unknown>(
+    serviceWorker,
+    STORAGE_KEYS.ACCOUNTS,
+  )
+
+  if (typeof raw !== "string") return []
+
+  try {
+    const parsed = JSON.parse(raw) as { accounts?: SiteAccount[] }
+    return Array.isArray(parsed.accounts) ? parsed.accounts : []
+  } catch {
+    return []
+  }
+}
+
+async function findStoredAccountIdByUsername(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  username: string,
+): Promise<string | null> {
+  const account = (await readStoredAccounts(serviceWorker)).find(
+    (storedAccount) =>
+      storedAccount.site_url === "https://example.com" &&
+      storedAccount.account_info.username === username,
+  )
+
+  return account?.id ?? null
+}
 
 test.beforeEach(async ({ context, page }) => {
   installExtensionPageGuards(page)
@@ -86,6 +123,88 @@ test("adds an account through the real add-account auto-detect flow", async ({
   })
 
   expect(persistedAccounts).toContain('"username":"e2e-user"')
+  await sitePage.close()
+})
+
+test("enables default-key provisioning in settings, adds an account, and opens the created key", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedUserPreferences(serviceWorker, {
+    tempWindowFallback: {
+      enabled: false,
+    },
+  })
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}?tab=accountManagement#${MENU_ITEM_IDS.BASIC}`,
+  )
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  const autoProvisionSwitch = page
+    .locator("#auto-provision-key-on-account-add")
+    .getByRole("switch")
+  await expect(autoProvisionSwitch).toHaveAttribute("aria-checked", "false")
+  await autoProvisionSwitch.click()
+  await expect(autoProvisionSwitch).toHaveAttribute("aria-checked", "true")
+
+  const sitePage = await context.newPage()
+  installExtensionPageGuards(sitePage)
+  await forceExtensionLanguage(sitePage, "en")
+  await sitePage.addInitScript(() => {
+    window.localStorage.setItem(
+      "user",
+      JSON.stringify({
+        id: 1,
+        username: "e2e-user",
+        quota: 1000,
+      }),
+    )
+  })
+  await sitePage.goto("https://example.com")
+  await sitePage.bringToFront()
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.ACCOUNT}`,
+  )
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await page.getByRole("button", { name: "Add Account" }).first().click()
+  await expect(page.locator("#site-url")).toBeVisible()
+  await page.locator("#site-url").fill("https://example.com")
+  await page.getByRole("button", { name: "Auto Detect" }).click()
+
+  await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
+  await page.getByRole("button", { name: "Confirm Add" }).click()
+
+  await expect(page.getByTestId("account-list-view")).toContainText("e2e-user")
+  await expect(page.getByText("Created a default API key for")).toBeVisible()
+
+  await expect
+    .poll(() => findStoredAccountIdByUsername(serviceWorker, "e2e-user"))
+    .not.toBeNull()
+  const accountId = await findStoredAccountIdByUsername(
+    serviceWorker,
+    "e2e-user",
+  )
+  expect(accountId).toBeTruthy()
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.KEYS}?accountId=${accountId}`,
+  )
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await expect(
+    page.getByRole("heading", { name: DEFAULT_AUTO_PROVISION_TOKEN_NAME }),
+  ).toBeVisible()
+  await expect(page.getByText("Group:")).toBeVisible()
+  await expect(page.getByText("default", { exact: true })).toBeVisible()
+
   await sitePage.close()
 })
 
