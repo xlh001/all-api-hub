@@ -37,7 +37,7 @@ const getTokenIds = (tokens: ApiToken[]): number[] =>
   tokens.map((token) => token.id)
 
 /**
- *
+ * Selects the single token that appeared after token creation by comparing ids.
  */
 export function selectSingleNewApiTokenByIdDiff(params: {
   existingTokenIds: number[]
@@ -76,7 +76,7 @@ const buildDisplayAccountRequest = (
 })
 
 /**
- *
+ * Creates a default token and resolves the created token when the API omits it.
  */
 async function createDefaultToken(params: {
   account: SiteAccount
@@ -123,7 +123,7 @@ async function createDefaultToken(params: {
 }
 
 /**
- *
+ * Ensures a saved account has a token that can be used by post-save automation.
  */
 export async function ensureAccountTokenForPostSaveWorkflow(params: {
   account: SiteAccount
