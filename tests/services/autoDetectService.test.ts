@@ -108,6 +108,96 @@ describe("autoDetectSmart", () => {
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
   })
 
+  it("skips current-tab detection from an AIHubMix console tab and uses the API origin background flow", async () => {
+    mockGetAccountSiteType.mockResolvedValue(SITE_TYPES.AIHUBMIX)
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 2,
+        active: true,
+        url: "https://console.aihubmix.com/statistics",
+      },
+    ])
+    mockGetActiveTabs.mockResolvedValue([{ id: 2 }])
+    browserAny.tabs.sendMessage.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 99,
+        user: { id: 99, username: "wrong-current-tab-user" },
+        accessToken: "wrong-current-tab-token",
+        siteTypeHint: SITE_TYPES.AIHUBMIX,
+      },
+    })
+    mockSendRuntimeMessage.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 7,
+        user: { id: 7, username: "aihubmix-user" },
+        accessToken: "console-session-token",
+        siteTypeHint: SITE_TYPES.AIHUBMIX,
+      },
+    })
+
+    const result = await autoDetectSmart("https://aihubmix.com")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 7,
+        user: { id: 7, username: "aihubmix-user" },
+        siteType: SITE_TYPES.AIHUBMIX,
+        accessToken: "console-session-token",
+        sub2apiAuth: undefined,
+      },
+    })
+    expect(browserAny.tabs.sendMessage).not.toHaveBeenCalled()
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
+      action: expect.any(String),
+      requestId: expect.any(String),
+      url: "https://aihubmix.com",
+    })
+    expect(mockFetchUserInfo).not.toHaveBeenCalled()
+  })
+
+  it("uses current-tab detection for AIHubMix when the active tab is the API origin", async () => {
+    mockGetAccountSiteType.mockResolvedValue(SITE_TYPES.AIHUBMIX)
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 2,
+        active: true,
+        url: "https://aihubmix.com/statistics",
+      },
+    ])
+    mockGetActiveTabs.mockResolvedValue([{ id: 2 }])
+    browserAny.tabs.sendMessage.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 7,
+        user: { id: 7, username: "aihubmix-user" },
+        accessToken: "main-origin-session-token",
+        siteTypeHint: SITE_TYPES.AIHUBMIX,
+      },
+    })
+
+    const result = await autoDetectSmart("https://console.aihubmix.com")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 7,
+        user: { id: 7, username: "aihubmix-user" },
+        siteType: SITE_TYPES.AIHUBMIX,
+        accessToken: "main-origin-session-token",
+        sub2apiAuth: undefined,
+      },
+    })
+    expect(browserAny.tabs.sendMessage).toHaveBeenCalledWith(2, {
+      action: expect.any(String),
+      url: "https://aihubmix.com",
+    })
+    expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
+    expect(mockFetchUserInfo).not.toHaveBeenCalled()
+  })
+
   it("surfaces a current-tab reload hint when the content script is unavailable and direct fallback stays generic", async () => {
     browserAny.runtime = null
 
@@ -333,6 +423,38 @@ describe("autoDetectSmart", () => {
     expect(result).toEqual({
       success: false,
       error: "detect failed",
+    })
+  })
+
+  it("keeps an invalid input URL on the direct detection path", async () => {
+    browserAny.tabs = null
+    browserAny.runtime = null
+    mockFetchUserInfo.mockResolvedValue({
+      id: 42,
+      username: "invalid-url-user",
+    })
+
+    const result = await autoDetectSmart("not a url")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 42,
+        user: {
+          id: 42,
+          username: "invalid-url-user",
+        },
+        siteType: SITE_TYPES.NEW_API,
+        accessToken: undefined,
+        sub2apiAuth: undefined,
+      },
+    })
+    expect(mockGetAccountSiteType).toHaveBeenCalledWith("not a url")
+    expect(mockFetchUserInfo).toHaveBeenCalledWith({
+      baseUrl: "not a url",
+      auth: {
+        authType: expect.any(String),
+      },
     })
   })
 })
