@@ -61,6 +61,11 @@ type StubNewApiSiteRoutesOptions = {
   exchangeRate?: number
   /** Quota total returned by the lightweight today-usage stat endpoint. */
   todayQuotaConsumption?: number
+  /** Initial quota returned by the mocked account self endpoint. */
+  initialQuota?: number
+  /** Quota credited by the mocked redemption-code top-up endpoint. */
+  redemptionCreditQuota?: number
+  onRedeemCode?: (code: string) => void | Promise<void>
   userId?: number
   username?: string
   accessToken?: string
@@ -558,6 +563,7 @@ export async function stubNewApiSiteRoutes(
   const accessToken = options.accessToken ?? "e2e-token"
   const exchangeRate = options.exchangeRate ?? 7
   const todayQuotaConsumption = options.todayQuotaConsumption ?? 0
+  const redemptionCreditQuota = options.redemptionCreditQuota ?? 100_000
   const title = options.title ?? "new-api"
   const systemName = options.systemName ?? "E2E New API"
   const models = options.models ?? ["gpt-4o-mini", "gpt-4.1-mini"]
@@ -570,6 +576,7 @@ export async function stubNewApiSiteRoutes(
   let nextTokenId =
     Math.max(0, ...(options.initialTokens ?? []).map((token) => token.id)) + 1
   const tokens = [...(options.initialTokens ?? [])]
+  let accountQuota = options.initialQuota ?? 1000
 
   await context.route(`${origin}/**`, async (route) => {
     const request = route.request()
@@ -604,7 +611,7 @@ export async function stubNewApiSiteRoutes(
             id: userId,
             username,
             access_token: accessToken,
-            quota: 1000,
+            quota: accountQuota,
           },
         }),
       })
@@ -712,6 +719,25 @@ export async function stubNewApiSiteRoutes(
         body: JSON.stringify({
           success: true,
           message: "created",
+        }),
+      })
+      return
+    }
+
+    if (method === "POST" && url.pathname === "/api/user/topup") {
+      const payload = request.postDataJSON() as {
+        key?: string
+      }
+      await options.onRedeemCode?.(payload.key ?? "")
+      accountQuota += redemptionCreditQuota
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          message: "redeemed",
+          data: redemptionCreditQuota,
         }),
       })
       return
