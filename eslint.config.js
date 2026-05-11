@@ -129,7 +129,7 @@ export default defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "jsdoc/require-jsdoc": "warn",
-      "jsdoc/require-description": "warn",
+      "jsdoc/require-description": "error",
     },
   },
   // Guardrails: avoid direct `console.*` usage in app/runtime code (use `~/utils/core/logger`).
