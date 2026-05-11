@@ -146,6 +146,38 @@ describe("AccountDialog ActionButtons", () => {
     expect(props.onAutoConfig).toHaveBeenCalledTimes(1)
   })
 
+  it("keeps auto-detect available when add-mode detection falls back to an invalid manual form", async () => {
+    const user = userEvent.setup()
+    const props = createProps()
+    props.phase = "account-form"
+    props.formSource = "manual"
+    props.isFormValid = false
+
+    render(<ActionButtons {...props} />)
+
+    const autoDetectButton = await screen.findByRole("button", {
+      name: "accountDialog:mode.autoDetect",
+    })
+    const manualAddButton = await screen.findByRole("button", {
+      name: "accountDialog:mode.manualAdd",
+    })
+
+    expect(autoDetectButton).toBeEnabled()
+    expect(manualAddButton).toBeEnabled()
+    expect(
+      screen.queryByRole("button", { name: "common:actions.cancel" }),
+    ).toBeNull()
+    expect(
+      screen.queryByRole("button", {
+        name: "accountDialog:actions.autoConfigAriaLabel",
+      }),
+    ).toBeNull()
+
+    await user.click(autoDetectButton)
+
+    expect(props.onAutoDetect).toHaveBeenCalledTimes(1)
+  })
+
   it("disables auto-config and shows the blocking reason when the visible form becomes invalid", async () => {
     const user = userEvent.setup()
     const props = createProps()

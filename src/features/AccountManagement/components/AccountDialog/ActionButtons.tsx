@@ -63,8 +63,11 @@ export default function ActionButtons({
   const { t } = useTranslation(["accountDialog", "common", "settings"])
   const { managedSiteType } = useUserPreferencesContext()
   const isAddMode = mode === DIALOG_MODES.ADD
-  const isPreForm = isAddMode && phase === ACCOUNT_DIALOG_PHASES.SITE_INPUT
   const isDetected = formSource === ACCOUNT_DIALOG_FORM_SOURCES.DETECTED
+  const shouldShowAddDetectionActions =
+    isAddMode &&
+    (phase === ACCOUNT_DIALOG_PHASES.SITE_INPUT ||
+      (!isDetected && !isFormValid))
   const managedSiteLabel = getManagedSiteLabel(t, managedSiteType)
   const autoConfigTitle = isFormValid
     ? t("accountDialog:actions.autoConfigTitle", {
@@ -100,7 +103,7 @@ export default function ActionButtons({
     autoConfigLoadingLabelByStep[accountPostSaveWorkflowStep] ??
     t("accountDialog:actions.configuring")
 
-  if (isPreForm) {
+  if (shouldShowAddDetectionActions) {
     return (
       <div className="flex flex-wrap gap-2">
         <Button
