@@ -18,10 +18,14 @@ import {
   isAccountSiteType,
   type AccountSiteType,
 } from "~/constants/siteType"
+import {
+  API_SERVICE_FETCH_CONTEXT_KINDS,
+  summarizeApiServiceFetchContext,
+  type ApiServiceFetchContext,
+} from "~/services/apiService/common/type"
 import { AuthTypeEnum, type Sub2ApiAuthConfig } from "~/types"
 import {
   getActiveOrAllTabs,
-  getActiveTabs,
   isMessageReceiverUnavailableError,
   sendRuntimeMessage,
 } from "~/utils/browser/browserApi"
@@ -45,6 +49,8 @@ function normalizeSiteTypeHint(value: unknown): AccountSiteType | undefined {
   return isAccountSiteType(value) ? value : undefined
 }
 
+type AutoDetectFetchContext = ApiServiceFetchContext
+
 interface AutoDetectResult {
   success: boolean
   data?: {
@@ -53,6 +59,7 @@ interface AutoDetectResult {
     siteType: AccountSiteType
     accessToken?: string
     sub2apiAuth?: Sub2ApiAuthConfig
+    fetchContext?: AutoDetectFetchContext
   }
   error?: string
   errorCode?: AutoDetectErrorCode
@@ -64,6 +71,7 @@ interface UserDataResult {
   accessToken?: string
   sub2apiAuth?: Sub2ApiAuthConfig
   siteTypeHint?: AccountSiteType
+  fetchContext?: AutoDetectFetchContext
 }
 
 interface CurrentTabUserDataResult {
@@ -111,6 +119,24 @@ function resolveAutoDetectUrl(url: string): string {
 }
 
 /**
+ * Builds a browser-profile context from a tab without implying that the tab can
+ * execute same-origin content-script fetches for the requested site.
+ */
+function createBrowserContextFromTab(
+  tab: { incognito?: boolean; cookieStoreId?: string } | null | undefined,
+): AutoDetectFetchContext | undefined {
+  if (!tab?.incognito && !tab?.cookieStoreId) {
+    return undefined
+  }
+
+  return {
+    kind: API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+    ...(tab.incognito === true ? { incognito: true } : {}),
+    ...(tab.cookieStoreId ? { cookieStoreId: tab.cookieStoreId } : {}),
+  }
+}
+
+/**
  * 公共逻辑：组合用户数据和站点类型
  * 这是所有自动识别方式的最后一步
  */
@@ -141,6 +167,9 @@ async function combineUserDataAndSiteType(
         siteType,
         accessToken: userData.accessToken,
         sub2apiAuth: userData.sub2apiAuth,
+        ...(userData.fetchContext
+          ? { fetchContext: userData.fetchContext }
+          : {}),
       },
     }
   } catch (error) {
@@ -160,15 +189,30 @@ async function combineUserDataAndSiteType(
 async function getUserDataViaAPI(
   url: string,
   siteType: AccountSiteType,
+  fetchContext?: AutoDetectFetchContext,
 ): Promise<UserDataResult | null> {
   try {
+    if (fetchContext) {
+      logger.debug("API auto-detect using browser fetch context", {
+        url,
+        siteType,
+        fetchContext: summarizeApiServiceFetchContext(fetchContext),
+      })
+    }
+
     const userInfo = await getApiService(siteType).fetchUserInfo({
       baseUrl: url,
       auth: {
         authType: AuthTypeEnum.Cookie,
       },
+      ...(fetchContext ? { fetchContext } : {}),
     })
     if (!userInfo || !userInfo.id) {
+      logger.debug("API auto-detect returned no user id", {
+        url,
+        siteType,
+        hasFetchContext: Boolean(fetchContext),
+      })
       return null
     }
     return {
@@ -179,9 +223,15 @@ async function getUserDataViaAPI(
           ? userInfo.access_token
           : undefined,
       siteTypeHint: siteType,
+      ...(fetchContext ? { fetchContext } : {}),
     }
   } catch (error) {
-    logger.error("API 方式获取用户数据失败", error)
+    logger.warn("API 方式获取用户数据失败", {
+      url,
+      siteType,
+      fetchContext: summarizeApiServiceFetchContext(fetchContext),
+      error: getErrorMessage(error),
+    })
     return null
   }
 }
@@ -195,7 +245,7 @@ async function getUserDataViaAPI(
  * 3) Detect site type and return unified result
  */
 async function autoDetectDirect(url: string): Promise<AutoDetectResult> {
-  logger.debug("使用直接方式", { url })
+  logger.info("使用直接方式", { url })
 
   try {
     // 检测站点类型，避免在未知站点上下文中使用默认 API
@@ -227,19 +277,51 @@ async function autoDetectDirect(url: string): Promise<AutoDetectResult> {
 async function getUserDataViaBackground(
   url: string,
   siteType: AccountSiteType,
+  fetchContext?: AutoDetectFetchContext,
 ): Promise<UserDataResult | null> {
   try {
     const requestId = `auto-detect-${Date.now()}`
+    logger.debug("Background auto-detect request prepared", {
+      url,
+      siteType,
+      requestId,
+      useIncognito: fetchContext?.incognito === true,
+      fetchContext: summarizeApiServiceFetchContext(fetchContext),
+    })
+
     const response = await sendRuntimeMessage({
       action: RuntimeActionIds.AutoDetectSite,
       url: url,
       requestId: requestId,
+      ...(fetchContext?.incognito === true ? { useIncognito: true } : {}),
+      ...(fetchContext?.cookieStoreId
+        ? { cookieStoreId: fetchContext.cookieStoreId }
+        : {}),
     })
 
     if (!response || !response.success || !response.data) {
       // Fallback: if content script/localStorage fetch fails, attempt API-based fetch
-      return await getUserDataViaAPI(url, siteType)
+      logger.info(
+        "Background auto-detect returned no user data; using API fallback",
+        {
+          url,
+          siteType,
+          requestId,
+          responseSuccess: response?.success === true,
+          hasResponseData: Boolean(response?.data),
+          fetchContext: summarizeApiServiceFetchContext(fetchContext),
+        },
+      )
+      return await getUserDataViaAPI(url, siteType, fetchContext)
     }
+
+    logger.debug("Background auto-detect returned user data", {
+      url,
+      siteType,
+      requestId,
+      hasFetchContext: Boolean(fetchContext),
+      siteTypeHint: response.data.siteTypeHint ?? null,
+    })
 
     return {
       userId: response.data.userId,
@@ -247,9 +329,15 @@ async function getUserDataViaBackground(
       accessToken: response.data.accessToken,
       sub2apiAuth: response.data.sub2apiAuth,
       siteTypeHint: normalizeSiteTypeHint(response.data.siteTypeHint),
+      ...(fetchContext ? { fetchContext } : {}),
     }
   } catch (error) {
-    logger.error("Background 方式获取用户数据失败", error)
+    logger.warn("Background 方式获取用户数据失败", {
+      url,
+      siteType,
+      fetchContext: summarizeApiServiceFetchContext(fetchContext),
+      error: getErrorMessage(error),
+    })
     return null
   }
 }
@@ -260,14 +348,20 @@ async function getUserDataViaBackground(
  * 1) Background script acquires a temporary browser context to read localStorage
  * 2) Falls back to API-based fetch when storage read fails
  */
-async function autoDetectViaBackground(url: string): Promise<AutoDetectResult> {
-  logger.debug("使用 Background 方式", { url })
+async function autoDetectViaBackground(
+  url: string,
+  fetchContext?: AutoDetectFetchContext,
+): Promise<AutoDetectResult> {
+  logger.info("使用 Background 方式", {
+    url,
+    fetchContext: summarizeApiServiceFetchContext(fetchContext),
+  })
 
   // 检测站点类型，避免在未知站点上下文中使用默认 API
   const siteType = await getAccountSiteType(url)
 
   // 通过 Background 获取用户数据
-  const userData = await getUserDataViaBackground(url, siteType)
+  const userData = await getUserDataViaBackground(url, siteType, fetchContext)
 
   // 组合用户数据和站点类型（公共逻辑）
   return await combineUserDataAndSiteType(userData, url)
@@ -277,26 +371,33 @@ async function autoDetectViaBackground(url: string): Promise<AutoDetectResult> {
  * Fetch user data from the active tab using content script, with API fallback.
  * @param url Target site URL.
  * @param siteType Detected site type used to select an API implementation.
+ * @param tabId The ID of the tab to query for user data via content script messaging.
  * @returns User data or null when not available.
  */
 async function getUserDataFromCurrentTab(
   url: string,
   siteType: AccountSiteType,
+  tabId: number,
+  incognito?: boolean,
+  cookieStoreId?: string,
 ): Promise<CurrentTabUserDataResult> {
   let contentScriptUnavailable = false
+  const fetchContext: AutoDetectFetchContext = {
+    kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+    tabId,
+    origin: new URL(url).origin,
+    ...(incognito === true ? { incognito: true } : {}),
+    ...(cookieStoreId ? { cookieStoreId } : {}),
+  }
+
+  logger.debug("Current-tab auto-detect fetch context prepared", {
+    url,
+    siteType,
+    fetchContext: summarizeApiServiceFetchContext(fetchContext),
+  })
 
   try {
-    // 1. 获取当前活动标签页
-    const tabs = await getActiveTabs()
-
-    if (!tabs || tabs.length === 0 || !tabs[0]?.id) {
-      logger.warn("无法获取当前标签页", { url })
-      return { userData: null, contentScriptUnavailable }
-    }
-
-    const tabId = tabs[0].id
-
-    // 2. 通过 content script 获取用户信息
+    // 通过 content script 获取用户信息
     try {
       const userResponse = await browser.tabs.sendMessage(tabId, {
         action: RuntimeActionIds.ContentGetUserFromLocalStorage,
@@ -311,6 +412,7 @@ async function getUserDataFromCurrentTab(
             accessToken: userResponse.data.accessToken,
             sub2apiAuth: userResponse.data.sub2apiAuth,
             siteTypeHint: normalizeSiteTypeHint(userResponse.data.siteTypeHint),
+            fetchContext,
           },
           contentScriptUnavailable,
         }
@@ -322,15 +424,25 @@ async function getUserDataFromCurrentTab(
         logger.warn("当前标签页 content script 不可用，尝试 API 降级", {
           url,
           tabId,
+          fetchContext: summarizeApiServiceFetchContext(fetchContext),
           error: getErrorMessage(error),
         })
       } else {
-        logger.error("从当前标签页获取用户数据失败", error)
+        logger.warn("从当前标签页获取用户数据失败", {
+          url,
+          tabId,
+          fetchContext: summarizeApiServiceFetchContext(fetchContext),
+          error: getErrorMessage(error),
+        })
       }
     }
 
     // fallback
-    const fallbackUserData = await getUserDataViaAPI(url, siteType)
+    const fallbackUserData = await getUserDataViaAPI(
+      url,
+      siteType,
+      fetchContext,
+    )
     if (fallbackUserData) {
       return {
         userData: fallbackUserData,
@@ -340,7 +452,12 @@ async function getUserDataFromCurrentTab(
 
     return { userData: null, contentScriptUnavailable }
   } catch (error) {
-    logger.error("从当前标签页获取用户数据失败", error)
+    logger.warn("从当前标签页获取用户数据失败", {
+      url,
+      tabId,
+      fetchContext: summarizeApiServiceFetchContext(fetchContext),
+      error: getErrorMessage(error),
+    })
     return { userData: null, contentScriptUnavailable }
   }
 }
@@ -353,15 +470,24 @@ async function getUserDataFromCurrentTab(
  */
 async function autoDetectFromCurrentTab(
   url: string,
+  tabId: number,
+  incognito?: boolean,
+  cookieStoreId?: string,
 ): Promise<AutoDetectResult> {
-  logger.debug("使用当前标签页方式", { url })
+  logger.info("使用当前标签页方式", { url, tabId })
 
   // 检测站点类型，避免在未知站点上下文中使用默认 API
   const siteType = await getAccountSiteType(url)
 
   // 从当前标签页获取用户数据
   const { userData, contentScriptUnavailable } =
-    await getUserDataFromCurrentTab(url, siteType)
+    await getUserDataFromCurrentTab(
+      url,
+      siteType,
+      tabId,
+      incognito,
+      cookieStoreId,
+    )
 
   // 组合用户数据和站点类型（公共逻辑）
   const result = await combineUserDataAndSiteType(userData, url)
@@ -390,6 +516,7 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
   const capabilities = detectPlatformCapabilities()
   let shouldHintCurrentTabReload = false
   let currentTabReloadHintResult: AutoDetectResult | null = null
+  let browserFallbackContext: AutoDetectFetchContext | undefined
 
   // 1. 尝试从当前标签页获取（最快，无需创建新窗口）
   if (capabilities.hasTabs) {
@@ -397,18 +524,36 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
       // On mobile, currentWindow may be unsupported; fall back to first available tab
       const tabs = await getActiveOrAllTabs()
       const currentTab = tabs.find((t) => t.active) ?? tabs[0]
+      browserFallbackContext = createBrowserContextFromTab(currentTab)
+      if (browserFallbackContext) {
+        logger.debug("Prepared browser-context fallback for auto-detect", {
+          url,
+          detectionUrl,
+          currentTabUrl: currentTab?.url ?? null,
+          fetchContext: summarizeApiServiceFetchContext(browserFallbackContext),
+        })
+      }
 
       if (currentTab?.url) {
         // 检查当前标签页是否是目标站点
         const currentUrl = new URL(currentTab.url)
         const targetUrl = new URL(detectionUrl)
 
-        if (currentUrl.origin === targetUrl.origin) {
-          logger.debug("当前标签页匹配目标站点，使用当前标签页方式", {
+        if (
+          currentUrl.origin === targetUrl.origin &&
+          typeof currentTab.id === "number"
+        ) {
+          logger.info("当前标签页匹配目标站点，使用当前标签页方式", {
             url,
             currentTabUrl: currentTab.url,
+            tabId: currentTab.id,
           })
-          const currentTabResult = await autoDetectFromCurrentTab(detectionUrl)
+          const currentTabResult = await autoDetectFromCurrentTab(
+            detectionUrl,
+            currentTab.id,
+            currentTab.incognito === true,
+            currentTab.cookieStoreId,
+          )
           if (currentTabResult.success) {
             return currentTabResult
           }
@@ -419,6 +564,31 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
           ) {
             shouldHintCurrentTabReload = true
             currentTabReloadHintResult = currentTabResult
+          }
+
+          const currentTabContext: AutoDetectFetchContext = {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: currentTab.id,
+            origin: new URL(detectionUrl).origin,
+            ...(currentTab.incognito === true ? { incognito: true } : {}),
+            ...(currentTab.cookieStoreId
+              ? { cookieStoreId: currentTab.cookieStoreId }
+              : {}),
+          }
+          logger.info(
+            "Current-tab auto-detect failed; trying background with same browser context",
+            {
+              url,
+              detectionUrl,
+              fetchContext: summarizeApiServiceFetchContext(currentTabContext),
+            },
+          )
+          const backgroundResult = await autoDetectViaBackgroundWithContext(
+            detectionUrl,
+            currentTabContext,
+          )
+          if (backgroundResult.success) {
+            return backgroundResult
           }
         }
       }
@@ -432,14 +602,23 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
     // Background path uses a temporary browser context, which may be backed by
     // a window or a tab depending on the current temp-context mode and browser capabilities.
     try {
-      const result = await autoDetectViaBackground(detectionUrl)
+      const result = await autoDetectViaBackground(
+        detectionUrl,
+        browserFallbackContext,
+      )
       if (result.success) {
         return result
       }
-      logger.debug("Background 方式失败，降级到直接方式", { url })
+      logger.info("Background 方式失败，降级到直接方式", {
+        url,
+        detectionUrl,
+        fetchContext: summarizeApiServiceFetchContext(browserFallbackContext),
+      })
     } catch (error) {
       logger.warn("Background 方式抛出异常，降级到直接方式", {
         url,
+        detectionUrl,
+        fetchContext: summarizeApiServiceFetchContext(browserFallbackContext),
         error: getErrorMessage(error),
       })
     }
@@ -464,4 +643,22 @@ export async function autoDetectSmart(url: string): Promise<AutoDetectResult> {
   }
 
   return directResult
+}
+
+/**
+ * Runs the background temp-context auto-detect path while preserving the
+ * matched current-tab browser context.
+ */
+async function autoDetectViaBackgroundWithContext(
+  url: string,
+  fetchContext: AutoDetectFetchContext,
+): Promise<AutoDetectResult> {
+  logger.info("使用带当前标签页上下文的 Background 方式", {
+    url,
+    fetchContext: summarizeApiServiceFetchContext(fetchContext),
+  })
+
+  const siteType = await getAccountSiteType(url)
+  const userData = await getUserDataViaBackground(url, siteType, fetchContext)
+  return await combineUserDataAndSiteType(userData, url)
 }

@@ -4,10 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { COOKIE_IMPORT_FAILURE_REASONS } from "~/constants/cookieImport"
 import { DIALOG_MODES } from "~/constants/dialogModes"
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SITE_TYPES } from "~/constants/siteType"
 import { useAccountDialog } from "~/features/AccountManagement/components/AccountDialog/hooks/useAccountDialog"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { AutoDetectErrorType } from "~/services/accounts/utils/autoDetectUtils"
+import { API_SERVICE_FETCH_CONTEXT_KINDS } from "~/services/apiService/common/type"
 import { AuthTypeEnum, SiteHealthStatus, type CheckInConfig } from "~/types"
 import type { TurnstilePreTrigger } from "~/types/turnstile"
 import { buildSiteAccount } from "~~/tests/test-utils/factories"
@@ -492,6 +494,13 @@ describe("useAccountDialog re-detect preservation", () => {
         userId: "12",
         siteName: "Detected Cookie Site",
         siteType: "new-api",
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+          tabId: 101,
+          origin: "https://cookie.example.com",
+          incognito: true,
+          cookieStoreId: " 1-incognito ",
+        },
       },
     })
 
@@ -526,13 +535,77 @@ describe("useAccountDialog re-detect preservation", () => {
 
     expect(sendRuntimeMessage).toHaveBeenCalledWith(
       expect.objectContaining({
+        action: RuntimeActionIds.AccountDialogImportCookieAuthSessionCookie,
         url: "https://cookie.example.com",
+        cookieStoreId: "1-incognito",
       }),
     )
     expect(result.current.state.cookieAuthSessionCookie).toBe("session=abc123")
     expect(result.current.state.showCookiePermissionWarning).toBe(false)
     expect(result.current.state.exchangeRate).toBe("")
     expect(result.current.state.isDetected).toBe(true)
+
+    vi.mocked(sendRuntimeMessage).mockResolvedValueOnce({
+      success: true,
+      data: " session=manual ",
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleImportCookieAuthSessionCookie()
+    })
+
+    expect(sendRuntimeMessage).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.AccountDialogImportCookieAuthSessionCookie,
+        url: "https://cookie.example.com",
+        cookieStoreId: "1-incognito",
+      }),
+    )
+    expect(result.current.state.cookieAuthSessionCookie).toBe(
+      " session=manual ",
+    )
+  })
+
+  it("shows backend cookie import errors and toggles manual form visibility", async () => {
+    const { sendRuntimeMessage } = await import("~/utils/browser/browserApi")
+    vi.mocked(sendRuntimeMessage).mockResolvedValueOnce({
+      success: false,
+      error: "blocked by browser",
+    })
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://cookie.example.com")
+      result.current.setters.setShowManualForm(true)
+    })
+
+    expect(result.current.state.showManualForm).toBe(true)
+
+    await act(async () => {
+      result.current.setters.setShowManualForm(false)
+    })
+
+    expect(result.current.state.showManualForm).toBe(false)
+
+    await act(async () => {
+      await result.current.handlers.handleImportCookieAuthSessionCookie()
+    })
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "accountDialog:messages.importCookiesFailed",
+    )
   })
 
   it("switches AIHubMix auto-detect results to access-token mode and skips cookie import", async () => {

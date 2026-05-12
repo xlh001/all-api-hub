@@ -1,3 +1,4 @@
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { buildCompatUserIdHeaders } from "~/services/apiService/common/compatHeaders"
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import {
@@ -9,17 +10,23 @@ import { createMinIntervalLimiter } from "~/services/apiService/common/minInterv
 import { withSiteApiRequestLimit } from "~/services/apiService/common/siteRequestLimiter"
 import type {
   ApiResponse,
+  ApiServiceFetchContext,
   ApiServiceRequest,
   AuthConfig,
   FetchApiOptions,
   LogItem,
   TodayUsageData,
 } from "~/services/apiService/common/type"
+import {
+  API_SERVICE_FETCH_CONTEXT_KINDS,
+  summarizeApiServiceFetchContext,
+} from "~/services/apiService/common/type"
 import { AuthTypeEnum } from "~/types"
 import type {
   TempWindowFallbackContext,
   TempWindowResponseType,
 } from "~/types/tempWindowFetch"
+import { sendTabMessageWithRetry } from "~/utils/browser/browserApi"
 import {
   addAuthMethodHeader,
   addExtensionHeader,
@@ -28,12 +35,22 @@ import {
   COOKIE_SESSION_OVERRIDE_HEADER_NAME,
 } from "~/utils/browser/cookieHelper"
 import { executeWithTempWindowFallback } from "~/utils/browser/tempWindowFetch"
+import { getErrorMessage } from "~/utils/core/error"
+import { safeRandomUUID } from "~/utils/core/identifier"
 import { createLogger } from "~/utils/core/logger"
 import { joinUrl } from "~/utils/core/url"
 import { normalizeUrlForOriginKey } from "~/utils/core/urlParsing"
 import { t } from "~/utils/i18n/core"
 
 type NormalizedAuthContext = AuthConfig
+
+interface ContentFetchResponse<T> {
+  success?: boolean
+  status?: number
+  data?: T
+  error?: string
+  code?: ApiErrorCode
+}
 
 const logger = createLogger("ApiServiceUtils")
 
@@ -194,6 +211,174 @@ const createBaseRequest = (
 }
 
 /**
+ * Converts supported header inputs into a structured-clone-safe object.
+ */
+function normalizeHeaderInit(
+  headers: HeadersInit | undefined,
+): Record<string, string> {
+  if (!headers) return {}
+
+  if (headers instanceof Headers) {
+    const result: Record<string, string> = {}
+    headers.forEach((value, key) => {
+      result[key] = value
+    })
+    return result
+  }
+
+  if (Array.isArray(headers)) {
+    return headers.reduce(
+      (acc, [key, value]) => {
+        acc[key] = value
+        return acc
+      },
+      {} as Record<string, string>,
+    )
+  }
+
+  return Object.entries(headers).reduce(
+    (acc, [key, value]) => {
+      if (value != null) {
+        acc[key] = String(value)
+      }
+      return acc
+    },
+    {} as Record<string, string>,
+  )
+}
+
+/**
+ * Normalizes request options before crossing an extension message boundary.
+ */
+function normalizeRequestInitForMessage(options: RequestInit): RequestInit {
+  return {
+    ...options,
+    headers: normalizeHeaderInit(options.headers),
+  }
+}
+
+/**
+ * Checks whether a request can safely prefer the matched current tab transport.
+ */
+function isCurrentTabContentFetchEligible(params: {
+  request: ApiServiceRequest
+  url: string
+  options: FetchApiOptions
+}): boolean {
+  if (params.options.currentTabTransport === "disabled") return false
+  const responseType = params.options.responseType ?? "json"
+  if (responseType !== "json" && responseType !== "text") return false
+
+  const fetchContext = params.request.fetchContext
+  if (fetchContext?.kind !== API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB)
+    return false
+  if (typeof fetchContext.tabId !== "number") return false
+
+  try {
+    const requestOrigin = new URL(params.url).origin
+    const contextOrigin = new URL(fetchContext.origin).origin
+    return requestOrigin === contextOrigin
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Sends the prepared request through the matched tab's content script.
+ */
+async function fetchViaCurrentTabContent<T>(context: {
+  fetchContext: Extract<
+    ApiServiceFetchContext,
+    { kind: typeof API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB }
+  >
+  url: string
+  endpoint: string
+  fetchOptions: RequestInit
+  onlyData: boolean
+  responseType: TempWindowResponseType
+}): Promise<T | ApiResponse<T>> {
+  const response = (await sendTabMessageWithRetry(context.fetchContext.tabId, {
+    action: RuntimeActionIds.ContentPerformTempWindowFetch,
+    requestId: safeRandomUUID(`current-tab-fetch-${context.url}`),
+    fetchUrl: context.url,
+    fetchOptions: normalizeRequestInitForMessage(context.fetchOptions),
+    responseType: context.responseType,
+  })) as ContentFetchResponse<ApiResponse<T> | T>
+
+  if (!response?.success) {
+    throw new ApiError(
+      response?.error || "Current-tab content fetch failed",
+      response?.status,
+      context.endpoint,
+      response?.code,
+    )
+  }
+
+  const responseBody = response.data
+
+  if (context.responseType === "json") {
+    if (context.onlyData) {
+      return extractDataFromApiResponseBody<T>(responseBody, context.endpoint)
+    }
+    return responseBody as ApiResponse<T>
+  }
+
+  return responseBody as T
+}
+
+/**
+ * Runs current-tab content fetch first when eligible, then falls back normally.
+ */
+async function executeWithCurrentTabContentPreference<T>(
+  context: {
+    request: ApiServiceRequest
+    url: string
+    endpoint: string
+    fetchOptions: RequestInit
+    onlyData: boolean
+    responseType: TempWindowResponseType
+    options: FetchApiOptions
+  },
+  fallback: () => Promise<T | ApiResponse<T>>,
+): Promise<T | ApiResponse<T>> {
+  if (
+    !isCurrentTabContentFetchEligible({
+      request: context.request,
+      url: context.url,
+      options: context.options,
+    })
+  ) {
+    return await fallback()
+  }
+
+  const fetchContext = context.request.fetchContext as Extract<
+    ApiServiceFetchContext,
+    { kind: typeof API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB }
+  >
+
+  try {
+    return await fetchViaCurrentTabContent<T>({
+      fetchContext,
+      url: context.url,
+      endpoint: context.endpoint,
+      fetchOptions: context.fetchOptions,
+      onlyData: context.onlyData,
+      responseType: context.responseType,
+    })
+  } catch (error) {
+    logger.debug("Current-tab content fetch failed; falling back", {
+      endpoint: context.endpoint,
+      url: context.url,
+      error: getErrorMessage(error),
+    })
+    // Keep current-tab fallback behavior aligned with temp-window fallback for
+    // now. If mutating-request replay becomes a real issue, handle it in the
+    // shared transport-fallback layer instead of special-casing this path.
+    return await fallback()
+  }
+}
+
+/**
  * Create a RequestInit configured for cookie-based auth.
  * @param auth Auth context used to compute headers.
  * @param options Additional fetch options to merge.
@@ -205,10 +390,15 @@ const createAuthRequest = async (
   const credentials: RequestCredentials =
     auth.authType === AuthTypeEnum.Cookie ? "include" : "omit"
 
+  const normalizedOptions: RequestInit = {
+    ...options,
+    headers: normalizeHeaderInit(options.headers),
+  }
+
   return createBaseRequest(
     await createRequestHeaders(auth),
     credentials,
-    options,
+    normalizedOptions,
   )
 }
 
@@ -429,33 +619,63 @@ const _fetchApi = async <T>(
     authType: resolvedAuth.authType,
     cookieAuthSessionCookie:
       request.auth?.cookie ?? accountInfo?.cookieAuth?.sessionCookie,
+    useIncognito: request.fetchContext?.incognito === true,
+    cookieStoreId: request.fetchContext?.cookieStoreId,
+    forceTempWindow:
+      request.fetchContext?.incognito === true ||
+      Boolean(request.fetchContext?.cookieStoreId),
+  }
+
+  if (context.forceTempWindow) {
+    logger.debug(
+      "Forcing temp-window fetch for browser-profile auto-detect context",
+      {
+        endpoint: options.endpoint,
+        url,
+        fetchContext: summarizeApiServiceFetchContext(request.fetchContext),
+      },
+    )
   }
 
   const siteRequestLimitKey = resolveSiteRequestLimitKey(baseUrl)
 
   return await withSiteApiRequestLimit(siteRequestLimitKey, async () => {
-    return await executeWithTempWindowFallback(context, async () => {
-      if (onlyData) {
-        return await apiRequestData<T>(
+    const fallback = async () =>
+      await executeWithTempWindowFallback(context, async () => {
+        if (onlyData) {
+          return await apiRequestData<T>(
+            url,
+            fetchOptions,
+            options.endpoint,
+            responseType,
+          )
+        }
+        const response = await apiRequest<T>(
           url,
           fetchOptions,
           options.endpoint,
           responseType,
         )
-      }
-      const response = await apiRequest<T>(
+
+        if (responseType === "json") {
+          return response as ApiResponse<T>
+        }
+
+        return response as T
+      })
+
+    return await executeWithCurrentTabContentPreference<T>(
+      {
+        request,
         url,
+        endpoint: options.endpoint,
         fetchOptions,
-        options.endpoint,
+        onlyData,
         responseType,
-      )
-
-      if (responseType === "json") {
-        return response as ApiResponse<T>
-      }
-
-      return response as T
-    })
+        options,
+      },
+      fallback,
+    )
   })
 }
 

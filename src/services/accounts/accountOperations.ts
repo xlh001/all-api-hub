@@ -25,6 +25,12 @@ import {
 import { normalizeAccountSiteUrlForStorage } from "~/services/accounts/utils/siteUrlNormalization"
 import { getApiService } from "~/services/apiService"
 import {
+  API_SERVICE_FETCH_CONTEXT_KINDS,
+  type ApiServiceFetchContext,
+  type ApiServiceRequest,
+  type SiteStatusInfo,
+} from "~/services/apiService/common/type"
+import {
   DEFAULT_PREFERENCES,
   userPreferences,
 } from "~/services/preferences/userPreferences"
@@ -101,6 +107,51 @@ async function withTimeout<T>(
 }
 
 /**
+ * Extracts the matched current-tab context from successful auto-detect data.
+ */
+function getAutoDetectFetchContext(
+  detectResultData: NonNullable<
+    Awaited<ReturnType<typeof autoDetectSmart>>["data"]
+  >,
+): ApiServiceFetchContext | undefined {
+  const fetchContext = detectResultData.fetchContext
+  if (fetchContext?.kind === API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT) {
+    return fetchContext
+  }
+
+  if (fetchContext?.kind === API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB) {
+    if (
+      typeof fetchContext.tabId === "number" &&
+      typeof fetchContext.origin === "string" &&
+      fetchContext.origin.trim()
+    ) {
+      return fetchContext
+    }
+  }
+
+  if (fetchContext?.incognito === true || fetchContext?.cookieStoreId) {
+    return fetchContext
+  }
+
+  return undefined
+}
+
+/**
+ * Builds the service-layer request used by auto-detect completion.
+ */
+function createAutoDetectApiRequest(params: {
+  baseUrl: string
+  auth: ApiServiceRequest["auth"]
+  fetchContext?: ApiServiceFetchContext
+}): ApiServiceRequest {
+  return {
+    baseUrl: params.baseUrl,
+    auth: params.auth,
+    ...(params.fetchContext ? { fetchContext: params.fetchContext } : {}),
+  }
+}
+
+/**
  * Parses a manual balance in USD from a string value and converts it to quota
  * units.
  *
@@ -171,6 +222,7 @@ export async function autoDetectAccount(
     }
 
     const { userId, siteType, sub2apiAuth } = detectResult.data
+    const autoDetectFetchContext = getAutoDetectFetchContext(detectResult.data)
     const isSub2Api = siteType === SITE_TYPES.SUB2API
     const isAIHubMix = siteType === SITE_TYPES.AIHUBMIX
     const effectiveAuthType =
@@ -223,43 +275,69 @@ export async function autoDetectAccount(
         access_token: detectResult.data.accessToken.trim(),
       })
     } else if (effectiveAuthType === AuthTypeEnum.Cookie) {
-      tokenPromise = getApiService(siteType).fetchUserInfo({
-        baseUrl: url,
-        auth: {
-          authType: AuthTypeEnum.Cookie,
-          userId,
-        },
-      })
+      tokenPromise = getApiService(siteType).fetchUserInfo(
+        createAutoDetectApiRequest({
+          baseUrl: url,
+          fetchContext: autoDetectFetchContext,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            userId,
+          },
+        }),
+      )
     } else if (effectiveAuthType === AuthTypeEnum.AccessToken) {
-      tokenPromise = getApiService(siteType).getOrCreateAccessToken({
-        baseUrl: url,
-        auth: {
-          authType: AuthTypeEnum.Cookie,
-          userId,
-        },
-      })
+      tokenPromise = getApiService(siteType).getOrCreateAccessToken(
+        createAutoDetectApiRequest({
+          baseUrl: url,
+          fetchContext: autoDetectFetchContext,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            userId,
+          },
+        }),
+      )
     } else {
       // none 或其他情况
       tokenPromise = Promise.resolve(null)
     }
 
-    const siteStatusPromise = getApiService(siteType).fetchSiteStatus({
-      baseUrl: url,
-      auth: {
-        authType: detectionAuthType || AuthTypeEnum.None,
-      },
-    })
+    const fetchSiteStatusFallback = () =>
+      getApiService(siteType).fetchSiteStatus(
+        createAutoDetectApiRequest({
+          baseUrl: url,
+          fetchContext: autoDetectFetchContext,
+          auth: {
+            authType: detectionAuthType || AuthTypeEnum.None,
+          },
+        }),
+      )
+
+    const siteStatusPromise: Promise<SiteStatusInfo | null> =
+      fetchSiteStatusFallback()
+
+    const fetchSupportCheckInFallback = () =>
+      getApiService(siteType).fetchSupportCheckIn(
+        createAutoDetectApiRequest({
+          baseUrl: url,
+          fetchContext: autoDetectFetchContext,
+          auth: {
+            authType: AuthTypeEnum.None,
+          },
+        }),
+      )
+
+    const checkSupportPromise: Promise<boolean | undefined> =
+      siteStatusPromise.then((siteStatus) =>
+        typeof siteStatus?.checkin_enabled === "boolean"
+          ? siteStatus.checkin_enabled
+          : fetchSupportCheckInFallback(),
+      )
 
     // 并行执行 token 获取和 site 状态获取（降低端到端等待）
     const [tokenInfo, siteStatus, checkSupport, siteName] = await Promise.all([
       tokenPromise,
       siteStatusPromise,
-      getApiService(siteType).fetchSupportCheckIn({
-        baseUrl: url,
-        auth: {
-          authType: AuthTypeEnum.None,
-        },
-      }),
+      checkSupportPromise,
       siteStatusPromise.then((resolvedSiteStatus) =>
         getSiteName(url, siteType, resolvedSiteStatus),
       ),
@@ -314,6 +392,9 @@ export async function autoDetectAccount(
         },
         siteType: siteType,
         ...(isSub2Api && sub2apiAuth ? { sub2apiAuth } : {}),
+        ...(autoDetectFetchContext
+          ? { fetchContext: autoDetectFetchContext }
+          : {}),
       },
     }
   } catch (error) {

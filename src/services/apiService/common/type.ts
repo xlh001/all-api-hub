@@ -326,6 +326,50 @@ export interface AuthConfig {
   tokenExpiresAt?: number
 }
 
+export const API_SERVICE_FETCH_CONTEXT_KINDS = {
+  CURRENT_TAB: "current-tab",
+  BROWSER_CONTEXT: "browser-context",
+} as const
+
+export type ApiServiceFetchContextKind =
+  (typeof API_SERVICE_FETCH_CONTEXT_KINDS)[keyof typeof API_SERVICE_FETCH_CONTEXT_KINDS]
+
+type ApiServiceBrowserFetchContext = {
+  incognito?: boolean
+  cookieStoreId?: string
+}
+
+export type ApiServiceFetchContext =
+  | (ApiServiceBrowserFetchContext & {
+      kind: typeof API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB
+      tabId: number
+      origin: string
+    })
+  | (ApiServiceBrowserFetchContext & {
+      kind: typeof API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT
+    })
+
+/**
+ * Builds a log-safe summary of a fetch context without exposing cookie-store values.
+ */
+export function summarizeApiServiceFetchContext(
+  fetchContext: ApiServiceFetchContext | undefined,
+) {
+  if (!fetchContext) return undefined
+
+  return {
+    kind: fetchContext.kind,
+    incognito: fetchContext.incognito === true,
+    hasCookieStoreId: Boolean(fetchContext.cookieStoreId),
+    ...(fetchContext.kind === API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB
+      ? {
+          tabId: fetchContext.tabId,
+          origin: fetchContext.origin,
+        }
+      : {}),
+  }
+}
+
 /**
  * API 服务请求的统一参数对象。
  *
@@ -349,6 +393,11 @@ export interface ApiServiceRequest {
    * 账号 ID（用于后续查询账号信息，目前可选）
    */
   accountId?: string
+  /**
+   * Optional transport context from account auto-detect. When present, common
+   * fetch helpers may try the matched tab content script before normal fetch.
+   */
+  fetchContext?: ApiServiceFetchContext
 }
 
 /**
@@ -381,6 +430,7 @@ export interface FetchApiOptions {
   options?: RequestInit
   responseType?: TempWindowResponseType
   tempWindowFallback?: TempWindowFallbackAllowlist
+  currentTabTransport?: "prefer" | "disabled"
 }
 
 /**

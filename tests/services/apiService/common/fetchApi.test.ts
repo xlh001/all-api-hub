@@ -1,6 +1,8 @@
 import { http, HttpResponse } from "msw"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { RuntimeActionIds } from "~/constants/runtimeActions"
+import { API_SERVICE_FETCH_CONTEXT_KINDS } from "~/services/apiService/common/type"
 import { AuthTypeEnum, TEMP_WINDOW_HEALTH_STATUS_CODES } from "~/types"
 import {
   COOKIE_AUTH_HEADER_NAME,
@@ -38,6 +40,23 @@ const { mockHasCookieInterceptorPermissions, mockGetPreferences } = vi.hoisted(
     mockGetPreferences: vi.fn(),
   }),
 )
+
+const { mockSendTabMessageWithRetry, mockSendRuntimeMessage } = vi.hoisted(
+  () => ({
+    mockSendTabMessageWithRetry: vi.fn(),
+    mockSendRuntimeMessage: vi.fn(),
+  }),
+)
+
+vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("~/utils/browser/browserApi")>()
+  return {
+    ...actual,
+    sendTabMessageWithRetry: mockSendTabMessageWithRetry,
+    sendRuntimeMessage: mockSendRuntimeMessage,
+  }
+})
 
 vi.mock("~/services/permissions/permissionManager", () => ({
   COOKIE_INTERCEPTOR_PERMISSIONS: [
@@ -82,6 +101,13 @@ vi.mock("~/utils/browser/protectionBypass", () => ({
   isProtectionBypassFirefoxEnv: vi.fn(() => true),
 }))
 
+vi.mock("~/utils/browser/index", () => ({
+  OPTIONS_PAGE_URL: "chrome-extension://test/options.html",
+  isExtensionBackground: vi.fn(() => false),
+  isExtensionPopup: vi.fn(() => false),
+  isExtensionSidePanel: vi.fn(() => false),
+}))
+
 const BASE_URL = "https://example.com/base/"
 const ENDPOINT = "/api/test"
 const API_URL = "https://example.com/base/api/test"
@@ -108,6 +134,8 @@ describe("apiService common fetchApi helpers", () => {
     vi.restoreAllMocks()
     server.resetHandlers()
 
+    mockHasCookieInterceptorPermissions.mockReset()
+    mockGetPreferences.mockReset()
     mockWithSiteApiRequestLimit.mockImplementation(
       async (_key: string, task: () => Promise<unknown>) => await task(),
     )
@@ -122,6 +150,9 @@ describe("apiService common fetchApi helpers", () => {
         useForManualRefresh: true,
       },
     })
+    mockSendTabMessageWithRetry.mockReset()
+    mockSendRuntimeMessage.mockReset()
+    mockSendRuntimeMessage.mockResolvedValue({ success: true })
   })
 
   afterEach(() => {
@@ -308,6 +339,654 @@ describe("apiService common fetchApi helpers", () => {
     expect(capturedCookie).toBe("session=abc123")
     expect(capturedCookieAuthMode).toBe("cookie")
     expect(capturedSessionOverride).toBe("session=abc123")
+  })
+
+  it("fetchApiData prefers current-tab content fetch for same-origin read requests", async () => {
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: true,
+      status: 200,
+      data: {
+        success: true,
+        data: { ok: true },
+        message: "ok",
+      },
+    })
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: 123,
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+        },
+        {
+          endpoint: ENDPOINT,
+          options: {
+            method: "GET",
+            headers: {
+              "X-Probe": "auto-detect",
+            },
+          },
+        },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).toHaveBeenCalledTimes(1)
+    expect(mockSendTabMessageWithRetry).toHaveBeenCalledWith(
+      456,
+      expect.objectContaining({
+        action: RuntimeActionIds.ContentPerformTempWindowFetch,
+        fetchUrl: API_URL,
+        responseType: "json",
+      }),
+    )
+    expect(mockSendTabMessageWithRetry.mock.calls[0][1].fetchOptions).toEqual(
+      expect.objectContaining({
+        method: "GET",
+        credentials: "include",
+        headers: expect.objectContaining({
+          Cookie: "session=abc123",
+          "X-Probe": "auto-detect",
+        }),
+      }),
+    )
+  })
+
+  it("normalizes Headers objects before sending current-tab content fetch", async () => {
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: true,
+      data: { success: true, data: { ok: true }, message: "content" },
+    })
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: 123,
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+        },
+        {
+          endpoint: ENDPOINT,
+          options: {
+            method: "GET",
+            headers: new Headers({
+              "X-Header-Object": "yes",
+            }),
+          },
+        },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry.mock.calls[0][1].fetchOptions).toEqual(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Cookie: "session=abc123",
+          "x-header-object": "yes",
+        }),
+      }),
+    )
+  })
+
+  it("normalizes header tuple arrays before sending current-tab content fetch", async () => {
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: true,
+      data: { success: true, data: { ok: true }, message: "content" },
+    })
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: 123,
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+        },
+        {
+          endpoint: ENDPOINT,
+          options: {
+            method: "GET",
+            headers: [["X-Header-Tuple", "yes"]],
+          },
+        },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry.mock.calls[0][1].fetchOptions).toEqual(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Cookie: "session=abc123",
+          "X-Header-Tuple": "yes",
+        }),
+      }),
+    )
+  })
+
+  it("fetchApiData can use current-tab content fetch for mutating requests", async () => {
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: true,
+      data: { success: true, data: { ok: true }, message: "content" },
+    })
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: 123,
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+        },
+        {
+          endpoint: ENDPOINT,
+          options: {
+            method: "POST",
+            body: JSON.stringify({ probe: true }),
+          },
+        },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).toHaveBeenCalledTimes(1)
+    expect(mockSendTabMessageWithRetry).toHaveBeenCalledWith(
+      456,
+      expect.objectContaining({
+        action: RuntimeActionIds.ContentPerformTempWindowFetch,
+        fetchUrl: API_URL,
+        responseType: "json",
+      }),
+    )
+    expect(mockSendTabMessageWithRetry.mock.calls[0][1].fetchOptions).toEqual(
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+        body: JSON.stringify({ probe: true }),
+      }),
+    )
+  })
+
+  it("fetchApiData skips current-tab content fetch when the request URL is not same-origin", async () => {
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "direct",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: "token",
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://other.example.com",
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
+  })
+
+  it("skips current-tab content fetch when the context origin is invalid", async () => {
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "direct",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: "token",
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "not a url",
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
+  })
+
+  it("skips current-tab content fetch when the tab id is invalid", async () => {
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "direct",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: "token",
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: "456" as unknown as number,
+            origin: "https://example.com",
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
+  })
+
+  it("fetchApiData falls back to the normal fetch path when current-tab content fetch fails", async () => {
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: false,
+      status: 503,
+      error: "content fetch failed",
+    })
+
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "direct",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: "token",
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it("fetchApiData skips normal fetch for incognito current-tab fallback and uses the temp context", async () => {
+    mockGetPreferences.mockResolvedValueOnce({
+      tempWindowFallback: {
+        enabled: true,
+        useInPopup: true,
+        useInSidePanel: true,
+        useInOptions: true,
+        useForAutoRefresh: true,
+        useForManualRefresh: true,
+      },
+    })
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: false,
+      status: 503,
+      error: "content fetch failed",
+    })
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      success: true,
+      status: 200,
+      data: {
+        success: true,
+        data: { ok: true },
+        message: "temp",
+      },
+    })
+
+    let normalFetchCount = 0
+    server.use(
+      http.get(API_URL, () => {
+        normalFetchCount += 1
+        return HttpResponse.json({
+          success: true,
+          data: { ok: false },
+          message: "normal",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: 123,
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+            incognito: true,
+            cookieStoreId: "1-incognito",
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(normalFetchCount).toBe(0)
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.TempWindowFetch,
+        originUrl: BASE_URL,
+        fetchUrl: API_URL,
+        useIncognito: true,
+        cookieStoreId: "1-incognito",
+      }),
+    )
+  })
+
+  it("fetchApiData skips normal fetch for incognito browser-context fallback", async () => {
+    mockGetPreferences.mockResolvedValueOnce({
+      tempWindowFallback: {
+        enabled: true,
+        useInPopup: true,
+        useInSidePanel: true,
+        useInOptions: true,
+        useForAutoRefresh: true,
+        useForManualRefresh: true,
+      },
+    })
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      success: true,
+      status: 200,
+      data: {
+        success: true,
+        data: { ok: true },
+        message: "temp",
+      },
+    })
+
+    let normalFetchCount = 0
+    server.use(
+      http.get(API_URL, () => {
+        normalFetchCount += 1
+        return HttpResponse.json({
+          success: true,
+          data: { ok: false },
+          message: "normal",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: 123,
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            incognito: true,
+            cookieStoreId: "1-incognito",
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
+    expect(normalFetchCount).toBe(0)
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.TempWindowFetch,
+        originUrl: BASE_URL,
+        fetchUrl: API_URL,
+        useIncognito: true,
+        cookieStoreId: "1-incognito",
+      }),
+    )
+  })
+
+  it("fetchApiData skips normal fetch when a browser-context cookie store is present", async () => {
+    mockGetPreferences.mockResolvedValueOnce({
+      tempWindowFallback: {
+        enabled: true,
+        useInPopup: true,
+        useInSidePanel: true,
+        useInOptions: true,
+        useForAutoRefresh: true,
+        useForManualRefresh: true,
+      },
+    })
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      success: true,
+      status: 200,
+      data: {
+        success: true,
+        data: { ok: true },
+        message: "temp",
+      },
+    })
+
+    let normalFetchCount = 0
+    server.use(
+      http.get(API_URL, () => {
+        normalFetchCount += 1
+        return HttpResponse.json({
+          success: true,
+          data: { ok: false },
+          message: "normal",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: 123,
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "firefox-container-2",
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
+    expect(normalFetchCount).toBe(0)
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: RuntimeActionIds.TempWindowFetch,
+        originUrl: BASE_URL,
+        fetchUrl: API_URL,
+        cookieStoreId: "firefox-container-2",
+      }),
+    )
+  })
+
+  it("fetchApiData honors current-tab transport opt-out", async () => {
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "direct",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: "token",
+          },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+        },
+        {
+          endpoint: ENDPOINT,
+          currentTabTransport: "disabled",
+        },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
+  })
+
+  it("fetchApi skips current-tab content fetch for binary response types", async () => {
+    server.use(
+      http.get("https://example.com/base/api/buffer", () => {
+        return new HttpResponse(Uint8Array.from([9, 8, 7]), {
+          headers: { "Content-Type": "application/octet-stream" },
+        })
+      }),
+    )
+
+    const result = await fetchApi<ArrayBuffer>(
+      {
+        baseUrl: BASE_URL,
+        auth: {
+          authType: AuthTypeEnum.AccessToken,
+          accessToken: "token",
+        },
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+          tabId: 456,
+          origin: "https://example.com",
+        },
+      },
+      { endpoint: "/api/buffer", responseType: "arrayBuffer" },
+      true,
+    )
+
+    expect(Array.from(new Uint8Array(result))).toEqual([9, 8, 7])
+    expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
+  })
+
+  it("fetchApi returns full JSON envelopes from current-tab content fetch when unwrapping is disabled", async () => {
+    const apiEnvelope = {
+      success: true,
+      data: { nested: "value" },
+      message: "content-envelope",
+    }
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: true,
+      data: apiEnvelope,
+    })
+
+    const result = await fetchApi<{ nested: string }>(
+      {
+        baseUrl: BASE_URL,
+        auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+          tabId: 456,
+          origin: "https://example.com",
+        },
+      },
+      { endpoint: ENDPOINT },
+    )
+
+    expect(result).toEqual(apiEnvelope)
+    expect(mockSendTabMessageWithRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it("fetchApi returns text responses from current-tab content fetch", async () => {
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: true,
+      data: "content text",
+    })
+
+    await expect(
+      fetchApi<string>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          fetchContext: {
+            kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+        },
+        { endpoint: ENDPOINT, responseType: "text" },
+        true,
+      ),
+    ).resolves.toBe("content text")
+
+    expect(mockSendTabMessageWithRetry).toHaveBeenCalledWith(
+      456,
+      expect.objectContaining({
+        responseType: "text",
+      }),
+    )
   })
 
   it("fetchApi should unwrap ApiResponse when _normalResponseType is true", async () => {
@@ -687,6 +1366,16 @@ describe("apiService common fetchApi helpers", () => {
   })
 
   it("fetchApiData should tag eligible errors when temp-window fallback is disabled", async () => {
+    mockGetPreferences.mockResolvedValueOnce({
+      tempWindowFallback: {
+        enabled: false,
+        useInPopup: true,
+        useInSidePanel: true,
+        useInOptions: true,
+        useForAutoRefresh: true,
+        useForManualRefresh: true,
+      },
+    })
     server.use(
       http.get(API_URL, () => {
         return HttpResponse.json({}, { status: 403 })

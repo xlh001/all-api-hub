@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { AUTO_DETECT_ERROR_CODES } from "~/constants/autoDetect"
 import { SITE_TYPES } from "~/constants/siteType"
+import { API_SERVICE_FETCH_CONTEXT_KINDS } from "~/services/apiService/common/type"
 import { autoDetectSmart } from "~/services/siteDetection/autoDetectService"
 
 const {
@@ -102,10 +103,267 @@ describe("autoDetectSmart", () => {
         siteType: SITE_TYPES.VELOERA,
         accessToken: "current-tab-token",
         sub2apiAuth: undefined,
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+          tabId: 1,
+          origin: "https://example.com",
+        },
       },
     })
     expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
+  })
+
+  it("returns a current-tab fetch context when current-tab detection succeeds", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 101,
+        active: true,
+        url: "https://example.com/dashboard",
+        incognito: true,
+        cookieStoreId: "1-incognito",
+      },
+    ])
+    browserAny.tabs.sendMessage.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 12,
+        user: { id: 12, username: "alice" },
+      },
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 12,
+        user: { id: 12, username: "alice" },
+        siteType: SITE_TYPES.NEW_API,
+        accessToken: undefined,
+        sub2apiAuth: undefined,
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+          tabId: 101,
+          origin: "https://example.com",
+          incognito: true,
+          cookieStoreId: "1-incognito",
+        },
+      },
+    })
+    expect(browserAny.tabs.sendMessage).toHaveBeenCalledWith(101, {
+      action: expect.any(String),
+      url: "https://example.com/console",
+    })
+    expect(mockGetActiveTabs).not.toHaveBeenCalled()
+  })
+
+  it("keeps incognito current-tab context on API fallback when content user data is missing", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 102,
+        active: true,
+        url: "https://example.com/dashboard",
+        incognito: true,
+        cookieStoreId: "1-incognito",
+      },
+    ])
+    browserAny.tabs.sendMessage.mockResolvedValue({
+      success: false,
+      error: "no local storage user",
+    })
+    mockFetchUserInfo.mockResolvedValue({
+      id: 13,
+      username: "api-incognito-user",
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 13,
+        user: { id: 13, username: "api-incognito-user" },
+        siteType: SITE_TYPES.NEW_API,
+        accessToken: undefined,
+        sub2apiAuth: undefined,
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+          tabId: 102,
+          origin: "https://example.com",
+          incognito: true,
+          cookieStoreId: "1-incognito",
+        },
+      },
+    })
+    expect(mockFetchUserInfo).toHaveBeenCalledWith({
+      baseUrl: "https://example.com/console",
+      auth: {
+        authType: expect.any(String),
+      },
+      fetchContext: {
+        kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+        tabId: 102,
+        origin: "https://example.com",
+        incognito: true,
+        cookieStoreId: "1-incognito",
+      },
+    })
+  })
+
+  it("keeps current-tab context when content script fails with a non-receiver error and API fallback succeeds", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 107,
+        active: true,
+        url: "https://example.com/dashboard",
+      },
+    ])
+    browserAny.tabs.sendMessage.mockRejectedValueOnce(
+      new Error("content storage failed"),
+    )
+    mockIsMessageReceiverUnavailableError.mockReturnValue(false)
+    mockFetchUserInfo.mockResolvedValueOnce({
+      id: 18,
+      username: "api-after-content-error",
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result.success).toBe(true)
+    expect(result.data).toMatchObject({
+      userId: 18,
+      user: { id: 18, username: "api-after-content-error" },
+      fetchContext: {
+        kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+        tabId: 107,
+        origin: "https://example.com",
+      },
+    })
+  })
+
+  it("falls back when current-tab error classification throws", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 108,
+        active: true,
+        url: "https://example.com/dashboard",
+      },
+    ])
+    browserAny.tabs.sendMessage.mockRejectedValueOnce(
+      new Error("content storage failed"),
+    )
+    mockIsMessageReceiverUnavailableError.mockImplementationOnce(() => {
+      throw new Error("classifier failed")
+    })
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      success: true,
+      data: {
+        userId: 19,
+        user: { id: 19, username: "background-after-classifier-error" },
+        siteTypeHint: SITE_TYPES.NEW_API,
+      },
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result.success).toBe(true)
+    expect(result.data).toMatchObject({
+      userId: 19,
+      user: { id: 19, username: "background-after-classifier-error" },
+    })
+    expect(mockSendRuntimeMessage).toHaveBeenCalledTimes(1)
+  })
+
+  it("falls back when site type resolution fails after current-tab data is found", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 106,
+        active: true,
+        url: "https://example.com/dashboard",
+      },
+    ])
+    mockGetAccountSiteType
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("site type failed"))
+      .mockResolvedValue(SITE_TYPES.NEW_API)
+    mockFetchUserInfo.mockResolvedValueOnce({
+      id: 17,
+      username: "fallback-after-site-type-failure",
+    })
+    browserAny.tabs.sendMessage.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 16,
+        user: { id: 16, username: "content-user" },
+      },
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 17,
+        user: {
+          id: 17,
+          username: "fallback-after-site-type-failure",
+        },
+        siteType: SITE_TYPES.NEW_API,
+        accessToken: undefined,
+        sub2apiAuth: undefined,
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+          tabId: 106,
+          origin: "https://example.com",
+        },
+      },
+    })
+    expect(mockFetchUserInfo).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses the matched current tab id instead of re-querying active tabs", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 101,
+        active: true,
+        url: "https://example.com/dashboard",
+      },
+    ])
+    mockGetActiveTabs.mockResolvedValue([
+      {
+        id: 202,
+        active: true,
+        url: "https://other.example.com/home",
+      },
+    ])
+    browserAny.tabs.sendMessage.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 12,
+        user: { id: 12, username: "alice" },
+      },
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result.success).toBe(true)
+    expect(result.data).toMatchObject({
+      userId: 12,
+      fetchContext: {
+        kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+        tabId: 101,
+      },
+    })
+    expect(browserAny.tabs.sendMessage).toHaveBeenCalledWith(101, {
+      action: expect.any(String),
+      url: "https://example.com/console",
+    })
+    expect(browserAny.tabs.sendMessage).not.toHaveBeenCalledWith(
+      202,
+      expect.anything(),
+    )
+    expect(mockGetActiveTabs).not.toHaveBeenCalled()
   })
 
   it("skips current-tab detection from an AIHubMix console tab and uses the API origin background flow", async () => {
@@ -149,6 +407,7 @@ describe("autoDetectSmart", () => {
         sub2apiAuth: undefined,
       },
     })
+    expect(result.data).not.toHaveProperty("fetchContext")
     expect(browserAny.tabs.sendMessage).not.toHaveBeenCalled()
     expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
       action: expect.any(String),
@@ -188,6 +447,11 @@ describe("autoDetectSmart", () => {
         siteType: SITE_TYPES.AIHUBMIX,
         accessToken: "main-origin-session-token",
         sub2apiAuth: undefined,
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+          tabId: 2,
+          origin: "https://aihubmix.com",
+        },
       },
     })
     expect(browserAny.tabs.sendMessage).toHaveBeenCalledWith(2, {
@@ -252,7 +516,96 @@ describe("autoDetectSmart", () => {
         sub2apiAuth: undefined,
       },
     })
+    expect(result.data).not.toHaveProperty("fetchContext")
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
+  })
+
+  it("uses active incognito tab context for background fallback even when the origin does not match", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 104,
+        active: true,
+        url: "https://other.example.com/profile",
+        incognito: true,
+        cookieStoreId: "1-incognito",
+      },
+    ])
+    mockSendRuntimeMessage.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 89,
+        user: { id: 89, username: "background-incognito-user" },
+        siteTypeHint: SITE_TYPES.NEW_API,
+      },
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result.success).toBe(true)
+    expect(result.data).toMatchObject({
+      userId: 89,
+      siteType: SITE_TYPES.NEW_API,
+      fetchContext: {
+        kind: API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+        incognito: true,
+        cookieStoreId: "1-incognito",
+      },
+    })
+    expect(browserAny.tabs.sendMessage).not.toHaveBeenCalled()
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
+      action: expect.any(String),
+      requestId: expect.any(String),
+      url: "https://example.com/console",
+      useIncognito: true,
+      cookieStoreId: "1-incognito",
+    })
+  })
+
+  it("asks background auto-detect to use incognito when a matching current tab cannot provide content data", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 103,
+        active: true,
+        url: "https://example.com/dashboard",
+        incognito: true,
+        cookieStoreId: "1-incognito",
+      },
+    ])
+    browserAny.tabs.sendMessage.mockResolvedValue({
+      success: false,
+      error: "no local storage user",
+    })
+    mockFetchUserInfo.mockResolvedValue(null)
+    mockSendRuntimeMessage.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 14,
+        user: { id: 14, username: "background-incognito-user" },
+        siteTypeHint: SITE_TYPES.NEW_API,
+      },
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result.success).toBe(true)
+    expect(result.data).toMatchObject({
+      userId: 14,
+      siteType: SITE_TYPES.NEW_API,
+      fetchContext: {
+        kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+        tabId: 103,
+        origin: "https://example.com",
+        incognito: true,
+        cookieStoreId: "1-incognito",
+      },
+    })
+    expect(mockSendRuntimeMessage).toHaveBeenCalledWith({
+      action: expect.any(String),
+      requestId: expect.any(String),
+      url: "https://example.com/console",
+      useIncognito: true,
+      cookieStoreId: "1-incognito",
+    })
   })
 
   it("uses API fallback when background auto-detect cannot return user data", async () => {
@@ -285,6 +638,128 @@ describe("autoDetectSmart", () => {
         siteType: SITE_TYPES.NEW_API,
         accessToken: undefined,
         sub2apiAuth: undefined,
+      },
+    })
+    expect(result.data).not.toHaveProperty("fetchContext")
+  })
+
+  it("falls back to direct detection when background auto-detect throws", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 23,
+        active: true,
+        url: "https://different.example.com/home",
+      },
+    ])
+    mockSendRuntimeMessage.mockRejectedValueOnce(new Error("runtime failed"))
+    mockFetchUserInfo.mockResolvedValueOnce({
+      id: 23,
+      username: "direct-after-runtime-throw",
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 23,
+        user: {
+          id: 23,
+          username: "direct-after-runtime-throw",
+        },
+        siteType: SITE_TYPES.NEW_API,
+        accessToken: undefined,
+        sub2apiAuth: undefined,
+      },
+    })
+    expect(mockFetchUserInfo).toHaveBeenCalledTimes(1)
+  })
+
+  it("falls back to direct detection when API fallback after background data miss throws", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 24,
+        active: true,
+        url: "https://different.example.com/home",
+      },
+    ])
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      success: false,
+      data: undefined,
+    })
+    mockFetchUserInfo
+      .mockRejectedValueOnce(new Error("context api failed"))
+      .mockResolvedValueOnce({
+        id: 24,
+        username: "direct-after-api-throw",
+      })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 24,
+        user: {
+          id: 24,
+          username: "direct-after-api-throw",
+        },
+        siteType: SITE_TYPES.NEW_API,
+        accessToken: undefined,
+        sub2apiAuth: undefined,
+      },
+    })
+    expect(mockFetchUserInfo).toHaveBeenCalledTimes(2)
+  })
+
+  it("keeps active incognito tab context on API fallback after background cannot return user data", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 105,
+        active: true,
+        url: "https://different.example.com/home",
+        incognito: true,
+        cookieStoreId: "1-incognito",
+      },
+    ])
+    mockSendRuntimeMessage.mockResolvedValue({
+      success: false,
+      data: undefined,
+    })
+    mockFetchUserInfo.mockResolvedValue({
+      id: 15,
+      username: "api-incognito-context-user",
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        userId: 15,
+        user: {
+          id: 15,
+          username: "api-incognito-context-user",
+        },
+        siteType: SITE_TYPES.NEW_API,
+        accessToken: undefined,
+        sub2apiAuth: undefined,
+        fetchContext: {
+          kind: API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+          incognito: true,
+          cookieStoreId: "1-incognito",
+        },
+      },
+    })
+    expect(mockFetchUserInfo).toHaveBeenCalledWith({
+      baseUrl: "https://example.com/console",
+      auth: {
+        authType: expect.any(String),
+      },
+      fetchContext: {
+        kind: API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+        incognito: true,
+        cookieStoreId: "1-incognito",
       },
     })
   })
@@ -379,6 +854,7 @@ describe("autoDetectSmart", () => {
         sub2apiAuth: undefined,
       },
     })
+    expect(result.data).not.toHaveProperty("fetchContext")
     expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
   })
 
@@ -410,7 +886,65 @@ describe("autoDetectSmart", () => {
         sub2apiAuth: undefined,
       },
     })
+    expect(result.data).not.toHaveProperty("fetchContext")
     expect(mockFetchUserInfo).toHaveBeenCalledTimes(2)
+  })
+
+  it("falls back to background after current-tab context creation throws", async () => {
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 32,
+        active: true,
+        url: "http://[::1",
+      },
+      {
+        id: 33,
+        active: false,
+        url: "https://different.example.com/home",
+      },
+    ])
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      success: true,
+      data: {
+        userId: 32,
+        user: { id: 32, username: "background-after-current-tab-throw" },
+        siteTypeHint: SITE_TYPES.NEW_API,
+      },
+    })
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result.success).toBe(true)
+    expect(result.data).toMatchObject({
+      userId: 32,
+      user: { id: 32, username: "background-after-current-tab-throw" },
+    })
+    expect(result.data).not.toHaveProperty("fetchContext")
+    expect(browserAny.tabs.sendMessage).not.toHaveBeenCalled()
+    expect(mockSendRuntimeMessage).toHaveBeenCalledTimes(1)
+  })
+
+  it("returns a current-tab reload hint when content and API fallback both fail", async () => {
+    browserAny.runtime = null
+
+    mockGetActiveOrAllTabs.mockResolvedValue([
+      {
+        id: 33,
+        active: true,
+        url: "https://example.com/home",
+      },
+    ])
+    browserAny.tabs.sendMessage.mockRejectedValueOnce(new Error("no receiver"))
+    mockIsMessageReceiverUnavailableError.mockReturnValue(true)
+    mockFetchUserInfo.mockResolvedValue(null)
+
+    const result = await autoDetectSmart("https://example.com/console")
+
+    expect(result).toEqual({
+      success: false,
+      error: "messages:autodetect.currentTabNeedsReload",
+      errorCode: AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE,
+    })
   })
 
   it("falls back to direct detection when browser tab and runtime capabilities are unavailable", async () => {
@@ -449,6 +983,7 @@ describe("autoDetectSmart", () => {
         sub2apiAuth: undefined,
       },
     })
+    expect(result.data).not.toHaveProperty("fetchContext")
     expect(mockGetAccountSiteType).toHaveBeenCalledWith("not a url")
     expect(mockFetchUserInfo).toHaveBeenCalledWith({
       baseUrl: "not a url",
