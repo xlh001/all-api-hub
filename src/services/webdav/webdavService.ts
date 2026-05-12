@@ -299,7 +299,11 @@ export async function downloadBackupRaw(
     },
   })
   if (res.status >= 200 && res.status < 300) {
-    return await res.text()
+    const body = await res.text()
+    if (options.prepareForWrite && body.trim() === "") {
+      throw new WebdavFileNotFoundError()
+    }
+    return body
   }
   if (await isMissingWebdavBackupResponse(res))
     throw new WebdavFileNotFoundError()

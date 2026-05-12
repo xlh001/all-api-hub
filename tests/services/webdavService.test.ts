@@ -227,6 +227,30 @@ describe("webdavService", () => {
       )
     })
 
+    it("treats empty successful prepare-for-write reads as fileNotFound", async () => {
+      mockedUserPreferences.getPreferences.mockResolvedValue(basePrefs)
+      globalAny.fetch
+        .mockResolvedValueOnce({ status: 405 })
+        .mockResolvedValueOnce({
+          status: 200,
+          text: vi.fn().mockResolvedValue(""),
+        })
+
+      const error = await downloadBackup(undefined, {
+        prepareForWrite: true,
+      }).catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(WebdavFileNotFoundError)
+      expect(error.code).toBe(WEBDAV_FILE_NOT_FOUND_ERROR_CODE)
+      expect(globalAny.fetch).toHaveBeenCalledTimes(2)
+      expect((globalAny.fetch.mock.calls[0][1] as RequestInit).method).toBe(
+        "MKCOL",
+      )
+      expect((globalAny.fetch.mock.calls[1][1] as RequestInit).method).toBe(
+        "GET",
+      )
+    })
+
     it("treats Nutstore 409 AncestorsNotFound as fileNotFound", async () => {
       mockedUserPreferences.getPreferences.mockResolvedValue(basePrefs)
       const text = vi
