@@ -153,6 +153,7 @@ Node.js version from `.nvmrc` and pnpm 10+.
 
 - The minimum validation bar is the repo's `pre-commit`-equivalent validation flow when available; if no such flow exists, fall back to `pnpm lint` plus the repo's affected-file or related-test validation command for the touched files.
 - In this repo, the default staged validation entrypoint is `pnpm run validate:staged`; do not treat bare `pnpm lint-staged` as the full pre-commit flow because it skips the separate staged i18n guard.
+- Do not treat standalone Prettier checks as correctness validation. For small scoped commits, run the focused behavioral/type validation needed for the change, stage only task-scoped files, and rely on the pre-commit `validate:staged` hook to apply staged Prettier/ESLint cleanup. Run standalone Prettier only when formatting itself is the task, no commit will be created, a hook failed because of formatting, or a large task-scoped diff needs pre-formatting to reduce review noise; in those cases prefer `prettier --write` over `prettier --check`.
 - Do not treat `pnpm knip` as the default minimum for every task. Add it when changes can affect the module/dependency graph, such as `package.json` or lockfile edits, `knip.ts` edits, file moves/renames/deletions, new or removed exports/barrels, or dynamic wiring changes that may leave dead files, exports, or dependencies behind.
 - When the repo defines a `pre-commit` validation flow, prefer running the equivalent `pre-commit` checks directly without creating a commit instead of assembling a hand-picked validation command set.
 
