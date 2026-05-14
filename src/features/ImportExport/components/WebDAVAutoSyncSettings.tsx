@@ -45,7 +45,7 @@ const logger = createLogger("WebDAVAutoSyncSettings")
  */
 export default function WebDAVAutoSyncSettings() {
   const { t } = useTranslation("importExport")
-  const { preferences, updateWebdavAutoSyncSettings } =
+  const { preferences, updateWebdavAutoSyncSettings, loadPreferences } =
     useUserPreferencesContext()
   const persistedWebdavSettings = preferences.webdav
 
@@ -143,8 +143,9 @@ export default function WebDAVAutoSyncSettings() {
       })
 
       if (response.success) {
-        toast.success(response.message || t("webdav.syncSuccess"))
+        await loadPreferences()
         await loadStatus()
+        toast.success(response.message || t("webdav.syncSuccess"))
       } else {
         toast.error(response.message || t("webdav.syncFailed"))
       }

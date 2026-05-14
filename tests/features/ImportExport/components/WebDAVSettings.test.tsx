@@ -9,7 +9,9 @@ import toast from "react-hot-toast"
 import { I18nextProvider } from "react-i18next"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
+import WebDAVAutoSyncSettings from "~/features/ImportExport/components/WebDAVAutoSyncSettings"
 import WebDAVSettings from "~/features/ImportExport/components/WebDAVSettings"
 import { testI18n } from "~~/tests/test-utils/i18n"
 import {
@@ -34,6 +36,7 @@ const {
   mockTestWebdavConnection,
   mockUploadBackup,
   mockImportFromBackupObject,
+  mockSendRuntimeMessage,
   loggerMocks,
 } = vi.hoisted(() => ({
   mockApplyPreferenceLanguage: vi.fn(),
@@ -58,6 +61,7 @@ const {
   mockTestWebdavConnection: vi.fn(),
   mockUploadBackup: vi.fn(),
   mockImportFromBackupObject: vi.fn(),
+  mockSendRuntimeMessage: vi.fn(),
   loggerMocks: {
     error: vi.fn(),
     info: vi.fn(),
@@ -134,6 +138,10 @@ vi.mock("~/services/webdav/webdavService", () => ({
   uploadBackup: mockUploadBackup,
 }))
 
+vi.mock("~/utils/browser/browserApi", () => ({
+  sendRuntimeMessage: mockSendRuntimeMessage,
+}))
+
 vi.mock("~/features/ImportExport/utils", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("~/features/ImportExport/utils")>()
@@ -162,7 +170,7 @@ const ENCRYPTED_BACKUP_ENVELOPE = {
 describe("WebDAVSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    setupMockPreferencePersistence(
+    const preferencePersistence = setupMockPreferencePersistence(
       mockUserPreferences,
       createPersistedPreferencesFixture({
         showTodayCashflow: true,
@@ -180,6 +188,22 @@ describe("WebDAVSettings", () => {
           },
         },
       }),
+    )
+    const savePreferencesWithResult =
+      mockUserPreferences.savePreferencesWithResult.getMockImplementation()
+    mockUserPreferences.savePreferencesWithResult.mockImplementation(
+      async (updates, options) => {
+        const expectedLastUpdated = options?.expectedLastUpdated
+        if (
+          typeof expectedLastUpdated === "number" &&
+          preferencePersistence.getPersistedPreferences().lastUpdated !==
+            expectedLastUpdated
+        ) {
+          return null
+        }
+
+        return await savePreferencesWithResult?.(updates, options)
+      },
     )
     mockUserPreferences.getLanguage.mockResolvedValue("ja")
     mockUserPreferences.exportPreferences.mockResolvedValue({
@@ -202,6 +226,31 @@ describe("WebDAVSettings", () => {
     mockDecryptWebdavBackupEnvelope.mockResolvedValue('{"version":2}')
     mockTestWebdavConnection.mockResolvedValue(undefined)
     mockUploadBackup.mockResolvedValue(undefined)
+    mockSendRuntimeMessage.mockImplementation(async (message: any) => {
+      switch (message.action) {
+        case RuntimeActionIds.WebdavAutoSyncGetStatus:
+          return {
+            success: true,
+            data: {
+              isSyncing: false,
+              lastSyncTime: 0,
+              lastSyncStatus: "idle",
+              lastSyncError: null,
+            },
+          }
+        case RuntimeActionIds.WebdavAutoSyncSyncNow: {
+          const latestPreferences =
+            preferencePersistence.getPersistedPreferences()
+          preferencePersistence.setPersistedPreferences({
+            ...latestPreferences,
+            lastUpdated: latestPreferences.lastUpdated + 1,
+          })
+          return { success: true, message: "custom sync ok" }
+        }
+        default:
+          return { success: true }
+      }
+    })
   })
 
   it("loads settings, saves config, tests the connection, and uploads a merged backup", async () => {
@@ -272,6 +321,46 @@ describe("WebDAVSettings", () => {
     })
     expect(toast.success).toHaveBeenCalledWith(
       "importExport:export.dataExported",
+    )
+  })
+
+  it("refreshes preferences after immediate auto-sync so manual WebDAV actions keep working", async () => {
+    render(
+      <>
+        <WebDAVSettings />
+        <WebDAVAutoSyncSettings />
+      </>,
+    )
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "importExport:webdav.autoSync.syncNow",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith("custom sync ok")
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.testConnection",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockTestWebdavConnection).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: "https://dav.example.com/backup.json",
+          username: "alice",
+          password: "pw",
+        }),
+      )
+    })
+    expect(toast.success).toHaveBeenCalledWith(
+      "importExport:webdav.testSuccess",
     )
   })
 
@@ -421,6 +510,9 @@ describe("WebDAVSettings", () => {
     render(<WebDAVSettings />)
 
     expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+    fireEvent.change(screen.getByDisplayValue("alice"), {
+      target: { value: "bob" },
+    })
 
     fireEvent.click(
       screen.getByRole("button", {

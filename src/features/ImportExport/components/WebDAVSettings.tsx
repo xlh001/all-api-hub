@@ -131,6 +131,7 @@ export default function WebDAVSettings() {
   const {
     draft: localConfig,
     setDraft: setLocalConfig,
+    isDirty: webdavConfigDirty,
     expectedLastUpdated,
   } = usePreferenceDraft({
     savedValue: savedConfig,
@@ -206,8 +207,13 @@ export default function WebDAVSettings() {
     updates: Partial<WebDAVSettings> = webdavConfig,
     options?: {
       expectedLastUpdated?: number
+      force?: boolean
     },
   ) => {
+    if (!options?.force && updates === webdavConfig && !webdavConfigDirty) {
+      return
+    }
+
     const success = await updateWebdavSettings(updates, {
       expectedLastUpdated: options?.expectedLastUpdated ?? expectedLastUpdated,
     })
@@ -219,7 +225,7 @@ export default function WebDAVSettings() {
   const handleSaveConfig = async () => {
     setSaving(true)
     try {
-      await persistWebdavConfig()
+      await persistWebdavConfig(webdavConfig, { force: true })
       toast.success(t("settings:messages.updateSuccess"))
     } catch (e) {
       logger.error("Failed to save WebDAV settings", e)
