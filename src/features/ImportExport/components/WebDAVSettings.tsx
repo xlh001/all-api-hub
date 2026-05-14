@@ -636,13 +636,16 @@ export default function WebDAVSettings() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <BodySmall className="m-0 text-gray-600 sm:col-span-2 lg:col-span-4 dark:text-gray-400">
-              {t(
+            <Alert
+              compact
+              variant={webdavConfigDirty ? "warning" : "info"}
+              description={t(
                 webdavConfigDirty
                   ? "webdav.actionState.unsaved"
                   : "webdav.actionState.saved",
               )}
-            </BodySmall>
+              className="sm:col-span-2 lg:col-span-4"
+            />
 
             {/* 保存配置 */}
             <Button

@@ -370,7 +370,15 @@ describe("WebDAVSettings", () => {
     render(<WebDAVSettings />)
 
     expect(
-      await screen.findByText("importExport:webdav.actionState.saved"),
+      (
+        await screen.findByText("importExport:webdav.actionState.saved")
+      ).closest('[role="alert"]'),
+    ).toBeInTheDocument()
+    expect(
+      screen
+        .getByText("importExport:webdav.actionState.saved")
+        .closest('[role="alert"]')
+        ?.querySelector("svg"),
     ).toBeInTheDocument()
     expect(
       screen.getByRole("button", {
@@ -383,7 +391,15 @@ describe("WebDAVSettings", () => {
     })
 
     expect(
-      await screen.findByText("importExport:webdav.actionState.unsaved"),
+      (
+        await screen.findByText("importExport:webdav.actionState.unsaved")
+      ).closest('[role="alert"]'),
+    ).toBeInTheDocument()
+    expect(
+      screen
+        .getByText("importExport:webdav.actionState.unsaved")
+        .closest('[role="alert"]')
+        ?.querySelector("svg"),
     ).toBeInTheDocument()
     expect(
       screen.getByRole("button", {

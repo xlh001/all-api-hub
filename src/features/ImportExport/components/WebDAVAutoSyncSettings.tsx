@@ -9,8 +9,8 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import {
+  Alert,
   Badge,
-  BodySmall,
   Button,
   Card,
   CardContent,
@@ -319,13 +319,16 @@ export default function WebDAVAutoSyncSettings() {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-3">
-          <BodySmall className="m-0 basis-full text-gray-600 dark:text-gray-400">
-            {t(
+          <Alert
+            compact
+            variant={autoSyncConfigDirty ? "warning" : "info"}
+            description={t(
               autoSyncConfigDirty
                 ? "webdav.autoSync.actionState.unsaved"
                 : "webdav.autoSync.actionState.saved",
             )}
-          </BodySmall>
+            className="basis-full"
+          />
 
           <Button
             id={WEBDAV_AUTO_SYNC_TARGET_IDS.saveSettings}

@@ -309,16 +309,26 @@ describe("WebDAVAutoSyncSettings", () => {
     const syncIntervalInput = await screen.findByDisplayValue("1800")
 
     expect(
-      screen.getByText("importExport:webdav.autoSync.actionState.saved"),
+      screen
+        .getByText("importExport:webdav.autoSync.actionState.saved")
+        .closest('[role="alert"]'),
+    ).toBeInTheDocument()
+    expect(
+      screen
+        .getByText("importExport:webdav.autoSync.actionState.saved")
+        .closest('[role="alert"]')
+        ?.querySelector("svg"),
     ).toBeInTheDocument()
 
     await user.clear(syncIntervalInput)
     await user.type(syncIntervalInput, "900")
 
     expect(
-      await screen.findByText(
-        "importExport:webdav.autoSync.actionState.unsaved",
-      ),
+      (
+        await screen.findByText(
+          "importExport:webdav.autoSync.actionState.unsaved",
+        )
+      ).closest('[role="alert"]'),
     ).toBeInTheDocument()
     expect(
       screen.getByRole("button", {
