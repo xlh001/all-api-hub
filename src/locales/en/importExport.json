@@ -24,7 +24,7 @@
     "dataPreview": "Data Preview",
     "dataValid": "Data format is correct",
     "description": "Restore data from a backup file",
-    "downloadImportFailed": "Download/Import failed",
+    "downloadImportFailed": "Import from WebDAV failed",
     "formatError": "Data format error, please check JSON format",
     "formatNotCorrect": "Data format not correct",
     "importFailed": "Import failed: {{error}}",
@@ -45,8 +45,8 @@
   "title": "Import/Export",
   "webdav": {
     "actionState": {
-      "saved": "Configuration is saved. Test, upload, and download/import use the currently saved configuration.",
-      "unsaved": "Configuration has unsaved changes. Test connection, upload sync data, and download/import will save these changes first."
+      "saved": "Configuration is saved. Test connection, upload to WebDAV, and import from WebDAV use the currently saved configuration.",
+      "unsaved": "Configuration has unsaved changes. Test connection, upload to WebDAV, and import from WebDAV will save these changes first."
     },
     "autoSync": {
       "actionState": {
@@ -70,8 +70,8 @@
       "title": "WebDAV Auto Sync"
     },
     "configDesc": "Configure WebDAV to sync shared data. Some device-local settings stay on this device and are not uploaded or overwritten.",
-    "downloadImport": "Download and Import Shared Data",
-    "downloadImportWithSave": "Save and Download/Import",
+    "downloadImport": "Import from WebDAV",
+    "downloadImportWithSave": "Save and Import from WebDAV",
     "encryption": {
       "decryptAction": "Decrypt and import",
       "decryptDialogDesc": "This WebDAV sync data is encrypted. Try a password to import it.",
@@ -113,8 +113,10 @@
     "testFailed": "Connection test failed",
     "testSuccess": "Connection test successful",
     "title": "WebDAV Sync",
-    "uploadBackup": "Upload Sync Data",
-    "uploadBackupWithSave": "Save and Upload Sync Data",
+    "uploadBackup": "Upload to WebDAV",
+    "uploadBackupWithSave": "Save and Upload to WebDAV",
+    "uploadFailed": "Upload to WebDAV failed",
+    "uploadSuccess": "Uploaded to WebDAV",
     "username": "Username",
     "webdavUrl": "Webdav URL",
     "webdavUrlExample": "For example: https://dav.example.com/{{filename}} full file URL or Webdav root directory URL"

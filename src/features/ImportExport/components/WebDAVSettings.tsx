@@ -312,13 +312,13 @@ export default function WebDAVSettings() {
       })
 
       await uploadBackup(JSON.stringify(payload, null, 2), webdavConfig)
-      toast.success(t("export.dataExported"))
+      toast.success(t("webdav.uploadSuccess"))
     } catch (e: any) {
       logger.error("Failed to upload backup to WebDAV", e)
       toast.error(
         e instanceof PersistWebdavConfigError
-          ? t("export.exportFailed")
-          : e?.message || t("export.exportFailed"),
+          ? t("webdav.uploadFailed")
+          : e?.message || t("webdav.uploadFailed"),
       )
     } finally {
       setUploading(false)

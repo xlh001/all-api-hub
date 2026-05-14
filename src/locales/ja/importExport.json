@@ -24,7 +24,7 @@
     "dataPreview": "データプレビュー",
     "dataValid": "データ形式は正しいです",
     "description": "バックアップファイルからデータを復元します",
-    "downloadImportFailed": "ダウンロード / インポートに失敗しました",
+    "downloadImportFailed": "WebDAV からのインポートに失敗しました",
     "formatError": "データ形式エラーです。JSON 形式を確認してください",
     "formatNotCorrect": "データ形式が正しくありません",
     "importFailed": "インポートに失敗しました: {{error}}",
@@ -45,8 +45,8 @@
   "title": "インポート / エクスポート",
   "webdav": {
     "actionState": {
-      "saved": "設定は保存済みです。接続テスト、アップロード、ダウンロード / インポートは現在保存済みの設定を使用します。",
-      "unsaved": "設定に未保存の変更があります。接続テスト、同期データのアップロード、ダウンロード / インポートは、先にこれらの変更を保存します。"
+      "saved": "設定は保存済みです。接続テスト、WebDAV へのアップロード、WebDAV からのインポートは現在保存済みの設定を使用します。",
+      "unsaved": "設定に未保存の変更があります。接続テスト、WebDAV へのアップロード、WebDAV からのインポートでは、先にこれらの変更を保存します。"
     },
     "autoSync": {
       "actionState": {
@@ -70,8 +70,8 @@
       "title": "WebDAV 自動同期"
     },
     "configDesc": "共有データを同期するための WebDAV を設定します。一部の端末ローカル設定はこの端末に残り、アップロードも上書きもされません。",
-    "downloadImport": "共有データをダウンロードしてインポート",
-    "downloadImportWithSave": "保存してダウンロード / インポート",
+    "downloadImport": "WebDAV からインポート",
+    "downloadImportWithSave": "保存して WebDAV からインポート",
     "encryption": {
       "decryptAction": "復号してインポート",
       "decryptDialogDesc": "この WebDAV 同期データは暗号化されています。パスワードを入力してインポートを試してください。",
@@ -113,8 +113,10 @@
     "testFailed": "接続テストに失敗しました",
     "testSuccess": "接続テストに成功しました",
     "title": "WebDAV 同期",
-    "uploadBackup": "同期データをアップロード",
-    "uploadBackupWithSave": "保存して同期データをアップロード",
+    "uploadBackup": "WebDAV にアップロード",
+    "uploadBackupWithSave": "保存して WebDAV にアップロード",
+    "uploadFailed": "WebDAV へのアップロードに失敗しました",
+    "uploadSuccess": "WebDAV にアップロードしました",
     "username": "ユーザー名",
     "webdavUrl": "WebDAV URL",
     "webdavUrlExample": "例: https://dav.example.com/{{filename}} の完全ファイル URL、または WebDAV ルートディレクトリ URL"

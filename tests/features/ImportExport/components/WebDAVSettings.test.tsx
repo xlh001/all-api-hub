@@ -322,7 +322,7 @@ describe("WebDAVSettings", () => {
       expect(mockUploadBackup).toHaveBeenCalled()
     })
     expect(toast.success).toHaveBeenCalledWith(
-      "importExport:export.dataExported",
+      "importExport:webdav.uploadSuccess",
     )
   })
 
@@ -570,6 +570,26 @@ describe("WebDAVSettings", () => {
     expect(mockTestWebdavConnection).not.toHaveBeenCalled()
   })
 
+  it("shows the action-specific upload failure message when persisting settings fails", async () => {
+    mockUserPreferences.savePreferencesWithResult.mockResolvedValue(null)
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+    fireEvent.change(screen.getByDisplayValue("alice"), {
+      target: { value: "bob" },
+    })
+
+    clickWebdavAction("webdav-upload-backup")
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "importExport:webdav.uploadFailed",
+      )
+    })
+    expect(mockUploadBackup).not.toHaveBeenCalled()
+  })
+
   it("blocks download/import when the sync-data selection is empty", async () => {
     render(<WebDAVSettings />)
 
@@ -612,7 +632,7 @@ describe("WebDAVSettings", () => {
       expect(mockUploadBackup).toHaveBeenCalled()
     })
     expect(toast.success).toHaveBeenCalledWith(
-      "importExport:export.dataExported",
+      "importExport:webdav.uploadSuccess",
     )
   })
 

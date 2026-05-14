@@ -24,7 +24,7 @@
     "dataPreview": "数据预览",
     "dataValid": "数据格式正确",
     "description": "从备份文件恢复数据",
-    "downloadImportFailed": "下载/导入失败",
+    "downloadImportFailed": "从 WebDAV 导入失败",
     "formatError": "数据格式错误，请检查JSON格式",
     "formatNotCorrect": "数据格式不正确",
     "importFailed": "导入失败: {{error}}",
@@ -45,8 +45,8 @@
   "title": "导入/导出",
   "webdav": {
     "actionState": {
-      "saved": "配置已保存。测试、上传和下载导入会使用当前已保存配置。",
-      "unsaved": "配置有未保存更改。测试连接、上传同步数据和下载导入会先保存这些更改。"
+      "saved": "配置已保存。测试连接、上传到 WebDAV 和从 WebDAV 导入会使用当前已保存配置。",
+      "unsaved": "配置有未保存更改。测试连接、上传到 WebDAV 和从 WebDAV 导入会先保存这些更改。"
     },
     "autoSync": {
       "actionState": {
@@ -70,8 +70,8 @@
       "title": "WebDAV 自动同步"
     },
     "configDesc": "配置 WebDAV 以同步共享数据。部分设备本地设置不会上传，也不会被远端覆盖。",
-    "downloadImport": "下载并导入共享数据",
-    "downloadImportWithSave": "保存并下载导入",
+    "downloadImport": "从 WebDAV 导入",
+    "downloadImportWithSave": "保存并从 WebDAV 导入",
     "encryption": {
       "decryptAction": "解密并导入",
       "decryptDialogDesc": "该 WebDAV 同步数据已加密，请尝试输入密码进行导入。",
@@ -113,8 +113,10 @@
     "testFailed": "测试连接失败",
     "testSuccess": "测试连接成功",
     "title": "WebDAV 同步",
-    "uploadBackup": "上传同步数据",
-    "uploadBackupWithSave": "保存并上传同步数据",
+    "uploadBackup": "上传到 WebDAV",
+    "uploadBackupWithSave": "保存并上传到 WebDAV",
+    "uploadFailed": "上传到 WebDAV 失败",
+    "uploadSuccess": "已上传到 WebDAV",
     "username": "用户名",
     "webdavUrl": "Webdav 地址",
     "webdavUrlExample": "例如：https://dav.example.com/{{filename}} 完整文件 URL或Webdav 根目录 URL"
