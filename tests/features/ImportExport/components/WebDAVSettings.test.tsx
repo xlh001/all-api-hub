@@ -542,9 +542,7 @@ describe("WebDAVSettings", () => {
     )
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        "settings:messages.saveSettingsFailed",
-      )
+      expect(toast.error).toHaveBeenCalledWith("settings:messages.updateFailed")
     })
     expect(loggerMocks.error).toHaveBeenCalledWith(
       "Failed to save WebDAV settings",

@@ -124,14 +124,28 @@ export default function WebDAVAutoSyncSettings() {
       )
 
       if (response.success) {
-        toast.success(t("settings:messages.updateSuccess"))
+        toast.success(
+          t("settings:messages.updateSuccess", {
+            name: t("webdav.autoSync.title"),
+          }),
+        )
         await loadStatus()
       } else {
-        toast.error(response.error || t("settings:messages.updateFailed"))
+        toast.error(
+          response.error ||
+            t("settings:messages.updateFailed", {
+              name: t("webdav.autoSync.title"),
+            }),
+        )
       }
     } catch (error: any) {
       logger.error("Failed to update auto-sync settings", error)
-      toast.error(error?.message || t("settings:messages.updateFailed"))
+      toast.error(
+        error?.message ||
+          t("settings:messages.updateFailed", {
+            name: t("webdav.autoSync.title"),
+          }),
+      )
     } finally {
       setSavingSettings(false)
     }

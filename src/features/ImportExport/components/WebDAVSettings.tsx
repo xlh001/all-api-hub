@@ -226,10 +226,18 @@ export default function WebDAVSettings() {
     setSaving(true)
     try {
       await persistWebdavConfig(webdavConfig, { force: true })
-      toast.success(t("settings:messages.updateSuccess"))
+      toast.success(
+        t("settings:messages.updateSuccess", {
+          name: t("webdav.title"),
+        }),
+      )
     } catch (e) {
       logger.error("Failed to save WebDAV settings", e)
-      toast.error(t("settings:messages.saveSettingsFailed"))
+      toast.error(
+        t("settings:messages.updateFailed", {
+          name: t("webdav.title"),
+        }),
+      )
     } finally {
       setSaving(false)
     }
