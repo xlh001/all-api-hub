@@ -44,7 +44,15 @@
   },
   "title": "Import/Export",
   "webdav": {
+    "actionState": {
+      "saved": "Configuration is saved. Test, upload, and download/import use the currently saved configuration.",
+      "unsaved": "Configuration has unsaved changes. Test connection, upload sync data, and download/import will save these changes first."
+    },
     "autoSync": {
+      "actionState": {
+        "saved": "Sync Now uses the saved WebDAV and auto-sync settings.",
+        "unsaved": "Auto-sync settings have unsaved changes. Sync Now will not use them; save the auto-sync settings first."
+      },
       "description": "Configure automatic sync for shared data. Device-local settings stay on the current device.",
       "enable": "Enable auto sync",
       "enableDesc": "When enabled, shared data will be synchronized to WebDAV at set intervals.",
@@ -63,6 +71,7 @@
     },
     "configDesc": "Configure WebDAV to sync shared data. Some device-local settings stay on this device and are not uploaded or overwritten.",
     "downloadImport": "Download and Import Shared Data",
+    "downloadImportWithSave": "Save and Download/Import",
     "encryption": {
       "decryptAction": "Decrypt and import",
       "decryptDialogDesc": "This WebDAV sync data is encrypted. Try a password to import it.",
@@ -100,10 +109,12 @@
     "syncing": "Syncing",
     "syncSuccess": "Sync successful",
     "testConnection": "Test Connection",
+    "testConnectionWithSave": "Save and Test Connection",
     "testFailed": "Connection test failed",
     "testSuccess": "Connection test successful",
     "title": "WebDAV Sync",
     "uploadBackup": "Upload Sync Data",
+    "uploadBackupWithSave": "Save and Upload Sync Data",
     "username": "Username",
     "webdavUrl": "Webdav URL",
     "webdavUrlExample": "For example: https://dav.example.com/{{filename}} full file URL or Webdav root directory URL"

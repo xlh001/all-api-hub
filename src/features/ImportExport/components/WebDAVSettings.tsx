@@ -636,6 +636,14 @@ export default function WebDAVSettings() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <BodySmall className="m-0 text-gray-600 sm:col-span-2 lg:col-span-4 dark:text-gray-400">
+              {t(
+                webdavConfigDirty
+                  ? "webdav.actionState.unsaved"
+                  : "webdav.actionState.saved",
+              )}
+            </BodySmall>
+
             {/* 保存配置 */}
             <Button
               id={WEBDAV_TARGET_IDS.saveConfig}
@@ -661,7 +669,11 @@ export default function WebDAVSettings() {
             >
               {testing
                 ? t("common:status.testing")
-                : t("webdav.testConnection")}
+                : t(
+                    webdavConfigDirty
+                      ? "webdav.testConnectionWithSave"
+                      : "webdav.testConnection",
+                  )}
             </Button>
 
             {/* 上传备份 */}
@@ -676,7 +688,11 @@ export default function WebDAVSettings() {
             >
               {uploading
                 ? t("common:status.uploading")
-                : t("webdav.uploadBackup")}
+                : t(
+                    webdavConfigDirty
+                      ? "webdav.uploadBackupWithSave"
+                      : "webdav.uploadBackup",
+                  )}
             </Button>
 
             {/* 下载并导入 */}
@@ -691,7 +707,11 @@ export default function WebDAVSettings() {
             >
               {downloading
                 ? t("common:status.processing")
-                : t("webdav.downloadImport")}
+                : t(
+                    webdavConfigDirty
+                      ? "webdav.downloadImportWithSave"
+                      : "webdav.downloadImport",
+                  )}
             </Button>
           </div>
         </CardContent>

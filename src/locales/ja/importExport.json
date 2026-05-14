@@ -44,7 +44,15 @@
   },
   "title": "インポート / エクスポート",
   "webdav": {
+    "actionState": {
+      "saved": "設定は保存済みです。接続テスト、アップロード、ダウンロード / インポートは現在保存済みの設定を使用します。",
+      "unsaved": "設定に未保存の変更があります。接続テスト、同期データのアップロード、ダウンロード / インポートは、先にこれらの変更を保存します。"
+    },
     "autoSync": {
+      "actionState": {
+        "saved": "今すぐ同期は、保存済みの WebDAV 設定と自動同期設定を使用します。",
+        "unsaved": "自動同期設定に未保存の変更があります。今すぐ同期ではこれらの変更は使用されません。先に自動同期設定を保存してください。"
+      },
       "description": "共有データの自動同期を設定します。端末ローカル設定は現在の端末に残ります。",
       "enable": "自動同期を有効化",
       "enableDesc": "有効にすると、共有データが設定した間隔で WebDAV に同期されます。",
@@ -63,6 +71,7 @@
     },
     "configDesc": "共有データを同期するための WebDAV を設定します。一部の端末ローカル設定はこの端末に残り、アップロードも上書きもされません。",
     "downloadImport": "共有データをダウンロードしてインポート",
+    "downloadImportWithSave": "保存してダウンロード / インポート",
     "encryption": {
       "decryptAction": "復号してインポート",
       "decryptDialogDesc": "この WebDAV 同期データは暗号化されています。パスワードを入力してインポートを試してください。",
@@ -100,10 +109,12 @@
     "syncing": "同期中",
     "syncSuccess": "同期に成功しました",
     "testConnection": "接続テスト",
+    "testConnectionWithSave": "保存して接続テスト",
     "testFailed": "接続テストに失敗しました",
     "testSuccess": "接続テストに成功しました",
     "title": "WebDAV 同期",
     "uploadBackup": "同期データをアップロード",
+    "uploadBackupWithSave": "保存して同期データをアップロード",
     "username": "ユーザー名",
     "webdavUrl": "WebDAV URL",
     "webdavUrlExample": "例: https://dav.example.com/{{filename}} の完全ファイル URL、または WebDAV ルートディレクトリ URL"

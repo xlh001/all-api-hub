@@ -44,7 +44,15 @@
   },
   "title": "匯入/匯出",
   "webdav": {
+    "actionState": {
+      "saved": "配置已儲存。測試、上傳和下載匯入會使用目前已儲存配置。",
+      "unsaved": "配置有未儲存變更。測試連線、上傳同步資料和下載匯入會先儲存這些變更。"
+    },
     "autoSync": {
+      "actionState": {
+        "saved": "立即同步會使用已儲存的 WebDAV 和自動同步設定。",
+        "unsaved": "自動同步設定有未儲存變更。立即同步不會使用這些變更，請先儲存自動同步設定。"
+      },
       "description": "配置自動同步共享資料；裝置本地設定仍保留在當前裝置。",
       "enable": "啟用自動同步",
       "enableDesc": "開啟後將按設定間隔自動與 WebDAV 同步共享資料。",
@@ -63,6 +71,7 @@
     },
     "configDesc": "配置 WebDAV 以同步共享資料。部分裝置本地設定不會上傳，也不會被遠端覆蓋。",
     "downloadImport": "下載並匯入共享資料",
+    "downloadImportWithSave": "儲存並下載匯入",
     "encryption": {
       "decryptAction": "解密並匯入",
       "decryptDialogDesc": "該 WebDAV 同步資料已加密，請嘗試輸入密碼進行匯入。",
@@ -100,10 +109,12 @@
     "syncing": "同步中",
     "syncSuccess": "同步成功",
     "testConnection": "測試連線",
+    "testConnectionWithSave": "儲存並測試連線",
     "testFailed": "測試連線失敗",
     "testSuccess": "測試連線成功",
     "title": "WebDAV 同步",
     "uploadBackup": "上傳同步資料",
+    "uploadBackupWithSave": "儲存並上傳同步資料",
     "username": "使用者名稱",
     "webdavUrl": "Webdav 地址",
     "webdavUrlExample": "例如：https://dav.example.com/{{filename}} 完整檔案 URL或Webdav 根目錄 URL"

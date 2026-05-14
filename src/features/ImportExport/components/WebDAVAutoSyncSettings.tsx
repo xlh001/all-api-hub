@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next"
 
 import {
   Badge,
+  BodySmall,
   Button,
   Card,
   CardContent,
@@ -65,6 +66,7 @@ export default function WebDAVAutoSyncSettings() {
   const {
     draft: localConfig,
     setDraft: setLocalConfig,
+    isDirty: autoSyncConfigDirty,
     expectedLastUpdated,
   } = usePreferenceDraft({
     savedValue: savedConfig,
@@ -316,7 +318,15 @@ export default function WebDAVAutoSyncSettings() {
         )}
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <BodySmall className="m-0 basis-full text-gray-600 dark:text-gray-400">
+            {t(
+              autoSyncConfigDirty
+                ? "webdav.autoSync.actionState.unsaved"
+                : "webdav.autoSync.actionState.saved",
+            )}
+          </BodySmall>
+
           <Button
             id={WEBDAV_AUTO_SYNC_TARGET_IDS.saveSettings}
             onClick={handleSaveSettings}

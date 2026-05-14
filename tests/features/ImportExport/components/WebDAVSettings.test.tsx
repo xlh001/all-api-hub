@@ -167,6 +167,10 @@ const ENCRYPTED_BACKUP_ENVELOPE = {
   ciphertext: "cipher",
 } as const
 
+function clickWebdavAction(actionId: string) {
+  fireEvent.click(document.getElementById(actionId) as HTMLButtonElement)
+}
+
 describe("WebDAVSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -312,9 +316,7 @@ describe("WebDAVSettings", () => {
       "importExport:webdav.testSuccess",
     )
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "importExport:webdav.uploadBackup" }),
-    )
+    clickWebdavAction("webdav-upload-backup")
     await waitFor(() => {
       expect(mockMergeWebdavBackupPayloadBySelection).toHaveBeenCalled()
       expect(mockUploadBackup).toHaveBeenCalled()
@@ -364,6 +366,42 @@ describe("WebDAVSettings", () => {
     )
   })
 
+  it("explains when manual WebDAV actions will save draft changes first", async () => {
+    render(<WebDAVSettings />)
+
+    expect(
+      await screen.findByText("importExport:webdav.actionState.saved"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "importExport:webdav.testConnection",
+      }),
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByDisplayValue("alice"), {
+      target: { value: "bob" },
+    })
+
+    expect(
+      await screen.findByText("importExport:webdav.actionState.unsaved"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "importExport:webdav.testConnectionWithSave",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "importExport:webdav.uploadBackupWithSave",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "importExport:webdav.downloadImportWithSave",
+      }),
+    ).toBeInTheDocument()
+  })
+
   it("blocks upload when the sync-data selection is empty", async () => {
     render(<WebDAVSettings />)
 
@@ -374,9 +412,7 @@ describe("WebDAVSettings", () => {
       .slice(0, 4)
       .forEach((checkbox) => fireEvent.click(checkbox))
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "importExport:webdav.uploadBackup" }),
-    )
+    clickWebdavAction("webdav-upload-backup")
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
@@ -399,11 +435,7 @@ describe("WebDAVSettings", () => {
     fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
       target: { value: "" },
     })
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     expect(
       await screen.findByText(
@@ -514,11 +546,7 @@ describe("WebDAVSettings", () => {
       target: { value: "bob" },
     })
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.testConnection",
-      }),
-    )
+    clickWebdavAction("webdav-test-connection")
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("importExport:webdav.testFailed")
@@ -536,11 +564,7 @@ describe("WebDAVSettings", () => {
       .slice(0, 4)
       .forEach((checkbox) => fireEvent.click(checkbox))
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
@@ -561,9 +585,7 @@ describe("WebDAVSettings", () => {
 
     expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "importExport:webdav.uploadBackup" }),
-    )
+    clickWebdavAction("webdav-upload-backup")
 
     await waitFor(() => {
       expect(mockMergeWebdavBackupPayloadBySelection).toHaveBeenCalledWith(
@@ -587,9 +609,7 @@ describe("WebDAVSettings", () => {
 
     expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "importExport:webdav.uploadBackup" }),
-    )
+    clickWebdavAction("webdav-upload-backup")
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("download failed")
@@ -604,11 +624,7 @@ describe("WebDAVSettings", () => {
 
     expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     await waitFor(() => {
       expect(mockBuildWebdavImportPayloadBySelection).toHaveBeenCalledWith(
@@ -642,11 +658,7 @@ describe("WebDAVSettings", () => {
 
     expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("import failed")
@@ -666,11 +678,7 @@ describe("WebDAVSettings", () => {
 
     expect(await screen.findByDisplayValue("stored-secret")).toBeInTheDocument()
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     await waitFor(() => {
       expect(document.getElementById("decryptPassword")).toBeTruthy()
@@ -709,11 +717,7 @@ describe("WebDAVSettings", () => {
     fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
       target: { value: "" },
     })
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     await waitFor(() => {
       expect(document.getElementById("decryptPassword")).toBeTruthy()
@@ -759,11 +763,7 @@ describe("WebDAVSettings", () => {
     fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
       target: { value: "" },
     })
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     await waitFor(() => {
       expect(document.getElementById("decryptPassword")).toBeTruthy()
@@ -810,11 +810,7 @@ describe("WebDAVSettings", () => {
     fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
       target: { value: "" },
     })
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     await waitFor(() => {
       expect(document.getElementById("decryptPassword")).toBeTruthy()
@@ -872,11 +868,7 @@ describe("WebDAVSettings", () => {
     fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
       target: { value: "" },
     })
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     await waitFor(() => {
       expect(document.getElementById("decryptPassword")).toBeTruthy()
@@ -952,11 +944,7 @@ describe("WebDAVSettings", () => {
       target: { value: "" },
     })
     fireEvent.click(screen.getByRole("switch"))
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "importExport:webdav.downloadImport",
-      }),
-    )
+    clickWebdavAction("webdav-download-import")
 
     expect(
       await screen.findByText(

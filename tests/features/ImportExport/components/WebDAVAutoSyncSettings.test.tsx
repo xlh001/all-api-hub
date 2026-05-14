@@ -300,4 +300,30 @@ describe("WebDAVAutoSyncSettings", () => {
       })
     })
   })
+
+  it("explains that sync now uses saved auto-sync settings when the draft is dirty", async () => {
+    const user = userEvent.setup()
+
+    render(<WebDAVAutoSyncSettings />)
+
+    const syncIntervalInput = await screen.findByDisplayValue("1800")
+
+    expect(
+      screen.getByText("importExport:webdav.autoSync.actionState.saved"),
+    ).toBeInTheDocument()
+
+    await user.clear(syncIntervalInput)
+    await user.type(syncIntervalInput, "900")
+
+    expect(
+      await screen.findByText(
+        "importExport:webdav.autoSync.actionState.unsaved",
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "importExport:webdav.autoSync.syncNow",
+      }),
+    ).toBeInTheDocument()
+  })
 })
