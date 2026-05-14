@@ -3,6 +3,17 @@ import {
   userPreferences,
   type UserPreferences,
 } from "~/services/preferences/userPreferences"
+import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
+import {
+  PRODUCT_ANALYTICS_ACTION_IDS,
+  PRODUCT_ANALYTICS_ENTRYPOINTS,
+  PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FEATURE_IDS,
+  PRODUCT_ANALYTICS_RESULTS,
+  PRODUCT_ANALYTICS_SURFACE_IDS,
+  type ProductAnalyticsErrorCategory,
+  type ProductAnalyticsResult,
+} from "~/services/productAnalytics/events"
 import { createLogger } from "~/utils/core/logger"
 
 /**
@@ -20,11 +31,52 @@ const handleContextMenuClick = async (info: any, tab: any) => {
 
   const selectionText = (info.selectionText || "").trim()
   const pageUrl = info.pageUrl || tab.url || ""
+  const isRedemptionMenu = info.menuItemId === REDEMPTION_MENU_ID
+  const isApiCheckMenu = info.menuItemId === API_CHECK_MENU_ID
+  const tracker = isRedemptionMenu
+    ? startProductAnalyticsAction({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.RedemptionAssist,
+        actionId:
+          PRODUCT_ANALYTICS_ACTION_IDS.TriggerRedemptionAssistFromContextMenu,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.BackgroundContextMenu,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      })
+    : isApiCheckMenu
+      ? startProductAnalyticsAction({
+          featureId: PRODUCT_ANALYTICS_FEATURE_IDS.WebAiApiCheck,
+          actionId:
+            PRODUCT_ANALYTICS_ACTION_IDS.TriggerApiCredentialCheckFromContextMenu,
+          surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.BackgroundContextMenu,
+          entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+        })
+      : undefined
+  const completeTracker = async (
+    result?: ProductAnalyticsResult,
+    options?: { errorCategory?: ProductAnalyticsErrorCategory },
+  ) => {
+    try {
+      if (!tracker) return
+      if (options) {
+        await tracker.complete(result, options)
+        return
+      }
+
+      if (result) {
+        await tracker.complete(result)
+        return
+      }
+
+      await tracker.complete()
+    } catch (error) {
+      logger.warn("Failed to complete product analytics action", error)
+    }
+  }
 
   try {
-    if (info.menuItemId === REDEMPTION_MENU_ID) {
+    if (isRedemptionMenu) {
       if (!selectionText) {
         logger.warn("No selection text for redemption assist trigger")
+        await completeTracker(PRODUCT_ANALYTICS_RESULTS.Skipped)
         return
       }
 
@@ -33,17 +85,22 @@ const handleContextMenuClick = async (info: any, tab: any) => {
         selectionText,
         pageUrl,
       })
+      await completeTracker()
     }
 
-    if (info.menuItemId === API_CHECK_MENU_ID) {
+    if (isApiCheckMenu) {
       await browser.tabs.sendMessage(tab.id, {
         action: RuntimeActionIds.ApiCheckContextMenuTrigger,
         selectionText,
         pageUrl,
       })
+      await completeTracker()
     }
   } catch (error) {
     logger.error("Failed to forward context menu trigger", error)
+    await completeTracker(PRODUCT_ANALYTICS_RESULTS.Failure, {
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+    })
   }
 }
 
