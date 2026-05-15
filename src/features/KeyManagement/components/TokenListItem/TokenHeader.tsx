@@ -277,35 +277,47 @@ function TokenActionButtons({
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
     })
 
-    const result = await openWithAccount(
-      account,
-      token,
-      (result) => {
-        showResultToast(result)
+    try {
+      const result = await openWithAccount(
+        account,
+        token,
+        (result) => {
+          showResultToast(result)
 
-        if (result?.success && onManagedSiteImportSuccess) {
-          void Promise.resolve(onManagedSiteImportSuccess(token)).catch(
-            (error) =>
-              logger.error(
-                "Managed-site import success callback failed",
-                error,
-              ),
-          )
-        }
-      },
-      {
-        managedSiteStatus,
-      },
-    )
+          if (result?.success && onManagedSiteImportSuccess) {
+            void Promise.resolve(onManagedSiteImportSuccess(token)).catch(
+              (error) =>
+                logger.error(
+                  "Managed-site import success callback failed",
+                  error,
+                ),
+            )
+          }
+        },
+        {
+          managedSiteStatus,
+        },
+      )
 
-    if (result.opened || result.deferred) {
-      await tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
-      return
+      if (result.opened || result.deferred) {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
+        return
+      }
+
+      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Skipped, {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      })
+    } catch (error) {
+      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      })
+      showResultToast({
+        success: false,
+        message: t("messages:errors.operation.failed", {
+          error: getErrorMessage(error),
+        }),
+      })
     }
-
-    await tracker.complete(PRODUCT_ANALYTICS_RESULTS.Skipped, {
-      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
-    })
   }
 
   const handleOpenCliProxyDialog = () => {
@@ -345,9 +357,9 @@ function TokenActionButtons({
         token,
       )
       OpenInCherryStudio(account, resolvedToken)
-      await tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
+      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
     } catch (error) {
-      await tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
       })
       showResultToast({
@@ -406,9 +418,9 @@ function TokenActionButtons({
         ),
         { duration: 8000 },
       )
-      await tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
+      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
     } catch (error) {
-      await tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
       })
       logger.error("Failed to save token to API profiles", {
@@ -621,10 +633,12 @@ export function TokenHeader({
     void Promise.resolve(
       onManagedSiteVerificationRetry(token, managedSiteStatus),
     )
-      .then(() => tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success))
+      .then(() => {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
+      })
       .catch((error) => {
         logger.error("Managed-site verification retry callback failed", error)
-        return tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         })
       })
