@@ -10,6 +10,7 @@ import {
 describe("siteType constants", () => {
   it("recognizes account site type values only", () => {
     expect(isAccountSiteType(SITE_TYPES.NEW_API)).toBe(true)
+    expect(isAccountSiteType(SITE_TYPES.V_API)).toBe(true)
     expect(isAccountSiteType(SITE_TYPES.SUB2API)).toBe(true)
     expect(isAccountSiteType(SITE_TYPES.AIHUBMIX)).toBe(true)
     expect(isAccountSiteType(SITE_TYPES.UNKNOWN)).toBe(true)
@@ -36,6 +37,17 @@ describe("siteType constants", () => {
       usagePath: "/console/log",
       checkInPath: "/console/personal",
       redeemPath: "/console/topup",
+      siteAnnouncementsPath: "/",
+    })
+  })
+
+  it("returns panel routes for V-API account pages", () => {
+    expect(getAccountSiteApiRouter(SITE_TYPES.V_API)).toMatchObject({
+      loginPath: "/login",
+      usagePath: "/panel/log",
+      checkInPath: "/panel/profile",
+      redeemPath: "/panel/topup",
+      adminCredentialsPath: "/panel/profile",
       siteAnnouncementsPath: "/",
     })
   })

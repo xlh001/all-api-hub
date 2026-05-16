@@ -10,6 +10,8 @@ import { SITE_TYPES, type AccountSiteType } from "~/constants/siteType"
 const COMPAT_USER_ID_HEADER_TO_SITE_TYPE = {
   "New-API-User": SITE_TYPES.NEW_API,
   "Veloera-User": SITE_TYPES.VELOERA,
+  // V-API support follows the requested popjane/v-api contract: user id in X-Api-User.
+  "X-Api-User": SITE_TYPES.V_API,
   "voapi-user": SITE_TYPES.VO_API,
   // Added in commit cb7527d2b15a2c99bc39827fe3ae1d7590622428 for Super-API
   // compatibility. Keep sending it as a broad fallback header, but do not
@@ -28,6 +30,7 @@ const COMPAT_USER_ID_HEADER_TO_SITE_TYPE = {
 export const COMPAT_USER_ID_ERROR_HEADER_TO_SITE_TYPE = {
   "New-API-User": SITE_TYPES.NEW_API,
   "Veloera-User": SITE_TYPES.VELOERA,
+  "X-Api-User": SITE_TYPES.V_API,
   "voapi-user": SITE_TYPES.VO_API,
   "Rix-Api-User": SITE_TYPES.RIX_API,
   "neo-api-user": SITE_TYPES.NEO_API,

@@ -134,7 +134,7 @@ But once you have multiple accounts, management quickly becomes painful:
 ### 🧩 Strong Compatibility
 No matter which architecture you use, there is a good chance we support it:
 - **Mainstream open source**: [one-api](https://github.com/songquanpeng/one-api), [new-api](https://github.com/QuantumNous/new-api), [Sub2API](https://github.com/Wei-Shaw/sub2api), [one-hub](https://github.com/MartialBE/one-hub), [done-hub](https://github.com/deanxv/done-hub), [Veloera](https://github.com/Veloera/Veloera)
-- **Specialized architectures**: [AIHubMix](https://aihubmix.com/), [AnyRouter](https://anyrouter.top), Neo-API, Super-API, and more
+- **Specialized architectures and compatible platforms**: [AIHubMix](https://aihubmix.com/), [AnyRouter](https://anyrouter.top), Neo-API, Super-API, v-api, and more
 - **Full list**: 👉 [Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html)
 
 <a id="ui-preview"></a>
