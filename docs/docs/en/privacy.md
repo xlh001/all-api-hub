@@ -38,11 +38,11 @@ These restrictions can be reviewed through the open-source code. The relevant fi
 
 ### How Data is Stored
 
-Apart from the anonymous product analytics described above, account data and user management data are **stored exclusively on your local device**, including:
+Apart from the anonymous product analytics described above, account data and user management data are **stored on your local device by default**, including:
 
 *   The browser's local storage
 *   No account data or user management data is transmitted to any external servers operated by us.
-*   Account data and user management data remain solely on your device and are only synchronized via the browser's built-in synchronization mechanism if you enable the browser's sync feature.
+*   Account data and user management data are synchronized only if you enable browser sync or this extension's WebDAV sync feature, in which case the data is handled by the corresponding sync mechanism or your configured WebDAV server.
 
 ### Optional Cloud Sync Feature
 
@@ -91,4 +91,4 @@ If you have any privacy-related questions or concerns, please:
 
 ---
 
-**Your Privacy Matters**: All API Hub is designed to limit data processing to local and necessary scopes. Apart from the anonymous product analytics described above, account data and user management data remain on your device, and we cannot access your account information or API keys; anonymous product analytics also reduce data risks through whitelisting, intervalization, and sensitive field filtering, and can be disabled by you and reviewed through the open-source code.
+**Your Privacy Matters**: All API Hub is designed to limit data processing to local and necessary scopes. Apart from the anonymous product analytics described above and any sync features you explicitly enable, account data and user management data remain on your device, and we cannot access your account information or API keys; anonymous product analytics also reduce data risks through whitelisting, intervalization, and sensitive field filtering, and can be disabled by you and reviewed through the open-source code.

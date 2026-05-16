@@ -313,9 +313,9 @@ This tool is primarily intended for developers or advanced users interested in v
 
 ### Where is the data stored?
 
-- **Local Storage**: All data is stored in the browser's local storage.
-- **Completely Offline**: The core functionality of the plugin does not require an internet connection.
-- **No Data Upload**: Data is not uploaded to any third-party servers.
+- **Local by default**: Accounts, keys, and site configuration are stored in the browser by default.
+- **Network access when needed**: Network requests are made only for the relevant feature, such as refreshing balances, calling site APIs, using WebDAV backup or sync, or sending enabled anonymous product analytics.
+- **Sensitive data protection**: Unless you enable WebDAV backup or sync, account data and keys are not uploaded to external storage. Anonymous product analytics do not collect API keys, cookies, account URLs, balances, request content, or user input.
 
 ### Will the data be lost?
 

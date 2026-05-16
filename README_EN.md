@@ -85,7 +85,7 @@ But once you have multiple accounts, management quickly becomes painful:
 - **Cloudflare challenge assistant**: Automatically helps you get through Cloudflare challenges so data refreshes and API calls stay uninterrupted.
 
 ### 🔒 Privacy and Security
-- **Local-first data storage**: Your keys and account data stay on your own device and are never uploaded to a server.
+- **Local by default**: Your keys and account data stay on your device by default and are only uploaded to external storage when you enable WebDAV backup or sync.
 - **Encrypted sync**: Supports encrypted WebDAV backup so you can restore everything instantly on another machine.
 
 
