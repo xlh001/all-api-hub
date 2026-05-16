@@ -60,12 +60,12 @@ body:
     attributes:
       label: Capabilities needed / 希望支持的能力
       options:
-        - label: Auto-detect account info / 自动识别账号信息
         - label: Refresh balance or quota / 刷新余额或额度
         - label: Manage API keys / 管理 API Key
-        - label: Check-in or redeem flow / 签到或兑换流程
-        - label: Model list or model pricing / 模型列表或模型价格
-        - label: Import current login or cookie session / 导入当前登录或 Cookie 会话
+        - label: Model list / 模型列表
+        - label: Model pricing / 模型价格
+        - label: Check-in flow / 签到流程
+        - label: Redeem flow / 兑换流程
 
   - type: textarea
     id: site-info
