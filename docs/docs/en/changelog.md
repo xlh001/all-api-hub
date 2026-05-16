@@ -8,6 +8,33 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.38.0
+- **New Features:**
+  - AIHubMix: Added `AIHubMix` site support. You can detect and manage AIHubMix accounts, with support for one-time key display, account URL normalization, and the correct sign-in entry. See [Supported Sites](./supported-sites.md).
+  - Account Management: Added a foreground token confirmation flow after saving an account. After saving, you can continue creating an API Token, confirming a one-time key, selecting groups, and configuring hosted-site setup, reducing unclear outcomes when background auto-configuration fails.
+  - Site Announcements: Added a site announcement center with background polling for new announcements, notification reminders, manual checks, mark-as-read actions, and per-site announcement viewing. See [Site Announcements](./site-announcements.md).
+  - Task Notifications: Added Telegram, Webhook, Feishu, WeCom, DingTalk, and ntfy notification channels. You can configure different delivery methods for auto check-in, sync, and other tasks, and send test notifications. See [Task Notifications](./task-notifications.md).
+  - Webhook Notifications: Webhook URLs now support template variables such as title, message, task, status, and counts, making it easier to integrate services like Bark that rely on URL parameters.
+  - Product Experience Analytics: Added privacy-friendly product analytics foundations to help understand usage of core features and improve future experiences.
+- **Experience Optimizations:**
+  - Notification Settings: Task notification settings are now grouped under a dedicated entry, with clearer setup guidance, test feedback, and error messages for each channel.
+  - WebDAV: Improved status messages for manual upload, import, sync, and settings save actions, making results more compact and easier to understand.
+  - WebDAV: Added clearer draft-save guidance, reducing confusion about whether unsaved configuration has taken effect.
+  - Add/Edit Account: Auto-detection actions remain available even when the manual form is currently invalid, making it easier to switch to the current login state to complete account details.
+- **Bug Fixes:**
+  - Auto Detection: Fixed request context handling in incognito and current-tab scenarios, improving auto-detection stability.
+  - Content Page: The API check overlay no longer triggers page shortcuts, reducing accidental actions on the target page.
+  - WebDAV: Fixed error handling when reading an empty backup before upload.
+  - WebDAV: Fixed an issue where manual upload, import, and similar actions could stop working after clicking "Sync Now".
+
+**Location Hints:**
+- AIHubMix Accounts: Add or auto-detect accounts under "Settings → Account Management".
+- AIHubMix One-Time Key: After saving an AIHubMix account, follow the dialog to create, view, and copy the key.
+- Site Announcements: View them under "Settings → Site Announcements", or receive new announcement reminders through background notifications.
+- Task Notifications: Configure Browser, Telegram, Webhook, Feishu, WeCom, DingTalk, and ntfy channels under "Settings → General → Notifications".
+- Webhook URL Templates: Fill in and test them in the Webhook notification channel settings.
+- WebDAV Sync: In `WebDAV Settings` and related manual actions under "Settings → Import/Export".
+
 ## 3.37.0
 - **New Features:**
   - Settings Page: Added global settings search. You can search pages, settings tabs, and individual settings from the top search box or with `Ctrl+K` / `Cmd+K`; recently visited items are also remembered so configuration is easier to find.
