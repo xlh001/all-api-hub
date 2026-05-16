@@ -26,6 +26,18 @@ export const MENU_ITEM_IDS = {
 export type OptionsMenuItemId =
   (typeof MENU_ITEM_IDS)[keyof typeof MENU_ITEM_IDS]
 
+export const OPTIONS_MENU_CATEGORY_IDS = {
+  GENERAL: "general",
+  API: "api",
+  AUTOMATION: "automation",
+  INSIGHTS: "insights",
+  SITE_MANAGEMENT: "siteManagement",
+  SYSTEM: "system",
+} as const
+
+export type OptionsMenuCategoryId =
+  (typeof OPTIONS_MENU_CATEGORY_IDS)[keyof typeof OPTIONS_MENU_CATEGORY_IDS]
+
 /**
  * Runtime menu ids rendered in the options sidebar, including dev-only entries.
  */

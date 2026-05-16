@@ -20,6 +20,8 @@ import { createElement, lazy, Suspense, type ComponentType } from "react"
 import { DEV_MENU_ITEM_IDS } from "~/constants/devOptionsMenuIds"
 import {
   MENU_ITEM_IDS,
+  OPTIONS_MENU_CATEGORY_IDS,
+  type OptionsMenuCategoryId,
   type OptionsPageMenuItemId,
 } from "~/constants/optionsMenuIds"
 
@@ -71,96 +73,96 @@ const UsageAnalytics = createLazyMenuComponent(
 // 菜单项类型定义
 interface MenuItem {
   id: OptionsPageMenuItemId
-  name: string
   icon: ComponentType<{ className?: string }>
   component: ComponentType<any>
+  category?: OptionsMenuCategoryId
 }
 
 // 菜单配置
 const BASE_MENU_ITEMS: MenuItem[] = [
   {
     id: MENU_ITEM_IDS.BASIC,
-    name: "基本设置",
     icon: Settings,
     component: BasicSettings,
+    category: OPTIONS_MENU_CATEGORY_IDS.GENERAL,
   },
   {
     id: MENU_ITEM_IDS.ACCOUNT,
-    name: "账户管理",
     icon: UserRound,
     component: AccountManagement,
+    category: OPTIONS_MENU_CATEGORY_IDS.GENERAL,
   },
   {
     id: MENU_ITEM_IDS.API_CREDENTIAL_PROFILES,
-    name: "API 凭据库",
     icon: KeyRound,
     component: ApiCredentialProfiles,
+    category: OPTIONS_MENU_CATEGORY_IDS.GENERAL,
   },
   {
     id: MENU_ITEM_IDS.BOOKMARK,
-    name: "书签",
     icon: Bookmark,
     component: BookmarkManagement,
+    category: OPTIONS_MENU_CATEGORY_IDS.GENERAL,
   },
   {
     id: MENU_ITEM_IDS.MODELS,
-    name: "模型列表",
     icon: Cpu,
     component: ModelList,
+    category: OPTIONS_MENU_CATEGORY_IDS.API,
   },
   {
     id: MENU_ITEM_IDS.KEYS,
-    name: "密钥管理",
     icon: UserRoundKey,
     component: KeyManagement,
+    category: OPTIONS_MENU_CATEGORY_IDS.API,
   },
   {
     id: MENU_ITEM_IDS.AUTO_CHECKIN,
-    name: "自动签到",
     icon: CalendarCheck2,
     component: AutoCheckin,
-  },
-  {
-    id: MENU_ITEM_IDS.BALANCE_HISTORY,
-    name: "余额历史",
-    icon: LineChart,
-    component: BalanceHistory,
+    category: OPTIONS_MENU_CATEGORY_IDS.AUTOMATION,
   },
   {
     id: MENU_ITEM_IDS.SITE_ANNOUNCEMENTS,
-    name: "网站公告",
     icon: Megaphone,
     component: SiteAnnouncements,
+    category: OPTIONS_MENU_CATEGORY_IDS.AUTOMATION,
+  },
+  {
+    id: MENU_ITEM_IDS.BALANCE_HISTORY,
+    icon: LineChart,
+    component: BalanceHistory,
+    category: OPTIONS_MENU_CATEGORY_IDS.INSIGHTS,
   },
   {
     id: MENU_ITEM_IDS.USAGE_ANALYTICS,
-    name: "用量分析",
     icon: BarChart3,
     component: UsageAnalytics,
+    category: OPTIONS_MENU_CATEGORY_IDS.INSIGHTS,
   },
   {
     id: MENU_ITEM_IDS.MANAGED_SITE_CHANNELS,
-    name: "渠道管理",
     icon: Layers,
     component: ManagedSiteChannels,
+    category: OPTIONS_MENU_CATEGORY_IDS.SITE_MANAGEMENT,
   },
   {
     id: MENU_ITEM_IDS.MANAGED_SITE_MODEL_SYNC,
-    name: "模型同步",
     icon: RefreshCcw,
     component: ManagedSiteModelSync,
+    category: OPTIONS_MENU_CATEGORY_IDS.SITE_MANAGEMENT,
   },
   {
     id: MENU_ITEM_IDS.IMPORT_EXPORT,
-    name: "导入/导出",
     icon: ArrowLeftRight,
     component: ImportExport,
+    category: OPTIONS_MENU_CATEGORY_IDS.SYSTEM,
   },
   {
     id: MENU_ITEM_IDS.ABOUT,
-    name: "关于",
     icon: Info,
     component: About,
+    category: OPTIONS_MENU_CATEGORY_IDS.SYSTEM,
   },
 ]
 
@@ -178,7 +180,6 @@ if (import.meta.env.MODE === "development") {
 
   DEV_MENU_ITEMS.push({
     id: DEV_MENU_ITEM_IDS.MESH_GRADIENT_LAB,
-    name: "Mesh Gradient Lab (Dev)",
     icon: Palette,
     component: MeshGradientLabComponent,
   })

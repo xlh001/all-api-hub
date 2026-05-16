@@ -365,6 +365,14 @@
     "balanceHistory": "Balance History",
     "basic": "Basic Settings",
     "bookmark": "Bookmark Management",
+    "categories": {
+      "api": "API",
+      "automation": "Automation",
+      "general": "General",
+      "insights": "Insights",
+      "siteManagement": "Site Management",
+      "system": "System"
+    },
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
     "externalCheckinAll": "Open all external check-ins",

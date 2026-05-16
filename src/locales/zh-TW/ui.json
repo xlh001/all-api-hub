@@ -360,6 +360,14 @@
     "balanceHistory": "餘額歷史",
     "basic": "基礎設定",
     "bookmark": "書籤管理",
+    "categories": {
+      "api": "介面",
+      "automation": "自動化",
+      "general": "一般",
+      "insights": "洞察",
+      "siteManagement": "站點管理",
+      "system": "系統"
+    },
     "collapseSidebar": "摺疊側邊欄",
     "expandSidebar": "展開側邊欄",
     "externalCheckinAll": "一鍵開啟外部簽到",

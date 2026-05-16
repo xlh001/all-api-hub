@@ -87,24 +87,22 @@ describe("Options Sidebar", () => {
       "ui:navigation.models",
       "ui:navigation.keys",
       "ui:navigation.autoCheckin",
-      "ui:navigation.balanceHistory",
       "ui:navigation.siteAnnouncements",
+      "ui:navigation.balanceHistory",
     ])
 
-    const autoCheckinButton = within(nav).getByRole("button", {
-      name: "ui:navigation.autoCheckin",
-    })
-    const balanceHistoryButton = within(nav).getByRole("button", {
-      name: "ui:navigation.balanceHistory",
-    })
-
-    expect(autoCheckinButton.parentElement?.firstElementChild).toHaveAttribute(
-      "role",
-      "none",
-    )
-    expect(balanceHistoryButton.parentElement?.firstElementChild).toBe(
-      balanceHistoryButton,
-    )
+    expect(
+      within(nav).getByText("ui:navigation.categories.general"),
+    ).toBeInTheDocument()
+    expect(
+      within(nav).getByText("ui:navigation.categories.api"),
+    ).toBeInTheDocument()
+    expect(
+      within(nav).getByText("ui:navigation.categories.automation"),
+    ).toBeInTheDocument()
+    expect(
+      within(nav).getByText("ui:navigation.categories.insights"),
+    ).toBeInTheDocument()
 
     expect(
       within(nav).getByRole("button", { name: "ui:navigation.autoCheckin" }),
@@ -163,6 +161,9 @@ describe("Options Sidebar", () => {
 
     expect(
       within(nav).queryByRole("button", { name: "ui:navigation.autoCheckin" }),
+    ).toBeNull()
+    expect(
+      within(nav).queryByText("ui:navigation.categories.general"),
     ).toBeNull()
     expect(
       within(nav).getByRole("button", {

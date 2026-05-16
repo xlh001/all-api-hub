@@ -360,6 +360,14 @@
     "balanceHistory": "残高履歴",
     "basic": "基本設定",
     "bookmark": "ブックマーク管理",
+    "categories": {
+      "api": "API",
+      "automation": "自動化",
+      "general": "一般",
+      "insights": "インサイト",
+      "siteManagement": "サイト管理",
+      "system": "システム"
+    },
     "collapseSidebar": "サイドバーを折りたたむ",
     "expandSidebar": "サイドバーを展開",
     "externalCheckinAll": "すべての外部チェックインを開く",

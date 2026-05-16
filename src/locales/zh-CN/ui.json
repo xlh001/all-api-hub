@@ -360,7 +360,15 @@
     "balanceHistory": "余额历史",
     "basic": "基础设置",
     "bookmark": "书签管理",
-    "collapseSidebar": "折叠侧边栏",
+    "categories": {
+      "api": "接口",
+      "automation": "自动化",
+      "general": "常规",
+      "insights": "洞察",
+      "siteManagement": "站点管理",
+      "system": "系统"
+    },
+    "collapseSidebar": "收起侧边栏",
     "expandSidebar": "展开侧边栏",
     "externalCheckinAll": "一键打开外部签到",
     "externalCheckinAllHint": "默认仅打开未签到；Ctrl/Cmd 打开全部；Shift 在新窗口打开；Ctrl/Cmd+Shift 同时生效。",
