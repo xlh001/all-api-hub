@@ -16,7 +16,11 @@ import {
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 import { joinUrl } from "~/utils/core/url"
-import { getFeedbackDestinationUrls } from "~/utils/navigation/feedbackLinks"
+import {
+  getFeedbackDestinationUrls,
+  getSiteSupportRequestUrl,
+  type SiteSupportRequestContext,
+} from "~/utils/navigation/feedbackLinks"
 
 /**
  * Unified logger scoped to navigation helpers and options-page routing.
@@ -468,6 +472,19 @@ const _openFeatureRequestPage = async () => {
 }
 
 /**
+ * Opens the site-support request issue form in a new browser tab.
+ */
+const _openSiteSupportRequestPage = async (
+  context?: SiteSupportRequestContext,
+) => {
+  await createActiveTab(
+    context
+      ? getSiteSupportRequestUrl(context)
+      : getFeedbackDestinationUrls().siteSupportRequest,
+  )
+}
+
+/**
  * Opens the repository discussions page in a new browser tab.
  */
 const _openDiscussionsPage = async () => {
@@ -786,6 +803,13 @@ export const openBugReportPage = withPopupClose(_openBugReportPage)
  * Open the feature-request issue template and close the popup afterward when needed.
  */
 export const openFeatureRequestPage = withPopupClose(_openFeatureRequestPage)
+
+/**
+ * Open the site-support issue template and close the popup afterward when needed.
+ */
+export const openSiteSupportRequestPage = withPopupClose(
+  _openSiteSupportRequestPage,
+)
 
 /**
  * Open the docs community hub and close the popup afterward when needed.

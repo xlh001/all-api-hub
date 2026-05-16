@@ -26,6 +26,7 @@ import {
   openPermissionsOnboardingPage,
   openSettingsPage,
   openSidePanelPage,
+  openSiteSupportRequestPage,
 } from "~/utils/navigation"
 import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
@@ -97,6 +98,7 @@ vi.mock("~/utils/navigation", () => ({
   openPermissionsOnboardingPage: vi.fn(),
   openSettingsPage: vi.fn(),
   openSidePanelPage: vi.fn(),
+  openSiteSupportRequestPage: vi.fn(),
 }))
 
 const {
@@ -140,6 +142,7 @@ const mockedOpenPermissionsOnboardingPage = vi.mocked(
 )
 const mockedOpenSettingsPage = vi.mocked(openSettingsPage)
 const mockedOpenSidePanelPage = vi.mocked(openSidePanelPage)
+const mockedOpenSiteSupportRequestPage = vi.mocked(openSiteSupportRequestPage)
 const mockedUseUpdateLogDialogContext = vi.mocked(useUpdateLogDialogContext)
 
 const expectPopupHeaderAction = ({
@@ -362,6 +365,17 @@ describe("popup HeaderSection", () => {
     )
 
     expect(mockedOpenFeatureRequestPage).toHaveBeenCalledTimes(1)
+
+    await user.click(
+      await screen.findByRole("button", { name: "ui:feedback.trigger" }),
+    )
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "ui:feedback.siteSupportRequest",
+      }),
+    )
+
+    expect(mockedOpenSiteSupportRequestPage).toHaveBeenCalledTimes(1)
 
     await user.click(
       await screen.findByRole("button", { name: "ui:feedback.trigger" }),

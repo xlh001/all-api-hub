@@ -8,6 +8,7 @@ import {
   reloadCurrentTab,
   type AutoDetectErrorProps,
 } from "~/services/accounts/utils/autoDetectUtils"
+import { openSiteSupportRequestPage } from "~/utils/navigation"
 
 /**
  * Alert displayed when automatic credential detection fails so users can recover.
@@ -45,14 +46,25 @@ export default function AutoDetectErrorAlert({
     }
   }
 
+  const handleReportUnsupportedSite = () => {
+    void openSiteSupportRequestPage({
+      siteUrl,
+      errorType: error.type,
+      errorMessage: error.message,
+    })
+  }
+
+  const hasRecoveryAction = Boolean(error.actionText || error.helpDocUrl)
+  const canReportUnsupportedSite = Boolean(siteUrl)
+
   return (
     <Alert variant="warning" className="mb-4">
       <div>
         <p className="mb-2 text-xs">{error.message}</p>
 
         {/* 操作按钮区域 */}
-        {(error.actionText || error.helpDocUrl) && (
-          <div className="flex space-x-2">
+        {(hasRecoveryAction || canReportUnsupportedSite) && (
+          <div className="flex flex-wrap gap-2">
             {/* 主要操作按钮 */}
             {error.actionText && (
               <Button
@@ -75,6 +87,17 @@ export default function AutoDetectErrorAlert({
                 leftIcon={<QuestionMarkCircleIcon className="h-3 w-3" />}
               >
                 {t("actions.helpDocument")}
+              </Button>
+            )}
+
+            {canReportUnsupportedSite && (
+              <Button
+                type="button"
+                onClick={handleReportUnsupportedSite}
+                variant="secondary"
+                size="sm"
+              >
+                {t("actions.reportUnsupportedSite")}
               </Button>
             )}
           </div>

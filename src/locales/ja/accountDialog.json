@@ -8,6 +8,7 @@
     "confirmAdd": "追加を確認",
     "helpDocument": "ヘルプドキュメント",
     "reloadCurrentPage": "現在のページを再読み込み",
+    "reportUnsupportedSite": "未対応サイトを報告",
     "saveAccount": "アカウントを保存",
     "saveChanges": "変更を保存",
     "workflow": {

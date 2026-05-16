@@ -11,6 +11,10 @@ const { openLoginTabMock, reloadCurrentTabMock } = vi.hoisted(() => ({
   reloadCurrentTabMock: vi.fn(),
 }))
 
+const { openSiteSupportRequestPageMock } = vi.hoisted(() => ({
+  openSiteSupportRequestPageMock: vi.fn(),
+}))
+
 vi.mock("~/services/accounts/utils/autoDetectUtils", async () => {
   const actual = await vi.importActual<
     typeof import("~/services/accounts/utils/autoDetectUtils")
@@ -35,10 +39,20 @@ vi.mock("react-i18next", async (importOriginal) => {
   }
 })
 
+vi.mock("~/utils/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("~/utils/navigation")>()
+
+  return {
+    ...actual,
+    openSiteSupportRequestPage: openSiteSupportRequestPageMock,
+  }
+})
+
 describe("AccountDialog warnings", () => {
   beforeEach(() => {
     openLoginTabMock.mockReset()
     reloadCurrentTabMock.mockReset()
+    openSiteSupportRequestPageMock.mockReset()
     ;(browser.tabs as any).create = vi.fn()
   })
 
@@ -160,6 +174,30 @@ describe("AccountDialog warnings", () => {
     expect(browser.tabs.create).toHaveBeenCalledWith({
       url: "https://docs.example.com/autodetect",
       active: true,
+    })
+  })
+
+  it("opens a prefilled site-support request from auto-detect failures", () => {
+    render(
+      <AutoDetectErrorAlert
+        error={{
+          type: AutoDetectErrorType.NOT_FOUND,
+          message: "Site was not recognized",
+        }}
+        siteUrl="https://relay.example.com/console"
+      />,
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "actions.reportUnsupportedSite",
+      }),
+    )
+
+    expect(openSiteSupportRequestPageMock).toHaveBeenCalledWith({
+      siteUrl: "https://relay.example.com/console",
+      errorType: AutoDetectErrorType.NOT_FOUND,
+      errorMessage: "Site was not recognized",
     })
   })
 

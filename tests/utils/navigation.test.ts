@@ -43,6 +43,7 @@ import {
   openSettingsTab,
   openSidePanelPage,
   openSidePanelWithFallback,
+  openSiteSupportRequestPage,
   openUsagePage,
   pushWithinOptionsPage,
   replaceWithinOptionsPage,
@@ -89,9 +90,17 @@ vi.mock("~/utils/core/url", () => ({
 }))
 
 vi.mock("~/utils/navigation/feedbackLinks", () => ({
+  getSiteSupportRequestUrl: vi.fn((context?: { siteUrl?: string }) =>
+    context?.siteUrl
+      ? `https://feedback.example/site-support?site=${encodeURIComponent(
+          context.siteUrl,
+        )}`
+      : "https://feedback.example/site-support",
+  ),
   getFeedbackDestinationUrls: vi.fn((language?: string) => ({
     bugReport: "https://feedback.example/bug",
     featureRequest: "https://feedback.example/feature",
+    siteSupportRequest: "https://feedback.example/site-support",
     discussions: "https://feedback.example/discussions",
     community: language
       ? `https://feedback.example/community?lang=${language}`
@@ -860,6 +869,9 @@ describe("navigation utilities", () => {
     await openAboutPage()
     await openBugReportPage()
     await openFeatureRequestPage()
+    await openSiteSupportRequestPage({
+      siteUrl: "https://relay.example.com/console",
+    })
     await openDiscussionsPage()
     await openCommunityPage("ja")
     await openAccountBaseUrl(account)
@@ -877,6 +889,10 @@ describe("navigation utilities", () => {
     )
     expect(mockedCreateTab).toHaveBeenCalledWith(
       "https://feedback.example/feature",
+      true,
+    )
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://feedback.example/site-support?site=https%3A%2F%2Frelay.example.com%2Fconsole",
       true,
     )
     expect(mockedCreateTab).toHaveBeenCalledWith(

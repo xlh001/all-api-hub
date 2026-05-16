@@ -8,6 +8,7 @@ import {
   openCommunityPage,
   openFeatureRequestPage,
   openPermissionsOnboardingPage,
+  openSiteSupportRequestPage,
 } from "~/utils/navigation"
 import { act, render, screen, waitFor } from "~~/tests/test-utils/render"
 
@@ -62,6 +63,7 @@ vi.mock("~/utils/navigation", async (importOriginal) => {
     openCommunityPage: vi.fn(),
     openFeatureRequestPage: vi.fn(),
     openPermissionsOnboardingPage: vi.fn(),
+    openSiteSupportRequestPage: vi.fn(),
   }
 })
 
@@ -71,6 +73,7 @@ const mockedOpenFeatureRequestPage = vi.mocked(openFeatureRequestPage)
 const mockedOpenPermissionsOnboardingPage = vi.mocked(
   openPermissionsOnboardingPage,
 )
+const mockedOpenSiteSupportRequestPage = vi.mocked(openSiteSupportRequestPage)
 const mockedUseUpdateLogDialogContext = vi.mocked(useUpdateLogDialogContext)
 
 describe("options Header", () => {
@@ -132,6 +135,16 @@ describe("options Header", () => {
       }),
     )
     expect(mockedOpenFeatureRequestPage).toHaveBeenCalledTimes(1)
+
+    await user.click(
+      await screen.findByRole("button", { name: "ui:feedback.trigger" }),
+    )
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "ui:feedback.siteSupportRequest",
+      }),
+    )
+    expect(mockedOpenSiteSupportRequestPage).toHaveBeenCalledTimes(1)
 
     await user.click(
       await screen.findByRole("button", { name: "ui:feedback.trigger" }),
