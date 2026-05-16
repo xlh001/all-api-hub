@@ -7,7 +7,7 @@
 
 # All API Hub – Your All-in-One AI Asset Manager
 
-**One-stop management for New API-compatible relay accounts: balance/usage dashboards, model price comparison, automatic check-in, site keys and standalone API credential management, in-page API availability testing, and channel/model sync & redirect**
+**One-stop management for New API-compatible relay accounts: balance/usage dashboards, model price comparison, automatic check-in, site keys and an API credential library, in-page API availability testing, and channel/model sync & redirect**
 
 <p align="center">
 <a href="https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo">
@@ -67,7 +67,7 @@ But once you have multiple accounts, management quickly becomes painful:
 ### 📊 Unified Dashboard for Multiple Sites
 - **Multi-account asset overview**: See balances, total usage, and health status for all your sites in one panel.
 - **Smart site detection**: Paste a URL and the extension automatically detects the architecture type, billing ratio, and setup details.
-- **Standalone credential profiles**: Manage `URL + Key` pairs directly, with tags for organization, as easily as managing bookmarks.
+- **API credential library**: Save common `Base URL + API Key` pairs for quick copying, API verification, model lookup, and balance/usage checks.
 
 ### 💰 Smarter Savings and Automated Gains
 - **Model price comparison**: Automatically calculate the effective per-model price across sites so you can find the best-value group and endpoint.

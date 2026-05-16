@@ -86,8 +86,8 @@ All API Hub 几乎支持市面上所有主流的 AI 中转站架构，包括：
 
 ### 🔑 密钥管理与快捷集成
 - **[令牌管理](./key-management.md)**：集中管理站点令牌，支持一键补全。
-- **[独立 API 凭证](./api-credential-profiles.md)**：无需账号保存 URL+Key，支持批量验证。
-- **[网页 API 嗅探](./web-ai-api-check.md)**：在网页内快速识别并测试 API 配置。
+- **[API 凭据库](./api-credential-profiles.md)**：无需账号保存 `Base URL + API Key`，用于复制、验证和查看模型。
+- **[网页 API 嗅探](./web-ai-api-check.md)**：在网页内快速识别并测试 API 配置，可保存到 API 凭据库。
 
 ### ⚡ 自动化与信息追踪
 - **[自动签到流](./auto-checkin.md)**：每天自动帮你完成所有站点的签到。

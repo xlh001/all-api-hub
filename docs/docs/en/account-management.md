@@ -49,7 +49,7 @@ As the number of accounts increases, you can keep the list tidy in the following
 ### 4.1 Tags
 - Add tags to accounts (e.g., `Work`, `Personal`, `Relay`, `Official`).
 - Quickly filter via tags at the top of the panel.
-- The tag system is shared with bookmarks and API credential profiles, supporting global renaming.
+- The tag system is shared with bookmarks and the API Credential Library, supporting global renaming.
 
 ### 4.2 Pinning
 - Hover over an account card and click the **"Pin"** icon.

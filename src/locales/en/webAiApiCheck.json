@@ -14,11 +14,11 @@
       "fetchingModels": "Fetching…",
       "fetchModels": "Fetch models",
       "hideKey": "Hide key",
-      "openApiProfiles": "Open API profiles",
+      "openApiProfiles": "Open API credential library",
       "retry": "Retry",
       "running": "Running…",
       "runOne": "Run",
-      "saveToProfiles": "Save to API profiles",
+      "saveToProfiles": "Save to API credential library",
       "saving": "Saving…",
       "showKey": "Show key",
       "test": "Test",
@@ -28,7 +28,7 @@
       "fetchModelsFailed": "Failed to fetch models.",
       "missingBaseUrlOrKey": "Please provide base URL and API key first.",
       "runProbeFailed": "Probe failed.",
-      "saveToProfilesFailed": "Failed to save to API profiles."
+      "saveToProfilesFailed": "Failed to save to API credential library."
     },
     "fields": {
       "apiKey": "API key",
@@ -40,9 +40,9 @@
       "saveWithoutTest": "Tip: you can save once base URL + API key are provided (no need to test or fetch models first). Testing is optional and only helps verify availability."
     },
     "messages": {
-      "savedToProfiles": "Saved {{name}} to API profiles."
+      "savedToProfiles": "Saved {{name}} to API credential library."
     },
-    "privacyHint": "API Keys will be considered sensitive information: hidden by default, and nothing is stored unless you choose to save to API profiles.",
+    "privacyHint": "API Keys will be considered sensitive information: hidden by default, and nothing is stored unless you choose to save to API credential library.",
     "probes": {
       "notRunYet": "Not run yet"
     },

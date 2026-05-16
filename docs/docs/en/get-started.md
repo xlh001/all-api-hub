@@ -86,7 +86,7 @@ After adding an account, you can "push" these configurations to other AI tools w
 
 ### 🔑 Key Management & Quick Integration
 - **[Token Management](./key-management.md)**: Centrally manage site tokens, with support for one-click completion.
-- **[API Credential Profiles](./api-credential-profiles.md)**: Save URL+Key without needing an account, supporting batch validation.
+- **[API Credential Library](./api-credential-profiles.md)**: Save `Base URL + API Key` without needing an account, then copy, verify, and view models from it.
 - **[Web API Sniffing](./web-ai-api-check.md)**: Quickly identify and test API configurations within a webpage.
 
 ### ⚡ Automation & Information Tracking

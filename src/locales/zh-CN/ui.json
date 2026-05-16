@@ -354,7 +354,7 @@
   "navigation": {
     "about": "关于",
     "account": "账户管理",
-    "apiCredentialProfiles": "API 凭证",
+    "apiCredentialProfiles": "API 凭据库",
     "autoCheckin": "自动签到",
     "autoCheckinRunNow": "快速签到",
     "balanceHistory": "余额历史",

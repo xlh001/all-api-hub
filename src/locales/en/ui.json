@@ -359,7 +359,7 @@
   "navigation": {
     "about": "About",
     "account": "Account Management",
-    "apiCredentialProfiles": "API Credential Profiles",
+    "apiCredentialProfiles": "API Credential Library",
     "autoCheckin": "Auto Check-in",
     "autoCheckinRunNow": "Quick check-in",
     "balanceHistory": "Balance History",

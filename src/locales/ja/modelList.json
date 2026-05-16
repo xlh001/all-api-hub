@@ -148,12 +148,12 @@
   "output": "出力:",
   "output1MTokens": "出力（100 万トークン）",
   "perCall": "1 回あたり:",
-  "pleaseSelectFirst": "モデル一覧を表示するには、先にアカウントまたは API 認証情報プロファイルを選択してください",
+  "pleaseSelectFirst": "モデル一覧を表示するには、先にアカウントまたは API 認証情報を選択してください",
   "pleaseSelectSource": "ソースを選択してください",
   "pricingDescription": "料金情報はサイトが提供する API インターフェースから取得されます。実際の費用は各サイトが公開している価格に従います。従量課金モデルの価格は 100 万トークンあたりで表示され、コール課金モデルは 1 回あたりの価格を表示します。",
   "pricingNote": "モデル料金に関する注意",
   "profileSourceNotice": {
-    "description": "保存済みの API 認証情報プロファイルでは、モデル検出と検証のみ利用できます。このソースでは、料金、グループフィルター、アカウント概要、キー互換性は利用できません。",
+    "description": "保存済みの API 認証情報では、モデル検出と検証のみ利用できます。このソースでは、料金、グループフィルター、アカウント概要、キー互換性は利用できません。",
     "title": "プロファイル由来のモデルカタログ"
   },
   "providerTabs": {
@@ -207,8 +207,8 @@
     "incompatibleFormat": "データ形式に互換性がありません",
     "loadFailed": "モデルデータの読み込みに失敗しました。しばらくしてからもう一度お試しください",
     "loading": "モデルデータを読み込み中...",
-    "profileLoadFailed": "この API 認証情報プロファイルのモデル読み込みに失敗しました: {{errorMessage}}",
-    "profileLoadFailedTitle": "この API 認証情報プロファイルのモデル読み込みに失敗しました",
+    "profileLoadFailed": "この API 認証情報のモデル読み込みに失敗しました: {{errorMessage}}",
+    "profileLoadFailedTitle": "この API 認証情報のモデル読み込みに失敗しました",
     "retryLoad": "再読み込み"
   },
   "title": "モデル一覧",

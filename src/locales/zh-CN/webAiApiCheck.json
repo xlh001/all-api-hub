@@ -14,11 +14,11 @@
       "fetchingModels": "获取中…",
       "fetchModels": "获取模型列表",
       "hideKey": "隐藏 Key",
-      "openApiProfiles": "打开 API 凭证",
+      "openApiProfiles": "打开 API 凭据库",
       "retry": "重试",
       "running": "运行中…",
       "runOne": "运行",
-      "saveToProfiles": "保存到 API 凭证",
+      "saveToProfiles": "保存到 API 凭据库",
       "saving": "保存中…",
       "showKey": "显示 Key",
       "test": "测试",
@@ -28,7 +28,7 @@
       "fetchModelsFailed": "获取模型列表失败。",
       "missingBaseUrlOrKey": "请先填写 Base URL 与 API Key。",
       "runProbeFailed": "探测失败。",
-      "saveToProfilesFailed": "保存到 API 凭证失败"
+      "saveToProfilesFailed": "保存到 API 凭据库失败"
     },
     "fields": {
       "apiKey": "API Key",
@@ -37,12 +37,12 @@
       "modelId": "模型 ID"
     },
     "hints": {
-      "saveWithoutTest": "提示：只要填写 Base URL 与 API Key 就能保存到 API 凭证（无需先测试或获取模型列表）。测试仅用于验证可用性。"
+      "saveWithoutTest": "提示：只要填写 Base URL 与 API Key 就能保存到 API 凭据库（无需先测试或获取模型列表）。测试仅用于验证可用性。"
     },
     "messages": {
-      "savedToProfiles": "已保存 {{name}} 到 API 凭证"
+      "savedToProfiles": "已保存 {{name}} 到 API 凭据库"
     },
-    "privacyHint": "API Key 会被视为敏感信息：默认隐藏，且除非你主动保存到 API 凭证，否则不会持久化保存任何数据。",
+    "privacyHint": "API Key 会被视为敏感信息：默认隐藏，且除非你主动保存到 API 凭据库，否则不会持久化保存任何数据。",
     "probes": {
       "notRunYet": "尚未运行"
     },

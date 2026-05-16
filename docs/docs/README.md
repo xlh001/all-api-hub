@@ -28,8 +28,8 @@ actions:
 features:
   - title: "📦 资产统一看板"
     details: "把多个站点与账号集中在一个面板里，余额、用量与健康状态一眼看清，支持智能识别地址自动添加。"
-  - title: "🏷️ 独立 API 凭证"
-    details: "无需账号，直接保存 Base URL + Key，支持标签分类，完美复用模型查看与接口验证功能。"
+  - title: "🏷️ API 凭据库"
+    details: "无需账号，直接保存 Base URL + API Key，用于快速复制、验证接口、查看模型与余额/用量。"
   - title: "💰 模型价格比对"
     details: "跨站对比各模型实际折合单价，自动锁定当前最优分组，助你寻找最实惠的调用路径。"
   - title: "✅ 深度接口验证"
@@ -62,7 +62,7 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 - **我想更省事**：[资产变动一眼看清](./balance-history.md) -> [同步账号到其它 AI 工具](./get-started.md#quick-export-sites)
 
 ### 🛠️ 我是进阶玩家 (Key 收藏家)
-- **密钥管理**：[将独立 URL+Key 保存为凭证](./api-credential-profiles.md)
+- **密钥管理**：[将独立 URL+Key 保存到 API 凭据库](./api-credential-profiles.md)
 - **可用性测试**：[批量验证接口与 CLI 兼容性](./web-ai-api-check.md)
 - **跨端同步**：[配置 WebDAV 加密备份](./webdav-sync.md)
 

@@ -17,7 +17,7 @@
   "import": {
     "backupTime": "Backup Time",
     "containsAccountData": "Contains account data",
-    "containsApiCredentialProfiles": "Contains API credential profiles",
+    "containsApiCredentialProfiles": "Contains API credential library",
     "containsChannelConfigs": "Contains channel configuration",
     "containsUserSettings": "Contains user settings",
     "dataInvalid": "Data format error, please check JSON format",
@@ -97,7 +97,7 @@
     "showPassword": "Show password",
     "syncData": {
       "accounts": "Accounts",
-      "apiCredentialProfiles": "API credential profiles",
+      "apiCredentialProfiles": "API credential library",
       "bookmarks": "Bookmarks",
       "description": "Choose which shared data domains participate in WebDAV sync. Device-local preference items such as WebDAV settings, sync selection, and account auto-refresh stay on the current device, while channel configurations remain synced for compatibility.",
       "preferences": "Preferences",

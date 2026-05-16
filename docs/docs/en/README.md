@@ -28,8 +28,8 @@ actions:
 features:
   - title: "📦 Unified Asset Dashboard"
     details: "Consolidate multiple sites and accounts into a single panel for a clear overview of balances, usage, and health status, with smart site identification."
-  - title: "🏷️ Independent API Credentials"
-    details: "Save Base URL + Key without a site account. Support tag filtering and reuse for model viewing and API validation."
+  - title: "🏷️ API Credential Library"
+    details: "Save Base URL + API Key without a site account for quick copying, API verification, model lookup, and balance/usage checks."
   - title: "💰 Model Price Comparison"
     details: "Compare actual costs across different sites, automatically identify the best group, and find the most cost-effective path."
   - title: "✅ In-depth API Validation"
@@ -64,7 +64,7 @@ In the AI era, many of us keep multiple relay-site accounts to save money or try
 
 ### 🛠️ I am an advanced user (Key collector)
 
-- **Key management**: [Save standalone URL+Key pairs as credentials](./api-credential-profiles.md)
+- **Key management**: [Save standalone URL+Key pairs to the API Credential Library](./api-credential-profiles.md)
 - **Availability testing**: [Batch verify API and CLI compatibility](./web-ai-api-check.md)
 - **Cross-device sync**: [Configure encrypted WebDAV backup](./webdav-sync.md)
 

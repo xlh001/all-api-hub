@@ -354,7 +354,7 @@
   "navigation": {
     "about": "この拡張機能について",
     "account": "アカウント管理",
-    "apiCredentialProfiles": "API 認証情報プロファイル",
+    "apiCredentialProfiles": "API 認証情報庫",
     "autoCheckin": "自動チェックイン",
     "autoCheckinRunNow": "クイックチェックイン",
     "balanceHistory": "残高履歴",

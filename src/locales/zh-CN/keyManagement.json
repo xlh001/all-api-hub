@@ -17,9 +17,9 @@
     "importToClaudeCodeRouter": "导入到 Claude Code Router",
     "importToCliProxy": "导入到 CLIProxyAPI",
     "importToManagedSite": "导入到 {{site}}",
-    "openApiProfiles": "打开 API 凭证",
+    "openApiProfiles": "打开 API 凭据库",
     "retryFailed": "重试失败账号",
-    "saveToApiProfiles": "保存到 API 凭证",
+    "saveToApiProfiles": "保存到 API 凭据库",
     "showKey": "显示密钥",
     "useInCherry": "在 Cherry Studio 中使用"
   },
@@ -223,8 +223,8 @@
     "keyCopied": "密钥 {{name}} 已复制到剪贴板",
     "loadFailed": "加载密钥列表失败",
     "revealFailed": "显示密钥失败",
-    "savedToApiProfiles": "已保存 {{name}} 到 API 凭证",
-    "saveToApiProfilesFailed": "保存到 API 凭证失败"
+    "savedToApiProfiles": "已保存 {{name}} 到 API 凭据库",
+    "saveToApiProfilesFailed": "保存到 API 凭据库失败"
   },
   "noKeys": "暂无密钥数据",
   "noMatchingKeys": "没有找到匹配的密钥",

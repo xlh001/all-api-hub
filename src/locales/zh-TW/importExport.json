@@ -17,7 +17,7 @@
   "import": {
     "backupTime": "備份時間",
     "containsAccountData": "包含帳號資料",
-    "containsApiCredentialProfiles": "包含 API 配置",
+    "containsApiCredentialProfiles": "包含 API 憑據庫",
     "containsChannelConfigs": "包含渠道配置",
     "containsUserSettings": "包含使用者設定",
     "dataInvalid": "資料格式錯誤，請檢查JSON格式",
@@ -97,7 +97,7 @@
     "showPassword": "顯示密碼",
     "syncData": {
       "accounts": "帳號",
-      "apiCredentialProfiles": "API 憑據",
+      "apiCredentialProfiles": "API 憑據庫",
       "bookmarks": "書籤",
       "description": "選擇需要透過 WebDAV 同步的共享資料型別；例如 WebDAV 配置、同步選擇和帳號自動重新整理等裝置本地項會保留在當前裝置。",
       "preferences": "偏好設定",

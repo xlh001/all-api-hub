@@ -116,7 +116,7 @@ const BASE_MENU_ITEMS: MenuItem[] = [
   },
   {
     id: MENU_ITEM_IDS.API_CREDENTIAL_PROFILES,
-    name: "API 凭证",
+    name: "API 凭据库",
     icon: KeyRound,
     component: ApiCredentialProfiles,
   },
