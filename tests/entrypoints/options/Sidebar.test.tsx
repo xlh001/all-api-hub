@@ -73,6 +73,39 @@ describe("Options Sidebar", () => {
     expect(
       within(nav).getByRole("button", { name: "ui:navigation.basic" }),
     ).toBeInTheDocument()
+
+    expect(
+      within(nav)
+        .getAllByRole("button")
+        .slice(0, 9)
+        .map((button) => button.textContent),
+    ).toEqual([
+      "ui:navigation.basic",
+      "ui:navigation.account",
+      "ui:navigation.apiCredentialProfiles",
+      "ui:navigation.bookmark",
+      "ui:navigation.models",
+      "ui:navigation.keys",
+      "ui:navigation.autoCheckin",
+      "ui:navigation.balanceHistory",
+      "ui:navigation.siteAnnouncements",
+    ])
+
+    const autoCheckinButton = within(nav).getByRole("button", {
+      name: "ui:navigation.autoCheckin",
+    })
+    const balanceHistoryButton = within(nav).getByRole("button", {
+      name: "ui:navigation.balanceHistory",
+    })
+
+    expect(autoCheckinButton.parentElement?.firstElementChild).toHaveAttribute(
+      "role",
+      "none",
+    )
+    expect(balanceHistoryButton.parentElement?.firstElementChild).toBe(
+      balanceHistoryButton,
+    )
+
     expect(
       within(nav).getByRole("button", { name: "ui:navigation.autoCheckin" }),
     ).toBeInTheDocument()

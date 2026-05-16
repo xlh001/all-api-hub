@@ -136,6 +136,12 @@ describe("popup bookmarks view", () => {
     const accountsView = screen.getByTestId("popup-view-accounts")
     expect(within(accountsView).getByText("AccountList")).toBeInTheDocument()
 
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+      "bookmark:switch.accounts",
+      "apiCredentialProfiles:popup.tabLabel",
+      "bookmark:switch.bookmarks",
+    ])
+
     fireEvent.click(
       await screen.findByRole("tab", { name: "bookmark:switch.bookmarks" }),
     )

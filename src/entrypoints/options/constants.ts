@@ -91,16 +91,16 @@ const BASE_MENU_ITEMS: MenuItem[] = [
     component: AccountManagement,
   },
   {
+    id: MENU_ITEM_IDS.API_CREDENTIAL_PROFILES,
+    name: "API 凭据库",
+    icon: KeyRound,
+    component: ApiCredentialProfiles,
+  },
+  {
     id: MENU_ITEM_IDS.BOOKMARK,
     name: "书签",
     icon: Bookmark,
     component: BookmarkManagement,
-  },
-  {
-    id: MENU_ITEM_IDS.AUTO_CHECKIN,
-    name: "自动签到",
-    icon: CalendarCheck2,
-    component: AutoCheckin,
   },
   {
     id: MENU_ITEM_IDS.MODELS,
@@ -115,10 +115,10 @@ const BASE_MENU_ITEMS: MenuItem[] = [
     component: KeyManagement,
   },
   {
-    id: MENU_ITEM_IDS.API_CREDENTIAL_PROFILES,
-    name: "API 凭据库",
-    icon: KeyRound,
-    component: ApiCredentialProfiles,
+    id: MENU_ITEM_IDS.AUTO_CHECKIN,
+    name: "自动签到",
+    icon: CalendarCheck2,
+    component: AutoCheckin,
   },
   {
     id: MENU_ITEM_IDS.BALANCE_HISTORY,

@@ -85,15 +85,15 @@ export default function PopupViewSwitchTabs({
       fallbackActionId: PRODUCT_ANALYTICS_ACTION_IDS.SelectAccountsView,
     },
     {
-      value: "bookmarks",
-      label: bookmarksLabel,
-      fallbackActionId: PRODUCT_ANALYTICS_ACTION_IDS.SelectBookmarksView,
-    },
-    {
       value: "apiCredentialProfiles",
       label: apiCredentialProfilesLabel,
       fallbackActionId:
         PRODUCT_ANALYTICS_ACTION_IDS.SelectApiCredentialProfilesView,
+    },
+    {
+      value: "bookmarks",
+      label: bookmarksLabel,
+      fallbackActionId: PRODUCT_ANALYTICS_ACTION_IDS.SelectBookmarksView,
     },
   ] as const
 
