@@ -2,9 +2,14 @@ import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   ACCOUNT_SITE_TYPES,
   MANAGED_SITE_TYPES,
+  SITE_TYPES,
   type ManagedSiteType,
 } from "~/constants/siteType"
+import { API_TYPES } from "~/services/verification/aiApiVerification/types"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
+import { createLogger } from "~/utils/core/logger"
+
+const logger = createLogger("ProductAnalyticsEvents")
 
 export const PRODUCT_ANALYTICS_EVENTS = {
   AppOpened: "app_opened",
@@ -82,10 +87,19 @@ export const PRODUCT_ANALYTICS_SOURCE_KINDS = {
   Manual: "manual",
   Row: "row",
   Auto: "auto",
+  ApiCredentialProfileManualOptions: "api_credential_profile_manual_options",
+  ApiCredentialProfileManualPopup: "api_credential_profile_manual_popup",
+  ApiCredentialProfileContentApiCheck:
+    "api_credential_profile_content_api_check",
+  ApiCredentialProfileAccountToken: "api_credential_profile_account_token",
+  ClipboardEvent: "clipboard_event",
+  ContextMenu: "context_menu",
+  CopyTargetClipboard: "copy_target_clipboard",
   ModelAllAccounts: "model_all_accounts",
   ModelAccount: "model_account",
   ModelProfile: "model_profile",
   ModelFallbackCatalog: "model_fallback_catalog",
+  Selection: "selection",
   Unknown: "unknown",
 } as const
 
@@ -97,6 +111,12 @@ export const PRODUCT_ANALYTICS_MODE_IDS = {
   Selected: "selected",
   Single: "single",
   RetryFailed: "retry_failed",
+  TelemetryAuto: "telemetry_auto",
+  TelemetryDisabled: "telemetry_disabled",
+  TelemetryNewApiTokenUsage: "telemetry_new_api_token_usage",
+  TelemetrySub2ApiUsage: "telemetry_sub2api_usage",
+  TelemetryOpenAiBilling: "telemetry_openai_billing",
+  TelemetryCustomReadOnlyEndpoint: "telemetry_custom_read_only_endpoint",
   Export: "export",
   SearchFilter: "search_filter",
   ProviderFilter: "provider_filter",
@@ -108,10 +128,40 @@ export const PRODUCT_ANALYTICS_MODE_IDS = {
   CollapseDetails: "collapse_details",
   ApiVerification: "api_verification",
   CliVerification: "cli_verification",
+  RefreshIntervalLessThan10m: "refresh_interval_lt_10m",
+  RefreshIntervalOneTo10m: "refresh_interval_1_10m",
+  RefreshIntervalTenTo60m: "refresh_interval_10_60m",
+  RefreshIntervalOneTo6h: "refresh_interval_1_6h",
+  RefreshIntervalSixTo24h: "refresh_interval_6_24h",
+  RefreshIntervalGreaterThan24h: "refresh_interval_gt_24h",
+  RetentionDaysSevenOrLess: "retention_days_le_7",
+  RetentionDaysEightTo30: "retention_days_8_30",
+  RetentionDaysThirtyOneTo365: "retention_days_31_365",
+  RetentionDaysGreaterThan365: "retention_days_gt_365",
+  UsageHistoryManual: "usage_history_manual",
+  UsageHistoryAfterRefresh: "usage_history_after_refresh",
+  UsageHistoryAlarm: "usage_history_alarm",
+  RateLimitLessThan20: "rate_limit_lt_20",
+  RateLimitTwentyTo60: "rate_limit_20_60",
+  RateLimitSixtyPlus: "rate_limit_60_plus",
+  TempWindowModeTab: "temp_window_mode_tab",
+  TempWindowModeWindow: "temp_window_mode_window",
+  TempWindowModeComposite: "temp_window_mode_composite",
+  WebDavMerge: "webdav_merge",
+  WebDavUploadOnly: "webdav_upload_only",
+  WebDavDownloadOnly: "webdav_download_only",
 } as const
 
 export type ProductAnalyticsModeId =
   (typeof PRODUCT_ANALYTICS_MODE_IDS)[keyof typeof PRODUCT_ANALYTICS_MODE_IDS]
+
+export const PRODUCT_ANALYTICS_EDITOR_MODES = {
+  Visual: "visual",
+  Json: "json",
+} as const
+
+export type ProductAnalyticsEditorMode =
+  (typeof PRODUCT_ANALYTICS_EDITOR_MODES)[keyof typeof PRODUCT_ANALYTICS_EDITOR_MODES]
 
 export const PRODUCT_ANALYTICS_STATUS_KINDS = {
   Healthy: "healthy",
@@ -133,6 +183,16 @@ export const PRODUCT_ANALYTICS_TELEMETRY_SOURCES = {
 
 export type ProductAnalyticsTelemetrySource =
   (typeof PRODUCT_ANALYTICS_TELEMETRY_SOURCES)[keyof typeof PRODUCT_ANALYTICS_TELEMETRY_SOURCES]
+
+export const PRODUCT_ANALYTICS_API_TYPES = {
+  OpenAiCompatible: API_TYPES.OPENAI_COMPATIBLE,
+  OpenAi: API_TYPES.OPENAI,
+  Anthropic: API_TYPES.ANTHROPIC,
+  Google: API_TYPES.GOOGLE,
+} as const
+
+export type ProductAnalyticsApiType =
+  (typeof PRODUCT_ANALYTICS_API_TYPES)[keyof typeof PRODUCT_ANALYTICS_API_TYPES]
 
 export const PRODUCT_ANALYTICS_PAGE_IDS = {
   PopupAccounts: "popup_accounts",
@@ -245,9 +305,11 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
     "detected_api_credential_check_dismissed",
   DetectedApiCredentialReviewStarted: "detected_api_credential_review_started",
   DismissDetectedApiCredentialCheck: "dismiss_detected_api_credential_check",
+  AutoFetchApiCredentialModelList: "auto_fetch_api_credential_model_list",
   FetchApiCredentialModelList: "fetch_api_credential_model_list",
   FilterAutoCheckinResults: "filter_auto_checkin_results",
   FilterAccounts: "filter_accounts",
+  FilterManagedSiteModelSyncResults: "filter_managed_site_model_sync_results",
   ImportBackupData: "import_backup_data",
   ImportAccountCookies: "import_account_cookies",
   ImportApiCredentialProfileToClaudeCodeRouter:
@@ -275,6 +337,8 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   OpenAutoCheckinManualSignIn: "open_auto_checkin_manual_sign_in",
   OpenBookmark: "open_bookmark",
   OpenBatchModelVerifyDialog: "open_batch_model_verify_dialog",
+  OpenCreateApiCredentialProfileDialog:
+    "open_create_api_credential_profile_dialog",
   OpenAccountKeyManagementFromModel: "open_account_key_management_from_model",
   OpenFailedAutoCheckinManualSignIns:
     "open_failed_auto_checkin_manual_sign_ins",
@@ -282,9 +346,14 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
     "open_filtered_managed_site_channel_migration",
   OpenKeyList: "open_key_list",
   OpenKeyManagement: "open_key_management",
+  OpenUpdateApiCredentialProfileDialog:
+    "open_update_api_credential_profile_dialog",
   OpenManagedSiteChannelFilters: "open_managed_site_channel_filters",
+  OpenManagedSiteChannelManagement: "open_managed_site_channel_management",
   OpenManagedSiteChannelMigration: "open_managed_site_channel_migration",
   OpenManagedSiteChannelModelSync: "open_managed_site_channel_model_sync",
+  OpenManagedSiteModelSyncConfigRequired:
+    "open_managed_site_model_sync_config_required",
   OpenModelKeyDialog: "open_model_key_dialog",
   OpenModelManagement: "open_model_management",
   OpenPopupExternalCheckIns: "open_popup_external_check_ins",
@@ -296,6 +365,8 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   OpenPopupSettingsPage: "open_popup_settings_page",
   OpenSidepanelFromPopup: "open_sidepanel_from_popup",
   OpenSidepanelFromToolbarAction: "open_sidepanel_from_toolbar_action",
+  ClearApiCredentialProfileFilters: "clear_api_credential_profile_filters",
+  FilterApiCredentialProfiles: "filter_api_credential_profiles",
   OpenUpdateAccountDialog: "open_update_account_dialog",
   OpenBalanceHistorySettings: "open_balance_history_settings",
   OpenRedeemPage: "open_redeem_page",
@@ -338,8 +409,15 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   SaveManagedSiteChannelModelFilters: "save_managed_site_channel_model_filters",
   ScanDuplicateAccounts: "scan_duplicate_accounts",
   SearchAccounts: "search_accounts",
+  SearchManagedSiteModelSyncChannels: "search_managed_site_model_sync_channels",
+  SelectAllManagedSiteModelSyncChannels:
+    "select_all_managed_site_model_sync_channels",
+  SelectManagedSiteModelSyncTab: "select_managed_site_model_sync_tab",
   SelectModelSource: "select_model_source",
   FilterModelList: "filter_model_list",
+  SelectApiCredentialProfileExportDestination:
+    "select_api_credential_profile_export_destination",
+  SnapshotApiCredentialProfiles: "snapshot_api_credential_profiles",
   ToggleModelDetails: "toggle_model_details",
   SelectApiCredentialProfilesView: "select_api_credential_profiles_view",
   SelectBookmarksView: "select_bookmarks_view",
@@ -347,8 +425,14 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   ShareOverviewSnapshot: "share_overview_snapshot",
   ShieldBypassPromptDismissed: "shield_bypass_prompt_dismissed",
   ShieldBypassSettingsVisited: "shield_bypass_settings_visited",
+  ShowApiCredentialCheckModal: "show_api_credential_check_modal",
+  ShowRedemptionAccountSelect: "show_redemption_account_select",
+  ShowRedemptionBatchResult: "show_redemption_batch_result",
+  ShowRedemptionPrompt: "show_redemption_prompt",
+  ShowShieldBypassPrompt: "show_shield_bypass_prompt",
   StartBatchModelVerify: "start_batch_model_verify",
   StopBatchModelVerify: "stop_batch_model_verify",
+  ScheduledManagedSiteModelSync: "scheduled_managed_site_model_sync",
   SyncWebDavNow: "sync_webdav_now",
   SyncManagedSiteChannel: "sync_managed_site_channel",
   SyncAllManagedSiteModels: "sync_all_managed_site_models",
@@ -367,6 +451,7 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   UpdateApiCredentialProfile: "update_api_credential_profile",
   UpdateBookmark: "update_bookmark",
   UpdateManagedSiteChannel: "update_managed_site_channel",
+  UpdateManagedSiteModelSyncSettings: "update_managed_site_model_sync_settings",
   UpdateWebDavAutoSyncSettings: "update_webdav_auto_sync_settings",
   UpdateWebDavConfig: "update_webdav_config",
   UploadWebDavBackup: "upload_webdav_backup",
@@ -463,6 +548,7 @@ export const PRODUCT_ANALYTICS_SURFACE_IDS = {
   PopupActionBar: "popup_action_bar",
   PopupApiCredentialProfilesEmptyState:
     "popup_api_credential_profiles_empty_state",
+  PopupApiCredentialProfilesStats: "popup_api_credential_profiles_stats",
   PopupHeader: "popup_header",
   PopupViewTabs: "popup_view_tabs",
   SidepanelActionBar: "sidepanel_action_bar",
@@ -475,10 +561,72 @@ export type ProductAnalyticsSurfaceId =
 
 export const PRODUCT_ANALYTICS_SETTING_IDS = {
   ProductAnalyticsEnabled: "product_analytics_enabled",
+  AccountBehaviorSnapshot: "account_behavior_snapshot",
+  AutoRefreshConfigSnapshot: "auto_refresh_config_snapshot",
+  UsageHistoryConfigSnapshot: "usage_history_config_snapshot",
+  BalanceHistoryConfigSnapshot: "balance_history_config_snapshot",
+  ManagedSiteConfigSnapshot: "managed_site_config_snapshot",
+  AutoCheckinConfigSnapshot: "auto_checkin_config_snapshot",
+  ManagedSiteModelSyncConfigSnapshot: "managed_site_model_sync_config_snapshot",
+  ModelRedirectConfigSnapshot: "model_redirect_config_snapshot",
+  RedemptionAssistConfigSnapshot: "redemption_assist_config_snapshot",
+  WebAiApiCheckConfigSnapshot: "web_ai_api_check_config_snapshot",
+  TempWindowFallbackConfigSnapshot: "temp_window_fallback_config_snapshot",
+  WebDavConfigSnapshot: "webdav_config_snapshot",
+  TaskNotificationsConfigSnapshot: "task_notifications_config_snapshot",
+  SiteAnnouncementsConfigSnapshot: "site_announcements_config_snapshot",
 } as const
 
 export type ProductAnalyticsSettingId =
   (typeof PRODUCT_ANALYTICS_SETTING_IDS)[keyof typeof PRODUCT_ANALYTICS_SETTING_IDS]
+
+export const PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES = {
+  Random: "random",
+  Deterministic: "deterministic",
+} as const
+
+export type ProductAnalyticsAutoCheckinScheduleMode =
+  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES]
+
+export const PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_INTERVAL_BUCKETS = {
+  LessThan10m: "lt_10m",
+  TenTo30m: "10_30m",
+  ThirtyTo60m: "30_60m",
+  GreaterThan60m: "gt_60m",
+} as const
+
+export type ProductAnalyticsAutoCheckinRetryIntervalBucket =
+  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_INTERVAL_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_INTERVAL_BUCKETS]
+
+export const PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS = {
+  One: "1",
+  TwoToThree: "2_3",
+  FourPlus: "4_plus",
+} as const
+
+export type ProductAnalyticsAutoCheckinRetryAttemptBucket =
+  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS]
+
+export const PRODUCT_ANALYTICS_AUTO_CHECKIN_WINDOW_LENGTH_BUCKETS = {
+  LessThan1h: "lt_1h",
+  OneTo4h: "1_4h",
+  FourTo12h: "4_12h",
+  GreaterThan12h: "gt_12h",
+} as const
+
+export type ProductAnalyticsAutoCheckinWindowLengthBucket =
+  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_WINDOW_LENGTH_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_WINDOW_LENGTH_BUCKETS]
+
+export const PRODUCT_ANALYTICS_AUTO_CHECKIN_DETERMINISTIC_TIME_BUCKETS = {
+  Night: "night",
+  Morning: "morning",
+  Afternoon: "afternoon",
+  Evening: "evening",
+  Unset: "unset",
+} as const
+
+export type ProductAnalyticsAutoCheckinDeterministicTimeBucket =
+  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_DETERMINISTIC_TIME_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_DETERMINISTIC_TIME_BUCKETS]
 
 export const PRODUCT_ANALYTICS_PERMISSION_IDS = {
   Notifications: "notifications",
@@ -497,6 +645,32 @@ export const PRODUCT_ANALYTICS_SITE_TYPES = [
 ] as ReadonlyArray<(typeof ACCOUNT_SITE_TYPES)[number] | ManagedSiteType>
 export type ProductAnalyticsSiteType =
   (typeof PRODUCT_ANALYTICS_SITE_TYPES)[number]
+
+export const PRODUCT_ANALYTICS_MANAGED_SITE_TYPES = {
+  NewApi: SITE_TYPES.NEW_API,
+  Veloera: SITE_TYPES.VELOERA,
+  DoneHub: SITE_TYPES.DONE_HUB,
+  Octopus: SITE_TYPES.OCTOPUS,
+  AxonHub: SITE_TYPES.AXON_HUB,
+  ClaudeCodeHub: SITE_TYPES.CLAUDE_CODE_HUB,
+} as const
+
+export type ProductAnalyticsManagedSiteType =
+  (typeof PRODUCT_ANALYTICS_MANAGED_SITE_TYPES)[keyof typeof PRODUCT_ANALYTICS_MANAGED_SITE_TYPES]
+
+export const PRODUCT_ANALYTICS_FAILURE_STAGES = {
+  Detection: "detection",
+  Parse: "parse",
+  Permission: "permission",
+  Validation: "validation",
+  Prompt: "prompt",
+  Persist: "persist",
+  Preview: "preview",
+  Execute: "execute",
+} as const
+
+export type ProductAnalyticsFailureStage =
+  (typeof PRODUCT_ANALYTICS_FAILURE_STAGES)[keyof typeof PRODUCT_ANALYTICS_FAILURE_STAGES]
 
 export type ProductAnalyticsEventPayloadMap = {
   [PRODUCT_ANALYTICS_EVENTS.AppOpened]: {
@@ -519,21 +693,94 @@ export type ProductAnalyticsEventPayloadMap = {
     result: ProductAnalyticsResult
     error_category?: ProductAnalyticsErrorCategory
     duration_bucket?: ProductAnalyticsDurationBucket
+    api_type?: ProductAnalyticsApiType
     source_kind?: ProductAnalyticsSourceKind
     mode?: ProductAnalyticsModeId
+    editor_mode?: ProductAnalyticsEditorMode
     status_kind?: ProductAnalyticsStatusKind
     telemetry_source?: ProductAnalyticsTelemetrySource
+    managed_site_type?: ProductAnalyticsManagedSiteType
+    source_managed_site_type?: ProductAnalyticsManagedSiteType
+    target_managed_site_type?: ProductAnalyticsManagedSiteType
+    failure_stage?: ProductAnalyticsFailureStage
     item_count_bucket?: ProductAnalyticsCountBucket
     selected_count_bucket?: ProductAnalyticsCountBucket
     success_count_bucket?: ProductAnalyticsCountBucket
     failure_count_bucket?: ProductAnalyticsCountBucket
+    skipped_count_bucket?: ProductAnalyticsCountBucket
+    warning_count_bucket?: ProductAnalyticsCountBucket
+    ready_count_bucket?: ProductAnalyticsCountBucket
+    blocked_count_bucket?: ProductAnalyticsCountBucket
     model_count_bucket?: ProductAnalyticsCountBucket
     usage_data_present?: boolean
     entrypoint: ProductAnalyticsEntrypoint
   }
   [PRODUCT_ANALYTICS_EVENTS.SettingChanged]: {
     setting_id: ProductAnalyticsSettingId
-    enabled: boolean
+    enabled?: boolean
+    configured?: boolean
+    auto_provision_key_on_account_add_enabled?: boolean
+    auto_fill_current_site_url_on_account_add_enabled?: boolean
+    warn_on_duplicate_account_add_enabled?: boolean
+    show_today_cashflow_enabled?: boolean
+    show_health_status_enabled?: boolean
+    refresh_on_open_enabled?: boolean
+    refresh_interval_bucket?: ProductAnalyticsModeId
+    min_refresh_interval_bucket?: ProductAnalyticsModeId
+    sync_interval_bucket?: ProductAnalyticsModeId
+    polling_interval_bucket?: ProductAnalyticsModeId
+    retention_days_bucket?: ProductAnalyticsModeId
+    end_of_day_capture_enabled?: boolean
+    managed_site_type?: ProductAnalyticsManagedSiteType
+    new_api_configured?: boolean
+    done_hub_configured?: boolean
+    veloera_configured?: boolean
+    octopus_configured?: boolean
+    axon_hub_configured?: boolean
+    claude_code_hub_configured?: boolean
+    cli_proxy_configured?: boolean
+    claude_code_router_configured?: boolean
+    concurrency_bucket?: ProductAnalyticsCountBucket
+    rate_limit_rpm_bucket?: ProductAnalyticsModeId
+    rate_limit_burst_bucket?: ProductAnalyticsCountBucket
+    allowed_models_configured?: boolean
+    global_filters_configured?: boolean
+    standard_models_configured?: boolean
+    prune_missing_targets_on_model_sync_enabled?: boolean
+    context_menu_enabled?: boolean
+    relaxed_code_validation_enabled?: boolean
+    url_whitelist_enabled?: boolean
+    url_whitelist_patterns_configured?: boolean
+    url_whitelist_account_urls_enabled?: boolean
+    url_whitelist_checkin_redeem_urls_enabled?: boolean
+    auto_detect_enabled?: boolean
+    auto_detect_url_patterns_configured?: boolean
+    popup_enabled?: boolean
+    sidepanel_enabled?: boolean
+    options_enabled?: boolean
+    auto_refresh_enabled?: boolean
+    manual_refresh_enabled?: boolean
+    mode?: ProductAnalyticsModeId
+    auto_sync_enabled?: boolean
+    backup_encryption_enabled?: boolean
+    sync_strategy?: ProductAnalyticsModeId
+    sync_accounts_enabled?: boolean
+    sync_bookmarks_enabled?: boolean
+    sync_api_profiles_enabled?: boolean
+    sync_preferences_enabled?: boolean
+    browser_channel_enabled?: boolean
+    third_party_channel_count_bucket?: ProductAnalyticsCountBucket
+    task_enabled_count_bucket?: ProductAnalyticsCountBucket
+    notification_enabled?: boolean
+    global_enabled?: boolean
+    ui_pretrigger_enabled?: boolean
+    notify_completion_enabled?: boolean
+    retry_enabled?: boolean
+    schedule_mode?: ProductAnalyticsAutoCheckinScheduleMode
+    retry_interval_bucket?: ProductAnalyticsAutoCheckinRetryIntervalBucket
+    retry_max_attempts_bucket?: ProductAnalyticsAutoCheckinRetryAttemptBucket
+    window_length_bucket?: ProductAnalyticsAutoCheckinWindowLengthBucket
+    deterministic_time_bucket?: ProductAnalyticsAutoCheckinDeterministicTimeBucket
     entrypoint: ProductAnalyticsEntrypoint
   }
   [PRODUCT_ANALYTICS_EVENTS.PermissionResult]: {
@@ -571,22 +818,40 @@ export type ProductAnalyticsTrackSiteEcosystemRequest = {
   reason: "startup" | "account_changed" | "manual"
 }
 
+export type ProductAnalyticsTrackSettingsSnapshotRequest = {
+  action: typeof RuntimeActionIds.ProductAnalyticsTrackSettingsSnapshot
+  reason: "startup" | "preferences_changed" | "manual"
+}
+
 export type ProductAnalyticsRuntimeRequest =
   | ProductAnalyticsTrackRequest
   | ProductAnalyticsTrackSiteEcosystemRequest
+  | ProductAnalyticsTrackSettingsSnapshotRequest
 
 /**
  * Sends a typed product analytics event to the background runtime handler.
+ * Telemetry dispatch is best-effort and must not block product flows.
  */
-export function trackProductAnalyticsEvent<
+export async function trackProductAnalyticsEvent<
   TEventName extends ProductAnalyticsEventName,
 >(
   eventName: TEventName,
   properties: ProductAnalyticsEventPayload<TEventName>,
-): Promise<unknown> {
-  return sendRuntimeMessage({
-    action: RuntimeActionIds.ProductAnalyticsTrackEvent,
-    eventName,
-    properties,
-  } satisfies ProductAnalyticsTrackRequest<TEventName>)
+): Promise<boolean> {
+  try {
+    const response = await sendRuntimeMessage({
+      action: RuntimeActionIds.ProductAnalyticsTrackEvent,
+      eventName,
+      properties,
+    } satisfies ProductAnalyticsTrackRequest<TEventName>)
+    return !(
+      response &&
+      typeof response === "object" &&
+      "success" in response &&
+      response.success === false
+    )
+  } catch (error) {
+    logger.warn("Product analytics event dispatch failed", error)
+    return false
+  }
 }

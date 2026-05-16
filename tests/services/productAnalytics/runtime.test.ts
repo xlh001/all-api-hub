@@ -1,22 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { fakeBrowser } from "wxt/testing/fake-browser"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SITE_TYPES } from "~/constants/siteType"
+import { createDefaultPreferences } from "~/services/preferences/userPreferences"
 import {
   handleProductAnalyticsMessage,
+  PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_EVENTS,
   setupProductAnalyticsAccountChangeListener,
+  setupProductAnalyticsPreferencesChangeListener,
 } from "~/services/productAnalytics"
 
-const { captureMock, getAllAccountsMock, preferenceMocks } = vi.hoisted(() => ({
-  captureMock: vi.fn(),
-  getAllAccountsMock: vi.fn(),
-  preferenceMocks: {
-    getState: vi.fn(),
-    isEnabled: vi.fn(),
-    setLastSiteEcosystemSnapshotAt: vi.fn(),
-  },
-}))
+const { captureMock, getAllAccountsMock, getPreferencesMock, preferenceMocks } =
+  vi.hoisted(() => ({
+    captureMock: vi.fn(),
+    getAllAccountsMock: vi.fn(),
+    getPreferencesMock: vi.fn(),
+    preferenceMocks: {
+      getState: vi.fn(),
+      isEnabled: vi.fn(),
+      setLastSettingsSnapshotAt: vi.fn(),
+      setLastSiteEcosystemSnapshotAt: vi.fn(),
+    },
+  }))
 
 vi.mock("~/services/productAnalytics/client", () => ({
   productAnalyticsClient: {
@@ -47,6 +54,20 @@ vi.mock("~/services/accounts/accountStorage", () => ({
   },
 }))
 
+vi.mock("~/services/preferences/userPreferences", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("~/services/preferences/userPreferences")
+    >()
+  return {
+    ...actual,
+    userPreferences: {
+      ...actual.userPreferences,
+      getPreferences: getPreferencesMock,
+    },
+  }
+})
+
 describe("product analytics runtime", () => {
   const originalBrowser = (globalThis as any).browser
 
@@ -57,8 +78,10 @@ describe("product analytics runtime", () => {
     captureMock.mockResolvedValue(true)
     preferenceMocks.isEnabled.mockResolvedValue(true)
     preferenceMocks.getState.mockResolvedValue({})
+    preferenceMocks.setLastSettingsSnapshotAt.mockResolvedValue(true)
     preferenceMocks.setLastSiteEcosystemSnapshotAt.mockResolvedValue(true)
     getAllAccountsMock.mockResolvedValue([])
+    getPreferencesMock.mockResolvedValue(createDefaultPreferences())
   })
 
   afterEach(() => {
@@ -86,6 +109,77 @@ describe("product analytics runtime", () => {
       entrypoint: "options",
     })
     expect(sendResponse).toHaveBeenCalledWith({ success: true })
+  })
+
+  it("sends rate-limited settings snapshots", async () => {
+    const sendResponse = vi.fn()
+    getPreferencesMock.mockResolvedValue(
+      createDefaultPreferences(Date.parse("2026-05-12T00:00:00.000Z")),
+    )
+
+    await handleProductAnalyticsMessage(
+      {
+        action: RuntimeActionIds.ProductAnalyticsTrackSettingsSnapshot,
+        reason: "startup",
+      },
+      sendResponse,
+    )
+
+    expect(captureMock).toHaveBeenCalledWith(
+      "setting_changed",
+      expect.objectContaining({
+        setting_id: "account_behavior_snapshot",
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      }),
+    )
+    expect(captureMock).toHaveBeenCalledWith(
+      "setting_changed",
+      expect.objectContaining({
+        setting_id: "webdav_config_snapshot",
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      }),
+    )
+    expect(preferenceMocks.setLastSettingsSnapshotAt).toHaveBeenCalledWith(
+      Date.parse("2026-05-12T00:00:00.000Z"),
+    )
+    expect(sendResponse).toHaveBeenCalledWith({ success: true })
+
+    vi.clearAllMocks()
+    preferenceMocks.isEnabled.mockResolvedValue(true)
+    preferenceMocks.getState.mockResolvedValue({
+      lastSettingsSnapshotAt: Date.parse("2026-05-12T00:00:00.000Z"),
+    })
+    preferenceMocks.setLastSiteEcosystemSnapshotAt.mockResolvedValue(true)
+    preferenceMocks.setLastSettingsSnapshotAt.mockResolvedValue(true)
+
+    await handleProductAnalyticsMessage(
+      {
+        action: RuntimeActionIds.ProductAnalyticsTrackSettingsSnapshot,
+        reason: "manual",
+      },
+      sendResponse,
+    )
+
+    expect(getPreferencesMock).not.toHaveBeenCalled()
+    expect(captureMock).not.toHaveBeenCalled()
+    expect(preferenceMocks.setLastSettingsSnapshotAt).not.toHaveBeenCalled()
+  })
+
+  it("does not update settings snapshot cadence when a snapshot event capture returns false", async () => {
+    const sendResponse = vi.fn()
+    captureMock.mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+
+    await handleProductAnalyticsMessage(
+      {
+        action: RuntimeActionIds.ProductAnalyticsTrackSettingsSnapshot,
+        reason: "startup",
+      },
+      sendResponse,
+    )
+
+    expect(captureMock).toHaveBeenCalledTimes(2)
+    expect(preferenceMocks.setLastSettingsSnapshotAt).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({ success: false })
   })
 
   it("ignores invalid runtime events", async () => {
@@ -237,16 +331,11 @@ describe("product analytics runtime", () => {
   })
 
   it("debounces local account storage changes and cleanup removes the listener", async () => {
-    const addListener = vi.fn()
-    const removeListener = vi.fn()
-    ;(globalThis as any).browser = {
-      storage: {
-        onChanged: {
-          addListener,
-          removeListener,
-        },
-      },
-    }
+    const addListener = vi.spyOn(fakeBrowser.storage.onChanged, "addListener")
+    const removeListener = vi.spyOn(
+      fakeBrowser.storage.onChanged,
+      "removeListener",
+    )
 
     const cleanup = setupProductAnalyticsAccountChangeListener()
     const handler = addListener.mock.calls[0][0]
@@ -272,17 +361,72 @@ describe("product analytics runtime", () => {
     expect(captureMock).toHaveBeenCalledTimes(1)
   })
 
+  it("debounces local preference storage changes and cleanup removes the listener", async () => {
+    const addListener = vi.spyOn(fakeBrowser.storage.onChanged, "addListener")
+    const removeListener = vi.spyOn(
+      fakeBrowser.storage.onChanged,
+      "removeListener",
+    )
+
+    const cleanup = setupProductAnalyticsPreferencesChangeListener()
+    const handler = addListener.mock.calls[0][0]
+
+    handler({ user_preferences: {} }, "sync")
+    handler({ other_key: {} }, "local")
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(captureMock).not.toHaveBeenCalled()
+
+    handler({ user_preferences: {} }, "local")
+    handler({ user_preferences: {} }, "local")
+    await vi.advanceTimersByTimeAsync(1_999)
+    expect(captureMock).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(1)
+    expect(captureMock).toHaveBeenCalledTimes(14)
+
+    handler({ user_preferences: {} }, "local")
+    cleanup()
+    await vi.advanceTimersByTimeAsync(2_000)
+
+    expect(removeListener).toHaveBeenCalledWith(handler)
+    expect(captureMock).toHaveBeenCalledTimes(14)
+  })
+
+  it("keeps preference change listener setup idempotent in one runtime context", async () => {
+    const addListener = vi.spyOn(fakeBrowser.storage.onChanged, "addListener")
+    const removeListener = vi.spyOn(
+      fakeBrowser.storage.onChanged,
+      "removeListener",
+    )
+
+    const firstCleanup = setupProductAnalyticsPreferencesChangeListener()
+    const secondCleanup = setupProductAnalyticsPreferencesChangeListener()
+    const handler = addListener.mock.calls[0][0]
+
+    expect(addListener).toHaveBeenCalledTimes(1)
+
+    handler({ user_preferences: {} }, "local")
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(captureMock).toHaveBeenCalledTimes(14)
+
+    secondCleanup()
+    expect(removeListener).toHaveBeenCalledTimes(1)
+    expect(removeListener).toHaveBeenCalledWith(handler)
+
+    handler({ user_preferences: {} }, "local")
+    firstCleanup()
+    await vi.advanceTimersByTimeAsync(2_000)
+
+    expect(removeListener).toHaveBeenCalledTimes(1)
+    expect(captureMock).toHaveBeenCalledTimes(14)
+  })
+
   it("keeps account change listener setup idempotent in one runtime context", async () => {
-    const addListener = vi.fn()
-    const removeListener = vi.fn()
-    ;(globalThis as any).browser = {
-      storage: {
-        onChanged: {
-          addListener,
-          removeListener,
-        },
-      },
-    }
+    const addListener = vi.spyOn(fakeBrowser.storage.onChanged, "addListener")
+    const removeListener = vi.spyOn(
+      fakeBrowser.storage.onChanged,
+      "removeListener",
+    )
 
     const firstCleanup = setupProductAnalyticsAccountChangeListener()
     const secondCleanup = setupProductAnalyticsAccountChangeListener()

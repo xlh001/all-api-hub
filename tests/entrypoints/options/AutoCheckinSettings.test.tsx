@@ -2,16 +2,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import AutoCheckinSettings from "~/features/BasicSettings/components/tabs/CheckinRedeem/AutoCheckinSettings"
 import {
+  PRODUCT_ANALYTICS_ACTION_IDS,
+  PRODUCT_ANALYTICS_ENTRYPOINTS,
+  PRODUCT_ANALYTICS_FEATURE_IDS,
+} from "~/services/productAnalytics/events"
+import {
   AUTO_CHECKIN_SCHEDULE_MODE,
   type AutoCheckinPreferences,
 } from "~/types/autoCheckin"
 import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
-const { toastMocks, useUserPreferencesContextMock } = vi.hoisted(() => ({
+const {
+  toastMocks,
+  trackProductAnalyticsActionStartedMock,
+  trackProductAnalyticsEventMock,
+  useUserPreferencesContextMock,
+} = vi.hoisted(() => ({
   toastMocks: {
     error: vi.fn(),
     success: vi.fn(),
   },
+  trackProductAnalyticsActionStartedMock: vi.fn(),
+  trackProductAnalyticsEventMock: vi.fn(),
   useUserPreferencesContextMock: vi.fn(),
 }))
 
@@ -38,6 +50,22 @@ vi.mock("~/utils/navigation", async (importOriginal) => {
     ...actual,
     pushWithinOptionsPage: (...args: unknown[]) =>
       pushWithinOptionsPageMock(...args),
+  }
+})
+
+vi.mock("~/services/productAnalytics/actions", () => ({
+  trackProductAnalyticsActionStarted: (...args: unknown[]) =>
+    trackProductAnalyticsActionStartedMock(...args),
+}))
+
+vi.mock("~/services/productAnalytics/events", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("~/services/productAnalytics/events")>()
+
+  return {
+    ...actual,
+    trackProductAnalyticsEvent: (...args: unknown[]) =>
+      trackProductAnalyticsEventMock(...args),
   }
 })
 
@@ -141,6 +169,46 @@ describe("AutoCheckinSettings", () => {
     })
     expect(toastMocks.success).toHaveBeenCalled()
     expect(pushWithinOptionsPageMock).toHaveBeenCalledWith("#autoCheckin")
+    expect(trackProductAnalyticsActionStartedMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AutoCheckin,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.RefreshAutoCheckinStatus,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      }),
+    )
+  })
+
+  it("leaves settings snapshot tracking to the preferences context", async () => {
+    render(<AutoCheckinSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    fireEvent.click(screen.getAllByRole("switch")[0])
+    await waitFor(() => {
+      expect(updateAutoCheckin).toHaveBeenCalledWith({ globalEnabled: false })
+    })
+
+    expect(trackProductAnalyticsEventMock).not.toHaveBeenCalled()
+  })
+
+  it("does not emit component-level settings analytics on reset", async () => {
+    render(<AutoCheckinSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:actions.reset" }),
+    )
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "common:actions.reset" })[1],
+    )
+
+    await waitFor(() => {
+      expect(resetAutoCheckinConfig).toHaveBeenCalled()
+    })
+    expect(trackProductAnalyticsEventMock).not.toHaveBeenCalled()
   })
 
   it("reports invalid retry numbers and save failures", async () => {

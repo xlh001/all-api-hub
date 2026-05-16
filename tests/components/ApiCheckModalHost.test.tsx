@@ -73,6 +73,19 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
 })
 
 describe("ApiCheckModalHost", () => {
+  const expectAnalyticsCallsToExcludeSensitiveValues = (
+    values: readonly string[],
+  ) => {
+    const analyticsCalls = JSON.stringify([
+      startProductAnalyticsActionMock.mock.calls,
+      completeProductAnalyticsActionMock.mock.calls,
+    ])
+
+    for (const value of values) {
+      expect(analyticsCalls).not.toContain(value)
+    }
+  }
+
   beforeEach(() => {
     ;(toast.success as any).mockReset()
     ;(toast.error as any).mockReset()
@@ -132,6 +145,46 @@ describe("ApiCheckModalHost", () => {
 
     expect(baseUrlInput.value).toBe("")
     expect(apiKeyInput.value).toBe("")
+  })
+
+  it("tracks modal open with safe credential presence insights", async () => {
+    const sourceText =
+      "Base URL: https://proxy.example.com/api\nAPI Key: sk-open-secret"
+    const pageUrl = "https://console.example.com/settings?token=secret"
+
+    await openModal({
+      sourceText,
+      pageUrl,
+      trigger: "contextMenu",
+    })
+
+    await screen.findByTestId("api-check-modal")
+
+    await waitFor(() => {
+      expect(startProductAnalyticsActionMock).toHaveBeenCalledWith({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.WebAiApiCheck,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.ShowApiCredentialCheckModal,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.ContentApiCheckModal,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Content,
+      })
+      expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Success,
+        {
+          insights: {
+            sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ContextMenu,
+            apiType: "openai-compatible",
+            readyCount: 1,
+            blockedCount: 0,
+          },
+        },
+      )
+    })
+    expectAnalyticsCallsToExcludeSensitiveValues([
+      sourceText,
+      "sk-open-secret",
+      "https://proxy.example.com/api",
+      pageUrl,
+    ])
   })
 
   it("focuses the modal when opened so page shortcuts no longer use the previously focused page element", async () => {
@@ -341,14 +394,12 @@ describe("ApiCheckModalHost", () => {
       },
     )
 
-    const analyticsCalls = JSON.stringify([
-      startProductAnalyticsActionMock.mock.calls,
-      completeProductAnalyticsActionMock.mock.calls,
+    expectAnalyticsCallsToExcludeSensitiveValues([
+      sourceText,
+      "sk-auto-secret",
+      "https://proxy.example.com/api",
+      pageUrl,
     ])
-    expect(analyticsCalls).not.toContain(sourceText)
-    expect(analyticsCalls).not.toContain("sk-auto-secret")
-    expect(analyticsCalls).not.toContain("https://proxy.example.com/api")
-    expect(analyticsCalls).not.toContain(pageUrl)
   })
 
   it("auto-extract fills baseUrl + apiKey from pasted text", async () => {
@@ -419,6 +470,52 @@ describe("ApiCheckModalHost", () => {
     })
   })
 
+  it("tracks automatic model fetch completion with safe api type and model-count insights", async () => {
+    const sourceText =
+      "Base URL: https://proxy.example.com/api\nAPI Key: sk-auto-model-secret"
+    const pageUrl = "https://console.example.com/settings?token=secret"
+    const modelId = "gpt-4o-sensitive"
+
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
+      if (message.action === RuntimeActionIds.ApiCheckFetchModels) {
+        return { success: true, modelIds: [modelId, "gpt-4o-mini"] }
+      }
+      return { success: false }
+    })
+
+    await openModal({
+      sourceText,
+      pageUrl,
+      trigger: "autoDetect",
+    })
+
+    await waitFor(() => {
+      expect(startProductAnalyticsActionMock).toHaveBeenCalledWith({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.WebAiApiCheck,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.AutoFetchApiCredentialModelList,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.ContentApiCheckModal,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Content,
+      })
+      expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Success,
+        {
+          insights: {
+            sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Auto,
+            apiType: "openai-compatible",
+            modelCount: 2,
+          },
+        },
+      )
+    })
+    expectAnalyticsCallsToExcludeSensitiveValues([
+      sourceText,
+      "sk-auto-model-secret",
+      "https://proxy.example.com/api",
+      pageUrl,
+      modelId,
+    ])
+  })
+
   it("tracks manual model fetch completion with model-count insights", async () => {
     const user = userEvent.setup()
     vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
@@ -454,6 +551,7 @@ describe("ApiCheckModalHost", () => {
         {
           insights: {
             sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+            apiType: "openai-compatible",
             modelCount: 2,
           },
         },
@@ -642,6 +740,7 @@ describe("ApiCheckModalHost", () => {
       {
         insights: {
           sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+          apiType: "openai-compatible",
           mode: PRODUCT_ANALYTICS_MODE_IDS.Single,
         },
       },
@@ -717,20 +816,19 @@ describe("ApiCheckModalHost", () => {
       {
         insights: expect.objectContaining({
           sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+          apiType: "openai-compatible",
           mode: PRODUCT_ANALYTICS_MODE_IDS.Single,
         }),
       },
     )
 
-    const analyticsCalls = JSON.stringify([
-      startProductAnalyticsActionMock.mock.calls,
-      completeProductAnalyticsActionMock.mock.calls,
+    expectAnalyticsCallsToExcludeSensitiveValues([
+      sourceText,
+      apiKey,
+      baseUrl,
+      pageUrl,
+      modelId,
     ])
-    expect(analyticsCalls).not.toContain(sourceText)
-    expect(analyticsCalls).not.toContain(apiKey)
-    expect(analyticsCalls).not.toContain(baseUrl)
-    expect(analyticsCalls).not.toContain(pageUrl)
-    expect(analyticsCalls).not.toContain(modelId)
   })
 
   it("test displays sanitized errors returned from background", async () => {
@@ -788,10 +886,12 @@ describe("ApiCheckModalHost", () => {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         insights: {
           sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+          apiType: "openai-compatible",
           mode: PRODUCT_ANALYTICS_MODE_IDS.All,
           itemCount: 5,
           successCount: 0,
           failureCount: 5,
+          skippedCount: 0,
         },
       },
     )
@@ -916,6 +1016,7 @@ describe("ApiCheckModalHost", () => {
       {
         insights: {
           sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+          apiType: "openai-compatible",
         },
       },
     )
@@ -1259,6 +1360,17 @@ describe("ApiCheckModalHost", () => {
       await screen.findByText("webAiApiCheck:modal.errors.missingBaseUrlOrKey"),
     ).toBeInTheDocument()
     expect(sendRuntimeMessage).not.toHaveBeenCalled()
+    expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Skipped,
+      expect.objectContaining({
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+        insights: expect.objectContaining({
+          sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+          apiType: "openai-compatible",
+          modelCount: 0,
+        }),
+      }),
+    )
   })
 
   it("shows validation error instead of running a probe without credentials", async () => {
@@ -1280,6 +1392,17 @@ describe("ApiCheckModalHost", () => {
       await screen.findByText("webAiApiCheck:modal.errors.missingBaseUrlOrKey"),
     ).toBeInTheDocument()
     expect(sendRuntimeMessage).not.toHaveBeenCalled()
+    expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Skipped,
+      expect.objectContaining({
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+        insights: expect.objectContaining({
+          sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+          apiType: "openai-compatible",
+          mode: PRODUCT_ANALYTICS_MODE_IDS.Single,
+        }),
+      }),
+    )
   })
 
   it("falls back to local fetch-models error when background returns no message", async () => {

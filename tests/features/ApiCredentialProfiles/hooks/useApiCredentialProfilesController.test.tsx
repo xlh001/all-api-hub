@@ -1,20 +1,25 @@
 import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { ProductAnalyticsScope } from "~/contexts/ProductAnalyticsScopeContext"
 import { useApiCredentialProfilesController } from "~/features/ApiCredentialProfiles/hooks/useApiCredentialProfilesController"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
+  PRODUCT_ANALYTICS_API_TYPES,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
+  PRODUCT_ANALYTICS_MODE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
+  PRODUCT_ANALYTICS_SOURCE_KINDS,
   PRODUCT_ANALYTICS_STATUS_KINDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
   PRODUCT_ANALYTICS_TELEMETRY_SOURCES,
+  type ProductAnalyticsEntrypoint,
 } from "~/services/productAnalytics/events"
 import { SiteHealthStatus } from "~/types"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
-import { act, renderHook } from "~~/tests/test-utils/render"
+import { act, render, renderHook } from "~~/tests/test-utils/render"
 
 const {
   completeProductAnalyticsActionMock,
@@ -153,6 +158,32 @@ function renderController() {
   })
 }
 
+function renderScopedController(entrypoint: ProductAnalyticsEntrypoint) {
+  let controller: ReturnType<typeof useApiCredentialProfilesController>
+
+  function ControllerProbe({ children }: { children?: ReactNode }) {
+    controller = useApiCredentialProfilesController()
+    return <>{children}</>
+  }
+
+  render(
+    <ProductAnalyticsScope entrypoint={entrypoint}>
+      <ControllerProbe />
+    </ProductAnalyticsScope>,
+    {
+      withReleaseUpdateStatusProvider: false,
+      withThemeProvider: false,
+      withUserPreferencesProvider: false,
+    },
+  )
+
+  return {
+    get current() {
+      return controller
+    },
+  }
+}
+
 describe("useApiCredentialProfilesController", () => {
   beforeEach(() => {
     completeProductAnalyticsActionMock.mockReset()
@@ -263,6 +294,14 @@ describe("useApiCredentialProfilesController", () => {
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
       result: PRODUCT_ANALYTICS_RESULTS.Success,
       durationMs: expect.any(Number),
+      insights: {
+        sourceKind:
+          PRODUCT_ANALYTICS_SOURCE_KINDS.ApiCredentialProfileManualOptions,
+        apiType: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
+        mode: PRODUCT_ANALYTICS_MODE_IDS.TelemetryAuto,
+        selectedCount: 0,
+        usageDataPresent: false,
+      },
     })
     expect(createProfileMock).toHaveBeenCalledTimes(1)
   })
@@ -294,6 +333,14 @@ describe("useApiCredentialProfilesController", () => {
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
       result: PRODUCT_ANALYTICS_RESULTS.Success,
       durationMs: expect.any(Number),
+      insights: {
+        sourceKind:
+          PRODUCT_ANALYTICS_SOURCE_KINDS.ApiCredentialProfileManualOptions,
+        apiType: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
+        mode: PRODUCT_ANALYTICS_MODE_IDS.TelemetryDisabled,
+        selectedCount: 0,
+        usageDataPresent: false,
+      },
     })
     expect(updateProfileMock).toHaveBeenCalledTimes(1)
   })
@@ -353,7 +400,66 @@ describe("useApiCredentialProfilesController", () => {
       result: PRODUCT_ANALYTICS_RESULTS.Failure,
       errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
       durationMs: expect.any(Number),
+      insights: {
+        sourceKind:
+          PRODUCT_ANALYTICS_SOURCE_KINDS.ApiCredentialProfileManualOptions,
+        apiType: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
+        mode: PRODUCT_ANALYTICS_MODE_IDS.TelemetryAuto,
+        selectedCount: 0,
+        usageDataPresent: false,
+      },
     })
+  })
+
+  it("opens profile dialogs without double-emitting button analytics", async () => {
+    tagStorageListTagsMock.mockResolvedValue([])
+
+    const { result } = renderController()
+    const profile = buildProfile()
+
+    await act(async () => {
+      result.current.openAddDialog()
+      result.current.openEditDialog(profile)
+      await Promise.resolve()
+    })
+
+    expect(result.current.isEditorOpen).toBe(true)
+    expect(result.current.editingProfile).toEqual(profile)
+    expect(startProductAnalyticsActionMock).not.toHaveBeenCalled()
+  })
+
+  it("completes profile save analytics with the scoped entrypoint", async () => {
+    tagStorageListTagsMock.mockResolvedValue([])
+    createProfileMock.mockResolvedValue(buildProfile())
+
+    const controller = renderScopedController(
+      PRODUCT_ANALYTICS_ENTRYPOINTS.Popup,
+    )
+
+    await act(async () => {
+      await controller.current.handleSave({
+        name: "Popup profile",
+        apiType: "openai-compatible",
+        baseUrl: "https://api.example.com",
+        apiKey: "sk-profile",
+        tagIds: [],
+        notes: "",
+        telemetryConfig: { mode: "auto" },
+      })
+    })
+
+    expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ApiCredentialProfiles,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.CreateApiCredentialProfile,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Popup,
+        result: PRODUCT_ANALYTICS_RESULTS.Success,
+        insights: expect.objectContaining({
+          sourceKind:
+            PRODUCT_ANALYTICS_SOURCE_KINDS.ApiCredentialProfileManualPopup,
+        }),
+      }),
+    )
   })
 
   it("completes delete profile analytics as unknown failure when storage reports no delete", async () => {
@@ -554,8 +660,11 @@ describe("useApiCredentialProfilesController", () => {
       {
         insights: {
           telemetrySource: PRODUCT_ANALYTICS_TELEMETRY_SOURCES.NewApiTokenUsage,
+          mode: PRODUCT_ANALYTICS_MODE_IDS.TelemetryAuto,
           statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
           itemCount: 2,
+          successCount: 2,
+          failureCount: 0,
           modelCount: 14,
           usageDataPresent: true,
         },
@@ -613,6 +722,7 @@ describe("useApiCredentialProfilesController", () => {
       {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         insights: {
+          mode: PRODUCT_ANALYTICS_MODE_IDS.TelemetryAuto,
           statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Warning,
           usageDataPresent: false,
         },

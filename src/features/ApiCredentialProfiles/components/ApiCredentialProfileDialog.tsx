@@ -20,6 +20,7 @@ import {
   isSupportedApiCredentialTelemetryEndpoint,
   type ApiCredentialTelemetryJsonPathField,
 } from "~/services/apiCredentialProfiles/telemetryConfig"
+import { trackProductAnalyticsActionStarted } from "~/services/productAnalytics/actions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -339,6 +340,15 @@ export function ApiCredentialProfileDialog({
     const normalizedBaseUrl = validate()
     if (!normalizedBaseUrl) return
 
+    void trackProductAnalyticsActionStarted({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ApiCredentialProfiles,
+      actionId: isEditMode
+        ? PRODUCT_ANALYTICS_ACTION_IDS.UpdateApiCredentialProfile
+        : PRODUCT_ANALYTICS_ACTION_IDS.CreateApiCredentialProfile,
+      surfaceId: dialogSurface,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+    })
+
     setIsSaving(true)
     try {
       await onSave({
@@ -402,16 +412,7 @@ export function ApiCredentialProfileDialog({
             >
               {t("common:actions.cancel")}
             </Button>
-            <Button
-              onClick={handleSave}
-              loading={isSaving}
-              disabled={isSaving}
-              analyticsAction={
-                isEditMode
-                  ? PRODUCT_ANALYTICS_ACTION_IDS.UpdateApiCredentialProfile
-                  : PRODUCT_ANALYTICS_ACTION_IDS.CreateApiCredentialProfile
-              }
-            >
+            <Button onClick={handleSave} loading={isSaving} disabled={isSaving}>
               {t("common:actions.save")}
             </Button>
           </div>

@@ -14,6 +14,13 @@ import {
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
+import { trackProductAnalyticsActionStarted } from "~/services/productAnalytics/actions"
+import {
+  PRODUCT_ANALYTICS_ACTION_IDS,
+  PRODUCT_ANALYTICS_ENTRYPOINTS,
+  PRODUCT_ANALYTICS_FEATURE_IDS,
+  PRODUCT_ANALYTICS_SURFACE_IDS,
+} from "~/services/productAnalytics/events"
 import {
   AUTO_CHECKIN_SCHEDULE_MODE,
   AutoCheckinPreferences,
@@ -27,6 +34,15 @@ import { pushWithinOptionsPage } from "~/utils/navigation"
  */
 const logger = createLogger("AutoCheckinSettings")
 
+const AUTO_CHECKIN_SETTINGS_ANALYTICS_CONTEXT = {
+  featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AutoCheckin,
+  surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAutoCheckinActionBar,
+  entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+} as const
+
+/**
+ * Applies partial preference updates before reporting the resulting strategy.
+ */
 /**
  * Basic settings panel for configuring auto check-in (window, schedule, retries, navigation).
  */
@@ -79,6 +95,10 @@ export default function AutoCheckinSettings() {
   }
 
   const handleNavigateToExecution = () => {
+    void trackProductAnalyticsActionStarted({
+      ...AUTO_CHECKIN_SETTINGS_ANALYTICS_CONTEXT,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.RefreshAutoCheckinStatus,
+    })
     pushWithinOptionsPage(`#${MENU_ITEM_IDS.AUTO_CHECKIN}`)
   }
 

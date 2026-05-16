@@ -2,10 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
+  PRODUCT_ANALYTICS_API_TYPES,
+  PRODUCT_ANALYTICS_EDITOR_MODES,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_EVENTS,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
+  PRODUCT_ANALYTICS_MANAGED_SITE_TYPES,
   PRODUCT_ANALYTICS_MODE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SOURCE_KINDS,
@@ -222,14 +226,24 @@ describe("product analytics action helpers", () => {
       result: PRODUCT_ANALYTICS_RESULTS.Success,
       durationMs: 2_000,
       insights: {
+        apiType: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
         sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.History,
         mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
+        editorMode: PRODUCT_ANALYTICS_EDITOR_MODES.Json,
         statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
         telemetrySource: PRODUCT_ANALYTICS_TELEMETRY_SOURCES.NewApiTokenUsage,
+        managedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+        sourceManagedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+        targetManagedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Octopus,
+        failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
         selectedCount: 2,
         itemCount: 3,
         successCount: 3,
         failureCount: 0,
+        skippedCount: 1,
+        warningCount: 13,
+        readyCount: 1,
+        blockedCount: 2,
         modelCount: 11,
         usageDataPresent: true,
       },
@@ -245,16 +259,63 @@ describe("product analytics action helpers", () => {
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
         result: PRODUCT_ANALYTICS_RESULTS.Success,
         duration_bucket: "1_5s",
+        api_type: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
         source_kind: PRODUCT_ANALYTICS_SOURCE_KINDS.History,
         mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
+        editor_mode: PRODUCT_ANALYTICS_EDITOR_MODES.Json,
         status_kind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
         telemetry_source: PRODUCT_ANALYTICS_TELEMETRY_SOURCES.NewApiTokenUsage,
+        managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+        source_managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+        target_managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Octopus,
+        failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
         selected_count_bucket: "2_3",
         item_count_bucket: "2_3",
         success_count_bucket: "2_3",
         failure_count_bucket: "0",
+        skipped_count_bucket: "1",
+        warning_count_bucket: "10_plus",
+        ready_count_bucket: "1",
+        blocked_count_bucket: "2_3",
         model_count_bucket: "10_plus",
         usage_data_present: true,
+      },
+    )
+  })
+
+  it("maps content-script detection insights to sanitized action completion fields", async () => {
+    const { trackProductAnalyticsActionCompleted } = await import(
+      "~/services/productAnalytics/actions"
+    )
+
+    await trackProductAnalyticsActionCompleted({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.WebAiApiCheck,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.ShowApiCredentialCheckModal,
+      surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.ContentApiCheckModal,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Content,
+      result: PRODUCT_ANALYTICS_RESULTS.Success,
+      insights: {
+        apiType: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
+        sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ContextMenu,
+        failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+        readyCount: 2,
+        blockedCount: 0,
+      },
+    })
+
+    expect(trackMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.WebAiApiCheck,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.ShowApiCredentialCheckModal,
+        surface_id: PRODUCT_ANALYTICS_SURFACE_IDS.ContentApiCheckModal,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Content,
+        result: PRODUCT_ANALYTICS_RESULTS.Success,
+        api_type: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
+        source_kind: PRODUCT_ANALYTICS_SOURCE_KINDS.ContextMenu,
+        failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+        ready_count_bucket: "2_3",
+        blocked_count_bucket: "0",
       },
     )
   })
@@ -345,6 +406,7 @@ describe("product analytics action helpers", () => {
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success, {
         durationMs: 2_000,
         insights: {
+          apiType: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
           sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.History,
           mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
           statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
@@ -353,6 +415,7 @@ describe("product analytics action helpers", () => {
           itemCount: 3,
           successCount: 3,
           failureCount: 0,
+          skippedCount: 1,
           modelCount: 11,
           usageDataPresent: true,
         },
@@ -371,6 +434,7 @@ describe("product analytics action helpers", () => {
           entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
           result: PRODUCT_ANALYTICS_RESULTS.Success,
           duration_bucket: "1_5s",
+          api_type: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
           source_kind: PRODUCT_ANALYTICS_SOURCE_KINDS.History,
           mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
           status_kind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
@@ -380,6 +444,7 @@ describe("product analytics action helpers", () => {
           item_count_bucket: "2_3",
           success_count_bucket: "2_3",
           failure_count_bucket: "0",
+          skipped_count_bucket: "1",
           model_count_bucket: "10_plus",
           usage_data_present: true,
         },
