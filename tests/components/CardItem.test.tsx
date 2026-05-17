@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import { CardItem } from "~/components/ui/CardItem"
 
 describe("CardItem", () => {
-  it("uses container-width responsive layout instead of viewport-only rows", () => {
+  it("keeps settings rows horizontal on wider viewports while allowing child content to respond to container width", () => {
     const { container } = render(
       <CardItem
         title="Title"
@@ -16,11 +16,13 @@ describe("CardItem", () => {
     expect(container.firstElementChild).toHaveClass(
       "[container-type:inline-size]",
       "flex-col",
-      "[@container(min-width:42rem)]:flex-row",
+      "sm:flex-row",
     )
     expect(screen.getByTestId("right-content").parentElement).toHaveClass(
       "w-full",
-      "[@container(min-width:42rem)]:w-auto",
+      "sm:ml-auto",
+      "sm:w-auto",
+      "sm:flex-none",
     )
   })
 

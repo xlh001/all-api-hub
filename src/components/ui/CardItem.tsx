@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils"
 import { BodySmall, Typography } from "./Typography"
 
 const cardItemVariants = cva(
-  "flex flex-1 flex-col items-start justify-between gap-4 [container-type:inline-size] transition-colors [@container(min-width:42rem)]:flex-row [@container(min-width:42rem)]:items-center",
+  "flex flex-1 flex-col items-start justify-between gap-4 [container-type:inline-size] transition-colors sm:flex-row sm:items-center",
   {
     variants: {
       padding: {
@@ -105,7 +105,7 @@ const CardItem = React.forwardRef<HTMLDivElement, CardSectionProps>(
               </div>
             </div>
             {rightContent && (
-              <div className="w-full min-w-0 flex-1 [@container(min-width:42rem)]:ml-auto [@container(min-width:42rem)]:w-auto [@container(min-width:42rem)]:flex-none">
+              <div className="w-full min-w-0 flex-1 sm:ml-auto sm:w-auto sm:flex-none">
                 {rightContent}
               </div>
             )}
