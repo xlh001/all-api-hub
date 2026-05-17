@@ -28,6 +28,7 @@ interface PopupViewSwitchTabProps {
   analyticsAction: ProductAnalyticsScopedActionConfig
   baseClassName: string
   label: string
+  testId: string
 }
 
 /**
@@ -37,6 +38,7 @@ function PopupViewSwitchTab({
   analyticsAction,
   baseClassName,
   label,
+  testId,
 }: PopupViewSwitchTabProps) {
   const analytics = useProductAnalyticsActionTracking({ analyticsAction })
   const trackingProps = analytics.getActionTrackingProps()
@@ -46,6 +48,7 @@ function PopupViewSwitchTab({
       as="button"
       type="button"
       title={label}
+      data-testid={testId}
       onClick={trackingProps.onClick}
       className={({ selected }) =>
         cn(
@@ -82,17 +85,20 @@ export default function PopupViewSwitchTabs({
     {
       value: "accounts",
       label: accountsLabel,
+      testId: "popup-accounts-tab",
       fallbackActionId: PRODUCT_ANALYTICS_ACTION_IDS.SelectAccountsView,
     },
     {
       value: "apiCredentialProfiles",
       label: apiCredentialProfilesLabel,
+      testId: "popup-api-credential-profiles-tab",
       fallbackActionId:
         PRODUCT_ANALYTICS_ACTION_IDS.SelectApiCredentialProfilesView,
     },
     {
       value: "bookmarks",
       label: bookmarksLabel,
+      testId: "popup-bookmarks-tab",
       fallbackActionId: PRODUCT_ANALYTICS_ACTION_IDS.SelectBookmarksView,
     },
   ] as const
@@ -129,6 +135,7 @@ export default function PopupViewSwitchTabs({
               analyticsAction={analyticsAction}
               baseClassName={baseClassName}
               label={tab.label}
+              testId={tab.testId}
             />
           )
         })}

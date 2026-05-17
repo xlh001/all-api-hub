@@ -110,7 +110,9 @@ const ImportSection = ({
                         <p>• {t("import.containsChannelConfigs")}</p>
                       )}
                       {validation.hasApiCredentialProfiles && (
-                        <p>• {t("import.containsApiCredentialProfiles")}</p>
+                        <p data-testid="import-export-contains-api-credential-profiles">
+                          • {t("import.containsApiCredentialProfiles")}
+                        </p>
                       )}
                       <p>
                         • {t("import.backupTime")}: {validation.timestamp}

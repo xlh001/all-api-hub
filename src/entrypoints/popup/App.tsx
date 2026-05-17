@@ -161,6 +161,7 @@ function PopupContent() {
         <ActionButtons
           primaryActionLabel={activeViewConfig.primaryActionLabel}
           onPrimaryAction={activeViewConfig.onPrimaryAction}
+          primaryActionTestId={activeViewConfig.primaryActionTestId}
           primaryAnalyticsAction={activeViewConfig.primaryAnalyticsAction}
         />
 

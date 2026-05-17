@@ -40,6 +40,7 @@ export default function ApiCredentialProfiles() {
           actions={
             <Button
               onClick={controller.openAddDialog}
+              data-testid="api-credential-profiles-add-button"
               analyticsAction={
                 PRODUCT_ANALYTICS_ACTION_IDS.OpenCreateApiCredentialProfileDialog
               }

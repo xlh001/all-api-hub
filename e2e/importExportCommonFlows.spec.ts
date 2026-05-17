@@ -358,7 +358,9 @@ test("round-trips a full backup through export download and file import", async 
   await expect(page.getByText("Data format is correct")).toBeVisible()
   await expect(page.getByText("Contains account data")).toBeVisible()
   await expect(page.getByText("Contains user settings")).toBeVisible()
-  await expect(page.getByText("Contains API credential profiles")).toBeVisible()
+  await expect(
+    page.getByTestId("import-export-contains-api-credential-profiles"),
+  ).toBeVisible()
 
   await page
     .locator("#import-section")
@@ -408,7 +410,7 @@ test("round-trips a full backup through export download and file import", async 
     page.getByRole("button", { name: "Round Trip Bookmark" }),
   ).toBeVisible()
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -584,7 +586,9 @@ test("imports API credential profiles from backup JSON and restores the popup ta
   await page.locator("#import-data-preview").fill(JSON.stringify(backup))
 
   await expect(page.getByText("Data format is correct")).toBeVisible()
-  await expect(page.getByText("Contains API credential profiles")).toBeVisible()
+  await expect(
+    page.getByTestId("import-export-contains-api-credential-profiles"),
+  ).toBeVisible()
 
   await page
     .locator("#import-section")
@@ -611,7 +615,7 @@ test("imports API credential profiles from backup JSON and restores the popup ta
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -704,7 +708,9 @@ test("restores a full backup and keeps common popup workflows available", async 
   await expect(page.getByText("Data format is correct")).toBeVisible()
   await expect(page.getByText("Contains account data")).toBeVisible()
   await expect(page.getByText("Contains user settings")).toBeVisible()
-  await expect(page.getByText("Contains API credential profiles")).toBeVisible()
+  await expect(
+    page.getByTestId("import-export-contains-api-credential-profiles"),
+  ).toBeVisible()
 
   await page
     .locator("#import-section")
@@ -753,7 +759,7 @@ test("restores a full backup and keeps common popup workflows available", async 
     page.getByRole("button", { name: "Full Restore Bookmark" }),
   ).toBeVisible()
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -843,7 +849,9 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
   await expect(page.getByText("Data format is correct")).toBeVisible()
   await expect(page.getByText("Contains account data")).toBeVisible()
   await expect(page.getByText("Contains user settings")).toBeVisible()
-  await expect(page.getByText("Contains API credential profiles")).toBeVisible()
+  await expect(
+    page.getByTestId("import-export-contains-api-credential-profiles"),
+  ).toBeVisible()
 
   await page
     .locator("#import-section")
@@ -886,7 +894,7 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
     page.getByRole("button", { name: "Sidepanel Restore Bookmark" }),
   ).toBeVisible()
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -1206,7 +1214,7 @@ test("uploads a WebDAV backup and restores it through the WebDAV download flow",
     restorePage.getByRole("button", { name: "WebDAV Bookmark" }),
   ).toBeVisible()
 
-  await restorePage.getByRole("tab", { name: "API Credentials" }).click()
+  await restorePage.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     restorePage.getByRole("heading", { name: "WebDAV Profile" }),
   ).toBeVisible()

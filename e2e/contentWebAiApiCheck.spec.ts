@@ -104,9 +104,11 @@ test("turns selected web API credentials into a verified profile and model catal
   await expect(modal).toBeVisible()
   await expect(modal.locator("input").nth(0)).toHaveValue(API_BASE_URL)
 
-  await modal.getByRole("button", { name: "Save to API profiles" }).click()
+  await modal.getByTestId("web-ai-api-check-save-to-profiles-button").click()
   await expect(
-    contentHost.getByText("Saved api-console.example.test to API profiles."),
+    contentHost.getByText(
+      "Saved api-console.example.test to API credential library.",
+    ),
   ).toBeVisible()
 
   const rawProfiles = await getPlasmoStorageRawValue<string>(
@@ -139,7 +141,7 @@ test("turns selected web API credentials into a verified profile and model catal
   await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(popupPage)
 
-  await popupPage.getByRole("tab", { name: "API Credentials" }).click()
+  await popupPage.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     popupPage.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()

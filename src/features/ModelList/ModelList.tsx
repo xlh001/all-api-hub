@@ -387,6 +387,7 @@ export default function ModelList(props: {
               label: t("apiCredentialProfiles:actions.add"),
               onClick: handleOpenApiCredentialProfiles,
               variant: "outline",
+              testId: "model-list-add-api-credential-profile-button",
             },
           ]}
         />

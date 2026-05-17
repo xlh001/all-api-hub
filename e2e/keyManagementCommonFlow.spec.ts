@@ -252,7 +252,7 @@ test("saves a key to API credential profiles and opens the profiles page", async
     page.getByRole("heading", { name: "Profile Export Key" }),
   ).toBeVisible()
 
-  await page.getByRole("button", { name: "Save to API profiles" }).click()
+  await page.getByTestId("key-management-save-to-api-profiles-button").click()
 
   await expect
     .poll(async () => {
@@ -269,7 +269,9 @@ test("saves a key to API credential profiles and opens the profiles page", async
       tagIds: ["team-shared"],
     })
 
-  await page.getByRole("button", { name: "Open API profiles" }).click()
+  await page
+    .getByTestId("key-management-open-api-profiles-toast-button")
+    .click()
 
   await expect(page).toHaveURL(/options\.html.*#apiCredentialProfiles$/)
   await expect(

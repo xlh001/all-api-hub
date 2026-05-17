@@ -136,7 +136,7 @@ test("sidepanel switches common saved-item tabs and opens the matching managemen
   expect(new URL(bookmarksPage.url()).hash).toBe(`#${MENU_ITEM_IDS.BOOKMARK}`)
   await bookmarksPage.close()
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -147,7 +147,7 @@ test("sidepanel switches common saved-item tabs and opens the matching managemen
     path: OPTIONS_PAGE_PATH,
     hash: `#${MENU_ITEM_IDS.API_CREDENTIAL_PROFILES}`,
   })
-  await page.getByRole("button", { name: "API Credential Profiles" }).click()
+  await page.getByTestId("popup-open-api-credential-profiles-button").click()
   const profilesPage = await profilesPagePromise
   installExtensionPageGuards(profilesPage)
   await waitForExtensionRoot(profilesPage)
@@ -244,7 +244,7 @@ test("sidepanel opens model management for a saved API credential profile", asyn
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()

@@ -130,7 +130,7 @@ test("routes no-source setup CTAs to account and API credential management", asy
   await expect(page.getByText("No model sources yet")).toBeVisible()
   await expect(
     page.getByText(
-      "Add a site account or API credential profile before viewing the model list.",
+      "Add a site account or API credential before viewing the model list.",
     ),
   ).toBeVisible()
 
@@ -146,10 +146,10 @@ test("routes no-source setup CTAs to account and API credential management", asy
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("button", { name: "Add profile" }).click()
+  await page.getByTestId("model-list-add-api-credential-profile-button").click()
   await expect(page).toHaveURL(/options\.html#apiCredentialProfiles$/)
   await expect(
-    page.getByRole("heading", { name: "API credential profiles" }),
+    page.getByRole("heading", { name: "API credential library" }),
   ).toBeVisible()
 })
 
@@ -178,18 +178,22 @@ test("creates an API profile from the empty model list and loads models from it"
   await expectPermissionOnboardingHidden(page)
 
   await expect(page.getByText("No model sources yet")).toBeVisible()
-  await page.getByRole("button", { name: "Add profile" }).click()
+  await page.getByTestId("model-list-add-api-credential-profile-button").click()
   await expect(page).toHaveURL(/options\.html#apiCredentialProfiles$/)
 
-  await page.getByRole("button", { name: "Add profile" }).first().click()
-  await expect(page.getByText("Add API credential profile")).toBeVisible()
+  await page.getByTestId("api-credential-profiles-add-button").click()
+  const profileDialog = page.getByTestId("api-credential-profile-dialog")
+  await expect(profileDialog).toBeVisible()
+  await expect(
+    profileDialog.getByRole("heading", { name: "Save API key" }),
+  ).toBeVisible()
 
   await page.locator("#api-credential-profile-name").fill("First Model Profile")
   await page
     .locator("#api-credential-profile-baseUrl")
     .fill("https://first-model-profile.example.com/v1")
   await page.locator("#api-credential-profile-apiKey").fill("sk-first-model")
-  await page.getByRole("button", { name: "Save" }).click()
+  await page.getByTestId("api-credential-profile-dialog-save-button").click()
 
   await expect(
     page.getByRole("heading", { name: "First Model Profile" }),

@@ -131,6 +131,12 @@ export default function HeaderSection({
       : activeView === "apiCredentialProfiles"
         ? PRODUCT_ANALYTICS_ACTION_IDS.OpenPopupApiCredentialProfilesPage
         : PRODUCT_ANALYTICS_ACTION_IDS.OpenPopupAccountManagementPage
+  const openFullPageTestId =
+    activeView === "bookmarks"
+      ? "popup-open-bookmark-management-button"
+      : activeView === "apiCredentialProfiles"
+        ? "popup-open-api-credential-profiles-button"
+        : "popup-open-account-management-button"
 
   const handleOpenFullPage = async () => {
     if (activeView === "bookmarks") {
@@ -212,6 +218,7 @@ export default function HeaderSection({
                   variant="outline"
                   size="sm"
                   aria-label={openFullPageLabel}
+                  data-testid={openFullPageTestId}
                   className="touch-manipulation"
                   analyticsAction={openFullPageActionId}
                 >

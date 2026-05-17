@@ -67,9 +67,9 @@ test("popup defers non-default tab chunks until users select them", async ({
     const bookmarksTab = page.getByRole("tab", {
       name: /^(Bookmarks|书签)$/,
     })
-    const apiCredentialProfilesTab = page.getByRole("tab", {
-      name: /^(API Credentials|API 凭证)$/,
-    })
+    const apiCredentialProfilesTab = page.getByTestId(
+      "popup-api-credential-profiles-tab",
+    )
 
     await bookmarksTab.click()
     if (strictMode) {

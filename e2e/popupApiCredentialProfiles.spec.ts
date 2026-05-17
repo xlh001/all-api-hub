@@ -40,23 +40,19 @@ test("creates an API credential profile from the popup tab", async ({
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
 
-  await page
-    .getByTestId("popup-view-apiCredentialProfiles")
-    .getByRole("button", { name: "Add profile" })
-    .first()
-    .click()
+  await page.getByTestId("popup-api-credential-profiles-primary-action").click()
 
   await page.locator("#api-credential-profile-name").fill("Popup Profile")
   await page
     .locator("#api-credential-profile-baseUrl")
     .fill("https://api.example.com/v1")
   await page.locator("#api-credential-profile-apiKey").fill("sk-popup-profile")
-  await page.getByRole("button", { name: "Save" }).click()
+  await page.getByTestId("api-credential-profile-dialog-save-button").click()
 
   await expect(
     page.getByRole("heading", { name: "Popup Profile" }),
@@ -73,16 +69,12 @@ test("creates a popup API credential profile, verifies it, and uses it in Model 
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
 
-  await page
-    .getByTestId("popup-view-apiCredentialProfiles")
-    .getByRole("button", { name: "Add profile" })
-    .first()
-    .click()
+  await page.getByTestId("popup-api-credential-profiles-primary-action").click()
 
   await page
     .locator("#api-credential-profile-name")
@@ -91,7 +83,7 @@ test("creates a popup API credential profile, verifies it, and uses it in Model 
     .locator("#api-credential-profile-baseUrl")
     .fill("https://api.example.com/v1")
   await page.locator("#api-credential-profile-apiKey").fill("sk-popup-journey")
-  await page.getByRole("button", { name: "Save" }).click()
+  await page.getByTestId("api-credential-profile-dialog-save-button").click()
 
   await expect(
     page.getByRole("heading", { name: "Popup Journey Profile" }),
@@ -191,7 +183,7 @@ test("verifies a stored popup API credential profile against mocked endpoints", 
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -225,7 +217,7 @@ test("opens Model Management for a stored popup API credential profile and loads
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -277,19 +269,20 @@ test("edits a stored popup API credential profile and persists the change", asyn
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
 
   await page.getByRole("button", { name: "Edit" }).click()
 
-  await expect(page.getByText("Edit API credential profile")).toBeVisible()
+  await expect(page.getByTestId("api-credential-profile-dialog")).toBeVisible()
+  await expect(page.getByText("Edit API credential")).toBeVisible()
 
   const nameInput = page.locator("#api-credential-profile-name")
   await nameInput.clear()
   await nameInput.fill("Updated Profile")
-  await page.getByRole("button", { name: "Save" }).click()
+  await page.getByTestId("api-credential-profile-dialog-save-button").click()
 
   await expect(
     page.getByRole("heading", { name: "Updated Profile" }),
@@ -337,7 +330,7 @@ test("deletes a stored popup API credential profile and removes it from storage"
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await page.getByRole("tab", { name: "API Credentials" }).click()
+  await page.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     page.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -346,7 +339,7 @@ test("deletes a stored popup API credential profile and removes it from storage"
 
   await page.getByRole("button", { name: "Delete" }).click()
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByText("Delete profile")).toBeVisible()
+  await expect(dialog.getByText("Delete credential")).toBeVisible()
   await dialog.getByRole("button", { name: "Delete" }).click()
 
   await expect(page.getByRole("heading", { name: "Delete Me" })).toHaveCount(0)

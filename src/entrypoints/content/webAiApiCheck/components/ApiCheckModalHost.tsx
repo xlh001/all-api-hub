@@ -798,6 +798,7 @@ export function ApiCheckModalHost() {
               </span>
               <button
                 type="button"
+                data-testid="web-ai-api-check-open-api-profiles-toast-button"
                 className="shrink-0 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
                 onClick={() => {
                   void sendRuntimeMessage({
@@ -1029,6 +1030,7 @@ export function ApiCheckModalHost() {
                 <Button
                   type="button"
                   variant="outline"
+                  data-testid="web-ai-api-check-save-to-profiles-button"
                   onClick={handleSaveProfile}
                   disabled={!canSaveProfile}
                 >

@@ -83,8 +83,12 @@ test("creates an API credential profile from the options page and persists it", 
 
   await openProfilesPage(page, extensionId)
 
-  await page.getByRole("button", { name: "Add profile" }).first().click()
-  await expect(page.getByText("Add API credential profile")).toBeVisible()
+  await page.getByTestId("api-credential-profiles-add-button").click()
+  const profileDialog = page.getByTestId("api-credential-profile-dialog")
+  await expect(profileDialog).toBeVisible()
+  await expect(
+    profileDialog.getByRole("heading", { name: "Save API key" }),
+  ).toBeVisible()
 
   await page.locator("#api-credential-profile-name").fill("Options Profile")
   await page
@@ -94,7 +98,7 @@ test("creates an API credential profile from the options page and persists it", 
   await page
     .locator("#api-credential-profile-notes")
     .fill("Created from options E2E")
-  await page.getByRole("button", { name: "Save" }).click()
+  await page.getByTestId("api-credential-profile-dialog-save-button").click()
 
   await expect(
     page.getByRole("heading", { name: "Options Profile" }),

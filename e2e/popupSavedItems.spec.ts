@@ -134,7 +134,7 @@ test("opens the full management page for the active popup tab", async ({
     `chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`,
   )
   await waitForExtensionRoot(apiPopupPage)
-  await apiPopupPage.getByRole("tab", { name: "API Credentials" }).click()
+  await apiPopupPage.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     apiPopupPage.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()
@@ -145,7 +145,7 @@ test("opens the full management page for the active popup tab", async ({
     hash: "#apiCredentialProfiles",
   })
   await apiPopupPage
-    .getByRole("button", { name: "API Credential Profiles" })
+    .getByTestId("popup-open-api-credential-profiles-button")
     .click()
   const profilesPage = await profilesPagePromise
   installExtensionPageGuards(profilesPage)

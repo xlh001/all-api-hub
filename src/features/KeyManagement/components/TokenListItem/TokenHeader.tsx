@@ -406,6 +406,7 @@ function TokenActionButtons({
             </span>
             <button
               type="button"
+              data-testid="key-management-open-api-profiles-toast-button"
               className="shrink-0 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
               onClick={() => {
                 openApiCredentialProfilesPage()
@@ -470,6 +471,7 @@ function TokenActionButtons({
       </IconButton>
       <IconButton
         aria-label={t("keyManagement:actions.saveToApiProfiles")}
+        data-testid="key-management-save-to-api-profiles-button"
         size="sm"
         variant="ghost"
         onClick={handleSaveToApiCredentialProfiles}

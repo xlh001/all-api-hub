@@ -48,6 +48,7 @@ interface PopupViewConfig {
   statsSection?: ReactNode
   primaryActionLabel: string
   onPrimaryAction: () => void
+  primaryActionTestId?: string
   primaryAnalyticsAction: {
     featureId: ProductAnalyticsFeatureId
     actionId: ProductAnalyticsActionId
@@ -151,6 +152,7 @@ export function usePopupViewRegistry(): Record<PopupViewType, PopupViewConfig> {
         </Suspense>
       ),
       primaryActionLabel: t("apiCredentialProfiles:actions.add"),
+      primaryActionTestId: "popup-api-credential-profiles-primary-action",
       onPrimaryAction: () => {
         if (apiCredentialProfilesViewRef.current) {
           apiCredentialProfilesViewRef.current.openAddDialog()

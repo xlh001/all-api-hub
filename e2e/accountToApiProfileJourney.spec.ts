@@ -200,9 +200,9 @@ test("adds an account, creates a reusable API profile from its key, and verifies
   await keysPage
     .getByRole("heading", { name: "Journey Created Key" })
     .locator(
-      "xpath=ancestor::*[.//button[@aria-label='Save to API profiles']][1]",
+      "xpath=ancestor::*[.//*[@data-testid='key-management-save-to-api-profiles-button']][1]",
     )
-    .getByRole("button", { name: "Save to API profiles" })
+    .getByTestId("key-management-save-to-api-profiles-button")
     .click()
 
   await expect
@@ -224,7 +224,7 @@ test("adds an account, creates a reusable API profile from its key, and verifies
   await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(popupPage)
 
-  await popupPage.getByRole("tab", { name: "API Credentials" }).click()
+  await popupPage.getByTestId("popup-api-credential-profiles-tab").click()
   await expect(
     popupPage.getByTestId("api-credential-profiles-popup-view"),
   ).toBeVisible()

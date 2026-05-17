@@ -33,6 +33,7 @@ import {
 interface ActionButtonsProps {
   primaryActionLabel: string
   onPrimaryAction: () => void
+  primaryActionTestId?: string
   primaryAnalyticsAction?: {
     featureId: ProductAnalyticsFeatureId
     actionId: ProductAnalyticsActionId
@@ -46,6 +47,7 @@ interface ActionButtonsProps {
 export default function ActionButtons({
   primaryActionLabel,
   onPrimaryAction,
+  primaryActionTestId,
   primaryAnalyticsAction,
 }: ActionButtonsProps) {
   const { t } = useTranslation("ui")
@@ -109,6 +111,7 @@ export default function ActionButtons({
         <div className="flex gap-1.5 sm:gap-2">
           <Button
             onClick={onPrimaryAction}
+            data-testid={primaryActionTestId}
             className="flex-1 touch-manipulation"
             size="default"
             leftIcon={<PlusIcon className="h-4 w-4" />}

@@ -389,6 +389,7 @@ export function ApiCredentialProfileDialog({
         closeOnEsc={!isSaving}
         showCloseButton={!isSaving}
         size="lg"
+        panelTestId="api-credential-profile-dialog"
         header={
           <div className="flex min-w-0 items-center gap-3">
             {isEditMode ? (
@@ -412,7 +413,12 @@ export function ApiCredentialProfileDialog({
             >
               {t("common:actions.cancel")}
             </Button>
-            <Button onClick={handleSave} loading={isSaving} disabled={isSaving}>
+            <Button
+              onClick={handleSave}
+              loading={isSaving}
+              disabled={isSaving}
+              data-testid="api-credential-profile-dialog-save-button"
+            >
               {t("common:actions.save")}
             </Button>
           </div>
