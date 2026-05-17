@@ -54,6 +54,11 @@ import {
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
 import { createLogger } from "~/utils/core/logger"
 
+import {
+  API_CREDENTIAL_PROFILES_TEST_IDS,
+  getApiCredentialProfileVerifyProbeTestId,
+} from "../testIds"
+
 /**
  * Unified logger scoped to API credential profile verification dialog.
  */
@@ -709,7 +714,7 @@ export function VerifyApiCredentialProfileDialog({
 
               <SearchableSelect
                 aria-label={t("aiApiVerification:verifyDialog.meta.model")}
-                data-testid="profile-verify-model-id"
+                data-testid={API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId}
                 options={modelOptions.map((id) => ({ value: id, label: id }))}
                 value={modelId}
                 onChange={(value) => {
@@ -788,7 +793,9 @@ export function VerifyApiCredentialProfileDialog({
               return (
                 <div
                   key={probe.definition.id}
-                  data-testid={`profile-verify-probe-${probe.definition.id}`}
+                  data-testid={getApiCredentialProfileVerifyProbeTestId(
+                    probe.definition.id,
+                  )}
                   className="dark:border-dark-bg-tertiary rounded-md border border-gray-100 p-3"
                 >
                   <div className="flex items-start justify-between gap-2">

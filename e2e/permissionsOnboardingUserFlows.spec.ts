@@ -1,5 +1,6 @@
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { BASIC_SETTINGS_TEST_IDS } from "~/features/BasicSettings/testIds"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   forceExtensionLanguage,
@@ -33,7 +34,9 @@ test("lets first-use users defer recommended permissions and continue into setti
   )
   await waitForExtensionRoot(page)
 
-  const dialog = page.getByTestId("permission-onboarding-dialog")
+  const dialog = page.getByTestId(
+    BASIC_SETTINGS_TEST_IDS.permissionOnboardingDialog,
+  )
   await expect(dialog).toBeVisible()
   await expect(
     page.getByRole("heading", { name: "Welcome to All API Hub" }),

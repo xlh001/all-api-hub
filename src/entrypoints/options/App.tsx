@@ -21,6 +21,7 @@ import { hasOptionalPermissions } from "./search/basicSettingsMeta"
 import { OptionsSearchDialog } from "./search/OptionsSearchDialog"
 import { useOptionsSearchContext } from "./search/useOptionsSearch"
 import { useSearchHotkeys } from "./search/useSearchHotkeys"
+import { OPTIONS_TEST_IDS } from "./testIds"
 
 /**
  * Maps options navigation state to the fixed analytics page id enum.
@@ -120,7 +121,7 @@ function OptionsPage() {
   return (
     <div
       className="dark:bg-dark-bg-primary flex min-h-screen flex-col bg-gray-50"
-      data-testid="options-app"
+      data-testid={OPTIONS_TEST_IDS.app}
     >
       <Header
         onSearchOpen={() => setIsSearchOpen(true)}

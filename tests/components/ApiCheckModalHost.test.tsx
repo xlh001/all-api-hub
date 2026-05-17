@@ -19,6 +19,10 @@ import {
   type ApiCheckOpenModalDetail,
 } from "~/entrypoints/content/webAiApiCheck/events"
 import {
+  getWebAiApiCheckProbeTestId,
+  WEB_AI_API_CHECK_TEST_IDS,
+} from "~/entrypoints/content/webAiApiCheck/testIds"
+import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
@@ -133,7 +137,7 @@ describe("ApiCheckModalHost", () => {
   it("opens with empty inputs for manual trigger without selection", async () => {
     await openModal()
 
-    const modal = await screen.findByTestId("api-check-modal")
+    const modal = await screen.findByTestId(WEB_AI_API_CHECK_TEST_IDS.modal)
     expect(modal).toBeInTheDocument()
 
     const baseUrlInput = screen.getByPlaceholderText(
@@ -158,7 +162,7 @@ describe("ApiCheckModalHost", () => {
       trigger: "contextMenu",
     })
 
-    await screen.findByTestId("api-check-modal")
+    await screen.findByTestId(WEB_AI_API_CHECK_TEST_IDS.modal)
 
     await waitFor(() => {
       expect(startProductAnalyticsActionMock).toHaveBeenCalledWith({
@@ -459,14 +463,18 @@ describe("ApiCheckModalHost", () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId("api-check-model-id")).toHaveTextContent("m1")
+      expect(
+        screen.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modelId),
+      ).toHaveTextContent("m1")
     })
 
-    await user.click(screen.getByTestId("api-check-model-id"))
+    await user.click(screen.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modelId))
     await user.click(await screen.findByText("m2"))
 
     await waitFor(() => {
-      expect(screen.getByTestId("api-check-model-id")).toHaveTextContent("m2")
+      expect(
+        screen.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modelId),
+      ).toHaveTextContent("m2")
     })
   })
 
@@ -644,13 +652,13 @@ describe("ApiCheckModalHost", () => {
     await user.paste("sk-secret-xyz")
 
     await waitFor(() => {
-      expect(screen.getByTestId("api-check-model-id")).toHaveTextContent(
-        "gpt-4o-mini",
-      )
+      expect(
+        screen.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modelId),
+      ).toHaveTextContent("gpt-4o-mini")
     })
 
     const probeCard = await screen.findByTestId(
-      "api-check-probe-text-generation",
+      getWebAiApiCheckProbeTestId("text-generation"),
     )
     await user.click(
       within(probeCard).getByRole("button", {
@@ -675,9 +683,9 @@ describe("ApiCheckModalHost", () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId("api-check-model-id")).toHaveTextContent(
-        "claude-3-5-sonnet",
-      )
+      expect(
+        screen.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modelId),
+      ).toHaveTextContent("claude-3-5-sonnet")
     })
     expect(screen.queryByText("OpenAI result")).not.toBeInTheDocument()
   })
@@ -717,7 +725,7 @@ describe("ApiCheckModalHost", () => {
     await user.paste("sk-secret-xyz")
 
     const probeCard = await screen.findByTestId(
-      "api-check-probe-text-generation",
+      getWebAiApiCheckProbeTestId("text-generation"),
     )
 
     await user.click(
@@ -789,13 +797,13 @@ describe("ApiCheckModalHost", () => {
         baseUrl,
         apiKey,
       })
-      expect(screen.getByTestId("api-check-model-id")).toHaveTextContent(
-        modelId,
-      )
+      expect(
+        screen.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modelId),
+      ).toHaveTextContent(modelId)
     })
 
     const probeCard = await screen.findByTestId(
-      "api-check-probe-text-generation",
+      getWebAiApiCheckProbeTestId("text-generation"),
     )
 
     await user.click(
@@ -864,7 +872,7 @@ describe("ApiCheckModalHost", () => {
     await user.paste("sk-secret-xyz")
 
     const probeCard = await screen.findByTestId(
-      "api-check-probe-text-generation",
+      getWebAiApiCheckProbeTestId("text-generation"),
     )
 
     await user.click(
@@ -922,7 +930,7 @@ describe("ApiCheckModalHost", () => {
     await user.paste("sk-secret-xyz")
 
     const probeCard = await screen.findByTestId(
-      "api-check-probe-text-generation",
+      getWebAiApiCheckProbeTestId("text-generation"),
     )
 
     await user.click(
@@ -1331,7 +1339,7 @@ describe("ApiCheckModalHost", () => {
     await user.paste("sk-secret-xyz")
 
     const probeCard = await screen.findByTestId(
-      "api-check-probe-text-generation",
+      getWebAiApiCheckProbeTestId("text-generation"),
     )
 
     await user.click(
@@ -1379,7 +1387,7 @@ describe("ApiCheckModalHost", () => {
     await openModal()
 
     const probeCard = await screen.findByTestId(
-      "api-check-probe-text-generation",
+      getWebAiApiCheckProbeTestId("text-generation"),
     )
 
     await user.click(
@@ -1513,7 +1521,7 @@ describe("ApiCheckModalHost", () => {
     await user.paste("sk-secret-xyz")
 
     const probeCard = await screen.findByTestId(
-      "api-check-probe-text-generation",
+      getWebAiApiCheckProbeTestId("text-generation"),
     )
 
     await user.click(
@@ -1565,9 +1573,9 @@ describe("ApiCheckModalHost", () => {
     await user.paste("sk-secret-xyz")
 
     await waitFor(() => {
-      expect(screen.getByTestId("api-check-model-id")).toHaveTextContent(
-        "gpt-4o-mini",
-      )
+      expect(
+        screen.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modelId),
+      ).toHaveTextContent("gpt-4o-mini")
     })
 
     await user.click(

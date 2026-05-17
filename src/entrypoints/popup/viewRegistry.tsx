@@ -22,6 +22,7 @@ import {
 import BalanceSection from "./components/BalanceSection"
 import type { PopupViewType } from "./components/PopupViewSwitchTabs"
 import ShareOverviewSnapshotButton from "./components/ShareOverviewSnapshotButton"
+import { POPUP_TEST_IDS } from "./testIds"
 
 const loadBookmarksList = () =>
   import("~/features/SiteBookmarks/components/BookmarksList")
@@ -152,7 +153,7 @@ export function usePopupViewRegistry(): Record<PopupViewType, PopupViewConfig> {
         </Suspense>
       ),
       primaryActionLabel: t("apiCredentialProfiles:actions.add"),
-      primaryActionTestId: "popup-api-credential-profiles-primary-action",
+      primaryActionTestId: POPUP_TEST_IDS.apiCredentialProfilesPrimaryAction,
       onPrimaryAction: () => {
         if (apiCredentialProfilesViewRef.current) {
           apiCredentialProfilesViewRef.current.openAddDialog()

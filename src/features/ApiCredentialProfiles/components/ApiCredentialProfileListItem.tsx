@@ -44,6 +44,8 @@ import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
 import { formatLocaleDateTime, formatTokenCount } from "~/utils/core/formatters"
 import { formatTelemetryMoney } from "~/utils/core/money"
 
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "../testIds"
+
 /**
  * Formats a secret for display (masked by default, revealable per-profile).
  */
@@ -351,7 +353,9 @@ export function ApiCredentialProfileListItem({
                       </div>
                       <div
                         className="dark:text-dark-text-primary font-semibold text-gray-900"
-                        data-testid="api-credential-telemetry-balance"
+                        data-testid={
+                          API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance
+                        }
                       >
                         {telemetry?.unlimitedQuota
                           ? t("common:quota.unlimited")
@@ -369,7 +373,9 @@ export function ApiCredentialProfileListItem({
                       </div>
                       <div
                         className="font-semibold text-emerald-600 dark:text-emerald-400"
-                        data-testid="api-credential-telemetry-today-usage"
+                        data-testid={
+                          API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayUsage
+                        }
                       >
                         {telemetry?.todayCostUsd !== undefined
                           ? formatTelemetryMoney(
@@ -385,7 +391,9 @@ export function ApiCredentialProfileListItem({
                       </div>
                       <div
                         className="dark:text-dark-text-primary font-semibold text-gray-900"
-                        data-testid="api-credential-telemetry-today-requests"
+                        data-testid={
+                          API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayRequests
+                        }
                       >
                         {typeof telemetry?.todayRequests === "number"
                           ? telemetry.todayRequests.toLocaleString()
@@ -398,7 +406,9 @@ export function ApiCredentialProfileListItem({
                       </div>
                       <div
                         className="dark:text-dark-text-primary truncate font-semibold text-gray-900"
-                        data-testid="api-credential-telemetry-models"
+                        data-testid={
+                          API_CREDENTIAL_PROFILES_TEST_IDS.telemetryModels
+                        }
                         title={telemetry?.models?.preview.join(", ")}
                       >
                         {telemetry?.models

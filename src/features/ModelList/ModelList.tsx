@@ -49,6 +49,7 @@ import { ProviderTabs } from "./components/ProviderTabs"
 import { StatusIndicator } from "./components/StatusIndicator"
 import { MODEL_LIST_GROUP_SELECTION_SCOPES } from "./groupSelectionScopes"
 import { useModelListData } from "./hooks/useModelListData"
+import { MODEL_LIST_TEST_IDS } from "./testIds"
 
 /**
  * Model list page showing pricing details with filtering by account, provider, and group.
@@ -387,7 +388,7 @@ export default function ModelList(props: {
               label: t("apiCredentialProfiles:actions.add"),
               onClick: handleOpenApiCredentialProfiles,
               variant: "outline",
-              testId: "model-list-add-api-credential-profile-button",
+              testId: MODEL_LIST_TEST_IDS.addApiCredentialProfileButton,
             },
           ]}
         />

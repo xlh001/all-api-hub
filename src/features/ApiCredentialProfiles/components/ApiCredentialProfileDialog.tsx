@@ -46,6 +46,8 @@ import type {
 import { DEFAULT_API_CREDENTIAL_TELEMETRY_CONFIG } from "~/types/apiCredentialProfiles"
 import { createLogger } from "~/utils/core/logger"
 
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "../testIds"
+
 /**
  * Unified logger scoped to the API credential profile dialog.
  */
@@ -389,7 +391,7 @@ export function ApiCredentialProfileDialog({
         closeOnEsc={!isSaving}
         showCloseButton={!isSaving}
         size="lg"
-        panelTestId="api-credential-profile-dialog"
+        panelTestId={API_CREDENTIAL_PROFILES_TEST_IDS.dialog}
         header={
           <div className="flex min-w-0 items-center gap-3">
             {isEditMode ? (
@@ -417,7 +419,7 @@ export function ApiCredentialProfileDialog({
               onClick={handleSave}
               loading={isSaving}
               disabled={isSaving}
-              data-testid="api-credential-profile-dialog-save-button"
+              data-testid={API_CREDENTIAL_PROFILES_TEST_IDS.dialogSaveButton}
             >
               {t("common:actions.save")}
             </Button>

@@ -19,6 +19,8 @@ import {
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/events"
 
+import { IMPORT_EXPORT_TEST_IDS } from "../testIds"
+
 interface ImportSectionProps {
   importData: string
   setImportData: (data: string) => void
@@ -110,7 +112,11 @@ const ImportSection = ({
                         <p>• {t("import.containsChannelConfigs")}</p>
                       )}
                       {validation.hasApiCredentialProfiles && (
-                        <p data-testid="import-export-contains-api-credential-profiles">
+                        <p
+                          data-testid={
+                            IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles
+                          }
+                        >
                           • {t("import.containsApiCredentialProfiles")}
                         </p>
                       )}

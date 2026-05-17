@@ -74,6 +74,8 @@ import {
   openSettingsTab,
 } from "~/utils/navigation"
 
+import { KEY_MANAGEMENT_TEST_IDS } from "../../testIds"
+
 /**
  * Unified logger scoped to the Key Management token header actions.
  */
@@ -406,7 +408,7 @@ function TokenActionButtons({
             </span>
             <button
               type="button"
-              data-testid="key-management-open-api-profiles-toast-button"
+              data-testid={KEY_MANAGEMENT_TEST_IDS.openApiProfilesToastButton}
               className="shrink-0 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
               onClick={() => {
                 openApiCredentialProfilesPage()
@@ -471,7 +473,7 @@ function TokenActionButtons({
       </IconButton>
       <IconButton
         aria-label={t("keyManagement:actions.saveToApiProfiles")}
-        data-testid="key-management-save-to-api-profiles-button"
+        data-testid={KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton}
         size="sm"
         variant="ghost"
         onClick={handleSaveToApiCredentialProfiles}

@@ -21,6 +21,7 @@ import {
 import { createLogger } from "~/utils/core/logger"
 import { showResultToast } from "~/utils/core/toastHelpers"
 
+import { BASIC_SETTINGS_TEST_IDS } from "../../testIds"
 import { PermissionList } from "../tabs/Permissions/PermissionList"
 
 /**
@@ -231,7 +232,10 @@ export function PermissionOnboardingDialog({
       header={header}
       footer={footer}
     >
-      <div className="space-y-4" data-testid="permission-onboarding-dialog">
+      <div
+        className="space-y-4"
+        data-testid={BASIC_SETTINGS_TEST_IDS.permissionOnboardingDialog}
+      >
         <Card padding="none" className="overflow-hidden">
           <CardHeader
             bordered

@@ -1,4 +1,5 @@
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
+import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { ApiToken } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
@@ -252,7 +253,9 @@ test("saves a key to API credential profiles and opens the profiles page", async
     page.getByRole("heading", { name: "Profile Export Key" }),
   ).toBeVisible()
 
-  await page.getByTestId("key-management-save-to-api-profiles-button").click()
+  await page
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton)
+    .click()
 
   await expect
     .poll(async () => {
@@ -270,7 +273,7 @@ test("saves a key to API credential profiles and opens the profiles page", async
     })
 
   await page
-    .getByTestId("key-management-open-api-profiles-toast-button")
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.openApiProfilesToastButton)
     .click()
 
   await expect(page).toHaveURL(/options\.html.*#apiCredentialProfiles$/)

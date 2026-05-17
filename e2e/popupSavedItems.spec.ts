@@ -2,6 +2,10 @@ import type { Page } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { getPopupViewTestId, POPUP_TEST_IDS } from "~/entrypoints/popup/testIds"
+import { getAccountManagementListItemTestId } from "~/features/AccountManagement/testIds"
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "~/features/ApiCredentialProfiles/testIds"
+import { SITE_BOOKMARKS_TEST_IDS } from "~/features/SiteBookmarks/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { SiteAccount, SiteBookmark } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
@@ -113,7 +117,7 @@ test("opens the full management page for the active popup tab", async ({
   await waitForExtensionRoot(page)
 
   await page.getByRole("tab", { name: "Bookmarks" }).click()
-  await expect(page.getByTestId("popup-view-bookmarks")).toBeVisible()
+  await expect(page.getByTestId(getPopupViewTestId("bookmarks"))).toBeVisible()
 
   const bookmarkPagePromise = waitForExtensionPage(context, {
     extensionId,
@@ -134,9 +138,11 @@ test("opens the full management page for the active popup tab", async ({
     `chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`,
   )
   await waitForExtensionRoot(apiPopupPage)
-  await apiPopupPage.getByTestId("popup-api-credential-profiles-tab").click()
+  await apiPopupPage
+    .getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab)
+    .click()
   await expect(
-    apiPopupPage.getByTestId("api-credential-profiles-popup-view"),
+    apiPopupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
 
   const profilesPagePromise = waitForExtensionPage(context, {
@@ -145,7 +151,7 @@ test("opens the full management page for the active popup tab", async ({
     hash: "#apiCredentialProfiles",
   })
   await apiPopupPage
-    .getByTestId("popup-open-api-credential-profiles-button")
+    .getByTestId(POPUP_TEST_IDS.openApiCredentialProfilesButton)
     .click()
   const profilesPage = await profilesPagePromise
   installExtensionPageGuards(profilesPage)
@@ -175,7 +181,7 @@ test("opens the account manager from the default popup accounts tab", async ({
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(page.getByTestId(getPopupViewTestId("accounts"))).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Popup Account" }),
   ).toBeVisible()
@@ -237,7 +243,7 @@ test("updates popup account totals after disabling an account from management", 
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(page.getByTestId(getPopupViewTestId("accounts"))).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Popup Active Account" }),
   ).toBeVisible()
@@ -284,19 +290,19 @@ test("updates popup account totals after disabling an account from management", 
   await waitForExtensionRoot(refreshedPopupPage)
 
   await expect(
-    refreshedPopupPage.getByTestId("popup-view-accounts"),
+    refreshedPopupPage.getByTestId(getPopupViewTestId("accounts")),
   ).toBeVisible()
   await expect(
     refreshedPopupPage.getByRole("button", { name: "Click to switch to CNY" }),
   ).toContainText("$1.00")
   await expect(
     refreshedPopupPage.getByTestId(
-      "account-management-account-list-item-popup-disable-account",
+      getAccountManagementListItemTestId("popup-disable-account"),
     ),
   ).toHaveAttribute("data-disabled", "true")
   await expect(
     refreshedPopupPage.getByTestId(
-      "account-management-account-list-item-popup-disable-account",
+      getAccountManagementListItemTestId("popup-disable-account"),
     ),
   ).toContainText("Disabled")
 })
@@ -323,7 +329,7 @@ test("opens a saved account site from the popup accounts tab", async ({
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(page.getByTestId(getPopupViewTestId("accounts"))).toBeVisible()
   await page.getByRole("button", { name: "Open Account" }).click()
 
   await expectBrowserTabOpened(
@@ -343,11 +349,11 @@ test("adds a bookmark from the popup bookmarks tab and keeps it in storage", asy
   await waitForExtensionRoot(page)
 
   await page.getByRole("tab", { name: "Bookmarks" }).click()
-  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
   await expect(page.getByText("No bookmarks yet")).toBeVisible()
 
   await page
-    .getByTestId("popup-view-bookmarks")
+    .getByTestId(getPopupViewTestId("bookmarks"))
     .getByRole("button", { name: "Add Bookmark" })
     .first()
     .click()
@@ -398,10 +404,10 @@ test("adds a bookmark from the popup, edits it in management, and opens the upda
   await waitForExtensionRoot(page)
 
   await page.getByRole("tab", { name: "Bookmarks" }).click()
-  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
 
   await page
-    .getByTestId("popup-view-bookmarks")
+    .getByTestId(getPopupViewTestId("bookmarks"))
     .getByRole("button", { name: "Add Bookmark" })
     .first()
     .click()
@@ -474,7 +480,9 @@ test("adds a bookmark from the popup, edits it in management, and opens the upda
   await waitForExtensionRoot(popupPage)
 
   await popupPage.getByRole("tab", { name: "Bookmarks" }).click()
-  await expect(popupPage.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(
+    popupPage.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView),
+  ).toBeVisible()
   await expect(
     popupPage.getByRole("button", { name: "Journey Docs Updated" }),
   ).toBeVisible()
@@ -514,7 +522,7 @@ test("opens a saved bookmark from the popup bookmarks tab", async ({
   await waitForExtensionRoot(page)
 
   await page.getByRole("tab", { name: "Bookmarks" }).click()
-  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
 
   await page.getByRole("button", { name: "Open Bookmark" }).click()
 

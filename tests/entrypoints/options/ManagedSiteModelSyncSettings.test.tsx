@@ -31,6 +31,14 @@ const {
   mockCompleteProductAnalyticsAction: vi.fn(),
 }))
 
+const TEST_IDS = vi.hoisted(() => ({
+  filterViewMode: "filter-view-mode",
+  filterCount: "filter-count",
+  probeRulesSupported: "probe-rules-supported",
+  allowedModelOptions: "allowed-model-options",
+  allowedModelSelected: "allowed-model-selected",
+}))
+
 vi.mock("~/contexts/UserPreferencesContext", async (importOriginal) => {
   const actual =
     (await importOriginal()) as typeof import("~/contexts/UserPreferencesContext")
@@ -120,9 +128,9 @@ vi.mock("~/components/ChannelFiltersEditor", () => ({
     onClickViewVisual,
   }: any) => (
     <div>
-      <div data-testid="filter-view-mode">{viewMode}</div>
-      <div data-testid="filter-count">{filters.length}</div>
-      <div data-testid="probe-rules-supported">
+      <div data-testid={TEST_IDS.filterViewMode}>{viewMode}</div>
+      <div data-testid={TEST_IDS.filterCount}>{filters.length}</div>
+      <div data-testid={TEST_IDS.probeRulesSupported}>
         {String(Boolean(probeRulesSupported))}
       </div>
       <button onClick={onAddFilter}>add-filter</button>
@@ -231,10 +239,12 @@ vi.mock("~/components/ui", () => ({
     disabled?: boolean
   }) => (
     <div>
-      <div data-testid="allowed-model-options">
+      <div data-testid={TEST_IDS.allowedModelOptions}>
         {options.map((option) => option.label).join(",")}
       </div>
-      <div data-testid="allowed-model-selected">{selected.join(",")}</div>
+      <div data-testid={TEST_IDS.allowedModelSelected}>
+        {selected.join(",")}
+      </div>
       <button
         disabled={disabled}
         onClick={() => onChange?.(["gpt-4o", "claude-3-7-sonnet"])}
@@ -367,10 +377,10 @@ describe("ManagedSiteModelSyncSettings", () => {
       })
     })
 
-    expect(screen.getByTestId("allowed-model-options")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.allowedModelOptions)).toHaveTextContent(
       "a-model,z-model",
     )
-    expect(screen.getByTestId("allowed-model-selected")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.allowedModelSelected)).toHaveTextContent(
       "existing-model",
     )
 
@@ -441,7 +451,7 @@ describe("ManagedSiteModelSyncSettings", () => {
       expect(mockedModelMetadataService.initialize).toHaveBeenCalledTimes(1)
     })
 
-    expect(screen.getByTestId("allowed-model-options")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.allowedModelOptions)).toHaveTextContent(
       "alpha-model,zeta-model",
     )
   })
@@ -488,7 +498,7 @@ describe("ManagedSiteModelSyncSettings", () => {
     expect(screen.getByDisplayValue("1")).toBeInTheDocument()
     expect(screen.getByDisplayValue("35")).toBeInTheDocument()
     expect(screen.getByDisplayValue("9")).toBeInTheDocument()
-    expect(screen.getByTestId("allowed-model-selected")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.allowedModelSelected)).toHaveTextContent(
       "legacy-model",
     )
   })
@@ -509,7 +519,7 @@ describe("ManagedSiteModelSyncSettings", () => {
       expect(mockedModelMetadataService.initialize).toHaveBeenCalledTimes(1)
     })
 
-    expect(screen.getByTestId("allowed-model-options")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.allowedModelOptions)).toHaveTextContent(
       "alpha-model,zeta-model",
     )
     expect(
@@ -532,7 +542,9 @@ describe("ManagedSiteModelSyncSettings", () => {
       ).toBeInTheDocument()
     })
 
-    expect(screen.getByTestId("allowed-model-options")).toHaveTextContent("")
+    expect(screen.getByTestId(TEST_IDS.allowedModelOptions)).toHaveTextContent(
+      "",
+    )
   })
 
   it("ignores invalid numeric values outside the supported ranges", async () => {
@@ -906,7 +918,9 @@ describe("ManagedSiteModelSyncSettings", () => {
       )
     })
 
-    expect(screen.getByTestId("filter-view-mode")).toHaveTextContent("json")
+    expect(screen.getByTestId(TEST_IDS.filterViewMode)).toHaveTextContent(
+      "json",
+    )
   })
 
   it("closes the global filters dialog when cancel is clicked outside a save", async () => {
@@ -971,7 +985,7 @@ describe("ManagedSiteModelSyncSettings", () => {
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument()
     expect(screen.getByLabelText("json-text")).toHaveValue("")
-    expect(screen.getByTestId("filter-count")).toHaveTextContent("1")
+    expect(screen.getByTestId(TEST_IDS.filterCount)).toHaveTextContent("1")
   })
 
   it("falls back to empty JSON text when switching the dialog draft to JSON fails to stringify", async () => {
@@ -1016,7 +1030,9 @@ describe("ManagedSiteModelSyncSettings", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "view-json" }))
 
-    expect(screen.getByTestId("filter-view-mode")).toHaveTextContent("json")
+    expect(screen.getByTestId(TEST_IDS.filterViewMode)).toHaveTextContent(
+      "json",
+    )
     expect(screen.getByLabelText("json-text")).toHaveValue("")
   })
 
@@ -1058,11 +1074,11 @@ describe("ManagedSiteModelSyncSettings", () => {
     )
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument()
-    expect(screen.getByTestId("filter-count")).toHaveTextContent("1")
+    expect(screen.getByTestId(TEST_IDS.filterCount)).toHaveTextContent("1")
 
     fireEvent.click(screen.getByRole("button", { name: "remove-filter" }))
 
-    expect(screen.getByTestId("filter-count")).toHaveTextContent("0")
+    expect(screen.getByTestId(TEST_IDS.filterCount)).toHaveTextContent("0")
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -1131,7 +1147,7 @@ describe("ManagedSiteModelSyncSettings", () => {
     )
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument()
-    expect(screen.getByTestId("filter-count")).toHaveTextContent("2")
+    expect(screen.getByTestId(TEST_IDS.filterCount)).toHaveTextContent("2")
 
     fireEvent.click(screen.getByRole("button", { name: "move-first-down" }))
     fireEvent.click(
@@ -1251,8 +1267,10 @@ describe("ManagedSiteModelSyncSettings", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: "view-visual" }))
 
-    expect(screen.getByTestId("filter-view-mode")).toHaveTextContent("visual")
-    expect(screen.getByTestId("filter-count")).toHaveTextContent("0")
+    expect(screen.getByTestId(TEST_IDS.filterViewMode)).toHaveTextContent(
+      "visual",
+    )
+    expect(screen.getByTestId(TEST_IDS.filterCount)).toHaveTextContent("0")
 
     fireEvent.click(
       screen.getByRole("button", {

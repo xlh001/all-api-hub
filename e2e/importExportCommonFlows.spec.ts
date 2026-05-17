@@ -6,6 +6,10 @@ import {
   SIDEPANEL_PAGE_PATH,
 } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { getPopupViewTestId, POPUP_TEST_IDS } from "~/entrypoints/popup/testIds"
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "~/features/ApiCredentialProfiles/testIds"
+import { IMPORT_EXPORT_TEST_IDS } from "~/features/ImportExport/testIds"
+import { SITE_BOOKMARKS_TEST_IDS } from "~/features/SiteBookmarks/testIds"
 import {
   createDefaultAccountStorageConfig,
   normalizeAccountStorageConfigForWrite,
@@ -359,7 +363,7 @@ test("round-trips a full backup through export download and file import", async 
   await expect(page.getByText("Contains account data")).toBeVisible()
   await expect(page.getByText("Contains user settings")).toBeVisible()
   await expect(
-    page.getByTestId("import-export-contains-api-credential-profiles"),
+    page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
 
   await page
@@ -396,7 +400,7 @@ test("round-trips a full backup through export download and file import", async 
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(page.getByTestId(getPopupViewTestId("accounts"))).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Round Trip Account" }),
   ).toBeVisible()
@@ -405,14 +409,14 @@ test("round-trips a full backup through export download and file import", async 
   ).toHaveCount(0)
 
   await page.getByRole("tab", { name: "Bookmarks" }).click()
-  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Round Trip Bookmark" }),
   ).toBeVisible()
 
-  await page.getByTestId("popup-api-credential-profiles-tab").click()
+  await page.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
   await expect(
-    page.getByTestId("api-credential-profiles-popup-view"),
+    page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
   await expect(
     page.getByRole("heading", { name: "Round Trip Profile" }),
@@ -546,7 +550,7 @@ test("imports account backup JSON from a selected file and restores popup accoun
   await page.goto(`chrome-extension://${extensionId}/popup.html`)
   await waitForExtensionRoot(page)
 
-  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(page.getByTestId(getPopupViewTestId("accounts"))).toBeVisible()
   await expect(
     page.getByRole("button", { name: "File Import Account" }),
   ).toBeVisible()
@@ -587,7 +591,7 @@ test("imports API credential profiles from backup JSON and restores the popup ta
 
   await expect(page.getByText("Data format is correct")).toBeVisible()
   await expect(
-    page.getByTestId("import-export-contains-api-credential-profiles"),
+    page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
 
   await page
@@ -615,9 +619,9 @@ test("imports API credential profiles from backup JSON and restores the popup ta
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await page.getByTestId("popup-api-credential-profiles-tab").click()
+  await page.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
   await expect(
-    page.getByTestId("api-credential-profiles-popup-view"),
+    page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
   await expect(
     page.getByRole("heading", { name: "Imported Profile" }),
@@ -709,7 +713,7 @@ test("restores a full backup and keeps common popup workflows available", async 
   await expect(page.getByText("Contains account data")).toBeVisible()
   await expect(page.getByText("Contains user settings")).toBeVisible()
   await expect(
-    page.getByTestId("import-export-contains-api-credential-profiles"),
+    page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
 
   await page
@@ -744,7 +748,7 @@ test("restores a full backup and keeps common popup workflows available", async 
   await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(page.getByTestId(getPopupViewTestId("accounts"))).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Full Restore Account" }),
   ).toBeVisible()
@@ -754,14 +758,14 @@ test("restores a full backup and keeps common popup workflows available", async 
   ).toHaveCount(0)
 
   await page.getByRole("tab", { name: "Bookmarks" }).click()
-  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Full Restore Bookmark" }),
   ).toBeVisible()
 
-  await page.getByTestId("popup-api-credential-profiles-tab").click()
+  await page.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
   await expect(
-    page.getByTestId("api-credential-profiles-popup-view"),
+    page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
   await expect(
     page.getByRole("heading", { name: "Full Restore Profile" }),
@@ -850,7 +854,7 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
   await expect(page.getByText("Contains account data")).toBeVisible()
   await expect(page.getByText("Contains user settings")).toBeVisible()
   await expect(
-    page.getByTestId("import-export-contains-api-credential-profiles"),
+    page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
 
   await page
@@ -883,20 +887,20 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
   await page.goto(`chrome-extension://${extensionId}/${SIDEPANEL_PAGE_PATH}`)
   await waitForExtensionRoot(page)
 
-  await expect(page.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(page.getByTestId(getPopupViewTestId("accounts"))).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Sidepanel Restore Account" }),
   ).toBeVisible()
 
   await page.getByRole("tab", { name: "Bookmarks" }).click()
-  await expect(page.getByTestId("bookmarks-list-view")).toBeVisible()
+  await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Sidepanel Restore Bookmark" }),
   ).toBeVisible()
 
-  await page.getByTestId("popup-api-credential-profiles-tab").click()
+  await page.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
   await expect(
-    page.getByTestId("api-credential-profiles-popup-view"),
+    page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
   await expect(
     page.getByRole("heading", { name: "Sidepanel Restore Profile" }),
@@ -1201,7 +1205,9 @@ test("uploads a WebDAV backup and restores it through the WebDAV download flow",
   await restorePage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(restorePage)
 
-  await expect(restorePage.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(
+    restorePage.getByTestId(getPopupViewTestId("accounts")),
+  ).toBeVisible()
   await expect(
     restorePage.getByRole("button", { name: "WebDAV Account" }),
   ).toBeVisible()
@@ -1214,7 +1220,7 @@ test("uploads a WebDAV backup and restores it through the WebDAV download flow",
     restorePage.getByRole("button", { name: "WebDAV Bookmark" }),
   ).toBeVisible()
 
-  await restorePage.getByTestId("popup-api-credential-profiles-tab").click()
+  await restorePage.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
   await expect(
     restorePage.getByRole("heading", { name: "WebDAV Profile" }),
   ).toBeVisible()

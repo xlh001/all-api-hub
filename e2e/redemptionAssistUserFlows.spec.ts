@@ -1,4 +1,5 @@
 import { POPUP_PAGE_PATH } from "~/constants/extensionPages"
+import { getPopupViewTestId } from "~/entrypoints/popup/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { SiteAccount } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
@@ -170,7 +171,9 @@ test("detects a redemption code on a real page, redeems it for the matched accou
   await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(popupPage)
 
-  await expect(popupPage.getByTestId("popup-view-accounts")).toBeVisible()
+  await expect(
+    popupPage.getByTestId(getPopupViewTestId("accounts")),
+  ).toBeVisible()
   await expect(
     popupPage.getByRole("button", { name: "Redeem Hub" }),
   ).toBeVisible()

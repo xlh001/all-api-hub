@@ -30,6 +30,10 @@ import {
   type BatchVerifyModelItem,
 } from "~/features/ModelList/batchVerification"
 import { MODEL_MANAGEMENT_SOURCE_KINDS } from "~/features/ModelList/modelManagementSources"
+import {
+  getBatchVerifyModelCheckboxTestId,
+  getBatchVerifyRowTestId,
+} from "~/features/ModelList/testIds"
 import { cn } from "~/lib/utils"
 import {
   fetchDisplayAccountTokens,
@@ -822,7 +826,7 @@ export function BatchVerifyModelsDialog({
 
   const renderRow = (row: BatchVerifyRow) => (
     <div
-      data-testid={`batch-verify-row-${row.item.key}`}
+      data-testid={getBatchVerifyRowTestId(row.item.key)}
       className="dark:border-dark-bg-tertiary rounded-md border border-gray-100 p-3"
     >
       <div className="flex items-start justify-between gap-3">
@@ -833,7 +837,7 @@ export function BatchVerifyModelsDialog({
           aria-label={t("modelList:batchVerify.modelSelection.toggle", {
             model: row.item.modelId,
           })}
-          data-testid={`batch-verify-model-checkbox-${row.item.key}`}
+          data-testid={getBatchVerifyModelCheckboxTestId(row.item.key)}
           className="mt-0.5"
         />
         <div className="min-w-0 flex-1">

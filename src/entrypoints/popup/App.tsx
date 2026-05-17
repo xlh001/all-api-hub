@@ -25,6 +25,7 @@ import HeaderSection from "./components/HeaderSection"
 import PopupViewSwitchTabs, {
   type PopupViewType,
 } from "./components/PopupViewSwitchTabs"
+import { getPopupViewTestId } from "./testIds"
 import { usePopupViewRegistry } from "./viewRegistry"
 
 /**
@@ -157,7 +158,7 @@ function PopupContent() {
           : null}
       </section>
 
-      <div className="flex-1" data-testid={`popup-view-${activeView}`}>
+      <div className="flex-1" data-testid={getPopupViewTestId(activeView)}>
         <ActionButtons
           primaryActionLabel={activeViewConfig.primaryActionLabel}
           onPrimaryAction={activeViewConfig.onPrimaryAction}

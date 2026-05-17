@@ -1,5 +1,9 @@
 import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { POPUP_TEST_IDS } from "~/entrypoints/popup/testIds"
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "~/features/ApiCredentialProfiles/testIds"
+import { SITE_BOOKMARKS_TEST_IDS } from "~/features/SiteBookmarks/testIds"
+import { USAGE_ANALYTICS_TEST_IDS } from "~/features/UsageAnalytics/testIds"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   attachJsonReport,
@@ -68,7 +72,7 @@ test("popup defers non-default tab chunks until users select them", async ({
       name: /^(Bookmarks|书签)$/,
     })
     const apiCredentialProfilesTab = page.getByTestId(
-      "popup-api-credential-profiles-tab",
+      POPUP_TEST_IDS.apiCredentialProfilesTab,
     )
 
     await bookmarksTab.click()
@@ -76,7 +80,7 @@ test("popup defers non-default tab chunks until users select them", async ({
       await waitForTrackedResourceCountIncrease(tracker, initial.resourceCount)
     } else {
       await waitForProbeSettle(page, 500, {
-        expectedSelector: '[data-testid="bookmarks-list-view"]',
+        expectedSelector: `[data-testid="${SITE_BOOKMARKS_TEST_IDS.listView}"]`,
       })
     }
 
@@ -111,7 +115,7 @@ test("popup defers non-default tab chunks until users select them", async ({
       )
     } else {
       await waitForProbeSettle(page, 500, {
-        expectedSelector: '[data-testid="api-credential-profiles-popup-view"]',
+        expectedSelector: `[data-testid="${API_CREDENTIAL_PROFILES_TEST_IDS.popupView}"]`,
       })
     }
 
@@ -179,7 +183,7 @@ test("options defers heavy page chunks until hash navigation loads them", async 
       await waitForTrackedResourceCountIncrease(tracker, initial.resourceCount)
     } else {
       await waitForProbeSettle(page, 500, {
-        expectedSelector: '[data-testid="usage-analytics-page"]',
+        expectedSelector: `[data-testid="${USAGE_ANALYTICS_TEST_IDS.page}"]`,
       })
     }
 

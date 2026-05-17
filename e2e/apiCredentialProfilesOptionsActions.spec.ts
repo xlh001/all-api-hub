@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "~/features/ApiCredentialProfiles/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
@@ -83,8 +84,10 @@ test("creates an API credential profile from the options page and persists it", 
 
   await openProfilesPage(page, extensionId)
 
-  await page.getByTestId("api-credential-profiles-add-button").click()
-  const profileDialog = page.getByTestId("api-credential-profile-dialog")
+  await page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.addButton).click()
+  const profileDialog = page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.dialog,
+  )
   await expect(profileDialog).toBeVisible()
   await expect(
     profileDialog.getByRole("heading", { name: "Save API key" }),
@@ -98,7 +101,9 @@ test("creates an API credential profile from the options page and persists it", 
   await page
     .locator("#api-credential-profile-notes")
     .fill("Created from options E2E")
-  await page.getByTestId("api-credential-profile-dialog-save-button").click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.dialogSaveButton)
+    .click()
 
   await expect(
     page.getByRole("heading", { name: "Options Profile" }),

@@ -2,6 +2,16 @@ import type { Page, Worker } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { POPUP_TEST_IDS } from "~/entrypoints/popup/testIds"
+import {
+  ACCOUNT_MANAGEMENT_TEST_IDS,
+  getAccountManagementListItemTestId,
+} from "~/features/AccountManagement/testIds"
+import {
+  API_CREDENTIAL_PROFILES_TEST_IDS,
+  getApiCredentialProfileVerifyProbeTestId,
+} from "~/features/ApiCredentialProfiles/testIds"
+import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { ApiToken, SiteAccount } from "~/types"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
@@ -95,7 +105,7 @@ function createJourneyToken(overrides: Partial<ApiToken> = {}): ApiToken {
 
 function getAccountRowByText(page: Page, text: string) {
   return page
-    .getByTestId(/^account-management-account-list-item-/)
+    .getByTestId(new RegExp(`^${getAccountManagementListItemTestId("")}`))
     .filter({ hasText: text })
 }
 
@@ -168,9 +178,9 @@ test("adds an account, creates a reusable API profile from its key, and verifies
   await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
   await page.getByRole("button", { name: "Confirm Add" }).click()
 
-  await expect(page.getByTestId("account-list-view")).toContainText(
-    "journey-user",
-  )
+  await expect(
+    page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListView),
+  ).toContainText("journey-user")
   await expect(getAccountRowByText(page, "journey-user")).toBeVisible()
 
   const accountId = await getJourneyAccountId(serviceWorker)
@@ -200,9 +210,9 @@ test("adds an account, creates a reusable API profile from its key, and verifies
   await keysPage
     .getByRole("heading", { name: "Journey Created Key" })
     .locator(
-      "xpath=ancestor::*[.//*[@data-testid='key-management-save-to-api-profiles-button']][1]",
+      `xpath=ancestor::*[.//*[@data-testid='${KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton}']][1]`,
     )
-    .getByTestId("key-management-save-to-api-profiles-button")
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton)
     .click()
 
   await expect
@@ -224,9 +234,9 @@ test("adds an account, creates a reusable API profile from its key, and verifies
   await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(popupPage)
 
-  await popupPage.getByTestId("popup-api-credential-profiles-tab").click()
+  await popupPage.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
   await expect(
-    popupPage.getByTestId("api-credential-profiles-popup-view"),
+    popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
   await expect(
     popupPage.getByRole("heading", {
@@ -235,8 +245,12 @@ test("adds an account, creates a reusable API profile from its key, and verifies
   ).toBeVisible()
 
   await popupPage.getByRole("button", { name: "Verify API" }).click()
-  const modelsProbe = popupPage.getByTestId("profile-verify-probe-models")
-  await expect(popupPage.getByTestId("profile-verify-model-id")).toBeVisible()
+  const modelsProbe = popupPage.getByTestId(
+    getApiCredentialProfileVerifyProbeTestId("models"),
+  )
+  await expect(
+    popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+  ).toBeVisible()
 
   await modelsProbe.getByRole("button", { name: "Run" }).click()
 

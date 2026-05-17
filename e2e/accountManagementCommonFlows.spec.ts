@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import {
   createDefaultAccountStorageConfig,
   normalizeAccountStorageConfigForWrite,
@@ -161,7 +162,9 @@ test("disables and re-enables a stored account from account management", async (
   await page.getByText("Disable account", { exact: true }).click()
 
   await expect(
-    page.locator('[data-testid="account-list-view"] [data-disabled="true"]'),
+    page.locator(
+      `[data-testid="${ACCOUNT_MANAGEMENT_TEST_IDS.accountListView}"] [data-disabled="true"]`,
+    ),
   ).toContainText("Toggle Account")
 
   await expect
@@ -177,7 +180,9 @@ test("disables and re-enables a stored account from account management", async (
   await page.getByText("Enable account", { exact: true }).click()
 
   await expect(
-    page.locator('[data-testid="account-list-view"] [data-disabled="true"]'),
+    page.locator(
+      `[data-testid="${ACCOUNT_MANAGEMENT_TEST_IDS.accountListView}"] [data-disabled="true"]`,
+    ),
   ).toHaveCount(0)
 
   await expect

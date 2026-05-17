@@ -37,6 +37,7 @@ import {
   openSidePanelPage,
 } from "~/utils/navigation"
 
+import { getPopupOpenFullPageButtonTestId } from "../testIds"
 import type { PopupViewType } from "./PopupViewSwitchTabs"
 import CompactThemeToggle from "./ThemeToggle"
 
@@ -131,12 +132,7 @@ export default function HeaderSection({
       : activeView === "apiCredentialProfiles"
         ? PRODUCT_ANALYTICS_ACTION_IDS.OpenPopupApiCredentialProfilesPage
         : PRODUCT_ANALYTICS_ACTION_IDS.OpenPopupAccountManagementPage
-  const openFullPageTestId =
-    activeView === "bookmarks"
-      ? "popup-open-bookmark-management-button"
-      : activeView === "apiCredentialProfiles"
-        ? "popup-open-api-credential-profiles-button"
-        : "popup-open-account-management-button"
+  const openFullPageTestId = getPopupOpenFullPageButtonTestId(activeView)
 
   const handleOpenFullPage = async () => {
     if (activeView === "bookmarks") {

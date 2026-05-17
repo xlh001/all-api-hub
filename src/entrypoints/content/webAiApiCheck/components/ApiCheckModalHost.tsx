@@ -57,6 +57,10 @@ import {
   dispatchApiCheckModalHostReady,
   type ApiCheckOpenModalDetail,
 } from "../events"
+import {
+  getWebAiApiCheckProbeTestId,
+  WEB_AI_API_CHECK_TEST_IDS,
+} from "../testIds"
 
 type ProbeItemState = {
   id: ApiVerificationProbeId
@@ -798,7 +802,9 @@ export function ApiCheckModalHost() {
               </span>
               <button
                 type="button"
-                data-testid="web-ai-api-check-open-api-profiles-toast-button"
+                data-testid={
+                  WEB_AI_API_CHECK_TEST_IDS.openApiProfilesToastButton
+                }
                 className="shrink-0 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
                 onClick={() => {
                   void sendRuntimeMessage({
@@ -851,7 +857,7 @@ export function ApiCheckModalHost() {
 
   return (
     <div
-      data-testid="api-check-modal"
+      data-testid={WEB_AI_API_CHECK_TEST_IDS.modal}
       className="pointer-events-none fixed inset-0 z-2147483647"
     >
       <div
@@ -974,7 +980,7 @@ export function ApiCheckModalHost() {
 
                   <SearchableSelect
                     aria-label={t("webAiApiCheck:modal.fields.modelId")}
-                    data-testid="api-check-model-id"
+                    data-testid={WEB_AI_API_CHECK_TEST_IDS.modelId}
                     options={modelIdsOptions}
                     value={modelId}
                     onChange={setModelId}
@@ -1030,7 +1036,7 @@ export function ApiCheckModalHost() {
                 <Button
                   type="button"
                   variant="outline"
-                  data-testid="web-ai-api-check-save-to-profiles-button"
+                  data-testid={WEB_AI_API_CHECK_TEST_IDS.saveToProfilesButton}
                   onClick={handleSaveProfile}
                   disabled={!canSaveProfile}
                 >
@@ -1063,7 +1069,7 @@ export function ApiCheckModalHost() {
                   return (
                     <div
                       key={probe.id}
-                      data-testid={`api-check-probe-${probe.id}`}
+                      data-testid={getWebAiApiCheckProbeTestId(probe.id)}
                       className="border-border rounded-md border p-3"
                     >
                       <div className="flex items-start justify-between gap-2">

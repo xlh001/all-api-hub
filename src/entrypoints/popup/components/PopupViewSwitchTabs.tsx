@@ -10,6 +10,8 @@ import {
   type ProductAnalyticsFeatureId,
 } from "~/services/productAnalytics/events"
 
+import { POPUP_TEST_IDS } from "../testIds"
+
 export type PopupViewType = "accounts" | "bookmarks" | "apiCredentialProfiles"
 
 interface PopupViewSwitchTabsProps {
@@ -85,20 +87,20 @@ export default function PopupViewSwitchTabs({
     {
       value: "accounts",
       label: accountsLabel,
-      testId: "popup-accounts-tab",
+      testId: POPUP_TEST_IDS.accountsTab,
       fallbackActionId: PRODUCT_ANALYTICS_ACTION_IDS.SelectAccountsView,
     },
     {
       value: "apiCredentialProfiles",
       label: apiCredentialProfilesLabel,
-      testId: "popup-api-credential-profiles-tab",
+      testId: POPUP_TEST_IDS.apiCredentialProfilesTab,
       fallbackActionId:
         PRODUCT_ANALYTICS_ACTION_IDS.SelectApiCredentialProfilesView,
     },
     {
       value: "bookmarks",
       label: bookmarksLabel,
-      testId: "popup-bookmarks-tab",
+      testId: POPUP_TEST_IDS.bookmarksTab,
       fallbackActionId: PRODUCT_ANALYTICS_ACTION_IDS.SelectBookmarksView,
     },
   ] as const

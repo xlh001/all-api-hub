@@ -44,6 +44,7 @@ import UsageAnalyticsFiltersCard from "./components/UsageAnalyticsFiltersCard"
 import { useUsageAnalyticsData } from "./hooks/useUsageAnalyticsData"
 import { useUsageAnalyticsExport } from "./hooks/useUsageAnalyticsExport"
 import { useUsageAnalyticsFilters } from "./hooks/useUsageAnalyticsFilters"
+import { USAGE_ANALYTICS_TEST_IDS } from "./testIds"
 import type {
   UsageAnalyticsBreakdownChartKey,
   UsageAnalyticsChartDisplayType,
@@ -569,7 +570,7 @@ export default function UsageAnalytics() {
     PRODUCT_ANALYTICS_SURFACE_IDS.OptionsUsageAnalyticsHeader
 
   return (
-    <div className="space-y-6 p-6" data-testid="usage-analytics-page">
+    <div className="space-y-6 p-6" data-testid={USAGE_ANALYTICS_TEST_IDS.page}>
       <PageHeader
         icon={BarChart3}
         title={t("title")}

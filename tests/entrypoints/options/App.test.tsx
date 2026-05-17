@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import App from "~/entrypoints/options/App"
+import { OPTIONS_TEST_IDS } from "~/entrypoints/options/testIds"
 import {
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_PAGE_IDS,
@@ -264,7 +265,7 @@ describe("options App", () => {
         withUserPreferencesProvider: false,
       })
 
-      expect(screen.getByTestId("options-app")).toBeInTheDocument()
+      expect(screen.getByTestId(OPTIONS_TEST_IDS.app)).toBeInTheDocument()
       expect(mockedUseProductAnalyticsPageView).toHaveBeenCalledWith({
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
         pageId,

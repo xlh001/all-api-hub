@@ -1,5 +1,6 @@
 import { POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { BASIC_SETTINGS_TEST_IDS } from "~/features/BasicSettings/testIds"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   forceExtensionLanguage,
@@ -38,7 +39,7 @@ test("opens basic settings from the popup header", async ({
   await expect(targetPage).toHaveURL(/options\.html#basic$/)
   await expect(
     targetPage
-      .getByTestId("basic-settings-page")
+      .getByTestId(BASIC_SETTINGS_TEST_IDS.page)
       .getByRole("heading", { name: "Settings", exact: true }),
   ).toBeVisible()
 })

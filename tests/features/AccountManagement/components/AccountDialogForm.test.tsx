@@ -6,6 +6,7 @@ import { SITE_TYPES } from "~/constants/siteType"
 import AccountForm from "~/features/AccountManagement/components/AccountDialog/AccountForm"
 import { ACCOUNT_FORM_MOBILE_DEFAULT_OPEN } from "~/features/AccountManagement/components/AccountDialog/accountFormSections"
 import { createEmptyAccountDialogDraft } from "~/features/AccountManagement/components/AccountDialog/models"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import { AuthTypeEnum, type CheckInConfig } from "~/types"
 import { fireEvent, render, screen, within } from "~~/tests/test-utils/render"
 
@@ -184,7 +185,7 @@ describe("AccountDialog AccountForm", () => {
     render(<AccountForm {...props} />)
 
     await user.click(
-      await screen.findByTestId("account-management-site-type-trigger"),
+      await screen.findByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.siteTypeTrigger),
     )
 
     expect(

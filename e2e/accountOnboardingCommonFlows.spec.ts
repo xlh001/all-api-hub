@@ -7,6 +7,13 @@ import {
   AIHUBMIX_WEB_ORIGIN,
   SITE_TYPES,
 } from "~/constants/siteType"
+import { POPUP_TEST_IDS } from "~/entrypoints/popup/testIds"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
+import {
+  API_CREDENTIAL_PROFILES_TEST_IDS,
+  getApiCredentialProfileVerifyProbeTestId,
+} from "~/features/ApiCredentialProfiles/testIds"
+import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { SiteAccount } from "~/types"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
@@ -379,7 +386,9 @@ test("adds an account through the real add-account auto-detect flow", async ({
   await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
   await page.getByRole("button", { name: "Confirm Add" }).click()
 
-  await expect(page.getByTestId("account-list-view")).toContainText("e2e-user")
+  await expect(
+    page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListView),
+  ).toContainText("e2e-user")
 
   const persistedAccounts = await serviceWorker.evaluate(async () => {
     const chromeApi = (globalThis as any).chrome
@@ -458,7 +467,9 @@ test("enables default-key provisioning, adds an account, saves the created key a
   await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
   await page.getByRole("button", { name: "Confirm Add" }).click()
 
-  await expect(page.getByTestId("account-list-view")).toContainText("e2e-user")
+  await expect(
+    page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListView),
+  ).toContainText("e2e-user")
   await expect(page.getByText("Created a default API key for")).toBeVisible()
 
   await expect
@@ -485,9 +496,9 @@ test("enables default-key provisioning, adds an account, saves the created key a
   await page
     .getByRole("heading", { name: DEFAULT_AUTO_PROVISION_TOKEN_NAME })
     .locator(
-      "xpath=ancestor::*[.//*[@data-testid='key-management-save-to-api-profiles-button']][1]",
+      `xpath=ancestor::*[.//*[@data-testid='${KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton}']][1]`,
     )
-    .getByTestId("key-management-save-to-api-profiles-button")
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton)
     .click()
 
   let savedProfileName = ""
@@ -512,17 +523,21 @@ test("enables default-key provisioning, adds an account, saves the created key a
   await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(popupPage)
 
-  await popupPage.getByTestId("popup-api-credential-profiles-tab").click()
+  await popupPage.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
   await expect(
-    popupPage.getByTestId("api-credential-profiles-popup-view"),
+    popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
   await expect(
     popupPage.getByRole("heading", { name: savedProfileName }),
   ).toBeVisible()
 
   await popupPage.getByRole("button", { name: "Verify API" }).click()
-  const modelsProbe = popupPage.getByTestId("profile-verify-probe-models")
-  await expect(popupPage.getByTestId("profile-verify-model-id")).toBeVisible()
+  const modelsProbe = popupPage.getByTestId(
+    getApiCredentialProfileVerifyProbeTestId("models"),
+  )
+  await expect(
+    popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+  ).toBeVisible()
 
   await modelsProbe.getByRole("button", { name: "Run" }).click()
 
@@ -573,7 +588,7 @@ test("adds an AIHubMix account, preserves its one-time key, and opens managed-si
 
   await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
   await expect(
-    page.getByTestId("account-management-site-type-trigger"),
+    page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.siteTypeTrigger),
   ).toHaveAttribute("data-site-type", SITE_TYPES.AIHUBMIX)
 
   await page

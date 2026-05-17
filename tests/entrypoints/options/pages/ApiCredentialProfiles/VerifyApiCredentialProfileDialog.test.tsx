@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { VerifyApiCredentialProfileDialog } from "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog"
 import {
+  API_CREDENTIAL_PROFILES_TEST_IDS,
+  getApiCredentialProfileVerifyProbeTestId,
+} from "~/features/ApiCredentialProfiles/testIds"
+import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
@@ -195,9 +199,9 @@ describe("VerifyApiCredentialProfileDialog", () => {
     expect(mockFetchOpenAICompatibleModelIds).toHaveBeenCalledTimes(1)
 
     await waitFor(() => {
-      expect(screen.getByTestId("profile-verify-model-id")).toHaveTextContent(
-        "gpt-4o-mini",
-      )
+      expect(
+        screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+      ).toHaveTextContent("gpt-4o-mini")
     })
   })
 
@@ -266,7 +270,9 @@ describe("VerifyApiCredentialProfileDialog", () => {
       />,
     )
 
-    const probeCard = await screen.findByTestId("profile-verify-probe-models")
+    const probeCard = await screen.findByTestId(
+      getApiCredentialProfileVerifyProbeTestId("models"),
+    )
     await user.click(
       within(probeCard).getByRole("button", {
         name: "aiApiVerification:verifyDialog.actions.runOne",
@@ -335,7 +341,9 @@ describe("VerifyApiCredentialProfileDialog", () => {
       />,
     )
 
-    const probeCard = await screen.findByTestId("profile-verify-probe-models")
+    const probeCard = await screen.findByTestId(
+      getApiCredentialProfileVerifyProbeTestId("models"),
+    )
     await user.click(
       within(probeCard).getByRole("button", {
         name: "aiApiVerification:verifyDialog.actions.runOne",
@@ -390,7 +398,7 @@ describe("VerifyApiCredentialProfileDialog", () => {
     )
 
     const modelsProbeCard = await screen.findByTestId(
-      "profile-verify-probe-models",
+      getApiCredentialProfileVerifyProbeTestId("models"),
     )
     await user.click(
       within(modelsProbeCard).getByRole("button", {
@@ -403,9 +411,9 @@ describe("VerifyApiCredentialProfileDialog", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByTestId("profile-verify-model-id")).toHaveTextContent(
-        "m2",
-      )
+      expect(
+        screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+      ).toHaveTextContent("m2")
     })
   })
 
@@ -477,7 +485,7 @@ describe("VerifyApiCredentialProfileDialog", () => {
     )
 
     const modelsProbeCard = await screen.findByTestId(
-      "profile-verify-probe-models",
+      getApiCredentialProfileVerifyProbeTestId("models"),
     )
     await user.click(
       within(modelsProbeCard).getByRole("button", {
@@ -881,13 +889,15 @@ describe("VerifyApiCredentialProfileDialog", () => {
 
     expect(await screen.findByText("Stored m0 history")).toBeInTheDocument()
 
-    await user.click(screen.getByTestId("profile-verify-model-id"))
+    await user.click(
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+    )
     await user.click(await screen.findByText("m1"))
 
     await waitFor(() => {
-      expect(screen.getByTestId("profile-verify-model-id")).toHaveTextContent(
-        "m1",
-      )
+      expect(
+        screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+      ).toHaveTextContent("m1")
     })
     expect(await screen.findByText("Stored m1 history")).toBeInTheDocument()
     expect(screen.queryByText("Stored m0 history")).not.toBeInTheDocument()
@@ -954,17 +964,19 @@ describe("VerifyApiCredentialProfileDialog", () => {
       }),
     )
 
-    await user.click(screen.getByTestId("profile-verify-model-id"))
+    await user.click(
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+    )
     await user.click(await screen.findByText("m1"))
 
     await waitFor(() => {
-      expect(screen.getByTestId("profile-verify-model-id")).toHaveTextContent(
-        "m1",
-      )
+      expect(
+        screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+      ).toHaveTextContent("m1")
     })
 
     const probeCard = await screen.findByTestId(
-      "profile-verify-probe-text-generation",
+      getApiCredentialProfileVerifyProbeTestId("text-generation"),
     )
     await user.click(
       within(probeCard).getByRole("button", {
@@ -1057,7 +1069,9 @@ describe("VerifyApiCredentialProfileDialog", () => {
     const clearButton = screen.getByRole("button", {
       name: "aiApiVerification:verifyDialog.history.clear",
     })
-    const probeCard = await screen.findByTestId("profile-verify-probe-models")
+    const probeCard = await screen.findByTestId(
+      getApiCredentialProfileVerifyProbeTestId("models"),
+    )
 
     await user.click(
       within(probeCard).getByRole("button", {

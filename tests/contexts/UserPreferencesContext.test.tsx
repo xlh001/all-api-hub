@@ -125,6 +125,14 @@ const mockedSendRuntimeMessage = sendRuntimeMessage as unknown as ReturnType<
   typeof vi.fn
 >
 
+const TEST_IDS = {
+  activeTab: "active-tab",
+  sortField: "sort-field",
+  currencyType: "currency-type",
+  managedSiteType: "managed-site-type",
+  loadingState: "loading-state",
+} as const
+
 let latestContext: ReturnType<typeof useUserPreferencesContext> | null = null
 
 const clonePreferences = (): UserPreferences =>
@@ -151,11 +159,13 @@ const Probe = ({ children }: { children?: ReactNode }) => {
 
   return (
     <div>
-      <div data-testid="active-tab">{context.activeTab}</div>
-      <div data-testid="sort-field">{context.sortField}</div>
-      <div data-testid="currency-type">{context.currencyType}</div>
-      <div data-testid="managed-site-type">{context.managedSiteType}</div>
-      <div data-testid="loading-state">{String(context.isLoading)}</div>
+      <div data-testid={TEST_IDS.activeTab}>{context.activeTab}</div>
+      <div data-testid={TEST_IDS.sortField}>{context.sortField}</div>
+      <div data-testid={TEST_IDS.currencyType}>{context.currencyType}</div>
+      <div data-testid={TEST_IDS.managedSiteType}>
+        {context.managedSiteType}
+      </div>
+      <div data-testid={TEST_IDS.loadingState}>{String(context.isLoading)}</div>
       {children}
     </div>
   )
@@ -173,7 +183,7 @@ const renderProvider = async (
   )
 
   await waitFor(() => {
-    expect(screen.getByTestId("loading-state")).toHaveTextContent("false")
+    expect(screen.getByTestId(TEST_IDS.loadingState)).toHaveTextContent("false")
   })
 
   return latestContext as ReturnType<typeof useUserPreferencesContext>
@@ -362,10 +372,10 @@ describe("UserPreferencesContext", () => {
       })
     })
 
-    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.activeTab)).toHaveTextContent(
       DATA_TYPE_BALANCE,
     )
-    expect(screen.getByTestId("sort-field")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.sortField)).toHaveTextContent(
       DATA_TYPE_BALANCE,
     )
     expect((latestContext as any)?.showTodayCashflow).toBe(false)
@@ -385,10 +395,10 @@ describe("UserPreferencesContext", () => {
       })
     })
 
-    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.activeTab)).toHaveTextContent(
       DATA_TYPE_BALANCE,
     )
-    expect(screen.getByTestId("sort-field")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.sortField)).toHaveTextContent(
       DATA_TYPE_BALANCE,
     )
     expect((latestContext as any)?.showTodayCashflow).toBe(false)
@@ -738,7 +748,7 @@ describe("UserPreferencesContext", () => {
     expect(mockedUserPreferences.updateActiveTab).toHaveBeenCalledWith(
       DATA_TYPE_CASHFLOW,
     )
-    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.activeTab)).toHaveTextContent(
       DATA_TYPE_CASHFLOW,
     )
     expect((latestContext as any)?.preferences.activeTab).toBe(
@@ -752,7 +762,7 @@ describe("UserPreferencesContext", () => {
     expect(mockedUserPreferences.updateActiveTab).toHaveBeenLastCalledWith(
       DATA_TYPE_BALANCE,
     )
-    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.activeTab)).toHaveTextContent(
       DATA_TYPE_BALANCE,
     )
     expect((latestContext as any)?.preferences.activeTab).toBe(
@@ -1156,7 +1166,7 @@ describe("UserPreferencesContext", () => {
 
     const context = await renderProvider(initialPreferences)
 
-    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.activeTab)).toHaveTextContent(
       DATA_TYPE_BALANCE,
     )
 
@@ -1164,8 +1174,8 @@ describe("UserPreferencesContext", () => {
       void context.loadPreferences()
     })
 
-    expect(screen.getByTestId("loading-state")).toHaveTextContent("true")
-    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.loadingState)).toHaveTextContent("true")
+    expect(screen.getByTestId(TEST_IDS.activeTab)).toHaveTextContent(
       DATA_TYPE_BALANCE,
     )
 
@@ -1175,10 +1185,12 @@ describe("UserPreferencesContext", () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId("loading-state")).toHaveTextContent("false")
+      expect(screen.getByTestId(TEST_IDS.loadingState)).toHaveTextContent(
+        "false",
+      )
     })
 
-    expect(screen.getByTestId("active-tab")).toHaveTextContent(
+    expect(screen.getByTestId(TEST_IDS.activeTab)).toHaveTextContent(
       DATA_TYPE_CASHFLOW,
     )
   })
@@ -1866,7 +1878,9 @@ describe("UserPreferencesContext", () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId("loading-state")).toHaveTextContent("true")
+      expect(screen.getByTestId(TEST_IDS.loadingState)).toHaveTextContent(
+        "true",
+      )
     })
 
     await act(async () => {
@@ -1906,7 +1920,9 @@ describe("UserPreferencesContext", () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId("loading-state")).toHaveTextContent("true")
+      expect(screen.getByTestId(TEST_IDS.loadingState)).toHaveTextContent(
+        "true",
+      )
     })
 
     await act(async () => {

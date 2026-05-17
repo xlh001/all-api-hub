@@ -49,6 +49,7 @@ import {
 import { PermissionOnboardingDialog } from "./components/dialogs/PermissionOnboardingDialog"
 import LoadingSkeleton from "./components/shared/LoadingSkeleton"
 import GeneralTab from "./components/tabs/General/GeneralTab"
+import { BASIC_SETTINGS_TEST_IDS } from "./testIds"
 
 type TabId =
   | "general"
@@ -654,7 +655,7 @@ export default function BasicSettings() {
   }
 
   return (
-    <div className="p-4 sm:p-6" data-testid="basic-settings-page">
+    <div className="p-4 sm:p-6" data-testid={BASIC_SETTINGS_TEST_IDS.page}>
       <PageHeader
         icon={Settings}
         title={t("title")}

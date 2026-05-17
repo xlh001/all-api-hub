@@ -23,6 +23,10 @@ const mockResolveDisplayAccountTokenForSecret = vi.fn()
 const mockStartProductAnalyticsAction = vi.fn()
 const mockCompleteProductAnalyticsAction = vi.fn()
 
+function getCliToolCardTestId(toolId: string) {
+  return `verify-cli-${toolId}`
+}
+
 vi.mock("~/services/apiService", () => ({
   getApiService: () => ({
     fetchAccountTokens: (...args: any[]) => mockFetchAccountTokens(...args),
@@ -108,7 +112,7 @@ describe("VerifyCliSupportDialog", () => {
       />,
     )
 
-    const toolCard = await screen.findByTestId("verify-cli-claude")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("claude"))
     const runButton = within(toolCard).getByRole("button", {
       name: "cliSupportVerification:verifyDialog.actions.runOne",
     })
@@ -315,7 +319,7 @@ describe("VerifyCliSupportDialog", () => {
       />,
     )
 
-    const toolCard = await screen.findByTestId("verify-cli-claude")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("claude"))
     const runButton = within(toolCard).getByRole("button", {
       name: "cliSupportVerification:verifyDialog.actions.runOne",
     })
@@ -408,7 +412,7 @@ describe("VerifyCliSupportDialog", () => {
       />,
     )
 
-    const toolCard = await screen.findByTestId("verify-cli-gemini")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("gemini"))
     const runButton = within(toolCard).getByRole("button", {
       name: "cliSupportVerification:verifyDialog.actions.runOne",
     })
@@ -473,7 +477,7 @@ describe("VerifyCliSupportDialog", () => {
       />,
     )
 
-    const toolCard = await screen.findByTestId("verify-cli-codex")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("codex"))
     expect(
       await within(toolCard).findByText(
         "cliSupportVerification:verifyDialog.requiresModelId",
@@ -542,7 +546,7 @@ describe("VerifyCliSupportDialog", () => {
       await screen.findByText("cliSupportVerification:verifyDialog.modelHint"),
     ).toBeInTheDocument()
 
-    const toolCard = await screen.findByTestId("verify-cli-codex")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("codex"))
     const runButton = within(toolCard).getByRole("button", {
       name: "cliSupportVerification:verifyDialog.actions.runOne",
     })
@@ -602,7 +606,7 @@ describe("VerifyCliSupportDialog", () => {
       />,
     )
 
-    await screen.findByTestId("verify-cli-claude")
+    await screen.findByTestId(getCliToolCardTestId("claude"))
     expect(
       screen.queryByText("cliSupportVerification:verifyDialog.modelHint"),
     ).not.toBeInTheDocument()
@@ -676,7 +680,7 @@ describe("VerifyCliSupportDialog", () => {
       />,
     )
 
-    const toolCard = await screen.findByTestId("verify-cli-claude")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("claude"))
     const runButton = within(toolCard).getByRole("button", {
       name: "cliSupportVerification:verifyDialog.actions.runOne",
     })
@@ -786,7 +790,7 @@ describe("VerifyCliSupportDialog", () => {
     })
     expect(runAllButton).toBeDisabled()
 
-    const toolCard = await screen.findByTestId("verify-cli-claude")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("claude"))
     expect(
       within(toolCard).getByRole("button", {
         name: "cliSupportVerification:verifyDialog.actions.runOne",
@@ -874,7 +878,7 @@ describe("VerifyCliSupportDialog", () => {
       />,
     )
 
-    const toolCard = await screen.findByTestId("verify-cli-claude")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("claude"))
     const runButton = within(toolCard).getByRole("button", {
       name: "cliSupportVerification:verifyDialog.actions.runOne",
     })
@@ -943,7 +947,7 @@ describe("VerifyCliSupportDialog", () => {
       />,
     )
 
-    const toolCard = await screen.findByTestId("verify-cli-codex")
+    const toolCard = await screen.findByTestId(getCliToolCardTestId("codex"))
     const runButton = within(toolCard).getByRole("button", {
       name: "cliSupportVerification:verifyDialog.actions.runOne",
     })

@@ -2,6 +2,7 @@ import type { BrowserContext } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { MODEL_LIST_TEST_IDS } from "~/features/ModelList/testIds"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
@@ -146,7 +147,9 @@ test("routes no-source setup CTAs to account and API credential management", asy
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByTestId("model-list-add-api-credential-profile-button").click()
+  await page
+    .getByTestId(MODEL_LIST_TEST_IDS.addApiCredentialProfileButton)
+    .click()
   await expect(page).toHaveURL(/options\.html#apiCredentialProfiles$/)
   await expect(
     page.getByRole("heading", { name: "API credential library" }),
@@ -178,7 +181,9 @@ test("creates an API profile from the empty model list and loads models from it"
   await expectPermissionOnboardingHidden(page)
 
   await expect(page.getByText("No model sources yet")).toBeVisible()
-  await page.getByTestId("model-list-add-api-credential-profile-button").click()
+  await page
+    .getByTestId(MODEL_LIST_TEST_IDS.addApiCredentialProfileButton)
+    .click()
   await expect(page).toHaveURL(/options\.html#apiCredentialProfiles$/)
 
   await page.getByTestId("api-credential-profiles-add-button").click()

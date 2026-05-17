@@ -13,6 +13,7 @@ import {
 
 import { ApiCredentialProfilesListView } from "./components/ApiCredentialProfilesListView"
 import { useApiCredentialProfilesController } from "./hooks/useApiCredentialProfilesController"
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "./testIds"
 
 /**
  * Options page for managing API credential profiles.
@@ -40,7 +41,7 @@ export default function ApiCredentialProfiles() {
           actions={
             <Button
               onClick={controller.openAddDialog}
-              data-testid="api-credential-profiles-add-button"
+              data-testid={API_CREDENTIAL_PROFILES_TEST_IDS.addButton}
               analyticsAction={
                 PRODUCT_ANALYTICS_ACTION_IDS.OpenCreateApiCredentialProfileDialog
               }

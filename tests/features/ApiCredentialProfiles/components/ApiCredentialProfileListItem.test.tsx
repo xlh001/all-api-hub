@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ApiCredentialProfileListItem } from "~/features/ApiCredentialProfiles/components/ApiCredentialProfileListItem"
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "~/features/ApiCredentialProfiles/testIds"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -265,13 +266,15 @@ describe("ApiCredentialProfileListItem", () => {
     renderListItem(buildProfile())
 
     expect(
-      screen.getByTestId("api-credential-telemetry-balance"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance),
     ).toHaveTextContent("Unlimited")
     expect(
-      screen.getByTestId("api-credential-telemetry-today-usage"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayUsage),
     ).toHaveTextContent("Not provided")
     expect(
-      screen.getByTestId("api-credential-telemetry-today-requests"),
+      screen.getByTestId(
+        API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayRequests,
+      ),
     ).toHaveTextContent("Not provided")
   })
 
@@ -290,7 +293,7 @@ describe("ApiCredentialProfileListItem", () => {
     )
 
     expect(
-      screen.getByTestId("api-credential-telemetry-balance"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance),
     ).toHaveTextContent("Not provided")
   })
 
@@ -308,16 +311,18 @@ describe("ApiCredentialProfileListItem", () => {
     )
 
     expect(
-      screen.getByTestId("api-credential-telemetry-balance"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance),
     ).toHaveTextContent("Not provided")
     expect(
-      screen.getByTestId("api-credential-telemetry-today-usage"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayUsage),
     ).toHaveTextContent("Not provided")
     expect(
-      screen.getByTestId("api-credential-telemetry-today-requests"),
+      screen.getByTestId(
+        API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayRequests,
+      ),
     ).toHaveTextContent("Not provided")
     expect(
-      screen.getByTestId("api-credential-telemetry-models"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryModels),
     ).toHaveTextContent("2 models")
   })
 
@@ -325,16 +330,18 @@ describe("ApiCredentialProfileListItem", () => {
     renderListItem(buildProfile({ telemetrySnapshot: undefined }))
 
     expect(
-      screen.getByTestId("api-credential-telemetry-balance"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance),
     ).toHaveTextContent("-")
     expect(
-      screen.getByTestId("api-credential-telemetry-today-usage"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayUsage),
     ).toHaveTextContent("-")
     expect(
-      screen.getByTestId("api-credential-telemetry-today-requests"),
+      screen.getByTestId(
+        API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayRequests,
+      ),
     ).toHaveTextContent("-")
     expect(
-      screen.getByTestId("api-credential-telemetry-models"),
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryModels),
     ).toHaveTextContent("-")
   })
 

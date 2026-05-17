@@ -10,6 +10,10 @@ import {
   getBatchVerifyFailureLogIds,
 } from "~/features/ModelList/components/BatchVerifyModelsDialog"
 import {
+  getBatchVerifyModelCheckboxTestId,
+  getBatchVerifyRowTestId,
+} from "~/features/ModelList/testIds"
+import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
@@ -217,7 +221,9 @@ describe("BatchVerifyModelsDialog", () => {
       await screen.findByTestId("batch-verify-virtual-list"),
     ).toBeInTheDocument()
     expect(
-      await screen.findByTestId("batch-verify-row-account:acc-1:model:gpt-4o"),
+      await screen.findByTestId(
+        getBatchVerifyRowTestId("account:acc-1:model:gpt-4o"),
+      ),
     ).toBeInTheDocument()
   })
 
@@ -853,18 +859,18 @@ describe("BatchVerifyModelsDialog", () => {
 
     expect(
       await screen.findByTestId(
-        "batch-verify-model-checkbox-account:acc-1:model:gpt-4o",
+        getBatchVerifyModelCheckboxTestId("account:acc-1:model:gpt-4o"),
       ),
     ).toBeChecked()
     expect(
       screen.getByTestId(
-        "batch-verify-model-checkbox-account:acc-1:model:gpt-4o-mini",
+        getBatchVerifyModelCheckboxTestId("account:acc-1:model:gpt-4o-mini"),
       ),
     ).toBeChecked()
 
     fireEvent.click(
       screen.getByTestId(
-        "batch-verify-model-checkbox-account:acc-1:model:gpt-4o",
+        getBatchVerifyModelCheckboxTestId("account:acc-1:model:gpt-4o"),
       ),
     )
     fireEvent.click(
@@ -1291,7 +1297,7 @@ describe("BatchVerifyModelsDialog", () => {
 
     expect(
       await screen.findByTestId(
-        "batch-verify-model-checkbox-account:acc-1:model:gpt-4o-mini",
+        getBatchVerifyModelCheckboxTestId("account:acc-1:model:gpt-4o-mini"),
       ),
     ).toBeInTheDocument()
     expect(

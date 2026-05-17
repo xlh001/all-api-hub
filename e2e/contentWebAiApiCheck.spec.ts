@@ -1,5 +1,11 @@
 import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { WEB_AI_API_CHECK_TEST_IDS } from "~/entrypoints/content/webAiApiCheck/testIds"
+import { POPUP_TEST_IDS } from "~/entrypoints/popup/testIds"
+import {
+  API_CREDENTIAL_PROFILES_TEST_IDS,
+  getApiCredentialProfileVerifyProbeTestId,
+} from "~/features/ApiCredentialProfiles/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
@@ -100,11 +106,13 @@ test("turns selected web API credentials into a verified profile and model catal
   const contentHost = page.locator("all-api-hub-redemption-toast")
   await contentHost.getByRole("button", { name: "Open" }).click()
 
-  const modal = contentHost.getByTestId("api-check-modal")
+  const modal = contentHost.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modal)
   await expect(modal).toBeVisible()
   await expect(modal.locator("input").nth(0)).toHaveValue(API_BASE_URL)
 
-  await modal.getByTestId("web-ai-api-check-save-to-profiles-button").click()
+  await modal
+    .getByTestId(WEB_AI_API_CHECK_TEST_IDS.saveToProfilesButton)
+    .click()
   await expect(
     contentHost.getByText(
       "Saved api-console.example.test to API credential library.",
@@ -141,9 +149,9 @@ test("turns selected web API credentials into a verified profile and model catal
   await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
   await waitForExtensionRoot(popupPage)
 
-  await popupPage.getByTestId("popup-api-credential-profiles-tab").click()
+  await popupPage.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
   await expect(
-    popupPage.getByTestId("api-credential-profiles-popup-view"),
+    popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
   await expect(
     popupPage.getByRole("heading", { name: "api-console.example.test" }),
@@ -153,8 +161,12 @@ test("turns selected web API credentials into a verified profile and model catal
   const verificationDialog = popupPage
     .getByRole("heading", { name: "API Verification" })
     .locator("xpath=ancestor::*[.//button[normalize-space()='Close']][1]")
-  const modelsProbe = popupPage.getByTestId("profile-verify-probe-models")
-  await expect(popupPage.getByTestId("profile-verify-model-id")).toBeVisible()
+  const modelsProbe = popupPage.getByTestId(
+    getApiCredentialProfileVerifyProbeTestId("models"),
+  )
+  await expect(
+    popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
+  ).toBeVisible()
   await modelsProbe.getByRole("button", { name: "Run" }).click()
   await expect(modelsProbe).toContainText("Pass")
   await expect(modelsProbe).toContainText("Fetched 1 model.")

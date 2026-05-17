@@ -27,6 +27,15 @@ type SortableMockState = {
   isDragging: boolean
 }
 
+const TEST_IDS = vi.hoisted(() => ({
+  dndContext: "dnd-context",
+  sortableContext: "sortable-context",
+  singleTagFilter: "single-tag-filter",
+  multiTagFilter: "multi-tag-filter",
+  accountRow: "account-row",
+  accountFilterBar: "account-filter-bar",
+}))
+
 const {
   mockUseAccountDataContext,
   mockUseUserPreferencesContext,
@@ -88,7 +97,7 @@ vi.mock("@dnd-kit/core", () => ({
     onDragEnd: (event: any) => void
   }) => {
     dndState.onDragEnd = onDragEnd
-    return <div data-testid="dnd-context">{children}</div>
+    return <div data-testid={TEST_IDS.dndContext}>{children}</div>
   },
   KeyboardSensor: vi.fn(),
   PointerSensor: vi.fn(),
@@ -104,7 +113,7 @@ vi.mock("@dnd-kit/sortable", () => ({
     return next
   },
   SortableContext: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="sortable-context">{children}</div>
+    <div data-testid={TEST_IDS.sortableContext}>{children}</div>
   ),
   sortableKeyboardCoordinates: sortableKeyboardCoordinatesMock,
   verticalListSortingStrategy: vi.fn(),
@@ -151,7 +160,9 @@ vi.mock("~/components/ui", () => {
 
     return (
       <div
-        data-testid={isSingleMode ? "single-tag-filter" : "multi-tag-filter"}
+        data-testid={
+          isSingleMode ? TEST_IDS.singleTagFilter : TEST_IDS.multiTagFilter
+        }
       >
         <button type="button" onClick={handleAllClick}>
           {allLabel}
@@ -277,7 +288,7 @@ vi.mock(
   "~/features/AccountManagement/components/AccountList/AccountListItem",
   () => ({
     default: ({ site }: any) => (
-      <div data-testid="account-row">{site.name}</div>
+      <div data-testid={TEST_IDS.accountRow}>{site.name}</div>
     ),
   }),
 )
@@ -307,7 +318,7 @@ vi.mock(
       onRefreshChange,
       onCheckInChange,
     }: any) => (
-      <div data-testid="account-filter-bar">
+      <div data-testid={TEST_IDS.accountFilterBar}>
         {disabledOptions.map((option: any) => (
           <button
             key={`disabled-${option.value}`}
@@ -568,8 +579,10 @@ describe("AccountList", () => {
 
     render(<AccountList />)
 
-    expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
-    expect(screen.queryByTestId("sortable-context")).not.toBeInTheDocument()
+    expect(screen.queryByTestId(TEST_IDS.dndContext)).not.toBeInTheDocument()
+    expect(
+      screen.queryByTestId(TEST_IDS.sortableContext),
+    ).not.toBeInTheDocument()
     expect(useSortableMock).not.toHaveBeenCalled()
 
     await act(async () => {
@@ -579,8 +592,8 @@ describe("AccountList", () => {
       })
     })
 
-    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
-    expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
+    expect(screen.getByTestId(TEST_IDS.sortableContext)).toBeInTheDocument()
     expect(useSensorMock).toHaveBeenCalledWith(expect.any(Function))
     expect(useSensorMock).toHaveBeenCalledWith(expect.any(Function), {
       coordinateGetter: sortableKeyboardCoordinatesMock,
@@ -600,15 +613,15 @@ describe("AccountList", () => {
 
       render(<AccountList />)
 
-      expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
+      expect(screen.queryByTestId(TEST_IDS.dndContext)).not.toBeInTheDocument()
 
       await act(async () => {
         await vi.runOnlyPendingTimersAsync()
       })
 
       vi.useRealTimers()
-      expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
-      expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+      expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
+      expect(screen.getByTestId(TEST_IDS.sortableContext)).toBeInTheDocument()
     } finally {
       vi.useRealTimers()
     }
@@ -645,8 +658,8 @@ describe("AccountList", () => {
       })[0],
     )
 
-    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
-    expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
+    expect(screen.getByTestId(TEST_IDS.sortableContext)).toBeInTheDocument()
     expect(useSortableMock).toHaveBeenCalledTimes(4)
   })
 
@@ -669,7 +682,7 @@ describe("AccountList", () => {
       })[0],
     )
 
-    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
     expect(dndState.onDragEnd).toBeTypeOf("function")
 
     dndState.onDragEnd?.({
@@ -702,7 +715,7 @@ describe("AccountList", () => {
       screen.getByRole("button", { name: "common:status.enabled" }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(3)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(3)
 
     await user.click(
       screen.getAllByRole("button", {
@@ -710,7 +723,7 @@ describe("AccountList", () => {
       })[0],
     )
 
-    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
     expect(dndState.onDragEnd).toBeTypeOf("function")
 
     dndState.onDragEnd?.({
@@ -744,7 +757,7 @@ describe("AccountList", () => {
       })[0],
     )
 
-    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
     expect(dndState.onDragEnd).toBeTypeOf("function")
 
     dndState.onDragEnd?.({
@@ -790,7 +803,7 @@ describe("AccountList", () => {
 
     await user.click(searchHandle)
 
-    expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
+    expect(screen.queryByTestId(TEST_IDS.dndContext)).not.toBeInTheDocument()
     expect(useSortableMock).not.toHaveBeenCalled()
 
     unmount()
@@ -804,7 +817,7 @@ describe("AccountList", () => {
     expect(
       screen.queryByRole("button", { name: "account:list.dragHandle" }),
     ).not.toBeInTheDocument()
-    expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
+    expect(screen.queryByTestId(TEST_IDS.dndContext)).not.toBeInTheDocument()
     expect(useSortableMock).not.toHaveBeenCalled()
   })
 
@@ -825,15 +838,17 @@ describe("AccountList", () => {
       })[0],
     )
 
-    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
-    expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
+    expect(screen.getByTestId(TEST_IDS.sortableContext)).toBeInTheDocument()
 
     rerender(<AccountList initialSearchQuery="Alpha" />)
 
     await waitFor(() => {
       expect(screen.getByRole("textbox")).toHaveValue("Alpha")
-      expect(screen.queryByTestId("dnd-context")).not.toBeInTheDocument()
-      expect(screen.queryByTestId("sortable-context")).not.toBeInTheDocument()
+      expect(screen.queryByTestId(TEST_IDS.dndContext)).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId(TEST_IDS.sortableContext),
+      ).not.toBeInTheDocument()
       expect(
         screen.getByRole("button", { name: "account:list.dragHandle" }),
       ).toBeDisabled()
@@ -867,8 +882,8 @@ describe("AccountList", () => {
       })[0],
     )
 
-    expect(await screen.findByTestId("dnd-context")).toBeInTheDocument()
-    expect(screen.getByTestId("sortable-context")).toBeInTheDocument()
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
+    expect(screen.getByTestId(TEST_IDS.sortableContext)).toBeInTheDocument()
     expect(useSortableMock).toHaveBeenCalled()
 
     const sortableHandle = screen.getAllByRole("button", {
@@ -888,13 +903,13 @@ describe("AccountList", () => {
 
     render(<AccountList />)
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(4)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(4)
 
     await user.click(
       screen.getByRole("button", { name: "common:status.enabled" }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(3)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(3)
     expect(screen.getByText("Enabled Alpha")).toBeInTheDocument()
     expect(screen.getByText("Enabled Gamma")).toBeInTheDocument()
     expect(screen.getByText("Unsynced Delta")).toBeInTheDocument()
@@ -903,7 +918,7 @@ describe("AccountList", () => {
 
     await user.click(screen.getByRole("button", { name: "Team A" }))
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Enabled Alpha")).toBeInTheDocument()
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
     expect(screen.queryByText("Enabled Gamma")).not.toBeInTheDocument()
@@ -916,7 +931,7 @@ describe("AccountList", () => {
 
     render(<AccountList initialSearchQuery="beta" />)
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Disabled Beta")).toBeInTheDocument()
     expect(screen.getByText("common:total: 1")).toBeInTheDocument()
 
@@ -925,7 +940,7 @@ describe("AccountList", () => {
     )
 
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
-    expect(screen.queryAllByTestId("account-row")).toHaveLength(0)
+    expect(screen.queryAllByTestId(TEST_IDS.accountRow)).toHaveLength(0)
     expect(screen.getByText("account:search.noResults")).toBeInTheDocument()
     expect(screen.getByText("common:total: 0")).toBeInTheDocument()
 
@@ -933,7 +948,7 @@ describe("AccountList", () => {
       screen.getByRole("button", { name: "common:status.disabled" }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Disabled Beta")).toBeInTheDocument()
     expect(
       screen.queryByText("account:search.noResults"),
@@ -948,7 +963,7 @@ describe("AccountList", () => {
 
     await user.click(screen.getByRole("button", { name: "one-api" }))
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(2)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(2)
     expect(screen.getByText("Enabled Alpha")).toBeInTheDocument()
     expect(screen.getByText("Enabled Gamma")).toBeInTheDocument()
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
@@ -958,7 +973,7 @@ describe("AccountList", () => {
       screen.getByRole("button", { name: "account:healthStatus.warning" }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Enabled Gamma")).toBeInTheDocument()
     expect(screen.queryByText("Enabled Alpha")).not.toBeInTheDocument()
     expect(screen.getByText("common:total: 1")).toBeInTheDocument()
@@ -975,7 +990,7 @@ describe("AccountList", () => {
       }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Unsynced Delta")).toBeInTheDocument()
     expect(screen.queryByText("Enabled Alpha")).not.toBeInTheDocument()
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
@@ -994,7 +1009,7 @@ describe("AccountList", () => {
       }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Enabled Alpha")).toBeInTheDocument()
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
     expect(screen.queryByText("Enabled Gamma")).not.toBeInTheDocument()
@@ -1012,7 +1027,7 @@ describe("AccountList", () => {
       }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Disabled Beta")).toBeInTheDocument()
     expect(screen.queryByText("Enabled Alpha")).not.toBeInTheDocument()
     expect(screen.queryByText("Enabled Gamma")).not.toBeInTheDocument()
@@ -1030,7 +1045,7 @@ describe("AccountList", () => {
       }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Enabled Gamma")).toBeInTheDocument()
     expect(screen.queryByText("Enabled Alpha")).not.toBeInTheDocument()
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
@@ -1048,7 +1063,7 @@ describe("AccountList", () => {
       }),
     )
 
-    expect(screen.getAllByTestId("account-row")).toHaveLength(1)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Unsynced Delta")).toBeInTheDocument()
     expect(screen.queryByText("Enabled Alpha")).not.toBeInTheDocument()
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
