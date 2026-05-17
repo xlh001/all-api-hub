@@ -1,4 +1,3 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { createInstance } from "i18next"
 import type { ReactNode } from "react"
@@ -12,6 +11,7 @@ import enSettings from "~/locales/en/settings.json"
 import jaSettings from "~/locales/ja/settings.json"
 import zhCnSettings from "~/locales/zh-CN/settings.json"
 import zhTwSettings from "~/locales/zh-TW/settings.json"
+import { act, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const permissionMocks = vi.hoisted(() => ({
   ensurePermissions: vi.fn(),
@@ -170,7 +170,11 @@ function renderWithI18n(
   ui: ReactNode,
   i18n: Awaited<ReturnType<typeof createSettingsI18n>>,
 ) {
-  return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>)
+  return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>, {
+    withReleaseUpdateStatusProvider: false,
+    withUserPreferencesProvider: false,
+    withThemeProvider: false,
+  })
 }
 
 describe("PermissionOnboardingDialog language selection", () => {
@@ -285,18 +289,21 @@ describe("PermissionOnboardingDialog language selection", () => {
 
     expect(await screen.findByText("外观")).toBeInTheDocument()
 
-    const selectorGroup = screen.getByRole("group", {
-      name: "界面语言选择",
-    })
-
     expect(
-      within(selectorGroup).getByRole("button", {
+      screen.getByRole("combobox", {
         name: "当前界面语言：简体中文",
       }),
-    ).toHaveAttribute("aria-pressed", "true")
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("combobox", {
+        name: "当前界面语言：简体中文",
+      }),
+    )
+
     expect(
-      within(selectorGroup).getByRole("button", {
-        name: "切换界面语言为英文",
+      await screen.findByRole("option", {
+        name: "英文",
       }),
     ).toBeInTheDocument()
   })

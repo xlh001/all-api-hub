@@ -10,7 +10,13 @@ import {
   AUTO_CHECKIN_SCHEDULE_MODE,
   type AutoCheckinPreferences,
 } from "~/types/autoCheckin"
-import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "~~/tests/test-utils/render"
 
 const {
   toastMocks,
@@ -176,6 +182,81 @@ describe("AutoCheckinSettings", () => {
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
       }),
     )
+  })
+
+  it("lets schedule mode options wrap inside narrow settings cards", async () => {
+    render(<AutoCheckinSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    const randomButton = screen.getByRole("button", {
+      name: "autoCheckin:settings.scheduleModeRandom",
+    })
+    const optionGroup = randomButton.parentElement
+
+    expect(optionGroup).toHaveClass(
+      "flex",
+      "w-full",
+      "flex-wrap",
+      "[@container(min-width:42rem)]:w-auto",
+    )
+    expect(randomButton).toHaveClass(
+      "min-w-fit",
+      "flex-1",
+      "[@container(min-width:42rem)]:flex-none",
+    )
+
+    await act(async () => {
+      fireEvent.click(randomButton)
+    })
+
+    expect(updateAutoCheckin).toHaveBeenCalledWith({
+      scheduleMode: AUTO_CHECKIN_SCHEDULE_MODE.RANDOM,
+    })
+  })
+
+  it("disables schedule mode changes while preferences are saving", async () => {
+    let resolveSave: (value: boolean) => void
+    updateAutoCheckin.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        resolveSave = resolve
+      }),
+    )
+
+    render(<AutoCheckinSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    fireEvent.click(screen.getAllByRole("switch")[0])
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "autoCheckin:settings.scheduleModeRandom",
+        }),
+      ).toBeDisabled()
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "autoCheckin:settings.scheduleModeRandom",
+      }),
+    )
+
+    expect(updateAutoCheckin).toHaveBeenCalledTimes(1)
+    expect(updateAutoCheckin).toHaveBeenCalledWith({ globalEnabled: false })
+
+    resolveSave!(true)
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "autoCheckin:settings.scheduleModeRandom",
+        }),
+      ).toBeEnabled()
+    })
   })
 
   it("leaves settings snapshot tracking to the preferences context", async () => {
