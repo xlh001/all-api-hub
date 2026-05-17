@@ -27,6 +27,9 @@ const globalsConfig = {
   ...globals.browser,
 }
 
+const jsFamilyFilePattern = "**/*.{js,cjs,mjs,jsx,ts,tsx}"
+const srcJsFamilyFilePattern = "src/**/*.{js,cjs,mjs,jsx,ts,tsx}"
+
 export default defineConfig([
   {
     ignores: [
@@ -37,7 +40,9 @@ export default defineConfig([
       ".output/**",
       ".wxt/**",
       "diagnostics-results/**",
-      "docs/**",
+      "docs/**/*",
+      "!docs/scripts/",
+      "!docs/scripts/**/*.mjs",
       "coverage/**",
       "playwright-report/**",
       "test-results/**",
@@ -118,6 +123,9 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
+  },
+  {
+    files: [jsFamilyFilePattern],
     rules: {
       "jsdoc/require-jsdoc": "off",
       "jsdoc/require-description": "off",
@@ -126,7 +134,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/**/*.{ts,tsx}"],
+    files: [srcJsFamilyFilePattern],
     rules: {
       "jsdoc/require-jsdoc": "warn",
       "jsdoc/require-description": "error",
@@ -134,14 +142,17 @@ export default defineConfig([
   },
   // Guardrails: avoid direct `console.*` usage in app/runtime code (use `~/utils/core/logger`).
   {
-    files: ["src/**/*.{ts,tsx}"],
+    files: [srcJsFamilyFilePattern],
     rules: {
       "no-console": "error",
     },
   },
   // Allow `console.*` in the unified logger implementation and in tests.
   {
-    files: ["src/utils/core/logger.ts", "tests/**/*.{ts,tsx}"],
+    files: [
+      "src/utils/core/logger.{js,cjs,mjs,jsx,ts,tsx}",
+      "tests/**/*.{js,cjs,mjs,jsx,ts,tsx}",
+    ],
     rules: {
       "no-console": "off",
     },
@@ -152,7 +163,7 @@ export default defineConfig([
   // - Start as a warning while we migrate existing violations out of `entrypoints/options/pages/**`.
   // - Once the repo is clean, upgrade this to "error" so `pnpm -s lint` fails on new violations.
   {
-    files: ["src/**/*.{ts,tsx}"],
+    files: [srcJsFamilyFilePattern],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -170,7 +181,7 @@ export default defineConfig([
   },
   // Allow options entrypoint code to depend on options pages.
   {
-    files: ["src/entrypoints/options/**/*.{ts,tsx}"],
+    files: ["src/entrypoints/options/**/*.{js,cjs,mjs,jsx,ts,tsx}"],
     rules: {
       "no-restricted-imports": "off",
     },
