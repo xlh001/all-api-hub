@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Alert } from "~/components/ui/Alert"
 import { Button } from "~/components/ui/button"
 import { Modal } from "~/components/ui/Dialog/Modal"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 
 export interface DuplicateAccountWarningDialogProps {
   isOpen: boolean
@@ -65,6 +66,9 @@ export function DuplicateAccountWarningDialog({
             onClick={onContinue}
             variant="warning"
             className="flex-1"
+            data-testid={
+              ACCOUNT_MANAGEMENT_TEST_IDS.duplicateWarningContinueButton
+            }
           >
             {t("accountDialog:warnings.duplicateAccount.actions.continue")}
           </Button>

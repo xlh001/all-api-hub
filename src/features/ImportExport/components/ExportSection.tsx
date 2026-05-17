@@ -21,6 +21,7 @@ import {
   type ProductAnalyticsActionId,
 } from "~/services/productAnalytics/events"
 
+import { IMPORT_EXPORT_TEST_IDS } from "../testIds"
 import {
   handleExportAccounts,
   handleExportAll,
@@ -97,6 +98,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
                 variant="success"
                 size="sm"
                 loading={isExporting}
+                data-testid={IMPORT_EXPORT_TEST_IDS.exportFullBackupButton}
               >
                 {isExporting
                   ? t("common:status.exporting")
@@ -123,6 +125,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
                 variant="default"
                 size="sm"
                 loading={isExporting}
+                data-testid={IMPORT_EXPORT_TEST_IDS.exportAccountDataButton}
               >
                 {isExporting
                   ? t("common:status.exporting")
@@ -149,6 +152,7 @@ const ExportSection = ({ isExporting, setIsExporting }: ExportSectionProps) => {
                 variant="secondary"
                 size="sm"
                 loading={isExporting}
+                data-testid={IMPORT_EXPORT_TEST_IDS.exportUserSettingsButton}
               >
                 {isExporting
                   ? t("common:status.exporting")

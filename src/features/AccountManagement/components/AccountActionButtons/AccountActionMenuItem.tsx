@@ -27,6 +27,8 @@ interface AccountActionMenuItemProps {
   disabled?: boolean
   /** Fixed analytics identifiers emitted for explicitly tracked menu actions. */
   analyticsAction?: ProductAnalyticsScopedActionConfig
+  /** Optional stable selector for E2E action targeting. */
+  testId?: string
 }
 
 const menuItemClassName =
@@ -50,6 +52,7 @@ export const AccountActionMenuItem: React.FC<AccountActionMenuItemProps> = ({
   tone = "default",
   disabled = false,
   analyticsAction,
+  testId,
 }) => {
   const descriptionId = React.useId()
   const analytics = useProductAnalyticsActionTracking({
@@ -65,6 +68,7 @@ export const AccountActionMenuItem: React.FC<AccountActionMenuItemProps> = ({
           type="button"
           aria-label={label}
           aria-describedby={description ? descriptionId : undefined}
+          data-testid={testId}
           title={description ?? hint}
           onClick={(e) => {
             e.preventDefault()

@@ -67,6 +67,7 @@ import { createLogger } from "~/utils/core/logger"
 import { applyPreferenceLanguage } from "~/utils/i18n/applyPreferenceLanguage"
 
 import { WEBDAV_TARGET_IDS } from "../searchTargets"
+import { IMPORT_EXPORT_TEST_IDS } from "../testIds"
 import {
   BACKUP_VERSION,
   importFromBackupObject,
@@ -794,6 +795,7 @@ export default function WebDAVSettings() {
               {/* 上传备份 */}
               <Button
                 id={WEBDAV_TARGET_IDS.uploadBackup}
+                data-testid={IMPORT_EXPORT_TEST_IDS.webdavUploadBackupButton}
                 onClick={handleUploadBackup}
                 disabled={uploading || !webdavConfigFilled}
                 loading={uploading}
@@ -813,6 +815,7 @@ export default function WebDAVSettings() {
               {/* 下载并导入 */}
               <Button
                 id={WEBDAV_TARGET_IDS.downloadImport}
+                data-testid={IMPORT_EXPORT_TEST_IDS.webdavDownloadImportButton}
                 onClick={handleDownloadAndImport}
                 disabled={downloading || !webdavConfigFilled}
                 loading={downloading}

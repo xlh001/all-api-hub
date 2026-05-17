@@ -167,10 +167,7 @@ test("exports a full backup containing accounts, user preferences, and API crede
   await waitForExtensionRoot(page)
 
   const downloadPromise = page.waitForEvent("download")
-  await page
-    .locator("#export-full-backup")
-    .getByRole("button", { name: "Export" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.exportFullBackupButton).click()
 
   const download = await downloadPromise
   expect(download.suggestedFilename()).toMatch(
@@ -285,10 +282,7 @@ test("round-trips a full backup through export download and file import", async 
   await waitForExtensionRoot(page)
 
   const downloadPromise = page.waitForEvent("download")
-  await page
-    .locator("#export-full-backup")
-    .getByRole("button", { name: "Export" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.exportFullBackupButton).click()
 
   const download = await downloadPromise
   const downloadPath = await download.path()
@@ -366,10 +360,7 @@ test("round-trips a full backup through export download and file import", async 
     page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
 
-  await page
-    .locator("#import-section")
-    .getByRole("button", { name: "Import" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.importBackupButton).click()
 
   await expect
     .poll(async () => {
@@ -408,7 +399,7 @@ test("round-trips a full backup through export download and file import", async 
     page.getByRole("button", { name: "Round Trip Old Account" }),
   ).toHaveCount(0)
 
-  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await page.getByTestId(POPUP_TEST_IDS.bookmarksTab).click()
   await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Round Trip Bookmark" }),
@@ -468,10 +459,7 @@ test("imports account backup JSON from the preview field and replaces account st
   await expect(page.getByText("Data format is correct")).toBeVisible()
   await expect(page.getByText("Contains account data")).toBeVisible()
 
-  await page
-    .locator("#import-section")
-    .getByRole("button", { name: "Import" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.importBackupButton).click()
 
   await expect
     .poll(async () => {
@@ -535,10 +523,7 @@ test("imports account backup JSON from a selected file and restores popup accoun
   await expect(page.getByText("Data format is correct")).toBeVisible()
   await expect(page.getByText("Contains account data")).toBeVisible()
 
-  await page
-    .locator("#import-section")
-    .getByRole("button", { name: "Import" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.importBackupButton).click()
 
   await expect
     .poll(async () => {
@@ -594,10 +579,7 @@ test("imports API credential profiles from backup JSON and restores the popup ta
     page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
 
-  await page
-    .locator("#import-section")
-    .getByRole("button", { name: "Import" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.importBackupButton).click()
 
   await expect
     .poll(async () => {
@@ -716,10 +698,7 @@ test("restores a full backup and keeps common popup workflows available", async 
     page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
 
-  await page
-    .locator("#import-section")
-    .getByRole("button", { name: "Import" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.importBackupButton).click()
 
   await expect
     .poll(async () => {
@@ -757,7 +736,7 @@ test("restores a full backup and keeps common popup workflows available", async 
     page.getByRole("button", { name: "Pre Restore Account" }),
   ).toHaveCount(0)
 
-  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await page.getByTestId(POPUP_TEST_IDS.bookmarksTab).click()
   await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Full Restore Bookmark" }),
@@ -857,10 +836,7 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
     page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
 
-  await page
-    .locator("#import-section")
-    .getByRole("button", { name: "Import" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.importBackupButton).click()
 
   await expect
     .poll(async () => {
@@ -892,7 +868,7 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
     page.getByRole("button", { name: "Sidepanel Restore Account" }),
   ).toBeVisible()
 
-  await page.getByRole("tab", { name: "Bookmarks" }).click()
+  await page.getByTestId(POPUP_TEST_IDS.bookmarksTab).click()
   await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Sidepanel Restore Bookmark" }),
@@ -915,7 +891,9 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
     },
   })
 
-  await page.getByRole("button", { name: "Open in Model Management" }).click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton)
+    .click()
 
   const modelsPage = await modelsPagePromise
   installExtensionPageGuards(modelsPage)
@@ -964,10 +942,7 @@ test("imports preference backup JSON and applies settings after reload", async (
   await expect(page.getByText("Data format is correct")).toBeVisible()
   await expect(page.getByText("Contains user settings")).toBeVisible()
 
-  await page
-    .locator("#import-section")
-    .getByRole("button", { name: "Import" })
-    .click()
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.importBackupButton).click()
 
   await expect
     .poll(() => readStoredPreferences(serviceWorker))
@@ -1100,7 +1075,9 @@ test("uploads a WebDAV backup and restores it through the WebDAV download flow",
   await page.locator("#webdav-url").fill(webdavFileUrl)
   await page.locator("#webdav-username").fill("webdav-user")
   await page.locator("#webdav-password").fill("webdav-password")
-  await page.locator("#webdav-upload-backup").click()
+  await page
+    .getByTestId(IMPORT_EXPORT_TEST_IDS.webdavUploadBackupButton)
+    .click()
 
   await expect.poll(() => uploadedPayloads.length).toBe(1)
   expect(uploadedPayloads[0]).toMatchObject({
@@ -1176,7 +1153,9 @@ test("uploads a WebDAV backup and restores it through the WebDAV download flow",
   await restorePage.locator("#webdav-url").fill(webdavFileUrl)
   await restorePage.locator("#webdav-username").fill("webdav-user")
   await restorePage.locator("#webdav-password").fill("webdav-password")
-  await restorePage.locator("#webdav-download-import").click()
+  await restorePage
+    .getByTestId(IMPORT_EXPORT_TEST_IDS.webdavDownloadImportButton)
+    .click()
 
   await expect
     .poll(async () => {
@@ -1215,7 +1194,7 @@ test("uploads a WebDAV backup and restores it through the WebDAV download flow",
     restorePage.getByRole("button", { name: "WebDAV Old Account" }),
   ).toHaveCount(0)
 
-  await restorePage.getByRole("tab", { name: "Bookmarks" }).click()
+  await restorePage.getByTestId(POPUP_TEST_IDS.bookmarksTab).click()
   await expect(
     restorePage.getByRole("button", { name: "WebDAV Bookmark" }),
   ).toBeVisible()

@@ -13,7 +13,10 @@ import {
   API_CREDENTIAL_PROFILES_TEST_IDS,
   getApiCredentialProfileVerifyProbeTestId,
 } from "~/features/ApiCredentialProfiles/testIds"
-import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
+import {
+  getKeyManagementTokenRowTestId,
+  KEY_MANAGEMENT_TEST_IDS,
+} from "~/features/KeyManagement/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { SiteAccount } from "~/types"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
@@ -126,6 +129,37 @@ async function stubAIHubMixRoutes(context: BrowserContext) {
     const request = route.request()
     const url = new URL(request.url())
     const method = request.method()
+
+    if (method === "GET" && url.pathname === "/") {
+      await route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: `<!doctype html>
+          <html>
+            <head><title>AIHubMix</title></head>
+            <body>
+              <script>
+                window.localStorage.setItem("user", JSON.stringify({
+                  id: 808,
+                  username: "aihubmix-user",
+                  quota: 250000,
+                  used_quota: 0
+                }))
+              </script>
+              AIHubMix
+            </body>
+          </html>`,
+      })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/favicon.ico") {
+      await route.fulfill({
+        status: 204,
+        body: "",
+      })
+      return
+    }
 
     if (method === "GET" && url.pathname === "/call/usr/self") {
       await route.fulfill({
@@ -377,14 +411,14 @@ test("adds an account through the real add-account auto-detect flow", async ({
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("button", { name: "Add Account" }).first().click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.addAccountButton).click()
 
   await expect(page.locator("#site-url")).toBeVisible()
   await page.locator("#site-url").fill("https://example.com")
-  await page.getByRole("button", { name: "Auto Detect" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.autoDetectButton).click()
 
   await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
-  await page.getByRole("button", { name: "Confirm Add" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.confirmAddButton).click()
 
   await expect(
     page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListView),
@@ -459,13 +493,13 @@ test("enables default-key provisioning, adds an account, saves the created key a
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("button", { name: "Add Account" }).first().click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.addAccountButton).click()
   await expect(page.locator("#site-url")).toBeVisible()
   await page.locator("#site-url").fill("https://example.com")
-  await page.getByRole("button", { name: "Auto Detect" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.autoDetectButton).click()
 
   await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
-  await page.getByRole("button", { name: "Confirm Add" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.confirmAddButton).click()
 
   await expect(
     page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListView),
@@ -494,10 +528,7 @@ test("enables default-key provisioning, adds an account, saves the created key a
   await expect(page.getByText("default", { exact: true })).toBeVisible()
 
   await page
-    .getByRole("heading", { name: DEFAULT_AUTO_PROVISION_TOKEN_NAME })
-    .locator(
-      `xpath=ancestor::*[.//*[@data-testid='${KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton}']][1]`,
-    )
+    .getByTestId(getKeyManagementTokenRowTestId(1))
     .getByTestId(KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton)
     .click()
 
@@ -531,7 +562,9 @@ test("enables default-key provisioning, adds an account, saves the created key a
     popupPage.getByRole("heading", { name: savedProfileName }),
   ).toBeVisible()
 
-  await popupPage.getByRole("button", { name: "Verify API" }).click()
+  await popupPage
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton)
+    .click()
   const modelsProbe = popupPage.getByTestId(
     getApiCredentialProfileVerifyProbeTestId("models"),
   )
@@ -539,7 +572,9 @@ test("enables default-key provisioning, adds an account, saves the created key a
     popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
   ).toBeVisible()
 
-  await modelsProbe.getByRole("button", { name: "Run" }).click()
+  await modelsProbe
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyProbeRunButton)
+    .click()
 
   await expect(modelsProbe).toContainText("Pass")
   await expect(modelsProbe).toContainText("Fetched 2 models.")
@@ -573,7 +608,18 @@ test("adds an AIHubMix account, preserves its one-time key, and opens managed-si
   const sitePage = await context.newPage()
   installExtensionPageGuards(sitePage)
   await forceExtensionLanguage(sitePage, "en")
-  await sitePage.goto(AIHUBMIX_SITE_URL)
+  await sitePage.addInitScript(() => {
+    window.localStorage.setItem(
+      "user",
+      JSON.stringify({
+        id: 808,
+        username: "aihubmix-user",
+        quota: 250000,
+        used_quota: 0,
+      }),
+    )
+  })
+  await sitePage.goto(AIHUBMIX_API_ORIGIN)
   await sitePage.bringToFront()
 
   await page.goto(
@@ -582,27 +628,25 @@ test("adds an AIHubMix account, preserves its one-time key, and opens managed-si
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("button", { name: "Add Account" }).first().click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.addAccountButton).click()
   await page.locator("#site-url").fill(AIHUBMIX_SITE_URL)
-  await page.getByRole("button", { name: "Auto Detect" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.autoDetectButton).click()
 
-  await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
   await expect(
     page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.siteTypeTrigger),
   ).toHaveAttribute("data-site-type", SITE_TYPES.AIHUBMIX)
+  await expect(
+    page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.autoConfigButton),
+  ).toBeVisible()
 
-  await page
-    .getByRole("button", {
-      name: "Save account and open New API channel setup",
-    })
-    .click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.autoConfigButton).click()
 
   await expect(page.getByText("Save the full key now")).toBeVisible()
   await expect(page.getByLabel("Full key")).toHaveValue(
     "sk-aihubmix-created-one-time-key",
   )
 
-  await page.getByRole("button", { name: "I saved it, close" }).click()
+  await page.getByTestId(KEY_MANAGEMENT_TEST_IDS.oneTimeKeyCloseButton).click()
 
   await expect(
     page.getByRole("heading", { name: "Create Channel" }),
@@ -659,14 +703,16 @@ test("requires duplicate-warning confirmation before the manual add flow continu
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("button", { name: "Add Account" }).first().click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.addAccountButton).click()
 
   await expect(page.locator("#site-url")).toBeVisible()
   await page.locator("#site-url").fill("https://example.com")
-  await page.getByRole("button", { name: "Manual Add" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.manualAddButton).click()
 
   await expect(page.getByText("Duplicate account")).toBeVisible()
-  await page.getByRole("button", { name: "Continue" }).click()
+  await page
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.duplicateWarningContinueButton)
+    .click()
 
   await expect(page.getByLabel("Site Type")).toBeVisible()
 })

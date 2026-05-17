@@ -1,5 +1,7 @@
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
+import { MODEL_LIST_TEST_IDS } from "~/features/ModelList/testIds"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
@@ -79,27 +81,25 @@ test("creates a model-scoped key from Model List and continues in Key Management
   await expect(page.getByRole("heading", { name: "Model List" })).toBeVisible()
   await expect(page.getByRole("heading", { name: MODEL_ID })).toBeVisible()
 
-  await page.getByRole("button", { name: "Key for this model" }).click()
+  await page.getByTestId(MODEL_LIST_TEST_IDS.modelKeyDialogButton).click()
 
-  const keyDialog = page
-    .getByRole("heading", { name: "Key for model" })
-    .locator("xpath=ancestor::*[@role='dialog'][1]")
+  const keyDialog = page.getByTestId(MODEL_LIST_TEST_IDS.modelKeyDialog)
   await expect(
     keyDialog.getByText(`No compatible keys for ${MODEL_ID}`),
   ).toBeVisible()
   await expect(keyDialog.getByText("vip")).toBeVisible()
 
-  await keyDialog.getByRole("button", { name: "Create custom key" }).click()
+  await keyDialog.getByTestId(MODEL_LIST_TEST_IDS.createCustomKeyButton).click()
 
-  const addKeyDialog = page
-    .getByRole("heading", { name: "Add API Key" })
-    .locator("xpath=ancestor::*[@role='dialog'][1]")
+  const addKeyDialog = page.getByTestId(KEY_MANAGEMENT_TEST_IDS.addTokenDialog)
   await expect(addKeyDialog.locator("#tokenName")).toHaveValue(CREATED_KEY_NAME)
   await expect(addKeyDialog.getByText("Model Limits")).toBeVisible()
   await expect(addKeyDialog.getByText(MODEL_ID)).toBeVisible()
   await expect(addKeyDialog.getByText("vip - VIP")).toBeVisible()
 
-  await addKeyDialog.getByRole("button", { name: "Create Key" }).click()
+  await addKeyDialog
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.addTokenSubmitButton)
+    .click()
 
   await expect(addKeyDialog).toHaveCount(0)
   await expect(keyDialog.getByText(CREATED_KEY_NAME)).toBeVisible()
@@ -115,7 +115,7 @@ test("creates a model-scoped key from Model List and continues in Key Management
   })
 
   await keyDialog
-    .getByRole("button", { name: "Open key management for Model Key Account" })
+    .getByTestId(MODEL_LIST_TEST_IDS.openKeyManagementButton)
     .click()
 
   const keysPage = await keysPagePromise

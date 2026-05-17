@@ -172,6 +172,7 @@ export default function ActionButtons({
           loading={isAutoConfiguring}
           bleed
           className="flex-1"
+          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.autoConfigButton}
           aria-label={t("accountDialog:actions.autoConfigAriaLabel", {
             managedSite: managedSiteLabel,
           })}

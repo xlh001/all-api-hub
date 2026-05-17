@@ -146,6 +146,7 @@ const ImportSection = ({
               loading={isImporting}
               variant="default"
               bleed
+              data-testid={IMPORT_EXPORT_TEST_IDS.importBackupButton}
             >
               {isImporting
                 ? t("common:status.importing")

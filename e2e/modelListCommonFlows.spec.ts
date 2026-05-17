@@ -2,6 +2,7 @@ import type { BrowserContext } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "~/features/ApiCredentialProfiles/testIds"
 import { MODEL_LIST_TEST_IDS } from "~/features/ModelList/testIds"
 import type { ModelPricing } from "~/services/apiService/common/type"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
@@ -135,7 +136,7 @@ test("routes no-source setup CTAs to account and API credential management", asy
     ),
   ).toBeVisible()
 
-  await page.getByRole("button", { name: "Add your first account" }).click()
+  await page.getByTestId(MODEL_LIST_TEST_IDS.addFirstAccountButton).click()
   await expect(page).toHaveURL(/options\.html#account$/)
   await expect(
     page.getByRole("heading", { name: "Account Management" }),
@@ -186,8 +187,10 @@ test("creates an API profile from the empty model list and loads models from it"
     .click()
   await expect(page).toHaveURL(/options\.html#apiCredentialProfiles$/)
 
-  await page.getByTestId("api-credential-profiles-add-button").click()
-  const profileDialog = page.getByTestId("api-credential-profile-dialog")
+  await page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.addButton).click()
+  const profileDialog = page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.dialog,
+  )
   await expect(profileDialog).toBeVisible()
   await expect(
     profileDialog.getByRole("heading", { name: "Save API key" }),
@@ -198,7 +201,9 @@ test("creates an API profile from the empty model list and loads models from it"
     .locator("#api-credential-profile-baseUrl")
     .fill("https://first-model-profile.example.com/v1")
   await page.locator("#api-credential-profile-apiKey").fill("sk-first-model")
-  await page.getByTestId("api-credential-profile-dialog-save-button").click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.dialogSaveButton)
+    .click()
 
   await expect(
     page.getByRole("heading", { name: "First Model Profile" }),
@@ -246,7 +251,9 @@ test("creates an API profile from the empty model list and loads models from it"
     searchParams: { profileId: profileId! },
   })
 
-  await page.getByRole("button", { name: "Open in Model Management" }).click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton)
+    .click()
 
   const modelsPage = await modelsPagePromise
   installExtensionPageGuards(modelsPage)

@@ -3,6 +3,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { DestructiveConfirmDialog } from "~/components/ui"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
 import {
@@ -104,6 +105,7 @@ export default function DelAccountDialog({
         void handleDelete()
       }}
       isWorking={isDeleting}
+      confirmButtonTestId={ACCOUNT_MANAGEMENT_TEST_IDS.deleteConfirmButton}
       details={account ? <AccountInfo account={account} /> : null}
     />
   )

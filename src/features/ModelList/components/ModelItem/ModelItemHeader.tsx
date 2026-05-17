@@ -21,6 +21,8 @@ import {
 } from "~/services/productAnalytics/events"
 import type { ApiVerificationHistorySummary } from "~/services/verification/verificationResultHistory"
 
+import { MODEL_LIST_TEST_IDS } from "../../testIds"
+
 interface ModelItemHeaderProps {
   model: ModelPricing
   isAvailableForUser: boolean
@@ -107,6 +109,7 @@ export const ModelItemHeader: React.FC<ModelItemHeaderProps> = ({
                 onClick={onOpenKeyDialog}
                 title={t("modelList:actions.keyForModel")}
                 aria-label={t("modelList:actions.keyForModel")}
+                data-testid={MODEL_LIST_TEST_IDS.modelKeyDialogButton}
                 className="shrink-0"
                 analyticsAction={
                   PRODUCT_ANALYTICS_ACTION_IDS.OpenModelKeyDialog

@@ -236,6 +236,7 @@ function AccountManagementContent({ searchQuery }: { searchQuery?: string }) {
                 variant="secondary"
                 leftIcon={<Search className="h-4 w-4" />}
                 title={t("account:actions.scanDuplicatesHint")}
+                data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.dedupeScanButton}
                 analyticsAction={
                   PRODUCT_ANALYTICS_ACTION_IDS.ScanDuplicateAccounts
                 }

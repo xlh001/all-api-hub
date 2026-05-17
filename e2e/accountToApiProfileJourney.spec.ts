@@ -11,7 +11,10 @@ import {
   API_CREDENTIAL_PROFILES_TEST_IDS,
   getApiCredentialProfileVerifyProbeTestId,
 } from "~/features/ApiCredentialProfiles/testIds"
-import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
+import {
+  getKeyManagementTokenRowTestId,
+  KEY_MANAGEMENT_TEST_IDS,
+} from "~/features/KeyManagement/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { ApiToken, SiteAccount } from "~/types"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
@@ -113,7 +116,9 @@ async function openAccountActionsMenu(page: Page, accountRowText: string) {
   const row = getAccountRowByText(page, accountRowText)
 
   await row.hover()
-  await row.getByRole("button", { name: "More" }).click()
+  await row
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowMoreActionsButton)
+    .click()
 }
 
 test.beforeEach(async ({ context, page }) => {
@@ -172,11 +177,11 @@ test("adds an account, creates a reusable API profile from its key, and verifies
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("button", { name: "Add Account" }).first().click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.addAccountButton).click()
   await page.locator("#site-url").fill(JOURNEY_SITE_URL)
-  await page.getByRole("button", { name: "Auto Detect" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.autoDetectButton).click()
   await expect(page.getByRole("button", { name: "Confirm Add" })).toBeVisible()
-  await page.getByRole("button", { name: "Confirm Add" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.confirmAddButton).click()
 
   await expect(
     page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListView),
@@ -192,26 +197,27 @@ test("adds an account, creates a reusable API profile from its key, and verifies
   })
 
   await openAccountActionsMenu(page, "journey-user")
-  await page.getByRole("menuitem", { name: "Key Management" }).click()
+  await page
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowKeyManagementMenuItem)
+    .click()
 
   const keysPage = await keysPagePromise
   installExtensionPageGuards(keysPage)
   await waitForExtensionRoot(keysPage)
   await expect(keysPage).toHaveURL(new RegExp(`accountId=${accountId}#keys$`))
 
-  await keysPage.getByRole("button", { name: "Add API Key" }).click()
+  await keysPage.getByTestId(KEY_MANAGEMENT_TEST_IDS.addTokenButton).click()
   await expect(keysPage.locator("#tokenName")).toBeVisible()
   await keysPage.locator("#tokenName").fill("Journey Created Key")
-  await keysPage.getByRole("button", { name: "Create Key" }).click()
+  await keysPage
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.addTokenSubmitButton)
+    .click()
   await expect(
     keysPage.getByRole("heading", { name: "Journey Created Key" }),
   ).toBeVisible()
 
   await keysPage
-    .getByRole("heading", { name: "Journey Created Key" })
-    .locator(
-      `xpath=ancestor::*[.//*[@data-testid='${KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton}']][1]`,
-    )
+    .getByTestId(getKeyManagementTokenRowTestId(43))
     .getByTestId(KEY_MANAGEMENT_TEST_IDS.saveToApiProfilesButton)
     .click()
 
@@ -244,7 +250,9 @@ test("adds an account, creates a reusable API profile from its key, and verifies
     }),
   ).toBeVisible()
 
-  await popupPage.getByRole("button", { name: "Verify API" }).click()
+  await popupPage
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton)
+    .click()
   const modelsProbe = popupPage.getByTestId(
     getApiCredentialProfileVerifyProbeTestId("models"),
   )
@@ -252,7 +260,9 @@ test("adds an account, creates a reusable API profile from its key, and verifies
     popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
   ).toBeVisible()
 
-  await modelsProbe.getByRole("button", { name: "Run" }).click()
+  await modelsProbe
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyProbeRunButton)
+    .click()
 
   await expect(modelsProbe).toContainText("Pass")
   await expect(modelsProbe).toContainText("Fetched 2 models.")

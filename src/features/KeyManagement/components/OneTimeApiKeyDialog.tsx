@@ -4,6 +4,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { Alert, Button, Input, Modal } from "~/components/ui"
+import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import type { ApiToken } from "~/types"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
@@ -80,7 +81,12 @@ export function OneTimeApiKeyDialog({
       }
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" onClick={handleClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+            data-testid={KEY_MANAGEMENT_TEST_IDS.oneTimeKeyCloseButton}
+          >
             {t("oneTimeKey.close")}
           </Button>
           <Button

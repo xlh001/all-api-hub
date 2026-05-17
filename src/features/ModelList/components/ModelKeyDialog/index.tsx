@@ -31,6 +31,7 @@ import {
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { openKeysPage } from "~/utils/navigation"
 
+import { MODEL_LIST_TEST_IDS } from "../../testIds"
 import {
   useModelKeyDialog,
   type ModelKeyDialogCreateResult,
@@ -197,6 +198,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
         onClick={handleOpenKeysPage}
         variant="link"
         className="mt-1 h-auto px-0 py-0 text-sm"
+        data-testid={MODEL_LIST_TEST_IDS.openKeyManagementButton}
         analyticsAction={{
           featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
           actionId:
@@ -346,6 +348,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
                     onClick={handleOpenAddTokenDialog}
                     variant="secondary"
                     disabled={!canCreateToken}
+                    data-testid={MODEL_LIST_TEST_IDS.createCustomKeyButton}
                     analyticsAction={
                       PRODUCT_ANALYTICS_ACTION_IDS.CreateCustomModelKey
                     }
@@ -411,6 +414,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
                   onClick={handleOpenAddTokenDialog}
                   variant="secondary"
                   disabled={!canCreateToken}
+                  data-testid={MODEL_LIST_TEST_IDS.createCustomKeyButton}
                   analyticsAction={
                     PRODUCT_ANALYTICS_ACTION_IDS.CreateCustomModelKey
                   }
@@ -427,7 +431,13 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="md" header={header}>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="md"
+        header={header}
+        panelTestId={MODEL_LIST_TEST_IDS.modelKeyDialog}
+      >
         {renderContent()}
       </Modal>
       <AddTokenDialog

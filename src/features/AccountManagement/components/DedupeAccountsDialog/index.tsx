@@ -5,6 +5,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { Button, DestructiveConfirmDialog, Modal } from "~/components/ui"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import {
   scanDuplicateAccounts,
   type AccountDedupeKeepStrategy,
@@ -269,6 +270,9 @@ export default function DedupeAccountsDialog({
               variant="destructive"
               onClick={() => setIsConfirmOpen(true)}
               disabled={isWorking || idsToDelete.length === 0}
+              data-testid={
+                ACCOUNT_MANAGEMENT_TEST_IDS.dedupePreviewDeleteButton
+              }
             >
               {t("ui:dialog.dedupeAccounts.previewDelete")}
             </Button>
@@ -307,6 +311,9 @@ export default function DedupeAccountsDialog({
         onConfirm={() => void handleConfirmDelete()}
         isWorking={isWorking}
         size="lg"
+        confirmButtonTestId={
+          ACCOUNT_MANAGEMENT_TEST_IDS.dedupeConfirmDeleteButton
+        }
         details={
           <DedupeAccountsConfirmDetails
             groups={groups}

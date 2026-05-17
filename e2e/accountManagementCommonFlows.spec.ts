@@ -2,7 +2,10 @@ import type { Page } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
-import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
+import {
+  ACCOUNT_MANAGEMENT_TEST_IDS,
+  getAccountManagementListItemTestId,
+} from "~/features/AccountManagement/testIds"
 import {
   createDefaultAccountStorageConfig,
   normalizeAccountStorageConfigForWrite,
@@ -85,8 +88,8 @@ async function seedStoredAccountConfig(
 
 function getAccountRow(page: Page, accountName: string) {
   return page
-    .getByRole("button", { name: accountName })
-    .locator("xpath=ancestor::div[contains(@class, 'group')][1]")
+    .getByTestId(new RegExp(`^${getAccountManagementListItemTestId("")}`))
+    .filter({ hasText: accountName })
 }
 
 async function getAccountButtonY(page: Page, accountName: string) {
@@ -105,7 +108,9 @@ async function getAccountButtonY(page: Page, accountName: string) {
 async function openAccountActionsMenu(page: Page, accountName: string) {
   const row = getAccountRow(page, accountName)
   await row.hover()
-  await row.getByRole("button", { name: "More" }).click()
+  await row
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowMoreActionsButton)
+    .click()
 }
 
 async function readAccountQuickCheckinRuntimeState(
@@ -159,7 +164,9 @@ test("disables and re-enables a stored account from account management", async (
   ).toBeVisible()
 
   await openAccountActionsMenu(page, "Toggle Account")
-  await page.getByText("Disable account", { exact: true }).click()
+  await page
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowDisableToggleMenuItem)
+    .click()
 
   await expect(
     page.locator(
@@ -177,7 +184,9 @@ test("disables and re-enables a stored account from account management", async (
 
   await openAccountActionsMenu(page, "Toggle Account")
   await expect(page.getByText("Enable account", { exact: true })).toBeVisible()
-  await page.getByText("Enable account", { exact: true }).click()
+  await page
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowDisableToggleMenuItem)
+    .click()
 
   await expect(
     page.locator(
@@ -224,13 +233,15 @@ test("deletes a stored account from account management and removes it from stora
   ).toBeVisible()
 
   await openAccountActionsMenu(page, "Delete Account")
-  await page.getByText("Delete", { exact: true }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowDeleteMenuItem).click()
 
   const dialog = page.getByRole("dialog")
   await expect(
     dialog.getByRole("heading", { name: "Delete Account" }),
   ).toBeVisible()
-  await dialog.getByRole("button", { name: "Confirm Delete" }).click()
+  await dialog
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.deleteConfirmButton)
+    .click()
 
   await expect(
     page.getByRole("button", { name: "Delete Account" }),
@@ -368,7 +379,9 @@ test("runs quick check-in for the selected eligible account from account managem
   await expectPermissionOnboardingHidden(page)
 
   await openAccountActionsMenu(page, "Quick Check-in Account")
-  await page.getByText("Quick check-in", { exact: true }).click()
+  await page
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowQuickCheckinMenuItem)
+    .click()
 
   await expect
     .poll(() => readAccountQuickCheckinRuntimeState(page))
@@ -440,7 +453,9 @@ test("pins and unpins an account from account management while persisting pinned
   )
 
   await openAccountActionsMenu(page, "Pinned Candidate")
-  await page.getByText("Pin account", { exact: true }).click()
+  await page
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowPinToggleMenuItem)
+    .click()
 
   await expect
     .poll(async () => {
@@ -460,7 +475,9 @@ test("pins and unpins an account from account management while persisting pinned
   )
 
   await openAccountActionsMenu(page, "Pinned Candidate")
-  await page.getByText("Unpin account", { exact: true }).click()
+  await page
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowPinToggleMenuItem)
+    .click()
 
   await expect
     .poll(async () => {
@@ -509,7 +526,7 @@ test("shows the empty duplicate-cleanup state when no duplicate accounts are fou
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("button", { name: "Scan duplicates" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.dedupeScanButton).click()
 
   const dialog = page.getByRole("dialog")
   await expect(
@@ -577,7 +594,7 @@ test("cleans duplicate accounts after preview confirmation and prunes stale refe
   await waitForExtensionRoot(page)
   await expectPermissionOnboardingHidden(page)
 
-  await page.getByRole("button", { name: "Scan duplicates" }).click()
+  await page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.dedupeScanButton).click()
 
   const dialog = page.getByRole("dialog")
   await expect(
@@ -596,7 +613,9 @@ test("cleans duplicate accounts after preview confirmation and prunes stale refe
   await expect(radios).toHaveCount(2)
   await radios.nth(1).click()
 
-  await dialog.getByRole("button", { name: "Preview deletion" }).click()
+  await dialog
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.dedupePreviewDeleteButton)
+    .click()
 
   const confirmDialog = page.getByRole("dialog", {
     name: "Delete duplicate accounts",
@@ -610,7 +629,9 @@ test("cleans duplicate accounts after preview confirmation and prunes stale refe
   await expect(
     confirmDialog.getByText("Delete: Duplicate Example · keep-user"),
   ).toBeVisible()
-  await confirmDialog.getByRole("button", { name: "Delete" }).click()
+  await confirmDialog
+    .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.dedupeConfirmDeleteButton)
+    .click()
 
   await expect(
     page.getByRole("button", { name: "Scan duplicates" }),

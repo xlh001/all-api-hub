@@ -20,6 +20,7 @@ import type { AccountToken, ApiToken, DisplaySiteData } from "~/types"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 
+import { KEY_MANAGEMENT_TEST_IDS } from "../../testIds"
 import { OneTimeApiKeyDialog } from "../OneTimeApiKeyDialog"
 import { DialogHeader } from "./DialogHeader"
 import { FormActions } from "./FormActions"
@@ -222,6 +223,7 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
         onClose={handleClose}
         size="lg"
         header={<DialogHeader isEditMode={isEditMode} />}
+        panelTestId={KEY_MANAGEMENT_TEST_IDS.addTokenDialog}
         footer={
           isLoading ? null : (
             <FormActions

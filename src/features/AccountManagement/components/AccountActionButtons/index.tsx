@@ -28,6 +28,7 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import { translateAutoCheckinMessageKey } from "~/features/AutoCheckin/utils/autoCheckin"
 import { exportShareSnapshotWithToast } from "~/features/ShareSnapshots/utils/exportShareSnapshotWithToast"
 import { resolveDisplayAccountTokenForSecret } from "~/services/accounts/utils/apiServiceRequest"
@@ -762,6 +763,7 @@ export default function AccountActionButtons({
           className="touch-manipulation"
           disabled={isAccountDisabled}
           aria-label={t("actions.copyUrl")}
+          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.rowCopyUrlButton}
           title={t("actions.copyUrl")}
           analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.CopyAccountSiteUrl}
         >
@@ -775,6 +777,7 @@ export default function AccountActionButtons({
           className="touch-manipulation"
           disabled={isCheckingTokens || isAccountDisabled}
           aria-label={t("actions.copyKey")}
+          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.rowCopyKeyButton}
           title={t("actions.copyKey")}
         >
           <KeyIcon className="h-4 w-4" />
@@ -790,6 +793,7 @@ export default function AccountActionButtons({
           className="touch-manipulation"
           disabled={isAccountDisabled}
           aria-label={t("actions.edit")}
+          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.rowEditButton}
           title={t("actions.edit")}
           analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.OpenUpdateAccountDialog}
         >
@@ -803,6 +807,7 @@ export default function AccountActionButtons({
             variant="ghost"
             size="sm"
             aria-label={t("common:actions.more")}
+            data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.rowMoreActionsButton}
           >
             <EllipsisHorizontalIcon className="h-4 w-4" />
           </MenuButton>
@@ -818,6 +823,7 @@ export default function AccountActionButtons({
                   icon={CheckCircleIcon}
                   label={t("actions.enableAccount")}
                   tone="success"
+                  testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowDisableToggleMenuItem}
                 />
 
                 <hr className="dark:border-dark-bg-tertiary my-1 border-gray-200" />
@@ -827,6 +833,7 @@ export default function AccountActionButtons({
                   icon={TrashIcon}
                   label={t("actions.delete")}
                   isDestructive={true}
+                  testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowDeleteMenuItem}
                 />
               </>
             ) : (
@@ -843,6 +850,7 @@ export default function AccountActionButtons({
                   onClick={handleNavigateToKeyManagement}
                   icon={KeyIcon}
                   label={t("actions.keyManagement")}
+                  testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowKeyManagementMenuItem}
                   analyticsAction={
                     PRODUCT_ANALYTICS_ACTION_IDS.OpenKeyManagement
                   }
@@ -855,6 +863,9 @@ export default function AccountActionButtons({
                     onClick={handleNavigateToModelManagement}
                     icon={CpuChipIcon}
                     label={t("actions.modelManagement")}
+                    testId={
+                      ACCOUNT_MANAGEMENT_TEST_IDS.rowModelManagementMenuItem
+                    }
                     analyticsAction={
                       PRODUCT_ANALYTICS_ACTION_IDS.OpenModelManagement
                     }
@@ -898,6 +909,7 @@ export default function AccountActionButtons({
                     onClick={handleNavigateToUsageManagement}
                     icon={ChartPieIcon}
                     label={t("actions.usageLog")}
+                    testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowUsageLogMenuItem}
                     analyticsAction={
                       PRODUCT_ANALYTICS_ACTION_IDS.OpenAccountUsageLog
                     }
@@ -908,6 +920,7 @@ export default function AccountActionButtons({
                   onClick={handleNavigateToRedeemPage}
                   icon={BanknotesIcon}
                   label={t("actions.redeemPage")}
+                  testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowRedeemMenuItem}
                   analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.OpenRedeemPage}
                 />
 
@@ -919,6 +932,7 @@ export default function AccountActionButtons({
                     onClick={handleTogglePin}
                     icon={PinToggleIcon}
                     label={pinLabel}
+                    testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowPinToggleMenuItem}
                   />
                 )}
 
@@ -937,6 +951,9 @@ export default function AccountActionButtons({
                       onClick={handleQuickCheckin}
                       icon={CalendarCheck2}
                       label={t("actions.quickCheckin")}
+                      testId={
+                        ACCOUNT_MANAGEMENT_TEST_IDS.rowQuickCheckinMenuItem
+                      }
                     />
                   </ProductAnalyticsScope>
                 )}
@@ -955,6 +972,7 @@ export default function AccountActionButtons({
                   icon={NoSymbolIcon}
                   label={t("actions.disableAccount")}
                   tone="warning"
+                  testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowDisableToggleMenuItem}
                 />
 
                 <AccountActionMenuItem
@@ -962,6 +980,7 @@ export default function AccountActionButtons({
                   icon={TrashIcon}
                   label={t("actions.delete")}
                   isDestructive={true}
+                  testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowDeleteMenuItem}
                 />
               </>
             )}

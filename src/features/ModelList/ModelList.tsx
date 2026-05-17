@@ -383,6 +383,7 @@ export default function ModelList(props: {
               label: t("account:addFirstAccount"),
               onClick: handleOpenAccountManagement,
               variant: "default",
+              testId: MODEL_LIST_TEST_IDS.addFirstAccountButton,
             },
             {
               label: t("apiCredentialProfiles:actions.add"),

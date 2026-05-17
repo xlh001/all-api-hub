@@ -1,5 +1,10 @@
 export const MODEL_LIST_TEST_IDS = {
   addApiCredentialProfileButton: "model-list-add-api-credential-profile-button",
+  addFirstAccountButton: "model-list-add-first-account-button",
+  modelKeyDialogButton: "model-list-model-key-dialog-button",
+  modelKeyDialog: "model-list-model-key-dialog",
+  createCustomKeyButton: "model-list-create-custom-key-button",
+  openKeyManagementButton: "model-list-open-key-management-button",
 } as const
 
 /**

@@ -7,6 +7,7 @@ export const ACCOUNT_MANAGEMENT_TEST_IDS = {
   authTypeTrigger: "account-management-auth-type-trigger",
   autoDetectButton: "account-management-auto-detect-button",
   manualAddButton: "account-management-manual-add-button",
+  autoConfigButton: "account-management-auto-config-button",
   siteNameInput: "account-management-site-name-input",
   siteTypeTrigger: "account-management-site-type-trigger",
   usernameInput: "account-management-username-input",
@@ -24,6 +25,25 @@ export const ACCOUNT_MANAGEMENT_TEST_IDS = {
     "account-management-sub2api-import-session-button",
   sub2apiRefreshTokenInput: "account-management-sub2api-refresh-token-input",
   confirmAddButton: "account-management-confirm-add-button",
+  rowCopyUrlButton: "account-management-row-copy-url-button",
+  rowCopyKeyButton: "account-management-row-copy-key-button",
+  rowEditButton: "account-management-row-edit-button",
+  rowMoreActionsButton: "account-management-row-more-actions-button",
+  rowKeyManagementMenuItem: "account-management-row-key-management-menu-item",
+  rowModelManagementMenuItem:
+    "account-management-row-model-management-menu-item",
+  rowUsageLogMenuItem: "account-management-row-usage-log-menu-item",
+  rowRedeemMenuItem: "account-management-row-redeem-menu-item",
+  rowPinToggleMenuItem: "account-management-row-pin-toggle-menu-item",
+  rowQuickCheckinMenuItem: "account-management-row-quick-checkin-menu-item",
+  rowDisableToggleMenuItem: "account-management-row-disable-toggle-menu-item",
+  rowDeleteMenuItem: "account-management-row-delete-menu-item",
+  deleteConfirmButton: "account-management-delete-confirm-button",
+  dedupeScanButton: "account-management-dedupe-scan-button",
+  dedupePreviewDeleteButton: "account-management-dedupe-preview-delete-button",
+  dedupeConfirmDeleteButton: "account-management-dedupe-confirm-delete-button",
+  duplicateWarningContinueButton:
+    "account-management-duplicate-warning-continue-button",
 } as const
 
 /**
