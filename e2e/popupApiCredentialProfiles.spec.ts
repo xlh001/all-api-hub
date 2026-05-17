@@ -137,10 +137,7 @@ test("creates a popup API credential profile, verifies it, and uses it in Model 
 
   expect(profileId).toBeTruthy()
 
-  await page.getByRole("button", { name: "Verify API" }).click()
-  const verificationDialog = page
-    .getByRole("heading", { name: "API Verification" })
-    .locator("xpath=ancestor::*[.//button[normalize-space()='Close']][1]")
+  await page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton).click()
   const modelsProbe = page.getByTestId(
     getApiCredentialProfileVerifyProbeTestId("models"),
   )
@@ -148,12 +145,18 @@ test("creates a popup API credential profile, verifies it, and uses it in Model 
     page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
   ).toBeVisible()
 
-  await modelsProbe.getByRole("button", { name: "Run" }).click()
+  await modelsProbe
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyProbeRunButton)
+    .click()
 
   await expect(modelsProbe).toContainText("Pass")
   await expect(modelsProbe).toContainText("Fetched 2 models.")
-  await verificationDialog.getByText("Close", { exact: true }).click()
-  await expect(verificationDialog).toHaveCount(0)
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyDialogCloseButton)
+    .click()
+  await expect(
+    page.getByRole("heading", { name: "API Verification" }),
+  ).toHaveCount(0)
 
   const targetPagePromise = waitForExtensionPage(context, {
     extensionId,
@@ -164,7 +167,9 @@ test("creates a popup API credential profile, verifies it, and uses it in Model 
     },
   })
 
-  await page.getByRole("button", { name: "Open in Model Management" }).click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton)
+    .click()
 
   const targetPage = await targetPagePromise
   installExtensionPageGuards(targetPage)
@@ -205,7 +210,7 @@ test("verifies a stored popup API credential profile against mocked endpoints", 
     page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
 
-  await page.getByRole("button", { name: "Verify API" }).click()
+  await page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton).click()
 
   const modelsProbe = page.getByTestId(
     getApiCredentialProfileVerifyProbeTestId("models"),
@@ -214,7 +219,9 @@ test("verifies a stored popup API credential profile against mocked endpoints", 
     page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyModelId),
   ).toBeVisible()
 
-  await modelsProbe.getByRole("button", { name: "Run" }).click()
+  await modelsProbe
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyProbeRunButton)
+    .click()
 
   await expect(modelsProbe).toContainText("Pass")
   await expect(modelsProbe).toContainText("Fetched 2 models.")
@@ -252,7 +259,9 @@ test("opens Model Management for a stored popup API credential profile and loads
     },
   })
 
-  await page.getByRole("button", { name: "Open in Model Management" }).click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton)
+    .click()
 
   const targetPage = await targetPagePromise
   installExtensionPageGuards(targetPage)
@@ -295,7 +304,7 @@ test("edits a stored popup API credential profile and persists the change", asyn
     page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
   ).toBeVisible()
 
-  await page.getByRole("button", { name: "Edit" }).click()
+  await page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.editButton).click()
 
   await expect(
     page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.dialog),
@@ -362,10 +371,14 @@ test("deletes a stored popup API credential profile and removes it from storage"
 
   await expect(page.getByRole("heading", { name: "Delete Me" })).toBeVisible()
 
-  await page.getByRole("button", { name: "Delete" }).click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.deleteTriggerButton)
+    .click()
   const dialog = page.getByRole("dialog")
   await expect(dialog.getByText("Delete credential")).toBeVisible()
-  await dialog.getByRole("button", { name: "Delete" }).click()
+  await dialog
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.deleteConfirmButton)
+    .click()
 
   await expect(page.getByRole("heading", { name: "Delete Me" })).toHaveCount(0)
 

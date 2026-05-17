@@ -181,12 +181,18 @@ test("filters options-page profiles and copies reusable credentials", async ({
     page.getByRole("heading", { name: "Archive Profile" }),
   ).toHaveCount(0)
 
-  await page.getByRole("button", { name: "Show Key" }).click()
+  await page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.showKeyButton).click()
   await expect(page.getByText("sk-reusable-profile")).toBeVisible()
 
-  await page.getByRole("button", { name: "Copy base URL", exact: true }).click()
-  await page.getByRole("button", { name: "Copy API key" }).click()
-  await page.getByRole("button", { name: "Copy base URL + API key" }).click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.copyBaseUrlButton)
+    .click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.copyApiKeyButton)
+    .click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.copyBundleButton)
+    .click()
 
   await expect
     .poll(() => readClipboardWrites(page))
@@ -235,7 +241,9 @@ test("opens model management for an options-page API credential profile", async 
     },
   })
 
-  await page.getByRole("button", { name: "Open in Model Management" }).click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton)
+    .click()
 
   const targetPage = await targetPagePromise
   installExtensionPageGuards(targetPage)

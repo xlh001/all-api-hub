@@ -620,7 +620,12 @@ export function VerifyApiCredentialProfileDialog({
         ) : null}
       </div>
       <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onClose} disabled={!canClose}>
+        <Button
+          variant="secondary"
+          onClick={onClose}
+          disabled={!canClose}
+          data-testid={API_CREDENTIAL_PROFILES_TEST_IDS.verifyDialogCloseButton}
+        >
           {t("aiApiVerification:verifyDialog.actions.close")}
         </Button>
         <Button
@@ -830,6 +835,9 @@ export function VerifyApiCredentialProfileDialog({
                       size="sm"
                       variant="secondary"
                       onClick={() => runProbe(probe.definition.id)}
+                      data-testid={
+                        API_CREDENTIAL_PROFILES_TEST_IDS.verifyProbeRunButton
+                      }
                       disabled={
                         isRunning ||
                         isPersisting ||

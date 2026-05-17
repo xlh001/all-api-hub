@@ -240,6 +240,9 @@ export function ApiCredentialProfileListItem({
                       variant="ghost"
                       size="sm"
                       onClick={() => onCopyBaseUrl(profile)}
+                      data-testid={
+                        API_CREDENTIAL_PROFILES_TEST_IDS.copyBaseUrlButton
+                      }
                       aria-label={t(
                         "apiCredentialProfiles:actions.copyBaseUrl",
                       )}
@@ -263,6 +266,9 @@ export function ApiCredentialProfileListItem({
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleKeyVisibility(profile.id)}
+                      data-testid={
+                        API_CREDENTIAL_PROFILES_TEST_IDS.showKeyButton
+                      }
                       aria-label={
                         visibleKeys.has(profile.id)
                           ? t("keyManagement:actions.hideKey")
@@ -283,6 +289,9 @@ export function ApiCredentialProfileListItem({
                       variant="ghost"
                       size="sm"
                       onClick={() => onCopyApiKey(profile)}
+                      data-testid={
+                        API_CREDENTIAL_PROFILES_TEST_IDS.copyApiKeyButton
+                      }
                       aria-label={t("apiCredentialProfiles:actions.copyApiKey")}
                       className="shrink-0"
                       analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.CopyApiKey}
@@ -464,6 +473,7 @@ export function ApiCredentialProfileListItem({
                 size="sm"
                 variant="ghost"
                 onClick={() => onCopyBundle(profile)}
+                data-testid={API_CREDENTIAL_PROFILES_TEST_IDS.copyBundleButton}
                 analyticsAction={
                   PRODUCT_ANALYTICS_ACTION_IDS.CopyApiCredentialBundle
                 }
@@ -475,6 +485,7 @@ export function ApiCredentialProfileListItem({
                 size="sm"
                 variant="ghost"
                 onClick={() => onEdit(profile)}
+                data-testid={API_CREDENTIAL_PROFILES_TEST_IDS.editButton}
                 analyticsAction={
                   PRODUCT_ANALYTICS_ACTION_IDS.OpenUpdateApiCredentialProfileDialog
                 }
@@ -486,6 +497,7 @@ export function ApiCredentialProfileListItem({
                 size="sm"
                 variant="ghost"
                 onClick={() => onVerify(profile)}
+                data-testid={API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton}
                 analyticsAction={
                   PRODUCT_ANALYTICS_ACTION_IDS.VerifyApiCredential
                 }
@@ -510,6 +522,9 @@ export function ApiCredentialProfileListItem({
                 size="sm"
                 variant="ghost"
                 onClick={() => onOpenModelManagement(profile)}
+                data-testid={
+                  API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton
+                }
                 analyticsAction={{
                   featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ModelList,
                   actionId:
@@ -593,6 +608,9 @@ export function ApiCredentialProfileListItem({
                 size="sm"
                 variant="destructive"
                 onClick={() => onDelete(profile)}
+                data-testid={
+                  API_CREDENTIAL_PROFILES_TEST_IDS.deleteTriggerButton
+                }
                 analyticsAction={
                   PRODUCT_ANALYTICS_ACTION_IDS.DeleteApiCredentialProfile
                 }

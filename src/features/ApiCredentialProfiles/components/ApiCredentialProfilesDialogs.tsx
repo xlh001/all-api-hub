@@ -14,6 +14,7 @@ import {
 import { getApiVerificationApiTypeLabel } from "~/services/verification/aiApiVerification/i18n"
 
 import type { ApiCredentialProfilesController } from "../hooks/useApiCredentialProfilesController"
+import { API_CREDENTIAL_PROFILES_TEST_IDS } from "../testIds"
 import {
   createCliProxyExportPayload,
   createExportAccount,
@@ -141,6 +142,9 @@ export function ApiCredentialProfilesDialogs({
         cancelLabel={t("common:actions.cancel")}
         onConfirm={controller.handleConfirmDelete}
         isWorking={controller.isDeleting}
+        confirmButtonTestId={
+          API_CREDENTIAL_PROFILES_TEST_IDS.deleteConfirmButton
+        }
         details={
           controller.deletingProfile ? (
             <div className="space-y-1 text-sm">
