@@ -25,6 +25,7 @@ export const ACCOUNT_MANAGEMENT_TEST_IDS = {
     "account-management-sub2api-import-session-button",
   sub2apiRefreshTokenInput: "account-management-sub2api-refresh-token-input",
   confirmAddButton: "account-management-confirm-add-button",
+  rowOpenButton: "account-management-row-open-button",
   rowCopyUrlButton: "account-management-row-copy-url-button",
   rowCopyKeyButton: "account-management-row-copy-key-button",
   rowEditButton: "account-management-row-edit-button",

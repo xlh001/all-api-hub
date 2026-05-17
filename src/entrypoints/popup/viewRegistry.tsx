@@ -131,6 +131,7 @@ export function usePopupViewRegistry(): Record<PopupViewType, PopupViewConfig> {
         </Suspense>
       ),
       primaryActionLabel: t("bookmark:actions.add"),
+      primaryActionTestId: POPUP_TEST_IDS.bookmarksPrimaryAction,
       onPrimaryAction: openAddBookmark,
       primaryAnalyticsAction: {
         featureId: PRODUCT_ANALYTICS_FEATURE_IDS.BookmarkManagement,

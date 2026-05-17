@@ -393,6 +393,7 @@ export default function BookmarksList({
               onClick: openAddBookmark,
               variant: "default",
               icon: <PlusIcon className="h-4 w-4" />,
+              testId: SITE_BOOKMARKS_TEST_IDS.emptyStateAddButton,
               analyticsAction: PRODUCT_ANALYTICS_ACTION_IDS.CreateBookmark,
             }}
           />
@@ -472,6 +473,7 @@ export default function BookmarksList({
         })}
         cancelLabel={t("common:actions.cancel")}
         confirmLabel={t("common:actions.delete")}
+        confirmButtonTestId={SITE_BOOKMARKS_TEST_IDS.deleteConfirmButton}
         onConfirm={() => {
           void handleConfirmDelete()
         }}

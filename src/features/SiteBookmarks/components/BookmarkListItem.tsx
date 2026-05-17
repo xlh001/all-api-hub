@@ -30,6 +30,11 @@ import {
 } from "~/services/productAnalytics/events"
 import type { SiteBookmark } from "~/types"
 
+import {
+  getSiteBookmarkListItemTestId,
+  SITE_BOOKMARKS_TEST_IDS,
+} from "../testIds"
+
 export interface BookmarkListItemProps {
   bookmark: SiteBookmark & { tags?: string[] }
   isPinned: boolean
@@ -81,6 +86,7 @@ export default function BookmarkListItem({
       <CardItem
         padding="none"
         className={cn("group touch-manipulation transition-all")}
+        data-testid={getSiteBookmarkListItemTestId(bookmark.id)}
       >
         <div className="flex w-full min-w-0 items-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
           <div className="min-w-0 flex-1 overflow-x-hidden">
@@ -134,6 +140,7 @@ export default function BookmarkListItem({
                 size="sm"
                 aria-label={t("bookmark:actions.open")}
                 title={t("bookmark:actions.open")}
+                data-testid={SITE_BOOKMARKS_TEST_IDS.rowOpenButton}
                 analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.OpenBookmark}
               >
                 <WorkflowTransitionIcon className="h-4 w-4" />
@@ -145,6 +152,7 @@ export default function BookmarkListItem({
                 size="sm"
                 aria-label={t("bookmark:actions.copyUrl")}
                 title={t("bookmark:actions.copyUrl")}
+                data-testid={SITE_BOOKMARKS_TEST_IDS.rowCopyUrlButton}
                 analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.CopyBookmarkUrl}
               >
                 <LinkIcon className="h-4 w-4" />
@@ -156,6 +164,7 @@ export default function BookmarkListItem({
                 size="sm"
                 aria-label={t("common:actions.edit")}
                 title={t("common:actions.edit")}
+                data-testid={SITE_BOOKMARKS_TEST_IDS.rowEditButton}
                 analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.UpdateBookmark}
               >
                 <PencilIcon className="h-4 w-4" />
@@ -167,6 +176,7 @@ export default function BookmarkListItem({
                   variant="ghost"
                   size="sm"
                   aria-label={t("common:actions.more")}
+                  data-testid={SITE_BOOKMARKS_TEST_IDS.rowMoreActionsButton}
                 >
                   <EllipsisHorizontalIcon className="h-4 w-4" />
                 </MenuButton>
@@ -182,6 +192,7 @@ export default function BookmarkListItem({
                     analyticsAction={
                       PRODUCT_ANALYTICS_ACTION_IDS.ToggleBookmarkPin
                     }
+                    testId={SITE_BOOKMARKS_TEST_IDS.rowPinToggleMenuItem}
                   />
                   <hr className="dark:border-dark-bg-tertiary my-1 border-gray-200" />
                   <AccountActionMenuItem
@@ -189,6 +200,7 @@ export default function BookmarkListItem({
                     icon={TrashIcon}
                     label={t("common:actions.delete")}
                     isDestructive={true}
+                    testId={SITE_BOOKMARKS_TEST_IDS.rowDeleteMenuItem}
                   />
                 </MenuItems>
               </Menu>

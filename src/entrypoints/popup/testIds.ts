@@ -3,6 +3,7 @@ import type { PopupViewType } from "./components/PopupViewSwitchTabs"
 export const POPUP_TEST_IDS = {
   apiCredentialProfilesPrimaryAction:
     "popup-api-credential-profiles-primary-action",
+  bookmarksPrimaryAction: "popup-bookmarks-primary-action",
   accountsTab: "popup-accounts-tab",
   apiCredentialProfilesTab: "popup-api-credential-profiles-tab",
   bookmarksTab: "popup-bookmarks-tab",

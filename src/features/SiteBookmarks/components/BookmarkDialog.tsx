@@ -26,6 +26,8 @@ import { getActiveTab } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 
+import { SITE_BOOKMARKS_TEST_IDS } from "../testIds"
+
 export type BookmarkDialogMode = "add" | "edit"
 
 interface BookmarkDialogProps {
@@ -258,6 +260,7 @@ export default function BookmarkDialog({
           onClose()
         }}
         size="md"
+        panelTestId={SITE_BOOKMARKS_TEST_IDS.dialog}
         header={
           <div className="space-y-1">
             <div className="text-base font-semibold">{title}</div>
@@ -273,6 +276,7 @@ export default function BookmarkDialog({
               variant="ghost"
               onClick={onClose}
               disabled={isWorking}
+              data-testid={SITE_BOOKMARKS_TEST_IDS.dialogCancelButton}
             >
               {t("common:actions.cancel")}
             </Button>
@@ -280,6 +284,7 @@ export default function BookmarkDialog({
               type="button"
               onClick={handleSubmit}
               disabled={isWorking}
+              data-testid={SITE_BOOKMARKS_TEST_IDS.dialogSaveButton}
               analyticsAction={
                 mode === "add"
                   ? PRODUCT_ANALYTICS_ACTION_IDS.CreateBookmark

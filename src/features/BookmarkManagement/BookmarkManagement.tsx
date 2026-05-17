@@ -10,6 +10,7 @@ import {
   BookmarkDialogStateProvider,
   useBookmarkDialogContext,
 } from "~/features/SiteBookmarks/hooks/BookmarkDialogStateContext"
+import { SITE_BOOKMARKS_TEST_IDS } from "~/features/SiteBookmarks/testIds"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -40,6 +41,7 @@ function BookmarkManagementContent({ searchQuery }: { searchQuery?: string }) {
           actions={
             <Button
               onClick={openAddBookmark}
+              data-testid={SITE_BOOKMARKS_TEST_IDS.addButton}
               analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.CreateBookmark}
             >
               {t("bookmark:actions.add")}
