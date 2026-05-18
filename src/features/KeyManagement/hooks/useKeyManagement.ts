@@ -146,6 +146,14 @@ interface RefreshManagedSiteTokenStatusOptions {
   resolvedChannelKeysById?: Record<number, string>
 }
 
+const toDisplayManagedSiteTokenStatusResult = (
+  result: ManagedSiteTokenChannelStatusResult,
+): ManagedSiteTokenChannelStatusResult => {
+  const displayResult = { ...result }
+  delete displayResult.resolvedChannelKeysById
+  return displayResult
+}
+
 const isFailedAccountTokenLoad = (
   value: FailedAccountTokenLoad | null,
 ): value is FailedAccountTokenLoad => value !== null
@@ -223,6 +231,21 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
   >({})
   const managedSiteTokenStatusesRef = useRef(managedSiteTokenStatuses)
   managedSiteTokenStatusesRef.current = managedSiteTokenStatuses
+  const updateManagedSiteTokenStatuses = useCallback(
+    (
+      updater: (
+        prev: Record<string, ManagedSiteTokenStatusState>,
+      ) => Record<string, ManagedSiteTokenStatusState>,
+    ) => {
+      const next = updater(managedSiteTokenStatusesRef.current)
+      managedSiteTokenStatusesRef.current = next
+      setManagedSiteTokenStatuses(next)
+    },
+    [],
+  )
+  const resolvedChannelKeysByIdentityKeyRef = useRef<
+    Record<string, Record<number, string>>
+  >({})
   const [isManagedSiteStatusRefreshing, setIsManagedSiteStatusRefreshing] =
     useState(false)
 
@@ -337,7 +360,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
   const invalidateManagedSiteStatuses = useCallback(
     (shouldRemove: (identityKey: string) => boolean) => {
-      setManagedSiteTokenStatuses((prev) => {
+      updateManagedSiteTokenStatuses((prev) => {
         let didChange = false
         const next: Record<string, ManagedSiteTokenStatusState> = {}
 
@@ -353,7 +376,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
         return didChange ? next : prev
       })
     },
-    [],
+    [updateManagedSiteTokenStatuses],
   )
 
   const invalidateManagedSiteStatusesForAccount = useCallback(
@@ -373,6 +396,26 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       )
     },
     [invalidateManagedSiteStatuses],
+  )
+
+  const mergeResolvedChannelKeysForIdentity = useCallback(
+    (identityKey: string, resolvedChannelKeysById?: Record<number, string>) => {
+      if (
+        !resolvedChannelKeysById ||
+        Object.keys(resolvedChannelKeysById).length === 0
+      ) {
+        return
+      }
+
+      resolvedChannelKeysByIdentityKeyRef.current = {
+        ...resolvedChannelKeysByIdentityKeyRef.current,
+        [identityKey]: {
+          ...(resolvedChannelKeysByIdentityKeyRef.current[identityKey] ?? {}),
+          ...resolvedChannelKeysById,
+        },
+      }
+    },
+    [],
   )
 
   const runManagedSiteStatusChecks = useCallback(
@@ -426,7 +469,8 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
           identityKey,
           cacheKey,
           resolvedChannelKeysById:
-            resolvedChannelKeysByIdentityKey[identityKey],
+            resolvedChannelKeysByIdentityKey[identityKey] ??
+            resolvedChannelKeysByIdentityKeyRef.current[identityKey],
         })
       }
 
@@ -444,7 +488,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
         managedSiteStatusRunIdRef.current = runId
       }
 
-      setManagedSiteTokenStatuses((prev) => {
+      updateManagedSiteTokenStatuses((prev) => {
         const next = { ...prev }
 
         for (const target of targets) {
@@ -478,13 +522,26 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
               token: target.token,
               resolvedChannelKeysById: target.resolvedChannelKeysById,
             })
-            resultsByIdentityKey[target.identityKey] = result
+            const displayResult = toDisplayManagedSiteTokenStatusResult(result)
 
             if (!isMountedRef.current) {
               return
             }
 
-            setManagedSiteTokenStatuses((prev) => {
+            const latestEntry =
+              managedSiteTokenStatusesRef.current[target.identityKey]
+
+            if (
+              !latestEntry ||
+              latestEntry.cacheKey !== target.cacheKey ||
+              latestEntry.runId !== runId
+            ) {
+              continue
+            }
+
+            resultsByIdentityKey[target.identityKey] = displayResult
+
+            updateManagedSiteTokenStatuses((prev) => {
               const currentEntry = prev[target.identityKey]
 
               if (
@@ -495,13 +552,18 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
                 return prev
               }
 
+              mergeResolvedChannelKeysForIdentity(
+                target.identityKey,
+                result.resolvedChannelKeysById,
+              )
+
               return {
                 ...prev,
                 [target.identityKey]: {
                   cacheKey: target.cacheKey,
                   runId,
                   isChecking: false,
-                  result,
+                  result: displayResult,
                   checkedAt: Date.now(),
                 },
               }
@@ -516,6 +578,8 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       accountById,
       buildManagedSiteStatusCacheKey,
       isManagedSiteChannelStatusSupported,
+      mergeResolvedChannelKeysForIdentity,
+      updateManagedSiteTokenStatuses,
     ],
   )
 
@@ -1102,8 +1166,9 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
   useEffect(() => {
     managedSiteStatusRunIdRef.current += 1
-    setManagedSiteTokenStatuses({})
-  }, [managedSiteConfigFingerprint])
+    resolvedChannelKeysByIdentityKeyRef.current = {}
+    updateManagedSiteTokenStatuses(() => ({}))
+  }, [managedSiteConfigFingerprint, updateManagedSiteTokenStatuses])
 
   useEffect(() => {
     if (
