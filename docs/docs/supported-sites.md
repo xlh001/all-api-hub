@@ -18,7 +18,7 @@
 | WONG公益站 | 暂无稳定公开官方描述。 | 暂无稳定公开官方链接 |
 | AIHubMix | 独立 AI API 聚合站点，插件以独立账号类型适配余额、密钥和模型接口。 | [官网](https://aihubmix.com/) / [API 文档](https://docs.aihubmix.com/cn/api/Cli) |
 | Veloera | 本项目已停止维护。 | [GitHub](https://github.com/Veloera/Veloera) |
-| VoAPI | 全新下一代高颜值、高性能、高扩展的智能 AI 大模型 API 聚合分发系统。 | [GitHub](https://github.com/VoAPI/VoAPI) |
+| VoAPI | 仅支持老版本兼容部署；新版 VoAPI 的接口和行为与当前插件兼容范围不一致。 | [GitHub](https://github.com/VoAPI/VoAPI) |
 | Super-API | Super-Api 全新 AI 模型接口管理与分发系统，仅供个人学习使用，请勿用于任何商业用途，本项目基于 NewAPI 开发。 | [官网](https://api.cngov.top/) / [GitHub](https://github.com/SuperAI-Api/Super-API) |
 | v-api | 基于 one-api 二开的功能强大的中转平台。 | 暂无 |
 

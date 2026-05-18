@@ -54,11 +54,9 @@
 
 ## 3. サポートされているサイトタイプ
 
-All API Hub は、市場のほぼすべての主要な AI 中継ステーションアーキテクチャをサポートしています。これらには以下が含まれます：
-- **One API / New API** シリーズ（最も一般的）
-- **Sub2API**
-- **AIHubMix**
-- **AnyRouter / VoAPI / Super-API** などの特殊アーキテクチャ
+All API Hub は、以下のオープンソースおよびクローズドソースのシステムに深く対応しています：
+- **オープンソースアーキテクチャ**：One API, New API, Sub2API, Veloera, AxonHub, One-Hub, Done-Hub など。
+- **特色あるアーキテクチャと互換性のあるプラットフォーム**：AIHubMix, AnyRouter, Neo-API, Super-API, v-api など。
 
 ::: tip 互換性に関するヒント
 これら上記のオープンソースシステムに基づいて構築されたサイトは、通常、完全にサポートされます。完全な互換性リストについては、[サポートされているサイトとシステムタイプ](./supported-sites.md) を参照してください。

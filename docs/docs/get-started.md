@@ -54,11 +54,9 @@
 
 ## 3. 支持的站点类型
 
-All API Hub 几乎支持市面上所有主流的 AI 中转站架构，包括：
-- **One API / New API** 系列（最常见）
-- **Sub2API**
-- **AIHubMix**
-- **AnyRouter / VoAPI / Super-API** 等特色架构
+All API Hub 深度兼容以下开源及闭源系统：
+- **开源架构**：One API, New API, Sub2API, Veloera, AxonHub, One-Hub, Done-Hub 等。
+- **特色架构与兼容平台**：AIHubMix, AnyRouter, Neo-API, Super-API, v-api 等。
 
 ::: tip 兼容性提示
 只要是基于以上开源系统搭建的站点，通常都能完美支持。完整的兼容列表请查看 [支持的站点与系统类型](./supported-sites.md)。

@@ -54,11 +54,9 @@ If auto-recognition fails, or if you want precise control, you can manually ente
 
 ## 3. Supported Site Types
 
-All API Hub supports almost all mainstream AI proxy station architectures on the market, including:
-- **One API / New API** series (most common)
-- **Sub2API**
-- **AIHubMix**
-- **AnyRouter / VoAPI / Super-API** and other specialized architectures
+All API Hub is deeply compatible with the following open-source and closed-source systems:
+- **Open-source architectures**: One API, New API, Sub2API, Veloera, AxonHub, One-Hub, Done-Hub, and more.
+- **Specialized architectures and compatible platforms**: AIHubMix, AnyRouter, Neo-API, Super-API, v-api, and more.
 
 ::: tip Compatibility Tip
 Sites built on the above open-source systems are usually perfectly supported. For a complete compatibility list, please check [Supported Sites and System Types](./supported-sites.md).
