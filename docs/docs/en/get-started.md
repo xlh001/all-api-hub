@@ -54,12 +54,13 @@ If auto-recognition fails, or if you want precise control, you can manually ente
 
 ## 3. Supported Site Types
 
-All API Hub is deeply compatible with the following open-source and closed-source systems:
-- **Open-source architectures**: One API, New API, Sub2API, Veloera, AxonHub, One-Hub, Done-Hub, and more.
-- **Specialized architectures and compatible platforms**: AIHubMix, AnyRouter, Neo-API, Super-API, v-api, and more.
+No matter which architecture you use, there is a good chance we support it:
+- **Account-site compatible architectures**: One API, New API, Veloera, One-Hub, Done-Hub, Sub2API, and more.
+- **Specialized account platforms and compatible implementations**: AIHubMix, AnyRouter, Neo-API, Super-API, v-api, and more.
+- **Self-hosted admin backends**: New API, Veloera, Done-Hub, [Octopus](https://github.com/bestruirui/octopus), AxonHub, Claude Code Hub, and more, for channel management, migration, and partial model sync.
 
 ::: tip Compatibility Tip
-Sites built on the above open-source systems are usually perfectly supported. For a complete compatibility list, please check [Supported Sites and System Types](./supported-sites.md).
+Relay sites built on account-site compatible architectures can usually be added as accounts. AxonHub, Octopus, Claude Code Hub, and similar systems are mainly used as self-hosted admin backends. For a complete compatibility list, please check [Supported Sites and System Types](./supported-sites.md).
 :::
 
 <a id="quick-export-sites"></a>

@@ -73,9 +73,10 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 ## 🧩 支持的系统架构
 
-All API Hub 深度兼容以下开源及闭源系统：
-- **开源架构**：One API, New API, Sub2API, Veloera, AxonHub, One-Hub, Done-Hub 等。
-- **特色架构与兼容平台**：AIHubMix, AnyRouter, Neo-API, Super-API, v-api 等。
+不论你用的是哪种架构，我们基本都支持：
+- **账号站点兼容架构**：One API, New API, Veloera, One-Hub, Done-Hub, Sub2API 等。
+- **特色账号平台与兼容实现**：AIHubMix, AnyRouter, Neo-API, Super-API, v-api 等。
+- **自建管理后台**：New API, Veloera, Done-Hub, Octopus, AxonHub, Claude Code Hub 等，用于渠道管理、迁移和部分模型同步。
 
 > 如果你在 macOS 上使用 Safari，请先查看 [Safari 安装指南](./safari-install.md)。
 > 如果你使用 QQ/360/Brave 等浏览器，请查看 [手动安装指南](./other-browser-install.md)。

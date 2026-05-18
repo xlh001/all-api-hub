@@ -54,12 +54,13 @@
 
 ## 3. サポートされているサイトタイプ
 
-All API Hub は、以下のオープンソースおよびクローズドソースのシステムに深く対応しています：
-- **オープンソースアーキテクチャ**：One API, New API, Sub2API, Veloera, AxonHub, One-Hub, Done-Hub など。
-- **特色あるアーキテクチャと互換性のあるプラットフォーム**：AIHubMix, AnyRouter, Neo-API, Super-API, v-api など。
+どのアーキテクチャを使っていても、高い確率で対応しています：
+- **アカウントサイト互換アーキテクチャ**：One API, New API, Veloera, One-Hub, Done-Hub, Sub2API など。
+- **特色あるアカウントプラットフォームと互換実装**：AIHubMix, AnyRouter, Neo-API, Super-API, v-api など。
+- **セルフホスト型管理バックエンド**：New API, Veloera, Done-Hub, [Octopus](https://github.com/bestruirui/octopus), AxonHub, Claude Code Hub など。チャネル管理、移行、一部のモデル同期に利用できます。
 
 ::: tip 互換性に関するヒント
-これら上記のオープンソースシステムに基づいて構築されたサイトは、通常、完全にサポートされます。完全な互換性リストについては、[サポートされているサイトとシステムタイプ](./supported-sites.md) を参照してください。
+アカウントサイト互換アーキテクチャで構築された中継サイトは、通常アカウントとして追加できます。AxonHub、Octopus、Claude Code Hub などは主にセルフホスト型管理バックエンドとして利用します。完全な互換性リストについては、[サポートされているサイトとシステムタイプ](./supported-sites.md) を参照してください。
 :::
 
 <a id="quick-export-sites"></a>

@@ -76,10 +76,11 @@ In the AI era, many of us keep multiple relay-site accounts to save money or try
 
 ## 🧩 Supported Site Architectures
 
-All API Hub is deeply compatible with the following open-source and closed-source systems:
+No matter which architecture you use, there is a good chance we support it:
 
-- **Open-source architectures**: One API, New API, Sub2API, Veloera, AxonHub, One-Hub, Done-Hub, and more.
-- **Specialized architectures and compatible platforms**: AIHubMix, AnyRouter, Neo-API, Super-API, v-api, and more.
+- **Account-site compatible architectures**: One API, New API, Veloera, One-Hub, Done-Hub, Sub2API, and more.
+- **Specialized account platforms and compatible implementations**: AIHubMix, AnyRouter, Neo-API, Super-API, v-api, and more.
+- **Self-hosted admin backends**: New API, Veloera, Done-Hub, [Octopus](https://github.com/bestruirui/octopus), AxonHub, Claude Code Hub, and more, for channel management, migration, and partial model sync.
 
 > If you use Safari on macOS, read the [Safari Installation Guide](./safari-install.md) first.
 > If you use QQ Browser, 360 Browser, Brave, or similar browsers, read the [Manual Installation Guide](./other-browser-install.md).

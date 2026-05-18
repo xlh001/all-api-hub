@@ -133,8 +133,9 @@
 <a id="introduction-tech"></a>
 ### 🧩 强大的兼容性
 不论你用的是哪种架构，我们基本都支持：
-- **主流开源**：[one-api](https://github.com/songquanpeng/one-api)、[new-api](https://github.com/QuantumNous/new-api)、[Sub2API](https://github.com/Wei-Shaw/sub2api)、[one-hub](https://github.com/MartialBE/one-hub)、[done-hub](https://github.com/deanxv/done-hub)、[Veloera](https://github.com/Veloera/Veloera)
-- **特色架构与兼容平台**：[AIHubMix](https://aihubmix.com/)、[AnyRouter](https://anyrouter.top)、Neo-API、Super-API、v-api 等
+- **账号站点兼容架构**：[one-api](https://github.com/songquanpeng/one-api)、[new-api](https://github.com/QuantumNous/new-api)、[Veloera](https://github.com/Veloera/Veloera)、[one-hub](https://github.com/MartialBE/one-hub)、[done-hub](https://github.com/deanxv/done-hub)、[Sub2API](https://github.com/Wei-Shaw/sub2api) 等
+- **特色账号平台与兼容实现**：[AIHubMix](https://aihubmix.com/)、[AnyRouter](https://anyrouter.top)、Neo-API、Super-API、v-api 等
+- **自建管理后台**：[new-api](https://github.com/QuantumNous/new-api)、[Veloera](https://github.com/Veloera/Veloera)、[done-hub](https://github.com/deanxv/done-hub)、[Octopus](https://github.com/bestruirui/octopus)、[AxonHub](https://github.com/looplj/axonhub)、[Claude Code Hub](https://github.com/ding113/claude-code-hub) 等，用于渠道管理、迁移和部分模型同步
 - **查看完整列表**：👉 [支持的站点](https://all-api-hub.qixing1217.top/supported-sites.html)
 
 <a id="ui-preview"></a>
