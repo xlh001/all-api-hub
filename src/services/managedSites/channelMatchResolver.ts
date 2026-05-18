@@ -4,6 +4,7 @@ import {
   MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS,
   MatchResolutionUnresolvedError,
   type ManagedSiteChannelMatchInspection,
+  type ManagedSiteChannelMatchUnresolvedReason,
 } from "~/services/managedSites/channelMatch"
 import type {
   ManagedSiteConfig,
@@ -18,8 +19,13 @@ import {
 } from "~/services/managedSites/utils/channelMatching"
 import { hasUsableManagedSiteChannelKey } from "~/services/managedSites/utils/managedSite"
 
+export type ManagedSiteChannelMatchService = Pick<
+  ManagedSiteService,
+  "searchChannel" | "hydrateComparableChannelKeys" | "fetchChannelSecretKey"
+>
+
 interface ResolveManagedSiteChannelMatchParams {
-  service: ManagedSiteService
+  service: ManagedSiteChannelMatchService
   managedConfig: ManagedSiteConfig
   accountBaseUrl: string
   models: string[]
@@ -31,6 +37,7 @@ interface ResolveManagedSiteChannelMatchParams {
 interface ManagedSiteChannelMatchResolution
   extends ManagedSiteChannelMatchInspection {
   resolvedChannelKeysById?: Record<number, string>
+  unresolvedReason?: ManagedSiteChannelMatchUnresolvedReason
 }
 
 const applyResolvedChannelKeys = <T extends { id: number; key?: string }>(
@@ -59,7 +66,7 @@ const applyResolvedChannelKeys = <T extends { id: number; key?: string }>(
 }
 
 const fetchRecoverableCandidateSecretKey = async (params: {
-  service: ManagedSiteService
+  service: ManagedSiteChannelMatchService
   managedConfig: ManagedSiteConfig
   channelId: number
 }) => {
@@ -82,8 +89,8 @@ const fetchRecoverableCandidateSecretKey = async (params: {
 }
 
 /**
- * Resolves the strongest available managed-site channel match while preserving
- * provider-specific exact-key checks before local ranked fallback.
+ * Resolves the strongest available managed-site channel match from local
+ * assessments, hydrating recoverable candidate keys when local data is hidden.
  */
 export async function resolveManagedSiteChannelMatch(
   params: ResolveManagedSiteChannelMatchParams,
@@ -99,6 +106,7 @@ export async function resolveManagedSiteChannelMatch(
   const searchBaseUrl = normalizeManagedSiteChannelBaseUrl(
     params.accountBaseUrl,
   )
+  let unresolvedReason: ManagedSiteChannelMatchUnresolvedReason | undefined
 
   const searchResults = await service.searchChannel(
     managedConfig.baseUrl,
@@ -155,6 +163,43 @@ export async function resolveManagedSiteChannelMatch(
     models,
   })
 
+  const alignExactModelAssessmentWithMatchedKey = (
+    assessmentChannels: typeof channels,
+  ) => {
+    if (!keyAssessment.matched || keyAssessment.channel?.id == null) {
+      return
+    }
+
+    const exactModelChannels = findManagedSiteChannelsByBaseUrlAndModels({
+      channels: assessmentChannels,
+      accountBaseUrl: searchBaseUrl,
+      models,
+    })
+
+    if (
+      !exactModelChannels.some(
+        (channel) => channel.id === keyAssessment.channel?.id,
+      )
+    ) {
+      return
+    }
+
+    const keyedModelsAssessment = inspectManagedSiteChannelModelsMatch({
+      channels: assessmentChannels,
+      accountBaseUrl: searchBaseUrl,
+      models,
+      exactChannel: keyAssessment.channel,
+    })
+
+    if (
+      keyedModelsAssessment.matched &&
+      keyedModelsAssessment.reason ===
+        MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.EXACT
+    ) {
+      modelsAssessment = keyedModelsAssessment
+    }
+  }
+
   const refreshAssessmentsWithResolvedKeys = () => {
     const channelsWithResolvedKeys = applyResolvedChannelKeys(
       searchResultItems,
@@ -175,39 +220,19 @@ export async function resolveManagedSiteChannelMatch(
       accountBaseUrl: searchBaseUrl,
       models,
     })
-    if (keyAssessment.matched && keyAssessment.channel) {
-      const exactModelChannels = findManagedSiteChannelsByBaseUrlAndModels({
-        channels: channelsWithResolvedKeys,
-        accountBaseUrl: searchBaseUrl,
-        models,
-      })
-
-      if (
-        !exactModelChannels.some(
-          (channel) => channel.id === keyAssessment.channel?.id,
-        )
-      ) {
-        return channelsWithResolvedKeys
-      }
-
-      const keyedModelsAssessment = inspectManagedSiteChannelModelsMatch({
-        channels: channelsWithResolvedKeys,
-        accountBaseUrl: searchBaseUrl,
-        models,
-        exactChannel: keyAssessment.channel,
-      })
-
-      if (
-        keyedModelsAssessment.matched &&
-        keyedModelsAssessment.reason ===
-          MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.EXACT
-      ) {
-        modelsAssessment = keyedModelsAssessment
-      }
-    }
+    alignExactModelAssessmentWithMatchedKey(channelsWithResolvedKeys)
 
     return channelsWithResolvedKeys
   }
+
+  const hasExactKeyAndModelMatch = () =>
+    keyAssessment.matched &&
+    modelsAssessment.matched &&
+    modelsAssessment.reason ===
+      MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.EXACT &&
+    keyAssessment.channel?.id === modelsAssessment.channel?.id
+
+  alignExactModelAssessmentWithMatchedKey(channels)
 
   if (Object.keys(mergedResolvedChannelKeysById).length > 0) {
     refreshAssessmentsWithResolvedKeys()
@@ -268,6 +293,7 @@ export async function resolveManagedSiteChannelMatch(
         if (!(error instanceof MatchResolutionUnresolvedError)) {
           throw error
         }
+        unresolvedReason ??= error.reason
       }
     }
 
@@ -276,45 +302,72 @@ export async function resolveManagedSiteChannelMatch(
     }
   }
 
-  const hasLocalExactMatch =
-    keyAssessment.matched &&
-    modelsAssessment.matched &&
-    modelsAssessment.reason ===
-      MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS.EXACT &&
-    keyAssessment.channel?.id != null &&
-    keyAssessment.channel.id === modelsAssessment.channel?.id
+  if (
+    typeof service.hydrateComparableChannelKeys === "function" &&
+    key?.trim() &&
+    !hasExactKeyAndModelMatch()
+  ) {
+    const exactModelChannels = findManagedSiteChannelsByBaseUrlAndModels({
+      channels: applyResolvedChannelKeys(
+        searchResultItems,
+        mergedResolvedChannelKeysById,
+      ),
+      accountBaseUrl: searchBaseUrl,
+      models,
+    })
+    const recoverableExactModelCandidates = exactModelChannels.filter(
+      (channel) =>
+        !hasUsableManagedSiteChannelKey(channel.key) &&
+        typeof mergedResolvedChannelKeysById[channel.id] !== "string",
+    )
+    const rankedRecoverableCandidate =
+      getRecoverableManagedSiteChannelCandidate({
+        url: {
+          channel:
+            urlBucket.length === 1
+              ? urlBucket[0]
+              : keyAssessment.channel ?? modelsAssessment.channel,
+          candidateCount: urlBucket.length,
+        },
+        models: {
+          channel: modelsAssessment.channel,
+          reason: modelsAssessment.reason,
+        },
+      })
+    const recoverableCandidates = [
+      ...recoverableExactModelCandidates,
+      ...(rankedRecoverableCandidate &&
+      modelsAssessment.channel?.id === rankedRecoverableCandidate.id &&
+      !recoverableExactModelCandidates.some(
+        (channel) => channel.id === rankedRecoverableCandidate.id,
+      ) &&
+      !hasUsableManagedSiteChannelKey(rankedRecoverableCandidate.key)
+        ? [rankedRecoverableCandidate]
+        : []),
+    ]
 
-  if (key?.trim() && models.length > 0 && !hasLocalExactMatch) {
-    let exactMatch = null
+    if (recoverableCandidates.length > 0) {
+      try {
+        const hydratedCandidates = await service.hydrateComparableChannelKeys(
+          managedConfig.baseUrl,
+          managedConfig.token,
+          managedConfig.userId,
+          recoverableCandidates,
+        )
 
-    try {
-      exactMatch = await service.findMatchingChannel(
-        managedConfig.baseUrl,
-        managedConfig.token,
-        managedConfig.userId,
-        searchBaseUrl,
-        models,
-        key,
-      )
-    } catch (error) {
-      if (!(error instanceof MatchResolutionUnresolvedError)) {
-        throw error
+        for (const channel of hydratedCandidates) {
+          if (hasUsableManagedSiteChannelKey(channel.key)) {
+            mergedResolvedChannelKeysById[channel.id] = channel.key!.trim()
+          }
+        }
+
+        refreshAssessmentsWithResolvedKeys()
+      } catch (error) {
+        if (!(error instanceof MatchResolutionUnresolvedError)) {
+          throw error
+        }
+        unresolvedReason ??= error.reason
       }
-    }
-
-    if (exactMatch) {
-      keyAssessment = inspectManagedSiteChannelKeyMatch({
-        channels,
-        accountBaseUrl: searchBaseUrl,
-        key,
-        exactChannel: exactMatch,
-      })
-      modelsAssessment = inspectManagedSiteChannelModelsMatch({
-        channels,
-        accountBaseUrl: searchBaseUrl,
-        models,
-        exactChannel: exactMatch,
-      })
     }
   }
 
@@ -334,6 +387,9 @@ export async function resolveManagedSiteChannelMatch(
     models: modelsAssessment,
     ...(Object.keys(mergedResolvedChannelKeysById).length > 0
       ? { resolvedChannelKeysById: mergedResolvedChannelKeysById }
+      : {}),
+    ...(unresolvedReason && !hasExactKeyAndModelMatch()
+      ? { unresolvedReason }
       : {}),
   }
 }

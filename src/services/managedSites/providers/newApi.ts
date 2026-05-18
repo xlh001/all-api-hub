@@ -10,14 +10,11 @@ import {
   MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS,
   MatchResolutionUnresolvedError,
 } from "~/services/managedSites/channelMatch"
+import { resolveManagedSiteImportDuplicate } from "~/services/managedSites/importDuplicateResolution"
 import {
   fetchNewApiChannelKey,
   NewApiChannelKeyRequirementError,
 } from "~/services/managedSites/providers/newApiSession"
-import {
-  findManagedSiteChannelByComparableInputs,
-  findManagedSiteChannelsByBaseUrlAndModels,
-} from "~/services/managedSites/utils/channelMatching"
 import { fetchManagedSiteAvailableModels } from "~/services/managedSites/utils/fetchManagedSiteAvailableModels"
 import { fetchTokenScopedModels } from "~/services/managedSites/utils/fetchTokenScopedModels"
 import { ApiToken, AuthTypeEnum, DisplaySiteData, SiteAccount } from "~/types"
@@ -52,6 +49,12 @@ import { resolveDefaultChannelGroups } from "./defaultChannelGroups"
  * Unified logger scoped to the New API integration and auto-config flows.
  */
 const logger = createLogger("NewApiService")
+
+const newApiImportDuplicateService = {
+  searchChannel,
+  hydrateComparableChannelKeys,
+  fetchChannelSecretKey,
+}
 
 /**
  * 搜索指定关键词的渠道
@@ -168,6 +171,56 @@ export async function fetchChannelSecretKey(
     ...sessionConfig,
     channelId,
   })
+}
+
+/**
+ * Hydrates hidden New API channel keys so the shared resolver can compare them.
+ */
+export async function hydrateComparableChannelKeys(
+  baseUrl: string,
+  _adminToken: string,
+  userId: number | string,
+  candidates: ManagedSiteChannel[],
+): Promise<ManagedSiteChannel[]> {
+  const sessionConfig = await getNewApiManagedSessionConfig(baseUrl, userId)
+  const hydratedCandidates: ManagedSiteChannel[] = []
+
+  for (const candidate of candidates) {
+    if (candidate.key?.trim()) {
+      hydratedCandidates.push(candidate)
+      continue
+    }
+
+    try {
+      const resolvedKey = await fetchNewApiChannelKey({
+        ...sessionConfig,
+        channelId: candidate.id,
+      })
+
+      hydratedCandidates.push({
+        ...candidate,
+        key: resolvedKey,
+      })
+    } catch (error) {
+      if (error instanceof NewApiChannelKeyRequirementError) {
+        throw new MatchResolutionUnresolvedError(
+          MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS.VERIFICATION_REQUIRED,
+        )
+      }
+
+      logger.warn("Failed to hydrate hidden New API channel key", {
+        baseUrl,
+        channelId: candidate.id,
+        error: getErrorMessage(error),
+      })
+
+      throw new MatchResolutionUnresolvedError(
+        MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS.KEY_RESOLUTION_FAILED,
+      )
+    }
+  }
+
+  return hydratedCandidates
 }
 
 /**
@@ -385,93 +438,6 @@ export function buildChannelPayload(
 }
 
 /**
- * 查找是否存在匹配的渠道。
- *
- * 默认匹配条件为 base_url + models；当传入 key 时，会进一步按 key 精确匹配，
- * 避免把不同 key 的渠道误判为重复。
- */
-export async function findMatchingChannel(
-  baseUrl: string,
-  adminToken: string,
-  userId: number | string,
-  accountBaseUrl: string,
-  models: string[],
-  key?: string,
-): Promise<ManagedSiteChannel | null> {
-  const searchResults = await searchChannel(
-    baseUrl,
-    adminToken,
-    userId,
-    accountBaseUrl,
-  )
-
-  if (!searchResults) {
-    return null
-  }
-
-  const exactMatch = findManagedSiteChannelByComparableInputs({
-    channels: searchResults.items,
-    accountBaseUrl,
-    models,
-    key,
-  })
-
-  if (exactMatch || !key?.trim()) {
-    return exactMatch
-  }
-
-  const narrowedCandidates = findManagedSiteChannelsByBaseUrlAndModels({
-    channels: searchResults.items,
-    accountBaseUrl,
-    models,
-  }).filter((channel) => !channel.key?.trim())
-
-  if (narrowedCandidates.length === 0) {
-    return null
-  }
-
-  const sessionConfig = await getNewApiManagedSessionConfig(baseUrl, userId)
-  const resolvedCandidates: ManagedSiteChannel[] = []
-
-  for (const candidate of narrowedCandidates) {
-    try {
-      const resolvedKey = await fetchNewApiChannelKey({
-        ...sessionConfig,
-        channelId: candidate.id,
-      })
-
-      resolvedCandidates.push({
-        ...candidate,
-        key: resolvedKey,
-      })
-    } catch (error) {
-      if (error instanceof NewApiChannelKeyRequirementError) {
-        throw new MatchResolutionUnresolvedError(
-          MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS.VERIFICATION_REQUIRED,
-        )
-      }
-
-      logger.warn("Failed to fetch hidden New API channel key", {
-        baseUrl,
-        channelId: candidate.id,
-        error: getErrorMessage(error),
-      })
-
-      throw new MatchResolutionUnresolvedError(
-        MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS.VERIFICATION_REQUIRED,
-      )
-    }
-  }
-
-  return findManagedSiteChannelByComparableInputs({
-    channels: resolvedCandidates,
-    accountBaseUrl,
-    models,
-    key,
-  })
-}
-
-/**
  * 将账户导入到 New API 作为渠道。
  * @param account 站点数据。
  * @param token API 令牌，用于访问上游模型与构建渠道。
@@ -499,14 +465,15 @@ export async function importToNewApi(
 
     const formData = await prepareChannelFormData(account, token)
 
-    const existingChannel = await findMatchingChannel(
-      newApiBaseUrl!,
-      newApiAdminToken!,
-      newApiUserId!,
-      formData.base_url,
-      formData.models,
-      formData.key,
-    )
+    const existingChannel = await resolveManagedSiteImportDuplicate({
+      service: newApiImportDuplicateService,
+      managedConfig: {
+        baseUrl: newApiBaseUrl!,
+        token: newApiAdminToken!,
+        userId: newApiUserId!,
+      },
+      formData,
+    })
 
     if (existingChannel) {
       return {
@@ -540,7 +507,11 @@ export async function importToNewApi(
       message: createdChannelResponse.message,
     }
   } catch (error) {
-    if (error instanceof MatchResolutionUnresolvedError) {
+    if (
+      error instanceof MatchResolutionUnresolvedError &&
+      error.reason ===
+        MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS.VERIFICATION_REQUIRED
+    ) {
       return {
         success: false,
         message: t("messages:newapi.channelMatchUnresolved"),

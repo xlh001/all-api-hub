@@ -11,8 +11,8 @@ import { accountStorage } from "~/services/accounts/accountStorage"
 import { normalizeAccountForManagedChannel } from "~/services/accounts/utils/siteUrlNormalization"
 import type { ApiResponse } from "~/services/apiService/common/type"
 import * as octopusApi from "~/services/apiService/octopus"
+import { resolveManagedSiteImportDuplicate } from "~/services/managedSites/importDuplicateResolution"
 import type { ManagedSiteConfig } from "~/services/managedSites/managedSiteService"
-import { findManagedSiteChannelByComparableInputs } from "~/services/managedSites/utils/channelMatching"
 import { getNumericChannelType } from "~/services/managedSites/utils/channelType"
 import { fetchManagedSiteAvailableModels } from "~/services/managedSites/utils/fetchManagedSiteAvailableModels"
 import { fetchTokenScopedModels } from "~/services/managedSites/utils/fetchTokenScopedModels"
@@ -30,7 +30,6 @@ import type {
   ChannelFormData,
   ChannelMode,
   CreateChannelPayload,
-  ManagedSiteChannel,
   ManagedSiteChannelListData,
   OctopusChannelWithData,
   UpdateChannelPayload,
@@ -47,6 +46,10 @@ import { normalizeList } from "~/utils/core/string"
 import { t } from "~/utils/i18n/core"
 
 const logger = createLogger("OctopusService")
+
+const octopusImportDuplicateService = {
+  searchChannel,
+}
 
 /**
  * 将 ChannelType (New API 渠道类型 0-55) 映射为 OctopusOutboundType (0-5)
@@ -462,38 +465,6 @@ export function buildChannelPayload(
 }
 
 /**
- * 查找匹配的渠道
- */
-export async function findMatchingChannel(
-  _baseUrl: string,
-  _adminToken: string,
-  _userId: number | string,
-  accountBaseUrl: string,
-  models: string[],
-  key?: string,
-): Promise<ManagedSiteChannel | null> {
-  try {
-    const config = await getFullOctopusConfig()
-    if (!config) return null
-
-    const channels = await octopusApi.listChannels(config)
-
-    // 规范化 accountBaseUrl，与 prepareChannelFormData 保持一致
-    const normalizedBase = buildOctopusBaseUrl(accountBaseUrl)
-
-    return findManagedSiteChannelByComparableInputs({
-      channels: channels.map(octopusChannelToManagedSite),
-      accountBaseUrl: normalizedBase,
-      models,
-      key,
-    })
-  } catch (error) {
-    logger.error("Failed to find matching channel", error)
-    return null
-  }
-}
-
-/**
  * Legacy direct-import helper for the managed-site compatibility path.
  * @deprecated Unused by the current runtime flow. Account auto-config now
  * uses `useChannelDialog().openWithAccount()` so users can review generated
@@ -523,15 +494,15 @@ export async function autoConfigToOctopus(
 
     const formData = await prepareChannelFormData(displaySiteData, apiToken)
 
-    // 检查是否已存在
-    const existingChannel = await findMatchingChannel(
-      config.baseUrl,
-      "",
-      "",
-      formData.base_url,
-      formData.models,
-      formData.key,
-    )
+    const existingChannel = await resolveManagedSiteImportDuplicate({
+      service: octopusImportDuplicateService,
+      managedConfig: {
+        baseUrl: config.baseUrl,
+        token: "",
+        userId: config.username,
+      },
+      formData,
+    })
 
     if (existingChannel) {
       return {

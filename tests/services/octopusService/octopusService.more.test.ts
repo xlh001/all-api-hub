@@ -344,14 +344,15 @@ describe("octopus additional flows", () => {
 
     mockConvertToDisplayData.mockReturnValue(displaySiteData)
     mockEnsureAccountApiToken.mockResolvedValueOnce(apiToken)
-    mockListChannels.mockResolvedValueOnce([existingChannel])
+    mockSearchChannels.mockResolvedValueOnce([existingChannel])
 
     const result = await autoConfigToOctopus(buildSiteAccount(), "toast-4")
 
     expect(result).toEqual({
       success: false,
-      message: "messages:octopus.channelExists",
+      message: expect.stringContaining("channelExists"),
     })
+    expect(mockSearchChannels).toHaveBeenCalledTimes(1)
     expect(mockCreateChannelApi).not.toHaveBeenCalled()
   })
 
@@ -370,10 +371,18 @@ describe("octopus additional flows", () => {
 
     mockConvertToDisplayData.mockReturnValue(displaySiteData)
     mockEnsureAccountApiToken.mockResolvedValueOnce(apiToken)
-    mockListChannels.mockResolvedValueOnce([])
+    mockSearchChannels.mockResolvedValueOnce([])
 
     const result = await autoConfigToOctopus(buildSiteAccount(), "toast-5")
 
+    expect(mockSearchChannels).toHaveBeenCalledWith(
+      {
+        baseUrl: "https://octopus.example.com",
+        username: "octo-user",
+        password: "octo-pass",
+      },
+      "https://proxy.example.com",
+    )
     expect(mockCreateChannelApi).toHaveBeenCalledWith(
       {
         baseUrl: "https://octopus.example.com",
@@ -535,37 +544,6 @@ describe("octopus additional flows", () => {
     })
   })
 
-  it("returns null when Octopus channel lookup cannot read config or list channels", async () => {
-    const { findMatchingChannel } = await import(
-      "~/services/managedSites/providers/octopus"
-    )
-
-    mockGetPreferences.mockResolvedValueOnce({
-      octopus: {
-        baseUrl: "",
-        username: "",
-        password: "",
-      },
-    })
-    await expect(
-      findMatchingChannel("ignored", "", "", "https://proxy.example.com", [
-        "gpt-4o",
-      ]),
-    ).resolves.toBeNull()
-
-    mockListChannels.mockRejectedValueOnce(new Error("list exploded"))
-    await expect(
-      findMatchingChannel(
-        "ignored",
-        "",
-        "",
-        "https://proxy.example.com",
-        ["gpt-4o"],
-        "octo-key",
-      ),
-    ).resolves.toBeNull()
-  })
-
   it("surfaces config-missing and unexpected import failures during Octopus auto-config", async () => {
     const { autoConfigToOctopus } = await import(
       "~/services/managedSites/providers/octopus"
@@ -597,7 +575,7 @@ describe("octopus additional flows", () => {
 
     mockConvertToDisplayData.mockReturnValue(displaySiteData)
     mockEnsureAccountApiToken.mockResolvedValueOnce(apiToken)
-    mockListChannels.mockResolvedValueOnce([])
+    mockSearchChannels.mockResolvedValueOnce([])
     mockCreateChannelApi.mockResolvedValueOnce({
       success: false,
       data: null,
@@ -606,6 +584,15 @@ describe("octopus additional flows", () => {
 
     const rejected = await autoConfigToOctopus(buildSiteAccount(), "toast-7")
 
+    expect(mockSearchChannels).toHaveBeenCalledWith(
+      {
+        baseUrl: "https://octopus.example.com",
+        username: "octo-user",
+        password: "octo-pass",
+      },
+      "https://proxy.example.com",
+    )
+    expect(mockCreateChannelApi).toHaveBeenCalled()
     expect(rejected).toEqual({
       success: false,
       message: "octopus rejected channel",

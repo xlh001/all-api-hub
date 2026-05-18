@@ -91,14 +91,12 @@ export interface ManagedSiteService {
     mode?: ChannelMode,
   ): CreateChannelPayload
 
-  findMatchingChannel(
+  hydrateComparableChannelKeys?(
     baseUrl: string,
     adminToken: string,
     userId: number | string,
-    accountBaseUrl: string,
-    models: string[],
-    key?: string,
-  ): Promise<ManagedSiteChannel | null>
+    candidates: ManagedSiteChannel[],
+  ): Promise<ManagedSiteChannel[]>
 
   fetchChannelSecretKey?(
     baseUrl: string,
@@ -170,7 +168,6 @@ export function getManagedSiteServiceForType(
       buildChannelName: octopusService.buildChannelName,
       prepareChannelFormData: octopusService.prepareChannelFormData,
       buildChannelPayload: octopusService.buildChannelPayload,
-      findMatchingChannel: octopusService.findMatchingChannel,
       autoConfigToManagedSite: octopusService.autoConfigToOctopus,
     }
   }
@@ -189,7 +186,6 @@ export function getManagedSiteServiceForType(
       buildChannelName: axonHubService.buildChannelName,
       prepareChannelFormData: axonHubService.prepareChannelFormData,
       buildChannelPayload: axonHubService.buildChannelPayload,
-      findMatchingChannel: axonHubService.findMatchingChannel,
       autoConfigToManagedSite: axonHubService.autoConfigToAxonHub,
     }
   }
@@ -208,7 +204,8 @@ export function getManagedSiteServiceForType(
       buildChannelName: claudeCodeHubService.buildChannelName,
       prepareChannelFormData: claudeCodeHubService.prepareChannelFormData,
       buildChannelPayload: claudeCodeHubService.buildChannelPayload,
-      findMatchingChannel: claudeCodeHubService.findMatchingChannel,
+      hydrateComparableChannelKeys:
+        claudeCodeHubService.hydrateComparableChannelKeys,
       fetchChannelSecretKey: claudeCodeHubService.fetchChannelSecretKey,
       autoConfigToManagedSite: claudeCodeHubService.autoConfigToClaudeCodeHub,
     }
@@ -228,7 +225,7 @@ export function getManagedSiteServiceForType(
       buildChannelName: veloeraService.buildChannelName,
       prepareChannelFormData: veloeraService.prepareChannelFormData,
       buildChannelPayload: veloeraService.buildChannelPayload,
-      findMatchingChannel: veloeraService.findMatchingChannel,
+      hydrateComparableChannelKeys: veloeraService.hydrateComparableChannelKeys,
       fetchChannelSecretKey: veloeraService.fetchChannelSecretKey,
       autoConfigToManagedSite: veloeraService.autoConfigToVeloera,
     }
@@ -248,7 +245,7 @@ export function getManagedSiteServiceForType(
       buildChannelName: doneHubService.buildChannelName,
       prepareChannelFormData: doneHubService.prepareChannelFormData,
       buildChannelPayload: doneHubService.buildChannelPayload,
-      findMatchingChannel: doneHubService.findMatchingChannel,
+      hydrateComparableChannelKeys: doneHubService.hydrateComparableChannelKeys,
       fetchChannelSecretKey: doneHubService.fetchChannelSecretKey,
       autoConfigToManagedSite: doneHubService.autoConfigToDoneHub,
     }
@@ -267,7 +264,7 @@ export function getManagedSiteServiceForType(
     buildChannelName: newApiService.buildChannelName,
     prepareChannelFormData: newApiService.prepareChannelFormData,
     buildChannelPayload: newApiService.buildChannelPayload,
-    findMatchingChannel: newApiService.findMatchingChannel,
+    hydrateComparableChannelKeys: newApiService.hydrateComparableChannelKeys,
     fetchChannelSecretKey: newApiService.fetchChannelSecretKey,
     autoConfigToManagedSite: newApiService.autoConfigToNewApi,
   }

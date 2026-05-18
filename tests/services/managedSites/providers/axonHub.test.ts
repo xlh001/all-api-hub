@@ -541,7 +541,7 @@ describe("AxonHub managed-site provider", () => {
     ).not.toThrow()
   })
 
-  it("finds existing matching channels and imports only when no duplicate exists", async () => {
+  it("imports only when no duplicate exists", async () => {
     const provider = await import("~/services/managedSites/providers/axonHub")
     const account = buildDisplaySiteData({
       name: "Source Site",
@@ -559,25 +559,7 @@ describe("AxonHub managed-site provider", () => {
       models: "gpt-4o,gpt-4.1",
     })
 
-    mockListChannels.mockResolvedValueOnce({
-      items: [matchingChannel],
-      total: 1,
-      page: 1,
-      pageSize: 100,
-    })
-
-    await expect(
-      provider.findMatchingChannel(
-        "",
-        "",
-        "",
-        "https://source.example/v1",
-        ["gpt-4o", "gpt-4.1"],
-        "test-source-key",
-      ),
-    ).resolves.toEqual(matchingChannel)
-
-    mockListChannels.mockResolvedValueOnce({
+    mockSearchChannels.mockResolvedValueOnce({
       items: [matchingChannel],
       total: 1,
       page: 1,
@@ -585,11 +567,12 @@ describe("AxonHub managed-site provider", () => {
     })
     await expect(provider.importToAxonHub(account, token)).resolves.toEqual({
       success: false,
-      message: 'messages:axonhub.channelExists:{"channelName":"Existing"}',
+      message: expect.stringContaining("channelExists"),
     })
+    expect(mockSearchChannels).toHaveBeenCalledTimes(1)
     expect(mockCreateAxonHubChannel).not.toHaveBeenCalled()
 
-    mockListChannels.mockResolvedValueOnce({
+    mockSearchChannels.mockResolvedValueOnce({
       items: [],
       total: 0,
       page: 1,
@@ -609,23 +592,6 @@ describe("AxonHub managed-site provider", () => {
         supportedModels: ["gpt-4o", "gpt-4.1"],
       }),
     )
-  })
-
-  it("returns null when matching-channel lookup cannot list AxonHub channels", async () => {
-    const provider = await import("~/services/managedSites/providers/axonHub")
-
-    mockListChannels.mockRejectedValueOnce(new Error("list exploded"))
-
-    await expect(
-      provider.findMatchingChannel(
-        "",
-        "",
-        "",
-        "https://source.example/v1",
-        ["gpt-4o"],
-        "test-source-key",
-      ),
-    ).resolves.toBeNull()
   })
 
   it("returns config-missing and import-failed messages for AxonHub import fallbacks", async () => {
@@ -685,7 +651,7 @@ describe("AxonHub managed-site provider", () => {
 
     mockConvertToDisplayData.mockReturnValue(account)
     mockEnsureAccountApiToken.mockResolvedValue(token)
-    mockListChannels.mockResolvedValueOnce({
+    mockSearchChannels.mockResolvedValueOnce({
       items: [],
       total: 0,
       page: 1,
@@ -699,6 +665,11 @@ describe("AxonHub managed-site provider", () => {
       message:
         'messages:axonhub.importSuccess:{"channelName":"Converted | Auto (auto)"}',
     })
+    expect(mockSearchChannels).toHaveBeenCalledWith(
+      axonHubConfig,
+      "https://converted.example",
+    )
+    expect(mockCreateAxonHubChannel).toHaveBeenCalled()
     expect(mockEnsureAccountApiToken).toHaveBeenCalledWith(
       storedAccount,
       account,
@@ -727,7 +698,7 @@ describe("AxonHub managed-site provider", () => {
 
     mockConvertToDisplayData.mockReturnValue(account)
     mockEnsureAccountApiToken.mockResolvedValue(token)
-    mockListChannels.mockResolvedValueOnce({
+    mockSearchChannels.mockResolvedValueOnce({
       items: [existingChannel],
       total: 1,
       page: 1,
@@ -738,16 +709,16 @@ describe("AxonHub managed-site provider", () => {
       provider.autoConfigToAxonHub(storedAccount, "toast-duplicate"),
     ).resolves.toEqual({
       success: false,
-      message:
-        'messages:axonhub.channelExists:{"channelName":"Existing Duplicate"}',
+      message: expect.stringContaining("channelExists"),
     })
+    expect(mockSearchChannels).toHaveBeenCalledTimes(1)
 
     expect(toast.loading).toHaveBeenCalledWith(
       "messages:accountOperations.importingToAxonHub",
       { id: "toast-duplicate" },
     )
     expect(toast.error).toHaveBeenCalledWith(
-      'messages:axonhub.channelExists:{"channelName":"Existing Duplicate"}',
+      expect.stringContaining("channelExists"),
       { id: "toast-duplicate" },
     )
   })

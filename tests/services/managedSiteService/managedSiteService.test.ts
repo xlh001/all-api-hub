@@ -4,11 +4,34 @@ import { SITE_TYPES } from "~/constants/siteType"
 
 const mockGetPreferences = vi.fn()
 
-vi.mock("~/services/preferences/userPreferences", () => ({
-  userPreferences: {
-    getPreferences: mockGetPreferences,
-  },
-}))
+const baseService = {
+  searchChannel: expect.any(Function),
+  createChannel: expect.any(Function),
+  updateChannel: expect.any(Function),
+  deleteChannel: expect.any(Function),
+  checkValidConfig: expect.any(Function),
+  getConfig: expect.any(Function),
+  fetchAvailableModels: expect.any(Function),
+  buildChannelName: expect.any(Function),
+  prepareChannelFormData: expect.any(Function),
+  buildChannelPayload: expect.any(Function),
+  autoConfigToManagedSite: expect.any(Function),
+}
+
+vi.mock("~/services/preferences/userPreferences", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("~/services/preferences/userPreferences")
+    >()
+
+  return {
+    ...actual,
+    userPreferences: {
+      ...actual.userPreferences,
+      getPreferences: mockGetPreferences,
+    },
+  }
+})
 
 vi.mock("~/services/managedSites/providers/newApi", () => ({
   checkValidNewApiConfig: vi.fn(async () => true),
@@ -25,7 +48,7 @@ vi.mock("~/services/managedSites/providers/newApi", () => ({
   buildChannelName: vi.fn(),
   prepareChannelFormData: vi.fn(),
   buildChannelPayload: vi.fn(),
-  findMatchingChannel: vi.fn(),
+  hydrateComparableChannelKeys: vi.fn(),
   fetchChannelSecretKey: vi.fn(),
   autoConfigToNewApi: vi.fn(),
 }))
@@ -45,7 +68,7 @@ vi.mock("~/services/managedSites/providers/veloera", () => ({
   buildChannelName: vi.fn(),
   prepareChannelFormData: vi.fn(),
   buildChannelPayload: vi.fn(),
-  findMatchingChannel: vi.fn(),
+  hydrateComparableChannelKeys: vi.fn(),
   fetchChannelSecretKey: vi.fn(),
   autoConfigToVeloera: vi.fn(),
 }))
@@ -65,7 +88,7 @@ vi.mock("~/services/managedSites/providers/doneHubService", () => ({
   buildChannelName: vi.fn(),
   prepareChannelFormData: vi.fn(),
   buildChannelPayload: vi.fn(),
-  findMatchingChannel: vi.fn(),
+  hydrateComparableChannelKeys: vi.fn(),
   fetchChannelSecretKey: vi.fn(),
   autoConfigToDoneHub: vi.fn(),
 }))
@@ -85,7 +108,6 @@ vi.mock("~/services/managedSites/providers/octopus", () => ({
   buildChannelName: vi.fn(),
   prepareChannelFormData: vi.fn(),
   buildChannelPayload: vi.fn(),
-  findMatchingChannel: vi.fn(),
   autoConfigToOctopus: vi.fn(),
 }))
 
@@ -104,7 +126,6 @@ vi.mock("~/services/managedSites/providers/axonHub", () => ({
   buildChannelName: vi.fn(),
   prepareChannelFormData: vi.fn(),
   buildChannelPayload: vi.fn(),
-  findMatchingChannel: vi.fn(),
   autoConfigToAxonHub: vi.fn(),
 }))
 
@@ -123,7 +144,7 @@ vi.mock("~/services/managedSites/providers/claudeCodeHub", () => ({
   buildChannelName: vi.fn(),
   prepareChannelFormData: vi.fn(),
   buildChannelPayload: vi.fn(),
-  findMatchingChannel: vi.fn(),
+  hydrateComparableChannelKeys: vi.fn(),
   fetchChannelSecretKey: vi.fn(),
   autoConfigToClaudeCodeHub: vi.fn(),
 }))
@@ -219,6 +240,8 @@ describe("managedSiteService", () => {
     const service = await getManagedSiteService()
     expect(service.siteType).toBe(SITE_TYPES.NEW_API)
     expect(service.messagesKey).toBe("newapi")
+    expect(service).toMatchObject(baseService)
+    expect(service.hydrateComparableChannelKeys).toEqual(expect.any(Function))
 
     const config = await service.getConfig()
     expect(config?.baseUrl).toBe("n")
@@ -236,6 +259,8 @@ describe("managedSiteService", () => {
     const service = await getManagedSiteService()
     expect(service.siteType).toBe(SITE_TYPES.VELOERA)
     expect(service.messagesKey).toBe("veloera")
+    expect(service).toMatchObject(baseService)
+    expect(service.hydrateComparableChannelKeys).toEqual(expect.any(Function))
 
     const config = await service.getConfig()
     expect(config?.baseUrl).toBe("v")
@@ -249,6 +274,8 @@ describe("managedSiteService", () => {
     const service = getManagedSiteServiceForType(SITE_TYPES.DONE_HUB)
     expect(service.siteType).toBe(SITE_TYPES.DONE_HUB)
     expect(service.messagesKey).toBe("donehub")
+    expect(service).toMatchObject(baseService)
+    expect(service.hydrateComparableChannelKeys).toEqual(expect.any(Function))
 
     const config = await service.getConfig()
     expect(config?.baseUrl).toBe("d")
@@ -262,6 +289,8 @@ describe("managedSiteService", () => {
     const service = getManagedSiteServiceForType(SITE_TYPES.OCTOPUS)
     expect(service.siteType).toBe(SITE_TYPES.OCTOPUS)
     expect(service.messagesKey).toBe("octopus")
+    expect(service).toMatchObject(baseService)
+    expect(service.hydrateComparableChannelKeys).toBeUndefined()
 
     const config = await service.getConfig()
     expect(config?.baseUrl).toBe("o")
@@ -275,6 +304,8 @@ describe("managedSiteService", () => {
     const service = getManagedSiteServiceForType(SITE_TYPES.AXON_HUB)
     expect(service.siteType).toBe(SITE_TYPES.AXON_HUB)
     expect(service.messagesKey).toBe("axonhub")
+    expect(service).toMatchObject(baseService)
+    expect(service.hydrateComparableChannelKeys).toBeUndefined()
 
     const config = await service.getConfig()
     expect(config).toEqual({
@@ -292,6 +323,8 @@ describe("managedSiteService", () => {
     const service = getManagedSiteServiceForType(SITE_TYPES.CLAUDE_CODE_HUB)
     expect(service.siteType).toBe(SITE_TYPES.CLAUDE_CODE_HUB)
     expect(service.messagesKey).toBe("claudecodehub")
+    expect(service).toMatchObject(baseService)
+    expect(service.hydrateComparableChannelKeys).toEqual(expect.any(Function))
     expect(service.fetchChannelSecretKey).toEqual(expect.any(Function))
 
     const config = await service.getConfig()
@@ -300,5 +333,29 @@ describe("managedSiteService", () => {
       token: "t",
       userId: "admin",
     })
+  })
+
+  it("exports real key hydration capabilities for hidden-key providers", async () => {
+    const [newApi, doneHub, veloera, claudeCodeHub] = await Promise.all([
+      vi.importActual<
+        typeof import("~/services/managedSites/providers/newApi")
+      >("~/services/managedSites/providers/newApi"),
+      vi.importActual<
+        typeof import("~/services/managedSites/providers/doneHubService")
+      >("~/services/managedSites/providers/doneHubService"),
+      vi.importActual<
+        typeof import("~/services/managedSites/providers/veloera")
+      >("~/services/managedSites/providers/veloera"),
+      vi.importActual<
+        typeof import("~/services/managedSites/providers/claudeCodeHub")
+      >("~/services/managedSites/providers/claudeCodeHub"),
+    ])
+
+    expect(newApi.hydrateComparableChannelKeys).toEqual(expect.any(Function))
+    expect(doneHub.hydrateComparableChannelKeys).toEqual(expect.any(Function))
+    expect(veloera.hydrateComparableChannelKeys).toEqual(expect.any(Function))
+    expect(claudeCodeHub.hydrateComparableChannelKeys).toEqual(
+      expect.any(Function),
+    )
   })
 })

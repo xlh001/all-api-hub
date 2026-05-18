@@ -10,8 +10,8 @@ import { accountStorage } from "~/services/accounts/accountStorage"
 import { normalizeAccountForManagedChannel } from "~/services/accounts/utils/siteUrlNormalization"
 import * as axonHubApi from "~/services/apiService/axonHub"
 import type { ApiResponse } from "~/services/apiService/common/type"
+import { resolveManagedSiteImportDuplicate } from "~/services/managedSites/importDuplicateResolution"
 import type { ManagedSiteConfig } from "~/services/managedSites/managedSiteService"
-import { findManagedSiteChannelByComparableInputs } from "~/services/managedSites/utils/channelMatching"
 import { fetchManagedSiteAvailableModels } from "~/services/managedSites/utils/fetchManagedSiteAvailableModels"
 import { fetchTokenScopedModels } from "~/services/managedSites/utils/fetchTokenScopedModels"
 import {
@@ -34,7 +34,6 @@ import {
   ChannelFormData,
   ChannelMode,
   CreateChannelPayload,
-  ManagedSiteChannel,
   ManagedSiteChannelListData,
   UpdateChannelPayload,
 } from "~/types/managedSite"
@@ -44,6 +43,10 @@ import { normalizeList } from "~/utils/core/string"
 import { t } from "~/utils/i18n/core"
 
 const logger = createLogger("AxonHubService")
+
+const axonHubImportDuplicateService = {
+  searchChannel,
+}
 
 /**
  * Check whether preferences contain a complete AxonHub admin config.
@@ -399,34 +402,6 @@ export function buildChannelPayload(
 }
 
 /**
- * Find an existing AxonHub channel matching source account attributes.
- */
-export async function findMatchingChannel(
-  _baseUrl: string,
-  _adminToken: string,
-  _userId: number | string,
-  accountBaseUrl: string,
-  models: string[],
-  key?: string,
-): Promise<ManagedSiteChannel | null> {
-  try {
-    const config = await getFullAxonHubConfig()
-    if (!config) return null
-
-    const channels = await axonHubApi.listChannels(config)
-    return findManagedSiteChannelByComparableInputs({
-      channels: channels.items,
-      accountBaseUrl,
-      models,
-      key,
-    })
-  } catch (error) {
-    logger.error("Failed to find matching AxonHub channel", error)
-    return null
-  }
-}
-
-/**
  * Import a single account token into AxonHub as an OpenAI-compatible channel.
  */
 export async function importToAxonHub(
@@ -440,14 +415,15 @@ export async function importToAxonHub(
     }
 
     const formData = await prepareChannelFormData(account, token)
-    const existingChannel = await findMatchingChannel(
-      config.baseUrl,
-      config.password,
-      config.email,
-      formData.base_url,
-      formData.models,
-      formData.key,
-    )
+    const existingChannel = await resolveManagedSiteImportDuplicate({
+      service: axonHubImportDuplicateService,
+      managedConfig: {
+        baseUrl: config.baseUrl,
+        token: config.password,
+        userId: config.email,
+      },
+      formData,
+    })
 
     if (existingChannel) {
       return {
