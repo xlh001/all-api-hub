@@ -12,10 +12,10 @@ provider keys, or unconfirmed channel keys.
 In this codebase, channel matching defaults to exact key comparison. One API,
 New API, AnyRouter, Veloera, OneHub, DoneHub, `v-api`, VoAPI, Super-API,
 Rix-Api, Neo-API, and WONG公益站 may use optional `sk-` prefix comparison
-because they are source-confirmed, documented in `AGENTS.md` as One API/New API
-family compatibility buckets, or site-specific compatible deployments whose
-tokens are observed to use `sk-` keys. Among current managed-site providers,
-this rule is exercised by New API, Veloera, and DoneHub.
+when direct upstream source, local adapter behavior, repository compatibility
+policy, or site-specific deployment observations confirm matching token
+authentication. Among current managed-site providers, this rule is exercised by
+New API, Veloera, and DoneHub.
 
 ## Source Review Summary
 
@@ -24,7 +24,7 @@ this rule is exercised by New API, Veloera, and DoneHub.
 | New API | Previously known from New API source behavior and local adapter evidence | Yes | High | Token auth accepts optional `sk-`; key inventory may be bare or masked. |
 | One API | `songquanpeng/one-api` | Yes | High | `middleware/auth.go` strips `Bearer ` and `sk-` before token validation; token create/model paths store bare keys. |
 | AnyRouter | Local adapter plus observed deployment behavior | Yes by compatible deployment behavior | Medium | Adapter reuses common One/New API account helpers with AnyRouter-specific check-in overrides; user-confirmed keys use `sk-`. |
-| Veloera | `AGENTS.md` compatibility relationship | Yes by New API-family compatibility | Medium-high | Documented as downstream of New API and implemented with dedicated New API-family adapter overrides in this repo. |
+| Veloera | `Veloera/Veloera` | Yes | High | `middleware/auth.go` strips `Bearer ` and `sk-` before token validation; `controller/token.go` stores the generated key directly in `Token.Key`, and `model/token.go` validates the stripped key by exact lookup. |
 | OneHub | `MartialBE/one-hub` | Yes | High | `middleware/auth.go` strips `Bearer ` and `sk-`; token model/create paths return stored key values. |
 | DoneHub | `deanxv/done-hub` | Yes | High | `middleware/auth.go` strips `Bearer ` and `sk-`; generated token keys are stored bare and token responses do not add `sk-`. |
 | v-api | `AGENTS.md` compatibility relationship | Yes by One API/New API-family compatibility | Medium | Documented as based on One API with some New API functionality. Exact deployment depth can vary. |
@@ -43,9 +43,9 @@ this rule is exercised by New API, Veloera, and DoneHub.
 
 Repository compatibility policy:
 
-- AGENTS.md: Veloera is downstream of New API; `v-api` is a One API
-  derivative/New API-compatible bucket; older VoAPI, Super-API, Rix-Api, and
-  Neo-API are treated as New API-family variants or compatibility buckets.
+- AGENTS.md: `v-api` is a One API derivative/New API-compatible bucket; older
+  VoAPI, Super-API, Rix-Api, and Neo-API are treated as New API-family variants
+  or compatibility buckets.
 
 One API:
 
@@ -67,6 +67,12 @@ DoneHub:
 - https://github.com/deanxv/done-hub/blob/main/controller/token.go
 - https://github.com/deanxv/done-hub/blob/main/model/channel.go
 - https://github.com/deanxv/done-hub/blob/main/controller/channel.go
+
+Veloera:
+
+- https://github.com/Veloera/Veloera/blob/main/middleware/auth.go
+- https://github.com/Veloera/Veloera/blob/main/controller/token.go
+- https://github.com/Veloera/Veloera/blob/main/model/token.go
 
 Sub2API:
 
