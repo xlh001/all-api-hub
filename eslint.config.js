@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import eslint from "@eslint/js"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import importPlugin from "eslint-plugin-import"
@@ -7,7 +8,34 @@ import { defineConfig } from "eslint/config"
 import globals from "globals"
 import tseslint from "typescript-eslint"
 
-import autoImports from "./.wxt/eslint-auto-imports.mjs"
+const autoImportsConfigUrl = new URL(
+  "./.wxt/eslint-auto-imports.mjs",
+  import.meta.url,
+)
+const wxtTsconfigUrl = new URL("./.wxt/tsconfig.json", import.meta.url)
+const wxtPrepared = existsSync(wxtTsconfigUrl)
+const autoImports = existsSync(autoImportsConfigUrl)
+  ? (await import(autoImportsConfigUrl.href)).default
+  : {
+      name: "wxt/auto-imports-unavailable",
+      languageOptions: {
+        globals: {},
+        sourceType: "module",
+      },
+    }
+const typescriptParserOptions = wxtPrepared
+  ? {
+      projectService: true,
+      tsconfigRootDir: import.meta.dirname,
+    }
+  : {
+      tsconfigRootDir: import.meta.dirname,
+    }
+const typescriptResolverOptions = {
+  alwaysTryTypes: true,
+  bun: true,
+  project: wxtPrepared ? "tsconfig.json" : "tsconfig.eslint.json",
+}
 
 const rules = {
   "@typescript-eslint/no-explicit-any": "off",
@@ -63,11 +91,7 @@ export default defineConfig([
     languageOptions: {
       // Use TypeScript ESLint parser for TypeScript files
       parser: tseslint.parser,
-      parserOptions: {
-        // Enable project service for better TypeScript integration
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
+      parserOptions: typescriptParserOptions,
     },
 
     rules: {
@@ -83,18 +107,11 @@ export default defineConfig([
     ],
     languageOptions: {
       parser: tseslint.parser,
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
+      parserOptions: typescriptParserOptions,
     },
     settings: {
       "import/resolver": {
-        typescript: {
-          alwaysTryTypes: true, // Always try to resolve types under `<root>@types` directory even if it doesn't contain any source code, like `@types/unist`
-
-          bun: true, // Resolve Bun modules (https://github.com/import-js/eslint-import-resolver-typescript#bun)
-        },
+        typescript: typescriptResolverOptions,
       },
     },
     rules: {
@@ -118,10 +135,7 @@ export default defineConfig([
     plugins: { jsdoc },
     languageOptions: {
       parser: tseslint.parser,
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
+      parserOptions: typescriptParserOptions,
     },
   },
   {
