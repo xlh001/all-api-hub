@@ -2068,6 +2068,7 @@ describe("ManagedSiteChannels", () => {
   it.each([
     [SITE_TYPES.DONE_HUB, "donehub"],
     [SITE_TYPES.VELOERA, "veloera"],
+    [SITE_TYPES.CLAUDE_CODE_HUB, "claudecodehub"],
   ])(
     "loads the real channel key from the edit dialog for %s",
     async (managedSiteType, messagesKey) => {
@@ -2429,10 +2430,10 @@ describe("ManagedSiteChannels", () => {
     )
     const editDialog = await screen.findByRole("dialog")
     expect(
-      within(editDialog).queryByRole("button", {
+      within(editDialog).getByRole("button", {
         name: "channelDialog:actions.loadRealKey",
       }),
-    ).not.toBeInTheDocument()
+    ).toBeInTheDocument()
 
     await user.click(
       within(editDialog).getByText("common:actions.cancel", {
