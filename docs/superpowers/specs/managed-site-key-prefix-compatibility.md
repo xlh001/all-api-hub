@@ -23,7 +23,7 @@ New API, Veloera, and DoneHub.
 | --- | --- | --- | --- | --- |
 | New API | Previously known from New API source behavior and local adapter evidence | Yes | High | Token auth accepts optional `sk-`; key inventory may be bare or masked. |
 | One API | `songquanpeng/one-api` | Yes | High | `middleware/auth.go` strips `Bearer ` and `sk-` before token validation; token create/model paths store bare keys. |
-| AnyRouter | Local adapter plus observed deployment behavior | Yes by compatible deployment behavior | Medium | Adapter reuses common One/New API account helpers with AnyRouter-specific check-in overrides; user-confirmed keys use `sk-`. |
+| AnyRouter | User-tested deployment behavior plus local adapter review | Yes by deployment-tested behavior | Medium | User testing confirmed optional `sk-` token matching on a compatible deployment. The local adapter reuses common One/New API account helpers with AnyRouter-specific check-in overrides. |
 | Veloera | `Veloera/Veloera` | Yes | High | `middleware/auth.go` strips `Bearer ` and `sk-` before token validation; `controller/token.go` stores the generated key directly in `Token.Key`, and `model/token.go` validates the stripped key by exact lookup. |
 | OneHub | `MartialBE/one-hub` | Yes | High | `middleware/auth.go` strips `Bearer ` and `sk-`; token model/create paths return stored key values. |
 | DoneHub | `deanxv/done-hub` | Yes | High | `middleware/auth.go` strips `Bearer ` and `sk-`; generated token keys are stored bare and token responses do not add `sk-`. |
@@ -32,7 +32,7 @@ New API, Veloera, and DoneHub.
 | Super-API | `AGENTS.md` compatibility relationship | Yes by New API-family compatibility | Medium | Documented as a New API-family variant or compatibility bucket; deployment modifications can vary. |
 | Rix-Api | `AGENTS.md` compatibility relationship | Yes by New API-family compatibility | Medium-low | Treated as a New API-family compatibility bucket in this repo; no single upstream is assumed. |
 | Neo-API | `AGENTS.md` compatibility relationship | Yes by New API-family compatibility | Medium-low | Treated as a New API-family compatibility bucket in this repo; no single upstream is assumed. |
-| WONG公益站 | Local adapter plus observed deployment behavior | Yes by compatible deployment behavior | Medium | Adapter reuses common One/New API account helpers with WONG-specific check-in and token-key reveal overrides; user-confirmed keys use `sk-`. |
+| WONG公益站 | User-tested deployment behavior plus local adapter review | Yes by deployment-tested behavior | Medium | User testing confirmed optional `sk-` token matching on a compatible deployment. The local adapter reuses common One/New API account helpers with WONG-specific check-in and token-key reveal overrides. |
 | Sub2API | `Wei-Shaw/sub2api` at `1d78dde8c414932a365c43985477d52eab044fbd` | No | High | Auth middlewares pass the full key to `GetByKey`; repository uses exact `apikey.KeyEQ(key)`. Random keys may be generated with `sk-`, but that prefix is part of the key. |
 | Octopus | `bestruirui/octopus` `dev` branch | No | High | Channel keys are stored, listed, and forwarded as-is. `sk-octopus-*` is a strict Octopus public API key format, not a channel key equivalence rule. |
 | AxonHub | `looplj/axonhub` `unstable` branch | No evidence found | Medium-high | Reviewed header extraction and channel credential structs. Header code strips transport prefixes such as `Bearer `, not a business-key `sk-` prefix. |
@@ -104,11 +104,11 @@ Claude Code Hub:
 - Preserve backend-provided key values for storage, display, copy, and request
   payloads unless a provider-specific adapter has an explicit reason to
   transform them.
-- Use optional `sk-` prefix comparison only in identity checks for confirmed
-  compatible backends, documented compatibility buckets, and site-specific
-  compatible deployments with observed `sk-` token behavior: One API, New API,
-  AnyRouter, Veloera, OneHub, DoneHub, `v-api`, VoAPI, Super-API, Rix-Api,
-  Neo-API, and WONG公益站.
+- Use optional `sk-` prefix comparison only in identity checks for
+  source-confirmed compatible backends, documented compatibility buckets, and
+  site-specific compatible deployments with user-tested `sk-` token matching:
+  One API, New API, AnyRouter, Veloera, OneHub, DoneHub, `v-api`, VoAPI,
+  Super-API, Rix-Api, Neo-API, and WONG公益站.
 - Use exact key comparison for Sub2API, Octopus, AxonHub, Claude Code Hub,
   AIHubMix, and source-unknown API credentials.
 - Do not strip One API `-channelId` or OneHub `#channelId` suffixes in this
