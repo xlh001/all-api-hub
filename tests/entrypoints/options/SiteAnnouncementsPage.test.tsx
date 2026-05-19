@@ -5,6 +5,10 @@ import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
 import SiteAnnouncementsPage from "~/entrypoints/options/pages/SiteAnnouncements"
 import {
+  DEFAULT_PREFERENCES,
+  userPreferences,
+} from "~/services/preferences/userPreferences"
+import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
@@ -16,6 +20,7 @@ import type {
   SiteAnnouncementRecord,
   SiteAnnouncementSiteState,
 } from "~/types/siteAnnouncements"
+import { deepOverride } from "~/utils"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { showResultToast } from "~/utils/core/toastHelpers"
 import { openSettingsTab } from "~/utils/navigation"
@@ -119,6 +124,9 @@ const status: SiteAnnouncementSiteState[] = [
 describe("SiteAnnouncementsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
+      structuredClone(DEFAULT_PREFERENCES),
+    )
     startProductAnalyticsActionMock.mockReturnValue({
       complete: completeProductAnalyticsActionMock,
     })
@@ -263,6 +271,48 @@ describe("SiteAnnouncementsPage", () => {
       anchor: SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
       preserveHistory: true,
     })
+  })
+
+  it("links the disabled page description to announcement polling settings", async () => {
+    const user = userEvent.setup()
+
+    render(<SiteAnnouncementsPage />)
+
+    await screen.findByText("siteAnnouncements:title")
+    expect(
+      screen.getByText("siteAnnouncements:description.disabledSummary"),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole("button", {
+        name: "siteAnnouncements:description.pollingSettingsLink",
+      }),
+    )
+
+    expect(openSettingsTab).toHaveBeenCalledWith("general", {
+      anchor: SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
+      preserveHistory: true,
+    })
+  })
+
+  it("shows the configured automatic polling interval when polling is enabled", async () => {
+    vi.mocked(userPreferences.getPreferences).mockResolvedValueOnce(
+      deepOverride(structuredClone(DEFAULT_PREFERENCES), {
+        siteAnnouncementNotifications: {
+          enabled: true,
+          intervalMinutes: 45,
+        },
+      }),
+    )
+
+    render(<SiteAnnouncementsPage />)
+
+    await screen.findByText("siteAnnouncements:title")
+    expect(
+      screen.getByText("siteAnnouncements:description.enabledSummary"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("siteAnnouncements:description.enabledInterval"),
+    ).toBeInTheDocument()
   })
 
   it("sorts site filter options by announcement count and supports search", async () => {
@@ -953,6 +1003,15 @@ describe("SiteAnnouncementsPage", () => {
         "siteAnnouncements:empty.descriptionWhenPollingDisabled",
       ),
     ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole("button", {
+        name: "siteAnnouncements:empty.pollingSettingsLink",
+      }),
+    )
+    expect(openSettingsTab).toHaveBeenCalledWith("general", {
+      anchor: SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
+      preserveHistory: true,
+    })
 
     await user.click(
       screen.getAllByRole("button", {

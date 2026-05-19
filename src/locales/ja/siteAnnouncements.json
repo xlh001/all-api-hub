@@ -12,11 +12,17 @@
     "notified": "通知済み",
     "unread": "未読"
   },
-  "description": "バックグラウンドで取得したサイト公告を確認し、未読状態を管理して手動確認を実行できます。",
+  "description": {
+    "disabledSummary": "自動取得は現在オフです。手動確認は引き続き実行できます。",
+    "enabledInterval": "現在の間隔: {{intervalMinutes}} 分ごと。",
+    "enabledSummary": "自動取得は現在オンです。取得したサイト公告を確認し、未読状態を管理して手動確認を実行できます。",
+    "pollingSettingsLink": "自動取得を設定"
+  },
   "empty": {
     "description": "バックグラウンド確認で新しい公告が見つかるとここに表示されます。",
     "descriptionWhenPollingDisabled": "今すぐ手動確認できます。自動取得は設定で管理できます。",
     "filtered": "現在のフィルターに一致する公告はありません",
+    "pollingSettingsLink": "自動取得を設定",
     "title": "公告記録はありません"
   },
   "filters": {

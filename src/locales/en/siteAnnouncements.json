@@ -12,11 +12,17 @@
     "notified": "Notified",
     "unread": "Unread"
   },
-  "description": "Review announcements fetched in the background, manage unread state, and trigger a manual check.",
+  "description": {
+    "disabledSummary": "Automatic polling is off; you can still trigger a manual check.",
+    "enabledInterval": "Current interval: every {{intervalMinutes}} minutes.",
+    "enabledSummary": "Automatic polling is on; review fetched announcements, manage unread state, and trigger a manual check.",
+    "pollingSettingsLink": "Configure automatic polling"
+  },
   "empty": {
     "description": "New announcements discovered by background checks will appear here.",
     "descriptionWhenPollingDisabled": "You can check manually now; automatic polling can be managed in settings.",
     "filtered": "No announcements match the current filters",
+    "pollingSettingsLink": "Configure automatic polling",
     "title": "No announcement records"
   },
   "filters": {

@@ -12,11 +12,17 @@
     "notified": "已通知",
     "unread": "未讀"
   },
-  "description": "查看背景拉取到的網站公告記錄，處理未讀狀態，並手動觸發一次檢查。",
+  "description": {
+    "disabledSummary": "自動抓取目前已關閉；你仍可手動觸發一次檢查。",
+    "enabledInterval": "目前間隔：每 {{intervalMinutes}} 分鐘。",
+    "enabledSummary": "自動抓取目前已開啟；你可以查看抓取到的網站公告、處理未讀狀態，並手動觸發一次檢查。",
+    "pollingSettingsLink": "設定自動抓取"
+  },
   "empty": {
     "description": "背景檢查到新公告後會顯示在這裡。",
     "descriptionWhenPollingDisabled": "你可以立即手動檢查；自動抓取可在設定中管理。",
     "filtered": "目前篩選條件下沒有公告",
+    "pollingSettingsLink": "設定自動抓取",
     "title": "暫無公告記錄"
   },
   "filters": {

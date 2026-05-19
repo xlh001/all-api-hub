@@ -12,11 +12,17 @@
     "notified": "Đã thông báo",
     "unread": "Chưa đọc"
   },
-  "description": "Xem các bản ghi thông báo trang web được lấy về dưới nền, xử lý trạng thái chưa đọc và kích hoạt kiểm tra thủ công.",
+  "description": {
+    "disabledSummary": "Tự động lấy hiện đang tắt; bạn vẫn có thể kích hoạt kiểm tra thủ công.",
+    "enabledInterval": "Khoảng thời gian hiện tại: mỗi {{intervalMinutes}} phút.",
+    "enabledSummary": "Tự động lấy hiện đang bật; xem các thông báo trang web đã lấy, xử lý trạng thái chưa đọc và kích hoạt kiểm tra thủ công.",
+    "pollingSettingsLink": "Cấu hình tự động lấy"
+  },
   "empty": {
     "description": "Thông báo mới sẽ được hiển thị ở đây sau khi được kiểm tra dưới nền.",
     "descriptionWhenPollingDisabled": "Bạn có thể kiểm tra thủ công ngay bây giờ; tự động lấy có thể được quản lý trong cài đặt.",
     "filtered": "Không có thông báo nào với các bộ lọc hiện tại",
+    "pollingSettingsLink": "Cấu hình tự động lấy",
     "title": "Chưa có bản ghi thông báo nào"
   },
   "filters": {

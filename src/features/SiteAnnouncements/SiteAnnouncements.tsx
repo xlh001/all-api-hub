@@ -28,6 +28,7 @@ import type {
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { showResultToast } from "~/utils/core/toastHelpers"
+import { openSettingsTab } from "~/utils/navigation"
 
 import { SiteAnnouncementsFiltersCard } from "./components/SiteAnnouncementsFiltersCard"
 import { SiteAnnouncementsList } from "./components/SiteAnnouncementsList"
@@ -45,6 +46,9 @@ interface SiteAnnouncementsPageProps {
   routeParams?: Record<string, string>
   refreshKey?: number
 }
+
+const textLinkClassName =
+  "font-medium text-blue-600 underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none dark:text-blue-400"
 
 /**
  * Options page for locally cached provider-site announcements.
@@ -316,6 +320,13 @@ export default function SiteAnnouncementsPage({
     }
   }
 
+  const handleOpenPollingSettings = useCallback(() => {
+    void openSettingsTab("general", {
+      anchor: SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
+      preserveHistory: true,
+    })
+  }, [])
+
   return (
     <div className="p-4 sm:p-6">
       <PageHeader
@@ -328,7 +339,34 @@ export default function SiteAnnouncementsPage({
             label={t("actions.pollingSettings")}
           />
         }
-        description={t("description")}
+        description={
+          <>
+            <span>
+              {t(
+                siteAnnouncementNotifications.enabled
+                  ? "description.enabledSummary"
+                  : "description.disabledSummary",
+              )}
+            </span>{" "}
+            {siteAnnouncementNotifications.enabled && (
+              <>
+                <span>
+                  {t("description.enabledInterval", {
+                    intervalMinutes:
+                      siteAnnouncementNotifications.intervalMinutes,
+                  })}
+                </span>{" "}
+              </>
+            )}
+            <button
+              type="button"
+              className={textLinkClassName}
+              onClick={handleOpenPollingSettings}
+            >
+              {t("description.pollingSettingsLink")}
+            </button>
+          </>
+        }
         className="mb-5"
         actions={
           <ProductAnalyticsScope
@@ -403,13 +441,22 @@ export default function SiteAnnouncementsPage({
               records.length === 0 ? t("empty.title") : t("empty.filtered")
             }
             description={
-              records.length === 0
-                ? t(
-                    isPollingDisabled
-                      ? "empty.descriptionWhenPollingDisabled"
-                      : "empty.description",
-                  )
-                : null
+              records.length === 0 ? (
+                isPollingDisabled ? (
+                  <>
+                    <span>{t("empty.descriptionWhenPollingDisabled")}</span>{" "}
+                    <button
+                      type="button"
+                      className={textLinkClassName}
+                      onClick={handleOpenPollingSettings}
+                    >
+                      {t("empty.pollingSettingsLink")}
+                    </button>
+                  </>
+                ) : (
+                  t("empty.description")
+                )
+              ) : null
             }
             action={{
               label: t("actions.checkNow"),
