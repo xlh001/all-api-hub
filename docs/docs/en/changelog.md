@@ -8,6 +8,28 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.39.0
+- **New Features:**
+  - Site Support: Added `v-api` site type support. Accounts can now be detected and managed according to this site's compatibility rules. See [Supported Sites](./supported-sites.md).
+  - Site Feedback: Added a "Site Support Request" flow. When auto-detection fails, you can submit feedback with the site URL and error details, and specify the capabilities you want supported, such as balance, keys, models, check-in, or redemption.
+  - Interface Language: Added Vietnamese UI support. You can now select `Tiếng Việt` in the language switcher.
+  - `Claude Code Hub`: Supports searching provider lists and revealing the real `Key`, making provider management and import-status troubleshooting more complete. See [Self-Hosted Site Management](./self-hosted-site-management.md).
+- **Experience Optimizations:**
+  - `API Credential Library`: Unified UI wording such as "Save API Key" and "API Credential Library", making it clearer that this area is for saving `Base URL + API Key` combinations for copying, verification, model lookup, and export.
+  - Settings Navigation: Settings pages are now grouped by General, API, Automation, Insights, Site Management, and System, with adjusted entry order in the settings page and popup so common pages are easier to locate.
+  - Settings Page: Improved the layout of controls such as language, theme, currency, default tab, and task notifications on small screens.
+  - Key Management: Improved token card layout on narrow mobile screens, making key information easier to read and copy.
+- **Bug Fixes:**
+  - Hosted Sites: Improved duplicate channel checks and key matching accuracy, reducing false matches when real `Key` values are hidden or there are many candidate channels.
+  - `sk-` Prefix: Copying, display, and matching now normalize optional `sk-` prefixes only for site types that support that semantics. Other sites keep their original key format, reducing false matches caused by format differences.
+
+**Location Hints:**
+- `v-api` Accounts: Add or auto-detect accounts under "Settings → Account Management".
+- Site Support Feedback: Submit it from the auto-detection failure prompt or the top feedback menu.
+- Vietnamese: Select `VI / Tiếng Việt` from the language switcher on any page.
+- `API Credential Library`: Use it from the extension popup or "Settings → API Credential Library".
+- `Claude Code Hub`: Configure and manage it under "Settings → Self-Hosted Site Management".
+
 ## 3.38.0
 - **New Features:**
   - AIHubMix: Added `AIHubMix` site support. You can detect and manage AIHubMix accounts, with support for one-time key display, account URL normalization, and the correct sign-in entry. See [Supported Sites](./supported-sites.md).
