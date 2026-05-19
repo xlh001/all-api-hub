@@ -11,6 +11,7 @@ import {
 } from "~/services/managedSites/managedSiteService"
 import { normalizeManagedSiteChannelBaseUrl } from "~/services/managedSites/utils/channelMatching"
 import {
+  collectManagedConfigSecrets,
   hasUsableManagedSiteChannelKey,
   supportsManagedSiteBaseUrlChannelLookup,
 } from "~/services/managedSites/utils/managedSite"
@@ -160,7 +161,7 @@ const collectSecrets = (
     token.key,
     account.token,
     account.cookieAuthSessionCookie,
-    managedConfig.token,
+    ...collectManagedConfigSecrets(managedConfig),
   ].filter(Boolean) as string[]
 
 const preparePreviewItem = async (params: {
@@ -455,12 +456,7 @@ export async function executeManagedSiteTokenBatchExport(params: {
     async (item): Promise<ManagedSiteTokenBatchExportExecutionItem> => {
       try {
         const payload = service.buildChannelPayload(item.draft!)
-        const response = await service.createChannel(
-          managedConfig.baseUrl,
-          managedConfig.token,
-          managedConfig.userId,
-          payload,
-        )
+        const response = await service.createChannel(managedConfig, payload)
 
         if (!response.success) {
           throw new Error(response.message || "Failed to create channel")

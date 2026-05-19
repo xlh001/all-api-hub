@@ -201,9 +201,14 @@ describe("modelSyncScheduler additional scheduler flows", () => {
     await modelSyncScheduler.listChannels()
 
     expect(mocks.modelSyncServiceCtor).toHaveBeenCalledWith(
-      "https://example.com",
-      "token",
-      "1",
+      {
+        siteType: "new-api",
+        config: {
+          baseUrl: "https://example.com",
+          adminToken: "token",
+          userId: "1",
+        },
+      },
       {
         requestsPerMinute: 10,
         burst: 2,
@@ -217,8 +222,9 @@ describe("modelSyncScheduler additional scheduler flows", () => {
           probeIds: ["text-generation"],
         }),
       ],
-      "new-api",
     )
+    const [, , , , sanitizedFilters] = mocks.modelSyncServiceCtor.mock.calls[0]
+    expect(sanitizedFilters[0]).not.toHaveProperty("apiKey")
   })
 })
 

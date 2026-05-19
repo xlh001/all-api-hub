@@ -45,6 +45,7 @@ import {
 } from "~/services/managedSites/managedSiteService"
 import { normalizeManagedSiteChannelBaseUrl } from "~/services/managedSites/utils/channelMatching"
 import {
+  collectManagedConfigSecrets,
   getManagedSiteType,
   supportsManagedSiteBaseUrlChannelLookup,
 } from "~/services/managedSites/utils/managedSite"
@@ -436,9 +437,11 @@ export default function AccountActionButtons({
         )
       }
 
-      if (managedConfig.token) {
-        secretsToRedact.add(managedConfig.token)
-      }
+      collectManagedConfigSecrets(managedConfig).forEach((secret) => {
+        if (secret) {
+          secretsToRedact.add(secret)
+        }
+      })
 
       const tokensResponse = await getApiService(
         site.siteType,

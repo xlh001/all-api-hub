@@ -33,6 +33,7 @@ import {
   type ManagedSiteTokenChannelStatus,
 } from "~/services/managedSites/tokenChannelStatus"
 import {
+  collectManagedConfigSecrets,
   getManagedSiteConfigMissingMessage,
   supportsManagedSiteBaseUrlChannelLookup,
 } from "~/services/managedSites/utils/managedSite"
@@ -485,7 +486,7 @@ export function useChannelDialog() {
       secretsToRedact = [
         apiToken.key,
         resolvedToken.key,
-        managedConfig.token,
+        ...collectManagedConfigSecrets(managedConfig),
         displaySiteData.token,
         displaySiteData.cookieAuthSessionCookie,
       ].filter(Boolean) as string[]
@@ -589,9 +590,10 @@ export function useChannelDialog() {
         name: credentials.name,
         apiKey: credentials.apiKey,
       })
-      secretsToRedact = [apiToken.key, managedConfig.token].filter(
-        Boolean,
-      ) as string[]
+      secretsToRedact = [
+        apiToken.key,
+        ...collectManagedConfigSecrets(managedConfig),
+      ].filter(Boolean) as string[]
 
       const formData = await service.prepareChannelFormData(
         displaySiteData,

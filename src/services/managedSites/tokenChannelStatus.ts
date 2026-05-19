@@ -19,10 +19,14 @@ import {
 } from "~/services/managedSites/providers/newApiSession"
 import { hasNewApiTotpSecret } from "~/services/managedSites/providers/newApiTotp"
 import { normalizeManagedSiteChannelBaseUrl } from "~/services/managedSites/utils/channelMatching"
-import { supportsManagedSiteBaseUrlChannelLookup } from "~/services/managedSites/utils/managedSite"
+import {
+  collectManagedConfigSecrets,
+  supportsManagedSiteBaseUrlChannelLookup,
+} from "~/services/managedSites/utils/managedSite"
 import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
 import type { AccountToken, ApiToken, DisplaySiteData } from "~/types"
 import type { ManagedSiteChannel } from "~/types/managedSite"
+import type { NewApiConfig } from "~/types/newApiConfig"
 import { createLogger } from "~/utils/core/logger"
 
 const logger = createLogger("ManagedSiteTokenChannelStatus")
@@ -168,15 +172,21 @@ const collectSecrets = (
   token: ApiToken | AccountToken,
   managedConfig: ManagedSiteConfig | null,
 ) => {
-  return [token.key, managedConfig?.token].filter(Boolean) as string[]
+  return [
+    token.key,
+    ...(managedConfig ? collectManagedConfigSecrets(managedConfig) : []),
+  ].filter(Boolean) as string[]
 }
+
+const isNewApiConfig = (config: ManagedSiteConfig): config is NewApiConfig =>
+  "adminToken" in config && "userId" in config
 
 const isExactVerificationUnavailable = (
   resolution: ManagedSiteChannelMatchInspection,
 ) => resolution.url.matched && !resolution.key.comparable
 
 const buildNewApiRecoveryMetadata = async (params: {
-  managedConfig: ManagedSiteConfig
+  managedConfig: NewApiConfig
   assessment?: ManagedSiteTokenChannelAssessment
 }): Promise<ManagedSiteTokenChannelRecovery> => {
   const loginAssistConfig = await getNewApiLoginAssistConfig()
@@ -315,6 +325,7 @@ export async function getManagedSiteTokenChannelStatus(
 
       if (
         service.siteType === SITE_TYPES.NEW_API &&
+        isNewApiConfig(managedConfig) &&
         isExactVerificationUnavailable(resolution)
       ) {
         try {
