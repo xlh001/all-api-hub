@@ -8,6 +8,30 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.40.0
+::: warning Site Announcement Auto Polling Is Off by Default
+Starting in this version, background auto polling for Site Announcements is opt-in: the extension will not proactively visit sites linked to your saved accounts on a schedule unless you explicitly enable it. Existing users will also be migrated to the disabled state after upgrading. You can still click **`Check Now`** manually on the Site Announcements page. To keep scheduled background polling, re-enable it under "Settings → General → Site Announcements" and adjust the polling interval as needed.
+:::
+
+- **New Features:**
+  - Site Announcements: Added a custom background polling interval from `15` to `1440` minutes, so you can control how often site announcements are checked. See [Site Announcements](./site-announcements.md).
+  - Settings Shortcuts: Added title-adjacent settings buttons to standalone pages such as Account Management, Auto Check-in, Balance History, Self-Hosted Site Channels, Model Sync, Site Announcements, and Usage Analytics, so you can jump directly to the related setting.
+- **Experience Optimizations:**
+  - Site Announcements: The site filter is now searchable and sorted by announcement count, with counts shown in the list, making the right site easier to find when many accounts are configured.
+  - Site Announcements: Page descriptions, empty states, and title actions now point directly to automatic polling settings, making the next step clearer when polling is off.
+  - Self-Hosted Site Management: Backend configuration is now passed by site type, reducing the risk of using the wrong configuration when switching between self-hosted backends, and sensitive configuration is better protected in diagnostics.
+- **Bug Fixes:**
+  - Site Announcements: Fixed polling cooldown alignment after browser alarm restoration, so background checks follow the configured interval more accurately.
+  - Site Announcements: **`Check Now`** now respects the current filter scope and is disabled while data is loading or when filters have no results, avoiding unnecessary checks for unrelated sites.
+  - Site Announcements: Fixed announcement titles with inline HTML being truncated or displayed incorrectly.
+  - Settings Search: Corrected the Usage Sync interval search target so search results jump to the actual sync interval setting.
+
+**Location Hints:**
+- Site Announcements: Open "Settings → Site Announcements" to view, manually check, and filter announcements.
+- Site Announcement Auto Polling: Open "Settings → General → Site Announcements" to enable or disable polling and set the interval.
+- Page Settings Shortcuts: Use the gear button next to titles on supported standalone pages.
+- Usage Sync Interval: Search for "Usage sync interval" in settings search, or open "Settings → Usage Analytics".
+
 ## 3.39.0
 - **New Features:**
   - Site Support: Added `v-api` site type support. Accounts can now be detected and managed according to this site's compatibility rules. See [Supported Sites](./supported-sites.md).
