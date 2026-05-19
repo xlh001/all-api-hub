@@ -92,10 +92,7 @@ export default function UsageHistorySyncSettingsSection({
             />
           </div>
 
-          <div
-            id="usage-history-sync-interval-hours"
-            className="grid grid-cols-1 gap-2"
-          >
+          <div className="grid grid-cols-1 gap-2">
             <Label
               htmlFor="usage-history-sync-schedule-mode"
               className="text-sm font-medium"
@@ -130,7 +127,10 @@ export default function UsageHistorySyncSettingsSection({
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-2">
+          <div
+            id="usage-history-sync-interval-hours"
+            className="grid grid-cols-1 gap-2"
+          >
             <Label className="text-sm font-medium">
               {t("settings.syncIntervalHours")}
             </Label>
