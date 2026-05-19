@@ -22,6 +22,7 @@ import {
 import {
   clearAlarm,
   createAlarm,
+  getAlarm,
   hasAlarmsAPI,
   onAlarm,
 } from "~/utils/browser/browserApi"
@@ -147,6 +148,110 @@ function createSiteState(params: {
 }
 
 /**
+ * Returns the timestamp when a site's cooldown expires, if it has been checked.
+ */
+function getAnnouncementCooldownExpiresAt(params: {
+  siteState: Pick<SiteAnnouncementSiteState, "lastCheckedAt">
+  intervalMinutes: number
+}): number | null {
+  const lastCheckedAt = params.siteState.lastCheckedAt
+  if (typeof lastCheckedAt !== "number") {
+    return null
+  }
+
+  return (
+    lastCheckedAt + clampIntervalMinutes(params.intervalMinutes) * 60 * 1000
+  )
+}
+
+/**
+ * Returns whether a site announcement check is still inside its cooldown window.
+ */
+function isWithinAnnouncementCooldown(params: {
+  siteState: Pick<SiteAnnouncementSiteState, "lastCheckedAt">
+  now: number
+  intervalMinutes: number
+}): boolean {
+  const expiresAt = getAnnouncementCooldownExpiresAt(params)
+  return expiresAt != null && params.now < expiresAt
+}
+
+/**
+ * Recreates the site announcement alarm with a specific first-run delay.
+ */
+async function rescheduleAnnouncementAlarm(params: {
+  intervalMinutes: number
+  delayInMinutes: number
+}): Promise<void> {
+  await clearAlarm(SITE_ANNOUNCEMENTS_ALARM_NAME)
+  await createAlarm(SITE_ANNOUNCEMENTS_ALARM_NAME, {
+    periodInMinutes: params.intervalMinutes,
+    delayInMinutes: params.delayInMinutes,
+  })
+}
+
+/**
+ * Chooses the next alarm delay from persisted site cooldowns.
+ */
+function getAnnouncementAlarmDelayMinutes(params: {
+  intervalMinutes: number
+  siteStates: SiteAnnouncementSiteState[]
+  accounts: SiteAccount[]
+}): number {
+  const now = Date.now()
+  let nextDelayMinutes = Number.POSITIVE_INFINITY
+  const accounts = dedupeCommonAccounts(params.accounts)
+  const enabledSiteKeys = new Set(
+    accounts.map((account) => {
+      const provider = getSiteAnnouncementProvider(account.site_type)
+      return provider.createSiteKey({
+        accountId: account.id,
+        siteType: account.site_type,
+        baseUrl: account.site_url,
+      })
+    }),
+  )
+  const siteKeysWithStatus = new Set(
+    params.siteStates
+      .filter((siteState) => enabledSiteKeys.has(siteState.siteKey))
+      .map((siteState) => siteState.siteKey),
+  )
+
+  for (const account of accounts) {
+    const provider = getSiteAnnouncementProvider(account.site_type)
+    const siteKey = provider.createSiteKey({
+      accountId: account.id,
+      siteType: account.site_type,
+      baseUrl: account.site_url,
+    })
+    if (!siteKeysWithStatus.has(siteKey)) {
+      return 1
+    }
+  }
+
+  for (const siteState of params.siteStates) {
+    if (!enabledSiteKeys.has(siteState.siteKey)) {
+      continue
+    }
+
+    const expiresAt = getAnnouncementCooldownExpiresAt({
+      siteState,
+      intervalMinutes: params.intervalMinutes,
+    })
+    if (expiresAt == null) {
+      continue
+    }
+
+    nextDelayMinutes = Math.min(
+      nextDelayMinutes,
+      Math.max(1, Math.ceil((expiresAt - now) / 60_000)),
+    )
+  }
+
+  return Number.isFinite(nextDelayMinutes) ? nextDelayMinutes : 1
+}
+
+/**
  * Removes duplicate common-provider accounts that share one announcement source.
  */
 function dedupeCommonAccounts(accounts: SiteAccount[]): SiteAccount[] {
@@ -174,17 +279,6 @@ function dedupeCommonAccounts(accounts: SiteAccount[]): SiteAccount[] {
   }
 
   return result
-}
-
-/**
- * Reads the master polling switch. Manual checks bypass this so users can
- * refresh the announcement page on demand even when automatic polling is off.
- */
-async function isAutomaticPollingEnabled(): Promise<boolean> {
-  const prefs = await userPreferences.getPreferences()
-  return normalizeSiteAnnouncementPreferences(
-    prefs.siteAnnouncementNotifications,
-  ).enabled
 }
 
 class SiteAnnouncementScheduler {
@@ -216,14 +310,34 @@ class SiteAnnouncementScheduler {
       return
     }
 
+    const intervalMinutes = clampIntervalMinutes(config.intervalMinutes)
+
     if (!config.enabled) {
       await clearAlarm(SITE_ANNOUNCEMENTS_ALARM_NAME)
       return
     }
 
-    await createAlarm(SITE_ANNOUNCEMENTS_ALARM_NAME, {
-      periodInMinutes: clampIntervalMinutes(config.intervalMinutes),
-      delayInMinutes: 1,
+    const siteStates = await siteAnnouncementStorage.getStatus()
+    const accounts = await accountStorage.getEnabledAccounts()
+    const delayInMinutes = getAnnouncementAlarmDelayMinutes({
+      intervalMinutes,
+      siteStates,
+      accounts,
+    })
+    const existingAlarm = await getAlarm(SITE_ANNOUNCEMENTS_ALARM_NAME)
+    if (
+      existingAlarm &&
+      existingAlarm.periodInMinutes != null &&
+      Math.abs(existingAlarm.periodInMinutes - intervalMinutes) < 0.001 &&
+      existingAlarm.scheduledTime != null &&
+      existingAlarm.scheduledTime <= Date.now() + delayInMinutes * 60_000
+    ) {
+      return
+    }
+
+    await rescheduleAnnouncementAlarm({
+      intervalMinutes,
+      delayInMinutes,
     })
   }
 
@@ -232,6 +346,10 @@ class SiteAnnouncementScheduler {
     await this.applySchedule(
       normalizeSiteAnnouncementPreferences(prefs.siteAnnouncementNotifications),
     )
+  }
+
+  async reconcileScheduleFromPreferences(): Promise<void> {
+    await this.applyScheduleFromPreferences()
   }
 
   async updateSettings(
@@ -279,9 +397,27 @@ class SiteAnnouncementScheduler {
     }
 
     try {
-      if (params.trigger === "alarm" && !(await isAutomaticPollingEnabled())) {
+      const automaticPollingPreferences =
+        params.trigger === "alarm"
+          ? normalizeSiteAnnouncementPreferences(
+              (await userPreferences.getPreferences())
+                .siteAnnouncementNotifications,
+            )
+          : undefined
+
+      if (params.trigger === "alarm" && !automaticPollingPreferences?.enabled) {
         return result
       }
+
+      const siteStatesByKey =
+        params.trigger === "alarm"
+          ? new Map(
+              (await siteAnnouncementStorage.getStatus()).map((site) => [
+                site.siteKey,
+                site,
+              ]),
+            )
+          : undefined
 
       const accounts = params.accountIds?.length
         ? await Promise.all(
@@ -292,6 +428,7 @@ class SiteAnnouncementScheduler {
               .filter((account) => account.disabled !== true),
           )
         : await accountStorage.getEnabledAccounts()
+      let nextCooldownExpiresAt: number | undefined
 
       for (const account of dedupeCommonAccounts(accounts)) {
         const provider = getSiteAnnouncementProvider(account.site_type)
@@ -302,6 +439,37 @@ class SiteAnnouncementScheduler {
           baseUrl: account.site_url,
         })
         const now = Date.now()
+        const existingSiteState = siteStatesByKey?.get(siteKey)
+
+        if (
+          params.trigger === "alarm" &&
+          automaticPollingPreferences &&
+          existingSiteState &&
+          isWithinAnnouncementCooldown({
+            siteState: existingSiteState,
+            now,
+            intervalMinutes: automaticPollingPreferences.intervalMinutes,
+          })
+        ) {
+          const cooldownExpiresAt = getAnnouncementCooldownExpiresAt({
+            siteState: existingSiteState,
+            intervalMinutes: automaticPollingPreferences.intervalMinutes,
+          })
+          if (cooldownExpiresAt != null) {
+            nextCooldownExpiresAt = Math.min(
+              nextCooldownExpiresAt ?? cooldownExpiresAt,
+              cooldownExpiresAt,
+            )
+          }
+
+          logger.debug("Skipping site announcement check within cooldown", {
+            siteKey,
+            intervalMinutes: automaticPollingPreferences.intervalMinutes,
+            lastCheckedAt: existingSiteState.lastCheckedAt ?? null,
+          })
+          continue
+        }
+
         result.checked += 1
 
         try {
@@ -372,6 +540,24 @@ class SiteAnnouncementScheduler {
         }
       }
 
+      if (
+        params.trigger === "alarm" &&
+        automaticPollingPreferences?.enabled &&
+        nextCooldownExpiresAt != null
+      ) {
+        const intervalMinutes = clampIntervalMinutes(
+          automaticPollingPreferences.intervalMinutes,
+        )
+        const delayInMinutes = Math.max(
+          1,
+          Math.ceil((nextCooldownExpiresAt - Date.now()) / 60_000),
+        )
+        await rescheduleAnnouncementAlarm({
+          intervalMinutes,
+          delayInMinutes,
+        })
+      }
+
       return result
     } catch (error) {
       logger.error("Site announcement check failed", error)
@@ -425,6 +611,11 @@ export const handleSiteAnnouncementMessage = async (
   try {
     switch (request.action) {
       case RuntimeActionIds.SiteAnnouncementsGetStatus: {
+        try {
+          await siteAnnouncementScheduler.reconcileScheduleFromPreferences()
+        } catch (error) {
+          logger.warn("Failed to reconcile site announcement schedule", error)
+        }
         sendResponse({
           success: true,
           data: await siteAnnouncementStorage.getStatus(),
