@@ -241,6 +241,76 @@ describe("SiteAnnouncementsPage", () => {
     })
   })
 
+  it("sorts site filter options by announcement count and supports search", async () => {
+    const user = userEvent.setup()
+    const betaSecondRecord: SiteAnnouncementRecord = {
+      ...records[1]!,
+      id: "announcement-3",
+      fingerprint: "fp-3",
+      title: "Beta follow-up",
+    }
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
+      switch (message.action) {
+        case RuntimeActionIds.SiteAnnouncementsListRecords:
+          return { success: true, data: [...records, betaSecondRecord] }
+        case RuntimeActionIds.SiteAnnouncementsGetStatus:
+          return {
+            success: true,
+            data: [
+              ...status,
+              {
+                siteKey: "site-3",
+                siteName: "Gamma API",
+                siteType: "new-api",
+                baseUrl: "https://gamma.example.com",
+                accountId: "account-3",
+                providerId: "common",
+                status: "success",
+                records: [],
+              },
+            ],
+          }
+        default:
+          return { success: true }
+      }
+    })
+
+    render(<SiteAnnouncementsPage />)
+
+    await screen.findByText("siteAnnouncements:title")
+    await user.click(
+      screen.getByRole("combobox", {
+        name: "siteAnnouncements:filters.site",
+      }),
+    )
+
+    const options = await screen.findAllByRole("option")
+    expect(options.map((option) => option.textContent)).toEqual([
+      "siteAnnouncements:filters.allSites",
+      "Beta API2",
+      "Alpha API1",
+      "Gamma API0",
+    ])
+    const commandList = document.querySelector('[data-slot="command-list"]')
+    expect(document.querySelector('[data-slot="popover-content"]')).toHaveClass(
+      "max-h-(--radix-popover-content-available-height)",
+      "overflow-hidden",
+    )
+    expect(commandList).toHaveClass(
+      "max-h-[calc(var(--radix-popover-content-available-height)-2.25rem)]",
+    )
+    expect(commandList).toHaveTextContent("2")
+    expect(commandList).toHaveTextContent("1")
+    expect(commandList).toHaveTextContent("0")
+
+    await user.type(
+      screen.getByPlaceholderText("siteAnnouncements:filters.searchSite"),
+      "gamma",
+    )
+    expect(screen.getByRole("option", { name: "Gamma API" })).toBeVisible()
+    expect(screen.queryByRole("option", { name: "Beta API" })).toBeNull()
+  })
+
   it("marks unread Sub2API announcements as read only when expanding details", async () => {
     const user = userEvent.setup()
     const unreadSub2ApiRecord = {
