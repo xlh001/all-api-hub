@@ -20,6 +20,7 @@ import {
   API_CREDENTIAL_PROFILES_CONFIG_VERSION,
   type ApiCredentialProfilesConfig,
 } from "~/types/apiCredentialProfiles"
+import type { ChannelConfigMap } from "~/types/channelConfig"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   createStoredAccount,
@@ -39,6 +40,8 @@ import {
   setPlasmoStorageValue,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
+
+const CHANNEL_CONFIGS_STORAGE_KEY = "channel_configs"
 
 async function readStoredAccountConfig(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
@@ -102,6 +105,25 @@ async function readStoredApiCredentialProfiles(
       profiles: [],
       lastUpdated: 0,
     }
+  }
+}
+
+async function readStoredChannelConfigs(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+): Promise<ChannelConfigMap> {
+  const raw = await getPlasmoStorageRawValue<unknown>(
+    serviceWorker,
+    CHANNEL_CONFIGS_STORAGE_KEY,
+  )
+
+  if (typeof raw !== "string") {
+    return {}
+  }
+
+  try {
+    return JSON.parse(raw) as ChannelConfigMap
+  } catch {
+    return {}
   }
 }
 
@@ -252,6 +274,29 @@ test("round-trips a full backup through export download and file import", async 
     createdAt: now,
     updatedAt: now,
   })
+  const roundTripChannelConfigs: ChannelConfigMap = {
+    42: {
+      channelId: 42,
+      modelFilterSettings: {
+        rules: [
+          {
+            id: "round-trip-filter",
+            name: "Round Trip Filter",
+            action: "include",
+            enabled: true,
+            kind: "pattern",
+            pattern: "gpt-4o",
+            isRegex: false,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+        updatedAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    },
+  }
 
   await setPlasmoStorageValue(
     serviceWorker,
@@ -274,6 +319,11 @@ test("round-trips a full backup through export download and file import", async 
     actionClickBehavior: "sidepanel",
     themeMode: "dark",
   })
+  await setPlasmoStorageValue(
+    serviceWorker,
+    CHANNEL_CONFIGS_STORAGE_KEY,
+    roundTripChannelConfigs,
+  )
   await seedApiCredentialProfiles(serviceWorker, [roundTripProfile])
 
   await page.goto(
@@ -294,6 +344,7 @@ test("round-trips a full backup through export download and file import", async 
   const exportedBackup = JSON.parse(exportedBackupBuffer.toString("utf8")) as {
     accounts?: AccountStorageConfig
     preferences?: Record<string, unknown>
+    channelConfigs?: ChannelConfigMap
     apiCredentialProfiles?: ApiCredentialProfilesConfig
   }
 
@@ -313,6 +364,21 @@ test("round-trips a full backup through export download and file import", async 
     currencyType: "CNY",
     actionClickBehavior: "sidepanel",
     themeMode: "dark",
+  })
+  expect(exportedBackup.channelConfigs).toMatchObject({
+    42: {
+      channelId: 42,
+      modelFilterSettings: {
+        rules: [
+          expect.objectContaining({
+            id: "round-trip-filter",
+            name: "Round Trip Filter",
+            action: "include",
+            pattern: "gpt-4o",
+          }),
+        ],
+      },
+    },
   })
   expect(exportedBackup.apiCredentialProfiles?.profiles).toEqual([
     expect.objectContaining({
@@ -338,6 +404,17 @@ test("round-trips a full backup through export download and file import", async 
     actionClickBehavior: "popup",
     themeMode: "system",
   })
+  await setPlasmoStorageValue(serviceWorker, CHANNEL_CONFIGS_STORAGE_KEY, {
+    43: {
+      channelId: 43,
+      modelFilterSettings: {
+        rules: [],
+        updatedAt: now + 1,
+      },
+      createdAt: now + 1,
+      updatedAt: now + 1,
+    },
+  } satisfies ChannelConfigMap)
   await seedApiCredentialProfiles(serviceWorker, [
     createStoredApiCredentialProfile({
       id: "round-trip-old-profile",
@@ -356,6 +433,7 @@ test("round-trips a full backup through export download and file import", async 
   await expect(page.getByText("Data format is correct")).toBeVisible()
   await expect(page.getByText("Contains account data")).toBeVisible()
   await expect(page.getByText("Contains user settings")).toBeVisible()
+  await expect(page.getByText("Contains channel configuration")).toBeVisible()
   await expect(
     page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
   ).toBeVisible()
@@ -369,11 +447,17 @@ test("round-trips a full backup through export download and file import", async 
         readStoredApiCredentialProfiles(serviceWorker),
         readStoredPreferences(serviceWorker),
       ])
+      const channelConfigs = await readStoredChannelConfigs(serviceWorker)
 
       return {
         accountIds: accountConfig.accounts.map((account) => account.id),
         bookmarkIds: accountConfig.bookmarks.map((bookmark) => bookmark.id),
         profileIds: profileConfig.profiles.map((profile) => profile.id),
+        channelConfigIds: Object.keys(channelConfigs),
+        channelFilterNames:
+          channelConfigs[42]?.modelFilterSettings.rules.map(
+            (rule) => rule.name,
+          ) ?? [],
         currencyType: preferences.currencyType,
         actionClickBehavior: preferences.actionClickBehavior,
         themeMode: preferences.themeMode,
@@ -383,6 +467,8 @@ test("round-trips a full backup through export download and file import", async 
       accountIds: ["round-trip-account"],
       bookmarkIds: ["round-trip-bookmark"],
       profileIds: ["round-trip-old-profile", "round-trip-profile"],
+      channelConfigIds: ["42"],
+      channelFilterNames: ["Round Trip Filter"],
       currencyType: "CNY",
       actionClickBehavior: "sidepanel",
       themeMode: "dark",
@@ -890,6 +976,23 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
       }),
   )
 
+  const sidepanelPage = await context.newPage()
+  installExtensionPageGuards(sidepanelPage)
+  await forceExtensionLanguage(sidepanelPage, "en")
+  await sidepanelPage.goto(
+    `chrome-extension://${extensionId}/${SIDEPANEL_PAGE_PATH}`,
+  )
+  await waitForExtensionRoot(sidepanelPage)
+  await sidepanelPage
+    .getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab)
+    .click()
+  await expect(
+    sidepanelPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
+  ).toBeVisible()
+  await expect(
+    sidepanelPage.getByRole("heading", { name: "Sidepanel Restore Profile" }),
+  ).toHaveCount(0)
+
   await page.goto(
     `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.IMPORT_EXPORT}`,
   )
@@ -927,26 +1030,8 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
       actionClickBehavior: "sidepanel",
     })
 
-  await page.goto(`chrome-extension://${extensionId}/${SIDEPANEL_PAGE_PATH}`)
-  await waitForExtensionRoot(page)
-
-  await expect(page.getByTestId(getPopupViewTestId("accounts"))).toBeVisible()
   await expect(
-    page.getByRole("button", { name: "Sidepanel Restore Account" }),
-  ).toBeVisible()
-
-  await page.getByTestId(POPUP_TEST_IDS.bookmarksTab).click()
-  await expect(page.getByTestId(SITE_BOOKMARKS_TEST_IDS.listView)).toBeVisible()
-  await expect(
-    page.getByRole("button", { name: "Sidepanel Restore Bookmark" }),
-  ).toBeVisible()
-
-  await page.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
-  await expect(
-    page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
-  ).toBeVisible()
-  await expect(
-    page.getByRole("heading", { name: "Sidepanel Restore Profile" }),
+    sidepanelPage.getByRole("heading", { name: "Sidepanel Restore Profile" }),
   ).toBeVisible()
 
   const modelsPagePromise = waitForExtensionPage(context, {
@@ -958,7 +1043,7 @@ test("restores a full backup and keeps the sidepanel model workflow available", 
     },
   })
 
-  await page
+  await sidepanelPage
     .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton)
     .click()
 

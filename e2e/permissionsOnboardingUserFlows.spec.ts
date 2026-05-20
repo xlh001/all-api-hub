@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test"
+import type { Page, Worker } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
@@ -18,7 +18,6 @@ import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
 const OPTIONAL_PERMISSIONS_STORAGE_KEY = "optional_permissions_state"
 const COOKIE_PERMISSION = "cookies"
-
 async function hasOptionalPermission(page: Page, permission: string) {
   return await page.evaluate(async (permission) => {
     const chromeApi = (
@@ -33,6 +32,36 @@ async function hasOptionalPermission(page: Page, permission: string) {
       permissions: [permission],
     })
   }, permission)
+}
+
+async function getManifestOptionalPermissions(page: Page) {
+  return await page.evaluate(() => {
+    const chromeApi = (
+      globalThis as typeof globalThis & { chrome?: typeof chrome }
+    ).chrome
+
+    if (!chromeApi?.runtime?.getManifest) {
+      throw new Error("chrome.runtime.getManifest is unavailable")
+    }
+
+    return [...(chromeApi.runtime.getManifest().optional_permissions ?? [])]
+  })
+}
+
+async function getLastSeenOptionalPermissions(serviceWorker: Worker) {
+  const raw = await getPlasmoStorageRawValue<unknown>(
+    serviceWorker,
+    OPTIONAL_PERMISSIONS_STORAGE_KEY,
+  )
+
+  if (typeof raw !== "string") return []
+
+  try {
+    const parsed = JSON.parse(raw) as { lastSeen?: string[] }
+    return parsed.lastSeen ?? []
+  } catch {
+    return []
+  }
 }
 
 test.beforeEach(async ({ context, page }) => {
@@ -72,27 +101,8 @@ test("lets first-use users defer recommended permissions and continue into setti
   await expect(page.getByRole("heading", { name: "Permissions" })).toBeVisible()
 
   await expect
-    .poll(async () => {
-      const raw = await getPlasmoStorageRawValue<unknown>(
-        serviceWorker,
-        OPTIONAL_PERMISSIONS_STORAGE_KEY,
-      )
-
-      if (typeof raw !== "string") return []
-
-      try {
-        const parsed = JSON.parse(raw) as { lastSeen?: string[] }
-        return parsed.lastSeen ?? []
-      } catch {
-        return []
-      }
-    })
-    .toEqual([
-      "clipboardRead",
-      "cookies",
-      "declarativeNetRequestWithHostAccess",
-      "notifications",
-    ])
+    .poll(() => getLastSeenOptionalPermissions(serviceWorker))
+    .toEqual((await getManifestOptionalPermissions(page)).sort())
 })
 
 test("lets users grant and revoke the cookies permission from settings", async ({
