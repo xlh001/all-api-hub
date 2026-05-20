@@ -85,6 +85,21 @@ async function expectBrowserTabOpened(
     .toBe(true)
 }
 
+async function expectBrowserTabNotOpened(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  url: string,
+) {
+  await expect
+    .poll(async () => {
+      return await serviceWorker.evaluate(async (targetUrl) => {
+        const chromeApi = (globalThis as any).chrome
+        const tabs = await chromeApi.tabs.query({})
+        return tabs.some((tab: { url?: string }) => tab.url === targetUrl)
+      }, url)
+    })
+    .toBe(false)
+}
+
 function getAccountRowByName(page: Page, name: string) {
   return page
     .getByTestId(new RegExp(`^${getAccountManagementListItemTestId("")}`))
@@ -354,6 +369,176 @@ test("opens a saved account site from the popup accounts tab", async ({
     serviceWorker,
     "https://account-open.example.com/",
   )
+})
+
+test("opens pending external check-ins from the popup and marks them checked in", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const today = new Date().toISOString().split("T")[0]
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "popup-pending-external-checkin",
+      site_name: "Pending External Check-in",
+      site_url: "https://pending-external.example.com",
+      account_info: {
+        id: 611,
+        username: "pending-external-user",
+        access_token: "pending-external-token",
+      },
+      checkIn: {
+        enableDetection: false,
+        customCheckIn: {
+          url: "https://benefits.example.com/pending/checkin",
+          redeemUrl: "https://benefits.example.com/pending/redeem",
+          isCheckedInToday: false,
+          openRedeemWithCheckIn: true,
+        },
+      },
+    }),
+    createStoredAccount({
+      id: "popup-done-external-checkin",
+      site_name: "Done External Check-in",
+      site_url: "https://done-external.example.com",
+      account_info: {
+        id: 612,
+        username: "done-external-user",
+        access_token: "done-external-token",
+      },
+      checkIn: {
+        enableDetection: false,
+        customCheckIn: {
+          url: "https://benefits.example.com/done/checkin",
+          redeemUrl: "https://benefits.example.com/done/redeem",
+          isCheckedInToday: true,
+          lastCheckInDate: today,
+          openRedeemWithCheckIn: true,
+        },
+      },
+    }),
+  ])
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await page
+    .getByRole("button", { name: "Open all external check-ins" })
+    .click()
+
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://benefits.example.com/pending/redeem",
+  )
+  await expectBrowserTabOpened(
+    serviceWorker,
+    "https://benefits.example.com/pending/checkin",
+  )
+  await expectBrowserTabNotOpened(
+    serviceWorker,
+    "https://benefits.example.com/done/redeem",
+  )
+  await expectBrowserTabNotOpened(
+    serviceWorker,
+    "https://benefits.example.com/done/checkin",
+  )
+
+  await expect(
+    page.getByText("Opened external check-in for 1 account (unchecked only)."),
+  ).toBeVisible()
+
+  await expect
+    .poll(async () => {
+      const accounts = await readStoredAccounts(serviceWorker)
+      return accounts.find(
+        (account) => account.id === "popup-pending-external-checkin",
+      )?.checkIn.customCheckIn?.isCheckedInToday
+    })
+    .toBe(true)
+})
+
+test("ctrl-clicking popup external check-ins opens already checked accounts too", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const today = new Date().toISOString().split("T")[0]
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "popup-pending-external-checkin",
+      site_name: "Pending External Check-in",
+      site_url: "https://pending-external.example.com",
+      account_info: {
+        id: 621,
+        username: "pending-external-user",
+        access_token: "pending-external-token",
+      },
+      checkIn: {
+        enableDetection: false,
+        customCheckIn: {
+          url: "https://benefits.example.com/ctrl-pending/checkin",
+          redeemUrl: "https://benefits.example.com/ctrl-pending/redeem",
+          isCheckedInToday: false,
+          openRedeemWithCheckIn: true,
+        },
+      },
+    }),
+    createStoredAccount({
+      id: "popup-done-external-checkin",
+      site_name: "Done External Check-in",
+      site_url: "https://done-external.example.com",
+      account_info: {
+        id: 622,
+        username: "done-external-user",
+        access_token: "done-external-token",
+      },
+      checkIn: {
+        enableDetection: false,
+        customCheckIn: {
+          url: "https://benefits.example.com/ctrl-done/checkin",
+          redeemUrl: "https://benefits.example.com/ctrl-done/redeem",
+          isCheckedInToday: true,
+          lastCheckInDate: today,
+          openRedeemWithCheckIn: true,
+        },
+      },
+    }),
+  ])
+
+  await page.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(page)
+
+  await page
+    .getByRole("button", { name: "Open all external check-ins" })
+    .click({ modifiers: ["Control"] })
+
+  for (const targetUrl of [
+    "https://benefits.example.com/ctrl-pending/redeem",
+    "https://benefits.example.com/ctrl-pending/checkin",
+    "https://benefits.example.com/ctrl-done/redeem",
+    "https://benefits.example.com/ctrl-done/checkin",
+  ]) {
+    await expectBrowserTabOpened(serviceWorker, targetUrl)
+  }
+
+  await expect(
+    page.getByText("Opened external check-ins for 2 accounts (all)."),
+  ).toBeVisible()
+
+  await expect
+    .poll(async () => {
+      const accounts = await readStoredAccounts(serviceWorker)
+      return accounts.map((account) => ({
+        id: account.id,
+        checked: account.checkIn.customCheckIn?.isCheckedInToday,
+      }))
+    })
+    .toEqual([
+      { id: "popup-pending-external-checkin", checked: true },
+      { id: "popup-done-external-checkin", checked: true },
+    ])
 })
 
 test("adds a bookmark from the popup bookmarks tab and keeps it in storage", async ({
