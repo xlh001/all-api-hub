@@ -1,5 +1,6 @@
 import { OPTIONS_PAGE_PATH, POPUP_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { WEB_AI_API_CHECK_TEST_IDS } from "~/entrypoints/content/webAiApiCheck/testIds"
 import { POPUP_TEST_IDS } from "~/entrypoints/popup/testIds"
 import {
@@ -23,6 +24,65 @@ import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 const TEST_PAGE_URL = "https://api-console.example.test/console"
 const API_BASE_URL = "https://api-console.example.test/api"
 const API_KEY = "sk-e2e-content-api-check-key"
+
+async function sendApiCheckContextMenuTrigger(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  params: {
+    pageUrl: string
+    selectionText: string
+  },
+) {
+  await expect
+    .poll(async () => {
+      return await serviceWorker.evaluate(
+        async ({ action, pageUrl, selectionText }) => {
+          const chromeApi = (globalThis as any).chrome
+          const tabs = await chromeApi.tabs.query({})
+          const targetTab = tabs.find(
+            (tab: { id?: number; url?: string }) => tab.url === pageUrl,
+          )
+
+          if (targetTab?.id == null) {
+            return { success: false, error: "Target tab not found" }
+          }
+
+          return await new Promise<{ success: boolean; error?: string }>(
+            (resolve) => {
+              chromeApi.tabs.sendMessage(
+                targetTab.id,
+                {
+                  action,
+                  pageUrl,
+                  selectionText,
+                },
+                () => {
+                  const error = chromeApi.runtime?.lastError
+                  const errorMessage =
+                    typeof error?.message === "string" ? error.message : ""
+                  if (errorMessage.includes("message port closed")) {
+                    resolve({ success: true })
+                    return
+                  }
+
+                  resolve(
+                    errorMessage
+                      ? { success: false, error: errorMessage }
+                      : { success: true },
+                  )
+                },
+              )
+            },
+          )
+        },
+        {
+          action: RuntimeActionIds.ApiCheckContextMenuTrigger,
+          pageUrl: params.pageUrl,
+          selectionText: params.selectionText,
+        },
+      )
+    })
+    .toMatchObject({ success: true })
+}
 
 test.beforeEach(async ({ context, page }) => {
   installExtensionPageGuards(page)
@@ -201,4 +261,39 @@ test("turns selected web API credentials into a verified profile and model catal
       .getByText("Profile: api-console.example.test", { exact: false })
       .first(),
   ).toBeVisible()
+})
+
+test("opens the API check modal from the background context-menu message path", async ({
+  context,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  await seedUserPreferences(serviceWorker, {
+    language: "en",
+    webAiApiCheck: {
+      enabled: true,
+      contextMenu: {
+        enabled: true,
+      },
+      autoDetect: {
+        enabled: false,
+        urlWhitelist: {
+          patterns: [],
+        },
+      },
+    },
+  })
+
+  await page.goto(TEST_PAGE_URL)
+
+  const selectedCredentialText = `base_url=${API_BASE_URL}\napi_key=${API_KEY}`
+  await sendApiCheckContextMenuTrigger(serviceWorker, {
+    pageUrl: TEST_PAGE_URL,
+    selectionText: selectedCredentialText,
+  })
+
+  const contentHost = page.locator("all-api-hub-redemption-toast")
+  const modal = contentHost.getByTestId(WEB_AI_API_CHECK_TEST_IDS.modal)
+  await expect(modal).toBeVisible()
+  await expect(modal.locator("input").nth(0)).toHaveValue(API_BASE_URL)
 })
