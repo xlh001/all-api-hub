@@ -1,4 +1,5 @@
 import { POPUP_PAGE_PATH } from "~/constants/extensionPages"
+import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { getPopupViewTestId } from "~/entrypoints/popup/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { SiteAccount } from "~/types"
@@ -37,6 +38,65 @@ async function readStoredAccounts(
   } catch {
     return []
   }
+}
+
+async function sendRedemptionContextMenuTrigger(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  params: {
+    pageUrl: string
+    selectionText: string
+  },
+) {
+  await expect
+    .poll(async () => {
+      return await serviceWorker.evaluate(
+        async ({ action, pageUrl, selectionText }) => {
+          const chromeApi = (globalThis as any).chrome
+          const tabs = await chromeApi.tabs.query({})
+          const targetTab = tabs.find(
+            (tab: { id?: number; url?: string }) => tab.url === pageUrl,
+          )
+
+          if (targetTab?.id == null) {
+            return { success: false, error: "Target tab not found" }
+          }
+
+          return await new Promise<{ success: boolean; error?: string }>(
+            (resolve) => {
+              chromeApi.tabs.sendMessage(
+                targetTab.id,
+                {
+                  action,
+                  pageUrl,
+                  selectionText,
+                },
+                () => {
+                  const error = chromeApi.runtime?.lastError
+                  const errorMessage =
+                    typeof error?.message === "string" ? error.message : ""
+                  if (errorMessage.includes("message port closed")) {
+                    resolve({ success: true })
+                    return
+                  }
+
+                  resolve(
+                    errorMessage
+                      ? { success: false, error: errorMessage }
+                      : { success: true },
+                  )
+                },
+              )
+            },
+          )
+        },
+        {
+          action: RuntimeActionIds.RedemptionAssistContextMenuTrigger,
+          pageUrl: params.pageUrl,
+          selectionText: params.selectionText,
+        },
+      )
+    })
+    .toMatchObject({ success: true })
 }
 
 test.beforeEach(async ({ page }) => {
@@ -180,4 +240,115 @@ test("detects a redemption code on a real page, redeems it for the matched accou
   await expect(
     popupPage.getByRole("button", { name: "Click to switch to CNY" }),
   ).toContainText("$3.00")
+})
+
+test("forwards selected redemption text from the background context-menu path to the live content listener", async ({
+  context,
+  page,
+}) => {
+  const redeemedCodes: string[] = []
+  await stubNewApiSiteRoutes(context, {
+    baseUrl: REDEEM_SITE_URL,
+    userId: 902,
+    username: "context-menu-user",
+    accessToken: "context-menu-access-token",
+    initialQuota: 2_000_000,
+    redemptionCreditQuota: 250_000,
+    onRedeemCode: (code) => {
+      redeemedCodes.push(code)
+    },
+  })
+
+  await context.route(REDEEM_PAGE_URL, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: `<!doctype html>
+        <html lang="en">
+          <head>
+            <title>Redeem Fixture</title>
+          </head>
+          <body>
+            <main>
+              <h1>Redeem Center</h1>
+              <p id="context-menu-code">${REDEMPTION_CODE}</p>
+            </main>
+          </body>
+        </html>`,
+    })
+  })
+
+  const serviceWorker = await getServiceWorker(context)
+  await seedUserPreferences(serviceWorker, {
+    language: "en",
+    currencyType: "USD",
+    redemptionAssist: {
+      enabled: true,
+      contextMenu: {
+        enabled: true,
+      },
+      relaxedCodeValidation: false,
+      urlWhitelist: {
+        enabled: true,
+        patterns: [],
+        includeAccountSiteUrls: false,
+        includeCheckInAndRedeemUrls: false,
+      },
+    },
+  })
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: "context-menu-redeem-account",
+      site_name: "Context Menu Hub",
+      site_url: REDEEM_SITE_URL,
+      exchange_rate: 7,
+      account_info: {
+        id: 902,
+        username: "context-menu-user",
+        access_token: "context-menu-access-token",
+        quota: 2_000_000,
+      },
+      checkIn: {
+        enableDetection: false,
+        customCheckIn: {
+          url: REDEEM_PAGE_URL,
+          redeemUrl: REDEEM_PAGE_URL,
+        },
+      },
+    }),
+  ])
+
+  await page.goto(REDEEM_PAGE_URL)
+  const selectedCode = await page
+    .locator("#context-menu-code")
+    .evaluate((target) => {
+      const selection = window.getSelection()
+      const range = document.createRange()
+      range.selectNodeContents(target)
+      selection?.removeAllRanges()
+      selection?.addRange(range)
+
+      return selection?.toString().trim() ?? ""
+    })
+  expect(selectedCode).toBe(REDEMPTION_CODE)
+
+  await sendRedemptionContextMenuTrigger(serviceWorker, {
+    pageUrl: REDEEM_PAGE_URL,
+    selectionText: selectedCode,
+  })
+
+  const contentHost = page.locator("all-api-hub-redemption-toast")
+  await expect(
+    contentHost.getByText("Redeemed successfully. Credited amount: 0.50"),
+  ).toBeVisible()
+  expect(redeemedCodes).toEqual([REDEMPTION_CODE])
+
+  await expect
+    .poll(async () => {
+      const accounts = await readStoredAccounts(serviceWorker)
+      return accounts.find(
+        (account) => account.id === "context-menu-redeem-account",
+      )?.account_info.quota
+    })
+    .toBe(2_250_000)
 })
