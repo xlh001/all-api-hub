@@ -610,6 +610,73 @@ test("imports API credential profiles from backup JSON and restores the popup ta
   ).toBeVisible()
 })
 
+test("refreshes an already-open popup API credentials tab after backup import", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const now = Date.parse("2026-03-30T13:30:00.000Z")
+  const importedProfile = createStoredApiCredentialProfile({
+    id: "live-refresh-profile",
+    name: "Live Refresh Profile",
+    baseUrl: "https://live-refresh-profile.example.com",
+    apiKey: "sk-live-refresh-profile",
+    createdAt: now,
+    updatedAt: now,
+  })
+  const backup = {
+    version: "2.0",
+    timestamp: now,
+    apiCredentialProfiles: {
+      version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+      profiles: [importedProfile],
+      lastUpdated: now,
+    },
+  }
+
+  const popupPage = await context.newPage()
+  installExtensionPageGuards(popupPage)
+  await forceExtensionLanguage(popupPage, "en")
+  await popupPage.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_PATH}`)
+  await waitForExtensionRoot(popupPage)
+
+  await popupPage.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
+  await expect(
+    popupPage.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.popupView),
+  ).toBeVisible()
+  await expect(popupPage.getByText("No API keys saved yet")).toBeVisible()
+  await expect(
+    popupPage.getByRole("heading", { name: "Live Refresh Profile" }),
+  ).toHaveCount(0)
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.IMPORT_EXPORT}`,
+  )
+  await waitForExtensionRoot(page)
+
+  await page.locator("#import-data-preview").fill(JSON.stringify(backup))
+
+  await expect(page.getByText("Data format is correct")).toBeVisible()
+  await expect(
+    page.getByTestId(IMPORT_EXPORT_TEST_IDS.containsApiCredentialProfiles),
+  ).toBeVisible()
+
+  await page.getByTestId(IMPORT_EXPORT_TEST_IDS.importBackupButton).click()
+
+  await expect
+    .poll(async () => {
+      const config = await readStoredApiCredentialProfiles(serviceWorker)
+      return config.profiles.map((profile) => profile.id)
+    })
+    .toEqual(["live-refresh-profile"])
+
+  await expect(
+    popupPage.getByRole("heading", { name: "Live Refresh Profile" }),
+  ).toBeVisible()
+  await expect(popupPage.getByText("No API keys saved yet")).toHaveCount(0)
+})
+
 test("restores a full backup and keeps common popup workflows available", async ({
   context,
   extensionId,

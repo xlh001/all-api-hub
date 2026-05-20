@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test"
+
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { BASIC_SETTINGS_TEST_IDS } from "~/features/BasicSettings/testIds"
@@ -15,6 +17,23 @@ import {
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
 const OPTIONAL_PERMISSIONS_STORAGE_KEY = "optional_permissions_state"
+const COOKIE_PERMISSION = "cookies"
+
+async function hasOptionalPermission(page: Page, permission: string) {
+  return await page.evaluate(async (permission) => {
+    const chromeApi = (
+      globalThis as typeof globalThis & { chrome?: typeof chrome }
+    ).chrome
+
+    if (!chromeApi?.permissions) {
+      throw new Error("chrome.permissions is unavailable in extension context")
+    }
+
+    return await chromeApi.permissions.contains({
+      permissions: [permission],
+    })
+  }, permission)
+}
 
 test.beforeEach(async ({ context, page }) => {
   installExtensionPageGuards(page)
@@ -74,4 +93,44 @@ test("lets first-use users defer recommended permissions and continue into setti
       "declarativeNetRequestWithHostAccess",
       "notifications",
     ])
+})
+
+test("lets users grant and revoke the cookies permission from settings", async ({
+  extensionId,
+  page,
+}) => {
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}?tab=permissions#${MENU_ITEM_IDS.BASIC}`,
+  )
+  await waitForExtensionRoot(page)
+
+  await expect(page.getByRole("heading", { name: "Permissions" })).toBeVisible()
+
+  const cookiesRow = page.locator(`#${COOKIE_PERMISSION}`)
+  await expect(cookiesRow).toContainText("Cookies")
+
+  await expect
+    .poll(() => hasOptionalPermission(page, COOKIE_PERMISSION), {
+      message: "Cookies permission should start ungranted",
+    })
+    .toBe(false)
+  await expect(cookiesRow.getByText("Not granted")).toBeVisible()
+
+  await cookiesRow.getByRole("button", { name: "Allow (recommended)" }).click()
+
+  await expect
+    .poll(() => hasOptionalPermission(page, COOKIE_PERMISSION), {
+      message: "Cookies permission should be granted after Allow",
+    })
+    .toBe(true)
+  await expect(cookiesRow.getByText("Granted")).toBeVisible()
+
+  await cookiesRow.getByRole("button", { name: "Revoke" }).click()
+
+  await expect
+    .poll(() => hasOptionalPermission(page, COOKIE_PERMISSION), {
+      message: "Cookies permission should be revoked after Revoke",
+    })
+    .toBe(false)
+  await expect(cookiesRow.getByText("Not granted")).toBeVisible()
 })
