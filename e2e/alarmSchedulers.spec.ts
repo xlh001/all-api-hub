@@ -16,6 +16,7 @@ import { getDayKeyFromUnixSeconds as getUsageHistoryDayKeyFromUnixSeconds } from
 import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
 import { SITE_ANNOUNCEMENTS_ALARM_NAME } from "~/services/siteAnnouncements/constants"
 import { AUTO_CHECKIN_SCHEDULE_MODE } from "~/types/autoCheckin"
+import type { AutoCheckinStatus } from "~/types/autoCheckin"
 import type { DailyBalanceHistoryStore } from "~/types/dailyBalanceHistory"
 import { CHANNEL_STATUS, type ManagedSiteChannel } from "~/types/managedSite"
 import type { ExecutionResult } from "~/types/managedSiteModelSync"
@@ -36,6 +37,7 @@ import {
   expectPermissionOnboardingHidden,
   getPlasmoStorageRawValue,
   getServiceWorker,
+  setPlasmoStorageValue,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
@@ -49,6 +51,7 @@ const WEBDAV_BEST_EFFORT_UPLOAD_ALARM_NAME = "webdavAutoSyncBestEffortUpload"
 const MANAGED_SITE_ALARM_BASE_URL = "https://managed-alarm.example.com"
 const MANAGED_SITE_ALARM_ADMIN_TOKEN = "managed-alarm-token"
 const MANAGED_SITE_ALARM_USER_ID = "1"
+const AUTO_CHECKIN_STATUS_STORAGE_KEY = "autoCheckin_status"
 
 const EXPECTED_ENABLED_ALARMS = [
   AUTO_CHECKIN_DAILY_ALARM_NAME,
@@ -233,6 +236,24 @@ async function scheduleAlarmSoon(serviceWorker: Worker, alarmName: string) {
       when: Date.now() + 1_000,
     })
   }, alarmName)
+}
+
+async function seedAutoCheckinStatus(
+  serviceWorker: Worker,
+  status: AutoCheckinStatus,
+) {
+  await setPlasmoStorageValue(
+    serviceWorker,
+    AUTO_CHECKIN_STATUS_STORAGE_KEY,
+    status,
+  )
+}
+
+function getLocalDay(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
 async function stubManagedSiteAdminRoutes(
@@ -995,6 +1016,165 @@ test("runs WebDAV auto-sync upload when its MV3 alarm fires", async ({
       }),
     }),
   )
+})
+
+test("runs auto-checkin retries when its MV3 alarm fires", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const accountId = "auto-checkin-retry-alarm-account"
+  const accountName = "Retry Alarm Account"
+  const baseUrl = "https://auto-checkin-retry.example.com"
+  const today = getLocalDay()
+  let checkinRequests = 0
+
+  await context.route(`${baseUrl}/api/user/checkin`, (route) => {
+    checkinRequests += 1
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        message: "check-in completed on retry",
+        data: { checkin_date: today, quota_awarded: 1 },
+      }),
+    })
+  })
+
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: accountId,
+      site_name: accountName,
+      site_url: baseUrl,
+      site_type: SITE_TYPES.NEW_API,
+      account_info: {
+        id: 74,
+        username: "retry-alarm-user",
+        access_token: "retry-alarm-token",
+      },
+      checkIn: {
+        enableDetection: true,
+        autoCheckInEnabled: true,
+        siteStatus: {
+          isCheckedInToday: false,
+        },
+      },
+    }),
+  ])
+  await seedUserPreferences(serviceWorker, {
+    autoCheckin: {
+      ...DEFAULT_PREFERENCES.autoCheckin!,
+      globalEnabled: true,
+      pretriggerDailyOnUiOpen: false,
+      notifyUiOnCompletion: true,
+      windowStart: "00:00",
+      windowEnd: "23:59",
+      scheduleMode: AUTO_CHECKIN_SCHEDULE_MODE.DETERMINISTIC,
+      deterministicTime: "23:58",
+      retryStrategy: {
+        enabled: true,
+        intervalMinutes: 30,
+        maxAttemptsPerDay: 2,
+      },
+    },
+  })
+  await seedAutoCheckinStatus(serviceWorker, {
+    lastDailyRunDay: today,
+    lastRunAt: new Date(Date.now() - 60_000).toISOString(),
+    lastRunResult: "failed",
+    perAccount: {
+      [accountId]: {
+        accountId,
+        accountName,
+        status: "failed",
+        message: "initial daily failure",
+        timestamp: Date.now() - 60_000,
+      },
+    },
+    summary: {
+      totalEligible: 1,
+      executed: 1,
+      successCount: 0,
+      failedCount: 1,
+      skippedCount: 0,
+      needsRetry: true,
+    },
+    accountsSnapshot: [
+      {
+        accountId,
+        accountName,
+        siteType: SITE_TYPES.NEW_API,
+        detectionEnabled: true,
+        autoCheckinEnabled: true,
+        providerAvailable: true,
+        isCheckedInToday: false,
+        lastResult: {
+          accountId,
+          accountName,
+          status: "failed",
+          message: "initial daily failure",
+          timestamp: Date.now() - 60_000,
+        },
+      },
+    ],
+    retryState: {
+      day: today,
+      pendingAccountIds: [accountId],
+      attemptsByAccount: {
+        [accountId]: 1,
+      },
+    },
+    pendingRetry: true,
+    retryAlarmTargetDay: today,
+  })
+
+  await openExtensionPage(page, extensionId)
+  await scheduleAlarmSoon(serviceWorker, AUTO_CHECKIN_RETRY_ALARM_NAME)
+
+  await expect
+    .poll(
+      async () => {
+        return await readJsonStorageValue<AutoCheckinStatus>(
+          serviceWorker,
+          AUTO_CHECKIN_STATUS_STORAGE_KEY,
+        )
+      },
+      {
+        message:
+          "auto-checkin retry alarm should retry only today's pending account",
+        timeout: 15_000,
+      },
+    )
+    .toEqual(
+      expect.objectContaining({
+        lastRunResult: "success",
+        pendingRetry: false,
+        perAccount: expect.objectContaining({
+          [accountId]: expect.objectContaining({
+            accountId,
+            accountName,
+            status: "success",
+            rawMessage: "check-in completed on retry",
+          }),
+        }),
+        summary: expect.objectContaining({
+          totalEligible: 1,
+          executed: 1,
+          successCount: 1,
+          failedCount: 0,
+          skippedCount: 0,
+          needsRetry: false,
+        }),
+      }),
+    )
+  const statusAfterRetry = await readJsonStorageValue<AutoCheckinStatus>(
+    serviceWorker,
+    AUTO_CHECKIN_STATUS_STORAGE_KEY,
+  )
+  expect(statusAfterRetry?.retryState).toBeUndefined()
+  expect(checkinRequests).toBe(1)
 })
 
 test("runs managed-site model sync when its MV3 alarm fires", async ({
