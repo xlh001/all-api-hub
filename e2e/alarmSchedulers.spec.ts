@@ -26,9 +26,11 @@ import { WEBDAV_SYNC_STRATEGIES } from "~/types/webdav"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   createStoredAccount,
+  createStoredBookmark,
   forceExtensionLanguage,
   installExtensionPageGuards,
   seedStoredAccounts,
+  seedStoredBookmarks,
   seedUserPreferences,
   stubLlmMetadataIndex,
   stubNewApiSiteRoutes,
@@ -1018,6 +1020,88 @@ test("runs WebDAV auto-sync upload when its MV3 alarm fires", async ({
   )
 })
 
+test("runs WebDAV best-effort upload when its dedicated MV3 alarm fires", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const bookmarkId = "webdav-best-effort-bookmark"
+  const backupFileUrl =
+    "https://webdav-best-effort.example.com/alarm-backup.json"
+  const { uploadedPayloads } = await stubWebdavBackupRoutes(context, {
+    backupFileUrl,
+  })
+
+  await seedStoredBookmarks(serviceWorker, [
+    createStoredBookmark({
+      id: bookmarkId,
+      name: "Best Effort Alarm Bookmark",
+      url: "https://webdav-best-effort.example.com/docs",
+    }),
+  ])
+  await seedUserPreferences(serviceWorker, {
+    webdav: {
+      ...DEFAULT_PREFERENCES.webdav,
+      autoSync: true,
+      url: backupFileUrl,
+      username: "webdav-best-effort-user",
+      password: "webdav-best-effort-password",
+      syncInterval: 120,
+      syncStrategy: WEBDAV_SYNC_STRATEGIES.MERGE,
+      syncData: {
+        accounts: false,
+        bookmarks: true,
+        apiCredentialProfiles: false,
+        preferences: false,
+      },
+    },
+  })
+
+  await openExtensionPage(page, extensionId)
+  await scheduleAlarmSoon(serviceWorker, WEBDAV_BEST_EFFORT_UPLOAD_ALARM_NAME)
+
+  await expect
+    .poll(
+      async () => {
+        return uploadedPayloads.at(-1)
+      },
+      {
+        message:
+          "WebDAV best-effort alarm should upload a current local bookmark backup",
+        timeout: 15_000,
+      },
+    )
+    .toEqual(
+      expect.objectContaining({
+        accounts: expect.objectContaining({
+          bookmarks: [
+            expect.objectContaining({
+              id: bookmarkId,
+              name: "Best Effort Alarm Bookmark",
+            }),
+          ],
+        }),
+      }),
+    )
+
+  const statusResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+    data: { lastSyncStatus: string; lastSyncError: string | null }
+  }>(page, {
+    action: RuntimeActionIds.WebdavAutoSyncGetStatus,
+  })
+  expect(statusResponse).toEqual(
+    expect.objectContaining({
+      success: true,
+      data: expect.objectContaining({
+        lastSyncStatus: "success",
+        lastSyncError: null,
+      }),
+    }),
+  )
+})
+
 test("runs auto-checkin retries when its MV3 alarm fires", async ({
   context,
   extensionId,
@@ -1175,6 +1259,71 @@ test("runs auto-checkin retries when its MV3 alarm fires", async ({
   )
   expect(statusAfterRetry?.retryState).toBeUndefined()
   expect(checkinRequests).toBe(1)
+})
+
+test("checks latest release metadata when its MV3 alarm fires for an eligible install", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  let githubReleaseRequests = 0
+
+  await context.route(
+    "https://api.github.com/repos/qixing-jk/all-api-hub/releases/latest",
+    (route) => {
+      githubReleaseRequests += 1
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          tag_name: "v9.9.9",
+          html_url:
+            "https://github.com/qixing-jk/all-api-hub/releases/tag/v9.9.9",
+        }),
+      })
+    },
+  )
+
+  await openExtensionPage(page, extensionId)
+  await expect
+    .poll(() => getAlarm(serviceWorker, RELEASE_UPDATE_ALARM_NAME), {
+      message: "release-update service should keep its daily production alarm",
+    })
+    .toEqual(
+      expect.objectContaining({
+        name: RELEASE_UPDATE_ALARM_NAME,
+        periodInMinutes: 24 * 60,
+      }),
+    )
+
+  await scheduleAlarmSoon(serviceWorker, RELEASE_UPDATE_ALARM_NAME)
+
+  await expect
+    .poll(
+      async () => {
+        return await readJsonStorageValue<{
+          eligible: boolean
+          reason: string
+          latestVersion: string | null
+          updateAvailable: boolean
+        }>(serviceWorker, STORAGE_KEYS.RELEASE_UPDATE_STATUS)
+      },
+      {
+        message:
+          "release-update alarm should fetch GitHub and persist latest release metadata",
+        timeout: 15_000,
+      },
+    )
+    .toEqual(
+      expect.objectContaining({
+        eligible: true,
+        reason: "chromium-development",
+        latestVersion: "9.9.9",
+        updateAvailable: true,
+      }),
+    )
+  expect(githubReleaseRequests).toBeGreaterThanOrEqual(1)
 })
 
 test("runs managed-site model sync when its MV3 alarm fires", async ({
