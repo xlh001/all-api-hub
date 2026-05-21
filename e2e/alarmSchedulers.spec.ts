@@ -360,6 +360,74 @@ async function stubManagedSiteAdminRoutes(
   return { updatePayloads }
 }
 
+async function stubWebdavBackupRoutes(
+  context: BrowserContext,
+  options: {
+    backupFileUrl: string
+    initialRemoteBackup?: string
+  },
+) {
+  let remoteBackup = options.initialRemoteBackup ?? ""
+  const uploadedPayloads: unknown[] = []
+  const backupFileUrl = new URL(options.backupFileUrl)
+
+  await context.route(`${backupFileUrl.origin}/**`, async (route: Route) => {
+    const request = route.request()
+    const method = request.method()
+    const url = new URL(request.url())
+    const isBackupFile = url.href === options.backupFileUrl
+
+    if (method === "GET" && isBackupFile) {
+      if (!remoteBackup) {
+        await route.fulfill({
+          status: 404,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "missing backup" }),
+        })
+        return
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: remoteBackup,
+      })
+      return
+    }
+
+    if (method === "PUT" && isBackupFile) {
+      remoteBackup = request.postData() ?? ""
+      uploadedPayloads.push(JSON.parse(remoteBackup))
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: "{}",
+      })
+      return
+    }
+
+    if (method === "MKCOL") {
+      await route.fulfill({
+        status: 201,
+        contentType: "text/plain",
+        body: "",
+      })
+      return
+    }
+
+    await route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: false,
+        message: `Unhandled WebDAV alarm E2E route: ${method} ${url.pathname}`,
+      }),
+    })
+  })
+
+  return { uploadedPayloads }
+}
+
 async function enableAlarmBackedFeatures(page: Page, serviceWorker: Worker) {
   await seedUserPreferences(serviceWorker, {
     webdav: {
@@ -818,6 +886,115 @@ test("captures daily balance snapshots when its MV3 alarm fires", async ({
         capturedAt: expect.any(Number),
       }),
     )
+})
+
+test("runs WebDAV auto-sync upload when its MV3 alarm fires", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const accountId = "webdav-alarm-account"
+  const backupFileUrl = "https://webdav-alarm.example.com/alarm-backup.json"
+  const { uploadedPayloads } = await stubWebdavBackupRoutes(context, {
+    backupFileUrl,
+  })
+
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: accountId,
+      site_name: "WebDAV Alarm Hub",
+      site_url: "https://webdav-account.example.com",
+      account_info: {
+        id: 63,
+        username: "webdav-alarm-user",
+        access_token: "webdav-alarm-token",
+      },
+    }),
+  ])
+  await seedUserPreferences(serviceWorker, {
+    webdav: {
+      ...DEFAULT_PREFERENCES.webdav,
+      autoSync: true,
+      url: backupFileUrl,
+      username: "webdav-alarm-user",
+      password: "webdav-alarm-password",
+      syncInterval: 120,
+      syncStrategy: WEBDAV_SYNC_STRATEGIES.UPLOAD_ONLY,
+      syncData: {
+        accounts: true,
+        bookmarks: false,
+        apiCredentialProfiles: false,
+        preferences: false,
+      },
+    },
+  })
+
+  await openExtensionPage(page, extensionId)
+  const settingsResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.WebdavAutoSyncUpdateSettings,
+    settings: {
+      autoSync: true,
+      syncInterval: 120,
+      syncStrategy: WEBDAV_SYNC_STRATEGIES.UPLOAD_ONLY,
+    },
+  })
+  expect(settingsResponse).toEqual(expect.objectContaining({ success: true }))
+
+  await expect
+    .poll(() => getAlarm(serviceWorker, WEBDAV_AUTO_SYNC_ALARM_NAME), {
+      message: "WebDAV auto-sync settings should create its production alarm",
+    })
+    .toEqual(
+      expect.objectContaining({
+        name: WEBDAV_AUTO_SYNC_ALARM_NAME,
+        periodInMinutes: 2,
+      }),
+    )
+
+  await scheduleAlarmSoon(serviceWorker, WEBDAV_AUTO_SYNC_ALARM_NAME)
+
+  await expect
+    .poll(
+      async () => {
+        return uploadedPayloads.at(-1)
+      },
+      {
+        message:
+          "WebDAV auto-sync alarm should upload a current local account backup",
+        timeout: 15_000,
+      },
+    )
+    .toEqual(
+      expect.objectContaining({
+        accounts: expect.objectContaining({
+          accounts: [
+            expect.objectContaining({
+              id: accountId,
+              site_name: "WebDAV Alarm Hub",
+            }),
+          ],
+        }),
+      }),
+    )
+
+  const statusResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+    data: { lastSyncStatus: string; lastSyncError: string | null }
+  }>(page, {
+    action: RuntimeActionIds.WebdavAutoSyncGetStatus,
+  })
+  expect(statusResponse).toEqual(
+    expect.objectContaining({
+      success: true,
+      data: expect.objectContaining({
+        lastSyncStatus: "success",
+        lastSyncError: null,
+      }),
+    }),
+  )
 })
 
 test("runs managed-site model sync when its MV3 alarm fires", async ({
