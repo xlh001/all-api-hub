@@ -209,7 +209,7 @@ function TokenEmptyState({
           onClick: handleAddToken,
           variant: "success",
           icon: <PlusIcon className="h-4 w-4" />,
-          testId: KEY_MANAGEMENT_TEST_IDS.addTokenButton,
+          testId: KEY_MANAGEMENT_TEST_IDS.emptyStateAddTokenButton,
         }}
       />
     )
