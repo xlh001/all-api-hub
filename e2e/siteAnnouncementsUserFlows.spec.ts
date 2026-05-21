@@ -34,6 +34,7 @@ const POLLING_SITE_URL = "https://announcement-polling.example.com"
 const POLLING_SITE_KEY = `notice:new-api:${POLLING_SITE_URL}`
 const POLLING_NOTICE_TEXT =
   "Background polling notice. Scheduler fetched this through the MV3 alarm path."
+const POLLING_INTERVAL_MINUTES = 15
 
 async function readSiteAnnouncementsStore(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
@@ -104,6 +105,31 @@ async function clearSiteAnnouncementAlarm(
     const chromeApi = (globalThis as any).chrome
     await chromeApi.alarms.clear(alarmName)
   }, SITE_ANNOUNCEMENTS_ALARM_NAME)
+}
+
+async function seedPollingAnnouncementScenario(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+) {
+  await seedUserPreferences(serviceWorker, {
+    siteAnnouncementNotifications: {
+      enabled: true,
+      notificationEnabled: false,
+      intervalMinutes: POLLING_INTERVAL_MINUTES,
+    },
+  })
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: POLLING_ACCOUNT_ID,
+      site_name: POLLING_SITE_NAME,
+      site_url: POLLING_SITE_URL,
+      site_type: SITE_TYPES.NEW_API,
+      account_info: {
+        id: 42,
+        username: "announcement-polling-user",
+        access_token: "announcement-polling-token",
+      },
+    }),
+  ])
 }
 
 async function sendRuntimeActionFromPage<TResponse>(
@@ -259,26 +285,7 @@ test("polls site announcements through the MV3 alarm scheduler and stores fetche
     })
   })
 
-  await seedUserPreferences(serviceWorker, {
-    siteAnnouncementNotifications: {
-      enabled: true,
-      notificationEnabled: false,
-      intervalMinutes: 15,
-    },
-  })
-  await seedStoredAccounts(serviceWorker, [
-    createStoredAccount({
-      id: POLLING_ACCOUNT_ID,
-      site_name: POLLING_SITE_NAME,
-      site_url: POLLING_SITE_URL,
-      site_type: SITE_TYPES.NEW_API,
-      account_info: {
-        id: 42,
-        username: "announcement-polling-user",
-        access_token: "announcement-polling-token",
-      },
-    }),
-  ])
+  await seedPollingAnnouncementScenario(serviceWorker)
 
   await page.goto(SITE_ANNOUNCEMENTS_URL(extensionId))
   await waitForExtensionRoot(page)
@@ -301,7 +308,7 @@ test("polls site announcements through the MV3 alarm scheduler and stores fetche
     settings: {
       enabled: true,
       notificationEnabled: false,
-      intervalMinutes: 15,
+      intervalMinutes: POLLING_INTERVAL_MINUTES,
     },
   })
   expect(settingsResponse).toMatchObject({ success: true })
@@ -313,7 +320,7 @@ test("polls site announcements through the MV3 alarm scheduler and stores fetche
     })
     .toMatchObject({
       name: SITE_ANNOUNCEMENTS_ALARM_NAME,
-      periodInMinutes: 15,
+      periodInMinutes: POLLING_INTERVAL_MINUTES,
     })
 
   await scheduleSiteAnnouncementAlarmSoon(activeServiceWorker)
@@ -372,26 +379,7 @@ test("reconciles, filters, and clears site announcement MV3 alarms", async ({
     })
   })
 
-  await seedUserPreferences(serviceWorker, {
-    siteAnnouncementNotifications: {
-      enabled: true,
-      notificationEnabled: false,
-      intervalMinutes: 15,
-    },
-  })
-  await seedStoredAccounts(serviceWorker, [
-    createStoredAccount({
-      id: POLLING_ACCOUNT_ID,
-      site_name: POLLING_SITE_NAME,
-      site_url: POLLING_SITE_URL,
-      site_type: SITE_TYPES.NEW_API,
-      account_info: {
-        id: 42,
-        username: "announcement-polling-user",
-        access_token: "announcement-polling-token",
-      },
-    }),
-  ])
+  await seedPollingAnnouncementScenario(serviceWorker)
 
   await page.goto(SITE_ANNOUNCEMENTS_URL(extensionId))
   await waitForExtensionRoot(page)
@@ -404,7 +392,7 @@ test("reconciles, filters, and clears site announcement MV3 alarms", async ({
     settings: {
       enabled: true,
       notificationEnabled: false,
-      intervalMinutes: 15,
+      intervalMinutes: POLLING_INTERVAL_MINUTES,
     },
   })
   expect(settingsResponse).toMatchObject({ success: true })
@@ -423,7 +411,7 @@ test("reconciles, filters, and clears site announcement MV3 alarms", async ({
     })
     .toMatchObject({
       name: SITE_ANNOUNCEMENTS_ALARM_NAME,
-      periodInMinutes: 15,
+      periodInMinutes: POLLING_INTERVAL_MINUTES,
     })
 
   await clearSiteAnnouncementAlarm(serviceWorker)
@@ -445,7 +433,7 @@ test("reconciles, filters, and clears site announcement MV3 alarms", async ({
     })
     .toMatchObject({
       name: SITE_ANNOUNCEMENTS_ALARM_NAME,
-      periodInMinutes: 15,
+      periodInMinutes: POLLING_INTERVAL_MINUTES,
     })
 
   await scheduleAlarmSoon(serviceWorker, unrelatedAlarmName)
@@ -478,7 +466,7 @@ test("reconciles, filters, and clears site announcement MV3 alarms", async ({
     settings: {
       enabled: false,
       notificationEnabled: false,
-      intervalMinutes: 15,
+      intervalMinutes: POLLING_INTERVAL_MINUTES,
     },
   })
   expect(disableResponse).toMatchObject({ success: true })
@@ -487,4 +475,169 @@ test("reconciles, filters, and clears site announcement MV3 alarms", async ({
       message: "disabling polling should clear the real MV3 alarm",
     })
     .toBeNull()
+})
+
+test("preserves matching site announcement alarms across repeated reconciliations", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+
+  await seedPollingAnnouncementScenario(serviceWorker)
+
+  await page.goto(SITE_ANNOUNCEMENTS_URL(extensionId))
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  const settingsResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.SiteAnnouncementsUpdatePreferences,
+    settings: {
+      enabled: true,
+      notificationEnabled: false,
+      intervalMinutes: POLLING_INTERVAL_MINUTES,
+    },
+  })
+  expect(settingsResponse).toMatchObject({ success: true })
+
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message: "enabled polling should schedule the site announcement alarm",
+    })
+    .toMatchObject({
+      name: SITE_ANNOUNCEMENTS_ALARM_NAME,
+      periodInMinutes: POLLING_INTERVAL_MINUTES,
+    })
+
+  const initialAlarm = await getSiteAnnouncementAlarm(serviceWorker)
+  expect(initialAlarm?.scheduledTime).toBeTruthy()
+
+  const statusResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.SiteAnnouncementsGetStatus,
+  })
+  expect(statusResponse).toMatchObject({ success: true })
+
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message: "status reconciliation should preserve the matching alarm",
+    })
+    .toMatchObject({
+      name: SITE_ANNOUNCEMENTS_ALARM_NAME,
+      scheduledTime: initialAlarm?.scheduledTime,
+      periodInMinutes: POLLING_INTERVAL_MINUTES,
+    })
+
+  const repeatedSettingsResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.SiteAnnouncementsUpdatePreferences,
+    settings: {
+      enabled: true,
+      notificationEnabled: false,
+      intervalMinutes: POLLING_INTERVAL_MINUTES,
+    },
+  })
+  expect(repeatedSettingsResponse).toMatchObject({ success: true })
+
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message: "saving unchanged settings should not drift the alarm schedule",
+    })
+    .toMatchObject({
+      name: SITE_ANNOUNCEMENTS_ALARM_NAME,
+      scheduledTime: initialAlarm?.scheduledTime,
+      periodInMinutes: POLLING_INTERVAL_MINUTES,
+    })
+})
+
+test("skips early site announcement alarms while persisted cooldown is active", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const lastCheckedAt = Date.now()
+  let noticeRequests = 0
+
+  await context.route(`${POLLING_SITE_URL}/api/notice`, async (route) => {
+    noticeRequests += 1
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        message: "ok",
+        data: "Early alarms should not bypass persisted cooldown.",
+      }),
+    })
+  })
+
+  await seedPollingAnnouncementScenario(serviceWorker)
+  await seedSiteAnnouncementsStore(serviceWorker, {
+    [POLLING_SITE_KEY]: {
+      siteKey: POLLING_SITE_KEY,
+      siteName: POLLING_SITE_NAME,
+      siteType: SITE_TYPES.NEW_API,
+      baseUrl: POLLING_SITE_URL,
+      accountId: POLLING_ACCOUNT_ID,
+      providerId: SITE_ANNOUNCEMENT_PROVIDER_IDS.Common,
+      status: SITE_ANNOUNCEMENT_STATUS.Success,
+      lastCheckedAt,
+      lastSuccessAt: lastCheckedAt,
+      records: [],
+    },
+  })
+
+  await page.goto(SITE_ANNOUNCEMENTS_URL(extensionId))
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  const settingsResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.SiteAnnouncementsUpdatePreferences,
+    settings: {
+      enabled: true,
+      notificationEnabled: false,
+      intervalMinutes: POLLING_INTERVAL_MINUTES,
+    },
+  })
+  expect(settingsResponse).toMatchObject({ success: true })
+
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message: "cooldown-aware reconciliation should keep a periodic alarm",
+    })
+    .toMatchObject({
+      name: SITE_ANNOUNCEMENTS_ALARM_NAME,
+      periodInMinutes: POLLING_INTERVAL_MINUTES,
+    })
+
+  await scheduleSiteAnnouncementAlarmSoon(serviceWorker)
+
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message:
+        "an early alarm should fire, skip fetching, and restore the periodic schedule",
+      timeout: 15_000,
+    })
+    .toMatchObject({
+      name: SITE_ANNOUNCEMENTS_ALARM_NAME,
+      periodInMinutes: POLLING_INTERVAL_MINUTES,
+    })
+
+  expect(noticeRequests).toBe(0)
+  await expect
+    .poll(async () => {
+      const store = await readSiteAnnouncementsStore(serviceWorker)
+      return store?.sites[POLLING_SITE_KEY]
+    })
+    .toMatchObject({
+      lastCheckedAt,
+      records: [],
+    })
 })
