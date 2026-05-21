@@ -1,5 +1,6 @@
-import type { Page, Worker } from "@playwright/test"
+import type { BrowserContext, Page, Route, Worker } from "@playwright/test"
 
+import { ChannelType } from "~/constants"
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SITE_TYPES } from "~/constants/siteType"
@@ -16,6 +17,8 @@ import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
 import { SITE_ANNOUNCEMENTS_ALARM_NAME } from "~/services/siteAnnouncements/constants"
 import { AUTO_CHECKIN_SCHEDULE_MODE } from "~/types/autoCheckin"
 import type { DailyBalanceHistoryStore } from "~/types/dailyBalanceHistory"
+import { CHANNEL_STATUS, type ManagedSiteChannel } from "~/types/managedSite"
+import type { ExecutionResult } from "~/types/managedSiteModelSync"
 import type { UsageHistoryStore } from "~/types/usageHistory"
 import { USAGE_HISTORY_SCHEDULE_MODE } from "~/types/usageHistory"
 import { WEBDAV_SYNC_STRATEGIES } from "~/types/webdav"
@@ -43,6 +46,9 @@ const MANAGED_SITE_MODEL_SYNC_ALARM_NAME = "managedSiteModelSync"
 const RELEASE_UPDATE_ALARM_NAME = "releaseUpdateDailyCheck"
 const WEBDAV_AUTO_SYNC_ALARM_NAME = "webdavAutoSync"
 const WEBDAV_BEST_EFFORT_UPLOAD_ALARM_NAME = "webdavAutoSyncBestEffortUpload"
+const MANAGED_SITE_ALARM_BASE_URL = "https://managed-alarm.example.com"
+const MANAGED_SITE_ALARM_ADMIN_TOKEN = "managed-alarm-token"
+const MANAGED_SITE_ALARM_USER_ID = "1"
 
 const EXPECTED_ENABLED_ALARMS = [
   AUTO_CHECKIN_DAILY_ALARM_NAME,
@@ -71,6 +77,50 @@ type AlarmSnapshot = {
   scheduledTime?: number
   periodInMinutes?: number
 } | null
+
+function createManagedSiteChannel(
+  overrides: Partial<ManagedSiteChannel>,
+): ManagedSiteChannel {
+  return {
+    id: 101,
+    type: ChannelType.OpenAI,
+    key: "",
+    name: "Production OpenAI",
+    base_url: "https://upstream-a.example.com/v1",
+    models: "gpt-4o-mini",
+    status: CHANNEL_STATUS.Enable,
+    weight: 1,
+    priority: 0,
+    openai_organization: null,
+    test_model: null,
+    created_time: 1_700_000_000,
+    test_time: 0,
+    response_time: 0,
+    other: "",
+    balance: 0,
+    balance_updated_time: 0,
+    group: "default",
+    used_quota: 0,
+    model_mapping: "",
+    status_code_mapping: "",
+    auto_ban: 1,
+    other_info: "",
+    tag: null,
+    param_override: null,
+    header_override: null,
+    remark: null,
+    channel_info: {
+      is_multi_key: false,
+      multi_key_size: 0,
+      multi_key_status_list: null,
+      multi_key_polling_index: 0,
+      multi_key_mode: "",
+    },
+    setting: "",
+    settings: "",
+    ...overrides,
+  }
+}
 
 async function readJsonStorageValue<T>(
   serviceWorker: Worker,
@@ -185,6 +235,131 @@ async function scheduleAlarmSoon(serviceWorker: Worker, alarmName: string) {
   }, alarmName)
 }
 
+async function stubManagedSiteAdminRoutes(
+  context: BrowserContext,
+  options: {
+    channels?: ManagedSiteChannel[]
+    fetchedModelsByChannelId?: Record<number, string[]>
+  } = {},
+) {
+  const channels = options.channels ?? [
+    createManagedSiteChannel({
+      id: 101,
+      name: "Production OpenAI",
+      base_url: "https://upstream-a.example.com/v1",
+      models: "gpt-4o-mini",
+    }),
+  ]
+  const updatePayloads: unknown[] = []
+  const origin = new URL(MANAGED_SITE_ALARM_BASE_URL).origin
+
+  await context.route(`${origin}/**`, async (route: Route) => {
+    const request = route.request()
+    const url = new URL(request.url())
+    const method = request.method()
+
+    if (method === "GET" && url.pathname === "/api/channel/") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          message: "ok",
+          data: {
+            items: channels,
+            total: channels.length,
+            type_counts: {
+              [String(ChannelType.OpenAI)]: channels.length,
+            },
+          },
+        }),
+      })
+      return
+    }
+
+    if (method === "GET" && url.pathname === "/api/group") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          message: "ok",
+          data: ["default"],
+        }),
+      })
+      return
+    }
+
+    if (
+      method === "GET" &&
+      url.pathname.startsWith("/api/channel/fetch_models/")
+    ) {
+      const channelId = Number(url.pathname.split("/").filter(Boolean).pop())
+      const fetchedModels =
+        options.fetchedModelsByChannelId?.[channelId] ??
+        (channelId === 101 ? ["gpt-4o-mini", "gpt-4.1-mini"] : null)
+
+      if (!fetchedModels) {
+        await route.fulfill({
+          status: 404,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: false,
+            message: `No fetched models configured for channel ${channelId}`,
+          }),
+        })
+        return
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          message: "ok",
+          data: fetchedModels,
+        }),
+      })
+      return
+    }
+
+    if (method === "PUT" && url.pathname === "/api/channel/") {
+      const payload = request.postDataJSON()
+      updatePayloads.push(payload)
+
+      const channel = channels.find(
+        (item) => item.id === Number((payload as { id?: number }).id),
+      )
+      if (channel) {
+        const updates = payload as Partial<ManagedSiteChannel>
+        if (typeof updates.models === "string") channel.models = updates.models
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          message: "updated",
+          data: null,
+        }),
+      })
+      return
+    }
+
+    await route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: false,
+        message: `Unhandled managed-site alarm E2E route: ${method} ${url.pathname}`,
+      }),
+    })
+  })
+
+  return { updatePayloads }
+}
+
 async function enableAlarmBackedFeatures(page: Page, serviceWorker: Worker) {
   await seedUserPreferences(serviceWorker, {
     webdav: {
@@ -204,9 +379,9 @@ async function enableAlarmBackedFeatures(page: Page, serviceWorker: Worker) {
     },
     newApi: {
       ...DEFAULT_PREFERENCES.newApi,
-      baseUrl: "https://managed-alarm.example.com",
-      adminToken: "managed-alarm-token",
-      userId: "1",
+      baseUrl: MANAGED_SITE_ALARM_BASE_URL,
+      adminToken: MANAGED_SITE_ALARM_ADMIN_TOKEN,
+      userId: MANAGED_SITE_ALARM_USER_ID,
     },
     managedSiteType: SITE_TYPES.NEW_API,
   })
@@ -643,4 +818,88 @@ test("captures daily balance snapshots when its MV3 alarm fires", async ({
         capturedAt: expect.any(Number),
       }),
     )
+})
+
+test("runs managed-site model sync when its MV3 alarm fires", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const { updatePayloads } = await stubManagedSiteAdminRoutes(context, {
+    channels: [
+      createManagedSiteChannel({
+        id: 101,
+        name: "Alarm Synced Channel",
+        base_url: "https://upstream-a.example.com/v1",
+        models: "gpt-4o-mini",
+      }),
+    ],
+    fetchedModelsByChannelId: {
+      101: ["gpt-4o-mini", "gpt-4.1-mini"],
+    },
+  })
+
+  await seedUserPreferences(serviceWorker, {
+    managedSiteType: SITE_TYPES.NEW_API,
+    newApi: {
+      ...DEFAULT_PREFERENCES.newApi,
+      baseUrl: MANAGED_SITE_ALARM_BASE_URL,
+      adminToken: MANAGED_SITE_ALARM_ADMIN_TOKEN,
+      userId: MANAGED_SITE_ALARM_USER_ID,
+    },
+    managedSiteModelSync: {
+      enabled: true,
+      interval: 5 * 60 * 1000,
+      concurrency: 1,
+      maxRetries: 0,
+      rateLimit: {
+        requestsPerMinute: 60,
+        burst: 10,
+      },
+      allowedModels: [],
+      globalChannelModelFilters: [],
+    },
+  })
+
+  await openExtensionPage(page, extensionId)
+  await scheduleAlarmSoon(serviceWorker, MANAGED_SITE_MODEL_SYNC_ALARM_NAME)
+
+  await expect
+    .poll(
+      async () => {
+        return await readJsonStorageValue<ExecutionResult>(
+          serviceWorker,
+          "managedSiteModelSync_lastExecution",
+        )
+      },
+      {
+        message:
+          "managed-site model-sync alarm should fetch upstream models and persist execution results",
+        timeout: 15_000,
+      },
+    )
+    .toEqual(
+      expect.objectContaining({
+        statistics: expect.objectContaining({
+          total: 1,
+          successCount: 1,
+          failureCount: 0,
+        }),
+        items: [
+          expect.objectContaining({
+            channelId: 101,
+            channelName: "Alarm Synced Channel",
+            ok: true,
+            oldModels: ["gpt-4o-mini"],
+            newModels: ["gpt-4o-mini", "gpt-4.1-mini"],
+          }),
+        ],
+      }),
+    )
+
+  expect(updatePayloads).toContainEqual({
+    id: 101,
+    models: "gpt-4o-mini,gpt-4.1-mini",
+  })
 })
