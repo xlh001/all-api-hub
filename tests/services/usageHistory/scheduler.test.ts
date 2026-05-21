@@ -23,6 +23,7 @@ import {
 import {
   clearAlarm,
   createAlarm,
+  getAlarm,
   hasAlarmsAPI,
   onAlarm,
 } from "~/utils/browser/browserApi"
@@ -72,6 +73,7 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
     ...actual,
     clearAlarm: vi.fn(),
     createAlarm: vi.fn(),
+    getAlarm: vi.fn(),
     hasAlarmsAPI: vi.fn(),
     onAlarm: vi.fn((listener) => {
       registeredAlarmListeners.push(listener)
@@ -105,6 +107,7 @@ describe("usageHistoryScheduler", () => {
     })
     vi.mocked(userPreferences.savePreferences).mockResolvedValue(true)
     vi.mocked(hasAlarmsAPI).mockReturnValue(true)
+    vi.mocked(getAlarm).mockResolvedValue(undefined)
     vi.mocked(accountStorage.getEnabledAccounts).mockResolvedValue([
       { id: "account-1", disabled: false },
       { id: "account-2", disabled: false },
@@ -130,6 +133,7 @@ describe("usageHistoryScheduler", () => {
     await usageHistoryScheduler.initialize()
 
     expect(onAlarm).toHaveBeenCalledTimes(1)
+    expect(clearAlarm).toHaveBeenCalledWith("usageHistorySync")
     expect(createAlarm).toHaveBeenCalledWith("usageHistorySync", {
       periodInMinutes: 45,
       delayInMinutes: 1,
@@ -158,6 +162,20 @@ describe("usageHistoryScheduler", () => {
         scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.ALARM,
       }),
     })
+  })
+
+  it("preserves an existing matching alarm to avoid startup schedule drift", async () => {
+    vi.mocked(getAlarm).mockResolvedValue({
+      name: "usageHistorySync",
+      scheduledTime: Date.now() + 30 * 60_000,
+      periodInMinutes: 45,
+    } as browser.alarms.Alarm)
+
+    await usageHistoryScheduler.initialize()
+
+    expect(getAlarm).toHaveBeenCalledWith("usageHistorySync")
+    expect(clearAlarm).not.toHaveBeenCalled()
+    expect(createAlarm).not.toHaveBeenCalled()
   })
 
   it("falls back to after-refresh scheduling when alarms are unavailable", async () => {

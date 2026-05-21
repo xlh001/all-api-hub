@@ -15,6 +15,7 @@ import {
 import {
   clearAlarm,
   createAlarm,
+  getAlarm,
   hasAlarmsAPI,
   onAlarm,
 } from "~/utils/browser/browserApi"
@@ -116,8 +117,19 @@ class UsageHistoryScheduler {
       return
     }
 
+    const intervalMinutes = clampSyncIntervalMinutes(config.syncIntervalMinutes)
+    const existingAlarm = await getAlarm(USAGE_HISTORY_ALARM_NAME)
+
+    if (
+      existingAlarm?.periodInMinutes != null &&
+      Math.abs(existingAlarm.periodInMinutes - intervalMinutes) < 0.001
+    ) {
+      return
+    }
+
+    await clearAlarm(USAGE_HISTORY_ALARM_NAME)
     await createAlarm(USAGE_HISTORY_ALARM_NAME, {
-      periodInMinutes: clampSyncIntervalMinutes(config.syncIntervalMinutes),
+      periodInMinutes: intervalMinutes,
       delayInMinutes: 1,
     })
   }
