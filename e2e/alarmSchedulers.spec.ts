@@ -1164,6 +1164,8 @@ test("runs auto-checkin retries when its MV3 alarm fires", async ({
       },
     },
   })
+
+  await openExtensionPage(page, extensionId)
   await seedAutoCheckinStatus(serviceWorker, {
     lastDailyRunDay: today,
     lastRunAt: new Date(Date.now() - 60_000).toISOString(),
@@ -1214,7 +1216,6 @@ test("runs auto-checkin retries when its MV3 alarm fires", async ({
     retryAlarmTargetDay: today,
   })
 
-  await openExtensionPage(page, extensionId)
   await scheduleAlarmSoon(serviceWorker, AUTO_CHECKIN_RETRY_ALARM_NAME)
 
   await expect
@@ -1258,6 +1259,120 @@ test("runs auto-checkin retries when its MV3 alarm fires", async ({
     AUTO_CHECKIN_STATUS_STORAGE_KEY,
   )
   expect(statusAfterRetry?.retryState).toBeUndefined()
+  expect(checkinRequests).toBe(1)
+})
+
+test("runs auto-checkin daily check-ins when its MV3 alarm fires", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const accountId = "auto-checkin-daily-alarm-account"
+  const accountName = "Daily Alarm Account"
+  const baseUrl = "https://auto-checkin-daily.example.com"
+  const today = getLocalDay()
+  let checkinRequests = 0
+
+  await context.route(`${baseUrl}/api/user/checkin`, (route) => {
+    checkinRequests += 1
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        message: "check-in completed on daily alarm",
+        data: { checkin_date: today, quota_awarded: 1 },
+      }),
+    })
+  })
+
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: accountId,
+      site_name: accountName,
+      site_url: baseUrl,
+      site_type: SITE_TYPES.NEW_API,
+      account_info: {
+        id: 75,
+        username: "daily-alarm-user",
+        access_token: "daily-alarm-token",
+      },
+      checkIn: {
+        enableDetection: true,
+        autoCheckInEnabled: true,
+        siteStatus: {
+          isCheckedInToday: false,
+        },
+      },
+    }),
+  ])
+  await seedUserPreferences(serviceWorker, {
+    autoCheckin: {
+      ...DEFAULT_PREFERENCES.autoCheckin!,
+      globalEnabled: true,
+      pretriggerDailyOnUiOpen: false,
+      notifyUiOnCompletion: true,
+      windowStart: "00:00",
+      windowEnd: "23:59",
+      scheduleMode: AUTO_CHECKIN_SCHEDULE_MODE.DETERMINISTIC,
+      deterministicTime: "23:58",
+      retryStrategy: {
+        enabled: false,
+        intervalMinutes: 30,
+        maxAttemptsPerDay: 1,
+      },
+    },
+  })
+  await seedAutoCheckinStatus(serviceWorker, {
+    dailyAlarmTargetDay: today,
+  })
+
+  await openExtensionPage(page, extensionId)
+  await scheduleAlarmSoon(serviceWorker, AUTO_CHECKIN_DAILY_ALARM_NAME)
+
+  await expect
+    .poll(
+      async () => {
+        return await readJsonStorageValue<AutoCheckinStatus>(
+          serviceWorker,
+          AUTO_CHECKIN_STATUS_STORAGE_KEY,
+        )
+      },
+      {
+        message:
+          "auto-checkin daily alarm should run today's eligible account once",
+        timeout: 15_000,
+      },
+    )
+    .toEqual(
+      expect.objectContaining({
+        lastDailyRunDay: today,
+        lastRunResult: "success",
+        pendingRetry: false,
+        perAccount: expect.objectContaining({
+          [accountId]: expect.objectContaining({
+            accountId,
+            accountName,
+            status: "success",
+            rawMessage: "check-in completed on daily alarm",
+          }),
+        }),
+        summary: expect.objectContaining({
+          totalEligible: 1,
+          executed: 1,
+          successCount: 1,
+          failedCount: 0,
+          skippedCount: 0,
+          needsRetry: false,
+        }),
+      }),
+    )
+  const statusAfterDailyAlarm = await readJsonStorageValue<AutoCheckinStatus>(
+    serviceWorker,
+    AUTO_CHECKIN_STATUS_STORAGE_KEY,
+  )
+  expect(statusAfterDailyAlarm?.retryState).toBeUndefined()
   expect(checkinRequests).toBe(1)
 })
 
