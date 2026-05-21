@@ -3,22 +3,35 @@ import type { Page, Worker } from "@playwright/test"
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SITE_TYPES } from "~/constants/siteType"
+import { LogType } from "~/services/apiService/common/type"
+import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { DAILY_BALANCE_HISTORY_ALARM_NAME } from "~/services/history/dailyBalanceHistory/constants"
-import { USAGE_HISTORY_ALARM_NAME } from "~/services/history/usageHistory/constants"
+import { getDayKeyFromUnixSeconds as getBalanceHistoryDayKeyFromUnixSeconds } from "~/services/history/dailyBalanceHistory/dayKeys"
+import {
+  USAGE_HISTORY_ALARM_NAME,
+  USAGE_HISTORY_STORAGE_KEYS,
+} from "~/services/history/usageHistory/constants"
+import { getDayKeyFromUnixSeconds as getUsageHistoryDayKeyFromUnixSeconds } from "~/services/history/usageHistory/core"
 import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
 import { SITE_ANNOUNCEMENTS_ALARM_NAME } from "~/services/siteAnnouncements/constants"
 import { AUTO_CHECKIN_SCHEDULE_MODE } from "~/types/autoCheckin"
+import type { DailyBalanceHistoryStore } from "~/types/dailyBalanceHistory"
+import type { UsageHistoryStore } from "~/types/usageHistory"
 import { USAGE_HISTORY_SCHEDULE_MODE } from "~/types/usageHistory"
 import { WEBDAV_SYNC_STRATEGIES } from "~/types/webdav"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
+  createStoredAccount,
   forceExtensionLanguage,
   installExtensionPageGuards,
+  seedStoredAccounts,
   seedUserPreferences,
   stubLlmMetadataIndex,
+  stubNewApiSiteRoutes,
 } from "~~/e2e/utils/commonUserFlows"
 import {
   expectPermissionOnboardingHidden,
+  getPlasmoStorageRawValue,
   getServiceWorker,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
@@ -58,6 +71,17 @@ type AlarmSnapshot = {
   scheduledTime?: number
   periodInMinutes?: number
 } | null
+
+async function readJsonStorageValue<T>(
+  serviceWorker: Worker,
+  storageKey: string,
+): Promise<T | null> {
+  const raw = await getPlasmoStorageRawValue<unknown>(serviceWorker, storageKey)
+  if (typeof raw !== "string") {
+    return null
+  }
+  return JSON.parse(raw) as T
+}
 
 async function openExtensionPage(page: Page, extensionId: string) {
   installExtensionPageGuards(page)
@@ -150,6 +174,15 @@ async function createStaleAlarms(
     },
     [...alarmNames],
   )
+}
+
+async function scheduleAlarmSoon(serviceWorker: Worker, alarmName: string) {
+  await serviceWorker.evaluate(async (name) => {
+    const chromeApi = (globalThis as any).chrome
+    await chromeApi.alarms.create(name, {
+      when: Date.now() + 1_000,
+    })
+  }, alarmName)
 }
 
 async function enableAlarmBackedFeatures(page: Page, serviceWorker: Worker) {
@@ -398,4 +431,216 @@ test("clears scheduler-owned MV3 alarms when features are disabled", async ({
       })
       .toBeNull()
   }
+})
+
+test("runs usage-history sync when its MV3 alarm fires", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const accountId = "usage-alarm-account"
+  const baseUrl = "https://usage-alarm.example.com"
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  const logCreatedAt = nowSeconds - 60
+  const usageDayKey = getUsageHistoryDayKeyFromUnixSeconds(logCreatedAt)
+  let usageLogRequests = 0
+
+  await context.route(`${baseUrl}/**`, async (route) => {
+    const request = route.request()
+    const url = new URL(request.url())
+
+    if (request.method() === "GET" && url.pathname === "/api/log/self") {
+      usageLogRequests += 1
+      expect(url.searchParams.get("type")).toBe(String(LogType.Consume))
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          message: "ok",
+          data: {
+            total: 1,
+            items: [
+              {
+                id: 101,
+                user_id: 41,
+                created_at: logCreatedAt,
+                type: LogType.Consume,
+                content: "completion",
+                username: "usage-alarm-user",
+                token_name: "Scheduled key",
+                model_name: "gpt-4o-mini",
+                quota: 321,
+                prompt_tokens: 123,
+                completion_tokens: 456,
+                use_time: 1.25,
+                is_stream: false,
+                channel_id: 7,
+                channel_name: "OpenAI",
+                token_id: 88,
+                group: "default",
+                ip: "127.0.0.1",
+                other: "{}",
+              },
+            ],
+          },
+        }),
+      })
+      return
+    }
+
+    await route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: false,
+        message: `Unhandled alarm E2E route: ${request.method()} ${url.pathname}`,
+      }),
+    })
+  })
+
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: accountId,
+      site_name: "Usage Alarm Hub",
+      site_url: baseUrl,
+      account_info: {
+        id: 41,
+        username: "usage-alarm-user",
+        access_token: "usage-alarm-token",
+      },
+    }),
+  ])
+
+  await openExtensionPage(page, extensionId)
+  const settingsResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.UsageHistoryUpdateSettings,
+    settings: {
+      enabled: true,
+      scheduleMode: USAGE_HISTORY_SCHEDULE_MODE.ALARM,
+      syncIntervalMinutes: 15,
+      retentionDays: 30,
+    },
+  })
+  expect(settingsResponse).toEqual(expect.objectContaining({ success: true }))
+
+  await scheduleAlarmSoon(serviceWorker, USAGE_HISTORY_ALARM_NAME)
+
+  await expect
+    .poll(
+      async () => {
+        const store = await readJsonStorageValue<UsageHistoryStore>(
+          serviceWorker,
+          USAGE_HISTORY_STORAGE_KEYS.STORE,
+        )
+        return store?.accounts[accountId]
+      },
+      {
+        message:
+          "usage-history alarm should fetch logs and persist account aggregates",
+        timeout: 15_000,
+      },
+    )
+    .toEqual(
+      expect.objectContaining({
+        status: expect.objectContaining({
+          state: "success",
+          lastSuccessAt: expect.any(Number),
+        }),
+        daily: expect.objectContaining({
+          [usageDayKey]: expect.objectContaining({
+            requests: 1,
+            promptTokens: 123,
+            completionTokens: 456,
+            totalTokens: 579,
+            quotaConsumed: 321,
+          }),
+        }),
+        dailyByModel: expect.objectContaining({
+          "gpt-4o-mini": expect.objectContaining({
+            [usageDayKey]: expect.objectContaining({
+              requests: 1,
+              quotaConsumed: 321,
+            }),
+          }),
+        }),
+      }),
+    )
+  expect(usageLogRequests).toBeGreaterThanOrEqual(1)
+})
+
+test("captures daily balance snapshots when its MV3 alarm fires", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const accountId = "balance-alarm-account"
+  const baseUrl = "https://balance-alarm.example.com"
+  const balanceDayKey = getBalanceHistoryDayKeyFromUnixSeconds(
+    Math.floor(Date.now() / 1000),
+  )
+
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: accountId,
+      site_name: "Balance Alarm Hub",
+      site_url: baseUrl,
+      account_info: {
+        id: 52,
+        username: "balance-alarm-user",
+        access_token: "balance-alarm-token",
+      },
+    }),
+  ])
+  await stubNewApiSiteRoutes(context, {
+    baseUrl,
+    userId: 52,
+    username: "balance-alarm-user",
+    accessToken: "balance-alarm-token",
+    initialQuota: 9_876_543,
+    todayQuotaConsumption: 123_456,
+  })
+
+  await openExtensionPage(page, extensionId)
+  const settingsResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.BalanceHistoryUpdateSettings,
+    settings: {
+      enabled: true,
+      endOfDayCapture: { enabled: true },
+      retentionDays: 365,
+    },
+  })
+  expect(settingsResponse).toEqual(expect.objectContaining({ success: true }))
+
+  await scheduleAlarmSoon(serviceWorker, DAILY_BALANCE_HISTORY_ALARM_NAME)
+
+  await expect
+    .poll(
+      async () => {
+        const store = await readJsonStorageValue<DailyBalanceHistoryStore>(
+          serviceWorker,
+          STORAGE_KEYS.DAILY_BALANCE_HISTORY_STORE,
+        )
+        return store?.snapshotsByAccountId[accountId]?.[balanceDayKey]
+      },
+      {
+        message:
+          "daily-balance alarm should refresh the account and persist an alarm-sourced snapshot",
+        timeout: 15_000,
+      },
+    )
+    .toEqual(
+      expect.objectContaining({
+        quota: 9_876_543,
+        today_quota_consumption: 123_456,
+        source: "alarm",
+        capturedAt: expect.any(Number),
+      }),
+    )
 })
