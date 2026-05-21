@@ -99,7 +99,7 @@ export async function saveAutoDetectedAccountFromApp(params: {
   }
 }
 
-export async function openKeyManagementPage(params: {
+async function openKeyManagementPage(params: {
   page: Page
   extensionId: string
   accountId: string
@@ -116,7 +116,7 @@ export async function openKeyManagementPage(params: {
   return params.page
 }
 
-export async function openKeyManagementPageFromAccountRow(params: {
+async function openKeyManagementPageFromAccountRow(params: {
   page: Page
   extensionId: string
   accountId?: string
@@ -149,18 +149,6 @@ export async function openKeyManagementPageFromAccountRow(params: {
   await waitForExtensionRoot(keyManagementPage)
   await expectPermissionOnboardingHidden(keyManagementPage)
   return keyManagementPage
-}
-
-export async function createTokenFromKeyManagementPage(params: {
-  page: Page
-  tokenName: string
-}) {
-  await submitCreateTokenForm(params)
-  await closeOneTimeKeyDialogIfPresent(params.page)
-
-  await expect(
-    params.page.getByRole("heading", { name: params.tokenName }),
-  ).toBeVisible({ timeout: 60_000 })
 }
 
 async function submitCreateTokenForm(params: {
@@ -239,6 +227,7 @@ export async function createAndVerifyTokenFromApp(params: {
   baseUrl?: string
   tokenName: string
   openFromAccountRow?: boolean
+  onTokenSubmitted?: (result: { page: Page; tokenName: string }) => void
 }) {
   let keyManagementPage = params.page
 
@@ -264,6 +253,10 @@ export async function createAndVerifyTokenFromApp(params: {
     })
   }
   await submitCreateTokenForm({
+    page: keyManagementPage,
+    tokenName: params.tokenName,
+  })
+  params.onTokenSubmitted?.({
     page: keyManagementPage,
     tokenName: params.tokenName,
   })

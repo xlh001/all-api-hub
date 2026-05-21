@@ -32,9 +32,12 @@ export async function runRealSiteKeyLifecycleFromAccountRow(params: {
       baseUrl: params.baseUrl,
       tokenName,
       openFromAccountRow: true,
+      onTokenSubmitted: (result) => {
+        keyManagementPage = result.page
+        createdTokenName = result.tokenName
+      },
     })
     keyManagementPage = tokenResult.page
-    createdTokenName = tokenName
   } finally {
     if (createdTokenName) {
       await deleteTokenFromKeyManagementPage({
@@ -64,7 +67,7 @@ export function buildRealSiteTestTokenName(params: {
     .slice(0, MAX_TEST_TOKEN_NAME_LENGTH)
 }
 
-export function buildRealSiteRunId() {
+function buildRealSiteRunId() {
   return `${Date.now().toString(36).slice(-6)}${Math.random()
     .toString(36)
     .slice(2, 6)}`

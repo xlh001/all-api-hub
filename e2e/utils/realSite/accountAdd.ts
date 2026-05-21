@@ -17,6 +17,8 @@ import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
 type ServiceWorker = Awaited<ReturnType<typeof getServiceWorker>>
 
+export type AccountAddDialog = ReturnType<typeof getAccountAddDialog>
+
 function getAccountAddDialog(page: Page) {
   const dialog = page.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountDialog)
 
@@ -115,9 +117,33 @@ export async function expectAccountListItemVisible(
   accountId: string,
   timeoutMs = 60_000,
 ) {
-  await expect(
-    page.getByTestId(getAccountManagementListItemTestId(accountId)),
-  ).toBeVisible({ timeout: timeoutMs })
+  const row = page.getByTestId(getAccountManagementListItemTestId(accountId))
+  await expect(row).toBeVisible({ timeout: timeoutMs })
+  return row
+}
+
+export async function expectAccountListItemVisibleBySite(
+  page: Page,
+  params: {
+    siteType: string
+    baseUrl: string
+    timeoutMs?: number
+  },
+) {
+  const row = page.locator(
+    [
+      `[data-testid^="account-management-account-list-item-"]`,
+      `[data-site-url=${cssAttributeValue(params.baseUrl)}]`,
+      `[data-site-type=${cssAttributeValue(params.siteType)}]`,
+    ].join(""),
+  )
+
+  await expect(row).toBeVisible({ timeout: params.timeoutMs ?? 60_000 })
+  return row
+}
+
+function cssAttributeValue(value: string) {
+  return `"${value.replace(/\\/gu, "\\\\").replace(/"/gu, '\\"')}"`
 }
 
 async function readSavedAccount(

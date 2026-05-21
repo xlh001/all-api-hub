@@ -3,6 +3,7 @@ import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { ApiToken } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
+import { createAndVerifyTokenFromApp } from "~~/e2e/utils/accountLifecycle"
 import {
   createStoredAccount,
   forceExtensionLanguage,
@@ -87,20 +88,16 @@ test("creates a token from key management and reloads it into the visible list",
   page,
 }) => {
   const serviceWorker = await getServiceWorker(context)
+
   await seedStoredAccounts(serviceWorker, [createStoredAccount()])
   await stubNewApiSiteRoutes(context)
 
-  await page.goto(
-    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#keys?accountId=e2e-account-1`,
-  )
-  await waitForExtensionRoot(page)
-  await expectPermissionOnboardingHidden(page)
-
-  await page.getByRole("button", { name: "Add API Key" }).click()
-  await expect(page.locator("#tokenName")).toBeVisible()
-  await page.locator("#tokenName").fill("E2E Created Key")
-
-  await page.getByRole("button", { name: "Create Key" }).click()
+  await createAndVerifyTokenFromApp({
+    page,
+    extensionId,
+    accountId: "e2e-account-1",
+    tokenName: "E2E Created Key",
+  })
 
   await expect(page.getByText("E2E Created Key")).toBeVisible()
 })

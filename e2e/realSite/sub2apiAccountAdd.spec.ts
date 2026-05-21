@@ -2,17 +2,11 @@ import { SITE_TYPES } from "~/constants/siteType"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
   forceExtensionLanguage,
-  installExtensionPageGuards,
   seedUserPreferences,
   stubLlmMetadataIndex,
 } from "~~/e2e/utils/commonUserFlows"
 import { getServiceWorker } from "~~/e2e/utils/extensionState"
-import {
-  autoDetectAccountFromAddDialog,
-  expectAccountListItemVisible,
-  openAccountManagementPage,
-  waitForSavedAccount,
-} from "~~/e2e/utils/realSite/accountAdd"
+import { runRealSiteAccountKeyFlow } from "~~/e2e/utils/realSite/accountKeyFlow"
 import {
   getSub2ApiRealSiteSkipReason,
   loginToRealSub2ApiSite,
@@ -27,7 +21,7 @@ test.describe("real-site E2E: Sub2API auto-detect account add flow", () => {
     await stubLlmMetadataIndex(context)
   })
 
-  test("logs into a real Sub2API site and auto-detects then saves the account", async ({
+  test("logs into a real Sub2API site, saves the account, then creates and deletes a key", async ({
     context,
     extensionId,
     page,
@@ -51,98 +45,69 @@ test.describe("real-site E2E: Sub2API auto-detect account add flow", () => {
     })
 
     const sitePage = await context.newPage()
-    try {
-      const loginResult = await loginToRealSub2ApiSite(sitePage, config)
-      expect(loginResult.authState.accessToken).not.toBe("")
+    await runRealSiteAccountKeyFlow({
+      page,
+      extensionId,
+      sitePage,
+      baseUrl: config.baseUrl,
+      siteType: SITE_TYPES.SUB2API,
+      expectedDetectedSiteType: SITE_TYPES.SUB2API,
+      label: "Sub2API",
+      login: async (realSitePage) => {
+        const loginResult = await loginToRealSub2ApiSite(realSitePage, config)
+        expect(loginResult.authState.accessToken).not.toBe("")
 
-      installExtensionPageGuards(page)
-      await openAccountManagementPage({ page, extensionId })
-
-      const dialog = await autoDetectAccountFromAddDialog(page, config.baseUrl)
-
-      await expect(dialog.siteNameInput).toHaveValue(/.+/, {
-        timeout: 60_000,
-      })
-
-      await expect(dialog.userIdInput).toHaveValue(/.+/, {
-        timeout: 60_000,
-      })
-      await expect(dialog.accessTokenInput).toHaveValue(
-        loginResult.authState.accessToken,
-        {
-          timeout: 60_000,
-        },
-      )
-      await expect(dialog.siteTypeTrigger).toHaveAttribute(
-        "data-site-type",
-        SITE_TYPES.SUB2API,
-      )
-      await expect(dialog.sub2apiRefreshTokenSwitch).toHaveAttribute(
-        "aria-checked",
-        "false",
-      )
-      await expect(dialog.sub2apiImportSessionButton).toHaveCount(0)
-
-      let importedHostedSession = false
-
-      if (loginResult.authState.refreshToken) {
-        await dialog.sub2apiRefreshTokenSwitch.click()
-        await expect(dialog.sub2apiRefreshTokenSwitch).toHaveAttribute(
-          "aria-checked",
-          "true",
-        )
-
-        const importSessionButtonVisible =
-          await dialog.sub2apiImportSessionButton
-            .waitFor({ state: "visible", timeout: 5_000 })
-            .then(() => true)
-            .catch(() => false)
-
-        if (importSessionButtonVisible) {
-          await dialog.sub2apiImportSessionButton.click()
-          await expect(dialog.sub2apiRefreshTokenInput).toHaveValue(
-            loginResult.authState.refreshToken,
-            {
+        return {
+          prepareDetectedDialog: async (dialog) => {
+            await expect(dialog.siteNameInput).toHaveValue(/.+/, {
               timeout: 60_000,
-            },
-          )
-          importedHostedSession = true
+            })
+
+            await expect(dialog.userIdInput).toHaveValue(/.+/, {
+              timeout: 60_000,
+            })
+            await expect(dialog.accessTokenInput).toHaveValue(
+              loginResult.authState.accessToken,
+              {
+                timeout: 60_000,
+              },
+            )
+            await expect(dialog.sub2apiRefreshTokenSwitch).toHaveAttribute(
+              "aria-checked",
+              "false",
+            )
+            await expect(dialog.sub2apiImportSessionButton).toHaveCount(0)
+
+            if (!loginResult.authState.refreshToken) {
+              return
+            }
+
+            await dialog.sub2apiRefreshTokenSwitch.click()
+            await expect(dialog.sub2apiRefreshTokenSwitch).toHaveAttribute(
+              "aria-checked",
+              "true",
+            )
+
+            const importSessionButtonVisible =
+              await dialog.sub2apiImportSessionButton
+                .waitFor({ state: "visible", timeout: 5_000 })
+                .then(() => true)
+                .catch(() => false)
+
+            if (!importSessionButtonVisible) {
+              return
+            }
+
+            await dialog.sub2apiImportSessionButton.click()
+            await expect(dialog.sub2apiRefreshTokenInput).toHaveValue(
+              loginResult.authState.refreshToken,
+              {
+                timeout: 60_000,
+              },
+            )
+          },
         }
-      }
-
-      await expect(dialog.confirmAddButton).toBeEnabled({ timeout: 60_000 })
-      await dialog.confirmAddButton.click()
-      await expect(dialog.dialog).not.toBeVisible({ timeout: 60_000 })
-
-      const savedAccount = await waitForSavedAccount({
-        serviceWorker,
-        siteType: SITE_TYPES.SUB2API,
-        baseUrl: config.baseUrl,
-      })
-
-      expect(savedAccount.site_type).toBe(SITE_TYPES.SUB2API)
-      expect(savedAccount.site_url).toBe(config.baseUrl)
-      expect(savedAccount.account_info.id).toBeDefined()
-      expect(savedAccount.account_info.id).not.toBeNull()
-      expect(String(savedAccount.account_info.id)).toMatch(/^\d+$/)
-      expect(savedAccount.account_info.access_token).toBe(
-        loginResult.authState.accessToken,
-      )
-
-      if (loginResult.authState.refreshToken && importedHostedSession) {
-        expect(savedAccount.sub2apiAuth?.refreshToken).toBe(
-          loginResult.authState.refreshToken,
-        )
-        if (typeof loginResult.authState.tokenExpiresAt === "number") {
-          expect(savedAccount.sub2apiAuth?.tokenExpiresAt).toBe(
-            loginResult.authState.tokenExpiresAt,
-          )
-        }
-      }
-
-      await expectAccountListItemVisible(page, savedAccount.id)
-    } finally {
-      await sitePage.close()
-    }
+      },
+    })
   })
 })

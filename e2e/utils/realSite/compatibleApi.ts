@@ -26,7 +26,7 @@ type RequiredRealSiteEnvKey<TPrefix extends string> =
   | `AAH_E2E_${TPrefix}_USERNAME`
   | `AAH_E2E_${TPrefix}_PASSWORD`
 
-export type CompatibleApiRealSiteResolution<TPrefix extends string> = {
+type CompatibleApiRealSiteResolution<TPrefix extends string> = {
   config: CompatibleApiRealSiteConfig | null
   missingEnvKeys: Array<RequiredRealSiteEnvKey<TPrefix>>
 }
