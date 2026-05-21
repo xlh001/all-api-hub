@@ -55,6 +55,17 @@ async function getSiteAnnouncementAlarm(
   scheduledTime?: number
   periodInMinutes?: number
 } | null> {
+  return await getAlarm(serviceWorker, SITE_ANNOUNCEMENTS_ALARM_NAME)
+}
+
+async function getAlarm(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  alarmName: string,
+): Promise<{
+  name: string
+  scheduledTime?: number
+  periodInMinutes?: number
+} | null> {
   return await serviceWorker.evaluate(async (alarmName) => {
     const chromeApi = (globalThis as any).chrome
     const alarm = await chromeApi.alarms.get(alarmName)
@@ -65,17 +76,33 @@ async function getSiteAnnouncementAlarm(
           periodInMinutes: alarm.periodInMinutes,
         }
       : null
-  }, SITE_ANNOUNCEMENTS_ALARM_NAME)
+  }, alarmName)
 }
 
 async function scheduleSiteAnnouncementAlarmSoon(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+) {
+  await scheduleAlarmSoon(serviceWorker, SITE_ANNOUNCEMENTS_ALARM_NAME)
+}
+
+async function scheduleAlarmSoon(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+  alarmName: string,
 ) {
   await serviceWorker.evaluate(async (alarmName) => {
     const chromeApi = (globalThis as any).chrome
     await chromeApi.alarms.create(alarmName, {
       when: Date.now() + 1_000,
     })
+  }, alarmName)
+}
+
+async function clearSiteAnnouncementAlarm(
+  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
+) {
+  await serviceWorker.evaluate(async (alarmName) => {
+    const chromeApi = (globalThis as any).chrome
+    await chromeApi.alarms.clear(alarmName)
   }, SITE_ANNOUNCEMENTS_ALARM_NAME)
 }
 
@@ -321,4 +348,143 @@ test("polls site announcements through the MV3 alarm scheduler and stores fetche
   ).toBeVisible()
   await expect(page.getByText(POLLING_SITE_NAME)).toBeVisible()
   await expect(page.getByText("Showing 1 of 1 announcement")).toBeVisible()
+})
+
+test("reconciles, filters, and clears site announcement MV3 alarms", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const unrelatedAlarmName = "siteAnnouncementsUnrelatedE2E"
+  let noticeRequests = 0
+
+  await context.route(`${POLLING_SITE_URL}/api/notice`, async (route) => {
+    noticeRequests += 1
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        message: "ok",
+        data: "Unrelated alarms must not fetch this notice.",
+      }),
+    })
+  })
+
+  await seedUserPreferences(serviceWorker, {
+    siteAnnouncementNotifications: {
+      enabled: true,
+      notificationEnabled: false,
+      intervalMinutes: 15,
+    },
+  })
+  await seedStoredAccounts(serviceWorker, [
+    createStoredAccount({
+      id: POLLING_ACCOUNT_ID,
+      site_name: POLLING_SITE_NAME,
+      site_url: POLLING_SITE_URL,
+      site_type: SITE_TYPES.NEW_API,
+      account_info: {
+        id: 42,
+        username: "announcement-polling-user",
+        access_token: "announcement-polling-token",
+      },
+    }),
+  ])
+
+  await page.goto(SITE_ANNOUNCEMENTS_URL(extensionId))
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  const settingsResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.SiteAnnouncementsUpdatePreferences,
+    settings: {
+      enabled: true,
+      notificationEnabled: false,
+      intervalMinutes: 15,
+    },
+  })
+  expect(settingsResponse).toMatchObject({ success: true })
+
+  const statusResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.SiteAnnouncementsGetStatus,
+  })
+  expect(statusResponse).toMatchObject({ success: true })
+
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message:
+        "enabled polling should restore a missing site announcement alarm",
+    })
+    .toMatchObject({
+      name: SITE_ANNOUNCEMENTS_ALARM_NAME,
+      periodInMinutes: 15,
+    })
+
+  await clearSiteAnnouncementAlarm(serviceWorker)
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message: "test setup should remove the real alarm before reconciliation",
+    })
+    .toBeNull()
+
+  const reconcileResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.SiteAnnouncementsGetStatus,
+  })
+  expect(reconcileResponse).toMatchObject({ success: true })
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message: "status queries should recreate a missing persisted alarm",
+    })
+    .toMatchObject({
+      name: SITE_ANNOUNCEMENTS_ALARM_NAME,
+      periodInMinutes: 15,
+    })
+
+  await scheduleAlarmSoon(serviceWorker, unrelatedAlarmName)
+  await expect
+    .poll(() => getAlarm(serviceWorker, unrelatedAlarmName), {
+      message: "test setup should create the unrelated one-shot alarm",
+    })
+    .toMatchObject({
+      name: unrelatedAlarmName,
+    })
+  await expect
+    .poll(() => getAlarm(serviceWorker, unrelatedAlarmName), {
+      message: "the unrelated one-shot alarm should fire and disappear",
+      timeout: 15_000,
+    })
+    .toBeNull()
+
+  expect(noticeRequests).toBe(0)
+  await expect
+    .poll(async () => {
+      const store = await readSiteAnnouncementsStore(serviceWorker)
+      return store?.sites[POLLING_SITE_KEY]?.records.length ?? 0
+    })
+    .toBe(0)
+
+  const disableResponse = await sendRuntimeActionFromPage<{
+    success: boolean
+  }>(page, {
+    action: RuntimeActionIds.SiteAnnouncementsUpdatePreferences,
+    settings: {
+      enabled: false,
+      notificationEnabled: false,
+      intervalMinutes: 15,
+    },
+  })
+  expect(disableResponse).toMatchObject({ success: true })
+  await expect
+    .poll(() => getSiteAnnouncementAlarm(serviceWorker), {
+      message: "disabling polling should clear the real MV3 alarm",
+    })
+    .toBeNull()
 })
