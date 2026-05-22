@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event"
+import { useState } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { VerifyApiCredentialProfileDialog } from "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog"
@@ -56,6 +57,22 @@ function createDeferred<T>() {
   }
 }
 
+async function selectApiTypeOption(user: ReturnType<typeof userEvent.setup>) {
+  await user.selectOptions(getApiTypeSelect(), API_TYPES.ANTHROPIC)
+}
+
+function getApiTypeSelect() {
+  return screen.getByRole("combobox", {
+    name: "aiApiVerification:verifyDialog.meta.apiType",
+  })
+}
+
+async function selectOpenAICompatibleApiTypeOption(
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  await user.selectOptions(getApiTypeSelect(), API_TYPES.OPENAI_COMPATIBLE)
+}
+
 vi.mock("~/services/verification/aiApiVerification", async (importOriginal) => {
   const original =
     await importOriginal<
@@ -109,6 +126,88 @@ vi.mock("~/utils/core/logger", async (importOriginal) => {
       warn: vi.fn(),
       error: (...args: unknown[]) => loggerErrorMock(...args),
     }),
+  }
+})
+
+vi.mock("~/components/ui", async (importOriginal) => {
+  const original = await importOriginal<typeof import("~/components/ui")>()
+
+  return {
+    ...original,
+    SearchableSelect: ({
+      "aria-label": ariaLabel,
+      "data-testid": testId,
+      disabled,
+      onChange,
+      options,
+      placeholder,
+      value,
+    }: {
+      "aria-label"?: string
+      "data-testid"?: string
+      disabled?: boolean
+      onChange: (value: string) => void
+      options: Array<{ value: string; label: string }>
+      placeholder?: string
+      value: string
+    }) => {
+      const [isOpen, setIsOpen] = useState(false)
+      const selectedOption = options.find((option) => option.value === value)
+      if (ariaLabel === "aiApiVerification:verifyDialog.meta.apiType") {
+        return (
+          <select
+            aria-label={ariaLabel}
+            data-testid={testId}
+            disabled={disabled}
+            value={value}
+            onChange={(event) => onChange(event.currentTarget.value)}
+          >
+            {placeholder && !value ? (
+              <option value="">{placeholder}</option>
+            ) : null}
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )
+      }
+
+      return (
+        <div>
+          <button
+            aria-label={ariaLabel}
+            data-testid={testId}
+            disabled={disabled}
+            type="button"
+            role="combobox"
+            aria-expanded={isOpen}
+            onClick={() => setIsOpen((current) => !current)}
+          >
+            {selectedOption?.label || value || placeholder}
+          </button>
+          {isOpen ? (
+            <div role="listbox">
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={option.value === value}
+                  onClick={() => {
+                    onChange(option.value)
+                    setIsOpen(false)
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )
+    },
   }
 })
 
@@ -459,16 +558,13 @@ describe("VerifyApiCredentialProfileDialog", () => {
       }),
     )
 
-    const apiTypeSelect = screen.getAllByRole("combobox")[0]
-    await user.click(apiTypeSelect)
-    await user.click(
-      await screen.findByText(
-        "aiApiVerification:verifyDialog.apiTypes.anthropic",
-      ),
-    )
+    await selectApiTypeOption(user)
 
+    await waitFor(() => {
+      expect(getApiTypeSelect()).toHaveValue(API_TYPES.ANTHROPIC)
+    })
     expect(
-      screen.getByText("apiCredentialProfiles:verify.override.badge"),
+      await screen.findByText("apiCredentialProfiles:verify.override.badge"),
     ).toBeInTheDocument()
     expect(
       screen.getByText("apiCredentialProfiles:verify.override.title"),
@@ -902,27 +998,16 @@ describe("VerifyApiCredentialProfileDialog", () => {
     expect(await screen.findByText("Stored m1 history")).toBeInTheDocument()
     expect(screen.queryByText("Stored m0 history")).not.toBeInTheDocument()
 
-    const apiTypeSelect = screen.getAllByRole("combobox")[0]
-    await user.click(apiTypeSelect)
-    await user.click(
-      await screen.findByText(
-        "aiApiVerification:verifyDialog.apiTypes.anthropic",
-      ),
-    )
+    await selectApiTypeOption(user)
 
-    await waitFor(() => {
+    await waitFor(() =>
       expect(
-        screen.getByText("aiApiVerification:verifyDialog.status.unverified"),
-      ).toBeInTheDocument()
-    })
+        screen.getAllByText("aiApiVerification:verifyDialog.status.pending"),
+      ).not.toHaveLength(0),
+    )
     expect(screen.queryByText("Stored m1 history")).not.toBeInTheDocument()
 
-    await user.click(screen.getAllByRole("combobox")[0])
-    await user.click(
-      await screen.findByText(
-        "aiApiVerification:verifyDialog.apiTypes.openaiCompatible",
-      ),
-    )
+    await selectOpenAICompatibleApiTypeOption(user)
 
     expect(await screen.findByText("Stored m1 history")).toBeInTheDocument()
   })

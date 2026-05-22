@@ -186,9 +186,11 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
           toast.success(t("dialog.createSuccess"))
         }
         if (onSuccess) {
-          void Promise.resolve(onSuccess(createdToken)).catch((error) => {
+          try {
+            await onSuccess(createdToken)
+          } catch (error) {
             logger.error("AddTokenDialog onSuccess callback failed", error)
-          })
+          }
         }
 
         if (createdToken && showOneTimeKeyDialog) {
@@ -199,12 +201,14 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
       if (isEditMode) {
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
       }
-      handleClose()
       if (isEditMode && onSuccess) {
-        void Promise.resolve(onSuccess()).catch((error) => {
+        try {
+          await onSuccess()
+        } catch (error) {
           logger.error("AddTokenDialog onSuccess callback failed", error)
-        })
+        }
       }
+      handleClose()
     } catch (error) {
       logger.error(`${isEditMode ? "更新" : "创建"}密钥失败`, error)
       const message = getErrorMessage(error)
