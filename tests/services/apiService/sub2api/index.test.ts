@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { AccountUpdateUserTimestampMode } from "~/services/accounts/accountDefaults"
 import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import type {
   ApiServiceAccountRequest,
@@ -1071,15 +1072,19 @@ describe("apiService sub2api refreshAccountData", () => {
         userId: 9,
       },
     )
-    expect(mockUpdateAccount).toHaveBeenCalledWith("account-1", {
-      account_info: {
-        access_token: "new-jwt",
+    expect(mockUpdateAccount).toHaveBeenCalledWith(
+      "account-1",
+      {
+        account_info: {
+          access_token: "new-jwt",
+        },
+        sub2apiAuth: {
+          refreshToken: "new-refresh",
+          tokenExpiresAt: now + 3600 * 1000,
+        },
       },
-      sub2apiAuth: {
-        refreshToken: "new-refresh",
-        tokenExpiresAt: now + 3600 * 1000,
-      },
-    })
+      { userTimestampMode: AccountUpdateUserTimestampMode.Preserve },
+    )
     expect(result.success).toBe(true)
     expect(result.authUpdate?.userId).toBe(9)
     expect(result.authUpdate?.username).toBe("stored-user")

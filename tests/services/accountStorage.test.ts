@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
+import { AccountUpdateUserTimestampMode } from "~/services/accounts/accountDefaults"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import {
   ACCOUNT_STORAGE_KEYS,
@@ -105,6 +106,7 @@ const seedStorage = (
 
 const createAccount = (overrides: Partial<SiteAccount> = {}): SiteAccount => {
   const numericId = overrides.id?.replace(/\D/g, "") || "1"
+  const updatedAt = overrides.updated_at ?? Date.now()
 
   return {
     id: overrides.id || "account-1",
@@ -129,7 +131,8 @@ const createAccount = (overrides: Partial<SiteAccount> = {}): SiteAccount => {
       today_income: overrides.account_info?.today_income ?? 500_000,
     },
     last_sync_time: overrides.last_sync_time ?? Date.now(),
-    updated_at: overrides.updated_at ?? Date.now(),
+    updated_at: updatedAt,
+    user_updated_at: overrides.user_updated_at ?? updatedAt,
     created_at: overrides.created_at ?? Date.now(),
     notes: overrides.notes ?? "",
     manualBalanceUsd: overrides.manualBalanceUsd,
@@ -507,15 +510,86 @@ describe("accountStorage core behaviors", () => {
     })
     seedStorage([account])
 
-    const success = await accountStorage.updateAccount("with-tags", {
-      tagIds: [],
-    })
+    const success = await accountStorage.updateAccount(
+      "with-tags",
+      {
+        tagIds: [],
+      },
+      { userTimestampMode: AccountUpdateUserTimestampMode.Touch },
+    )
     expect(success).toBe(true)
 
     const accounts = await accountStorage.getAllAccounts()
     const updated = accounts.find((acc) => acc.id === "with-tags")
 
     expect(updated?.tagIds).toEqual([])
+  })
+
+  it("updateAccount advances user timestamp while refreshAccount preserves it", async () => {
+    vi.useFakeTimers()
+    try {
+      const initialNow = new Date(2026, 0, 2, 10, 0, 0)
+      const manualNow = new Date(2026, 0, 2, 11, 0, 0)
+      const refreshNow = new Date(2026, 0, 2, 12, 0, 0)
+      vi.setSystemTime(initialNow)
+
+      const account = {
+        ...createAccount({
+          id: "timestamp-split",
+          site_type: "one-api",
+          site_url: "https://timestamp.example.com",
+          updated_at: initialNow.getTime(),
+        }),
+        user_updated_at: initialNow.getTime(),
+      } as SiteAccount & { user_updated_at: number }
+      seedStorage([account])
+
+      vi.setSystemTime(manualNow)
+      const manualSuccess = await accountStorage.updateAccount(
+        "timestamp-split",
+        {
+          notes: "manual edit",
+        },
+        { userTimestampMode: AccountUpdateUserTimestampMode.Touch },
+      )
+
+      expect(manualSuccess).toBe(true)
+      const manuallyUpdated = (await accountStorage.getAccountById(
+        "timestamp-split",
+      )) as (SiteAccount & { user_updated_at: number }) | null
+      expect(manuallyUpdated?.updated_at).toBe(manualNow.getTime())
+      expect(manuallyUpdated?.user_updated_at).toBe(manualNow.getTime())
+
+      mockRefreshAccountData.mockResolvedValueOnce({
+        success: true,
+        data: {
+          quota: 42,
+          today_prompt_tokens: 0,
+          today_completion_tokens: 0,
+          today_quota_consumption: 0,
+          today_requests_count: 0,
+          today_income: 0,
+          checkIn: {
+            enableDetection: false,
+          },
+        },
+        healthStatus: {
+          status: SiteHealthStatus.Healthy,
+          message: "",
+        },
+      })
+
+      vi.setSystemTime(refreshNow)
+      await accountStorage.refreshAccount("timestamp-split", true)
+
+      const refreshed = (await accountStorage.getAccountById(
+        "timestamp-split",
+      )) as (SiteAccount & { user_updated_at: number }) | null
+      expect(refreshed?.updated_at).toBe(refreshNow.getTime())
+      expect(refreshed?.user_updated_at).toBe(manualNow.getTime())
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("updateAccount should not lose parallel updates to different accounts", async () => {
@@ -539,9 +613,13 @@ describe("accountStorage core behaviors", () => {
 
     await Promise.all(
       accounts.map((account) =>
-        accountStorage.updateAccount(account.id, {
-          notes: expectedNotesById.get(account.id),
-        }),
+        accountStorage.updateAccount(
+          account.id,
+          {
+            notes: expectedNotesById.get(account.id),
+          },
+          { userTimestampMode: AccountUpdateUserTimestampMode.Touch },
+        ),
       ),
     )
 
@@ -1055,15 +1133,68 @@ describe("accountStorage core behaviors", () => {
   })
 
   it("deleteAccount should remove account data and pinned references", async () => {
-    const account = createAccount({ id: "to-delete" })
-    seedStorage([account], ["to-delete"])
+    vi.useFakeTimers()
+    const deletedAt = new Date("2026-05-22T01:00:00Z")
 
-    await accountStorage.deleteAccount("to-delete")
+    try {
+      vi.setSystemTime(deletedAt)
 
-    const config = storageData.get(ACCOUNT_STORAGE_KEYS.ACCOUNTS)
-    expect(config?.accounts).toHaveLength(0)
-    expect(config?.pinnedAccountIds).toEqual([])
-    expect(pruneStatusForAccountIdsMock).toHaveBeenCalledWith(["to-delete"])
+      const account = createAccount({ id: "to-delete" })
+      seedStorage([account], ["to-delete"])
+
+      await accountStorage.deleteAccount("to-delete")
+
+      const config = storageData.get(ACCOUNT_STORAGE_KEYS.ACCOUNTS)
+      expect(config?.accounts).toHaveLength(0)
+      expect(config?.pinnedAccountIds).toEqual([])
+      expect(config?.deletedEntryRecords?.["to-delete"]).toEqual({
+        kind: "account",
+        deletedAt: deletedAt.getTime(),
+        entryUpdatedAt: account.updated_at,
+      })
+      expect(pruneStatusForAccountIdsMock).toHaveBeenCalledWith(["to-delete"])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("deleteAccount records deletion without user timestamp and ignores async status cleanup failure", async () => {
+    vi.useFakeTimers()
+    const deletedAt = new Date("2026-05-22T02:00:00Z")
+
+    try {
+      vi.setSystemTime(deletedAt)
+      pruneStatusForAccountIdsMock.mockRejectedValueOnce(
+        new Error("status cleanup failed"),
+      )
+
+      const account = createAccount({
+        id: "delete-no-user-timestamp",
+        updated_at: 123,
+        user_updated_at: undefined as any,
+      })
+      delete (account as Partial<SiteAccount>).user_updated_at
+      seedStorage([account])
+
+      await expect(
+        accountStorage.deleteAccount("delete-no-user-timestamp"),
+      ).resolves.toBe(true)
+
+      const config = storageData.get(
+        ACCOUNT_STORAGE_KEYS.ACCOUNTS,
+      ) as AccountStorageConfig
+      expect(config.deletedEntryRecords?.["delete-no-user-timestamp"]).toEqual({
+        kind: "account",
+        deletedAt: deletedAt.getTime(),
+        entryUpdatedAt: 123,
+      })
+      await Promise.resolve()
+      expect(pruneStatusForAccountIdsMock).toHaveBeenCalledWith([
+        "delete-no-user-timestamp",
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("deleteAccount should surface a missing-account error", async () => {
@@ -1109,6 +1240,36 @@ describe("accountStorage core behaviors", () => {
     expect(pruneStatusForAccountIdsMock).toHaveBeenCalledWith([
       "bulk-b",
       "bulk-c",
+    ])
+  })
+
+  it("deleteAccounts still returns deleted ids when async status cleanup fails", async () => {
+    const accounts = [
+      createAccount({ id: "bulk-cleanup-a" }),
+      createAccount({ id: "bulk-cleanup-b" }),
+    ]
+    storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+      accounts,
+      bookmarks: [],
+      pinnedAccountIds: [],
+      orderedAccountIds: [],
+      last_updated: Date.now(),
+    } satisfies AccountStorageConfig)
+    pruneStatusForAccountIdsMock.mockRejectedValueOnce(
+      new Error("bulk cleanup failed"),
+    )
+
+    await expect(
+      accountStorage.deleteAccounts(["bulk-cleanup-a", "bulk-cleanup-b"]),
+    ).resolves.toEqual({
+      deletedCount: 2,
+      deletedIds: ["bulk-cleanup-a", "bulk-cleanup-b"],
+    })
+
+    await Promise.resolve()
+    expect(pruneStatusForAccountIdsMock).toHaveBeenCalledWith([
+      "bulk-cleanup-a",
+      "bulk-cleanup-b",
     ])
   })
 
@@ -2529,6 +2690,79 @@ describe("accountStorage bookmarks", () => {
       expect(persisted.accounts[0].excludeFromTotalBalance).toBe(false)
     })
 
+    it("getAccountById migrates legacy accounts without changing user update time", async () => {
+      vi.useFakeTimers()
+      const now = new Date("2026-05-23T01:00:00Z")
+
+      try {
+        vi.setSystemTime(now)
+        const legacyAccount = createAccount({
+          id: "legacy-by-id",
+          updated_at: 100,
+          user_updated_at: 100,
+        })
+        delete (legacyAccount as any).disabled
+        delete (legacyAccount as any).excludeFromTotalBalance
+        seedStorage([legacyAccount])
+
+        const found = await accountStorage.getAccountById("legacy-by-id")
+
+        expect(found?.id).toBe("legacy-by-id")
+        expect(found?.user_updated_at).toBe(100)
+        const persisted = storageData.get(
+          ACCOUNT_STORAGE_KEYS.ACCOUNTS,
+        ) as AccountStorageConfig
+        expect(persisted.accounts[0].updated_at).toBe(100)
+        expect(persisted.accounts[0].user_updated_at).toBe(100)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it("getAccountByBaseUrlAndUserId migrates matches without changing user update time", async () => {
+      vi.useFakeTimers()
+      const now = new Date("2026-05-23T02:00:00Z")
+
+      try {
+        vi.setSystemTime(now)
+        const legacyAccount = createAccount({
+          id: "legacy-by-url-user",
+          site_url: "https://legacy-user.example.com",
+          updated_at: 200,
+          user_updated_at: 200,
+          account_info: {
+            id: 987,
+            access_token: "token",
+            username: "legacy-user",
+            quota: 100,
+            today_prompt_tokens: 0,
+            today_completion_tokens: 0,
+            today_quota_consumption: 0,
+            today_requests_count: 0,
+            today_income: 0,
+          },
+        })
+        delete (legacyAccount as any).disabled
+        delete (legacyAccount as any).excludeFromTotalBalance
+        seedStorage([legacyAccount])
+
+        const found = await accountStorage.getAccountByBaseUrlAndUserId(
+          "https://legacy-user.example.com",
+          987,
+        )
+
+        expect(found?.id).toBe("legacy-by-url-user")
+        expect(found?.user_updated_at).toBe(200)
+        const persisted = storageData.get(
+          ACCOUNT_STORAGE_KEYS.ACCOUNTS,
+        ) as AccountStorageConfig
+        expect(persisted.accounts[0].updated_at).toBe(200)
+        expect(persisted.accounts[0].user_updated_at).toBe(200)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
     it("exportData falls back to a safe default config when storage reads fail", async () => {
       seedStorage([createAccount({ id: "existing-1" })])
 
@@ -2588,6 +2822,61 @@ describe("accountStorage bookmarks", () => {
       expect(restored.bookmarks).toEqual([backupBookmark])
       expect(restored.pinnedAccountIds).toEqual(["backup-1", "bookmark-1"])
       expect(restored.orderedAccountIds).toEqual(["bookmark-1", "backup-1"])
+    })
+
+    it("importData keeps the newest deleted entry record when markers collide", async () => {
+      storageData.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, {
+        accounts: [],
+        bookmarks: [],
+        pinnedAccountIds: [],
+        orderedAccountIds: [],
+        deletedEntryRecords: {
+          "same-id": {
+            kind: "account",
+            deletedAt: 300,
+            entryUpdatedAt: 150,
+          },
+          "incoming-older": {
+            kind: "bookmark",
+            deletedAt: 100,
+            entryUpdatedAt: 50,
+          },
+        },
+        last_updated: Date.now(),
+      } satisfies AccountStorageConfig)
+
+      await accountStorage.importData({
+        accounts: [createAccount({ id: "imported-1" })],
+        deletedEntryRecords: {
+          "same-id": {
+            kind: "account",
+            deletedAt: 200,
+            entryUpdatedAt: 100,
+          },
+          "incoming-older": {
+            kind: "bookmark",
+            deletedAt: 400,
+            entryUpdatedAt: 350,
+          },
+        },
+      })
+
+      const imported = storageData.get(
+        ACCOUNT_STORAGE_KEYS.ACCOUNTS,
+      ) as AccountStorageConfig
+
+      expect(imported.deletedEntryRecords).toMatchObject({
+        "same-id": {
+          kind: "account",
+          deletedAt: 300,
+          entryUpdatedAt: 150,
+        },
+        "incoming-older": {
+          kind: "bookmark",
+          deletedAt: 400,
+          entryUpdatedAt: 350,
+        },
+      })
     })
 
     it("importData sanitizes bookmarks and filters pinned and ordered ids to surviving entries", async () => {

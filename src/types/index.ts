@@ -83,6 +83,7 @@ export interface SiteAccount {
   account_info: AccountInfo // 账号信息
   last_sync_time: number // 最后同步时间 (timestamp)
   updated_at: number // 更改时间 (timestamp)
+  user_updated_at: number // 用户意图更改时间 (timestamp)
   created_at: number // 创建时间 (timestamp)
   /**
    * Free-form notes for this account.
@@ -294,6 +295,24 @@ export interface SiteBookmark {
   updated_at: number
 }
 
+export const DELETED_ENTRY_KIND = {
+  ACCOUNT: "account",
+  BOOKMARK: "bookmark",
+} as const
+
+export const DELETED_ENTRY_KINDS = [
+  DELETED_ENTRY_KIND.ACCOUNT,
+  DELETED_ENTRY_KIND.BOOKMARK,
+] as const
+
+export type DeletedEntryKind = (typeof DELETED_ENTRY_KINDS)[number]
+
+export interface DeletedEntryRecord {
+  kind: DeletedEntryKind
+  deletedAt: number
+  entryUpdatedAt: number
+}
+
 /**
  * Account and bookmark storage schema persisted in the extension's storage.
  */
@@ -313,6 +332,11 @@ export interface AccountStorageConfig {
    * Manual ordering of entries (full list of ids), newest change first.
    */
   orderedAccountIds: string[]
+  /**
+   * Best-effort deletion markers used by WebDAV merge sync to avoid restoring
+   * stale remote entries that were intentionally deleted on this device.
+   */
+  deletedEntryRecords?: Record<string, DeletedEntryRecord>
   last_updated: number
 }
 

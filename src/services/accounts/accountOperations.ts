@@ -12,6 +12,7 @@ import {
   type AccountSiteType,
 } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
+import { AccountUpdateUserTimestampMode } from "~/services/accounts/accountDefaults"
 import {
   ensureDefaultApiTokenForAccount,
   generateDefaultTokenRequest,
@@ -730,7 +731,10 @@ export async function validateAndSaveAccount(
 
     const normalizedTagIds = normalizeTagIdsInput(tagIds)
 
-    const accountData: Omit<SiteAccount, "id" | "created_at" | "updated_at"> = {
+    const accountData: Omit<
+      SiteAccount,
+      "id" | "created_at" | "updated_at" | "user_updated_at"
+    > = {
       site_name: siteName.trim(),
       site_url: storageSiteUrl,
       health: { status: SiteHealthStatus.Healthy }, // 成功获取数据说明状态正常
@@ -791,7 +795,7 @@ export async function validateAndSaveAccount(
 
     const partialAccountData: Omit<
       SiteAccount,
-      "id" | "created_at" | "updated_at"
+      "id" | "created_at" | "updated_at" | "user_updated_at"
     > = {
       site_name: siteName.trim(),
       site_url: storageSiteUrl,
@@ -980,7 +984,9 @@ export async function validateAndUpdateAccount(
 
     const normalizedTagIds = normalizeTagIdsInput(tagIds)
 
-    const updateData: Partial<Omit<SiteAccount, "id" | "created_at">> = {
+    const updateData: Partial<
+      Omit<SiteAccount, "id" | "created_at" | "updated_at" | "user_updated_at">
+    > = {
       site_name: siteName.trim(),
       site_url: storageSiteUrl,
       health: { status: SiteHealthStatus.Healthy }, // 成功获取数据说明状态正常
@@ -1011,7 +1017,9 @@ export async function validateAndUpdateAccount(
       last_sync_time: Date.now(),
     }
 
-    const success = await accountStorage.updateAccount(accountId, updateData)
+    const success = await accountStorage.updateAccount(accountId, updateData, {
+      userTimestampMode: AccountUpdateUserTimestampMode.Touch,
+    })
     if (!success) {
       return {
         success: false,
@@ -1073,6 +1081,7 @@ export async function validateAndUpdateAccount(
     const success = await accountStorage.updateAccount(
       accountId,
       partialUpdateData,
+      { userTimestampMode: AccountUpdateUserTimestampMode.Touch },
     )
 
     if (!success) {

@@ -15,9 +15,12 @@ import { withExtensionStorageWriteLock } from "~/services/core/storageWriteLock"
 import { maybeCaptureDailyBalanceSnapshot } from "~/services/history/dailyBalanceHistory/capture"
 import { ensureAccountTagsStorageMigrated } from "~/services/tags/migrations/accountTagsStorageMigration"
 import {
+  DELETED_ENTRY_KIND,
   SiteHealthStatus,
   type AccountStats,
   type AccountStorageConfig,
+  type DeletedEntryKind,
+  type DeletedEntryRecord,
   type DisplaySiteData,
   type SiteAccount,
   type SiteBookmark,
@@ -34,6 +37,7 @@ import { autoCheckinStorage } from "../checkin/autoCheckin/storage"
 import { userPreferences } from "../preferences/userPreferences"
 import { getAccountSiteType } from "../siteDetection/detectSiteType"
 import {
+  AccountUpdateUserTimestampMode,
   applySiteAccountUpdates,
   createDefaultAccountStorageConfig,
   createPersistedSiteAccount,
@@ -61,6 +65,10 @@ type RefreshAccountOptions = {
   balanceHistoryCaptureSource?: DailyBalanceHistoryCaptureSource
   allowDisabled?: boolean
   reEnableOnSuccess?: boolean
+}
+
+type UpdateAccountOptions = {
+  userTimestampMode: AccountUpdateUserTimestampMode
 }
 
 class AccountStorageService {
@@ -92,6 +100,44 @@ class AccountStorageService {
     account: Pick<SiteAccount, "excludeFromTotalBalance">,
   ) {
     return account.excludeFromTotalBalance
+  }
+
+  private static createDeletedEntryRecord(input: {
+    kind: DeletedEntryKind
+    entryUpdatedAt?: number
+    now: number
+  }): DeletedEntryRecord {
+    return {
+      kind: input.kind,
+      deletedAt: input.now,
+      entryUpdatedAt:
+        typeof input.entryUpdatedAt === "number" ? input.entryUpdatedAt : 0,
+    }
+  }
+
+  private static resolveAccountUserUpdatedAt(account?: SiteAccount) {
+    if (!account) return undefined
+    return typeof account.user_updated_at === "number"
+      ? account.user_updated_at
+      : account.updated_at
+  }
+
+  private static mergeDeletedEntryRecordMaps(input: {
+    existing?: AccountStorageConfig["deletedEntryRecords"]
+    incoming?: AccountStorageConfig["deletedEntryRecords"]
+  }): NonNullable<AccountStorageConfig["deletedEntryRecords"]> {
+    const records: NonNullable<AccountStorageConfig["deletedEntryRecords"]> = {
+      ...(input.existing || {}),
+    }
+
+    for (const [id, incoming] of Object.entries(input.incoming || {})) {
+      const current = records[id]
+      if (!current || incoming.deletedAt > current.deletedAt) {
+        records[id] = incoming
+      }
+    }
+
+    return records
   }
 
   /**
@@ -187,7 +233,9 @@ class AccountStorageService {
           accountId: account.id,
         })
         const migratedAccount = migrateAccountConfig(account)
-        await this.updateAccount(id, migratedAccount)
+        await this.updateAccount(id, migratedAccount, {
+          userTimestampMode: AccountUpdateUserTimestampMode.Preserve,
+        })
         return migratedAccount
       }
 
@@ -288,7 +336,9 @@ class AccountStorageService {
           userId,
         })
         const migratedAccount = migrateAccountConfig(account)
-        await this.updateAccount(account.id, migratedAccount)
+        await this.updateAccount(account.id, migratedAccount, {
+          userTimestampMode: AccountUpdateUserTimestampMode.Preserve,
+        })
         return migratedAccount
       }
 
@@ -341,7 +391,10 @@ class AccountStorageService {
    * Add a new account; generates id/timestamps and saves.
    */
   async addAccount(
-    accountData: Omit<SiteAccount, "id" | "created_at" | "updated_at">,
+    accountData: Omit<
+      SiteAccount,
+      "id" | "created_at" | "updated_at" | "user_updated_at"
+    >,
   ): Promise<string> {
     try {
       logger.info("开始添加新账号", { siteName: accountData.site_name })
@@ -368,6 +421,7 @@ class AccountStorageService {
   async updateAccount(
     id: string,
     updates: DeepPartial<SiteAccount>,
+    options: UpdateAccountOptions,
   ): Promise<boolean> {
     try {
       return await this.mutateAccountById(id, ({ account }) => ({
@@ -375,6 +429,7 @@ class AccountStorageService {
           account,
           updates,
           now: Date.now(),
+          userTimestampMode: options.userTimestampMode,
         }),
         result: true,
         changed: true,
@@ -402,6 +457,7 @@ class AccountStorageService {
             account,
             updates: { disabled: normalized },
             now: Date.now(),
+            userTimestampMode: AccountUpdateUserTimestampMode.Touch,
           }),
           result: {
             updated: true,
@@ -487,6 +543,7 @@ class AccountStorageService {
             account,
             updates: { disabled: normalized },
             now,
+            userTimestampMode: AccountUpdateUserTimestampMode.Touch,
           })
         })
 
@@ -525,6 +582,7 @@ class AccountStorageService {
     try {
       const deleted = await this.mutateStorageConfig((config) => {
         const accounts = config.accounts
+        const deletedAccount = accounts.find((account) => account.id === id)
         const filteredAccounts = accounts.filter((account) => account.id !== id)
 
         if (filteredAccounts.length === accounts.length) {
@@ -545,6 +603,16 @@ class AccountStorageService {
         config.orderedAccountIds = config.orderedAccountIds.filter(
           (orderedId) => orderedId !== id,
         )
+        const now = Date.now()
+        config.deletedEntryRecords = {
+          ...(config.deletedEntryRecords || {}),
+          [id]: AccountStorageService.createDeletedEntryRecord({
+            kind: DELETED_ENTRY_KIND.ACCOUNT,
+            entryUpdatedAt:
+              AccountStorageService.resolveAccountUserUpdatedAt(deletedAccount),
+            now,
+          }),
+        }
         return { result: true, changed: true }
       })
 
@@ -577,9 +645,10 @@ class AccountStorageService {
     try {
       const result = await this.mutateStorageConfig((config) => {
         const accounts = config.accounts
-        const deletedIds = accounts
-          .filter((account) => idSet.has(account.id))
-          .map((account) => account.id)
+        const deletedAccounts = accounts.filter((account) =>
+          idSet.has(account.id),
+        )
+        const deletedIds = deletedAccounts.map((account) => account.id)
         const filteredAccounts = accounts.filter(
           (account) => !idSet.has(account.id),
         )
@@ -599,6 +668,21 @@ class AccountStorageService {
         config.orderedAccountIds = config.orderedAccountIds.filter(
           (orderedId) => !idSet.has(orderedId),
         )
+        const now = Date.now()
+        config.deletedEntryRecords = {
+          ...(config.deletedEntryRecords || {}),
+          ...Object.fromEntries(
+            deletedAccounts.map((account) => [
+              account.id,
+              AccountStorageService.createDeletedEntryRecord({
+                kind: DELETED_ENTRY_KIND.ACCOUNT,
+                entryUpdatedAt:
+                  AccountStorageService.resolveAccountUserUpdatedAt(account),
+                now,
+              }),
+            ]),
+          ),
+        }
         return { result: { deletedCount, deletedIds }, changed: true }
       })
 
@@ -795,9 +879,13 @@ class AccountStorageService {
    * Update account last_sync_time to now.
    */
   async updateSyncTime(id: string): Promise<boolean> {
-    return this.updateAccount(id, {
-      last_sync_time: Date.now(),
-    })
+    return this.updateAccount(
+      id,
+      {
+        last_sync_time: Date.now(),
+      },
+      { userTimestampMode: AccountUpdateUserTimestampMode.Preserve },
+    )
   }
 
   /**
@@ -820,17 +908,21 @@ class AccountStorageService {
       const detectedAt = today.getTime()
       const currentCheckIn = account.checkIn
 
-      return this.updateAccount(id, {
-        checkIn: {
-          ...currentCheckIn,
-          siteStatus: {
-            ...(currentCheckIn.siteStatus ?? {}),
-            isCheckedInToday: true,
-            lastCheckInDate: todayDate,
-            lastDetectedAt: detectedAt,
+      return this.updateAccount(
+        id,
+        {
+          checkIn: {
+            ...currentCheckIn,
+            siteStatus: {
+              ...(currentCheckIn.siteStatus ?? {}),
+              isCheckedInToday: true,
+              lastCheckInDate: todayDate,
+              lastDetectedAt: detectedAt,
+            },
           },
         },
-      })
+        { userTimestampMode: AccountUpdateUserTimestampMode.Preserve },
+      )
     } catch (error) {
       logger.error("标记账号为已签到失败", { accountId: id, error })
       return false
@@ -861,16 +953,20 @@ class AccountStorageService {
       const todayDate = today.toISOString().split("T")[0]
       const currentCheckIn = account.checkIn
 
-      return this.updateAccount(id, {
-        checkIn: {
-          ...currentCheckIn,
-          customCheckIn: {
-            ...(currentCheckIn.customCheckIn ?? {}),
-            isCheckedInToday: true,
-            lastCheckInDate: todayDate,
+      return this.updateAccount(
+        id,
+        {
+          checkIn: {
+            ...currentCheckIn,
+            customCheckIn: {
+              ...(currentCheckIn.customCheckIn ?? {}),
+              isCheckedInToday: true,
+              lastCheckInDate: todayDate,
+            },
           },
         },
-      })
+        { userTimestampMode: AccountUpdateUserTimestampMode.Preserve },
+      )
     } catch (error) {
       logger.error("标记账号外部签到为已完成失败", { accountId: id, error })
       return false
@@ -994,7 +1090,12 @@ class AccountStorageService {
       })
 
       // 构建更新数据
-      const updateData: Partial<Omit<SiteAccount, "id" | "created_at">> = {
+      const updateData: Partial<
+        Omit<
+          SiteAccount,
+          "id" | "created_at" | "updated_at" | "user_updated_at"
+        >
+      > = {
         health: {
           status: result.healthStatus.status,
           reason: result.healthStatus.message,
@@ -1108,7 +1209,9 @@ class AccountStorageService {
       }
 
       // 更新账号信息
-      const didPersist = await this.updateAccount(id, updateData)
+      const didPersist = await this.updateAccount(id, updateData, {
+        userTimestampMode: AccountUpdateUserTimestampMode.Preserve,
+      })
       const updatedAccount = didPersist
         ? await this.getAccountById(id)
         : account
@@ -1152,14 +1255,18 @@ class AccountStorageService {
       logger.error("刷新账号数据失败", { accountId: id, error })
       // 在出现异常时也尝试更新健康状态为unknown
       try {
-        await this.updateAccount(id, {
-          health: {
-            status: SiteHealthStatus.Unknown,
-            reason: getErrorMessage(error),
-            code: undefined,
+        await this.updateAccount(
+          id,
+          {
+            health: {
+              status: SiteHealthStatus.Unknown,
+              reason: getErrorMessage(error),
+              code: undefined,
+            },
+            last_sync_time: Date.now(),
           },
-          last_sync_time: Date.now(),
-        })
+          { userTimestampMode: AccountUpdateUserTimestampMode.Preserve },
+        )
       } catch (updateError) {
         logger.error("更新健康状态失败", { accountId: id, error: updateError })
       }
@@ -1461,6 +1568,7 @@ class AccountStorageService {
     bookmarks?: SiteBookmark[]
     pinnedAccountIds?: string[]
     orderedAccountIds?: string[]
+    deletedEntryRecords?: AccountStorageConfig["deletedEntryRecords"]
   }): Promise<{ migratedCount: number }> {
     return this.withStorageWriteLock(async () => {
       const backupConfig = this.cloneConfig(await this.getStorageConfig())
@@ -1505,12 +1613,22 @@ class AccountStorageService {
             )
           : filteredOrderedIds
 
+        const deletedEntryRecords =
+          AccountStorageService.mergeDeletedEntryRecordMaps({
+            existing: backupConfig.deletedEntryRecords,
+            incoming: data.deletedEntryRecords,
+          })
+        for (const id of entryIds) {
+          delete deletedEntryRecords[id]
+        }
+
         const nextConfig = normalizeAccountStorageConfigForWrite({
           ...backupConfig,
           accounts: normalizedAccounts,
           bookmarks: bookmarksToImport,
           pinnedAccountIds: pinnedToPersist,
           orderedAccountIds: orderedToPersist,
+          deletedEntryRecords,
         })
 
         await this.storage.set(ACCOUNT_STORAGE_KEYS.ACCOUNTS, nextConfig)
@@ -1950,6 +2068,16 @@ class AccountStorageService {
         config.orderedAccountIds = config.orderedAccountIds.filter(
           (orderedId) => orderedId !== id,
         )
+        const now = Date.now()
+        const current = bookmarks.find((bookmark) => bookmark.id === id)
+        config.deletedEntryRecords = {
+          ...(config.deletedEntryRecords || {}),
+          [id]: AccountStorageService.createDeletedEntryRecord({
+            kind: DELETED_ENTRY_KIND.BOOKMARK,
+            entryUpdatedAt: current?.updated_at,
+            now,
+          }),
+        }
         return { result: true, changed: true }
       })
     } catch (error) {
@@ -2001,7 +2129,9 @@ class AccountStorageService {
       return account
     }
 
-    const success = await this.updateAccount(account.id, updates)
+    const success = await this.updateAccount(account.id, updates, {
+      userTimestampMode: AccountUpdateUserTimestampMode.Preserve,
+    })
     if (success) {
       const refreshed = await this.getAccountById(account.id)
       if (refreshed) {
