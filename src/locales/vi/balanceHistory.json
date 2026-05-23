@@ -82,6 +82,7 @@
   },
   "metrics": {
     "balance": "Số dư",
+    "estimatedIncome": "Thu nhập ước tính",
     "income": "Thu nhập",
     "net": "Thay đổi ròng",
     "outcome": "Chi phí"
@@ -110,6 +111,8 @@
     "enabledHint": "Sau khi đóng, sẽ không ghi lại ảnh chụp nhanh và cũng không lên lịch thu thập cuối ngày.",
     "endOfDayCapture": "Thu thập cuối ngày",
     "endOfDayCaptureHint": "Cố gắng thu thập một lần mỗi ngày vào khoảng {{time}} (yêu cầu trình duyệt hỗ trợ Alarms API).",
+    "estimatedTodayIncome": "Hiển thị thu nhập hôm nay ước tính",
+    "estimatedTodayIncomeHint": "Dùng lịch sử số dư để ước tính phần thưởng không xuất hiện trong nhật ký thu nhập của trang. Không khả dụng khi thiếu ảnh chụp số dư chuẩn của ngày trước.",
     "retentionDays": "Số ngày lưu giữ"
   },
   "summary": {
@@ -120,6 +123,7 @@
       "account": "Tài khoản",
       "cashflowCoverage": "Độ bao phủ thu chi",
       "endBalance": "Số dư cuối kỳ",
+      "estimatedIncomeTotal": "Tổng thu nhập ước tính",
       "incomeTotal": "Thu nhập trong kỳ",
       "outcomeTotal": "Chi phí trong kỳ",
       "rangeNet": "Thay đổi ròng trong kỳ",

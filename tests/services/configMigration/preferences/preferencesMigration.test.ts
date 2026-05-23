@@ -247,6 +247,49 @@ describe("preferencesMigration", () => {
       expect(result.balanceHistory).toEqual(DEFAULT_BALANCE_HISTORY_PREFERENCES)
     })
 
+    it("defaults estimated today income to disabled when migrating balance history preferences", () => {
+      const migrated = migratePreferences(
+        createV0Preferences({
+          balanceHistory: {
+            enabled: true,
+            endOfDayCapture: { enabled: true },
+            retentionDays: 45,
+          },
+          preferencesVersion: 24,
+        } as any),
+      )
+
+      expect(migrated.balanceHistory).toMatchObject({
+        enabled: true,
+        endOfDayCapture: { enabled: true },
+        retentionDays: 45,
+        estimatedTodayIncome: { enabled: false },
+      })
+      expect(migrated.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
+    })
+
+    it("preserves estimated today income when migrating balance history preferences", () => {
+      const migrated = migratePreferences(
+        createV0Preferences({
+          balanceHistory: {
+            enabled: true,
+            endOfDayCapture: { enabled: true },
+            estimatedTodayIncome: { enabled: true },
+            retentionDays: 45,
+          },
+          preferencesVersion: 24,
+        } as any),
+      )
+
+      expect(migrated.balanceHistory).toMatchObject({
+        enabled: true,
+        endOfDayCapture: { enabled: true },
+        retentionDays: 45,
+        estimatedTodayIncome: { enabled: true },
+      })
+      expect(migrated.preferencesVersion).toBe(CURRENT_PREFERENCES_VERSION)
+    })
+
     it("defaults site announcement polling to disabled for new preference snapshots", () => {
       expect(DEFAULT_PREFERENCES.siteAnnouncementNotifications).toEqual(
         DEFAULT_SITE_ANNOUNCEMENT_PREFERENCES,
@@ -263,6 +306,7 @@ describe("preferencesMigration", () => {
           enabled: "yes" as any,
           endOfDayCapture: { enabled: "no" as any },
           retentionDays: "not-a-number" as any,
+          estimatedTodayIncome: { enabled: false },
         },
       })
 
@@ -279,6 +323,7 @@ describe("preferencesMigration", () => {
           enabled: true,
           endOfDayCapture: { enabled: true },
           retentionDays: 0,
+          estimatedTodayIncome: { enabled: false },
         },
       })
       const highPrefs = createV0Preferences({
@@ -287,6 +332,7 @@ describe("preferencesMigration", () => {
           enabled: true,
           endOfDayCapture: { enabled: false },
           retentionDays: 99999,
+          estimatedTodayIncome: { enabled: false },
         },
       })
 
