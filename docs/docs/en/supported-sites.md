@@ -21,6 +21,24 @@ The following are the most common and suitable types of sites for unified manage
 | Super-API | Super-Api brand new AI model interface management and distribution system, for personal learning use only, please do not use for any commercial purposes. This project is based on NewAPI. | [Official Website](https://api.cngov.top/) / [GitHub](https://github.com/SuperAI-Api/Super-API) |
 | v-api | A powerful intermediate platform based on the secondary development of one-api. | No data available |
 
+## ❤️ Recommended Sponsored Sites
+
+If you are looking for stable, efficient, and highly compatible AI relay services, try our partner:
+
+<table>
+  <tr>
+    <td width="160" align="center">
+      <a href="https://www.packyapi.com/register?aff=all-api-hub">
+        <img src="../../resources/partners/packycode.png" alt="PackyCode" width="140">
+      </a>
+    </td>
+    <td>
+      <strong>PackyCode</strong><br/>
+      Offers relay services for Claude Code, Codex, Gemini, and more. Register using <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get <strong>10% off</strong>!
+    </td>
+  </tr>
+</table>
+
 ## Compatible Variants with Limited Public Information
 
 The following compatible types are currently within the plugin's support scope, but have relatively limited public official information. They are typically found in private deployments, closed-source branches, or branded versions of specific sites:

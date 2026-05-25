@@ -96,3 +96,20 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
   alt="All API Hub 微信群二维码"
   style="width: min(280px, 100%);"
 />
+
+<a id="sponsors"></a>
+## ❤️ 赞助商
+
+<table>
+  <tr>
+    <td width="180" align="center">
+      <a href="https://www.packyapi.com/register?aff=all-api-hub">
+        <img src="../../resources/partners/packycode.png" alt="PackyCode" width="150">
+      </a>
+    </td>
+    <td>
+      感谢 PackyCode 赞助了本项目！PackyCode 是一家稳定、高效的API中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。PackyCode
+      为本软件的用户提供了特别优惠，使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写"all-api-hub"优惠码，首次充值可以享受9折优惠！
+    </td>
+  </tr>
+</table>

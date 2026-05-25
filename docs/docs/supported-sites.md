@@ -22,6 +22,24 @@
 | Super-API | Super-Api 全新 AI 模型接口管理与分发系统，仅供个人学习使用，请勿用于任何商业用途，本项目基于 NewAPI 开发。 | [官网](https://api.cngov.top/) / [GitHub](https://github.com/SuperAI-Api/Super-API) |
 | v-api | 基于 one-api 二开的功能强大的中转平台。 | 暂无 |
 
+## ❤️ 推荐赞助站点
+
+如果你正在寻找稳定、高效且兼容性良好的 AI 中转服务，可以尝试我们的合作伙伴：
+
+<table>
+  <tr>
+    <td width="160" align="center">
+      <a href="https://www.packyapi.com/register?aff=all-api-hub">
+        <img src="../resources/partners/packycode.png" alt="PackyCode" width="140">
+      </a>
+    </td>
+    <td>
+      <strong>PackyCode</strong><br/>
+      提供 Claude Code、Codex、Gemini 等多种中转服务。使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写 "all-api-hub" 优惠码，首次充值可享 <strong>9 折优惠</strong>！
+    </td>
+  </tr>
+</table>
+
 ## 已兼容但公开资料较少的变体
 
 以下兼容类型目前也在插件支持范围内，但公开官方资料相对有限，通常见于私有部署、闭源分支或特定站点品牌化版本：

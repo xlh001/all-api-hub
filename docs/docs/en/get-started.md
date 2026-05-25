@@ -40,6 +40,10 @@ Open and log in to your AI proxy station website in your browser first.
 4. Click **`Auto-Recognize`**.
 5. After confirming the information is correct, click **`Confirm Addition`**.
 
+::: tip Don't have an account yet?
+If you are looking for stable, efficient, and highly compatible AI relay services, try our partner [PackyCode](https://www.packyapi.com/register?aff=all-api-hub) (enter the `all-api-hub` promo code during recharge to get 10% off).
+:::
+
 > **Shield Bypass Tip**: If the site has Cloudflare verification (5-second shield), the plugin will automatically pop up a window to assist with bypassing it. Once verified, it will continue the recognition process automatically.
 
 <a id="manual-addition"></a>

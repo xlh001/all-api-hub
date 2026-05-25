@@ -24,7 +24,11 @@
 2. Navigate to **`API Credential Library`** in the left-hand menu.
 3. Click **`Save API key`** in the upper right corner.
 
-If you have already obtained a key for an upstream site in `Key Management`, you can also verify or organize it there before saving it to the `API Credential Library` for easier later use.
+If you have already obtained a key for an upstream site in `Key Management`, you can also verify or organize it before saving it to the `API Credential Library` for easier later use.
+
+::: tip Looking for High-Quality API Interfaces?
+If you need stable and CLI-supported API interfaces to fill your credential library, try our partner [PackyCode](https://www.packyapi.com/register?aff=all-api-hub) (enter the `all-api-hub` promo code during recharge to get 10% off).
+:::
 
 ## How to Add Credentials
 

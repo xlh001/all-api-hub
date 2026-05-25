@@ -21,6 +21,24 @@
 | Super-API | Super-Api 新しい AI モデルインターフェース管理および配布システム。個人学習目的のみに使用し、商業目的には絶対に使用しないでください。このプロジェクトは NewAPI をベースに開発されています。 | [公式サイト](https://api.cngov.top/) / [GitHub](https://github.com/SuperAI-Api/Super-API) |
 | v-api | one-api をベースにした、高機能なプロキシプラットフォーム。 | 該当なし |
 
+## ❤️ 推奨スポンサーサイト
+
+安定しており、効率的で、互換性の高い AI プロキシ サービスをお探しの場合は、当社のパートナーをお試しください:
+
+<table>
+  <tr>
+    <td width="160" align="center">
+      <a href="https://www.packyapi.com/register?aff=all-api-hub">
+        <img src="../../resources/partners/packycode.png" alt="PackyCode" width="140">
+      </a>
+    </td>
+    <td>
+      <strong>PackyCode</strong><br/>
+      Offers relay services for Claude Code, Codex, Gemini, and more. Register using <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get <strong>10% off</strong>!
+    </td>
+  </tr>
+</table>
+
 ## 互換性はあるが公開資料が少ないバリアント
 
 以下の互換性のあるタイプは、現在プラグインのサポート範囲内ですが、公開された公式資料は比較的限られています。通常、プライベートデプロイメント、クローズドソースブランチ、または特定のサイトのブランド化バージョンで見られます。
