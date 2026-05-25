@@ -29,7 +29,7 @@
   <tr>
     <td width="160" align="center">
       <a href="https://www.packyapi.com/register?aff=all-api-hub">
-        <img src="../../resources/partners/packycode.png" alt="PackyCode" width="140">
+        <img src="../../../resources/partners/packycode.png" alt="PackyCode" width="140">
       </a>
     </td>
     <td>
