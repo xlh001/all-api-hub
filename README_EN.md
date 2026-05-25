@@ -68,7 +68,7 @@ But once you have multiple accounts, management quickly becomes painful:
 
 ### 🚀 Fast Ecosystem Integration
 - **One-click quick export**: Deep integration with **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code**, and more. See the full list in [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html).
-- **Admin workflow tools**: Built-in productivity tools for self-hosted site admins, including channel management, model redirection, and channel sync.
+- **Admin workflow tools**: Import existing accounts/keys as self-hosted site channels, with admin tools for channel management, model redirection, and channel sync.
 - **Web sniffing and quick capture**: Select a Base URL or API Key on a webpage to instantly open the test popup and save it. See [Web AI API Sniffing & Verification](https://all-api-hub.qixing1217.top/en/web-ai-api-check.html).
 
 ### 🧪 Reliability Safeguards
