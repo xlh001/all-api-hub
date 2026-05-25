@@ -3,7 +3,6 @@
 </h4>
 
 <div align="center">
-  <img src="src/assets/icon.png" alt="All API Hub Logo" width="128" height="128">
 
 # All API Hub – Your All-in-One AI Asset Manager
 
@@ -19,29 +18,22 @@
 <a href="https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}">
   <img alt="Firefox Add-on" src="https://img.shields.io/amo/v/{bc73541a-133d-4b50-b261-36ea20df0d24}?label=Firefox&logo=firefoxbrowser&style=flat">
 </a>
-<a href="https://github.com/qixing-jk/all-api-hub/releases">
-  <img alt="GitHub version" src="https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat">
-</a>
 </p>
 
-**[⚡ Quick Start](https://all-api-hub.qixing1217.top/en/get-started.html) | [📚 Docs](https://all-api-hub.qixing1217.top/en/) | [💬 Community](https://all-api-hub.qixing1217.top/#community) | [🔌 Integrations](https://all-api-hub.qixing1217.top/en/supported-export-tools.html) | [🌐 Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html) | [❓ FAQ](https://all-api-hub.qixing1217.top/en/faq.html) | [📜 Changelog](https://all-api-hub.qixing1217.top/en/changelog.html)**
+**[⚡ Quick Start](https://all-api-hub.qixing1217.top/en/get-started.html) | [🌐 Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html) | [🔌 Integrations](https://all-api-hub.qixing1217.top/en/supported-export-tools.html) | [📜 Changelog](https://all-api-hub.qixing1217.top/en/changelog.html)**
 
 <p align="center">
-  <strong>📢 Discussion:</strong>
-  <a href="https://linux.do/t/topic/1001042">All API Hub Thread on Linux.do</a>
-</p>
-
-<a id="community"></a>
-<p align="center">
-  <strong>💬 Community:</strong> 
+  <a href="https://linux.do/t/topic/1001042">
+    <img alt="Linux.do discussion thread" src="https://img.shields.io/badge/Discussion-Linux.do-faa511?logo=linux&logoColor=white" />
+  </a>
   <a href="./resources/wechat_group.png">
-    <img alt="WeChat-Chinese Group" src="https://img.shields.io/badge/WeChat-Chinese%20Group-green" />
+    <img alt="WeChat Chinese group" src="https://img.shields.io/badge/WeChat-Chinese%20Group-green?logo=wechat&logoColor=white" />
   </a>
   <a href="https://discord.gg/RmFXZ577ZQ">
-    <img alt="Discord-Multilingual Community" src="https://img.shields.io/badge/Discord-Multilingual%20Community-5865F2?logo=discord&logoColor=white">
+    <img alt="Discord multilingual community" src="https://img.shields.io/badge/Discord-Multilingual%20Community-5865F2?logo=discord&logoColor=white">
   </a>
   <a href="https://t.me/qixing_chat">
-    <img alt="Telegram-Multilingual Group" src="https://img.shields.io/badge/Telegram-Multilingual%20Group-blue?logo=telegram">
+    <img alt="Telegram multilingual group" src="https://img.shields.io/badge/Telegram-Multilingual%20Group-blue?logo=telegram&logoColor=white">
   </a>
 </p>
 

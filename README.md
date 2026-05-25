@@ -3,7 +3,6 @@
 </h4>
 
 <div align="center">
-  <img src="src/assets/icon.png" alt="All API Hub Logo" width="128" height="128">
 
 # All API Hub – 你的全能 AI 资产管家
 
@@ -19,29 +18,22 @@
 <a href="https://addons.mozilla.org/firefox/addon/{bc73541a-133d-4b50-b261-36ea20df0d24}">
   <img alt="Firefox Add-on" src="https://img.shields.io/amo/v/{bc73541a-133d-4b50-b261-36ea20df0d24}?label=Firefox&logo=firefoxbrowser&style=flat">
 </a>
-<a href="https://github.com/qixing-jk/all-api-hub/releases">
-  <img alt="GitHub version" src="https://img.shields.io/github/v/release/qixing-jk/all-api-hub?label=GitHub&logo=github&style=flat">
-</a>
 </p>
 
-**[⚡ 快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [📚 文档中心](https://all-api-hub.qixing1217.top/) | [💬 社区交流](https://all-api-hub.qixing1217.top/#community) | [🔌 集成工具](https://all-api-hub.qixing1217.top/supported-export-tools.html) | [🌐 支持站点](https://all-api-hub.qixing1217.top/supported-sites.html) | [❓ 常见问题](https://all-api-hub.qixing1217.top/faq.html) | [📜 更新日志](https://all-api-hub.qixing1217.top/changelog.html)**
+**[⚡ 快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [🌐 支持站点](https://all-api-hub.qixing1217.top/supported-sites.html) | [🔌 集成工具](https://all-api-hub.qixing1217.top/supported-export-tools.html) | [📜 更新日志](https://all-api-hub.qixing1217.top/changelog.html)**
 
 <p align="center">
-  <strong>📢 讨论帖：</strong>
-  <a href="https://linux.do/t/topic/1001042">Linux.do 主题帖</a>
-</p>
-
-<a id="community"></a>
-<p align="center">
-  <strong>💬 社区：</strong> 
+  <a href="https://linux.do/t/topic/1001042">
+    <img alt="Linux.do 主题帖" src="https://img.shields.io/badge/Linux.do-主题帖-faa511?logo=linux&logoColor=white" />
+  </a>
   <a href="./resources/wechat_group.png">
-    <img alt="中文群" src="https://img.shields.io/badge/WeChat-中文群-green" />
+    <img alt="微信中文群" src="https://img.shields.io/badge/微信-中文群-green?logo=wechat&logoColor=white" />
   </a>
   <a href="https://discord.gg/RmFXZ577ZQ">
-    <img alt="Discord-多语言社区" src="https://img.shields.io/badge/Discord-多语言社区-5865F2?logo=discord&logoColor=white">
+    <img alt="Discord 多语言社区" src="https://img.shields.io/badge/Discord-多语言社区-5865F2?logo=discord&logoColor=white">
   </a>
   <a href="https://t.me/qixing_chat">
-    <img alt="Telegram-多语言群" src="https://img.shields.io/badge/Telegram-多语言群-blue?logo=telegram">
+    <img alt="Telegram 多语言群" src="https://img.shields.io/badge/Telegram-多语言群-blue?logo=telegram&logoColor=white">
   </a>
 </p>
 
