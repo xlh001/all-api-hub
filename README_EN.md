@@ -121,6 +121,26 @@ GitHub Stable and Nightly are manual installation channels. They do not auto-upd
 
 </details>
 
+<a id="sponsors"></a>
+## ❤️ Sponsors
+
+> [Want to appear here?](mailto:street-anime-olive@duck.com)
+
+<table>
+  <tr>
+    <td width="180" align="center">
+      <a href="https://www.packyapi.com/register?aff=all-api-hub">
+        <img src="resources/partners/packycode.png" alt="PackyCode" width="150">
+      </a>
+    </td>
+    <td>
+      Thanks to PackyCode for sponsoring this project! PackyCode is a reliable and efficient API relay service provider, offering relay services for Claude Code, Codex,
+      Gemini, and more. PackyCode provides special discounts for our software users: register using
+      <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get 10% off.
+    </td>
+  </tr>
+</table>
+
 <a id="quick-start"></a>
 ## 🧑‍🚀 30-Second Quick Start
 
