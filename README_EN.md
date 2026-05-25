@@ -67,10 +67,9 @@ But once you have multiple accounts, management quickly becomes painful:
 - **Deep usage analytics**: Generate reports by site, account, model, and date, including heatmaps and slow-request analysis.
 
 ### 🚀 Fast Ecosystem Integration
-- **One-click quick export**: Deep integration with **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code**, and more.
+- **One-click quick export**: Deep integration with **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code**, and more. See the full list in [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html).
 - **Admin workflow tools**: Built-in productivity tools for self-hosted site admins, including channel management, model redirection, and channel sync.
 - **Web sniffing and quick capture**: Select a Base URL or API Key on a webpage to instantly open the test popup and save it. See [Web AI API Sniffing & Verification](https://all-api-hub.qixing1217.top/en/web-ai-api-check.html).
-- **Supported integrations**: 👉 [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html)
 
 ### 🧪 Reliability Safeguards
 - **Multi-dimensional API verification**: Batch test model availability, token compatibility, and CLI proxy availability.
