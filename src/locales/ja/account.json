@@ -170,6 +170,22 @@
     "noResults": "一致するアカウントが見つかりません",
     "placeholder": "サイト情報またはアカウント情報を入力して検索"
   },
+  "sponsor": {
+    "actions": {
+      "continueAddAccount": "このアカウントの追加を続ける",
+      "openApiCredentialProfilesFallback": "このプロバイダーの API キーを API 認証情報として追加",
+      "openBookmarkManagerFallback": "アカウントを追加せず、まずプロバイダーをブックマーク",
+      "visitProvider": "プロバイダーを開く"
+    },
+    "recommendedProviders": "おすすめプロバイダー",
+    "supportStatus": {
+      "fallbackApiCredentialProfiles": "認証情報として追加可能",
+      "fallbackBookmark": "まずブックマーク可能",
+      "fallbackBookmarkAndApi": "ブックマーク / 認証情報として追加可能",
+      "supported": "直接追加可能",
+      "unsupported": "手動設定が必要な場合があります"
+    }
+  },
   "stats": {
     "completion": "補完",
     "estimatedTodayIncome": "推定収入",

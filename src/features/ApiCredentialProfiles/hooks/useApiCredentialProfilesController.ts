@@ -70,6 +70,64 @@ type SaveApiCredentialProfileInput = {
   telemetryConfig?: ApiCredentialTelemetryConfig
 }
 
+type ApiCredentialProfileAddPrefill = {
+  name?: string
+  baseUrl?: string
+  apiKeyCreateUrl?: string
+  apiKeyCreateHint?: string
+}
+
+/**
+ * Normalizes add-dialog prefill fields before they reach controlled inputs or links.
+ */
+function normalizeApiCredentialProfileAddPrefill(
+  value: unknown,
+): ApiCredentialProfileAddPrefill | null {
+  if (typeof value !== "object" || value === null) return null
+
+  const record = value as Record<string, unknown>
+  const name = trimOptionalString(record.name)
+  const baseUrl = trimOptionalString(record.baseUrl)
+  const apiKeyCreateUrl = normalizeOptionalHttpUrl(record.apiKeyCreateUrl)
+  const apiKeyCreateHint = trimOptionalString(record.apiKeyCreateHint)
+
+  const prefill = {
+    ...(name ? { name } : {}),
+    ...(baseUrl ? { baseUrl } : {}),
+    ...(apiKeyCreateUrl ? { apiKeyCreateUrl } : {}),
+    ...(apiKeyCreateHint ? { apiKeyCreateHint } : {}),
+  }
+
+  return Object.keys(prefill).length > 0 ? prefill : null
+}
+
+/**
+ * Trims optional string input and omits empty or non-string values.
+ */
+function trimOptionalString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined
+
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+/**
+ * Returns an HTTP(S) URL string when the optional input is safe to render.
+ */
+function normalizeOptionalHttpUrl(value: unknown): string | undefined {
+  const trimmed = trimOptionalString(value)
+  if (!trimmed) return undefined
+
+  try {
+    const url = new URL(trimmed)
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? trimmed
+      : undefined
+  } catch {
+    return undefined
+  }
+}
+
 type RuntimeBroadcastMessage = {
   type?: (typeof RuntimeMessageTypes)[keyof typeof RuntimeMessageTypes]
 }
@@ -316,14 +374,21 @@ export function useApiCredentialProfilesController() {
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editingProfile, setEditingProfile] =
     useState<ApiCredentialProfile | null>(null)
+  const [addPrefill, setAddPrefill] =
+    useState<ApiCredentialProfileAddPrefill | null>(null)
 
-  const openAddDialog = useCallback(() => {
-    setEditingProfile(null)
-    setIsEditorOpen(true)
-  }, [])
+  const openAddDialog = useCallback(
+    (prefill?: ApiCredentialProfileAddPrefill | null | unknown) => {
+      setEditingProfile(null)
+      setAddPrefill(normalizeApiCredentialProfileAddPrefill(prefill))
+      setIsEditorOpen(true)
+    },
+    [],
+  )
 
   const openEditDialog = useCallback((profile: ApiCredentialProfile) => {
     setEditingProfile(profile)
+    setAddPrefill(null)
     setIsEditorOpen(true)
   }, [])
 
@@ -714,6 +779,7 @@ export function useApiCredentialProfilesController() {
     isEditorOpen,
     setIsEditorOpen,
     editingProfile,
+    addPrefill,
     openAddDialog,
     openEditDialog,
     handleSave,

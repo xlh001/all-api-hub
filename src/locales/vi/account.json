@@ -170,6 +170,22 @@
     "noResults": "Không tìm thấy tài khoản phù hợp",
     "placeholder": "Nhập thông tin trang web hoặc thông tin tài khoản để tìm kiếm"
   },
+  "sponsor": {
+    "actions": {
+      "continueAddAccount": "Tiếp tục thêm tài khoản này",
+      "openApiCredentialProfilesFallback": "Thêm API Key của nhà cung cấp này làm thông tin xác thực API",
+      "openBookmarkManagerFallback": "Đánh dấu nhà cung cấp thay vì thêm tài khoản",
+      "visitProvider": "Truy cập nhà cung cấp"
+    },
+    "recommendedProviders": "Nhà cung cấp được đề xuất",
+    "supportStatus": {
+      "fallbackApiCredentialProfiles": "Có thể thêm làm thông tin xác thực",
+      "fallbackBookmark": "Có thể đánh dấu trước",
+      "fallbackBookmarkAndApi": "Đánh dấu / thêm thông tin xác thực",
+      "supported": "Có thể thêm trực tiếp",
+      "unsupported": "Có thể cần thiết lập thủ công"
+    }
+  },
   "stats": {
     "completion": "Hoàn thành",
     "estimatedTodayIncome": "Thu nhập ước tính",
