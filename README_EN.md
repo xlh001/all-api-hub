@@ -79,15 +79,11 @@ But once you have multiple accounts, management quickly becomes painful:
 - **Local by default**: Your keys and account data stay on your device by default and are only uploaded to external storage when you enable WebDAV backup or sync.
 - **Encrypted sync**: Supports encrypted WebDAV backup so you can restore everything instantly on another machine.
 
-
-> [!NOTE]
-> Loved the original [One API Hub](https://github.com/fxaxg/one-api-hub)? You will probably like All API Hub even more. It has been heavily refactored while keeping data compatibility, so you can import with one click.
-
 <a id="installation"></a>
 ## 🚀 Quick Installation
 
 > [!IMPORTANT]
-> **For 90% of users, the store build is the right choice.** It is the easiest to install, supports automatic updates, and is the most hassle-free option.
+> **For most users, the store build is the recommended choice.** It is the easiest to install, supports automatic updates, and is the most hassle-free option.
 
 | Channel | Install Link | Current Version | Users |
 |------|----------|----------|-------|
@@ -131,6 +127,9 @@ GitHub Stable and Nightly are manual installation channels. They do not auto-upd
     </td>
   </tr>
 </table>
+
+> [!NOTE]
+> If you previously used [One API Hub](https://github.com/fxaxg/one-api-hub), All API Hub has been heavily refactored while preserving data compatibility, so you can import your existing data with one click.
 
 <a id="quick-start"></a>
 ## 🧑‍🚀 30-Second Quick Start
