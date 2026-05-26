@@ -102,8 +102,8 @@ export default function AccountBalanceSummary() {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="dark:bg-dark-bg-secondary/40 space-y-1 rounded-lg bg-gray-50/80 p-3">
+    <div className="space-y-2">
+      <div className="dark:bg-dark-bg-secondary/40 space-y-1 rounded-lg bg-gray-50/80">
         <BodySmall className="font-medium">
           {t("account:stats.totalBalance")}
         </BodySmall>
