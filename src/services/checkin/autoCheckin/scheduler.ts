@@ -1811,7 +1811,9 @@ class AutoCheckinScheduler {
       // Treat missing values as enabled to preserve backward compatibility with older stored prefs.
       notifyUiOnCompletion = config.notifyUiOnCompletion !== false
 
-      if (!config.globalEnabled) {
+      // The global switch controls scheduled/bulk auto check-in. An explicit
+      // per-account manual run from the account menu should still execute.
+      if (!config.globalEnabled && !targetAccountIdSet) {
         logger.info("Global feature disabled; skipping")
         return
       }

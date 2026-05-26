@@ -1372,6 +1372,77 @@ describe("autoCheckinScheduler daily+retry behavior", () => {
     vi.useRealTimers()
   })
 
+  it("allows targeted manual check-in when the global scheduled feature is disabled", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: false,
+        notifyUiOnCompletion: true,
+      },
+    })
+
+    storedStatus = {
+      perAccount: {
+        target: {
+          accountId: "target",
+          accountName: "Target Site · user",
+          status: "skipped",
+          messageKey: "autoCheckin:skipReasons.account_disabled",
+          reasonCode: "account_disabled",
+          timestamp: Date.now() - 60_000,
+        },
+      },
+      summary: {
+        totalEligible: 1,
+        executed: 0,
+        successCount: 0,
+        failedCount: 0,
+        skippedCount: 1,
+        needsRetry: false,
+      },
+    } as any
+
+    const targetAccount: any = {
+      id: "target",
+      disabled: false,
+      site_name: "Target Site",
+      site_type: SITE_TYPES.VELOERA,
+      account_info: { username: "user" },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }
+    mockedAccountStorage.getAllAccounts.mockResolvedValue([targetAccount])
+
+    const provider = {
+      canCheckIn: vi.fn(() => true),
+      checkIn: vi.fn(async () => ({ status: "success" })),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValue(provider)
+
+    await autoCheckinScheduler.runCheckins({
+      runType: AUTO_CHECKIN_RUN_TYPE.MANUAL,
+      targetAccountIds: ["target"],
+    })
+
+    expect(provider.checkIn).toHaveBeenCalledTimes(1)
+    expect(storedStatus.perAccount.target).toMatchObject({
+      status: "success",
+    })
+    expect(storedStatus.perAccount.target.reasonCode).toBeUndefined()
+    expect(storedStatus.summary).toMatchObject({
+      totalEligible: 1,
+      executed: 1,
+      successCount: 1,
+      failedCount: 0,
+      skippedCount: 0,
+      needsRetry: false,
+    })
+
+    vi.useRealTimers()
+  })
+
   it("preserves targeted manual history when runCheckins fails before execution", async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2024, 0, 1, 9, 15, 0))
