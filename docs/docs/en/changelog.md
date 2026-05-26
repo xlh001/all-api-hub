@@ -8,6 +8,16 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.41.1
+- **Bug Fixes:**
+  - Account Management: Fixed the first add-account auto-detect flow not carrying detected check-in detection and auto check-in settings into the form. You can now confirm whether the account supports check-in, and whether it will join auto check-in, before saving. See [Account Management](./account-management.md).
+  - Auto Check-in: Fixed `Quick Check-in` from an account menu being skipped when global auto check-in is disabled. Manual per-account check-ins now run independently from the background schedule switch. See [Auto Check-in](./auto-checkin.md).
+  - Auto Check-in: Improved Turnstile handling for New API access-token accounts. The assisted flow now tries an incognito temporary window first and falls back to a normal temporary window when needed, reducing failures caused by mixed login states across multiple accounts.
+
+**Location Hints:**
+- Add-account check-in settings: Use auto-detect while adding an account under "Settings → Account Management".
+- `Quick Check-in` and Turnstile results: Check "Settings → Auto Check-in" or the account action menu.
+
 ## 3.41.0
 - **New Features:**
   - AIHubMix: `AIHubMix` accounts can now view available models and prices in Model List, with prices shown from the site's returned per-1M-token rates. When the account-specific model scope cannot be confirmed, a catalog-scope notice is shown so you do not mistake every catalog model as available to the account. See [Model List](./model-list.md).
