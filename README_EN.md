@@ -6,7 +6,7 @@
 
 # All API Hub – Your All-in-One AI Asset Manager
 
-**One-stop management for New API-compatible relay accounts: balance/usage dashboards, model price comparison, automatic check-in, site keys and an API credential library, in-page API availability testing, and channel/model sync & redirect**
+**One-stop management for New API-compatible relay accounts: balances, usage, model prices, check-ins, API credentials, in-page testing, and channel/model sync & redirects**
 
 <p align="center">
 <a href="https://chromewebstore.google.com/detail/lapnciffpekdengooeolaienkeoilfeo">
@@ -42,33 +42,33 @@
 <a id="introduction"></a>
 ## ❓ Why All API Hub?
 
-**In simple terms**: AI relay sites are like a marketplace for AI credits, letting you access top-tier models such as ChatGPT, Claude, and Midjourney in one place at very low prices, sometimes even for free.
+**In simple terms**: AI relay sites are like a marketplace for AI credits, giving you low-cost or even free access to models such as ChatGPT, Claude, and GPT Image.
 
 But once you have multiple accounts, management quickly becomes painful:
 
-- 📂 **Scattered assets**: To check balances and spending, you have to sign in to each site one by one.
-- 💲 **Messy pricing**: Every site uses different billing ratios, so it is hard to tell which one is actually the best deal.
-- ✅ **Missed daily perks**: Many sites offer free daily check-in credits, but manual check-ins are tedious and easy to forget.
-- 🔌 **Annoying setup work**: Pasting API credentials into different AI tools such as Immersive Translate or Cherry Studio gets old fast.
+- 📂 **Scattered assets**: Balances and usage are spread across separate sites.
+- 💲 **Messy pricing**: Different billing ratios make the best deal hard to spot.
+- ✅ **Missed daily perks**: Manual daily check-ins are easy to forget.
+- 🔌 **Annoying setup work**: API details must be copied into tools such as cc-switch and Cherry Studio again and again.
 
-**All API Hub is your all-purpose AI asset manager.** Just add your site URLs and let the extension handle the rest.
+**All API Hub is your AI asset manager**: add your site URLs and let the extension handle the rest.
 
 <a id="features"></a>
 ## ✨ What Can It Do for You?
 
 ### 📊 Unified Dashboard for Multiple Sites
-- **Multi-account asset overview**: See balances, total usage, and health status for all your sites in one panel.
-- **Smart site detection**: Paste a URL and the extension automatically detects the architecture type, billing ratio, and setup details.
-- **API credential library**: Save common `Base URL + API Key` pairs for quick copying, API verification, model lookup, and balance/usage checks.
+- **Multi-account asset overview**: See balances, usage, and health status in one panel.
+- **Smart site detection**: Paste a URL to detect the architecture, billing ratio, and setup details.
+- **API credential library**: Save common `Base URL + API Key` pairs for copying, API verification, model lookup, and balance/usage checks.
 
 ### 💰 Smarter Savings and Automated Gains
-- **Model price comparison**: Automatically calculate the effective per-model price across sites so you can find the best-value group and endpoint.
-- **Fully automated check-in flow**: Run check-ins for all supported sites with one click or on a schedule, so your stored quota keeps growing.
+- **Model price comparison**: Calculate effective model prices across sites to find better-value groups and endpoints.
+- **Fully automated check-in flow**: Run supported site check-ins with one click or on a schedule.
 - **Deep usage analytics**: Generate reports by site, account, model, and date, including heatmaps and slow-request analysis.
 
 ### 🚀 Fast Ecosystem Integration
-- **One-click quick export**: Deep integration with **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code**, and more. See the full list in [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html).
-- **Admin workflow tools**: Import existing accounts/keys as self-hosted site channels, with admin tools for channel management, model redirection, and channel sync.
+- **One-click quick export**: Sync to **CherryStudio, CC Switch, CLIProxyAPI, Claude Code Router, Kilo Code**, and more. See [Supported Tools](https://all-api-hub.qixing1217.top/en/supported-export-tools.html).
+- **Admin workflow tools**: Import accounts/keys as self-hosted site channels, with tools for channel management, model redirection, and channel sync.
 - **Web sniffing and quick capture**: Select a Base URL or API Key on a webpage to instantly open the test popup and save it. See [Web AI API Sniffing & Verification](https://all-api-hub.qixing1217.top/en/web-ai-api-check.html).
 
 ### 🧪 Reliability Safeguards
@@ -76,14 +76,14 @@ But once you have multiple accounts, management quickly becomes painful:
 - **Cloudflare challenge assistant**: Automatically helps you get through Cloudflare challenges so data refreshes and API calls stay uninterrupted.
 
 ### 🔒 Privacy and Security
-- **Local by default**: Your keys and account data stay on your device by default and are only uploaded to external storage when you enable WebDAV backup or sync.
-- **Encrypted sync**: Supports encrypted WebDAV backup so you can restore everything instantly on another machine.
+- **Local by default**: Keys and account data stay on your device unless you enable WebDAV backup or sync.
+- **Encrypted sync**: Supports encrypted WebDAV backup so you can restore data on another machine.
 
 <a id="installation"></a>
 ## 🚀 Quick Installation
 
 > [!IMPORTANT]
-> **For most users, the store build is the recommended choice.** It is the easiest to install, supports automatic updates, and is the most hassle-free option.
+> **For most users, the store build is recommended.** It is easy to install and supports automatic updates.
 
 | Channel | Install Link | Current Version | Users |
 |------|----------|----------|-------|
@@ -99,7 +99,7 @@ But once you have multiple accounts, management quickly becomes painful:
 | GitHub Stable | [Download Stable](https://github.com/qixing-jk/all-api-hub/releases/latest) | When you cannot install the store build or need to temporarily install a published fix manually |
 | Nightly pre-release | [Download Nightly](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) | When you want early access and are willing to help test; it may be less stable than the store build |
 
-GitHub Stable and Nightly are manual installation channels. They do not auto-update like the store build. You can Star / Watch the repository to receive new version notifications.
+GitHub Stable and Nightly are manual installation channels and do not auto-update. Star / Watch the repository to receive new version notifications.
 
 **Other environments:**
 - **Mobile browsers**: Supports mobile Edge, Firefox for Android, Kiwi, and more. See the [mobile browser guide](https://all-api-hub.qixing1217.top/en/faq.html#mobile-browser-support).
