@@ -1,6 +1,50 @@
 {
   "schemaVersion": 3,
-  "items": [],
+  "items": [
+    {
+      "id": "packycode",
+      "enabled": true,
+      "rank": 100,
+      "supportStatus": "supported",
+      "urls": {
+        "primaryAffiliate": "https://www.packyapi.com/register?aff=all-api-hub",
+        "website": "https://www.packyapi.com",
+        "apiKeyCreate": "https://www.packyapi.com/console/token?aff=all-api-hub"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "PackyCode",
+          "tagline": "稳定高效的 API 中转服务，支持 Claude Code、Codex、Gemini 等多种工具场景。",
+          "postClickNote": "使用 all-api-hub 优惠码完成首次充值，可享受 9 折优惠。"
+        },
+        "zh-TW": {
+          "name": "PackyCode",
+          "tagline": "穩定高效的 API 中轉服務，支援 Claude Code、Codex、Gemini 等多種工具場景。",
+          "postClickNote": "使用 all-api-hub 優惠碼完成首次儲值，可享 9 折優惠。"
+        },
+        "en": {
+          "name": "PackyCode",
+          "tagline": "A stable and efficient API relay service for Claude Code, Codex, Gemini, and more.",
+          "postClickNote": "Use promo code all-api-hub on your first recharge to get 10% off."
+        },
+        "ja": {
+          "name": "PackyCode",
+          "tagline": "Claude Code、Codex、Gemini などで使える、安定した高速な API リレーサービスです。",
+          "postClickNote": "初回チャージ時にプロモコード all-api-hub を入力すると、10% オフになります。"
+        },
+        "vi": {
+          "name": "PackyCode",
+          "tagline": "Dich vu chuyen tiep API on dinh, hieu qua cho Claude Code, Codex, Gemini va nhieu cong cu khac.",
+          "postClickNote": "Dung ma uu dai all-api-hub trong lan nap dau tien de duoc giam 10%."
+        }
+      },
+      "accountPrefill": {
+        "siteType": "new-api",
+        "siteUrl": "https://www.packyapi.com",
+        "authType": "access_token"
+      }
+    }
+  ],
   "_examples": {
     "devSponsors": [
       {
