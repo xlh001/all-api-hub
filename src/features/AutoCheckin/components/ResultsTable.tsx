@@ -108,6 +108,8 @@ export default function ResultsTable({
     switch (hintKey) {
       case "execution.hints.invalidAccessToken":
         return t("execution.hints.invalidAccessToken")
+      case "execution.hints.manualVerificationRequired":
+        return t("execution.hints.manualVerificationRequired")
       case "execution.hints.noTabWithId":
         return t("execution.hints.noTabWithId")
       case "execution.hints.siteTypeCheckinUnsupported":
