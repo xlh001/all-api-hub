@@ -1193,7 +1193,7 @@ export function useAccountDialog({
 
         const preserveExistingCheckIn =
           mode === DIALOG_MODES.EDIT ||
-          formSource !== ACCOUNT_DIALOG_FORM_SOURCES.DETECTED
+          formSource === ACCOUNT_DIALOG_FORM_SOURCES.DETECTED
 
         const nextSiteType = isAccountSiteType(resultData.siteType)
           ? resultData.siteType

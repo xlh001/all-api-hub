@@ -76,6 +76,58 @@ describe("useAccountDialog re-detect preservation", () => {
     await accountStorage.clearAllData()
   })
 
+  it("prefills detected check-in support on the first add-account auto-detect", async () => {
+    mockAutoDetectAccount.mockResolvedValueOnce({
+      success: true,
+      message: "ok",
+      data: {
+        username: "detected-user",
+        accessToken: "detected-token",
+        userId: "7",
+        exchangeRate: 7,
+        siteName: "Detected New API",
+        siteType: SITE_TYPES.NEW_API,
+        checkIn: {
+          enableDetection: true,
+          autoCheckInEnabled: true,
+          siteStatus: { isCheckedInToday: false },
+          customCheckIn: {
+            url: "",
+            redeemUrl: "",
+            openRedeemWithCheckIn: true,
+            isCheckedInToday: false,
+          },
+        } as CheckInConfig,
+      },
+    })
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://new-api.example.com")
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleAutoDetect()
+    })
+
+    expect(result.current.state.isDetected).toBe(true)
+    expect(result.current.state.siteType).toBe(SITE_TYPES.NEW_API)
+    expect(result.current.state.checkIn.enableDetection).toBe(true)
+    expect(result.current.state.checkIn.autoCheckInEnabled).toBe(true)
+  })
+
   it("preserves notes and custom check-in fields when re-detecting an existing account", async () => {
     const turnstilePreTrigger: TurnstilePreTrigger = {
       kind: "clickSelector",
