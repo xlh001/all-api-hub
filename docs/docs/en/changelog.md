@@ -8,6 +8,24 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.41.0
+- **New Features:**
+  - AIHubMix: `AIHubMix` accounts can now view available models and prices in Model List, with prices shown from the site's returned per-1M-token rates. When the account-specific model scope cannot be confirmed, a catalog-scope notice is shown so you do not mistake every catalog model as available to the account. See [Model List](./model-list.md).
+  - Balance History: Added an optional, off-by-default "Estimated Today's Income" feature. The popup and Balance History can now show site-reported income separately from income estimated from balance changes. See [Balance History](./balance-history.md).
+  - Account Management: The add/edit account form now includes an **`Exclude from Today's Income`** switch. Specific accounts can be excluded from today's income totals in the popup, account list, and shared overview without affecting refresh, check-in, or account display. See [Account Management](./account-management.md).
+- **Experience Optimizations:**
+  - Add Account: Improved the first-step input experience. Authentication method and site URL now adapt to the available width: narrow screens choose the authentication method first and then fill in the site URL, while wider screens keep them side by side, making the add-account flow less cramped.
+  - Auto Check-in: When a result fails because Turnstile, PoW, or another web verification step is required, the results table now suggests opening the site and completing verification before retrying, reducing confusion from raw error messages. See [Auto Check-in](./auto-checkin.md).
+- **Bug Fixes:**
+  - WebDAV: Fixed an issue where deleted accounts or bookmarks could reappear from an older backup after merged sync. Deletion records now participate in later sync merges. See [WebDAV Backup and Auto Sync](./webdav-sync.md).
+
+**Location Hints:**
+- AIHubMix Model List: Open "Settings → Model List" and select an `AIHubMix` account as the data source.
+- Estimated Today's Income: Enable it under "Settings → Basic Settings → Balance History", then view it in the popup and "Settings → Balance History".
+- `Exclude from Today's Income`: Available in the balance statistics section of the add/edit account dialog under "Settings → Account Management".
+- Auto Check-in Verification Hint: View it in failed account rows in the Auto Check-in execution results list.
+- WebDAV Sync: Use it from `WebDAV Settings` and sync actions under "Settings → Import / Export".
+
 ## 3.40.0
 ::: warning Site Announcement Auto Polling Is Off by Default
 Starting in this version, background auto polling for Site Announcements is opt-in: the extension will not proactively visit sites linked to your saved accounts on a schedule unless you explicitly enable it. Existing users will also be migrated to the disabled state after upgrading. You can still click **`Check Now`** manually on the Site Announcements page. To keep scheduled background polling, re-enable it under "Settings → General → Site Announcements" and adjust the polling interval as needed.
