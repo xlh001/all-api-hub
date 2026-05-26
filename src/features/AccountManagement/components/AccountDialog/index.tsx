@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { ThemeAwareToaster } from "~/components/ThemeAwareToaster"
 import { Modal } from "~/components/ui/Dialog/Modal"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
+import { AIHUBMIX_API_ORIGIN } from "~/constants/siteType"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
 import { useDialogStateContext } from "~/features/AccountManagement/hooks/DialogStateContext"
 import { SPONSOR_RECOMMENDATION_SURFACES } from "~/features/AccountManagement/sponsors/constants"
@@ -14,8 +15,10 @@ import { useSponsorRecommendations } from "~/features/AccountManagement/sponsors
 import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import AddTokenDialog from "~/features/KeyManagement/components/AddTokenDialog"
 import { OneTimeApiKeyDialog } from "~/features/KeyManagement/components/OneTimeApiKeyDialog"
+import { buildOneTimeApiKeyProfileSaveAction } from "~/features/KeyManagement/utils/apiCredentialProfileSaveAction"
 import { DEFAULT_AUTO_PROVISION_TOKEN_NAME } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
 import type { DisplaySiteData } from "~/types"
+import { createLogger } from "~/utils/core/logger"
 import {
   openApiCredentialProfilesPage,
   openFullBookmarkManagerPage,
@@ -33,6 +36,8 @@ import InfoPanel from "./InfoPanel"
 import { ManagedSiteConfigPromptDialog } from "./ManagedSiteConfigPromptDialog"
 import { ACCOUNT_DIALOG_PHASES } from "./models"
 import SiteInfoInput from "./SiteInfoInput"
+
+const logger = createLogger("AccountDialog")
 
 interface AccountDialogProps {
   isOpen: boolean
@@ -175,6 +180,19 @@ export default function AccountDialog({
           postSaveSub2ApiDialogSessionId,
         )
       : null
+
+  const postSaveOneTimeKeySaveAction = state.postSaveOneTimeToken
+    ? buildOneTimeApiKeyProfileSaveAction({
+        accountName: state.draft.siteName || "AIHubMix",
+        baseUrl: AIHUBMIX_API_ORIGIN,
+        siteType: state.siteType,
+        tagIds: state.draft.tagIds,
+        token: state.postSaveOneTimeToken,
+        t,
+        logger,
+        source: "AccountDialog",
+      })
+    : undefined
 
   return (
     <>
@@ -381,6 +399,7 @@ export default function AccountDialog({
         isOpen={!!state.postSaveOneTimeToken}
         token={state.postSaveOneTimeToken}
         onClose={handlers.handlePostSaveOneTimeTokenClose}
+        saveAction={postSaveOneTimeKeySaveAction}
       />
     </>
   )
