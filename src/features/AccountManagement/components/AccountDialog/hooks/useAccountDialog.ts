@@ -75,7 +75,7 @@ import {
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
-import { showWarningToast } from "~/utils/core/toastHelpers"
+import { showUpdateToast, showWarningToast } from "~/utils/core/toastHelpers"
 import { tryParseOrigin } from "~/utils/core/urlParsing"
 import { openSettingsTab } from "~/utils/navigation"
 
@@ -150,6 +150,7 @@ export function useAccountDialog({
     managedSiteType,
     autoFillCurrentSiteUrlOnAccountAdd,
     autoProvisionKeyOnAccountAdd,
+    updateWarnOnDuplicateAccountAdd,
   } = useUserPreferencesContext()
 
   const [url, setUrl] = useState("")
@@ -496,6 +497,32 @@ export function useAccountDialog({
     duplicateAccountWarningResolverRef.current?.(true)
     duplicateAccountWarningResolverRef.current = null
   }, [])
+
+  const handleDuplicateAccountWarningDisableAndContinue =
+    useCallback(async () => {
+      let success = false
+      try {
+        success = await updateWarnOnDuplicateAccountAdd(false)
+      } catch (error) {
+        logger.warn("Failed to disable duplicate-account warning preference", {
+          error,
+        })
+      }
+
+      if (!success) {
+        showUpdateToast(
+          false,
+          t("settings:duplicateAccountWarningOnAdd.toggleLabel"),
+        )
+        return
+      }
+
+      setDuplicateAccountWarning((prev) =>
+        prev.isOpen ? { ...prev, isOpen: false } : prev,
+      )
+      duplicateAccountWarningResolverRef.current?.(true)
+      duplicateAccountWarningResolverRef.current = null
+    }, [t, updateWarnOnDuplicateAccountAdd])
 
   // Enforce Sub2API constraints: JWT-only (access token), no built-in check-in.
   useEffect(() => {
@@ -2179,6 +2206,7 @@ export function useAccountDialog({
       handleSub2apiUseRefreshTokenChange,
       handleDuplicateAccountWarningCancel,
       handleDuplicateAccountWarningContinue,
+      handleDuplicateAccountWarningDisableAndContinue,
       handleManagedSiteConfigPromptClose,
       handleOpenManagedSiteSettings,
       handleAihubmixPostSaveKeyPromptCancel,
