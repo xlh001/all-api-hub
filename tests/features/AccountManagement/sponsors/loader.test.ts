@@ -17,6 +17,120 @@ import {
 } from "~/features/AccountManagement/sponsors/types"
 import { AuthTypeEnum } from "~/types"
 
+const sponsorLoaderFixtures = vi.hoisted(() => ({
+  bundledCatalog: {
+    schemaVersion: 3,
+    items: [
+      {
+        id: "bundled-provider",
+        enabled: true,
+        rank: 10,
+        supportStatus: "supported",
+        urls: {
+          primaryAffiliate: "https://bundled.example.com/affiliate",
+          website: "https://bundled.example.com",
+        },
+        locales: {
+          "zh-CN": {
+            name: "本地服务",
+            tagline: "本地推荐",
+          },
+          en: {
+            name: "Bundled Provider",
+            tagline: "Bundled recommendation",
+          },
+        },
+        accountPrefill: {
+          siteType: "new-api",
+          siteUrl: "https://bundled.example.com",
+          authType: "access_token",
+        },
+      },
+    ],
+    _examples: {
+      devSponsors: [
+        {
+          id: "dev-supported-direct",
+          enabled: true,
+          rank: 9000,
+          supportStatus: "supported",
+          urls: {
+            primaryAffiliate: "https://dev-supported.example.test/register",
+            website: "https://dev-supported.example.test",
+          },
+          locales: {
+            "zh-CN": {
+              name: "[DEV] 可直接添加",
+              tagline:
+                "测试 Cookie 认证的 accountPrefill 主按钮和添加账号预填。",
+              postClickNote:
+                "测试 Cookie 认证预填后的提示，会显示在新建账号 URL 下方。",
+            },
+          },
+          accountPrefill: {
+            siteType: "new-api",
+            siteUrl: "https://dev-supported.example.test",
+            authType: "cookie",
+          },
+        },
+        {
+          id: "dev-supported-access-token",
+          enabled: true,
+          rank: 9010,
+          supportStatus: "supported",
+          urls: {
+            primaryAffiliate: "https://dev-token.example.test/register",
+            website: "https://dev-token.example.test",
+            apiKeyCreate:
+              "https://dev-token.example.test/dashboard/api-keys?utm_source=all-api-hub",
+          },
+          locales: {
+            "zh-CN": {
+              name: "[DEV] 访问令牌",
+              tagline: "测试 access token 认证预填。",
+              postClickNote:
+                "测试访问令牌认证预填后的提示，会显示在新建账号 URL 下方。",
+            },
+          },
+          accountPrefill: {
+            siteType: "new-api",
+            siteUrl: "https://dev-token.example.test",
+            authType: "access_token",
+          },
+        },
+        {
+          id: "dev-unsupported-all-fallbacks",
+          enabled: true,
+          rank: 9020,
+          supportStatus: "unsupported",
+          urls: {
+            primaryAffiliate: "https://dev-all-fallbacks.example.test/register",
+            website: "https://dev-all-fallbacks.example.test",
+            apiKeyCreate:
+              "https://dev-all-fallbacks.example.test/dashboard/api-keys?utm_source=all-api-hub",
+          },
+          locales: {
+            "zh-CN": {
+              name: "[DEV] 全部兜底",
+              tagline: "测试全部兜底入口。",
+              postClickNote:
+                "测试赞助商提供的活动提示，可同时显示在添加账号和获取 API Key 的引导中。",
+            },
+          },
+          fallbackHints: {
+            bookmarkManager: true,
+            apiCredentialProfiles: true,
+          },
+        },
+      ],
+    },
+  },
+}))
+
+vi.mock("~~/public/sponsor-catalog.json", () => ({
+  default: sponsorLoaderFixtures.bundledCatalog,
+}))
+
 vi.mock("~/features/AccountManagement/sponsors/storage", () => ({
   sponsorCatalogStorage: {
     getCachedRemoteCatalog: vi.fn(),
@@ -74,6 +188,24 @@ function mockFetchJson(payload: unknown, ok = true) {
   return fetchMock
 }
 
+function expectBundledSponsorFallback(
+  result: Awaited<ReturnType<typeof loadSponsorRecommendations>>,
+) {
+  expect(result.source).toBe(SPONSOR_CATALOG_SOURCES.Bundled)
+  expect(result.items).toEqual([
+    expect.objectContaining({
+      id: "bundled-provider",
+      name: "本地服务",
+      source: SPONSOR_CATALOG_SOURCES.Bundled,
+      accountPrefill: expect.objectContaining({
+        authType: AuthTypeEnum.AccessToken,
+        siteType: SITE_TYPES.NEW_API,
+        siteUrl: "https://bundled.example.com",
+      }),
+    }),
+  ])
+}
+
 describe("sponsor recommendation loader", () => {
   beforeEach(() => {
     vi.unstubAllGlobals()
@@ -123,8 +255,7 @@ describe("sponsor recommendation loader", () => {
 
     const result = await loadSponsorRecommendations({ locale: "zh-CN", now })
 
-    expect(result.items).toEqual([])
-    expect(result.source).toBe(SPONSOR_CATALOG_SOURCES.Bundled)
+    expectBundledSponsorFallback(result)
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
@@ -152,8 +283,7 @@ describe("sponsor recommendation loader", () => {
 
     const result = await loadSponsorRecommendations({ locale: "zh-CN", now })
 
-    expect(result.items).toEqual([])
-    expect(result.source).toBe(SPONSOR_CATALOG_SOURCES.Bundled)
+    expectBundledSponsorFallback(result)
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
@@ -166,8 +296,7 @@ describe("sponsor recommendation loader", () => {
 
     const result = await loadSponsorRecommendations({ locale: "zh-CN", now })
 
-    expect(result.items).toEqual([])
-    expect(result.source).toBe(SPONSOR_CATALOG_SOURCES.Bundled)
+    expectBundledSponsorFallback(result)
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
