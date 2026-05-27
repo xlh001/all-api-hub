@@ -230,7 +230,7 @@ This project uses [Husky](https://typicode.github.io/husky) to enforce code qual
 
 - **pre-commit**: Runs `pnpm run validate:staged` (see `.husky/pre-commit` and `package.json`)
   - Runs `pnpm lint-staged --concurrent false` to format staged source and script files with Prettier, fix ESLint issues, and run `vitest related --run` for staged JS/TS files
-  - Then runs `pnpm run i18n:check:staged` so repo-level translation extraction checks are not skipped when `lint-staged` passes
+  - Then runs `pnpm run i18n:check:staged` so repo-level translation extraction and completeness checks are not skipped when `lint-staged` passes
 - **pre-push**: Runs `pnpm run validate:push` (see `.husky/pre-push` and `package.json`)
   - Internally runs `pnpm compile` to catch full-repo TypeScript issues locally before push
   - Then runs `pnpm knip` to catch unused files, exports, and dependencies before push
@@ -287,7 +287,7 @@ GitHub Actions automatically runs tests on every push and pull request. The work
 3. Runs `pnpm compile` for full-repo type checking
 4. Runs `pnpm lint` for repository-wide lint validation
 5. Runs `pnpm knip` to catch unused files, exports, and dependencies
-6. Runs `pnpm run i18n:extract:ci` to ensure locale files stay in sync with code
+6. Runs `pnpm run i18n:extract:ci` and `pnpm run i18n:status` to ensure locale files stay in sync with code and all secondary locales are complete
 7. Runs `pnpm test:ci` to execute tests with coverage
 8. Uploads coverage artifacts
 
