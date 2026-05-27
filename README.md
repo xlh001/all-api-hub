@@ -207,7 +207,7 @@ All API Hub 基于 GNU Affero General Public License v3.0（AGPL-3.0）开源。
 
 商业授权联系：<street-anime-olive@duck.com>
 
-商业授权仅覆盖 All API Hub 维护者有权授权的代码和资源。第三方依赖以及历史上源自 [One API Hub](https://github.com/fxaxg/one-api-hub) 的 MIT 许可部分，仍需保留对应版权与许可声明。
+商业授权仅覆盖 All API Hub 维护者有权授权的代码和资源。第三方依赖以及历史上源自 [One API Hub](https://github.com/fxaxg/one-api-hub) 的 MIT 许可部分，仍需保留对应版权与许可声明，详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 <a id="tech-stack"></a>
 ## 🏗️ 技术栈

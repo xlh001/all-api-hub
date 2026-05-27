@@ -209,7 +209,7 @@ Commercial licenses are available for organizations or individuals who need term
 
 For commercial licensing, contact: <street-anime-olive@duck.com>
 
-Commercial licenses apply only to code and assets for which the All API Hub maintainers have the right to grant commercial terms. Third-party dependencies and historical MIT-licensed portions derived from [One API Hub](https://github.com/fxaxg/one-api-hub) remain subject to their own copyright and license notices.
+Commercial licenses apply only to code and assets for which the All API Hub maintainers have the right to grant commercial terms. Third-party dependencies and historical MIT-licensed portions derived from [One API Hub](https://github.com/fxaxg/one-api-hub) remain subject to their own copyright and license notices. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 <a id="tech-stack"></a>
 ## 🏗️ Tech Stack
