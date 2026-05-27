@@ -15,7 +15,7 @@
 | done-hub | このプロジェクトは one-hub をベースに二次開発されました。 | [GitHub](https://github.com/deanxv/done-hub) |
 | AnyRouter | Claude Code プロキシ · ゼロしきい値 · 無料 $50 | [ドキュメント](https://docs.anyrouter.top/) / [公式サイト](https://anyrouter.top) |
 | WONG公益站 | 安定した公開された公式説明はありません。 | 安定した公開された公式リンクはありません |
-| AIHubMix | 独立した AI API 集約サイト。拡張機能では専用のアカウント種別として、残高、キー、モデル API に対応します。 | [公式サイト](https://aihubmix.com/?aff=W3DN) / [API ドキュメント](https://docs.aihubmix.com/cn/api/Cli) |
+| AIHubMix | 独立した AI API 集約サイト。拡張機能では専用のアカウント種別として、残高、キー、モデル API に対応します。 | [公式サイト](https://aihubmix.com/?aff=W3DN) / [API ドキュメント](https://docs.aihubmix.com/cn/api/Cli) / [設定ガイド](./sponsor-guides/aihubmix.md) |
 | Veloera | このプロジェクトはメンテナンスを停止しました。 | [GitHub](https://github.com/Veloera/Veloera) |
 | VoAPI | 旧バージョンの互換デプロイのみ対応しています。新しい VoAPI バージョンは、現在の拡張機能の互換範囲外です。 | [GitHub](https://github.com/VoAPI/VoAPI) |
 | Super-API | Super-Api 新しい AI モデルインターフェース管理および配布システム。個人学習目的のみに使用し、商業目的には絶対に使用しないでください。このプロジェクトは NewAPI をベースに開発されています。 | [公式サイト](https://api.cngov.top/) / [GitHub](https://github.com/SuperAI-Api/Super-API) |
@@ -42,7 +42,7 @@
       <img src="../../../resources/partners/xingchen.png" alt="Xingchen AI">
     </a>
     <p>
-      <strong>Xingchen AI</strong> は、Claude Code、Codex、Gemini などに対応した安定性と効率性の高い API 中継サービスプロバイダーです。1:1 のチャージ比率に対応し、請求書も発行でき、Claude は通常価格の 40% 程度から利用できます。詳細と利用開始は <a href="https://ai.centos.hk">こちらのリンク</a>をご覧ください。
+      <strong>Xingchen AI</strong> は、Claude Code、Codex、Gemini などに対応した安定性と効率性の高い API 中継サービスプロバイダーです。1:1 のチャージ比率に対応し、請求書も発行でき、Claude は通常価格の 40% 程度から利用できます。詳細と利用開始は <a href="https://ai.centos.hk">こちらのリンク</a>をご覧ください（<a href="./sponsor-guides/xingchen.md">設定ガイド</a>）。
     </p>
   </section>
 
@@ -75,7 +75,7 @@
       <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
     </a>
     <p>
-      <strong>RunAPI</strong> は、高効率で安定した API OpenRouter の代替プラットフォームです。1 つの API Key で OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルにアクセスでき、元価格の 10% 程度から利用できます。Claude Code や OpenClaw などのツールにも対応しています。<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a>から登録し、RunAPI 管理者に連絡すると、<strong>￥7 の無料クレジット</strong>を受け取れます。
+      <strong>RunAPI</strong> は、高効率で安定した API OpenRouter の代替プラットフォームです。1 つの API Key で OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルにアクセスでき、元価格の 10% 程度から利用できます。Claude Code や OpenClaw などのツールにも対応しています。<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a>から登録し、RunAPI 管理者に連絡すると、<strong>￥7 の無料クレジット</strong>を受け取れます（<a href="./sponsor-guides/runapi.md">設定ガイド</a>）。
     </p>
   </section>
 

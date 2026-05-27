@@ -131,7 +131,7 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
     <img src="resources/partners/xingchen.png" alt="Xingchen AI" width="64" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Xingchen AI 様、本プロジェクトへのご協賛ありがとうございます。Xingchen AI は、Claude Code、Codex、Gemini などの中継サービスを提供する、安定性と効率性に優れた API 中継サービスプロバイダーです。1:1 のチャージ比率と請求書発行に対応し、Claude は通常価格の 40% 程度から利用できます。詳しくは <a href="https://ai.centos.hk">こちらのリンク</a> をご覧ください。
+    Xingchen AI 様、本プロジェクトへのご協賛ありがとうございます。Xingchen AI は、Claude Code、Codex、Gemini などの中継サービスを提供する、安定性と効率性に優れた API 中継サービスプロバイダーです。1:1 のチャージ比率と請求書発行に対応し、Claude は通常価格の 40% 程度から利用できます。詳しくは <a href="https://ai.centos.hk">こちらのリンク</a> をご覧ください（<a href="https://all-api-hub.qixing1217.top/ja/sponsor-guides/xingchen.html">設定ガイド</a>）。
   </p>
 </div>
 
@@ -167,7 +167,7 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
   </a>
   <p>
     RunAPI 様、本プロジェクトへのご協賛ありがとうございます。RunAPI は安定した OpenRouter 代替 API プラットフォームで、1 つの API Key から OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルにアクセスできます。
-    標準価格の 10% 程度から利用でき、Claude Code や OpenClaw などのツールにも対応しています。RunAPI は All API Hub ユーザー向けの限定特典として、<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a> から登録して管理者に連絡すると、¥7 の無料クレジットを受け取れます。
+    標準価格の 10% 程度から利用でき、Claude Code や OpenClaw などのツールにも対応しています。RunAPI は All API Hub ユーザー向けの限定特典として、<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a> から登録して管理者に連絡すると、¥7 の無料クレジットを受け取れます（<a href="https://all-api-hub.qixing1217.top/ja/sponsor-guides/runapi.html">設定ガイド</a>）。
   </p>
 </div>
 

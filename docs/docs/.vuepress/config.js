@@ -96,6 +96,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/supported-sites',
+              '/sponsor-guides',
               '/ldoh-site-lookup',
               '/supported-export-tools',
               '/quick-export',
@@ -186,6 +187,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/en/supported-sites',
+              '/en/sponsor-guides',
               '/en/ldoh-site-lookup',
               '/en/supported-export-tools',
               '/en/quick-export',
@@ -276,6 +278,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/ja/supported-sites',
+              '/ja/sponsor-guides',
               '/ja/ldoh-site-lookup',
               '/ja/supported-export-tools',
               '/ja/quick-export',

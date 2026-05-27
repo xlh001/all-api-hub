@@ -16,7 +16,7 @@
 | done-hub | 本项目是基于 one-hub 二次开发而来的。 | [GitHub](https://github.com/deanxv/done-hub) |
 | AnyRouter | Claude Code 中转站 · 零门槛 · 免费 $50 | [文档](https://docs.anyrouter.top/) / [官网](https://anyrouter.top) |
 | WONG公益站 | 暂无稳定公开官方描述。 | 暂无稳定公开官方链接 |
-| AIHubMix | 独立 AI API 聚合站点，插件以独立账号类型适配余额、密钥和模型接口。 | [官网](https://aihubmix.com/?aff=W3DN) / [API 文档](https://docs.aihubmix.com/cn/api/Cli) |
+| AIHubMix | 独立 AI API 聚合站点，插件以独立账号类型适配余额、密钥和模型接口。 | [官网](https://aihubmix.com/?aff=W3DN) / [API 文档](https://docs.aihubmix.com/cn/api/Cli) / [使用教程](./sponsor-guides/aihubmix.md) |
 | Veloera | 本项目已停止维护。 | [GitHub](https://github.com/Veloera/Veloera) |
 | VoAPI | 仅支持老版本兼容部署；新版 VoAPI 的接口和行为与当前插件兼容范围不一致。 | [GitHub](https://github.com/VoAPI/VoAPI) |
 | Super-API | Super-Api 全新 AI 模型接口管理与分发系统，仅供个人学习使用，请勿用于任何商业用途，本项目基于 NewAPI 开发。 | [官网](https://api.cngov.top/) / [GitHub](https://github.com/SuperAI-Api/Super-API) |
@@ -43,7 +43,7 @@
       <img src="../../resources/partners/xingchen.png" alt="星辰AI">
     </a>
     <p>
-      <strong>星辰AI</strong> 稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用。
+      <strong>星辰AI</strong> 稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用（<a href="./sponsor-guides/xingchen.md">使用教程</a>）。
     </p>
   </section>
 
@@ -76,7 +76,7 @@
       <img src="../../resources/partners/runapi.jpg" alt="RunAPI">
     </a>
     <p>
-      <strong>RunAPI</strong> 高效稳定的 API OpenRouter 平替平台，一个 API Key 可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，兼容 Claude Code、OpenClaw 等工具。使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 <strong>￥7 免费额度</strong>。
+      <strong>RunAPI</strong> 高效稳定的 API OpenRouter 平替平台，一个 API Key 可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，兼容 Claude Code、OpenClaw 等工具。使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 <strong>￥7 免费额度</strong>（<a href="./sponsor-guides/runapi.md">使用教程</a>）。
     </p>
   </section>
 
@@ -108,6 +108,7 @@
 ## 相关文档
 
 - [支持的导出工具列表](./supported-export-tools.md)
+- [赞助商使用教程](./sponsor-guides.md)
 - [快速导出站点配置](./quick-export.md)
 - [自建站点管理](./self-hosted-site-management.md)
 - [自建站点模型同步](./managed-site-model-sync.md)

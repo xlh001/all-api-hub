@@ -15,7 +15,7 @@ The following are the most common and suitable types of sites for unified manage
 | done-hub | This project is a secondary development based on one-hub. | [GitHub](https://github.com/deanxv/done-hub) |
 | AnyRouter | Claude Code intermediate station · Zero threshold · Free $50 | [Documentation](https://docs.anyrouter.top/) / [Official Website](https://anyrouter.top) |
 | WONG Public Welfare Site | No stable public official description available. | No stable public official link available |
-| AIHubMix | Independent AI API aggregation site. The extension supports its balance, key, and model APIs through a dedicated account type. | [Official Website](https://aihubmix.com/?aff=W3DN) / [API Documentation](https://docs.aihubmix.com/cn/api/Cli) |
+| AIHubMix | Independent AI API aggregation site. The extension supports its balance, key, and model APIs through a dedicated account type. | [Official Website](https://aihubmix.com/?aff=W3DN) / [API Documentation](https://docs.aihubmix.com/cn/api/Cli) / [Setup Guide](./sponsor-guides/aihubmix.md) |
 | Veloera | This project has been discontinued. | [GitHub](https://github.com/Veloera/Veloera) |
 | VoAPI | Only legacy compatible deployments are supported; newer VoAPI versions are outside the extension's current compatibility scope. | [GitHub](https://github.com/VoAPI/VoAPI) |
 | Super-API | Super-Api brand new AI model interface management and distribution system, for personal learning use only, please do not use for any commercial purposes. This project is based on NewAPI. | [Official Website](https://api.cngov.top/) / [GitHub](https://github.com/SuperAI-Api/Super-API) |
@@ -42,7 +42,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
       <img src="../../../resources/partners/xingchen.png" alt="Xingchen AI">
     </a>
     <p>
-      <strong>Xingchen AI</strong> is a stable and efficient API relay provider offering services for Claude Code, Codex, Gemini, and more. It supports 1:1 top-ups, provides invoices, and offers Claude at as low as 40% of the standard price. Learn more and start using it through <a href="https://ai.centos.hk">this link</a>.
+      <strong>Xingchen AI</strong> is a stable and efficient API relay provider offering services for Claude Code, Codex, Gemini, and more. It supports 1:1 top-ups, provides invoices, and offers Claude at as low as 40% of the standard price. Learn more and start using it through <a href="https://ai.centos.hk">this link</a> (<a href="./sponsor-guides/xingchen.md">setup guide</a>).
     </p>
   </section>
 
@@ -75,7 +75,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
       <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
     </a>
     <p>
-      <strong>RunAPI</strong> is an efficient and stable alternative to API OpenRouter. A single API Key can access 150+ mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, at prices as low as 10% of the original. It is compatible with tools like Claude Code and OpenClaw. Register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a <strong>￥7 free credit</strong>.
+      <strong>RunAPI</strong> is an efficient and stable alternative to API OpenRouter. A single API Key can access 150+ mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, at prices as low as 10% of the original. It is compatible with tools like Claude Code and OpenClaw. Register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a <strong>￥7 free credit</strong> (<a href="./sponsor-guides/runapi.md">setup guide</a>).
     </p>
   </section>
 

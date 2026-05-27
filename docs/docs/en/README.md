@@ -124,7 +124,7 @@ Have questions or want to share useful sites? Join the community:
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    Thanks to Xingchen AI for sponsoring this project. Xingchen AI is a stable and efficient API relay provider offering services for Claude Code, Codex, Gemini, and more. It supports 1:1 top-ups, provides invoices, and offers Claude at as low as 40% of the standard price. You can learn more and start using it through <a href="https://ai.centos.hk">this link</a>.
+    Thanks to Xingchen AI for sponsoring this project. Xingchen AI is a stable and efficient API relay provider offering services for Claude Code, Codex, Gemini, and more. It supports 1:1 top-ups, provides invoices, and offers Claude at as low as 40% of the standard price. You can learn more and start using it through <a href="https://ai.centos.hk">this link</a> (<a href="./sponsor-guides/xingchen.md">setup guide</a>).
   </p>
 </div>
 
@@ -167,6 +167,6 @@ Have questions or want to share useful sites? Join the community:
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    Thanks to RunAPI for sponsoring this project! RunAPI is a stable and efficient alternative to API OpenRouter. With one API Key, you can access over 150 mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, at prices as low as 10% of the original. It is extremely stable and seamlessly compatible with tools like Claude Code and OpenClaw. RunAPI offers exclusive benefits for All API Hub users: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a ¥7 free credit.
+    Thanks to RunAPI for sponsoring this project! RunAPI is a stable and efficient alternative to API OpenRouter. With one API Key, you can access over 150 mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, at prices as low as 10% of the original. It is extremely stable and seamlessly compatible with tools like Claude Code and OpenClaw. RunAPI offers exclusive benefits for All API Hub users: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a ¥7 free credit (<a href="./sponsor-guides/runapi.md">setup guide</a>).
   </p>
 </div>

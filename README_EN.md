@@ -136,7 +136,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
   <p>
     Thanks to Xingchen AI for sponsoring this project! Xingchen AI is a stable and efficient API relay service provider, offering relay services for Claude Code, Codex,
     Gemini, and more. It offers a 1:1 recharge ratio with invoice support and Claude from 40% pricing. Learn more using
-    <a href="https://ai.centos.hk">this link</a>.
+    <a href="https://ai.centos.hk">this link</a> (<a href="https://all-api-hub.qixing1217.top/en/sponsor-guides/xingchen.html">setup guide</a>).
   </p>
 </div>
 
@@ -175,7 +175,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
   <p>
     Thanks to RunAPI for sponsoring this project! RunAPI is a stable OpenRouter alternative API platform: one API key gives access to 150+ mainstream models including
     OpenAI, Claude, Gemini, DeepSeek, and Grok, from 10% of standard pricing, with Claude Code and OpenClaw compatibility. RunAPI offers All API Hub users an exclusive
-    benefit: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the administrator to claim ¥7 in free credits.
+    benefit: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the administrator to claim ¥7 in free credits (<a href="https://all-api-hub.qixing1217.top/en/sponsor-guides/runapi.html">setup guide</a>).
   </p>
 </div>
 
