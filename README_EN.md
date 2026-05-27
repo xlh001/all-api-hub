@@ -200,6 +200,17 @@ No matter which architecture you use, there is a good chance we support it:
 
 Please refer to the [CONTRIBUTING](CONTRIBUTING.md) for more information.
 
+<a id="license"></a>
+## 📜 License and Commercial Licensing
+
+All API Hub is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+Commercial licenses are available for organizations or individuals who need terms not provided by AGPL-3.0, including proprietary distribution, closed-source modifications, white-label redistribution, or other private commercial integration use cases.
+
+For commercial licensing, contact: <street-anime-olive@duck.com>
+
+Commercial licenses apply only to code and assets for which the All API Hub maintainers have the right to grant commercial terms. Third-party dependencies and historical MIT-licensed portions derived from [One API Hub](https://github.com/fxaxg/one-api-hub) remain subject to their own copyright and license notices.
+
 <a id="tech-stack"></a>
 ## 🏗️ Tech Stack
 

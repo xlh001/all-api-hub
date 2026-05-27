@@ -2,6 +2,15 @@
 
 Thank you for considering contributing to All API Hub! This guide will help you get started with development and testing.
 
+## Contributor Licensing
+
+By submitting a pull request or other contribution to this repository, you agree that your contribution may be licensed under:
+
+- GNU Affero General Public License v3.0 (AGPL-3.0), and
+- commercial license terms granted by the All API Hub maintainers.
+
+You represent that you have the right to submit the contribution and that it does not infringe any third-party rights. If you do not agree to these terms, please do not submit the contribution.
+
 ## Development Setup
 
 ### Prerequisites

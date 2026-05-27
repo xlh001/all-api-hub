@@ -198,6 +198,17 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 
 请参阅 [CONTRIBUTING](CONTRIBUTING.md) 以获取更多信息。
 
+<a id="license"></a>
+## 📜 许可证与商业授权
+
+All API Hub 基于 GNU Affero General Public License v3.0（AGPL-3.0）开源。
+
+如果你需要 AGPL-3.0 之外的授权条款，例如闭源分发、私有修改、白标再分发，或其他闭源商业集成场景，可以联系项目维护者获取商业授权。
+
+商业授权联系：<street-anime-olive@duck.com>
+
+商业授权仅覆盖 All API Hub 维护者有权授权的代码和资源。第三方依赖以及历史上源自 [One API Hub](https://github.com/fxaxg/one-api-hub) 的 MIT 许可部分，仍需保留对应版权与许可声明。
+
 <a id="tech-stack"></a>
 ## 🏗️ 技术栈
 
