@@ -135,6 +135,11 @@ export default function AccountDialog({
           onEditAccount: openEditAccount,
         }
       : {}
+  const cookieAuthPermissionProps = {
+    cookieAuthPermissionsGranted: state.cookieAuthPermissionsGranted,
+    isRequestingCookieAuthPermissions: state.isRequestingCookieAuthPermissions,
+    onRequestCookieAuthPermissions: handlers.handleRequestCookieAuthPermissions,
+  }
   const siteInfoInputProps: ComponentProps<typeof SiteInfoInput> =
     showEntryAuthTypeSelector
       ? {
@@ -146,6 +151,7 @@ export default function AccountDialog({
           showAuthTypeSelector: true,
           authType: state.authType,
           onAuthTypeChange: setters.setAuthType,
+          ...cookieAuthPermissionProps,
           ...addModeSiteInfoProps,
         }
       : {
@@ -154,6 +160,7 @@ export default function AccountDialog({
           isDetected: state.isDetected,
           onClearUrl: handlers.handleClearUrl,
           siteType: state.siteType,
+          ...cookieAuthPermissionProps,
           ...addModeSiteInfoProps,
         }
 
@@ -326,6 +333,12 @@ export default function AccountDialog({
                 onAuthTypeChange={setters.setAuthType}
                 isImportingCookies={state.isImportingCookies}
                 showCookiePermissionWarning={state.showCookiePermissionWarning}
+                cookieAuthPermissionsGranted={
+                  state.cookieAuthPermissionsGranted
+                }
+                isRequestingCookieAuthPermissions={
+                  state.isRequestingCookieAuthPermissions
+                }
                 onCookieAuthSessionCookieChange={
                   setters.setCookieAuthSessionCookie
                 }
@@ -334,6 +347,9 @@ export default function AccountDialog({
                 }
                 onOpenCookiePermissionSettings={
                   handlers.handleOpenCookiePermissionSettings
+                }
+                onRequestCookieAuthPermissions={
+                  handlers.handleRequestCookieAuthPermissions
                 }
               />
             )}

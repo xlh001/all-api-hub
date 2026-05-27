@@ -6,6 +6,7 @@ import { COOKIE_IMPORT_FAILURE_REASONS } from "~/constants/cookieImport"
 import { DIALOG_MODES } from "~/constants/dialogModes"
 import { useAccountDialog } from "~/features/AccountManagement/components/AccountDialog/hooks/useAccountDialog"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import { AuthTypeEnum } from "~/types"
 import { act, renderHook, waitFor } from "~~/tests/test-utils/render"
 
 const { mockOpenWithAccount, mockOpenSub2ApiTokenCreationDialog } = vi.hoisted(
@@ -17,6 +18,18 @@ const { mockOpenWithAccount, mockOpenSub2ApiTokenCreationDialog } = vi.hoisted(
 
 const { mockOpenSettingsTab } = vi.hoisted(() => ({
   mockOpenSettingsTab: vi.fn(),
+}))
+
+const {
+  mockEnsurePermissions,
+  mockHasPermission,
+  mockHasPermissions,
+  mockOnOptionalPermissionsChanged,
+} = vi.hoisted(() => ({
+  mockEnsurePermissions: vi.fn(),
+  mockHasPermission: vi.fn(),
+  mockHasPermissions: vi.fn(),
+  mockOnOptionalPermissionsChanged: vi.fn(() => vi.fn()),
 }))
 
 vi.mock("react-hot-toast", () => ({
@@ -60,9 +73,32 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   }
 })
 
+vi.mock("~/services/permissions/permissionManager", () => ({
+  ensurePermissions: mockEnsurePermissions,
+  hasPermission: mockHasPermission,
+  hasPermissions: mockHasPermissions,
+  onOptionalPermissionsChanged: mockOnOptionalPermissionsChanged,
+  OPTIONAL_PERMISSION_IDS: {
+    Cookies: "cookies",
+    declarativeNetRequestWithHostAccess: "declarativeNetRequestWithHostAccess",
+    WebRequest: "webRequest",
+    WebRequestBlocking: "webRequestBlocking",
+  },
+  OPTIONAL_PERMISSIONS: [
+    "cookies",
+    "declarativeNetRequestWithHostAccess",
+    "webRequest",
+    "webRequestBlocking",
+  ],
+}))
+
 describe("useAccountDialog cookie import feedback", () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    mockHasPermission.mockResolvedValue(true)
+    mockHasPermissions.mockResolvedValue(true)
+    mockEnsurePermissions.mockResolvedValue(true)
+    mockOnOptionalPermissionsChanged.mockReturnValue(vi.fn())
     await accountStorage.clearAllData()
   })
 
@@ -225,6 +261,175 @@ describe("useAccountDialog cookie import feedback", () => {
     expect(result.current.state.showCookiePermissionWarning).toBe(false)
     expect(toast.error).toHaveBeenCalledWith(
       "accountDialog:messages.importCookiesFailed",
+    )
+  })
+
+  it("recommends and requests the full cookie-auth optional permission set", async () => {
+    vi.mocked(toast.success).mockClear()
+    mockHasPermission.mockResolvedValue(false)
+    mockHasPermissions.mockResolvedValue(false)
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setAuthType(AuthTypeEnum.Cookie)
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.cookieAuthPermissionsGranted).toBe(false)
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleRequestCookieAuthPermissions()
+    })
+
+    expect(mockEnsurePermissions).toHaveBeenCalledWith([
+      "cookies",
+      "declarativeNetRequestWithHostAccess",
+      "webRequest",
+      "webRequestBlocking",
+    ])
+    expect(mockEnsurePermissions).toHaveBeenCalledTimes(1)
+    expect(toast.success).toHaveBeenCalledWith(
+      "accountDialog:messages.cookiePermissionGranted",
+    )
+  })
+
+  it("keeps the cookie permission action pending until the permission request settles", async () => {
+    vi.mocked(toast.success).mockClear()
+    mockHasPermission.mockResolvedValue(false)
+    mockHasPermissions.mockResolvedValue(false)
+    let resolveEnsurePermissions: (granted: boolean) => void = () => {}
+    mockEnsurePermissions.mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        resolveEnsurePermissions = resolve
+      }),
+    )
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setAuthType(AuthTypeEnum.Cookie)
+    })
+
+    let requestPromise: Promise<void>
+    await act(async () => {
+      requestPromise =
+        result.current.handlers.handleRequestCookieAuthPermissions()
+    })
+
+    expect(result.current.state.isRequestingCookieAuthPermissions).toBe(true)
+    expect(mockEnsurePermissions).toHaveBeenCalledWith([
+      "cookies",
+      "declarativeNetRequestWithHostAccess",
+      "webRequest",
+      "webRequestBlocking",
+    ])
+
+    await act(async () => {
+      resolveEnsurePermissions(true)
+      await requestPromise
+    })
+
+    expect(result.current.state.isRequestingCookieAuthPermissions).toBe(false)
+    expect(toast.success).toHaveBeenCalledWith(
+      "accountDialog:messages.cookiePermissionGranted",
+    )
+  })
+
+  it("marks cookie permissions unavailable when refresh fails and removes the listener on close", async () => {
+    const unsubscribe = vi.fn()
+    mockHasPermissions.mockRejectedValue(new Error("permission probe failed"))
+    mockOnOptionalPermissionsChanged.mockReturnValue(unsubscribe)
+
+    const { result, unmount } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setAuthType(AuthTypeEnum.Cookie)
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.cookieAuthPermissionsGranted).toBe(false)
+    })
+
+    expect(mockHasPermissions).toHaveBeenCalledWith([
+      "cookies",
+      "declarativeNetRequestWithHostAccess",
+      "webRequest",
+      "webRequestBlocking",
+    ])
+    expect(mockOnOptionalPermissionsChanged).toHaveBeenCalledTimes(1)
+
+    unmount()
+
+    expect(unsubscribe).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows an error toast when the cookie permission request is rejected", async () => {
+    vi.mocked(toast.error).mockClear()
+    mockHasPermission.mockResolvedValue(false)
+    mockHasPermissions.mockResolvedValue(false)
+    mockEnsurePermissions.mockRejectedValueOnce(
+      new Error("permission request failed"),
+    )
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setAuthType(AuthTypeEnum.Cookie)
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleRequestCookieAuthPermissions()
+    })
+
+    expect(result.current.state.isRequestingCookieAuthPermissions).toBe(false)
+    expect(toast.error).toHaveBeenCalledWith(
+      "accountDialog:messages.cookiePermissionGrantFailed",
     )
   })
 })
