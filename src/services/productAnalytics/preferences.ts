@@ -15,8 +15,6 @@ export const PRODUCT_ANALYTICS_DEFAULT_ENABLED = true
 interface ProductAnalyticsPreferenceState {
   enabled?: boolean
   anonymousId?: string
-  lastSiteEcosystemSnapshotAt?: number
-  lastSettingsSnapshotAt?: number
   updatedAt?: number
 }
 
@@ -45,20 +43,6 @@ export function normalizeState(
     normalized.anonymousId = anonymousId
   }
 
-  if (
-    typeof state.lastSiteEcosystemSnapshotAt === "number" &&
-    Number.isFinite(state.lastSiteEcosystemSnapshotAt)
-  ) {
-    normalized.lastSiteEcosystemSnapshotAt = state.lastSiteEcosystemSnapshotAt
-  }
-
-  if (
-    typeof state.lastSettingsSnapshotAt === "number" &&
-    Number.isFinite(state.lastSettingsSnapshotAt)
-  ) {
-    normalized.lastSettingsSnapshotAt = state.lastSettingsSnapshotAt
-  }
-
   if (typeof state.updatedAt === "number" && Number.isFinite(state.updatedAt)) {
     normalized.updatedAt = state.updatedAt
   }
@@ -84,7 +68,7 @@ class ProductAnalyticsPreferencesService {
     await this.storage.set(
       PRODUCT_ANALYTICS_STORAGE_KEYS.PRODUCT_ANALYTICS_PREFERENCES,
       {
-        ...state,
+        ...normalizeState(state),
         ...patch,
         updatedAt: Date.now(),
       },
@@ -153,40 +137,6 @@ class ProductAnalyticsPreferencesService {
       const anonymousId = await this.getOrCreateAnonymousIdFromState(state)
       return await work(anonymousId)
     })
-  }
-
-  async setLastSiteEcosystemSnapshotAt(timestamp: number): Promise<boolean> {
-    if (!Number.isFinite(timestamp)) {
-      return false
-    }
-
-    try {
-      await this.withStorageWriteLock(async () => {
-        const state = await this.getState()
-        await this.saveState(state, { lastSiteEcosystemSnapshotAt: timestamp })
-      })
-      return true
-    } catch (error) {
-      logger.warn("Failed to update site ecosystem snapshot timestamp", error)
-      return false
-    }
-  }
-
-  async setLastSettingsSnapshotAt(timestamp: number): Promise<boolean> {
-    if (!Number.isFinite(timestamp)) {
-      return false
-    }
-
-    try {
-      await this.withStorageWriteLock(async () => {
-        const state = await this.getState()
-        await this.saveState(state, { lastSettingsSnapshotAt: timestamp })
-      })
-      return true
-    } catch (error) {
-      logger.warn("Failed to update settings snapshot timestamp", error)
-      return false
-    }
   }
 
   private async getOrCreateAnonymousIdFromState(

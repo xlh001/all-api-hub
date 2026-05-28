@@ -18,6 +18,7 @@ describe("productAnalyticsPreferences", () => {
     await storage.remove(
       PRODUCT_ANALYTICS_STORAGE_KEYS.PRODUCT_ANALYTICS_PREFERENCES,
     )
+    await storage.remove(PRODUCT_ANALYTICS_STORAGE_KEYS.PRODUCT_ANALYTICS_STATE)
   })
 
   afterEach(async () => {
@@ -25,6 +26,7 @@ describe("productAnalyticsPreferences", () => {
     await storage.remove(
       PRODUCT_ANALYTICS_STORAGE_KEYS.PRODUCT_ANALYTICS_PREFERENCES,
     )
+    await storage.remove(PRODUCT_ANALYTICS_STORAGE_KEYS.PRODUCT_ANALYTICS_STATE)
   })
 
   it("resolves analytics as enabled when no explicit preference exists", async () => {
@@ -33,7 +35,18 @@ describe("productAnalyticsPreferences", () => {
     )
   })
 
-  it("persists explicit disabled preference durably", async () => {
+  it("persists explicit disabled preference without retaining legacy state fields", async () => {
+    await storage.set(
+      PRODUCT_ANALYTICS_STORAGE_KEYS.PRODUCT_ANALYTICS_PREFERENCES,
+      {
+        lastSettingsSnapshotAt: 67890,
+        shieldBypassSummary: {
+          day: "2026-05-12",
+          promptShownCount: 2,
+        },
+      },
+    )
+
     await expect(productAnalyticsPreferences.setEnabled(false)).resolves.toBe(
       true,
     )
@@ -45,6 +58,15 @@ describe("productAnalyticsPreferences", () => {
         updatedAt: Date.parse("2026-05-12T00:00:00.000Z"),
       }),
     )
+    await expect(
+      storage.get(PRODUCT_ANALYTICS_STORAGE_KEYS.PRODUCT_ANALYTICS_PREFERENCES),
+    ).resolves.toEqual({
+      enabled: false,
+      updatedAt: Date.parse("2026-05-12T00:00:00.000Z"),
+    })
+    await expect(
+      storage.get(PRODUCT_ANALYTICS_STORAGE_KEYS.PRODUCT_ANALYTICS_STATE),
+    ).resolves.toBeUndefined()
   })
 
   it("generates anonymous id once and reuses it", async () => {
@@ -129,55 +151,24 @@ describe("productAnalyticsPreferences", () => {
     ).resolves.toBe(first)
   })
 
-  it("persists site ecosystem snapshot timestamp", async () => {
-    await expect(
-      productAnalyticsPreferences.setLastSiteEcosystemSnapshotAt(12345),
-    ).resolves.toBe(true)
-
-    await expect(productAnalyticsPreferences.getState()).resolves.toEqual(
-      expect.objectContaining({
-        lastSiteEcosystemSnapshotAt: 12345,
-      }),
-    )
-  })
-
-  it("persists settings snapshot timestamp", async () => {
-    await expect(
-      productAnalyticsPreferences.setLastSettingsSnapshotAt(67890),
-    ).resolves.toBe(true)
-
-    await expect(productAnalyticsPreferences.getState()).resolves.toEqual(
-      expect.objectContaining({
-        lastSettingsSnapshotAt: 67890,
-      }),
-    )
-  })
-
-  it("rejects invalid settings snapshot timestamps", async () => {
-    await expect(
-      productAnalyticsPreferences.setLastSettingsSnapshotAt(Number.NaN),
-    ).resolves.toBe(false)
-
-    await expect(productAnalyticsPreferences.getState()).resolves.not.toEqual(
-      expect.objectContaining({
-        lastSettingsSnapshotAt: expect.any(Number),
-      }),
-    )
-  })
-
   it("normalizes persisted anonymous id whitespace", () => {
     expect(normalizeState({ anonymousId: "  analytics-existing  " })).toEqual({
       anonymousId: "analytics-existing",
     })
   })
 
-  it("normalizes persisted settings snapshot timestamp", () => {
-    expect(normalizeState({ lastSettingsSnapshotAt: 67890 })).toEqual({
-      lastSettingsSnapshotAt: 67890,
+  it("keeps telemetry state out of normalized preferences", () => {
+    expect(
+      normalizeState({
+        anonymousId: "analytics-existing",
+        lastSettingsSnapshotAt: 67890,
+        shieldBypassSummary: {
+          day: "2026-05-12",
+          promptShownCount: 2,
+        },
+      }),
+    ).toEqual({
+      anonymousId: "analytics-existing",
     })
-  })
-
-  it("drops invalid persisted settings snapshot timestamp", () => {
-    expect(normalizeState({ lastSettingsSnapshotAt: Number.NaN })).toEqual({})
   })
 })

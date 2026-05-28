@@ -17,6 +17,7 @@ export const PRODUCT_ANALYTICS_EVENTS = {
   FeatureActionStarted: "feature_action_started",
   FeatureActionCompleted: "feature_action_completed",
   SettingChanged: "setting_changed",
+  SettingsSnapshotCaptured: "settings_snapshot_captured",
   PermissionResult: "permission_result",
   SiteEcosystemSnapshot: "site_ecosystem_snapshot",
   SiteTypePresent: "site_type_present",
@@ -106,6 +107,26 @@ export const PRODUCT_ANALYTICS_SOURCE_KINDS = {
 export type ProductAnalyticsSourceKind =
   (typeof PRODUCT_ANALYTICS_SOURCE_KINDS)[keyof typeof PRODUCT_ANALYTICS_SOURCE_KINDS]
 
+export const PRODUCT_ANALYTICS_TARGET_KINDS = {
+  ConfigRequired: "config_required",
+  ExternalSite: "external_site",
+  ManualSignIn: "manual_sign_in",
+  ModelFilter: "model_filter",
+  ResultFilter: "result_filter",
+  ModelSource: "model_source",
+} as const
+
+export type ProductAnalyticsTargetKind =
+  (typeof PRODUCT_ANALYTICS_TARGET_KINDS)[keyof typeof PRODUCT_ANALYTICS_TARGET_KINDS]
+
+export const PRODUCT_ANALYTICS_TARGET_STATES = {
+  Enabled: "enabled",
+  Disabled: "disabled",
+} as const
+
+export type ProductAnalyticsTargetState =
+  (typeof PRODUCT_ANALYTICS_TARGET_STATES)[keyof typeof PRODUCT_ANALYTICS_TARGET_STATES]
+
 export const PRODUCT_ANALYTICS_MODE_IDS = {
   All: "all",
   Selected: "selected",
@@ -124,6 +145,7 @@ export const PRODUCT_ANALYTICS_MODE_IDS = {
   BillingFilter: "billing_filter",
   GroupFilter: "group_filter",
   AccountFilter: "account_filter",
+  StatusFilter: "status_filter",
   ExpandDetails: "expand_details",
   CollapseDetails: "collapse_details",
   ApiVerification: "api_verification",
@@ -430,6 +452,7 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   ShowRedemptionBatchResult: "show_redemption_batch_result",
   ShowRedemptionPrompt: "show_redemption_prompt",
   ShowShieldBypassPrompt: "show_shield_bypass_prompt",
+  SummarizeShieldBypassDaily: "summarize_shield_bypass_daily",
   StartBatchModelVerify: "start_batch_model_verify",
   StopBatchModelVerify: "stop_batch_model_verify",
   ScheduledManagedSiteModelSync: "scheduled_managed_site_model_sync",
@@ -699,6 +722,8 @@ export type ProductAnalyticsEventPayloadMap = {
     editor_mode?: ProductAnalyticsEditorMode
     status_kind?: ProductAnalyticsStatusKind
     telemetry_source?: ProductAnalyticsTelemetrySource
+    target_kind?: ProductAnalyticsTargetKind
+    target_state?: ProductAnalyticsTargetState
     managed_site_type?: ProductAnalyticsManagedSiteType
     source_managed_site_type?: ProductAnalyticsManagedSiteType
     target_managed_site_type?: ProductAnalyticsManagedSiteType
@@ -712,7 +737,16 @@ export type ProductAnalyticsEventPayloadMap = {
     ready_count_bucket?: ProductAnalyticsCountBucket
     blocked_count_bucket?: ProductAnalyticsCountBucket
     model_count_bucket?: ProductAnalyticsCountBucket
+    filter_count_bucket?: ProductAnalyticsCountBucket
+    result_count_bucket?: ProductAnalyticsCountBucket
     usage_data_present?: boolean
+    shield_bypass_prompt_shown_count_bucket?: ProductAnalyticsCountBucket
+    shield_bypass_prompt_dismissed_count_bucket?: ProductAnalyticsCountBucket
+    shield_bypass_settings_visited_count_bucket?: ProductAnalyticsCountBucket
+    temp_window_fetch_success_count_bucket?: ProductAnalyticsCountBucket
+    temp_window_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
+    temp_window_turnstile_fetch_success_count_bucket?: ProductAnalyticsCountBucket
+    temp_window_turnstile_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
     entrypoint: ProductAnalyticsEntrypoint
   }
   [PRODUCT_ANALYTICS_EVENTS.SettingChanged]: {
@@ -782,6 +816,77 @@ export type ProductAnalyticsEventPayloadMap = {
     window_length_bucket?: ProductAnalyticsAutoCheckinWindowLengthBucket
     deterministic_time_bucket?: ProductAnalyticsAutoCheckinDeterministicTimeBucket
     entrypoint: ProductAnalyticsEntrypoint
+  }
+  [PRODUCT_ANALYTICS_EVENTS.SettingsSnapshotCaptured]: Omit<
+    ProductAnalyticsEventPayloadMap[typeof PRODUCT_ANALYTICS_EVENTS.SettingChanged],
+    "setting_id"
+  > & {
+    setting_id?: ProductAnalyticsSettingId
+    account_auto_refresh_enabled?: boolean
+    account_auto_refresh_on_open_enabled?: boolean
+    account_auto_refresh_interval_bucket?: ProductAnalyticsModeId
+    account_auto_refresh_min_interval_bucket?: ProductAnalyticsModeId
+    usage_history_enabled?: boolean
+    usage_history_mode?: ProductAnalyticsModeId
+    usage_history_sync_interval_bucket?: ProductAnalyticsModeId
+    usage_history_retention_days_bucket?: ProductAnalyticsModeId
+    balance_history_enabled?: boolean
+    balance_history_end_of_day_capture_enabled?: boolean
+    balance_history_retention_days_bucket?: ProductAnalyticsModeId
+    managed_site_model_sync_enabled?: boolean
+    managed_site_model_sync_interval_bucket?: ProductAnalyticsModeId
+    managed_site_model_sync_concurrency_bucket?: ProductAnalyticsCountBucket
+    managed_site_model_sync_retry_max_attempts_bucket?: ProductAnalyticsAutoCheckinRetryAttemptBucket
+    managed_site_model_sync_rate_limit_rpm_bucket?: ProductAnalyticsModeId
+    managed_site_model_sync_rate_limit_burst_bucket?: ProductAnalyticsCountBucket
+    managed_site_model_sync_allowed_models_configured?: boolean
+    managed_site_model_sync_global_filters_configured?: boolean
+    auto_checkin_global_enabled?: boolean
+    auto_checkin_ui_pretrigger_enabled?: boolean
+    auto_checkin_notify_completion_enabled?: boolean
+    auto_checkin_retry_enabled?: boolean
+    auto_checkin_schedule_mode?: ProductAnalyticsAutoCheckinScheduleMode
+    auto_checkin_retry_interval_bucket?: ProductAnalyticsAutoCheckinRetryIntervalBucket
+    auto_checkin_retry_max_attempts_bucket?: ProductAnalyticsAutoCheckinRetryAttemptBucket
+    auto_checkin_window_length_bucket?: ProductAnalyticsAutoCheckinWindowLengthBucket
+    auto_checkin_deterministic_time_bucket?: ProductAnalyticsAutoCheckinDeterministicTimeBucket
+    model_redirect_enabled?: boolean
+    model_redirect_standard_models_configured?: boolean
+    model_redirect_prune_missing_targets_on_model_sync_enabled?: boolean
+    redemption_assist_enabled?: boolean
+    redemption_assist_context_menu_enabled?: boolean
+    redemption_assist_relaxed_code_validation_enabled?: boolean
+    redemption_assist_allowlist_enabled?: boolean
+    redemption_assist_allowlist_patterns_configured?: boolean
+    redemption_assist_allowlist_account_urls_enabled?: boolean
+    redemption_assist_allowlist_checkin_redeem_urls_enabled?: boolean
+    web_ai_api_check_enabled?: boolean
+    web_ai_api_check_context_menu_enabled?: boolean
+    web_ai_api_check_auto_detect_enabled?: boolean
+    web_ai_api_check_auto_detect_patterns_configured?: boolean
+    temp_window_fallback_enabled?: boolean
+    temp_window_fallback_popup_enabled?: boolean
+    temp_window_fallback_sidepanel_enabled?: boolean
+    temp_window_fallback_options_enabled?: boolean
+    temp_window_fallback_auto_refresh_enabled?: boolean
+    temp_window_fallback_manual_refresh_enabled?: boolean
+    temp_window_fallback_mode?: ProductAnalyticsModeId
+    webdav_configured?: boolean
+    webdav_auto_sync_enabled?: boolean
+    webdav_backup_encryption_enabled?: boolean
+    webdav_sync_strategy?: ProductAnalyticsModeId
+    webdav_sync_interval_bucket?: ProductAnalyticsModeId
+    webdav_sync_accounts_enabled?: boolean
+    webdav_sync_bookmarks_enabled?: boolean
+    webdav_sync_api_profiles_enabled?: boolean
+    webdav_sync_preferences_enabled?: boolean
+    task_notifications_enabled?: boolean
+    task_notifications_browser_channel_enabled?: boolean
+    task_notifications_third_party_channel_count_bucket?: ProductAnalyticsCountBucket
+    task_notifications_task_enabled_count_bucket?: ProductAnalyticsCountBucket
+    site_announcements_enabled?: boolean
+    site_announcements_notification_enabled?: boolean
+    site_announcements_polling_interval_bucket?: ProductAnalyticsModeId
   }
   [PRODUCT_ANALYTICS_EVENTS.PermissionResult]: {
     permission_id: ProductAnalyticsPermissionId

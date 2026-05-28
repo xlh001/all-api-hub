@@ -17,12 +17,14 @@ import {
   type ProductAnalyticsRuntimeRequest,
 } from "./events"
 import { productAnalyticsPreferences } from "./preferences"
-import { buildSettingsSnapshotEvents } from "./settings"
+import { buildAggregateSettingsSnapshotEvent } from "./settings"
 import { shouldSendSettingsSnapshot } from "./settingsSnapshot"
+import { flushShieldBypassDailySummary } from "./shieldBypassSummary"
 import {
   buildSiteEcosystemAnalyticsEvents,
   shouldSendSiteEcosystemSnapshot,
 } from "./siteEcosystem"
+import { productAnalyticsState } from "./state"
 
 const logger = createLogger("ProductAnalyticsRuntime")
 const ACCOUNT_CHANGE_SNAPSHOT_DEBOUNCE_MS = 2_000
@@ -48,7 +50,7 @@ function isKnownEventName(value: unknown): value is ProductAnalyticsEventName {
 async function captureSiteEcosystemSnapshot(): Promise<boolean> {
   if (!(await productAnalyticsPreferences.isEnabled())) return false
 
-  const state = await productAnalyticsPreferences.getState()
+  const state = await productAnalyticsState.getState()
   const now = Date.now()
   if (
     !shouldSendSiteEcosystemSnapshot(state.lastSiteEcosystemSnapshotAt, now)
@@ -67,7 +69,7 @@ async function captureSiteEcosystemSnapshot(): Promise<boolean> {
     if (!captured) return false
   }
 
-  await productAnalyticsPreferences.setLastSiteEcosystemSnapshotAt(now)
+  await productAnalyticsState.setLastSiteEcosystemSnapshotAt(now)
   return true
 }
 
@@ -77,27 +79,25 @@ async function captureSiteEcosystemSnapshot(): Promise<boolean> {
 async function captureSettingsSnapshot(): Promise<boolean> {
   if (!(await productAnalyticsPreferences.isEnabled())) return false
 
-  const state = await productAnalyticsPreferences.getState()
+  const state = await productAnalyticsState.getState()
   const now = Date.now()
   if (!shouldSendSettingsSnapshot(state.lastSettingsSnapshotAt, now)) {
     return false
   }
 
   const preferences = await userPreferences.getPreferences()
-  const events = buildSettingsSnapshotEvents(
+  const event = buildAggregateSettingsSnapshotEvent(
     preferences,
     PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
   )
 
-  for (const properties of events) {
-    const captured = await productAnalyticsClient.capture(
-      PRODUCT_ANALYTICS_EVENTS.SettingChanged,
-      properties,
-    )
-    if (!captured) return false
-  }
+  const captured = await productAnalyticsClient.capture(
+    PRODUCT_ANALYTICS_EVENTS.SettingsSnapshotCaptured,
+    event,
+  )
+  if (!captured) return false
 
-  await productAnalyticsPreferences.setLastSettingsSnapshotAt(now)
+  await productAnalyticsState.setLastSettingsSnapshotAt(now)
   return true
 }
 
@@ -188,6 +188,17 @@ function captureSettingsSnapshotBestEffort() {
   void captureSettingsSnapshot().catch((error) => {
     if (isDevelopmentMode()) {
       logger.debug("Product analytics settings snapshot failed", error)
+    }
+  })
+}
+
+/**
+ * Starts shield-bypass summary capture without failing background startup.
+ */
+function flushShieldBypassDailySummaryBestEffort() {
+  void flushShieldBypassDailySummary().catch((error) => {
+    if (isDevelopmentMode()) {
+      logger.debug("Product analytics shield bypass summary failed", error)
     }
   })
 }
@@ -308,4 +319,11 @@ export function triggerStartupSiteEcosystemSnapshot() {
  */
 export function triggerStartupSettingsSnapshot() {
   captureSettingsSnapshotBestEffort()
+}
+
+/**
+ * Triggers the startup shield-bypass summary flush in the background worker.
+ */
+export function triggerStartupShieldBypassDailySummary() {
+  flushShieldBypassDailySummaryBestEffort()
 }

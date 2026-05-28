@@ -17,13 +17,25 @@ import {
   COOKIE_SESSION_OVERRIDE_HEADER_NAME,
 } from "~/utils/browser/cookieHelper"
 
-const { trackProductAnalyticsActionCompletedMock } = vi.hoisted(() => ({
+const {
+  trackProductAnalyticsActionCompletedMock,
+  recordTempWindowFetchResultMock,
+  recordTempWindowTurnstileFetchResultMock,
+} = vi.hoisted(() => ({
   trackProductAnalyticsActionCompletedMock: vi.fn(),
+  recordTempWindowFetchResultMock: vi.fn(),
+  recordTempWindowTurnstileFetchResultMock: vi.fn(),
 }))
 
 vi.mock("~/services/productAnalytics/actions", () => ({
   trackProductAnalyticsActionCompleted:
     trackProductAnalyticsActionCompletedMock,
+}))
+
+vi.mock("~/services/productAnalytics/shieldBypassSummary", () => ({
+  recordShieldBypassTempWindowFetchResult: recordTempWindowFetchResultMock,
+  recordShieldBypassTempWindowTurnstileFetchResult:
+    recordTempWindowTurnstileFetchResultMock,
 }))
 
 const originalBrowser = (globalThis as any).browser
@@ -127,6 +139,8 @@ describe("tempWindowPool window fallback", () => {
     tempContextMode = "window"
     defaultTempContextMode = "window"
     trackProductAnalyticsActionCompletedMock.mockReset()
+    recordTempWindowFetchResultMock.mockReset()
+    recordTempWindowTurnstileFetchResultMock.mockReset()
 
     vi.useFakeTimers()
     vi.resetModules()
@@ -261,6 +275,9 @@ describe("tempWindowPool window fallback", () => {
         statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
       },
     })
+    expect(recordTempWindowFetchResultMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Success,
+    )
     expect(createWindowMock).toHaveBeenCalledTimes(1)
     expect(createTabMock).toHaveBeenCalledWith("https://example.com", false)
 
@@ -573,6 +590,9 @@ describe("tempWindowPool window fallback", () => {
         statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Error,
       },
     })
+    expect(recordTempWindowFetchResultMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+    )
   })
 
   it("falls back to the default saved temp-context mode when user preferences are missing that field", async () => {
@@ -2656,6 +2676,9 @@ describe("tempWindowPool window fallback", () => {
         hasTurnstile: true,
       },
     })
+    expect(recordTempWindowTurnstileFetchResultMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Success,
+    )
   })
 
   it("adds Firefox token-auth headers during turnstile fetches without cookie overrides", async () => {
@@ -2918,6 +2941,9 @@ describe("tempWindowPool window fallback", () => {
         statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Error,
       },
     })
+    expect(recordTempWindowTurnstileFetchResultMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+    )
     await new Promise((resolve) => setTimeout(resolve, 2500))
     expect(removeTabOrWindowMock).toHaveBeenCalledWith(809)
     expect(removeTempWindowCookieRuleMock).not.toHaveBeenCalled()
@@ -3003,6 +3029,9 @@ describe("tempWindowPool window fallback", () => {
         statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Error,
       },
     })
+    expect(recordTempWindowTurnstileFetchResultMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+    )
 
     const analyticsCallsJson = JSON.stringify(
       trackProductAnalyticsActionCompletedMock.mock.calls,

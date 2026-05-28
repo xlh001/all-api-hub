@@ -25,6 +25,8 @@ import {
   PRODUCT_ANALYTICS_SOURCE_KINDS,
   PRODUCT_ANALYTICS_STATUS_KINDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
+  PRODUCT_ANALYTICS_TARGET_KINDS,
+  PRODUCT_ANALYTICS_TARGET_STATES,
   PRODUCT_ANALYTICS_TELEMETRY_SOURCES,
 } from "~/services/productAnalytics/events"
 import {
@@ -223,11 +225,16 @@ describe("product analytics privacy filtering", () => {
         mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
         item_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
         selected_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
+        filter_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
+        result_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.FourToTen,
         success_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
         failure_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
         skipped_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
+        target_kind: PRODUCT_ANALYTICS_TARGET_KINDS.ModelFilter,
+        target_state: PRODUCT_ANALYTICS_TARGET_STATES.Enabled,
         telemetry_source: PRODUCT_ANALYTICS_TELEMETRY_SOURCES.NewApiTokenUsage,
         usage_data_present: true,
+        target_value: "private-provider",
         source_url: "https://private.example/path",
         sourceText: "sk-secret",
         selected_count: 2,
@@ -246,9 +253,13 @@ describe("product analytics privacy filtering", () => {
       mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
       item_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
       selected_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
+      filter_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
+      result_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.FourToTen,
       success_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
       failure_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
       skipped_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
+      target_kind: PRODUCT_ANALYTICS_TARGET_KINDS.ModelFilter,
+      target_state: PRODUCT_ANALYTICS_TARGET_STATES.Enabled,
       telemetry_source: PRODUCT_ANALYTICS_TELEMETRY_SOURCES.NewApiTokenUsage,
       usage_data_present: true,
     })
@@ -392,6 +403,72 @@ describe("product analytics privacy filtering", () => {
       sync_bookmarks_enabled: false,
       sync_api_profiles_enabled: true,
       sync_preferences_enabled: false,
+    })
+  })
+
+  it("keeps reviewed aggregate settings snapshot fields with sensitive-looking names", () => {
+    const sanitized = sanitizeProductAnalyticsEvent(
+      PRODUCT_ANALYTICS_EVENTS.SettingsSnapshotCaptured,
+      {
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+        account_auto_refresh_enabled: true,
+        account_auto_refresh_on_open_enabled: false,
+        account_auto_refresh_interval_bucket:
+          PRODUCT_ANALYTICS_MODE_IDS.RefreshIntervalOneTo6h,
+        account_auto_refresh_min_interval_bucket:
+          PRODUCT_ANALYTICS_MODE_IDS.RefreshIntervalTenTo60m,
+        balance_history_enabled: true,
+        balance_history_end_of_day_capture_enabled: true,
+        balance_history_retention_days_bucket:
+          PRODUCT_ANALYTICS_MODE_IDS.RetentionDaysThirtyOneTo365,
+        managed_site_model_sync_enabled: true,
+        managed_site_model_sync_interval_bucket:
+          PRODUCT_ANALYTICS_MODE_IDS.RefreshIntervalSixTo24h,
+        managed_site_model_sync_concurrency_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
+        managed_site_model_sync_retry_max_attempts_bucket:
+          PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS.TwoToThree,
+        managed_site_model_sync_rate_limit_rpm_bucket:
+          PRODUCT_ANALYTICS_MODE_IDS.RateLimitTwentyTo60,
+        managed_site_model_sync_rate_limit_burst_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.FourToTen,
+        managed_site_model_sync_allowed_models_configured: true,
+        managed_site_model_sync_global_filters_configured: true,
+        redemption_assist_allowlist_account_urls_enabled: true,
+        redemption_assist_allowlist_checkin_redeem_urls_enabled: false,
+        accountName: "Private account",
+        balanceAmount: "123.45",
+        configuredUrl: "https://private.example",
+      },
+    )
+
+    expect(sanitized).toEqual({
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      account_auto_refresh_enabled: true,
+      account_auto_refresh_on_open_enabled: false,
+      account_auto_refresh_interval_bucket:
+        PRODUCT_ANALYTICS_MODE_IDS.RefreshIntervalOneTo6h,
+      account_auto_refresh_min_interval_bucket:
+        PRODUCT_ANALYTICS_MODE_IDS.RefreshIntervalTenTo60m,
+      balance_history_enabled: true,
+      balance_history_end_of_day_capture_enabled: true,
+      balance_history_retention_days_bucket:
+        PRODUCT_ANALYTICS_MODE_IDS.RetentionDaysThirtyOneTo365,
+      managed_site_model_sync_enabled: true,
+      managed_site_model_sync_interval_bucket:
+        PRODUCT_ANALYTICS_MODE_IDS.RefreshIntervalSixTo24h,
+      managed_site_model_sync_concurrency_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
+      managed_site_model_sync_retry_max_attempts_bucket:
+        PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS.TwoToThree,
+      managed_site_model_sync_rate_limit_rpm_bucket:
+        PRODUCT_ANALYTICS_MODE_IDS.RateLimitTwentyTo60,
+      managed_site_model_sync_rate_limit_burst_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.FourToTen,
+      managed_site_model_sync_allowed_models_configured: true,
+      managed_site_model_sync_global_filters_configured: true,
+      redemption_assist_allowlist_account_urls_enabled: true,
+      redemption_assist_allowlist_checkin_redeem_urls_enabled: false,
     })
   })
 
@@ -792,6 +869,58 @@ describe("product analytics privacy filtering", () => {
       })
     },
   )
+
+  it("keeps shield bypass daily summary buckets while dropping request details", () => {
+    const sanitized = sanitizeProductAnalyticsEvent(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ShieldBypassAssist,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.SummarizeShieldBypassDaily,
+        surface_id:
+          PRODUCT_ANALYTICS_SURFACE_IDS.BackgroundShieldBypassTempContext,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+        result: PRODUCT_ANALYTICS_RESULTS.Success,
+        shield_bypass_prompt_shown_count_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.TenPlus,
+        shield_bypass_prompt_dismissed_count_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
+        shield_bypass_settings_visited_count_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
+        temp_window_fetch_success_count_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.FourToTen,
+        temp_window_fetch_failure_count_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
+        temp_window_turnstile_fetch_success_count_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.Zero,
+        temp_window_turnstile_fetch_failure_count_bucket:
+          PRODUCT_ANALYTICS_COUNT_BUCKETS.FourToTen,
+        fetchUrl: "https://private.example/api/checkin?token=secret",
+      },
+    )
+
+    expect(sanitized).toEqual({
+      feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ShieldBypassAssist,
+      action_id: PRODUCT_ANALYTICS_ACTION_IDS.SummarizeShieldBypassDaily,
+      surface_id:
+        PRODUCT_ANALYTICS_SURFACE_IDS.BackgroundShieldBypassTempContext,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      result: PRODUCT_ANALYTICS_RESULTS.Success,
+      shield_bypass_prompt_shown_count_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.TenPlus,
+      shield_bypass_prompt_dismissed_count_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
+      shield_bypass_settings_visited_count_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
+      temp_window_fetch_success_count_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.FourToTen,
+      temp_window_fetch_failure_count_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.One,
+      temp_window_turnstile_fetch_success_count_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.Zero,
+      temp_window_turnstile_fetch_failure_count_bucket:
+        PRODUCT_ANALYTICS_COUNT_BUCKETS.FourToTen,
+    })
+  })
 
   it("drops invalid enum values while keeping valid entrypoint", () => {
     const sanitized = sanitizeProductAnalyticsEvent(
