@@ -2871,7 +2871,7 @@ describe("useKeyManagement enabled account filtering", () => {
     confirmSpy.mockRestore()
   })
 
-  it("does not delete a token when the confirmation dialog is cancelled", async () => {
+  it("deletes a token without using native browser confirmation", async () => {
     const account = createDisplayAccount({
       id: "cancel-delete-acc",
       name: "Cancel Delete Account",
@@ -2896,7 +2896,7 @@ describe("useKeyManagement enabled account filtering", () => {
       deleteApiToken,
     } as any)
 
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false)
+    const confirmSpy = vi.spyOn(window, "confirm")
 
     const { result } = renderHook(() => useKeyManagement(), {
       wrapper: createWrapper(),
@@ -2912,8 +2912,11 @@ describe("useKeyManagement enabled account filtering", () => {
       await result.current.handleDeleteToken(token)
     })
 
-    expect(deleteApiToken).not.toHaveBeenCalled()
-    expect(vi.mocked(toast.success)).not.toHaveBeenCalled()
+    expect(confirmSpy).not.toHaveBeenCalled()
+    expect(deleteApiToken).toHaveBeenCalledWith(expect.anything(), token.id)
+    expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+      "keyManagement:messages.deleteSuccess",
+    )
     expect(vi.mocked(toast.error)).not.toHaveBeenCalled()
 
     confirmSpy.mockRestore()

@@ -1369,14 +1369,6 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
   }
 
   const handleDeleteToken = async (token: AccountToken) => {
-    if (
-      !window.confirm(
-        t("keyManagement:messages.deleteConfirm", { name: token.name }),
-      )
-    ) {
-      return
-    }
-
     const tracker = startProductAnalyticsAction(
       keyManagementAnalyticsContext(
         PRODUCT_ANALYTICS_ACTION_IDS.DeleteAccountToken,

@@ -296,10 +296,10 @@ export async function deleteTokenFromKeyManagementPage(params: {
       : params.page.getByTestId(getKeyManagementTokenRowTestId(params.token.id))
   await expect(row).toBeVisible({ timeout: 60_000 })
 
-  params.page.once("dialog", (dialog) => {
-    void dialog.accept()
-  })
   await row.getByRole("button", { name: "Delete Key" }).click()
+  await params.page
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.deleteTokenConfirmButton)
+    .click()
   await expect(row).toHaveCount(0, { timeout: 60_000 })
 }
 

@@ -1,5 +1,8 @@
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
-import { getKeyManagementTokenRowTestId } from "~/features/KeyManagement/testIds"
+import {
+  getKeyManagementTokenRowTestId,
+  KEY_MANAGEMENT_TEST_IDS,
+} from "~/features/KeyManagement/testIds"
 import type { ApiToken } from "~/types"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import { verifyAccountKeyLifecycleUsage } from "~~/e2e/scenarios/accountUsage"
@@ -127,8 +130,10 @@ test("deletes an existing token from key management and shows the empty state", 
     page.getByRole("heading", { name: "Existing Key" }),
   ).toBeVisible()
 
-  page.once("dialog", (dialog) => dialog.accept())
   await page.getByRole("button", { name: "Delete Key" }).click()
+  await page
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.deleteTokenConfirmButton)
+    .click()
 
   await expect(page.getByRole("heading", { name: "Existing Key" })).toHaveCount(
     0,

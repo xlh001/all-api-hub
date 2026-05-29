@@ -8,6 +8,7 @@ export const KEY_MANAGEMENT_TEST_IDS = {
   addTokenSubmitButton: "key-management-add-token-submit-button",
   oneTimeKeyCloseButton: "key-management-one-time-key-close-button",
   oneTimeKeySaveButton: "key-management-one-time-key-save-button",
+  deleteTokenConfirmButton: "key-management-delete-token-confirm-button",
 } as const
 
 export const KEY_MANAGEMENT_TOKEN_ROW_TEST_ID_PREFIX =
