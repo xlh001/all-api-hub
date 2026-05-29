@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import ApiCredentialProfilesStatsSection from "~/entrypoints/popup/components/ApiCredentialProfilesStatsSection"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
-  PRODUCT_ANALYTICS_COUNT_BUCKETS,
   PRODUCT_ANALYTICS_EVENTS,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
@@ -194,11 +193,11 @@ describe("ApiCredentialProfilesStatsSection", () => {
           PRODUCT_ANALYTICS_SURFACE_IDS.PopupApiCredentialProfilesStats,
         entrypoint: "popup",
         result: "success",
-        item_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
-        selected_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
-        success_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.Zero,
-        failure_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.Zero,
-        model_count_bucket: PRODUCT_ANALYTICS_COUNT_BUCKETS.TwoToThree,
+        item_count: 3,
+        selected_count: 3,
+        success_count: 0,
+        failure_count: 0,
+        model_count: 3,
       },
     )
 
@@ -211,8 +210,45 @@ describe("ApiCredentialProfilesStatsSection", () => {
     expect(payloadText).not.toContain("tag-a")
     expect(payloadText).not.toContain("tag-b")
     expect(payloadText).not.toContain("tag-c")
-    expect(payloadText).not.toContain('"item_count":3')
-    expect(payloadText).not.toContain('"selected_count":3')
-    expect(payloadText).not.toContain('"model_count":3')
+    expect(payloadText).not.toContain("alpha.example.com")
+  })
+
+  it("tracks only unhealthy telemetry snapshots as failures", () => {
+    mockUseUserPreferencesContext.mockReturnValue({ currencyType: "USD" })
+    mockUseApiCredentialProfiles.mockReturnValue({
+      isLoading: false,
+      profiles: [
+        buildProfile({
+          id: "profile-1",
+          telemetrySnapshot: {
+            attempts: [],
+            health: { status: SiteHealthStatus.Healthy },
+            lastSyncTime: 1000,
+          },
+        }),
+        buildProfile({
+          id: "profile-2",
+          telemetrySnapshot: {
+            attempts: [],
+            health: { status: SiteHealthStatus.Warning },
+            lastSyncTime: 1000,
+          },
+        }),
+      ],
+    })
+
+    render(<ApiCredentialProfilesStatsSection />, {
+      withReleaseUpdateStatusProvider: false,
+      withThemeProvider: false,
+      withUserPreferencesProvider: false,
+    })
+
+    expect(trackProductAnalyticsEventMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      expect.objectContaining({
+        success_count: 1,
+        failure_count: 1,
+      }),
+    )
   })
 })

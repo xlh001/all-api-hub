@@ -1,12 +1,19 @@
 import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import {
+  AUTO_DETECT_FETCH_CONTEXT_KINDS,
+  AUTO_DETECT_STRATEGIES,
+} from "~/constants/autoDetect"
 import { COOKIE_IMPORT_FAILURE_REASONS } from "~/constants/cookieImport"
 import { DIALOG_MODES } from "~/constants/dialogModes"
 import { SITE_TYPES } from "~/constants/siteType"
 import { useAccountDialog } from "~/features/AccountManagement/components/AccountDialog/hooks/useAccountDialog"
 import { accountStorage } from "~/services/accounts/accountStorage"
-import { AutoDetectErrorType } from "~/services/accounts/utils/autoDetectUtils"
+import {
+  AUTO_DETECT_FAILURE_REASONS,
+  AutoDetectErrorType,
+} from "~/services/accounts/utils/autoDetectUtils"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -16,6 +23,7 @@ import {
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/events"
+import { AuthTypeEnum } from "~/types"
 import { buildSiteAccount } from "~~/tests/test-utils/factories"
 import { act, renderHook, waitFor } from "~~/tests/test-utils/render"
 
@@ -168,7 +176,7 @@ describe("useAccountDialog analytics", () => {
     })
   }
 
-  it("tracks successful account auto-detect without sensitive fields", async () => {
+  it("tracks successful account auto-detect with safe context and without sensitive fields", async () => {
     mockAutoDetectAccount.mockResolvedValueOnce({
       success: true,
       data: {
@@ -178,6 +186,12 @@ describe("useAccountDialog analytics", () => {
         exchangeRate: 7,
         siteName: "Detected Site",
         siteType: SITE_TYPES.NEW_API,
+        autoDetectContext: {
+          strategy: AUTO_DETECT_STRATEGIES.CurrentTab,
+          fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+          incognitoContextUsed: true,
+          currentTabMatched: true,
+        },
       },
     })
 
@@ -196,14 +210,42 @@ describe("useAccountDialog analytics", () => {
     expectStartedAction(PRODUCT_ANALYTICS_ACTION_IDS.RunAccountAutoDetect)
     expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
       PRODUCT_ANALYTICS_RESULTS.Success,
+      {
+        insights: {
+          requestedAuthMode: AuthTypeEnum.AccessToken,
+          autoDetectStrategy: AUTO_DETECT_STRATEGIES.CurrentTab,
+          siteType: SITE_TYPES.NEW_API,
+          fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+          incognitoContextUsed: true,
+          currentTabMatched: true,
+        },
+      },
     )
+    expect(
+      mockCompleteProductAnalyticsAction.mock.calls[0]?.[1]?.insights,
+    ).toEqual({
+      requestedAuthMode: AuthTypeEnum.AccessToken,
+      autoDetectStrategy: AUTO_DETECT_STRATEGIES.CurrentTab,
+      siteType: SITE_TYPES.NEW_API,
+      fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+      incognitoContextUsed: true,
+      currentTabMatched: true,
+    })
     expectNoSensitiveAnalyticsFields()
   })
 
-  it("tracks failed account auto-detect with a safe error category", async () => {
+  it("tracks failed account auto-detect with safe context and a safe error category", async () => {
     mockAutoDetectAccount.mockResolvedValueOnce({
       success: false,
       message: "backend leaked private host",
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.UserDataMissing,
+      autoDetectContext: {
+        strategy: AUTO_DETECT_STRATEGIES.BackgroundTempContext,
+        siteType: SITE_TYPES.NEW_API,
+        fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.BrowserContext,
+        incognitoContextUsed: false,
+        currentTabMatched: false,
+      },
       detailedError: {
         type: AutoDetectErrorType.UNAUTHORIZED,
         message: "private backend text",
@@ -229,6 +271,102 @@ describe("useAccountDialog analytics", () => {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
         insights: {
           failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+          accountAutoDetectFailureReason:
+            AUTO_DETECT_FAILURE_REASONS.UserDataMissing,
+          requestedAuthMode: AuthTypeEnum.AccessToken,
+          autoDetectStrategy: AUTO_DETECT_STRATEGIES.BackgroundTempContext,
+          siteType: SITE_TYPES.NEW_API,
+          fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.BrowserContext,
+          incognitoContextUsed: false,
+          currentTabMatched: false,
+        },
+      },
+    )
+    expectNoSensitiveAnalyticsFields()
+  })
+
+  it("tracks completion failures with the final hinted site type", async () => {
+    mockAutoDetectAccount.mockResolvedValueOnce({
+      success: false,
+      message: "local validation failed",
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.UsernameMissing,
+      autoDetectContext: {
+        strategy: AUTO_DETECT_STRATEGIES.CurrentTab,
+        siteType: SITE_TYPES.VELOERA,
+        fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+        incognitoContextUsed: false,
+        currentTabMatched: true,
+      },
+      detailedError: {
+        type: AutoDetectErrorType.INVALID_RESPONSE,
+        message: "private local detail",
+      },
+    })
+
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await setUrlAndWait(result, "https://private.example.com")
+
+    await act(async () => {
+      await result.current.handlers.handleAutoDetect()
+    })
+
+    expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+      {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+          accountAutoDetectFailureReason:
+            AUTO_DETECT_FAILURE_REASONS.UsernameMissing,
+          requestedAuthMode: AuthTypeEnum.AccessToken,
+          autoDetectStrategy: AUTO_DETECT_STRATEGIES.CurrentTab,
+          siteType: SITE_TYPES.VELOERA,
+          fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+          incognitoContextUsed: false,
+          currentTabMatched: true,
+        },
+      },
+    )
+    expectNoSensitiveAnalyticsFields()
+  })
+
+  it("tracks account auto-detect token-fetch failures with a safe reason", async () => {
+    mockAutoDetectAccount.mockResolvedValueOnce({
+      success: false,
+      message: "local token guidance",
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed,
+      detailedError: {
+        type: AutoDetectErrorType.UNKNOWN,
+        message: "private backend text",
+      },
+    })
+
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await setUrlAndWait(result, "https://private.example.com")
+
+    await act(async () => {
+      await result.current.handlers.handleAutoDetect()
+    })
+
+    expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+      {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+          requestedAuthMode: AuthTypeEnum.AccessToken,
+          accountAutoDetectFailureReason:
+            AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed,
         },
       },
     )
@@ -279,6 +417,7 @@ describe("useAccountDialog analytics", () => {
           errorCategory,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+            requestedAuthMode: AuthTypeEnum.AccessToken,
           },
         },
       )
@@ -315,6 +454,7 @@ describe("useAccountDialog analytics", () => {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
         insights: {
           failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+          requestedAuthMode: AuthTypeEnum.AccessToken,
         },
       },
     )
@@ -357,7 +497,7 @@ describe("useAccountDialog analytics", () => {
       PRODUCT_ANALYTICS_RESULTS.Cancelled,
       {
         insights: {
-          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Prompt,
+          requestedAuthMode: AuthTypeEnum.AccessToken,
         },
       },
     )
@@ -380,14 +520,51 @@ describe("useAccountDialog analytics", () => {
     expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
       PRODUCT_ANALYTICS_RESULTS.Skipped,
       {
-        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
         insights: {
-          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          requestedAuthMode: AuthTypeEnum.AccessToken,
         },
       },
     )
     expect(mockAutoDetectAccount).not.toHaveBeenCalled()
     expectNoSensitiveAnalyticsFields()
+  })
+
+  it("tracks duplicate-check persistence errors with requested auth mode", async () => {
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await setUrlAndWait(result, "https://private.example.com")
+
+    const storageGetSpy = vi
+      .spyOn(accountStorage, "getAllAccountsOrThrow")
+      .mockResolvedValueOnce({
+        get filter() {
+          throw new Error("private duplicate check failure")
+        },
+      } as any)
+
+    await act(async () => {
+      await result.current.handlers.handleAutoDetect()
+    })
+
+    expectStartedAction(PRODUCT_ANALYTICS_ACTION_IDS.RunAccountAutoDetect)
+    expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+      {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        insights: {
+          requestedAuthMode: AuthTypeEnum.AccessToken,
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+        },
+      },
+    )
+    expect(mockAutoDetectAccount).not.toHaveBeenCalled()
+    expectNoSensitiveAnalyticsFields()
+
+    storageGetSpy.mockRestore()
   })
 
   it("does not treat advisory duplicate-check errors as auto-detect failures", async () => {
@@ -421,6 +598,12 @@ describe("useAccountDialog analytics", () => {
     expect(mockAutoDetectAccount).toHaveBeenCalled()
     expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
       PRODUCT_ANALYTICS_RESULTS.Success,
+      {
+        insights: {
+          requestedAuthMode: AuthTypeEnum.AccessToken,
+          siteType: SITE_TYPES.NEW_API,
+        },
+      },
     )
     expectNoSensitiveAnalyticsFields()
 
@@ -451,6 +634,7 @@ describe("useAccountDialog analytics", () => {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         insights: {
           failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+          requestedAuthMode: AuthTypeEnum.AccessToken,
         },
       },
     )
@@ -486,6 +670,7 @@ describe("useAccountDialog analytics", () => {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.RateLimit,
         insights: {
           failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+          requestedAuthMode: AuthTypeEnum.AccessToken,
         },
       },
     )

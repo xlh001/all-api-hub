@@ -184,7 +184,7 @@ describe("product analytics action helpers", () => {
     ).toBeUndefined()
   })
 
-  it("tracks completion with duration and error buckets but no raw error text", async () => {
+  it("tracks completion with exact duration and error categories but no raw error text", async () => {
     const { trackProductAnalyticsActionCompleted } = await import(
       "~/services/productAnalytics/actions"
     )
@@ -209,7 +209,7 @@ describe("product analytics action helpers", () => {
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
         result: PRODUCT_ANALYTICS_RESULTS.Failure,
         error_category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network,
-        duration_bucket: "5_30s",
+        duration_ms: 6000,
         failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
       },
     )
@@ -412,7 +412,7 @@ describe("product analytics action helpers", () => {
           PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteModelSyncActionBar,
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
         result: PRODUCT_ANALYTICS_RESULTS.Success,
-        duration_bucket: "1_5s",
+        duration_ms: 2000,
         api_type: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
         source_kind: PRODUCT_ANALYTICS_SOURCE_KINDS.History,
         mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
@@ -425,17 +425,17 @@ describe("product analytics action helpers", () => {
         source_managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
         target_managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Octopus,
         failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
-        selected_count_bucket: "2_3",
-        item_count_bucket: "2_3",
-        success_count_bucket: "2_3",
-        failure_count_bucket: "0",
-        skipped_count_bucket: "1",
-        warning_count_bucket: "10_plus",
-        ready_count_bucket: "1",
-        blocked_count_bucket: "2_3",
-        model_count_bucket: "10_plus",
-        filter_count_bucket: "2_3",
-        result_count_bucket: "4_10",
+        selected_count: 2,
+        item_count: 3,
+        success_count: 3,
+        failure_count: 0,
+        skipped_count: 1,
+        warning_count: 13,
+        ready_count: 1,
+        blocked_count: 2,
+        model_count: 11,
+        filter_count: 2,
+        result_count: 8,
         usage_data_present: true,
       },
     )
@@ -472,8 +472,8 @@ describe("product analytics action helpers", () => {
         api_type: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
         source_kind: PRODUCT_ANALYTICS_SOURCE_KINDS.ContextMenu,
         failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
-        ready_count_bucket: "2_3",
-        blocked_count_bucket: "0",
+        ready_count: 2,
+        blocked_count: 0,
       },
     )
   })
@@ -538,7 +538,7 @@ describe("product analytics action helpers", () => {
           surface_id: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsImportExportPage,
           entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
           result: PRODUCT_ANALYTICS_RESULTS.Success,
-          duration_bucket: "1_5s",
+          duration_ms: 1250,
         },
       )
     })
@@ -591,19 +591,19 @@ describe("product analytics action helpers", () => {
             PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteModelSyncActionBar,
           entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
           result: PRODUCT_ANALYTICS_RESULTS.Success,
-          duration_bucket: "1_5s",
+          duration_ms: 2000,
           api_type: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
           source_kind: PRODUCT_ANALYTICS_SOURCE_KINDS.History,
           mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
           status_kind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
           telemetry_source:
             PRODUCT_ANALYTICS_TELEMETRY_SOURCES.NewApiTokenUsage,
-          selected_count_bucket: "2_3",
-          item_count_bucket: "2_3",
-          success_count_bucket: "2_3",
-          failure_count_bucket: "0",
-          skipped_count_bucket: "1",
-          model_count_bucket: "10_plus",
+          selected_count: 2,
+          item_count: 3,
+          success_count: 3,
+          failure_count: 0,
+          skipped_count: 1,
+          model_count: 11,
           usage_data_present: true,
         },
       )

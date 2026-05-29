@@ -17,7 +17,10 @@
  */
 import {
   AUTO_DETECT_ERROR_CODES,
+  AUTO_DETECT_FAILURE_REASONS,
+  type AutoDetectAnalyticsContext,
   type AutoDetectErrorCode,
+  type AutoDetectFailureReason,
 } from "~/constants/autoDetect"
 import {
   AIHUBMIX_HOSTNAMES,
@@ -41,6 +44,12 @@ export enum AutoDetectErrorType {
   FORBIDDEN = "forbidden",
   NOT_FOUND = "notFound",
   SERVER_ERROR = "serverError",
+}
+
+export {
+  AUTO_DETECT_FAILURE_REASONS,
+  type AutoDetectAnalyticsContext,
+  type AutoDetectFailureReason,
 }
 
 // 自动识别错误信息
@@ -113,6 +122,12 @@ export function getAutoDetectErrorByCode(
   switch (errorCode) {
     case AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE:
       return createCurrentTabReloadRequiredError()
+    case AUTO_DETECT_ERROR_CODES.SITE_TYPE_DETECTION_FAILED:
+      return {
+        type: AutoDetectErrorType.NOT_FOUND,
+        message: t("messages:autodetect.notFound"),
+        helpDocUrl: getDocsAutoDetectUrl(),
+      }
     default:
       return null
   }

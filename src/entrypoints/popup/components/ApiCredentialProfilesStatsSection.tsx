@@ -13,7 +13,6 @@ import {
   PRODUCT_ANALYTICS_SURFACE_IDS,
   trackProductAnalyticsEvent,
 } from "~/services/productAnalytics/events"
-import { bucketCount } from "~/services/productAnalytics/privacy"
 import { SiteHealthStatus } from "~/types"
 import { formatTelemetryMoney } from "~/utils/core/money"
 
@@ -62,6 +61,8 @@ export default function ApiCredentialProfilesStatsSection() {
         acc.profileTelemetryCount += 1
         if (snapshot.health.status === SiteHealthStatus.Healthy) {
           acc.healthyCount += 1
+        } else {
+          acc.unhealthyTelemetryCount += 1
         }
         if (typeof snapshot.balanceUsd === "number") {
           acc.balanceUsd += snapshot.balanceUsd
@@ -78,6 +79,7 @@ export default function ApiCredentialProfilesStatsSection() {
         balanceUsd: 0,
         balanceSources: 0,
         profileTelemetryCount: 0,
+        unhealthyTelemetryCount: 0,
         todayUsageSources: 0,
         todayUsageUsd: 0,
       },
@@ -103,18 +105,18 @@ export default function ApiCredentialProfilesStatsSection() {
           PRODUCT_ANALYTICS_SURFACE_IDS.PopupApiCredentialProfilesStats,
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Popup,
         result: PRODUCT_ANALYTICS_RESULTS.Success,
-        item_count_bucket: bucketCount(profiles.length),
-        selected_count_bucket: bucketCount(usedTagsCount),
-        success_count_bucket: bucketCount(telemetryStats.healthyCount),
-        failure_count_bucket: bucketCount(telemetryStats.profileTelemetryCount),
-        model_count_bucket: bucketCount(uniqueBaseUrlsCount),
+        item_count: profiles.length,
+        selected_count: usedTagsCount,
+        success_count: telemetryStats.healthyCount,
+        failure_count: telemetryStats.unhealthyTelemetryCount,
+        model_count: uniqueBaseUrlsCount,
       },
     )
   }, [
     isLoading,
     profiles.length,
     telemetryStats.healthyCount,
-    telemetryStats.profileTelemetryCount,
+    telemetryStats.unhealthyTelemetryCount,
     uniqueBaseUrlsCount,
     usedTagsCount,
   ])

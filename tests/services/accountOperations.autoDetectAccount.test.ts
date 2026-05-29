@@ -1,10 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { AUTO_DETECT_ERROR_CODES } from "~/constants/autoDetect"
+import {
+  AUTO_DETECT_ERROR_CODES,
+  AUTO_DETECT_FETCH_CONTEXT_KINDS,
+  AUTO_DETECT_STRATEGIES,
+} from "~/constants/autoDetect"
 import { SITE_TYPES } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
 import { autoDetectAccount } from "~/services/accounts/accountOperations"
-import { AutoDetectErrorType } from "~/services/accounts/utils/autoDetectUtils"
+import {
+  AUTO_DETECT_FAILURE_REASONS,
+  AutoDetectErrorType,
+} from "~/services/accounts/utils/autoDetectUtils"
 import { API_SERVICE_FETCH_CONTEXT_KINDS } from "~/services/apiService/common/type"
 import { AuthTypeEnum } from "~/types"
 
@@ -154,6 +161,71 @@ describe("accountOperations autoDetectAccount", () => {
       url: "https://tracked.example.com",
     })
     expect(mockFetchSiteStatus).toHaveBeenCalledTimes(1)
+  })
+
+  it("preserves privacy-safe auto-detect metadata in success responses", async () => {
+    const autoDetectContext = {
+      strategy: AUTO_DETECT_STRATEGIES.CurrentTab,
+      fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+      incognitoContextUsed: true,
+      currentTabMatched: true,
+    }
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: true,
+      autoDetectContext,
+      data: {
+        userId: 7,
+        siteType: SITE_TYPES.NEW_API,
+        fetchContext: incognitoCurrentTabFetchContext(
+          "https://status.example.com",
+        ),
+      },
+    })
+    mockGetOrCreateAccessToken.mockResolvedValueOnce({
+      username: "detected-user",
+      access_token: "detected-token",
+    })
+    mockFetchSiteStatus.mockResolvedValueOnce({
+      system_name: "Detected Portal",
+      checkin_enabled: false,
+    })
+    mockExtractDefaultExchangeRate.mockReturnValueOnce(7)
+
+    const result = await autoDetectAccount(
+      "https://status.example.com",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result.success).toBe(true)
+    expect(result.data?.autoDetectContext).toEqual({
+      ...autoDetectContext,
+      siteType: SITE_TYPES.NEW_API,
+    })
+  })
+
+  it("preserves privacy-safe auto-detect metadata in failure responses", async () => {
+    const autoDetectContext = {
+      strategy: AUTO_DETECT_STRATEGIES.BackgroundTempContext,
+      siteType: SITE_TYPES.NEW_API,
+      fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.BrowserContext,
+      incognitoContextUsed: false,
+      currentTabMatched: false,
+    }
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: false,
+      error: "messages:operations.detection.getUserIdFailed",
+      autoDetectContext,
+    })
+
+    const result = await autoDetectAccount(
+      "https://status.example.com",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result.success).toBe(false)
+    expect(result.autoDetectContext).toEqual(autoDetectContext)
   })
 
   it("passes current-tab context to service requests during auto-detect completion", async () => {
@@ -448,9 +520,58 @@ describe("accountOperations autoDetectAccount", () => {
 
     expect(result).toMatchObject({
       success: false,
-      message: "messages:operations.detection.getUserIdFailed",
+      message: "messages:operations.detection.getUserIdFailedDetailed",
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.UserIdMissing,
       detailedError: expect.objectContaining({
         type: AutoDetectErrorType.INVALID_RESPONSE,
+      }),
+    })
+  })
+
+  it("returns the upstream detection failure reason when smart detection fails", async () => {
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: false,
+      error: "messages:autodetect.currentTabNeedsReload",
+      errorCode: AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE,
+    })
+
+    const result = await autoDetectAccount(
+      "https://example.com",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result).toMatchObject({
+      success: false,
+      message: "messages:autodetect.currentTabNeedsReload",
+      autoDetectFailureReason:
+        AUTO_DETECT_FAILURE_REASONS.CurrentTabContentScriptUnavailable,
+      detailedError: expect.objectContaining({
+        type: AutoDetectErrorType.CURRENT_TAB_RELOAD_REQUIRED,
+      }),
+    })
+  })
+
+  it("returns the site-type detection failure reason when smart detection cannot classify the site", async () => {
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: false,
+      error: "private site type error",
+      errorCode: AUTO_DETECT_ERROR_CODES.SITE_TYPE_DETECTION_FAILED,
+    })
+
+    const result = await autoDetectAccount(
+      "https://unknown.example.com",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result).toMatchObject({
+      success: false,
+      message: "messages:autodetect.notFound",
+      autoDetectFailureReason:
+        AUTO_DETECT_FAILURE_REASONS.SiteTypeDetectionFailed,
+      detailedError: expect.objectContaining({
+        type: AutoDetectErrorType.NOT_FOUND,
       }),
     })
   })
@@ -850,13 +971,56 @@ describe("accountOperations autoDetectAccount", () => {
 
     expect(result).toMatchObject({
       success: false,
-      message: "messages:operations.detection.getInfoFailed",
+      message: "messages:operations.detection.getUsernameFailedDetailed",
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.UsernameMissing,
       detailedError: expect.objectContaining({
         type: AutoDetectErrorType.INVALID_RESPONSE,
       }),
     })
     expect(mockGetOrCreateAccessToken).not.toHaveBeenCalled()
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
+  })
+
+  it("uses final hinted site type in metadata when completion validation fails", async () => {
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: true,
+      autoDetectContext: {
+        strategy: AUTO_DETECT_STRATEGIES.CurrentTab,
+        siteType: SITE_TYPES.NEW_API,
+        fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+        incognitoContextUsed: false,
+        currentTabMatched: true,
+      },
+      data: {
+        userId: 12,
+        user: { id: 12 },
+        siteType: SITE_TYPES.VELOERA,
+        fetchContext: currentTabFetchContext("https://veloera.example.com"),
+      },
+    })
+    mockGetOrCreateAccessToken.mockResolvedValueOnce({
+      username: "",
+      access_token: "veloera-token",
+    })
+    mockFetchSiteStatus.mockResolvedValueOnce({
+      system_name: "Veloera",
+    })
+    mockFetchSupportCheckIn.mockResolvedValueOnce(false)
+    mockExtractDefaultExchangeRate.mockReturnValueOnce(null)
+
+    const result = await autoDetectAccount(
+      "https://veloera.example.com",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result).toMatchObject({
+      success: false,
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.UsernameMissing,
+      autoDetectContext: expect.objectContaining({
+        siteType: SITE_TYPES.VELOERA,
+      }),
+    })
   })
 
   it("fails AIHubMix auto-detect when token retrieval returns no token", async () => {
@@ -884,7 +1048,8 @@ describe("accountOperations autoDetectAccount", () => {
 
     expect(result).toMatchObject({
       success: false,
-      message: "messages:operations.detection.getInfoFailed",
+      message: "messages:operations.detection.getAccessTokenFailedDetailed",
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.AccessTokenMissing,
       detailedError: expect.objectContaining({
         type: AutoDetectErrorType.INVALID_RESPONSE,
       }),
@@ -917,9 +1082,77 @@ describe("accountOperations autoDetectAccount", () => {
 
     expect(result).toMatchObject({
       success: false,
-      message: "messages:operations.detection.getInfoFailed",
+      message: "messages:operations.detection.getAccessTokenFailedDetailed",
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.AccessTokenMissing,
       detailedError: expect.objectContaining({
         type: AutoDetectErrorType.INVALID_RESPONSE,
+      }),
+    })
+  })
+
+  it("classifies token creation exceptions during auto-detect completion", async () => {
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: true,
+      data: {
+        userId: 5,
+        siteType: SITE_TYPES.NEW_API,
+      },
+    })
+    mockGetOrCreateAccessToken.mockRejectedValueOnce(
+      new Error("private token backend text"),
+    )
+    mockFetchSiteStatus.mockResolvedValueOnce({
+      system_name: "Token Failure Portal",
+    })
+    mockFetchSupportCheckIn.mockResolvedValueOnce(false)
+
+    const result = await autoDetectAccount(
+      "https://token-failure.example.com",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result).toMatchObject({
+      success: false,
+      autoDetectFailureReason: AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed,
+      detailedError: expect.objectContaining({
+        type: AutoDetectErrorType.UNKNOWN,
+      }),
+    })
+  })
+
+  it("continues auto-detect when check-in support probing fails", async () => {
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: true,
+      data: {
+        userId: 7,
+        siteType: SITE_TYPES.NEW_API,
+      },
+    })
+    mockGetOrCreateAccessToken.mockResolvedValueOnce({
+      username: "checkin-fallback-user",
+      access_token: "checkin-fallback-token",
+    })
+    mockFetchSiteStatus.mockResolvedValueOnce({
+      system_name: "Checkin Fallback Portal",
+    })
+    mockFetchSupportCheckIn.mockRejectedValueOnce(
+      new Error("private check-in backend text"),
+    )
+    mockExtractDefaultExchangeRate.mockReturnValueOnce(null)
+
+    const result = await autoDetectAccount(
+      "https://checkin-fallback.example.com",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result.success).toBe(true)
+    expect(result.data).toMatchObject({
+      username: "checkin-fallback-user",
+      accessToken: "checkin-fallback-token",
+      checkIn: expect.objectContaining({
+        enableDetection: false,
       }),
     })
   })
@@ -941,11 +1174,19 @@ describe("accountOperations autoDetectAccount", () => {
   })
 
   it("maps current-tab content-script failures to a reload hint", async () => {
+    const autoDetectContext = {
+      strategy: AUTO_DETECT_STRATEGIES.CurrentTab,
+      siteType: SITE_TYPES.NEW_API,
+      fetchContextKind: AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+      incognitoContextUsed: true,
+      currentTabMatched: true,
+    }
     mockSendRuntimeMessage.mockResolvedValueOnce(null)
     mockAutoDetectSmart.mockResolvedValueOnce({
       success: false,
       error: "some generic failure",
       errorCode: AUTO_DETECT_ERROR_CODES.CURRENT_TAB_CONTENT_SCRIPT_UNAVAILABLE,
+      autoDetectContext,
     })
 
     const result = await autoDetectAccount(
@@ -959,5 +1200,6 @@ describe("accountOperations autoDetectAccount", () => {
       message: "messages:autodetect.currentTabNeedsReload",
       actionText: "accountDialog:actions.reloadCurrentPage",
     })
+    expect(result.autoDetectContext).toEqual(autoDetectContext)
   })
 })

@@ -1,19 +1,22 @@
-import { useId } from "react"
+import { useEffect, useId, useRef } from "react"
 import { useTranslation } from "react-i18next"
 
-import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
-
+import {
+  getSponsorRecommendationImpressionKey,
+  trackSponsorRecommendationsImpression,
+} from "~/features/AccountManagement/sponsors/analytics"
 import {
   SPONSOR_RECOMMENDATION_SURFACES,
   type SponsorRecommendationSurface,
-} from "./constants"
-import { SponsorRecommendationCard } from "./SponsorRecommendationCard"
+} from "~/features/AccountManagement/sponsors/constants"
+import { SponsorRecommendationCard } from "~/features/AccountManagement/sponsors/SponsorRecommendationCard"
 import type {
   AddAccountPrefill,
   SponsorApiCredentialFallbackPrefill,
   SponsorBookmarkFallbackPrefill,
   SponsorRecommendation,
-} from "./types"
+} from "~/features/AccountManagement/sponsors/types"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 
 interface SponsorRecommendationsSectionProps {
   surface: SponsorRecommendationSurface
@@ -35,8 +38,22 @@ export function SponsorRecommendationsSection({
 }: SponsorRecommendationsSectionProps) {
   const { t } = useTranslation("account")
   const headingId = useId()
+  const trackedImpressionKeys = useRef(new Set<string>())
   const showVisibleHeader =
     surface !== SPONSOR_RECOMMENDATION_SURFACES.AddAccountDialog
+
+  useEffect(() => {
+    if (items.length === 0) return
+
+    const impressionKey = getSponsorRecommendationImpressionKey({
+      items,
+      surface,
+    })
+    if (trackedImpressionKeys.current.has(impressionKey)) return
+
+    trackedImpressionKeys.current.add(impressionKey)
+    trackSponsorRecommendationsImpression({ items, surface })
+  }, [items, surface])
 
   if (items.length === 0) {
     return null
@@ -61,6 +78,8 @@ export function SponsorRecommendationsSection({
           <SponsorRecommendationCard
             key={item.id}
             item={item}
+            itemCount={items.length}
+            surface={surface}
             onContinueAddAccount={onContinueAddAccount}
             onOpenBookmarkManager={onOpenBookmarkManager}
             onOpenApiCredentialProfiles={onOpenApiCredentialProfiles}

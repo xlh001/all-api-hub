@@ -1,3 +1,9 @@
+import {
+  AUTO_DETECT_FAILURE_REASONS,
+  AUTO_DETECT_FETCH_CONTEXT_KINDS,
+  AUTO_DETECT_STRATEGIES,
+  type AutoDetectFailureReason,
+} from "~/constants/autoDetect"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   ACCOUNT_SITE_TYPES,
@@ -6,6 +12,7 @@ import {
   type ManagedSiteType,
 } from "~/constants/siteType"
 import { API_TYPES } from "~/services/verification/aiApiVerification/types"
+import { AuthTypeEnum } from "~/types"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { createLogger } from "~/utils/core/logger"
 
@@ -17,6 +24,8 @@ export const PRODUCT_ANALYTICS_EVENTS = {
   FeatureActionStarted: "feature_action_started",
   FeatureActionCompleted: "feature_action_completed",
   ShieldBypassSummaryCaptured: "shield_bypass_summary_captured",
+  AutoCheckinRunSummaryCaptured: "auto_checkin_run_summary_captured",
+  AutoCheckinAccountGroupCaptured: "auto_checkin_account_group_captured",
   SettingChanged: "setting_changed",
   SettingsSnapshotCaptured: "settings_snapshot_captured",
   PermissionResult: "permission_result",
@@ -61,28 +70,6 @@ export const PRODUCT_ANALYTICS_ERROR_CATEGORIES = {
 
 export type ProductAnalyticsErrorCategory =
   (typeof PRODUCT_ANALYTICS_ERROR_CATEGORIES)[keyof typeof PRODUCT_ANALYTICS_ERROR_CATEGORIES]
-
-export const PRODUCT_ANALYTICS_DURATION_BUCKETS = {
-  LessThan1s: "lt_1s",
-  OneTo5s: "1_5s",
-  FiveTo30s: "5_30s",
-  ThirtyTo120s: "30_120s",
-  GreaterThan120s: "gt_120s",
-} as const
-
-export type ProductAnalyticsDurationBucket =
-  (typeof PRODUCT_ANALYTICS_DURATION_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_DURATION_BUCKETS]
-
-export const PRODUCT_ANALYTICS_COUNT_BUCKETS = {
-  Zero: "0",
-  One: "1",
-  TwoToThree: "2_3",
-  FourToTen: "4_10",
-  TenPlus: "10_plus",
-} as const
-
-export type ProductAnalyticsCountBucket =
-  (typeof PRODUCT_ANALYTICS_COUNT_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_COUNT_BUCKETS]
 
 export const PRODUCT_ANALYTICS_SOURCE_KINDS = {
   History: "history",
@@ -264,6 +251,7 @@ export const PRODUCT_ANALYTICS_FEATURE_IDS = {
   UsageAnalytics: "usage_analytics",
   WebDavSync: "webdav_sync",
   WebAiApiCheck: "web_ai_api_check",
+  SponsorRecommendations: "sponsor_recommendations",
 } as const
 
 export type ProductAnalyticsFeatureId =
@@ -393,6 +381,10 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   OpenUpdateAccountDialog: "open_update_account_dialog",
   OpenBalanceHistorySettings: "open_balance_history_settings",
   OpenRedeemPage: "open_redeem_page",
+  OpenSponsorAddAccountFollowup: "open_sponsor_add_account_followup",
+  OpenSponsorApiCredentialsFollowup: "open_sponsor_api_credentials_followup",
+  OpenSponsorBookmarkFollowup: "open_sponsor_bookmark_followup",
+  OpenSponsorProvider: "open_sponsor_provider",
   OpenSelectedManagedSiteChannelMigration:
     "open_selected_managed_site_channel_migration",
   OpenUsageSyncSettings: "open_usage_sync_settings",
@@ -495,6 +487,7 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
     "trigger_redemption_assist_from_context_menu",
   VisitRedemptionAssistSettingsFromPrompt:
     "visit_redemption_assist_settings_from_prompt",
+  ViewSponsorRecommendations: "view_sponsor_recommendations",
 } as const
 
 export type ProductAnalyticsActionId =
@@ -511,6 +504,10 @@ export const PRODUCT_ANALYTICS_SURFACE_IDS = {
   OptionsAccountManagementHeader: "options_account_management_header",
   OptionsAccountManagementPage: "options_account_management_page",
   OptionsAccountManagementRowActions: "options_account_management_row_actions",
+  OptionsAccountManagementAddAccountSponsorRecommendations:
+    "options_account_management_add_account_sponsor_recommendations",
+  OptionsAccountManagementNewcomerSponsorRecommendations:
+    "options_account_management_newcomer_sponsor_recommendations",
   OptionsAccountTokenKiloCodeExportDialog:
     "options_account_token_kilo_code_export_dialog",
   OptionsApiCredentialProfilesDialog: "options_api_credential_profiles_dialog",
@@ -612,45 +609,26 @@ export const PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES = {
 export type ProductAnalyticsAutoCheckinScheduleMode =
   (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES]
 
-export const PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_INTERVAL_BUCKETS = {
-  LessThan10m: "lt_10m",
-  TenTo30m: "10_30m",
-  ThirtyTo60m: "30_60m",
-  GreaterThan60m: "gt_60m",
+export const PRODUCT_ANALYTICS_AUTO_CHECKIN_RUN_KINDS = {
+  Daily: "daily",
+  Manual: "manual",
+  Retry: "retry",
 } as const
 
-export type ProductAnalyticsAutoCheckinRetryIntervalBucket =
-  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_INTERVAL_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_INTERVAL_BUCKETS]
+export type ProductAnalyticsAutoCheckinRunKind =
+  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RUN_KINDS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RUN_KINDS]
 
-export const PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS = {
-  One: "1",
-  TwoToThree: "2_3",
-  FourPlus: "4_plus",
+export const PRODUCT_ANALYTICS_AUTO_CHECKIN_SKIP_REASONS = {
+  AccountDisabled: "account_disabled",
+  DetectionDisabled: "detection_disabled",
+  AutoCheckinDisabled: "auto_checkin_disabled",
+  AlreadyCheckedToday: "already_checked_today",
+  NoProvider: "no_provider",
+  ProviderNotReady: "provider_not_ready",
 } as const
 
-export type ProductAnalyticsAutoCheckinRetryAttemptBucket =
-  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS]
-
-export const PRODUCT_ANALYTICS_AUTO_CHECKIN_WINDOW_LENGTH_BUCKETS = {
-  LessThan1h: "lt_1h",
-  OneTo4h: "1_4h",
-  FourTo12h: "4_12h",
-  GreaterThan12h: "gt_12h",
-} as const
-
-export type ProductAnalyticsAutoCheckinWindowLengthBucket =
-  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_WINDOW_LENGTH_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_WINDOW_LENGTH_BUCKETS]
-
-export const PRODUCT_ANALYTICS_AUTO_CHECKIN_DETERMINISTIC_TIME_BUCKETS = {
-  Night: "night",
-  Morning: "morning",
-  Afternoon: "afternoon",
-  Evening: "evening",
-  Unset: "unset",
-} as const
-
-export type ProductAnalyticsAutoCheckinDeterministicTimeBucket =
-  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_DETERMINISTIC_TIME_BUCKETS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_DETERMINISTIC_TIME_BUCKETS]
+export type ProductAnalyticsAutoCheckinSkipReason =
+  (typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_SKIP_REASONS)[keyof typeof PRODUCT_ANALYTICS_AUTO_CHECKIN_SKIP_REASONS]
 
 export const PRODUCT_ANALYTICS_PERMISSION_IDS = {
   Notifications: "notifications",
@@ -691,6 +669,58 @@ export const PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS = {
 
 export type ProductAnalyticsPermissionFailureReason =
   (typeof PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS)[keyof typeof PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS]
+
+export const PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FAILURE_REASONS =
+  AUTO_DETECT_FAILURE_REASONS
+
+export type ProductAnalyticsAccountAutoDetectFailureReason =
+  AutoDetectFailureReason
+
+export const PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_STRATEGIES =
+  AUTO_DETECT_STRATEGIES
+
+export type ProductAnalyticsAccountAutoDetectStrategy =
+  (typeof PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_STRATEGIES)[keyof typeof PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_STRATEGIES]
+
+export const PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FETCH_CONTEXT_KINDS =
+  AUTO_DETECT_FETCH_CONTEXT_KINDS
+
+export type ProductAnalyticsAccountAutoDetectFetchContextKind =
+  (typeof PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FETCH_CONTEXT_KINDS)[keyof typeof PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FETCH_CONTEXT_KINDS]
+
+export const PRODUCT_ANALYTICS_REQUESTED_AUTH_MODES = AuthTypeEnum
+
+export type ProductAnalyticsRequestedAuthMode = AuthTypeEnum
+
+export const PRODUCT_ANALYTICS_SPONSOR_ACTION_KINDS = {
+  ApiCredentialProfilesFallback: "api_credential_profiles_fallback",
+  BookmarkFallback: "bookmark_fallback",
+  ContinueAddAccount: "continue_add_account",
+  VisitProvider: "visit_provider",
+} as const
+
+export type ProductAnalyticsSponsorActionKind =
+  (typeof PRODUCT_ANALYTICS_SPONSOR_ACTION_KINDS)[keyof typeof PRODUCT_ANALYTICS_SPONSOR_ACTION_KINDS]
+
+export const PRODUCT_ANALYTICS_SPONSOR_CATALOG_SOURCES = {
+  Bundled: "bundled",
+  Cached: "cached",
+  Mixed: "mixed",
+  Remote: "remote",
+} as const
+
+export type ProductAnalyticsSponsorCatalogSource =
+  (typeof PRODUCT_ANALYTICS_SPONSOR_CATALOG_SOURCES)[keyof typeof PRODUCT_ANALYTICS_SPONSOR_CATALOG_SOURCES]
+
+export const PRODUCT_ANALYTICS_SPONSOR_SUPPORT_STATUSES = {
+  Supported: "supported",
+  Unsupported: "unsupported",
+} as const
+
+export type ProductAnalyticsSponsorSupportStatus =
+  (typeof PRODUCT_ANALYTICS_SPONSOR_SUPPORT_STATUSES)[keyof typeof PRODUCT_ANALYTICS_SPONSOR_SUPPORT_STATUSES]
+
+export type ProductAnalyticsSponsorId = string
 
 export const PRODUCT_ANALYTICS_SITE_TYPES = [
   ...new Set([...ACCOUNT_SITE_TYPES, ...MANAGED_SITE_TYPES]),
@@ -744,7 +774,7 @@ export type ProductAnalyticsEventPayloadMap = {
     surface_id?: ProductAnalyticsSurfaceId
     result: ProductAnalyticsResult
     error_category?: ProductAnalyticsErrorCategory
-    duration_bucket?: ProductAnalyticsDurationBucket
+    duration_ms?: number
     api_type?: ProductAnalyticsApiType
     source_kind?: ProductAnalyticsSourceKind
     mode?: ProductAnalyticsModeId
@@ -757,38 +787,82 @@ export type ProductAnalyticsEventPayloadMap = {
     source_managed_site_type?: ProductAnalyticsManagedSiteType
     target_managed_site_type?: ProductAnalyticsManagedSiteType
     failure_stage?: ProductAnalyticsFailureStage
-    item_count_bucket?: ProductAnalyticsCountBucket
-    selected_count_bucket?: ProductAnalyticsCountBucket
-    success_count_bucket?: ProductAnalyticsCountBucket
-    failure_count_bucket?: ProductAnalyticsCountBucket
-    skipped_count_bucket?: ProductAnalyticsCountBucket
-    warning_count_bucket?: ProductAnalyticsCountBucket
-    ready_count_bucket?: ProductAnalyticsCountBucket
-    blocked_count_bucket?: ProductAnalyticsCountBucket
-    model_count_bucket?: ProductAnalyticsCountBucket
-    filter_count_bucket?: ProductAnalyticsCountBucket
-    result_count_bucket?: ProductAnalyticsCountBucket
+    account_auto_detect_failure_reason?: ProductAnalyticsAccountAutoDetectFailureReason
+    auto_detect_strategy?: ProductAnalyticsAccountAutoDetectStrategy
+    requested_auth_mode?: ProductAnalyticsRequestedAuthMode
+    site_type?: ProductAnalyticsSiteType
+    fetch_context_kind?: ProductAnalyticsAccountAutoDetectFetchContextKind
+    incognito_context_used?: boolean
+    current_tab_matched?: boolean
+    item_count?: number
+    selected_count?: number
+    success_count?: number
+    failure_count?: number
+    skipped_count?: number
+    warning_count?: number
+    ready_count?: number
+    blocked_count?: number
+    model_count?: number
+    filter_count?: number
+    result_count?: number
     usage_data_present?: boolean
-    shield_bypass_prompt_shown_count_bucket?: ProductAnalyticsCountBucket
-    shield_bypass_prompt_dismissed_count_bucket?: ProductAnalyticsCountBucket
-    shield_bypass_settings_visited_count_bucket?: ProductAnalyticsCountBucket
-    temp_window_fetch_success_count_bucket?: ProductAnalyticsCountBucket
-    temp_window_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
-    temp_window_turnstile_fetch_success_count_bucket?: ProductAnalyticsCountBucket
-    temp_window_turnstile_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
+    shield_bypass_prompt_shown_count?: number
+    shield_bypass_prompt_dismissed_count?: number
+    shield_bypass_settings_visited_count?: number
+    temp_window_fetch_success_count?: number
+    temp_window_fetch_failure_count?: number
+    temp_window_turnstile_fetch_success_count?: number
+    temp_window_turnstile_fetch_failure_count?: number
+    sponsor_action_kind?: ProductAnalyticsSponsorActionKind
+    sponsor_catalog_source?: ProductAnalyticsSponsorCatalogSource
+    sponsor_id?: ProductAnalyticsSponsorId
+    sponsor_rank?: number
+    sponsor_support_status?: ProductAnalyticsSponsorSupportStatus
+    sponsor_supported_count?: number
+    sponsor_unsupported_count?: number
     entrypoint: ProductAnalyticsEntrypoint
   }
   [PRODUCT_ANALYTICS_EVENTS.ShieldBypassSummaryCaptured]: {
     feature_id: typeof PRODUCT_ANALYTICS_FEATURE_IDS.ShieldBypassAssist
     surface_id: typeof PRODUCT_ANALYTICS_SURFACE_IDS.BackgroundShieldBypassTempContext
     entrypoint: typeof PRODUCT_ANALYTICS_ENTRYPOINTS.Background
-    shield_bypass_prompt_shown_count_bucket?: ProductAnalyticsCountBucket
-    shield_bypass_prompt_dismissed_count_bucket?: ProductAnalyticsCountBucket
-    shield_bypass_settings_visited_count_bucket?: ProductAnalyticsCountBucket
-    temp_window_fetch_success_count_bucket?: ProductAnalyticsCountBucket
-    temp_window_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
-    temp_window_turnstile_fetch_success_count_bucket?: ProductAnalyticsCountBucket
-    temp_window_turnstile_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
+    shield_bypass_prompt_shown_count?: number
+    shield_bypass_prompt_dismissed_count?: number
+    shield_bypass_settings_visited_count?: number
+    temp_window_fetch_success_count?: number
+    temp_window_fetch_failure_count?: number
+    temp_window_turnstile_fetch_success_count?: number
+    temp_window_turnstile_fetch_failure_count?: number
+  }
+  [PRODUCT_ANALYTICS_EVENTS.AutoCheckinRunSummaryCaptured]: {
+    run_kind: ProductAnalyticsAutoCheckinRunKind
+    entrypoint: typeof PRODUCT_ANALYTICS_ENTRYPOINTS.Background
+    total_accounts: number
+    detection_enabled_accounts: number
+    auto_checkin_enabled_accounts: number
+    provider_available_accounts: number
+    runnable_accounts: number
+    success_count: number
+    failed_count: number
+    skipped_count: number
+    retry_enabled: boolean
+    retry_pending_before: number
+    retry_attempted: number
+    retry_rescued: number
+    retry_pending_after: number
+    retry_exhausted: number
+  }
+  [PRODUCT_ANALYTICS_EVENTS.AutoCheckinAccountGroupCaptured]: {
+    run_kind: ProductAnalyticsAutoCheckinRunKind
+    entrypoint: typeof PRODUCT_ANALYTICS_ENTRYPOINTS.Background
+    site_type?: ProductAnalyticsSiteType
+    requested_auth_mode?: ProductAnalyticsRequestedAuthMode
+    skip_reason?: ProductAnalyticsAutoCheckinSkipReason
+    total_accounts: number
+    runnable_accounts: number
+    success_count: number
+    failed_count: number
+    skipped_count: number
   }
   [PRODUCT_ANALYTICS_EVENTS.SettingChanged]: {
     setting_id: ProductAnalyticsSettingId
@@ -800,11 +874,11 @@ export type ProductAnalyticsEventPayloadMap = {
     show_today_cashflow_enabled?: boolean
     show_health_status_enabled?: boolean
     refresh_on_open_enabled?: boolean
-    refresh_interval_bucket?: ProductAnalyticsModeId
-    min_refresh_interval_bucket?: ProductAnalyticsModeId
-    sync_interval_bucket?: ProductAnalyticsModeId
-    polling_interval_bucket?: ProductAnalyticsModeId
-    retention_days_bucket?: ProductAnalyticsModeId
+    refresh_interval_minutes?: number
+    min_refresh_interval_seconds?: number
+    sync_interval_minutes?: number
+    polling_interval_minutes?: number
+    retention_days?: number
     end_of_day_capture_enabled?: boolean
     managed_site_type?: ProductAnalyticsManagedSiteType
     new_api_configured?: boolean
@@ -815,9 +889,9 @@ export type ProductAnalyticsEventPayloadMap = {
     claude_code_hub_configured?: boolean
     cli_proxy_configured?: boolean
     claude_code_router_configured?: boolean
-    concurrency_bucket?: ProductAnalyticsCountBucket
-    rate_limit_rpm_bucket?: ProductAnalyticsModeId
-    rate_limit_burst_bucket?: ProductAnalyticsCountBucket
+    concurrency?: number
+    rate_limit_rpm?: number
+    rate_limit_burst?: number
     allowed_models_configured?: boolean
     global_filters_configured?: boolean
     standard_models_configured?: boolean
@@ -844,18 +918,18 @@ export type ProductAnalyticsEventPayloadMap = {
     sync_api_profiles_enabled?: boolean
     sync_preferences_enabled?: boolean
     browser_channel_enabled?: boolean
-    third_party_channel_count_bucket?: ProductAnalyticsCountBucket
-    task_enabled_count_bucket?: ProductAnalyticsCountBucket
+    third_party_channel_count?: number
+    task_enabled_count?: number
     notification_enabled?: boolean
     global_enabled?: boolean
     ui_pretrigger_enabled?: boolean
     notify_completion_enabled?: boolean
     retry_enabled?: boolean
     schedule_mode?: ProductAnalyticsAutoCheckinScheduleMode
-    retry_interval_bucket?: ProductAnalyticsAutoCheckinRetryIntervalBucket
-    retry_max_attempts_bucket?: ProductAnalyticsAutoCheckinRetryAttemptBucket
-    window_length_bucket?: ProductAnalyticsAutoCheckinWindowLengthBucket
-    deterministic_time_bucket?: ProductAnalyticsAutoCheckinDeterministicTimeBucket
+    retry_interval_minutes?: number
+    retry_max_attempts?: number
+    window_length_minutes?: number
+    deterministic_time_minutes?: number
     entrypoint: ProductAnalyticsEntrypoint
   }
   [PRODUCT_ANALYTICS_EVENTS.SettingsSnapshotCaptured]: Omit<
@@ -865,21 +939,21 @@ export type ProductAnalyticsEventPayloadMap = {
     setting_id?: ProductAnalyticsSettingId
     account_auto_refresh_enabled?: boolean
     account_auto_refresh_on_open_enabled?: boolean
-    account_auto_refresh_interval_bucket?: ProductAnalyticsModeId
-    account_auto_refresh_min_interval_bucket?: ProductAnalyticsModeId
+    account_auto_refresh_interval_minutes?: number
+    account_auto_refresh_min_interval_seconds?: number
     usage_history_enabled?: boolean
     usage_history_mode?: ProductAnalyticsModeId
-    usage_history_sync_interval_bucket?: ProductAnalyticsModeId
-    usage_history_retention_days_bucket?: ProductAnalyticsModeId
+    usage_history_sync_interval_minutes?: number
+    usage_history_retention_days?: number
     balance_history_enabled?: boolean
     balance_history_end_of_day_capture_enabled?: boolean
-    balance_history_retention_days_bucket?: ProductAnalyticsModeId
+    balance_history_retention_days?: number
     managed_site_model_sync_enabled?: boolean
-    managed_site_model_sync_interval_bucket?: ProductAnalyticsModeId
-    managed_site_model_sync_concurrency_bucket?: ProductAnalyticsCountBucket
-    managed_site_model_sync_retry_max_attempts_bucket?: ProductAnalyticsAutoCheckinRetryAttemptBucket
-    managed_site_model_sync_rate_limit_rpm_bucket?: ProductAnalyticsModeId
-    managed_site_model_sync_rate_limit_burst_bucket?: ProductAnalyticsCountBucket
+    managed_site_model_sync_interval_minutes?: number
+    managed_site_model_sync_concurrency?: number
+    managed_site_model_sync_retry_max_attempts?: number
+    managed_site_model_sync_rate_limit_rpm?: number
+    managed_site_model_sync_rate_limit_burst?: number
     managed_site_model_sync_allowed_models_configured?: boolean
     managed_site_model_sync_global_filters_configured?: boolean
     auto_checkin_global_enabled?: boolean
@@ -887,10 +961,10 @@ export type ProductAnalyticsEventPayloadMap = {
     auto_checkin_notify_completion_enabled?: boolean
     auto_checkin_retry_enabled?: boolean
     auto_checkin_schedule_mode?: ProductAnalyticsAutoCheckinScheduleMode
-    auto_checkin_retry_interval_bucket?: ProductAnalyticsAutoCheckinRetryIntervalBucket
-    auto_checkin_retry_max_attempts_bucket?: ProductAnalyticsAutoCheckinRetryAttemptBucket
-    auto_checkin_window_length_bucket?: ProductAnalyticsAutoCheckinWindowLengthBucket
-    auto_checkin_deterministic_time_bucket?: ProductAnalyticsAutoCheckinDeterministicTimeBucket
+    auto_checkin_retry_interval_minutes?: number
+    auto_checkin_retry_max_attempts?: number
+    auto_checkin_window_length_minutes?: number
+    auto_checkin_deterministic_time_minutes?: number
     model_redirect_enabled?: boolean
     model_redirect_standard_models_configured?: boolean
     model_redirect_prune_missing_targets_on_model_sync_enabled?: boolean
@@ -916,18 +990,18 @@ export type ProductAnalyticsEventPayloadMap = {
     webdav_auto_sync_enabled?: boolean
     webdav_backup_encryption_enabled?: boolean
     webdav_sync_strategy?: ProductAnalyticsModeId
-    webdav_sync_interval_bucket?: ProductAnalyticsModeId
+    webdav_sync_interval_minutes?: number
     webdav_sync_accounts_enabled?: boolean
     webdav_sync_bookmarks_enabled?: boolean
     webdav_sync_api_profiles_enabled?: boolean
     webdav_sync_preferences_enabled?: boolean
     task_notifications_enabled?: boolean
     task_notifications_browser_channel_enabled?: boolean
-    task_notifications_third_party_channel_count_bucket?: ProductAnalyticsCountBucket
-    task_notifications_task_enabled_count_bucket?: ProductAnalyticsCountBucket
+    task_notifications_third_party_channel_count?: number
+    task_notifications_task_enabled_count?: number
     site_announcements_enabled?: boolean
     site_announcements_notification_enabled?: boolean
-    site_announcements_polling_interval_bucket?: ProductAnalyticsModeId
+    site_announcements_polling_interval_minutes?: number
   }
   [PRODUCT_ANALYTICS_EVENTS.PermissionResult]: {
     permission_id: ProductAnalyticsPermissionId
@@ -940,15 +1014,15 @@ export type ProductAnalyticsEventPayloadMap = {
     entrypoint: ProductAnalyticsEntrypoint
   }
   [PRODUCT_ANALYTICS_EVENTS.SiteEcosystemSnapshot]: {
-    total_account_count_bucket: ProductAnalyticsCountBucket
-    distinct_site_count_bucket: ProductAnalyticsCountBucket
-    known_site_type_count_bucket: ProductAnalyticsCountBucket
-    unknown_site_count_bucket: ProductAnalyticsCountBucket
-    managed_site_count_bucket: ProductAnalyticsCountBucket
+    total_account_count: number
+    distinct_site_count: number
+    known_site_type_count: number
+    unknown_site_count: number
+    managed_site_count: number
   }
   [PRODUCT_ANALYTICS_EVENTS.SiteTypePresent]: {
     site_type: ProductAnalyticsSiteType
-    account_count_bucket: ProductAnalyticsCountBucket
+    account_count: number
   }
 }
 

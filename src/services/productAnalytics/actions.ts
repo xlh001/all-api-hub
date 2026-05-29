@@ -8,20 +8,24 @@ import {
   PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_RESULTS,
   trackProductAnalyticsEvent,
+  type ProductAnalyticsAccountAutoDetectFailureReason,
+  type ProductAnalyticsAccountAutoDetectFetchContextKind,
+  type ProductAnalyticsAccountAutoDetectStrategy,
   type ProductAnalyticsApiType,
   type ProductAnalyticsEditorMode,
   type ProductAnalyticsErrorCategory,
   type ProductAnalyticsFailureStage,
   type ProductAnalyticsManagedSiteType,
   type ProductAnalyticsModeId,
+  type ProductAnalyticsRequestedAuthMode,
   type ProductAnalyticsResult,
+  type ProductAnalyticsSiteType,
   type ProductAnalyticsSourceKind,
   type ProductAnalyticsStatusKind,
   type ProductAnalyticsTargetKind,
   type ProductAnalyticsTargetState,
   type ProductAnalyticsTelemetrySource,
 } from "./events"
-import { bucketCount, bucketDurationMs } from "./privacy"
 
 export {
   resolveProductAnalyticsActionContext,
@@ -50,6 +54,13 @@ export type ProductAnalyticsActionInsights = {
   sourceManagedSiteType?: ProductAnalyticsManagedSiteType
   targetManagedSiteType?: ProductAnalyticsManagedSiteType
   failureStage?: ProductAnalyticsFailureStage
+  accountAutoDetectFailureReason?: ProductAnalyticsAccountAutoDetectFailureReason
+  autoDetectStrategy?: ProductAnalyticsAccountAutoDetectStrategy
+  requestedAuthMode?: ProductAnalyticsRequestedAuthMode
+  siteType?: ProductAnalyticsSiteType
+  fetchContextKind?: ProductAnalyticsAccountAutoDetectFetchContextKind
+  incognitoContextUsed?: boolean
+  currentTabMatched?: boolean
   itemCount?: number
   selectedCount?: number
   successCount?: number
@@ -237,38 +248,60 @@ function mapProductAnalyticsActionInsights(
       ? { target_managed_site_type: insights.targetManagedSiteType }
       : {}),
     ...(insights.failureStage ? { failure_stage: insights.failureStage } : {}),
+    ...(insights.accountAutoDetectFailureReason
+      ? {
+          account_auto_detect_failure_reason:
+            insights.accountAutoDetectFailureReason,
+        }
+      : {}),
+    ...(insights.autoDetectStrategy
+      ? { auto_detect_strategy: insights.autoDetectStrategy }
+      : {}),
+    ...(insights.requestedAuthMode
+      ? { requested_auth_mode: insights.requestedAuthMode }
+      : {}),
+    ...(insights.siteType ? { site_type: insights.siteType } : {}),
+    ...(insights.fetchContextKind
+      ? { fetch_context_kind: insights.fetchContextKind }
+      : {}),
+    ...(typeof insights.incognitoContextUsed === "boolean"
+      ? { incognito_context_used: insights.incognitoContextUsed }
+      : {}),
+    ...(typeof insights.currentTabMatched === "boolean"
+      ? { current_tab_matched: insights.currentTabMatched }
+      : {}),
     ...(typeof insights.itemCount === "number"
-      ? { item_count_bucket: bucketCount(insights.itemCount) }
+      ? { item_count: insights.itemCount }
       : {}),
     ...(typeof insights.selectedCount === "number"
-      ? { selected_count_bucket: bucketCount(insights.selectedCount) }
+      ? { selected_count: insights.selectedCount }
       : {}),
     ...(typeof insights.successCount === "number"
-      ? { success_count_bucket: bucketCount(insights.successCount) }
+      ? { success_count: insights.successCount }
       : {}),
     ...(typeof insights.failureCount === "number"
-      ? { failure_count_bucket: bucketCount(insights.failureCount) }
+      ? { failure_count: insights.failureCount }
       : {}),
     ...(typeof insights.skippedCount === "number"
-      ? { skipped_count_bucket: bucketCount(insights.skippedCount) }
+      ? { skipped_count: insights.skippedCount }
       : {}),
     ...(typeof insights.warningCount === "number"
-      ? { warning_count_bucket: bucketCount(insights.warningCount) }
+      ? { warning_count: insights.warningCount }
       : {}),
     ...(typeof insights.readyCount === "number"
-      ? { ready_count_bucket: bucketCount(insights.readyCount) }
+      ? { ready_count: insights.readyCount }
       : {}),
     ...(typeof insights.blockedCount === "number"
-      ? { blocked_count_bucket: bucketCount(insights.blockedCount) }
+      ? { blocked_count: insights.blockedCount }
       : {}),
     ...(typeof insights.modelCount === "number"
-      ? { model_count_bucket: bucketCount(insights.modelCount) }
+      ? { model_count: insights.modelCount }
       : {}),
     ...(typeof insights.filterCount === "number"
-      ? { filter_count_bucket: bucketCount(insights.filterCount) }
+      ? { filter_count: insights.filterCount }
       : {}),
     ...(typeof insights.resultCount === "number"
-      ? { result_count_bucket: bucketCount(insights.resultCount) }
+      ? { result_count: insights.resultCount }
       : {}),
     ...(typeof insights.usageDataPresent === "boolean"
       ? { usage_data_present: insights.usageDataPresent }
@@ -369,9 +402,7 @@ export async function trackProductAnalyticsActionCompleted({
         ...(resolvedErrorCategory
           ? { error_category: resolvedErrorCategory }
           : {}),
-        ...(typeof durationMs === "number"
-          ? { duration_bucket: bucketDurationMs(durationMs) }
-          : {}),
+        ...(typeof durationMs === "number" ? { duration_ms: durationMs } : {}),
         ...mapProductAnalyticsActionInsights(insights),
         ...(failureStage ? { failure_stage: failureStage } : {}),
       },

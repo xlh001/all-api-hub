@@ -4,11 +4,9 @@ import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_API_TYPES,
-  PRODUCT_ANALYTICS_AUTO_CHECKIN_DETERMINISTIC_TIME_BUCKETS,
-  PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS,
-  PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_INTERVAL_BUCKETS,
+  PRODUCT_ANALYTICS_AUTO_CHECKIN_RUN_KINDS,
   PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES,
-  PRODUCT_ANALYTICS_AUTO_CHECKIN_WINDOW_LENGTH_BUCKETS,
+  PRODUCT_ANALYTICS_AUTO_CHECKIN_SKIP_REASONS,
   PRODUCT_ANALYTICS_EDITOR_MODES,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_EVENTS,
@@ -228,7 +226,7 @@ describe("product analytics event enums", () => {
     })
   })
 
-  it("defines fixed Auto Check-in setting ids and strategy dimensions", () => {
+  it("defines fixed Auto Check-in setting ids and schedule dimensions", () => {
     expect(PRODUCT_ANALYTICS_SETTING_IDS).toMatchObject({
       AutoCheckinConfigSnapshot: "auto_checkin_config_snapshot",
     })
@@ -237,33 +235,24 @@ describe("product analytics event enums", () => {
       Random: "random",
       Deterministic: "deterministic",
     })
-    expect(PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_INTERVAL_BUCKETS).toMatchObject(
-      {
-        LessThan10m: "lt_10m",
-        TenTo30m: "10_30m",
-        ThirtyTo60m: "30_60m",
-        GreaterThan60m: "gt_60m",
-      },
-    )
-    expect(PRODUCT_ANALYTICS_AUTO_CHECKIN_RETRY_ATTEMPT_BUCKETS).toMatchObject({
-      One: "1",
-      TwoToThree: "2_3",
-      FourPlus: "4_plus",
+  })
+
+  it("defines fixed Auto Check-in run analytics events and dimensions", () => {
+    expect(PRODUCT_ANALYTICS_EVENTS).toMatchObject({
+      AutoCheckinRunSummaryCaptured: "auto_checkin_run_summary_captured",
+      AutoCheckinAccountGroupCaptured: "auto_checkin_account_group_captured",
     })
-    expect(PRODUCT_ANALYTICS_AUTO_CHECKIN_WINDOW_LENGTH_BUCKETS).toMatchObject({
-      LessThan1h: "lt_1h",
-      OneTo4h: "1_4h",
-      FourTo12h: "4_12h",
-      GreaterThan12h: "gt_12h",
+    expect(PRODUCT_ANALYTICS_AUTO_CHECKIN_RUN_KINDS).toMatchObject({
+      Daily: "daily",
+      Manual: "manual",
+      Retry: "retry",
     })
-    expect(
-      PRODUCT_ANALYTICS_AUTO_CHECKIN_DETERMINISTIC_TIME_BUCKETS,
-    ).toMatchObject({
-      Night: "night",
-      Morning: "morning",
-      Afternoon: "afternoon",
-      Evening: "evening",
-      Unset: "unset",
+    expect(PRODUCT_ANALYTICS_AUTO_CHECKIN_SKIP_REASONS).toMatchObject({
+      AccountDisabled: "account_disabled",
+      DetectionDisabled: "detection_disabled",
+      AutoCheckinDisabled: "auto_checkin_disabled",
+      NoProvider: "no_provider",
+      ProviderNotReady: "provider_not_ready",
     })
   })
 
