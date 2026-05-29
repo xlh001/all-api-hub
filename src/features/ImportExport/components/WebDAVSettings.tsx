@@ -28,6 +28,7 @@ import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/a
 import { channelConfigStorage } from "~/services/managedSites/channelConfigStorage"
 import { userPreferences } from "~/services/preferences/userPreferences"
 import {
+  resolveProductAnalyticsErrorCategoryFromError,
   startProductAnalyticsAction,
   type ProductAnalyticsActionContext,
 } from "~/services/productAnalytics/actions"
@@ -35,6 +36,7 @@ import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
@@ -104,19 +106,31 @@ const WEBDAV_SYNC_DATA_INPUT_IDS: Record<WebDAVSyncDataKey, string> = {
 }
 
 class PersistWebdavConfigError extends Error {
-  constructor() {
-    super("Failed to persist WebDAV settings")
+  constructor(cause?: unknown) {
+    super("Failed to persist WebDAV settings", { cause })
     this.name = "PersistWebdavConfigError"
+    ;(this as Error & { cause?: unknown }).cause = cause
   }
 }
 
 /** Classify WebDAV validation failures without exposing raw error details. */
 function getWebdavAnalyticsErrorCategory(error: unknown) {
   if (error instanceof PersistWebdavConfigError) {
-    return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation
+    return error.cause
+      ? resolveProductAnalyticsErrorCategoryFromError(error.cause)
+      : PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown
   }
 
-  return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown
+  return resolveProductAnalyticsErrorCategoryFromError(error)
+}
+
+/** Classify which WebDAV phase failed without exposing raw connection details. */
+function getWebdavAnalyticsFailureStage(error: unknown) {
+  if (error instanceof PersistWebdavConfigError) {
+    return PRODUCT_ANALYTICS_FAILURE_STAGES.Persist
+  }
+
+  return PRODUCT_ANALYTICS_FAILURE_STAGES.Execute
 }
 
 /**
@@ -253,9 +267,15 @@ export default function WebDAVSettings() {
       return
     }
 
-    const success = await updateWebdavSettings(updates, {
-      expectedLastUpdated: options?.expectedLastUpdated ?? expectedLastUpdated,
-    })
+    let success: boolean
+    try {
+      success = await updateWebdavSettings(updates, {
+        expectedLastUpdated:
+          options?.expectedLastUpdated ?? expectedLastUpdated,
+      })
+    } catch (error) {
+      throw new PersistWebdavConfigError(error)
+    }
     if (!success) {
       throw new PersistWebdavConfigError()
     }
@@ -284,6 +304,9 @@ export default function WebDAVSettings() {
       )
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: getWebdavAnalyticsErrorCategory(e),
+        insights: {
+          failureStage: getWebdavAnalyticsFailureStage(e),
+        },
       })
     } finally {
       setSaving(false)
@@ -312,6 +335,9 @@ export default function WebDAVSettings() {
       )
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: getWebdavAnalyticsErrorCategory(e),
+        insights: {
+          failureStage: getWebdavAnalyticsFailureStage(e),
+        },
       })
     } finally {
       setTesting(false)
@@ -336,6 +362,9 @@ export default function WebDAVSettings() {
       if (!ensureSyncDataSelected()) {
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          },
         })
         return
       }
@@ -395,6 +424,9 @@ export default function WebDAVSettings() {
       )
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: getWebdavAnalyticsErrorCategory(e),
+        insights: {
+          failureStage: getWebdavAnalyticsFailureStage(e),
+        },
       })
     } finally {
       setUploading(false)
@@ -431,6 +463,9 @@ export default function WebDAVSettings() {
       if (!ensureSyncDataSelected()) {
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          },
         })
         return
       }
@@ -485,6 +520,9 @@ export default function WebDAVSettings() {
       )
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: getWebdavAnalyticsErrorCategory(e),
+        insights: {
+          failureStage: getWebdavAnalyticsFailureStage(e),
+        },
       })
     } finally {
       setDownloading(false)
@@ -514,6 +552,9 @@ export default function WebDAVSettings() {
       if (!ensureSyncDataSelected()) {
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          },
         })
         return
       }
@@ -527,6 +568,7 @@ export default function WebDAVSettings() {
       const data = JSON.parse(content)
       const result = await handleImportWithSelection(data)
       let importedPreferencesLastUpdated: number | null = null
+      let decryptPasswordPersistFailed = false
 
       if (result.allImported || result.sections?.preferences) {
         const refreshedPreferences = await userPreferences.getPreferences()
@@ -554,6 +596,7 @@ export default function WebDAVSettings() {
         } catch (error) {
           logger.error("Failed to persist WebDAV decrypt password", error)
           toast.error(t("settings:messages.saveSettingsFailed"))
+          decryptPasswordPersistFailed = true
         }
       }
 
@@ -563,7 +606,16 @@ export default function WebDAVSettings() {
 
       setDecryptDialogOpen(false)
       setPendingEnvelope(null)
-      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
+      if (decryptPasswordPersistFailed) {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        })
+      } else {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
+      }
     } catch (e: any) {
       logger.error("Failed to decrypt/import WebDAV backup", e)
       toast.error(e?.message || t("webdav.encryption.decryptFailed"))
@@ -571,6 +623,11 @@ export default function WebDAVSettings() {
         errorCategory: decryptCompleted
           ? getWebdavAnalyticsErrorCategory(e)
           : PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+        insights: {
+          failureStage: decryptCompleted
+            ? getWebdavAnalyticsFailureStage(e)
+            : PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+        },
       })
     } finally {
       setDecrypting(false)

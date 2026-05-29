@@ -23,7 +23,10 @@ import {
   fetchApiCredentialModelIds,
   normalizeApiCredentialModelIds,
 } from "~/services/apiCredentialProfiles/modelCatalog"
-import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
+import {
+  resolveProductAnalyticsErrorCategoryFromError,
+  startProductAnalyticsAction,
+} from "~/services/productAnalytics/actions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -32,6 +35,7 @@ import {
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/events"
+import { resolveProductAnalyticsErrorCategoryFromProbeResult } from "~/services/productAnalytics/verification"
 import {
   API_TYPES,
   getApiVerificationProbeDefinitions,
@@ -45,7 +49,10 @@ import {
   getApiVerificationProbeLabel,
   translateApiVerificationSummary,
 } from "~/services/verification/aiApiVerification/i18n"
-import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
+import {
+  buildSafeProbeFailureDiagnostics,
+  toSanitizedErrorSummary,
+} from "~/services/verification/aiApiVerification/utils"
 import {
   createProfileModelVerificationHistoryTarget,
   createProfileVerificationHistoryTarget,
@@ -517,19 +524,18 @@ export function VerifyApiCredentialProfileDialog({
       } else {
         tracker?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
           errorCategory:
-            result.status === "unsupported"
-              ? PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported
-              : PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+            resolveProductAnalyticsErrorCategoryFromProbeResult(result),
         })
       }
       return result
     } catch (error) {
+      const sanitizedMessage = toSanitizedErrorSummary(error, [
+        profile.apiKey,
+        profile.baseUrl,
+      ])
       logger.error("Probe failed", {
         probeId,
-        message: toSanitizedErrorSummary(error, [
-          profile.apiKey,
-          profile.baseUrl,
-        ]),
+        message: sanitizedMessage,
       })
 
       const fallback: ApiVerificationProbeResult = {
@@ -537,6 +543,7 @@ export function VerifyApiCredentialProfileDialog({
         status: "fail",
         latencyMs: 0,
         summary: t("aiApiVerification:verifyDialog.errors.unexpected"),
+        ...buildSafeProbeFailureDiagnostics(error, sanitizedMessage),
       }
 
       const nextProbes = probesRef.current.map((probe) => {
@@ -550,7 +557,7 @@ export function VerifyApiCredentialProfileDialog({
       replaceProbes(nextProbes)
       await persistProbeResults(nextProbes, modelIdOverride)
       tracker?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        errorCategory: resolveProductAnalyticsErrorCategoryFromError(error),
       })
       return fallback
     }
@@ -627,8 +634,18 @@ export function VerifyApiCredentialProfileDialog({
 
       const hasFailedProbe = failureCount > 0
       if (hasFailedProbe) {
+        const errorCategory = results
+          .filter((result) => result.status === "fail")
+          .map((result) =>
+            resolveProductAnalyticsErrorCategoryFromProbeResult(result),
+          )
+          .find(
+            (category) =>
+              category !== PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          )
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          errorCategory:
+            errorCategory ?? PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights,
         })
         return
@@ -643,7 +660,7 @@ export function VerifyApiCredentialProfileDialog({
         ]),
       })
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        errorCategory: resolveProductAnalyticsErrorCategoryFromError(error),
       })
     } finally {
       setIsRunning(false)

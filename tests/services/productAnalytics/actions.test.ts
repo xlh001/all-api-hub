@@ -210,8 +210,156 @@ describe("product analytics action helpers", () => {
         result: PRODUCT_ANALYTICS_RESULTS.Failure,
         error_category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network,
         duration_bucket: "5_30s",
+        failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
       },
     )
+  })
+
+  it("defaults failed completions without an explicit failure stage to execute", async () => {
+    const { trackProductAnalyticsActionCompleted } = await import(
+      "~/services/productAnalytics/actions"
+    )
+
+    await trackProductAnalyticsActionCompleted({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AutoCheckin,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.RunAutoCheckinNow,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+    })
+
+    expect(trackMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.AutoCheckin,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.RunAutoCheckinNow,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        error_category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+      },
+    )
+  })
+
+  it("defaults failed completions without an explicit error category to unknown", async () => {
+    const { trackProductAnalyticsActionCompleted } = await import(
+      "~/services/productAnalytics/actions"
+    )
+
+    await trackProductAnalyticsActionCompleted({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.KeyManagement,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.RefreshAccountTokens,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+    })
+
+    expect(trackMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.KeyManagement,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.RefreshAccountTokens,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        error_category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+      },
+    )
+  })
+
+  it("does not add failure diagnostics to non-failure completions by default", async () => {
+    const { trackProductAnalyticsActionCompleted } = await import(
+      "~/services/productAnalytics/actions"
+    )
+
+    await trackProductAnalyticsActionCompleted({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ImportExport,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.ExportFullBackup,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      result: PRODUCT_ANALYTICS_RESULTS.Cancelled,
+    })
+
+    expect(trackMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ImportExport,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.ExportFullBackup,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Cancelled,
+      },
+    )
+  })
+
+  it("maps structured errors to safe analytics categories without raw messages", async () => {
+    const { resolveProductAnalyticsErrorCategoryFromError } = await import(
+      "~/services/productAnalytics/actions"
+    )
+
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({ statusCode: 401 }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({ statusCode: 429 }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.RateLimit)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({
+        code: "NETWORK_ERROR",
+      }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({
+        originalCode: "JSON_PARSE_ERROR",
+      }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({
+        code: "FEATURE_UNSUPPORTED",
+      }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({ name: "AbortError" }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Timeout)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({
+        name: "NotAllowedError",
+      }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Permission)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({ name: "NotFoundError" }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError(
+        new TypeError("Failed to fetch"),
+      ),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({
+        cause: { statusCode: 403 },
+      }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({ statusCode: 99 }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError({ statusCode: 600 }),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown)
+  })
+
+  it("keeps unstructured analytics errors in the unknown bucket", async () => {
+    const { resolveProductAnalyticsErrorCategoryFromError } = await import(
+      "~/services/productAnalytics/actions"
+    )
+
+    expect(resolveProductAnalyticsErrorCategoryFromError("private text")).toBe(
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+    )
+    expect(resolveProductAnalyticsErrorCategoryFromError({})).toBe(
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+    )
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError(
+        new TypeError("Cannot read properties of undefined"),
+      ),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown)
   })
 
   it("tracks completion with controlled action insight properties", async () => {

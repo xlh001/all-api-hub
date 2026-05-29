@@ -46,24 +46,29 @@ import {
   getManagedSiteLabel,
 } from "~/services/managedSites/utils/managedSite"
 import {
-  ensurePermissions,
+  ensurePermissionsDetailed,
   hasPermissions,
   onOptionalPermissionsChanged,
   OPTIONAL_PERMISSION_IDS,
   OPTIONAL_PERMISSIONS,
   type ManifestOptionalPermissions,
 } from "~/services/permissions/permissionManager"
-import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
+import {
+  resolveProductAnalyticsErrorCategoryFromError,
+  startProductAnalyticsAction,
+} from "~/services/productAnalytics/actions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
   type ProductAnalyticsActionId,
   type ProductAnalyticsErrorCategory,
 } from "~/services/productAnalytics/events"
+import { trackOptionalPermissionRequestResult } from "~/services/productAnalytics/permissions"
 import {
   AuthTypeEnum,
   type ApiToken,
@@ -530,7 +535,19 @@ export function useAccountDialog({
       return true
     }
 
-    const accounts = await accountStorage.getAllAccounts()
+    let accounts: Awaited<ReturnType<typeof accountStorage.getAllAccounts>>
+    try {
+      accounts = await accountStorage.getAllAccountsOrThrow()
+    } catch (error) {
+      logger.warn(
+        "Duplicate-account lookup failed; continuing without warning",
+        {
+          error,
+          siteUrl: normalizedBaseUrl,
+        },
+      )
+      return true
+    }
     const existingSiteAccounts = accounts.filter(
       (acc) =>
         normalizeSiteUrlForDuplicateCheck({
@@ -1023,7 +1040,18 @@ export function useAccountDialog({
     setCookieAuthPermissionState((prev) => ({ ...prev, pending: true }))
 
     try {
-      const granted = await ensurePermissions(cookieAuthPermissions)
+      const result = await ensurePermissionsDetailed(cookieAuthPermissions)
+      const granted = result.success
+      for (const permissionResult of result.requestedResults) {
+        trackOptionalPermissionRequestResult(permissionResult.id, {
+          success: permissionResult.success,
+          failureReason: permissionResult.failureReason
+            ? permissionResult.failureReason
+            : undefined,
+          wasGrantedBefore: permissionResult.wasGrantedBefore,
+          wasGrantedAfter: permissionResult.wasGrantedAfter,
+        })
+      }
       await refreshCookieAuthPermissionState()
 
       if (granted) {
@@ -1032,6 +1060,15 @@ export function useAccountDialog({
         toast.error(t("messages.cookiePermissionGrantFailed"))
       }
     } catch (error) {
+      const wasGrantedBefore = cookieAuthPermissionState.granted === true
+      for (const permissionId of cookieAuthPermissions) {
+        trackOptionalPermissionRequestResult(permissionId, {
+          success: false,
+          failureReason: error,
+          wasGrantedBefore,
+          wasGrantedAfter: wasGrantedBefore,
+        })
+      }
       logger.warn("Failed to request cookie auth permissions", {
         error,
         permissions: cookieAuthPermissions,
@@ -1043,7 +1080,7 @@ export function useAccountDialog({
         pending: false,
       }))
     }
-  }, [refreshCookieAuthPermissionState, t])
+  }, [cookieAuthPermissionState.granted, refreshCookieAuthPermissionState, t])
 
   const isAihubmixNormalSaveForegroundKeyFlow = useCallback(
     (options?: {
@@ -1317,6 +1354,9 @@ export function useAccountDialog({
     if (!url.trim()) {
       analyticsAction.complete(PRODUCT_ANALYTICS_RESULTS.Skipped, {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+        },
       })
       return
     }
@@ -1324,7 +1364,11 @@ export function useAccountDialog({
     try {
       const shouldContinue = await ensureDuplicateAccountAddConfirmation()
       if (!shouldContinue) {
-        analyticsAction.complete(PRODUCT_ANALYTICS_RESULTS.Cancelled)
+        analyticsAction.complete(PRODUCT_ANALYTICS_RESULTS.Cancelled, {
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Prompt,
+          },
+        })
         return
       }
     } catch (error) {
@@ -1335,6 +1379,9 @@ export function useAccountDialog({
       )
       analyticsAction.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+        },
       })
       return
     }
@@ -1353,6 +1400,9 @@ export function useAccountDialog({
           errorCategory: getAutoDetectAnalyticsErrorCategory(
             result.detailedError?.type,
           ),
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+          },
         })
         return
       }
@@ -1470,7 +1520,13 @@ export function useAccountDialog({
       setDetectionError(detectionError)
       enterForm(ACCOUNT_DIALOG_FORM_SOURCES.MANUAL)
       analyticsAction.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-        errorCategory: getAutoDetectAnalyticsErrorCategory(detectionError.type),
+        errorCategory: getAutoDetectAnalyticsErrorCategory(
+          detectionError.type,
+          error,
+        ),
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+        },
       })
     } finally {
       setIsDetecting(false)
@@ -2427,6 +2483,7 @@ function startAccountDialogAnalyticsAction(actionId: ProductAnalyticsActionId) {
  */
 function getAutoDetectAnalyticsErrorCategory(
   errorType?: AutoDetectErrorType,
+  structuredError?: unknown,
 ): ProductAnalyticsErrorCategory {
   switch (errorType) {
     case AutoDetectErrorType.UNAUTHORIZED:
@@ -2435,14 +2492,18 @@ function getAutoDetectAnalyticsErrorCategory(
     case AutoDetectErrorType.TIMEOUT:
       return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Timeout
     case AutoDetectErrorType.NETWORK_ERROR:
+    case AutoDetectErrorType.SERVER_ERROR:
       return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network
     case AutoDetectErrorType.INVALID_RESPONSE:
       return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation
-    case AutoDetectErrorType.CURRENT_TAB_RELOAD_REQUIRED:
     case AutoDetectErrorType.NOT_FOUND:
-    case AutoDetectErrorType.SERVER_ERROR:
+    case AutoDetectErrorType.CURRENT_TAB_RELOAD_REQUIRED:
+      return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported
     case AutoDetectErrorType.UNKNOWN:
     default:
+      if (structuredError !== undefined) {
+        return resolveProductAnalyticsErrorCategoryFromError(structuredError)
+      }
       return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown
   }
 }

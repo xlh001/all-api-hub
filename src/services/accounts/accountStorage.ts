@@ -195,27 +195,19 @@ class AccountStorageService {
    */
   async getAllAccounts(): Promise<SiteAccount[]> {
     try {
-      // Ensure tag data is migrated on reads so downstream consumers always see
-      // `tagIds` and a consistent global tag store.
-      await ensureAccountTagsStorageMigrated(this.storage)
-
-      const config = await this.getStorageConfigOrDefault()
-      const { accounts, migratedCount } = migrateAccountsConfig(config.accounts)
-      const normalizedAccounts = accounts.map(normalizeSiteAccount)
-
-      if (migratedCount > 0) {
-        // If any account schemas were upgraded, persist the normalized set immediately
-        logger.info("Accounts migrated; persisting updated accounts", {
-          migratedCount,
-        })
-        await this.saveAccounts(normalizedAccounts)
-      }
-
-      return normalizedAccounts
+      return await this.readAllAccounts()
     } catch (error) {
       logger.error("获取账号信息失败", error)
       return []
     }
+  }
+
+  /**
+   * Get all accounts while preserving storage read failures for callers that
+   * must fail closed instead of treating unreadable storage as an empty list.
+   */
+  async getAllAccountsOrThrow(): Promise<SiteAccount[]> {
+    return this.readAllAccounts()
   }
 
   /**
@@ -1691,38 +1683,44 @@ class AccountStorageService {
     }
   }
 
-  /**
-   * Save the full account list while also pruning stale pinned/ordered ids.
-   *
-   * This keeps derived collections in sync so the UI never references missing
-   * accounts after deletions or imports.
-   */
-  private async saveAccounts(accounts: SiteAccount[]): Promise<void> {
-    logger.debug("开始保存账号数据", { accountCount: accounts.length })
-    await this.mutateStorageConfig((existingConfig) => {
-      const { entryIds } = AccountStorageService.buildEntryIdSets({
-        accounts,
-        bookmarks: existingConfig.bookmarks,
-      })
-      const filteredPinnedIds = existingConfig.pinnedAccountIds.filter((id) =>
-        entryIds.has(id),
-      )
-      const filteredOrderedIds = existingConfig.orderedAccountIds.filter((id) =>
-        entryIds.has(id),
-      )
-      existingConfig.accounts = accounts
-      existingConfig.pinnedAccountIds = filteredPinnedIds
-      existingConfig.orderedAccountIds = filteredOrderedIds
+  private async readAllAccounts(): Promise<SiteAccount[]> {
+    // Ensure tag data is migrated on reads so downstream consumers always see
+    // `tagIds` and a consistent global tag store.
+    await ensureAccountTagsStorageMigrated(this.storage)
 
-      logger.debug("保存的配置数据", {
-        accountCount: accounts.length,
-        pinnedCount: filteredPinnedIds.length,
-        orderedCount: filteredOrderedIds.length,
-        storageKey: ACCOUNT_STORAGE_KEYS.ACCOUNTS,
+    const config = await this.getStorageConfig()
+    const { accounts, migratedCount } = migrateAccountsConfig(config.accounts)
+    const normalizedAccounts = accounts.map(normalizeSiteAccount)
+
+    if (migratedCount > 0) {
+      logger.info("Accounts migrated; persisting updated accounts", {
+        migratedCount,
       })
+      await this.persistReadMigration()
+    }
+
+    return normalizedAccounts
+  }
+
+  /**
+   * Persist read-time account migrations from the current storage snapshot.
+   *
+   * Re-reading under the write lock avoids replacing newer add/update/delete
+   * operations with the stale snapshot originally returned to the caller.
+   */
+  private async persistReadMigration(): Promise<void> {
+    await this.mutateStorageConfig((existingConfig) => {
+      const { accounts, migratedCount } = migrateAccountsConfig(
+        existingConfig.accounts,
+      )
+
+      if (migratedCount === 0) {
+        return { result: undefined, changed: false }
+      }
+
+      existingConfig.accounts = accounts.map(normalizeSiteAccount)
       return { result: undefined, changed: true }
     })
-    logger.debug("账号数据保存完成")
   }
 
   /**

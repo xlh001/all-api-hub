@@ -11,13 +11,14 @@ import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/Card"
 import { BodySmall, Heading3, Link } from "~/components/ui/Typography"
 import {
-  ensurePermissions,
+  ensurePermissionsDetailed,
   hasPermission,
   ManifestOptionalPermissions,
   onOptionalPermissionsChanged,
   OPTIONAL_PERMISSION_DEFINITIONS,
   OPTIONAL_PERMISSIONS,
 } from "~/services/permissions/permissionManager"
+import { trackOptionalPermissionRequestResult } from "~/services/productAnalytics/permissions"
 import { createLogger } from "~/utils/core/logger"
 import { showResultToast } from "~/utils/core/toastHelpers"
 
@@ -151,13 +152,33 @@ export function PermissionOnboardingDialog({
     let success = false
 
     try {
-      success = await ensurePermissions(OPTIONAL_PERMISSIONS)
+      const result = await ensurePermissionsDetailed(OPTIONAL_PERMISSIONS)
+      success = result.success
+      for (const permissionResult of result.requestedResults) {
+        trackOptionalPermissionRequestResult(permissionResult.id, {
+          success: permissionResult.success,
+          failureReason: permissionResult.failureReason
+            ? permissionResult.failureReason
+            : undefined,
+          wasGrantedBefore: permissionResult.wasGrantedBefore,
+          wasGrantedAfter: permissionResult.wasGrantedAfter,
+        })
+      }
       showResultToast(
         success,
         t("permissionsOnboarding.toasts.success"),
         t("permissionsOnboarding.toasts.error"),
       )
     } catch (error) {
+      for (const permissionId of OPTIONAL_PERMISSIONS) {
+        const wasGrantedBefore = statuses[permissionId] === true
+        trackOptionalPermissionRequestResult(permissionId, {
+          success: false,
+          failureReason: error,
+          wasGrantedBefore,
+          wasGrantedAfter: wasGrantedBefore,
+        })
+      }
       logger.error("Failed to grant all optional permissions", error)
       success = false
       showResultToast(false, t("permissionsOnboarding.toasts.error"))
@@ -169,7 +190,7 @@ export function PermissionOnboardingDialog({
     if (success) {
       onClose()
     }
-  }, [hasOptionalPermissions, loadStatuses, onClose, t])
+  }, [hasOptionalPermissions, loadStatuses, onClose, statuses, t])
 
   const handleOpenGithub = useCallback(() => {
     window.open(GITHUB_URL, "_blank", "noopener,noreferrer")

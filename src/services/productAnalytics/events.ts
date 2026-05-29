@@ -16,6 +16,7 @@ export const PRODUCT_ANALYTICS_EVENTS = {
   PageViewed: "page_viewed",
   FeatureActionStarted: "feature_action_started",
   FeatureActionCompleted: "feature_action_completed",
+  ShieldBypassSummaryCaptured: "shield_bypass_summary_captured",
   SettingChanged: "setting_changed",
   SettingsSnapshotCaptured: "settings_snapshot_captured",
   PermissionResult: "permission_result",
@@ -663,6 +664,34 @@ export const PRODUCT_ANALYTICS_PERMISSION_IDS = {
 export type ProductAnalyticsPermissionId =
   (typeof PRODUCT_ANALYTICS_PERMISSION_IDS)[keyof typeof PRODUCT_ANALYTICS_PERMISSION_IDS]
 
+export const PRODUCT_ANALYTICS_PERMISSION_OPERATIONS = {
+  Request: "request",
+  Remove: "remove",
+} as const
+
+export type ProductAnalyticsPermissionOperation =
+  (typeof PRODUCT_ANALYTICS_PERMISSION_OPERATIONS)[keyof typeof PRODUCT_ANALYTICS_PERMISSION_OPERATIONS]
+
+export const PRODUCT_ANALYTICS_PERMISSION_OUTCOMES = {
+  Granted: "granted",
+  Denied: "denied",
+  Revoked: "revoked",
+  RevokeFailed: "revoke_failed",
+  ApiError: "api_error",
+} as const
+
+export type ProductAnalyticsPermissionOutcome =
+  (typeof PRODUCT_ANALYTICS_PERMISSION_OUTCOMES)[keyof typeof PRODUCT_ANALYTICS_PERMISSION_OUTCOMES]
+
+export const PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS = {
+  UserDenied: "user_denied",
+  RemoveFailed: "remove_failed",
+  ApiException: "api_exception",
+} as const
+
+export type ProductAnalyticsPermissionFailureReason =
+  (typeof PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS)[keyof typeof PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS]
+
 export const PRODUCT_ANALYTICS_SITE_TYPES = [
   ...new Set([...ACCOUNT_SITE_TYPES, ...MANAGED_SITE_TYPES]),
 ] as ReadonlyArray<(typeof ACCOUNT_SITE_TYPES)[number] | ManagedSiteType>
@@ -748,6 +777,18 @@ export type ProductAnalyticsEventPayloadMap = {
     temp_window_turnstile_fetch_success_count_bucket?: ProductAnalyticsCountBucket
     temp_window_turnstile_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
     entrypoint: ProductAnalyticsEntrypoint
+  }
+  [PRODUCT_ANALYTICS_EVENTS.ShieldBypassSummaryCaptured]: {
+    feature_id: typeof PRODUCT_ANALYTICS_FEATURE_IDS.ShieldBypassAssist
+    surface_id: typeof PRODUCT_ANALYTICS_SURFACE_IDS.BackgroundShieldBypassTempContext
+    entrypoint: typeof PRODUCT_ANALYTICS_ENTRYPOINTS.Background
+    shield_bypass_prompt_shown_count_bucket?: ProductAnalyticsCountBucket
+    shield_bypass_prompt_dismissed_count_bucket?: ProductAnalyticsCountBucket
+    shield_bypass_settings_visited_count_bucket?: ProductAnalyticsCountBucket
+    temp_window_fetch_success_count_bucket?: ProductAnalyticsCountBucket
+    temp_window_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
+    temp_window_turnstile_fetch_success_count_bucket?: ProductAnalyticsCountBucket
+    temp_window_turnstile_fetch_failure_count_bucket?: ProductAnalyticsCountBucket
   }
   [PRODUCT_ANALYTICS_EVENTS.SettingChanged]: {
     setting_id: ProductAnalyticsSettingId
@@ -891,6 +932,11 @@ export type ProductAnalyticsEventPayloadMap = {
   [PRODUCT_ANALYTICS_EVENTS.PermissionResult]: {
     permission_id: ProductAnalyticsPermissionId
     result: ProductAnalyticsResult
+    operation: ProductAnalyticsPermissionOperation
+    outcome: ProductAnalyticsPermissionOutcome
+    failure_reason?: ProductAnalyticsPermissionFailureReason
+    was_granted_before: boolean
+    was_granted_after: boolean
     entrypoint: ProductAnalyticsEntrypoint
   }
   [PRODUCT_ANALYTICS_EVENTS.SiteEcosystemSnapshot]: {

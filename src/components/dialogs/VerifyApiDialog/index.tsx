@@ -16,14 +16,19 @@ import { Modal } from "~/components/ui/Dialog/Modal"
 import { resolveDisplayAccountTokenForSecret } from "~/services/accounts/utils/apiServiceRequest"
 import { getApiService } from "~/services/apiService"
 import { identifyProvider } from "~/services/models/utils/modelProviders"
-import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
+import {
+  resolveProductAnalyticsErrorCategoryFromError,
+  startProductAnalyticsAction,
+} from "~/services/productAnalytics/actions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/events"
+import { resolveProductAnalyticsErrorCategoryFromProbeResult } from "~/services/productAnalytics/verification"
 import {
   API_TYPES,
   getApiVerificationProbeDefinitions,
@@ -40,7 +45,10 @@ import {
   getApiVerificationProbeLabel,
   translateApiVerificationSummary,
 } from "~/services/verification/aiApiVerification/i18n"
-import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
+import {
+  buildSafeProbeFailureDiagnostics,
+  toSanitizedErrorSummary,
+} from "~/services/verification/aiApiVerification/utils"
 import {
   createAccountModelVerificationHistoryTarget,
   verificationResultHistoryStorage,
@@ -210,17 +218,18 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
       )
       return result
     } catch (error) {
+      const sanitizedMessage = toSanitizedErrorSummary(
+        error,
+        [
+          selectedToken.key,
+          resolvedToken.key,
+          account.token,
+          account.cookieAuthSessionCookie,
+        ].filter(Boolean) as string[],
+      )
       logger.error("Probe failed", {
         probeId,
-        message: toSanitizedErrorSummary(
-          error,
-          [
-            selectedToken.key,
-            resolvedToken.key,
-            account.token,
-            account.cookieAuthSessionCookie,
-          ].filter(Boolean) as string[],
-        ),
+        message: sanitizedMessage,
       })
 
       const fallback: ApiVerificationProbeResult = {
@@ -228,6 +237,7 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
         status: "fail",
         latencyMs: 0,
         summary: t("verifyDialog.errors.unexpected"),
+        ...buildSafeProbeFailureDiagnostics(error, sanitizedMessage),
       }
       const nextProbes = probesRef.current.map((probe) => {
         if (probe.definition.id !== probeId) return probe
@@ -265,6 +275,7 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
     let successCount = 0
     let failureCount = 0
     let hasExecutedProbe = false
+    let failedProbeResult: ApiVerificationProbeResult | undefined
     setIsRunning(true)
     replaceProbes(buildProbeState(apiType))
     try {
@@ -282,6 +293,7 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
         } else if (result.status === "fail") {
           hasExecutedProbe = true
           failureCount += 1
+          failedProbeResult ??= result
         }
       }
       const completionResult =
@@ -291,7 +303,18 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
             ? PRODUCT_ANALYTICS_RESULTS.Success
             : PRODUCT_ANALYTICS_RESULTS.Skipped
       tracker.complete(completionResult, {
+        ...(completionResult === PRODUCT_ANALYTICS_RESULTS.Failure
+          ? {
+              errorCategory:
+                resolveProductAnalyticsErrorCategoryFromProbeResult(
+                  failedProbeResult,
+                ),
+            }
+          : {}),
         insights: {
+          ...(completionResult === PRODUCT_ANALYTICS_RESULTS.Failure
+            ? { failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute }
+            : {}),
           successCount,
           failureCount,
         },
@@ -301,7 +324,9 @@ export function VerifyApiDialog(props: VerifyApiDialogProps) {
         message: toSanitizedErrorSummary(error, []),
       })
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+        errorCategory: resolveProductAnalyticsErrorCategoryFromError(error),
         insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
           successCount,
           failureCount,
         },

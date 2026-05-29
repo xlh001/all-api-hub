@@ -14,11 +14,13 @@ import { useProductAnalyticsScope } from "~/contexts/ProductAnalyticsScopeContex
 import { UserPreferencesProvider } from "~/contexts/UserPreferencesContext"
 import WebDAVAutoSyncSettings from "~/features/ImportExport/components/WebDAVAutoSyncSettings"
 import WebDAVSettings from "~/features/ImportExport/components/WebDAVSettings"
+import { WEBDAV_TARGET_IDS } from "~/features/ImportExport/searchTargets"
 import { resolveProductAnalyticsActionContext } from "~/services/productAnalytics/actionConfig"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
@@ -157,6 +159,12 @@ vi.mock("~/utils/browser/browserApi", () => ({
 }))
 
 vi.mock("~/services/productAnalytics/actions", () => ({
+  resolveProductAnalyticsErrorCategoryFromError: (error: unknown) =>
+    error &&
+    typeof error === "object" &&
+    (error as { statusCode?: unknown }).statusCode === 401
+      ? PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth
+      : PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
   startProductAnalyticsAction: (...args: unknown[]) =>
     mockStartProductAnalyticsAction(...args),
 }))
@@ -227,6 +235,34 @@ const ENCRYPTED_BACKUP_ENVELOPE = {
 
 function clickWebdavAction(actionId: string) {
   fireEvent.click(document.getElementById(actionId) as HTMLButtonElement)
+}
+
+function clearWebdavSyncDataSelection() {
+  ;[
+    WEBDAV_TARGET_IDS.syncDataAccounts,
+    WEBDAV_TARGET_IDS.syncDataBookmarks,
+    WEBDAV_TARGET_IDS.syncDataApiCredentialProfiles,
+    WEBDAV_TARGET_IDS.syncDataPreferences,
+  ].forEach((id) =>
+    fireEvent.click(document.getElementById(id) as HTMLInputElement),
+  )
+}
+
+async function openManualDecryptDialog() {
+  mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
+  mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+    ENCRYPTED_BACKUP_ENVELOPE,
+  )
+
+  expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+  fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
+    target: { value: "" },
+  })
+  clickWebdavAction("webdav-download-import")
+
+  await screen.findByText("importExport:webdav.encryption.decryptDialogTitle")
+  mockCompleteProductAnalyticsAction.mockClear()
 }
 
 describe("WebDAVSettings", () => {
@@ -360,7 +396,7 @@ describe("WebDAVSettings", () => {
     })
   })
 
-  it("completes WebDAV config save analytics as validation failure when persistence rejects the update", async () => {
+  it("completes WebDAV config save analytics as unknown failure when persistence rejects the update", async () => {
     mockUserPreferences.savePreferencesWithResult.mockResolvedValue(null)
 
     render(<WebDAVSettings />)
@@ -374,7 +410,73 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation },
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        },
+      )
+    })
+  })
+
+  it("completes WebDAV config save analytics with persist stage when persistence throws", async () => {
+    const persistenceError = new Error("storage unavailable")
+    mockUserPreferences.savePreferencesWithResult.mockRejectedValueOnce(
+      persistenceError,
+    )
+
+    render(<WebDAVSettings />)
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "importExport:webdav.saveConfig",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        },
+      )
+    })
+    expect(loggerMocks.error).toHaveBeenCalledWith(
+      "Failed to save WebDAV settings",
+      expect.objectContaining({
+        cause: persistenceError,
+      }),
+    )
+  })
+
+  it("maps structured WebDAV config persistence failures to safe analytics categories", async () => {
+    mockUserPreferences.savePreferencesWithResult.mockRejectedValueOnce(
+      Object.assign(new Error("private storage auth failed"), {
+        statusCode: 401,
+      }),
+    )
+
+    render(<WebDAVSettings />)
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "importExport:webdav.saveConfig",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        },
       )
     })
   })
@@ -416,7 +518,96 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         "failure",
-        { errorCategory: "validation" },
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        },
+      )
+    })
+  })
+
+  it("completes WebDAV connection test analytics with persist stage when persistence throws", async () => {
+    mockUserPreferences.savePreferencesWithResult.mockRejectedValueOnce(
+      new Error("storage unavailable"),
+    )
+
+    render(<WebDAVSettings />)
+
+    fireEvent.change(await screen.findByDisplayValue("alice"), {
+      target: { value: "bob" },
+    })
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.testConnectionWithSave",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        },
+      )
+    })
+    expect(mockTestWebdavConnection).not.toHaveBeenCalled()
+  })
+
+  it("completes WebDAV connection test analytics with execute stage when the connection check fails", async () => {
+    mockTestWebdavConnection.mockRejectedValueOnce(
+      new Error("connection failed"),
+    )
+
+    render(<WebDAVSettings />)
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "importExport:webdav.testConnection",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+          },
+        },
+      )
+    })
+  })
+
+  it("maps structured WebDAV connection failures to safe analytics categories", async () => {
+    mockTestWebdavConnection.mockRejectedValueOnce(
+      Object.assign(new Error("private connection failed"), {
+        statusCode: 401,
+      }),
+    )
+
+    render(<WebDAVSettings />)
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "importExport:webdav.testConnection",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+          },
+        },
       )
     })
   })
@@ -449,17 +640,19 @@ describe("WebDAVSettings", () => {
 
     expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
 
-    screen
-      .getAllByRole("checkbox")
-      .slice(0, 4)
-      .forEach((checkbox) => fireEvent.click(checkbox))
+    clearWebdavSyncDataSelection()
 
     clickWebdavAction("webdav-upload-backup")
 
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation },
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          },
+        },
       )
     })
     expect(mockUploadBackup).not.toHaveBeenCalled()
@@ -479,9 +672,40 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown },
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+          },
+        },
       )
     })
+  })
+
+  it("completes WebDAV upload analytics with persist stage when persistence throws", async () => {
+    mockUserPreferences.savePreferencesWithResult.mockRejectedValueOnce(
+      new Error("storage unavailable"),
+    )
+
+    render(<WebDAVSettings />)
+
+    fireEvent.change(await screen.findByDisplayValue("alice"), {
+      target: { value: "bob" },
+    })
+    clickWebdavAction("webdav-upload-backup")
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        },
+      )
+    })
+    expect(mockUploadBackup).not.toHaveBeenCalled()
   })
 
   it("completes WebDAV download/import analytics as success after import finishes", async () => {
@@ -532,6 +756,29 @@ describe("WebDAVSettings", () => {
     })
   })
 
+  it("completes WebDAV download/import analytics as validation failure when sync data is empty", async () => {
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    clearWebdavSyncDataSelection()
+
+    clickWebdavAction("webdav-download-import")
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          },
+        },
+      )
+    })
+    expect(mockDownloadBackupRaw).not.toHaveBeenCalled()
+  })
+
   it("completes WebDAV download/import analytics as unknown failure when import fails", async () => {
     mockImportFromBackupObject.mockRejectedValueOnce(new Error("import failed"))
 
@@ -546,9 +793,40 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown },
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+          },
+        },
       )
     })
+  })
+
+  it("completes WebDAV download/import analytics with persist stage when persistence throws", async () => {
+    mockUserPreferences.savePreferencesWithResult.mockRejectedValueOnce(
+      new Error("storage unavailable"),
+    )
+
+    render(<WebDAVSettings />)
+
+    fireEvent.change(await screen.findByDisplayValue("alice"), {
+      target: { value: "bob" },
+    })
+    clickWebdavAction("webdav-download-import")
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        },
+      )
+    })
+    expect(mockDownloadBackupRaw).not.toHaveBeenCalled()
   })
 
   it("starts and completes manual decrypt/import analytics only when the user confirms decrypt", async () => {
@@ -609,22 +887,9 @@ describe("WebDAVSettings", () => {
   })
 
   it("completes manual decrypt/import analytics as validation failure when decrypt fails", async () => {
-    mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
-    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
-      ENCRYPTED_BACKUP_ENVELOPE,
-    )
-
     render(<WebDAVSettings />)
 
-    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
-
-    fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
-      target: { value: "" },
-    })
-    clickWebdavAction("webdav-download-import")
-
-    await screen.findByText("importExport:webdav.encryption.decryptDialogTitle")
-    mockCompleteProductAnalyticsAction.mockClear()
+    await openManualDecryptDialog()
 
     mockDecryptWebdavBackupEnvelope.mockRejectedValueOnce(
       new Error("manual decrypt failed"),
@@ -638,7 +903,71 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation },
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          },
+        },
+      )
+    })
+  })
+
+  it("completes manual decrypt/import analytics as validation failure when sync data becomes empty", async () => {
+    render(<WebDAVSettings />)
+
+    await openManualDecryptDialog()
+
+    clearWebdavSyncDataSelection()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          },
+        },
+      )
+    })
+    expect(mockDecryptWebdavBackupEnvelope).not.toHaveBeenCalled()
+  })
+
+  it("completes manual decrypt/import analytics with execute stage when import fails after decrypt", async () => {
+    mockImportFromBackupObject.mockRejectedValueOnce(new Error("import failed"))
+
+    render(<WebDAVSettings />)
+
+    await openManualDecryptDialog()
+
+    fireEvent.change(
+      document.getElementById("decryptPassword") as HTMLInputElement,
+      {
+        target: { value: "manual-secret" },
+      },
+    )
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+          },
+        },
       )
     })
   })
@@ -809,10 +1138,7 @@ describe("WebDAVSettings", () => {
 
     expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
 
-    screen
-      .getAllByRole("checkbox")
-      .slice(0, 4)
-      .forEach((checkbox) => fireEvent.click(checkbox))
+    clearWebdavSyncDataSelection()
 
     clickWebdavAction("webdav-upload-backup")
 
@@ -986,10 +1312,7 @@ describe("WebDAVSettings", () => {
 
     expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
 
-    screen
-      .getAllByRole("checkbox")
-      .slice(0, 4)
-      .forEach((checkbox) => fireEvent.click(checkbox))
+    clearWebdavSyncDataSelection()
 
     clickWebdavAction("webdav-download-import")
 
@@ -1217,6 +1540,15 @@ describe("WebDAVSettings", () => {
       expect(toast.error).toHaveBeenCalledWith(
         "settings:messages.saveSettingsFailed",
       )
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+          },
+        },
+      )
     })
   })
 
@@ -1304,10 +1636,7 @@ describe("WebDAVSettings", () => {
       expect(document.getElementById("decryptPassword")).toBeTruthy()
     })
 
-    screen
-      .getAllByRole("checkbox")
-      .slice(0, 4)
-      .forEach((checkbox) => fireEvent.click(checkbox))
+    clearWebdavSyncDataSelection()
 
     fireEvent.click(
       screen.getByRole("button", {

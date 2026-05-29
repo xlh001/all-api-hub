@@ -12,6 +12,7 @@ import {
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
+  PRODUCT_ANALYTICS_STATUS_KINDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
   PRODUCT_ANALYTICS_TARGET_STATES,
 } from "~/services/productAnalytics/events"
@@ -41,6 +42,7 @@ const {
   trackStartedMock,
   startProductAnalyticsActionMock,
   completeProductAnalyticsActionMock,
+  resolveProductAnalyticsErrorCategoryFromErrorMock,
 } = vi.hoisted(() => ({
   mockHandleSetAccountDisabled: vi.fn(),
   mockTogglePinAccount: vi.fn(),
@@ -79,6 +81,7 @@ const {
   trackStartedMock: vi.fn(),
   startProductAnalyticsActionMock: vi.fn(),
   completeProductAnalyticsActionMock: vi.fn(),
+  resolveProductAnalyticsErrorCategoryFromErrorMock: vi.fn(),
 }))
 
 vi.mock("react-hot-toast", () => ({
@@ -158,6 +161,8 @@ vi.mock("~/services/productAnalytics/actions", async (importOriginal) => {
     trackProductAnalyticsActionStarted: trackStartedMock,
     startProductAnalyticsAction: (...args: unknown[]) =>
       startProductAnalyticsActionMock(...args),
+    resolveProductAnalyticsErrorCategoryFromError:
+      resolveProductAnalyticsErrorCategoryFromErrorMock,
   }
 })
 
@@ -186,6 +191,9 @@ describe("AccountActionButtons", () => {
     startProductAnalyticsActionMock.mockReturnValue({
       complete: completeProductAnalyticsActionMock,
     })
+    resolveProductAnalyticsErrorCategoryFromErrorMock.mockReturnValue(
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+    )
     completeProductAnalyticsActionMock.mockResolvedValue(undefined)
     exportShareSnapshotWithToastMock.mockResolvedValue(undefined)
   })
@@ -679,7 +687,11 @@ describe("AccountActionButtons", () => {
   })
 
   it("falls back to the copy dialog when the token probe throws", async () => {
-    fetchAccountTokensMock.mockRejectedValueOnce(new Error("probe failed"))
+    const tokenLoadError = { statusCode: 401, message: "private auth text" }
+    fetchAccountTokensMock.mockRejectedValueOnce(tokenLoadError)
+    resolveProductAnalyticsErrorCategoryFromErrorMock.mockReturnValueOnce(
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+    )
 
     const user = userEvent.setup()
     const onCopyKey = vi.fn()
@@ -708,11 +720,12 @@ describe("AccountActionButtons", () => {
         expect.objectContaining({ id: "acc-probe-failed" }),
       )
     })
+    expect(
+      resolveProductAnalyticsErrorCategoryFromErrorMock,
+    ).toHaveBeenCalledWith(tokenLoadError)
     expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
       PRODUCT_ANALYTICS_RESULTS.Failure,
-      {
-        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
-      },
+      { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth },
     )
   })
 
@@ -965,6 +978,11 @@ describe("AccountActionButtons", () => {
       })
       expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Success,
+        {
+          insights: {
+            statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
+          },
+        },
       )
     })
   })
@@ -1010,6 +1028,11 @@ describe("AccountActionButtons", () => {
       )
       expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Success,
+        {
+          insights: {
+            statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
+          },
+        },
       )
     })
   })
@@ -1104,6 +1127,52 @@ describe("AccountActionButtons", () => {
     expect(loadAccountDataMock).not.toHaveBeenCalled()
   })
 
+  it("tracks quick-checkin runtime failures with the shared safe error category", async () => {
+    toastLoadingMock.mockReturnValue("toast-quick-checkin-structured-error")
+    const structuredError = { statusCode: 403, message: "private auth text" }
+    sendRuntimeMessageMock.mockRejectedValueOnce(structuredError)
+    resolveProductAnalyticsErrorCategoryFromErrorMock.mockReturnValueOnce(
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+    )
+
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-quick-structured-error",
+          disabled: false,
+          name: "Structured Error Site",
+          checkIn: { enableDetection: true },
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText("account:actions.quickCheckin")
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    await waitFor(() => {
+      expect(
+        resolveProductAnalyticsErrorCategoryFromErrorMock,
+      ).toHaveBeenCalledWith(structuredError)
+      expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth },
+      )
+    })
+    expect(loadAccountDataMock).not.toHaveBeenCalled()
+  })
+
   it("tracks skipped quick-checkin completion when the account result is skipped", async () => {
     toastLoadingMock.mockReturnValue("toast-quick-checkin-skipped")
     sendRuntimeMessageMock
@@ -1149,6 +1218,121 @@ describe("AccountActionButtons", () => {
     await waitFor(() => {
       expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Skipped,
+        {
+          insights: {
+            statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Warning,
+          },
+        },
+      )
+    })
+  })
+
+  it("tracks failed quick-checkin completion with status kind context", async () => {
+    toastLoadingMock.mockReturnValue("toast-quick-checkin-failed-status")
+    sendRuntimeMessageMock
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          perAccount: {
+            "acc-quick-failed-status": {
+              status: CHECKIN_RESULT_STATUS.FAILED,
+              messageKey: "autoCheckin:providerFallback.checkinFailed",
+            },
+          },
+        },
+      })
+
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-quick-failed-status",
+          disabled: false,
+          name: "Failed Status Site",
+          checkIn: { enableDetection: true },
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText("account:actions.quickCheckin")
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    await waitFor(() => {
+      expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+          insights: {
+            statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Error,
+          },
+        },
+      )
+    })
+  })
+
+  it("tracks unsupported quick-checkin endpoint failures with a safe category", async () => {
+    toastLoadingMock.mockReturnValue("toast-quick-checkin-unsupported")
+    sendRuntimeMessageMock
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          perAccount: {
+            "acc-quick-unsupported": {
+              status: CHECKIN_RESULT_STATUS.FAILED,
+              messageKey: "autoCheckin:providerFallback.endpointNotSupported",
+            },
+          },
+        },
+      })
+
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-quick-unsupported",
+          disabled: false,
+          name: "Unsupported Site",
+          checkIn: { enableDetection: true },
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText("account:actions.quickCheckin")
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    await waitFor(() => {
+      expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported,
+          insights: {
+            statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Error,
+          },
+        },
       )
     })
   })

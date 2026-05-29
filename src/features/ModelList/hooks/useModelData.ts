@@ -19,22 +19,26 @@ import {
   loadAccountTokenFallbackPricingResponse,
 } from "~/services/apiCredentialProfiles/modelCatalog"
 import { getApiService } from "~/services/apiService"
-import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import type { PricingResponse } from "~/services/apiService/common/type"
 import {
   MODEL_PRICING_CACHE_TTL_MS,
   modelPricingCache,
 } from "~/services/models/modelPricingCache"
-import { trackProductAnalyticsActionCompleted } from "~/services/productAnalytics/actions"
+import {
+  resolveProductAnalyticsErrorCategoryFromError,
+  trackProductAnalyticsActionCompleted,
+} from "~/services/productAnalytics/actions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SOURCE_KINDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
   type ProductAnalyticsErrorCategory,
+  type ProductAnalyticsFailureStage,
   type ProductAnalyticsResult,
   type ProductAnalyticsSourceKind,
 } from "~/services/productAnalytics/events"
@@ -117,39 +121,65 @@ function getModelDataErrorCategory(
 ): ProductAnalyticsErrorCategory {
   const code =
     error && typeof error === "object"
-      ? (error as { code?: unknown; originalCode?: unknown }).code
-      : undefined
-  const originalCode =
-    error && typeof error === "object"
-      ? (error as { originalCode?: unknown }).originalCode
+      ? (error as { code?: unknown }).code
       : undefined
 
   if (code === MODEL_LIST_DATA_ERROR_CODES.INVALID_FORMAT) {
     return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation
   }
 
-  if (error instanceof ApiError) {
-    if (
-      error.statusCode === 401 ||
-      error.statusCode === 403 ||
-      code === API_ERROR_CODES.HTTP_401 ||
-      code === API_ERROR_CODES.HTTP_403 ||
-      originalCode === API_ERROR_CODES.HTTP_401 ||
-      originalCode === API_ERROR_CODES.HTTP_403
-    ) {
-      return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth
-    }
+  return resolveProductAnalyticsErrorCategoryFromError(error)
+}
 
-    if (code === API_ERROR_CODES.NETWORK_ERROR) {
-      return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network
-    }
+/** Classify whether model catalog loading failed during parsing or execution. */
+function getModelDataFailureStage(
+  error: unknown,
+): ProductAnalyticsFailureStage {
+  const code =
+    error && typeof error === "object"
+      ? (error as { code?: unknown }).code
+      : undefined
+
+  return code === MODEL_LIST_DATA_ERROR_CODES.INVALID_FORMAT
+    ? PRODUCT_ANALYTICS_FAILURE_STAGES.Parse
+    : PRODUCT_ANALYTICS_FAILURE_STAGES.Execute
+}
+
+/** Derive coupled analytics diagnostics from a single model-data failure. */
+function getModelDataFailureDiagnostics(error: unknown): {
+  errorCategory: ProductAnalyticsErrorCategory
+  failureStage: ProductAnalyticsFailureStage
+} {
+  return {
+    errorCategory: getModelDataErrorCategory(error),
+    failureStage: getModelDataFailureStage(error),
   }
+}
 
-  if (error instanceof TypeError && error.message.includes("fetch")) {
-    return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network
-  }
+/** Derive aggregate model catalog diagnostics from the failed account queries. */
+function getAggregateModelDataFailureDiagnostics(errors: unknown[]): {
+  errorCategory: ProductAnalyticsErrorCategory
+  failureStage: ProductAnalyticsFailureStage
+} {
+  const diagnostics = errors.map((error) =>
+    getModelDataFailureDiagnostics(error),
+  )
+  const representativeDiagnostic =
+    diagnostics.find(
+      (diagnostic) =>
+        diagnostic.failureStage === PRODUCT_ANALYTICS_FAILURE_STAGES.Parse,
+    ) ??
+    diagnostics.find(
+      (diagnostic) =>
+        diagnostic.errorCategory !== PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+    )
 
-  return PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown
+  return (
+    representativeDiagnostic ?? {
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+    }
+  )
 }
 
 const MODEL_DATA_ANALYTICS_CONTEXT = {
@@ -165,6 +195,7 @@ const MODEL_DATA_ANALYTICS_CONTEXT = {
  * @param params.result Coarse load outcome.
  * @param params.sourceKind Selected model source kind.
  * @param params.errorCategory Optional sanitized failure category.
+ * @param params.failureStage Optional sanitized failure stage.
  * @param params.modelCount Number of models loaded, when available.
  * @param params.successCount Number of successful account loads, when available.
  * @param params.failureCount Number of failed account loads, when available.
@@ -173,6 +204,7 @@ function trackModelDataLoadCompletion(params: {
   result: ProductAnalyticsResult
   sourceKind: ProductAnalyticsSourceKind
   errorCategory?: ProductAnalyticsErrorCategory
+  failureStage?: ProductAnalyticsFailureStage
   modelCount?: number
   successCount?: number
   failureCount?: number
@@ -183,6 +215,7 @@ function trackModelDataLoadCompletion(params: {
     errorCategory: params.errorCategory,
     insights: {
       sourceKind: params.sourceKind,
+      ...(params.failureStage ? { failureStage: params.failureStage } : {}),
       ...(typeof params.modelCount === "number"
         ? { modelCount: params.modelCount }
         : {}),
@@ -581,6 +614,7 @@ function useSingleAccountModelData(params: {
         result: PRODUCT_ANALYTICS_RESULTS.Failure,
         sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelFallbackCatalog,
         errorCategory: getModelDataErrorCategory(error),
+        failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
       })
     } finally {
       if (isActiveFallbackCatalogRequest(requestScopeKey, requestId)) {
@@ -675,6 +709,7 @@ function useSingleAccountModelData(params: {
             result: PRODUCT_ANALYTICS_RESULTS.Failure,
             sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAccount,
             errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Parse,
           })
         }
         return
@@ -691,6 +726,7 @@ function useSingleAccountModelData(params: {
           result: PRODUCT_ANALYTICS_RESULTS.Failure,
           sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAccount,
           errorCategory: getModelDataErrorCategory(query.error),
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
         })
       }
     }
@@ -859,7 +895,8 @@ function useAllAccountsModelData(
     if (!queries.every((query) => query.isSuccess || query.isError)) return
 
     const successCount = queries.filter((query) => query.isSuccess).length
-    const failureCount = queries.filter((query) => query.isError).length
+    const failedQueries = queries.filter((query) => query.isError)
+    const failureCount = failedQueries.length
     const modelCount = queries.reduce(
       (count, query) => count + getPricingModelCount(query.data),
       0,
@@ -878,6 +915,13 @@ function useAllAccountsModelData(
     if (trackedAggregateLoadKeyRef.current === trackingKey) return
     trackedAggregateLoadKeyRef.current = trackingKey
 
+    const failureDiagnostics =
+      failureCount > 0
+        ? getAggregateModelDataFailureDiagnostics(
+            failedQueries.map((query) => query.error),
+          )
+        : null
+
     // Conservative aggregate semantics: any account failure makes the overall
     // load a failure, because the rendered catalog is incomplete.
     trackModelDataLoadCompletion({
@@ -886,8 +930,11 @@ function useAllAccountsModelData(
           ? PRODUCT_ANALYTICS_RESULTS.Failure
           : PRODUCT_ANALYTICS_RESULTS.Success,
       sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAllAccounts,
-      ...(failureCount > 0
-        ? { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown }
+      ...(failureDiagnostics
+        ? { errorCategory: failureDiagnostics.errorCategory }
+        : {}),
+      ...(failureDiagnostics
+        ? { failureStage: failureDiagnostics.failureStage }
         : {}),
       modelCount,
       successCount,
@@ -1056,6 +1103,7 @@ function useProfileModelData(
           result: PRODUCT_ANALYTICS_RESULTS.Failure,
           sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelProfile,
           errorCategory: getModelDataErrorCategory(query.error),
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
         })
       }
     }

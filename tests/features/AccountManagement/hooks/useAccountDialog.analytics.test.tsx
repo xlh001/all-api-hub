@@ -11,6 +11,7 @@ import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
@@ -26,6 +27,7 @@ const {
   mockToastSuccess,
   mockStartProductAnalyticsAction,
   mockCompleteProductAnalyticsAction,
+  mockResolveProductAnalyticsErrorCategoryFromError,
 } = vi.hoisted(() => ({
   mockAutoDetectAccount: vi.fn(),
   mockOpenWithAccount: vi.fn(),
@@ -34,6 +36,7 @@ const {
   mockToastSuccess: vi.fn(),
   mockStartProductAnalyticsAction: vi.fn(),
   mockCompleteProductAnalyticsAction: vi.fn(),
+  mockResolveProductAnalyticsErrorCategoryFromError: vi.fn(),
 }))
 
 vi.mock("react-hot-toast", () => ({
@@ -68,6 +71,8 @@ vi.mock("~/services/accounts/accountOperations", async (importOriginal) => {
 
 vi.mock("~/services/productAnalytics/actions", () => ({
   startProductAnalyticsAction: mockStartProductAnalyticsAction,
+  resolveProductAnalyticsErrorCategoryFromError:
+    mockResolveProductAnalyticsErrorCategoryFromError,
 }))
 
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
@@ -87,10 +92,14 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
 describe("useAccountDialog analytics", () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    mockAutoDetectAccount.mockReset()
     await accountStorage.clearAllData()
     mockStartProductAnalyticsAction.mockReturnValue({
       complete: mockCompleteProductAnalyticsAction,
     })
+    mockResolveProductAnalyticsErrorCategoryFromError.mockReturnValue(
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+    )
     ;(globalThis.browser.tabs.sendMessage as any) = vi.fn()
   })
 
@@ -218,6 +227,95 @@ describe("useAccountDialog analytics", () => {
       PRODUCT_ANALYTICS_RESULTS.Failure,
       {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+        },
+      },
+    )
+    expectNoSensitiveAnalyticsFields()
+  })
+
+  it.each([
+    [
+      AutoDetectErrorType.NOT_FOUND,
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported,
+    ],
+    [
+      AutoDetectErrorType.CURRENT_TAB_RELOAD_REQUIRED,
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported,
+    ],
+    [
+      AutoDetectErrorType.SERVER_ERROR,
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network,
+    ],
+  ])(
+    "tracks %s account auto-detect failures with a specific safe error category",
+    async (errorType, errorCategory) => {
+      mockAutoDetectAccount.mockResolvedValueOnce({
+        success: false,
+        message: "backend leaked private host",
+        detailedError: {
+          type: errorType,
+          message: "private backend text",
+        },
+      })
+
+      const { result } = renderAddHook()
+
+      await waitFor(() => {
+        expect(result.current.state).toBeTruthy()
+      })
+
+      await setUrlAndWait(result, "https://private.example.com")
+
+      await act(async () => {
+        await result.current.handlers.handleAutoDetect()
+      })
+
+      expectStartedAction(PRODUCT_ANALYTICS_ACTION_IDS.RunAccountAutoDetect)
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory,
+          insights: {
+            failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+          },
+        },
+      )
+      expectNoSensitiveAnalyticsFields()
+    },
+  )
+
+  it("tracks local account auto-detect data-shape failures as validation", async () => {
+    mockAutoDetectAccount.mockResolvedValueOnce({
+      success: false,
+      message: "local validation failed",
+      detailedError: {
+        type: AutoDetectErrorType.INVALID_RESPONSE,
+        message: "private local detail",
+      },
+    })
+
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await setUrlAndWait(result, "https://private.example.com")
+
+    await act(async () => {
+      await result.current.handlers.handleAutoDetect()
+    })
+
+    expectStartedAction(PRODUCT_ANALYTICS_ACTION_IDS.RunAccountAutoDetect)
+    expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+      {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+        },
       },
     )
     expectNoSensitiveAnalyticsFields()
@@ -257,6 +355,11 @@ describe("useAccountDialog analytics", () => {
     expectStartedAction(PRODUCT_ANALYTICS_ACTION_IDS.RunAccountAutoDetect)
     expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
       PRODUCT_ANALYTICS_RESULTS.Cancelled,
+      {
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Prompt,
+        },
+      },
     )
     expect(mockAutoDetectAccount).not.toHaveBeenCalled()
     expectNoSensitiveAnalyticsFields()
@@ -278,9 +381,114 @@ describe("useAccountDialog analytics", () => {
       PRODUCT_ANALYTICS_RESULTS.Skipped,
       {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+        },
       },
     )
     expect(mockAutoDetectAccount).not.toHaveBeenCalled()
+    expectNoSensitiveAnalyticsFields()
+  })
+
+  it("does not treat advisory duplicate-check errors as auto-detect failures", async () => {
+    mockAutoDetectAccount.mockResolvedValueOnce({
+      success: true,
+      data: {
+        username: "private-user",
+        accessToken: "private-token",
+        userId: "123",
+        exchangeRate: 7,
+        siteName: "Detected Site",
+        siteType: SITE_TYPES.NEW_API,
+      },
+    })
+    const storageGetSpy = vi
+      .spyOn((accountStorage as any).storage, "get")
+      .mockRejectedValueOnce(new Error("private storage failure"))
+
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await setUrlAndWait(result, "https://private.example.com")
+
+    await act(async () => {
+      await result.current.handlers.handleAutoDetect()
+    })
+
+    expect(mockAutoDetectAccount).toHaveBeenCalled()
+    expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Success,
+    )
+    expectNoSensitiveAnalyticsFields()
+
+    storageGetSpy.mockRestore()
+  })
+
+  it("tracks thrown account auto-detect errors with a detection failure stage", async () => {
+    mockAutoDetectAccount.mockRejectedValueOnce(
+      new Error("private detect failure"),
+    )
+
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await setUrlAndWait(result, "https://private.example.com")
+
+    await act(async () => {
+      await result.current.handlers.handleAutoDetect()
+    })
+
+    expectStartedAction(PRODUCT_ANALYTICS_ACTION_IDS.RunAccountAutoDetect)
+    expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+      {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+        },
+      },
+    )
+    expectNoSensitiveAnalyticsFields()
+  })
+
+  it("tracks thrown account auto-detect structured errors with the shared safe category", async () => {
+    const structuredError = { statusCode: 429, message: "private rate limit" }
+    mockAutoDetectAccount.mockRejectedValueOnce(structuredError)
+    mockResolveProductAnalyticsErrorCategoryFromError.mockReturnValueOnce(
+      PRODUCT_ANALYTICS_ERROR_CATEGORIES.RateLimit,
+    )
+
+    const { result } = renderAddHook()
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await setUrlAndWait(result, "https://private.example.com")
+
+    await act(async () => {
+      await result.current.handlers.handleAutoDetect()
+    })
+
+    expect(
+      mockResolveProductAnalyticsErrorCategoryFromError,
+    ).toHaveBeenCalledWith(structuredError)
+    expectStartedAction(PRODUCT_ANALYTICS_ACTION_IDS.RunAccountAutoDetect)
+    expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+      {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.RateLimit,
+        insights: {
+          failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Detection,
+        },
+      },
+    )
     expectNoSensitiveAnalyticsFields()
   })
 

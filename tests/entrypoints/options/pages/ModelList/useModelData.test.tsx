@@ -13,11 +13,13 @@ import {
 } from "~/features/ModelList/modelManagementSources"
 import { InvalidTokenPayloadError } from "~/services/accounts/utils/apiServiceRequest"
 import { getApiService } from "~/services/apiService"
+import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import { modelPricingCache } from "~/services/models/modelPricingCache"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SOURCE_KINDS,
@@ -57,10 +59,16 @@ vi.mock("~/services/apiService", () => ({
   getApiService: vi.fn(),
 }))
 
-vi.mock("~/services/productAnalytics/actions", () => ({
-  trackProductAnalyticsActionCompleted: (...args: unknown[]) =>
-    mockTrackProductAnalyticsActionCompleted(...args),
-}))
+vi.mock("~/services/productAnalytics/actions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("~/services/productAnalytics/actions")>()
+
+  return {
+    ...actual,
+    trackProductAnalyticsActionCompleted: (...args: unknown[]) =>
+      mockTrackProductAnalyticsActionCompleted(...args),
+  }
+})
 
 vi.mock(
   "~/services/accounts/utils/apiServiceRequest",
@@ -152,6 +160,7 @@ const expectLastModelDataAnalyticsCompletion = (expected: {
   successCount?: number
   failureCount?: number
   errorCategory?: string
+  failureStage?: string
 }) => {
   const lastCall = mockTrackProductAnalyticsActionCompleted.mock.lastCall?.[0]
 
@@ -166,6 +175,7 @@ const expectLastModelDataAnalyticsCompletion = (expected: {
       : {}),
     insights: {
       sourceKind: expected.sourceKind,
+      ...(expected.failureStage ? { failureStage: expected.failureStage } : {}),
       ...(typeof expected.modelCount === "number"
         ? { modelCount: expected.modelCount }
         : {}),
@@ -381,6 +391,7 @@ describe("useModelData all-accounts loading", () => {
       result: PRODUCT_ANALYTICS_RESULTS.Failure,
       sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAccount,
       errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Parse,
     })
   })
 
@@ -449,6 +460,216 @@ describe("useModelData all-accounts loading", () => {
       successCount: 1,
       failureCount: 1,
       errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+    })
+  })
+
+  it("tracks all-account fetch exceptions as network failures", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn().mockImplementation(({ accountId }) => {
+      if (accountId === "analytics-all-success") {
+        return Promise.resolve({
+          data: [
+            {
+              model_name: "gpt-4o-mini",
+              quota_type: 0,
+              model_ratio: 1,
+              model_price: 1,
+              completion_ratio: 1,
+              enable_groups: ["default"],
+              supported_endpoint_types: [],
+            },
+          ],
+          group_ratio: { default: 1 },
+          success: true,
+          usable_group: { default: true },
+        })
+      }
+
+      return Promise.reject(new TypeError("Failed to fetch"))
+    })
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const accounts = [
+      createDisplayAccount({
+        id: "analytics-all-success",
+        baseUrl: "https://all-success.example.com",
+        userId: 75,
+      }),
+      createDisplayAccount({
+        id: "analytics-all-network-failure",
+        baseUrl: "https://all-network-failure.example.com",
+        userId: 76,
+      }),
+    ]
+
+    renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts,
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(mockTrackProductAnalyticsActionCompleted).toHaveBeenCalledTimes(
+          1,
+        )
+      },
+      { timeout: 3000 },
+    )
+    expectLastModelDataAnalyticsCompletion({
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAllAccounts,
+      modelCount: 1,
+      successCount: 1,
+      failureCount: 1,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+    })
+  })
+
+  it("tracks all-account invalid-format aggregate load as validation parse failure", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn().mockImplementation(({ accountId }) => {
+      if (accountId === "analytics-all-valid") {
+        return Promise.resolve({
+          data: [
+            {
+              model_name: "gpt-4o-mini",
+              quota_type: 0,
+              model_ratio: 1,
+              model_price: 1,
+              completion_ratio: 1,
+              enable_groups: ["default"],
+              supported_endpoint_types: [],
+            },
+          ],
+          group_ratio: { default: 1 },
+          success: true,
+          usable_group: { default: true },
+        })
+      }
+
+      return Promise.resolve({
+        data: null,
+        group_ratio: {},
+        success: true,
+        usable_group: {},
+      })
+    })
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const accounts = [
+      createDisplayAccount({
+        id: "analytics-all-valid",
+        baseUrl: "https://all-valid.example.com",
+        userId: 81,
+      }),
+      createDisplayAccount({
+        id: "analytics-all-invalid-format",
+        baseUrl: "https://all-invalid-format.example.com",
+        userId: 82,
+      }),
+    ]
+
+    renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts,
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(mockTrackProductAnalyticsActionCompleted).toHaveBeenCalledTimes(
+          1,
+        )
+      },
+      { timeout: 3000 },
+    )
+    expectLastModelDataAnalyticsCompletion({
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAllAccounts,
+      modelCount: 1,
+      successCount: 1,
+      failureCount: 1,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Parse,
+    })
+  })
+
+  it("tracks all-account aggregate diagnostics from the same parse failure", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn().mockImplementation(({ accountId }) => {
+      if (accountId === "analytics-all-auth-failure") {
+        return Promise.reject(
+          new ApiError(
+            "private auth failure",
+            401,
+            "https://private.example.com/api/pricing",
+            API_ERROR_CODES.HTTP_401,
+          ),
+        )
+      }
+
+      return Promise.resolve({
+        data: null,
+        group_ratio: {},
+        success: true,
+        usable_group: {},
+      })
+    })
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const accounts = [
+      createDisplayAccount({
+        id: "analytics-all-auth-failure",
+        baseUrl: "https://all-auth-failure.example.com",
+        userId: 91,
+      }),
+      createDisplayAccount({
+        id: "analytics-all-invalid-format",
+        baseUrl: "https://all-invalid-format.example.com",
+        userId: 92,
+      }),
+    ]
+
+    renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts,
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(mockTrackProductAnalyticsActionCompleted).toHaveBeenCalledTimes(
+          1,
+        )
+      },
+      { timeout: 3000 },
+    )
+    expectLastModelDataAnalyticsCompletion({
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAllAccounts,
+      modelCount: 0,
+      successCount: 0,
+      failureCount: 2,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Parse,
     })
   })
 
@@ -511,6 +732,7 @@ describe("useModelData all-accounts loading", () => {
       result: PRODUCT_ANALYTICS_RESULTS.Failure,
       sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelProfile,
       errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
     })
   })
 
@@ -597,6 +819,7 @@ describe("useModelData all-accounts loading", () => {
       result: PRODUCT_ANALYTICS_RESULTS.Failure,
       sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelFallbackCatalog,
       errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
     })
   })
 
@@ -1398,6 +1621,85 @@ describe("useModelData all-accounts loading", () => {
     expect(toastErrorMock).toHaveBeenCalledWith(
       "modelList:status.fallback.loadModelsFailedFallback",
     )
+  })
+
+  it("classifies fallback catalog structured failures without leaking details", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi.fn().mockRejectedValue(new Error("boom"))
+    vi.mocked(getApiService).mockReturnValue({ fetchModelPricing } as any)
+
+    const fallbackToken = {
+      id: 6,
+      user_id: 42,
+      key: "sk-only",
+      status: 1,
+      name: "Only key",
+      created_time: 0,
+      accessed_time: 0,
+      expired_time: -1,
+      remain_quota: 0,
+      unlimited_quota: true,
+      used_quota: 0,
+    }
+
+    mockFetchDisplayAccountTokens.mockResolvedValueOnce([fallbackToken])
+    mockLoadAccountTokenFallbackPricingResponse.mockRejectedValueOnce(
+      new Error("sanitized fallback failure", {
+        cause: new ApiError(
+          "private auth failure for sk-only",
+          401,
+          "/v1/models",
+          API_ERROR_CODES.HTTP_401,
+        ),
+      }),
+    )
+
+    const account = createDisplayAccount({
+      id: "catalog-auth-error-account",
+      baseUrl: "https://catalog-auth-error.example.com",
+      userId: 42,
+    })
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAccountSource(account),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(mockFetchDisplayAccountTokens).toHaveBeenCalledTimes(1)
+      },
+      { timeout: 3000 },
+    )
+    await waitFor(
+      () => {
+        expect(result.current.accountFallback?.selectedTokenId).toBe(6)
+      },
+      { timeout: 3000 },
+    )
+    mockTrackProductAnalyticsActionCompleted.mockClear()
+
+    await act(async () => {
+      await result.current.accountFallback?.loadCatalog()
+    })
+
+    await waitFor(() => {
+      expectLastModelDataAnalyticsCompletion({
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelFallbackCatalog,
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+        failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+      })
+    })
+    expect(
+      JSON.stringify(mockTrackProductAnalyticsActionCompleted.mock.calls),
+    ).not.toContain("sk-only")
   })
 
   it("reports mixed invalid-format and load-failed states in all-accounts mode", async () => {

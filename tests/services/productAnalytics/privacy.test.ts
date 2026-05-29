@@ -20,6 +20,9 @@ import {
   PRODUCT_ANALYTICS_MANAGED_SITE_TYPES,
   PRODUCT_ANALYTICS_MODE_IDS,
   PRODUCT_ANALYTICS_PAGE_IDS,
+  PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS,
+  PRODUCT_ANALYTICS_PERMISSION_OPERATIONS,
+  PRODUCT_ANALYTICS_PERMISSION_OUTCOMES,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SETTING_IDS,
   PRODUCT_ANALYTICS_SOURCE_KINDS,
@@ -403,6 +406,36 @@ describe("product analytics privacy filtering", () => {
       sync_bookmarks_enabled: false,
       sync_api_profiles_enabled: true,
       sync_preferences_enabled: false,
+    })
+  })
+
+  it("keeps permission operation outcome fields without raw permission context", () => {
+    const sanitized = sanitizeProductAnalyticsEvent(
+      PRODUCT_ANALYTICS_EVENTS.PermissionResult,
+      {
+        permission_id: "clipboardRead",
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Request,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.Denied,
+        failure_reason: PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.UserDenied,
+        was_granted_before: false,
+        was_granted_after: false,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        permissionPromptText: "private browser prompt text",
+        errorMessage: "private browser error",
+        url: "https://private.example/settings",
+      },
+    )
+
+    expect(sanitized).toEqual({
+      permission_id: "clipboardRead",
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Request,
+      outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.Denied,
+      failure_reason: PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.UserDenied,
+      was_granted_before: false,
+      was_granted_after: false,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
     })
   })
 
@@ -872,7 +905,7 @@ describe("product analytics privacy filtering", () => {
 
   it("keeps shield bypass daily summary buckets while dropping request details", () => {
     const sanitized = sanitizeProductAnalyticsEvent(
-      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      PRODUCT_ANALYTICS_EVENTS.ShieldBypassSummaryCaptured,
       {
         feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ShieldBypassAssist,
         action_id: PRODUCT_ANALYTICS_ACTION_IDS.SummarizeShieldBypassDaily,
@@ -900,11 +933,9 @@ describe("product analytics privacy filtering", () => {
 
     expect(sanitized).toEqual({
       feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ShieldBypassAssist,
-      action_id: PRODUCT_ANALYTICS_ACTION_IDS.SummarizeShieldBypassDaily,
       surface_id:
         PRODUCT_ANALYTICS_SURFACE_IDS.BackgroundShieldBypassTempContext,
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
-      result: PRODUCT_ANALYTICS_RESULTS.Success,
       shield_bypass_prompt_shown_count_bucket:
         PRODUCT_ANALYTICS_COUNT_BUCKETS.TenPlus,
       shield_bypass_prompt_dismissed_count_bucket:

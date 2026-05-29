@@ -25,12 +25,9 @@ import {
   hasPermission,
   onOptionalPermissionsChanged,
   OPTIONAL_PERMISSION_IDS,
-  requestPermission,
+  requestPermissionDetailed,
 } from "~/services/permissions/permissionManager"
-import {
-  getPermissionAnalyticsResult,
-  trackOptionalPermissionResult,
-} from "~/services/productAnalytics/permissions"
+import { trackOptionalPermissionRequestResult } from "~/services/productAnalytics/permissions"
 import {
   TASK_NOTIFICATION_CHANNELS,
   TASK_NOTIFICATION_TASKS,
@@ -535,13 +532,22 @@ export default function TaskNotificationSettings() {
 
   const handleRequestPermission = async () => {
     setIsRequestingPermission(true)
+    const wasGrantedBefore = permissionGranted === true
     try {
-      const success = await requestPermission(
+      const result = await requestPermissionDetailed(
         OPTIONAL_PERMISSION_IDS.Notifications,
       )
-      trackOptionalPermissionResult(
+      const success = result.success
+      trackOptionalPermissionRequestResult(
         OPTIONAL_PERMISSION_IDS.Notifications,
-        getPermissionAnalyticsResult(success),
+        {
+          success,
+          failureReason: result.failureReason
+            ? result.failureReason
+            : undefined,
+          wasGrantedBefore,
+          wasGrantedAfter: success || wasGrantedBefore,
+        },
       )
       await refreshPermissionStatus()
       showResultToast(
@@ -550,11 +556,22 @@ export default function TaskNotificationSettings() {
         t("taskNotifications.permission.requestFailed"),
       )
     } catch (error) {
-      trackOptionalPermissionResult(
+      trackOptionalPermissionRequestResult(
         OPTIONAL_PERMISSION_IDS.Notifications,
-        getPermissionAnalyticsResult(false),
+        {
+          success: false,
+          failureReason: error,
+          wasGrantedBefore,
+          wasGrantedAfter: wasGrantedBefore,
+        },
       )
-      throw error
+      logger.warn("Failed to request notification permission", error)
+      await refreshPermissionStatus()
+      showResultToast(
+        false,
+        t("taskNotifications.permission.requestSuccess"),
+        t("taskNotifications.permission.requestFailed"),
+      )
     } finally {
       setIsRequestingPermission(false)
     }

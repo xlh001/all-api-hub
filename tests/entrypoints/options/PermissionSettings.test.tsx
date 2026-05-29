@@ -5,7 +5,10 @@ import PermissionSettings from "~/features/BasicSettings/components/tabs/Permiss
 import {
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_EVENTS,
+  PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS,
   PRODUCT_ANALYTICS_PERMISSION_IDS,
+  PRODUCT_ANALYTICS_PERMISSION_OPERATIONS,
+  PRODUCT_ANALYTICS_PERMISSION_OUTCOMES,
   PRODUCT_ANALYTICS_RESULTS,
 } from "~/services/productAnalytics/events"
 import { render, screen, waitFor, within } from "~~/tests/test-utils/render"
@@ -14,8 +17,8 @@ const {
   changedListenerRef,
   hasPermissionMock,
   onOptionalPermissionsChangedMock,
-  removePermissionMock,
-  requestPermissionMock,
+  removePermissionDetailedMock,
+  requestPermissionDetailedMock,
   showResultToastMock,
   trackProductAnalyticsEventMock,
   unsubscribeMock,
@@ -25,8 +28,8 @@ const {
   },
   hasPermissionMock: vi.fn(),
   onOptionalPermissionsChangedMock: vi.fn(),
-  removePermissionMock: vi.fn(),
-  requestPermissionMock: vi.fn(),
+  removePermissionDetailedMock: vi.fn(),
+  requestPermissionDetailedMock: vi.fn(),
   showResultToastMock: vi.fn(),
   trackProductAnalyticsEventMock: vi.fn(),
   unsubscribeMock: vi.fn(),
@@ -50,8 +53,8 @@ vi.mock("~/services/permissions/permissionManager", () => ({
   hasPermission: (id: string) => hasPermissionMock(id),
   onOptionalPermissionsChanged: (listener: () => void) =>
     onOptionalPermissionsChangedMock(listener),
-  removePermission: (id: string) => removePermissionMock(id),
-  requestPermission: (id: string) => requestPermissionMock(id),
+  removePermissionDetailed: (id: string) => removePermissionDetailedMock(id),
+  requestPermissionDetailed: (id: string) => requestPermissionDetailedMock(id),
 }))
 
 vi.mock("~/utils/core/toastHelpers", () => ({
@@ -73,8 +76,8 @@ describe("PermissionSettings", () => {
     hasPermissionMock.mockImplementation(
       async (id: string) => id === "cookies" || id === "notifications",
     )
-    requestPermissionMock.mockResolvedValue(true)
-    removePermissionMock.mockResolvedValue(false)
+    requestPermissionDetailedMock.mockResolvedValue({ success: true })
+    removePermissionDetailedMock.mockResolvedValue({ success: false })
     onOptionalPermissionsChangedMock.mockImplementation((listener) => {
       changedListenerRef.current = listener
       return unsubscribeMock
@@ -131,10 +134,10 @@ describe("PermissionSettings", () => {
     )
 
     await waitFor(() => {
-      expect(removePermissionMock).toHaveBeenCalledWith("cookies")
+      expect(removePermissionDetailedMock).toHaveBeenCalledWith("cookies")
     })
-    expect(requestPermissionMock).toHaveBeenCalledWith("clipboardRead")
-    expect(removePermissionMock).toHaveBeenCalledWith("notifications")
+    expect(requestPermissionDetailedMock).toHaveBeenCalledWith("clipboardRead")
+    expect(removePermissionDetailedMock).toHaveBeenCalledWith("notifications")
     expect(showResultToastMock).toHaveBeenCalledWith(
       true,
       "settings:permissions.messages.granted",
@@ -154,6 +157,12 @@ describe("PermissionSettings", () => {
       {
         permission_id: PRODUCT_ANALYTICS_PERMISSION_IDS.Cookies,
         result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Remove,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.RevokeFailed,
+        failure_reason:
+          PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.RemoveFailed,
+        was_granted_before: true,
+        was_granted_after: true,
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
       },
     )
@@ -162,6 +171,10 @@ describe("PermissionSettings", () => {
       {
         permission_id: PRODUCT_ANALYTICS_PERMISSION_IDS.ClipboardRead,
         result: PRODUCT_ANALYTICS_RESULTS.Success,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Request,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.Granted,
+        was_granted_before: false,
+        was_granted_after: true,
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
       },
     )
@@ -170,6 +183,12 @@ describe("PermissionSettings", () => {
       {
         permission_id: PRODUCT_ANALYTICS_PERMISSION_IDS.Notifications,
         result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Remove,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.RevokeFailed,
+        failure_reason:
+          PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.RemoveFailed,
+        was_granted_before: true,
+        was_granted_after: true,
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
       },
     )
@@ -228,7 +247,9 @@ describe("PermissionSettings", () => {
   })
 
   it("shows an error toast when requesting a permission throws", async () => {
-    requestPermissionMock.mockRejectedValueOnce(new Error("request failed"))
+    requestPermissionDetailedMock.mockRejectedValueOnce(
+      new Error("request failed"),
+    )
 
     render(<PermissionSettings />, {
       withUserPreferencesProvider: false,
@@ -267,6 +288,58 @@ describe("PermissionSettings", () => {
       {
         permission_id: PRODUCT_ANALYTICS_PERMISSION_IDS.ClipboardRead,
         result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Request,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.ApiError,
+        failure_reason:
+          PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.ApiException,
+        was_granted_before: false,
+        was_granted_after: false,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      },
+    )
+  })
+
+  it("tracks browser API request exceptions returned by the permission manager", async () => {
+    requestPermissionDetailedMock.mockResolvedValueOnce({
+      success: false,
+      failureReason: "api_exception",
+    })
+
+    render(<PermissionSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    await screen.findByText("settings:permissions.items.clipboardRead.title")
+    const clipboardRow = document.getElementById("clipboardRead")
+    if (!clipboardRow) {
+      throw new Error("Expected clipboard permission row")
+    }
+
+    fireEvent.click(
+      within(clipboardRow).getByRole("button", {
+        name: "settings:permissions.actions.allow",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(showResultToastMock).toHaveBeenCalledWith(
+        false,
+        "settings:permissions.messages.granted",
+        "settings:permissions.messages.grantFailed",
+      )
+    })
+    expect(trackProductAnalyticsEventMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.PermissionResult,
+      {
+        permission_id: PRODUCT_ANALYTICS_PERMISSION_IDS.ClipboardRead,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Request,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.ApiError,
+        failure_reason:
+          PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.ApiException,
+        was_granted_before: false,
+        was_granted_after: false,
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
       },
     )

@@ -22,6 +22,7 @@ import { inputVariants } from "~/components/ui/input"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { cn } from "~/lib/utils"
 import {
+  resolveProductAnalyticsErrorCategoryFromError,
   startProductAnalyticsAction,
   type ProductAnalyticsActionInsights,
 } from "~/services/productAnalytics/actions"
@@ -34,9 +35,11 @@ import {
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SOURCE_KINDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
+  type ProductAnalyticsErrorCategory,
   type ProductAnalyticsResult,
   type ProductAnalyticsSourceKind,
 } from "~/services/productAnalytics/events"
+import { resolveProductAnalyticsErrorCategoryFromProbeResult } from "~/services/productAnalytics/verification"
 import {
   API_TYPES,
   getApiVerificationProbeDefinitions,
@@ -68,6 +71,10 @@ type ProbeItemState = {
   isRunning: boolean
   attempts: number
   result: ApiVerificationProbeResult | null
+}
+
+type ApiCheckProbeResultWithAnalyticsCategory = ApiVerificationProbeResult & {
+  analyticsErrorCategory?: ProductAnalyticsErrorCategory
 }
 
 // Preserve the real debounce in dev/prod to avoid bursty background requests
@@ -478,8 +485,15 @@ export function ApiCheckModalHost() {
             response?.error ||
               t("webAiApiCheck:modal.errors.fetchModelsFailed"),
           )
+          const errorCategory =
+            response?.errorCategory ??
+            (typeof response?.errorStatusCode === "number"
+              ? resolveProductAnalyticsErrorCategoryFromError({
+                  statusCode: response.errorStatusCode,
+                })
+              : PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown)
           tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-            errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+            errorCategory,
             insights: {
               sourceKind:
                 origin === "auto"
@@ -492,7 +506,7 @@ export function ApiCheckModalHost() {
         }
       } catch (error) {
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          errorCategory: resolveProductAnalyticsErrorCategoryFromError(error),
           insights: {
             sourceKind:
               origin === "auto"
@@ -566,7 +580,7 @@ export function ApiCheckModalHost() {
   const runProbe = async (
     probeId: ApiVerificationProbeId,
     options: { trackIndividual?: boolean } = {},
-  ): Promise<ApiVerificationProbeResult | null> => {
+  ): Promise<ApiCheckProbeResultWithAnalyticsCategory | null> => {
     const shouldTrack = options.trackIndividual !== false
     const tracker = shouldTrack
       ? startProductAnalyticsAction({
@@ -613,7 +627,9 @@ export function ApiCheckModalHost() {
         probeId,
       })
 
-      const result = response?.result as ApiVerificationProbeResult | undefined
+      const result = response?.result as
+        | ApiCheckProbeResultWithAnalyticsCategory
+        | undefined
       if (response?.success && result) {
         setProbes((prev) =>
           prev.map((probe) =>
@@ -625,7 +641,10 @@ export function ApiCheckModalHost() {
         const analyticsResult = getProbeAnalyticsResult(result)
         tracker?.complete(analyticsResult, {
           ...(analyticsResult === PRODUCT_ANALYTICS_RESULTS.Failure
-            ? { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown }
+            ? {
+                errorCategory:
+                  resolveProductAnalyticsErrorCategoryFromProbeResult(result),
+              }
             : {}),
           insights: buildApiCheckAnalyticsInsights(apiType, trigger, {
             mode: PRODUCT_ANALYTICS_MODE_IDS.Single,
@@ -637,11 +656,12 @@ export function ApiCheckModalHost() {
       const message =
         response?.error || t("webAiApiCheck:modal.errors.runProbeFailed")
 
-      const fallback: ApiVerificationProbeResult = {
+      const fallback: ApiCheckProbeResultWithAnalyticsCategory = {
         id: probeId,
         status: "fail",
         latencyMs: 0,
         summary: message,
+        analyticsErrorCategory: response?.errorCategory,
         input: {
           apiType,
           baseUrl: trimmedBaseUrl,
@@ -656,18 +676,21 @@ export function ApiCheckModalHost() {
         ),
       )
       tracker?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        errorCategory:
+          response?.errorCategory ?? PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         insights: buildApiCheckAnalyticsInsights(apiType, trigger, {
           mode: PRODUCT_ANALYTICS_MODE_IDS.Single,
         }),
       })
       return fallback
-    } catch {
-      const fallback: ApiVerificationProbeResult = {
+    } catch (error) {
+      const errorCategory = resolveProductAnalyticsErrorCategoryFromError(error)
+      const fallback: ApiCheckProbeResultWithAnalyticsCategory = {
         id: probeId,
         status: "fail",
         latencyMs: 0,
         summary: t("webAiApiCheck:modal.errors.runProbeFailed"),
+        analyticsErrorCategory: errorCategory,
         input: {
           apiType,
           baseUrl: trimmedBaseUrl,
@@ -685,7 +708,7 @@ export function ApiCheckModalHost() {
         ),
       )
       tracker?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        errorCategory,
         insights: buildApiCheckAnalyticsInsights(apiType, trigger, {
           mode: PRODUCT_ANALYTICS_MODE_IDS.Single,
         }),
@@ -718,7 +741,7 @@ export function ApiCheckModalHost() {
     }
 
     setIsRunningAll(true)
-    const results: ApiVerificationProbeResult[] = []
+    const results: ApiCheckProbeResultWithAnalyticsCategory[] = []
     try {
       for (const def of probeDefinitions) {
         // Run sequentially so the UI updates progressively and we avoid bursty network traffic.
@@ -743,7 +766,14 @@ export function ApiCheckModalHost() {
 
       tracker.complete(analyticsResult, {
         ...(analyticsResult === PRODUCT_ANALYTICS_RESULTS.Failure
-          ? { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown }
+          ? {
+              errorCategory:
+                results.find((result) => result.status === "fail")
+                  ?.analyticsErrorCategory ??
+                resolveProductAnalyticsErrorCategoryFromProbeResult(
+                  results.find((result) => result.status === "fail"),
+                ),
+            }
           : {}),
         insights: buildApiCheckAnalyticsInsights(apiType, trigger, {
           mode: PRODUCT_ANALYTICS_MODE_IDS.All,
@@ -828,14 +858,16 @@ export function ApiCheckModalHost() {
             t("webAiApiCheck:modal.errors.saveToProfilesFailed"),
         )
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          errorCategory:
+            response?.errorCategory ??
+            PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: buildApiCheckAnalyticsInsights(apiType, trigger),
         })
       }
-    } catch {
+    } catch (error) {
       toast.error(t("webAiApiCheck:modal.errors.saveToProfilesFailed"))
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        errorCategory: resolveProductAnalyticsErrorCategoryFromError(error),
         insights: buildApiCheckAnalyticsInsights(apiType, trigger),
       })
     } finally {
