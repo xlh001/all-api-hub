@@ -186,6 +186,110 @@ describe("setupWebAiApiCheckContent", () => {
     cleanup()
   })
 
+  it("opens auto-detect for enhanced matches when enhanced auto-detect is enabled", async () => {
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
+      if (message.action === RuntimeActionIds.ApiCheckShouldPrompt) {
+        return {
+          success: true,
+          shouldPrompt: true,
+          enhancedShouldPrompt: true,
+        }
+      }
+      return { success: false }
+    })
+    vi.mocked(showApiCheckConfirmToast).mockResolvedValue(true)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    document.dispatchEvent(
+      makeClipboardEvent(
+        "copy",
+        [
+          "proxy.example.com/api/v1/chat/completions",
+          "test-Aa1Bb2Cc3Dd4Ee5Ff6Gg7Hh8Ii9Jj0Kk1",
+        ].join("\n"),
+      ),
+    )
+
+    await waitFor(() =>
+      expect(dispatchOpenApiCheckModal).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trigger: "autoDetect",
+          extraction: expect.objectContaining({
+            summary: expect.objectContaining({
+              usesEnhancedResult: true,
+            }),
+          }),
+        }),
+      ),
+    )
+    expect(showApiCheckConfirmToast).toHaveBeenCalledWith({
+      usesEnhancedResult: true,
+    })
+
+    cleanup()
+  })
+
+  it("does not prompt for enhanced-only matches when enhanced auto-detect is disabled", async () => {
+    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
+      if (message.action === RuntimeActionIds.ApiCheckShouldPrompt) {
+        return {
+          success: true,
+          shouldPrompt: true,
+          enhancedShouldPrompt: false,
+        }
+      }
+      return { success: false }
+    })
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    document.dispatchEvent(
+      makeClipboardEvent(
+        "copy",
+        [
+          "proxy.example.com/api/v1/chat/completions",
+          "test-Aa1Bb2Cc3Dd4Ee5Ff6Gg7Hh8Ii9Jj0Kk1",
+        ].join("\n"),
+      ),
+    )
+
+    await waitFor(() => expect(sendRuntimeMessage).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(showApiCheckConfirmToast).not.toHaveBeenCalled()
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
+  it("does not auto-prompt for manual-only unseparated long keys", async () => {
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      shouldPrompt: true,
+      enhancedShouldPrompt: true,
+    })
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    document.dispatchEvent(
+      makeClipboardEvent(
+        "copy",
+        [
+          "https://proxy.example.com/api",
+          "TESTKEYAa1Bb2Cc3Dd4Ee5Ff6Gg7Hh8Ii9Jj0Kk1",
+        ].join("\n"),
+      ),
+    )
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(showApiCheckConfirmToast).not.toHaveBeenCalled()
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
   it("does not open modal when the auto-detect confirmation toast is dismissed", async () => {
     const apiKey = buildApiKey()
     vi.mocked(sendRuntimeMessage).mockResolvedValue({
@@ -381,6 +485,109 @@ describe("setupWebAiApiCheckContent", () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(sendRuntimeMessage).not.toHaveBeenCalled()
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
+  it("ignores clicks originating from the content UI host element", async () => {
+    vi.useFakeTimers()
+
+    const readText = vi.fn().mockResolvedValue(
+      buildApiCheckClipboardText({
+        baseUrl: "https://proxy.example.com/api",
+        apiKey: buildApiKey(),
+      }),
+    )
+
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        readText,
+      },
+    })
+
+    const host = document.createElement("all-api-hub-redemption-toast")
+    const innerButton = document.createElement("button")
+    innerButton.textContent = "Copy"
+    host.appendChild(innerButton)
+    document.body.appendChild(host)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    innerButton.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+
+    await vi.advanceTimersByTimeAsync(500)
+    await flushMicrotasks()
+
+    expect(sendRuntimeMessage).not.toHaveBeenCalled()
+    expect(checkPermissionViaMessage).not.toHaveBeenCalled()
+    expect(readText).not.toHaveBeenCalled()
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
+  it("ignores clicks that cannot read clipboard text", async () => {
+    vi.useFakeTimers()
+
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    })
+
+    const button = document.createElement("button")
+    button.textContent = "Copy"
+    document.body.appendChild(button)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+
+    await vi.advanceTimersByTimeAsync(500)
+    await flushMicrotasks()
+
+    expect(sendRuntimeMessage).not.toHaveBeenCalled()
+    expect(checkPermissionViaMessage).not.toHaveBeenCalled()
+    expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
+
+    cleanup()
+  })
+
+  it("does not request clipboard permission when click prompt state is vetoed", async () => {
+    vi.useFakeTimers()
+
+    const readText = vi.fn()
+    vi.mocked(sendRuntimeMessage).mockResolvedValue({
+      success: true,
+      shouldPrompt: false,
+      enhancedShouldPrompt: false,
+    })
+
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        readText,
+      },
+    })
+
+    const button = document.createElement("button")
+    button.textContent = "Copy"
+    document.body.appendChild(button)
+
+    const cleanup = setupWebAiApiCheckContent()
+
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+
+    await vi.advanceTimersByTimeAsync(500)
+    await flushMicrotasks()
+
+    expect(sendRuntimeMessage).toHaveBeenCalledWith({
+      action: RuntimeActionIds.ApiCheckShouldPrompt,
+      pageUrl: window.location.href,
+    })
+    expect(checkPermissionViaMessage).not.toHaveBeenCalled()
+    expect(readText).not.toHaveBeenCalled()
     expect(dispatchOpenApiCheckModal).not.toHaveBeenCalled()
 
     cleanup()

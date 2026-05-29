@@ -6,6 +6,7 @@ import {
   RuntimeActionPrefixes,
 } from "~/constants/runtimeActions"
 import { applyActionClickBehavior } from "~/entrypoints/background/actionClickBehavior"
+import { WEB_AI_API_CHECK_TARGET_IDS } from "~/features/BasicSettings/components/tabs/WebAiApiCheck/searchTargets"
 import { handleAccountKeyRepairMessage } from "~/services/accounts/accountKeyAutoProvisioning"
 import { handleAutoRefreshMessage } from "~/services/accounts/autoRefreshService"
 import { handleAutoCheckinMessage } from "~/services/checkin/autoCheckin/scheduler"
@@ -30,7 +31,10 @@ import {
 import { extractSessionCookieHeader } from "~/utils/browser/cookieString"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
-import { openOrFocusOptionsMenuItem } from "~/utils/navigation"
+import {
+  openBugReportPage,
+  openOrFocusOptionsMenuItem,
+} from "~/utils/navigation"
 
 import { setupContextMenus } from "./contextMenus"
 import { trackCookieInterceptorUrl } from "./cookieInterceptor"
@@ -227,6 +231,26 @@ export function setupRuntimeMessageListeners() {
       ) {
         openOrFocusOptionsMenuItem(MENU_ITEM_IDS.API_CREDENTIAL_PROFILES)
         sendResponse({ success: true })
+        return true
+      }
+
+      if (request.action === RuntimeActionIds.OpenSettingsWebAiApiCheck) {
+        openOrFocusOptionsMenuItem(MENU_ITEM_IDS.BASIC, {
+          tab: "webAiApiCheck",
+          anchor: WEB_AI_API_CHECK_TARGET_IDS.enhancedAutoDetect,
+        })
+        sendResponse({ success: true })
+        return true
+      }
+
+      if (request.action === RuntimeActionIds.OpenFeedbackBugReport) {
+        void openBugReportPage()
+          .then(() => {
+            sendResponse({ success: true })
+          })
+          .catch((error) => {
+            sendResponse({ success: false, error: getErrorMessage(error) })
+          })
         return true
       }
 

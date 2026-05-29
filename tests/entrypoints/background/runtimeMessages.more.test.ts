@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { COOKIE_IMPORT_FAILURE_REASONS } from "~/constants/cookieImport"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
+import { WEB_AI_API_CHECK_TARGET_IDS } from "~/features/BasicSettings/components/tabs/WebAiApiCheck/searchTargets"
 import { PRODUCT_ANALYTICS_EVENTS } from "~/services/productAnalytics/events"
 
 type RuntimeMessageListener = (
@@ -41,6 +42,7 @@ const mocks = vi.hoisted(() => ({
   handleTempWindowFetch: vi.fn(),
   handleTempWindowTurnstileFetch: vi.fn(),
   handleTempWindowGetRenderedTitle: vi.fn(),
+  openBugReportPage: vi.fn(),
 }))
 
 vi.mock("~/utils/browser/browserApi", () => ({
@@ -66,6 +68,7 @@ vi.mock("~/entrypoints/background/cookieInterceptor", () => ({
 
 vi.mock("~/utils/navigation", () => ({
   openOrFocusOptionsMenuItem: mocks.openOrFocusOptionsMenuItem,
+  openBugReportPage: mocks.openBugReportPage,
 }))
 
 vi.mock("~/entrypoints/background/tempWindowPool", () => ({
@@ -293,6 +296,16 @@ describe("setupRuntimeMessageListeners additional routing", () => {
         action: RuntimeActionIds.OpenSettingsApiCredentialProfiles,
         expectedArgs: [MENU_ITEM_IDS.API_CREDENTIAL_PROFILES],
       },
+      {
+        action: RuntimeActionIds.OpenSettingsWebAiApiCheck,
+        expectedArgs: [
+          MENU_ITEM_IDS.BASIC,
+          {
+            tab: "webAiApiCheck",
+            anchor: WEB_AI_API_CHECK_TARGET_IDS.enhancedAutoDetect,
+          },
+        ],
+      },
     ]
 
     for (const item of openCalls) {
@@ -305,6 +318,44 @@ describe("setupRuntimeMessageListeners additional routing", () => {
         ...item.expectedArgs,
       )
     }
+  })
+
+  it("opens the bug report feedback destination for background-triggered navigation", async () => {
+    const listener = await loadListener()
+    const sendResponse = vi.fn()
+    mocks.openBugReportPage.mockResolvedValueOnce(undefined)
+
+    const result = listener(
+      { action: RuntimeActionIds.OpenFeedbackBugReport },
+      {},
+      sendResponse,
+    )
+
+    expect(result).toBe(true)
+    await waitForAsyncResponse()
+    expect(sendResponse).toHaveBeenCalledWith({ success: true })
+    expect(mocks.openBugReportPage).toHaveBeenCalledTimes(1)
+  })
+
+  it("surfaces bug report navigation failures", async () => {
+    const listener = await loadListener()
+    const sendResponse = vi.fn()
+    mocks.openBugReportPage.mockRejectedValueOnce(
+      new Error("navigation blocked"),
+    )
+
+    const result = listener(
+      { action: RuntimeActionIds.OpenFeedbackBugReport },
+      {},
+      sendResponse,
+    )
+
+    expect(result).toBe(true)
+    await waitForAsyncResponse()
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: "navigation blocked",
+    })
   })
 
   it("routes release update actions to the dedicated handler", async () => {
