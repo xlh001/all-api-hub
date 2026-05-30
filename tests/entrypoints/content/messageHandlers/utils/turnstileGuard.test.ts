@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   detectTurnstileWidget,
@@ -18,6 +18,11 @@ function createMockElement<K extends keyof HTMLElementTagNameMap>(
   return element
 }
 
+async function settleTurnstileWait<T>(promise: Promise<T>): Promise<T> {
+  await vi.advanceTimersByTimeAsync(30_000)
+  return promise
+}
+
 describe("turnstileGuard", () => {
   beforeEach(() => {
     document.title = ""
@@ -25,6 +30,10 @@ describe("turnstileGuard", () => {
     globalThis.__aahTurnstileAutoStartState = undefined
     globalThis.__aahTurnstilePreTriggerState = undefined
     vi.restoreAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   describe("detectTurnstileWidget", () => {
@@ -201,12 +210,15 @@ describe("turnstileGuard", () => {
     })
 
     it("returns timeout when Turnstile is present but token never appears", async () => {
+      vi.useFakeTimers()
       document.body.innerHTML = '<div class="cf-turnstile"></div>'
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-timeout",
-        timeoutMs: 100,
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-timeout",
+          timeoutMs: 100,
+        }),
+      )
 
       expect(result.status).toBe("timeout")
       expect(result.token).toBeNull()
@@ -214,6 +226,7 @@ describe("turnstileGuard", () => {
     })
 
     it("auto-starts an existing turnstile widget and resolves once the token field appears", async () => {
+      vi.useFakeTimers()
       const container = createMockElement("div", (el) => {
         el.className = "cf-turnstile"
         el.click = vi.fn(() => {
@@ -225,10 +238,12 @@ describe("turnstileGuard", () => {
       })
       document.body.appendChild(container)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-auto-start-success",
-        timeoutMs: 1500,
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-auto-start-success",
+          timeoutMs: 1500,
+        }),
+      )
 
       expect(result.status).toBe("token_obtained")
       expect(result.token).toBe("token-from-auto-start")
@@ -241,6 +256,7 @@ describe("turnstileGuard", () => {
     })
 
     it("uses preTrigger to click a check-in button and obtain a token", async () => {
+      vi.useFakeTimers()
       const button = createMockElement("button", (el) => {
         el.textContent = "签到"
         el.click = vi.fn(() => {
@@ -253,11 +269,13 @@ describe("turnstileGuard", () => {
 
       document.body.appendChild(button)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-pretrigger",
-        timeoutMs: 1500,
-        preTrigger: { kind: "checkinButton" },
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-pretrigger",
+          timeoutMs: 1500,
+          preTrigger: { kind: "checkinButton" },
+        }),
+      )
 
       expect(result.status).toBe("token_obtained")
       expect(result.token).toBe("token-2")
@@ -265,6 +283,7 @@ describe("turnstileGuard", () => {
     })
 
     it("uses clickSelector preTrigger to render the token field", async () => {
+      vi.useFakeTimers()
       const trigger = createMockElement("button", (el) => {
         el.className = "turnstile-trigger"
         el.click = vi.fn(() => {
@@ -277,14 +296,16 @@ describe("turnstileGuard", () => {
 
       document.body.appendChild(trigger)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-selector",
-        timeoutMs: 1500,
-        preTrigger: {
-          kind: "clickSelector",
-          selector: ".turnstile-trigger",
-        },
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-selector",
+          timeoutMs: 1500,
+          preTrigger: {
+            kind: "clickSelector",
+            selector: ".turnstile-trigger",
+          },
+        }),
+      )
 
       expect(result.status).toBe("token_obtained")
       expect(result.token).toBe("token-from-selector")
@@ -292,6 +313,7 @@ describe("turnstileGuard", () => {
     })
 
     it("uses clickText preTrigger and ignores already-completed buttons", async () => {
+      vi.useFakeTimers()
       const completed = createMockElement("button", (el) => {
         el.textContent = "已签到"
         el.click = vi.fn()
@@ -309,15 +331,17 @@ describe("turnstileGuard", () => {
       document.body.appendChild(completed)
       document.body.appendChild(actionable)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-click-text",
-        timeoutMs: 1500,
-        preTrigger: {
-          kind: "clickText",
-          positivePattern: "check\\s*in",
-          negativePattern: "already|已签到",
-        },
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-click-text",
+          timeoutMs: 1500,
+          preTrigger: {
+            kind: "clickText",
+            positivePattern: "check\\s*in",
+            negativePattern: "already|已签到",
+          },
+        }),
+      )
 
       expect(result.status).toBe("token_obtained")
       expect(result.token).toBe("token-click-text")
@@ -326,6 +350,7 @@ describe("turnstileGuard", () => {
     })
 
     it("uses a custom clickText candidate selector and skips non-actionable matches", async () => {
+      vi.useFakeTimers()
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
       svg.setAttribute("class", "turnstile-candidate")
       svg.textContent = "Check in from svg"
@@ -358,16 +383,18 @@ describe("turnstileGuard", () => {
       document.body.appendChild(completed)
       document.body.appendChild(actionable)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-click-text-candidates",
-        timeoutMs: 1500,
-        preTrigger: {
-          kind: "clickText",
-          positivePattern: "check\\s*in",
-          negativePattern: "already",
-          candidateSelector: ".turnstile-candidate",
-        },
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-click-text-candidates",
+          timeoutMs: 1500,
+          preTrigger: {
+            kind: "clickText",
+            positivePattern: "check\\s*in",
+            negativePattern: "already",
+            candidateSelector: ".turnstile-candidate",
+          },
+        }),
+      )
 
       expect(result.status).toBe("token_obtained")
       expect(result.token).toBe("token-custom-candidates")
@@ -377,6 +404,7 @@ describe("turnstileGuard", () => {
     })
 
     it("falls back to the default check-in patterns when custom preTrigger patterns are invalid", async () => {
+      vi.useFakeTimers()
       const button = createMockElement("button", (el) => {
         el.textContent = "签到"
         el.click = vi.fn(() => {
@@ -388,15 +416,17 @@ describe("turnstileGuard", () => {
       })
       document.body.appendChild(button)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-invalid-patterns",
-        timeoutMs: 1500,
-        preTrigger: {
-          kind: "checkinButton",
-          positivePattern: "(",
-          negativePattern: "x".repeat(300),
-        },
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-invalid-patterns",
+          timeoutMs: 1500,
+          preTrigger: {
+            kind: "checkinButton",
+            positivePattern: "(",
+            negativePattern: "x".repeat(300),
+          },
+        }),
+      )
 
       expect(result.status).toBe("token_obtained")
       expect(result.token).toBe("token-default-pattern-fallback")
@@ -404,6 +434,7 @@ describe("turnstileGuard", () => {
     })
 
     it("accepts a string timeout from runtime messages", async () => {
+      vi.useFakeTimers()
       const trigger = createMockElement("button", (el) => {
         el.className = "turnstile-string-timeout"
         el.click = vi.fn(() => {
@@ -415,14 +446,16 @@ describe("turnstileGuard", () => {
       })
       document.body.appendChild(trigger)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-string-timeout",
-        timeoutMs: "1500",
-        preTrigger: {
-          kind: "clickSelector",
-          selector: ".turnstile-string-timeout",
-        },
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-string-timeout",
+          timeoutMs: "1500",
+          preTrigger: {
+            kind: "clickSelector",
+            selector: ".turnstile-string-timeout",
+          },
+        }),
+      )
 
       expect(result.status).toBe("token_obtained")
       expect(result.token).toBe("token-string-timeout")
@@ -430,23 +463,26 @@ describe("turnstileGuard", () => {
     })
 
     it("respects a zero-attempt preTrigger throttle and does not click even when a target exists", async () => {
+      vi.useFakeTimers()
       const button = createMockElement("button", (el) => {
         el.textContent = "签到"
         el.click = vi.fn()
       })
       document.body.appendChild(button)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-zero-max-attempts",
-        timeoutMs: 500,
-        preTrigger: {
-          kind: "checkinButton",
-          throttle: {
-            maxAttempts: 0,
-            minIntervalMs: 0,
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-zero-max-attempts",
+          timeoutMs: 500,
+          preTrigger: {
+            kind: "checkinButton",
+            throttle: {
+              maxAttempts: 0,
+              minIntervalMs: 0,
+            },
           },
-        },
-      })
+        }),
+      )
 
       expect(result.status).toBe("not_present")
       expect(result.token).toBeNull()
@@ -454,17 +490,20 @@ describe("turnstileGuard", () => {
     })
 
     it("does not pre-trigger when requestId is blank even if a target exists", async () => {
+      vi.useFakeTimers()
       const button = createMockElement("button", (el) => {
         el.textContent = "签到"
         el.click = vi.fn()
       })
       document.body.appendChild(button)
 
-      const result = await waitForTurnstileToken({
-        requestId: "   ",
-        timeoutMs: 500,
-        preTrigger: { kind: "checkinButton" },
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "   ",
+          timeoutMs: 500,
+          preTrigger: { kind: "checkinButton" },
+        }),
+      )
 
       expect(result.status).toBe("not_present")
       expect(result.token).toBeNull()
@@ -472,17 +511,20 @@ describe("turnstileGuard", () => {
     })
 
     it("throttles repeated preTrigger clicks when the widget never appears", async () => {
+      vi.useFakeTimers()
       const button = createMockElement("button", (el) => {
         el.textContent = "签到"
         el.click = vi.fn()
       })
       document.body.appendChild(button)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-pretrigger-throttle",
-        timeoutMs: 1000,
-        preTrigger: { kind: "checkinButton" },
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-pretrigger-throttle",
+          timeoutMs: 1000,
+          preTrigger: { kind: "checkinButton" },
+        }),
+      )
 
       expect(result.status).toBe("not_present")
       expect(result.token).toBeNull()
@@ -490,14 +532,17 @@ describe("turnstileGuard", () => {
     })
 
     it("returns not_present after timeout when preTrigger is enabled but no target can be found", async () => {
-      const result = await waitForTurnstileToken({
-        requestId: "req-missing-pretrigger",
-        timeoutMs: 500,
-        preTrigger: {
-          kind: "clickSelector",
-          selector: ".missing-turnstile-trigger",
-        },
-      })
+      vi.useFakeTimers()
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-missing-pretrigger",
+          timeoutMs: 500,
+          preTrigger: {
+            kind: "clickSelector",
+            selector: ".missing-turnstile-trigger",
+          },
+        }),
+      )
 
       expect(result.status).toBe("not_present")
       expect(result.token).toBeNull()
@@ -505,6 +550,7 @@ describe("turnstileGuard", () => {
     })
 
     it("clears auto-start throttling after timeout so the same request can retry", async () => {
+      vi.useFakeTimers()
       const container = createMockElement("div", (el) => {
         el.className = "cf-turnstile"
         el.click = vi.fn()
@@ -514,10 +560,12 @@ describe("turnstileGuard", () => {
       const firstAttempt = maybeAutoStartTurnstile({ requestId: "req-retry" })
       expect(firstAttempt.attempted).toBe(true)
 
-      const result = await waitForTurnstileToken({
-        requestId: "req-retry",
-        timeoutMs: 100,
-      })
+      const result = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-retry",
+          timeoutMs: 100,
+        }),
+      )
 
       expect(result.status).toBe("timeout")
 
@@ -527,6 +575,7 @@ describe("turnstileGuard", () => {
     })
 
     it("clears preTrigger throttling after success so the same request can run again immediately", async () => {
+      vi.useFakeTimers()
       const createTrigger = (token: string) =>
         createMockElement("button", (el) => {
           el.textContent = "签到"
@@ -541,11 +590,13 @@ describe("turnstileGuard", () => {
       const firstButton = createTrigger("token-first")
       document.body.appendChild(firstButton)
 
-      const firstResult = await waitForTurnstileToken({
-        requestId: "req-pretrigger-reset",
-        timeoutMs: 1500,
-        preTrigger: { kind: "checkinButton" },
-      })
+      const firstResult = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-pretrigger-reset",
+          timeoutMs: 1500,
+          preTrigger: { kind: "checkinButton" },
+        }),
+      )
 
       expect(firstResult.status).toBe("token_obtained")
       expect(firstButton.click).toHaveBeenCalledTimes(1)
@@ -555,11 +606,13 @@ describe("turnstileGuard", () => {
       const secondButton = createTrigger("token-second")
       document.body.appendChild(secondButton)
 
-      const secondResult = await waitForTurnstileToken({
-        requestId: "req-pretrigger-reset",
-        timeoutMs: 1500,
-        preTrigger: { kind: "checkinButton" },
-      })
+      const secondResult = await settleTurnstileWait(
+        waitForTurnstileToken({
+          requestId: "req-pretrigger-reset",
+          timeoutMs: 1500,
+          preTrigger: { kind: "checkinButton" },
+        }),
+      )
 
       expect(secondResult.status).toBe("token_obtained")
       expect(secondResult.token).toBe("token-second")
