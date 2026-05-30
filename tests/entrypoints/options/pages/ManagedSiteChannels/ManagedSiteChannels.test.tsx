@@ -1096,8 +1096,6 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("clears the last active status filter when the same option is unchecked", async () => {
-    const user = userEvent.setup()
-
     mockChannels([
       { id: 1, name: "Alpha", base_url: "https://alpha.example", status: 1 },
       { id: 2, name: "Beta", base_url: "https://beta.example", status: 2 },

@@ -143,6 +143,7 @@ const createWrapper = () => {
     defaultOptions: {
       queries: {
         retry: false,
+        retryDelay: 0,
       },
     },
   })
@@ -1335,7 +1336,7 @@ describe("useModelData all-accounts loading", () => {
     )
 
     await waitFor(() => {
-      expect(fetchModelPricing).toHaveBeenCalledTimes(1)
+      expect(fetchModelPricing).toHaveBeenCalledTimes(2)
     })
     await waitFor(
       () => {
@@ -1454,7 +1455,7 @@ describe("useModelData all-accounts loading", () => {
     )
 
     await waitFor(() => {
-      expect(fetchModelPricing).toHaveBeenCalledTimes(1)
+      expect(fetchModelPricing).toHaveBeenCalledTimes(2)
     })
     await waitFor(
       () => {

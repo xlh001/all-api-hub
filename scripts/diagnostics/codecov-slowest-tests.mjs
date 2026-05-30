@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+import { fileURLToPath } from "node:url"
+
+import {
+  buildFileSummaryRows,
+  formatCsv,
+  normalizeCodecovTestRow,
+} from "./codecov-slowest-tests-utils.mjs"
 
 const DEFAULT_OWNER = "qixing-jk"
 const DEFAULT_REPO = "all-api-hub"
@@ -33,40 +40,6 @@ function readNumberArg(name, fallback) {
 
 function getBooleanArg(name) {
   return args.includes(`--${name}`)
-}
-
-function decodeHtmlEntities(value) {
-  return value
-    .replaceAll("&gt;", ">")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&amp;", "&")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#39;", "'")
-}
-
-function toCsvCell(value) {
-  const text = String(value ?? "")
-  if (!/[",\n\r]/.test(text)) return text
-
-  return `"${text.replaceAll('"', '""')}"`
-}
-
-function formatCsv(rows) {
-  const headers = [
-    "duration_seconds",
-    "classname",
-    "name",
-    "commit_sha",
-    "branch",
-    "timestamp",
-  ]
-
-  return [
-    headers.join(","),
-    ...rows.map((row) =>
-      headers.map((header) => toCsvCell(row[header])).join(","),
-    ),
-  ].join("\n")
 }
 
 async function fetchJson(url) {
@@ -113,17 +86,35 @@ async function main() {
   }
 
   const rows = collected
-    .map((row) => ({
-      duration_seconds: row.duration_seconds,
-      classname: row.classname,
-      name: decodeHtmlEntities(row.name),
-      computed_name: decodeHtmlEntities(row.computed_name),
-      commit_sha: row.commit_sha,
-      branch: row.branch,
-      timestamp: row.timestamp,
-    }))
+    .map(normalizeCodecovTestRow)
     .sort((a, b) => b.duration_seconds - a.duration_seconds)
     .slice(0, limit)
+
+  const fileRows = buildFileSummaryRows(rows)
+
+  if (format === "files-json") {
+    console.log(JSON.stringify(fileRows, null, 2))
+    return
+  }
+
+  if (format === "files-csv") {
+    console.log(formatCsv(fileRows))
+    return
+  }
+
+  if (format === "files-table") {
+    console.table(
+      fileRows.map((row) => ({
+        total_seconds: row.total_duration_seconds.toFixed(3),
+        slow_tests: row.slow_test_count,
+        max_seconds: row.max_duration_seconds.toFixed(3),
+        file: row.classname,
+        slowest_test: row.slowest_test,
+        command: row.command,
+      })),
+    )
+    return
+  }
 
   if (format === "json") {
     console.log(JSON.stringify(rows, null, 2))
@@ -145,7 +136,9 @@ async function main() {
   )
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error)
-  process.exitCode = 1
-})
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error)
+    process.exitCode = 1
+  })
+}

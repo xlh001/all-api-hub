@@ -7,6 +7,7 @@ const config: KnipConfig = {
     "wxt.config.ts",
     "i18next.config.ts",
     "vitest.config.ts",
+    "scripts/diagnostics/codecov-slowest-tests.mjs",
     "scripts/diagnostics/collect-extension-memory.mjs",
     "scripts/diagnostics/compare-extension-memory.mjs",
     "scripts/diagnostics/compare-lazy-loading.mjs",
