@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { OptionsSearchDialog } from "~/entrypoints/options/search/OptionsSearchDialog"
 import type { OptionsSearchContext } from "~/entrypoints/options/search/types"
-import { render, screen, waitFor } from "~~/tests/test-utils/render"
+import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const baseContext: OptionsSearchContext = {
   autoCheckinEnabled: true,
@@ -19,6 +19,12 @@ describe("OptionsSearchDialog", () => {
   beforeEach(() => {
     window.localStorage.clear()
   })
+
+  const searchFor = (query: string) => {
+    fireEvent.change(screen.getByRole("combobox"), {
+      target: { value: query },
+    })
+  }
 
   it("shows an idle state before the user types a query", async () => {
     render(
@@ -54,7 +60,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    await user.type(screen.getByRole("combobox"), "clipboard")
+    searchFor("clipboard")
     await user.click(
       screen.getByText("settings:permissions.items.clipboardRead.title"),
     )
@@ -84,7 +90,6 @@ describe("OptionsSearchDialog", () => {
   })
 
   it("groups page, tab, section, and control results and matches technical aliases", async () => {
-    const user = userEvent.setup()
     const onPageNavigate = vi.fn()
 
     render(
@@ -97,8 +102,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    const input = screen.getByRole("combobox")
-    await user.type(input, "webdav")
+    searchFor("webdav")
 
     expect(
       screen.getByRole("group", { name: "ui:optionsSearch.groups.control" }),
@@ -115,8 +119,6 @@ describe("OptionsSearchDialog", () => {
   })
 
   it("finds newly indexed localized settings across options pages", async () => {
-    const user = userEvent.setup()
-
     render(
       <OptionsSearchDialog
         open
@@ -127,8 +129,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    const input = screen.getByRole("combobox")
-    await user.type(input, "upload")
+    searchFor("upload")
 
     expect(
       screen.getAllByText("importExport:webdav.uploadBackup").length,
@@ -149,7 +150,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    await user.type(screen.getByRole("combobox"), "import export webdav url")
+    searchFor("import export webdav url")
     await user.click(screen.getByText("importExport:webdav.webdavUrl"))
 
     expect(onPageNavigate).toHaveBeenCalledWith("importExport", {
@@ -159,8 +160,6 @@ describe("OptionsSearchDialog", () => {
   })
 
   it("finds newly indexed settings that were previously missing", async () => {
-    const user = userEvent.setup()
-
     render(
       <OptionsSearchDialog
         open
@@ -171,8 +170,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    const input = screen.getByRole("combobox")
-    await user.type(input, "clipboard")
+    searchFor("clipboard")
 
     expect(
       screen.getByText("settings:permissions.items.clipboardRead.title"),
@@ -180,8 +178,6 @@ describe("OptionsSearchDialog", () => {
   })
 
   it("finds individual sorting priority rules", async () => {
-    const user = userEvent.setup()
-
     render(
       <OptionsSearchDialog
         open
@@ -192,8 +188,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    const input = screen.getByRole("combobox")
-    await user.type(input, "pinned")
+    searchFor("pinned")
 
     expect(
       screen.getByText("settings:sorting.pinnedPriority"),
@@ -201,8 +196,6 @@ describe("OptionsSearchDialog", () => {
   })
 
   it("finds individual WebDAV sync data options", async () => {
-    const user = userEvent.setup()
-
     render(
       <OptionsSearchDialog
         open
@@ -213,8 +206,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    const input = screen.getByRole("combobox")
-    await user.type(input, "bookmarks")
+    searchFor("bookmarks")
 
     expect(
       screen.getAllByText("importExport:webdav.syncData.bookmarks").length,
@@ -236,7 +228,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    await user.type(screen.getByRole("combobox"), "book")
+    searchFor("book")
     await user.click(screen.getByText("ui:navigation.bookmark"))
 
     expect(onPageNavigate).toHaveBeenCalledWith("bookmark")
@@ -257,7 +249,7 @@ describe("OptionsSearchDialog", () => {
 
     await screen.findByRole("dialog")
     const input = screen.getByRole("combobox")
-    await user.type(input, "webdav")
+    searchFor("webdav")
     await user.click(
       screen.getByRole("button", { name: "common:actions.clear" }),
     )
@@ -280,7 +272,7 @@ describe("OptionsSearchDialog", () => {
 
     await screen.findByRole("dialog")
     const input = screen.getByRole("combobox")
-    await user.type(input, "webdav")
+    searchFor("webdav")
     await user.keyboard("{Escape}")
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
@@ -338,7 +330,7 @@ describe("OptionsSearchDialog", () => {
     )
 
     await screen.findByRole("dialog")
-    await user.type(screen.getByRole("combobox"), "clipboard")
+    searchFor("clipboard")
     await user.click(
       screen.getByText("settings:permissions.items.clipboardRead.title"),
     )
