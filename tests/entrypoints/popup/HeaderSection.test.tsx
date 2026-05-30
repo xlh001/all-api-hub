@@ -8,8 +8,12 @@ import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_REASONS,
+  PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
+  PRODUCT_ANALYTICS_MODE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
+  PRODUCT_ANALYTICS_SOURCE_KINDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
   type ProductAnalyticsActionId,
   type ProductAnalyticsFeatureId,
@@ -285,7 +289,11 @@ describe("popup HeaderSection", () => {
   })
 
   it("completes popup header refresh analytics with the default success result", async () => {
-    handleRefreshMock.mockResolvedValueOnce({ success: 4, failed: 0 })
+    handleRefreshMock.mockResolvedValueOnce({
+      success: 4,
+      failed: 0,
+      refreshedCount: 3,
+    })
 
     render(<HeaderSection />, { withReleaseUpdateStatusProvider: false })
 
@@ -303,8 +311,21 @@ describe("popup HeaderSection", () => {
         PRODUCT_ANALYTICS_RESULTS.Success,
         {
           insights: {
+            itemCount: 4,
             successCount: 4,
             failureCount: 0,
+          },
+          diagnostics: {
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.All,
+            },
+            outcome: {
+              itemCount: 4,
+              successCount: 4,
+              failureCount: 0,
+              skippedCount: 1,
+            },
           },
         },
       )
@@ -323,7 +344,20 @@ describe("popup HeaderSection", () => {
     await waitFor(() => {
       expect(trackerCompleteMock).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown },
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          diagnostics: {
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.All,
+            },
+            failure: {
+              category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+              stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Request,
+              reason: PRODUCT_ANALYTICS_FAILURE_REASONS.Unknown,
+            },
+          },
+        },
       )
     })
   })

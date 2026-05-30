@@ -1,16 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FAILURE_REASONS,
+  PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FETCH_CONTEXT_KINDS,
+  PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_STRATEGIES,
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_API_TYPES,
   PRODUCT_ANALYTICS_EDITOR_MODES,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_EVENTS,
+  PRODUCT_ANALYTICS_FAILURE_REASONS,
   PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_MANAGED_SITE_TYPES,
   PRODUCT_ANALYTICS_MODE_IDS,
+  PRODUCT_ANALYTICS_REQUESTED_AUTH_MODES,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SOURCE_KINDS,
   PRODUCT_ANALYTICS_STATUS_KINDS,
@@ -327,9 +332,7 @@ describe("product analytics action helpers", () => {
       resolveProductAnalyticsErrorCategoryFromError({ name: "NotFoundError" }),
     ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported)
     expect(
-      resolveProductAnalyticsErrorCategoryFromError(
-        new TypeError("Failed to fetch"),
-      ),
+      resolveProductAnalyticsErrorCategoryFromError({ name: "NetworkError" }),
     ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network)
     expect(
       resolveProductAnalyticsErrorCategoryFromError({
@@ -360,6 +363,11 @@ describe("product analytics action helpers", () => {
         new TypeError("Cannot read properties of undefined"),
       ),
     ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown)
+    expect(
+      resolveProductAnalyticsErrorCategoryFromError(
+        new TypeError("Failed to fetch"),
+      ),
+    ).toBe(PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network)
   })
 
   it("tracks completion with controlled action insight properties", async () => {
@@ -388,6 +396,26 @@ describe("product analytics action helpers", () => {
         sourceManagedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
         targetManagedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Octopus,
         failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+        failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.PartialSuccess,
+        accountAutoDetectFailureReason:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed,
+        autoDetectStrategy:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_STRATEGIES.BackgroundTempContext,
+        requestedAuthMode: PRODUCT_ANALYTICS_REQUESTED_AUTH_MODES.Cookie,
+        siteType: "new-api",
+        fetchContextKind:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FETCH_CONTEXT_KINDS.BrowserContext,
+        cacheHit: false,
+        cacheUsed: true,
+        fallbackAvailable: true,
+        fallbackUsed: true,
+        retryAttempted: true,
+        retryCount: 2,
+        tempContextUsed: true,
+        incognitoContextUsed: true,
+        staleResponseIgnored: false,
+        backgroundExecution: true,
+        currentTabMatched: false,
         selectedCount: 2,
         itemCount: 3,
         successCount: 3,
@@ -425,6 +453,26 @@ describe("product analytics action helpers", () => {
         source_managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
         target_managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Octopus,
         failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+        failure_reason: PRODUCT_ANALYTICS_FAILURE_REASONS.PartialSuccess,
+        account_auto_detect_failure_reason:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed,
+        auto_detect_strategy:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_STRATEGIES.BackgroundTempContext,
+        requested_auth_mode: PRODUCT_ANALYTICS_REQUESTED_AUTH_MODES.Cookie,
+        site_type: "new-api",
+        fetch_context_kind:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FETCH_CONTEXT_KINDS.BrowserContext,
+        cache_hit: false,
+        cache_used: true,
+        fallback_available: true,
+        fallback_used: true,
+        retry_attempted: true,
+        retry_count: 2,
+        temp_context_used: true,
+        incognito_context_used: true,
+        stale_response_ignored: false,
+        background_execution: true,
+        current_tab_matched: false,
         selected_count: 2,
         item_count: 3,
         success_count: 3,
@@ -437,6 +485,164 @@ describe("product analytics action helpers", () => {
         filter_count: 2,
         result_count: 8,
         usage_data_present: true,
+      },
+    )
+  })
+
+  it("flattens structured action diagnostics to outbound completion fields", async () => {
+    const { trackProductAnalyticsActionCompleted } = await import(
+      "~/services/productAnalytics/actions"
+    )
+
+    await trackProductAnalyticsActionCompleted({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+      surfaceId:
+        PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteModelSyncActionBar,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      diagnostics: {
+        context: {
+          sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAccount,
+          mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
+          apiType: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
+          editorMode: PRODUCT_ANALYTICS_EDITOR_MODES.Visual,
+          statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Warning,
+          telemetrySource: PRODUCT_ANALYTICS_TELEMETRY_SOURCES.Models,
+          targetKind: PRODUCT_ANALYTICS_TARGET_KINDS.ExternalSite,
+          targetState: PRODUCT_ANALYTICS_TARGET_STATES.Enabled,
+          managedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Veloera,
+          sourceManagedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+          targetManagedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Octopus,
+          siteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+          requestedAuthMode: PRODUCT_ANALYTICS_REQUESTED_AUTH_MODES.AccessToken,
+          fetchContextKind:
+            PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+          autoDetectStrategy:
+            PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_STRATEGIES.CurrentTab,
+        },
+        execution: {
+          cacheHit: false,
+          cacheUsed: true,
+          fallbackAvailable: true,
+          fallbackUsed: false,
+          retryAttempted: true,
+          retryCount: 2,
+          tempContextUsed: true,
+          incognitoContextUsed: true,
+          staleResponseIgnored: true,
+          backgroundExecution: true,
+          currentTabMatched: true,
+        },
+        outcome: {
+          itemCount: 3,
+          selectedCount: 2,
+          successCount: 1,
+          failureCount: 1,
+          skippedCount: 1,
+          warningCount: 1,
+          readyCount: 2,
+          blockedCount: 1,
+          modelCount: 8,
+          filterCount: 4,
+          resultCount: 7,
+          usageDataPresent: true,
+        },
+        failure: {
+          category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+          stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+          reason: PRODUCT_ANALYTICS_FAILURE_REASONS.SessionExpired,
+          accountAutoDetectFailureReason:
+            PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FAILURE_REASONS.UserDataMissing,
+        },
+      },
+    })
+
+    expect(trackMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+        surface_id:
+          PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteModelSyncActionBar,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        error_category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+        api_type: PRODUCT_ANALYTICS_API_TYPES.OpenAiCompatible,
+        source_kind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAccount,
+        mode: PRODUCT_ANALYTICS_MODE_IDS.Selected,
+        editor_mode: PRODUCT_ANALYTICS_EDITOR_MODES.Visual,
+        status_kind: PRODUCT_ANALYTICS_STATUS_KINDS.Warning,
+        telemetry_source: PRODUCT_ANALYTICS_TELEMETRY_SOURCES.Models,
+        target_kind: PRODUCT_ANALYTICS_TARGET_KINDS.ExternalSite,
+        target_state: PRODUCT_ANALYTICS_TARGET_STATES.Enabled,
+        managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Veloera,
+        source_managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+        target_managed_site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.Octopus,
+        requested_auth_mode: PRODUCT_ANALYTICS_REQUESTED_AUTH_MODES.AccessToken,
+        site_type: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+        fetch_context_kind:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FETCH_CONTEXT_KINDS.CurrentTab,
+        auto_detect_strategy:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_STRATEGIES.CurrentTab,
+        cache_hit: false,
+        cache_used: true,
+        fallback_available: true,
+        fallback_used: false,
+        retry_attempted: true,
+        retry_count: 2,
+        temp_context_used: true,
+        incognito_context_used: true,
+        stale_response_ignored: true,
+        background_execution: true,
+        current_tab_matched: true,
+        item_count: 3,
+        selected_count: 2,
+        success_count: 1,
+        failure_count: 1,
+        skipped_count: 1,
+        warning_count: 1,
+        ready_count: 2,
+        blocked_count: 1,
+        model_count: 8,
+        filter_count: 4,
+        result_count: 7,
+        usage_data_present: true,
+        failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+        failure_reason: PRODUCT_ANALYTICS_FAILURE_REASONS.SessionExpired,
+        account_auto_detect_failure_reason:
+          PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FAILURE_REASONS.UserDataMissing,
+      },
+    )
+  })
+
+  it("keeps an explicit error category when diagnostics report a different category", async () => {
+    const { trackProductAnalyticsActionCompleted } = await import(
+      "~/services/productAnalytics/actions"
+    )
+
+    await trackProductAnalyticsActionCompleted({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network,
+      diagnostics: {
+        failure: {
+          category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+        },
+      },
+    })
+
+    expect(trackMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        error_category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network,
+        failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
       },
     )
   })

@@ -14,6 +14,7 @@ import {
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_EVENTS,
+  PRODUCT_ANALYTICS_FAILURE_REASONS,
   PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_MANAGED_SITE_TYPES,
@@ -420,6 +421,32 @@ describe("product analytics privacy filtering", () => {
     const sanitized = sanitizeProductAnalyticsEvent(
       PRODUCT_ANALYTICS_EVENTS.SettingChanged,
       {
+        setting_id: "app_preferences_snapshot",
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        theme_mode: "dark",
+        normalized_language: "zh-TW",
+        toolbar_action_click_behavior: "sidepanel",
+        open_changelog_on_update_enabled: false,
+        rawLanguage: "zh-Hant-TW-private",
+        accountName: "private account",
+        url: "https://private.example/settings",
+      },
+    )
+
+    expect(sanitized).toEqual({
+      setting_id: "app_preferences_snapshot",
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      theme_mode: "dark",
+      normalized_language: "zh-TW",
+      toolbar_action_click_behavior: "sidepanel",
+      open_changelog_on_update_enabled: false,
+    })
+  })
+
+  it("keeps WebDAV settings snapshot fields and strips configured secrets", () => {
+    const sanitized = sanitizeProductAnalyticsEvent(
+      PRODUCT_ANALYTICS_EVENTS.SettingChanged,
+      {
         setting_id: PRODUCT_ANALYTICS_SETTING_IDS.WebDavConfigSnapshot,
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
         configured: true,
@@ -453,6 +480,109 @@ describe("product analytics privacy filtering", () => {
     })
   })
 
+  it("keeps task notification settings snapshot fields and strips configured secrets", () => {
+    const sanitized = sanitizeProductAnalyticsEvent(
+      PRODUCT_ANALYTICS_EVENTS.SettingChanged,
+      {
+        setting_id:
+          PRODUCT_ANALYTICS_SETTING_IDS.TaskNotificationsConfigSnapshot,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        enabled: true,
+        browser_channel_enabled: true,
+        telegram_channel_enabled: true,
+        feishu_channel_enabled: false,
+        dingtalk_channel_enabled: false,
+        wecom_channel_enabled: false,
+        ntfy_channel_enabled: true,
+        webhook_channel_enabled: true,
+        auto_checkin_task_enabled: true,
+        webdav_auto_sync_task_enabled: true,
+        managed_site_model_sync_task_enabled: true,
+        usage_history_sync_task_enabled: false,
+        balance_history_capture_task_enabled: false,
+        site_announcements_task_enabled: true,
+        third_party_channel_count: 3,
+        task_enabled_count: 4,
+        telegramBotToken: "private-bot-token",
+        telegramChatId: "private-chat",
+        ntfyTopicUrl: "https://ntfy.example/topic",
+        ntfyAccessToken: "private-ntfy-token",
+        webhookUrl: "https://webhook.example/private",
+      },
+    )
+
+    expect(sanitized).toEqual({
+      setting_id: PRODUCT_ANALYTICS_SETTING_IDS.TaskNotificationsConfigSnapshot,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      enabled: true,
+      browser_channel_enabled: true,
+      telegram_channel_enabled: true,
+      feishu_channel_enabled: false,
+      dingtalk_channel_enabled: false,
+      wecom_channel_enabled: false,
+      ntfy_channel_enabled: true,
+      webhook_channel_enabled: true,
+      auto_checkin_task_enabled: true,
+      webdav_auto_sync_task_enabled: true,
+      managed_site_model_sync_task_enabled: true,
+      usage_history_sync_task_enabled: false,
+      balance_history_capture_task_enabled: false,
+      site_announcements_task_enabled: true,
+      third_party_channel_count: 3,
+      task_enabled_count: 4,
+    })
+  })
+
+  it("keeps aggregate settings snapshot fields with reviewed sensitive-looking names", () => {
+    const sanitized = sanitizeProductAnalyticsEvent(
+      PRODUCT_ANALYTICS_EVENTS.SettingsSnapshotCaptured,
+      {
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+        balance_history_estimated_today_income_enabled: true,
+        webdav_sync_accounts_enabled: true,
+        webdav_sync_api_profiles_enabled: true,
+        active_tab: "balance",
+        currency_type: "CNY",
+        show_today_cashflow_enabled: false,
+        sort_field: "income",
+        sort_order: "asc",
+        sorting_priority_configured: true,
+        sorting_priority_customized: true,
+        sorting_priority_enabled_criteria_count: 4,
+        console_logging_enabled: false,
+        log_level: "warn",
+        estimated_today_income_enabled: true,
+        auto_detect_enhanced_enabled: true,
+        reminder_dismissed: true,
+        task_notifications_balance_history_capture_task_enabled: false,
+        webdavUrl: "https://dav.example/private",
+        apiProfileName: "private profile",
+        accountName: "private account",
+      },
+    )
+
+    expect(sanitized).toEqual({
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      balance_history_estimated_today_income_enabled: true,
+      webdav_sync_accounts_enabled: true,
+      webdav_sync_api_profiles_enabled: true,
+      active_tab: "balance",
+      currency_type: "CNY",
+      show_today_cashflow_enabled: false,
+      sort_field: "income",
+      sort_order: "asc",
+      sorting_priority_configured: true,
+      sorting_priority_customized: true,
+      sorting_priority_enabled_criteria_count: 4,
+      console_logging_enabled: false,
+      log_level: "warn",
+      estimated_today_income_enabled: true,
+      auto_detect_enhanced_enabled: true,
+      reminder_dismissed: true,
+      task_notifications_balance_history_capture_task_enabled: false,
+    })
+  })
+
   it("keeps permission operation outcome fields without raw permission context", () => {
     const sanitized = sanitizeProductAnalyticsEvent(
       PRODUCT_ANALYTICS_EVENTS.PermissionResult,
@@ -480,6 +610,48 @@ describe("product analytics privacy filtering", () => {
       was_granted_before: false,
       was_granted_after: false,
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+    })
+  })
+
+  it("keeps permission failure reasons event-scoped from action completion reasons", () => {
+    expect(
+      sanitizeProductAnalyticsEvent(PRODUCT_ANALYTICS_EVENTS.PermissionResult, {
+        permission_id: "clipboardRead",
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Request,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.Denied,
+        failure_reason: PRODUCT_ANALYTICS_FAILURE_REASONS.SessionExpired,
+        was_granted_before: false,
+        was_granted_after: false,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      }),
+    ).toEqual({
+      permission_id: "clipboardRead",
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Request,
+      outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.Denied,
+      was_granted_before: false,
+      was_granted_after: false,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+    })
+
+    expect(
+      sanitizeProductAnalyticsEvent(
+        PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+        {
+          feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+          action_id: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+          result: PRODUCT_ANALYTICS_RESULTS.Failure,
+          failure_reason:
+            PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.UserDenied,
+          entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+        },
+      ),
+    ).toEqual({
+      feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+      action_id: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
     })
   })
 
@@ -511,6 +683,76 @@ describe("product analytics privacy filtering", () => {
       account_auto_detect_failure_reason:
         PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FAILURE_REASONS.CurrentTabContentScriptUnavailable,
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+    })
+  })
+
+  it("keeps action completion diagnostics and rejects raw failure reason strings", () => {
+    const sanitized = sanitizeProductAnalyticsEvent(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+        surface_id:
+          PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteModelSyncActionBar,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        error_category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+        failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+        failure_reason: PRODUCT_ANALYTICS_FAILURE_REASONS.SessionExpired,
+        cache_hit: false,
+        cache_used: true,
+        fallback_available: true,
+        fallback_used: false,
+        retry_attempted: true,
+        retry_count: 2,
+        stale_response_ignored: true,
+        background_execution: true,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+        backend_message: "session expired for account alice",
+        raw_failure_reason: "private backend text",
+        account_name: "Alice",
+        url: "https://private.example.com",
+      },
+    )
+
+    expect(sanitized).toEqual({
+      feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+      action_id: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+      surface_id:
+        PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteModelSyncActionBar,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      error_category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Auth,
+      failure_stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+      failure_reason: PRODUCT_ANALYTICS_FAILURE_REASONS.SessionExpired,
+      cache_hit: false,
+      cache_used: true,
+      fallback_available: true,
+      fallback_used: false,
+      retry_attempted: true,
+      retry_count: 2,
+      stale_response_ignored: true,
+      background_execution: true,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+    })
+
+    expect(
+      sanitizeProductAnalyticsEvent(
+        PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+        {
+          feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+          action_id: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+          result: PRODUCT_ANALYTICS_RESULTS.Failure,
+          retry_attempted: 999,
+          retry_count: 2,
+          failure_reason: "session expired for account alice",
+          entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+        },
+      ),
+    ).toEqual({
+      feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+      action_id: PRODUCT_ANALYTICS_ACTION_IDS.SyncSelectedManagedSiteModels,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      retry_count: 2,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
     })
   })
 

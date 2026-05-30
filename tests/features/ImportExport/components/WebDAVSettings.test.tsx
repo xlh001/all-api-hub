@@ -20,9 +20,12 @@ import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_REASONS,
   PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
+  PRODUCT_ANALYTICS_MODE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
+  PRODUCT_ANALYTICS_SOURCE_KINDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/events"
 import { testI18n } from "~~/tests/test-utils/i18n"
@@ -410,12 +413,12 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
+        expect.objectContaining({
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
           },
-        },
+        }),
       )
     })
   })
@@ -631,6 +634,20 @@ describe("WebDAVSettings", () => {
       })
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Success,
+        expect.objectContaining({
+          diagnostics: expect.objectContaining({
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.WebDavUploadOnly,
+            },
+            outcome: {
+              itemCount: 1,
+              successCount: 1,
+              failureCount: 0,
+              skippedCount: 0,
+            },
+          }),
+        }),
       )
     })
   })
@@ -651,6 +668,23 @@ describe("WebDAVSettings", () => {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+          },
+          diagnostics: {
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.WebDavUploadOnly,
+            },
+            outcome: {
+              itemCount: 0,
+              successCount: 0,
+              failureCount: 1,
+              skippedCount: 0,
+            },
+            failure: {
+              category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+              stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
+              reason: PRODUCT_ANALYTICS_FAILURE_REASONS.MissingSelection,
+            },
           },
         },
       )
@@ -677,6 +711,23 @@ describe("WebDAVSettings", () => {
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
           },
+          diagnostics: {
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.WebDavUploadOnly,
+            },
+            outcome: {
+              itemCount: 1,
+              successCount: 0,
+              failureCount: 1,
+              skippedCount: 0,
+            },
+            failure: {
+              category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+              stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+              reason: PRODUCT_ANALYTICS_FAILURE_REASONS.Unknown,
+            },
+          },
         },
       )
     })
@@ -697,12 +748,29 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
+        expect.objectContaining({
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
           },
-        },
+          diagnostics: expect.objectContaining({
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.WebDavUploadOnly,
+            },
+            outcome: {
+              itemCount: 1,
+              successCount: 0,
+              failureCount: 1,
+              skippedCount: 0,
+            },
+            failure: expect.objectContaining({
+              category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+              stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+              reason: PRODUCT_ANALYTICS_FAILURE_REASONS.Unknown,
+            }),
+          }),
+        }),
       )
     })
     expect(mockUploadBackup).not.toHaveBeenCalled()
@@ -727,6 +795,20 @@ describe("WebDAVSettings", () => {
       })
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Success,
+        expect.objectContaining({
+          diagnostics: expect.objectContaining({
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.WebDavDownloadOnly,
+            },
+            outcome: {
+              itemCount: 1,
+              successCount: 1,
+              failureCount: 0,
+              skippedCount: 0,
+            },
+          }),
+        }),
       )
     })
   })
@@ -752,6 +834,24 @@ describe("WebDAVSettings", () => {
       ).toBeInTheDocument()
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Skipped,
+        {
+          diagnostics: {
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.WebDavDownloadOnly,
+            },
+            execution: {
+              retryAttempted: true,
+              retryCount: 1,
+            },
+            outcome: {
+              itemCount: 1,
+              successCount: 0,
+              failureCount: 0,
+              skippedCount: 1,
+            },
+          },
+        },
       )
     })
   })
@@ -768,12 +868,12 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
+        expect.objectContaining({
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
           },
-        },
+        }),
       )
     })
     expect(mockDownloadBackupRaw).not.toHaveBeenCalled()
@@ -793,12 +893,12 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
+        expect.objectContaining({
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
           },
-        },
+        }),
       )
     })
   })
@@ -818,12 +918,12 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
+        expect.objectContaining({
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
           },
-        },
+        }),
       )
     })
     expect(mockDownloadBackupRaw).not.toHaveBeenCalled()
@@ -882,6 +982,14 @@ describe("WebDAVSettings", () => {
       })
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Success,
+        expect.objectContaining({
+          diagnostics: expect.objectContaining({
+            context: {
+              sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.Manual,
+              mode: PRODUCT_ANALYTICS_MODE_IDS.WebDavDownloadOnly,
+            },
+          }),
+        }),
       )
     })
   })
@@ -903,12 +1011,12 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
+        expect.objectContaining({
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
           },
-        },
+        }),
       )
     })
   })
@@ -929,12 +1037,12 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
+        expect.objectContaining({
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Validation,
           },
-        },
+        }),
       )
     })
     expect(mockDecryptWebdavBackupEnvelope).not.toHaveBeenCalled()
@@ -962,12 +1070,12 @@ describe("WebDAVSettings", () => {
     await waitFor(() => {
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
+        expect.objectContaining({
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
           },
-        },
+        }),
       )
     })
   })
@@ -1542,12 +1650,18 @@ describe("WebDAVSettings", () => {
       )
       expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Failure,
-        {
-          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Validation,
+        expect.objectContaining({
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
             failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
           },
-        },
+          diagnostics: expect.objectContaining({
+            failure: expect.objectContaining({
+              category: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+              stage: PRODUCT_ANALYTICS_FAILURE_STAGES.Persist,
+            }),
+          }),
+        }),
       )
     })
   })
