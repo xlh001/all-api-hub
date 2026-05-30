@@ -163,6 +163,10 @@ const waitForChannelsRefreshIdle = () =>
     { timeout: 3000 },
   )
 
+const clickControl = (element: HTMLElement) => {
+  fireEvent.click(element)
+}
+
 const rowActionMenuItemNames = [
   "managedSiteChannels:table.rowActions.edit",
   "managedSiteChannels:table.rowActions.view",
@@ -771,8 +775,6 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("tracks manual refresh analytics failure when channel loading fails", async () => {
-    const user = userEvent.setup()
-
     mockChannels([])
     vi.mocked(sendRuntimeMessage)
       .mockResolvedValueOnce({
@@ -788,7 +790,7 @@ describe("ManagedSiteChannels", () => {
 
     await waitForChannelsRefreshIdle()
 
-    await user.click(
+    clickControl(
       screen.getByRole("button", {
         name: "managedSiteChannels:toolbar.refresh",
       }),
@@ -812,8 +814,6 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("tracks opening the create channel dialog from the toolbar", async () => {
-    const user = userEvent.setup()
-
     mockChannels([])
 
     render(
@@ -825,7 +825,7 @@ describe("ManagedSiteChannels", () => {
 
     await waitForChannelsRefreshIdle()
 
-    await user.click(
+    clickControl(
       screen.getByRole("button", {
         name: "managedSiteChannels:toolbar.addChannel",
       }),
@@ -841,7 +841,6 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("keeps row selection attached to the same channel after refreshed rows reorder", async () => {
-    const user = userEvent.setup()
     let resolveRefresh:
       | ((value: { success: boolean; data: { items: any[] } }) => void)
       | undefined
@@ -875,7 +874,7 @@ describe("ManagedSiteChannels", () => {
     const betaRow = screen.getByText("Beta").closest("tr")
     expect(betaRow).toBeTruthy()
 
-    await user.click(
+    clickControl(
       within(betaRow!).getByRole("checkbox", {
         name: "managedSiteChannels:table.selectRow",
       }),
@@ -891,7 +890,7 @@ describe("ManagedSiteChannels", () => {
       ).toBeChecked()
     })
 
-    await user.click(
+    clickControl(
       screen.getByRole("button", {
         name: "managedSiteChannels:toolbar.refresh",
       }),
@@ -1081,7 +1080,7 @@ describe("ManagedSiteChannels", () => {
       name: "managedSiteChannels:toolbar.status",
     })
 
-    await user.click(statusButton)
+    clickControl(statusButton)
     await user.click(
       await screen.findByRole("checkbox", {
         name: "managedSiteChannels:statusLabels.manualPause",
@@ -1113,13 +1112,13 @@ describe("ManagedSiteChannels", () => {
       name: "managedSiteChannels:toolbar.status",
     })
 
-    await user.click(statusButton)
+    clickControl(statusButton)
 
     const manualPauseCheckbox = await screen.findByRole("checkbox", {
       name: "managedSiteChannels:statusLabels.manualPause",
     })
 
-    await user.click(manualPauseCheckbox)
+    clickControl(manualPauseCheckbox)
 
     await waitFor(() => {
       expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
@@ -1127,7 +1126,7 @@ describe("ManagedSiteChannels", () => {
     })
     expect(statusButton).toHaveTextContent("(1)")
 
-    await user.click(manualPauseCheckbox)
+    clickControl(manualPauseCheckbox)
 
     await waitFor(() => {
       expect(screen.getByText("Alpha")).toBeInTheDocument()
@@ -1597,8 +1596,6 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("removes successfully deleted channels and reports partial delete failures", async () => {
-    const user = userEvent.setup()
-
     mockChannels([
       { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
       { id: 2, name: "Beta", base_url: "https://beta.example", key: "b" },
@@ -1633,18 +1630,18 @@ describe("ManagedSiteChannels", () => {
     expect(alphaRow).toBeTruthy()
     expect(betaRow).toBeTruthy()
 
-    await user.click(
+    clickControl(
       within(alphaRow!).getByRole("checkbox", {
         name: "managedSiteChannels:table.selectRow",
       }),
     )
-    await user.click(
+    clickControl(
       within(betaRow!).getByRole("checkbox", {
         name: "managedSiteChannels:table.selectRow",
       }),
     )
 
-    await user.click(
+    clickControl(
       screen.getByRole("button", {
         name: "managedSiteChannels:toolbar.deleteSelected",
       }),
@@ -1662,7 +1659,7 @@ describe("ManagedSiteChannels", () => {
       within(dialog).getByText("managedSiteChannels:dialog.deleteTitlePlural"),
     ).toBeInTheDocument()
 
-    await user.click(
+    clickControl(
       within(dialog).getByRole("button", {
         name: "managedSiteChannels:dialog.confirm",
       }),
@@ -1701,7 +1698,6 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("syncs the selected rows from the toolbar", async () => {
-    const user = userEvent.setup()
     const initialChannels = [
       {
         id: 1,
@@ -1766,18 +1762,18 @@ describe("ManagedSiteChannels", () => {
     expect(alphaRow).toBeTruthy()
     expect(betaRow).toBeTruthy()
 
-    await user.click(
+    clickControl(
       within(alphaRow!).getByRole("checkbox", {
         name: "managedSiteChannels:table.selectRow",
       }),
     )
-    await user.click(
+    clickControl(
       within(betaRow!).getByRole("checkbox", {
         name: "managedSiteChannels:table.selectRow",
       }),
     )
 
-    await user.click(
+    clickControl(
       screen.getByRole("button", {
         name: "managedSiteChannels:toolbar.syncSelected",
       }),
@@ -1836,8 +1832,6 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("uses the select-all checkbox to open a migration preview for the whole page", async () => {
-    const user = userEvent.setup()
-
     mockChannels(
       [
         { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
@@ -1851,7 +1845,7 @@ describe("ManagedSiteChannels", () => {
     await waitForRowText("Alpha")
     await waitForRowText("Beta")
 
-    await user.click(
+    clickControl(
       screen.getByRole("button", {
         name: /managedSiteChannels:toolbar.enterMigrationMode/,
       }),
@@ -1861,13 +1855,13 @@ describe("ManagedSiteChannels", () => {
       PRODUCT_ANALYTICS_ACTION_IDS.ToggleManagedSiteChannelMigrationMode,
       PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteChannelsToolbar,
     )
-    await user.click(
+    clickControl(
       screen.getByRole("checkbox", {
         name: "managedSiteChannels:table.selectAll",
       }),
     )
 
-    await user.click(
+    clickControl(
       screen.getByRole("button", {
         name: "managedSiteChannels:toolbar.migrateSelected",
       }),
