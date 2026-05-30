@@ -2587,7 +2587,6 @@ describe("tempWindowPool window fallback", () => {
     tempContextMode = "tab"
     isProtectionBypassFirefoxEnvMock.mockReturnValue(true)
     createTabMock.mockResolvedValueOnce({ id: 808 })
-    vi.useRealTimers()
     sendMessageMock.mockImplementation(
       async (_tabId: number, message: { action: string }) => {
         switch (message.action) {
@@ -2625,7 +2624,7 @@ describe("tempWindowPool window fallback", () => {
     )
 
     const sendResponse = vi.fn()
-    await handleTempWindowTurnstileFetch(
+    const request = handleTempWindowTurnstileFetch(
       {
         originUrl: "https://example.com",
         pageUrl: "https://example.com/checkin",
@@ -2640,6 +2639,9 @@ describe("tempWindowPool window fallback", () => {
       },
       sendResponse,
     )
+
+    await vi.advanceTimersByTimeAsync(1000)
+    await request
 
     const fetchCall = sendMessageMock.mock.calls.find(
       ([, message]) =>
@@ -2685,7 +2687,6 @@ describe("tempWindowPool window fallback", () => {
     tempContextMode = "tab"
     isProtectionBypassFirefoxEnvMock.mockReturnValue(true)
     createTabMock.mockResolvedValueOnce({ id: 811 })
-    vi.useRealTimers()
     sendMessageMock.mockImplementation(
       async (_tabId: number, message: { action: string }) => {
         switch (message.action) {
@@ -2723,7 +2724,7 @@ describe("tempWindowPool window fallback", () => {
     )
 
     const sendResponse = vi.fn()
-    await handleTempWindowTurnstileFetch(
+    const request = handleTempWindowTurnstileFetch(
       {
         originUrl: "https://example.com",
         pageUrl: "https://example.com/checkin",
@@ -2737,6 +2738,9 @@ describe("tempWindowPool window fallback", () => {
       },
       sendResponse,
     )
+
+    await vi.advanceTimersByTimeAsync(1000)
+    await request
 
     const fetchCall = sendMessageMock.mock.calls.find(
       ([, message]) =>
@@ -2780,7 +2784,6 @@ describe("tempWindowPool window fallback", () => {
     tempContextMode = "tab"
     isProtectionBypassFirefoxEnvMock.mockReturnValue(true)
     createTabMock.mockResolvedValueOnce({ id: 812 })
-    vi.useRealTimers()
     sendMessageMock.mockImplementation(
       async (_tabId: number, message: { action: string }) => {
         switch (message.action) {
@@ -2818,7 +2821,7 @@ describe("tempWindowPool window fallback", () => {
     )
 
     const sendResponse = vi.fn()
-    await handleTempWindowTurnstileFetch(
+    const request = handleTempWindowTurnstileFetch(
       {
         originUrl: "https://example.com",
         pageUrl: "https://example.com/checkin",
@@ -2830,6 +2833,9 @@ describe("tempWindowPool window fallback", () => {
       },
       sendResponse,
     )
+
+    await vi.advanceTimersByTimeAsync(1000)
+    await request
 
     const fetchCall = sendMessageMock.mock.calls.find(
       ([, message]) =>
@@ -2872,7 +2878,6 @@ describe("tempWindowPool window fallback", () => {
   it("returns structured turnstile timeout metadata when no token becomes available", async () => {
     tempContextMode = "tab"
     createTabMock.mockResolvedValueOnce({ id: 809 })
-    vi.useRealTimers()
     sendMessageMock.mockImplementation(
       async (_tabId: number, message: { action: string }) => {
         switch (message.action) {
@@ -2913,6 +2918,7 @@ describe("tempWindowPool window fallback", () => {
       sendResponse,
     )
 
+    await vi.advanceTimersByTimeAsync(1000)
     await request
 
     expect(sendResponse).toHaveBeenCalledWith({
@@ -2944,7 +2950,7 @@ describe("tempWindowPool window fallback", () => {
     expect(recordTempWindowTurnstileFetchResultMock).toHaveBeenCalledWith(
       PRODUCT_ANALYTICS_RESULTS.Failure,
     )
-    await new Promise((resolve) => setTimeout(resolve, 2500))
+    await vi.advanceTimersByTimeAsync(2500)
     expect(removeTabOrWindowMock).toHaveBeenCalledWith(809)
     expect(removeTempWindowCookieRuleMock).not.toHaveBeenCalled()
   })
