@@ -1,13 +1,15 @@
 import { RuntimeActionIds } from "~/constants/runtimeActions"
-import { getAccountSiteApiRouter } from "~/constants/siteType"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import {
+  resolveAccountSiteRouteUrl,
+  SITE_ROUTE_KINDS,
+} from "~/services/accounts/utils/siteRouteResolver"
 import {
   createTab,
   createWindow,
   hasWindowsAPI,
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
-import { joinUrl } from "~/utils/core/url"
 
 /**
  * External custom check-in flow (background-only).
@@ -140,14 +142,13 @@ export async function handleExternalCheckInMessage(
 
             if (shouldOpenRedeem) {
               openedRedeem = false
-              const redeemUrl =
-                account.checkIn?.customCheckIn?.redeemUrl ||
-                joinUrl(
-                  account.site_url,
-                  getAccountSiteApiRouter(account.site_type).redeemPath,
-                )
-
               try {
+                const redeemUrl =
+                  account.checkIn?.customCheckIn?.redeemUrl ||
+                  (await resolveAccountSiteRouteUrl(
+                    { baseUrl: account.site_url, siteType: account.site_type },
+                    SITE_ROUTE_KINDS.Redeem,
+                  ))
                 openedRedeem = await openExternalPage(redeemUrl)
                 if (!openedRedeem) {
                   redeemError = "Failed to open redeem tab"

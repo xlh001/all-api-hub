@@ -1,15 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
-import { getAccountSiteApiRouter } from "~/constants/siteType"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import { SITE_ROUTE_KINDS } from "~/services/accounts/utils/siteRouteResolver"
 import { handleExternalCheckInMessage } from "~/services/checkin/externalCheckInService"
 import {
   createTab,
   createWindow,
   hasWindowsAPI,
 } from "~/utils/browser/browserApi"
-import { joinUrl } from "~/utils/core/url"
 
 vi.mock("~/services/accounts/accountStorage", () => ({
   accountStorage: {
@@ -29,20 +28,26 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   }
 })
 
-vi.mock("~/constants/siteType", () => ({
-  getAccountSiteApiRouter: vi.fn(() => ({ redeemPath: "/redeem" })),
-}))
-
-vi.mock("~/utils/core/url", () => ({
-  joinUrl: vi.fn((base: string, path: string) => `${base}${path}`),
+vi.mock("~/services/accounts/utils/siteRouteResolver", () => ({
+  SITE_ROUTE_KINDS: {
+    Redeem: "redeem",
+  },
+  resolveAccountSiteRouteUrl: vi.fn((account: { baseUrl: string }) =>
+    Promise.resolve(`${account.baseUrl}/redeem`),
+  ),
 }))
 
 const mockedAccountStorage = vi.mocked(accountStorage)
 const mockedCreateTab = vi.mocked(createTab)
 const mockedCreateWindow = vi.mocked(createWindow)
 const mockedHasWindowsAPI = vi.mocked(hasWindowsAPI)
-const mockedGetAccountSiteApiRouter = vi.mocked(getAccountSiteApiRouter)
-const mockedJoinUrl = vi.mocked(joinUrl)
+
+const getMockedRouteResolver = async () => {
+  const { resolveAccountSiteRouteUrl } = await import(
+    "~/services/accounts/utils/siteRouteResolver"
+  )
+  return vi.mocked(resolveAccountSiteRouteUrl)
+}
 
 describe("handleExternalCheckInMessage", () => {
   beforeEach(() => {
@@ -198,8 +203,11 @@ describe("handleExternalCheckInMessage", () => {
       sendResponse,
     )
 
-    expect(mockedGetAccountSiteApiRouter).toHaveBeenCalledWith("one-api")
-    expect(mockedJoinUrl).toHaveBeenCalledWith("https://example.com", "/redeem")
+    const mockedResolveAccountSiteRouteUrl = await getMockedRouteResolver()
+    expect(mockedResolveAccountSiteRouteUrl).toHaveBeenCalledWith(
+      { baseUrl: "https://example.com", siteType: "one-api" },
+      SITE_ROUTE_KINDS.Redeem,
+    )
     expect(mockedCreateTab).toHaveBeenNthCalledWith(
       1,
       "https://example.com/redeem",
@@ -271,6 +279,60 @@ describe("handleExternalCheckInMessage", () => {
     )
   })
 
+  it("marks account when check-in opens even if redeem URL resolution fails", async () => {
+    const sendResponse = vi.fn()
+    mockedAccountStorage.getAccountById.mockResolvedValue({
+      id: "a2-route-error",
+      site_url: "https://example.com",
+      site_type: "one-api",
+      checkIn: {
+        customCheckIn: {
+          url: "https://checkin.example",
+          openRedeemWithCheckIn: true,
+        },
+      },
+    } as any)
+
+    const mockedResolveAccountSiteRouteUrl = await getMockedRouteResolver()
+    mockedResolveAccountSiteRouteUrl.mockRejectedValueOnce(
+      new Error("redeem route missing"),
+    )
+    mockedCreateTab.mockResolvedValueOnce({ id: 23 } as any)
+    mockedAccountStorage.markAccountAsCustomCheckedIn.mockResolvedValue(true)
+
+    await handleExternalCheckInMessage(
+      {
+        action: RuntimeActionIds.ExternalCheckInOpenAndMark,
+        accountIds: ["a2-route-error"],
+      },
+      sendResponse,
+    )
+
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://checkin.example",
+      true,
+    )
+    expect(
+      mockedAccountStorage.markAccountAsCustomCheckedIn,
+    ).toHaveBeenCalledWith("a2-route-error")
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          results: [
+            expect.objectContaining({
+              accountId: "a2-route-error",
+              openedRedeem: false,
+              openedCheckIn: true,
+              markedCheckedIn: true,
+              redeemError: "redeem route missing",
+            }),
+          ],
+        }),
+      }),
+    )
+  })
+
   it("opens pages in a new window when requested", async () => {
     const sendResponse = vi.fn()
     mockedHasWindowsAPI.mockReturnValue(true)
@@ -300,8 +362,11 @@ describe("handleExternalCheckInMessage", () => {
       sendResponse,
     )
 
-    expect(mockedGetAccountSiteApiRouter).toHaveBeenCalledWith("one-api")
-    expect(mockedJoinUrl).toHaveBeenCalledWith("https://example.com", "/redeem")
+    const mockedResolveAccountSiteRouteUrl = await getMockedRouteResolver()
+    expect(mockedResolveAccountSiteRouteUrl).toHaveBeenCalledWith(
+      { baseUrl: "https://example.com", siteType: "one-api" },
+      SITE_ROUTE_KINDS.Redeem,
+    )
     expect(mockedCreateWindow).toHaveBeenCalledWith({
       url: "https://example.com/redeem",
       focused: true,
@@ -353,7 +418,8 @@ describe("handleExternalCheckInMessage", () => {
       sendResponse,
     )
 
-    expect(mockedJoinUrl).not.toHaveBeenCalled()
+    const mockedResolveAccountSiteRouteUrl = await getMockedRouteResolver()
+    expect(mockedResolveAccountSiteRouteUrl).not.toHaveBeenCalled()
     expect(mockedCreateTab).toHaveBeenCalledTimes(1)
     expect(sendResponse).toHaveBeenCalledWith(
       expect.objectContaining({
