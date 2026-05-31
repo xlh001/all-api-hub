@@ -2,7 +2,11 @@ name: Test
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - "ci/**"
+      - "test/**"
     paths:
       - "src/**"
       - "public/**"
@@ -33,6 +37,7 @@ on:
       - "vitest.config.ts"
       - "wxt.config.ts"
       - ".github/workflows/test.yml"
+  workflow_dispatch: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
