@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { createMinIntervalLimiter } from "~/services/apiService/common/minIntervalLimiter"
+import { createMinIntervalLimiter } from "~/services/apiTransport/minIntervalLimiter"
 
 describe("createMinIntervalLimiter", () => {
   beforeEach(() => {
@@ -47,6 +47,15 @@ describe("createMinIntervalLimiter", () => {
     vi.advanceTimersByTime(200)
     await expect(promiseA).resolves.toBeUndefined()
     expect(onAResolved).toHaveBeenCalledTimes(1)
+  })
+
+  it("clears a completed key from the queue", async () => {
+    const limiter = createMinIntervalLimiter({ minIntervalMs: 200 })
+
+    await limiter("site-a")
+    await Promise.resolve()
+
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it("treats non-positive minIntervalMs as disabled", async () => {
