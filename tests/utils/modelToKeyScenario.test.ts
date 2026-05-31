@@ -158,6 +158,63 @@ describe("model-to-key E2E scenario", () => {
     })
   })
 
+  it("ignores the compatible key select placeholder when resolving the created Key Management token", async () => {
+    const modelPage = createModelPage({
+      selectedCompatibleKeyName: "Select a key",
+    })
+    const keysPage = createKeysPage()
+
+    vi.mocked(runModelListCatalogScenario).mockResolvedValue(modelPage)
+    vi.mocked(mocks.waitForExtensionPage).mockResolvedValue(keysPage)
+
+    await runModelToKeyManagementScenario({
+      page: {} as any,
+      extensionId: "extension-id",
+      accountId: "account-1",
+      modelId: "gpt-model-key-mini",
+      createdKeyName: "model gpt-model-key-mini",
+      cleanupCreatedKey: true,
+    })
+
+    expect(keysPage.getByRole).toHaveBeenCalledWith("heading", {
+      name: "model gpt-model-key-mini",
+      exact: true,
+    })
+    expect(keysPage.getByRole).not.toHaveBeenCalledWith("heading", {
+      name: "Select a key",
+      exact: true,
+    })
+  })
+
+  it("still verifies the model key dialog leaves the empty state when the compatible key select shows a placeholder", async () => {
+    const modelPage = createModelPage({
+      selectedCompatibleKeyName: "Select a key",
+    })
+    const keysPage = createKeysPage()
+
+    vi.mocked(runModelListCatalogScenario).mockResolvedValue(modelPage)
+    vi.mocked(mocks.waitForExtensionPage).mockResolvedValue(keysPage)
+
+    await runModelToKeyManagementScenario({
+      page: {} as any,
+      extensionId: "extension-id",
+      accountId: "account-1",
+      modelId: "gpt-model-key-mini",
+      createdKeyName: "model gpt-model-key-mini",
+    })
+
+    expect(modelPage.keyDialog.getByText).toHaveBeenCalledWith(
+      "No compatible keys for gpt-model-key-mini",
+    )
+    const keyDialogGetByTextCalls = modelPage.keyDialog.getByText.mock
+      .calls as [string, ...unknown[]][]
+    expect(
+      keyDialogGetByTextCalls.filter(
+        ([text]) => text === "No compatible keys for gpt-model-key-mini",
+      ),
+    ).toHaveLength(2)
+  })
+
   it("cleans up the created key when cleanup is enabled", async () => {
     const modelPage = createModelPage()
     const keysPage = createKeysPage()
@@ -370,6 +427,7 @@ function createModelPage(
   }
 
   return {
+    keyDialog,
     context: vi.fn(() => "browser-context"),
     getByTestId: vi.fn((testId: string) => {
       if (testId === MODEL_LIST_TEST_IDS.modelKeyDialog) return keyDialog

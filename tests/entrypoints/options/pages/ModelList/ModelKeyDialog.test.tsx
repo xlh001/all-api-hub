@@ -123,6 +123,21 @@ const TOKEN = {
   group: "",
 } as any
 
+function mockTimeoutsAsMicrotasks() {
+  const originalSetTimeout = globalThis.setTimeout
+
+  return vi
+    .spyOn(globalThis, "setTimeout")
+    .mockImplementation((callback, delay) => {
+      if (delay === 1_000) {
+        queueMicrotask(() => callback(undefined))
+        return originalSetTimeout(() => undefined, 0)
+      }
+
+      return originalSetTimeout(callback, delay)
+    })
+}
+
 describe("ModelKeyDialog", () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -521,13 +536,19 @@ describe("ModelKeyDialog", () => {
     )
   })
 
-  it("shows a create error when refreshed inventory has no compatible token", async () => {
+  it("waits for a compatible key to appear after create returns without a token payload", async () => {
     fetchAccountTokensMock
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ ...TOKEN, id: 11, group: "vip" }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          ...TOKEN,
+          id: 11,
+          key: "sk-refreshed-compatible",
+          name: "refreshed",
+        },
+      ])
     createApiTokenMock.mockResolvedValueOnce(true)
-
-    const user = userEvent.setup()
 
     render(
       <ModelKeyDialog
@@ -539,18 +560,64 @@ describe("ModelKeyDialog", () => {
       />,
     )
 
-    await user.click(
-      await screen.findByRole("button", {
-        name: "modelList:keyDialog.createKey",
-      }),
+    const createButton = await screen.findByRole("button", {
+      name: "modelList:keyDialog.createKey",
+    })
+    const setTimeoutSpy = mockTimeoutsAsMicrotasks()
+    const user = userEvent.setup()
+
+    await user.click(createButton)
+
+    await waitFor(() => {
+      expect(fetchAccountTokensMock).toHaveBeenCalledTimes(3)
+    })
+    setTimeoutSpy.mockRestore()
+
+    expect(
+      await screen.findByRole("button", { name: "common:actions.copyKey" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText("modelList:keyDialog.noCompatibleFoundAfterCreate"),
+    ).not.toBeInTheDocument()
+    expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Success,
     )
+  })
+
+  it("shows a create error when refreshed inventory has no compatible token", async () => {
+    fetchAccountTokensMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([{ ...TOKEN, id: 11, group: "vip" }])
+    createApiTokenMock.mockResolvedValueOnce(true)
+
+    render(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={ACCOUNT}
+        modelId="gpt-4"
+        modelEnableGroups={["default"]}
+      />,
+    )
+
+    const createButton = await screen.findByRole("button", {
+      name: "modelList:keyDialog.createKey",
+    })
+    const setTimeoutSpy = mockTimeoutsAsMicrotasks()
+    const user = userEvent.setup()
+
+    await user.click(createButton)
+
+    await waitFor(() => {
+      expect(fetchAccountTokensMock).toHaveBeenCalledTimes(6)
+    })
+    setTimeoutSpy.mockRestore()
 
     expect(
       await screen.findByText(
         "modelList:keyDialog.noCompatibleFoundAfterCreate",
       ),
     ).toBeInTheDocument()
-    expect(fetchAccountTokensMock).toHaveBeenCalledTimes(2)
     expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
       PRODUCT_ANALYTICS_RESULTS.Failure,
       { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown },

@@ -13,6 +13,7 @@ import {
 import { formatOptionalSkPrefixSiteToken } from "~/services/apiService/common/apiKey"
 import { isTokenCompatibleWithModel } from "~/services/models/utils/tokenModelCompatibility"
 import { AuthTypeEnum, type ApiToken, type DisplaySiteData } from "~/types"
+import { sleep } from "~/utils/core/async"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 
@@ -20,6 +21,8 @@ import { createLogger } from "~/utils/core/logger"
  * Logger scoped to the "model key" dialog so token loading and clipboard failures can be diagnosed safely.
  */
 const logger = createLogger("ModelKeyDialogHook")
+const POST_CREATE_TOKEN_REFRESH_ATTEMPTS = 5
+const POST_CREATE_TOKEN_REFRESH_INTERVAL_MS = 1_000
 
 const isCreatedApiToken = (value: unknown): value is ApiToken =>
   !!value &&
@@ -161,6 +164,34 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
     [compatibleTokens, selectedTokenId],
   )
 
+  const fetchTokensUntilCompatibleAfterCreate = useCallback(async () => {
+    if (!account) {
+      return { refreshedTokens: [], refreshedCompatible: [] }
+    }
+
+    for (
+      let attempt = 1;
+      attempt <= POST_CREATE_TOKEN_REFRESH_ATTEMPTS;
+      attempt++
+    ) {
+      const refreshedTokens = await fetchDisplayAccountTokens(account)
+      const refreshedCompatible = refreshedTokens.filter((token) =>
+        isTokenCompatibleWithModel(token, modelContext),
+      )
+
+      if (
+        refreshedCompatible.length > 0 ||
+        attempt === POST_CREATE_TOKEN_REFRESH_ATTEMPTS
+      ) {
+        return { refreshedTokens, refreshedCompatible }
+      }
+
+      await sleep(POST_CREATE_TOKEN_REFRESH_INTERVAL_MS)
+    }
+
+    return { refreshedTokens: [], refreshedCompatible: [] }
+  }, [account, modelContext])
+
   const copySelectedKey = useCallback(async () => {
     if (!account || !selectedToken) return
 
@@ -220,12 +251,9 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
           }
         }
 
-        const refreshedTokens = await fetchDisplayAccountTokens(account)
+        const { refreshedTokens, refreshedCompatible } =
+          await fetchTokensUntilCompatibleAfterCreate()
         setTokens(refreshedTokens)
-
-        const refreshedCompatible = refreshedTokens.filter((token) =>
-          isTokenCompatibleWithModel(token, modelContext),
-        )
 
         if (refreshedCompatible.length === 0) {
           setCreateError(
@@ -266,7 +294,14 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
         setIsLoading(false)
       }
     },
-    [account, canCreateToken, modelContext, modelId, t],
+    [
+      account,
+      canCreateToken,
+      fetchTokensUntilCompatibleAfterCreate,
+      modelContext,
+      modelId,
+      t,
+    ],
   )
 
   const createDefaultKey = useCallback(
