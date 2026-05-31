@@ -391,7 +391,9 @@ async function stubWebdavBackupRoutes(
   },
 ) {
   let remoteBackup = options.initialRemoteBackup ?? ""
+  const stagedBackups = new Map<string, string>()
   const uploadedPayloads: unknown[] = []
+  const tempDeleteUrls: string[] = []
   const backupFileUrl = new URL(options.backupFileUrl)
 
   await context.route(`${backupFileUrl.origin}/**`, async (route: Route) => {
@@ -399,9 +401,14 @@ async function stubWebdavBackupRoutes(
     const method = request.method()
     const url = new URL(request.url())
     const isBackupFile = url.href === options.backupFileUrl
+    const isTempBackupFile =
+      url.pathname.startsWith(
+        `${backupFileUrl.pathname.replace(/\/[^/]*$/, "")}/.`,
+      ) && url.pathname.includes(".tmp.")
 
-    if (method === "GET" && isBackupFile) {
-      if (!remoteBackup) {
+    if (method === "GET" && (isBackupFile || isTempBackupFile)) {
+      const body = isTempBackupFile ? stagedBackups.get(url.href) : remoteBackup
+      if (!body) {
         await route.fulfill({
           status: 404,
           contentType: "application/json",
@@ -413,18 +420,70 @@ async function stubWebdavBackupRoutes(
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: remoteBackup,
+        body,
       })
       return
     }
 
-    if (method === "PUT" && isBackupFile) {
-      remoteBackup = request.postData() ?? ""
+    if (method === "PUT" && (isBackupFile || isTempBackupFile)) {
+      const body = request.postData() ?? ""
+      if (isTempBackupFile) {
+        stagedBackups.set(url.href, body)
+      } else {
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "direct final backup PUT rejected" }),
+        })
+        return
+      }
+      await route.fulfill({
+        status: isTempBackupFile ? 204 : 201,
+        contentType: "application/json",
+        body: "{}",
+      })
+      return
+    }
+
+    if (method === "PROPFIND") {
+      await route.fulfill({
+        status: 207,
+        contentType: "application/xml",
+        body: `<?xml version="1.0" encoding="utf-8"?><d:multistatus xmlns:d="DAV:" />`,
+      })
+      return
+    }
+
+    if (method === "MOVE" && isTempBackupFile) {
+      const destination = request.headers()["destination"]
+      const body = stagedBackups.get(url.href)
+      if (destination !== options.backupFileUrl || body === undefined) {
+        await route.fulfill({
+          status: 404,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "missing staged backup" }),
+        })
+        return
+      }
+
+      remoteBackup = body
+      stagedBackups.delete(url.href)
       uploadedPayloads.push(JSON.parse(remoteBackup))
       await route.fulfill({
         status: 201,
         contentType: "application/json",
         body: "{}",
+      })
+      return
+    }
+
+    if (method === "DELETE" && isTempBackupFile) {
+      tempDeleteUrls.push(url.href)
+      stagedBackups.delete(url.href)
+      await route.fulfill({
+        status: 204,
+        contentType: "text/plain",
+        body: "",
       })
       return
     }
@@ -448,7 +507,7 @@ async function stubWebdavBackupRoutes(
     })
   })
 
-  return { uploadedPayloads }
+  return { tempDeleteUrls, uploadedPayloads }
 }
 
 async function enableAlarmBackedFeatures(page: Page, serviceWorker: Worker) {
@@ -919,9 +978,12 @@ test("runs WebDAV auto-sync upload when its MV3 alarm fires", async ({
   const serviceWorker = await getServiceWorker(context)
   const accountId = "webdav-alarm-account"
   const backupFileUrl = "https://webdav-alarm.example.com/alarm-backup.json"
-  const { uploadedPayloads } = await stubWebdavBackupRoutes(context, {
-    backupFileUrl,
-  })
+  const { tempDeleteUrls, uploadedPayloads } = await stubWebdavBackupRoutes(
+    context,
+    {
+      backupFileUrl,
+    },
+  )
 
   await seedStoredAccounts(serviceWorker, [
     createStoredAccount({
@@ -1003,6 +1065,8 @@ test("runs WebDAV auto-sync upload when its MV3 alarm fires", async ({
       }),
     )
 
+  expect(tempDeleteUrls).toEqual([])
+
   const statusResponse = await sendRuntimeActionFromPage<{
     success: boolean
     data: { lastSyncStatus: string; lastSyncError: string | null }
@@ -1029,9 +1093,12 @@ test("runs WebDAV best-effort upload when its dedicated MV3 alarm fires", async 
   const bookmarkId = "webdav-best-effort-bookmark"
   const backupFileUrl =
     "https://webdav-best-effort.example.com/alarm-backup.json"
-  const { uploadedPayloads } = await stubWebdavBackupRoutes(context, {
-    backupFileUrl,
-  })
+  const { tempDeleteUrls, uploadedPayloads } = await stubWebdavBackupRoutes(
+    context,
+    {
+      backupFileUrl,
+    },
+  )
 
   await seedStoredBookmarks(serviceWorker, [
     createStoredBookmark({
@@ -1084,6 +1151,8 @@ test("runs WebDAV best-effort upload when its dedicated MV3 alarm fires", async 
         }),
       }),
     )
+
+  expect(tempDeleteUrls).toEqual([])
 
   const statusResponse = await sendRuntimeActionFromPage<{
     success: boolean

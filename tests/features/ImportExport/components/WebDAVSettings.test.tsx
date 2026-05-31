@@ -47,6 +47,7 @@ const {
   mockMergeWebdavBackupPayloadBySelection,
   mockDownloadBackup,
   mockDownloadBackupRaw,
+  mockParseWebdavBackupJson,
   mockIsWebdavFileNotFoundError,
   mockStartProductAnalyticsAction,
   mockCompleteProductAnalyticsAction,
@@ -74,6 +75,7 @@ const {
   mockMergeWebdavBackupPayloadBySelection: vi.fn(),
   mockDownloadBackup: vi.fn(),
   mockDownloadBackupRaw: vi.fn(),
+  mockParseWebdavBackupJson: vi.fn(),
   mockIsWebdavFileNotFoundError: vi.fn(),
   mockStartProductAnalyticsAction: vi.fn(),
   mockCompleteProductAnalyticsAction: vi.fn(),
@@ -152,6 +154,7 @@ vi.mock("~/services/webdav/webdavSelectiveSync", () => ({
 vi.mock("~/services/webdav/webdavService", () => ({
   downloadBackup: mockDownloadBackup,
   downloadBackupRaw: mockDownloadBackupRaw,
+  parseWebdavBackupJson: mockParseWebdavBackupJson,
   isWebdavFileNotFoundError: mockIsWebdavFileNotFoundError,
   testWebdavConnection: mockTestWebdavConnection,
   uploadBackup: mockUploadBackup,
@@ -316,6 +319,9 @@ describe("WebDAVSettings", () => {
     mockApiCredentialProfilesStorage.exportConfig.mockResolvedValue([{ id: 2 }])
     mockDownloadBackup.mockResolvedValue('{"version":2,"accounts":[]}')
     mockDownloadBackupRaw.mockResolvedValue('{"version":2}')
+    mockParseWebdavBackupJson.mockImplementation((content: string) =>
+      JSON.parse(content),
+    )
     mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(null)
     mockIsWebdavFileNotFoundError.mockReturnValue(false)
     mockMergeWebdavBackupPayloadBySelection.mockReturnValue({ merged: true })
@@ -1458,6 +1464,163 @@ describe("WebDAVSettings", () => {
     )
   })
 
+  it("asks before rebuilding the WebDAV backup when the existing remote backup is malformed", async () => {
+    mockDownloadBackup.mockResolvedValueOnce('{"version":2,"accounts":"')
+    mockParseWebdavBackupJson.mockImplementationOnce(() => {
+      throw new Error("messages:webdav.invalidBackupJson")
+    })
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    clickWebdavAction("webdav-upload-backup")
+
+    expect(
+      await screen.findByText("importExport:webdav.rebuildDialog.title"),
+    ).toBeInTheDocument()
+    expect(mockUploadBackup).not.toHaveBeenCalled()
+    expect(mockMergeWebdavBackupPayloadBySelection).not.toHaveBeenCalled()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.rebuildDialog.cancel",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("importExport:webdav.rebuildDialog.title"),
+      ).not.toBeInTheDocument()
+    })
+    expect(mockUploadBackup).not.toHaveBeenCalled()
+  })
+
+  it("keeps the rebuild dialog open while a forced rebuild is pending", async () => {
+    mockDownloadBackup.mockResolvedValueOnce('{"version":2,"accounts":"')
+    mockParseWebdavBackupJson.mockImplementationOnce(() => {
+      throw new Error("messages:webdav.invalidBackupJson")
+    })
+    let resolveUpload: () => void = () => {}
+    mockUploadBackup.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveUpload = resolve
+      }),
+    )
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+    clickWebdavAction("webdav-upload-backup")
+
+    expect(
+      await screen.findByText("importExport:webdav.rebuildDialog.title"),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.rebuildDialog.confirm",
+      }),
+    )
+
+    expect(
+      screen.getByText("importExport:webdav.rebuildDialog.title"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "importExport:webdav.rebuildDialog.cancel",
+      }),
+    ).toBeDisabled()
+
+    fireEvent.click(screen.getByLabelText("common:actions.close"))
+    expect(
+      screen.getByText("importExport:webdav.rebuildDialog.title"),
+    ).toBeInTheDocument()
+
+    resolveUpload()
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("importExport:webdav.rebuildDialog.title"),
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it("closes the rebuild dialog from the modal close button when idle", async () => {
+    mockDownloadBackup.mockResolvedValueOnce('{"version":2,"accounts":"')
+    mockParseWebdavBackupJson.mockImplementationOnce(() => {
+      throw new Error("messages:webdav.invalidBackupJson")
+    })
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+    clickWebdavAction("webdav-upload-backup")
+
+    expect(
+      await screen.findByText("importExport:webdav.rebuildDialog.title"),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByLabelText("common:actions.close"))
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("importExport:webdav.rebuildDialog.title"),
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it("rebuilds a malformed WebDAV backup with a one-time full sync selection after confirmation", async () => {
+    mockDownloadBackup.mockResolvedValueOnce('{"version":2,"accounts":"')
+    mockParseWebdavBackupJson.mockImplementationOnce(() => {
+      throw new Error("messages:webdav.invalidBackupJson")
+    })
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+    fireEvent.click(
+      document.getElementById(
+        WEBDAV_TARGET_IDS.syncDataPreferences,
+      ) as HTMLInputElement,
+    )
+
+    clickWebdavAction("webdav-upload-backup")
+
+    expect(
+      await screen.findByText("importExport:webdav.rebuildDialog.title"),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.rebuildDialog.confirm",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockMergeWebdavBackupPayloadBySelection).toHaveBeenCalledWith(
+        expect.objectContaining({
+          remoteBackup: null,
+          selection: {
+            accounts: true,
+            bookmarks: true,
+            apiCredentialProfiles: true,
+            preferences: true,
+          },
+        }),
+      )
+      expect(mockUploadBackup).toHaveBeenCalled()
+    })
+    expect(toast.success).toHaveBeenCalledWith(
+      "importExport:webdav.uploadSuccess",
+    )
+    expect(
+      document.getElementById(
+        WEBDAV_TARGET_IDS.syncDataPreferences,
+      ) as HTMLInputElement,
+    ).not.toBeChecked()
+  })
+
   it("surfaces the upload failure when fetching the remote backup fails unexpectedly", async () => {
     const downloadError = new Error("download failed")
     mockDownloadBackup.mockRejectedValueOnce(downloadError)
@@ -1473,6 +1636,46 @@ describe("WebDAVSettings", () => {
       expect(toast.error).toHaveBeenCalledWith("download failed")
     })
     expect(mockUploadBackup).not.toHaveBeenCalled()
+  })
+
+  it("surfaces unexpected remote backup parse failures during upload", async () => {
+    const parseError = new Error("unexpected parse failure")
+    mockDownloadBackup.mockResolvedValueOnce('{"version":2}')
+    mockParseWebdavBackupJson.mockImplementationOnce(() => {
+      throw parseError
+    })
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    clickWebdavAction("webdav-upload-backup")
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("unexpected parse failure")
+    })
+    expect(
+      screen.queryByText("importExport:webdav.rebuildDialog.title"),
+    ).not.toBeInTheDocument()
+    expect(mockUploadBackup).not.toHaveBeenCalled()
+  })
+
+  it("shows the safe-save failure message when WebDAV upload cannot be committed", async () => {
+    mockUploadBackup.mockRejectedValueOnce(
+      new Error("messages:webdav.safeCommitFailed"),
+    )
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    clickWebdavAction("webdav-upload-backup")
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "messages:webdav.safeCommitFailed",
+      )
+    })
   })
 
   it("imports an unencrypted WebDAV backup without opening the decrypt dialog", async () => {
@@ -1507,6 +1710,27 @@ describe("WebDAVSettings", () => {
     expect(
       screen.queryByText("importExport:webdav.encryption.decryptDialogTitle"),
     ).not.toBeInTheDocument()
+  })
+
+  it("shows a stable WebDAV backup error when downloaded backup JSON is malformed", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce('{"version":2,"accounts":"')
+    mockParseWebdavBackupJson.mockImplementationOnce(() => {
+      throw new Error("messages:webdav.invalidBackupJson")
+    })
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    clickWebdavAction("webdav-download-import")
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "messages:webdav.invalidBackupJson",
+      )
+    })
+    expect(mockBuildWebdavImportPayloadBySelection).not.toHaveBeenCalled()
+    expect(mockImportFromBackupObject).not.toHaveBeenCalled()
   })
 
   it("shows the download/import failure message when importing the backup fails", async () => {
@@ -1664,6 +1888,70 @@ describe("WebDAVSettings", () => {
         }),
       )
     })
+  })
+
+  it("imports decrypted content without reporting persist failure when save password is disabled", async () => {
+    mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
+    mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
+      ENCRYPTED_BACKUP_ENVELOPE,
+    )
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+
+    fireEvent.change(screen.getAllByDisplayValue("stored-secret")[0], {
+      target: { value: "" },
+    })
+    mockCompleteProductAnalyticsAction.mockClear()
+    clickWebdavAction("webdav-download-import")
+
+    await waitFor(() => {
+      expect(document.getElementById("decryptPassword")).toBeTruthy()
+    })
+    const savePasswordCheckbox = screen.getByRole("checkbox", {
+      name: "importExport:webdav.encryption.savePassword",
+    })
+    fireEvent.change(
+      document.getElementById("decryptPassword") as HTMLInputElement,
+      {
+        target: { value: "manual-secret" },
+      },
+    )
+    fireEvent.click(savePasswordCheckbox)
+    expect(savePasswordCheckbox).toHaveAttribute("aria-checked", "false")
+    mockUserPreferences.savePreferencesWithResult.mockClear()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockImportFromBackupObject).toHaveBeenCalledWith(
+        { imported: true },
+        { preserveWebdav: true },
+      )
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Success,
+        expect.objectContaining({
+          diagnostics: expect.objectContaining({
+            outcome: expect.objectContaining({
+              successCount: 1,
+              failureCount: 0,
+            }),
+          }),
+        }),
+      )
+    })
+
+    expect(mockUserPreferences.savePreferencesWithResult).toHaveBeenCalledTimes(
+      0,
+    )
+    expect(toast.error).not.toHaveBeenCalledWith(
+      "settings:messages.saveSettingsFailed",
+    )
   })
 
   it("persists the decrypt password with the current draft version when the imported backup excludes preferences", async () => {
