@@ -149,7 +149,8 @@ export function useChannelDialog() {
       siteType: SITE_TYPES.UNKNOWN,
       baseUrl: options.baseUrl,
       token: "",
-      userId: 0,
+      // Raw credential profiles are synthetic account rows without an upstream user.
+      userId: "",
       authType: AuthTypeEnum.None,
       checkIn: {
         enableDetection: false,

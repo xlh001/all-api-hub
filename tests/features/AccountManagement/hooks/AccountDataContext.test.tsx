@@ -1485,18 +1485,21 @@ describe("AccountDataContext current tab detection", () => {
     const matchingAccount = {
       id: "acc-2",
       site_url: "https://api.example.com/v1",
+      site_type: "new-api",
       account_info: { id: 42 },
       last_sync_time: 0,
     }
     const sameSiteDifferentUser = {
       id: "acc-1",
       site_url: "https://api.example.com/dashboard",
-      account_info: { id: 7 },
+      site_type: "new-api",
+      account_info: { id: "7" },
       last_sync_time: 0,
     }
     const otherSite = {
       id: "acc-3",
       site_url: "https://other.example.com",
+      site_type: "new-api",
       account_info: { id: 99 },
       last_sync_time: 0,
     }
@@ -1511,7 +1514,7 @@ describe("AccountDataContext current tab detection", () => {
     ])
     vi.mocked(globalThis.browser.tabs.sendMessage).mockResolvedValue({
       success: true,
-      data: { userId: 42 },
+      data: { userId: "42" },
     } as any)
 
     const getLatestCtx = await renderAccountDataProvider()
@@ -1526,6 +1529,7 @@ describe("AccountDataContext current tab detection", () => {
     expect(globalThis.browser.tabs.sendMessage).toHaveBeenCalledWith(7, {
       action: RuntimeActionIds.ContentGetUserFromLocalStorage,
       url: "https://api.example.com",
+      siteType: "new-api",
     })
   })
 
@@ -1533,6 +1537,7 @@ describe("AccountDataContext current tab detection", () => {
     const sameSiteAccount = {
       id: "acc-1",
       site_url: "https://api.example.com/v1",
+      site_type: "new-api",
       account_info: { id: 7 },
       last_sync_time: 0,
     }
@@ -1606,7 +1611,7 @@ describe("AccountDataContext current tab detection", () => {
     })
     vi.mocked(globalThis.browser.tabs.sendMessage).mockResolvedValue({
       success: true,
-      data: { userId: 7 },
+      data: { userId: "7" },
     } as any)
 
     const getLatestCtx = await renderAccountDataProvider()
@@ -1661,7 +1666,7 @@ describe("AccountDataContext current tab detection", () => {
     })
     vi.mocked(globalThis.browser.tabs.sendMessage).mockResolvedValue({
       success: true,
-      data: { userId: 7 },
+      data: { userId: "7" },
     } as any)
 
     const getLatestCtx = await renderAccountDataProvider()

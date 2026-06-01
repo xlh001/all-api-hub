@@ -121,6 +121,7 @@ async function stubAIHubMixRoutes(context: BrowserContext) {
                 window.localStorage.setItem("user", JSON.stringify({
                   id: 808,
                   username: "aihubmix-user",
+                  display_name: "aihubmix-user",
                   quota: 250000,
                   used_quota: 0
                 }))
@@ -149,6 +150,7 @@ async function stubAIHubMixRoutes(context: BrowserContext) {
           data: {
             id: 808,
             username: "aihubmix-user",
+            display_name: "aihubmix-user",
             quota: 250000,
             used_quota: 0,
           },
@@ -178,6 +180,7 @@ async function stubAIHubMixRoutes(context: BrowserContext) {
           data: {
             id: 808,
             username: "aihubmix-user",
+            display_name: "aihubmix-user",
             access_token: "aihubmix-account-access-token",
             quota: 250000,
             used_quota: 0,
@@ -541,6 +544,7 @@ test("adds an AIHubMix account, preserves its one-time key, and opens managed-si
       JSON.stringify({
         id: 808,
         username: "aihubmix-user",
+        display_name: "aihubmix-user",
         quota: 250000,
         used_quota: 0,
       }),
@@ -614,7 +618,7 @@ test("requires duplicate-warning confirmation before the manual add flow continu
       site_name: "Existing Example",
       site_url: "https://example.com",
       account_info: {
-        id: 99,
+        id: "99",
         username: "existing-user",
         access_token: "existing-token",
       },

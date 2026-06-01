@@ -1,5 +1,6 @@
 import { AIHUBMIX_API_ORIGIN, SITE_TYPES } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
+import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
 import { determineHealthStatus } from "~/services/apiService/common"
 import {
   hasUsableApiTokenKey,
@@ -55,7 +56,10 @@ const EMPTY_TODAY_INCOME: TodayIncomeData = {
   today_income: 0,
 }
 
-type AIHubMixUserInfo = UserInfo & {
+type AIHubMixUserInfo = {
+  username: string
+  display_name: string
+  access_token?: string | null
   quota?: number | string
   used_quota?: number | string
   request_count?: number | string
@@ -409,7 +413,7 @@ const buildAIHubMixModelPricing = (
  * AccessToken mode and `/api/user/self`.
  */
 export async function fetchUserInfo(request: ApiServiceRequest): Promise<{
-  id: number
+  id: string
   username: string
   access_token: string
   user: UserInfo
@@ -433,11 +437,23 @@ export async function fetchUserInfo(request: ApiServiceRequest): Promise<{
           },
         )
 
+  const id = normalizeAccountIdentity(userData.username) ?? ""
+  const username = normalizeAccountIdentity(userData.display_name) ?? ""
+  const accessToken = normalizeAccessToken(userData.access_token)
+
   return {
-    id: userData.id,
-    username: userData.username,
-    access_token: normalizeAccessToken(userData.access_token),
-    user: userData,
+    // AIHubMix intentionally omits database ids from web-session user info.
+    // Upstream confirms username is unique and stable for third-party account ids:
+    // https://github.com/jerlinn/inferHub/issues/2
+    id,
+    username,
+    access_token: accessToken,
+    user: {
+      ...userData,
+      id,
+      username,
+      access_token: accessToken,
+    },
   }
 }
 

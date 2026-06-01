@@ -90,7 +90,7 @@ describe("autoDetectSmart", () => {
     browserAny.tabs.sendMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 12,
+        userId: "12",
         user: { id: 12, username: "alice" },
         accessToken: "current-tab-token",
         siteTypeHint: SITE_TYPES.VELOERA,
@@ -102,7 +102,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 12,
+        userId: "12",
         user: { id: 12, username: "alice" },
         siteType: SITE_TYPES.VELOERA,
         accessToken: "current-tab-token",
@@ -131,7 +131,7 @@ describe("autoDetectSmart", () => {
     browserAny.tabs.sendMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 12,
+        userId: "12",
         user: { id: 12, username: "alice" },
       },
     })
@@ -141,7 +141,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 12,
+        userId: "12",
         user: { id: 12, username: "alice" },
         siteType: SITE_TYPES.NEW_API,
         accessToken: undefined,
@@ -158,6 +158,7 @@ describe("autoDetectSmart", () => {
     expect(browserAny.tabs.sendMessage).toHaveBeenCalledWith(101, {
       action: expect.any(String),
       url: "https://example.com/console",
+      siteType: SITE_TYPES.NEW_API,
     })
     expect(mockGetActiveTabs).not.toHaveBeenCalled()
   })
@@ -175,7 +176,7 @@ describe("autoDetectSmart", () => {
     browserAny.tabs.sendMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 12,
+        userId: "12",
         user: { id: 12, username: "alice" },
       },
     })
@@ -215,7 +216,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 13,
+        userId: "13",
         user: { id: 13, username: "api-incognito-user" },
         siteType: SITE_TYPES.NEW_API,
         accessToken: undefined,
@@ -265,7 +266,7 @@ describe("autoDetectSmart", () => {
 
     expect(result.success).toBe(true)
     expect(result.data).toMatchObject({
-      userId: 18,
+      userId: "18",
       user: { id: 18, username: "api-after-content-error" },
       fetchContext: {
         kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
@@ -292,7 +293,7 @@ describe("autoDetectSmart", () => {
     mockSendRuntimeMessage.mockResolvedValueOnce({
       success: true,
       data: {
-        userId: 19,
+        userId: "19",
         user: { id: 19, username: "background-after-classifier-error" },
         siteTypeHint: SITE_TYPES.NEW_API,
       },
@@ -302,7 +303,7 @@ describe("autoDetectSmart", () => {
 
     expect(result.success).toBe(true)
     expect(result.data).toMatchObject({
-      userId: 19,
+      userId: "19",
       user: { id: 19, username: "background-after-classifier-error" },
     })
     expect(mockSendRuntimeMessage).toHaveBeenCalledTimes(1)
@@ -327,7 +328,7 @@ describe("autoDetectSmart", () => {
     browserAny.tabs.sendMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 16,
+        userId: "16",
         user: { id: 16, username: "content-user" },
       },
     })
@@ -337,7 +338,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 17,
+        userId: "17",
         user: {
           id: 17,
           username: "fallback-after-site-type-failure",
@@ -373,7 +374,7 @@ describe("autoDetectSmart", () => {
     browserAny.tabs.sendMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 12,
+        userId: "12",
         user: { id: 12, username: "alice" },
       },
     })
@@ -382,7 +383,7 @@ describe("autoDetectSmart", () => {
 
     expect(result.success).toBe(true)
     expect(result.data).toMatchObject({
-      userId: 12,
+      userId: "12",
       fetchContext: {
         kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
         tabId: 101,
@@ -391,6 +392,7 @@ describe("autoDetectSmart", () => {
     expect(browserAny.tabs.sendMessage).toHaveBeenCalledWith(101, {
       action: expect.any(String),
       url: "https://example.com/console",
+      siteType: SITE_TYPES.NEW_API,
     })
     expect(browserAny.tabs.sendMessage).not.toHaveBeenCalledWith(
       202,
@@ -412,7 +414,7 @@ describe("autoDetectSmart", () => {
     browserAny.tabs.sendMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 99,
+        userId: "99",
         user: { id: 99, username: "wrong-current-tab-user" },
         accessToken: "wrong-current-tab-token",
         siteTypeHint: SITE_TYPES.AIHUBMIX,
@@ -421,7 +423,7 @@ describe("autoDetectSmart", () => {
     mockSendRuntimeMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 7,
+        userId: "7",
         user: { id: 7, username: "aihubmix-user" },
         accessToken: "console-session-token",
         siteTypeHint: SITE_TYPES.AIHUBMIX,
@@ -433,7 +435,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 7,
+        userId: "7",
         user: { id: 7, username: "aihubmix-user" },
         siteType: SITE_TYPES.AIHUBMIX,
         accessToken: "console-session-token",
@@ -463,7 +465,7 @@ describe("autoDetectSmart", () => {
     browserAny.tabs.sendMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 7,
+        userId: "7",
         user: { id: 7, username: "aihubmix-user" },
         accessToken: "main-origin-session-token",
         siteTypeHint: SITE_TYPES.AIHUBMIX,
@@ -475,7 +477,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 7,
+        userId: "7",
         user: { id: 7, username: "aihubmix-user" },
         siteType: SITE_TYPES.AIHUBMIX,
         accessToken: "main-origin-session-token",
@@ -490,6 +492,7 @@ describe("autoDetectSmart", () => {
     expect(browserAny.tabs.sendMessage).toHaveBeenCalledWith(2, {
       action: expect.any(String),
       url: "https://aihubmix.com",
+      siteType: SITE_TYPES.AIHUBMIX,
     })
     expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
     expect(mockFetchUserInfo).not.toHaveBeenCalled()
@@ -530,7 +533,7 @@ describe("autoDetectSmart", () => {
     mockSendRuntimeMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 88,
+        userId: "88",
         user: { id: 88, username: "background-user" },
         accessToken: "background-token",
         siteTypeHint: SITE_TYPES.NEW_API,
@@ -542,7 +545,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 88,
+        userId: "88",
         user: { id: 88, username: "background-user" },
         siteType: SITE_TYPES.NEW_API,
         accessToken: "background-token",
@@ -566,7 +569,7 @@ describe("autoDetectSmart", () => {
     mockSendRuntimeMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 89,
+        userId: "89",
         user: { id: 89, username: "background-incognito-user" },
         siteTypeHint: SITE_TYPES.NEW_API,
       },
@@ -576,7 +579,7 @@ describe("autoDetectSmart", () => {
 
     expect(result.success).toBe(true)
     expect(result.data).toMatchObject({
-      userId: 89,
+      userId: "89",
       siteType: SITE_TYPES.NEW_API,
       fetchContext: {
         kind: API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
@@ -612,7 +615,7 @@ describe("autoDetectSmart", () => {
     mockSendRuntimeMessage.mockResolvedValue({
       success: true,
       data: {
-        userId: 14,
+        userId: "14",
         user: { id: 14, username: "background-incognito-user" },
         siteTypeHint: SITE_TYPES.NEW_API,
       },
@@ -622,7 +625,7 @@ describe("autoDetectSmart", () => {
 
     expect(result.success).toBe(true)
     expect(result.data).toMatchObject({
-      userId: 14,
+      userId: "14",
       siteType: SITE_TYPES.NEW_API,
       fetchContext: {
         kind: API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB,
@@ -663,7 +666,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 9,
+        userId: "9",
         user: {
           id: 9,
           username: "api-user",
@@ -695,7 +698,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 23,
+        userId: "23",
         user: {
           id: 23,
           username: "direct-after-runtime-throw",
@@ -732,7 +735,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 24,
+        userId: "24",
         user: {
           id: 24,
           username: "direct-after-api-throw",
@@ -769,7 +772,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 15,
+        userId: "15",
         user: {
           id: 15,
           username: "api-incognito-context-user",
@@ -826,7 +829,7 @@ describe("autoDetectSmart", () => {
     ).resolves.toMatchObject({
       success: true,
       data: {
-        userId: 10,
+        userId: "10",
         user: {
           id: 10,
           username: "api-user",
@@ -843,7 +846,7 @@ describe("autoDetectSmart", () => {
     ).resolves.toMatchObject({
       success: true,
       data: {
-        userId: 11,
+        userId: "11",
         user: {
           id: 11,
           username: "api-user-with-object-token",
@@ -877,7 +880,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 21,
+        userId: "21",
         user: {
           id: 21,
           username: "direct-user",
@@ -909,7 +912,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 22,
+        userId: "22",
         user: {
           id: 22,
           username: "direct-after-background-failure",
@@ -946,7 +949,7 @@ describe("autoDetectSmart", () => {
     mockSendRuntimeMessage.mockResolvedValueOnce({
       success: true,
       data: {
-        userId: 32,
+        userId: "32",
         user: { id: 32, username: "background-after-current-tab-throw" },
         siteTypeHint: SITE_TYPES.NEW_API,
       },
@@ -956,7 +959,7 @@ describe("autoDetectSmart", () => {
 
     expect(result.success).toBe(true)
     expect(result.data).toMatchObject({
-      userId: 32,
+      userId: "32",
       user: { id: 32, username: "background-after-current-tab-throw" },
     })
     expect(result.data).not.toHaveProperty("fetchContext")
@@ -1052,7 +1055,7 @@ describe("autoDetectSmart", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        userId: 42,
+        userId: "42",
         user: {
           id: 42,
           username: "invalid-url-user",

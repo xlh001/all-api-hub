@@ -17,6 +17,7 @@ import {
   normalizeOptionalAccountAuthType,
   resolveDefaultAccountAuthType,
 } from "~/features/AccountManagement/utils/accountAuthType"
+import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
 import {
   autoDetectAccount,
   getSiteName,
@@ -525,7 +526,7 @@ export function useAccountDialog({
       value: baseUrl,
       siteType,
     })
-    const currentUserId = userId.trim()
+    const currentUserId = normalizeAccountIdentity(userId)
 
     if (!baseUrl) {
       return true
@@ -565,7 +566,8 @@ export function useAccountDialog({
 
     const exactMatch = currentUserId
       ? existingSiteAccounts.find(
-          (acc) => String(acc.account_info.id) === currentUserId,
+          (acc) =>
+            normalizeAccountIdentity(acc.account_info.id) === currentUserId,
         )
       : undefined
 
@@ -767,7 +769,7 @@ export function useAccountDialog({
             siteName: siteAccount.site_name,
             username: siteAccount.account_info.username,
             accessToken: siteAccount.account_info.access_token,
-            userId: siteAccount.account_info.id.toString(),
+            userId: normalizeAccountIdentity(siteAccount.account_info.id) ?? "",
             exchangeRate: siteAccount.exchange_rate.toString(),
             manualBalanceUsd: siteAccount.manualBalanceUsd ?? "",
             notes: siteAccount.notes || "",
@@ -1257,6 +1259,9 @@ export function useAccountDialog({
       const targetOrigin = tryParseOrigin(baseUrl)
 
       let imported: any | null = null
+      const hasUsableSub2apiRefreshToken = (value: unknown): boolean =>
+        typeof (value as any)?.sub2apiAuth?.refreshToken === "string" &&
+        (value as any).sub2apiAuth.refreshToken.trim().length > 0
 
       if (targetOrigin && browser?.tabs?.sendMessage) {
         const tabs = await getAllTabs().catch(() => [])
@@ -1275,10 +1280,13 @@ export function useAccountDialog({
             const response = await browser.tabs.sendMessage(tabId, {
               action: RuntimeActionIds.ContentGetUserFromLocalStorage,
               url: baseUrl,
+              siteType: SITE_TYPES.SUB2API,
             })
             if (response?.success && response.data) {
               imported = response.data
-              break
+              if (hasUsableSub2apiRefreshToken(imported)) {
+                break
+              }
             }
           } catch {
             // Ignore and continue to the next candidate.
@@ -1286,7 +1294,7 @@ export function useAccountDialog({
         }
       }
 
-      if (!imported) {
+      if (!hasUsableSub2apiRefreshToken(imported)) {
         const response = await sendRuntimeMessage({
           action: RuntimeActionIds.AutoDetectSite,
           url: baseUrl,
@@ -1312,10 +1320,7 @@ export function useAccountDialog({
         typeof imported?.accessToken === "string"
           ? imported.accessToken.trim()
           : ""
-      const importedUserId =
-        typeof imported?.userId === "number" && Number.isFinite(imported.userId)
-          ? imported.userId
-          : null
+      const importedUserId = normalizeAccountIdentity(imported?.userId) ?? ""
       const importedUsername =
         typeof imported?.user?.username === "string"
           ? imported.user.username.trim()
@@ -1329,9 +1334,7 @@ export function useAccountDialog({
             ? tokenExpiresAtRaw
             : null,
         ...(importedAccessToken ? { accessToken: importedAccessToken } : {}),
-        ...(typeof importedUserId === "number"
-          ? { userId: String(importedUserId) }
-          : {}),
+        ...(importedUserId ? { userId: importedUserId } : {}),
         ...(importedUsername ? { username: importedUsername } : {}),
       }))
 
