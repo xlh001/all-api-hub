@@ -138,21 +138,18 @@ describe("useAccountDialog current tab detection", () => {
     const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
       typeof vi.fn
     >
-    tabsQueryMock
-      .mockRejectedValueOnce(new Error("currentWindow unsupported"))
-      .mockResolvedValueOnce([
+    tabsQueryMock.mockImplementation(async (queryInfo) => {
+      if (queryInfo?.currentWindow) {
+        throw new Error("currentWindow unsupported")
+      }
+
+      return [
         {
           id: 2,
           url: "https://fallback.example.com/dashboard",
         },
-      ])
-      .mockRejectedValueOnce(new Error("currentWindow unsupported"))
-      .mockResolvedValueOnce([
-        {
-          id: 2,
-          url: "https://fallback.example.com/dashboard",
-        },
-      ])
+      ]
+    })
 
     const { result } = renderHook(() =>
       useAccountDialog({
@@ -168,6 +165,62 @@ describe("useAccountDialog current tab detection", () => {
         "https://fallback.example.com",
       )
       expect(result.current.state.siteName).toBe("Detected Site")
+    })
+  })
+
+  it("clears stale current-tab detection when fallback active-tab lookup returns no tab", async () => {
+    const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
+      typeof vi.fn
+    >
+    let activatedListener: (() => void | Promise<void>) | undefined
+    onTabActivatedMock.mockImplementation((listener) => {
+      activatedListener = listener
+      return () => {}
+    })
+    tabsQueryMock.mockResolvedValueOnce([
+      {
+        id: 13,
+        url: "https://initial.example.com/path",
+      },
+    ])
+    tabsQueryMock.mockResolvedValueOnce([
+      {
+        id: 13,
+        url: "https://initial.example.com/path",
+      },
+    ])
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBe(
+        "https://initial.example.com",
+      )
+      expect(result.current.state.siteName).toBe("Detected Site")
+    })
+
+    tabsQueryMock.mockImplementation(async (queryInfo) => {
+      if (queryInfo?.currentWindow) {
+        throw new Error("currentWindow unsupported")
+      }
+
+      return []
+    })
+
+    await act(async () => {
+      await activatedListener?.()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBeNull()
+      expect(result.current.state.siteName).toBe("")
     })
   })
 
@@ -196,6 +249,167 @@ describe("useAccountDialog current tab detection", () => {
       expect(result.current.state.siteName).toBe("")
     })
     expect(mockGetSiteName).not.toHaveBeenCalled()
+  })
+
+  it("clears current-tab detection when the primary active-tab lookup returns no tab", async () => {
+    const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
+      typeof vi.fn
+    >
+    tabsQueryMock.mockResolvedValue([])
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBeNull()
+      expect(result.current.state.siteName).toBe("")
+    })
+    expect(mockGetSiteName).not.toHaveBeenCalled()
+  })
+
+  it("clears current-tab detection when the primary active-tab lookup returns a tab without a URL", async () => {
+    const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
+      typeof vi.fn
+    >
+    tabsQueryMock.mockResolvedValue([{ id: 16 }])
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBeNull()
+      expect(result.current.state.siteName).toBe("")
+    })
+    expect(mockGetSiteName).not.toHaveBeenCalled()
+  })
+
+  it("clears current-tab detection when fallback finds a non-http tab", async () => {
+    const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
+      typeof vi.fn
+    >
+    let activatedListener: (() => void | Promise<void>) | undefined
+    onTabActivatedMock.mockImplementation((listener) => {
+      activatedListener = listener
+      return () => {}
+    })
+    tabsQueryMock.mockResolvedValueOnce([
+      {
+        id: 14,
+        url: "https://initial.example.com/path",
+      },
+    ])
+    tabsQueryMock.mockResolvedValueOnce([
+      {
+        id: 14,
+        url: "https://initial.example.com/path",
+      },
+    ])
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBe(
+        "https://initial.example.com",
+      )
+      expect(result.current.state.siteName).toBe("Detected Site")
+    })
+
+    tabsQueryMock.mockImplementation(async (queryInfo) => {
+      if (queryInfo?.currentWindow) {
+        throw new Error("currentWindow unsupported")
+      }
+
+      return [
+        {
+          id: 14,
+          url: "chrome://extensions",
+        },
+      ]
+    })
+
+    await act(async () => {
+      await activatedListener?.()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBeNull()
+      expect(result.current.state.siteName).toBe("")
+    })
+  })
+
+  it("clears current-tab detection when fallback active-tab lookup returns a tab without a URL", async () => {
+    const tabsQueryMock = globalThis.browser.tabs.query as ReturnType<
+      typeof vi.fn
+    >
+    let activatedListener: (() => void | Promise<void>) | undefined
+    onTabActivatedMock.mockImplementation((listener) => {
+      activatedListener = listener
+      return () => {}
+    })
+    tabsQueryMock.mockResolvedValueOnce([
+      {
+        id: 15,
+        url: "https://initial.example.com/path",
+      },
+    ])
+    tabsQueryMock.mockResolvedValueOnce([
+      {
+        id: 15,
+        url: "https://initial.example.com/path",
+      },
+    ])
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBe(
+        "https://initial.example.com",
+      )
+      expect(result.current.state.siteName).toBe("Detected Site")
+    })
+
+    tabsQueryMock.mockImplementation(async (queryInfo) => {
+      if (queryInfo?.currentWindow) {
+        throw new Error("currentWindow unsupported")
+      }
+
+      return [{ id: 15 }]
+    })
+
+    await act(async () => {
+      await activatedListener?.()
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.currentTabUrl).toBeNull()
+      expect(result.current.state.siteName).toBe("")
+    })
   })
 
   it("ignores non-http tabs and only refreshes on tab updates for the active tab", async () => {

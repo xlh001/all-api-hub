@@ -16,6 +16,7 @@ describe("setupRuntimeMessageListeners routing", () => {
   let hasCookieReadPermissionForUrl: ReturnType<typeof vi.fn>
   let handleManagedSiteModelSyncMessage: ReturnType<typeof vi.fn>
   let setupContextMenus: ReturnType<typeof vi.fn>
+  let originalBrowserCookies: unknown
 
   beforeEach(() => {
     runtimeMessageListener = undefined
@@ -24,6 +25,7 @@ describe("setupRuntimeMessageListeners routing", () => {
     hasCookieReadPermissionForUrl = vi.fn().mockResolvedValue(true)
     handleManagedSiteModelSyncMessage = vi.fn()
     setupContextMenus = vi.fn().mockResolvedValue(undefined)
+    originalBrowserCookies = (globalThis as any).browser?.cookies
 
     vi.resetModules()
 
@@ -97,6 +99,7 @@ describe("setupRuntimeMessageListeners routing", () => {
     vi.doUnmock("~/services/redemption/redemptionAssist")
     vi.doUnmock("~/services/history/usageHistory/scheduler")
     vi.doUnmock("~/services/webdav/webdavAutoSyncService")
+    ;(globalThis as any).browser.cookies = originalBrowserCookies
     vi.resetModules()
     vi.restoreAllMocks()
   })
@@ -273,6 +276,102 @@ describe("setupRuntimeMessageListeners routing", () => {
     expect(sendResponse).toHaveBeenCalledWith({
       success: true,
       data: "session=incognito",
+    })
+  })
+
+  it("resolves the cookie store from the source tab for incognito cookie import requests", async () => {
+    getCookieHeaderForUrlResult.mockResolvedValueOnce({
+      header: "session=incognito",
+    })
+    const getAllCookieStores = vi.fn().mockResolvedValueOnce([
+      { id: "0", tabIds: [1] },
+      { id: "1-incognito", tabIds: [42] },
+    ])
+    ;(globalThis as any).browser.cookies = {
+      ...((globalThis as any).browser.cookies ?? {}),
+      getAllCookieStores,
+    }
+
+    const { setupRuntimeMessageListeners } = await import(
+      "~/entrypoints/background/runtimeMessages"
+    )
+
+    setupRuntimeMessageListeners()
+    expect(runtimeMessageListener).toBeTypeOf("function")
+
+    const sendResponse = vi.fn()
+    const result = runtimeMessageListener?.(
+      {
+        action: RuntimeActionIds.AccountDialogImportCookieAuthSessionCookie,
+        url: "https://example.com",
+        sourceTabId: 42,
+        sourceTabIncognito: true,
+      },
+      {},
+      sendResponse,
+    )
+
+    expect(result).toBe(true)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(getAllCookieStores).toHaveBeenCalledTimes(1)
+    expect(getCookieHeaderForUrlResult).toHaveBeenCalledWith(
+      "https://example.com",
+      {
+        includeSession: true,
+        storeId: "1-incognito",
+      },
+    )
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: "session=incognito",
+    })
+  })
+
+  it("falls back to the default cookie store when source-tab store lookup fails", async () => {
+    getCookieHeaderForUrlResult.mockResolvedValueOnce({
+      header: "session=regular",
+    })
+    const getAllCookieStores = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("cookie store lookup failed"))
+    ;(globalThis as any).browser.cookies = {
+      ...((globalThis as any).browser.cookies ?? {}),
+      getAllCookieStores,
+    }
+
+    const { setupRuntimeMessageListeners } = await import(
+      "~/entrypoints/background/runtimeMessages"
+    )
+
+    setupRuntimeMessageListeners()
+    expect(runtimeMessageListener).toBeTypeOf("function")
+
+    const sendResponse = vi.fn()
+    const result = runtimeMessageListener?.(
+      {
+        action: RuntimeActionIds.AccountDialogImportCookieAuthSessionCookie,
+        url: "https://example.com",
+        sourceTabId: 42,
+        sourceTabIncognito: true,
+      },
+      {},
+      sendResponse,
+    )
+
+    expect(result).toBe(true)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(getAllCookieStores).toHaveBeenCalledTimes(1)
+    expect(getCookieHeaderForUrlResult).toHaveBeenCalledWith(
+      "https://example.com",
+      {
+        includeSession: true,
+      },
+    )
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: "session=regular",
     })
   })
 
