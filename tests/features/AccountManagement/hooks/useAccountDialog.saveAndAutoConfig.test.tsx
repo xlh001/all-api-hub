@@ -8,6 +8,7 @@ import { useAccountDialog } from "~/features/AccountManagement/components/Accoun
 import {
   ACCOUNT_POST_SAVE_WORKFLOW_ERROR_CODES,
   ACCOUNT_POST_SAVE_WORKFLOW_STEPS,
+  ACCOUNT_TOKEN_INVENTORY_STATE_KINDS,
   ENSURE_ACCOUNT_TOKEN_RESULT_KINDS,
 } from "~/services/accounts/accountPostSaveWorkflow"
 import { accountStorage } from "~/services/accounts/accountStorage"
@@ -38,6 +39,7 @@ const {
   mockToast,
   mockValidateAndSaveAccount,
   mockValidateAndUpdateAccount,
+  mockInspectAccountTokenInventory,
   mockEnsureAccountTokenForPostSaveWorkflow,
   mockOpenWithAccount,
   mockOpenSub2ApiTokenCreationDialog,
@@ -49,6 +51,7 @@ const {
   mockToast: vi.fn(),
   mockValidateAndSaveAccount: vi.fn(),
   mockValidateAndUpdateAccount: vi.fn(),
+  mockInspectAccountTokenInventory: vi.fn(),
   mockEnsureAccountTokenForPostSaveWorkflow: vi.fn(),
   mockOpenWithAccount: vi.fn(),
   mockOpenSub2ApiTokenCreationDialog: vi.fn(),
@@ -103,6 +106,7 @@ vi.mock(
 
     return {
       ...actual,
+      inspectAccountTokenInventory: mockInspectAccountTokenInventory,
       ensureAccountTokenForPostSaveWorkflow:
         mockEnsureAccountTokenForPostSaveWorkflow,
     }
@@ -168,6 +172,10 @@ describe("useAccountDialog save and auto-config flows", () => {
     mockValidateAndUpdateAccount.mockResolvedValue({
       success: true,
       feedbackLevel: "success",
+    })
+    mockInspectAccountTokenInventory.mockResolvedValue({
+      kind: ACCOUNT_TOKEN_INVENTORY_STATE_KINDS.Missing,
+      existingTokenIds: [],
     })
     mockEnsureAccountTokenForPostSaveWorkflow.mockResolvedValue({
       kind: ENSURE_ACCOUNT_TOKEN_RESULT_KINDS.Ready,
@@ -929,6 +937,195 @@ describe("useAccountDialog save and auto-config flows", () => {
     )
     expect(result.current.state.aihubmixPostSaveKeyPrompt.isOpen).toBe(true)
     expect(mockEnsureAccountTokenForPostSaveWorkflow).not.toHaveBeenCalled()
+  })
+
+  it("does not open the AIHubMix foreground key prompt when the saved account already has a token", async () => {
+    mockAutoProvisionKeyOnAccountAdd(true)
+    const onSuccess = vi.fn()
+    const savedSiteAccount = buildSiteAccount({
+      id: "saved-account-id",
+      site_name: "AIHubMix",
+      site_url: "https://console.aihubmix.com",
+      health: { status: SiteHealthStatus.Healthy },
+      site_type: SITE_TYPES.AIHUBMIX,
+      exchange_rate: 7,
+      authType: AuthTypeEnum.AccessToken,
+      account_info: {
+        ...buildSiteAccount().account_info,
+        id: "13",
+        username: "aihubmix-user",
+        access_token: "aihubmix-access-token",
+      },
+    }) as SiteAccount
+    const savedDisplayData =
+      accountStorage.convertToDisplayData(savedSiteAccount)
+    const existingToken = buildToken({
+      id: 502,
+      key: "sk-***masked***",
+    })
+
+    vi.spyOn(accountStorage, "getAccountById").mockResolvedValue(
+      savedSiteAccount,
+    )
+    vi.spyOn(accountStorage, "getDisplayDataById").mockResolvedValue(
+      savedDisplayData,
+    )
+    mockInspectAccountTokenInventory.mockResolvedValueOnce({
+      kind: ACCOUNT_TOKEN_INVENTORY_STATE_KINDS.Present,
+      token: existingToken,
+      existingTokenIds: [existingToken.id],
+      hasUsableSecret: false,
+    })
+
+    const { result } = renderAddHook({ onSuccess })
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await fillAihubmixAccountDraft(result)
+
+    await act(async () => {
+      await result.current.handlers.handleSaveAccount()
+    })
+
+    expect(mockInspectAccountTokenInventory).toHaveBeenCalledWith({
+      displaySiteData: savedDisplayData,
+    })
+    expect(result.current.state.aihubmixPostSaveKeyPrompt.isOpen).toBe(false)
+    expect(result.current.state.postSaveOneTimeToken).toBeNull()
+    expect(onSuccess).toHaveBeenCalledWith("saved-account-id")
+  })
+
+  it("ignores stale AIHubMix foreground key prompt completions after close", async () => {
+    mockAutoProvisionKeyOnAccountAdd(true)
+    const onSuccess = vi.fn()
+    const savedSiteAccount = buildSiteAccount({
+      id: "saved-account-id",
+      site_name: "AIHubMix",
+      site_url: "https://console.aihubmix.com",
+      health: { status: SiteHealthStatus.Healthy },
+      site_type: SITE_TYPES.AIHUBMIX,
+      exchange_rate: 7,
+      authType: AuthTypeEnum.AccessToken,
+      account_info: {
+        ...buildSiteAccount().account_info,
+        id: "13",
+        username: "aihubmix-user",
+        access_token: "aihubmix-access-token",
+      },
+    }) as SiteAccount
+    const savedDisplayData =
+      accountStorage.convertToDisplayData(savedSiteAccount)
+    let resolveInventory:
+      | ((
+          value: Awaited<ReturnType<typeof mockInspectAccountTokenInventory>>,
+        ) => void)
+      | undefined
+    const pendingInventory = new Promise<
+      Awaited<ReturnType<typeof mockInspectAccountTokenInventory>>
+    >((resolve) => {
+      resolveInventory = resolve
+    })
+
+    vi.spyOn(accountStorage, "getAccountById").mockResolvedValue(
+      savedSiteAccount,
+    )
+    vi.spyOn(accountStorage, "getDisplayDataById").mockResolvedValue(
+      savedDisplayData,
+    )
+    mockInspectAccountTokenInventory.mockReturnValueOnce(pendingInventory)
+
+    const { result } = renderAddHook({ onSuccess })
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await fillAihubmixAccountDraft(result)
+
+    let savePromise: ReturnType<
+      typeof result.current.handlers.handleSaveAccount
+    >
+    act(() => {
+      savePromise = result.current.handlers.handleSaveAccount()
+    })
+
+    await waitFor(() => {
+      expect(mockInspectAccountTokenInventory).toHaveBeenCalledWith({
+        displaySiteData: savedDisplayData,
+      })
+    })
+
+    act(() => {
+      result.current.handlers.handleClose()
+    })
+
+    await act(async () => {
+      resolveInventory?.({
+        kind: ACCOUNT_TOKEN_INVENTORY_STATE_KINDS.Missing,
+        existingTokenIds: [],
+      })
+      await savePromise
+    })
+
+    expect(result.current.state.aihubmixPostSaveKeyPrompt.isOpen).toBe(false)
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
+  it("opens the AIHubMix foreground key prompt when token inventory lookup fails", async () => {
+    mockAutoProvisionKeyOnAccountAdd(true)
+    const onSuccess = vi.fn()
+    const savedSiteAccount = buildSiteAccount({
+      id: "saved-account-id",
+      site_name: "AIHubMix",
+      site_url: "https://console.aihubmix.com",
+      health: { status: SiteHealthStatus.Healthy },
+      site_type: SITE_TYPES.AIHUBMIX,
+      exchange_rate: 7,
+      authType: AuthTypeEnum.AccessToken,
+      account_info: {
+        ...buildSiteAccount().account_info,
+        id: "13",
+        username: "aihubmix-user",
+        access_token: "aihubmix-access-token",
+      },
+    }) as SiteAccount
+    const savedDisplayData =
+      accountStorage.convertToDisplayData(savedSiteAccount)
+
+    vi.spyOn(accountStorage, "getAccountById").mockResolvedValue(
+      savedSiteAccount,
+    )
+    vi.spyOn(accountStorage, "getDisplayDataById").mockResolvedValue(
+      savedDisplayData,
+    )
+    mockInspectAccountTokenInventory.mockRejectedValueOnce(
+      new Error("inventory unavailable"),
+    )
+
+    const { result } = renderAddHook({ onSuccess })
+
+    await waitFor(() => {
+      expect(result.current.state).toBeTruthy()
+    })
+
+    await fillAihubmixAccountDraft(result)
+
+    await act(async () => {
+      await result.current.handlers.handleSaveAccount()
+    })
+
+    expect(mockInspectAccountTokenInventory).toHaveBeenCalledWith({
+      displaySiteData: savedDisplayData,
+    })
+    expect(result.current.state.aihubmixPostSaveKeyPrompt).toMatchObject({
+      isOpen: true,
+      accountId: "saved-account-id",
+      accountName: "AIHubMix",
+      isCreating: false,
+    })
+    expect(onSuccess).not.toHaveBeenCalled()
   })
 
   it("does not open the AIHubMix foreground key prompt when auto-provision is disabled", async () => {
