@@ -23,6 +23,7 @@ import {
   TempWindowFallbackPreferences,
   userPreferences,
 } from "~/services/preferences/userPreferences"
+import { AuthTypeEnum } from "~/types"
 import {
   TEMP_WINDOW_HEALTH_STATUS_CODES,
   type TempWindowHealthStatusCode,
@@ -418,6 +419,19 @@ export function matchesTempWindowFallbackAllowlist(
 }
 
 /**
+ * Allows 401 fallback only for cookie-auth requests that can replay a stored account cookie.
+ */
+function isCookieAuthUnauthorizedFallback(
+  error: ApiError,
+  context: TempWindowFallbackContext,
+): boolean {
+  if (context.authType !== AuthTypeEnum.Cookie) return false
+  if (!context.cookieAuthSessionCookie?.trim()) return false
+
+  return error.statusCode === 401 || error.code === API_ERROR_CODES.HTTP_401
+}
+
+/**
  * Mutates an {@link ApiError} to preserve its original code and attach a more
  * specific failure reason.
  *
@@ -503,7 +517,10 @@ async function shouldUseTempWindowFallback(
     return false
   }
 
-  if (!matchesTempWindowFallbackAllowlist(error, context.tempWindowFallback)) {
+  if (
+    !matchesTempWindowFallbackAllowlist(error, context.tempWindowFallback) &&
+    !isCookieAuthUnauthorizedFallback(error, context)
+  ) {
     logSkipTempWindowFallback(
       "Error does not match any temp window fallback codes or statuses.",
       context,
