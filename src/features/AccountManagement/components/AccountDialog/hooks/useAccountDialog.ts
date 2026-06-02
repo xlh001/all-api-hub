@@ -316,6 +316,8 @@ export function useAccountDialog({
   const duplicateAccountWarningAcknowledgedSiteUrlRef = useRef<string | null>(
     null,
   )
+  const selectedSiteUrlRef = useRef("")
+  const currentTabSiteNameRef = useRef("")
   const hasConsumedAutoFillCurrentSiteUrlRef = useRef(false)
   const hasExplicitAuthTypeRef = useRef(false)
   const siteName = draft.siteName
@@ -335,6 +337,8 @@ export function useAccountDialog({
   const sub2apiUseRefreshToken = draft.sub2apiUseRefreshToken
   const sub2apiRefreshToken = draft.sub2apiRefreshToken
   const sub2apiTokenExpiresAt = draft.sub2apiTokenExpiresAt
+  // Keep URL state readable inside async tab-detection guards without rerendering.
+  selectedSiteUrlRef.current = url
   const isDetected =
     phase === ACCOUNT_DIALOG_PHASES.ACCOUNT_FORM &&
     formSource === ACCOUNT_DIALOG_FORM_SOURCES.DETECTED
@@ -702,6 +706,7 @@ export function useAccountDialog({
   const detectSlowHintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   )
+  const currentTabDetectionRunRef = useRef(0)
   const detectedCookieStoreIdRef = useRef<string | null>(null)
   const currentTabCookieImportContextRef =
     useRef<CurrentTabCookieImportContext | null>(null)
@@ -821,6 +826,7 @@ export function useAccountDialog({
       newAccountRef.current = null
       detectedCookieStoreIdRef.current = null
       currentTabCookieImportContextRef.current = null
+      currentTabSiteNameRef.current = ""
       duplicateAccountWarningAcknowledgedSiteUrlRef.current = null
       hasConsumedAutoFillCurrentSiteUrlRef.current = Boolean(nextPrefill)
       const normalizedPrefillAuthType = normalizeOptionalAccountAuthType(
@@ -930,11 +936,22 @@ export function useAccountDialog({
     if (mode === DIALOG_MODES.EDIT && account) {
       return
     }
+    const runId = currentTabDetectionRunRef.current + 1
+    currentTabDetectionRunRef.current = runId
+    const isCurrentDetectionRun = () =>
+      currentTabDetectionRunRef.current === runId
     const clearCurrentTabDetection = () => {
+      if (!isCurrentDetectionRun()) return
+
       currentTabCookieImportContextRef.current = null
+      currentTabSiteNameRef.current = ""
       setCurrentTabUrl(null)
-      setSiteName("")
+      // Preserve a user-selected or typed site name when the URL field is already owned by the user.
+      if (!selectedSiteUrlRef.current.trim()) {
+        setSiteName("")
+      }
     }
+    const canApplyCurrentTabTitle = () => !selectedSiteUrlRef.current.trim()
 
     try {
       const tabs = await browser.tabs.query({
@@ -953,7 +970,13 @@ export function useAccountDialog({
           currentTabCookieImportContextRef.current =
             createCurrentTabCookieImportContext(tab, baseUrl)
           setCurrentTabUrl(baseUrl)
-          setSiteName(await getSiteName(tab))
+          const resolvedSiteName = await getSiteName(tab)
+          if (!isCurrentDetectionRun()) return
+
+          currentTabSiteNameRef.current = resolvedSiteName
+          if (canApplyCurrentTabTitle()) {
+            setSiteName(resolvedSiteName)
+          }
         } catch (error) {
           logger.warn("Failed to parse current tab URL", {
             error,
@@ -977,7 +1000,13 @@ export function useAccountDialog({
             currentTabCookieImportContextRef.current =
               createCurrentTabCookieImportContext(tab, baseUrl)
             setCurrentTabUrl(baseUrl)
-            setSiteName(await getSiteName(tab))
+            const resolvedSiteName = await getSiteName(tab)
+            if (!isCurrentDetectionRun()) return
+
+            currentTabSiteNameRef.current = resolvedSiteName
+            if (canApplyCurrentTabTitle()) {
+              setSiteName(resolvedSiteName)
+            }
           } else {
             clearCurrentTabDetection()
           }
@@ -1116,6 +1145,9 @@ export function useAccountDialog({
   const handleUseCurrentTabUrl = () => {
     if (currentTabUrl) {
       handleUrlChange(currentTabUrl)
+      if (currentTabSiteNameRef.current.trim()) {
+        setSiteName(currentTabSiteNameRef.current)
+      }
     }
   }
 
