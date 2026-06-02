@@ -2,7 +2,11 @@ name: E2E Smoke
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - "ci/**"
+      - "test/**"
     paths:
       - "src/**"
       - "public/**"
@@ -17,7 +21,6 @@ on:
       - "wxt.config.ts"
       - ".github/workflows/e2e-smoke.yml"
   pull_request:
-    branches: [main, develop]
     paths:
       - "src/**"
       - "public/**"

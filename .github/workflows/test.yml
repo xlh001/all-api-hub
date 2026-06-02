@@ -22,7 +22,6 @@ on:
       - "wxt.config.ts"
       - ".github/workflows/test.yml"
   pull_request:
-    branches: [main, develop]
     paths:
       - "src/**"
       - "public/**"
