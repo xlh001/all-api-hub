@@ -2,7 +2,6 @@ import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SITE_TYPES } from "~/constants/siteType"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import type { UserPreferences } from "~/services/preferences/userPreferences"
@@ -16,6 +15,7 @@ import {
   PRODUCT_ANALYTICS_SURFACE_IDS,
   PRODUCT_ANALYTICS_TARGET_STATES,
 } from "~/services/productAnalytics/events"
+import { AutoCheckinMessageTypes } from "~/services/runtimeMessaging/messageTypes"
 import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
 import { buildDisplaySiteData } from "~~/tests/test-utils/factories"
 import { render } from "~~/tests/test-utils/render"
@@ -113,6 +113,19 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   return {
     ...actual,
     sendRuntimeMessage: sendRuntimeMessageMock,
+  }
+})
+
+vi.mock("~/services/checkin/autoCheckin/messaging", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("~/services/checkin/autoCheckin/messaging")
+    >()
+
+  return {
+    ...actual,
+    sendAutoCheckinMessage: (type: string, data?: Record<string, unknown>) =>
+      sendRuntimeMessageMock(type, data),
   }
 })
 
@@ -957,13 +970,16 @@ describe("AccountActionButtons", () => {
       "autoCheckin:messages.loading.running",
     )
     await waitFor(() => {
-      expect(sendRuntimeMessageMock).toHaveBeenNthCalledWith(1, {
-        action: RuntimeActionIds.AutoCheckinRunNow,
-        accountIds: ["acc-5"],
-      })
-      expect(sendRuntimeMessageMock).toHaveBeenNthCalledWith(2, {
-        action: RuntimeActionIds.AutoCheckinGetStatus,
-      })
+      expect(sendRuntimeMessageMock).toHaveBeenNthCalledWith(
+        1,
+        AutoCheckinMessageTypes.RunNow,
+        { accountIds: ["acc-5"] },
+      )
+      expect(sendRuntimeMessageMock).toHaveBeenNthCalledWith(
+        2,
+        AutoCheckinMessageTypes.GetStatus,
+        undefined,
+      )
       expect(toastDismissMock).toHaveBeenCalledWith("toast-quick-checkin")
       expect(toastSuccessMock).toHaveBeenCalledWith(
         "Site: autoCheckin:providerFallback.checkinSuccessful",
@@ -987,7 +1003,7 @@ describe("AccountActionButtons", () => {
     })
   })
 
-  it("shows a completion fallback toast when quick check-in finishes without a per-account result", async () => {
+  it("shows a failure toast when quick check-in finishes without a per-account result", async () => {
     toastLoadingMock.mockReturnValue("toast-quick-checkin-fallback")
     sendRuntimeMessageMock
       .mockResolvedValueOnce({ success: true })
@@ -1023,14 +1039,66 @@ describe("AccountActionButtons", () => {
       expect(toastDismissMock).toHaveBeenCalledWith(
         "toast-quick-checkin-fallback",
       )
-      expect(toastSuccessMock).toHaveBeenCalledWith(
-        "autoCheckin:messages.success.runCompleted",
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "autoCheckin:messages.error.runFailed",
       )
       expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
-        PRODUCT_ANALYTICS_RESULTS.Success,
+        PRODUCT_ANALYTICS_RESULTS.Failure,
         {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
-            statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Healthy,
+            statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Error,
+          },
+        },
+      )
+    })
+  })
+
+  it("shows a failure toast when quick check-in status lookup fails", async () => {
+    toastLoadingMock.mockReturnValue("toast-quick-checkin-status-failed")
+    sendRuntimeMessageMock
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: "status unavailable" })
+
+    const user = userEvent.setup()
+
+    render(
+      <AccountActionButtons
+        site={buildDisplaySiteData({
+          id: "acc-quick-status-failed",
+          disabled: false,
+          name: "Status Failed Site",
+          checkIn: { enableDetection: true },
+        })}
+        onCopyKey={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.more" }),
+    )
+
+    const menu = await screen.findByRole("menu")
+    const label = await within(menu).findByText("account:actions.quickCheckin")
+    const button = label.closest("button")
+    expect(button).not.toBeNull()
+
+    await user.click(button!)
+
+    await waitFor(() => {
+      expect(toastDismissMock).toHaveBeenCalledWith(
+        "toast-quick-checkin-status-failed",
+      )
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "autoCheckin:messages.error.runFailed",
+      )
+      expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Failure,
+        {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights: {
+            statusKind: PRODUCT_ANALYTICS_STATUS_KINDS.Error,
           },
         },
       )

@@ -2,8 +2,8 @@ import { fireEvent } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { RuntimeActionIds } from "~/constants/runtimeActions"
 import AutoCheckin from "~/entrypoints/options/pages/AutoCheckin"
+import { sendAutoCheckinMessage } from "~/services/checkin/autoCheckin/messaging"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -12,6 +12,7 @@ import {
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/events"
+import { AutoCheckinMessageTypes } from "~/services/runtimeMessaging/messageTypes"
 import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
 import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
@@ -26,6 +27,10 @@ const { toast } = vi.hoisted(() => ({
 
 vi.mock("react-hot-toast", () => ({
   default: toast,
+}))
+
+vi.mock("~/services/checkin/autoCheckin/messaging", () => ({
+  sendAutoCheckinMessage: vi.fn(),
 }))
 
 const { startProductAnalyticsActionMock, completeProductAnalyticsActionMock } =
@@ -51,9 +56,7 @@ describe("AutoCheckin bulk manual open", () => {
   })
 
   it("disables the bulk manual-open button when there are no failed accounts", async () => {
-    const browserApi = await import("~/utils/browser/browserApi")
-
-    vi.spyOn(browserApi, "sendRuntimeMessage").mockResolvedValue({
+    vi.mocked(sendAutoCheckinMessage).mockResolvedValue({
       success: true,
       data: {
         perAccount: {
@@ -79,12 +82,11 @@ describe("AutoCheckin bulk manual open", () => {
 
   it("opens all failed accounts even when table filters hide some results", async () => {
     const user = userEvent.setup()
-    const browserApi = await import("~/utils/browser/browserApi")
     const navigation = await import("~/utils/navigation")
-    const sendRuntimeMessageSpy = vi
-      .spyOn(browserApi, "sendRuntimeMessage")
-      .mockImplementation(async (message: any) => {
-        if (message.action === RuntimeActionIds.AutoCheckinGetStatus) {
+    const sendAutoCheckinMessageSpy = vi
+      .mocked(sendAutoCheckinMessage)
+      .mockImplementation(async (type: string, data?: any) => {
+        if (type === AutoCheckinMessageTypes.GetStatus) {
           return {
             success: true,
             data: {
@@ -115,10 +117,10 @@ describe("AutoCheckin bulk manual open", () => {
           }
         }
 
-        if (message.action === RuntimeActionIds.AutoCheckinGetAccountInfo) {
+        if (type === AutoCheckinMessageTypes.GetAccountInfo) {
           return {
             success: true,
-            data: { id: message.accountId },
+            data: { id: data?.accountId },
           }
         }
 
@@ -157,14 +159,14 @@ describe("AutoCheckin bulk manual open", () => {
       )
     })
 
-    expect(sendRuntimeMessageSpy).toHaveBeenCalledWith({
-      action: RuntimeActionIds.AutoCheckinGetAccountInfo,
-      accountId: "alpha",
-    })
-    expect(sendRuntimeMessageSpy).toHaveBeenCalledWith({
-      action: RuntimeActionIds.AutoCheckinGetAccountInfo,
-      accountId: "beta",
-    })
+    expect(sendAutoCheckinMessageSpy).toHaveBeenCalledWith(
+      AutoCheckinMessageTypes.GetAccountInfo,
+      { accountId: "alpha" },
+    )
+    expect(sendAutoCheckinMessageSpy).toHaveBeenCalledWith(
+      AutoCheckinMessageTypes.GetAccountInfo,
+      { accountId: "beta" },
+    )
     expect(toast.success).toHaveBeenCalledWith(
       "autoCheckin:messages.success.openFailedManualCompleted",
     )
@@ -189,12 +191,11 @@ describe("AutoCheckin bulk manual open", () => {
 
   it("keeps opening remaining failed accounts when one manual page fails", async () => {
     const user = userEvent.setup()
-    const browserApi = await import("~/utils/browser/browserApi")
     const navigation = await import("~/utils/navigation")
 
-    vi.spyOn(browserApi, "sendRuntimeMessage").mockImplementation(
-      async (message: any) => {
-        if (message.action === RuntimeActionIds.AutoCheckinGetStatus) {
+    vi.mocked(sendAutoCheckinMessage).mockImplementation(
+      async (type: string, data?: any) => {
+        if (type === AutoCheckinMessageTypes.GetStatus) {
           return {
             success: true,
             data: {
@@ -218,10 +219,10 @@ describe("AutoCheckin bulk manual open", () => {
           }
         }
 
-        if (message.action === RuntimeActionIds.AutoCheckinGetAccountInfo) {
+        if (type === AutoCheckinMessageTypes.GetAccountInfo) {
           return {
             success: true,
-            data: { id: message.accountId },
+            data: { id: data?.accountId },
           }
         }
 
@@ -266,12 +267,11 @@ describe("AutoCheckin bulk manual open", () => {
   })
 
   it("opens failed manual sign-ins in a new window when shift-clicked", async () => {
-    const browserApi = await import("~/utils/browser/browserApi")
     const navigation = await import("~/utils/navigation")
 
-    vi.spyOn(browserApi, "sendRuntimeMessage").mockImplementation(
-      async (message: any) => {
-        if (message.action === RuntimeActionIds.AutoCheckinGetStatus) {
+    vi.mocked(sendAutoCheckinMessage).mockImplementation(
+      async (type: string, data?: any) => {
+        if (type === AutoCheckinMessageTypes.GetStatus) {
           return {
             success: true,
             data: {
@@ -288,10 +288,10 @@ describe("AutoCheckin bulk manual open", () => {
           }
         }
 
-        if (message.action === RuntimeActionIds.AutoCheckinGetAccountInfo) {
+        if (type === AutoCheckinMessageTypes.GetAccountInfo) {
           return {
             success: true,
-            data: { id: message.accountId },
+            data: { id: data?.accountId },
           }
         }
 

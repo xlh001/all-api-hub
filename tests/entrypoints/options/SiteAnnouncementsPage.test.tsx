@@ -1,7 +1,6 @@
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
 import SiteAnnouncementsPage from "~/entrypoints/options/pages/SiteAnnouncements"
 import {
@@ -16,21 +15,24 @@ import {
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/events"
+import { SiteAnnouncementsMessageTypes } from "~/services/runtimeMessaging/messageTypes"
+import { sendSiteAnnouncementsMessage } from "~/services/siteAnnouncements/messaging"
 import type {
   SiteAnnouncementRecord,
   SiteAnnouncementSiteState,
 } from "~/types/siteAnnouncements"
 import { deepOverride } from "~/utils"
-import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { showResultToast } from "~/utils/core/toastHelpers"
 import { openSettingsTab } from "~/utils/navigation"
 import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const {
+  sendSiteAnnouncementsMessageMock,
   startProductAnalyticsActionMock,
   trackProductAnalyticsActionStartedMock,
   completeProductAnalyticsActionMock,
 } = vi.hoisted(() => ({
+  sendSiteAnnouncementsMessageMock: vi.fn(),
   startProductAnalyticsActionMock: vi.fn(),
   trackProductAnalyticsActionStartedMock: vi.fn(),
   completeProductAnalyticsActionMock: vi.fn(),
@@ -41,9 +43,12 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
     await importOriginal<typeof import("~/utils/browser/browserApi")>()
   return {
     ...actual,
-    sendRuntimeMessage: vi.fn(),
   }
 })
+
+vi.mock("~/services/siteAnnouncements/messaging", () => ({
+  sendSiteAnnouncementsMessage: sendSiteAnnouncementsMessageMock,
+}))
 
 vi.mock("~/utils/core/toastHelpers", () => ({
   showResultToast: vi.fn(),
@@ -131,28 +136,30 @@ describe("SiteAnnouncementsPage", () => {
       complete: completeProductAnalyticsActionMock,
     })
     completeProductAnalyticsActionMock.mockResolvedValue(undefined)
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: records }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: status }
-        case RuntimeActionIds.SiteAnnouncementsCheckNow:
-          return {
-            success: true,
-            data: {
-              checked: 3,
-              created: 0,
-              notified: 0,
-              failed: 1,
-              unsupported: 1,
-              records: [],
-            },
-          }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.CheckNow:
+            return {
+              success: true,
+              data: {
+                checked: 3,
+                created: 0,
+                notified: 0,
+                failed: 1,
+                unsupported: 1,
+                records: [],
+              },
+            }
+          default:
+            return { success: true }
+        }
+      },
+    )
   })
 
   const expectCheckNowAnalyticsStarted = (surfaceId: string) => {
@@ -323,31 +330,33 @@ describe("SiteAnnouncementsPage", () => {
       fingerprint: "fp-3",
       title: "Beta follow-up",
     }
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: [...records, betaSecondRecord] }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return {
-            success: true,
-            data: [
-              ...status,
-              {
-                siteKey: "site-3",
-                siteName: "Gamma API",
-                siteType: "new-api",
-                baseUrl: "https://gamma.example.com",
-                accountId: "account-3",
-                providerId: "common",
-                status: "success",
-                records: [],
-              },
-            ],
-          }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: [...records, betaSecondRecord] }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return {
+              success: true,
+              data: [
+                ...status,
+                {
+                  siteKey: "site-3",
+                  siteName: "Gamma API",
+                  siteType: "new-api",
+                  baseUrl: "https://gamma.example.com",
+                  accountId: "account-3",
+                  providerId: "common",
+                  status: "success",
+                  records: [],
+                },
+              ],
+            }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -393,16 +402,18 @@ describe("SiteAnnouncementsPage", () => {
       read: false,
     }
 
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: [unreadSub2ApiRecord] }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: [] }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: [unreadSub2ApiRecord] }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: [] }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -419,18 +430,14 @@ describe("SiteAnnouncementsPage", () => {
     )
 
     await waitFor(() => {
-      expect(sendRuntimeMessage).toHaveBeenCalledWith({
-        action: RuntimeActionIds.SiteAnnouncementsMarkRead,
-        recordId: "announcement-3",
-      })
+      expect(sendSiteAnnouncementsMessage).toHaveBeenCalledWith(
+        SiteAnnouncementsMessageTypes.MarkRead,
+        { recordId: "announcement-3" },
+      )
       expect(
-        vi
-          .mocked(sendRuntimeMessage)
-          .mock.calls.filter(
-            (call) =>
-              (call[0] as { action?: string }).action ===
-              RuntimeActionIds.SiteAnnouncementsMarkRead,
-          ),
+        sendSiteAnnouncementsMessageMock.mock.calls.filter(
+          ([type]) => type === SiteAnnouncementsMessageTypes.MarkRead,
+        ),
       ).toHaveLength(1)
     })
   })
@@ -438,21 +445,25 @@ describe("SiteAnnouncementsPage", () => {
   it("completes single-record mark-read analytics as success when the runtime succeeds", async () => {
     const user = userEvent.setup()
     let currentRecords = records
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: currentRecords }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: status }
-        case RuntimeActionIds.SiteAnnouncementsMarkRead:
-          currentRecords = currentRecords.map((record) =>
-            record.id === "announcement-1" ? { ...record, read: true } : record,
-          )
-          return { success: true }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: currentRecords }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.MarkRead:
+            currentRecords = currentRecords.map((record) =>
+              record.id === "announcement-1"
+                ? { ...record, read: true }
+                : record,
+            )
+            return { success: true }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -471,10 +482,10 @@ describe("SiteAnnouncementsPage", () => {
       expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
         PRODUCT_ANALYTICS_RESULTS.Success,
       )
-      expect(sendRuntimeMessage).toHaveBeenCalledWith({
-        action: RuntimeActionIds.SiteAnnouncementsMarkRead,
-        recordId: "announcement-1",
-      })
+      expect(sendSiteAnnouncementsMessage).toHaveBeenCalledWith(
+        SiteAnnouncementsMessageTypes.MarkRead,
+        { recordId: "announcement-1" },
+      )
     })
     await waitFor(() => {
       expect(
@@ -488,18 +499,20 @@ describe("SiteAnnouncementsPage", () => {
   it("completes single-record mark-read analytics as failure when the runtime reports failure", async () => {
     const user = userEvent.setup()
 
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: records }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: status }
-        case RuntimeActionIds.SiteAnnouncementsMarkRead:
-          return { success: false, error: "mark rejected" }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.MarkRead:
+            return { success: false, error: "mark rejected" }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -523,7 +536,7 @@ describe("SiteAnnouncementsPage", () => {
   })
 
   it("shows a toast when the initial announcement load fails", async () => {
-    vi.mocked(sendRuntimeMessage).mockRejectedValueOnce(
+    sendSiteAnnouncementsMessageMock.mockRejectedValueOnce(
       new Error("network down"),
     )
 
@@ -538,6 +551,68 @@ describe("SiteAnnouncementsPage", () => {
     })
   })
 
+  it("shows a toast when the typed announcement list response is unsuccessful", async () => {
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: false, error: "list rejected" }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          default:
+            return { success: true }
+        }
+      },
+    )
+
+    render(<SiteAnnouncementsPage />)
+
+    await waitFor(() => {
+      expect(showResultToast).toHaveBeenCalledWith({
+        success: false,
+        message: "list rejected",
+        errorFallback: "siteAnnouncements:messages.loadFailed",
+      })
+    })
+    expect(
+      await screen.findByText("siteAnnouncements:messages.loadFailed"),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText("siteAnnouncements:empty.title"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows the load-error state when the typed announcement status response is unsuccessful", async () => {
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: false, error: "status rejected" }
+          default:
+            return { success: true }
+        }
+      },
+    )
+
+    render(<SiteAnnouncementsPage />)
+
+    await waitFor(() => {
+      expect(showResultToast).toHaveBeenCalledWith({
+        success: false,
+        message: "status rejected",
+        errorFallback: "siteAnnouncements:messages.loadFailed",
+      })
+    })
+    expect(
+      await screen.findByText("siteAnnouncements:messages.loadFailed"),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText("Full maintenance window"),
+    ).not.toBeInTheDocument()
+  })
+
   it("disables manual checks while announcements are loading", async () => {
     let resolveRecords!: (response: {
       success: true
@@ -547,13 +622,13 @@ describe("SiteAnnouncementsPage", () => {
       success: true
       data: typeof status
     }) => void
-    vi.mocked(sendRuntimeMessage).mockImplementation((message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
+    sendSiteAnnouncementsMessageMock.mockImplementation((type: string) => {
+      switch (type) {
+        case SiteAnnouncementsMessageTypes.ListRecords:
           return new Promise((resolve) => {
             resolveRecords = resolve
           })
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
+        case SiteAnnouncementsMessageTypes.GetStatus:
           return new Promise((resolve) => {
             resolveStatus = resolve
           })
@@ -612,13 +687,9 @@ describe("SiteAnnouncementsPage", () => {
       })
     })
     expect(
-      vi
-        .mocked(sendRuntimeMessage)
-        .mock.calls.filter(
-          (call) =>
-            (call[0] as { action?: string }).action ===
-            RuntimeActionIds.SiteAnnouncementsListRecords,
-        ),
+      sendSiteAnnouncementsMessageMock.mock.calls.filter(
+        ([type]) => type === SiteAnnouncementsMessageTypes.ListRecords,
+      ),
     ).toHaveLength(2)
   })
 
@@ -635,16 +706,11 @@ describe("SiteAnnouncementsPage", () => {
     )
 
     await waitFor(() => {
-      const checkNowMessages = vi
-        .mocked(sendRuntimeMessage)
-        .mock.calls.map((call) => call[0] as { action?: string })
-        .filter(
-          (message) =>
-            message.action === RuntimeActionIds.SiteAnnouncementsCheckNow,
-        )
+      const checkNowMessages = sendSiteAnnouncementsMessageMock.mock.calls
+        .filter(([type]) => type === SiteAnnouncementsMessageTypes.CheckNow)
+        .map(([, data]) => data)
 
       expect(checkNowMessages.at(-1)).toEqual({
-        action: RuntimeActionIds.SiteAnnouncementsCheckNow,
         accountIds: ["account-1", "account-2"],
       })
     })
@@ -669,10 +735,10 @@ describe("SiteAnnouncementsPage", () => {
     )
 
     await waitFor(() => {
-      expect(sendRuntimeMessage).toHaveBeenCalledWith({
-        action: RuntimeActionIds.SiteAnnouncementsCheckNow,
-        accountIds: ["account-1"],
-      })
+      expect(sendSiteAnnouncementsMessage).toHaveBeenCalledWith(
+        SiteAnnouncementsMessageTypes.CheckNow,
+        { accountIds: ["account-1"] },
+      )
     })
   })
 
@@ -691,16 +757,11 @@ describe("SiteAnnouncementsPage", () => {
     )
 
     await waitFor(() => {
-      const checkNowMessages = vi
-        .mocked(sendRuntimeMessage)
-        .mock.calls.map((call) => call[0] as { action?: string })
-        .filter(
-          (message) =>
-            message.action === RuntimeActionIds.SiteAnnouncementsCheckNow,
-        )
+      const checkNowMessages = sendSiteAnnouncementsMessageMock.mock.calls
+        .filter(([type]) => type === SiteAnnouncementsMessageTypes.CheckNow)
+        .map(([, data]) => data)
 
       expect(checkNowMessages.at(-1)).toEqual({
-        action: RuntimeActionIds.SiteAnnouncementsCheckNow,
         accountIds: ["account-2"],
       })
     })
@@ -709,31 +770,33 @@ describe("SiteAnnouncementsPage", () => {
   it("disables manual checks when filters leave no visible announcements", async () => {
     const user = userEvent.setup()
 
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: records }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return {
-            success: true,
-            data: [
-              ...status,
-              {
-                siteKey: "site-3",
-                siteName: "Gamma API",
-                siteType: "new-api",
-                baseUrl: "https://gamma.example.com",
-                accountId: "account-3",
-                providerId: "common",
-                status: "success",
-                records: [],
-              },
-            ],
-          }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return {
+              success: true,
+              data: [
+                ...status,
+                {
+                  siteKey: "site-3",
+                  siteName: "Gamma API",
+                  siteType: "new-api",
+                  baseUrl: "https://gamma.example.com",
+                  accountId: "account-3",
+                  providerId: "common",
+                  status: "success",
+                  records: [],
+                },
+              ],
+            }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -754,31 +817,29 @@ describe("SiteAnnouncementsPage", () => {
     })
 
     expect(
-      vi
-        .mocked(sendRuntimeMessage)
-        .mock.calls.some(
-          (call) =>
-            (call[0] as { action?: string }).action ===
-            RuntimeActionIds.SiteAnnouncementsCheckNow,
-        ),
+      sendSiteAnnouncementsMessageMock.mock.calls.some(
+        ([type]) => type === SiteAnnouncementsMessageTypes.CheckNow,
+      ),
     ).toBe(false)
   })
 
   it("shows failure feedback when the manual check throws", async () => {
     const user = userEvent.setup()
 
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: records }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: status }
-        case RuntimeActionIds.SiteAnnouncementsCheckNow:
-          throw new Error("check failed")
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.CheckNow:
+            throw new Error("check failed")
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -805,29 +866,31 @@ describe("SiteAnnouncementsPage", () => {
   it("completes manual check analytics as failure when the runtime reports failure", async () => {
     const user = userEvent.setup()
 
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: records }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: status }
-        case RuntimeActionIds.SiteAnnouncementsCheckNow:
-          return {
-            success: false,
-            error: "check rejected",
-            data: {
-              checked: 2,
-              created: 0,
-              notified: 0,
-              failed: 2,
-              unsupported: 0,
-              records: [],
-            },
-          }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.CheckNow:
+            return {
+              success: false,
+              error: "check rejected",
+              data: {
+                checked: 2,
+                created: 0,
+                notified: 0,
+                failed: 2,
+                unsupported: 0,
+                records: [],
+              },
+            }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -843,17 +906,50 @@ describe("SiteAnnouncementsPage", () => {
         PRODUCT_ANALYTICS_RESULTS.Failure,
         {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
-          insights: {
-            itemCount: 2,
-            successCount: 0,
-            failureCount: 2,
-          },
         },
       )
       expect(showResultToast).toHaveBeenCalledWith({
         success: false,
+        message: "check rejected",
         successFallback: "siteAnnouncements:messages.checkCompleted",
-        errorFallback: "check rejected",
+        errorFallback: "siteAnnouncements:messages.checkFailed",
+      })
+    })
+  })
+
+  it("uses local failure fallback copy when the manual check runtime error is blank", async () => {
+    const user = userEvent.setup()
+
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.CheckNow:
+            return { success: false, error: "" }
+          default:
+            return { success: true }
+        }
+      },
+    )
+
+    render(<SiteAnnouncementsPage />)
+
+    await screen.findByText("siteAnnouncements:title")
+    await user.click(
+      screen.getByRole("button", {
+        name: "siteAnnouncements:actions.checkNow",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(showResultToast).toHaveBeenCalledWith({
+        success: false,
+        message: undefined,
+        successFallback: "siteAnnouncements:messages.checkCompleted",
+        errorFallback: "siteAnnouncements:messages.checkFailed",
       })
     })
   })
@@ -861,22 +957,24 @@ describe("SiteAnnouncementsPage", () => {
   it("marks all records read for the current filter scope", async () => {
     const user = userEvent.setup()
     let currentRecords = records
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: currentRecords }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: status }
-        case RuntimeActionIds.SiteAnnouncementsMarkAllRead:
-          currentRecords = currentRecords.map((record) => ({
-            ...record,
-            read: true,
-          }))
-          return { success: true, data: 1 }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: currentRecords }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.MarkAllRead:
+            currentRecords = currentRecords.map((record) => ({
+              ...record,
+              read: true,
+            }))
+            return { success: true, data: 1 }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -897,10 +995,10 @@ describe("SiteAnnouncementsPage", () => {
           },
         },
       )
-      expect(sendRuntimeMessage).toHaveBeenCalledWith({
-        action: RuntimeActionIds.SiteAnnouncementsMarkAllRead,
-        siteKey: undefined,
-      })
+      expect(sendSiteAnnouncementsMessage).toHaveBeenCalledWith(
+        SiteAnnouncementsMessageTypes.MarkAllRead,
+        { siteKey: undefined },
+      )
     })
     await waitFor(() => {
       expect(
@@ -914,18 +1012,20 @@ describe("SiteAnnouncementsPage", () => {
   it("completes mark-all-read analytics as failure when the runtime reports failure", async () => {
     const user = userEvent.setup()
 
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: records }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: status }
-        case RuntimeActionIds.SiteAnnouncementsMarkAllRead:
-          return { success: false, error: "mark rejected" }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.MarkAllRead:
+            return { success: false, error: "mark rejected" }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -948,18 +1048,20 @@ describe("SiteAnnouncementsPage", () => {
   it("completes mark-all-read analytics as failure when the runtime throws", async () => {
     const user = userEvent.setup()
 
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: records }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: status }
-        case RuntimeActionIds.SiteAnnouncementsMarkAllRead:
-          throw new Error("mark failed")
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: records }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: status }
+          case SiteAnnouncementsMessageTypes.MarkAllRead:
+            throw new Error("mark failed")
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -982,16 +1084,18 @@ describe("SiteAnnouncementsPage", () => {
   it("renders the empty announcement state when no records are available", async () => {
     const user = userEvent.setup()
 
-    vi.mocked(sendRuntimeMessage).mockImplementation(async (message: any) => {
-      switch (message.action) {
-        case RuntimeActionIds.SiteAnnouncementsListRecords:
-          return { success: true, data: [] }
-        case RuntimeActionIds.SiteAnnouncementsGetStatus:
-          return { success: true, data: [] }
-        default:
-          return { success: true }
-      }
-    })
+    sendSiteAnnouncementsMessageMock.mockImplementation(
+      async (type: string) => {
+        switch (type) {
+          case SiteAnnouncementsMessageTypes.ListRecords:
+            return { success: true, data: [] }
+          case SiteAnnouncementsMessageTypes.GetStatus:
+            return { success: true, data: [] }
+          default:
+            return { success: true }
+        }
+      },
+    )
 
     render(<SiteAnnouncementsPage />)
 
@@ -1027,9 +1131,10 @@ describe("SiteAnnouncementsPage", () => {
       )
     })
     await waitFor(() => {
-      expect(sendRuntimeMessage).toHaveBeenCalledWith({
-        action: RuntimeActionIds.SiteAnnouncementsCheckNow,
-      })
+      expect(sendSiteAnnouncementsMessage).toHaveBeenCalledWith(
+        SiteAnnouncementsMessageTypes.CheckNow,
+        undefined,
+      )
     })
   })
 })

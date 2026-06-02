@@ -5,13 +5,18 @@ import {
   AUTO_DETECT_STRATEGIES,
   type AutoDetectFailureReason,
 } from "~/constants/autoDetect"
-import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
   ACCOUNT_SITE_TYPES,
   MANAGED_SITE_TYPES,
   SITE_TYPES,
   type ManagedSiteType,
 } from "~/constants/siteType"
+import {
+  ProductAnalyticsMessageTypes,
+  sendProductAnalyticsMessage,
+  type ProductAnalyticsTrackRequest,
+  type ProductAnalyticsTrackRequestDiscriminated,
+} from "~/services/productAnalytics/messaging"
 import { API_TYPES } from "~/services/verification/aiApiVerification/types"
 import {
   AuthTypeEnum,
@@ -22,7 +27,6 @@ import {
 } from "~/types"
 import type { LogLevel } from "~/types/logging"
 import type { ThemeMode } from "~/types/theme"
-import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { createLogger } from "~/utils/core/logger"
 
 const logger = createLogger("ProductAnalyticsEvents")
@@ -1155,29 +1159,6 @@ export type ProductAnalyticsEventPayload<
   TEventName extends ProductAnalyticsEventName,
 > = ProductAnalyticsEventPayloadMap[TEventName]
 
-export type ProductAnalyticsTrackRequest<
-  TEventName extends ProductAnalyticsEventName = ProductAnalyticsEventName,
-> = {
-  action: typeof RuntimeActionIds.ProductAnalyticsTrackEvent
-  eventName: TEventName
-  properties: ProductAnalyticsEventPayload<TEventName>
-}
-
-export type ProductAnalyticsTrackSiteEcosystemRequest = {
-  action: typeof RuntimeActionIds.ProductAnalyticsTrackSiteEcosystemSnapshot
-  reason: "startup" | "account_changed" | "manual"
-}
-
-export type ProductAnalyticsTrackSettingsSnapshotRequest = {
-  action: typeof RuntimeActionIds.ProductAnalyticsTrackSettingsSnapshot
-  reason: "startup" | "preferences_changed" | "manual"
-}
-
-export type ProductAnalyticsRuntimeRequest =
-  | ProductAnalyticsTrackRequest
-  | ProductAnalyticsTrackSiteEcosystemRequest
-  | ProductAnalyticsTrackSettingsSnapshotRequest
-
 /**
  * Sends a typed product analytics event to the background runtime handler.
  * Telemetry dispatch is best-effort and must not block product flows.
@@ -1189,17 +1170,30 @@ export async function trackProductAnalyticsEvent<
   properties: ProductAnalyticsEventPayload<TEventName>,
 ): Promise<boolean> {
   try {
-    const response = await sendRuntimeMessage({
-      action: RuntimeActionIds.ProductAnalyticsTrackEvent,
+    const request = {
       eventName,
       properties,
-    } satisfies ProductAnalyticsTrackRequest<TEventName>)
-    return !(
-      response &&
-      typeof response === "object" &&
-      "success" in response &&
-      response.success === false
+    } satisfies ProductAnalyticsTrackRequest<TEventName>
+    void Promise.resolve(
+      sendProductAnalyticsMessage(
+        ProductAnalyticsMessageTypes.TrackEvent,
+        request as ProductAnalyticsTrackRequestDiscriminated,
+      ),
     )
+      .then((response) => {
+        if (
+          response &&
+          typeof response === "object" &&
+          "success" in response &&
+          response.success === false
+        ) {
+          logger.warn("Product analytics event dispatch was rejected")
+        }
+      })
+      .catch((error) => {
+        logger.warn("Product analytics event dispatch failed", error)
+      })
+    return true
   } catch (error) {
     logger.warn("Product analytics event dispatch failed", error)
     return false

@@ -6,7 +6,6 @@ import { OptionsPageSettingsTitleAction } from "~/components/OptionsPageSettings
 import { PageHeader } from "~/components/PageHeader"
 import { Button } from "~/components/ui"
 import { EmptyState } from "~/components/ui/EmptyState"
-import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
 import { ProductAnalyticsScope } from "~/contexts/ProductAnalyticsScopeContext"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
@@ -20,12 +19,17 @@ import {
   PRODUCT_ANALYTICS_SURFACE_IDS,
   type ProductAnalyticsSurfaceId,
 } from "~/services/productAnalytics/events"
+import { SiteAnnouncementsMessageTypes } from "~/services/runtimeMessaging/messageTypes"
+import {
+  getRuntimeMessageFailureMessage,
+  getRuntimeMessageToastMessage,
+} from "~/services/runtimeMessaging/result"
+import { sendSiteAnnouncementsMessage } from "~/services/siteAnnouncements/messaging"
 import type {
   SiteAnnouncementCheckResult,
   SiteAnnouncementRecord,
   SiteAnnouncementSiteState,
 } from "~/types/siteAnnouncements"
-import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { showResultToast } from "~/utils/core/toastHelpers"
 import { openSettingsTab } from "~/utils/navigation"
@@ -69,22 +73,47 @@ export default function SiteAnnouncementsPage({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     () => new Set(routeParams?.recordId ? [routeParams.recordId] : []),
   )
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
+    setLoadError(null)
     try {
       const [recordsResponse, statusResponse] = await Promise.all([
-        sendRuntimeMessage({
-          action: RuntimeActionIds.SiteAnnouncementsListRecords,
-        }),
-        sendRuntimeMessage({
-          action: RuntimeActionIds.SiteAnnouncementsGetStatus,
-        }),
+        sendSiteAnnouncementsMessage(SiteAnnouncementsMessageTypes.ListRecords),
+        sendSiteAnnouncementsMessage(SiteAnnouncementsMessageTypes.GetStatus),
       ])
 
-      setRecords(recordsResponse?.data ?? [])
-      setStatus(statusResponse?.data ?? [])
+      if (!recordsResponse.success) {
+        showResultToast({
+          success: false,
+          message: getRuntimeMessageFailureMessage(
+            recordsResponse,
+            t("messages.loadFailed"),
+          ),
+          errorFallback: t("messages.loadFailed"),
+        })
+        setLoadError(t("messages.loadFailed"))
+        return
+      }
+
+      if (!statusResponse.success) {
+        showResultToast({
+          success: false,
+          message: getRuntimeMessageFailureMessage(
+            statusResponse,
+            t("messages.loadFailed"),
+          ),
+          errorFallback: t("messages.loadFailed"),
+        })
+        setLoadError(t("messages.loadFailed"))
+        return
+      }
+
+      setRecords(recordsResponse.data)
+      setStatus(statusResponse.data)
     } catch (error) {
+      setLoadError(t("messages.loadFailed"))
       showResultToast({
         success: false,
         message: getErrorMessage(error),
@@ -171,20 +200,15 @@ export default function SiteAnnouncementsPage({
     })
     setIsChecking(true)
     try {
-      const checkRequest = shouldScopeManualCheck
-        ? {
-            action: RuntimeActionIds.SiteAnnouncementsCheckNow,
-            accountIds: manualCheckAccountIds,
-          }
-        : {
-            action: RuntimeActionIds.SiteAnnouncementsCheckNow,
-          }
-      const response = await sendRuntimeMessage(checkRequest)
+      const response = await sendSiteAnnouncementsMessage(
+        SiteAnnouncementsMessageTypes.CheckNow,
+        shouldScopeManualCheck
+          ? { accountIds: manualCheckAccountIds }
+          : undefined,
+      )
       const success = response?.success === true
-      const checkResult = response?.data as
-        | SiteAnnouncementCheckResult
-        | null
-        | undefined
+      const checkResult: SiteAnnouncementCheckResult | null | undefined =
+        response.success ? response.data : undefined
       const checkInsights =
         checkResult && typeof checkResult.checked === "number"
           ? {
@@ -224,8 +248,9 @@ export default function SiteAnnouncementsPage({
       }
       showResultToast({
         success,
+        message: getRuntimeMessageToastMessage(response),
         successFallback: t("messages.checkCompleted"),
-        errorFallback: response?.error ?? t("messages.checkFailed"),
+        errorFallback: t("messages.checkFailed"),
       })
       await loadData()
     } catch (error) {
@@ -250,10 +275,12 @@ export default function SiteAnnouncementsPage({
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
     })
     try {
-      const response = await sendRuntimeMessage({
-        action: RuntimeActionIds.SiteAnnouncementsMarkRead,
-        recordId,
-      })
+      const response = await sendSiteAnnouncementsMessage(
+        SiteAnnouncementsMessageTypes.MarkRead,
+        {
+          recordId,
+        },
+      )
       if (response?.success) {
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
         await loadData()
@@ -261,10 +288,20 @@ export default function SiteAnnouncementsPage({
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         })
+        showResultToast({
+          success: false,
+          message: getRuntimeMessageToastMessage(response),
+          errorFallback: t("messages.markReadFailed"),
+        })
       }
-    } catch {
+    } catch (error) {
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      })
+      showResultToast({
+        success: false,
+        message: getErrorMessage(error),
+        errorFallback: t("messages.markReadFailed"),
       })
     }
   }
@@ -277,10 +314,12 @@ export default function SiteAnnouncementsPage({
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
     })
     try {
-      const response = await sendRuntimeMessage({
-        action: RuntimeActionIds.SiteAnnouncementsMarkAllRead,
-        siteKey: siteKey === "all" ? undefined : siteKey,
-      })
+      const response = await sendSiteAnnouncementsMessage(
+        SiteAnnouncementsMessageTypes.MarkAllRead,
+        {
+          siteKey: siteKey === "all" ? undefined : siteKey,
+        },
+      )
       if (response?.success) {
         if (typeof response.data === "number") {
           tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success, {
@@ -294,10 +333,20 @@ export default function SiteAnnouncementsPage({
         tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         })
+        showResultToast({
+          success: false,
+          message: getRuntimeMessageToastMessage(response),
+          errorFallback: t("messages.markAllReadFailed"),
+        })
       }
-    } catch {
+    } catch (error) {
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      })
+      showResultToast({
+        success: false,
+        message: getErrorMessage(error),
+        errorFallback: t("messages.markAllReadFailed"),
       })
     }
   }
@@ -426,6 +475,21 @@ export default function SiteAnnouncementsPage({
         <EmptyState
           icon={<RefreshCcw className="h-10 w-10 animate-spin" />}
           title={t("loading")}
+        />
+      ) : loadError ? (
+        <EmptyState
+          icon={<Megaphone className="h-10 w-10" />}
+          title={loadError}
+          action={{
+            label: t("actions.checkNow"),
+            onClick: () =>
+              void handleCheckNow(
+                PRODUCT_ANALYTICS_SURFACE_IDS.OptionsSiteAnnouncementsEmptyState,
+              ),
+            disabled: !canRunManualCheck,
+            loading: isChecking,
+            leftIcon: <RefreshCcw className="h-4 w-4" />,
+          }}
         />
       ) : filteredRecords.length === 0 ? (
         <ProductAnalyticsScope
