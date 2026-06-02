@@ -8,6 +8,25 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.43.0
+- **Experience Optimizations:**
+  - AIHubMix: After adding an account, the extension now checks whether tokens already exist first. If tokens are present, it no longer shows the default key creation prompt; if none exist, it still prompts you to create one and displays the one-time full key. See [Account Management](./account-management.md).
+  - Auto Detect: When detecting certain AIHubMix page URLs from the extension popup, temporary-window minimization no longer causes the popup to close, making detection more stable. See [Auto Detect Troubleshooting Guide](./auto-detect.md).
+- **Bug Fixes:**
+  - AIHubMix: Compatible with cases where the site no longer returns the original numeric ID. The account is saved with an available text identifier instead, so adding, syncing, import / export, duplicate detection, pinning, and related flows no longer fail because the numeric ID is missing. See [Account Management](./account-management.md).
+  - Account Management: Fixed cookie import potentially using the wrong browser cookie environment when adding a `Cookie Authentication` account from an incognito window or a Firefox container tab.
+  - Account Management: Fixed `Use current page`-related prefill sometimes keeping a stale title or URL after fast tab switches, unavailable tabs, or non-webpage addresses.
+  - AIHubMix: Fixed inconsistent duplicate-account warnings and current-site detection across `aihubmix.com`, `www.aihubmix.com`, and `console.aihubmix.com`.
+  - In-page extension UI: Fixed in-page extension interfaces still showing Chinese after switching the extension language.
+  - Cookie Authentication: When multiple accounts on the same site use `Cookie Authentication`, refresh, detection, and related operations now use the Cookie for the current account more accurately.
+  - Model List: After creating a model-compatible key, the dialog now waits for the new key to appear in the site response, reducing cases where it still says no compatible key exists or cannot continue copying / managing the key. See [Model List](./model-list.md).
+
+**Location Hints:**
+- AIHubMix account saving, cookie import, and current-page prefill: Add an account under "Settings → Account Management".
+- AIHubMix default key prompt: Add an `AIHubMix` account with "Automatically create a default token after adding an account" enabled.
+- Auto-detect temporary window: Trigger auto detect from the extension popup after entering a site.
+- Model-compatible keys: Create or copy a key for a model under "Settings → Model List".
+
 ## 3.42.0
 - **New Features:**
   - Web AI API Check: Improved automatic detection of `Base URL` and `API Key` from web page content. When multiple candidates are found, you can choose the pair to verify, and the confirmation prompt can open settings or submit issue feedback directly. See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
