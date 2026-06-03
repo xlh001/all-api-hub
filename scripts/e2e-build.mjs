@@ -4,8 +4,18 @@ import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
+import {
+  getE2eExtensionDirName,
+  readE2eBuildVariant,
+} from "../e2e/utils/e2eBuildVariants.shared.js"
+
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
-const extensionDir = path.join(rootDir, ".output", "chrome-mv3-test")
+const buildVariant = readE2eBuildVariant()
+const extensionDir = path.join(
+  rootDir,
+  ".output",
+  getE2eExtensionDirName(buildVariant),
+)
 const metadataPath = path.join(extensionDir, ".aah-e2e-build.json")
 const inputPaths = JSON.parse(
   fs.readFileSync(path.join(rootDir, "e2e", "e2e-build-inputs.json"), "utf8"),
@@ -31,6 +41,7 @@ fs.writeFileSync(
   `${JSON.stringify(
     {
       version: 1,
+      buildVariant,
       gitHead: getGitHead(),
       inputHash: createInputHash(),
       inputPaths,
