@@ -61,7 +61,7 @@ export function OverviewAutomationPanel({
 }: OverviewAutomationPanelProps) {
   return (
     <Card className="dark:bg-dark-bg-secondary/95 flex h-full max-h-none flex-col overflow-hidden border-slate-200/80 bg-white/95 shadow-sm shadow-slate-200/60 xl:max-h-[28rem] dark:border-white/10 dark:shadow-black/20">
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
         {overview.items.map((item) => (
           <AutomationItemRow
             key={item.id}

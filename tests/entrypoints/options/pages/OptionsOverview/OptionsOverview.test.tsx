@@ -616,6 +616,7 @@ describe("OptionsOverview", () => {
       "overflow-x-hidden",
       "overflow-y-auto",
     )
+    expect(attentionCard).not.toHaveClass("overscroll-contain")
     expect(
       screen.getByText("optionsOverview:attention.addAccount.description"),
     ).toHaveClass("line-clamp-2", "break-words")
@@ -637,6 +638,15 @@ describe("OptionsOverview", () => {
     })
 
     renderOverview()
+
+    const automationRegion = screen.getByTestId(
+      OPTIONS_OVERVIEW_TEST_IDS.automationOverview,
+    )
+    const automationCard = automationRegion.firstElementChild
+    const automationRows = automationCard?.firstElementChild
+
+    expect(automationRows).toHaveClass("overflow-y-auto")
+    expect(automationRows).not.toHaveClass("overscroll-contain")
 
     const autoCheckinTrigger = screen.getByRole("button", {
       name: "optionsOverview:automation.items.autoCheckin.label",

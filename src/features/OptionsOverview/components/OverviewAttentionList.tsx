@@ -39,7 +39,7 @@ export function OverviewAttentionList({
   }
 
   return (
-    <Card className="dark:bg-dark-bg-secondary/95 h-full max-h-[28rem] overflow-x-hidden overflow-y-auto overscroll-contain border-slate-200/80 bg-white/95 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:shadow-black/20">
+    <Card className="dark:bg-dark-bg-secondary/95 h-full max-h-[28rem] overflow-x-hidden overflow-y-auto border-slate-200/80 bg-white/95 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:shadow-black/20">
       <ul className="m-0 list-none p-0">
         {items.map((item) => {
           const title = getAttentionTitle(item, t)
