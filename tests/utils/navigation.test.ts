@@ -744,7 +744,7 @@ describe("navigation utilities", () => {
       true,
     )
     expect(mockedCreateTab).toHaveBeenCalledWith(
-      `${OPTIONS_PAGE_URL}?onboarding=permissions&reason=debug#basic`,
+      `${OPTIONS_PAGE_URL}?onboarding=permissions&reason=debug#overview`,
       true,
     )
     expect(mockedCreateTab).toHaveBeenCalledWith(
@@ -906,6 +906,22 @@ describe("navigation utilities", () => {
 
     replaceStateSpy.mockRestore()
     pushStateSpy.mockRestore()
+  })
+
+  it("opens permissions onboarding in-place when already on the options page", async () => {
+    window.history.replaceState(null, "", `${OPTIONS_PAGE_URL}#account`)
+    const replaceStateSpy = vi.spyOn(window.history, "replaceState")
+
+    await openPermissionsOnboardingPage({ reason: "debug" })
+
+    expect(replaceStateSpy).toHaveBeenCalledWith(
+      null,
+      "",
+      `${OPTIONS_PAGE_URL}?onboarding=permissions&reason=debug#overview`,
+    )
+    expect(mockedCreateTab).not.toHaveBeenCalled()
+
+    replaceStateSpy.mockRestore()
   })
 
   it("opens the remaining wrapper destinations in fresh tabs", async () => {

@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
 import { WEBDAV_AUTO_SYNC_TARGET_IDS } from "~/features/ImportExport/searchTargets"
-import OptionsOverview from "~/features/OptionsOverview/OptionsOverview"
+import OptionsOverview, {
+  getPermissionsOnboardingReasonFromUrl,
+} from "~/features/OptionsOverview/OptionsOverview"
 import { OPTIONS_OVERVIEW_TEST_IDS } from "~/features/OptionsOverview/testIds"
 import type { OptionsOverviewViewModel } from "~/features/OptionsOverview/types"
 import {
@@ -17,20 +19,26 @@ import {
   PRODUCT_ANALYTICS_TARGET_KINDS,
   trackProductAnalyticsEvent,
 } from "~/services/productAnalytics/events"
-import { render, screen } from "~~/tests/test-utils/render"
+import { act, render, screen } from "~~/tests/test-utils/render"
 
 const {
   pushWithinOptionsPageMock,
+  setLastSeenOptionalPermissionsMock,
   trackProductAnalyticsEventMock,
   useOptionsOverviewDataMock,
 } = vi.hoisted(() => ({
   pushWithinOptionsPageMock: vi.fn(),
+  setLastSeenOptionalPermissionsMock: vi.fn(),
   trackProductAnalyticsEventMock: vi.fn(),
   useOptionsOverviewDataMock: vi.fn(),
 }))
 
 vi.mock("~/features/OptionsOverview/useOptionsOverviewData", () => ({
   useOptionsOverviewData: useOptionsOverviewDataMock,
+}))
+
+vi.mock("~/services/permissions/optionalPermissionState", () => ({
+  setLastSeenOptionalPermissions: setLastSeenOptionalPermissionsMock,
 }))
 
 vi.mock("~/services/productAnalytics/events", async (importOriginal) => {
@@ -61,6 +69,29 @@ vi.mock("~/components/icons/WorkflowTransitionIcon", () => ({
     />
   ),
 }))
+
+vi.mock(
+  "~/features/OptionsOverview/components/dialogs/PermissionOnboardingDialog",
+  () => ({
+    PermissionOnboardingDialog: ({
+      open,
+      onClose,
+      reason,
+    }: {
+      open: boolean
+      onClose: () => void
+      reason: string | null
+    }) =>
+      open ? (
+        <div data-testid="permission-onboarding">
+          <span>{reason}</span>
+          <button type="button" onClick={onClose}>
+            close
+          </button>
+        </div>
+      ) : null,
+  }),
+)
 
 const setupViewModel: OptionsOverviewViewModel = {
   statusCards: [
@@ -298,7 +329,9 @@ const setupViewModel: OptionsOverviewViewModel = {
 describe("OptionsOverview", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setLastSeenOptionalPermissionsMock.mockResolvedValue(undefined)
     trackProductAnalyticsEventMock.mockResolvedValue(true)
+    window.history.replaceState(null, "", "/")
   })
 
   it("renders loading state while overview data loads", () => {
@@ -334,6 +367,88 @@ describe("OptionsOverview", () => {
         name: "optionsOverview:configurationOverview.open",
       }),
     ).not.toBeInTheDocument()
+  })
+
+  it("opens permissions onboarding from Overview URL state", async () => {
+    useOptionsOverviewDataMock.mockReturnValue({
+      isLoading: false,
+      error: null,
+      viewModel: setupViewModel,
+      reload: vi.fn(),
+    })
+
+    renderOverview()
+
+    expect(
+      screen.queryByTestId("permission-onboarding"),
+    ).not.toBeInTheDocument()
+
+    act(() => {
+      window.history.replaceState(
+        null,
+        "",
+        "/?onboarding=permissions&reason=debug#overview",
+      )
+      window.dispatchEvent(new Event("hashchange"))
+    })
+
+    expect(
+      await screen.findByTestId("permission-onboarding"),
+    ).toHaveTextContent("debug")
+  })
+
+  it("ignores permissions onboarding URL state outside the Overview route", () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?onboarding=permissions&reason=debug#basic",
+    )
+
+    expect(getPermissionsOnboardingReasonFromUrl()).toBeNull()
+  })
+
+  it("ignores non-permissions onboarding modes on the Overview route", () => {
+    window.history.replaceState(null, "", "/?onboarding=tour#overview")
+
+    expect(getPermissionsOnboardingReasonFromUrl()).toBeNull()
+  })
+
+  it("treats missing browser globals as no permissions onboarding state", () => {
+    const originalWindow = globalThis.window
+
+    vi.stubGlobal("window", undefined)
+
+    try {
+      expect(getPermissionsOnboardingReasonFromUrl()).toBeNull()
+    } finally {
+      vi.stubGlobal("window", originalWindow)
+    }
+  })
+
+  it("closes permissions onboarding, records the current optional permissions, and cleans the URL", async () => {
+    const user = userEvent.setup()
+    useOptionsOverviewDataMock.mockReturnValue({
+      isLoading: false,
+      error: null,
+      viewModel: setupViewModel,
+      reload: vi.fn(),
+    })
+    window.history.replaceState(
+      null,
+      "",
+      "/?onboarding=permissions&reason=debug#overview",
+    )
+
+    renderOverview()
+
+    await user.click(screen.getByRole("button", { name: "close" }))
+
+    expect(
+      screen.queryByTestId("permission-onboarding"),
+    ).not.toBeInTheDocument()
+    expect(setLastSeenOptionalPermissionsMock).toHaveBeenCalledTimes(1)
+    expect(window.location.search).toBe("")
+    expect(window.location.hash).toBe("#overview")
   })
 
   it("keeps overview status surfaces compact without repeated helper copy", () => {
