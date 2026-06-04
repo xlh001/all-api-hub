@@ -29,8 +29,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
+import {
+  BASIC_SETTINGS_ANCHOR_TO_TAB,
+  type BasicSettingsTabId as TabId,
+} from "~/constants/basicSettingsTabs"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
-import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import {
   clearHighlightSearchParam,
@@ -50,21 +53,6 @@ import { PermissionOnboardingDialog } from "./components/dialogs/PermissionOnboa
 import LoadingSkeleton from "./components/shared/LoadingSkeleton"
 import GeneralTab from "./components/tabs/General/GeneralTab"
 import { BASIC_SETTINGS_TEST_IDS } from "./testIds"
-
-type TabId =
-  | "general"
-  | "notifications"
-  | "balanceHistory"
-  | "accountManagement"
-  | "refresh"
-  | "checkinRedeem"
-  | "webAiApiCheck"
-  | "accountUsage"
-  | "dataBackup"
-  | "managedSite"
-  | "cliProxy"
-  | "claudeCodeRouter"
-  | "permissions"
 
 interface TabConfig {
   id: TabId
@@ -140,57 +128,6 @@ const TAB_CONFIGS = [
   { id: "dataBackup", component: DataBackupTab },
 ] satisfies TabConfig[]
 
-const ANCHOR_TO_TAB: Record<string, TabId> = {
-  "general-display": "general",
-  display: "general",
-  appearance: "general",
-  theme: "general",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_ENABLED]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_PERMISSION]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_BROWSER]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_TELEGRAM]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_FEISHU]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_DINGTALK]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_WECOM]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_NTFY]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_CHANNEL_WEBHOOK]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_AUTO_CHECKIN]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_WEBDAV_AUTO_SYNC]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_MANAGED_SITE_MODEL_SYNC]:
-    "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_USAGE_HISTORY_SYNC]: "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_BALANCE_HISTORY_CAPTURE]:
-    "notifications",
-  [SETTINGS_ANCHORS.TASK_NOTIFICATIONS_SITE_ANNOUNCEMENTS]: "notifications",
-  [SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS]: "general",
-  [SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED]: "general",
-  [SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_INTERVAL]: "general",
-  [SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_PAGE]: "general",
-  "balance-history": "balanceHistory",
-  "account-management": "accountManagement",
-  "auto-provision-key-on-account-add": "accountManagement",
-  "sorting-priority": "accountManagement",
-  sorting: "accountManagement",
-  "auto-refresh": "refresh",
-  refresh: "refresh",
-  "auto-checkin": "checkinRedeem",
-  "checkin-redeem": "checkinRedeem",
-  checkin: "checkinRedeem",
-  "web-ai-api-check": "webAiApiCheck",
-  "usage-history-sync": "accountUsage",
-  "usage-history-sync-state": "accountUsage",
-  webdav: "dataBackup",
-  "webdav-auto-sync": "dataBackup",
-  "import-export-entry": "dataBackup",
-  "new-api": "managedSite",
-  "new-api-model-sync": "managedSite",
-  "cli-proxy": "cliProxy",
-  "claude-code-router": "claudeCodeRouter",
-  "dangerous-zone": "general",
-  ...(hasOptionalPermissions ? { permissions: "permissions" } : {}),
-}
-
 interface SettingsTabItem {
   id: TabId
   label: string
@@ -225,6 +162,23 @@ function getDesktopTabRowWidth(
 }
 
 /**
+ * Resolve legacy anchor-only Basic Settings links to the tab that owns them.
+ * New overview/search links pass an explicit `tab` param; this fallback can be
+ * removed after old anchor-only URLs no longer need compatibility.
+ */
+function getTabFromSearchAnchor(): TabId | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+
+  const anchor = new URLSearchParams(window.location.search)
+    .get("anchor")
+    ?.trim()
+
+  return anchor ? BASIC_SETTINGS_ANCHOR_TO_TAB[anchor] ?? null : null
+}
+
+/**
  * Resolve the currently requested Basic Settings tab from the URL state.
  */
 function resolveSelectedTabIndexFromUrl(): number {
@@ -245,8 +199,18 @@ function resolveSelectedTabIndexFromUrl(): number {
     }
   }
 
+  const tabFromSearchAnchor = getTabFromSearchAnchor()
+  if (tabFromSearchAnchor) {
+    const index = TAB_CONFIGS.findIndex(
+      (config) => config.id === tabFromSearchAnchor,
+    )
+    if (index >= 0) {
+      return index
+    }
+  }
+
   if (isHeadingAnchor && anchor) {
-    const targetTab = ANCHOR_TO_TAB[anchor]
+    const targetTab = BASIC_SETTINGS_ANCHOR_TO_TAB[anchor]
     if (targetTab) {
       const index = TAB_CONFIGS.findIndex((config) => config.id === targetTab)
       if (index >= 0) {
