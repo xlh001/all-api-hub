@@ -43,10 +43,14 @@ export const test = base.extend<ExtensionFixtures>({
       "--no-first-run",
     ]
 
+    const chromeExecutablePath = process.env.AAH_E2E_CHROME_EXECUTABLE_PATH
+      ? path.resolve(process.cwd(), process.env.AAH_E2E_CHROME_EXECUTABLE_PATH)
+      : null
     const launchOptions = {
       headless,
       args,
       ignoreDefaultArgs: ["--disable-extensions"],
+      ...(chromeExecutablePath ? { executablePath: chromeExecutablePath } : {}),
     }
 
     let context:
@@ -56,7 +60,7 @@ export const test = base.extend<ExtensionFixtures>({
     try {
       context = await chromium.launchPersistentContext(userDataDir, {
         ...launchOptions,
-        ...(headless ? { channel: "chromium" } : {}),
+        ...(headless && !chromeExecutablePath ? { channel: "chromium" } : {}),
       })
       await stubSponsorRemoteCatalog(context)
 
