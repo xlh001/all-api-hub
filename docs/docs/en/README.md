@@ -104,17 +104,59 @@ Have questions or want to share useful sites? Join the community:
 <a id="sponsors"></a>
 ## ❤️ Sponsors
 
-<table>
-  <tr>
-    <td width="180" align="center">
-      <a href="https://www.packyapi.com/register?aff=all-api-hub">
-        <img src="../../../resources/partners/packycode.png" alt="PackyCode" width="150">
-      </a>
-    </td>
-    <td>
-      Thanks to PackyCode for sponsoring this project! PackyCode is a reliable and efficient API relay service provider, offering relay services for Claude Code, Codex,
-      Gemini, and more. PackyCode provides special discounts for our software users: register using
-      <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get 10% off.
-    </td>
-  </tr>
-</table>
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
+    <a href="https://www.packyapi.com/register?aff=all-api-hub">
+      <img src="../../../resources/partners/packycode.png" alt="PackyCode">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    Thanks to PackyCode for sponsoring this project! PackyCode is a reliable and efficient API relay service provider, offering relay services for Claude Code, Codex,
+    Gemini, and more. PackyCode provides special discounts for our software users: register using
+    <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get 10% off.
+  </p>
+</div>
+
+<style>
+.readme-sponsor {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.readme-sponsor-logo {
+  flex: 0 0 180px;
+  text-align: center;
+}
+
+.readme-sponsor-logo img {
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+}
+
+.readme-sponsor-copy {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .readme-sponsor {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .readme-sponsor-logo {
+    flex-basis: auto;
+    width: 100%;
+    text-align: left;
+  }
+
+  .readme-sponsor-logo img {
+    width: 128px;
+  }
+}
+</style>

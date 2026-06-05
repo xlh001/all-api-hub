@@ -112,19 +112,16 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 
 > [想出现在这里？](mailto:street-anime-olive@duck.com)
 
-<table>
-  <tr>
-    <td width="180" align="center">
-      <a href="https://www.packyapi.com/register?aff=all-api-hub">
-        <img src="resources/partners/packycode.png" alt="PackyCode" width="150">
-      </a>
-    </td>
-    <td>
-      感谢 PackyCode 赞助了本项目！PackyCode 是一家稳定、高效的API中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。PackyCode
-      为本软件的用户提供了特别优惠，使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写"all-api-hub"优惠码，首次充值可以享受9折优惠！
-    </td>
-  </tr>
-</table>
+<div>
+  <a href="https://www.packyapi.com/register?aff=all-api-hub">
+    <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="12" vspace="4">
+  </a>
+  <p>
+    感谢 PackyCode 赞助了本项目！PackyCode 是一家稳定、高效的API中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。PackyCode
+    为本软件的用户提供了特别优惠，使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写"all-api-hub"优惠码，首次充值可以享受9折优惠！
+  </p>
+</div>
+<br clear="left">
 
 > [!NOTE]
 > 如果你之前使用过 [One API Hub](https://github.com/fxaxg/one-api-hub)，All API Hub 已完成大幅重构，并保留数据兼容能力，支持一键导入原有数据。

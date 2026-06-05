@@ -100,16 +100,58 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 <a id="sponsors"></a>
 ## ❤️ 赞助商
 
-<table>
-  <tr>
-    <td width="180" align="center">
-      <a href="https://www.packyapi.com/register?aff=all-api-hub">
-        <img src="../../resources/partners/packycode.png" alt="PackyCode" width="150">
-      </a>
-    </td>
-    <td>
-      感谢 PackyCode 赞助了本项目！PackyCode 是一家稳定、高效的API中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。PackyCode
-      为本软件的用户提供了特别优惠，使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写"all-api-hub"优惠码，首次充值可以享受9折优惠！
-    </td>
-  </tr>
-</table>
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
+    <a href="https://www.packyapi.com/register?aff=all-api-hub">
+      <img src="../../resources/partners/packycode.png" alt="PackyCode">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    感谢 PackyCode 赞助了本项目！PackyCode 是一家稳定、高效的API中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。PackyCode
+    为本软件的用户提供了特别优惠，使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写"all-api-hub"优惠码，首次充值可以享受9折优惠！
+  </p>
+</div>
+
+<style>
+.readme-sponsor {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.readme-sponsor-logo {
+  flex: 0 0 180px;
+  text-align: center;
+}
+
+.readme-sponsor-logo img {
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+}
+
+.readme-sponsor-copy {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .readme-sponsor {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .readme-sponsor-logo {
+    flex-basis: auto;
+    width: 100%;
+    text-align: left;
+  }
+
+  .readme-sponsor-logo img {
+    width: 128px;
+  }
+}
+</style>
