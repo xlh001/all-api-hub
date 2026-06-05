@@ -8,6 +8,23 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.44.0
+- **New Features:**
+  - Settings Overview: The settings page now includes an `Overview` workbench that brings together accounts, API credentials, today's usage, items that need attention, automated tasks, and configuration status, with direct jumps to the pages that need action.
+- **Experience Optimizations:**
+  - Permission Onboarding: Optional permission explanations and grant entry points are now handled by `Overview`; when the extension needs new optional permissions, it explains the purpose of Cookies, web request observation, notifications, and related permissions in one place. See [Permission Management (Optional Permissions)](./permissions.md).
+  - API Credential Library: The add-credential button is now consistently labeled `Save API Key`, better matching the `Base URL + API Key`-only use case. See [API Credential Library](./api-credential-profiles.md).
+  - Extension Popup: Statistics on the `API Key` page now wrap on narrow screens, so balance, today's usage, and related metrics no longer crowd each other.
+- **Bug Fixes:**
+  - WebDAV: Compatible with China Science and Technology Cloud (CSTCloud) overwrite-move failures. The extension now retries replacing the official backup file, reducing upload failures during manual sync or auto sync. See [WebDAV Backup and Auto Sync](./webdav-sync.md).
+  - Older Browser Compatibility: Fixed runtime messages that might not receive responses, improving compatibility for cross-entry tasks such as Auto Check-in, Model Sync, WebDAV Auto Sync, notifications, and in-page detection.
+
+**Location Hints:**
+- Settings Overview: Open "Settings" to enter `Overview` by default.
+- Permission Onboarding: After upgrading, if new optional permissions are needed, check the prompt under "Settings → Overview"; you can also view the full permission status under "Settings → Permission Management".
+- API Credential Library: Click `Save API Key` under "Settings → API Credential Library".
+- WebDAV Sync: Use `WebDAV Settings` and auto-sync actions under "Settings → Import / Export".
+
 ## 3.43.0
 - **Experience Optimizations:**
   - AIHubMix: After adding an account, the extension now checks whether tokens already exist first. If tokens are present, it no longer shows the default key creation prompt; if none exist, it still prompts you to create one and displays the one-time full key. See [Account Management](./account-management.md).
