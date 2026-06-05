@@ -122,9 +122,13 @@ describe("ApiCredentialProfilesStatsSection", () => {
       withUserPreferencesProvider: false,
     })
 
-    expect(
-      screen.getAllByText("apiCredentialProfiles:telemetry.notProvided"),
-    ).toHaveLength(2)
+    const placeholders = screen.getAllByText(
+      "apiCredentialProfiles:telemetry.notProvided",
+    )
+
+    expect(placeholders).toHaveLength(2)
+    expect(placeholders[0]).toHaveClass("block")
+    expect(placeholders[1]).toHaveClass("block")
   })
 
   it("does not present refreshed snapshots without balance as a zero balance", () => {
@@ -150,9 +154,45 @@ describe("ApiCredentialProfilesStatsSection", () => {
     })
 
     expect(screen.queryByText("$0.00")).not.toBeInTheDocument()
-    expect(
-      screen.getAllByText("apiCredentialProfiles:telemetry.notProvided"),
-    ).toHaveLength(2)
+    const placeholders = screen.getAllByText(
+      "apiCredentialProfiles:telemetry.notProvided",
+    )
+
+    expect(placeholders).toHaveLength(2)
+    expect(placeholders[0]).toHaveClass("block")
+    expect(placeholders[1]).toHaveClass("block")
+  })
+
+  it("renders missing money stats as neutral values on their own line", () => {
+    mockUseUserPreferencesContext.mockReturnValue({ currencyType: "USD" })
+    mockUseApiCredentialProfiles.mockReturnValue({
+      isLoading: false,
+      profiles: [
+        buildProfile({
+          telemetrySnapshot: {
+            attempts: [],
+            health: { status: SiteHealthStatus.Healthy },
+            lastSyncTime: 1000,
+          },
+        }),
+      ],
+    })
+
+    render(<ApiCredentialProfilesStatsSection />, {
+      withReleaseUpdateStatusProvider: false,
+      withThemeProvider: false,
+      withUserPreferencesProvider: false,
+    })
+
+    const placeholders = screen.getAllByText(
+      "apiCredentialProfiles:telemetry.notProvided",
+    )
+
+    expect(placeholders).toHaveLength(2)
+    expect(placeholders[0]).toHaveClass("block")
+    expect(placeholders[1]).toHaveClass("block")
+    expect(placeholders[1]).not.toHaveClass("text-emerald-600")
+    expect(placeholders[1]).toHaveClass("text-gray-500")
   })
 
   it("tracks anonymous inventory buckets without raw counts", () => {

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { BodySmall, Caption } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { useApiCredentialProfiles } from "~/features/ApiCredentialProfiles/hooks/useApiCredentialProfiles"
+import { cn } from "~/lib/utils"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -17,6 +18,8 @@ import { SiteHealthStatus } from "~/types"
 import { formatTelemetryMoney } from "~/utils/core/money"
 
 import { AnimatedStatValue } from "./AnimatedStatValue"
+
+const moneyValueClassName = "block text-base font-semibold"
 
 /**
  * Popup API credential profile statistics summary for the API Credentials view.
@@ -89,9 +92,18 @@ export default function ApiCredentialProfilesStatsSection() {
       ...stats,
       balanceUsd: stats.balanceSources > 0 ? stats.balanceUsd : undefined,
       todayUsageUsd:
-        stats.profileTelemetryCount > 0 ? stats.todayUsageUsd : undefined,
+        stats.todayUsageSources > 0 ? stats.todayUsageUsd : undefined,
     }
   }, [profiles])
+
+  const balanceText =
+    telemetryStats.balanceUsd === undefined
+      ? t("apiCredentialProfiles:telemetry.notProvided")
+      : formatTelemetryMoney(telemetryStats.balanceUsd, currencyType)
+  const todayUsageText =
+    telemetryStats.todayUsageUsd === undefined
+      ? t("apiCredentialProfiles:telemetry.notProvided")
+      : formatTelemetryMoney(telemetryStats.todayUsageUsd, currencyType)
 
   useEffect(() => {
     if (isLoading) return
@@ -171,24 +183,29 @@ export default function ApiCredentialProfilesStatsSection() {
           <Caption className="font-medium">
             {t("apiCredentialProfiles:stats.totalBalance")}
           </Caption>
-          <span className="text-base font-semibold">
-            {telemetryStats.balanceUsd === undefined
-              ? t("apiCredentialProfiles:telemetry.notProvided")
-              : formatTelemetryMoney(telemetryStats.balanceUsd, currencyType)}
+          <span
+            className={cn(
+              moneyValueClassName,
+              telemetryStats.balanceUsd === undefined &&
+                "dark:text-dark-text-tertiary text-gray-500",
+            )}
+          >
+            {balanceText}
           </span>
         </div>
         <div className="space-y-1">
           <Caption className="font-medium">
             {t("apiCredentialProfiles:stats.todayUsage")}
           </Caption>
-          <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
-            {telemetryStats.todayUsageUsd === undefined ||
-            telemetryStats.todayUsageSources === 0
-              ? t("apiCredentialProfiles:telemetry.notProvided")
-              : formatTelemetryMoney(
-                  telemetryStats.todayUsageUsd,
-                  currencyType,
-                )}
+          <span
+            className={cn(
+              moneyValueClassName,
+              telemetryStats.todayUsageUsd === undefined
+                ? "dark:text-dark-text-tertiary text-gray-500"
+                : "text-emerald-600 dark:text-emerald-400",
+            )}
+          >
+            {todayUsageText}
           </span>
         </div>
       </div>
