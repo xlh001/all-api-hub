@@ -35,6 +35,7 @@ describe("background context menu refresh", () => {
 
   const contextMenusCreate = vi.fn()
   const contextMenusRemove = vi.fn().mockResolvedValue(undefined)
+  const contextMenusRemoveListener = vi.fn()
   const contextMenusAddListener = vi.fn(
     (listener: (info: any, tab: any) => unknown) => {
       listeners.push(listener)
@@ -48,6 +49,7 @@ describe("background context menu refresh", () => {
       remove: contextMenusRemove,
       onClicked: {
         addListener: contextMenusAddListener,
+        removeListener: contextMenusRemoveListener,
       },
     },
     tabs: {
@@ -64,6 +66,7 @@ describe("background context menu refresh", () => {
     contextMenusCreate.mockClear()
     contextMenusRemove.mockClear()
     contextMenusAddListener.mockClear()
+    contextMenusRemoveListener.mockClear()
     tabsSendMessage.mockClear()
     startProductAnalyticsActionMock.mockReset()
     trackerCompleteMock.mockReset()
@@ -143,6 +146,8 @@ describe("background context menu refresh", () => {
       123,
       expect.objectContaining({
         action: RuntimeActionIds.ApiCheckContextMenuTrigger,
+        pageUrl: "https://example.com",
+        selectionText: "sk-test",
       }),
     )
     expect(startProductAnalyticsActionMock).toHaveBeenCalledWith({
@@ -191,6 +196,47 @@ describe("background context menu refresh", () => {
     )
   })
 
+  it("forwards selected text from the redemption context-menu action", async () => {
+    const { refreshContextMenus } = await import(
+      "~/entrypoints/background/contextMenus"
+    )
+
+    await refreshContextMenus({
+      redemptionAssist: { enabled: true, contextMenu: { enabled: true } },
+      webAiApiCheck: { enabled: true, contextMenu: { enabled: true } },
+    } as any)
+
+    await Promise.all(
+      listeners.map((listener) =>
+        listener(
+          {
+            menuItemId: "redemption-assist-context-menu",
+            selectionText: "coupon-code",
+            pageUrl: "https://example.com",
+          },
+          { id: 123, url: "https://example.com" },
+        ),
+      ),
+    )
+
+    expect(tabsSendMessage).toHaveBeenCalledWith(
+      123,
+      expect.objectContaining({
+        action: RuntimeActionIds.RedemptionAssistContextMenuTrigger,
+        pageUrl: "https://example.com",
+        selectionText: "coupon-code",
+      }),
+    )
+    expect(startProductAnalyticsActionMock).toHaveBeenCalledWith({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.RedemptionAssist,
+      actionId:
+        PRODUCT_ANALYTICS_ACTION_IDS.TriggerRedemptionAssistFromContextMenu,
+      surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.BackgroundContextMenu,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+    })
+    expect(trackerCompleteMock).toHaveBeenCalledWith()
+  })
+
   it("reports a failed AI API Check context-menu action when forwarding fails", async () => {
     tabsSendMessage.mockRejectedValueOnce(new Error("content unavailable"))
     const { refreshContextMenus } = await import(
@@ -219,6 +265,8 @@ describe("background context menu refresh", () => {
       123,
       expect.objectContaining({
         action: RuntimeActionIds.ApiCheckContextMenuTrigger,
+        pageUrl: "https://example.com",
+        selectionText: "sk-test",
       }),
     )
     expect(startProductAnalyticsActionMock).toHaveBeenCalledWith({
