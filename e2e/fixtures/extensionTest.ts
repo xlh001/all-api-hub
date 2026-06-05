@@ -9,6 +9,7 @@ import {
   assertBuiltExtensionExists,
   getExtensionIdFromServiceWorker,
 } from "~~/e2e/utils/extension"
+import { buildExtensionLaunchOptions } from "~~/e2e/utils/extensionLaunch"
 
 type ExtensionFixtures = {
   extensionId: string
@@ -36,32 +37,24 @@ export const test = base.extend<ExtensionFixtures>({
         path.join(os.tmpdir(), `all-api-hub-e2e-${testInfo.workerIndex}-`),
       ))
 
-    const args = [
-      `--disable-extensions-except=${extensionDir}`,
-      `--load-extension=${extensionDir}`,
-      "--no-default-browser-check",
-      "--no-first-run",
-    ]
-
     const chromeExecutablePath = process.env.AAH_E2E_CHROME_EXECUTABLE_PATH
       ? path.resolve(process.cwd(), process.env.AAH_E2E_CHROME_EXECUTABLE_PATH)
       : null
-    const launchOptions = {
+    const launchOptions = buildExtensionLaunchOptions({
+      extensionDir,
       headless,
-      args,
-      ignoreDefaultArgs: ["--disable-extensions"],
-      ...(chromeExecutablePath ? { executablePath: chromeExecutablePath } : {}),
-    }
+      chromeExecutablePath,
+    })
 
     let context:
       | Awaited<ReturnType<typeof chromium.launchPersistentContext>>
       | undefined
 
     try {
-      context = await chromium.launchPersistentContext(userDataDir, {
-        ...launchOptions,
-        ...(headless && !chromeExecutablePath ? { channel: "chromium" } : {}),
-      })
+      context = await chromium.launchPersistentContext(
+        userDataDir,
+        launchOptions,
+      )
       await stubSponsorRemoteCatalog(context)
 
       await run(context)
