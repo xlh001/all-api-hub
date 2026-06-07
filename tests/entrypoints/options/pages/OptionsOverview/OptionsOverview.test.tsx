@@ -19,6 +19,7 @@ import {
   PRODUCT_ANALYTICS_TARGET_KINDS,
   trackProductAnalyticsEvent,
 } from "~/services/productAnalytics/events"
+import type { ProductAnnouncement } from "~/services/productAnnouncements/types"
 import { act, render, screen } from "~~/tests/test-utils/render"
 
 const {
@@ -26,16 +27,25 @@ const {
   setLastSeenOptionalPermissionsMock,
   trackProductAnalyticsEventMock,
   useOptionsOverviewDataMock,
+  useProductAnnouncementsMock,
 } = vi.hoisted(() => ({
   pushWithinOptionsPageMock: vi.fn(),
   setLastSeenOptionalPermissionsMock: vi.fn(),
   trackProductAnalyticsEventMock: vi.fn(),
   useOptionsOverviewDataMock: vi.fn(),
+  useProductAnnouncementsMock: vi.fn(),
 }))
 
 vi.mock("~/features/OptionsOverview/useOptionsOverviewData", () => ({
   useOptionsOverviewData: useOptionsOverviewDataMock,
 }))
+
+vi.mock(
+  "~/features/ProductAnnouncements/hooks/useProductAnnouncements",
+  () => ({
+    useProductAnnouncements: useProductAnnouncementsMock,
+  }),
+)
 
 vi.mock("~/services/permissions/optionalPermissionState", () => ({
   setLastSeenOptionalPermissions: setLastSeenOptionalPermissionsMock,
@@ -326,11 +336,39 @@ const setupViewModel: OptionsOverviewViewModel = {
   ],
 }
 
+const riskNotice = {
+  id: "risk",
+  revision: 1,
+  severity: "warning",
+  priority: 10,
+  startsAt: 1,
+  expiresAt: 2,
+  title: "Risk notice",
+  message: "Please review.",
+  seen: false,
+  dismissed: false,
+} satisfies ProductAnnouncement
+
 describe("OptionsOverview", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     setLastSeenOptionalPermissionsMock.mockResolvedValue(undefined)
     trackProductAnalyticsEventMock.mockResolvedValue(true)
+    useProductAnnouncementsMock.mockReturnValue({
+      state: {
+        view: {
+          notices: [],
+          activeNotices: [],
+          dismissedNotices: [],
+          primaryRiskNotice: null,
+          unseenActiveCount: 0,
+        },
+      },
+      isLoading: false,
+      reload: vi.fn(),
+      markSeen: vi.fn().mockResolvedValue(true),
+      dismiss: vi.fn(),
+    })
     window.history.replaceState(null, "", "/")
   })
 
@@ -367,6 +405,58 @@ describe("OptionsOverview", () => {
         name: "optionsOverview:configurationOverview.open",
       }),
     ).not.toBeInTheDocument()
+  })
+
+  it("surfaces product risk announcements and opens the header popover request", async () => {
+    const dismiss = vi.fn()
+    useOptionsOverviewDataMock.mockReturnValue({
+      isLoading: false,
+      error: null,
+      viewModel: setupViewModel,
+      reload: vi.fn(),
+    })
+    useProductAnnouncementsMock.mockReturnValue({
+      state: {
+        view: {
+          notices: [riskNotice],
+          activeNotices: [
+            riskNotice,
+            { ...riskNotice, id: "info", severity: "info" },
+            { ...riskNotice, id: "dismissed", dismissed: true },
+            { ...riskNotice, id: "critical", severity: "critical" },
+          ],
+          dismissedNotices: [
+            { ...riskNotice, id: "dismissed", dismissed: true },
+          ],
+          primaryRiskNotice: riskNotice,
+          unseenActiveCount: 1,
+        },
+      },
+      isLoading: false,
+      reload: vi.fn(),
+      markSeen: vi.fn().mockResolvedValue(true),
+      dismiss,
+    })
+
+    renderOverview()
+
+    expect(screen.getByText("Risk notice")).toBeVisible()
+    expect(
+      screen.getByText("productAnnouncements:summary.additional_one"),
+    ).toBeVisible()
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "productAnnouncements:actions.viewAll",
+      }),
+    )
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "productAnnouncements:actions.dismiss",
+      }),
+    )
+
+    expect(dismiss).toHaveBeenCalledWith("risk", 1)
   })
 
   it("opens permissions onboarding from Overview URL state", async () => {
