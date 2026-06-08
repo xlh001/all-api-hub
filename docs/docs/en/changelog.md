@@ -8,6 +8,21 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.45.0
+- **New Features:**
+  - Product reminders: The extension popup and settings page now include an important-reminders entry for risk notices, service changes, and usage suggestions.
+  - Account Management: The account list now includes `Clear sort`, so field sorting can be reset to the default display order in one action. See [Account Management](./account-management.md) and [Sorting Priority Settings](./sorting-priority.md).
+- **Experience Optimizations:**
+  - Changelog: After an upgrade, the changelog now opens automatically only when the current version has a matching release note, avoiding incorrect changelog opens for rollback, pre-release, or unpublished-note versions.
+  - Account Management: When a site is already open in the browser, its matching account is shown higher in the list, making the account related to the current page easier to find. See [Account Management](./account-management.md).
+- **Bug Fixes:**
+  - Popups and dialogs: Fixed operation toasts that could appear twice while a dialog was open. Success / failure prompts for actions such as adding accounts and saving settings are no longer duplicated.
+
+**Location Hints:**
+- Product reminders: Check the extension popup title bar, settings page title bar, or "Settings → Overview".
+- Account sorting: Use sorting and `Clear sort` in the "Settings → Account Management" list header; detailed sorting rules can be adjusted under "Settings → General → Sorting Priority".
+- Changelog auto-open: Control it under "Settings → General → Changelog".
+
 ## 3.44.0
 - **New Features:**
   - Settings Overview: The settings page now includes an `Overview` workbench that brings together accounts, API credentials, today's usage, items that need attention, automated tasks, and configuration status, with direct jumps to the pages that need action.
