@@ -448,6 +448,7 @@ function createAccountDataContextValue(
     displayData: [enabledAlpha, disabledBeta, enabledGamma, unsyncedDelta],
     isInitialLoad: false,
     handleSort: vi.fn(),
+    clearSortConfig: vi.fn(),
     sortField: "name",
     sortOrder: "asc",
     handleReorder: vi.fn(),
@@ -568,6 +569,65 @@ describe("AccountList", () => {
         name: "account:list.sort account:list.header.createdAt",
       }),
     ).toBeInTheDocument()
+  })
+
+  it("shows a clear sort action when field sorting is active", async () => {
+    const user = userEvent.setup()
+    const clearSortConfig = vi.fn()
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        clearSortConfig,
+        sortField: "name",
+        sortOrder: "asc",
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:list.clearSort" }),
+    )
+
+    expect(clearSortConfig).toHaveBeenCalledTimes(1)
+  })
+
+  it("hides the clear sort action when field sorting has been cleared", () => {
+    const clearSortConfig = vi.fn()
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        clearSortConfig,
+        sortField: null,
+        sortOrder: "asc",
+      }),
+    )
+
+    render(<AccountList />)
+
+    expect(
+      screen.queryByRole("button", { name: "account:list.clearSort" }),
+    ).not.toBeInTheDocument()
+    expect(clearSortConfig).not.toHaveBeenCalled()
+  })
+
+  it("hides the clear sort action while search mode is active", () => {
+    const clearSortConfig = vi.fn()
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        clearSortConfig,
+        sortField: "name",
+        sortOrder: "asc",
+      }),
+    )
+
+    render(<AccountList initialSearchQuery="Alpha" />)
+
+    expect(
+      screen.queryByRole("button", { name: "account:list.clearSort" }),
+    ).not.toBeInTheDocument()
+    expect(clearSortConfig).not.toHaveBeenCalled()
   })
 
   it("auto-loads dnd during idle time after the first render settles", async () => {
