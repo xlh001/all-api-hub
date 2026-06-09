@@ -3082,6 +3082,109 @@ describe("useKeyManagement enabled account filtering", () => {
     confirmSpy.mockRestore()
   })
 
+  it("deletes a token when the account inventory has not been loaded", async () => {
+    const account = createDisplayAccount({
+      id: "delete-empty-inventory-acc",
+      name: "Delete Empty Inventory Account",
+    })
+    const token = createToken({
+      id: 910,
+      key: "token-910",
+      name: "Delete Empty Inventory Token",
+      accountId: account.id,
+      accountName: account.name,
+      expired_time: 0,
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([])
+    const deleteApiToken = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(getApiService).mockReturnValue({
+      fetchAccountTokens,
+      deleteApiToken,
+    } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.handleDeleteToken(token)
+    })
+
+    expect(deleteApiToken).toHaveBeenCalledWith(expect.anything(), token.id)
+    expect(result.current.tokenInventories[account.id]).toBeUndefined()
+    expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+      "keyManagement:messages.deleteSuccess",
+    )
+  })
+
+  it("keeps stale inventory unchanged when deleting a token missing from it", async () => {
+    const account = createDisplayAccount({
+      id: "delete-stale-inventory-acc",
+      name: "Delete Stale Inventory Account",
+    })
+    const loadedToken = createToken({
+      id: 911,
+      key: "token-911",
+      name: "Loaded Token",
+      accountId: account.id,
+      accountName: account.name,
+      expired_time: 0,
+    })
+    const staleToken = createToken({
+      id: 912,
+      key: "token-912",
+      name: "Stale Token",
+      accountId: account.id,
+      accountName: account.name,
+      expired_time: 0,
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchAccountTokens = vi.fn().mockResolvedValue([loadedToken])
+    const deleteApiToken = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(getApiService).mockReturnValue({
+      fetchAccountTokens,
+      deleteApiToken,
+    } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.tokenInventories[account.id]?.tokens).toEqual([
+        loadedToken,
+      ]),
+    )
+
+    await act(async () => {
+      await result.current.handleDeleteToken(staleToken)
+    })
+
+    expect(deleteApiToken).toHaveBeenCalledWith(
+      expect.anything(),
+      staleToken.id,
+    )
+    expect(result.current.tokenInventories[account.id]?.tokens).toEqual([
+      loadedToken,
+    ])
+    expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+      "keyManagement:messages.deleteSuccess",
+    )
+  })
+
   it("shows the delete error when token deletion fails", async () => {
     const mockedUseAccountData = vi.mocked(useAccountData)
     const account = createDisplayAccount({
@@ -3202,6 +3305,61 @@ describe("useKeyManagement enabled account filtering", () => {
     )
 
     confirmSpy.mockRestore()
+  })
+
+  it("removes a deleted token from local inventory before the refresh finishes", async () => {
+    const account = createDisplayAccount({
+      id: "delete-optimistic-acc",
+      name: "Delete Optimistic Account",
+    })
+    const token = createToken({
+      id: 911,
+      key: "sk-delete-optimistic",
+      name: "Delete Optimistic Token",
+      accountId: account.id,
+      accountName: account.name,
+      expired_time: 0,
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    let resolveRefresh: (tokens: (typeof token)[]) => void = () => {}
+    const fetchAccountTokens = vi
+      .fn()
+      .mockResolvedValueOnce([token])
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRefresh = resolve
+          }),
+      )
+    const deleteApiToken = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(getApiService).mockReturnValue({
+      fetchAccountTokens,
+      deleteApiToken,
+    } as any)
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(1))
+
+    await act(async () => {
+      await result.current.handleDeleteToken(token)
+    })
+
+    expect(result.current.tokens).toEqual([])
+
+    await act(async () => {
+      resolveRefresh([])
+    })
   })
 
   it("does not show delete failure feedback when analytics completion rejects after a successful delete", async () => {

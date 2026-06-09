@@ -12,6 +12,7 @@ import {
   fetchAccountTokens,
   fetchTokenById,
   fetchUserGroups,
+  resolveApiTokenKey,
   updateApiToken,
 } from "~/services/apiService/sub2api"
 import {
@@ -190,6 +191,75 @@ describe("apiService sub2api key management service", () => {
     )
   })
 
+  it("resolves usable inventory keys without calling unsupported compatible reveal endpoints", async () => {
+    await expect(
+      resolveApiTokenKey(createRequest(), {
+        id: 1,
+        key: "sub2api-full-secret",
+      }),
+    ).resolves.toBe("sub2api-full-secret")
+
+    expect(fetchApiMock).not.toHaveBeenCalled()
+  })
+
+  it("tries the Sub2API key detail endpoint before rejecting masked inventory keys", async () => {
+    fetchApiMock.mockResolvedValueOnce({
+      code: 0,
+      message: "ok",
+      data: {
+        id: 1,
+        user_id: 1,
+        key: "sk-still********masked",
+        name: "demo key",
+        status: "active",
+        quota: 1.5,
+        quota_used: 0,
+        created_at: "2026-03-06T00:00:00.000Z",
+        updated_at: "2026-03-06T00:00:00.000Z",
+        expires_at: null,
+      },
+    })
+
+    await expect(
+      resolveApiTokenKey(createRequest(), {
+        id: 1,
+        key: "sk-still********masked",
+      }),
+    ).rejects.toThrow("token_secret_key_unresolvable")
+
+    expect(fetchApiMock).toHaveBeenCalledTimes(1)
+    expect(fetchApiMock.mock.calls[0]?.[1]?.endpoint).toBe("/api/v1/keys/1")
+  })
+
+  it("resolves masked inventory keys from the Sub2API key detail endpoint", async () => {
+    fetchApiMock.mockResolvedValueOnce({
+      code: 0,
+      message: "ok",
+      data: {
+        id: 1,
+        user_id: 1,
+        key: "sub2api-detail-full-secret",
+        name: "demo key",
+        status: "active",
+        quota: 1.5,
+        quota_used: 0,
+        created_at: "2026-03-06T00:00:00.000Z",
+        updated_at: "2026-03-06T00:00:00.000Z",
+        expires_at: null,
+      },
+    })
+
+    await expect(
+      resolveApiTokenKey(createRequest(), {
+        id: 1,
+        key: "sk-still********masked",
+      }),
+    ).resolves.toBe("sub2api-detail-full-secret")
+
+    expect(fetchApiMock).toHaveBeenCalledTimes(1)
+    expect(fetchApiMock.mock.calls[0]?.[1]?.endpoint).toBe("/api/v1/keys/1")
+  })
+
   it("resolves the current group and strips unsupported fields on create", async () => {
     const now = Date.UTC(2026, 2, 6, 0, 0, 0)
     vi.spyOn(Date, "now").mockReturnValue(now)
@@ -223,8 +293,14 @@ describe("apiService sub2api key management service", () => {
       expired_time: Math.floor((now + 36 * 60 * 60 * 1000) / 1000),
     })
 
-    await expect(createApiToken(createRequest(), tokenRequest)).resolves.toBe(
-      true,
+    await expect(
+      createApiToken(createRequest(), tokenRequest),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        id: 1,
+        key: "new-key",
+        name: "demo key",
+      }),
     )
 
     const postCall = fetchApiMock.mock.calls[1]
@@ -236,6 +312,58 @@ describe("apiService sub2api key management service", () => {
       expires_in_days: 2,
       ip_whitelist: ["1.1.1.1", "2.2.2.2"],
     })
+  })
+
+  it("uses hydrated auth user id when create returns a key DTO without user_id", async () => {
+    getAccountByIdMock.mockResolvedValue({
+      account_info: {
+        id: "42",
+        access_token: "stored-jwt",
+      },
+    })
+    fetchApiMock
+      .mockResolvedValueOnce({
+        code: 0,
+        message: "ok",
+        data: [{ id: 9, name: "vip", description: "VIP plan" }],
+      })
+      .mockResolvedValueOnce({
+        code: 0,
+        message: "ok",
+        data: {
+          id: 1,
+          key: "new-key",
+          name: "demo key",
+          status: "active",
+          quota: 1.5,
+          quota_used: 0,
+          created_at: "2026-03-06T00:00:00.000Z",
+          updated_at: "2026-03-06T00:00:00.000Z",
+          expires_at: null,
+          group: { id: 9, name: "vip" },
+        },
+      })
+
+    await expect(
+      createApiToken(
+        createRequest({
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            accessToken: "stale-jwt",
+          },
+        }),
+        createTokenRequest(),
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        id: 1,
+        user_id: 42,
+        key: "new-key",
+      }),
+    )
+    expect((fetchApiMock.mock.calls[1]?.[0] as any)?.auth?.accessToken).toBe(
+      "stored-jwt",
+    )
   })
 
   it("preserves consumed quota when translating shared edit payloads", async () => {

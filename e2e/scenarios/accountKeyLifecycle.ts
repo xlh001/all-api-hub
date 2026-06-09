@@ -8,6 +8,7 @@ import {
   submitTokenCreationFromKeyManagementPage,
 } from "~~/e2e/utils/accountLifecycle"
 import type { getServiceWorker } from "~~/e2e/utils/extensionState"
+import { formatScenarioError } from "~~/e2e/utils/scenarioErrors"
 
 type ServiceWorker = Awaited<ReturnType<typeof getServiceWorker>>
 
@@ -39,7 +40,7 @@ function throwScenarioError(params: {
   if (params.primaryError && params.cleanupError) {
     throw new AggregateError(
       [params.primaryError, params.cleanupError],
-      params.message,
+      `${params.message}: primary=${formatScenarioError(params.primaryError)}; cleanup=${formatScenarioError(params.cleanupError)}`,
     )
   }
 

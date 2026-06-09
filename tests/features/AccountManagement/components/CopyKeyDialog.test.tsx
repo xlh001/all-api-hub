@@ -2,6 +2,7 @@ import userEvent from "@testing-library/user-event"
 import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { SITE_TYPES } from "~/constants/siteType"
 import CopyKeyDialog from "~/features/AccountManagement/components/CopyKeyDialog"
 import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
@@ -106,6 +107,14 @@ const ACCOUNT = {
   tagIds: ["tag-a"],
 } as any
 
+const AIHUBMIX_ACCOUNT = {
+  ...ACCOUNT,
+  id: "aihubmix-1",
+  name: "AIHubMix",
+  siteType: SITE_TYPES.AIHUBMIX,
+  baseUrl: "https://aihubmix.com",
+}
+
 const TOKEN = {
   id: 1,
   user_id: 1,
@@ -172,7 +181,7 @@ describe("CopyKeyDialog", () => {
     })
   })
 
-  it("shows a one-time key dialog when create returns a full token", async () => {
+  it("shows a one-time key dialog when AIHubMix create returns a full token", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([])
     createApiTokenMock.mockResolvedValueOnce({
       ...TOKEN,
@@ -186,7 +195,13 @@ describe("CopyKeyDialog", () => {
       .spyOn(navigator.clipboard, "writeText")
       .mockResolvedValue(undefined)
 
-    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+    render(
+      <CopyKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={AIHUBMIX_ACCOUNT}
+      />,
+    )
 
     await user.click(
       await screen.findByRole("button", {
@@ -207,7 +222,7 @@ describe("CopyKeyDialog", () => {
     })
   })
 
-  it("shows the created one-time token without refetching inventory", async () => {
+  it("shows the AIHubMix created one-time token without refetching inventory", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([])
     createApiTokenMock.mockResolvedValueOnce({
       ...TOKEN,
@@ -220,7 +235,13 @@ describe("CopyKeyDialog", () => {
       .spyOn(navigator.clipboard, "writeText")
       .mockResolvedValue(undefined)
 
-    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+    render(
+      <CopyKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={AIHUBMIX_ACCOUNT}
+      />,
+    )
 
     await user.click(
       await screen.findByRole("button", {
@@ -239,6 +260,45 @@ describe("CopyKeyDialog", () => {
     })
   })
 
+  it("refreshes instead of showing a one-time key when AIHubMix create returns a masked key", async () => {
+    fetchAccountTokensMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([TOKEN])
+    createApiTokenMock.mockResolvedValueOnce({
+      ...TOKEN,
+      id: 9,
+      key: "sk-created********masked",
+      name: "aihubmix-masked",
+    })
+
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+
+    render(
+      <CopyKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={AIHUBMIX_ACCOUNT}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.copyKey.createKey",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(fetchAccountTokensMock).toHaveBeenCalledTimes(2)
+      expect(writeText).toHaveBeenCalledWith("sk-test")
+    })
+    expect(
+      screen.queryByText("keyManagement:oneTimeKey.title"),
+    ).not.toBeInTheDocument()
+  })
+
   it("refreshes instead of showing a one-time key when create returns a token-shaped object with an invalid secret", async () => {
     fetchAccountTokensMock
       .mockResolvedValueOnce([])
@@ -255,7 +315,13 @@ describe("CopyKeyDialog", () => {
       .spyOn(navigator.clipboard, "writeText")
       .mockResolvedValue(undefined)
 
-    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+    render(
+      <CopyKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={AIHUBMIX_ACCOUNT}
+      />,
+    )
 
     await user.click(
       await screen.findByRole("button", {
@@ -702,7 +768,7 @@ describe("CopyKeyDialog", () => {
     })
   })
 
-  it("shows one-time key dialog for custom AddTokenDialog create returns", async () => {
+  it("shows one-time key dialog for custom AIHubMix AddTokenDialog create returns", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([])
     fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
     fetchUserGroupsMock.mockResolvedValueOnce({
@@ -720,7 +786,13 @@ describe("CopyKeyDialog", () => {
       .spyOn(navigator.clipboard, "writeText")
       .mockResolvedValue(undefined)
 
-    render(<CopyKeyDialog isOpen={true} onClose={() => {}} account={ACCOUNT} />)
+    render(
+      <CopyKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={AIHUBMIX_ACCOUNT}
+      />,
+    )
 
     await user.click(
       await screen.findByRole("button", {
@@ -748,7 +820,7 @@ describe("CopyKeyDialog", () => {
     })
   })
 
-  it("saves a custom one-time key to an API credential profile without closing the dialog", async () => {
+  it("saves a custom AIHubMix one-time key to an API credential profile without closing the dialog", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([])
     fetchAccountAvailableModelsMock.mockResolvedValueOnce([])
     fetchUserGroupsMock.mockResolvedValueOnce({
@@ -762,11 +834,11 @@ describe("CopyKeyDialog", () => {
     })
     createApiCredentialProfileMock.mockResolvedValueOnce({
       id: "profile-1",
-      name: "Example - My Key",
+      name: "AIHubMix - My Key",
       apiType: API_TYPES.OPENAI_COMPATIBLE,
-      baseUrl: ACCOUNT.baseUrl,
+      baseUrl: AIHUBMIX_ACCOUNT.baseUrl,
       apiKey: "sk-custom-full-secret",
-      tagIds: ACCOUNT.tagIds,
+      tagIds: AIHUBMIX_ACCOUNT.tagIds,
       notes: "",
       createdAt: 1,
       updatedAt: 1,
@@ -776,7 +848,13 @@ describe("CopyKeyDialog", () => {
     const user = userEvent.setup()
     vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined)
 
-    render(<CopyKeyDialog isOpen={true} onClose={onClose} account={ACCOUNT} />)
+    render(
+      <CopyKeyDialog
+        isOpen={true}
+        onClose={onClose}
+        account={AIHUBMIX_ACCOUNT}
+      />,
+    )
 
     await user.click(
       await screen.findByRole("button", {
@@ -796,11 +874,11 @@ describe("CopyKeyDialog", () => {
 
     await waitFor(() => {
       expect(createApiCredentialProfileMock).toHaveBeenCalledWith({
-        name: "Example - My Key",
+        name: "AIHubMix - My Key",
         apiType: API_TYPES.OPENAI_COMPATIBLE,
-        baseUrl: ACCOUNT.baseUrl,
+        baseUrl: AIHUBMIX_ACCOUNT.baseUrl,
         apiKey: "sk-custom-full-secret",
-        tagIds: ACCOUNT.tagIds,
+        tagIds: AIHUBMIX_ACCOUNT.tagIds,
       })
     })
     expect(toastSuccessMock).toHaveBeenCalledWith(
