@@ -114,11 +114,22 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 
 <div>
   <a href="https://www.packyapi.com/register?aff=all-api-hub">
-    <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="12" vspace="4">
+    <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
     感谢 PackyCode 赞助了本项目！PackyCode 是一家稳定、高效的API中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。PackyCode
     为本软件的用户提供了特别优惠，使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写"all-api-hub"优惠码，首次充值可以享受9折优惠！
+  </p>
+</div>
+<br clear="left">
+
+<div>
+  <a href="https://runapi.co/register?aff=cvDm">
+    <img src="resources/partners/runapi.jpg" alt="RunAPI" width="64" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    感谢 RunAPI 赞助了本项目！RunAPI 是高效稳定的 API OpenRouter 平替平台，一个 API Key 即可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，极其稳定，可以无缝兼容 Claude Code、OpenClaw 等工具。RunAPI
+    为 All API Hub 的用户提供专属福利：使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 ￥7 的免费额度。
   </p>
 </div>
 <br clear="left">

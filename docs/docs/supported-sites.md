@@ -38,6 +38,17 @@
       提供 Claude Code、Codex、Gemini 等多种中转服务。使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写 "all-api-hub" 优惠码，首次充值可享 <strong>9 折优惠</strong>！
     </td>
   </tr>
+  <tr>
+    <td width="160" align="center">
+      <a href="https://runapi.co/register?aff=cvDm">
+        <img src="../../resources/partners/runapi.jpg" alt="RunAPI" width="64">
+      </a>
+    </td>
+    <td>
+      <strong>RunAPI</strong><br/>
+      高效稳定的 API OpenRouter 平替平台，一个 API Key 可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，兼容 Claude Code、OpenClaw 等工具。使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 <strong>￥7 免费额度</strong>。
+    </td>
+  </tr>
 </table>
 
 ## 已兼容但公开资料较少的变体

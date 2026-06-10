@@ -115,12 +115,24 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 
 <div>
   <a href="https://www.packyapi.com/register?aff=all-api-hub">
-    <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="12" vspace="4">
+    <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
     Thanks to PackyCode for sponsoring this project! PackyCode is a reliable and efficient API relay service provider, offering relay services for Claude Code, Codex,
     Gemini, and more. PackyCode provides special discounts for our software users: register using
     <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get 10% off.
+  </p>
+</div>
+<br clear="left">
+
+<div>
+  <a href="https://runapi.co/register?aff=cvDm">
+    <img src="resources/partners/runapi.jpg" alt="RunAPI" width="64" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Thanks to RunAPI for sponsoring this project! RunAPI is a stable OpenRouter alternative API platform: one API key gives access to 150+ mainstream models including
+    OpenAI, Claude, Gemini, DeepSeek, and Grok, from 10% of standard pricing, with Claude Code and OpenClaw compatibility. RunAPI offers All API Hub users an exclusive
+    benefit: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the administrator to claim ¥7 in free credits.
   </p>
 </div>
 <br clear="left">

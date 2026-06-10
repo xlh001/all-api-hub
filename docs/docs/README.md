@@ -112,6 +112,18 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
   </p>
 </div>
 
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
+    <a href="https://runapi.co/register?aff=cvDm">
+      <img class="readme-sponsor-logo-small" src="../../resources/partners/runapi.jpg" alt="RunAPI">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    感谢 RunAPI 赞助了本项目！RunAPI 是高效稳定的 API OpenRouter 平替平台，一个 API Key 即可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，极其稳定，可以无缝兼容 Claude Code、OpenClaw 等工具。RunAPI
+    为 All API Hub 的用户提供专属福利：使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 ￥7 的免费额度。
+  </p>
+</div>
+
 <style>
 .readme-sponsor {
   display: flex;
@@ -126,9 +138,13 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 }
 
 .readme-sponsor-logo img {
-  width: 150px;
+  width: 128px;
   max-width: 100%;
   height: auto;
+}
+
+.readme-sponsor-logo img.readme-sponsor-logo-small {
+  width: 64px;
 }
 
 .readme-sponsor-copy {
@@ -152,6 +168,10 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
   .readme-sponsor-logo img {
     width: 128px;
+  }
+
+  .readme-sponsor-logo img.readme-sponsor-logo-small {
+    width: 64px;
   }
 }
 </style>

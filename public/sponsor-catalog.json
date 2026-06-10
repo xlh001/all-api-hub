@@ -43,6 +43,48 @@
         "siteUrl": "https://www.packyapi.com",
         "authType": "access_token"
       }
+    },
+    {
+      "id": "runapi",
+      "enabled": true,
+      "rank": 110,
+      "supportStatus": "supported",
+      "urls": {
+        "primaryAffiliate": "https://runapi.co/register?aff=cvDm",
+        "website": "https://runapi.co"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "RunAPI",
+          "tagline": "高效稳定的 API OpenRouter 平替平台，一个 API Key 可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，兼容 Claude Code、OpenClaw 等工具。",
+          "postClickNote": "All API Hub 用户注册后联系 RunAPI 管理员，即可领取 ¥7 免费额度。"
+        },
+        "zh-TW": {
+          "name": "RunAPI",
+          "tagline": "高效穩定的 API OpenRouter 平替平台，一個 API Key 可存取 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，兼容 Claude Code、OpenClaw 等工具。",
+          "postClickNote": "All API Hub 使用者註冊後聯絡管理員，即可領取 ¥7 免費額度。"
+        },
+        "en": {
+          "name": "RunAPI",
+          "tagline": "A stable OpenRouter alternative API platform: one API key for 150+ mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, from 10% of standard pricing, with Claude Code and OpenClaw compatibility.",
+          "postClickNote": "All API Hub users can register and contact the administrator to claim ¥7 in free credits."
+        },
+        "ja": {
+          "name": "RunAPI",
+          "tagline": "OpenRouter の代替として使える安定した API プラットフォームです。1 つの API Key で OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルを利用でき、Claude Code や OpenClaw にも対応します。",
+          "postClickNote": "All API Hub ユーザーは登録後に管理者へ連絡すると、¥7 の無料クレジットを受け取れます。"
+        },
+        "vi": {
+          "name": "RunAPI",
+          "tagline": "Nen tang API on dinh thay the OpenRouter: mot API Key truy cap hon 150 mo hinh pho bien nhu OpenAI, Claude, Gemini, DeepSeek va Grok, gia tu 10%, tuong thich Claude Code va OpenClaw.",
+          "postClickNote": "Nguoi dung All API Hub co the dang ky va lien he quan tri vien de nhan ¥7 han muc mien phi."
+        }
+      },
+      "accountPrefill": {
+        "siteType": "new-api",
+        "siteUrl": "https://runapi.co",
+        "authType": "access_token"
+      }
     }
   ],
   "_examples": {

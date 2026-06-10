@@ -41,7 +41,7 @@
 5. 确认信息无误后，点击 **`确认添加`**。
 
 ::: tip 还没有账号？
-如果你正在寻找稳定、高效且兼容性良好的 AI 中转服务，可以尝试我们的合作伙伴 [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)（注册并充值时填写 `all-api-hub` 优惠码可享 9 折）。
+如果你正在寻找稳定、高效且兼容性良好的 AI 中转服务，可以尝试我们的合作伙伴 [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)（注册并充值时填写 `all-api-hub` 优惠码可享 9 折），或 [RunAPI](https://runapi.co/register?aff=cvDm)（注册并联系 RunAPI 管理员可领取 ￥7 免费额度）。
 :::
 
 > **过盾提示**：如果站点有 Cloudflare 验证（五秒盾），插件会自动弹出窗口协助过盾，验证通过后会自动继续识别。
