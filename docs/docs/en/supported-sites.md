@@ -25,30 +25,51 @@ The following are the most common and suitable types of sites for unified manage
 
 If you are looking for stable, efficient, and highly compatible AI relay services, try our partner:
 
-<table>
-  <tr>
-    <td width="160" align="center">
-      <a href="https://www.packyapi.com/register?aff=all-api-hub">
-        <img src="../../../resources/partners/packycode.png" alt="PackyCode" width="140">
-      </a>
-    </td>
-    <td>
-      <strong>PackyCode</strong><br/>
-      Offers relay services for Claude Code, Codex, Gemini, and more. Register using <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get <strong>10% off</strong>!
-    </td>
-  </tr>
-  <tr>
-    <td width="160" align="center">
-      <a href="https://runapi.co/register?aff=cvDm">
-        <img src="../../../resources/partners/runapi.jpg" alt="RunAPI" width="64">
-      </a>
-    </td>
-    <td>
-      <strong>RunAPI</strong><br/>
-      An efficient and stable alternative to API OpenRouter. A single API Key can access 150+ mainstream models including OpenAI, Claude, Gemini, DeepSeek, Grok, etc., starting from 10% of the price. Compatible with tools like Claude Code and OpenClaw. Register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a <strong>￥7 free credit</strong>.
-    </td>
-  </tr>
-</table>
+<div class="sponsor-list">
+  <section class="sponsor-item sponsor-item-featured">
+    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../../resources/partners/volcengine.jpg" alt="Volcengine Ark Coding-Plan">
+    </a>
+    <p>
+      <strong>Volcengine Ark Coding-Plan</strong> is ByteDance's developer productivity program. The Lite plan starts at <strong>CNY 9.9/month</strong>, supports popular models such as Doubao, DeepSeek, and GLM, and works with IDE tools like Cursor, Claude Code, and Windsurf. Join through the <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">campaign link</a> to get first-order discounts and referral rewards.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo sponsor-logo-small" href="https://ai.centos.hk">
+      <img src="../../../resources/partners/xingchen.png" alt="Xingchen AI">
+    </a>
+    <p>
+      <strong>Xingchen AI</strong> is a stable and efficient API relay provider offering services for Claude Code, Codex, Gemini, and more. It supports 1:1 top-ups, provides invoices, and offers Claude at as low as 40% of the standard price. Learn more and start using it through <a href="https://ai.centos.hk">this link</a>.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://www.packyapi.com/register?aff=all-api-hub">
+      <img src="../../../resources/partners/packycode.png" alt="PackyCode">
+    </a>
+    <p>
+      <strong>PackyCode</strong> offers relay services for Claude Code, Codex, Gemini, and more. Register using <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get <strong>10% off</strong>.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo sponsor-logo-small" href="https://runapi.co/register?aff=cvDm">
+      <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
+    </a>
+    <p>
+      <strong>RunAPI</strong> is an efficient and stable alternative to API OpenRouter. A single API Key can access 150+ mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, at prices as low as 10% of the original. It is compatible with tools like Claude Code and OpenClaw. Register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a <strong>￥7 free credit</strong>.
+    </p>
+  </section>
+
+  <hr>
+</div>
 
 ## Compatible Variants with Limited Public Information
 

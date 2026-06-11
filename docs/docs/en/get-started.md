@@ -41,7 +41,12 @@ Open and log in to your AI proxy station website in your browser first.
 5. After confirming the information is correct, click **`Confirm Addition`**.
 
 ::: tip Don't have an account yet?
-If you are looking for stable, efficient, and highly compatible AI relay services, try our partner [PackyCode](https://www.packyapi.com/register?aff=all-api-hub) (enter the `all-api-hub` promo code during recharge to get 10% off), or [RunAPI](https://runapi.co/register?aff=cvDm) (register and contact a RunAPI administrator to receive a ￥7 free credit).
+If you are looking for stable, efficient, and highly compatible AI relay services, try our partners:
+
+- [Volcengine Ark Coding-Plan](https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub): Lite plan starts at CNY 9.9/month, with first-order discounts and referral rewards.
+- [Xingchen AI](https://ai.centos.hk): 1:1 top-up ratio, invoicing support, and Claude pricing as low as 40% of the standard price.
+- [PackyCode](https://www.packyapi.com/register?aff=all-api-hub): Enter the `all-api-hub` promo code during recharge to get 10% off.
+- [RunAPI](https://runapi.co/register?aff=cvDm): Register and contact a RunAPI administrator to receive a ￥7 free credit.
 :::
 
 > **Shield Bypass Tip**: If the site has Cloudflare verification (5-second shield), the plugin will automatically pop up a window to assist with bypassing it. Once verified, it will continue the recognition process automatically.

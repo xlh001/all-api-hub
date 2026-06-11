@@ -23,32 +23,53 @@
 
 ## ❤️ 推奨スポンサーサイト
 
-安定しており、効率的で、互換性の高い AI プロキシ サービスをお探しの場合は、当社のパートナーをお試しください:
+安定していて効率的かつ互換性の高い AI プロキシサービスをお探しなら、次のパートナーをお試しください。
 
-<table>
-  <tr>
-    <td width="160" align="center">
-      <a href="https://www.packyapi.com/register?aff=all-api-hub">
-        <img src="../../../resources/partners/packycode.png" alt="PackyCode" width="140">
-      </a>
-    </td>
-    <td>
-      <strong>PackyCode</strong><br/>
-      Claude Code、Codex、Gemini などの多様なプロキシサービスを提供しています。<a href="https://www.packyapi.com/register?aff=all-api-hub">こちらのリンク</a>から登録し、初回チャージ時に "all-api-hub" クーポンコードを入力すると、<strong>10% オフ</strong>になります！
-    </td>
-  </tr>
-  <tr>
-    <td width="160" align="center">
-      <a href="https://runapi.co/register?aff=cvDm">
-        <img src="../../../resources/partners/runapi.jpg" alt="RunAPI" width="64">
-      </a>
-    </td>
-    <td>
-      <strong>RunAPI</strong><br/>
-      高効率で安定した API OpenRouter の代替プラットフォーム。1 つの API Key で OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルにアクセス可能。元価格の 10% から利用でき、Claude Code、OpenClaw などのツールとも互換性があります。<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a>から登録し、RunAPI 管理者に連絡すると、<strong>￥7 の無料クレジット</strong>を受け取ることができます。
-    </td>
-  </tr>
-</table>
+<div class="sponsor-list">
+  <section class="sponsor-item sponsor-item-featured">
+    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../../resources/partners/volcengine.jpg" alt="Volcengine Ark Coding-Plan">
+    </a>
+    <p>
+      <strong>Volcengine Ark Coding-Plan</strong> は ByteDance の開発者向け生産性プログラムです。Lite プランは <strong>月額 9.9 元</strong> から利用でき、Doubao、DeepSeek、GLM などの主要モデルをサポートし、Cursor、Claude Code、Windsurf などの IDE ツールにも対応しています。<a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">キャンペーンリンク</a>から参加すると、初回割引と招待リワードを利用できます。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo sponsor-logo-small" href="https://ai.centos.hk">
+      <img src="../../../resources/partners/xingchen.png" alt="Xingchen AI">
+    </a>
+    <p>
+      <strong>Xingchen AI</strong> は、Claude Code、Codex、Gemini などに対応した安定性と効率性の高い API 中継サービスプロバイダーです。1:1 のチャージ比率に対応し、請求書も発行でき、Claude は通常価格の 40% 程度から利用できます。詳細と利用開始は <a href="https://ai.centos.hk">こちらのリンク</a>をご覧ください。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://www.packyapi.com/register?aff=all-api-hub">
+      <img src="../../../resources/partners/packycode.png" alt="PackyCode">
+    </a>
+    <p>
+      <strong>PackyCode</strong> は、Claude Code、Codex、Gemini などの多様なプロキシサービスを提供しています。<a href="https://www.packyapi.com/register?aff=all-api-hub">こちらのリンク</a>から登録し、初回チャージ時に "all-api-hub" クーポンコードを入力すると、<strong>10% オフ</strong>になります。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo sponsor-logo-small" href="https://runapi.co/register?aff=cvDm">
+      <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
+    </a>
+    <p>
+      <strong>RunAPI</strong> は、高効率で安定した API OpenRouter の代替プラットフォームです。1 つの API Key で OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルにアクセスでき、元価格の 10% 程度から利用できます。Claude Code や OpenClaw などのツールにも対応しています。<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a>から登録し、RunAPI 管理者に連絡すると、<strong>￥7 の無料クレジット</strong>を受け取れます。
+    </p>
+  </section>
+
+  <hr>
+</div>
 
 ## 互換性はあるが公開資料が少ないバリアント
 

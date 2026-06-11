@@ -104,6 +104,32 @@ Have questions or want to share useful sites? Join the community:
 <a id="sponsors"></a>
 ## ❤️ Sponsors
 
+<div class="readme-sponsor readme-sponsor-featured">
+  <p class="readme-sponsor-banner">
+    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../../resources/partners/volcengine.jpg" alt="Volcengine Ark Coding-Plan">
+    </a>
+  </p>
+  <p class="readme-sponsor-copy">
+    <strong>Volcengine Ark Coding-Plan</strong> is ByteDance's developer productivity program. The Lite plan starts at <strong>CNY 9.9/month</strong> and gives you access to popular models such as Doubao, DeepSeek, and GLM, with support for IDE tools like Cursor, Claude Code, and Windsurf plus automatic model switching. Join through the <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">campaign link</a> to get first-order discounts and referral rewards.
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
+    <a href="https://ai.centos.hk">
+      <img class="readme-sponsor-logo-small" src="../../../resources/partners/xingchen.png" alt="Xingchen AI">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    Thanks to Xingchen AI for sponsoring this project. Xingchen AI is a stable and efficient API relay provider offering services for Claude Code, Codex, Gemini, and more. It supports 1:1 top-ups, provides invoices, and offers Claude at as low as 40% of the standard price. You can learn more and start using it through <a href="https://ai.centos.hk">this link</a>.
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
     <a href="https://www.packyapi.com/register?aff=all-api-hub">
@@ -117,6 +143,8 @@ Have questions or want to share useful sites? Join the community:
   </p>
 </div>
 
+<hr class="readme-sponsor-divider">
+
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
     <a href="https://runapi.co/register?aff=cvDm">
@@ -127,55 +155,3 @@ Have questions or want to share useful sites? Join the community:
     Thanks to RunAPI for sponsoring this project! RunAPI is a stable and efficient alternative to API OpenRouter. With one API Key, you can access over 150 mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, at prices as low as 10% of the original. It is extremely stable and seamlessly compatible with tools like Claude Code and OpenClaw. RunAPI offers exclusive benefits for All API Hub users: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a ¥7 free credit.
   </p>
 </div>
-
-<style>
-.readme-sponsor {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin: 1rem 0;
-}
-
-.readme-sponsor-logo {
-  flex: 0 0 180px;
-  text-align: center;
-}
-
-.readme-sponsor-logo img {
-  width: 128px;
-  max-width: 100%;
-  height: auto;
-}
-
-.readme-sponsor-logo img.readme-sponsor-logo-small {
-  width: 64px;
-}
-
-.readme-sponsor-copy {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-}
-
-@media (max-width: 640px) {
-  .readme-sponsor {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .readme-sponsor-logo {
-    flex-basis: auto;
-    width: 100%;
-    text-align: left;
-  }
-
-  .readme-sponsor-logo img {
-    width: 128px;
-  }
-
-  .readme-sponsor-logo img.readme-sponsor-logo-small {
-    width: 64px;
-  }
-}
-</style>

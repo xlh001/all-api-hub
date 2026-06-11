@@ -27,7 +27,12 @@
 `キー管理` でアップストリームサイトのキーを取得した場合は、まずそこで検証または整理してから `API 認証情報庫` に保存すると、後で使いやすくなります。
 
 ::: tip 高品質な API インターフェースをお探しですか？
-認証情報庫を充実させるために、安定しており、CLI をサポートする API インターフェースが必要な場合は、当社のパートナー [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)（登録およびチャージ時に `all-api-hub` クーポンコードを入力すると 10% オフになります）、または [RunAPI](https://runapi.co/register?aff=cvDm)（登録後 RunAPI 管理者に連絡すると ￥7 の無料クレジットを受け取れます）をお試しください。
+認証情報庫を充実させるために、安定していて CLI にも対応した API インターフェースが必要な場合は、次のパートナーをお試しください。
+
+- [Volcengine Ark Coding-Plan](https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub)：Lite プランは月額 9.9 元からで、初回割引と招待リワードがあります。
+- [Xingchen AI](https://ai.centos.hk)：1:1 のチャージ比率、請求書対応、Claude は通常価格の 40% 程度から利用できます。
+- [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)：チャージ時に `all-api-hub` クーポンコードを入力すると 10% オフになります。
+- [RunAPI](https://runapi.co/register?aff=cvDm)：登録後に RunAPI 管理者へ連絡すると ￥7 の無料クレジットを受け取れます。
 :::
 
 ## 認証情報の追加方法
