@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type React from "react"
+import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import ModelItem from "~/features/ModelList/components/ModelItem"
@@ -13,6 +14,7 @@ import {
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/events"
+import { createTab } from "~/utils/browser/browserApi"
 
 const { loggerWarnSpy } = vi.hoisted(() => ({
   loggerWarnSpy: vi.fn(),
@@ -27,6 +29,10 @@ vi.mock("react-hot-toast", () => ({
     success: vi.fn(),
     error: vi.fn(),
   },
+}))
+
+vi.mock("~/utils/browser/browserApi", () => ({
+  createTab: vi.fn(),
 }))
 
 vi.mock("~/utils/core/logger", () => ({
@@ -66,12 +72,33 @@ vi.mock("~/features/ModelList/components/ModelItem/ModelItemHeader", () => ({
   ModelItemHeader: ({
     model,
     trailingContent,
+    onOpenKeyDialog,
+    onVerifyApi,
+    onVerifyCliSupport,
   }: {
     model: { model_name: string }
     trailingContent?: React.ReactNode
+    onOpenKeyDialog?: () => void
+    onVerifyApi?: () => void
+    onVerifyCliSupport?: () => void
   }) => (
     <div>
       {model.model_name}
+      {onOpenKeyDialog ? (
+        <button type="button" onClick={onOpenKeyDialog}>
+          key
+        </button>
+      ) : null}
+      {onVerifyApi ? (
+        <button type="button" onClick={onVerifyApi}>
+          verify-api
+        </button>
+      ) : null}
+      {onVerifyCliSupport ? (
+        <button type="button" onClick={onVerifyCliSupport}>
+          verify-cli
+        </button>
+      ) : null}
       {trailingContent ? (
         <div className="flex min-w-0 flex-wrap items-center gap-2 sm:ml-auto">
           {trailingContent}
@@ -260,6 +287,60 @@ describe("ModelItem", () => {
     )
   })
 
+  it("keeps row-level account actions available when an aggregate display source disables them", async () => {
+    const user = userEvent.setup()
+    const onOpenModelKeyDialog = vi.fn()
+    const onVerifyModel = vi.fn()
+    const onVerifyCliSupport = vi.fn()
+    const props = createDefaultProps()
+
+    render(
+      <ModelItem
+        {...props}
+        source={{
+          ...props.source,
+          capabilities: {
+            ...props.source.capabilities,
+            supportsTokenCompatibility: true,
+            supportsCredentialVerification: true,
+            supportsCliVerification: true,
+          },
+        }}
+        displayCapabilities={{
+          supportsPricing: true,
+          supportsRatioDisplay: true,
+          supportsGroupFiltering: true,
+          supportsAccountSummary: true,
+          supportsTokenCompatibility: false,
+          supportsCredentialVerification: false,
+          supportsBatchCredentialVerification: true,
+          supportsCliVerification: false,
+        }}
+        onOpenModelKeyDialog={onOpenModelKeyDialog}
+        onVerifyModel={onVerifyModel}
+        onVerifyCliSupport={onVerifyCliSupport}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "key" }))
+    await user.click(screen.getByRole("button", { name: "verify-api" }))
+    await user.click(screen.getByRole("button", { name: "verify-cli" }))
+
+    expect(onOpenModelKeyDialog).toHaveBeenCalledWith(
+      props.source.account,
+      props.model.model_name,
+      props.model.enable_groups,
+    )
+    expect(onVerifyModel).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "account" }),
+      props.model.model_name,
+    )
+    expect(onVerifyCliSupport).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "account" }),
+      props.model.model_name,
+    )
+  })
+
   it("uses internal expansion state when expansion props are omitted", async () => {
     const user = userEvent.setup()
 
@@ -289,16 +370,52 @@ describe("ModelItem", () => {
     )
   })
 
-  it("keeps source controls in the header trailing area", () => {
-    render(<ModelItem {...createDefaultProps()} />)
+  it("keeps source controls in the header trailing area", async () => {
+    const user = userEvent.setup()
+    const writeText = vi.fn().mockRejectedValue(new Error("clipboard denied"))
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
 
-    const sourceBadge = screen.getByText("Account One").closest("[data-slot]")
+    render(
+      <ModelItem
+        {...createDefaultProps()}
+        source={{
+          ...createDefaultProps().source,
+          account: {
+            ...createDefaultProps().source.account,
+            baseUrl: "https://api.example.com",
+          },
+        }}
+      />,
+    )
+
+    const sourceBadge = screen
+      .getByText("Account One · api.example.com")
+      .closest("[data-slot]")
     expect(sourceBadge).toHaveClass("max-w-full", "min-w-0")
     expect(sourceBadge?.parentElement).toHaveClass(
       "flex-wrap",
       "items-center",
       "sm:ml-auto",
     )
+    expect(sourceBadge).toHaveAttribute("title", "https://api.example.com")
+    expect(
+      screen.getByRole("button", { name: "actions.copySiteUrl" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "actions.openSite" }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "actions.openSite" }))
+    expect(createTab).toHaveBeenCalledWith("https://api.example.com/", true)
+
+    await user.click(
+      screen.getByRole("button", { name: "actions.copySiteUrl" }),
+    )
+    expect(writeText).toHaveBeenCalledWith("https://api.example.com")
+    expect(toast.error).toHaveBeenCalledWith("messages.copyFailed")
   })
 
   it("treats expansion as controlled only when both props are provided", async () => {
