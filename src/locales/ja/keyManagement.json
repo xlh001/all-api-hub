@@ -272,7 +272,7 @@
     "skipReasons": {
       "aihubmixOneTimeKey": "AIHubMix のキーは一度だけ表示できます。手動で作成し、完全なキーをすぐに保存してください。",
       "noneAuth": "認証情報なし（auth type: none）",
-      "sub2api": "未対応サイト種別（Sub2API）"
+      "sub2api": "Sub2API グループの選択が必要です。手動でキーを作成してください"
     },
     "title": "少なくとも 1 つのキーを確保",
     "totalsLabels": {

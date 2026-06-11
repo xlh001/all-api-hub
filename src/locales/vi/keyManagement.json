@@ -272,7 +272,7 @@
     "skipReasons": {
       "aihubmixOneTimeKey": "Khóa AIHubMix chỉ có thể xem một lần, vui lòng tạo thủ công và lưu ngay khóa đầy đủ",
       "noneAuth": "Không có thông tin xác thực (Phương thức xác thực: Không có)",
-      "sub2api": "Loại trang web không được hỗ trợ (Sub2API)"
+      "sub2api": "Cần chọn nhóm Sub2API; hãy tạo khóa thủ công"
     },
     "title": "Đảm bảo có ít nhất một khóa",
     "totalsLabels": {

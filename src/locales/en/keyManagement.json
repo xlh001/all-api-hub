@@ -278,7 +278,7 @@
     "skipReasons": {
       "aihubmixOneTimeKey": "AIHubMix keys can only be viewed once. Create the key manually and save the full key immediately.",
       "noneAuth": "No credentials (auth type: none)",
-      "sub2api": "Unsupported site type (Sub2API)"
+      "sub2api": "Requires selecting a Sub2API group; create the key manually"
     },
     "title": "Ensure at least one key",
     "totalsLabels": {

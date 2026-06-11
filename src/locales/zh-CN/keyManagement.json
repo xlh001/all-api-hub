@@ -272,7 +272,7 @@
     "skipReasons": {
       "aihubmixOneTimeKey": "AIHubMix 密钥仅可查看一次，请手动创建并立即保存完整密钥",
       "noneAuth": "无凭据（认证方式：无）",
-      "sub2api": "不支持的站点类型（Sub2API）"
+      "sub2api": "需要选择 Sub2API 分组，请手动创建密钥"
     },
     "title": "确保至少有一个密钥",
     "totalsLabels": {
