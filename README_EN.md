@@ -114,6 +114,34 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 > [Want to appear here?](mailto:street-anime-olive@duck.com)
 
 <div>
+  <p>
+    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="resources/partners/volcengine.jpg" alt="Volcengine Ark Coding-Plan" width="100%">
+    </a>
+  </p>
+  <p>
+    <b>Volcengine Ark Coding-Plan</b> is a developer productivity initiative by ByteDance. The Lite plan starts at just <b>9.9 RMB/month</b>, providing access to top-tier models like Doubao, DeepSeek, and GLM.
+    It is perfectly compatible with IDE tools such as Cursor, Claude Code, and Windsurf, offering high-speed responses, concurrency stability, and a unique Auto-model switching experience.
+    Join via the <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">activity link</a> now to enjoy referral rebates and first-order discounts.
+  </p>
+</div>
+
+<hr>
+
+<div>
+  <a href="https://ai.centos.hk">
+    <img src="resources/partners/xingchen.png" alt="Xingchen AI" width="64" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Thanks to Xingchen AI for sponsoring this project! Xingchen AI is a stable and efficient API relay service provider, offering relay services for Claude Code, Codex,
+    Gemini, and more. It offers a 1:1 recharge ratio with invoice support and Claude from 40% pricing. Learn more using
+    <a href="https://ai.centos.hk">this link</a>.
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://www.packyapi.com/register?aff=all-api-hub">
     <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="10" vspace="4">
   </a>
@@ -123,7 +151,8 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get 10% off.
   </p>
 </div>
-<br clear="left">
+
+<hr>
 
 <div>
   <a href="https://runapi.co/register?aff=cvDm">
@@ -135,7 +164,9 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     benefit: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the administrator to claim ¥7 in free credits.
   </p>
 </div>
-<br clear="left">
+
+<hr>
+
 
 > [!NOTE]
 > If you previously used [One API Hub](https://github.com/fxaxg/one-api-hub), All API Hub has been heavily refactored while preserving data compatibility, so you can import your existing data with one click.

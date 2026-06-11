@@ -41,7 +41,12 @@
 5. 确认信息无误后，点击 **`确认添加`**。
 
 ::: tip 还没有账号？
-如果你正在寻找稳定、高效且兼容性良好的 AI 中转服务，可以尝试我们的合作伙伴 [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)（注册并充值时填写 `all-api-hub` 优惠码可享 9 折），或 [RunAPI](https://runapi.co/register?aff=cvDm)（注册并联系 RunAPI 管理员可领取 ￥7 免费额度）。
+如果你正在寻找稳定、高效且兼容性良好的 AI 中转服务，可以尝试我们的合作伙伴：
+
+- [火山引擎方舟 Coding-Plan](https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub)：Lite 套餐 9.9 元/月起，并有邀请返利及首单优惠。
+- [星辰AI](https://ai.centos.hk)：充值比例 1:1，可开发票；Claude 低至 4 折。
+- [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)：注册并充值时填写 `all-api-hub` 优惠码可享 9 折。
+- [RunAPI](https://runapi.co/register?aff=cvDm)：注册并联系 RunAPI 管理员可领取 ￥7 免费额度。
 :::
 
 > **过盾提示**：如果站点有 Cloudflare 验证（五秒盾），插件会自动弹出窗口协助过盾，验证通过后会自动继续识别。

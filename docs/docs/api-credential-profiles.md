@@ -27,7 +27,12 @@
 如果你已经在 `密钥管理` 中拿到了某个上游站点的 Key，也可以先在那里验证或整理，再把它保存到 `API 凭据库` 中，后续使用会更方便。
 
 ::: tip 寻找优质 API 接口？
-如果你需要稳定且支持 CLI 的 API 接口来填充你的凭据库，可以尝试我们的合作伙伴 [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)（注册并充值时填写 `all-api-hub` 优惠码可享 9 折），或 [RunAPI](https://runapi.co/register?aff=cvDm)（注册并联系 RunAPI 管理员可领取 ￥7 免费额度）。
+如果你需要稳定且支持 CLI 的 API 接口来填充你的凭据库，可以尝试我们的合作伙伴：
+
+- [火山引擎方舟 Coding-Plan](https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub)：Lite 套餐 9.9 元/月起，并有邀请返利及首单优惠。
+- [星辰AI](https://ai.centos.hk)：充值比例 1:1，可开发票；Claude 低至 4 折。
+- [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)：注册并充值时填写 `all-api-hub` 优惠码可享 9 折。
+- [RunAPI](https://runapi.co/register?aff=cvDm)：注册并联系 RunAPI 管理员可领取 ￥7 免费额度。
 :::
 
 ## 如何添加凭证

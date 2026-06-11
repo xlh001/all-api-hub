@@ -100,6 +100,32 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 <a id="sponsors"></a>
 ## ❤️ 赞助商
 
+<div class="readme-sponsor readme-sponsor-featured">
+  <p class="readme-sponsor-banner">
+    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../resources/partners/volcengine.jpg" alt="火山引擎方舟 Coding-Plan">
+    </a>
+  </p>
+  <p class="readme-sponsor-copy">
+    <strong>火山引擎方舟 Coding-Plan</strong> 是字节跳动推出的开发者生产力计划。Lite 套餐仅需 <strong>9.9 元/月</strong>，即可使用豆包、DeepSeek、GLM 等主流模型，适配 Cursor、Claude Code、Windsurf 等 IDE 工具，并提供模型自动切换体验。现在通过<a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">活动链接</a>加入，还可享受好友邀请返利及首单优惠。
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
+    <a href="https://ai.centos.hk">
+      <img class="readme-sponsor-logo-small" src="../../resources/partners/xingchen.png" alt="星辰AI">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    感谢星辰AI赞助了本项目！星辰AI是一家稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用。
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
     <a href="https://www.packyapi.com/register?aff=all-api-hub">
@@ -112,6 +138,8 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
   </p>
 </div>
 
+<hr class="readme-sponsor-divider">
+
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
     <a href="https://runapi.co/register?aff=cvDm">
@@ -123,55 +151,3 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
     为 All API Hub 的用户提供专属福利：使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 ￥7 的免费额度。
   </p>
 </div>
-
-<style>
-.readme-sponsor {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin: 1rem 0;
-}
-
-.readme-sponsor-logo {
-  flex: 0 0 180px;
-  text-align: center;
-}
-
-.readme-sponsor-logo img {
-  width: 128px;
-  max-width: 100%;
-  height: auto;
-}
-
-.readme-sponsor-logo img.readme-sponsor-logo-small {
-  width: 64px;
-}
-
-.readme-sponsor-copy {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-}
-
-@media (max-width: 640px) {
-  .readme-sponsor {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .readme-sponsor-logo {
-    flex-basis: auto;
-    width: 100%;
-    text-align: left;
-  }
-
-  .readme-sponsor-logo img {
-    width: 128px;
-  }
-
-  .readme-sponsor-logo img.readme-sponsor-logo-small {
-    width: 64px;
-  }
-}
-</style>

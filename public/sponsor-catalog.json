@@ -2,6 +2,89 @@
   "schemaVersion": 3,
   "items": [
     {
+      "id": "volcengine-coding-plan",
+      "enabled": true,
+      "rank": 90,
+      "supportStatus": "unsupported",
+      "urls": {
+        "primaryAffiliate": "https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub",
+        "website": "https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub",
+        "apiKeyCreate": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "火山引擎 - 方舟Coding-Plan",
+          "tagline": "字节跳动旗下开发者生产力计划，Lite 套餐仅需 9.9 元/月。支持豆包、DeepSeek、GLM 等顶级模型，完美适配 Cursor、Claude Code 等工具，尊享高并发稳定性与模型自动切换体验。",
+          "postClickNote": "全场 Lite 套餐 9.9 元/月起，更有邀请好友首单 9.5 折优惠及充值券返利。"
+        },
+        "zh-TW": {
+          "name": "火山引擎 - 方舟Coding-Plan",
+          "tagline": "字節跳動旗下開發者生產力計劃，Lite 套餐僅需 9.9 元/月。支持豆包、DeepSeek、GLM 等頂級模型，完美适配 Cursor、Claude Code 等工具，尊享高併發穩定性與模型自動切換體驗。",
+          "postClickNote": "全場 Lite 套餐 9.9 元/月起，更有邀請好友首單 9.5 折優惠及充值券返利。"
+        },
+        "en": {
+          "name": "Volcengine - Coding Plan",
+          "tagline": "ByteDance's developer productivity plan: Lite plan starts at just 9.9 RMB/month. Supports Doubao, DeepSeek, GLM, and other top models. Perfectly compatible with Cursor, Claude Code, etc., offering high concurrency and auto-model switching.",
+          "postClickNote": "Lite plans start at 9.9 RMB/month. Get 5% rebate in vouchers for referrals and 5% off for invited friends' first orders."
+        },
+        "ja": {
+          "name": "Volcengine - Coding Plan",
+          "tagline": "ByteDance の開発者向け生産性プランです。Lite プランは月額 9.9 RMB から利用でき、Doubao、DeepSeek、GLM などの主要モデルに対応します。Cursor、Claude Code などのツールと組み合わせやすく、高い同時実行性能と Auto モデル切り替えを提供します。",
+          "postClickNote": "Lite プランは月額 9.9 RMB から。紹介によるクーポン還元と、紹介された友人の初回注文割引があります。"
+        },
+        "vi": {
+          "name": "Volcengine - Coding Plan",
+          "tagline": "Ke hoach nang suat lap trinh vien cua ByteDance, goi Lite tu 9.9 RMB/thang. Ho tro Doubao, DeepSeek, GLM va cac mo hinh hang dau khac, phu hop voi Cursor, Claude Code va cac cong cu tuong tu, cung cap do on dinh khi dong thoi cao va chuyen doi mo hinh Auto.",
+          "postClickNote": "Goi Lite tu 9.9 RMB/thang, kem hoan phieu giam gia khi gioi thieu ban be va uu dai don hang dau tien cho nguoi duoc moi."
+        }
+      },
+      "fallbackHints": {
+        "apiCredentialProfiles": true
+      }
+    },
+    {
+      "id": "xingchen-ai",
+      "enabled": true,
+      "rank": 95,
+      "supportStatus": "supported",
+      "urls": {
+        "primaryAffiliate": "https://ai.centos.hk",
+        "website": "https://ai.centos.hk"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "星辰AI",
+          "tagline": "稳定高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。",
+          "postClickNote": "充值比例 1:1，可开发票；Claude 低至 4 折。"
+        },
+        "zh-TW": {
+          "name": "星辰AI",
+          "tagline": "穩定高效的 API 中轉服務商，提供 Claude Code、Codex、Gemini 等多種中轉服務。",
+          "postClickNote": "儲值比例 1:1，可開發票；Claude 低至 4 折。"
+        },
+        "en": {
+          "name": "Xingchen AI",
+          "tagline": "A stable and efficient API relay provider for Claude Code, Codex, Gemini, and more.",
+          "postClickNote": "1:1 recharge ratio with invoice support and Claude from 40% pricing."
+        },
+        "ja": {
+          "name": "Xingchen AI",
+          "tagline": "Claude Code、Codex、Gemini などの中継サービスを提供する、安定した高速な API 中継プロバイダーです。",
+          "postClickNote": "チャージ比率は 1:1、請求書発行に対応。Claude は 40% 価格から利用できます。"
+        },
+        "vi": {
+          "name": "Xingchen AI",
+          "tagline": "Nha cung cap chuyen tiep API on dinh, hieu qua cho Claude Code, Codex, Gemini va nhieu dich vu khac.",
+          "postClickNote": "Ty le nap 1:1, ho tro xuat hoa don va Claude tu 40% gia."
+        }
+      },
+      "accountPrefill": {
+        "siteType": "new-api",
+        "siteUrl": "https://ai.centos.hk",
+        "authType": "access_token"
+      }
+    },
+    {
       "id": "packycode",
       "enabled": true,
       "rank": 100,

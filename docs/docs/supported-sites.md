@@ -26,30 +26,51 @@
 
 如果你正在寻找稳定、高效且兼容性良好的 AI 中转服务，可以尝试我们的合作伙伴：
 
-<table>
-  <tr>
-    <td width="160" align="center">
-      <a href="https://www.packyapi.com/register?aff=all-api-hub">
-        <img src="../../resources/partners/packycode.png" alt="PackyCode" width="140">
-      </a>
-    </td>
-    <td>
-      <strong>PackyCode</strong><br/>
-      提供 Claude Code、Codex、Gemini 等多种中转服务。使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写 "all-api-hub" 优惠码，首次充值可享 <strong>9 折优惠</strong>！
-    </td>
-  </tr>
-  <tr>
-    <td width="160" align="center">
-      <a href="https://runapi.co/register?aff=cvDm">
-        <img src="../../resources/partners/runapi.jpg" alt="RunAPI" width="64">
-      </a>
-    </td>
-    <td>
-      <strong>RunAPI</strong><br/>
-      高效稳定的 API OpenRouter 平替平台，一个 API Key 可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，兼容 Claude Code、OpenClaw 等工具。使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 <strong>￥7 免费额度</strong>。
-    </td>
-  </tr>
-</table>
+<div class="sponsor-list">
+  <section class="sponsor-item sponsor-item-featured">
+    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../resources/partners/volcengine.jpg" alt="火山引擎方舟 Coding-Plan">
+    </a>
+    <p>
+      <strong>火山引擎方舟 Coding-Plan</strong> 字节跳动旗下开发者生产力计划，Lite 套餐 <strong>9.9 元/月</strong>起，支持豆包、DeepSeek、GLM 等主流模型，适配 Cursor、Claude Code、Windsurf 等 IDE 工具。通过<a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">活动链接</a>加入，可享受好友邀请返利及首单优惠。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo sponsor-logo-small" href="https://ai.centos.hk">
+      <img src="../../resources/partners/xingchen.png" alt="星辰AI">
+    </a>
+    <p>
+      <strong>星辰AI</strong> 稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://www.packyapi.com/register?aff=all-api-hub">
+      <img src="../../resources/partners/packycode.png" alt="PackyCode">
+    </a>
+    <p>
+      <strong>PackyCode</strong> 提供 Claude Code、Codex、Gemini 等多种中转服务。使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写 "all-api-hub" 优惠码，首次充值可享 <strong>9 折优惠</strong>！
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo sponsor-logo-small" href="https://runapi.co/register?aff=cvDm">
+      <img src="../../resources/partners/runapi.jpg" alt="RunAPI">
+    </a>
+    <p>
+      <strong>RunAPI</strong> 高效稳定的 API OpenRouter 平替平台，一个 API Key 可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，兼容 Claude Code、OpenClaw 等工具。使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 <strong>￥7 免费额度</strong>。
+    </p>
+  </section>
+
+  <hr>
+</div>
 
 ## 已兼容但公开资料较少的变体
 
@@ -79,4 +100,3 @@
 - [快速导出站点配置](./quick-export.md)
 - [自建站点管理](./self-hosted-site-management.md)
 - [自建站点模型同步](./managed-site-model-sync.md)
-

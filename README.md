@@ -113,6 +113,32 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 > [想出现在这里？](mailto:street-anime-olive@duck.com)
 
 <div>
+  <p>
+    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="resources/partners/volcengine.jpg" alt="火山引擎方舟 Coding-Plan" width="100%">
+    </a>
+  </p>
+  <p>
+    <b>火山引擎方舟 Coding-Plan</b> 是字节跳动推出的开发者生产力计划。Lite 套餐仅需 <b>9.9 元/月</b>，即可畅享豆包、DeepSeek、GLM 等顶级大模型。
+    完美适配 Cursor、Claude Code、Windsurf 等 IDE 工具，提供极速响应、高并发稳定性及独家 Auto 模型自动切换体验。
+    现在通过<a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">活动链接</a>加入，还可享受好友邀请返利及首单优惠。
+  </p>
+</div>
+
+<hr>
+
+<div>
+  <a href="https://ai.centos.hk">
+    <img src="resources/partners/xingchen.png" alt="星辰AI" width="64" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    感谢星辰AI赞助了本项目！星辰AI是一家稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用。
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://www.packyapi.com/register?aff=all-api-hub">
     <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="10" vspace="4">
   </a>
@@ -121,7 +147,8 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
     为本软件的用户提供了特别优惠，使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写"all-api-hub"优惠码，首次充值可以享受9折优惠！
   </p>
 </div>
-<br clear="left">
+
+<hr>
 
 <div>
   <a href="https://runapi.co/register?aff=cvDm">
@@ -132,7 +159,8 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
     为 All API Hub 的用户提供专属福利：使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 ￥7 的免费额度。
   </p>
 </div>
-<br clear="left">
+
+<hr>
 
 > [!NOTE]
 > 如果你之前使用过 [One API Hub](https://github.com/fxaxg/one-api-hub)，All API Hub 已完成大幅重构，并保留数据兼容能力，支持一键导入原有数据。
