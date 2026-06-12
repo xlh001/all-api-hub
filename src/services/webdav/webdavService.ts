@@ -117,6 +117,21 @@ function ensureFilename(url: string, version: string = CONFIG_VERSION) {
 }
 
 /**
+ * Resolves the endpoint used for connection checks.
+ *
+ * For directory-style settings, probe the configured collection itself instead
+ * of the generated backup file path so first-time valid endpoints are not
+ * rejected before the backup file exists.
+ *
+ * Both directory-style URLs (e.g., "http://host/webdav/") and file-style URLs
+ * (e.g., "http://host/webdav/backup.json") are returned unchanged, ensuring
+ * connection tests probe the user's exact configuration.
+ */
+function resolveConnectionTestUrl(url: string) {
+  return url
+}
+
+/**
  * Derives the backup directory URL from a fully-qualified backup target URL.
  *
  * Used so we can create the collection via `MKCOL` before uploading.
@@ -629,7 +644,8 @@ async function getWebdavEncryptionConfig() {
  * errors.
  */
 export async function testWebdavConnection(custom?: Partial<WebDAVConfig>) {
-  const { cfg, targetUrl } = await resolveWebdavBackupRequestContext(custom)
+  const { cfg } = await resolveWebdavBackupRequestContext(custom)
+  const targetUrl = resolveConnectionTestUrl(cfg.url)
 
   const res = await fetch(targetUrl, {
     method: "GET",
