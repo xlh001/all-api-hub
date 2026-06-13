@@ -1,6 +1,9 @@
 <h4 align="center">
-<a href="./README.md">简体中文</a> | English
+<a href="./README_CN.md">简体中文</a> | English | <a href="./README_JA.md">日本語</a>
 </h4>
+
+> [!IMPORTANT]
+> English is now the default GitHub README. This page is kept for existing links; you can also read the same content at [README.md](./README.md).
 
 <div align="center">
 
