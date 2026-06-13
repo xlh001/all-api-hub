@@ -1,477 +1,574 @@
 import { describe, expect, it } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
-import {
-  normalizeSponsorCatalog,
-  selectSponsorRecommendations,
-} from "~/features/AccountManagement/sponsors/catalog"
-import {
-  SPONSOR_CATALOG_SCHEMA_VERSION,
-  SPONSOR_RECOMMENDATION_SURFACES,
-} from "~/features/AccountManagement/sponsors/constants"
+import { normalizeSponsorCatalog } from "~/features/AccountManagement/sponsors/catalog"
 import {
   SPONSOR_CATALOG_SOURCES,
   SPONSOR_SUPPORT_STATUS,
-  type RawSponsorCatalog,
 } from "~/features/AccountManagement/sponsors/types"
 import { AuthTypeEnum } from "~/types"
 
-const now = Date.UTC(2026, 4, 25)
+const now = Date.parse("2026-06-11T00:00:00.000Z")
 
-describe("sponsor catalog normalization", () => {
-  it("keeps enabled HTTP sponsors with fallback locale content and stable ordering", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "later",
-          enabled: true,
-          rank: 20,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
-          urls: {
-            primaryAffiliate: "https://example.com/later",
-          },
-          locales: {
-            en: {
-              name: "Later",
-              tagline: "English fallback sponsor",
+describe("sponsor catalog v4 normalization", () => {
+  it("selects one whole valid locale campaign", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "locale-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "English Campaign",
+                tagline: "English synthetic campaign.",
+                links: {
+                  primary: "https://en.example.invalid/signup",
+                },
+                actions: {
+                  bookmarkFallback: {
+                    url: "https://en.example.invalid",
+                  },
+                },
+              },
+              "zh-CN": {
+                enabled: true,
+                rank: 20,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Chinese Campaign",
+                tagline: "Chinese synthetic campaign.",
+                links: {
+                  primary: "https://zh.example.invalid/signup",
+                },
+                actions: {
+                  bookmarkFallback: {
+                    url: "https://zh.example.invalid",
+                  },
+                  apiCredentialProfileFallback: {
+                    baseUrl: "https://zh-api.example.invalid",
+                  },
+                },
+              },
             },
           },
-          fallbackHints: {
-            bookmarkManager: true,
-          },
-        },
-        {
-          id: "supported-provider",
-          enabled: true,
-          rank: 10,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://supported.example.test/register",
-            website: "https://supported.example.test",
-          },
-          locales: {
-            "zh-CN": {
-              name: "Supported Provider",
-              tagline: "稳定的测试服务",
-            },
-            en: {
-              name: "Supported Provider",
-              tagline: "Reliable test service",
-            },
-          },
-          accountPrefill: {
-            siteType: SITE_TYPES.NEW_API,
-            siteUrl: "https://supported.example.test",
-            authType: AuthTypeEnum.Cookie,
-          },
-        },
-      ],
-    }
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "zh-CN",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Bundled,
-    })
+        ],
+      },
+      {
+        locale: "en-US",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Bundled,
+      },
+    )
 
     expect(result.errors).toEqual([])
     expect(result.ok).toBe(true)
-    expect(result.items.map((item) => item.id)).toEqual([
-      "supported-provider",
-      "later",
-    ])
+    expect(result.items).toHaveLength(1)
     expect(result.items[0]).toMatchObject({
-      id: "supported-provider",
-      name: "Supported Provider",
-      tagline: "稳定的测试服务",
-      supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-      source: SPONSOR_CATALOG_SOURCES.Bundled,
-      primaryAffiliateUrl: "https://supported.example.test/register",
-      websiteUrl: "https://supported.example.test",
-      fallbackHints: {
-        bookmarkManager: false,
-        apiCredentialProfiles: false,
+      selectedLocale: "en",
+      schemaVersion: 4,
+      links: {
+        primary: "https://en.example.invalid/signup",
       },
-      accountPrefill: {
-        siteType: SITE_TYPES.NEW_API,
-        siteUrl: "https://supported.example.test",
-        authType: AuthTypeEnum.Cookie,
+      actions: {
+        bookmarkFallback: {
+          url: "https://en.example.invalid",
+        },
       },
     })
-    expect(result.items[1]).toMatchObject({
-      id: "later",
-      name: "Later",
-      tagline: "English fallback sponsor",
-      supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
-      primaryAffiliateUrl: "https://example.com/later",
-      fallbackHints: {
-        bookmarkManager: true,
-        apiCredentialProfiles: false,
+    expect(result.items[0].actions).not.toHaveProperty(
+      "apiCredentialProfileFallback",
+    )
+  })
+
+  it("falls back when the candidate locale campaign is disabled", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "fallback-campaign",
+            locales: {
+              en: {
+                enabled: false,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Disabled Campaign",
+                tagline: "Disabled locale campaign.",
+                links: {
+                  primary: "https://en.example.invalid/signup",
+                },
+              },
+              "zh-CN": {
+                enabled: true,
+                rank: 20,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Fallback Campaign",
+                tagline: "Valid fallback campaign.",
+                links: {
+                  primary: "https://zh.example.invalid/signup",
+                },
+              },
+            },
+          },
+        ],
+      },
+      {
+        locale: "en",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.items[0]).toMatchObject({
+      selectedLocale: "zh-CN",
+      links: {
+        primary: "https://zh.example.invalid/signup",
       },
     })
   })
 
-  it("rejects unsafe, disabled, expired, malformed, and unsupported-schema items", () => {
-    const invalidCatalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "disabled",
-          enabled: false,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/disabled",
+  it("does not fall back to arbitrary unrelated locale campaigns", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "unrelated-locale-campaign",
+            locales: {
+              fr: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "French Campaign",
+                tagline: "Unrelated synthetic campaign.",
+                links: {
+                  primary: "https://fr.example.invalid/signup",
+                },
+              },
+            },
           },
-          locales: {
-            en: { name: "Disabled", tagline: "Disabled sponsor" },
-          },
-        },
-        {
-          id: "ftp-url",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "ftp://example.com/unsafe",
-          },
-          locales: {
-            en: { name: "FTP", tagline: "Unsafe URL" },
-          },
-        },
-        {
-          id: "expired",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/expired",
-          },
-          endsAt: "2026-01-01T00:00:00.000Z",
-          locales: {
-            en: { name: "Expired", tagline: "Expired sponsor" },
-          },
-        },
-        {
-          id: "missing-copy",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/missing-copy",
-          },
-          locales: {
-            fr: { name: "Manquant", tagline: "Copie manquante" },
-          },
-        },
-      ],
-    }
-
-    const result = normalizeSponsorCatalog(invalidCatalog, {
-      locale: "zh-CN",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Remote,
-    })
+        ],
+      },
+      {
+        locale: "de-DE",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
 
     expect(result.ok).toBe(false)
     expect(result.items).toEqual([])
-    expect(result.errors).toEqual([
-      "item disabled is disabled",
-      "item ftp-url has invalid primaryAffiliate URL",
-      "item expired is outside its active date range",
-      "item missing-copy has no localized name and tagline",
-    ])
-
-    const unsupportedSchema = normalizeSponsorCatalog(
-      {
-        schemaVersion: 999,
-        items: [],
-      },
-      {
-        locale: "zh-CN",
-        now,
-        source: SPONSOR_CATALOG_SOURCES.Remote,
-      },
+    expect(result.errors.join("\n")).toContain(
+      "item unrelated-locale-campaign has no valid localized campaign for de-DE",
     )
-
-    expect(unsupportedSchema.ok).toBe(false)
-    expect(unsupportedSchema.items).toEqual([])
-    expect(unsupportedSchema.errors).toEqual(["unsupported schemaVersion 999"])
   })
 
-  it("rejects structurally malformed remote payloads and items without throwing", () => {
-    for (const catalog of [null, undefined]) {
-      expect(() =>
-        normalizeSponsorCatalog(catalog as unknown as RawSponsorCatalog, {
-          locale: "zh-CN",
-          now,
-          source: SPONSOR_CATALOG_SOURCES.Remote,
-        }),
-      ).not.toThrow()
-
-      expect(
-        normalizeSponsorCatalog(catalog as unknown as RawSponsorCatalog, {
-          locale: "zh-CN",
-          now,
-          source: SPONSOR_CATALOG_SOURCES.Remote,
-        }),
-      ).toEqual({
-        ok: false,
-        items: [],
-        errors: ["catalog payload must be an object"],
-      })
-    }
-
-    expect(() =>
-      normalizeSponsorCatalog(
-        {
-          schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-          items: null,
-        } as unknown as RawSponsorCatalog,
-        {
-          locale: "zh-CN",
-          now,
-          source: SPONSOR_CATALOG_SOURCES.Remote,
-        },
-      ),
-    ).not.toThrow()
-
-    const malformedPayload = normalizeSponsorCatalog(
+  it("normalizes every supported v4 action payload", () => {
+    const result = normalizeSponsorCatalog(
       {
-        schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-        items: null,
-      } as unknown as RawSponsorCatalog,
+        schemaVersion: 4,
+        items: [
+          {
+            id: "action-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
+                name: "Action Campaign",
+                tagline: "Synthetic action campaign.",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                },
+                actions: {
+                  addAccount: {
+                    siteType: SITE_TYPES.NEW_API,
+                    siteUrl: "https://api.example.invalid",
+                    authType: AuthTypeEnum.AccessToken,
+                  },
+                  bookmarkFallback: {
+                    url: "https://bookmark.example.invalid",
+                  },
+                  apiCredentialProfileFallback: {
+                    baseUrl: "https://api-base.example.invalid",
+                    apiKeyCreateUrl: "https://console.example.invalid/api-keys",
+                    apiKeyCreateHint: "Create an example API key.",
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
       {
-        locale: "zh-CN",
+        locale: "en",
         now,
         source: SPONSOR_CATALOG_SOURCES.Remote,
       },
     )
 
-    expect(malformedPayload).toEqual({
-      ok: false,
-      items: [],
-      errors: ["catalog items must be an array"],
+    expect(result.errors).toEqual([])
+    expect(result.ok).toBe(true)
+    expect(result.items[0].actions).toEqual({
+      addAccount: {
+        siteType: SITE_TYPES.NEW_API,
+        siteUrl: "https://api.example.invalid",
+        authType: AuthTypeEnum.AccessToken,
+      },
+      bookmarkFallback: {
+        url: "https://bookmark.example.invalid",
+      },
+      apiCredentialProfileFallback: {
+        baseUrl: "https://api-base.example.invalid",
+        apiKeyCreateUrl: "https://console.example.invalid/api-keys",
+        apiKeyCreateHint: "Create an example API key.",
+      },
     })
+  })
 
-    expect(() =>
-      normalizeSponsorCatalog(
-        {
-          schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-          items: [
-            {
-              id: "missing-urls",
-              enabled: true,
-              supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-              locales: {
-                en: { name: "Missing URLs", tagline: "No URLs object" },
-              },
-            },
-            {
-              id: "null-urls",
-              enabled: true,
-              supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-              urls: null,
-              locales: {
-                en: { name: "Null URLs", tagline: "Null URLs object" },
-              },
-            },
-            {
-              id: "missing-locales",
-              enabled: true,
-              supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-              urls: {
-                primaryAffiliate: "https://example.com/missing-locales",
-              },
-            },
-            {
-              id: "null-copy",
-              enabled: true,
-              supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-              urls: {
-                primaryAffiliate: "https://example.com/null-copy",
-              },
-              locales: {
-                en: null,
-              },
-            },
-          ],
-        } as unknown as RawSponsorCatalog,
-        {
-          locale: "en",
-          now,
-          source: SPONSOR_CATALOG_SOURCES.Remote,
-        },
-      ),
-    ).not.toThrow()
-
-    const malformedItems = normalizeSponsorCatalog(
+  it("keeps API key creation data on the explicit V4 action", () => {
+    const result = normalizeSponsorCatalog(
       {
-        schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
+        schemaVersion: 4,
         items: [
           {
-            id: "missing-urls",
-            enabled: true,
-            supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
+            id: "api-key-bridge-campaign",
             locales: {
-              en: { name: "Missing URLs", tagline: "No URLs object" },
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "API Key Bridge Campaign",
+                tagline: "Synthetic API key bridge campaign.",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                },
+                actions: {
+                  apiCredentialProfileFallback: {
+                    baseUrl: "https://api-base.example.invalid",
+                    apiKeyCreateUrl: "https://console.example.invalid/api-keys",
+                  },
+                },
+              },
             },
           },
+        ],
+      },
+      {
+        locale: "en",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
+
+    expect(result.errors).toEqual([])
+    expect(result.ok).toBe(true)
+    expect(result.items[0].actions).toMatchObject({
+      apiCredentialProfileFallback: {
+        baseUrl: "https://api-base.example.invalid",
+        apiKeyCreateUrl: "https://console.example.invalid/api-keys",
+      },
+    })
+  })
+
+  it("rejects malformed unselected locale campaigns", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
           {
-            id: "null-urls",
-            enabled: true,
-            supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-            urls: null,
+            id: "unselected-malformed-campaign",
             locales: {
-              en: { name: "Null URLs", tagline: "Null URLs object" },
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Selected Campaign",
+                tagline: "Selected campaign is otherwise valid.",
+                links: {
+                  primary: "https://en.example.invalid/signup",
+                },
+              },
+              "zh-CN": {
+                enabled: true,
+                rank: 20,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Malformed Campaign",
+                tagline: "Unselected campaign has unknown action key.",
+                links: {
+                  primary: "https://zh.example.invalid/signup",
+                },
+                actions: {
+                  unknownAction: {
+                    url: "https://unknown.example.invalid",
+                  },
+                },
+              },
             },
           },
+        ],
+      },
+      {
+        locale: "en",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.items).toEqual([])
+    expect(result.errors.join("\n")).toContain(
+      "locale zh-CN has unsupported action fields: unknownAction",
+    )
+  })
+
+  it("rejects unsafe links in unselected locale campaigns", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
           {
-            id: "missing-locales",
-            enabled: true,
-            supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-            urls: {
-              primaryAffiliate: "https://example.com/missing-locales",
+            id: "unselected-unsafe-link-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Selected Campaign",
+                tagline: "Selected campaign is otherwise valid.",
+                links: {
+                  primary: "https://en.example.invalid/signup",
+                },
+              },
+              "zh-CN": {
+                enabled: true,
+                rank: 20,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Unsafe Link Campaign",
+                tagline: "Unselected campaign has unsafe link.",
+                links: {
+                  primary: "javascript:alert(1)",
+                },
+              },
             },
           },
+        ],
+      },
+      {
+        locale: "en",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.items).toEqual([])
+    expect(result.errors.join("\n")).toContain("locale zh-CN has invalid links")
+  })
+
+  it("rejects invalid nested actions in unselected locale campaigns", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
           {
-            id: "null-copy",
-            enabled: true,
-            supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-            urls: {
-              primaryAffiliate: "https://example.com/null-copy",
+            id: "unselected-invalid-action-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Selected Campaign",
+                tagline: "Selected campaign is otherwise valid.",
+                links: {
+                  primary: "https://en.example.invalid/signup",
+                },
+              },
+              "zh-CN": {
+                enabled: true,
+                rank: 20,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Invalid Action Campaign",
+                tagline: "Unselected campaign has invalid action payload.",
+                links: {
+                  primary: "https://zh.example.invalid/signup",
+                },
+                actions: {
+                  addAccount: {
+                    siteType: SITE_TYPES.UNKNOWN,
+                    siteUrl: "https://api.example.invalid",
+                    authType: AuthTypeEnum.AccessToken,
+                  },
+                },
+              },
             },
+          },
+        ],
+      },
+      {
+        locale: "en",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.items).toEqual([])
+    expect(result.errors.join("\n")).toContain(
+      "locale zh-CN has invalid actions",
+    )
+  })
+
+  it("rejects invalid rank and date values in unselected locale campaigns", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "unselected-invalid-values-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Selected Campaign",
+                tagline: "Selected campaign is otherwise valid.",
+                links: {
+                  primary: "https://en.example.invalid/signup",
+                },
+              },
+              "zh-CN": {
+                enabled: true,
+                rank: Number.NaN,
+                startsAt: "not a date",
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Invalid Values Campaign",
+                tagline: "Unselected campaign has invalid rank and date.",
+                links: {
+                  primary: "https://zh.example.invalid/signup",
+                },
+              },
+            },
+          },
+        ],
+      },
+      {
+        locale: "en",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.items).toEqual([])
+    expect(result.errors.join("\n")).toContain("locale zh-CN has invalid rank")
+  })
+
+  it("rejects top-level campaign fields", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "strict-campaign",
+            rank: 10,
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Strict Campaign",
+                tagline: "Synthetic strict campaign.",
+                website: "https://website.example.invalid",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                },
+              },
+            },
+          },
+        ],
+      },
+      {
+        locale: "en",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.items).toEqual([])
+    expect(result.errors.join("\n")).toContain("top-level")
+  })
+
+  it("rejects unknown locale fields", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "unknown-locale-field-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Unknown Locale Field Campaign",
+                tagline: "Synthetic unknown locale field campaign.",
+                website: "https://website.example.invalid",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                },
+              },
+            },
+          },
+        ],
+      },
+      {
+        locale: "en",
+        now,
+        source: SPONSOR_CATALOG_SOURCES.Remote,
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.items).toEqual([])
+    expect(result.errors.join("\n")).toContain(
+      "locale en has unsupported locale fields: website",
+    )
+  })
+
+  it("rejects malformed locale and action containers before semantic selection", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "invalid-locales-campaign",
+            locales: "en",
+          },
+          {
+            id: "invalid-locale-shape-campaign",
             locales: {
               en: null,
             },
           },
-        ],
-      } as unknown as RawSponsorCatalog,
-      {
-        locale: "en",
-        now,
-        source: SPONSOR_CATALOG_SOURCES.Remote,
-      },
-    )
-
-    expect(malformedItems.ok).toBe(false)
-    expect(malformedItems.items).toEqual([])
-    expect(malformedItems.errors).toEqual([
-      "item missing-urls has invalid urls",
-      "item null-urls has invalid urls",
-      "item missing-locales has invalid locales",
-      "item null-copy has no localized name and tagline",
-    ])
-  })
-
-  it("trims normalized URLs, display copy, and account prefill fields", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "trimmed",
-          enabled: true,
-          rank: 1,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "  https://example.com/affiliate  ",
-            website: "  https://example.com  ",
-            apiKeyCreate: "  https://example.com/dashboard/keys?aff=aah  ",
-          },
-          locales: {
-            en: {
-              name: "  Trimmed Sponsor  ",
-              tagline: "  Trimmed tagline  ",
-              postClickNote: "  Use promo code APIHUB after registration.  ",
-            },
-          },
-          accountPrefill: {
-            siteType: SITE_TYPES.NEW_API,
-            siteUrl: "  https://supported.example.test  ",
-            authType: AuthTypeEnum.Cookie,
-          },
-        },
-      ],
-    }
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "en",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Remote,
-    })
-
-    expect(result.errors).toEqual([])
-    expect(result.items[0]).toMatchObject({
-      primaryAffiliateUrl: "https://example.com/affiliate",
-      websiteUrl: "https://example.com",
-      apiKeyCreateUrl: "https://example.com/dashboard/keys?aff=aah",
-      name: "Trimmed Sponsor",
-      tagline: "Trimmed tagline",
-      postClickNote: "Use promo code APIHUB after registration.",
-      accountPrefill: {
-        siteType: SITE_TYPES.NEW_API,
-        siteUrl: "https://supported.example.test",
-        authType: AuthTypeEnum.Cookie,
-      },
-    })
-  })
-
-  it("treats blank account prefill auth types as omitted", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "blank-auth-type",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/blank-auth-type",
-          },
-          locales: {
-            en: {
-              name: "Blank Auth Type",
-              tagline: "Blank auth type is omitted.",
-            },
-          },
-          accountPrefill: {
-            siteType: SITE_TYPES.NEW_API,
-            siteUrl: "https://blank-auth-type.example.com",
-            authType: "",
-          },
-        },
-      ],
-    }
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "en",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Remote,
-    })
-
-    expect(result.errors).toEqual([])
-    expect(result.items[0]).toMatchObject({
-      accountPrefill: {
-        siteType: SITE_TYPES.NEW_API,
-        siteUrl: "https://blank-auth-type.example.com",
-      },
-    })
-    expect(result.items[0]?.accountPrefill).not.toHaveProperty("authType")
-  })
-
-  it("rejects unsafe sponsor API key creation URLs", () => {
-    const result = normalizeSponsorCatalog(
-      {
-        schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-        items: [
           {
-            id: "unsafe-key-url",
-            enabled: true,
-            supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
-            urls: {
-              primaryAffiliate: "https://example.com/register",
-              apiKeyCreate: "javascript:alert(1)",
-            },
+            id: "invalid-actions-container-campaign",
             locales: {
               en: {
-                name: "Unsafe key URL",
-                tagline: "Invalid key creation URL.",
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Invalid Actions Campaign",
+                tagline: "Synthetic invalid actions campaign.",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                },
+                actions: [],
               },
             },
           },
@@ -486,333 +583,241 @@ describe("sponsor catalog normalization", () => {
 
     expect(result.ok).toBe(false)
     expect(result.items).toEqual([])
-    expect(result.errors).toEqual([
-      "item unsafe-key-url has invalid apiKeyCreate URL",
-    ])
+    expect(result.errors.join("\n")).toContain(
+      "item invalid-locales-campaign has invalid locales",
+    )
+    expect(result.errors.join("\n")).toContain(
+      "item invalid-locale-shape-campaign locale en has invalid shape",
+    )
+    expect(result.errors.join("\n")).toContain(
+      "item invalid-actions-container-campaign locale en has invalid actions",
+    )
   })
 
-  it("rejects malformed non-boolean enabled flags without changing disabled wording", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "bad-enabled",
-          enabled: "yes" as unknown as boolean,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/bad-enabled",
+  it("rejects selected locale campaigns with invalid semantic fields", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "invalid-shape-selected-campaign",
+            locales: {
+              en: null,
+            },
           },
-          locales: {
-            en: { name: "Bad enabled", tagline: "Malformed enabled flag" },
+          {
+            id: "invalid-support-status-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: "pending",
+                name: "Invalid Status Campaign",
+                tagline: "Synthetic invalid status campaign.",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                },
+              },
+            },
           },
-        },
-        {
-          id: "disabled",
-          enabled: false,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/disabled",
+          {
+            id: "expired-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 20,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                startsAt: "2026-07-01T00:00:00.000Z",
+                name: "Expired Campaign",
+                tagline: "Synthetic expired campaign.",
+                links: {
+                  primary: "https://expired.example.invalid/signup",
+                },
+              },
+            },
           },
-          locales: {
-            en: { name: "Disabled", tagline: "Disabled sponsor" },
+          {
+            id: "missing-name-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 30,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "",
+                tagline: "Synthetic missing name campaign.",
+                links: {
+                  primary: "https://missing-name.example.invalid/signup",
+                },
+              },
+            },
           },
-        },
-      ],
-    }
-
-    expect(() =>
-      normalizeSponsorCatalog(catalog, {
+          {
+            id: "invalid-date-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 40,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                endsAt: "not a date",
+                name: "Invalid Date Campaign",
+                tagline: "Synthetic invalid date campaign.",
+                links: {
+                  primary: "https://invalid-date.example.invalid/signup",
+                },
+              },
+            },
+          },
+        ],
+      },
+      {
         locale: "en",
         now,
         source: SPONSOR_CATALOG_SOURCES.Remote,
-      }),
-    ).not.toThrow()
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "en",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Remote,
-    })
+      },
+    )
 
     expect(result.ok).toBe(false)
     expect(result.items).toEqual([])
-    expect(result.errors).toEqual([
-      "item bad-enabled has invalid enabled flag",
-      "item disabled is disabled",
-    ])
+    expect(result.errors.join("\n")).toContain(
+      "item invalid-shape-selected-campaign locale en has invalid shape",
+    )
+    expect(result.errors.join("\n")).toContain(
+      "item invalid-support-status-campaign locale en has invalid supportStatus",
+    )
+    expect(result.errors.join("\n")).toContain(
+      "item expired-campaign locale en is outside its active date range",
+    )
+    expect(result.errors.join("\n")).toContain(
+      "item missing-name-campaign locale en has invalid name or tagline",
+    )
+    expect(result.errors.join("\n")).toContain(
+      "item invalid-date-campaign locale en is outside its active date range",
+    )
   })
 
-  it("rejects malformed item shape, id, status, date range, website, and URL parser failures", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        null as unknown as RawSponsorCatalog["items"][number],
-        {
-          id: "Bad ID",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/bad-id",
+  it("rejects invalid fallback action URLs and malformed action payloads", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "invalid-api-key-url-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Invalid API Key URL Campaign",
+                tagline: "Synthetic invalid API key URL campaign.",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                },
+                actions: {
+                  apiCredentialProfileFallback: {
+                    baseUrl: "https://api.example.invalid",
+                    apiKeyCreateUrl: "not a url",
+                  },
+                },
+              },
+            },
           },
-          locales: {
-            en: { name: "Bad ID", tagline: "Invalid id" },
+          {
+            id: "invalid-bookmark-shape-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 20,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Invalid Bookmark Shape Campaign",
+                tagline: "Synthetic invalid bookmark shape campaign.",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                },
+                actions: {
+                  bookmarkFallback: "https://bookmark.example.invalid",
+                },
+              },
+            },
           },
-        },
-        {
-          id: "bad-status",
-          enabled: true,
-          supportStatus: "maybe" as typeof SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/bad-status",
-          },
-          locales: {
-            en: { name: "Bad Status", tagline: "Invalid status" },
-          },
-        },
-        {
-          id: "bad-date",
-          enabled: true,
-          startsAt: "not a date",
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/bad-date",
-          },
-          locales: {
-            en: { name: "Bad Date", tagline: "Invalid date" },
-          },
-        },
-        {
-          id: "bad-website",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/bad-website",
-            website: "javascript:alert(1)",
-          },
-          locales: {
-            en: { name: "Bad Website", tagline: "Invalid website" },
-          },
-        },
-        {
-          id: "bad-url",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://[invalid",
-          },
-          locales: {
-            en: { name: "Bad URL", tagline: "Invalid URL" },
-          },
-        },
-      ],
-    }
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "en",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Remote,
-    })
-
-    expect(result.ok).toBe(false)
-    expect(result.items).toEqual([])
-    expect(result.errors).toEqual([
-      "item unknown has invalid shape",
-      "item Bad ID has invalid id",
-      "item bad-status has invalid supportStatus",
-      "item bad-date is outside its active date range",
-      "item bad-website has invalid website URL",
-      "item bad-url has invalid primaryAffiliate URL",
-    ])
-  })
-
-  it("rejects unknown account prefill site types without throwing", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "unknown-supported",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/unknown-supported",
-          },
-          locales: {
-            en: { name: "Unknown", tagline: "Unknown account type" },
-          },
-          accountPrefill: {
-            siteType: SITE_TYPES.UNKNOWN,
-            siteUrl: "https://unknown.example.com",
-          },
-        },
-      ],
-    }
-
-    expect(() =>
-      normalizeSponsorCatalog(catalog, {
+        ],
+      },
+      {
         locale: "en",
         now,
         source: SPONSOR_CATALOG_SOURCES.Remote,
-      }),
-    ).not.toThrow()
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "en",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Remote,
-    })
+      },
+    )
 
     expect(result.ok).toBe(false)
     expect(result.items).toEqual([])
-    expect(result.errors).toEqual([
-      "item unknown-supported has invalid accountPrefill",
-    ])
+    expect(result.errors.join("\n")).toContain(
+      "item invalid-api-key-url-campaign locale en has invalid actions",
+    )
+    expect(result.errors.join("\n")).toContain(
+      "item invalid-bookmark-shape-campaign locale en has invalid bookmarkFallback action",
+    )
   })
 
-  it("rejects malformed sponsor account prefill auth types without throwing", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "bad-auth-type",
-          enabled: true,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/bad-auth-type",
+  it("rejects unknown nested link and action fields", () => {
+    const result = normalizeSponsorCatalog(
+      {
+        schemaVersion: 4,
+        items: [
+          {
+            id: "unknown-link-field-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 10,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Unknown Link Field Campaign",
+                tagline: "Synthetic unknown link field campaign.",
+                links: {
+                  primary: "https://campaign.example.invalid/signup",
+                  extra: "https://extra.example.invalid",
+                },
+              },
+            },
           },
-          locales: {
-            en: { name: "Bad Auth Type", tagline: "Malformed auth type" },
+          {
+            id: "unknown-action-field-campaign",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 20,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Unknown Action Field Campaign",
+                tagline: "Synthetic unknown action field campaign.",
+                links: {
+                  primary: "https://action.example.invalid/signup",
+                },
+                actions: {
+                  addAccount: {
+                    siteType: SITE_TYPES.NEW_API,
+                    siteUrl: "https://api.example.invalid",
+                    authType: AuthTypeEnum.AccessToken,
+                    extra: "ignored",
+                  },
+                },
+              },
+            },
           },
-          accountPrefill: {
-            siteType: SITE_TYPES.NEW_API,
-            siteUrl: "https://bad-auth-type.example.com",
-            authType: "session-header",
-          },
-        },
-      ],
-    }
-
-    expect(() =>
-      normalizeSponsorCatalog(catalog, {
+        ],
+      },
+      {
         locale: "en",
         now,
         source: SPONSOR_CATALOG_SOURCES.Remote,
-      }),
-    ).not.toThrow()
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "en",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Remote,
-    })
+      },
+    )
 
     expect(result.ok).toBe(false)
     expect(result.items).toEqual([])
-    expect(result.errors).toEqual([
-      "item bad-auth-type has invalid accountPrefill",
-    ])
-  })
-
-  it("trims sponsor ids before validation, sorting, and output", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "z",
-          enabled: true,
-          rank: 1,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/z",
-          },
-          locales: {
-            en: { name: "Z", tagline: "Sponsor Z" },
-          },
-        },
-        {
-          id: "  padded-id  ",
-          enabled: true,
-          rank: 1,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/padded-id",
-          },
-          locales: {
-            en: { name: "Padded", tagline: "Sponsor with padded id" },
-          },
-        },
-      ],
-    }
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "en",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Remote,
-    })
-
-    expect(result.errors).toEqual([])
-    expect(result.items.map((item) => item.id)).toEqual(["padded-id", "z"])
-  })
-
-  it("returns all recommendations for each surface while preserving ordering", () => {
-    const catalog: RawSponsorCatalog = {
-      schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      items: [
-        {
-          id: "c",
-          enabled: true,
-          rank: 3,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
-          urls: {
-            primaryAffiliate: "https://example.com/c",
-          },
-          locales: {
-            en: { name: "C", tagline: "Sponsor C" },
-          },
-        },
-        {
-          id: "a",
-          enabled: true,
-          rank: 1,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Supported,
-          urls: {
-            primaryAffiliate: "https://example.com/a",
-          },
-          locales: {
-            en: { name: "A", tagline: "Sponsor A" },
-          },
-        },
-        {
-          id: "b",
-          enabled: true,
-          rank: 2,
-          supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
-          urls: {
-            primaryAffiliate: "https://example.com/b",
-          },
-          locales: {
-            en: { name: "B", tagline: "Sponsor B" },
-          },
-        },
-      ],
-    }
-
-    const result = normalizeSponsorCatalog(catalog, {
-      locale: "en",
-      now,
-      source: SPONSOR_CATALOG_SOURCES.Bundled,
-    })
-
-    expect(
-      selectSponsorRecommendations(
-        result.items,
-        SPONSOR_RECOMMENDATION_SURFACES.Newcomer,
-      ).map((item) => item.id),
-    ).toEqual(["a", "b", "c"])
-    expect(
-      selectSponsorRecommendations(
-        result.items,
-        SPONSOR_RECOMMENDATION_SURFACES.AddAccountDialog,
-      ).map((item) => item.id),
-    ).toEqual(["a", "b", "c"])
+    expect(result.errors.join("\n")).toContain(
+      "locale en has unsupported link fields: extra",
+    )
+    expect(result.errors.join("\n")).toContain(
+      "locale en has unsupported addAccount action fields: extra",
+    )
   })
 })
