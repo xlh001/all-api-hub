@@ -8,6 +8,29 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.46.0
+- **New Features:**
+  - Key Management: Added a group key audit that checks whether each account group has a usable key, creates missing keys for supported sites, and lists keys whose groups are no longer available so you can review and delete them in one place. See [Key Management](./key-management.md).
+  - Key Management: You can now batch import selected keys into `CLIProxyAPI`, with per-key results shown during the import. See [CLIProxyAPI Integration](./cliproxyapi-integration.md).
+  - Feedback and languages: The feedback menu, About page, and first-time language selection flow now include a "Request a language" entry, making it easier to ask for missing languages or translation improvements.
+- **Experience Optimizations:**
+  - Auto Detect: If the extension popup closes during account auto detection, the extension now suggests continuing in the popup or switching to the side panel to finish adding the account, reducing confusion after an interrupted detection flow. See [Auto Detect Troubleshooting Guide](./auto-detect.md).
+  - Multilingual display: Extension pages now keep the page language marker aligned with the current UI language, reducing browser auto-translation misjudgments. If a page still cannot display correctly, it provides a reload entry and suggests switching the extension language or disabling browser auto-translation before retrying.
+  - Key Management: When managed-site administrator information is not configured, related checks now explain that the setup is optional and send you to a more accurate settings destination.
+- **Bug Fixes:**
+  - Model List: Restored per-row actions in the "All accounts" view, including key creation, single API verification, CLI verification, copying the site URL, and opening the site. See [Model List](./model-list.md).
+  - Model List: Batch verification results now show the source account and site, making it easier to identify which site or account is unavailable. See [Model List](./model-list.md).
+  - `Sub2API`: After creating a key, the list now refreshes automatically; after a successful deletion, the key is removed from the local list immediately, reducing manual refreshes and repeated checks.
+  - WebDAV: Temporary files used during backup uploads no longer start with a dot, reducing upload failures caused by server-side security policies blocking temporary-file writes. See [WebDAV Backup and Auto Sync](./webdav-sync.md).
+  - WebDAV: Connection tests, uploads, and downloads now save the current form changes first; directory URLs are also tested as directories, reducing cases where a valid configuration appears to fail testing. See [WebDAV Backup and Auto Sync](./webdav-sync.md).
+
+**Location Hints:**
+- Group key audit and batch import: Use them under "Settings → Key Management".
+- `CLIProxyAPI` connection settings: Enter the management API URL and management key under "Settings → CLIProxyAPI".
+- Language requests: Submit them from the `Feedback` menu in the extension popup or settings page title bar, from "Settings → About", or during first-time language selection.
+- Auto-detect interruption hint: Check it after starting auto detection while adding an account from the extension popup.
+- WebDAV settings: Test, upload, or download under `WebDAV Settings` in "Settings → Import / Export".
+
 ## 3.45.0
 - **New Features:**
   - Product reminders: The extension popup and settings page now include an important-reminders entry for risk notices, service changes, and usage suggestions.
