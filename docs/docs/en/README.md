@@ -106,12 +106,12 @@ Have questions or want to share useful sites? Join the community:
 
 <div class="readme-sponsor readme-sponsor-featured">
   <p class="readme-sponsor-banner">
-    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="../../../resources/partners/volcengine.jpg" alt="Volcengine Ark Coding-Plan">
+    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../../resources/partners/volcengine.jpg" alt="Dola Seed on BytePlus ModelArk">
     </a>
   </p>
   <p class="readme-sponsor-copy">
-    <strong>Volcengine Ark Coding-Plan</strong> is ByteDance's developer productivity program. The Lite plan starts at <strong>CNY 9.9/month</strong> and gives you access to popular models such as Doubao, DeepSeek, and GLM, with support for IDE tools like Cursor, Claude Code, and Windsurf plus automatic model switching. Join through the <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">campaign link</a> to get first-order discounts and referral rewards.
+    Thanks to Dola Seed for sponsoring this project! Dola Seed 2.0 is a full-modal general large model independently developed by ByteDance for the global market. Built on a unified multimodal architecture, it supports joint understanding and generation of text, images, audio, and video. It natively enables agent collaboration, with strong reasoning, long-task execution, tool integration, and coding capabilities. It is widely applicable to smart cockpits, personal assistants, education, customer support, marketing, retail, and other scenarios. It excels in multimodal perception, end-to-end complex task delivery, stable interaction, and data security, and is readily accessible and deployable via the ModelArk platform. Register via <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">this link</a> to get 500,000 tokens of free inference quota per model.<a href="https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"> >>中国大陆地区的开发者请点击这里</a>
   </p>
 </div>
 

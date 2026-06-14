@@ -44,17 +44,17 @@
           "enabled": true,
           "rank": 90,
           "supportStatus": "unsupported",
-          "name": "Volcengine - Coding Plan",
-          "tagline": "ByteDance's developer productivity plan: Lite plan starts at just 9.9 RMB/month. Supports Doubao, DeepSeek, GLM, and other top models. Perfectly compatible with Cursor, Claude Code, etc., offering high concurrency and auto-model switching.",
+          "name": "Dola Seed on BytePlus ModelArk",
+          "tagline": "Dola Seed 2.0 is ByteDance's full-modal general large model for the global market, available through BytePlus ModelArk with multimodal understanding and generation, agent collaboration, reasoning, tool integration, and coding capabilities.",
           "links": {
-            "primary": "https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
+            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
           },
-          "postClickNote": "Lite plans start at 9.9 RMB/month. Get 5% rebate in vouchers for referrals and 5% off for invited friends' first orders.",
+          "postClickNote": "Register via BytePlus ModelArk to get 500,000 tokens of free inference quota per model. Developers in mainland China can use https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub instead.",
           "actions": {
             "apiCredentialProfileFallback": {
-              "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
-              "apiKeyCreateUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
-              "apiKeyCreateHint": "Lite plans start at 9.9 RMB/month. Get 5% rebate in vouchers for referrals and 5% off for invited friends' first orders."
+              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
+              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
+              "apiKeyCreateHint": "Create a BytePlus ModelArk API key in the same region as your inference endpoint. The prefilled Base URL uses the AP region; switch it if your endpoint is in another region."
             }
           }
         },
@@ -62,17 +62,17 @@
           "enabled": true,
           "rank": 90,
           "supportStatus": "unsupported",
-          "name": "Volcengine - Coding Plan",
-          "tagline": "ByteDance の開発者向け生産性プランです。Lite プランは月額 9.9 RMB から利用でき、Doubao、DeepSeek、GLM などの主要モデルに対応します。Cursor、Claude Code などのツールと組み合わせやすく、高い同時実行性能と Auto モデル切り替えを提供します。",
+          "name": "Dola Seed on BytePlus ModelArk",
+          "tagline": "Dola Seed 2.0 は ByteDance がグローバル市場向けに開発したフルモーダル汎用大規模モデルです。BytePlus ModelArk から、マルチモーダル理解と生成、エージェント協調、推論、ツール連携、コーディング機能を利用できます。",
           "links": {
-            "primary": "https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
+            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
           },
-          "postClickNote": "Lite プランは月額 9.9 RMB から。紹介によるクーポン還元と、紹介された友人の初回注文割引があります。",
+          "postClickNote": "BytePlus ModelArk から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。中国大陆地区の開発者は https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub を利用してください。",
           "actions": {
             "apiCredentialProfileFallback": {
-              "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
-              "apiKeyCreateUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
-              "apiKeyCreateHint": "Lite プランは月額 9.9 RMB から。紹介によるクーポン還元と、紹介された友人の初回注文割引があります。"
+              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
+              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
+              "apiKeyCreateHint": "推論エンドポイントと同じリージョンで BytePlus ModelArk API Key を作成してください。事前入力される Base URL は AP リージョン用です。別リージョンのエンドポイントを使う場合は変更してください。"
             }
           }
         },
@@ -80,17 +80,17 @@
           "enabled": true,
           "rank": 90,
           "supportStatus": "unsupported",
-          "name": "Volcengine - Coding Plan",
-          "tagline": "Ke hoach nang suat lap trinh vien cua ByteDance, goi Lite tu 9.9 RMB/thang. Ho tro Doubao, DeepSeek, GLM va cac mo hinh hang dau khac, phu hop voi Cursor, Claude Code va cac cong cu tuong tu, cung cap do on dinh khi dong thoi cao va chuyen doi mo hinh Auto.",
+          "name": "Dola Seed on BytePlus ModelArk",
+          "tagline": "Dola Seed 2.0 la mo hinh lon tong quat full-modal cua ByteDance cho thi truong toan cau, co tren BytePlus ModelArk voi kha nang hieu va tao noi dung da phuong thuc, phoi hop agent, suy luan, tich hop cong cu va lap trinh.",
           "links": {
-            "primary": "https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
+            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
           },
-          "postClickNote": "Goi Lite tu 9.9 RMB/thang, kem hoan phieu giam gia khi gioi thieu ban be va uu dai don hang dau tien cho nguoi duoc moi.",
+          "postClickNote": "Dang ky qua BytePlus ModelArk de nhan 500.000 token suy luan mien phi cho moi mo hinh. Lap trinh vien o Trung Quoc dai luc co the dung https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub.",
           "actions": {
             "apiCredentialProfileFallback": {
-              "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
-              "apiKeyCreateUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
-              "apiKeyCreateHint": "Goi Lite tu 9.9 RMB/thang, kem hoan phieu giam gia khi gioi thieu ban be va uu dai don hang dau tien cho nguoi duoc moi."
+              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
+              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
+              "apiKeyCreateHint": "Tao API key BytePlus ModelArk trong cung khu vuc voi inference endpoint cua ban. Base URL duoc dien san dung khu vuc AP; hay doi lai neu endpoint cua ban nam o khu vuc khac."
             }
           }
         }
