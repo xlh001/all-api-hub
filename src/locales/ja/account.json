@@ -27,7 +27,7 @@
     "locateManagedSiteChannel": "チャネルを特定",
     "locateManagedSiteChannelUnsupported": "現在の管理対象サイトが URL によるチャネル検索をサポートしていないため、この機能は利用できません。",
     "locateManagedSiteChannelUnsupportedHint": "未対応",
-    "modelManagement": "モデル管理",
+    "modelManagement": "モデル一覧",
     "openAllExternalCheckIn": "すべての外部チェックインを開く",
     "openAllExternalCheckInHint": "未チェックの外部チェックインを開きます。Ctrl/Cmd: すべて開く。Shift: 新しいウィンドウで開く。Ctrl/Cmd+Shift: すべてを新しいウィンドウで開く。",
     "pin": "アカウントをピン留め",

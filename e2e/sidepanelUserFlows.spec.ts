@@ -216,7 +216,7 @@ test("sidepanel opens saved account and bookmark targets in browser tabs", async
   )
 })
 
-test("sidepanel opens model management for a saved API credential profile", async ({
+test("sidepanel opens the model list for a saved API credential profile", async ({
   context,
   extensionId,
   page,
@@ -264,7 +264,9 @@ test("sidepanel opens model management for a saved API credential profile", asyn
     },
   })
 
-  await page.getByRole("button", { name: "Open in Model Management" }).click()
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton)
+    .click()
 
   const modelsPage = await modelsPagePromise
   installExtensionPageGuards(modelsPage)

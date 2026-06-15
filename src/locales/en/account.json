@@ -27,7 +27,7 @@
     "locateManagedSiteChannel": "Locate channel",
     "locateManagedSiteChannelUnsupported": "These features are unavailable because the current managed site does not currently support searching channels by URL.",
     "locateManagedSiteChannelUnsupportedHint": "Unsupported",
-    "modelManagement": "Model Management",
+    "modelManagement": "Model List",
     "openAllExternalCheckIn": "Open all external check-ins",
     "openAllExternalCheckInHint": "Open unchecked external check-ins. Ctrl/Cmd: open all. Shift: open in new window. Ctrl/Cmd+Shift: open all in new window.",
     "pin": "Pin account",

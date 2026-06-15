@@ -265,7 +265,7 @@ test("turns selected web API credentials into a verified profile and model catal
   })
 
   await popupPage
-    .getByRole("button", { name: "Open in Model Management" })
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.openModelManagementButton)
     .click()
 
   const modelsPage = await modelsPagePromise

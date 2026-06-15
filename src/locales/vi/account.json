@@ -27,7 +27,7 @@
     "locateManagedSiteChannel": "Định vị kênh tương ứng",
     "locateManagedSiteChannelUnsupported": "Do trang web được quản lý hiện tại tạm thời không hỗ trợ tìm kiếm kênh bằng URL, tính năng liên quan không thể hoạt động bình thường",
     "locateManagedSiteChannelUnsupportedHint": "Không hỗ trợ",
-    "modelManagement": "Quản lý mô hình",
+    "modelManagement": "Danh sách mô hình",
     "openAllExternalCheckIn": "Mở điểm danh bên ngoài bằng một cú nhấp chuột",
     "openAllExternalCheckInHint": "Mặc định chỉ mở những mục chưa điểm danh; Ctrl/Cmd để mở tất cả; Shift để mở trong cửa sổ mới; Ctrl/Cmd+Shift để áp dụng đồng thời.",
     "pin": "Ghim tài khoản",

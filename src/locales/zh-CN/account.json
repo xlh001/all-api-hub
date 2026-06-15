@@ -27,7 +27,7 @@
     "locateManagedSiteChannel": "定位对应渠道",
     "locateManagedSiteChannelUnsupported": "因为当前托管站点暂不支持使用URL搜索渠道，相关功能无法正常工作",
     "locateManagedSiteChannelUnsupportedHint": "不支持",
-    "modelManagement": "模型管理",
+    "modelManagement": "模型列表",
     "openAllExternalCheckIn": "一键打开外部签到",
     "openAllExternalCheckInHint": "默认仅打开未签到；Ctrl/Cmd 打开全部；Shift 在新窗口打开；Ctrl/Cmd+Shift 同时生效。",
     "pin": "置顶账号",
