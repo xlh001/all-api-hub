@@ -62,7 +62,11 @@ interface ModelItemProps {
   isLowestPrice?: boolean
   verificationSummary?: ApiVerificationHistorySummary | null
   onFilterAccount?: (accountId: string) => void
-  onVerifyModel?: (source: ModelManagementItemSource, modelId: string) => void
+  onVerifyModel?: (
+    source: ModelManagementItemSource,
+    modelId: string,
+    modelEnableGroups?: string[],
+  ) => void
   onVerifyCliSupport?: (
     source: ModelManagementItemSource,
     modelId: string,
@@ -73,7 +77,7 @@ interface ModelItemProps {
       { kind: typeof MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT }
     >["account"],
     modelId: string,
-    modelEnableGroups: string[],
+    modelEnableGroups?: string[],
   ) => void
   isExpanded?: boolean
   onToggleExpand?: () => void
@@ -230,6 +234,12 @@ export default function ModelItem(props: ModelItemProps) {
         ? activeGroups.some((group) => model.enable_groups.includes(group))
         : true
 
+  const modelActionEnableGroups = effectiveGroup
+    ? [effectiveGroup]
+    : model.enable_groups.length > 0
+      ? model.enable_groups
+      : undefined
+
   const sourceBadge = sourceLabel.label ? (
     handleFilterAccount ? (
       <Badge
@@ -322,14 +332,19 @@ export default function ModelItem(props: ModelItemProps) {
                     onOpenModelKeyDialog(
                       source.account,
                       model.model_name,
-                      model.enable_groups,
+                      modelActionEnableGroups,
                     )
                 : undefined
             }
             onVerifyApi={
               effectiveCapabilities.supportsCredentialVerification &&
               onVerifyModel
-                ? () => onVerifyModel(source, model.model_name)
+                ? () =>
+                    onVerifyModel(
+                      source,
+                      model.model_name,
+                      modelActionEnableGroups,
+                    )
                 : undefined
             }
             onVerifyCliSupport={

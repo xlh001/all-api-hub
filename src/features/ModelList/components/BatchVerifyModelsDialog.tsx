@@ -200,6 +200,24 @@ function getRowLatency(results: ApiVerificationProbeResult[]) {
   return results.reduce((total, result) => total + (result.latencyMs || 0), 0)
 }
 
+/** Resolve a failed probe row to localized, stable user-facing feedback. */
+function resolveFailureSummaryText(
+  t: ReturnType<typeof useTranslation>["t"],
+  result: ApiVerificationProbeResult,
+) {
+  const fallback =
+    result.summary.trim() || t("modelList:batchVerify.messages.unexpected")
+
+  if (!result.summaryKey) {
+    return fallback
+  }
+
+  return t(`aiApiVerification:${result.summaryKey}`, {
+    ...(result.summaryParams ?? {}),
+    defaultValue: fallback,
+  })
+}
+
 /** Pick a valid probe id for synthetic failure records. */
 function getFirstApplicableProbeId(
   apiType: ApiVerificationApiType,
@@ -929,30 +947,42 @@ export function BatchVerifyModelsDialog({
               </div>
             ) : null}
             {row.results.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {row.results.map((result) => (
-                  <Badge
-                    key={result.id}
-                    variant={statusVariant(
-                      result.status === "unsupported"
-                        ? BATCH_VERIFY_ROW_STATUSES.SKIPPED
-                        : result.status,
-                    )}
-                    size="sm"
-                  >
-                    {getApiVerificationProbeLabel(t, result.id)}
-                    {" · "}
-                    {result.status === "pass"
-                      ? t("modelList:batchVerify.status.pass")
-                      : result.status === "fail"
-                        ? t("modelList:batchVerify.status.fail")
-                        : t(
-                            "aiApiVerification:verifyDialog.status.unsupported",
-                          )}
-                    {" · "}
-                    {formatLatency(result.latencyMs)}
-                  </Badge>
-                ))}
+              <div className="mt-2 space-y-1.5">
+                <div className="flex flex-wrap gap-1.5">
+                  {row.results.map((result) => (
+                    <Badge
+                      key={result.id}
+                      variant={statusVariant(
+                        result.status === "unsupported"
+                          ? BATCH_VERIFY_ROW_STATUSES.SKIPPED
+                          : result.status,
+                      )}
+                      size="sm"
+                    >
+                      {getApiVerificationProbeLabel(t, result.id)}
+                      {" · "}
+                      {result.status === "pass"
+                        ? t("modelList:batchVerify.status.pass")
+                        : result.status === "fail"
+                          ? t("modelList:batchVerify.status.fail")
+                          : t(
+                              "aiApiVerification:verifyDialog.status.unsupported",
+                            )}
+                      {" · "}
+                      {formatLatency(result.latencyMs)}
+                    </Badge>
+                  ))}
+                </div>
+                {row.results
+                  .filter((result) => result.status === "fail")
+                  .map((result) => (
+                    <div
+                      key={`${result.id}-summary`}
+                      className="text-xs break-words text-red-600 dark:text-red-400"
+                    >
+                      {resolveFailureSummaryText(t, result)}
+                    </div>
+                  ))}
               </div>
             ) : null}
           </div>
