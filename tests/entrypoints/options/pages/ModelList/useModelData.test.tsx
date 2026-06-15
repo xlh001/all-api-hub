@@ -1581,11 +1581,11 @@ describe("useModelData all-accounts loading", () => {
         expect(
           mockLoadAccountTokenFallbackPricingResponse,
         ).toHaveBeenCalledTimes(1)
+        expect(result.current.pricingData?.data[0]?.model_name).toBe(
+          "stale-runtime-model",
+        )
       },
       { timeout: 3000 },
-    )
-    expect(result.current.pricingData?.data[0]?.model_name).toBe(
-      "stale-runtime-model",
     )
 
     await act(async () => {
@@ -1596,6 +1596,9 @@ describe("useModelData all-accounts loading", () => {
       expect(mockLoadAccountTokenFallbackPricingResponse).toHaveBeenCalledTimes(
         2,
       )
+      expect(result.current.pricingData?.data[0]?.model_name).toBe(
+        "fresh-runtime-model",
+      )
     })
     expect(
       mockLoadAccountTokenFallbackPricingResponse,
@@ -1603,9 +1606,6 @@ describe("useModelData all-accounts loading", () => {
       account,
       token: fallbackToken,
     })
-    expect(result.current.pricingData?.data[0]?.model_name).toBe(
-      "fresh-runtime-model",
-    )
     expect(fetchModelPricing).not.toHaveBeenCalled()
   })
 
