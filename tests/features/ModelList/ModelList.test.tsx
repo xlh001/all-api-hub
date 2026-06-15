@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -7,8 +7,9 @@ import ModelList from "~/features/ModelList/ModelList"
 import { MODEL_MANAGEMENT_SOURCE_KINDS } from "~/features/ModelList/modelManagementSources"
 import { MODEL_LIST_TEST_IDS } from "~/features/ModelList/testIds"
 
-const { mockUseModelListData } = vi.hoisted(() => ({
+const { mockUseModelListData, openKeysPageMock } = vi.hoisted(() => ({
   mockUseModelListData: vi.fn(),
+  openKeysPageMock: vi.fn(),
 }))
 
 vi.mock("react-i18next", async (importOriginal) => {
@@ -36,6 +37,15 @@ vi.mock("@headlessui/react", () => ({
 vi.mock("~/features/ModelList/hooks/useModelListData", () => ({
   useModelListData: (...args: unknown[]) => mockUseModelListData(...args),
 }))
+
+vi.mock("~/utils/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("~/utils/navigation")>()
+
+  return {
+    ...actual,
+    openKeysPage: openKeysPageMock,
+  }
+})
 
 vi.mock(
   "~/services/verification/verificationResultHistory",
@@ -253,6 +263,43 @@ describe("ModelList", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockUseModelListData.mockReturnValue(createModelListData())
+  })
+
+  it("opens key management for the selected account from the title action", async () => {
+    const user = userEvent.setup()
+
+    render(<ModelList />)
+
+    await user.click(
+      within(screen.getByTestId(MODEL_LIST_TEST_IDS.titleActions)).getByTestId(
+        MODEL_LIST_TEST_IDS.openSelectedAccountKeysButton,
+      ),
+    )
+
+    expect(openKeysPageMock).toHaveBeenCalledWith(ACCOUNT.id)
+  })
+
+  it("does not show the key-management title shortcut for non-account sources", () => {
+    mockUseModelListData.mockReturnValue({
+      ...createModelListData(),
+      selectedSource: {
+        kind: MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS,
+        value: "all-accounts",
+        capabilities: CAPABILITIES,
+      },
+      selectedSourceValue: "all-accounts",
+      currentAccount: null,
+      pricingContexts: [],
+      pricingData: null,
+    })
+
+    render(<ModelList />)
+
+    expect(
+      within(
+        screen.getByTestId(MODEL_LIST_TEST_IDS.titleActions),
+      ).queryByTestId(MODEL_LIST_TEST_IDS.openSelectedAccountKeysButton),
+    ).not.toBeInTheDocument()
   })
 
   it("opens the model key dialog from an incompatible API verification token state", async () => {
