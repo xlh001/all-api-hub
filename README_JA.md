@@ -116,7 +116,7 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
 <div>
   <p>
     <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="resources/partners/volcengine.jpg" alt="Dola Seed on BytePlus ModelArk" width="100%">
+      <img src="resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk" width="100%">
     </a>
   </p>
   <p>

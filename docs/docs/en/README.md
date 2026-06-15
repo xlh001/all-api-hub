@@ -107,7 +107,7 @@ Have questions or want to share useful sites? Join the community:
 <div class="readme-sponsor readme-sponsor-featured">
   <p class="readme-sponsor-banner">
     <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="../../../resources/partners/volcengine.jpg" alt="Dola Seed on BytePlus ModelArk">
+      <img src="../../../resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk">
     </a>
   </p>
   <p class="readme-sponsor-copy">
