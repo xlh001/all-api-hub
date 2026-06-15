@@ -44,6 +44,14 @@ const keyDialogSurface = PRODUCT_ANALYTICS_SURFACE_IDS.OptionsModelListKeyDialog
 const logger = createLogger("ModelKeyDialog")
 
 /**
+ * Builds a compact label that disambiguates same-named keys across groups.
+ */
+function getCompatibleTokenLabel(token: Pick<ApiToken, "name" | "group">) {
+  const group = typeof token.group === "string" ? token.group.trim() : ""
+  return `${token.name} · ${group || DEFAULT_MODEL_GROUP}`
+}
+
+/**
  * Modal used by the Model List to help users select or create a key compatible with a specific model.
  */
 interface ModelKeyDialogProps {
@@ -411,7 +419,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
                     <SelectContent>
                       {compatibleTokens.map((token) => (
                         <SelectItem key={token.id} value={String(token.id)}>
-                          {token.name}
+                          {getCompatibleTokenLabel(token)}
                         </SelectItem>
                       ))}
                     </SelectContent>

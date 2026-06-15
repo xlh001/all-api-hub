@@ -38,7 +38,7 @@ type CreatedKeyManagementToken = {
 
 const COMPATIBLE_KEY_SELECT_PLACEHOLDER = "Select a key"
 
-async function resolveCreatedCompatibleKeyName(params: {
+async function resolveCreatedCompatibleKeyLabel(params: {
   keyDialog: ReturnType<Page["getByTestId"]>
   fallbackName: string
 }) {
@@ -176,15 +176,15 @@ export async function runModelToKeyManagementScenario(
     .click()
 
   await expect(addKeyDialog).toHaveCount(0)
-  const actualCreatedKeyName = await resolveCreatedCompatibleKeyName({
+  const createdCompatibleKeyLabel = await resolveCreatedCompatibleKeyLabel({
     keyDialog,
     fallbackName: createdKeyName,
   })
   await expect(
     keyDialog.getByText(`No compatible keys for ${modelId}`),
   ).toHaveCount(0)
-  if (actualCreatedKeyName !== createdKeyName) {
-    await expect(keyDialog.getByText(actualCreatedKeyName)).toBeVisible()
+  if (createdCompatibleKeyLabel !== createdKeyName) {
+    await expect(keyDialog.getByText(createdCompatibleKeyLabel)).toBeVisible()
   }
 
   const keysPagePromise = waitForExtensionPage(page.context(), {
@@ -208,7 +208,7 @@ export async function runModelToKeyManagementScenario(
 
     const createdKeyManagementResult = await expectCreatedKeyManagementToken({
       page: keysPage,
-      fallbackName: actualCreatedKeyName,
+      fallbackName: createdKeyName,
     })
     createdKeyManagementToken = createdKeyManagementResult.token
 
@@ -230,7 +230,7 @@ export async function runModelToKeyManagementScenario(
       createdKeyManagementToken ??=
         await resolveCreatedKeyManagementTokenForCleanup({
           page: keysPage,
-          fallbackName: actualCreatedKeyName,
+          fallbackName: createdKeyName,
         })
 
       if (!createdKeyManagementToken) {

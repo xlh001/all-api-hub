@@ -262,6 +262,34 @@ describe("ModelKeyDialog", () => {
     })
   })
 
+  it("shows token groups when choosing an existing compatible key", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([
+      { ...TOKEN, id: 1, name: "shared key", group: "default" },
+      { ...TOKEN, id: 2, name: "shared key", group: "vip" },
+    ])
+
+    const user = userEvent.setup()
+
+    render(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={ACCOUNT}
+        modelId="gpt-4"
+        modelEnableGroups={["default", "vip"]}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("combobox", {
+        name: "modelList:keyDialog.selectLabel",
+      }),
+    )
+
+    expect(screen.getByText("shared key · default")).toBeInTheDocument()
+    expect(screen.getByText("shared key · vip")).toBeInTheDocument()
+  })
+
   it("shows empty state and explicit create actions when no compatible tokens exist", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([])
 
