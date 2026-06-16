@@ -200,7 +200,6 @@ test("grants cookie-auth optional permissions and saves two cookie accounts on t
     getCookieAuthOptionalPermissions(optionalPermissions)
   expect(cookieAuthPermissions).toContain("cookies")
   await requestAndExpectOptionalPermissions(page, cookieAuthPermissions)
-  await seedStoredAccounts(serviceWorker, [])
   await installMockedTempWindowCookieAuthBridge(serviceWorker)
 
   await saveManualAccountFromApp({
@@ -235,7 +234,9 @@ test("grants cookie-auth optional permissions and saves two cookie accounts on t
   await expectPermissionOnboardingHidden(page)
 
   const accounts = (await readStoredAccounts(serviceWorker)).filter(
-    (account) => account.site_url === MOCKED_MULTI_ACCOUNT_SITE_URL,
+    (account) =>
+      account.site_url === MOCKED_MULTI_ACCOUNT_SITE_URL &&
+      account.authType === AuthTypeEnum.Cookie,
   )
   expect(accounts).toHaveLength(2)
   expect(accounts).toEqual(

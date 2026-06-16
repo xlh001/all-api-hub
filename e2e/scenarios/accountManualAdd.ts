@@ -116,10 +116,7 @@ export async function refreshAccountRowsAndReadStorage(params: {
     const row = params.page.getByTestId(
       getAccountManagementListItemTestId(accountId),
     )
-    await row.hover()
-    await row
-      .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowMoreActionsButton)
-      .click()
+    await openAccountRowActionsMenu(row)
     await params.page
       .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowRefreshMenuItem)
       .click()
@@ -155,6 +152,16 @@ async function waitForStoredAccountQuota(params: {
       return account?.account_info.quota ?? null
     })
     .toEqual(params.expectedQuota)
+}
+
+async function openAccountRowActionsMenu(row: Locator) {
+  await row.hover()
+  const moreActionsButton = row.getByTestId(
+    ACCOUNT_MANAGEMENT_TEST_IDS.rowMoreActionsButton,
+  )
+  await expect(moreActionsButton).toBeVisible()
+  await moreActionsButton.focus()
+  await moreActionsButton.press("Enter")
 }
 
 async function waitForManualSavedAccount(params: {
