@@ -10,6 +10,7 @@ import {
   createAccountSource,
   createAllAccountsSource,
   createProfileSource,
+  type ModelManagementSource,
 } from "~/features/ModelList/modelManagementSources"
 import { InvalidTokenPayloadError } from "~/services/accounts/utils/apiServiceRequest"
 import {
@@ -403,7 +404,7 @@ describe("useModelData all-accounts loading", () => {
     expect(fetchModelPricing).not.toHaveBeenCalled()
   })
 
-  it("does not invoke all-account pricing when capability is disabled", async () => {
+  it("does not invoke all-account pricing when Sub2API has no fallback key", async () => {
     toastSuccessMock.mockReset()
     toastErrorMock.mockReset()
     const fetchModelPricing = vi
@@ -414,6 +415,7 @@ describe("useModelData all-accounts loading", () => {
         capabilities: { modelPricing: false },
       }),
     )
+    mockFetchDisplayAccountTokens.mockResolvedValue([])
 
     const accounts = [
       createDisplayAccount({
@@ -442,12 +444,639 @@ describe("useModelData all-accounts loading", () => {
     await waitFor(
       () => {
         expect(result.current.loadErrorMessage).toBe(
-          "modelList:status.loadFailed",
+          "modelList:status.loadFailedWithReason",
         )
       },
       { timeout: 3000 },
     )
     expect(fetchModelPricing).not.toHaveBeenCalled()
+    expect(mockFetchDisplayAccountTokens).toHaveBeenCalledTimes(2)
+    expect(mockFetchDisplayAccountTokens).toHaveBeenCalledWith(accounts[0])
+    expect(mockFetchDisplayAccountTokens).toHaveBeenCalledWith(accounts[1])
+  })
+
+  it("loads every Sub2API fallback key in all-accounts mode so each key can be compared", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi
+      .fn()
+      .mockRejectedValue(new Error("common pricing should not be called"))
+    vi.mocked(getApiService).mockReturnValue(
+      createMockApiService(fetchModelPricing, {
+        capabilities: { modelPricing: false },
+      }),
+    )
+
+    const account = createDisplayAccount({
+      id: "sub2api-all-accounts",
+      name: "Sub2API Account",
+      baseUrl: "https://sub2api-all.example.invalid",
+      siteType: SITE_TYPES.SUB2API,
+      userId: "sub2api-all-user",
+    })
+    const fallbackTokens = [
+      {
+        id: 21,
+        user_id: 21,
+        key: "sk-sub2api-all-masked-a",
+        status: 1,
+        name: "Default runtime key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+      {
+        id: 22,
+        user_id: 21,
+        key: "sk-sub2api-all-masked-b",
+        status: 1,
+        name: "VIP runtime key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ]
+    const defaultPricing = {
+      data: [
+        {
+          model_name: "example-runtime-priced-model",
+          quota_type: 0,
+          model_ratio: 2,
+          model_price: 0,
+          completion_ratio: 1,
+          enable_groups: ["default"],
+          supported_endpoint_types: [],
+          price_metadata: {
+            source: MODEL_PRICE_SOURCE_KINDS.OFFICIAL_RATE_ESTIMATE,
+            precision: MODEL_PRICE_PRECISION_KINDS.ESTIMATED,
+          },
+        },
+      ],
+      group_ratio: { default: 1 },
+      success: true,
+      usable_group: { default: "default" },
+      model_list_source: {
+        kind: MODEL_LIST_SOURCE_KINDS.SUB2API_RUNTIME_KEY,
+        provider: SITE_TYPES.SUB2API,
+        supportsRuntimeModelList: true,
+        supportsPricing: true,
+      },
+    }
+    const vipPricing = {
+      ...defaultPricing,
+      data: [
+        {
+          ...defaultPricing.data[0],
+          model_name: "example-runtime-vip-model",
+          enable_groups: ["vip"],
+        },
+      ],
+      group_ratio: { vip: 0.5 },
+      usable_group: { vip: "vip" },
+    }
+
+    mockFetchDisplayAccountTokens.mockResolvedValueOnce(fallbackTokens)
+    mockLoadAccountTokenFallbackPricingResponse
+      .mockResolvedValueOnce(defaultPricing)
+      .mockResolvedValueOnce(vipPricing)
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(
+          mockLoadAccountTokenFallbackPricingResponse,
+        ).toHaveBeenCalledTimes(2)
+      },
+      { timeout: 3000 },
+    )
+
+    expect(fetchModelPricing).not.toHaveBeenCalled()
+    expect(result.current.loadErrorMessage).toBeNull()
+    expect(result.current.pricingContexts).toEqual([
+      {
+        account,
+        pricing: defaultPricing,
+        sourceIdentity: {
+          kind: "account-token",
+          id: "sub2api-all-accounts:token:21",
+          tokenId: 21,
+          tokenName: "Default runtime key",
+        },
+      },
+      {
+        account,
+        pricing: vipPricing,
+        sourceIdentity: {
+          kind: "account-token",
+          id: "sub2api-all-accounts:token:22",
+          tokenId: 22,
+          tokenName: "VIP runtime key",
+        },
+      },
+    ])
+  })
+
+  it("loads only active Sub2API fallback keys in all-accounts mode", async () => {
+    const fetchModelPricing = vi.fn()
+    vi.mocked(getApiService).mockReturnValue(
+      createMockApiService(fetchModelPricing, {
+        capabilities: { modelPricing: false },
+      }),
+    )
+
+    const account = createDisplayAccount({
+      id: "sub2api-active-only",
+      name: "Sub2API Active Only",
+      baseUrl: "https://sub2api-active-only.example.invalid",
+      siteType: SITE_TYPES.SUB2API,
+    })
+    const tokens = [
+      {
+        id: 21,
+        user_id: 21,
+        key: "sk-active",
+        status: 1,
+        name: "Active runtime key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+      {
+        id: 22,
+        user_id: 21,
+        key: "sk-disabled",
+        status: 0,
+        name: "Disabled runtime key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ]
+    const pricing = {
+      data: [
+        {
+          model_name: "active-model",
+          quota_type: 0,
+          model_ratio: 1,
+          model_price: 0,
+          completion_ratio: 1,
+          enable_groups: ["default"],
+          supported_endpoint_types: [],
+        },
+      ],
+      group_ratio: { default: 1 },
+      success: true,
+      usable_group: { default: true },
+    }
+
+    mockFetchDisplayAccountTokens.mockResolvedValueOnce(tokens)
+    mockLoadAccountTokenFallbackPricingResponse.mockResolvedValueOnce(pricing)
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(
+          mockLoadAccountTokenFallbackPricingResponse,
+        ).toHaveBeenCalledTimes(1)
+      },
+      { timeout: 3000 },
+    )
+
+    expect(mockLoadAccountTokenFallbackPricingResponse).toHaveBeenCalledWith({
+      account,
+      token: tokens[0],
+    })
+    expect(fetchModelPricing).not.toHaveBeenCalled()
+    expect(result.current.loadErrorMessage).toBeNull()
+    expect(result.current.pricingContexts).toEqual([
+      {
+        account,
+        pricing,
+        sourceIdentity: {
+          kind: "account-token",
+          id: "sub2api-active-only:token:21",
+          tokenId: 21,
+          tokenName: "Active runtime key",
+        },
+      },
+    ])
+  })
+
+  it("keeps successful Sub2API token contexts as partial instead of load failed when another token fails", async () => {
+    mockTrackProductAnalyticsActionCompleted.mockReset()
+    const fetchModelPricing = vi.fn()
+    vi.mocked(getApiService).mockReturnValue(
+      createMockApiService(fetchModelPricing, {
+        capabilities: { modelPricing: false },
+      }),
+    )
+
+    const account = createDisplayAccount({
+      id: "sub2api-partial",
+      name: "Sub2API Partial",
+      baseUrl: "https://sub2api-partial.example.invalid",
+      siteType: SITE_TYPES.SUB2API,
+    })
+    const tokens = [
+      {
+        id: 31,
+        user_id: 31,
+        key: "sk-success",
+        status: 1,
+        name: "Success key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+      {
+        id: 32,
+        user_id: 31,
+        key: "sk-failure",
+        status: 1,
+        name: "Failure key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ]
+    const pricing = {
+      data: [
+        {
+          model_name: "surviving-model",
+          quota_type: 0,
+          model_ratio: 1,
+          model_price: 0,
+          completion_ratio: 1,
+          enable_groups: ["default"],
+          supported_endpoint_types: [],
+        },
+      ],
+      group_ratio: { default: 1 },
+      success: true,
+      usable_group: { default: "default" },
+    }
+
+    mockFetchDisplayAccountTokens.mockResolvedValue(tokens)
+    mockLoadAccountTokenFallbackPricingResponse
+      .mockResolvedValueOnce(pricing)
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(result.current.pricingContexts).toHaveLength(1)
+      },
+      { timeout: 3000 },
+    )
+
+    expect(result.current.loadErrorMessage).toBeNull()
+    expect(result.current.accountQueryStates).toEqual([
+      expect.objectContaining({
+        account,
+        isLoading: false,
+        hasData: true,
+        hasError: true,
+        errorType: "partial-load-failed",
+        errorMessage: "modelList:accountSummary.partialLoadFailedReason",
+      }),
+    ])
+    expectLastModelDataAnalyticsCompletion({
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAllAccounts,
+      modelCount: 1,
+      successCount: 1,
+      failureCount: 1,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+      failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.NetworkUnreachable,
+    })
+  })
+
+  it("marks a Sub2API account failed when every fallback key fails", async () => {
+    const fetchModelPricing = vi.fn()
+    vi.mocked(getApiService).mockReturnValue(
+      createMockApiService(fetchModelPricing, {
+        capabilities: { modelPricing: false },
+      }),
+    )
+
+    const account = createDisplayAccount({
+      id: "sub2api-all-failed",
+      name: "Sub2API Failed",
+      baseUrl: "https://sub2api-failed.example.invalid",
+      siteType: SITE_TYPES.SUB2API,
+    })
+    const tokens = [
+      {
+        id: 41,
+        user_id: 41,
+        key: "sk-failed",
+        status: 1,
+        name: "Failed key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ]
+
+    mockFetchDisplayAccountTokens.mockResolvedValue(tokens)
+    mockLoadAccountTokenFallbackPricingResponse.mockRejectedValue(
+      new Error("token failed"),
+    )
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(result.current.loadErrorMessage).toBe(
+          "modelList:status.loadFailedWithReason",
+        )
+      },
+      { timeout: 3000 },
+    )
+
+    expect(result.current.pricingContexts).toEqual([])
+    expect(result.current.accountQueryStates).toEqual([
+      expect.objectContaining({
+        account,
+        isLoading: false,
+        hasData: false,
+        hasError: true,
+        errorType: "load-failed",
+        errorMessage: "token failed",
+      }),
+    ])
+  })
+
+  it("marks mixed Sub2API all-token failures as load failed instead of invalid format", async () => {
+    const fetchModelPricing = vi.fn()
+    vi.mocked(getApiService).mockReturnValue(
+      createMockApiService(fetchModelPricing, {
+        capabilities: { modelPricing: false },
+      }),
+    )
+
+    const account = createDisplayAccount({
+      id: "sub2api-mixed-failed",
+      name: "Sub2API Mixed Failed",
+      baseUrl: "https://sub2api-mixed-failed.example.invalid",
+      siteType: SITE_TYPES.SUB2API,
+    })
+    const tokens = [
+      {
+        id: 51,
+        user_id: 51,
+        key: "sk-invalid",
+        status: 1,
+        name: "Invalid key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+      {
+        id: 52,
+        user_id: 51,
+        key: "sk-generic",
+        status: 1,
+        name: "Generic failure key",
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ]
+
+    mockFetchDisplayAccountTokens.mockResolvedValue(tokens)
+    mockLoadAccountTokenFallbackPricingResponse
+      .mockResolvedValueOnce({
+        data: null,
+        group_ratio: {},
+        success: true,
+        usable_group: {},
+      })
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({
+        data: null,
+        group_ratio: {},
+        success: true,
+        usable_group: {},
+      })
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource: createAllAccountsSource(),
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(
+      () => {
+        expect(result.current.loadErrorMessage).toBe(
+          "modelList:status.loadFailedWithReason",
+        )
+      },
+      { timeout: 3000 },
+    )
+
+    expect(result.current.dataFormatError).toBe(false)
+    expect(result.current.accountQueryStates).toEqual([
+      expect.objectContaining({
+        account,
+        isLoading: false,
+        hasData: false,
+        hasError: true,
+        errorType: "load-failed",
+        errorMessage: "Failed to fetch",
+      }),
+    ])
+    expectLastModelDataAnalyticsCompletion({
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      sourceKind: PRODUCT_ANALYTICS_SOURCE_KINDS.ModelAllAccounts,
+      modelCount: 0,
+      successCount: 0,
+      failureCount: 1,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Network,
+      failureStage: PRODUCT_ANALYTICS_FAILURE_STAGES.Execute,
+      failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.NetworkUnreachable,
+    })
+  })
+
+  it("refetches all-accounts pricing after single-account query cache was populated", async () => {
+    toastSuccessMock.mockReset()
+    toastErrorMock.mockReset()
+
+    const fetchModelPricing = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [
+          {
+            model_name: "single-account-cached-model",
+            quota_type: 0,
+            model_ratio: 1,
+            model_price: 1,
+            completion_ratio: 1,
+            enable_groups: ["default"],
+            supported_endpoint_types: [],
+          },
+        ],
+        group_ratio: { default: 1 },
+        success: true,
+        usable_group: { default: true },
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            model_name: "all-accounts-refetched-model",
+            quota_type: 0,
+            model_ratio: 1,
+            model_price: 1,
+            completion_ratio: 1,
+            enable_groups: ["default"],
+            supported_endpoint_types: [],
+          },
+        ],
+        group_ratio: { default: 1 },
+        success: true,
+        usable_group: { default: true },
+      })
+    vi.mocked(getApiService).mockReturnValue(
+      createMockApiService(fetchModelPricing),
+    )
+
+    const account = createDisplayAccount({
+      id: "query-key-scope-account",
+      name: "Query Key Scope Account",
+      baseUrl: "https://query-key-scope.example.invalid",
+      userId: "query-key-user",
+    })
+    const cacheKey = [
+      account.id,
+      account.baseUrl,
+      account.userId,
+      account.siteType,
+      account.authType,
+    ].join("|")
+    type HookProps = {
+      selectedSource: ModelManagementSource
+      accounts: DisplaySiteData[]
+    }
+    const initialProps: HookProps = {
+      selectedSource: createAccountSource(account),
+      accounts: [account],
+    }
+
+    const { result, rerender } = renderHook(
+      ({ selectedSource, accounts }: HookProps) =>
+        useModelData({
+          selectedSource,
+          accounts,
+        }),
+      {
+        initialProps,
+        wrapper: createWrapper(),
+      },
+    )
+
+    await waitFor(
+      () => {
+        expect(result.current.pricingData?.data[0]?.model_name).toBe(
+          "single-account-cached-model",
+        )
+      },
+      { timeout: 3000 },
+    )
+    await modelPricingCache.invalidate(cacheKey)
+
+    rerender({
+      selectedSource: createAllAccountsSource(),
+      accounts: [account],
+    })
+
+    await waitFor(
+      () => {
+        expect(result.current.pricingContexts).toEqual([
+          {
+            account,
+            pricing: expect.objectContaining({
+              data: [
+                expect.objectContaining({
+                  model_name: "all-accounts-refetched-model",
+                }),
+              ],
+            }),
+            sourceIdentity: {
+              kind: "account",
+              id: "query-key-scope-account",
+            },
+          },
+        ])
+      },
+      { timeout: 3000 },
+    )
+
+    expect(fetchModelPricing).toHaveBeenCalledTimes(2)
+    expect(result.current.loadErrorMessage).toBeNull()
   })
 
   it("tracks single-account pricing load success with model-count insight once", async () => {
@@ -1312,7 +1941,7 @@ describe("useModelData all-accounts loading", () => {
       },
     ]
 
-    mockFetchDisplayAccountTokens.mockResolvedValueOnce(fallbackTokens)
+    mockFetchDisplayAccountTokens.mockResolvedValue(fallbackTokens)
     mockLoadAccountTokenFallbackPricingResponse.mockResolvedValueOnce({
       data: [
         {
@@ -1364,12 +1993,17 @@ describe("useModelData all-accounts loading", () => {
     expect(fetchModelPricing).not.toHaveBeenCalled()
     await waitFor(() => {
       expect(result.current.accountFallback?.selectedTokenId).toBeNull()
+      expect(result.current.accountFallback?.tokens).toEqual(fallbackTokens)
     })
 
     expect(mockLoadAccountTokenFallbackPricingResponse).not.toHaveBeenCalled()
 
     act(() => {
       result.current.accountFallback?.setSelectedTokenId(18)
+    })
+
+    await waitFor(() => {
+      expect(result.current.accountFallback?.selectedTokenId).toBe(18)
     })
 
     await act(async () => {
@@ -1404,6 +2038,24 @@ describe("useModelData all-accounts loading", () => {
         ],
       }),
     )
+    expect(result.current.pricingContexts).toEqual([
+      {
+        account,
+        pricing: expect.objectContaining({
+          data: [
+            expect.objectContaining({
+              model_name: "example-runtime-model",
+            }),
+          ],
+        }),
+        sourceIdentity: {
+          kind: "account-token",
+          id: "sub2api-runtime-fallback-account:token:18",
+          tokenId: 18,
+          tokenName: "Runtime key",
+        },
+      },
+    ])
   })
 
   it("auto-loads Sub2API runtime models when a single fallback key is available", async () => {
@@ -1466,7 +2118,7 @@ describe("useModelData all-accounts loading", () => {
       },
     }
 
-    mockFetchDisplayAccountTokens.mockResolvedValueOnce([fallbackToken])
+    mockFetchDisplayAccountTokens.mockResolvedValue([fallbackToken])
     mockLoadAccountTokenFallbackPricingResponse.mockResolvedValueOnce(
       fallbackPricing,
     )
@@ -1562,7 +2214,7 @@ describe("useModelData all-accounts loading", () => {
       },
     })
 
-    mockFetchDisplayAccountTokens.mockResolvedValueOnce([fallbackToken])
+    mockFetchDisplayAccountTokens.mockResolvedValue([fallbackToken])
     mockLoadAccountTokenFallbackPricingResponse
       .mockResolvedValueOnce(createFallbackPricing("stale-runtime-model"))
       .mockResolvedValueOnce(createFallbackPricing("fresh-runtime-model"))
@@ -2384,7 +3036,7 @@ describe("useModelData all-accounts loading", () => {
       () => {
         expect(result.current.dataFormatError).toBe(true)
         expect(result.current.loadErrorMessage).toBe(
-          "modelList:status.loadFailed",
+          "modelList:status.loadFailedWithReason",
         )
         expect(result.current.accountQueryStates).toEqual([
           expect.objectContaining({
