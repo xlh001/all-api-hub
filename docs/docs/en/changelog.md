@@ -8,6 +8,26 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.47.0
+- **New Features:**
+  - `Sub2API` Model List: You can now view available models and estimated prices for `Sub2API` accounts in Model List. If an account has multiple API keys, you can also see which models each key can use. See [Model List](./model-list.md).
+  - Model List: Added a `Compare Prices` shortcut that switches to a low-price comparison view, helping you compare model prices across accounts and keys faster. See [Model List](./model-list.md).
+  - Model List / Key Management: You can now jump from a model to the matching account's keys, and from Key Management back to that account's model list. See [Model List](./model-list.md) and [Key Management](./key-management.md).
+- **Experience Optimizations:**
+  - Account Management: When adding or editing an account, the account is saved first and balance / usage refresh continues afterward. If the site responds slowly, you no longer need to keep waiting in the save dialog. See [Account Management](./account-management.md).
+  - Model List: Model groups and usable keys are shown more clearly. Keys with the same name also show their group, reducing the chance of selecting the wrong key.
+  - Crash Recovery: If a page error may be related to browser auto-translation, the extension now guides you to language feedback first; other errors still use the regular issue feedback path, making it easier to choose the right entry.
+- **Bug Fixes:**
+  - Account Management: Sites that use mixed letter-and-number user IDs can now be saved and edited normally, instead of failing because the user ID is not purely numeric. See [Account Management](./account-management.md).
+  - Model List: Single-model verification now prefers a key that actually fits the model. If no usable key exists, the extension prompts you to add a model key first. See [Model List](./model-list.md).
+  - Model List: Model verification failures now explain the reason more clearly, reducing cases where you only see a failure without knowing whether to check the account, model, or key. See [Model List](./model-list.md).
+
+**Location Hints:**
+- `Sub2API` model viewing, price comparison, and model verification: Use them under "Settings → Model List".
+- Account model / key jumps: Use them after selecting a single account in "Settings → Model List" or "Settings → Key Management".
+- Text user IDs and background refresh: They apply when adding or editing accounts under "Settings → Account Management".
+- Crash recovery guidance: Shown automatically after an extension page crashes.
+
 ## 3.46.0
 - **New Features:**
   - Key Management: Added a group key audit that checks whether each account group has a usable key, creates missing keys for supported sites, and lists keys whose groups are no longer available so you can review and delete them in one place. See [Key Management](./key-management.md).
