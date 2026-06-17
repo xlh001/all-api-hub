@@ -8,7 +8,6 @@ import type { AutoDetectErrorCode } from "~/constants/autoDetect"
 import { AUTO_DETECT_ERROR_CODES } from "~/constants/autoDetect"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
-  ACCOUNT_SITE_TITLE_RULES,
   isAccountSiteType,
   SITE_TYPES,
   type AccountSiteType,
@@ -21,6 +20,10 @@ import {
   generateDefaultTokenRequest,
 } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import {
+  completeAutoDetectedAccount,
+  getAutoDetectCompletionFailureReason,
+} from "~/services/accounts/autoDetectCompletion/completion"
 import { createDisplayAccountApiContext } from "~/services/accounts/utils/apiServiceRequest"
 import {
   analyzeAutoDetectError,
@@ -32,12 +35,6 @@ import {
 } from "~/services/accounts/utils/autoDetectUtils"
 import { normalizeAccountSiteUrlForStorage } from "~/services/accounts/utils/siteUrlNormalization"
 import { getApiService } from "~/services/apiService"
-import {
-  API_SERVICE_FETCH_CONTEXT_KINDS,
-  type ApiServiceFetchContext,
-  type ApiServiceRequest,
-  type SiteStatusInfo,
-} from "~/services/apiService/common/type"
 import {
   DEFAULT_PREFERENCES,
   userPreferences,
@@ -66,6 +63,8 @@ import { t } from "~/utils/i18n/core"
 const logger = createLogger("AccountOperations")
 
 export const MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS = 20000
+
+export { extractDomainPrefix, getSiteName } from "~/services/accounts/siteName"
 
 const isCreatedApiToken = (value: unknown): value is ApiToken =>
   !!value &&
@@ -103,31 +102,6 @@ function getAutoDetectFailureReasonByErrorCode(
 }
 
 /**
- * Preserves the failing completion step while keeping the original error available for UI classification.
- */
-class AutoDetectCompletionError extends Error {
-  constructor(
-    readonly reason: AutoDetectFailureReason,
-    cause: unknown,
-  ) {
-    super(getErrorMessage(cause))
-    this.name = "AutoDetectCompletionError"
-    this.cause = cause
-  }
-}
-
-/**
- * Resolves the most specific auto-detect completion reason available for analytics.
- */
-function getAutoDetectCompletionFailureReason(
-  error: unknown,
-): AutoDetectFailureReason {
-  return error instanceof AutoDetectCompletionError
-    ? error.reason
-    : AUTO_DETECT_FAILURE_REASONS.UnexpectedException
-}
-
-/**
  * Returns local user-facing guidance for known completion failures.
  */
 function getAutoDetectCompletionFailureMessage(
@@ -136,13 +110,36 @@ function getAutoDetectCompletionFailureMessage(
 ) {
   switch (reason) {
     case AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed:
+    case AUTO_DETECT_FAILURE_REASONS.AccessTokenMissing:
       return t("messages:operations.detection.getAccessTokenFailedDetailed")
     case AUTO_DETECT_FAILURE_REASONS.SiteStatusFetchFailed:
       return t("messages:operations.detection.getSiteStatusFailedDetailed")
+    case AUTO_DETECT_FAILURE_REASONS.UsernameMissing:
+      return t("messages:operations.detection.getUsernameFailedDetailed")
     default:
       return t("accountDialog:messages.autoDetectFailed", {
         error: fallbackErrorMessage,
       })
+  }
+}
+
+/**
+ * Preserves invalid-response details for completion validation failures.
+ */
+function getAutoDetectCompletionDetailedError(
+  error: unknown,
+  reason: AutoDetectFailureReason,
+  message: string,
+) {
+  switch (reason) {
+    case AUTO_DETECT_FAILURE_REASONS.UsernameMissing:
+    case AUTO_DETECT_FAILURE_REASONS.AccessTokenMissing:
+      return {
+        type: AutoDetectErrorType.INVALID_RESPONSE,
+        message,
+      }
+    default:
+      return analyzeAutoDetectError(error)
   }
 }
 
@@ -184,51 +181,6 @@ async function withTimeout<T>(
     if (timeoutId !== undefined) {
       clearTimeout(timeoutId)
     }
-  }
-}
-
-/**
- * Extracts the matched current-tab context from successful auto-detect data.
- */
-function getAutoDetectFetchContext(
-  detectResultData: NonNullable<
-    Awaited<ReturnType<typeof autoDetectSmart>>["data"]
-  >,
-): ApiServiceFetchContext | undefined {
-  const fetchContext = detectResultData.fetchContext
-  if (fetchContext?.kind === API_SERVICE_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT) {
-    return fetchContext
-  }
-
-  if (fetchContext?.kind === API_SERVICE_FETCH_CONTEXT_KINDS.CURRENT_TAB) {
-    if (
-      typeof fetchContext.tabId === "number" &&
-      typeof fetchContext.origin === "string" &&
-      fetchContext.origin.trim()
-    ) {
-      return fetchContext
-    }
-  }
-
-  if (fetchContext?.incognito === true || fetchContext?.cookieStoreId) {
-    return fetchContext
-  }
-
-  return undefined
-}
-
-/**
- * Builds the service-layer request used by auto-detect completion.
- */
-function createAutoDetectApiRequest(params: {
-  baseUrl: string
-  auth: ApiServiceRequest["auth"]
-  fetchContext?: ApiServiceFetchContext
-}): ApiServiceRequest {
-  return {
-    baseUrl: params.baseUrl,
-    auth: params.auth,
-    ...(params.fetchContext ? { fetchContext: params.fetchContext } : {}),
   }
 }
 
@@ -309,21 +261,11 @@ export async function autoDetectAccount(
       }
     }
 
-    const { userId, siteType, sub2apiAuth } = detectResult.data
+    const { userId, siteType } = detectResult.data
     autoDetectContext = withFinalAutoDetectSiteType(
       detectResult.autoDetectContext,
       siteType,
     )
-    const autoDetectFetchContext = getAutoDetectFetchContext(detectResult.data)
-    const isSub2Api = siteType === SITE_TYPES.SUB2API
-    const isAIHubMix = siteType === SITE_TYPES.AIHUBMIX
-    const effectiveAuthType =
-      isSub2Api || isAIHubMix ? AuthTypeEnum.AccessToken : authType
-    // AIHubMix imports through cookie-authenticated web endpoints, then stores
-    // the retrieved account access token for all normal account/key/model APIs.
-    const detectionAuthType = isAIHubMix
-      ? AuthTypeEnum.Cookie
-      : effectiveAuthType
 
     if (!userId) {
       return {
@@ -338,188 +280,17 @@ export async function autoDetectAccount(
       }
     }
 
-    let tokenPromise: Promise<any>
-
-    // 根据 authType 选择对应的 Promise
-    if (isSub2Api) {
-      const accessToken =
-        typeof detectResult.data.accessToken === "string"
-          ? detectResult.data.accessToken.trim()
-          : ""
-      const detectedUsername =
-        typeof detectResult.data.user?.username === "string"
-          ? detectResult.data.user.username.trim()
-          : ""
-
-      tokenPromise = Promise.resolve({
-        username: detectedUsername,
-        access_token: accessToken,
-      })
-    } else if (
-      isAIHubMix &&
-      typeof detectResult.data.accessToken === "string"
-    ) {
-      const detectedUsername =
-        typeof detectResult.data.user?.username === "string"
-          ? detectResult.data.user.username.trim()
-          : ""
-
-      tokenPromise = Promise.resolve({
-        username: detectedUsername,
-        access_token: detectResult.data.accessToken.trim(),
-      })
-    } else if (effectiveAuthType === AuthTypeEnum.Cookie) {
-      tokenPromise = getApiService(siteType).fetchUserInfo(
-        createAutoDetectApiRequest({
-          baseUrl: url,
-          fetchContext: autoDetectFetchContext,
-          auth: {
-            authType: AuthTypeEnum.Cookie,
-            userId,
-          },
-        }),
-      )
-    } else if (effectiveAuthType === AuthTypeEnum.AccessToken) {
-      tokenPromise = getApiService(siteType).getOrCreateAccessToken(
-        createAutoDetectApiRequest({
-          baseUrl: url,
-          fetchContext: autoDetectFetchContext,
-          auth: {
-            authType: AuthTypeEnum.Cookie,
-            userId,
-          },
-        }),
-      )
-    } else {
-      // none 或其他情况
-      tokenPromise = Promise.resolve(null)
-    }
-
-    const fetchSiteStatusFallback = () =>
-      getApiService(siteType).fetchSiteStatus(
-        createAutoDetectApiRequest({
-          baseUrl: url,
-          fetchContext: autoDetectFetchContext,
-          auth: {
-            authType: detectionAuthType || AuthTypeEnum.None,
-          },
-        }),
-      )
-
-    const siteStatusPromise: Promise<SiteStatusInfo | null> =
-      fetchSiteStatusFallback()
-    const classifiedSiteStatusPromise = siteStatusPromise.catch((error) => {
-      throw new AutoDetectCompletionError(
-        AUTO_DETECT_FAILURE_REASONS.SiteStatusFetchFailed,
-        error,
-      )
+    const completed = await completeAutoDetectedAccount({
+      url,
+      requestedAuthType: authType,
+      detected: detectResult.data,
+      autoDetectContext,
     })
-
-    const fetchSupportCheckInFallback = () =>
-      getApiService(siteType).fetchSupportCheckIn(
-        createAutoDetectApiRequest({
-          baseUrl: url,
-          fetchContext: autoDetectFetchContext,
-          auth: {
-            authType: AuthTypeEnum.None,
-          },
-        }),
-      )
-
-    const checkSupportPromise: Promise<boolean | undefined> =
-      classifiedSiteStatusPromise.then((siteStatus) =>
-        typeof siteStatus?.checkin_enabled === "boolean"
-          ? siteStatus.checkin_enabled
-          : fetchSupportCheckInFallback().catch((error) => {
-              logger.warn("Auto-detect check-in support probe failed", {
-                siteType,
-                error: getErrorMessage(error),
-              })
-              return false
-            }),
-      )
-
-    // 并行执行 token 获取和 site 状态获取（降低端到端等待）
-    const [tokenInfo, siteStatus, checkSupport, siteName] = await Promise.all([
-      tokenPromise.catch((error) => {
-        throw new AutoDetectCompletionError(
-          AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed,
-          error,
-        )
-      }),
-      classifiedSiteStatusPromise,
-      checkSupportPromise,
-      classifiedSiteStatusPromise.then((resolvedSiteStatus) =>
-        getSiteName(url, siteType, resolvedSiteStatus),
-      ),
-    ])
-
-    const { username: detectedUsername, access_token } = tokenInfo
-
-    // 验证获取到的用户信息是否完整
-    const isUsernameMissing = !isSub2Api && !detectedUsername
-    const isAccessTokenMissing =
-      (effectiveAuthType === AuthTypeEnum.AccessToken || isAIHubMix) &&
-      !access_token
-
-    if (
-      // Sub2API 默认可能返回空 username（""），此时不应阻止账号识别；但 AccessToken 仍然必须存在
-      isUsernameMissing ||
-      isAccessTokenMissing
-    ) {
-      const failureReason = isAccessTokenMissing
-        ? AUTO_DETECT_FAILURE_REASONS.AccessTokenMissing
-        : AUTO_DETECT_FAILURE_REASONS.UsernameMissing
-      const message = isAccessTokenMissing
-        ? t("messages:operations.detection.getAccessTokenFailedDetailed")
-        : t("messages:operations.detection.getUsernameFailedDetailed")
-      return {
-        success: false,
-        message,
-        detailedError: {
-          type: AutoDetectErrorType.INVALID_RESPONSE,
-          message,
-        },
-        autoDetectContext,
-        autoDetectFailureReason: failureReason,
-      }
-    }
-
-    // 获取默认充值比例
-    const defaultExchangeRate =
-      getApiService(siteType).extractDefaultExchangeRate(siteStatus) ??
-      UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
 
     return {
       success: true,
       message: t("accountDialog:messages.autoDetectSuccess"),
-      data: {
-        username: detectedUsername,
-        siteName: siteName,
-        accessToken: access_token,
-        userId: userId.toString(),
-        exchangeRate: defaultExchangeRate,
-        authType: effectiveAuthType,
-        checkIn: {
-          enableDetection: isSub2Api ? false : checkSupport ?? false,
-          autoCheckInEnabled: isSub2Api ? false : true,
-          siteStatus: {
-            isCheckedInToday: false,
-          },
-          customCheckIn: {
-            url: "",
-            redeemUrl: "",
-            openRedeemWithCheckIn: true,
-            isCheckedInToday: false,
-          },
-        },
-        siteType: siteType,
-        ...(isSub2Api && sub2apiAuth ? { sub2apiAuth } : {}),
-        ...(autoDetectFetchContext
-          ? { fetchContext: autoDetectFetchContext }
-          : {}),
-        autoDetectContext,
-      },
+      data: completed,
     }
   } catch (error) {
     const errorMessage = getErrorMessage(error)
@@ -532,7 +303,11 @@ export async function autoDetectAccount(
       t("messages:autodetect.failed", { error: errorMessage }),
       error,
     )
-    const detailedError = analyzeAutoDetectError(error)
+    const detailedError = getAutoDetectCompletionDetailedError(
+      error,
+      autoDetectFailureReason,
+      message,
+    )
     return {
       success: false,
       message,
@@ -1341,103 +1116,6 @@ export async function validateAndUpdateAccount(
       feedbackLevel: "warning",
     }
   }
-}
-
-/**
- * 提取域名关键部分（排除 www 与常见双后缀）供 UI 显示默认站点名使用。
- * @param hostname 待分析的主机名
- * @returns 规范化后的前缀并首字母大写
- */
-export function extractDomainPrefix(hostname: string): string {
-  if (!hostname) return ""
-
-  // 移除 www. 前缀
-  const withoutWww = hostname.replace(/^www\./, "")
-
-  // 处理子域名情况，例如：xxx.xx.google.com -> google
-  const parts = withoutWww.split(".")
-  if (parts.length >= 2) {
-    // 如果是常见的二级域名（如 .com.cn, .co.uk 等），取倒数第三个部分
-    const lastPart = parts[parts.length - 1]
-    const secondLastPart = parts[parts.length - 2]
-
-    // 检查是否为双重后缀
-    const doubleSuffixes = ["com", "net", "org", "gov", "edu", "co"]
-    if (
-      parts.length >= 3 &&
-      doubleSuffixes.includes(secondLastPart) &&
-      lastPart.length === 2
-    ) {
-      // 首字母大写
-      return (
-        parts[parts.length - 3].charAt(0).toUpperCase() +
-        parts[parts.length - 3].slice(1)
-      )
-    }
-
-    // 否则返回倒数第二个部分
-    return secondLastPart.charAt(0).toUpperCase() + secondLastPart.slice(1)
-  }
-
-  return withoutWww.charAt(0).toUpperCase() + withoutWww.slice(1)
-}
-
-/**
- * 判断站点名称是否仍是默认标题（如“未知站点”），用于决定是否替换。
- * @param siteName 待检测的站点名称
- * @returns true 表示不是默认名称
- */
-function IsNotDefaultSiteName(siteName: string): boolean {
-  return !ACCOUNT_SITE_TITLE_RULES.some(
-    (rule) => rule.name !== SITE_TYPES.UNKNOWN && rule.regex.test(siteName),
-  )
-}
-/**
- * 根据 Tab、URL 或站点状态信息推断最终展示的站点名称。
- * @param input 可能为浏览器 Tab 对象或字符串 URL
- * @param siteTypeHint Optional site-type hint so site-specific API overrides can
- * be used when resolving the display name.
- * @param siteStatusInfo Optional pre-fetched site status info to avoid redundant API calls when resolving the display name.
- * @returns 计算后的站点名称
- */
-export async function getSiteName(
-  input: browser.tabs.Tab | string,
-  siteTypeHint?: string,
-  siteStatusInfo?: { system_name?: string | null } | null,
-): Promise<string> {
-  // 1. 统一提取信息
-  const urlString = typeof input === "string" ? input : input.url ?? ""
-  const tabTitle = typeof input === "string" ? null : input.title
-
-  // 2. 优先从 Tab 标题获取
-  if (tabTitle && IsNotDefaultSiteName(tabTitle)) {
-    return tabTitle
-  }
-
-  // 3. 解析 URL
-  const urlObj = new URL(urlString)
-  const hostWithProtocol = `${urlObj.protocol}//${urlObj.host}`
-
-  // 4. 仅在已知 siteType 时才请求站点状态，避免为未知站点增加额外探测请求。
-  if (siteTypeHint) {
-    const resolvedSiteStatus =
-      siteStatusInfo ??
-      (await getApiService(siteTypeHint).fetchSiteStatus({
-        baseUrl: hostWithProtocol,
-        auth: {
-          authType: AuthTypeEnum.None,
-        },
-      }))
-    if (
-      resolvedSiteStatus?.system_name &&
-      IsNotDefaultSiteName(resolvedSiteStatus.system_name)
-    ) {
-      return resolvedSiteStatus.system_name
-    }
-  }
-
-  // 5. 最后从域名获取
-  return extractDomainPrefix(urlObj.hostname)
 }
 
 /**
