@@ -46,6 +46,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
 - [Volcengine Ark Coding-Plan](https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub): Lite plan starts at CNY 9.9/month, with first-order discounts and referral rewards.
 - [Xingchen AI](https://ai.centos.hk): 1:1 top-up ratio, invoicing support, and Claude pricing as low as 40% of the standard price.
 - [PackyCode](https://www.packyapi.com/register?aff=all-api-hub): Enter the `all-api-hub` promo code during recharge to get 10% off.
+- [Atlas Cloud](https://www.atlascloud.ai/console/coding-plan): One AI API for 300+ curated video, image, and LLM models, with a new coding plan promotion for more budget-friendly API access.
 - [RunAPI](https://runapi.co/register?aff=cvDm): Register and contact a RunAPI administrator to receive a ￥7 free credit.
 :::
 

@@ -147,6 +147,21 @@ Have questions or want to share useful sites? Join the community:
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
+    <a href="https://www.atlascloud.ai/console/coding-plan">
+      <img src="../../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    Thanks to Atlas Cloud for sponsoring this project! Atlas Cloud is a full-modal AI inference platform that gives developers one API for video generation, image
+    generation, and LLM access across 300+ curated models. Check out Atlas Cloud's new coding plan promotion for more budget-friendly API access:
+    <a href="https://www.atlascloud.ai/console/coding-plan">this link</a>.
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
     <a href="https://runapi.co/register?aff=cvDm">
       <img class="readme-sponsor-logo-small" src="../../../resources/partners/runapi.jpg" alt="RunAPI">
     </a>

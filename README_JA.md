@@ -150,6 +150,18 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
 <hr>
 
 <div>
+  <a href="https://www.atlascloud.ai/console/coding-plan">
+    <img src="resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud" width="128" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Atlas Cloud 様、本プロジェクトへのご協賛ありがとうございます。Atlas Cloud はフルモーダル AI 推論プラットフォームで、1 つの AI API から動画生成、画像生成、LLM API にアクセスでき、300
+    以上の厳選モデルを横断して利用できます。より手頃な API 利用に向けた新しい Coding Plan プロモーションは、<a href="https://www.atlascloud.ai/console/coding-plan">こちらのリンク</a>をご覧ください。
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://runapi.co/register?aff=cvDm">
     <img src="resources/partners/runapi.jpg" alt="RunAPI" width="64" align="left" hspace="10" vspace="4">
   </a>

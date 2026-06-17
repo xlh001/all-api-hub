@@ -60,6 +60,17 @@ If you are looking for stable, efficient, and highly compatible AI relay service
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://www.atlascloud.ai/console/coding-plan">
+      <img src="../../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
+    </a>
+    <p>
+      <strong>Atlas Cloud</strong> is a full-modal AI inference platform. One AI API gives developers access to video generation, image generation, and LLM APIs across 300+ curated models. Explore the new coding plan promotion for more budget-friendly API access through <a href="https://www.atlascloud.ai/console/coding-plan">this link</a>.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo sponsor-logo-small" href="https://runapi.co/register?aff=cvDm">
       <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
     </a>

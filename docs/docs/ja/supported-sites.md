@@ -60,6 +60,17 @@
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://www.atlascloud.ai/console/coding-plan">
+      <img src="../../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
+    </a>
+    <p>
+      <strong>Atlas Cloud</strong> はフルモーダル AI 推論プラットフォームです。1 つの AI API から動画生成、画像生成、LLM API にアクセスでき、300 以上の厳選モデルを横断して利用できます。より手頃な API 利用に向けた新しい Coding Plan プロモーションは、<a href="https://www.atlascloud.ai/console/coding-plan">こちらのリンク</a>をご覧ください。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo sponsor-logo-small" href="https://runapi.co/register?aff=cvDm">
       <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
     </a>

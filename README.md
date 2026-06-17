@@ -153,6 +153,19 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 <hr>
 
 <div>
+  <a href="https://www.atlascloud.ai/console/coding-plan">
+    <img src="resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud" width="128" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Thanks to Atlas Cloud for sponsoring this project! Atlas Cloud is a full-modal AI inference platform that gives developers one API for video generation, image
+    generation, and LLM access across 300+ curated models. Check out Atlas Cloud's new coding plan promotion for more budget-friendly API access:
+    <a href="https://www.atlascloud.ai/console/coding-plan">this link</a>.
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://runapi.co/register?aff=cvDm">
     <img src="resources/partners/runapi.jpg" alt="RunAPI" width="64" align="left" hspace="10" vspace="4">
   </a>
