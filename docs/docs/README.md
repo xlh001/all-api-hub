@@ -142,13 +142,13 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
-    <a href="https://www.atlascloud.ai/console/coding-plan">
+    <a href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">
       <img src="../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
     </a>
   </div>
   <p class="readme-sponsor-copy">
     感谢 Atlas Cloud 赞助了本项目！Atlas Cloud 是全模态 AI 推理平台，开发者只需接入一个 AI API，即可统一访问视频生成、图像生成和 LLM
-    API，覆盖 300+ 精选模型。Atlas Cloud 新推出 Coding Plan 优惠，适合需要更高性价比 API 访问的开发者，欢迎通过<a href="https://www.atlascloud.ai/console/coding-plan">此链接</a>了解。
+    API，覆盖 300+ 精选模型。Atlas Cloud 新推出 Coding Plan 优惠，适合需要更高性价比 API 访问的开发者，欢迎通过<a href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">此链接</a>了解。
   </p>
 </div>
 

@@ -60,11 +60,11 @@ If you are looking for stable, efficient, and highly compatible AI relay service
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo" href="https://www.atlascloud.ai/console/coding-plan">
+    <a class="sponsor-logo" href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">
       <img src="../../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
     </a>
     <p>
-      <strong>Atlas Cloud</strong> is a full-modal AI inference platform. One AI API gives developers access to video generation, image generation, and LLM APIs across 300+ curated models. Explore the new coding plan promotion for more budget-friendly API access through <a href="https://www.atlascloud.ai/console/coding-plan">this link</a>.
+      <strong>Atlas Cloud</strong> is a full-modal AI inference platform. One AI API gives developers access to video generation, image generation, and LLM APIs across 300+ curated models. Explore the new coding plan promotion for more budget-friendly API access through <a href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">this link</a>.
     </p>
   </section>
 
