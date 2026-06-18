@@ -89,6 +89,7 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 - [GitHub Discussions](https://github.com/qixing-jk/all-api-hub/discussions)
 - [Discord 社区](https://discord.gg/RmFXZ577ZQ)
 - [Telegram 群](https://t.me/qixing_chat)
+- [QQ 群](https://qm.qq.com/q/ebSCy31Phe)
 - **微信群**：扫描下方二维码加入中文群。
 
 <img

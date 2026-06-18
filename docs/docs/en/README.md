@@ -93,6 +93,7 @@ Have questions or want to share useful sites? Join the community:
 - [GitHub Discussions](https://github.com/qixing-jk/all-api-hub/discussions)
 - [Discord Community](https://discord.gg/RmFXZ577ZQ)
 - [Telegram Group](https://t.me/qixing_chat)
+- [QQ Group](https://qm.qq.com/q/ebSCy31Phe)
 - **WeChat Group**: Scan the QR code below to join the Chinese group.
 
 <img

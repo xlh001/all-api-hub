@@ -29,6 +29,9 @@
   <a href="./resources/wechat_group.png">
     <img alt="微信中文群" src="https://img.shields.io/badge/微信-中文群-green?logo=wechat&logoColor=white" />
   </a>
+  <a href="https://qm.qq.com/q/ebSCy31Phe">
+    <img alt="QQ 中文群" src="https://img.shields.io/badge/QQ-中文群-12B7F5?logo=qq&logoColor=white" />
+  </a>
   <a href="https://discord.gg/RmFXZ577ZQ">
     <img alt="Discord 多语言社区" src="https://img.shields.io/badge/Discord-多语言社区-5865F2?logo=discord&logoColor=white">
   </a>
