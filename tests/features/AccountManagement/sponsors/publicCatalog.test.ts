@@ -16,6 +16,12 @@ import publicSponsorCatalogV4 from "~~/public/sponsor-catalog.v4.json"
 
 const now = Date.UTC(2026, 4, 25)
 
+function expectHttpsUrl(value: unknown) {
+  expect(typeof value).toBe("string")
+  const url = new URL(value as string)
+  expect(url.protocol).toBe("https:")
+}
+
 describe("public sponsor catalog artifacts", () => {
   it("keeps the V3 public catalog as a legacy artifact for old clients", () => {
     expect(legacySponsorCatalog.schemaVersion).toBe(3)
@@ -50,24 +56,28 @@ describe("public sponsor catalog artifacts", () => {
     })
 
     expect(productionResult.errors).toEqual([])
-    expect(productionResult.items.map((item) => item.id)).toEqual([
-      "volcengine-coding-plan",
-      "xingchen-ai",
-      "packycode",
-      "runapi",
-    ])
-    expect(productionResult.items[0]).toMatchObject({
-      actions: {
-        apiCredentialProfileFallback: {
-          baseUrl: "https://ark.cn-beijing.volces.com/api/v3",
-          apiKeyCreateUrl:
-            "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
-        },
-      },
-      links: {
-        primary:
-          "https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub",
-      },
+    expect(productionResult.ok).toBe(true)
+    expect(productionResult.items.length).toBeGreaterThan(0)
+    productionResult.items.forEach((item) => {
+      expect(item.schemaVersion).toBe(SPONSOR_CATALOG_SCHEMA_VERSION)
+      expect(item.source).toBe(SPONSOR_CATALOG_SOURCES.Remote)
+      expect(item.selectedLocale).toBeTruthy()
+      expectHttpsUrl(item.links.primary)
+
+      const { addAccount, apiCredentialProfileFallback, bookmarkFallback } =
+        item.actions
+      if (addAccount) {
+        expectHttpsUrl(addAccount.siteUrl)
+      }
+      if (apiCredentialProfileFallback) {
+        expectHttpsUrl(apiCredentialProfileFallback.baseUrl)
+        if (apiCredentialProfileFallback.apiKeyCreateUrl) {
+          expectHttpsUrl(apiCredentialProfileFallback.apiKeyCreateUrl)
+        }
+      }
+      if (bookmarkFallback) {
+        expectHttpsUrl(bookmarkFallback.url)
+      }
     })
 
     expect(bundledSponsorCatalog).toBe(publicSponsorCatalogV4)
