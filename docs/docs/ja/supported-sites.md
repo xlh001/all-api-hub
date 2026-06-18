@@ -27,11 +27,11 @@
 
 <div class="sponsor-list">
   <section class="sponsor-item sponsor-item-featured">
-    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
-      <img src="../../../resources/partners/volcengine_en.jpg" alt="Volcengine Ark Coding-Plan">
+    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../../resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk">
     </a>
     <p>
-      <strong>Volcengine Ark Coding-Plan</strong> は ByteDance の開発者向け生産性プログラムです。Lite プランは <strong>月額 9.9 元</strong> から利用でき、Doubao、DeepSeek、GLM などの主要モデルをサポートし、Cursor、Claude Code、Windsurf などの IDE ツールにも対応しています。<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">キャンペーンリンク</a>から参加すると、初回割引と招待リワードを利用できます。
+      <strong>Dola Seed on BytePlus ModelArk</strong> は ByteDance がグローバル市場向けに開発したフルモーダル汎用大規模モデルです。BytePlus ModelArk から、マルチモーダル理解と生成、エージェント協調、推論、ツール連携、コーディング機能を利用できます。<a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">BytePlus ModelArk のリンク</a>から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。
     </p>
   </section>
 

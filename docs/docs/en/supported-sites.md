@@ -27,11 +27,11 @@ If you are looking for stable, efficient, and highly compatible AI relay service
 
 <div class="sponsor-list">
   <section class="sponsor-item sponsor-item-featured">
-    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
-      <img src="../../../resources/partners/volcengine_en.jpg" alt="Volcengine Ark Coding-Plan">
+    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../../resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk">
     </a>
     <p>
-      <strong>Volcengine Ark Coding-Plan</strong> is ByteDance's developer productivity program. The Lite plan starts at <strong>CNY 9.9/month</strong>, supports popular models such as Doubao, DeepSeek, and GLM, and works with IDE tools like Cursor, Claude Code, and Windsurf. Join through the <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">campaign link</a> to get first-order discounts and referral rewards.
+      <strong>Dola Seed on BytePlus ModelArk</strong> is ByteDance's full-modal general large model for the global market, available through BytePlus ModelArk with multimodal understanding and generation, agent collaboration, reasoning, tool integration, and coding capabilities. Register through the <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">BytePlus ModelArk link</a> to get 500,000 free inference tokens per model.
     </p>
   </section>
 
