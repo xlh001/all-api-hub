@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { AccountUpdateUserTimestampMode } from "~/services/accounts/accountDefaults"
 import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import type {
   ApiServiceAccountRequest,
@@ -30,6 +29,7 @@ import {
   refreshAccountData,
   updateApiToken,
 } from "~/services/apiService/sub2api"
+import type { Sub2ApiAuthSessionRequest } from "~/services/apiService/sub2api/authSession"
 import {
   buildSub2ApiUserGroups,
   convertExpirySecondsToSub2ApiDays,
@@ -49,9 +49,9 @@ import type {
 } from "~/services/apiService/sub2api/type"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 
-const { mockGetAccountById, mockUpdateAccount } = vi.hoisted(() => ({
-  mockGetAccountById: vi.fn(),
-  mockUpdateAccount: vi.fn(),
+const { mockGetLatestAuth, mockPersistAuthUpdate } = vi.hoisted(() => ({
+  mockGetLatestAuth: vi.fn(),
+  mockPersistAuthUpdate: vi.fn(),
 }))
 
 vi.mock("~/services/apiService/common", () => ({
@@ -502,15 +502,17 @@ describe("apiService sub2api refreshAccountData", () => {
     vi.clearAllMocks()
     vi.mocked(fetchApi).mockReset()
     vi.mocked(resyncSub2ApiAuthToken).mockReset()
-    mockGetAccountById.mockReset()
-    mockUpdateAccount.mockReset()
-    mockGetAccountById.mockResolvedValue(null)
-    mockUpdateAccount.mockResolvedValue(true)
+    mockGetLatestAuth.mockReset()
+    mockPersistAuthUpdate.mockReset()
+    mockGetLatestAuth.mockResolvedValue(null)
+    mockPersistAuthUpdate.mockResolvedValue(true)
   })
 
   const createRequest = (
-    overrides: Partial<ApiServiceAccountRequest> = {},
-  ): ApiServiceAccountRequest =>
+    overrides: Partial<
+      Sub2ApiAuthSessionRequest<ApiServiceAccountRequest>
+    > = {},
+  ): Sub2ApiAuthSessionRequest<ApiServiceAccountRequest> =>
     ({
       baseUrl: "https://sub2.example.com",
       auth: {
@@ -525,7 +527,7 @@ describe("apiService sub2api refreshAccountData", () => {
         customCheckIn: { url: "", redeemUrl: "", openRedeemWithCheckIn: true },
       },
       ...overrides,
-    }) as ApiServiceAccountRequest
+    }) as Sub2ApiAuthSessionRequest<ApiServiceAccountRequest>
 
   const createTokenRequest = (
     overrides: Partial<CreateTokenRequest> = {},
@@ -721,7 +723,7 @@ describe("apiService sub2api refreshAccountData", () => {
 
     expect(result.success).toBe(true)
     expect(result.authUpdate?.accessToken).toBe("new-jwt")
-    expect(mockUpdateAccount).not.toHaveBeenCalled()
+    expect(mockPersistAuthUpdate).not.toHaveBeenCalled()
 
     nowSpy.mockRestore()
   })
@@ -1066,11 +1068,9 @@ describe("apiService sub2api refreshAccountData", () => {
     const now = 1_700_000_000_000
     const nowSpy = vi.spyOn(Date, "now").mockReturnValue(now)
 
-    mockGetAccountById.mockResolvedValueOnce({
-      account_info: {
-        id: "9",
-        access_token: "stored-jwt",
-      },
+    mockGetLatestAuth.mockResolvedValueOnce({
+      accessToken: "stored-jwt",
+      userId: "9",
       sub2apiAuth: {
         refreshToken: "stored-refresh",
         tokenExpiresAt: now + 60_000,
@@ -1102,9 +1102,9 @@ describe("apiService sub2api refreshAccountData", () => {
     const result = await refreshAccountData(
       createRequest({
         accountId: "account-1",
-        accountAuthStore: {
-          getAccountById: (...args: any[]) => mockGetAccountById(...args),
-          updateAccount: (...args: any[]) => mockUpdateAccount(...args),
+        sub2apiAuthSession: {
+          getLatestAuth: (...args: any[]) => mockGetLatestAuth(...args),
+          persistAuthUpdate: (...args: any[]) => mockPersistAuthUpdate(...args),
         },
         auth: {
           authType: AuthTypeEnum.AccessToken,
@@ -1113,7 +1113,7 @@ describe("apiService sub2api refreshAccountData", () => {
       }),
     )
 
-    expect(mockGetAccountById).toHaveBeenCalledWith("account-1")
+    expect(mockGetLatestAuth).toHaveBeenCalledWith("account-1")
     expect((vi.mocked(fetchApi).mock.calls[0]?.[0] as any)?.auth).toMatchObject(
       {
         accessToken: "new-jwt",
@@ -1122,19 +1122,11 @@ describe("apiService sub2api refreshAccountData", () => {
         userId: "9",
       },
     )
-    expect(mockUpdateAccount).toHaveBeenCalledWith(
-      "account-1",
-      {
-        account_info: {
-          access_token: "new-jwt",
-        },
-        sub2apiAuth: {
-          refreshToken: "new-refresh",
-          tokenExpiresAt: now + 3600 * 1000,
-        },
-      },
-      { userTimestampMode: AccountUpdateUserTimestampMode.Preserve },
-    )
+    expect(mockPersistAuthUpdate).toHaveBeenCalledWith("account-1", {
+      accessToken: "new-jwt",
+      refreshToken: "new-refresh",
+      tokenExpiresAt: now + 3600 * 1000,
+    })
     expect(result.success).toBe(true)
     expect(result.authUpdate?.userId).toBe("9")
     expect(result.authUpdate?.username).toBe("stored-user")
@@ -1150,10 +1142,10 @@ describe("apiService sub2api exported operations", () => {
     vi.clearAllMocks()
     vi.mocked(fetchApi).mockReset()
     vi.mocked(resyncSub2ApiAuthToken).mockReset()
-    mockGetAccountById.mockReset()
-    mockUpdateAccount.mockReset()
-    mockGetAccountById.mockResolvedValue(null)
-    mockUpdateAccount.mockResolvedValue(true)
+    mockGetLatestAuth.mockReset()
+    mockPersistAuthUpdate.mockReset()
+    mockGetLatestAuth.mockResolvedValue(null)
+    mockPersistAuthUpdate.mockResolvedValue(true)
   })
 
   const baseRequest = {
@@ -2020,22 +2012,18 @@ describe("apiService sub2api exported operations", () => {
     const now = 1_700_000_000_000
     const nowSpy = vi.spyOn(Date, "now").mockReturnValue(now)
 
-    mockGetAccountById
+    mockGetLatestAuth
       .mockResolvedValueOnce({
-        account_info: {
-          id: "7",
-          access_token: "old-jwt",
-        },
+        accessToken: "old-jwt",
+        userId: "7",
         sub2apiAuth: {
           refreshToken: "old-refresh",
           tokenExpiresAt: now + 3600 * 1000,
         },
       })
       .mockResolvedValueOnce({
-        account_info: {
-          id: "7",
-          access_token: "external-jwt",
-        },
+        accessToken: "external-jwt",
+        userId: "7",
         sub2apiAuth: {
           refreshToken: "external-refresh",
           tokenExpiresAt: now + 3600 * 1000,
@@ -2057,9 +2045,9 @@ describe("apiService sub2api exported operations", () => {
       fetchAccountTokens({
         ...baseRequest,
         accountId: "account-1",
-        accountAuthStore: {
-          getAccountById: (...args: any[]) => mockGetAccountById(...args),
-          updateAccount: (...args: any[]) => mockUpdateAccount(...args),
+        sub2apiAuthSession: {
+          getLatestAuth: (...args: any[]) => mockGetLatestAuth(...args),
+          persistAuthUpdate: (...args: any[]) => mockPersistAuthUpdate(...args),
         },
         auth: {
           authType: AuthTypeEnum.AccessToken,
