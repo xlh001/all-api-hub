@@ -29,7 +29,7 @@
 ::: tip 高品質な API インターフェースをお探しですか？
 認証情報庫を充実させるために、安定していて CLI にも対応した API インターフェースが必要な場合は、次のパートナーをお試しください。
 
-- [Volcengine Ark Coding-Plan](https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub)：Lite プランは月額 9.9 元からで、初回割引と招待リワードがあります。
+- [Volcengine Ark Coding-Plan](https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html)：Lite プランは月額 9.9 元からで、初回割引と招待リワードがあります。
 - [Xingchen AI](https://ai.centos.hk)：1:1 のチャージ比率、請求書対応、Claude は通常価格の 40% 程度から利用できます。[設定ガイド](./sponsor-guides/xingchen.md)
 - [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)：チャージ時に `all-api-hub` クーポンコードを入力すると 10% オフになります。
 - [Atlas Cloud](https://www.atlascloud.ai/console/coding-plan)：1 つの AI API で 300 以上の厳選された動画、画像、LLM モデルを利用でき、新しい Coding Plan プロモーションでより手頃に API へアクセスできます。

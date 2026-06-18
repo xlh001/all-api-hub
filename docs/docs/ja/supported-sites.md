@@ -27,11 +27,11 @@
 
 <div class="sponsor-list">
   <section class="sponsor-item sponsor-item-featured">
-    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
       <img src="../../../resources/partners/volcengine_en.jpg" alt="Volcengine Ark Coding-Plan">
     </a>
     <p>
-      <strong>Volcengine Ark Coding-Plan</strong> は ByteDance の開発者向け生産性プログラムです。Lite プランは <strong>月額 9.9 元</strong> から利用でき、Doubao、DeepSeek、GLM などの主要モデルをサポートし、Cursor、Claude Code、Windsurf などの IDE ツールにも対応しています。<a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">キャンペーンリンク</a>から参加すると、初回割引と招待リワードを利用できます。
+      <strong>Volcengine Ark Coding-Plan</strong> は ByteDance の開発者向け生産性プログラムです。Lite プランは <strong>月額 9.9 元</strong> から利用でき、Doubao、DeepSeek、GLM などの主要モデルをサポートし、Cursor、Claude Code、Windsurf などの IDE ツールにも対応しています。<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">キャンペーンリンク</a>から参加すると、初回割引と招待リワードを利用できます。
     </p>
   </section>
 

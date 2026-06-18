@@ -27,11 +27,11 @@ If you are looking for stable, efficient, and highly compatible AI relay service
 
 <div class="sponsor-list">
   <section class="sponsor-item sponsor-item-featured">
-    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
       <img src="../../../resources/partners/volcengine_en.jpg" alt="Volcengine Ark Coding-Plan">
     </a>
     <p>
-      <strong>Volcengine Ark Coding-Plan</strong> is ByteDance's developer productivity program. The Lite plan starts at <strong>CNY 9.9/month</strong>, supports popular models such as Doubao, DeepSeek, and GLM, and works with IDE tools like Cursor, Claude Code, and Windsurf. Join through the <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">campaign link</a> to get first-order discounts and referral rewards.
+      <strong>Volcengine Ark Coding-Plan</strong> is ByteDance's developer productivity program. The Lite plan starts at <strong>CNY 9.9/month</strong>, supports popular models such as Doubao, DeepSeek, and GLM, and works with IDE tools like Cursor, Claude Code, and Windsurf. Join through the <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">campaign link</a> to get first-order discounts and referral rewards.
     </p>
   </section>
 

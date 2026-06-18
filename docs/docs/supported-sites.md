@@ -28,11 +28,11 @@
 
 <div class="sponsor-list">
   <section class="sponsor-item sponsor-item-featured">
-    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="../../resources/partners/volcengine.jpg" alt="火山引擎方舟 Coding-Plan">
+    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
+      <img src="../../resources/partners/volcengine.png" alt="火山引擎方舟 Coding-Plan">
     </a>
     <p>
-      <strong>火山引擎方舟 Coding-Plan</strong> 字节跳动旗下开发者生产力计划，Lite 套餐 <strong>9.9 元/月</strong>起，支持豆包、DeepSeek、GLM 等主流模型，适配 Cursor、Claude Code、Windsurf 等 IDE 工具。通过<a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">活动链接</a>加入，可享受好友邀请返利及首单优惠。
+      <strong>火山引擎方舟 Coding-Plan</strong> 字节跳动旗下开发者生产力计划，Lite 套餐 <strong>9.9 元/月</strong>起，支持豆包、DeepSeek、GLM 等主流模型，适配 Cursor、Claude Code、Windsurf 等 IDE 工具。通过<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">活动链接</a>加入，可享受好友邀请返利及首单优惠。
     </p>
   </section>
 

@@ -114,14 +114,14 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 
 <div>
   <p>
-    <a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="resources/partners/volcengine.jpg" alt="火山引擎方舟 Coding-Plan" width="100%">
+    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
+      <img src="resources/partners/volcengine.png" alt="火山引擎方舟 Coding-Plan" width="100%">
     </a>
   </p>
   <p>
     <b>火山引擎方舟 Coding-Plan</b> 是字节跳动推出的开发者生产力计划。Lite 套餐仅需 <b>9.9 元/月</b>，即可畅享豆包、DeepSeek、GLM 等顶级大模型。
     完美适配 Cursor、Claude Code、Windsurf 等 IDE 工具，提供极速响应、高并发稳定性及独家 Auto 模型自动切换体验。
-    现在通过<a href="https://www.volcengine.com/activity/codingplan?utm_campaign=hw&utm_content=hw&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">活动链接</a>加入，还可享受好友邀请返利及首单优惠。
+    现在通过<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">活动链接</a>加入，还可享受好友邀请返利及首单优惠。
   </p>
 </div>
 
