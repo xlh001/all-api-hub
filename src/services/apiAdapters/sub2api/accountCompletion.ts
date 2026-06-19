@@ -1,14 +1,12 @@
 import { AUTO_DETECT_FAILURE_REASONS } from "~/constants/autoDetect"
-import { SITE_TYPES } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
-import { getApiService } from "~/services/apiService"
+import { sub2ApiAccountBootstrap } from "~/services/apiAdapters/sub2api/accountBootstrap"
 import { AuthTypeEnum } from "~/types"
 
 import type { AccountCompletionCapability } from "../contracts/accountCompletion"
 
 export const sub2ApiAccountCompletion: AccountCompletionCapability = {
   async complete(request, helpers) {
-    const service = getApiService(SITE_TYPES.SUB2API)
     const { url, detected, context } = request
 
     const accessToken = helpers.trimString(detected.accessToken)
@@ -21,7 +19,7 @@ export const sub2ApiAccountCompletion: AccountCompletionCapability = {
 
     let siteStatus = null
     try {
-      siteStatus = await service.fetchSiteStatus(
+      siteStatus = await sub2ApiAccountBootstrap.fetchSiteStatus(
         helpers.createServiceRequest({
           baseUrl: url,
           context,
@@ -43,7 +41,7 @@ export const sub2ApiAccountCompletion: AccountCompletionCapability = {
       accessToken,
       userId: detected.userId.toString(),
       exchangeRate:
-        service.extractDefaultExchangeRate(siteStatus) ??
+        sub2ApiAccountBootstrap.extractDefaultExchangeRate(siteStatus) ??
         UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
       authType: AuthTypeEnum.AccessToken,
       checkIn: helpers.createInitialCheckInConfig({

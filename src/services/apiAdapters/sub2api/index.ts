@@ -1,4 +1,5 @@
 import { SITE_TYPES } from "~/constants/siteType"
+import { sub2ApiAccountBootstrap } from "~/services/apiAdapters/sub2api/accountBootstrap"
 
 import type { SiteAdapter } from "../contracts/siteAdapter"
 import { sub2ApiAccountCompletion } from "./accountCompletion"
@@ -14,6 +15,7 @@ export const sub2ApiAdapter: SiteAdapter = {
   siteAnnouncements: sub2ApiSiteAnnouncements,
   modelCatalog: sub2ApiModelCatalog,
   accountData: sub2ApiAccountData,
+  accountBootstrap: sub2ApiAccountBootstrap,
   accountCompletion: sub2ApiAccountCompletion,
   keyManagement: sub2ApiKeyManagement,
   accountRefresh: sub2ApiAccountRefresh,
