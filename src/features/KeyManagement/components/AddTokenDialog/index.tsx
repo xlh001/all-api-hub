@@ -182,11 +182,21 @@ export default function AddTokenDialog(props: AddTokenDialogProps) {
         allow_ips: formData.allowIps.trim() || "",
         group: formData.group,
       }
-      const { keyManagement, request, service } =
+      const { keyManagement, request } =
         createDisplayAccountApiContext(currentAccount)
 
       if (isEditMode && editingToken) {
-        await service.updateApiToken(request, editingToken.id, tokenData)
+        const updated = await requireDisplayAccountKeyManagement(
+          currentAccount,
+          keyManagement,
+        ).updateToken({
+          request,
+          tokenId: editingToken.id,
+          tokenData,
+        })
+        if (updated === false) {
+          throw new Error(t("dialog.updateFailed"))
+        }
         toast.success(t("dialog.updateSuccess"))
       } else {
         const created = await requireDisplayAccountKeyManagement(
