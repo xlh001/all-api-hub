@@ -1,5 +1,14 @@
-import { SITE_TYPES } from "~/constants/siteType"
-import { requireDisplayAccountKeyManagement } from "~/services/accounts/utils/apiServiceRequest"
+import {
+  requireDisplayAccountKeyManagement,
+  requireDisplayAccountTokenProvisioning,
+} from "~/services/accounts/utils/apiServiceRequest"
+import {
+  CREATED_TOKEN_SECRET_DECISION_KINDS,
+  DEFAULT_TOKEN_CREATION_DECISION_KINDS,
+  TOKEN_PROVISIONING_BLOCK_REASONS,
+  TOKEN_PROVISIONING_ERRORS,
+  TOKEN_PROVISIONING_WORKFLOWS,
+} from "~/services/apiAdapters/contracts/tokenProvisioning"
 import { getSiteAdapter } from "~/services/apiAdapters/registry"
 import type { CreateTokenRequest } from "~/services/apiService/common/type"
 import type { ApiServiceRequest } from "~/services/apiTransport/type"
@@ -13,6 +22,7 @@ import { t } from "~/utils/i18n/core"
 
 import {
   DEFAULT_AUTO_PROVISION_TOKEN_NAME,
+  DEFAULT_USER_GROUP_NAME,
   generateDefaultTokenRequest,
 } from "./ensureDefaultToken"
 
@@ -37,7 +47,7 @@ export function buildGroupDefaultTokenRequest(
   return {
     ...generateDefaultTokenRequest(),
     name:
-      group && group !== "default"
+      group && group !== DEFAULT_USER_GROUP_NAME
         ? `${group} group (auto)`
         : DEFAULT_AUTO_PROVISION_TOKEN_NAME,
     group,
@@ -78,9 +88,14 @@ export async function ensureAccountKeysForAvailableGroups(params: {
   siteUrlOrigin: string
 }): Promise<AccountKeyCoverageResult> {
   const { account, displaySiteData, accountName, siteUrlOrigin } = params
+  const adapter = getSiteAdapter(displaySiteData.siteType)
   const keyManagement = requireDisplayAccountKeyManagement(
     displaySiteData,
-    getSiteAdapter(displaySiteData.siteType).keyManagement,
+    adapter.keyManagement,
+  )
+  const tokenProvisioning = requireDisplayAccountTokenProvisioning(
+    displaySiteData,
+    adapter.tokenProvisioning,
   )
   const request = createAccountApiRequest(account, displaySiteData)
   const accountId = displaySiteData.id || account.id
@@ -105,20 +120,43 @@ export async function ensureAccountKeysForAvailableGroups(params: {
       }
     }
 
-    if (displaySiteData.siteType === SITE_TYPES.SUB2API) {
+    const decision = tokenProvisioning.resolveDefaultTokenCreation({
+      workflow: TOKEN_PROVISIONING_WORKFLOWS.Repair,
+      defaultTokenData: generateDefaultTokenRequest(),
+    })
+
+    if (decision.kind !== DEFAULT_TOKEN_CREATION_DECISION_KINDS.Create) {
+      if (
+        decision.kind === DEFAULT_TOKEN_CREATION_DECISION_KINDS.Blocked &&
+        decision.reason ===
+          TOKEN_PROVISIONING_BLOCK_REASONS.OneTimeSecretRequired
+      ) {
+        throw new Error(t("messages:aihubmix.createRequiresOneTimeKeyDialog"))
+      }
+
       throw new Error(t("messages:sub2api.createRequiresGroup"))
     }
 
-    if (displaySiteData.siteType === SITE_TYPES.AIHUBMIX) {
-      throw new Error(t("messages:aihubmix.createRequiresOneTimeKeyDialog"))
+    const createResult = await keyManagement.createToken(
+      request,
+      decision.tokenData,
+    )
+    const createdTokenDecision = tokenProvisioning.classifyCreatedToken({
+      workflow: TOKEN_PROVISIONING_WORKFLOWS.Repair,
+      result: createResult,
+    })
+
+    if (
+      createdTokenDecision.kind === CREATED_TOKEN_SECRET_DECISION_KINDS.Failed
+    ) {
+      throw new Error(TOKEN_PROVISIONING_ERRORS.CreateTokenFailed)
     }
 
-    await keyManagement.createToken(request, generateDefaultTokenRequest())
     return {
       created: true,
       availableGroups: [],
       coveredGroups: [],
-      createdGroups: [""],
+      createdGroups: [decision.tokenData.group],
       missingGroups: [],
       invalidTokens: [],
     }

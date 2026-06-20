@@ -10,6 +10,15 @@ import {
   deleteInvalidAccountToken,
   ensureAccountKeysForAvailableGroups,
 } from "~/services/accounts/accountKeyAutoProvisioning/groupCoverage"
+import {
+  CREATED_TOKEN_SECRET_DECISION_KINDS,
+  DEFAULT_TOKEN_CREATION_DECISION_KINDS,
+  TOKEN_CREATION_SECRET_RECOVERY,
+  TOKEN_PROVISIONING_BLOCK_REASONS,
+  TOKEN_PROVISIONING_ERRORS,
+  TOKEN_PROVISIONING_REPAIR_POLICY_KINDS,
+  TOKEN_PROVISIONING_WORKFLOWS,
+} from "~/services/apiAdapters/contracts/tokenProvisioning"
 import { AuthTypeEnum } from "~/types"
 import { ACCOUNT_KEY_REPAIR_INVALID_TOKEN_REASONS } from "~/types/accountKeyAutoProvisioning"
 import {
@@ -23,6 +32,8 @@ const mocks = vi.hoisted(() => ({
   fetchUserGroups: vi.fn(),
   createApiToken: vi.fn(),
   deleteApiToken: vi.fn(),
+  resolveDefaultTokenCreation: vi.fn(),
+  classifyCreatedToken: vi.fn(),
 }))
 
 vi.mock("~/services/apiAdapters/registry", () => ({
@@ -36,6 +47,16 @@ vi.mock("~/services/apiAdapters/registry", () => ({
       deleteToken: (...args: unknown[]) => mocks.deleteApiToken(...args),
       resolveTokenKey: vi.fn(),
       fetchAvailableModels: vi.fn(),
+    },
+    tokenProvisioning: {
+      isInventoryTokenUsable: vi.fn(() => true),
+      resolveDefaultTokenCreation: (...args: unknown[]) =>
+        mocks.resolveDefaultTokenCreation(...args),
+      classifyCreatedToken: (...args: unknown[]) =>
+        mocks.classifyCreatedToken(...args),
+      getRepairPolicy: vi.fn(() => ({
+        kind: TOKEN_PROVISIONING_REPAIR_POLICY_KINDS.Eligible,
+      })),
     },
   })),
 }))
@@ -83,6 +104,19 @@ describe("ensureAccountKeysForAvailableGroups", () => {
     mocks.fetchUserGroups.mockReset()
     mocks.createApiToken.mockReset()
     mocks.deleteApiToken.mockReset()
+    mocks.resolveDefaultTokenCreation.mockReset()
+    mocks.classifyCreatedToken.mockReset()
+    mocks.resolveDefaultTokenCreation.mockImplementation(
+      ({ defaultTokenData }) => ({
+        kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Create,
+        tokenData: defaultTokenData,
+        oneTimeSecret: false,
+        recoverCreatedToken: TOKEN_CREATION_SECRET_RECOVERY.InventoryRefetch,
+      }),
+    )
+    mocks.classifyCreatedToken.mockReturnValue({
+      kind: CREATED_TOKEN_SECRET_DECISION_KINDS.NeedsInventoryRefetch,
+    })
   })
 
   it("creates missing group keys and reports tokens tied to unavailable groups", async () => {
@@ -188,6 +222,16 @@ describe("ensureAccountKeysForAvailableGroups", () => {
         resolveTokenKey: vi.fn(),
         fetchAvailableModels: vi.fn(),
       },
+      tokenProvisioning: {
+        isInventoryTokenUsable: vi.fn(() => true),
+        resolveDefaultTokenCreation: (...args: unknown[]) =>
+          mocks.resolveDefaultTokenCreation(...args),
+        classifyCreatedToken: (...args: unknown[]) =>
+          mocks.classifyCreatedToken(...args),
+        getRepairPolicy: vi.fn(() => ({
+          kind: TOKEN_PROVISIONING_REPAIR_POLICY_KINDS.Eligible,
+        })),
+      },
     })
     mocks.createApiToken.mockResolvedValue(true)
 
@@ -208,7 +252,57 @@ describe("ensureAccountKeysForAvailableGroups", () => {
       }),
       generateDefaultTokenRequest(),
     )
+    expect(mocks.resolveDefaultTokenCreation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workflow: TOKEN_PROVISIONING_WORKFLOWS.Repair,
+        defaultTokenData: generateDefaultTokenRequest(),
+      }),
+    )
     expect(mocks.fetchUserGroups).not.toHaveBeenCalled()
+  })
+
+  it("blocks legacy one-key repair when policy requires a one-time secret dialog", async () => {
+    mocks.fetchAccountTokens.mockResolvedValue([])
+    mocks.fetchUserGroups.mockResolvedValue({})
+    mocks.resolveDefaultTokenCreation.mockReturnValueOnce({
+      kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Blocked,
+      reason: TOKEN_PROVISIONING_BLOCK_REASONS.OneTimeSecretRequired,
+    })
+
+    await expect(runCoverage()).rejects.toThrow(
+      "messages:aihubmix.createRequiresOneTimeKeyDialog",
+    )
+
+    expect(mocks.createApiToken).not.toHaveBeenCalled()
+  })
+
+  it("blocks legacy one-key repair when policy rejects default creation", async () => {
+    mocks.fetchAccountTokens.mockResolvedValue([])
+    mocks.fetchUserGroups.mockResolvedValue({})
+    mocks.resolveDefaultTokenCreation.mockReturnValueOnce({
+      kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Blocked,
+      reason: TOKEN_PROVISIONING_BLOCK_REASONS.GroupRequired,
+    })
+
+    await expect(runCoverage()).rejects.toThrow(
+      "messages:sub2api.createRequiresGroup",
+    )
+
+    expect(mocks.createApiToken).not.toHaveBeenCalled()
+  })
+
+  it("fails legacy one-key repair when token creation is rejected", async () => {
+    mocks.fetchAccountTokens.mockResolvedValue([])
+    mocks.fetchUserGroups.mockResolvedValue({})
+    mocks.createApiToken.mockResolvedValueOnce(false)
+    mocks.classifyCreatedToken.mockReturnValueOnce({
+      kind: CREATED_TOKEN_SECRET_DECISION_KINDS.Failed,
+      reason: TOKEN_PROVISIONING_BLOCK_REASONS.CreateFailed,
+    })
+
+    await expect(runCoverage()).rejects.toThrow(
+      TOKEN_PROVISIONING_ERRORS.CreateTokenFailed,
+    )
   })
 
   it("treats empty group responses as legacy one-key coverage when a token already exists", async () => {

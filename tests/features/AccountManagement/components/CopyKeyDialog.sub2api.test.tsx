@@ -3,6 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import CopyKeyDialog from "~/features/AccountManagement/components/CopyKeyDialog"
 import {
+  CREATED_TOKEN_SECRET_DECISION_KINDS,
+  DEFAULT_TOKEN_CREATION_DECISION_KINDS,
+  TOKEN_CREATION_SECRET_RECOVERY,
+  TOKEN_PROVISIONING_BLOCK_REASONS,
+  TOKEN_PROVISIONING_REPAIR_POLICY_KINDS,
+  TOKEN_PROVISIONING_WORKFLOWS,
+} from "~/services/apiAdapters/contracts/tokenProvisioning"
+import { ACCOUNT_KEY_REPAIR_SKIP_REASONS } from "~/types/accountKeyAutoProvisioning"
+import {
   buildSub2ApiAccount,
   buildSub2ApiToken,
 } from "~~/tests/test-utils/factories"
@@ -23,6 +32,84 @@ const {
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
 }))
+
+const normalizeGroupNames = (groups: Record<string, unknown>): string[] =>
+  Array.from(
+    new Set(
+      Object.keys(groups)
+        .map((group) => group.trim())
+        .filter(Boolean),
+    ),
+  )
+
+const createSub2ApiTokenProvisioningMock = () => ({
+  isInventoryTokenUsable: vi.fn(() => true),
+  resolveDefaultTokenCreation: vi.fn((request: any) => {
+    const explicitGroup =
+      typeof request.explicitGroup === "string"
+        ? request.explicitGroup.trim()
+        : ""
+
+    if (explicitGroup) {
+      return {
+        kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Create,
+        tokenData: { ...request.defaultTokenData, group: explicitGroup },
+        oneTimeSecret: false,
+        recoverCreatedToken: TOKEN_CREATION_SECRET_RECOVERY.InventoryRefetch,
+      }
+    }
+
+    if (
+      request.workflow !== TOKEN_PROVISIONING_WORKFLOWS.QuickCreateSelection &&
+      request.workflow !== TOKEN_PROVISIONING_WORKFLOWS.PostSaveAutomation
+    ) {
+      return {
+        kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Blocked,
+        reason: TOKEN_PROVISIONING_BLOCK_REASONS.GroupRequired,
+      }
+    }
+
+    if (!request.userGroups) {
+      return { kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.NeedsUserGroups }
+    }
+
+    const allowedGroups = normalizeGroupNames(request.userGroups)
+
+    if (allowedGroups.length === 0) {
+      return {
+        kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Blocked,
+        reason: TOKEN_PROVISIONING_BLOCK_REASONS.AvailableGroupRequired,
+      }
+    }
+
+    if (allowedGroups.length === 1) {
+      return {
+        kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Create,
+        tokenData: { ...request.defaultTokenData, group: allowedGroups[0] },
+        oneTimeSecret: false,
+        recoverCreatedToken: TOKEN_CREATION_SECRET_RECOVERY.InventoryRefetch,
+      }
+    }
+
+    return {
+      kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.SelectionRequired,
+      allowedGroups,
+      reason: TOKEN_PROVISIONING_BLOCK_REASONS.GroupSelectionRequired,
+    }
+  }),
+  classifyCreatedToken: vi.fn(({ result }: any) =>
+    result
+      ? { kind: CREATED_TOKEN_SECRET_DECISION_KINDS.NeedsInventoryRefetch }
+      : {
+          kind: CREATED_TOKEN_SECRET_DECISION_KINDS.Failed,
+          reason: TOKEN_PROVISIONING_BLOCK_REASONS.CreateFailed,
+        },
+  ),
+  getRepairPolicy: vi.fn(() => ({
+    kind: TOKEN_PROVISIONING_REPAIR_POLICY_KINDS.Skipped,
+    skipReason: ACCOUNT_KEY_REPAIR_SKIP_REASONS.Sub2Api,
+  })),
+})
 
 vi.mock("react-hot-toast", () => ({
   default: {
@@ -56,6 +143,7 @@ vi.mock("~/services/apiAdapters/registry", () => ({
         fetch: (...args: any[]) => fetchUserGroupsMock(...args),
       },
     },
+    tokenProvisioning: createSub2ApiTokenProvisioningMock(),
   }),
 }))
 

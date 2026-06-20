@@ -10,7 +10,7 @@ import {
   DEFAULT_PREFERENCES,
   userPreferences,
 } from "~/services/preferences/userPreferences"
-import { AuthTypeEnum, type CheckInConfig } from "~/types"
+import { AuthTypeEnum, type CheckInConfig, type DisplaySiteData } from "~/types"
 
 const {
   fetchAccountDataMock,
@@ -363,6 +363,48 @@ describe("accountOperations auto-provision key on add", () => {
     await flushPromises()
 
     expect(ensureDefaultApiTokenForAccountMock).toHaveBeenCalledTimes(1)
+    expect(toastSuccessMock).not.toHaveBeenCalled()
+    expect(toastErrorMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows failure feedback when saved account display data is invalid for auto-provision", async () => {
+    // Intentionally omit required DisplaySiteData fields to exercise the
+    // defensive validation branch used when storage returns malformed data.
+    const invalidDisplaySiteData: Partial<DisplaySiteData> = {
+      id: "invalid-display-account",
+      name: "Invalid Display",
+      siteType: SITE_TYPES.NEW_API,
+      baseUrl: "https://api.example.com",
+      authType: AuthTypeEnum.AccessToken,
+      userId: "1",
+      token: "",
+      cookieAuthSessionCookie: "",
+    }
+    vi.spyOn(accountStorage, "getDisplayDataById").mockResolvedValueOnce(
+      invalidDisplaySiteData as DisplaySiteData,
+    )
+
+    const result = await validateAndSaveAccount(
+      "https://api.example.com",
+      "Test Site",
+      "tester",
+      "test-token",
+      "1",
+      "7.0",
+      "",
+      [],
+      CHECK_IN_DISABLED,
+      "unknown",
+      AuthTypeEnum.AccessToken,
+      "",
+    )
+
+    expect(result.success).toBe(true)
+
+    await flushPromises()
+    await flushPromises()
+
+    expect(ensureDefaultApiTokenForAccountMock).not.toHaveBeenCalled()
     expect(toastSuccessMock).not.toHaveBeenCalled()
     expect(toastErrorMock).toHaveBeenCalledTimes(1)
   })

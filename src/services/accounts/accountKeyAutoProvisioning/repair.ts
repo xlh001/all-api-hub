@@ -1,8 +1,9 @@
 import { Storage } from "@plasmohq/storage"
 
 import { RuntimeMessageTypes } from "~/constants/runtimeActions"
-import { SITE_TYPES } from "~/constants/siteType"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import { TOKEN_PROVISIONING_REPAIR_POLICY_KINDS } from "~/services/apiAdapters/contracts/tokenProvisioning"
+import { getSiteAdapter } from "~/services/apiAdapters/registry"
 import { ACCOUNT_KEY_AUTO_PROVISIONING_STORAGE_KEYS } from "~/services/core/storageKeys"
 import type { DisplaySiteData, SiteAccount } from "~/types"
 import { AuthTypeEnum } from "~/types"
@@ -12,6 +13,12 @@ import type {
   AccountKeyRepairDeleteInvalidTokensResult,
   AccountKeyRepairProgress,
   AccountKeyRepairSkipReason,
+} from "~/types/accountKeyAutoProvisioning"
+import {
+  ACCOUNT_KEY_REPAIR_ERRORS,
+  ACCOUNT_KEY_REPAIR_JOB_STATES,
+  ACCOUNT_KEY_REPAIR_OUTCOMES,
+  ACCOUNT_KEY_REPAIR_SKIP_REASONS,
 } from "~/types/accountKeyAutoProvisioning"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
@@ -31,6 +38,11 @@ import { runPerKeySequential } from "./perOriginQueue"
 
 const logger = createLogger("AccountKeyRepair")
 
+const getInvalidTokenDeleteErrorMessage = (error: unknown) => {
+  const message = getErrorMessage(error)
+  return message === "{}" ? "" : message
+}
+
 /**
  * Creates a default idle progress snapshot used when no repair job has started
  * yet (or when the stored progress blob is missing).
@@ -39,7 +51,7 @@ const logger = createLogger("AccountKeyRepair")
 function createIdleProgress(): AccountKeyRepairProgress {
   return {
     jobId: "idle",
-    state: "idle",
+    state: ACCOUNT_KEY_REPAIR_JOB_STATES.Idle,
     totals: {
       enabledAccounts: 0,
       eligibleAccounts: 0,
@@ -77,16 +89,16 @@ function getOriginKey(siteUrl: string): string {
 function getSkipReason(
   account: SiteAccount,
 ): AccountKeyRepairSkipReason | null {
-  if (account.site_type === SITE_TYPES.SUB2API) {
-    return "sub2api"
-  }
+  const policy = getSiteAdapter(
+    account.site_type,
+  ).tokenProvisioning?.getRepairPolicy()
 
-  if (account.site_type === SITE_TYPES.AIHUBMIX) {
-    return "aihubmixOneTimeKey"
+  if (policy?.kind === TOKEN_PROVISIONING_REPAIR_POLICY_KINDS.Skipped) {
+    return policy.skipReason
   }
 
   if (account.authType === AuthTypeEnum.None) {
-    return "noneAuth"
+    return ACCOUNT_KEY_REPAIR_SKIP_REASONS.NoneAuth
   }
 
   return null
@@ -127,7 +139,7 @@ class AccountKeyRepairRunner {
     const now = Date.now()
     const progress: AccountKeyRepairProgress = {
       jobId: safeRandomUUID("accountKeyRepair"),
-      state: "running",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Running,
       startedAt: now,
       updatedAt: now,
       totals: {
@@ -187,7 +199,7 @@ class AccountKeyRepairRunner {
               displaySiteDataById.get(account.id)?.name ?? account.site_name,
             siteType: account.site_type,
             siteUrlOrigin: getOriginKey(account.site_url),
-            outcome: "skipped",
+            outcome: ACCOUNT_KEY_REPAIR_OUTCOMES.Skipped,
             skipReason,
             finishedAt: Date.now(),
           })
@@ -220,7 +232,7 @@ class AccountKeyRepairRunner {
 
       this.updateProgress((prev) => ({
         ...prev,
-        state: "completed",
+        state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
         finishedAt: Date.now(),
       }))
       await this.persistAndNotify()
@@ -228,7 +240,7 @@ class AccountKeyRepairRunner {
       logger.error("Repair run failed", error)
       this.updateProgress((prev) => ({
         ...prev,
-        state: "failed",
+        state: ACCOUNT_KEY_REPAIR_JOB_STATES.Failed,
         finishedAt: Date.now(),
         lastError: getErrorMessage(error),
       }))
@@ -276,7 +288,7 @@ class AccountKeyRepairRunner {
           !hasToken &&
           !hasCookie)
       ) {
-        throw new Error("invalid_display_site_data")
+        throw new Error(ACCOUNT_KEY_REPAIR_ERRORS.InvalidDisplaySiteData)
       }
 
       const result = await ensureAccountKeysForAvailableGroups({
@@ -293,10 +305,10 @@ class AccountKeyRepairRunner {
         siteUrlOrigin: originKey,
         outcome:
           !result.created && result.missingGroups.length > 0
-            ? "failed"
+            ? ACCOUNT_KEY_REPAIR_OUTCOMES.Failed
             : result.created
-              ? "created"
-              : "alreadyHad",
+              ? ACCOUNT_KEY_REPAIR_OUTCOMES.Created
+              : ACCOUNT_KEY_REPAIR_OUTCOMES.AlreadyHad,
         availableGroups: result.availableGroups,
         coveredGroups: result.coveredGroups,
         createdGroups: result.createdGroups,
@@ -310,7 +322,7 @@ class AccountKeyRepairRunner {
         accountName,
         siteType: account.site_type,
         siteUrlOrigin: originKey,
-        outcome: "failed",
+        outcome: ACCOUNT_KEY_REPAIR_OUTCOMES.Failed,
         errorMessage: getErrorMessage(error),
         finishedAt: Date.now(),
       })
@@ -335,23 +347,24 @@ class AccountKeyRepairRunner {
 
       const nextSummary = { ...prev.summary }
       switch (result.outcome) {
-        case "created":
+        case ACCOUNT_KEY_REPAIR_OUTCOMES.Created:
           nextSummary.created += 1
           break
-        case "alreadyHad":
+        case ACCOUNT_KEY_REPAIR_OUTCOMES.AlreadyHad:
           nextSummary.alreadyHad += 1
           break
-        case "skipped":
+        case ACCOUNT_KEY_REPAIR_OUTCOMES.Skipped:
           nextSummary.skipped += 1
           break
-        case "failed":
+        case ACCOUNT_KEY_REPAIR_OUTCOMES.Failed:
           nextSummary.failed += 1
           break
         default:
           break
       }
 
-      const isEligibleOutcome = result.outcome !== "skipped"
+      const isEligibleOutcome =
+        result.outcome !== ACCOUNT_KEY_REPAIR_OUTCOMES.Skipped
       const availableGroupCount = result.availableGroups?.length ?? 0
       const coveredGroupCount = result.coveredGroups?.length ?? 0
       const createdKeyCount = result.createdGroups?.length ?? 0
@@ -508,7 +521,7 @@ export async function deleteInvalidAccountTokens(
     if (!account || !displaySiteData) {
       failed.push({
         ...token,
-        errorMessage: "account_not_found",
+        errorMessage: ACCOUNT_KEY_REPAIR_ERRORS.AccountNotFound,
       })
       continue
     }
@@ -523,7 +536,9 @@ export async function deleteInvalidAccountTokens(
     } catch (error) {
       failed.push({
         ...token,
-        errorMessage: getErrorMessage(error) || "delete_failed",
+        errorMessage:
+          getInvalidTokenDeleteErrorMessage(error) ||
+          ACCOUNT_KEY_REPAIR_ERRORS.DeleteFailed,
       })
     }
   }
