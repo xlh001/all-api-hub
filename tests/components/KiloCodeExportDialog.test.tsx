@@ -1,9 +1,13 @@
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { KiloCodeExportDialog } from "~/components/KiloCodeExportDialog"
+import {
+  buildKiloCodeCreateTokenToastId,
+  KiloCodeExportDialog,
+} from "~/components/KiloCodeExportDialog"
 import { SITE_TYPES } from "~/constants/siteType"
 import { DEFAULT_AUTO_PROVISION_TOKEN_NAME } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
+import { TOKEN_QUICK_CREATE_RESOLUTION_KINDS } from "~/services/accounts/tokenQuickCreateResolution"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -91,7 +95,7 @@ const mockResolveApiTokenKey = vi.fn()
 const mockFetchAccountAvailableModels = vi.fn()
 const mockFetchUserGroups = vi.fn()
 const mockEnsureAccountApiToken = vi.fn()
-const mockResolveSub2ApiQuickCreateResolution = vi.fn()
+const mockResolveDefaultTokenQuickCreateResolution = vi.fn()
 
 vi.mock("~/services/apiAdapters/registry", () => ({
   getSiteAdapter: (...args: unknown[]) => mockGetSiteAdapter(...args),
@@ -100,8 +104,8 @@ vi.mock("~/services/apiAdapters/registry", () => ({
 vi.mock("~/services/accounts/accountOperations", () => ({
   ensureAccountApiToken: (...args: unknown[]) =>
     mockEnsureAccountApiToken(...args),
-  resolveSub2ApiQuickCreateResolution: (...args: unknown[]) =>
-    mockResolveSub2ApiQuickCreateResolution(...args),
+  resolveDefaultTokenQuickCreateResolution: (...args: unknown[]) =>
+    mockResolveDefaultTokenQuickCreateResolution(...args),
 }))
 
 const createDisplayAccount = (
@@ -215,7 +219,7 @@ describe("KiloCodeExportDialog", () => {
     mockFetchUserGroups.mockReset()
     mockFetchUserGroups.mockResolvedValue({})
     mockEnsureAccountApiToken.mockReset()
-    mockResolveSub2ApiQuickCreateResolution.mockReset()
+    mockResolveDefaultTokenQuickCreateResolution.mockReset()
   })
 
   it("auto loads tokens after selecting sites and enables export actions", async () => {
@@ -288,6 +292,14 @@ describe("KiloCodeExportDialog", () => {
         name: "ui:dialog.kiloCode.actions.downloadSettings",
       }),
     ).not.toBeDisabled()
+
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.refresh" }),
+    )
+
+    await waitFor(() => {
+      expect(mockFetchAccountTokens).toHaveBeenCalledTimes(2)
+    })
   })
 
   it("disables export actions when there is nothing exportable", async () => {
@@ -767,9 +779,20 @@ describe("KiloCodeExportDialog", () => {
     mockFetchAccountTokens
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ id: 11, name: "Created", key: "sk-test" }])
-    mockResolveSub2ApiQuickCreateResolution.mockResolvedValueOnce({
-      kind: "ready",
+    const policyTokenData = {
+      name: DEFAULT_AUTO_PROVISION_TOKEN_NAME,
+      remain_quota: 45678,
+      expired_time: -1,
+      unlimited_quota: false,
+      model_limits_enabled: false,
+      model_limits: "",
+      allow_ips: "",
       group: "vip",
+    }
+
+    mockResolveDefaultTokenQuickCreateResolution.mockResolvedValueOnce({
+      kind: TOKEN_QUICK_CREATE_RESOLUTION_KINDS.Ready,
+      tokenData: policyTokenData,
     })
     mockEnsureAccountApiToken.mockResolvedValueOnce({
       id: 11,
@@ -801,15 +824,15 @@ describe("KiloCodeExportDialog", () => {
     )
 
     await waitFor(() => {
-      expect(mockResolveSub2ApiQuickCreateResolution).toHaveBeenCalledWith(
+      expect(mockResolveDefaultTokenQuickCreateResolution).toHaveBeenCalledWith(
         expect.objectContaining({ id: "b", siteType: "sub2api" }),
       )
       expect(mockEnsureAccountApiToken).toHaveBeenCalledWith(
         expect.objectContaining({ id: "b", site_type: "sub2api" }),
         expect.objectContaining({ id: "b", siteType: "sub2api" }),
         expect.objectContaining({
-          toastId: "kilocode-create-token-b",
-          sub2apiGroup: "vip",
+          toastId: buildKiloCodeCreateTokenToastId("b"),
+          defaultTokenData: policyTokenData,
         }),
       )
     })
@@ -830,8 +853,8 @@ describe("KiloCodeExportDialog", () => {
     })
 
     mockFetchAccountTokens.mockResolvedValueOnce([])
-    mockResolveSub2ApiQuickCreateResolution.mockResolvedValueOnce({
-      kind: "selection_required",
+    mockResolveDefaultTokenQuickCreateResolution.mockResolvedValueOnce({
+      kind: TOKEN_QUICK_CREATE_RESOLUTION_KINDS.SelectionRequired,
       allowedGroups: ["default", "vip"],
     })
     mockFetchUserGroups.mockResolvedValueOnce({
@@ -864,7 +887,9 @@ describe("KiloCodeExportDialog", () => {
 
     expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
     expect(
-      await screen.findByText("messages:sub2api.createRequiresGroupSelection"),
+      await screen.findByText(
+        "messages:tokenProvisioning.createRequiresGroupSelection",
+      ),
     ).toBeInTheDocument()
     expect(addTokenDialogPropsMock).toHaveBeenCalled()
 
@@ -875,6 +900,13 @@ describe("KiloCodeExportDialog", () => {
       allowedGroups: ["default", "vip"],
     })
     expect(latestDialogProps?.createPrefill).not.toHaveProperty("group")
+
+    await user.click(
+      await screen.findByRole("button", { name: "mock-add-token-close" }),
+    )
+    expect(
+      screen.queryByTestId("mock-add-token-dialog"),
+    ).not.toBeInTheDocument()
   })
 
   it("uses the newest created token after constrained Sub2API creation regardless of fetch order", async () => {
@@ -908,8 +940,8 @@ describe("KiloCodeExportDialog", () => {
         created_time: 100,
       },
     ])
-    mockResolveSub2ApiQuickCreateResolution.mockResolvedValueOnce({
-      kind: "selection_required",
+    mockResolveDefaultTokenQuickCreateResolution.mockResolvedValueOnce({
+      kind: TOKEN_QUICK_CREATE_RESOLUTION_KINDS.SelectionRequired,
       allowedGroups: ["default", "vip"],
     })
 
@@ -990,8 +1022,8 @@ describe("KiloCodeExportDialog", () => {
         created_at: "2024-04-01T00:00:00.000Z",
       },
     ])
-    mockResolveSub2ApiQuickCreateResolution.mockResolvedValueOnce({
-      kind: "selection_required",
+    mockResolveDefaultTokenQuickCreateResolution.mockResolvedValueOnce({
+      kind: TOKEN_QUICK_CREATE_RESOLUTION_KINDS.SelectionRequired,
       allowedGroups: ["default", "vip"],
     })
 
@@ -1066,8 +1098,8 @@ describe("KiloCodeExportDialog", () => {
         key: "sk-newest",
       },
     ])
-    mockResolveSub2ApiQuickCreateResolution.mockResolvedValueOnce({
-      kind: "selection_required",
+    mockResolveDefaultTokenQuickCreateResolution.mockResolvedValueOnce({
+      kind: TOKEN_QUICK_CREATE_RESOLUTION_KINDS.SelectionRequired,
       allowedGroups: ["default", "vip"],
     })
 
@@ -1126,8 +1158,8 @@ describe("KiloCodeExportDialog", () => {
     })
 
     mockFetchAccountTokens.mockResolvedValueOnce([])
-    mockResolveSub2ApiQuickCreateResolution.mockResolvedValueOnce({
-      kind: "blocked",
+    mockResolveDefaultTokenQuickCreateResolution.mockResolvedValueOnce({
+      kind: TOKEN_QUICK_CREATE_RESOLUTION_KINDS.Blocked,
       message: "   ",
     })
 
@@ -1149,14 +1181,59 @@ describe("KiloCodeExportDialog", () => {
     )
 
     const fallbackMessage =
-      "Token creation was blocked. Please check site policy or try again."
+      "ui:dialog.kiloCode.messages.createTokenBlockedFallback"
 
     await waitFor(() => {
       expect(toastErrorMock).toHaveBeenCalledWith(fallbackMessage, {
-        id: "kilocode-create-token-b",
+        id: buildKiloCodeCreateTokenToastId("b"),
       })
     })
     expect(await screen.findByText(fallbackMessage)).toBeInTheDocument()
+  })
+
+  it("uses the blocked Sub2API create message when one is available", async () => {
+    const user = userEvent.setup()
+    const site = createDisplayAccount({
+      id: "b",
+      name: "Site B",
+      baseUrl: "https://b.test",
+      siteType: "sub2api",
+    })
+
+    mockUseAccountData.mockReturnValue({
+      enabledAccounts: [createSiteAccount(site)],
+      enabledDisplayData: [site],
+    })
+
+    mockFetchAccountTokens.mockResolvedValueOnce([])
+    mockResolveDefaultTokenQuickCreateResolution.mockResolvedValueOnce({
+      kind: TOKEN_QUICK_CREATE_RESOLUTION_KINDS.Blocked,
+      message: "Policy blocked",
+    })
+
+    render(<KiloCodeExportDialog isOpen={true} onClose={() => {}} />)
+
+    const sitePicker = await screen.findByPlaceholderText(
+      "ui:dialog.kiloCode.placeholders.selectSites",
+    )
+    await user.click(sitePicker)
+    await user.clear(sitePicker)
+    await user.type(sitePicker, "Site B")
+    await user.keyboard("{ArrowDown}")
+    await user.click(await screen.findByRole("option", { name: "Site B" }))
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "ui:dialog.kiloCode.actions.createDefaultToken",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith("Policy blocked", {
+        id: buildKiloCodeCreateTokenToastId("b"),
+      })
+    })
+    expect(await screen.findByText("Policy blocked")).toBeInTheDocument()
   })
 
   it("shows accountNotFound feedback when token creation is requested without a backing account", async () => {
