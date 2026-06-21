@@ -41,7 +41,20 @@ describe("pending sponsor add-account intent", () => {
   })
 
   it("rejects malformed sponsor prefill values before opening or persisting them", () => {
+    const prefill = {
+      source: "sponsor",
+      sponsorId: "supported-provider",
+      siteType: SITE_TYPES.NEW_API,
+      siteUrl: "https://supported.example.test",
+    }
+
     expect(isSponsorAddAccountPrefill(null)).toBe(false)
+    expect(
+      isSponsorAddAccountPrefill({
+        createdAt: Date.now(),
+        prefill,
+      }),
+    ).toBe(false)
     expect(
       isSponsorAddAccountPrefill({
         source: "bookmark",
@@ -104,7 +117,7 @@ describe("pending sponsor add-account intent", () => {
     ).resolves.toBeUndefined()
   })
 
-  it("stores and consumes blank auth type as an omitted sponsor prefill auth type", async () => {
+  it("stores and consumes blank auth type as the profile default auth type", async () => {
     await setPendingSponsorAddAccountPrefill({
       source: "sponsor",
       sponsorId: "supported-provider",
@@ -119,6 +132,26 @@ describe("pending sponsor add-account intent", () => {
         sponsorId: "supported-provider",
         siteType: SITE_TYPES.NEW_API,
         siteUrl: "https://supported.example.test",
+        authType: AuthTypeEnum.AccessToken,
+      },
+    )
+  })
+
+  it("fills omitted sponsor prefill auth type from profile defaults", async () => {
+    await setPendingSponsorAddAccountPrefill({
+      source: "sponsor",
+      sponsorId: "supported-provider",
+      siteType: SITE_TYPES.ANYROUTER,
+      siteUrl: "https://anyrouter.top",
+    })
+
+    await expect(getAndClearPendingSponsorAddAccountPrefill()).resolves.toEqual(
+      {
+        source: "sponsor",
+        sponsorId: "supported-provider",
+        siteType: SITE_TYPES.ANYROUTER,
+        siteUrl: "https://anyrouter.top",
+        authType: AuthTypeEnum.Cookie,
       },
     )
   })

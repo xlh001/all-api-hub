@@ -244,6 +244,50 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     ])
   })
 
+  it("uses the selected token key for compatible account-token fallback even when the adapter exposes model pricing", async () => {
+    const fetchPricingMock = vi
+      .fn()
+      .mockRejectedValue(new Error("account-scoped pricing should not run"))
+    getSiteAdapterMock.mockReturnValueOnce({
+      siteType: SITE_TYPES.NEW_API,
+      modelPricing: {
+        fetchPricing: fetchPricingMock,
+      },
+    })
+    resolveDisplayAccountTokenForSecretMock.mockResolvedValueOnce({
+      ...TOKEN,
+      key: "sk-selected-token-secret",
+      models: "",
+    })
+    fetchOpenAICompatibleModelIdsMock.mockResolvedValueOnce([
+      "selected-token-model",
+    ])
+
+    const result = await loadAccountTokenFallbackPricingResponse({
+      account: {
+        ...ACCOUNT,
+        siteType: SITE_TYPES.NEW_API,
+      },
+      token: {
+        ...TOKEN,
+        key: "sk-compatible-masked",
+      },
+    })
+
+    expect(fetchPricingMock).not.toHaveBeenCalled()
+    expect(resolveDisplayAccountTokenForSecretMock).toHaveBeenCalledWith(
+      expect.objectContaining({ siteType: SITE_TYPES.NEW_API }),
+      expect.objectContaining({ key: "sk-compatible-masked" }),
+    )
+    expect(fetchOpenAICompatibleModelIdsMock).toHaveBeenCalledWith({
+      baseUrl: "https://example.com",
+      apiKey: "sk-selected-token-secret",
+    })
+    expect(result.data.map((item) => item.model_name)).toEqual([
+      "selected-token-model",
+    ])
+  })
+
   it("falls back to token-declared models when the upstream key lookup fails", async () => {
     resolveDisplayAccountTokenForSecretMock.mockResolvedValueOnce({
       ...TOKEN,
@@ -326,28 +370,75 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     expect(fetchOpenAICompatibleModelIdsMock).not.toHaveBeenCalled()
   })
 
-  it("sanitizes a missing AIHubMix model pricing capability failure", async () => {
+  it("falls back to token lookup when a profile-priced site has no pricing adapter", async () => {
     getSiteAdapterMock.mockReturnValueOnce({
       siteType: SITE_TYPES.AIHUBMIX,
     })
+    resolveDisplayAccountTokenForSecretMock.mockResolvedValueOnce({
+      ...TOKEN,
+      key: "sk-real-secret",
+    })
+    fetchOpenAICompatibleModelIdsMock.mockResolvedValueOnce(["profile-model"])
 
-    await expect(
-      loadAccountTokenFallbackPricingResponse({
-        account: {
-          ...ACCOUNT,
-          siteType: SITE_TYPES.AIHUBMIX,
-          baseUrl: "https://aihubmix.com",
-        },
-        token: {
-          ...TOKEN,
-          key: "sk-****masked",
-          models: "",
-        },
-      }),
-    ).rejects.toThrow("modelPricing is not implemented for AIHubMix")
+    const result = await loadAccountTokenFallbackPricingResponse({
+      account: {
+        ...ACCOUNT,
+        siteType: SITE_TYPES.AIHUBMIX,
+        baseUrl: "https://aihubmix.com",
+      },
+      token: {
+        ...TOKEN,
+        key: "sk-masked",
+      },
+    })
 
-    expect(resolveDisplayAccountTokenForSecretMock).not.toHaveBeenCalled()
-    expect(fetchOpenAICompatibleModelIdsMock).not.toHaveBeenCalled()
+    expect(getSiteAdapterMock).toHaveBeenCalledWith(SITE_TYPES.AIHUBMIX)
+    expect(resolveDisplayAccountTokenForSecretMock).toHaveBeenCalled()
+    expect(fetchOpenAICompatibleModelIdsMock).toHaveBeenCalledWith({
+      baseUrl: "https://aihubmix.com",
+      apiKey: "sk-real-secret",
+    })
+    expect(result.data.map((item) => item.model_name)).toEqual([
+      "profile-model",
+    ])
+  })
+
+  it("does not use the Sub2API runtime-key fallback for compatible accounts without direct pricing adapters", async () => {
+    getSiteAdapterMock.mockReturnValueOnce({
+      siteType: SITE_TYPES.NEW_API,
+    })
+    resolveDisplayAccountTokenForSecretMock.mockResolvedValueOnce({
+      ...TOKEN,
+      key: "sk-real-secret",
+    })
+    fetchOpenAICompatibleModelIdsMock.mockResolvedValueOnce(["gpt-compatible"])
+
+    const result = await loadAccountTokenFallbackPricingResponse({
+      account: {
+        ...ACCOUNT,
+        siteType: SITE_TYPES.NEW_API,
+        baseUrl: "https://compatible.example.invalid",
+      },
+      token: {
+        ...TOKEN,
+        key: "sk-compatible-masked",
+        models: "",
+      },
+    })
+
+    expect(resolveDisplayAccountTokenForSecretMock).toHaveBeenCalled()
+    expect(fetchOpenAICompatibleModelIdsMock).toHaveBeenCalledWith({
+      baseUrl: "https://compatible.example.invalid",
+      apiKey: "sk-real-secret",
+    })
+    expect(fetchSub2ApiRuntimeModelsMock).not.toHaveBeenCalled()
+    expect(result.data.map((item) => item.model_name)).toEqual([
+      "gpt-compatible",
+    ])
+    expect(result.model_list_source).toEqual({
+      kind: MODEL_LIST_SOURCE_KINDS.CATALOG_FALLBACK,
+      supportsPricing: false,
+    })
   })
 
   it("loads Sub2API selected-key runtime models as model-list-only rows", async () => {
