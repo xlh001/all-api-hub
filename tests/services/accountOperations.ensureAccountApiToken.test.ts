@@ -19,7 +19,6 @@ import {
   TOKEN_PROVISIONING_BLOCK_REASONS,
   TOKEN_PROVISIONING_ERRORS,
   TOKEN_PROVISIONING_REPAIR_POLICY_KINDS,
-  TOKEN_PROVISIONING_WORKFLOWS,
 } from "~/services/apiAdapters/contracts/tokenProvisioning"
 import { AuthTypeEnum } from "~/types"
 import {
@@ -64,7 +63,10 @@ const {
           },
         },
         tokenProvisioning: {
-          isInventoryTokenUsable: vi.fn(() => true),
+          isInventoryTokenUsable: vi.fn(
+            ({ token }) =>
+              typeof token.key === "string" && !token.key.includes("***"),
+          ),
           resolveDefaultTokenCreation: (...args: unknown[]) =>
             resolveDefaultTokenCreationMock(...args),
           classifyCreatedToken: (...args: unknown[]) =>
@@ -252,6 +254,32 @@ describe("accountOperations Sub2API token creation guards", () => {
     expect(createApiTokenMock).not.toHaveBeenCalled()
   })
 
+  it("uses group-selection fallback copy when background Sub2API creation needs user choice", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+    resolveDefaultTokenCreationMock
+      .mockReturnValueOnce({
+        kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.NeedsUserGroups,
+      })
+      .mockReturnValueOnce({
+        kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.SelectionRequired,
+        allowedGroups: ["default", "vip"],
+        reason: TOKEN_PROVISIONING_BLOCK_REASONS.GroupSelectionRequired,
+      })
+    fetchUserGroupsMock.mockResolvedValueOnce({
+      default: { desc: "Default", ratio: 1 },
+      vip: { desc: "VIP", ratio: 1 },
+    })
+
+    await expect(
+      ensureDefaultApiTokenForAccount({
+        account: SITE_ACCOUNT,
+        displaySiteData: DISPLAY_ACCOUNT,
+      }),
+    ).rejects.toThrow("messages:tokenProvisioning.createRequiresGroup")
+
+    expect(createApiTokenMock).not.toHaveBeenCalled()
+  })
+
   it("treats existing Sub2API tokens as already satisfying background ensure", async () => {
     const token = buildSub2ApiToken({ id: 5, group: "vip" })
     fetchAccountTokensMock.mockResolvedValueOnce([token])
@@ -307,12 +335,6 @@ describe("accountOperations Sub2API token creation guards", () => {
       expect.anything(),
       expect.objectContaining({ group: "vip" }),
     )
-    expect(resolveDefaultTokenCreationMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        workflow: TOKEN_PROVISIONING_WORKFLOWS.SharedEnsure,
-        explicitGroup: "vip",
-      }),
-    )
     expect(createApiTokenMock).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({ group: "vip" }),
@@ -343,12 +365,6 @@ describe("accountOperations Sub2API token creation guards", () => {
       }),
     ).resolves.toEqual(token)
 
-    expect(resolveDefaultTokenCreationMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        workflow: TOKEN_PROVISIONING_WORKFLOWS.SharedEnsure,
-        explicitGroup: "vip",
-      }),
-    )
     expect(createApiTokenMock).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({ group: "vip" }),
@@ -385,12 +401,6 @@ describe("accountOperations Sub2API token creation guards", () => {
       }),
     ).resolves.toEqual(token)
 
-    expect(resolveDefaultTokenCreationMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        workflow: TOKEN_PROVISIONING_WORKFLOWS.SharedEnsure,
-        defaultTokenData: policyTokenData,
-      }),
-    )
     expect(createApiTokenMock).toHaveBeenCalledWith(
       expect.any(Object),
       policyTokenData,
@@ -926,7 +936,7 @@ describe("ensureDefaultApiTokenForAccount non-Sub2API branches", () => {
     expect(createApiTokenMock).not.toHaveBeenCalled()
   })
 
-  it("returns an existing AIHubMix token without trying to create a new one", async () => {
+  it("returns an existing usable AIHubMix token without trying to create a new one", async () => {
     const { displayAccount, siteAccount } = createAIHubMixAccounts()
     const existingToken = {
       id: 24,
@@ -947,6 +957,35 @@ describe("ensureDefaultApiTokenForAccount non-Sub2API branches", () => {
     await expect(
       ensureAccountApiToken(siteAccount as any, displayAccount as any),
     ).resolves.toEqual(existingToken)
+
+    expect(createApiTokenMock).not.toHaveBeenCalled()
+  })
+
+  it("does not treat a masked AIHubMix inventory token as usable for shared ensure", async () => {
+    const { displayAccount, siteAccount } = createAIHubMixAccounts()
+    fetchAccountTokensMock.mockResolvedValueOnce([
+      {
+        id: 24,
+        user_id: displayAccount.userId,
+        key: "sk-***masked***",
+        status: 1,
+        name: "masked",
+        created_time: 1,
+        accessed_time: 1,
+        expired_time: -1,
+        remain_quota: -1,
+        unlimited_quota: true,
+        used_quota: 0,
+      },
+    ])
+    resolveDefaultTokenCreationMock.mockReturnValueOnce({
+      kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Blocked,
+      reason: TOKEN_PROVISIONING_BLOCK_REASONS.OneTimeSecretRequired,
+    })
+
+    await expect(
+      ensureAccountApiToken(siteAccount as any, displayAccount as any),
+    ).rejects.toThrow("messages:aihubmix.createRequiresOneTimeKeyDialog")
 
     expect(createApiTokenMock).not.toHaveBeenCalled()
   })
@@ -972,7 +1011,18 @@ describe("ensureDefaultApiTokenForAccount non-Sub2API branches", () => {
     ).rejects.toThrow("messages:aihubmix.createRequiresOneTimeKeyDialog")
   })
 
-  it("fails background token ensure when created token secret cannot be recovered", async () => {
+  it("reports shared token creation failures with the create-token message", async () => {
+    const { displayAccount, siteAccount } = createNonSub2ApiAccounts()
+
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+    createApiTokenMock.mockResolvedValueOnce(false)
+
+    await expect(
+      ensureAccountApiToken(siteAccount as any, displayAccount as any),
+    ).rejects.toThrow("messages:accountOperations.createTokenFailed")
+  })
+
+  it("blocks background token ensure when created token secret cannot be recovered", async () => {
     const { displayAccount, siteAccount } = createAIHubMixAccounts()
 
     fetchAccountTokensMock.mockResolvedValueOnce([])
@@ -993,7 +1043,26 @@ describe("ensureDefaultApiTokenForAccount non-Sub2API branches", () => {
         account: siteAccount as any,
         displaySiteData: displayAccount as any,
       }),
-    ).rejects.toThrow(TOKEN_PROVISIONING_ERRORS.TokenNotFound)
+    ).rejects.toThrow("messages:aihubmix.createRequiresOneTimeKeyDialog")
+  })
+
+  it("preserves the fallback policy reason for unsupported background auto-provision", async () => {
+    const { displayAccount, siteAccount } = createNonSub2ApiAccounts()
+
+    fetchAccountTokensMock.mockResolvedValueOnce([])
+    resolveDefaultTokenCreationMock.mockReturnValueOnce({
+      kind: DEFAULT_TOKEN_CREATION_DECISION_KINDS.Blocked,
+      reason: TOKEN_PROVISIONING_BLOCK_REASONS.GroupRequired,
+    })
+
+    await expect(
+      ensureDefaultApiTokenForAccount({
+        account: siteAccount as any,
+        displaySiteData: displayAccount as any,
+      }),
+    ).rejects.toMatchObject({
+      reason: TOKEN_PROVISIONING_BLOCK_REASONS.GroupRequired,
+    })
   })
 
   it("fails when default token creation reports false", async () => {
