@@ -10,6 +10,7 @@ import {
   type ModelManagementSource,
 } from "~/features/ModelList/modelManagementSources"
 import {
+  isModelListPriceSortMode,
   MODEL_LIST_SORT_MODES,
   type ModelListSortMode,
 } from "~/features/ModelList/sortModes"
@@ -890,7 +891,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     [baseFilteredRawModels, getAccountFilteredRawModels],
   )
 
-  const getFilteredResultCount = useCallback(
+  const getFilteredModels = useCallback(
     (overrides: FilterOverrides = {}) => {
       const baseModels = resolveCalculatedModels({
         rawItems: getAccountFilteredRawModels(
@@ -908,13 +909,13 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
       })
 
       if (selectedProvider === MODEL_PROVIDER_FILTER_VALUES.ALL) {
-        return baseModels.length
+        return baseModels
       }
 
       return baseModels.filter(
         (item) =>
           filterModelsByProvider([item.model], selectedProvider).length > 0,
-      ).length
+      )
     },
     [
       getAccountFilteredRawModels,
@@ -925,6 +926,11 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
       selectedSource?.capabilities.supportsGroupFiltering,
       showRealPrice,
     ],
+  )
+
+  const getFilteredResultCount = useCallback(
+    (overrides: FilterOverrides = {}) => getFilteredModels(overrides).length,
+    [getFilteredModels],
   )
 
   const accountSummaryCountsByAccountId = useMemo(() => {
@@ -1120,26 +1126,24 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
       return a.index - b.index
     }
 
-    const sortedWithIndices =
-      sortMode === MODEL_LIST_SORT_MODES.DEFAULT
-        ? indexedItems
-        : (() => {
-            const pricedItems = indexedItems
-              .filter(
-                (
-                  item,
-                ): item is (typeof indexedItems)[number] & {
-                  priceKey: ComparablePriceKey
-                } => !!item.priceKey && hasComparablePriceValue(item.priceKey),
-              )
-              .sort(comparePricedRows)
-
-            const missingPriceItems = indexedItems.filter(
-              (item) =>
-                !item.priceKey || !hasComparablePriceValue(item.priceKey),
+    const sortedWithIndices = !isModelListPriceSortMode(sortMode)
+      ? indexedItems
+      : (() => {
+          const pricedItems = indexedItems
+            .filter(
+              (
+                item,
+              ): item is (typeof indexedItems)[number] & {
+                priceKey: ComparablePriceKey
+              } => !!item.priceKey && hasComparablePriceValue(item.priceKey),
             )
-            return [...pricedItems, ...missingPriceItems]
-          })()
+            .sort(comparePricedRows)
+
+          const missingPriceItems = indexedItems.filter(
+            (item) => !item.priceKey || !hasComparablePriceValue(item.priceKey),
+          )
+          return [...pricedItems, ...missingPriceItems]
+        })()
 
     return sortedWithIndices.map(({ item, itemKey }) => ({
       ...item,
@@ -1165,6 +1169,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     baseFilteredModels,
     allProvidersFilteredCount: baseFilteredModels.length,
     getProviderFilteredCount,
+    getFilteredModels,
     getFilteredResultCount,
     availableGroups,
     availableAccountGroupsByAccountId,

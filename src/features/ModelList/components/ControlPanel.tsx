@@ -41,6 +41,10 @@ import {
   type ModelListSortMode,
 } from "~/features/ModelList/sortModes"
 import { MODEL_LIST_TEST_IDS } from "~/features/ModelList/testIds"
+import {
+  DEFAULT_MODEL_LIST_VERIFICATION_RESULT_FILTERS,
+  type ModelListVerificationResultFilter,
+} from "~/features/ModelList/verificationResultFilters"
 import { trackProductAnalyticsActionCompleted } from "~/services/productAnalytics/actions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
@@ -62,6 +66,10 @@ interface ControlPanelProps {
   setSearchTerm: (term: string) => void
   sortMode: ModelListSortMode
   setSortMode: (mode: ModelListSortMode) => void
+  selectedVerificationResults?: ModelListVerificationResultFilter[]
+  setSelectedVerificationResults?: (
+    results: ModelListVerificationResultFilter[],
+  ) => void
   selectedBillingMode: ModelListBillingMode
   setSelectedBillingMode: (mode: ModelListBillingMode) => void
   selectedGroups: string[]
@@ -81,6 +89,7 @@ interface ControlPanelProps {
     sortMode?: ModelListSortMode
     selectedBillingMode?: ModelListBillingMode
     selectedGroups?: string[]
+    selectedVerificationResults?: ModelListVerificationResultFilter[]
   }) => number
   onBatchVerifyModels?: () => void
 }
@@ -96,6 +105,8 @@ interface ControlPanelProps {
  * @param props.setSearchTerm Setter to update search keyword.
  * @param props.sortMode Active sort mode.
  * @param props.setSortMode Setter for sort mode.
+ * @param props.selectedVerificationResults Active verification-result filters.
+ * @param props.setSelectedVerificationResults Setter for verification-result filters.
  * @param props.selectedBillingMode Active billing-mode filter value.
  * @param props.setSelectedBillingMode Setter for billing-mode filter.
  * @param props.selectedGroups Active candidate group filter set.
@@ -123,6 +134,8 @@ export function ControlPanel({
   setSearchTerm,
   sortMode,
   setSortMode,
+  selectedVerificationResults = DEFAULT_MODEL_LIST_VERIFICATION_RESULT_FILTERS,
+  setSelectedVerificationResults = () => {},
   selectedBillingMode,
   setSelectedBillingMode,
   selectedGroups,
@@ -146,7 +159,11 @@ export function ControlPanel({
   const isAllAccountsSource =
     selectedSourceValue === ALL_ACCOUNTS_SOURCE_VALUE ||
     selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
-  const supportsPriceSorting = sourceCapabilities.supportsPricing
+  const supportsLatencySorting =
+    sourceCapabilities.supportsCredentialVerification ||
+    sourceCapabilities.supportsBatchCredentialVerification
+  const supportsSortControls =
+    sourceCapabilities.supportsPricing || supportsLatencySorting
   const isPriceComparisonActive =
     isAllAccountsSource &&
     sortMode === MODEL_LIST_SORT_MODES.MODEL_CHEAPEST_FIRST &&
@@ -169,14 +186,26 @@ export function ControlPanel({
       value: MODEL_LIST_SORT_MODES.DEFAULT,
       label: t("sortOptions.default"),
     },
-    {
-      value: MODEL_LIST_SORT_MODES.PRICE_ASC,
-      label: t("sortOptions.priceAsc"),
-    },
-    {
-      value: MODEL_LIST_SORT_MODES.PRICE_DESC,
-      label: t("sortOptions.priceDesc"),
-    },
+    ...(sourceCapabilities.supportsPricing
+      ? [
+          {
+            value: MODEL_LIST_SORT_MODES.PRICE_ASC,
+            label: t("sortOptions.priceAsc"),
+          },
+          {
+            value: MODEL_LIST_SORT_MODES.PRICE_DESC,
+            label: t("sortOptions.priceDesc"),
+          },
+        ]
+      : []),
+    ...(supportsLatencySorting
+      ? [
+          {
+            value: MODEL_LIST_SORT_MODES.VERIFICATION_LATENCY_ASC,
+            label: t("sortOptions.verificationLatencyAsc"),
+          },
+        ]
+      : []),
     ...(selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
       ? [
           {
@@ -200,6 +229,20 @@ export function ControlPanel({
       label: t("ui:billing.perCall"),
     },
   ]
+  const verificationResultOptions = [
+    {
+      value: "pass",
+      label: t("verificationResults.filters.pass"),
+    },
+    {
+      value: "fail",
+      label: t("verificationResults.filters.fail"),
+    },
+    {
+      value: "unverified",
+      label: t("verificationResults.filters.unverified"),
+    },
+  ]
 
   const handleCopyModelNames = () => {
     if (filteredModels.length === 0) {
@@ -219,6 +262,7 @@ export function ControlPanel({
       sortMode: ModelListSortMode
       selectedBillingMode: ModelListBillingMode
       selectedGroups: string[]
+      selectedVerificationResults: ModelListVerificationResultFilter[]
     }> = {},
   ) => {
     const nextSearchTerm = nextFilters.searchTerm ?? searchTerm
@@ -226,17 +270,24 @@ export function ControlPanel({
     const nextSelectedBillingMode =
       nextFilters.selectedBillingMode ?? selectedBillingMode
     const nextSelectedGroups = nextFilters.selectedGroups ?? selectedGroups
+    const nextSelectedVerificationResults =
+      nextFilters.selectedVerificationResults ?? selectedVerificationResults
     const filterCount =
       (nextSearchTerm.trim() ? 1 : 0) +
       (nextSortMode !== MODEL_LIST_SORT_MODES.DEFAULT ? 1 : 0) +
       (nextSelectedBillingMode !== MODEL_LIST_BILLING_MODES.ALL ? 1 : 0) +
-      nextSelectedGroups.length
+      nextSelectedGroups.length +
+      (nextSelectedVerificationResults.length ===
+      verificationResultOptions.length
+        ? 0
+        : 1)
     const resultCount =
       getFilteredResultCount?.({
         searchTerm: nextSearchTerm,
         sortMode: nextSortMode,
         selectedBillingMode: nextSelectedBillingMode,
         selectedGroups: nextSelectedGroups,
+        selectedVerificationResults: nextSelectedVerificationResults,
       }) ?? filteredModels.length
 
     void trackProductAnalyticsActionCompleted({
@@ -279,6 +330,13 @@ export function ControlPanel({
       selectedGroups: groups,
     })
   }
+  const handleVerificationResultSelectionChange = (results: string[]) => {
+    const nextResults = results as ModelListVerificationResultFilter[]
+    setSelectedVerificationResults(nextResults)
+    trackFilterChange(PRODUCT_ANALYTICS_MODE_IDS.StatusFilter, {
+      selectedVerificationResults: nextResults,
+    })
+  }
   const handleEnablePriceComparison = () => {
     if (!isAllAccountsSource && setSelectedSourceValue) {
       setSelectedSourceValue(ALL_ACCOUNTS_SOURCE_VALUE)
@@ -315,8 +373,14 @@ export function ControlPanel({
           />
         )}
 
-        <div className="mb-4 flex flex-col gap-4 lg:flex-row">
-          <FormField label={t("searchModels")} className="flex-1">
+        <div
+          className="mb-4 flex flex-col gap-4 lg:flex-row lg:flex-wrap"
+          data-testid="model-list-filter-row"
+        >
+          <FormField
+            label={t("searchModels")}
+            className="min-w-[16rem] flex-1 lg:basis-[18rem]"
+          >
             <Input
               type="text"
               placeholder={t("searchPlaceholder")}
@@ -328,7 +392,7 @@ export function ControlPanel({
             />
           </FormField>
 
-          {supportsPriceSorting && (
+          {supportsSortControls && (
             <FormField label={t("sortBy")} className="w-full lg:w-72">
               <SearchableSelect
                 options={sortOptions}
@@ -357,6 +421,7 @@ export function ControlPanel({
                   options={groupOptions}
                   selected={selectedGroups}
                   onChange={handleGroupSelectionChange}
+                  size="default"
                   displayMode="summary"
                   placeholder={t("allGroups")}
                   emptyMessage={t("allGroups")}
@@ -366,6 +431,21 @@ export function ControlPanel({
                 </p>
               </FormField>
             )}
+
+          <FormField
+            label={t("verificationResults.label")}
+            className="w-full lg:w-64"
+          >
+            <CompactMultiSelect
+              options={verificationResultOptions}
+              selected={selectedVerificationResults}
+              onChange={handleVerificationResultSelectionChange}
+              size="default"
+              displayMode="summary"
+              placeholder={t("verificationResults.all")}
+              emptyMessage={t("verificationResults.none")}
+            />
+          </FormField>
         </div>
 
         <ProductAnalyticsScope
