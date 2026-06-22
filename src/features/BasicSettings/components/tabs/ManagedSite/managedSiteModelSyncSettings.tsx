@@ -47,6 +47,8 @@ import { safeRandomUUID } from "~/utils/core/identifier"
 import { createLogger } from "~/utils/core/logger"
 import { pushWithinOptionsPage } from "~/utils/navigation"
 
+import { MANAGED_SITE_MODEL_SYNC_CHANNEL_PROCESSING_TIMEOUT_TARGET_ID } from "./managedSiteModelSyncTargetIds"
+
 type UserManagedSiteModelSyncConfig = NonNullable<
   typeof DEFAULT_PREFERENCES.managedSiteModelSync
 >
@@ -86,6 +88,8 @@ const MODEL_SYNC_SETTINGS_ANALYTICS_CONTEXT = {
   surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteModelSyncActionBar,
   entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
 } as const
+
+const CHANNEL_PROCESSING_TIMEOUT_MAX_SECONDS = 43_200
 
 /**
  * Starts an analytics span for model-sync settings actions using fixed enums.
@@ -132,6 +136,7 @@ export default function ManagedSiteModelSyncSettings() {
         intervalMs: rawPrefs.interval,
         concurrency: rawPrefs.concurrency,
         maxRetries: rawPrefs.maxRetries,
+        channelProcessingTimeout: rawPrefs.channelProcessingTimeout ?? 0,
         rateLimit: rawPrefs.rateLimit,
         allowedModels: rawPrefs.allowedModels ?? [],
         globalChannelModelFilters: rawPrefs.globalChannelModelFilters ?? [],
@@ -143,6 +148,9 @@ export default function ManagedSiteModelSyncSettings() {
           24 * 60 * 60 * 1000,
         concurrency: DEFAULT_PREFERENCES.managedSiteModelSync?.concurrency ?? 2,
         maxRetries: DEFAULT_PREFERENCES.managedSiteModelSync?.maxRetries ?? 2,
+        channelProcessingTimeout:
+          DEFAULT_PREFERENCES.managedSiteModelSync?.channelProcessingTimeout ??
+          0,
         rateLimit: DEFAULT_PREFERENCES.managedSiteModelSync?.rateLimit ?? {
           requestsPerMinute: 20,
           burst: 5,
@@ -237,6 +245,10 @@ export default function ManagedSiteModelSyncSettings() {
       }
       if (updates.maxRetries !== undefined) {
         userPrefsUpdate.maxRetries = updates.maxRetries
+      }
+      if (updates.channelProcessingTimeout !== undefined) {
+        userPrefsUpdate.channelProcessingTimeout =
+          updates.channelProcessingTimeout
       }
       if (updates.rateLimit !== undefined) {
         userPrefsUpdate.rateLimit = updates.rateLimit
@@ -617,6 +629,44 @@ export default function ManagedSiteModelSyncSettings() {
                 disabled={isSaving}
                 className="w-24"
               />
+            }
+          />
+
+          {/* Per-Channel Timeout */}
+          <CardItem
+            id={MANAGED_SITE_MODEL_SYNC_CHANNEL_PROCESSING_TIMEOUT_TARGET_ID}
+            title={t("managedSiteModelSync:settings.channelProcessingTimeout")}
+            description={t(
+              "managedSiteModelSync:settings.channelProcessingTimeoutDesc",
+            )}
+            rightContent={
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max={String(CHANNEL_PROCESSING_TIMEOUT_MAX_SECONDS)}
+                  value={String(preferences.channelProcessingTimeout)}
+                  onChange={(e) => {
+                    const timeoutSeconds = parseInt(e.target.value, 10)
+                    if (
+                      Number.isFinite(timeoutSeconds) &&
+                      timeoutSeconds >= 0 &&
+                      timeoutSeconds <= CHANNEL_PROCESSING_TIMEOUT_MAX_SECONDS
+                    ) {
+                      void savePreferences({
+                        channelProcessingTimeout: timeoutSeconds,
+                      })
+                    }
+                  }}
+                  disabled={isSaving}
+                  className="w-24"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {t(
+                    "managedSiteModelSync:settings.channelProcessingTimeoutUnit",
+                  )}
+                </span>
+              </div>
             }
           />
 
