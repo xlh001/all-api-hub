@@ -79,7 +79,7 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 - **自建管理后台**：New API, Veloera, Done-Hub, Octopus, AxonHub, Claude Code Hub 等，用于渠道管理、迁移和部分模型同步。
 
 > 如果你在 macOS 上使用 Safari，请先查看 [Safari 安装指南](./safari-install.md)。
-> 如果你使用 QQ/360/Brave 等浏览器，请查看 [手动安装指南](./other-browser-install.md)。
+> 如果你使用 QQ/360/Brave/Vivaldi/Opera 等浏览器，请查看 [其他浏览器安装指南](./other-browser-install.md)。
 > 如果你想了解商店版为什么会晚于 GitHub Release、如何手动检查更新，请查看 [安装渠道与更新说明](./extension-update-install.md)。
 
 <a id="community"></a>

@@ -118,12 +118,12 @@ Sub2API 站点常见特征：控制台接口在 `/api/v1/*`，并使用 **短期
 1. **查询Issue**：前往 [GitHub Issues](https://github.com/qixing-jk/all-api-hub/issues) 搜索是否有相同问题
 2. **使用最新版本**：
    - 大多数用户建议优先使用商店版，等待浏览器商店自动更新
-   - 如果修复尚未上架商店，或你无法安装商店版，可临时从 GitHub Releases 手动安装
+   - 如果修复尚未上架商店、你的浏览器无法安装商店版或 Chrome Web Store 兼容版本，可临时从 GitHub Releases 手动安装
    - GitHub Stable、Nightly 或 main 分支开发版适合临时验证和协助测试，手动安装后不会自动更新；你可以 Star / Watch 仓库来接收新版本通知，更多区别请查看 [安装渠道与更新说明](./extension-update-install.md)
 
 ### 如何获取最新版本？
 
-插件在多个平台发布，Chrome、Edge、Firefox 用户建议优先使用对应商店版本。如果你想确认当前是否有新版本、为什么商店版可能晚于 GitHub Release、或需要手动安装 GitHub 包，请查看 [安装渠道与更新说明](./extension-update-install.md)。
+插件在多个平台发布，Chrome、Edge、Firefox 用户建议优先使用对应商店版本；Brave、Vivaldi、Opera 等 Chromium 浏览器通常也可以先尝试 Chrome Web Store。如果你想确认当前是否有新版本、为什么商店版可能晚于 GitHub Release、或需要手动安装 GitHub 包，请查看 [安装渠道与更新说明](./extension-update-install.md)。
 
 ## ⚙️ 功能使用问题
 
@@ -278,7 +278,7 @@ WebDAV 备份可以帮你在多设备间同步数据：
 
 插件支持在移动端 / 手机端浏览器中使用，例如手机 `Edge`、`Firefox for Android`、`Kiwi` 等，实际可用性取决于浏览器本身对扩展能力的支持情况。
 
-如果你使用的是 QQ 浏览器、360 系浏览器、猎豹浏览器或其他支持 Chrome 扩展的桌面浏览器，请查看 [QQ / 360 等浏览器安装指南](./other-browser-install.md)。
+如果你使用的是 QQ 浏览器、360 系浏览器、猎豹浏览器、Brave、Vivaldi、Opera 或其他支持 Chrome 扩展的桌面浏览器，请查看 [其他浏览器安装指南](./other-browser-install.md)。
 
 ### 移动端使用建议
 
@@ -361,7 +361,7 @@ WebDAV 备份可以帮你在多设备间同步数据：
 ## 📚 相关文档
 
 - [使用教程](./get-started.md)
-- [QQ / 360 等浏览器安装指南](./other-browser-install.md)
+- [其他浏览器安装指南](./other-browser-install.md)
 - [GitHub 仓库](https://github.com/qixing-jk/all-api-hub)
 - [问题反馈](https://github.com/qixing-jk/all-api-hub/issues)
 - [更新日志](./changelog.md)

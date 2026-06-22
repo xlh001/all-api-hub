@@ -3,7 +3,7 @@
 All API Hub has two common installation channels: the **browser store version** and the **GitHub manual installation version**. If you are not sure which one to choose, use the browser store version first.
 
 ::: tip Simple answer
-Chrome, Edge, and Firefox users should install the matching store version first. Store versions are updated automatically by the browser and are the easiest to maintain. Only consider manual installation from GitHub when the store has not received an update yet, your browser cannot install the store version, or you need to temporarily verify a fix.
+Chrome, Edge, and Firefox users should install the matching store version first. Store versions are updated automatically by the browser and are the easiest to maintain. Only consider manual installation from GitHub when the store has not received an update yet, your browser cannot install a store or Chrome Web Store compatible version, or you need to temporarily verify a fix.
 :::
 
 ## Which Version Should I Install?
@@ -13,11 +13,12 @@ Chrome, Edge, and Firefox users should install the matching store version first.
 | You use Chrome | Chrome Web Store version | Updated automatically by the browser, and you can also check manually inside the extension |
 | You use Edge | Edge Add-ons version | Updated automatically by the browser, and you can also check manually inside the extension |
 | You use Firefox | Firefox Add-ons version | Updated automatically by Firefox |
-| You use QQ Browser, 360 Browser, Brave, Vivaldi, Opera, or a similar browser | GitHub Chrome package | You need to download new versions manually later |
+| You use Brave / Vivaldi / Opera | Try Chrome Web Store first; use the GitHub Chrome package only if it is unavailable | Store builds update automatically; manual builds require re-download |
+| You use QQ Browser / 360 Browser / Cheetah Browser or a similar browser | Use the built-in extension center first if available; otherwise use the GitHub Chrome package | Depends on the installation source; manual builds require re-download |
 | The store version has not received an urgent fix yet | Temporarily use GitHub Stable | You need to download new versions manually later |
 | You want to try features that are still in development | Nightly / development build | It may be unstable and is only recommended for testing |
 
-If you need to load the extension manually in QQ Browser, 360 Browser, Brave, Vivaldi, Opera, or a similar browser, see the [installation guide for QQ / 360 and other browsers](./other-browser-install.md).
+If you use QQ Browser, 360 Browser, Cheetah Browser, Brave, Vivaldi, Opera, or a similar browser, see the [Other Browser Installation Guide](./other-browser-install.md). Brave, Vivaldi, and Opera can usually try Chrome Web Store first; download the GitHub Chrome package only when manual loading is needed.
 
 ## Why Does GitHub Have a Newer Version Before the Store?
 
@@ -81,7 +82,7 @@ Firefox usually updates extensions automatically. You can also open `about:addon
 Manual installation from GitHub is best used temporarily:
 
 - The store version has not received a fix that you urgently need.
-- Your current browser does not have an available store version.
+- Your current browser does not have an available store version and cannot use a compatible store path such as Chrome Web Store.
 - You need to help confirm whether a new version fixes an issue.
 
 Before installing manually, note that:
@@ -91,7 +92,7 @@ Before installing manually, note that:
 - Before switching from the store version to a manually installed version, it is recommended to export a backup of your data.
 - It is not recommended to keep multiple All API Hub installations from different sources for long-term use, unless you are intentionally testing.
 
-For manual installation and update steps, see the [installation guide for QQ / 360 and other browsers](./other-browser-install.md).
+For manual installation and update steps, see the [Other Browser Installation Guide](./other-browser-install.md).
 
 ## Frequently Asked Questions
 
@@ -113,11 +114,11 @@ If you use the store version, wait for store review and rollout first. If you ur
 
 ### How Do I Update a Manually Installed Version?
 
-Download the new package and load the new extension directory again. For details, see the [installation guide for QQ / 360 and other browsers](./other-browser-install.md#update-extension).
+Download the new package and load the new extension directory again. For details, see the [Other Browser Installation Guide](./other-browser-install.md#update-extension).
 
 ## Related Documentation
 
 - [Get Started](./get-started.md)
-- [Installation Guide for QQ / 360 and Other Browsers](./other-browser-install.md)
+- [Other Browser Installation Guide](./other-browser-install.md)
 - [Safari Extension Installation Guide](./safari-install.md)
 - [Changelog](./changelog.md)

@@ -83,7 +83,7 @@ No matter which architecture you use, there is a good chance we support it:
 - **Self-hosted admin backends**: New API, Veloera, Done-Hub, [Octopus](https://github.com/bestruirui/octopus), AxonHub, Claude Code Hub, and more, for channel management, migration, and partial model sync.
 
 > If you use Safari on macOS, read the [Safari Installation Guide](./safari-install.md) first.
-> If you use QQ Browser, 360 Browser, Brave, or similar browsers, read the [Manual Installation Guide](./other-browser-install.md).
+> If you use QQ Browser, 360 Browser, Brave, Vivaldi, Opera, or similar browsers, read the [Other Browser Installation Guide](./other-browser-install.md).
 > To learn why the store version may be behind GitHub Releases, or how to check updates manually, read [Installation Channels and Updates](./extension-update-install.md).
 
 <a id="community"></a>

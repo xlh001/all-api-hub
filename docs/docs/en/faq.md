@@ -134,7 +134,7 @@ The plugin is released on multiple platforms. Prefer the official store that mat
 | **Nightly pre-release** | Fastest access to in-progress changes, may be unstable | [Download Here](https://github.com/qixing-jk/all-api-hub/releases/tag/nightly) |
 
 ::: tip Recommendation
-Chrome, Edge, and Firefox users should prioritize the store build. If you want to check whether a new version is available, understand why the store version may be behind GitHub Releases, or manually install a GitHub package, see [Installation Channels and Updates](./extension-update-install.md). Use GitHub Releases only when a fix has not reached the store yet, you cannot install the store build, or you use a browser that needs manual loading, such as QQ Browser, 360 Series Browsers, Cheetah Browser, Brave, Vivaldi, or Opera. These manual installations do not auto-update. You can Star / Watch the repository to receive new version notifications, and see the [QQ / 360 and Other Browser Installation Guide](./other-browser-install.md) for those browsers.
+Chrome, Edge, and Firefox users should prioritize the matching store build. Brave, Vivaldi, and Opera users can usually try Chrome Web Store first. If you want to check whether a new version is available, understand why the store version may be behind GitHub Releases, or manually install a GitHub package, see [Installation Channels and Updates](./extension-update-install.md). Use GitHub Releases only when a fix has not reached the store yet, you cannot install the store build or Chrome Web Store compatible build, or you use a browser that needs manual loading, such as QQ Browser, 360 Series Browsers, or Cheetah Browser. These manual installations do not auto-update. You can Star / Watch the repository to receive new version notifications, and see the [Other Browser Installation Guide](./other-browser-install.md) for those browsers.
 :::
 
 ## ⚙️ Feature Usage Issues
@@ -290,7 +290,7 @@ Balance History is used to view account balance changes and daily income/expendi
 
 The plugin supports use in mobile browsers such as mobile `Edge`, `Firefox for Android`, `Kiwi`, etc. Actual usability depends on the browser's support for extension capabilities.
 
-If you are using QQ Browser, 360 Series Browsers, Cheetah Browser, or other desktop browsers that support Chrome extensions, please refer to the [QQ / 360 and Other Browser Installation Guide](./other-browser-install.md).
+If you are using QQ Browser, 360 Series Browsers, Cheetah Browser, Brave, Vivaldi, Opera, or another desktop browser that supports Chrome extensions, please refer to the [Other Browser Installation Guide](./other-browser-install.md).
 
 ### Mobile Usage Recommendations
 
@@ -373,7 +373,7 @@ See details: [CONTRIBUTING.md](https://github.com/qixing-jk/all-api-hub/blob/mai
 ## 📚 Related Documentation
 
 - [Tutorial](./get-started.md)
-- [QQ / 360 and Other Browser Installation Guide](./other-browser-install.md)
+- [Other Browser Installation Guide](./other-browser-install.md)
 - [GitHub Repository](https://github.com/qixing-jk/all-api-hub)
 - [Feedback](https://github.com/qixing-jk/all-api-hub/issues)
 - [Changelog](./changelog.md)
