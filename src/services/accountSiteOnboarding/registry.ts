@@ -1,23 +1,12 @@
 import {
-  getAccountSiteAdapterFamilyMetadata,
   getAccountSiteCompatUserIdHeaderRules as getAccountSiteCompatUserIdHeaderRuleMetadata,
   getAccountSiteDomainRuleMetadata,
-  getAccountSiteMetadata,
-  getAccountSiteRouteOverrideMetadata,
   getAccountSiteTitleRuleMetadata,
 } from "~/services/accountSiteOnboarding/metadata"
 
 import { compatibleUserContentSessionExtractor } from "./contentSession/compatibleUser"
 import { sub2ApiContentSessionExtractor } from "./contentSession/sub2api"
 import type { ContentSessionExtractor } from "./contracts"
-import type { AccountSiteType } from "./siteTypes"
-
-/**
- * Returns the onboarding definition for one account site type.
- */
-export function getAccountSiteOnboardingDefinition(siteType: AccountSiteType) {
-  return getAccountSiteMetadata(siteType)
-}
 
 /**
  * Returns domain-detection rules for account site onboarding.
@@ -38,20 +27,6 @@ export function getAccountSiteTitleRules() {
  */
 export function getAccountSiteCompatUserIdHeaderRules() {
   return getAccountSiteCompatUserIdHeaderRuleMetadata()
-}
-
-/**
- * Returns the adapter family declared for one account site type.
- */
-export function getAccountSiteAdapterFamily(siteType: AccountSiteType) {
-  return getAccountSiteAdapterFamilyMetadata(siteType)
-}
-
-/**
- * Returns route overrides for one account site type.
- */
-export function getAccountSiteRouteOverrides(siteType: AccountSiteType) {
-  return getAccountSiteRouteOverrideMetadata(siteType)
 }
 
 /**
