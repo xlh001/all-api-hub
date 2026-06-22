@@ -360,6 +360,74 @@ describe("ManagedSiteModelSync page", () => {
     })
   })
 
+  it("opens managed-site model sync settings from the disabled auto-sync prompt", async () => {
+    mockSendRuntimeMessage.mockImplementation(
+      async (type: string, _data?: any) => {
+        switch (type) {
+          case ModelSyncMessageTypes.GetLastExecution:
+            return {
+              success: true,
+              data: {
+                items: [],
+                statistics: {
+                  total: 0,
+                  successCount: 0,
+                  failureCount: 0,
+                  durationMs: 0,
+                  startedAt: 0,
+                  endedAt: 0,
+                },
+              },
+            }
+          case ModelSyncMessageTypes.GetProgress:
+            return {
+              success: true,
+              data: { isRunning: false, completed: 0, total: 0, failed: 0 },
+            }
+          case ModelSyncMessageTypes.GetNextRun:
+            return { success: true, data: { nextScheduledAt: null } }
+          case ModelSyncMessageTypes.GetPreferences:
+            return {
+              success: true,
+              data: { enableSync: false, intervalMs: 2 * 60 * 60 * 1000 },
+            }
+          case ModelSyncMessageTypes.ListChannels:
+            return { success: true, data: { items: [] } }
+          default:
+            return { success: true }
+        }
+      },
+    )
+
+    render(<ManagedSiteModelSync />)
+
+    expect(
+      await screen.findByText(
+        "managedSiteModelSync:execution.overview.disabledHint",
+      ),
+    ).toBeInTheDocument()
+
+    const configureButton = screen.getByRole("button", {
+      name: "managedSiteModelSync:execution.overview.enableAutoSync",
+    })
+
+    expect(configureButton).toHaveAttribute(
+      "data-analytics-action",
+      [
+        PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteModelSync,
+        PRODUCT_ANALYTICS_ACTION_IDS.OpenManagedSiteModelSyncSettings,
+        PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteModelSyncActionBar,
+        PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      ].join(":"),
+    )
+    fireEvent.click(configureButton)
+
+    expect(mockOpenSettingsTab).toHaveBeenCalledWith("managedSite", {
+      anchor: "managed-site-model-sync",
+      preserveHistory: true,
+    })
+  })
+
   it("shows a configuration empty state and skips model-sync loading when managed-site config is missing", async () => {
     mockUseUserPreferencesContext.mockReturnValue({
       preferences: {
