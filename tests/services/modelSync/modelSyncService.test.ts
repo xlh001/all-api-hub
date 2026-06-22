@@ -1221,6 +1221,39 @@ describe("ModelSyncService - batching and mapping", () => {
     ])
   })
 
+  it("marks managed-site API requests as already rate-limited by model sync", async () => {
+    const service = new ModelSyncService(makeExampleRuntimeConfig(), {
+      requestsPerMinute: 120,
+      burst: 5,
+    })
+
+    fetchChannelModelsMock.mockResolvedValueOnce(["gpt-4o"])
+
+    await service.fetchChannelModels(123)
+
+    expect(fetchChannelModelsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bypassSiteRequestLimit: true,
+      }),
+      123,
+    )
+  })
+
+  it("keeps the generic site limiter when model sync has no configured limiter", async () => {
+    const service = new ModelSyncService(makeExampleRuntimeConfig())
+
+    fetchChannelModelsMock.mockResolvedValueOnce(["gpt-4o"])
+
+    await service.fetchChannelModels(123)
+
+    expect(fetchChannelModelsMock).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        bypassSiteRequestLimit: true,
+      }),
+      123,
+    )
+  })
+
   it("merges existing channel models with mapping keys before updating model_mapping", async () => {
     const service = new ModelSyncService(makeExampleRuntimeConfig())
 
