@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
 import { PRODUCT_ANALYTICS_ERROR_CATEGORIES } from "~/services/productAnalytics/events"
 import type { ApiVerificationProbeResult } from "~/services/verification/aiApiVerification"
+import { WEB_AI_API_CHECK_BASE_URL_HISTORY_SUGGESTION_LIMIT } from "~/services/verification/webAiApiCheck/constants"
 
 const { onWebAiApiCheckMessageMock, webAiApiCheckMessageHandlers } = vi.hoisted(
   () => ({
@@ -925,6 +926,298 @@ describe("webAiApiCheck background handlers", () => {
     })
   })
 
+  it("records Base URL history and returns current suggestions", async () => {
+    vi.resetModules()
+
+    const { webAiApiCheckBaseUrlHistoryStorage } = await import(
+      "~/services/verification/webAiApiCheck/baseUrlHistory"
+    )
+    const recordUseSpy = vi
+      .spyOn(webAiApiCheckBaseUrlHistoryStorage, "recordUse")
+      .mockResolvedValue({
+        version: 1,
+        entries: [],
+        lastUpdated: 123,
+      })
+    vi.spyOn(
+      webAiApiCheckBaseUrlHistoryStorage,
+      "getSuggestions",
+    ).mockResolvedValue([
+      {
+        baseUrl: "https://canonical.example.com",
+        lastUsedAt: 123,
+        useCount: 2,
+      },
+    ])
+    const background = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const response =
+      await background.resolveWebAiApiCheckRecordBaseUrlHistoryMessage({
+        baseUrl: "https://canonical.example.com/api/v1/models",
+        pageUrl: "https://docs.example.invalid/setup",
+      })
+
+    expect(recordUseSpy).toHaveBeenCalledWith({
+      baseUrl: "https://canonical.example.com/api/v1/models",
+      pageUrl: "https://docs.example.invalid/setup",
+    })
+    expect(response).toEqual({
+      success: true,
+      suggestions: [
+        {
+          baseUrl: "https://canonical.example.com",
+          lastUsedAt: 123,
+          useCount: 2,
+        },
+      ],
+    })
+  })
+
+  it("returns Base URL history suggestions through the registered background handler", async () => {
+    vi.resetModules()
+    onWebAiApiCheckMessageMock.mockClear()
+    webAiApiCheckMessageHandlers.clear()
+
+    const { webAiApiCheckBaseUrlHistoryStorage } = await import(
+      "~/services/verification/webAiApiCheck/baseUrlHistory"
+    )
+    const getSuggestionsSpy = vi
+      .spyOn(webAiApiCheckBaseUrlHistoryStorage, "getSuggestions")
+      .mockResolvedValue([
+        {
+          baseUrl: "https://suggested.example.com",
+          lastUsedAt: 123,
+          useCount: 2,
+          matchedSourceOrigin: "https://docs.example.invalid",
+        },
+      ])
+    const background = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+    const { WebAiApiCheckMessageTypes } = await import(
+      "~/services/verification/webAiApiCheck/messaging"
+    )
+
+    background.setupWebAiApiCheckMessagingListeners()
+    const handler = webAiApiCheckMessageHandlers.get(
+      WebAiApiCheckMessageTypes.GetBaseUrlHistorySuggestions,
+    )
+
+    await expect(
+      handler?.({
+        data: {
+          pageUrl: "https://docs.example.invalid/setup",
+          limit: 2,
+        },
+      }),
+    ).resolves.toEqual({
+      success: true,
+      suggestions: [
+        {
+          baseUrl: "https://suggested.example.com",
+          lastUsedAt: 123,
+          useCount: 2,
+          matchedSourceOrigin: "https://docs.example.invalid",
+        },
+      ],
+    })
+    expect(getSuggestionsSpy).toHaveBeenCalledWith({
+      pageUrl: "https://docs.example.invalid/setup",
+      limit: 2,
+    })
+  })
+
+  it("returns a safe failure when Base URL history suggestions cannot be read", async () => {
+    vi.resetModules()
+    onWebAiApiCheckMessageMock.mockClear()
+    webAiApiCheckMessageHandlers.clear()
+
+    const { webAiApiCheckBaseUrlHistoryStorage } = await import(
+      "~/services/verification/webAiApiCheck/baseUrlHistory"
+    )
+    vi.spyOn(
+      webAiApiCheckBaseUrlHistoryStorage,
+      "getSuggestions",
+    ).mockRejectedValue(new Error("database path leaked"))
+    const background = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+    const { WebAiApiCheckMessageTypes } = await import(
+      "~/services/verification/webAiApiCheck/messaging"
+    )
+
+    background.setupWebAiApiCheckMessagingListeners()
+    const handler = webAiApiCheckMessageHandlers.get(
+      WebAiApiCheckMessageTypes.GetBaseUrlHistorySuggestions,
+    )
+
+    await expect(
+      handler?.({
+        data: {
+          pageUrl: "https://docs.example.invalid/setup",
+          limit: 2,
+        },
+      }),
+    ).resolves.toEqual({
+      success: false,
+      error: "Failed to read Base URL history",
+    })
+  })
+
+  it("records no Base URL history for blank input but still returns suggestions", async () => {
+    vi.resetModules()
+
+    const { webAiApiCheckBaseUrlHistoryStorage } = await import(
+      "~/services/verification/webAiApiCheck/baseUrlHistory"
+    )
+    const recordUseSpy = vi.spyOn(
+      webAiApiCheckBaseUrlHistoryStorage,
+      "recordUse",
+    )
+    vi.spyOn(
+      webAiApiCheckBaseUrlHistoryStorage,
+      "getSuggestions",
+    ).mockResolvedValue([])
+    const background = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const response =
+      await background.resolveWebAiApiCheckRecordBaseUrlHistoryMessage({
+        baseUrl: "   ",
+        pageUrl: "https://docs.example.invalid/setup",
+      })
+
+    expect(recordUseSpy).not.toHaveBeenCalled()
+    expect(response).toEqual({ success: true, suggestions: [] })
+  })
+
+  it("keeps record Base URL history best-effort when storage fails", async () => {
+    vi.resetModules()
+
+    const { webAiApiCheckBaseUrlHistoryStorage } = await import(
+      "~/services/verification/webAiApiCheck/baseUrlHistory"
+    )
+    vi.spyOn(webAiApiCheckBaseUrlHistoryStorage, "recordUse").mockRejectedValue(
+      new Error("storage unavailable"),
+    )
+    const background = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const response =
+      await background.resolveWebAiApiCheckRecordBaseUrlHistoryMessage({
+        baseUrl: "https://canonical.example.com/api/v1/models",
+        pageUrl: "https://docs.example.invalid/setup",
+      })
+
+    expect(response).toEqual({ success: true })
+  })
+
+  it("removes a stored Base URL history entry and returns current suggestions", async () => {
+    vi.resetModules()
+
+    const { webAiApiCheckBaseUrlHistoryStorage } = await import(
+      "~/services/verification/webAiApiCheck/baseUrlHistory"
+    )
+    const removeBaseUrlSpy = vi
+      .spyOn(webAiApiCheckBaseUrlHistoryStorage, "removeBaseUrl")
+      .mockResolvedValue({
+        version: 1,
+        entries: [],
+        lastUpdated: 123,
+      })
+    const getSuggestionsSpy = vi
+      .spyOn(webAiApiCheckBaseUrlHistoryStorage, "getSuggestions")
+      .mockResolvedValue([
+        {
+          baseUrl: "https://keep.example.com",
+          lastUsedAt: 123,
+          useCount: 1,
+        },
+      ])
+    const background = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const response =
+      await background.resolveWebAiApiCheckRemoveBaseUrlHistoryMessage({
+        baseUrl: "https://remove.example.com/api/v1/models",
+        pageUrl: "https://docs.example.invalid/setup",
+      })
+
+    expect(removeBaseUrlSpy).toHaveBeenCalledWith({
+      baseUrl: "https://remove.example.com/api/v1/models",
+    })
+    expect(getSuggestionsSpy).toHaveBeenCalledWith({
+      pageUrl: "https://docs.example.invalid/setup",
+      limit: WEB_AI_API_CHECK_BASE_URL_HISTORY_SUGGESTION_LIMIT,
+    })
+    expect(response).toEqual({
+      success: true,
+      suggestions: [
+        {
+          baseUrl: "https://keep.example.com",
+          lastUsedAt: 123,
+          useCount: 1,
+        },
+      ],
+    })
+  })
+
+  it("removes no Base URL history for blank input but still returns suggestions", async () => {
+    vi.resetModules()
+
+    const { webAiApiCheckBaseUrlHistoryStorage } = await import(
+      "~/services/verification/webAiApiCheck/baseUrlHistory"
+    )
+    const removeBaseUrlSpy = vi.spyOn(
+      webAiApiCheckBaseUrlHistoryStorage,
+      "removeBaseUrl",
+    )
+    vi.spyOn(
+      webAiApiCheckBaseUrlHistoryStorage,
+      "getSuggestions",
+    ).mockResolvedValue([])
+    const background = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const response =
+      await background.resolveWebAiApiCheckRemoveBaseUrlHistoryMessage({
+        baseUrl: "   ",
+        pageUrl: "https://docs.example.invalid/setup",
+      })
+
+    expect(removeBaseUrlSpy).not.toHaveBeenCalled()
+    expect(response).toEqual({ success: true, suggestions: [] })
+  })
+
+  it("keeps remove Base URL history best-effort when storage fails", async () => {
+    vi.resetModules()
+
+    const { webAiApiCheckBaseUrlHistoryStorage } = await import(
+      "~/services/verification/webAiApiCheck/baseUrlHistory"
+    )
+    vi.spyOn(
+      webAiApiCheckBaseUrlHistoryStorage,
+      "removeBaseUrl",
+    ).mockRejectedValue(new Error("storage unavailable"))
+    const background = await import(
+      "~/services/verification/webAiApiCheck/background"
+    )
+
+    const response =
+      await background.resolveWebAiApiCheckRemoveBaseUrlHistoryMessage({
+        baseUrl: "https://remove.example.com/api/v1/models",
+        pageUrl: "https://docs.example.invalid/setup",
+      })
+
+    expect(response).toEqual({ success: true })
+  })
+
   it("registers the cancel-run-probe background message handler", async () => {
     vi.resetModules()
     onWebAiApiCheckMessageMock.mockClear()
@@ -939,12 +1232,15 @@ describe("webAiApiCheck background handlers", () => {
     background.setupWebAiApiCheckMessagingListeners()
     background.setupWebAiApiCheckMessagingListeners()
 
-    expect(onWebAiApiCheckMessageMock).toHaveBeenCalledTimes(5)
+    expect(onWebAiApiCheckMessageMock).toHaveBeenCalledTimes(8)
     expect(
       onWebAiApiCheckMessageMock.mock.calls.map((call) => call[0]),
     ).toEqual([
       WebAiApiCheckMessageTypes.ShouldPrompt,
       WebAiApiCheckMessageTypes.FetchModels,
+      WebAiApiCheckMessageTypes.GetBaseUrlHistorySuggestions,
+      WebAiApiCheckMessageTypes.RecordBaseUrlHistory,
+      WebAiApiCheckMessageTypes.RemoveBaseUrlHistory,
       WebAiApiCheckMessageTypes.RunProbe,
       WebAiApiCheckMessageTypes.CancelRunProbe,
       WebAiApiCheckMessageTypes.SaveProfile,
