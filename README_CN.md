@@ -131,23 +131,23 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 <hr>
 
 <div>
-  <a href="https://ai.centos.hk">
-    <img src="resources/partners/xingchen.png" alt="星辰AI" width="64" align="left" hspace="10" vspace="4">
-  </a>
-  <p>
-    感谢星辰AI赞助了本项目！星辰AI是一家稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用（<a href="https://all-api-hub.qixing1217.top/sponsor-guides/xingchen.html">使用教程</a>）。
-  </p>
-</div>
-
-<hr>
-
-<div>
   <a href="https://www.packyapi.com/register?aff=all-api-hub">
     <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
     感谢 PackyCode 赞助了本项目！PackyCode 是一家稳定、高效的API中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。PackyCode
     为本软件的用户提供了特别优惠，使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写"all-api-hub"优惠码，首次充值可以享受9折优惠（<a href="https://all-api-hub.qixing1217.top/sponsor-guides/packycode.html">使用教程</a>）！
+  </p>
+</div>
+
+<hr>
+
+<div>
+  <a href="https://ai.centos.hk">
+    <img src="resources/partners/xingchen.png" alt="星辰AI" width="64" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    感谢星辰AI赞助了本项目！星辰AI是一家稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用（<a href="https://all-api-hub.qixing1217.top/sponsor-guides/xingchen.html">使用教程</a>）。
   </p>
 </div>
 

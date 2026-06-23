@@ -43,51 +43,9 @@
       }
     },
     {
-      "id": "xingchen-ai",
-      "enabled": true,
-      "rank": 95,
-      "supportStatus": "supported",
-      "urls": {
-        "primaryAffiliate": "https://ai.centos.hk",
-        "website": "https://ai.centos.hk"
-      },
-      "locales": {
-        "zh-CN": {
-          "name": "星辰AI",
-          "tagline": "稳定高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。",
-          "postClickNote": "充值比例 1:1，可开发票；Claude 低至 4 折。"
-        },
-        "zh-TW": {
-          "name": "星辰AI",
-          "tagline": "穩定高效的 API 中轉服務商，提供 Claude Code、Codex、Gemini 等多種中轉服務。",
-          "postClickNote": "儲值比例 1:1，可開發票；Claude 低至 4 折。"
-        },
-        "en": {
-          "name": "Xingchen AI",
-          "tagline": "A stable and efficient API relay provider for Claude Code, Codex, Gemini, and more.",
-          "postClickNote": "1:1 recharge ratio with invoice support and Claude from 40% pricing."
-        },
-        "ja": {
-          "name": "Xingchen AI",
-          "tagline": "Claude Code、Codex、Gemini などの中継サービスを提供する、安定した高速な API 中継プロバイダーです。",
-          "postClickNote": "チャージ比率は 1:1、請求書発行に対応。Claude は 40% 価格から利用できます。"
-        },
-        "vi": {
-          "name": "Xingchen AI",
-          "tagline": "Nha cung cap chuyen tiep API on dinh, hieu qua cho Claude Code, Codex, Gemini va nhieu dich vu khac.",
-          "postClickNote": "Ty le nap 1:1, ho tro xuat hoa don va Claude tu 40% gia."
-        }
-      },
-      "accountPrefill": {
-        "siteType": "new-api",
-        "siteUrl": "https://ai.centos.hk",
-        "authType": "access_token"
-      }
-    },
-    {
       "id": "packycode",
       "enabled": true,
-      "rank": 100,
+      "rank": 95,
       "supportStatus": "supported",
       "urls": {
         "primaryAffiliate": "https://www.packyapi.com/register?aff=all-api-hub",
@@ -124,6 +82,48 @@
       "accountPrefill": {
         "siteType": "new-api",
         "siteUrl": "https://www.packyapi.com",
+        "authType": "access_token"
+      }
+    },
+    {
+      "id": "xingchen-ai",
+      "enabled": true,
+      "rank": 100,
+      "supportStatus": "supported",
+      "urls": {
+        "primaryAffiliate": "https://ai.centos.hk",
+        "website": "https://ai.centos.hk"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "星辰AI",
+          "tagline": "稳定高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。",
+          "postClickNote": "充值比例 1:1，可开发票；Claude 低至 4 折。"
+        },
+        "zh-TW": {
+          "name": "星辰AI",
+          "tagline": "穩定高效的 API 中轉服務商，提供 Claude Code、Codex、Gemini 等多種中轉服務。",
+          "postClickNote": "儲值比例 1:1，可開發票；Claude 低至 4 折。"
+        },
+        "en": {
+          "name": "Xingchen AI",
+          "tagline": "A stable and efficient API relay provider for Claude Code, Codex, Gemini, and more.",
+          "postClickNote": "1:1 recharge ratio with invoice support and Claude from 40% pricing."
+        },
+        "ja": {
+          "name": "Xingchen AI",
+          "tagline": "Claude Code、Codex、Gemini などの中継サービスを提供する、安定した高速な API 中継プロバイダーです。",
+          "postClickNote": "チャージ比率は 1:1、請求書発行に対応。Claude は 40% 価格から利用できます。"
+        },
+        "vi": {
+          "name": "Xingchen AI",
+          "tagline": "Nha cung cap chuyen tiep API on dinh, hieu qua cho Claude Code, Codex, Gemini va nhieu dich vu khac.",
+          "postClickNote": "Ty le nap 1:1, ho tro xuat hoa don va Claude tu 40% gia."
+        }
+      },
+      "accountPrefill": {
+        "siteType": "new-api",
+        "siteUrl": "https://ai.centos.hk",
         "authType": "access_token"
       }
     },

@@ -39,22 +39,22 @@
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo sponsor-logo-small" href="https://ai.centos.hk">
-      <img src="../../resources/partners/xingchen.png" alt="星辰AI">
+    <a class="sponsor-logo" href="https://www.packyapi.com/register?aff=all-api-hub">
+      <img src="../../resources/partners/packycode.png" alt="PackyCode">
     </a>
     <p>
-      <strong>星辰AI</strong> 稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用（<a href="./sponsor-guides/xingchen.md">使用教程</a>）。
+      <strong>PackyCode</strong> 提供 Claude Code、Codex、Gemini 等多种中转服务。使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写 "all-api-hub" 优惠码，首次充值可享 <strong>9 折优惠</strong>（<a href="./sponsor-guides/packycode.md">使用教程</a>）。
     </p>
   </section>
 
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo" href="https://www.packyapi.com/register?aff=all-api-hub">
-      <img src="../../resources/partners/packycode.png" alt="PackyCode">
+    <a class="sponsor-logo sponsor-logo-small" href="https://ai.centos.hk">
+      <img src="../../resources/partners/xingchen.png" alt="星辰AI">
     </a>
     <p>
-      <strong>PackyCode</strong> 提供 Claude Code、Codex、Gemini 等多种中转服务。使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写 "all-api-hub" 优惠码，首次充值可享 <strong>9 折优惠</strong>（<a href="./sponsor-guides/packycode.md">使用教程</a>）。
+      <strong>星辰AI</strong> 稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。充值比例 1:1，可开发票；Claude 低至 4 折。欢迎通过<a href="https://ai.centos.hk">此链接</a>了解和使用（<a href="./sponsor-guides/xingchen.md">使用教程</a>）。
     </p>
   </section>
 

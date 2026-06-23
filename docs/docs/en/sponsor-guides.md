@@ -9,8 +9,8 @@ These guides are for users who already have, or plan to create, an account with 
 | Service | Use Case | Guide |
 | --- | --- | --- |
 | RunAPI | Add a RunAPI account, view model pricing, and save or export API credentials. | [View guide](./sponsor-guides/runapi.md) |
-| Xingchen AI | Add a Xingchen AI account, view model pricing, and save or export API credentials. | [View guide](./sponsor-guides/xingchen.md) |
 | PackyCode | Add a PackyCode account, view model pricing, and save or export API credentials. | [View guide](./sponsor-guides/packycode.md) |
+| Xingchen AI | Add a Xingchen AI account, view model pricing, and save or export API credentials. | [View guide](./sponsor-guides/xingchen.md) |
 | AIHubMix | Add an AIHubMix account, save one-time full API keys, and view model pricing. | [View guide](./sponsor-guides/aihubmix.md) |
 
 ## Related Documentation
