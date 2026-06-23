@@ -10,6 +10,7 @@
 | --- | --- | --- |
 | RunAPI | RunAPI アカウントを追加し、モデル価格を確認して API 認証情報を保存・エクスポートします。 | [ガイドを見る](./sponsor-guides/runapi.md) |
 | Xingchen AI | Xingchen AI アカウントを追加し、モデル価格を確認して API 認証情報を保存・エクスポートします。 | [ガイドを見る](./sponsor-guides/xingchen.md) |
+| PackyCode | PackyCode アカウントを追加し、モデル価格を確認して API 認証情報を保存・エクスポートします。 | [ガイドを見る](./sponsor-guides/packycode.md) |
 | AIHubMix | AIHubMix アカウントを追加し、一度だけ表示される完全な API キーを保存してモデル価格を確認します。 | [ガイドを見る](./sponsor-guides/aihubmix.md) |
 
 ## 関連ドキュメント

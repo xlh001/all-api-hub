@@ -10,6 +10,7 @@
 | --- | --- | --- |
 | RunAPI | 添加 RunAPI 账号，查看模型价格，保存并导出 API 凭据。 | [查看教程](./sponsor-guides/runapi.md) |
 | 星辰AI | 添加星辰AI账号，查看模型价格，保存并导出 API 凭据。 | [查看教程](./sponsor-guides/xingchen.md) |
+| PackyCode | 添加 PackyCode 账号，查看模型价格，保存并导出 API 凭据。 | [查看教程](./sponsor-guides/packycode.md) |
 | AIHubMix | 添加 AIHubMix 账号，保存一次性显示的完整 Key，查看模型价格。 | [查看教程](./sponsor-guides/aihubmix.md) |
 
 ## 相关文档

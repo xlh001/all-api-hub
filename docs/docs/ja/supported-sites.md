@@ -53,7 +53,7 @@
       <img src="../../../resources/partners/packycode.png" alt="PackyCode">
     </a>
     <p>
-      <strong>PackyCode</strong> は、Claude Code、Codex、Gemini などの多様なプロキシサービスを提供しています。<a href="https://www.packyapi.com/register?aff=all-api-hub">こちらのリンク</a>から登録し、初回チャージ時に "all-api-hub" クーポンコードを入力すると、<strong>10% オフ</strong>になります。
+      <strong>PackyCode</strong> は、Claude Code、Codex、Gemini などの多様なプロキシサービスを提供しています。<a href="https://www.packyapi.com/register?aff=all-api-hub">こちらのリンク</a>から登録し、初回チャージ時に "all-api-hub" クーポンコードを入力すると、<strong>10% オフ</strong>になります（<a href="./sponsor-guides/packycode.md">設定ガイド</a>）。
     </p>
   </section>
 
