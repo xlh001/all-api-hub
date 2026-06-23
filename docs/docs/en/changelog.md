@@ -8,6 +8,34 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.48.0
+- **New Features:**
+  - Key Management: You can now batch-save selected keys into the `API Credential Library`. This turns keys already organized on a site into reusable `Base URL + API Key` credentials, so you do not need to re-enter them one by one when copying, verifying, viewing models, or exporting them to other tools. See [Key Management](./key-management.md) and [API Credential Library](./api-credential-profiles.md).
+  - Model List: Added filtering by latest verification result and sorting by verification duration, making it easier to revisit failed models, find models that have not been verified yet, or prioritize slower models. Batch verification applies to the currently filtered list. See [Model List](./model-list.md).
+  - Managed Site Model Sync: Added `Max processing time per channel`. If a single channel takes too long to return results, it is marked as failed and sync continues with the remaining channels, preventing a full sync from being blocked by a few slow channels. See [Managed Site Model Sync](./managed-site-model-sync.md).
+  - Version Update Check: Chrome / Edge store-version checks now compare both the latest stable GitHub release and browser store update status. If the browser has a store update ready, you can click `Reload to update` to apply the new version. See [Installation Channels and Updates](./extension-update-install.md).
+- **Experience Optimizations:**
+  - Web AI API Sniffing and Verification: After the page identifies `Base URL + API Key`, the verification dialog now shows the extracted `API Key` by default, making it easier to confirm the detected value before saving it to the `API Credential Library`. See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
+  - Web AI API Sniffing and Verification: You can stop an individual check or the whole group during testing, so services that do not respond for a long time no longer force you to wait for the entire verification run before handling other credentials. See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
+  - Managed Site Model Sync: Running progress refreshes more promptly. When automatic sync is disabled, the page now explains that only manual sync will run and provides a shortcut to automatic sync settings, reducing confusion about whether sync is running. See [Managed Site Model Sync](./managed-site-model-sync.md).
+  - API Credential Library: When there are no credentials yet, the empty state now suggests saving existing site keys from Key Management and provides a shortcut, making the first credential setup easier to start. See [API Credential Library](./api-credential-profiles.md).
+  - Settings navigation: The former "Basic Settings" entry is now named "Settings" and moved into the "System" group. Basic preferences, AI API Test, notifications, and related options remain on the same settings page; only the entry name and location now better match their role.
+  - Docs and community: Added a QQ group entry and expanded installation-channel guidance, sponsor usage guides, and recommended-site information, making it easier to find update instructions, community support, or API service references.
+- **Bug Fixes:**
+  - WebDAV: Directory-style WebDAV URLs are now tested as directories, reducing cases where a usable directory was incorrectly reported as a failed connection. Direct `.json` backup file URLs are still tested as file URLs. See [WebDAV Backup and Automatic Synchronization](./webdav-sync.md).
+  - Key Management: When multiple `Cookie authentication` accounts exist under the same site, the key list now preserves each account's own session information, reducing cases where key loading uses another account's login session. See [Key Management](./key-management.md).
+  - Account Management: After adding or editing an account, refreshed balance, usage, and sync time now update in the account list and already-open account pages, reducing cases where saved accounts still show old data until a manual refresh. See [Account Management](./account-management.md).
+  - Managed Site Model Sync: Channel loading or sync request failures no longer show strange English keys or code-like messages. Errors now fall back to readable localized text. See [Managed Site Model Sync](./managed-site-model-sync.md).
+
+**Location Hints:**
+- Batch-save keys: Select multiple keys under "Settings → Key Management".
+- Model verification filters, verification-duration sorting, and batch verification: Use them under "Settings → Model List".
+- Max processing time per channel, automatic sync guidance, and sync progress: Check them under "Settings → Self-Hosted Site Management → Model Sync Settings" and on the model sync page.
+- Store-version update checks: Click `Check now` in the version and update area under "Settings → About".
+- Web AI API Sniffing and Verification: Use it after a web page identifies `Base URL + API Key` and opens the verification dialog. Related switches are in the `AI API Test` tab under the left-side `Settings` entry.
+- Post-save account refresh: Applies automatically after adding or editing an account under "Settings → Account Management".
+- WebDAV connection testing: Use it under `WebDAV Settings` in "Settings → Import / Export".
+
 ## 3.47.0
 - **New Features:**
   - `Sub2API` Model List: You can now view available models and estimated prices for `Sub2API` accounts in Model List. If an account has multiple API keys, you can also see which models each key can use. See [Model List](./model-list.md).
