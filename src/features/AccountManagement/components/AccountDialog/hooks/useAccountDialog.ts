@@ -112,6 +112,7 @@ import {
   getActiveTabs,
   getAllTabs,
   getBrowserApiCapabilities,
+  isMessageReceiverUnavailableError,
   onTabActivated,
   onTabUpdated,
   sendRuntimeMessage,
@@ -167,13 +168,51 @@ const logger = createLogger("AccountDialogHook")
 /**
  * Refreshes saved account data without keeping the account dialog save flow open.
  */
-function schedulePostSaveAccountRefresh(accountId: string) {
-  void accountStorage.refreshAccount(accountId, true).catch((error) => {
-    logger.warn("Post-save deferred account refresh failed", {
-      accountId,
-      error: getErrorMessage(error),
+function schedulePostSaveAccountRefresh(
+  accountId: string,
+  onPostSaveAccountRefresh?: (accountIds: string[]) => Promise<void>,
+) {
+  void accountStorage
+    .refreshAccount(accountId, true)
+    .then(async (result) => {
+      if (!result?.refreshed) {
+        return
+      }
+
+      if (onPostSaveAccountRefresh) {
+        await onPostSaveAccountRefresh([accountId])
+      }
+
+      try {
+        await sendRuntimeMessage(
+          {
+            action: RuntimeActionIds.AccountRefreshCompleted,
+            updatedAccountIds: [accountId],
+          },
+          { maxAttempts: 1 },
+        )
+      } catch (error) {
+        const errorMessage = getErrorMessage(error)
+        if (isMessageReceiverUnavailableError(error)) {
+          logger.debug("Post-save account refresh notification ignored", {
+            accountId,
+            error: errorMessage,
+          })
+          return
+        }
+
+        logger.warn("Post-save account refresh notification failed", {
+          accountId,
+          error: errorMessage,
+        })
+      }
     })
-  })
+    .catch((error) => {
+      logger.warn("Post-save deferred account refresh failed", {
+        accountId,
+        error: getErrorMessage(error),
+      })
+    })
 }
 
 interface CookieAuthPermissionState {
@@ -238,6 +277,7 @@ interface UseAccountDialogProps {
   prefill?: AddAccountPrefill | null
   isOpen: boolean
   onClose: () => void
+  onPostSaveAccountRefresh?: (accountIds: string[]) => Promise<void>
   onSuccess?: (data: any) => void
 }
 
@@ -262,6 +302,7 @@ interface AihubmixPostSaveKeyPromptState {
  * @param props.prefill Optional add-mode sponsor prefill.
  * @param props.isOpen Whether the dialog is currently open.
  * @param props.onClose Handler invoked when dialog closes.
+ * @param props.onPostSaveAccountRefresh Optional handler invoked after deferred account refresh completes.
  * @param props.onSuccess Optional handler invoked after successful save.
  * @returns Aggregated state, setters, and handlers powering the dialog UI.
  */
@@ -271,6 +312,7 @@ export function useAccountDialog({
   prefill,
   isOpen,
   onClose,
+  onPostSaveAccountRefresh,
   onSuccess,
 }: UseAccountDialogProps) {
   const { t } = useTranslation(["accountDialog", "settings", "messages"])
@@ -1935,7 +1977,7 @@ export function useAccountDialog({
           : null
 
       if (savedAccountId) {
-        schedulePostSaveAccountRefresh(savedAccountId)
+        schedulePostSaveAccountRefresh(savedAccountId, onPostSaveAccountRefresh)
       }
 
       const feedbackMessage =

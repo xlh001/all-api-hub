@@ -180,6 +180,7 @@ interface AccountDataContextType {
   unpinAccount: (id: string) => Promise<boolean>
   togglePinAccount: (id: string) => Promise<boolean>
   loadAccountData: () => Promise<void>
+  reloadAccountsById: (accountIds: string[]) => Promise<void>
   handleRefresh: (force?: boolean) => Promise<{
     success: number
     failed: number
@@ -846,9 +847,8 @@ export const AccountDataProvider = ({
     void checkCurrentTab()
   }, [accounts, checkCurrentTab, hasLoadedAccountData])
 
-  // 监听后台自动刷新的更新通知
-  useEffect(() => {
-    const reloadAccountsById = async (accountIds: string[]) => {
+  const reloadAccountsById = useCallback(
+    async (accountIds: string[]) => {
       const uniqueIds = Array.from(
         new Set(
           accountIds.filter(
@@ -905,14 +905,26 @@ export const AccountDataProvider = ({
         setAccounts(mergedAccounts)
         const balanceHistoryStore = await dailyBalanceHistoryStorage.getStore()
         const todayKey = getDayKeyFromUnixSeconds(Math.floor(Date.now() / 1000))
+        const latestActiveReloadedAccounts = activeReloadedAccounts.filter(
+          (account) =>
+            targetedReloadGenerationByAccountIdRef.current[account.id] ===
+            reloadGeneration,
+        )
+        if (latestActiveReloadedAccounts.length === 0) {
+          return
+        }
+
+        const latestReloadedById = Object.fromEntries(
+          latestActiveReloadedAccounts.map((account) => [account.id, account]),
+        )
         const latestAccounts = accountsRef.current
         const latestKnownIds = new Set(
           latestAccounts.map((account) => account.id),
         )
         const latestMergedAccounts = latestAccounts.map(
-          (account) => reloadedById[account.id] ?? account,
+          (account) => latestReloadedById[account.id] ?? account,
         )
-        for (const account of activeReloadedAccounts) {
+        for (const account of latestActiveReloadedAccounts) {
           if (!latestKnownIds.has(account.id)) {
             latestMergedAccounts.push(account)
           }
@@ -941,7 +953,7 @@ export const AccountDataProvider = ({
             currentDayKey: todayKey,
           }),
         )
-        for (const account of activeReloadedAccounts) {
+        for (const account of latestActiveReloadedAccounts) {
           if (
             targetedReloadGenerationByAccountIdRef.current[account.id] ===
             reloadGeneration
@@ -959,8 +971,17 @@ export const AccountDataProvider = ({
         )
         await loadAccountData()
       }
-    }
+    },
+    [
+      buildDisplayDataWithBalanceHistory,
+      estimatedTodayIncomeEnabled,
+      loadAccountData,
+      tagStore,
+    ],
+  )
 
+  // 监听后台自动刷新的更新通知
+  useEffect(() => {
     return onRuntimeMessage((message: any) => {
       if (
         message.type === "AUTO_REFRESH_UPDATE" &&
@@ -974,19 +995,17 @@ export const AccountDataProvider = ({
         loadAccountData()
       }
 
-      if (message?.action === RuntimeActionIds.AutoCheckinRunCompleted) {
+      if (
+        message?.action === RuntimeActionIds.AutoCheckinRunCompleted ||
+        message?.action === RuntimeActionIds.AccountRefreshCompleted
+      ) {
         const updatedAccountIds = Array.isArray(message.updatedAccountIds)
           ? message.updatedAccountIds
           : []
         void reloadAccountsById(updatedAccountIds)
       }
     })
-  }, [
-    buildDisplayDataWithBalanceHistory,
-    estimatedTodayIncomeEnabled,
-    loadAccountData,
-    tagStore,
-  ])
+  }, [loadAccountData, reloadAccountsById])
 
   const handleSort = useCallback(
     (field: SortField) => {
@@ -1373,6 +1392,7 @@ export const AccountDataProvider = ({
       unpinAccount,
       togglePinAccount,
       loadAccountData,
+      reloadAccountsById,
       handleRefresh,
       handleRefreshDisabledAccounts,
       handleSort,
@@ -1413,6 +1433,7 @@ export const AccountDataProvider = ({
       unpinAccount,
       togglePinAccount,
       loadAccountData,
+      reloadAccountsById,
       handleRefresh,
       handleRefreshDisabledAccounts,
       handleSort,

@@ -1958,6 +1958,131 @@ describe("AccountDataContext refresh orchestration", () => {
 
     expect(initialLoadCalls).toBeGreaterThan(0)
   })
+
+  it("reloads a saved account into display data after a post-save refresh notification", async () => {
+    mockGetAllAccounts.mockResolvedValue([
+      { id: "saved-account-id", name: "before", last_sync_time: 0 },
+    ])
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().displayData).toEqual([
+        expect.objectContaining({
+          id: "saved-account-id",
+          name: "before",
+          last_sync_time: 0,
+        }),
+      ])
+    })
+
+    mockGetAccountById.mockResolvedValueOnce({
+      id: "saved-account-id",
+      name: "after",
+      last_sync_time: 1_710_123_456_789,
+    })
+
+    const listener = (globalThis as any).__accountDataContextRuntimeListener as
+      | ((message: any) => void)
+      | undefined
+    expect(listener).toBeTypeOf("function")
+
+    await act(async () => {
+      listener!({
+        action: RuntimeActionIds.AccountRefreshCompleted,
+        updatedAccountIds: ["saved-account-id"],
+      })
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().displayData).toEqual([
+        expect.objectContaining({
+          id: "saved-account-id",
+          name: "after",
+          last_sync_time: 1_710_123_456_789,
+        }),
+      ])
+    })
+  })
+
+  it("does not let an older targeted reload overwrite a newer reload after balance history loads", async () => {
+    mockGetAllAccounts.mockResolvedValue([
+      { id: "saved-account-id", name: "before", last_sync_time: 0 },
+    ])
+    const olderBalanceHistoryLoad = createDeferred<{
+      schemaVersion: number
+      snapshotsByAccountId: Record<string, never>
+    }>()
+    const balanceHistoryStore = {
+      schemaVersion: DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+      snapshotsByAccountId: {},
+    }
+    mockGetDailyBalanceHistoryStore.mockResolvedValue(balanceHistoryStore)
+
+    const getLatestCtx = await renderAccountDataProvider()
+
+    await waitFor(() => {
+      expect(getLatestCtx().displayData).toEqual([
+        expect.objectContaining({
+          id: "saved-account-id",
+          name: "before",
+          last_sync_time: 0,
+        }),
+      ])
+    })
+
+    mockGetDailyBalanceHistoryStore.mockReset()
+    mockGetDailyBalanceHistoryStore
+      .mockReturnValueOnce(olderBalanceHistoryLoad.promise)
+      .mockResolvedValueOnce(balanceHistoryStore)
+
+    mockGetAccountById
+      .mockResolvedValueOnce({
+        id: "saved-account-id",
+        name: "older",
+        last_sync_time: 1,
+      })
+      .mockResolvedValueOnce({
+        id: "saved-account-id",
+        name: "newer",
+        last_sync_time: 2,
+      })
+
+    const olderReload = getLatestCtx().reloadAccountsById(["saved-account-id"])
+
+    await waitFor(() => {
+      expect(mockGetDailyBalanceHistoryStore).toHaveBeenCalledTimes(1)
+    })
+
+    await act(async () => {
+      await getLatestCtx().reloadAccountsById(["saved-account-id"])
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().displayData).toEqual([
+        expect.objectContaining({
+          id: "saved-account-id",
+          name: "newer",
+          last_sync_time: 2,
+        }),
+      ])
+    })
+
+    await act(async () => {
+      olderBalanceHistoryLoad.resolve(balanceHistoryStore)
+      await olderReload
+    })
+
+    await waitFor(() => {
+      expect(getLatestCtx().displayData).toEqual([
+        expect.objectContaining({
+          id: "saved-account-id",
+          name: "newer",
+          last_sync_time: 2,
+        }),
+      ])
+    })
+  })
 })
 
 describe("AccountDataContext sorting behavior", () => {
