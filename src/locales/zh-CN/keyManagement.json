@@ -23,7 +23,9 @@
     "saveToApiProfiles": "保存到 API 凭据库",
     "saveToApiProfilesHint": "将此密钥保存到 API 凭据库，用于快速复制、验证和导出。",
     "showKey": "显示密钥",
-    "useInCherry": "在 Cherry Studio 中使用"
+    "useInCherry": "在 Cherry Studio 中使用",
+    "verifyApi": "验证接口",
+    "verifyCliSupport": "验证 CLI 兼容性"
   },
   "allAccounts": "所有账号",
   "allAccountsFailed": "{{count}} 个失败",
@@ -255,7 +257,9 @@
     "loadFailed": "加载密钥列表失败",
     "revealFailed": "显示密钥失败",
     "savedToApiProfiles": "已保存 {{name}} 到 API 凭据库",
-    "saveToApiProfilesFailed": "保存到 API 凭据库失败"
+    "saveToApiProfilesFailed": "保存到 API 凭据库失败",
+    "verifyApiFailed": "打开接口验证失败",
+    "verifyCliSupportFailed": "打开 CLI 兼容性验证失败"
   },
   "noKeys": "暂无密钥数据",
   "noMatchingKeys": "没有找到匹配的密钥",

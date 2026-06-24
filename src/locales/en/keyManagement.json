@@ -24,7 +24,9 @@
     "saveToApiProfiles": "Save to API credential library",
     "saveToApiProfilesHint": "Save this key to the API credential library for quick copying, verification, and export.",
     "showKey": "Show Key",
-    "useInCherry": "Use in Cherry Studio"
+    "useInCherry": "Use in Cherry Studio",
+    "verifyApi": "Verify API",
+    "verifyCliSupport": "Verify CLI Support"
   },
   "allAccounts": "All accounts",
   "allAccountsFailed_one": "{{count}} failed",
@@ -261,7 +263,9 @@
     "loadFailed": "Failed to load key list",
     "revealFailed": "Failed to reveal key",
     "savedToApiProfiles": "Saved {{name}} to API credential library",
-    "saveToApiProfilesFailed": "Failed to save to API credential library"
+    "saveToApiProfilesFailed": "Failed to save to API credential library",
+    "verifyApiFailed": "Failed to open API verification",
+    "verifyCliSupportFailed": "Failed to open CLI compatibility verification"
   },
   "noKeys": "No key data yet",
   "noMatchingKeys": "No matching keys found",
