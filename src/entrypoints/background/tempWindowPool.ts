@@ -1,5 +1,7 @@
 import { RuntimeActionIds } from "~/constants/runtimeActions"
+import { isAccountSiteType, type AccountSiteType } from "~/constants/siteType"
 import { TURNSTILE_DEFAULT_QUERY_PARAM_NAME } from "~/constants/turnstile"
+import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import {
   API_ERROR_CODES,
@@ -31,12 +33,16 @@ import {
 import { getAccountSiteType } from "~/services/siteDetection/detectSiteType"
 import { AuthTypeEnum } from "~/types"
 import type {
+  TempWindowCheckinPageAction,
+  TempWindowCheckinPageActionParams,
   TempWindowFetch,
   TempWindowFetchParams,
+  TempWindowPageAccountIdentity,
   TempWindowTurnstileFetch,
   TempWindowTurnstileFetchParams,
   TempWindowTurnstileMeta,
 } from "~/types/tempWindowFetch"
+import type { CheckinPageActionTriggerResult } from "~/types/turnstile"
 import {
   classifyRecoverableWindowCreationFailure,
   createTab,
@@ -96,6 +102,21 @@ const TEMP_WINDOW_ANALYTICS_FAILURE_REASONS = {
 } as const
 type TempWindowAnalyticsFailureReason =
   (typeof TEMP_WINDOW_ANALYTICS_FAILURE_REASONS)[keyof typeof TEMP_WINDOW_ANALYTICS_FAILURE_REASONS]
+
+interface TempPageAccountIdentityContentResponse {
+  success?: boolean
+  error?: string
+  data?: {
+    userId?: unknown
+    user?: unknown
+    siteTypeHint?: unknown
+  }
+}
+
+interface TempContextTabSnapshot {
+  url?: string
+  status?: string
+}
 
 /** Retry delay when the content script is not ready to receive messages. */
 const SHIELD_BYPASS_UI_RETRY_MS = 250
@@ -292,6 +313,30 @@ async function prepareTempContextFetchOptions(params: {
 }
 
 /**
+ * Navigates a temporary context tab and keeps the in-memory URL tracker aligned.
+ */
+async function navigateTempContextToPage(
+  context: TempContext,
+  url: string,
+  meta: { requestId: string; origin: string },
+) {
+  const currentTab = await getTempContextTabSnapshot(context.tabId)
+  if (currentTab?.url === url && currentTab.status === "complete") {
+    context.currentUrl = currentTab.url
+    return
+  }
+
+  if (context.currentUrl !== url || currentTab?.url !== url) {
+    await updateTab(context.tabId, { url })
+    context.currentUrl = url
+  }
+
+  await waitForTabComplete(context.tabId, meta)
+  context.currentUrl =
+    (await getTempContextTabSnapshot(context.tabId))?.url ?? url
+}
+
+/**
  * 在临时上下文中渲染页面并读取真实的 document.title。
  */
 export async function handleTempWindowGetRenderedTitle(
@@ -355,6 +400,7 @@ type TempContext = {
   tabId: number
   origin: string
   type: "window" | "tab"
+  currentUrl?: string
   activeRequestIds: Set<string>
   lastUsed: number
   releaseTimer?: ReturnType<typeof setTimeout>
@@ -1132,6 +1178,194 @@ export async function handleTempWindowFetch(
 }
 
 /**
+ * Resolves the logged-in account identity from a temporary page tab.
+ */
+async function resolveTempPageAccountIdentity(params: {
+  tabId: number
+  url: string
+  siteType: AccountSiteType
+}): Promise<TempWindowPageAccountIdentity | null> {
+  let userResponse: TempPageAccountIdentityContentResponse
+  try {
+    userResponse =
+      await sendTabMessageWithRetry<TempPageAccountIdentityContentResponse>(
+        params.tabId,
+        {
+          action: RuntimeActionIds.ContentGetUserFromLocalStorage,
+          url: params.url,
+          siteType: params.siteType,
+        },
+      )
+  } catch (error) {
+    logger.warn("Temporary page account identity lookup failed", {
+      reason: getErrorMessage(error),
+    })
+    return null
+  }
+
+  if (!userResponse || !userResponse.success) {
+    logger.warn("Temporary page account identity lookup failed", {
+      reason: userResponse?.error ?? null,
+    })
+    return null
+  }
+
+  const userId = normalizeAccountIdentity(userResponse.data?.userId)
+  if (!userId) return null
+
+  const siteTypeHint = isAccountSiteType(userResponse.data?.siteTypeHint)
+    ? userResponse.data.siteTypeHint
+    : undefined
+
+  return {
+    userId,
+    user: userResponse.data?.user ?? null,
+    ...(siteTypeHint ? { siteTypeHint } : {}),
+  }
+}
+
+/**
+ * Opens a temporary page context and triggers the native check-in page action after identity verification.
+ */
+export async function handleTempWindowCheckinPageAction(
+  request: TempWindowCheckinPageActionParams,
+  sendResponse: (response?: TempWindowCheckinPageAction) => void,
+) {
+  const {
+    originUrl,
+    pageUrl,
+    requestId,
+    suppressMinimize,
+    siteType,
+    expectedUserId,
+    trigger,
+  } = request
+
+  if (
+    !originUrl ||
+    !pageUrl ||
+    !expectedUserId ||
+    !isAccountSiteType(siteType)
+  ) {
+    sendResponse({
+      success: false,
+      reason: "invalid_request",
+      error: t("messages:background.invalidFetchRequest"),
+    })
+    return
+  }
+
+  const tempRequestId =
+    requestId || safeRandomUUID(`temp-checkin-page-action-${pageUrl}`)
+
+  logTempWindow("tempWindowCheckinPageActionStart", {
+    requestId: tempRequestId,
+    origin: normalizeOrigin(originUrl),
+    pageUrl: sanitizeUrlForLog(pageUrl),
+    siteType,
+  })
+
+  try {
+    const context = await acquireTempContext(
+      pageUrl,
+      tempRequestId,
+      suppressMinimize,
+    )
+    const { tabId } = context
+
+    await navigateTempContextToPage(context, pageUrl, {
+      requestId: tempRequestId,
+      origin: normalizeOrigin(originUrl),
+    })
+
+    const identity = await resolveTempPageAccountIdentity({
+      tabId,
+      url: pageUrl,
+      siteType,
+    })
+
+    const normalizedExpectedUserId = normalizeAccountIdentity(expectedUserId)
+    if (!identity || !normalizedExpectedUserId) {
+      sendResponse({
+        success: false,
+        reason: "identity_missing",
+        identity,
+      })
+      return
+    }
+
+    if (identity.userId !== normalizedExpectedUserId) {
+      sendResponse({
+        success: false,
+        reason: "identity_mismatch",
+        identity,
+        expectedUserId: normalizedExpectedUserId,
+      })
+      return
+    }
+
+    const triggerResponse = await sendTabMessageWithRetry(tabId, {
+      action: RuntimeActionIds.ContentTriggerCheckinPageAction,
+      requestId: tempRequestId,
+      trigger: trigger ?? { kind: "checkinButton" },
+    })
+
+    if (!triggerResponse || triggerResponse.success !== true) {
+      sendResponse({
+        success: false,
+        reason: "trigger_failed",
+        identity,
+        error: triggerResponse?.error ?? TEMP_WINDOW_FETCH_NO_RESPONSE_ERROR,
+      })
+      return
+    }
+
+    const triggerResult = triggerResponse as CheckinPageActionTriggerResult & {
+      success: true
+    }
+    const reason =
+      triggerResult.status === "clicked"
+        ? "clicked"
+        : triggerResult.status === "target_not_found"
+          ? "target_not_found"
+          : triggerResult.status === "throttled"
+            ? "throttled"
+            : "trigger_failed"
+
+    sendResponse({
+      success: triggerResult.clicked,
+      reason,
+      identity,
+      trigger: {
+        status: triggerResult.status,
+        clicked: triggerResult.clicked,
+        reason: triggerResult.reason,
+        detection: triggerResult.detection,
+        ...(triggerResult.target ? { target: triggerResult.target } : {}),
+        ...(triggerResult.error ? { error: triggerResult.error } : {}),
+      },
+      ...(triggerResult.error ? { error: triggerResult.error } : {}),
+    })
+  } catch (error) {
+    logTempWindow("tempWindowCheckinPageActionError", {
+      requestId: tempRequestId,
+      error: getErrorMessage(error),
+    })
+    await releaseTempContext(tempRequestId, {
+      forceClose: true,
+      reason: "tempWindowCheckinPageActionError",
+    })
+    sendResponse({
+      success: false,
+      reason: "trigger_failed",
+      error: getErrorMessage(error),
+    })
+  } finally {
+    await releaseTempContext(tempRequestId)
+  }
+}
+
+/**
  * Executes a Turnstile-assisted temp-context fetch.
  *
  * This flow navigates the temporary tab to a page that can render Turnstile,
@@ -1230,9 +1464,7 @@ export async function handleTempWindowTurnstileFetch(
     )
     const { tabId } = context
 
-    // Ensure the temp tab is on the requested page URL so Turnstile can render.
-    await updateTab(tabId, { url: pageUrl })
-    await waitForTabComplete(tabId, {
+    await navigateTempContextToPage(context, pageUrl, {
       requestId: tempRequestId,
       origin: normalizeOrigin(originUrl),
     })
@@ -1990,6 +2222,7 @@ async function createTempContextInstance(
     void showShieldBypassUiInTab({ tabId, origin, requestId })
 
     await waitForTabComplete(tabId, { requestId, origin })
+    const readyTab = await getTempContextTabSnapshot(tabId)
 
     logTempWindow("createTempContextInstanceReady", {
       requestId,
@@ -2006,6 +2239,7 @@ async function createTempContextInstance(
       tabId,
       origin,
       type,
+      currentUrl: readyTab?.url ?? url,
       activeRequestIds: new Set<string>(),
       lastUsed: Date.now(),
     }
@@ -2051,6 +2285,27 @@ function buildTempContextOriginKey(
   }
 
   return origin
+}
+
+/**
+ * Reads the live URL/load state for a reusable temp-context tab.
+ */
+async function getTempContextTabSnapshot(
+  tabId: number,
+): Promise<TempContextTabSnapshot | null> {
+  try {
+    const tab = await getTab(tabId)
+    return {
+      url: tab.url,
+      status: tab.status,
+    }
+  } catch (error) {
+    logger.debug("Unable to inspect temp context tab state", {
+      tabId,
+      error: getErrorMessage(error),
+    })
+    return null
+  }
 }
 
 /**

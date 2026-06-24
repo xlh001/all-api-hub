@@ -66,6 +66,7 @@ export const RuntimeActionIds = {
   AutoDetectSite: "autoDetectSite",
   TempWindowFetch: "tempWindowFetch",
   TempWindowTurnstileFetch: "tempWindowTurnstileFetch",
+  TempWindowCheckinPageAction: "tempWindowCheckinPageAction",
   TempWindowGetRenderedTitle: "tempWindowGetRenderedTitle",
 
   CookieInterceptorTrackUrl: composeRuntimeAction(
@@ -119,6 +120,7 @@ export const RuntimeActionIds = {
   ContentCheckCapGuard: "checkCapGuard",
   ContentCheckCloudflareGuard: "checkCloudflareGuard",
   ContentWaitForTurnstileToken: "waitForTurnstileToken",
+  ContentTriggerCheckinPageAction: "triggerCheckinPageAction",
   ContentWaitAndGetUserInfo: "waitAndGetUserInfo",
   ContentPerformTempWindowFetch: "performTempWindowFetch",
   ContentGetRenderedTitle: "getRenderedTitle",
