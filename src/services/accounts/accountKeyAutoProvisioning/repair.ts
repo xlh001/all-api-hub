@@ -108,6 +108,7 @@ class AccountKeyRepairRunner {
   private storage: Storage
   private currentProgress: AccountKeyRepairProgress | null = null
   private currentRun: Promise<void> | null = null
+  private currentAbortController: AbortController | null = null
   private progressQueue: Promise<void> = Promise.resolve()
 
   constructor() {
@@ -136,6 +137,7 @@ class AccountKeyRepairRunner {
       return await this.getProgress()
     }
 
+    const abortController = new AbortController()
     const now = Date.now()
     const progress: AccountKeyRepairProgress = {
       jobId: safeRandomUUID("accountKeyRepair"),
@@ -158,18 +160,73 @@ class AccountKeyRepairRunner {
     }
 
     this.currentProgress = progress
-    await this.persistAndNotify()
-
-    this.currentRun = this.run(progress.jobId).finally(() => {
-      this.currentRun = null
-    })
+    this.currentAbortController = abortController
+    const initialPersist = this.persistAndNotify()
+    const runPromise = initialPersist
+      .then(() => this.run(progress.jobId, abortController.signal))
+      .catch((error) => {
+        logger.error("Repair run failed to start", error)
+      })
+      .finally(() => {
+        if (this.currentAbortController === abortController) {
+          this.currentAbortController = null
+        }
+        if (this.currentRun === runPromise) {
+          this.currentRun = null
+        }
+      })
+    this.currentRun = runPromise
+    await initialPersist
 
     return progress
   }
 
-  private async run(jobId: string): Promise<void> {
+  async cancel(): Promise<{
+    success: true
+    data: AccountKeyRepairProgress
+  }> {
+    const progress = await this.getProgress()
+
+    if (progress.state !== ACCOUNT_KEY_REPAIR_JOB_STATES.Running) {
+      return { success: true as const, data: progress }
+    }
+
+    this.currentAbortController?.abort()
+    this.currentAbortController = null
+    await this.queueProgressUpdate((prev) =>
+      prev.state === ACCOUNT_KEY_REPAIR_JOB_STATES.Running
+        ? {
+            ...prev,
+            state: ACCOUNT_KEY_REPAIR_JOB_STATES.Cancelled,
+            finishedAt: Date.now(),
+          }
+        : prev,
+    )
+
+    return {
+      success: true as const,
+      data: this.currentProgress ?? progress,
+    }
+  }
+
+  private isCurrentJobCancelled(jobId: string, abortSignal: AbortSignal) {
+    return (
+      abortSignal.aborted ||
+      (this.currentProgress?.jobId === jobId &&
+        this.currentProgress?.state === ACCOUNT_KEY_REPAIR_JOB_STATES.Cancelled)
+    )
+  }
+
+  private async run(jobId: string, abortSignal: AbortSignal): Promise<void> {
     try {
+      if (this.isCurrentJobCancelled(jobId, abortSignal)) {
+        return
+      }
+
       const allAccounts = await accountStorage.getAllAccounts()
+      if (this.isCurrentJobCancelled(jobId, abortSignal)) {
+        return
+      }
       const enabledAccounts = allAccounts.filter(
         (account) => account.disabled !== true,
       )
@@ -191,6 +248,10 @@ class AccountKeyRepairRunner {
       await this.persistAndNotify()
 
       for (const account of enabledAccounts) {
+        if (this.isCurrentJobCancelled(jobId, abortSignal)) {
+          return
+        }
+
         const skipReason = getSkipReason(account)
         if (skipReason) {
           await this.recordResult({
@@ -221,14 +282,20 @@ class AccountKeyRepairRunner {
       await runPerKeySequential({
         items: eligibleAccounts,
         getKey: (account) => getOriginKey(account.site_url),
+        shouldContinue: () => !this.isCurrentJobCancelled(jobId, abortSignal),
         worker: async (account) => {
           await this.processEligibleAccount(
             account,
             displaySiteDataById.get(account.id)?.name ?? account.site_name,
             displaySiteDataById,
+            abortSignal,
           )
         },
       })
+
+      if (this.isCurrentJobCancelled(jobId, abortSignal)) {
+        return
+      }
 
       this.updateProgress((prev) => ({
         ...prev,
@@ -237,6 +304,10 @@ class AccountKeyRepairRunner {
       }))
       await this.persistAndNotify()
     } catch (error) {
+      if (this.isCurrentJobCancelled(jobId, abortSignal)) {
+        return
+      }
+
       logger.error("Repair run failed", error)
       this.updateProgress((prev) => ({
         ...prev,
@@ -253,6 +324,9 @@ class AccountKeyRepairRunner {
           currentJobId: current.jobId,
         })
       }
+      if (this.currentAbortController?.signal === abortSignal) {
+        this.currentAbortController = null
+      }
     }
   }
 
@@ -260,9 +334,14 @@ class AccountKeyRepairRunner {
     account: SiteAccount,
     accountName: string,
     displaySiteDataById: ReadonlyMap<string, DisplaySiteData>,
+    abortSignal: AbortSignal,
   ): Promise<void> {
     const originKey = getOriginKey(account.site_url)
     try {
+      if (abortSignal.aborted) {
+        return
+      }
+
       const displaySiteData: DisplaySiteData =
         displaySiteDataById.get(account.id) ??
         accountStorage.convertToDisplayData(account)
@@ -296,7 +375,12 @@ class AccountKeyRepairRunner {
         displaySiteData,
         accountName: resolvedAccountName,
         siteUrlOrigin: originKey,
+        abortSignal,
       })
+
+      if (abortSignal.aborted) {
+        return
+      }
 
       await this.recordResult({
         accountId: account.id,
@@ -317,6 +401,10 @@ class AccountKeyRepairRunner {
         finishedAt: Date.now(),
       })
     } catch (error) {
+      if (abortSignal.aborted) {
+        return
+      }
+
       await this.recordResult({
         accountId: account.id,
         accountName,
@@ -498,6 +586,13 @@ export async function getAccountKeyRepairProgress() {
 }
 
 /**
+ * Cancel the active background repair job, if one is running.
+ */
+export async function cancelAccountKeyRepair() {
+  return await accountKeyRepairRunner.cancel()
+}
+
+/**
  * Delete selected invalid account tokens and update the current repair progress.
  */
 export async function deleteInvalidAccountTokens(
@@ -575,6 +670,13 @@ export function setupAccountKeyRepairMessagingListeners() {
     onAccountKeyRepairMessage(AccountKeyRepairMessageTypes.Start, async () => {
       try {
         return await startAccountKeyRepair()
+      } catch (error) {
+        return toAccountKeyRepairFailure(error)
+      }
+    }),
+    onAccountKeyRepairMessage(AccountKeyRepairMessageTypes.Cancel, async () => {
+      try {
+        return await cancelAccountKeyRepair()
       } catch (error) {
         return toAccountKeyRepairFailure(error)
       }
