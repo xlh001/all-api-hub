@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  CircleX,
   Columns3,
   Filter,
   Layers,
@@ -37,6 +38,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
 import toast from "react-hot-toast"
@@ -270,6 +272,7 @@ export default function ManagedSiteChannels({
   const [migrationChannels, setMigrationChannels] = useState<ChannelRow[]>([])
   const [isMigrationDialogOpen, setIsMigrationDialogOpen] = useState(false)
   const [isMigrationMode, setIsMigrationMode] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
   const verification = useNewApiManagedVerification()
   const { openNewApiManagedVerification } = verification
 
@@ -1278,13 +1281,26 @@ export default function ManagedSiteChannels({
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
             <div className="relative w-full md:max-w-sm">
               <Input
+                ref={searchInputRef}
                 value={searchValue}
                 onChange={(event) => handleSearchChange(event.target.value)}
                 placeholder={t("toolbar.searchPlaceholder")}
-                leftIcon={<ListFilter className="h-4 w-4" />}
-                onClear={() => handleSearchChange("")}
-                clearButtonLabel={t("toolbar.clearSearch")}
+                className="ps-9"
               />
+              <ListFilter className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              {searchValue && (
+                <button
+                  type="button"
+                  aria-label={t("toolbar.clearSearch")}
+                  className="text-muted-foreground/80 absolute top-1/2 right-2 -translate-y-1/2"
+                  onClick={() => {
+                    handleSearchChange("")
+                    searchInputRef.current?.focus()
+                  }}
+                >
+                  <CircleX className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2 md:flex md:flex-1 md:items-center md:gap-2">
@@ -1494,11 +1510,9 @@ export default function ManagedSiteChannels({
                           style={{ width: header.getSize() }}
                         >
                           {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                            <Button
+                            <button
                               type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto w-full justify-start gap-2 p-0"
+                              className="flex w-full items-center gap-2"
                               onClick={header.column.getToggleSortingHandler()}
                             >
                               {flexRender(
@@ -1511,7 +1525,7 @@ export default function ManagedSiteChannels({
                               {header.column.getIsSorted() === "desc" && (
                                 <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                               )}
-                            </Button>
+                            </button>
                           ) : (
                             flexRender(
                               header.column.columnDef.header,

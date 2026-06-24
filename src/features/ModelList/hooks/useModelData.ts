@@ -60,7 +60,10 @@ import {
   type ProductAnalyticsSourceKind,
 } from "~/services/productAnalytics/events"
 import { buildModelListDiagnostics } from "~/services/productAnalytics/modelListDiagnostics"
-import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
+import {
+  isAbortError,
+  toSanitizedErrorSummary,
+} from "~/services/verification/aiApiVerification/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { getErrorMessage } from "~/utils/core/error"
 
@@ -406,10 +409,12 @@ function createModelPricingCacheKey(
 /** Builds the adapter pricing request from a display account. */
 function createDisplayAccountModelPricingRequest(
   account: DisplaySiteData,
+  abortSignal?: AbortSignal,
 ): ModelPricingRequest {
   return {
     baseUrl: account.baseUrl,
     accountId: account.id,
+    abortSignal,
     auth: {
       authType: account.authType,
       userId: account.userId,
@@ -431,6 +436,7 @@ async function mapWithConcurrency<T, R>(
   items: T[],
   concurrency: number,
   mapper: (item: T) => Promise<R>,
+  abortSignal?: AbortSignal,
 ) {
   const results = new Array<R>(items.length)
   let nextIndex = 0
@@ -439,6 +445,9 @@ async function mapWithConcurrency<T, R>(
   await Promise.all(
     Array.from({ length: workerCount }, async () => {
       while (nextIndex < items.length) {
+        if (abortSignal?.aborted) {
+          throw abortSignal.reason ?? new DOMException("Aborted", "AbortError")
+        }
         const currentIndex = nextIndex
         nextIndex += 1
         results[currentIndex] = await mapper(items[currentIndex])
@@ -453,6 +462,7 @@ async function mapWithConcurrency<T, R>(
 async function loadTokenScopedCatalogPricingContext(params: {
   account: DisplaySiteData
   token: ApiToken
+  abortSignal?: AbortSignal
 }): Promise<SettledContextResult> {
   try {
     const pricing = await loadAccountTokenFallbackPricingResponse(params)
@@ -472,6 +482,10 @@ async function loadTokenScopedCatalogPricingContext(params: {
       },
     }
   } catch (error) {
+    if (isAbortError(error, params.abortSignal)) {
+      throw error
+    }
+
     return { error }
   }
 }
@@ -479,10 +493,18 @@ async function loadTokenScopedCatalogPricingContext(params: {
 /** Loads token-scoped catalog fallbacks for every account token in comparison mode. */
 async function fetchTokenScopedCatalogPricingContexts(
   account: DisplaySiteData,
+  abortSignal?: AbortSignal,
 ): Promise<AccountPricingQueryResult> {
+  if (abortSignal?.aborted) {
+    throw abortSignal.reason ?? new DOMException("Aborted", "AbortError")
+  }
+
   const tokens = (await fetchDisplayAccountTokens(account)).filter(
     (token) => token.status === 1,
   )
+  if (abortSignal?.aborted) {
+    throw abortSignal.reason ?? new DOMException("Aborted", "AbortError")
+  }
   if (tokens.length === 0) {
     throw createUnsupportedModelPricingError()
   }
@@ -490,7 +512,9 @@ async function fetchTokenScopedCatalogPricingContexts(
   const settledResults = await mapWithConcurrency(
     tokens,
     TOKEN_SCOPED_CATALOG_CONCURRENCY,
-    (token) => loadTokenScopedCatalogPricingContext({ account, token }),
+    (token) =>
+      loadTokenScopedCatalogPricingContext({ account, token, abortSignal }),
+    abortSignal,
   )
   const contexts = settledResults.flatMap((result) =>
     result.context ? [result.context] : [],
@@ -586,10 +610,13 @@ function useSingleAccountModelData(params: {
         : undefined,
     [safeDisplayData, selectedSource],
   )
+  const fallbackCatalogAbortControllerRef = useRef<AbortController | null>(null)
 
   const resetFallbackState = useCallback(() => {
     fallbackTokensRequestIdRef.current += 1
     fallbackCatalogRequestIdRef.current += 1
+    fallbackCatalogAbortControllerRef.current?.abort()
+    fallbackCatalogAbortControllerRef.current = null
     setFallbackStateScopeKey(MODEL_LIST_QUERY_SCOPE_VALUES.NONE)
     setFallbackPricingData(null)
     setFallbackTokens([])
@@ -712,7 +739,7 @@ function useSingleAccountModelData(params: {
     staleTime: MODEL_PRICING_CACHE_TTL_MS,
     refetchOnWindowFocus: false,
     retry: shouldRetryModelPricingQuery,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!currentAccount) {
         throw new Error("No account selected")
       }
@@ -732,7 +759,7 @@ function useSingleAccountModelData(params: {
       directLoadCacheHitRef.current = false
 
       const data = await readiness.modelPricing.fetchPricing(
-        createDisplayAccountModelPricingRequest(currentAccount),
+        createDisplayAccountModelPricingRequest(currentAccount, signal),
       )
 
       if (!Array.isArray(data.data)) {
@@ -831,6 +858,9 @@ function useSingleAccountModelData(params: {
     if (!currentAccount || !selectedFallbackToken) return
     const requestScopeKey = currentAccountScopeKey
     const requestId = ++fallbackCatalogRequestIdRef.current
+    fallbackCatalogAbortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    fallbackCatalogAbortControllerRef.current = abortController
 
     setFallbackStateScopeKey(requestScopeKey)
     setIsLoadingFallbackCatalog(true)
@@ -840,6 +870,7 @@ function useSingleAccountModelData(params: {
       const pricing = await loadAccountTokenFallbackPricingResponse({
         account: currentAccount,
         token: selectedFallbackToken,
+        abortSignal: abortController.signal,
       })
 
       if (!isActiveFallbackCatalogRequest(requestScopeKey, requestId)) {
@@ -859,7 +890,10 @@ function useSingleAccountModelData(params: {
         modelCount: getPricingModelCount(pricing),
       })
     } catch (error) {
-      if (!isActiveFallbackCatalogRequest(requestScopeKey, requestId)) {
+      if (
+        abortController.signal.aborted ||
+        !isActiveFallbackCatalogRequest(requestScopeKey, requestId)
+      ) {
         return
       }
 
@@ -882,6 +916,9 @@ function useSingleAccountModelData(params: {
         fallbackUsed: true,
       })
     } finally {
+      if (fallbackCatalogAbortControllerRef.current === abortController) {
+        fallbackCatalogAbortControllerRef.current = null
+      }
       if (isActiveFallbackCatalogRequest(requestScopeKey, requestId)) {
         setIsLoadingFallbackCatalog(false)
       }
@@ -893,6 +930,13 @@ function useSingleAccountModelData(params: {
     selectedFallbackToken,
     t,
   ])
+
+  useEffect(() => {
+    return () => {
+      fallbackCatalogAbortControllerRef.current?.abort()
+      fallbackCatalogAbortControllerRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     if (
@@ -1191,13 +1235,13 @@ function useAllAccountsModelData(
       staleTime: MODEL_PRICING_CACHE_TTL_MS,
       refetchOnWindowFocus: false,
       retry: shouldRetryModelPricingQuery,
-      queryFn: async () => {
+      queryFn: async ({ signal }) => {
         const readiness = resolveModelListAccountSourceReadiness(account)
         if (
           readiness.route ===
           MODEL_LIST_ACCOUNT_SOURCE_ROUTES.TokenScopedRuntimeCatalog
         ) {
-          return fetchTokenScopedCatalogPricingContexts(account)
+          return fetchTokenScopedCatalogPricingContexts(account, signal)
         }
 
         if (
@@ -1223,7 +1267,7 @@ function useAllAccountsModelData(
         }
 
         const data = await readiness.modelPricing.fetchPricing(
-          createDisplayAccountModelPricingRequest(account),
+          createDisplayAccountModelPricingRequest(account, signal),
         )
 
         if (!Array.isArray(data.data)) {
@@ -1444,7 +1488,7 @@ function useProfileModelData(
     staleTime: MODEL_PRICING_CACHE_TTL_MS,
     refetchOnWindowFocus: false,
     retry: 1,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!currentProfile) {
         throw new Error("No profile selected")
       }
@@ -1453,6 +1497,7 @@ function useProfileModelData(
         apiType: currentProfile.apiType,
         baseUrl: currentProfile.baseUrl,
         apiKey: currentProfile.apiKey,
+        abortSignal: signal,
       })
 
       return buildApiCredentialProfilePricingResponse(modelIds)

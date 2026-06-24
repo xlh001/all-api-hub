@@ -99,4 +99,107 @@ describe("loadModelPriceTable", () => {
     expect(abortSignal?.aborted).toBe(true)
     await loadingExpectation
   })
+
+  it("aborts LiteLLM price-table requests when the caller signal aborts", async () => {
+    const abortController = new AbortController()
+    let abortSignal: AbortSignal | undefined
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: RequestInit) => {
+        abortSignal = init?.signal ?? undefined
+
+        return new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("The operation was aborted", "AbortError"))
+          })
+        })
+      }),
+    )
+
+    const loading = loadModelPriceTable(abortController.signal)
+    const loadingExpectation = expect(loading).rejects.toMatchObject({
+      name: "AbortError",
+    })
+
+    abortController.abort()
+
+    expect(abortSignal?.aborted).toBe(true)
+    await loadingExpectation
+  })
+
+  it("uses the timeout controller when AbortSignal.any is unavailable", async () => {
+    const originalAny = AbortSignal.any
+    const callerAbortController = new AbortController()
+    let fetchSignal: AbortSignal | undefined
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: RequestInit) => {
+        fetchSignal = init?.signal ?? undefined
+
+        return new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("The operation was aborted", "AbortError"))
+          })
+        })
+      }),
+    )
+    Object.defineProperty(AbortSignal, "any", {
+      configurable: true,
+      value: undefined,
+    })
+
+    try {
+      const loading = loadModelPriceTable(callerAbortController.signal)
+      const loadingExpectation = expect(loading).rejects.toMatchObject({
+        name: "AbortError",
+      })
+
+      callerAbortController.abort()
+
+      expect(fetchSignal?.aborted).toBe(true)
+      await loadingExpectation
+    } finally {
+      Object.defineProperty(AbortSignal, "any", {
+        configurable: true,
+        value: originalAny,
+      })
+    }
+  })
+
+  it("relays an already-aborted caller signal when AbortSignal.any is unavailable", async () => {
+    const originalAny = AbortSignal.any
+    const callerAbortController = new AbortController()
+    const abortError = new DOMException("Already stopped", "AbortError")
+    callerAbortController.abort(abortError)
+    let fetchSignal: AbortSignal | undefined
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: RequestInit) => {
+        fetchSignal = init?.signal ?? undefined
+        return Promise.reject(
+          new DOMException("The operation was aborted", "AbortError"),
+        )
+      }),
+    )
+    Object.defineProperty(AbortSignal, "any", {
+      configurable: true,
+      value: undefined,
+    })
+
+    try {
+      await expect(
+        loadModelPriceTable(callerAbortController.signal),
+      ).rejects.toMatchObject({
+        name: "AbortError",
+      })
+
+      expect(fetchSignal?.aborted).toBe(true)
+      expect(fetchSignal?.reason).toBe(abortError)
+    } finally {
+      Object.defineProperty(AbortSignal, "any", {
+        configurable: true,
+        value: originalAny,
+      })
+    }
+  })
 })

@@ -2,10 +2,10 @@ import { XMarkIcon } from "@heroicons/react/24/outline"
 import type { CSSProperties } from "react"
 import { createPortal } from "react-dom"
 import toast, { ToastBar, Toaster } from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 import { getThemeAwareToastStyles } from "~/components/toast/themeAwareToastStyles"
 import { useToasterPortalHost } from "~/components/toast/ToasterPortal"
-import { IconButton } from "~/components/ui"
 import { useTheme } from "~/contexts/ThemeContext"
 
 interface ThemeAwareToasterProps {
@@ -29,6 +29,7 @@ export const ThemeAwareToaster = ({
 }: ThemeAwareToasterProps) => {
   const { resolvedTheme } = useTheme()
   const portalHost = useToasterPortalHost()
+  const { t: translate } = useTranslation("common")
 
   const toaster = (
     <Toaster
@@ -63,23 +64,21 @@ export const ThemeAwareToaster = ({
         },
       }}
     >
-      {(t) => (
-        <ToastBar toast={t}>
+      {(toastInstance) => (
+        <ToastBar toast={toastInstance}>
           {({ icon, message }) => {
             return (
               <>
                 {icon}
                 {message}
-                {t.type !== "loading" && (
-                  <IconButton
+                {toastInstance.type !== "loading" && (
+                  <button
                     type="button"
-                    aria-label="Close notification"
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => toast.dismiss(t.id)}
+                    aria-label={translate("actions.close")}
+                    onClick={() => toast.dismiss(toastInstance.id)}
                   >
                     <XMarkIcon className="h-4 w-4" />
-                  </IconButton>
+                  </button>
                 )}
               </>
             )

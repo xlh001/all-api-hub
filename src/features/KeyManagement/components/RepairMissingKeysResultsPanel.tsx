@@ -1,7 +1,7 @@
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import type { TFunction } from "i18next"
 import { ShieldCheck, TriangleAlert } from "lucide-react"
-import type { Dispatch, SetStateAction } from "react"
+import { useRef, type Dispatch, type SetStateAction } from "react"
 
 import {
   Badge,
@@ -77,6 +77,8 @@ export function RepairMissingKeysResultsPanel({
   onSelectedInvalidTokenKeysChange,
   t,
 }: RepairMissingKeysResultsPanelProps) {
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+
   return (
     <>
       <ResponsiveToggleGroup
@@ -161,6 +163,7 @@ export function RepairMissingKeysResultsPanel({
               {t("keyManagement:repairMissingKeys.searchLabel")}
             </Label>
             <Input
+              ref={searchInputRef}
               id="repair-missing-keys-search"
               type="text"
               placeholder={t(
@@ -170,8 +173,21 @@ export function RepairMissingKeysResultsPanel({
               value={searchTerm}
               onChange={(event) => onSearchTermChange(event.target.value)}
               leftIcon={<MagnifyingGlassIcon className="h-4 w-4" />}
-              onClear={() => onSearchTermChange("")}
-              clearButtonLabel={t("common:actions.clear")}
+              rightIcon={
+                searchTerm ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSearchTermChange("")
+                      searchInputRef.current?.focus()
+                    }}
+                    className="dark:hover:bg-dark-bg-tertiary rounded p-1 hover:bg-gray-100"
+                    aria-label={t("common:actions.clear")}
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </button>
+                ) : null
+              }
               containerClassName="w-full"
             />
           </div>

@@ -3,12 +3,13 @@ import { runApiVerificationProbe } from "~/services/verification/aiApiVerificati
 
 import type { CliSupportResult, CliSupportStatus, CliToolId } from "../types"
 
-type RunCliToolCallingSimulationParams = {
+interface RunCliToolCallingSimulationParams {
   toolId: CliToolId
   baseUrl: string
   apiKey: string
   apiType: ApiVerificationApiType
   modelId?: string
+  abortSignal?: AbortSignal
   /**
    * Documented endpoint template for UI display.
    *
@@ -35,6 +36,7 @@ export async function runCliToolCallingSimulation(
     apiType: params.apiType,
     modelId: params.modelId,
     probeId: "tool-calling",
+    abortSignal: params.abortSignal,
   })
 
   const status: CliSupportStatus = probeResult.status

@@ -455,17 +455,47 @@ export function BatchVerifyModelsDialog({
   )
 
   const getResolvedToken = useCallback(
-    (item: AccountBatchVerifyModelItem, token: ApiToken): Promise<ApiToken> => {
+    (
+      item: AccountBatchVerifyModelItem,
+      token: ApiToken,
+      abortSignal?: AbortSignal,
+    ): Promise<ApiToken> => {
       const cacheKey = `${item.source.account.id}:${token.id}`
       const cached = resolvedTokenCacheRef.current.get(cacheKey)
-      if (cached) return cached
+      const promise =
+        cached ??
+        resolveDisplayAccountTokenForSecret(item.source.account, token, {
+          abortSignal,
+        })
+      if (!cached) {
+        const cachedPromise = promise.catch((error) => {
+          resolvedTokenCacheRef.current.delete(cacheKey)
+          throw error
+        })
+        cachedPromise.catch(() => {})
+        resolvedTokenCacheRef.current.set(cacheKey, cachedPromise)
+      }
 
-      const promise = resolveDisplayAccountTokenForSecret(
-        item.source.account,
-        token,
-      )
-      resolvedTokenCacheRef.current.set(cacheKey, promise)
-      return promise
+      if (!abortSignal || !cached) return promise
+      if (abortSignal.aborted) {
+        return Promise.reject(
+          abortSignal.reason ?? new DOMException("Aborted", "AbortError"),
+        )
+      }
+
+      return Promise.race([
+        promise,
+        new Promise<ApiToken>((_resolve, reject) => {
+          abortSignal.addEventListener(
+            "abort",
+            () =>
+              reject(
+                abortSignal.reason ?? new DOMException("Aborted", "AbortError"),
+              ),
+            { once: true },
+          )
+        }),
+      ])
     },
     [],
   )
@@ -548,7 +578,11 @@ export function BatchVerifyModelsDialog({
                   return null
                 }
 
-                const resolvedToken = await getResolvedToken(item, token)
+                const resolvedToken = await getResolvedToken(
+                  item,
+                  token,
+                  abortSignal,
+                )
                 if (isStopped()) return null
 
                 return {
