@@ -44,11 +44,11 @@ import {
 } from "~/components/ui"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { VerifyApiCredentialProfileDialog } from "~/features/ApiCredentialProfiles/components/VerifyApiCredentialProfileDialog"
-import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
-import { buildApiCredentialProfileName } from "~/features/KeyManagement/utils/apiCredentialProfileName"
+import { TOKEN_PROVISIONING_TEST_IDS } from "~/features/TokenProvisioning/testIds"
 import { resolveDisplayAccountTokenForSecret } from "~/services/accounts/utils/apiServiceRequest"
 import { normalizeAccountSiteUrlForManagedChannel } from "~/services/accounts/utils/siteUrlNormalization"
-import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
+import { createProfileFromAccountToken } from "~/services/apiCredentialProfiles/accountTokenImport"
+import { buildApiCredentialProfileName } from "~/services/apiCredentialProfiles/accountTokenProfileName"
 import { OpenInCherryStudio } from "~/services/integrations/cherryStudio"
 import {
   MANAGED_SITE_TOKEN_CHANNEL_STATUS_UNKNOWN_REASONS,
@@ -82,6 +82,8 @@ import {
   openApiCredentialProfilesPage,
   openSettingsTab,
 } from "~/utils/navigation"
+
+import { KEY_MANAGEMENT_TEST_IDS } from "../../testIds"
 
 /**
  * Unified logger scoped to the Key Management token header actions.
@@ -417,24 +419,20 @@ function TokenActionButtons({
       surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsKeyManagementRowActions,
       entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
     })
-    const profileName = buildApiCredentialProfileName({
-      accountName: account.name,
-      fallbackAccountName: token.accountName,
-      tokenName: token.name,
-    })
     let resolvedToken = token
 
     try {
       resolvedToken = await resolveDisplayAccountTokenForSecret(account, token)
-      const profile = await apiCredentialProfilesStorage.createProfile({
-        name: profileName,
-        apiType,
-        baseUrl: normalizeAccountSiteUrlForManagedChannel({
-          siteType: account.siteType,
-          url: account.baseUrl,
-        }),
-        apiKey: resolvedToken.key,
+      const profile = await createProfileFromAccountToken({
+        accountName: account.name,
+        fallbackAccountName: token.accountName,
+        baseUrl: account.baseUrl,
+        siteType: account.siteType,
         tagIds: account.tagIds ?? [],
+        token: {
+          ...token,
+          key: resolvedToken.key,
+        },
       })
       toast.success(
         (toastInstance) => (
@@ -446,7 +444,9 @@ function TokenActionButtons({
             </span>
             <button
               type="button"
-              data-testid={KEY_MANAGEMENT_TEST_IDS.openApiProfilesToastButton}
+              data-testid={
+                TOKEN_PROVISIONING_TEST_IDS.openApiProfilesToastButton
+              }
               className="shrink-0 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
               onClick={() => {
                 openApiCredentialProfilesPage()

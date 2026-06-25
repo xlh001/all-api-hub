@@ -3,9 +3,9 @@ import userEvent from "@testing-library/user-event"
 import { act } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
+import { TOKEN_PROVISIONING_TEST_IDS } from "~/features/TokenProvisioning/testIds"
 
-let OneTimeApiKeyDialog: typeof import("~/features/KeyManagement/components/OneTimeApiKeyDialog").OneTimeApiKeyDialog
+let OneTimeApiKeyDialog: typeof import("~/features/TokenProvisioning/components/OneTimeApiKeyDialog").OneTimeApiKeyDialog
 
 vi.mock("@headlessui/react", () => {
   const Dialog = ({ children }: any) => <div>{children}</div>
@@ -23,7 +23,7 @@ vi.mock("@headlessui/react", () => {
 describe("OneTimeApiKeyDialog", () => {
   beforeEach(async () => {
     ;({ OneTimeApiKeyDialog } = await import(
-      "~/features/KeyManagement/components/OneTimeApiKeyDialog"
+      "~/features/TokenProvisioning/components/OneTimeApiKeyDialog"
     ))
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -49,7 +49,7 @@ describe("OneTimeApiKeyDialog", () => {
     )
 
     expect(
-      screen.queryByTestId(KEY_MANAGEMENT_TEST_IDS.oneTimeKeySaveButton),
+      screen.queryByTestId(TOKEN_PROVISIONING_TEST_IDS.oneTimeKeySaveButton),
     ).not.toBeInTheDocument()
 
     rerender(
@@ -65,7 +65,7 @@ describe("OneTimeApiKeyDialog", () => {
     )
 
     expect(
-      screen.getByTestId(KEY_MANAGEMENT_TEST_IDS.oneTimeKeySaveButton),
+      screen.getByTestId(TOKEN_PROVISIONING_TEST_IDS.oneTimeKeySaveButton),
     ).toBeInTheDocument()
   })
 
@@ -85,7 +85,7 @@ describe("OneTimeApiKeyDialog", () => {
     )
 
     await user.click(
-      screen.getByTestId(KEY_MANAGEMENT_TEST_IDS.oneTimeKeySaveButton),
+      screen.getByTestId(TOKEN_PROVISIONING_TEST_IDS.oneTimeKeySaveButton),
     )
 
     expect(onSave).toHaveBeenCalledTimes(1)
@@ -108,7 +108,7 @@ describe("OneTimeApiKeyDialog", () => {
     )
 
     await user.click(
-      screen.getByTestId(KEY_MANAGEMENT_TEST_IDS.oneTimeKeySaveButton),
+      screen.getByTestId(TOKEN_PROVISIONING_TEST_IDS.oneTimeKeySaveButton),
     )
 
     expect(onSave).toHaveBeenCalledTimes(1)
@@ -136,7 +136,7 @@ describe("OneTimeApiKeyDialog", () => {
     )
 
     const saveButton = screen.getByTestId(
-      KEY_MANAGEMENT_TEST_IDS.oneTimeKeySaveButton,
+      TOKEN_PROVISIONING_TEST_IDS.oneTimeKeySaveButton,
     )
 
     await user.dblClick(saveButton)

@@ -1,12 +1,9 @@
 import type { TFunction } from "i18next"
 import toast from "react-hot-toast"
 
-import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
-import { buildApiCredentialProfileName } from "~/features/KeyManagement/utils/apiCredentialProfileName"
+import { TOKEN_PROVISIONING_TEST_IDS } from "~/features/TokenProvisioning/testIds"
 import { resolveDisplayAccountTokenForSecret } from "~/services/accounts/utils/apiServiceRequest"
-import { normalizeAccountSiteUrlForManagedChannel } from "~/services/accounts/utils/siteUrlNormalization"
-import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
-import { API_TYPES } from "~/services/verification/aiApiVerification"
+import { createProfileFromAccountToken } from "~/services/apiCredentialProfiles/accountTokenImport"
 import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import type { AccountToken } from "~/types/accountToken"
@@ -168,7 +165,7 @@ export async function saveApiTokensToApiCredentialProfiles({
           </span>
           <button
             type="button"
-            data-testid={KEY_MANAGEMENT_TEST_IDS.openApiProfilesToastButton}
+            data-testid={TOKEN_PROVISIONING_TEST_IDS.openApiProfilesToastButton}
             className="shrink-0 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
             onClick={() => {
               openApiCredentialProfilesPage()
@@ -236,18 +233,12 @@ async function createApiCredentialProfileFromToken({
   tagIds,
   token,
 }: Omit<BuildOneTimeApiKeyProfileSaveActionParams, "t" | "logger" | "source">) {
-  return apiCredentialProfilesStorage.createProfile({
-    name: buildApiCredentialProfileName({
-      accountName,
-      fallbackAccountName,
-      tokenName: token.name ?? "",
-    }),
-    apiType: API_TYPES.OPENAI_COMPATIBLE,
-    baseUrl: normalizeAccountSiteUrlForManagedChannel({
-      siteType,
-      url: baseUrl,
-    }),
-    apiKey: token.key,
-    tagIds: tagIds ?? [],
+  return createProfileFromAccountToken({
+    accountName,
+    fallbackAccountName,
+    baseUrl,
+    siteType,
+    tagIds,
+    token,
   })
 }

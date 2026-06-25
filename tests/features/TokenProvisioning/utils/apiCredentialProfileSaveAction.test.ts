@@ -6,11 +6,11 @@ import {
   AIHUBMIX_WEB_ORIGIN,
   SITE_TYPES,
 } from "~/constants/siteType"
-import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
+import { TOKEN_PROVISIONING_TEST_IDS } from "~/features/TokenProvisioning/testIds"
 import {
   buildOneTimeApiKeyProfileSaveAction,
   saveApiTokensToApiCredentialProfiles,
-} from "~/features/KeyManagement/utils/apiCredentialProfileSaveAction"
+} from "~/features/TokenProvisioning/utils/apiCredentialProfileSaveAction"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { AuthTypeEnum } from "~/types"
 import {
@@ -299,7 +299,7 @@ describe("saveApiTokensToApiCredentialProfiles", () => {
     const toastMessage = toastMessageRenderer({ id: "toast-1" })
     const openButton = toastMessage.props.children[1]
     expect(openButton.props["data-testid"]).toBe(
-      KEY_MANAGEMENT_TEST_IDS.openApiProfilesToastButton,
+      TOKEN_PROVISIONING_TEST_IDS.openApiProfilesToastButton,
     )
     expect(openButton.props.children).toBe(
       "keyManagement:actions.openApiProfiles",
