@@ -34,6 +34,7 @@ If you need stable and CLI-friendly API interfaces to fill your credential libra
 - [Xingchen AI](https://ai.centos.hk): 1:1 top-up ratio, invoicing support, and Claude pricing as low as 40% of the standard price. [Setup guide](./sponsor-guides/xingchen.md)
 - [Atlas Cloud](https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub): One AI API for 300+ curated video, image, and LLM models, with a new coding plan promotion for more budget-friendly API access.
 - [RunAPI](https://runapi.co/register?aff=cvDm): Register and contact the RunAPI administrator to receive a ￥7 free credit. [Setup guide](./sponsor-guides/runapi.md)
+- [AICodeMirror](https://www.right.codes/register?aff=690a8be5): Official high-stability relay services for Claude Code / Codex / Gemini CLI. Register through this link to get 20% off your first top-up, and enterprise customers can get up to 25% off.
 :::
 
 ## How to Add Credentials
