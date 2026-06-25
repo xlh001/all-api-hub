@@ -350,10 +350,12 @@ describe("AutoCheckin account actions", () => {
         return { success: true }
       },
     )
+    const openCheckInPagePromise = new Promise((_, reject) => {
+      rejectOpen = reject
+    })
+    void openCheckInPagePromise.catch(() => {})
     vi.spyOn(navigation, "openCheckInPage").mockReturnValue(
-      new Promise((_, reject) => {
-        rejectOpen = reject
-      }) as any,
+      openCheckInPagePromise as any,
     )
 
     render(<AutoCheckin routeParams={{}} />)
@@ -602,10 +604,12 @@ describe("AutoCheckin account actions", () => {
         return { success: true }
       },
     )
+    const openAccountBaseUrlPromise = new Promise((_, reject) => {
+      rejectOpen = reject
+    })
+    void openAccountBaseUrlPromise.catch(() => {})
     vi.spyOn(navigation, "openAccountBaseUrl").mockReturnValue(
-      new Promise((_, reject) => {
-        rejectOpen = reject
-      }) as any,
+      openAccountBaseUrlPromise as any,
     )
 
     render(<AutoCheckin routeParams={{}} />)
