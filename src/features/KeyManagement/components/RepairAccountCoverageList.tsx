@@ -19,6 +19,7 @@ interface RepairAccountCoverageListProps {
   accountIds: Set<string>
   filteredResults: AccountKeyRepairAccountResult[]
   openingSub2ApiAccountId: string | null
+  readOnly?: boolean
   onOpenSub2ApiTokenDialog: (accountId: string) => void
   t: TFunction
 }
@@ -30,6 +31,7 @@ export function RepairAccountCoverageList({
   accountIds,
   filteredResults,
   openingSub2ApiAccountId,
+  readOnly = false,
   onOpenSub2ApiTokenDialog,
   t,
 }: RepairAccountCoverageListProps) {
@@ -54,11 +56,35 @@ export function RepairAccountCoverageList({
               ? result.errorMessage || ""
               : ""
         const canCreateSub2ApiKey =
+          !readOnly &&
           result.outcome === ACCOUNT_KEY_REPAIR_OUTCOMES.Skipped &&
           result.skipReason === ACCOUNT_KEY_REPAIR_SKIP_REASONS.Sub2Api &&
           accountIds.has(result.accountId)
 
         const badgeVariant = OUTCOME_BADGE_VARIANTS[result.outcome]
+        const renamedTokenCount = result.renamedTokens?.length ?? 0
+        const renameFailedTokenCount = result.renameFailedTokens?.length ?? 0
+        const renameBadges =
+          renamedTokenCount > 0 || renameFailedTokenCount > 0 ? (
+            <>
+              {renamedTokenCount > 0 ? (
+                <Badge variant="info" size="sm">
+                  {t(
+                    "keyManagement:repairMissingKeys.renameSummary.accountRenamed",
+                    { count: renamedTokenCount },
+                  )}
+                </Badge>
+              ) : null}
+              {renameFailedTokenCount > 0 ? (
+                <Badge variant="warning" size="sm">
+                  {t(
+                    "keyManagement:repairMissingKeys.renameSummary.accountFailed",
+                    { count: renameFailedTokenCount },
+                  )}
+                </Badge>
+              ) : null}
+            </>
+          ) : null
 
         return (
           <li
@@ -139,6 +165,11 @@ export function RepairAccountCoverageList({
                     {getCoverageGroupLabel(t, "missingGroup", group)}
                   </Badge>
                 ))}
+                {renameBadges}
+              </div>
+            ) : renamedTokenCount > 0 || renameFailedTokenCount > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                {renameBadges}
               </div>
             ) : null}
           </li>

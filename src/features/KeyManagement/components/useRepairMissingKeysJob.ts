@@ -103,6 +103,7 @@ interface UseRepairMissingKeysJobOptions {
   accounts: DisplaySiteData[]
   isOpen: boolean
   startOnOpen: boolean
+  renameAutoTemplateTokens?: boolean
   t: TFunction
 }
 
@@ -112,6 +113,7 @@ interface UseRepairMissingKeysJobOptions {
 export function useRepairMissingKeysJob({
   accounts,
   isOpen,
+  renameAutoTemplateTokens = true,
   startOnOpen,
   t,
 }: UseRepairMissingKeysJobOptions) {
@@ -127,6 +129,7 @@ export function useRepairMissingKeysJob({
   const progressRef = useRef<AccountKeyRepairProgress | null>(null)
   const accountsRef = useRef(accounts)
   const isDialogOpenRef = useRef(isOpen)
+  const hasAutoStartedRef = useRef(false)
   const startInFlightRef = useRef(false)
   const startRequestIdRef = useRef(0)
 
@@ -154,6 +157,9 @@ export function useRepairMissingKeysJob({
     try {
       const response = await sendAccountKeyRepairMessage(
         AccountKeyRepairMessageTypes.Start,
+        {
+          renameAutoTemplateTokens,
+        },
       )
       if (response?.success && response.data) {
         startedAnalyticsJobIdRef.current = response.data.jobId
@@ -202,7 +208,7 @@ export function useRepairMissingKeysJob({
         }
       }
     }
-  }, [t])
+  }, [renameAutoTemplateTokens, t])
 
   const handleCancelAudit = useCallback(async () => {
     if (cancelInFlightRef.current) {
@@ -322,9 +328,14 @@ export function useRepairMissingKeysJob({
   }, [isOpen, t])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {
+      hasAutoStartedRef.current = false
+      return
+    }
     if (!startOnOpen) return
+    if (hasAutoStartedRef.current) return
 
+    hasAutoStartedRef.current = true
     void handleStartAudit()
   }, [handleStartAudit, isOpen, startOnOpen])
 

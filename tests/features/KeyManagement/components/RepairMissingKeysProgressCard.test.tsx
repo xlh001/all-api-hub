@@ -7,7 +7,21 @@ import { RepairMissingKeysProgressCard } from "~/features/KeyManagement/componen
 import type { AccountKeyRepairProgress } from "~/types/accountKeyAutoProvisioning"
 import { ACCOUNT_KEY_REPAIR_JOB_STATES } from "~/types/accountKeyAutoProvisioning"
 
-const t = ((key: string) => key) as TFunction
+const t = ((key: string, options?: Record<string, unknown>) => {
+  if (key === "keyManagement:repairMissingKeys.renameSummary.accountRenamed") {
+    return `renamed ${options?.count}`
+  }
+  if (key === "keyManagement:repairMissingKeys.renameSummary.accountFailed") {
+    return `failed ${options?.count}`
+  }
+  if (
+    key === "keyManagement:repairMissingKeys.renameSummary.summarySeparator"
+  ) {
+    return " | "
+  }
+
+  return key
+}) as TFunction
 
 function buildProgress(
   overrides: Partial<AccountKeyRepairProgress> = {},
@@ -130,6 +144,30 @@ describe("RepairMissingKeysProgressCard", () => {
     expect(onCancelAudit).toHaveBeenCalledTimes(1)
   })
 
+  it("uses custom progress actions when provided", () => {
+    renderCard({
+      progress: buildProgress({
+        state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      }),
+      actions: (
+        <button type="button">
+          keyManagement:repairMissingKeys.previousResult.backToSetup
+        </button>
+      ),
+    })
+
+    expect(
+      screen.getByRole("button", {
+        name: "keyManagement:repairMissingKeys.previousResult.backToSetup",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", {
+        name: "keyManagement:repairMissingKeys.actions.rerun",
+      }),
+    ).not.toBeInTheDocument()
+  })
+
   it("renders state-derived processed totals and outcome counts", () => {
     renderCard({
       progress: buildProgress({
@@ -178,5 +216,46 @@ describe("RepairMissingKeysProgressCard", () => {
       screen.getByText("keyManagement:repairMissingKeys.outcomes.failed")
         .nextElementSibling,
     ).toHaveTextContent("1")
+  })
+
+  it("renders auto-template rename totals when present", () => {
+    renderCard({
+      progress: buildProgress({
+        summary: {
+          created: 0,
+          alreadyHad: 1,
+          skipped: 0,
+          failed: 0,
+          renamedKeys: 3,
+          renameFailed: 1,
+        },
+      }),
+    })
+
+    expect(
+      screen.getByText("keyManagement:repairMissingKeys.renameSummary.renamed")
+        .nextElementSibling,
+    ).toHaveTextContent("3")
+    expect(
+      screen.getByText("keyManagement:repairMissingKeys.renameSummary.failed")
+        .nextElementSibling,
+    ).toHaveTextContent("1")
+  })
+
+  it("shows a lightweight auto-template rename result summary", () => {
+    renderCard({
+      progress: buildProgress({
+        summary: {
+          created: 0,
+          alreadyHad: 1,
+          skipped: 0,
+          failed: 0,
+          renamedKeys: 3,
+          renameFailed: 1,
+        },
+      }),
+    })
+
+    expect(screen.getByText("renamed 3 | failed 1")).toBeInTheDocument()
   })
 })
