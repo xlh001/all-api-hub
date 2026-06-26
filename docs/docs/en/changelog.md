@@ -8,6 +8,35 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.49.0
+- **New Features:**
+  - Web AI API Sniffing and Verification: The test dialog now remembers recently used `Base URL` values, so you can choose from suggestions next time instead of pasting them repeatedly. See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
+  - Web AI API Sniffing and Verification: When you copy a Key from a web page or chat, common extra spaces, separators, hidden characters, and similar noise are handled automatically, reducing manual cleanup. See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
+  - Web AI API Sniffing and Verification: Added `API Key Cleanup Rules`, so you can add your own cleanup rules for fixed extra text and get a warning when a rule is invalid. See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
+  - Web AI API Sniffing and Verification: Before saving a temporary test Key to the `API Credential Library`, you can now add tags, notes, and an expiration date directly, so there is less cleanup after saving. See [Web AI API Sniffing and Verification](./web-ai-api-check.md) and [API Credential Library](./api-credential-profiles.md).
+  - Web AI API Sniffing and Verification: Test results completed before saving are carried into the new credential, so you do not need to re-run the same test immediately after saving. See [Web AI API Sniffing and Verification](./web-ai-api-check.md) and [API Credential Library](./api-credential-profiles.md).
+  - API Credential Library: Credentials can now record an `Expiration Date`, making it easier to see which Keys are long-term, close to expiring, or already expired. See [API Credential Library](./api-credential-profiles.md).
+  - Key Management: Each key card can now check API availability and CLI compatibility directly, without copying the Key to another page first. See [Key Management](./key-management.md).
+  - Settings: `Click extension icon` can now open the `Options page` by default, making the browser toolbar a direct entry point for users who often work in the full settings view.
+- **Experience Optimizations:**
+  - Automatic Check-in: For some New API-compatible sites that need a web page to complete check-in, the extension will keep trying when it can. If it cannot finish, it now explains the reason more clearly. See [Automatic Check-in](./auto-checkin.md).
+  - Verification flows: Long-running model-list batch verification, API checks, and CLI compatibility checks can now be stopped. Completed results are kept, and unfinished items are marked as stopped.
+  - Key Management: `Key coverage check` can be cancelled midway, and you can review the previous check result before deciding whether to run it again. See [Key Management](./key-management.md).
+  - Key Management: When repairing missing keys, automatically created key names can be tidied to match the current group, with the result showing whether the rename succeeded. See [Key Management](./key-management.md).
+  - Key Management: Sub2API-related key coverage checks now make skipped reasons and available repair entry points easier to understand. See [Key Management](./key-management.md).
+  - Account Management: When adding or editing an account, authentication-method help and check-in detection descriptions are clearer, making it easier to distinguish "check status during refresh" from "actually perform check-in." See [Account Management](./account-management.md).
+- **Bug Fixes:**
+  - Web AI API Sniffing and Verification: Editing copied content without finding new credentials no longer clears the filled `Base URL` / `API Key`; if only one value is found, the other one is kept. See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
+  - Account and model key creation: Default keys now use a more suitable name based on the selected group, and Keys created from Model List no longer carry unwanted model limits. See [Account Management](./account-management.md), [Key Management](./key-management.md), and [Model List](./model-list.md).
+  - Settings Search: Pressing `Home` / `End` in the search box now moves the text cursor normally, making search terms easier to edit.
+
+**Location Hints:**
+- Web AI API Sniffing and Verification: Select text on a web page and use the context menu, or trigger automatic detection on a whitelisted page. Related switches and `API Key Cleanup Rules` are under `AI API Test` in `Settings` on the left navigation of the extension settings page.
+- API Credential Library expiration date: Fill it when adding or editing a credential under `API Credential Library` on the left navigation of the extension settings page.
+- Key verification and key coverage check: Use them from key cards and the top check entry under `Key Management` on the left navigation of the extension settings page.
+- Default target for clicking the extension icon: Choose it under `Settings → General → Click extension icon` on the left navigation of the extension settings page.
+- Temporary-page assisted automatic check-in: Applies automatically when running manual or automatic check-in for supported accounts. The global switch is under `Automatic Check-in` on the left navigation of the extension settings page.
+
 ## 3.48.0
 - **New Features:**
   - Key Management: You can now batch-save selected keys into the `API Credential Library`. This turns keys already organized on a site into reusable `Base URL + API Key` credentials, so you do not need to re-enter them one by one when copying, verifying, viewing models, or exporting them to other tools. See [Key Management](./key-management.md) and [API Credential Library](./api-credential-profiles.md).
