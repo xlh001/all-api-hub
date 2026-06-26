@@ -93,16 +93,29 @@ function getAccountRow(page: Page, accountName: string) {
 }
 
 async function getAccountButtonY(page: Page, accountName: string) {
-  const box = await page
+  const accountButton = getAccountRow(page, accountName)
     .getByRole("button", { name: accountName })
     .first()
-    .boundingBox()
+  await expect(accountButton).toBeVisible()
 
-  if (!box) {
+  let accountButtonY: number | undefined
+  await expect
+    .poll(
+      async () => {
+        accountButtonY = (await accountButton.boundingBox())?.y
+        return accountButtonY
+      },
+      {
+        message: `resolve account row position for ${accountName}`,
+      },
+    )
+    .not.toBeUndefined()
+
+  if (accountButtonY === undefined) {
     throw new Error(`Could not resolve account row for ${accountName}`)
   }
 
-  return box.y
+  return accountButtonY
 }
 
 async function openAccountActionsMenu(page: Page, accountName: string) {

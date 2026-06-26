@@ -14,7 +14,7 @@ import {
 } from "~/services/productAnalytics/events"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { AuthTypeEnum } from "~/types"
-import { render, screen, waitFor } from "~~/tests/test-utils/render"
+import { act, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const {
   fetchAccountTokensMock,
@@ -157,6 +157,17 @@ function mockTimeoutsAsMicrotasks() {
 
       return originalSetTimeout(callback, delay)
     })
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve
+    reject = nextReject
+  })
+
+  return { promise, resolve, reject }
 }
 
 describe("ModelKeyDialog", () => {
@@ -882,7 +893,7 @@ describe("ModelKeyDialog", () => {
     expect(
       await screen.findByText("modelList:keyDialog.ineligible.missingAuth"),
     ).toBeInTheDocument()
-    expect(fetchAccountTokensMock).toHaveBeenCalledTimes(1)
+    expect(fetchAccountTokensMock).not.toHaveBeenCalled()
   })
 
   it("explains missing credentials when token management credentials are incomplete", async () => {
@@ -903,6 +914,83 @@ describe("ModelKeyDialog", () => {
         "modelList:keyDialog.ineligible.missingCredentials",
       ),
     ).toBeInTheDocument()
+    expect(fetchAccountTokensMock).not.toHaveBeenCalled()
+  })
+
+  it("clears loaded token state when the selected account becomes ineligible", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([TOKEN])
+
+    const { rerender } = render(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={ACCOUNT}
+        modelId="gpt-4"
+        modelEnableGroups={["default"]}
+      />,
+    )
+
+    expect(
+      await screen.findByRole("button", { name: "common:actions.copyKey" }),
+    ).toBeInTheDocument()
+
+    rerender(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{ ...ACCOUNT, authType: AuthTypeEnum.None, token: "" }}
+        modelId="gpt-4"
+        modelEnableGroups={["default"]}
+      />,
+    )
+
+    expect(
+      await screen.findByText("modelList:keyDialog.ineligible.missingAuth"),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "common:actions.copyKey" }),
+    ).not.toBeInTheDocument()
+    expect(fetchAccountTokensMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("ignores stale token fetch completions after the selected account becomes ineligible", async () => {
+    const pendingTokens = createDeferred<(typeof TOKEN)[]>()
+    fetchAccountTokensMock.mockReturnValueOnce(pendingTokens.promise)
+
+    const { rerender } = render(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={ACCOUNT}
+        modelId="gpt-4"
+        modelEnableGroups={["default"]}
+      />,
+    )
+
+    await screen.findByText("modelList:keyDialog.loading")
+
+    rerender(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={{ ...ACCOUNT, authType: AuthTypeEnum.None, token: "" }}
+        modelId="gpt-4"
+        modelEnableGroups={["default"]}
+      />,
+    )
+
+    expect(
+      await screen.findByText("modelList:keyDialog.ineligible.missingAuth"),
+    ).toBeInTheDocument()
+
+    await act(async () => {
+      pendingTokens.resolve([TOKEN])
+      await pendingTokens.promise
+    })
+
+    expect(
+      screen.queryByRole("button", { name: "common:actions.copyKey" }),
+    ).not.toBeInTheDocument()
     expect(fetchAccountTokensMock).toHaveBeenCalledTimes(1)
   })
 
