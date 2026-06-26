@@ -823,7 +823,7 @@ describe("ApiCheckModalHost", () => {
     ).toBeInTheDocument()
   })
 
-  it("clears active credentials when edited source text no longer contains credentials", async () => {
+  it("preserves active credentials when edited source text has no extraction result", async () => {
     const user = userEvent.setup()
     vi.mocked(sendWebAiApiCheckMessage).mockImplementation(
       async (type: any) => {
@@ -856,14 +856,57 @@ describe("ApiCheckModalHost", () => {
     await user.type(sourceTextInput, "No credentials here")
 
     await waitFor(() => {
-      expect(baseUrlInput.value).toBe("")
-      expect(apiKeyInput.value).toBe("")
+      expect(baseUrlInput.value).toBe("https://proxy.example.com/api")
+      expect(apiKeyInput.value).toBe("sk-test-source-clear-fixture")
     })
     expect(
       screen.getByRole("button", {
         name: "webAiApiCheck:modal.actions.saveToProfiles",
       }),
-    ).toBeDisabled()
+    ).toBeEnabled()
+  })
+
+  it("preserves the other credential when edited source text only extracts one value", async () => {
+    const user = userEvent.setup()
+    vi.mocked(sendWebAiApiCheckMessage).mockImplementation(
+      async (type: any) => {
+        if (type === WebAiApiCheckMessageTypes.FetchModels) {
+          return { success: true, modelIds: ["gpt-4o-mini"] }
+        }
+        return { success: false }
+      },
+    )
+
+    await openModal({
+      sourceText:
+        "Base URL: https://proxy.example.com/api\nAPI Key: sk-test-partial-fixture",
+    })
+
+    const baseUrlInput = (await screen.findByLabelText(
+      "webAiApiCheck:modal.fields.baseUrl",
+    )) as HTMLInputElement
+    const apiKeyInput = screen.getByLabelText(
+      "webAiApiCheck:modal.fields.apiKey",
+    ) as HTMLInputElement
+    const sourceTextInput = screen.getByLabelText(
+      "webAiApiCheck:modal.sourceText.label",
+    )
+
+    expect(baseUrlInput.value).toBe("https://proxy.example.com/api")
+    expect(apiKeyInput.value).toBe("sk-test-partial-fixture")
+
+    await user.clear(sourceTextInput)
+    await user.type(sourceTextInput, "Base URL: https://next.example.com/api")
+
+    await waitFor(() => {
+      expect(baseUrlInput.value).toBe("https://next.example.com/api")
+      expect(apiKeyInput.value).toBe("sk-test-partial-fixture")
+    })
+    expect(
+      screen.getByRole("button", {
+        name: "webAiApiCheck:modal.actions.saveToProfiles",
+      }),
+    ).toBeEnabled()
   })
 
   it("tracks modal open with safe credential presence insights", async () => {
