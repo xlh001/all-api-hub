@@ -178,6 +178,17 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 <hr>
 
 <div>
+  <a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">
+    <img src="resources/partners/unity2ai.jpg" alt="Unity2.ai" width="128" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    感谢 Unity2.ai 赞助了本项目！Unity2.ai 是面向个人开发者、团队和企业的高性能 AI 模型 API 中转平台，长期服务国内头部企业，日均承载超 300 亿 token 调用，支持 5000 RPM 级高并发。支持余额计费、首充赠额、组合订阅、企业开票和专属对接。通过<a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">此链接</a>注册可领取 $2 余额，加入官方群再送 $10 余额，最高可领 $12 免费额度。
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://www.right.codes/register?aff=690a8be5">
     <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="64" align="left" hspace="10" vspace="4">
   </a>

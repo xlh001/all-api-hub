@@ -172,6 +172,19 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
+    <a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">
+      <img src="../../resources/partners/unity2ai.jpg" alt="Unity2.ai">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    感谢 Unity2.ai 赞助了本项目！Unity2.ai 是面向个人开发者、团队和企业的高性能 AI 模型 API 中转平台，长期服务国内头部企业，日均承载超 300 亿 token 调用，支持 5000 RPM 级高并发。支持余额计费、首充赠额、组合订阅、企业开票和专属对接。通过<a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">此链接</a>注册可领取 $2 余额，加入官方群再送 $10 余额，最高可领 $12 免费额度。
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
     <a href="https://www.right.codes/register?aff=690a8be5">
       <img class="readme-sponsor-logo-small" src="../../resources/partners/aicodemirror.png" alt="AICodeMirror">
     </a>

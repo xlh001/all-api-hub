@@ -82,6 +82,17 @@
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">
+      <img src="../../../resources/partners/unity2ai.jpg" alt="Unity2.ai">
+    </a>
+    <p>
+      <strong>Unity2.ai</strong> は、個人開発者、チーム、企業向けの高性能 AI モデル API 中継プラットフォームです。1 日あたり 300 億 token 超の呼び出しを処理し、5,000 RPM 級の高同時実行、残高課金、初回チャージ特典、組み合わせサブスクリプション、企業向け請求書、専任サポートに対応しています。<a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">こちらのリンク</a>から登録すると <strong>$2 の残高</strong>を受け取れます。公式グループに参加するとさらに $10、最大 $12 の無料枠を受け取れます。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo sponsor-logo-small" href="https://www.right.codes/register?aff=690a8be5">
       <img src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
     </a>

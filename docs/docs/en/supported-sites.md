@@ -82,6 +82,17 @@ If you are looking for stable, efficient, and highly compatible AI relay service
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">
+      <img src="../../../resources/partners/unity2ai.jpg" alt="Unity2.ai">
+    </a>
+    <p>
+      <strong>Unity2.ai</strong> is a high-performance AI model API relay platform for individual developers, teams, and enterprises. It handles more than 30 billion tokens per day and supports 5,000 RPM-level concurrency, balance billing, first top-up bonuses, bundled subscriptions, enterprise invoicing, and dedicated onboarding. Register through <a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">this link</a> to receive <strong>$2 in balance</strong>, then join the official group for another $10, up to $12 in free credits.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo sponsor-logo-small" href="https://www.right.codes/register?aff=690a8be5">
       <img src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
     </a>

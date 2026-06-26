@@ -185,6 +185,18 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 <hr>
 
 <div>
+  <a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">
+    <img src="resources/partners/unity2ai.jpg" alt="Unity2.ai" width="128" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Thanks to Unity2.ai for sponsoring this project! Unity2.ai is a high-performance AI model API relay platform for individual developers, teams, and enterprises. It has long served leading enterprise customers in China, handles more than 30 billion tokens per day, and supports 5,000 RPM-level high concurrency. It supports balance billing, first top-up bonuses, bundled subscriptions, enterprise invoicing, and dedicated onboarding. Register via
+    <a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">this link</a> to receive $2 in balance, then join the official group for another $10, up to $12 in free credits.
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://www.right.codes/register?aff=690a8be5">
     <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="64" align="left" hspace="10" vspace="4">
   </a>
