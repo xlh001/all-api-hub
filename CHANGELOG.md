@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.49.1](https://github.com/qixing-jk/all-api-hub/compare/v3.49.0...v3.49.1) (2026-06-27)
+
+
+### Bug Fixes
+
+* **site-detection:** recognize more white-label Sub2API sites when adding an account ([#1074](https://github.com/qixing-jk/all-api-hub/issues/1074)) ([6003423](https://github.com/qixing-jk/all-api-hub/commit/600342311ece261c1627274e16b58c8acd300983))
+* **ui:** keep searchable selects stable when option labels contain quotes, backslashes, or similar characters ([#1076](https://github.com/qixing-jk/all-api-hub/issues/1076)) ([6f1e3eb](https://github.com/qixing-jk/all-api-hub/commit/6f1e3eb064049d6aae1540b9e1115a78bb61e656))
+
 ## [3.49.0](https://github.com/qixing-jk/all-api-hub/compare/v3.48.0...v3.49.0) (2026-06-26)
 
 
