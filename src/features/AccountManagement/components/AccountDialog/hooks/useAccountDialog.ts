@@ -26,6 +26,12 @@ import {
   isAccountAuthType,
   resolveDefaultAccountAuthType,
 } from "~/features/AccountManagement/utils/accountAuthType"
+import {
+  ACCOUNT_BROWSER_SESSION_SOURCES,
+  resolveAccountBrowserSession,
+  type AccountBrowserSession,
+  type ResolveAccountBrowserSessionOptions,
+} from "~/services/accountBrowserSession"
 import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
 import {
   autoDetectAccount,
@@ -110,13 +116,10 @@ import { deepOverride } from "~/utils"
 import { isExtensionPopup } from "~/utils/browser"
 import {
   getActiveTabs,
-  getAllTabs,
-  getBrowserApiCapabilities,
   isMessageReceiverUnavailableError,
   onTabActivated,
   onTabUpdated,
   sendRuntimeMessage,
-  sendTabMessage,
 } from "~/utils/browser/browserApi"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
@@ -157,6 +160,30 @@ function createCurrentTabCookieImportContext(
     ...(typeof tab.cookieStoreId === "string" && tab.cookieStoreId.trim()
       ? { cookieStoreId: tab.cookieStoreId.trim() }
       : {}),
+  }
+}
+
+/**
+ * Reuses the active tab only when it belongs to the target origin and browser profile.
+ */
+function createCurrentTabBrowserSessionContext(
+  context: CurrentTabCookieImportContext | null,
+  targetUrl: string,
+): ResolveAccountBrowserSessionOptions["currentTab"] | undefined {
+  const targetOrigin = tryParseOrigin(targetUrl)
+  if (
+    !context ||
+    !targetOrigin ||
+    targetOrigin !== context.origin ||
+    typeof context.tabId !== "number"
+  ) {
+    return undefined
+  }
+
+  return {
+    tabId: context.tabId,
+    incognito: context.incognito === true,
+    ...(context.cookieStoreId ? { cookieStoreId: context.cookieStoreId } : {}),
   }
 }
 
@@ -1500,9 +1527,8 @@ export function useAccountDialog({
   /**
    * Import Sub2API dashboard session credentials (including refresh_token) into the form.
    *
-   * Strategy:
-   * 1) Prefer any existing tab with the same origin (least intrusive; supports incognito tabs when allowed).
-   * 2) Fall back to the background temp-window auto-detect flow.
+   * Strategy is centralized in accountBrowserSession so tab lookup, messaging,
+   * temp-window fallback, and normalization stay consistent across import flows.
    */
   const handleImportSub2apiSession = async () => {
     const analyticsAction = startAccountDialogAnalyticsAction(
@@ -1520,70 +1546,43 @@ export function useAccountDialog({
     setIsImportingSub2apiSession(true)
     try {
       const baseUrl = url.trim()
-      const targetOrigin = tryParseOrigin(baseUrl)
 
-      let imported: any | null = null
-      const hasUsableSub2apiRefreshToken = (value: unknown): boolean =>
-        typeof (value as any)?.sub2apiAuth?.refreshToken === "string" &&
-        (value as any).sub2apiAuth.refreshToken.trim().length > 0
+      const hasUsableSub2apiRefreshToken = (
+        value: AccountBrowserSession | null,
+      ): value is AccountBrowserSession =>
+        typeof value?.sub2apiAuth?.refreshToken === "string" &&
+        value.sub2apiAuth.refreshToken.trim().length > 0
+      const currentTab = createCurrentTabBrowserSessionContext(
+        currentTabCookieImportContextRef.current,
+        baseUrl,
+      )
+      let importError: unknown
 
-      if (targetOrigin && getBrowserApiCapabilities().hasTabs) {
-        const tabs = await getAllTabs().catch(() => [])
-        const candidates = tabs
-          .filter((tab) => {
-            if (!tab?.id || !tab.url) return false
-            return tryParseOrigin(tab.url) === targetOrigin
-          })
-          .sort((a, b) => Number(Boolean(b.active)) - Number(Boolean(a.active)))
-
-        for (const tab of candidates) {
-          const tabId = tab.id
-          if (typeof tabId !== "number") continue
-
-          try {
-            const response = await sendTabMessage(tabId, {
-              action: RuntimeActionIds.ContentGetUserFromLocalStorage,
-              url: baseUrl,
-              siteType: SITE_TYPES.SUB2API,
-            })
-            if (response?.success && response.data) {
-              imported = response.data
-              if (hasUsableSub2apiRefreshToken(imported)) {
-                break
-              }
-            }
-          } catch {
-            // Ignore and continue to the next candidate.
+      const imported = await resolveAccountBrowserSession({
+        baseUrl,
+        siteType: SITE_TYPES.SUB2API,
+        ...(currentTab ? { currentTab } : {}),
+        useExistingTabs: true,
+        useTempWindow: true,
+        requestIdPrefix: "account-dialog-sub2api-import",
+        isUsableSession: hasUsableSub2apiRefreshToken,
+        onError: (error, context) => {
+          if (context.source === ACCOUNT_BROWSER_SESSION_SOURCES.TEMP_WINDOW) {
+            importError ??= error
           }
-        }
-      }
+        },
+      })
 
-      if (!hasUsableSub2apiRefreshToken(imported)) {
-        const response = await sendRuntimeMessage({
-          action: RuntimeActionIds.AutoDetectSite,
-          url: baseUrl,
-          requestId: `account-dialog-sub2api-import-${Date.now()}`,
-        })
-        if (response?.success && response.data) {
-          imported = response.data
-        }
-      }
-
-      const refreshToken =
-        typeof imported?.sub2apiAuth?.refreshToken === "string"
-          ? imported.sub2apiAuth.refreshToken.trim()
-          : ""
+      const refreshToken = imported?.sub2apiAuth?.refreshToken?.trim() ?? ""
       if (!refreshToken) {
+        if (importError) throw importError
         analyticsAction.complete(PRODUCT_ANALYTICS_RESULTS.Skipped)
         toast.error(t("messages.importSub2apiSessionMissing"))
         return
       }
 
       const tokenExpiresAtRaw = imported?.sub2apiAuth?.tokenExpiresAt
-      const importedAccessToken =
-        typeof imported?.accessToken === "string"
-          ? imported.accessToken.trim()
-          : ""
+      const importedAccessToken = imported?.accessToken?.trim() ?? ""
       const importedUserId = normalizeAccountIdentity(imported?.userId) ?? ""
       const importedUsername =
         typeof imported?.user?.username === "string"
