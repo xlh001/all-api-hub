@@ -8,6 +8,15 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.49.1
+- **Bug Fixes:**
+  - Account auto detection: More `Sub2API` relay sites that changed their page branding or appearance can now be recognized as `Sub2API`, reducing cases where adding an account ends up as an unknown site or another compatible type. See [Account Management](./account-management.md) and [Auto Detect Troubleshooting Guide](./auto-detect.md).
+  - Search and selection controls: Searchable dropdowns and multi-selects no longer crash when option names contain quotes, backslashes, plus signs, or similar special characters. They still search by the displayed label and select the correct item.
+
+**Location Hints:**
+- `Sub2API` auto detection: Applies when adding an account under "Settings → Account Management" and clicking `Auto Detect`.
+- Search and selection control fix: Applies automatically in searchable dropdowns for models, groups, sites, and similar options.
+
 ## 3.49.0
 - **New Features:**
   - Web AI API Sniffing and Verification: The test dialog now remembers recently used `Base URL` values, so you can choose from suggestions next time instead of pasting them repeatedly. See [Web AI API Sniffing and Verification](./web-ai-api-check.md).
