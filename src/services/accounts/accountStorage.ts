@@ -2,6 +2,7 @@ import { Storage } from "@plasmohq/storage"
 
 import { SITE_TYPES } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
+import type { RefreshAccountResult } from "~/services/accountData/model"
 import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
 import {
   isAccountSiteProfileUrl,
@@ -12,7 +13,6 @@ import {
   collectDuplicateAccountNameKeys,
   resolveAccountDisplayName,
 } from "~/services/accounts/utils/accountDisplayName"
-import type { RefreshAccountResult } from "~/services/apiService/common/type"
 import {
   ACCOUNT_STORAGE_KEYS,
   STORAGE_LOCKS,
@@ -1144,10 +1144,10 @@ class AccountStorageService {
 
       // 如果成功获取数据，更新账号信息
       const shouldReEnable = Boolean(
-        options?.reEnableOnSuccess === true && result.success && result.data,
+        options?.reEnableOnSuccess === true && result.success,
       )
 
-      if (result.success && result.data) {
+      if (result.success) {
         const manualBalanceUsd = account.manualBalanceUsd?.trim()
         const manualQuota =
           manualBalanceUsd && manualBalanceUsd.length > 0

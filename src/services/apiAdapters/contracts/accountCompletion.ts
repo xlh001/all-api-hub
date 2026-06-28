@@ -1,4 +1,5 @@
 import type { AutoDetectFailureReason } from "~/constants/autoDetect"
+import type { SiteStatusInfo } from "~/services/accountBootstrap/model"
 import type {
   AutoDetectCompletionData,
   AutoDetectCompletionError,
@@ -7,8 +8,7 @@ import type {
 import type {
   ApiServiceFetchContext,
   ApiServiceRequest,
-  SiteStatusInfo,
-} from "~/services/apiService/common/type"
+} from "~/services/apiTransport/type"
 
 export type AccountCompletionRuntimeContext = {
   fetchContext?: ApiServiceFetchContext

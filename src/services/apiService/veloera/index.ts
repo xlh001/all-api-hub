@@ -1,3 +1,7 @@
+import type {
+  AccountData,
+  RefreshAccountResult,
+} from "~/services/accountData/model"
 import {
   determineHealthStatus,
   fetchAccountQuota,
@@ -7,13 +11,9 @@ import {
 import { REQUEST_CONFIG } from "~/services/apiService/common/constant"
 import { ApiError } from "~/services/apiService/common/errors"
 import { fetchAllItems } from "~/services/apiService/common/pagination"
-import type {
-  AccountData,
-  ApiServiceAccountRequest,
-  ApiServiceRequest,
-  RefreshAccountResult,
-} from "~/services/apiService/common/type"
+import type { ApiServiceAccountRequest } from "~/services/apiService/common/type"
 import { fetchApi, fetchApiData } from "~/services/apiService/common/utils"
+import type { ApiServiceRequest } from "~/services/apiTransport/type"
 import { CheckInConfig, SiteHealthStatus } from "~/types"
 import type {
   CreateChannelPayload,

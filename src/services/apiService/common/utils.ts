@@ -1,16 +1,16 @@
-import type {
-  ApiResponse,
-  FetchApiOptions,
-  LogItem,
-  TodayUsageData,
-} from "~/services/apiService/common/type"
+import type { TodayUsageData } from "~/services/accountData/model"
 import {
   extractDataFromApiResponseBody,
   isHttpUrl,
   fetchApi as transportFetchApi,
   fetchApiData as transportFetchApiData,
 } from "~/services/apiTransport/request"
-import type { ApiServiceRequest } from "~/services/apiTransport/type"
+import type {
+  ApiResponse,
+  ApiServiceRequest,
+  FetchApiOptions,
+} from "~/services/apiTransport/type"
+import type { LogItem } from "~/services/usageLogs/model"
 
 export { extractDataFromApiResponseBody, isHttpUrl }
 
