@@ -5,12 +5,6 @@ import { AuthTypeEnum } from "~/types"
 const mockFetchAccountAvailableModels = vi.fn()
 const mockFetchOpenAICompatibleModelIds = vi.fn()
 
-vi.mock("~/services/apiService", () => ({
-  getApiService: vi.fn(() => ({
-    fetchAccountAvailableModels: mockFetchAccountAvailableModels,
-  })),
-}))
-
 vi.mock("~/services/aiApi/openaiCompatible", () => ({
   fetchOpenAICompatibleModelIds: mockFetchOpenAICompatibleModelIds,
 }))
@@ -46,6 +40,9 @@ describe("fetchManagedSiteAvailableModels", () => {
     const result = await fetchManagedSiteAvailableModels(
       createAccount(),
       createToken({ models: "declared-a,declared-b" }),
+      {
+        fetchAccountAvailableModels: mockFetchAccountAvailableModels,
+      },
     )
 
     expect(result).toEqual(["gpt-4o-mini"])
@@ -64,6 +61,9 @@ describe("fetchManagedSiteAvailableModels", () => {
     const result = await fetchManagedSiteAvailableModels(
       createAccount(),
       createToken({ models: "declared-only-model" }),
+      {
+        fetchAccountAvailableModels: mockFetchAccountAvailableModels,
+      },
     )
 
     expect(result).toEqual(["claude-3-opus"])
@@ -84,10 +84,25 @@ describe("fetchManagedSiteAvailableModels", () => {
       createToken({ models: "declared-only-model" }),
       {
         includeAccountFallback: false,
+        fetchAccountAvailableModels: mockFetchAccountAvailableModels,
       },
     )
 
     expect(result).toEqual([])
     expect(mockFetchAccountAvailableModels).not.toHaveBeenCalled()
+  })
+
+  it("fails fast when account fallback is enabled without a fallback query", async () => {
+    const { fetchManagedSiteAvailableModels } = await import(
+      "~/services/managedSites/utils/fetchManagedSiteAvailableModels"
+    )
+
+    mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce(["gpt-4o-mini"])
+
+    await expect(
+      fetchManagedSiteAvailableModels(createAccount(), createToken()),
+    ).rejects.toThrow(
+      "fetchAccountAvailableModels is required when account fallback is enabled",
+    )
   })
 })

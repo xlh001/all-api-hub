@@ -2,12 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const mockFetchSiteUserGroups = vi.fn()
 
-vi.mock("~/services/apiService", () => ({
-  getApiService: vi.fn(() => ({
-    fetchSiteUserGroups: mockFetchSiteUserGroups,
-  })),
-}))
-
 describe("resolveDefaultChannelGroups", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -21,10 +15,10 @@ describe("resolveDefaultChannelGroups", () => {
     mockFetchSiteUserGroups.mockResolvedValueOnce(["vip", "Default"])
 
     const result = await resolveDefaultChannelGroups({
-      siteType: "new-api",
+      fetchSiteUserGroups: mockFetchSiteUserGroups,
       getConfig: async () => ({
         baseUrl: "https://managed.example.com",
-        token: "admin-token",
+        adminToken: "admin-token",
         userId: "1",
       }),
     })
@@ -40,10 +34,10 @@ describe("resolveDefaultChannelGroups", () => {
     mockFetchSiteUserGroups.mockResolvedValueOnce([])
 
     const result = await resolveDefaultChannelGroups({
-      siteType: "new-api",
+      fetchSiteUserGroups: mockFetchSiteUserGroups,
       getConfig: async () => ({
         baseUrl: "https://managed.example.com",
-        token: "admin-token",
+        adminToken: "admin-token",
         userId: "1",
       }),
     })
@@ -59,10 +53,10 @@ describe("resolveDefaultChannelGroups", () => {
     mockFetchSiteUserGroups.mockResolvedValueOnce(["vip", "beta"])
 
     const result = await resolveDefaultChannelGroups({
-      siteType: "Veloera",
+      fetchSiteUserGroups: mockFetchSiteUserGroups,
       getConfig: async () => ({
         baseUrl: "https://managed.example.com",
-        token: "admin-token",
+        adminToken: "admin-token",
         userId: "1",
       }),
     })
@@ -76,7 +70,7 @@ describe("resolveDefaultChannelGroups", () => {
     )
 
     const result = await resolveDefaultChannelGroups({
-      siteType: "done-hub",
+      fetchSiteUserGroups: mockFetchSiteUserGroups,
       getConfig: async () => null,
     })
 
@@ -93,10 +87,10 @@ describe("resolveDefaultChannelGroups", () => {
     mockFetchSiteUserGroups.mockRejectedValueOnce(new Error("boom"))
 
     const result = await resolveDefaultChannelGroups({
-      siteType: "new-api",
+      fetchSiteUserGroups: mockFetchSiteUserGroups,
       getConfig: async () => ({
         baseUrl: "https://managed.example.com",
-        token: "admin-token",
+        adminToken: "admin-token",
         userId: "1",
       }),
       onError,

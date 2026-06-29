@@ -14,10 +14,17 @@ import {
   buildManagedSiteChannel,
 } from "~~/tests/test-utils/factories"
 
-const mockResolveDisplayAccountTokenForSecret = vi.fn()
-const mockGetManagedSiteService = vi.fn()
-const mockGetManagedSiteServiceForType = vi.fn()
-const mockResolveManagedSiteChannelMatch = vi.fn()
+const {
+  mockResolveDisplayAccountTokenForSecret,
+  mockGetManagedSiteService,
+  mockGetManagedSiteServiceForType,
+  mockResolveManagedSiteChannelMatch,
+} = vi.hoisted(() => ({
+  mockResolveDisplayAccountTokenForSecret: vi.fn(),
+  mockGetManagedSiteService: vi.fn(),
+  mockGetManagedSiteServiceForType: vi.fn(),
+  mockResolveManagedSiteChannelMatch: vi.fn(),
+}))
 
 vi.mock("~/services/accounts/utils/apiServiceRequest", () => ({
   resolveDisplayAccountTokenForSecret: mockResolveDisplayAccountTokenForSecret,
@@ -109,9 +116,10 @@ const buildService = (
     updateChannel: vi.fn(),
     deleteChannel: vi.fn(),
     checkValidConfig: vi.fn(),
+    fetchSiteUserGroups: vi.fn().mockResolvedValue([]),
+    fetchAccountAvailableModels: vi.fn().mockResolvedValue([]),
     fetchAvailableModels: vi.fn(),
     buildChannelName: vi.fn(),
-    autoConfigToManagedSite: vi.fn(),
     ...overrides,
   }) as ManagedSiteService
 

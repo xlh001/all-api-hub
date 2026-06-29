@@ -1,4 +1,4 @@
-import { getApiService } from "~/services/apiService"
+import type { ApiServiceRequest } from "~/services/apiTransport/type"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { createLogger } from "~/utils/core/logger"
 import { normalizeList } from "~/utils/core/string"
@@ -18,8 +18,11 @@ type FetchManagedSiteAvailableModelsAccount = Pick<
   | "cookieAuthSessionCookie"
 >
 
-type FetchManagedSiteAvailableModelsOptions = {
+export type FetchManagedSiteAvailableModelsOptions = {
   includeAccountFallback?: boolean
+  fetchAccountAvailableModels?: (
+    request: ApiServiceRequest,
+  ) => Promise<string[]>
 }
 
 /**
@@ -47,10 +50,14 @@ export async function fetchManagedSiteAvailableModels(
   candidateSources.push(tokenScopedModels)
 
   if (includeAccountFallback) {
+    if (!options.fetchAccountAvailableModels) {
+      throw new Error(
+        "fetchAccountAvailableModels is required when account fallback is enabled",
+      )
+    }
+
     try {
-      const fallbackModels = await getApiService(
-        account.siteType,
-      ).fetchAccountAvailableModels({
+      const fallbackModels = await options.fetchAccountAvailableModels({
         baseUrl: account.baseUrl,
         accountId: account.id,
         auth: {

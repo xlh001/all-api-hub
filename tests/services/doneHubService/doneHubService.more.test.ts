@@ -5,66 +5,39 @@ import {
   buildApiToken,
   buildDisplaySiteData,
   buildManagedSiteChannel,
-  buildSiteAccount,
 } from "~~/tests/test-utils/factories"
 
-const mockToast = {
-  loading: vi.fn(),
-  success: vi.fn(),
-  error: vi.fn(),
-}
-
 const {
-  mockEnsureAccountApiToken,
-  mockConvertToDisplayData,
   mockSearchChannel,
   mockCreateChannel,
   mockUpdateChannel,
   mockDeleteChannel,
   mockFetchDoneHubChannel,
+  mockFetchSiteUserGroups,
   mockGetPreferences,
   mockFetchTokenScopedModels,
   mockResolveDefaultChannelGroups,
   mockFetchManagedSiteAvailableModels,
 } = vi.hoisted(() => ({
-  mockEnsureAccountApiToken: vi.fn(),
-  mockConvertToDisplayData: vi.fn(),
   mockSearchChannel: vi.fn(),
   mockCreateChannel: vi.fn(),
   mockUpdateChannel: vi.fn(),
   mockDeleteChannel: vi.fn(),
   mockFetchDoneHubChannel: vi.fn(),
+  mockFetchSiteUserGroups: vi.fn(),
   mockGetPreferences: vi.fn(),
   mockFetchTokenScopedModels: vi.fn(),
   mockResolveDefaultChannelGroups: vi.fn(),
   mockFetchManagedSiteAvailableModels: vi.fn(),
 }))
 
-vi.mock("react-hot-toast", () => ({
-  default: mockToast,
-}))
-
-vi.mock("~/services/accounts/accountOperations", () => ({
-  ensureAccountApiToken: mockEnsureAccountApiToken,
-}))
-
-vi.mock("~/services/accounts/accountStorage", () => ({
-  accountStorage: {
-    convertToDisplayData: mockConvertToDisplayData,
-  },
-}))
-
-vi.mock("~/services/apiService", () => ({
-  getApiService: vi.fn(() => ({
-    searchChannel: mockSearchChannel,
-    createChannel: mockCreateChannel,
-    updateChannel: mockUpdateChannel,
-    deleteChannel: mockDeleteChannel,
-  })),
-}))
-
 vi.mock("~/services/apiService/doneHub", () => ({
+  searchChannel: (...args: unknown[]) => mockSearchChannel(...args),
+  createChannel: (...args: unknown[]) => mockCreateChannel(...args),
+  updateChannel: (...args: unknown[]) => mockUpdateChannel(...args),
+  deleteChannel: (...args: unknown[]) => mockDeleteChannel(...args),
   fetchChannel: (...args: unknown[]) => mockFetchDoneHubChannel(...args),
+  fetchSiteUserGroups: (...args: unknown[]) => mockFetchSiteUserGroups(...args),
 }))
 
 vi.mock("~/services/preferences/userPreferences", () => ({
@@ -106,6 +79,7 @@ describe("doneHubService additional flows", () => {
     })
     mockResolveDefaultChannelGroups.mockResolvedValue(["ops", "default"])
     mockFetchManagedSiteAvailableModels.mockResolvedValue(["gpt-4o-mini"])
+    mockFetchSiteUserGroups.mockResolvedValue(["default"])
     mockSearchChannel.mockResolvedValue({
       items: [],
       total: 0,
@@ -146,6 +120,48 @@ describe("doneHubService additional flows", () => {
       groups: ["ops", "default"],
     })
     expect(result.modelPrefillFetchFailed).toBeUndefined()
+  })
+
+  it("passes Done Hub group lookup wiring to the default-group resolver", async () => {
+    const { prepareChannelFormData } = await import(
+      "~/services/managedSites/providers/doneHubService"
+    )
+    const groupError = new Error("groups unavailable")
+    mockResolveDefaultChannelGroups.mockImplementationOnce(async (options) => {
+      const groups = await options.fetchSiteUserGroups({
+        baseUrl: "https://done-hub.example.com",
+        adminToken: "done-hub-token",
+        userId: "100",
+      })
+      options.onError(groupError)
+      return groups
+    })
+    const account = buildDisplaySiteData({
+      name: "Done Hub Account",
+      baseUrl: "https://proxy.example.com",
+    })
+    const token = buildApiToken({
+      key: "done-hub-key",
+      name: "Primary Token",
+    })
+
+    const result = await prepareChannelFormData(account, token)
+
+    expect(mockResolveDefaultChannelGroups).toHaveBeenCalled()
+    expect(mockResolveDefaultChannelGroups.mock.calls[0][0]).toEqual({
+      getConfig: expect.any(Function),
+      fetchSiteUserGroups: expect.any(Function),
+      onError: expect.any(Function),
+    })
+    expect(mockFetchSiteUserGroups).toHaveBeenCalledWith({
+      baseUrl: "https://done-hub.example.com",
+      auth: {
+        authType: "access_token",
+        accessToken: "done-hub-token",
+        userId: "100",
+      },
+    })
+    expect(result.groups).toEqual(["default"])
   })
 
   it("uses the AIHubMix API origin for managed-site channel imports", async () => {
@@ -207,151 +223,6 @@ describe("doneHubService additional flows", () => {
         groups: ["default"],
       }),
     })
-  })
-
-  it("returns validation errors immediately when DoneHub config is incomplete", async () => {
-    const { autoConfigToDoneHub } = await import(
-      "~/services/managedSites/providers/doneHubService"
-    )
-    mockGetPreferences.mockResolvedValueOnce({
-      doneHub: {
-        baseUrl: "",
-        adminToken: "",
-        userId: "",
-      },
-    })
-
-    const result = await autoConfigToDoneHub(buildSiteAccount(), "toast-1")
-
-    expect(result.success).toBe(false)
-    expect(result.message).toContain(
-      "messages:errors.validation.doneHubBaseUrlRequired",
-    )
-    expect(result.message).toContain(
-      "messages:errors.validation.doneHubAdminTokenRequired",
-    )
-    expect(result.message).toContain(
-      "messages:errors.validation.doneHubUserIdRequired",
-    )
-    expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
-  })
-
-  it("returns a numeric validation error immediately when the DoneHub admin user ID is invalid", async () => {
-    const { autoConfigToDoneHub } = await import(
-      "~/services/managedSites/providers/doneHubService"
-    )
-    mockGetPreferences.mockResolvedValueOnce({
-      doneHub: {
-        baseUrl: "https://done-hub.example.com",
-        adminToken: "done-hub-token",
-        userId: "abc",
-      },
-    })
-
-    const result = await autoConfigToDoneHub(buildSiteAccount(), "toast-1b")
-
-    expect(result.success).toBe(false)
-    expect(result.message).toContain("messages:errors.validation.userIdNumeric")
-    expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
-  })
-
-  it("retries transient network failures and then imports successfully", async () => {
-    vi.useFakeTimers()
-
-    const { autoConfigToDoneHub } = await import(
-      "~/services/managedSites/providers/doneHubService"
-    )
-    const account = buildSiteAccount({ site_url: "https://proxy.example.com" })
-    const displaySiteData = buildDisplaySiteData({
-      name: "Imported Site",
-      baseUrl: "https://proxy.example.com",
-    })
-    const apiToken = buildApiToken({
-      key: "done-hub-key",
-      name: "Imported Token",
-    })
-
-    mockConvertToDisplayData.mockReturnValue(displaySiteData)
-    mockEnsureAccountApiToken
-      .mockRejectedValueOnce(new Error("network unavailable"))
-      .mockResolvedValueOnce(apiToken)
-
-    const promise = autoConfigToDoneHub(account, "toast-2")
-    await vi.runAllTimersAsync()
-    const result = await promise
-
-    expect(mockEnsureAccountApiToken).toHaveBeenCalledTimes(2)
-    expect(mockCreateChannel).toHaveBeenCalledWith(
-      {
-        baseUrl: "https://done-hub.example.com",
-        auth: {
-          authType: "access_token",
-          accessToken: "done-hub-token",
-          userId: "100",
-        },
-      },
-      expect.objectContaining({
-        channel: expect.objectContaining({
-          name: "Imported Site | Imported Token (auto)",
-          key: "done-hub-key",
-        }),
-      }),
-    )
-    expect(mockToast.error).toHaveBeenCalledWith("network unavailable", {
-      id: "toast-2",
-    })
-    expect(mockToast.loading).toHaveBeenCalledWith(
-      "messages:accountOperations.retrying",
-      { id: "toast-2" },
-    )
-    expect(mockToast.success).toHaveBeenCalledWith(
-      "messages:donehub.importSuccess",
-      { id: "toast-2" },
-    )
-    expect(result).toEqual({
-      success: true,
-      message: "messages:donehub.importSuccess",
-      data: { token: apiToken },
-    })
-  })
-
-  it("stops before creation when a matching DoneHub channel already exists", async () => {
-    const { autoConfigToDoneHub } = await import(
-      "~/services/managedSites/providers/doneHubService"
-    )
-    const displaySiteData = buildDisplaySiteData({
-      name: "Duplicate Site",
-      baseUrl: "https://proxy.example.com",
-    })
-    const apiToken = buildApiToken({
-      key: "done-hub-key",
-      name: "Imported Token",
-    })
-
-    mockConvertToDisplayData.mockReturnValue(displaySiteData)
-    mockEnsureAccountApiToken.mockResolvedValueOnce(apiToken)
-    mockSearchChannel.mockResolvedValueOnce({
-      items: [
-        buildManagedSiteChannel({
-          id: 22,
-          name: "Existing DoneHub Channel",
-          base_url: "https://proxy.example.com",
-          models: "gpt-4o,gpt-4.1",
-          key: "done-hub-key",
-        }),
-      ],
-      total: 1,
-      type_counts: {},
-    })
-
-    const result = await autoConfigToDoneHub(buildSiteAccount(), "toast-3")
-
-    expect(result).toEqual({
-      success: false,
-      message: expect.stringContaining("channelExists"),
-    })
-    expect(mockSearchChannel).toHaveBeenCalledTimes(1)
-    expect(mockCreateChannel).not.toHaveBeenCalled()
   })
 
   it("proxies search, create, update, delete, and available-model fetches with Done Hub auth", async () => {
@@ -478,6 +349,9 @@ describe("doneHubService additional flows", () => {
     expect(mockFetchManagedSiteAvailableModels).toHaveBeenCalledWith(
       account,
       token,
+      expect.objectContaining({
+        fetchAccountAvailableModels: expect.any(Function),
+      }),
     )
   })
 
@@ -615,37 +489,5 @@ describe("doneHubService additional flows", () => {
       },
       22,
     )
-  })
-
-  it("returns the provider failure message when Done Hub channel creation is rejected", async () => {
-    const { autoConfigToDoneHub } = await import(
-      "~/services/managedSites/providers/doneHubService"
-    )
-    const displaySiteData = buildDisplaySiteData({
-      name: "Imported Site",
-      baseUrl: "https://proxy.example.com",
-    })
-    const apiToken = buildApiToken({
-      key: "done-hub-key",
-      name: "Imported Token",
-    })
-
-    mockConvertToDisplayData.mockReturnValue(displaySiteData)
-    mockEnsureAccountApiToken.mockResolvedValueOnce(apiToken)
-    mockCreateChannel.mockResolvedValueOnce({
-      success: false,
-      message: "done hub rejected channel",
-    })
-
-    const result = await autoConfigToDoneHub(buildSiteAccount(), "toast-6")
-
-    expect(result).toEqual({
-      success: false,
-      message: "done hub rejected channel",
-    })
-    expect(mockToast.error).toHaveBeenCalledWith("done hub rejected channel", {
-      id: "toast-6",
-    })
-    expect(mockToast.success).not.toHaveBeenCalled()
   })
 })

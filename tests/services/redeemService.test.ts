@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
 import { accountStorage } from "~/services/accounts/accountStorage"
-import { getSiteAdapter } from "~/services/apiAdapters/registry"
+import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import { redeemService } from "~/services/redemption/redeemService"
 
 vi.mock("~/services/accounts/accountStorage", () => ({
@@ -14,7 +14,7 @@ vi.mock("~/services/accounts/accountStorage", () => ({
 }))
 
 vi.mock("~/services/apiAdapters/registry", () => ({
-  getSiteAdapter: vi.fn(),
+  getSiteTypeCapabilities: vi.fn(),
 }))
 
 describe("redeemService.redeemCodeForAccount", () => {
@@ -31,7 +31,7 @@ describe("redeemService.redeemCodeForAccount", () => {
 
     expect(result.success).toBe(false)
     expect(result.message).toBe("messages:storage.accountNotFound")
-    expect(getSiteAdapter).not.toHaveBeenCalled()
+    expect(getSiteTypeCapabilities).not.toHaveBeenCalled()
   })
 
   it("rejects disabled accounts and does not call the API service", async () => {
@@ -50,7 +50,7 @@ describe("redeemService.redeemCodeForAccount", () => {
 
     expect(result.success).toBe(false)
     expect(result.message).toBe("messages:storage.accountDisabled")
-    expect(getSiteAdapter).not.toHaveBeenCalled()
+    expect(getSiteTypeCapabilities).not.toHaveBeenCalled()
   })
 
   it("redeems successfully and prefers stored display data when available", async () => {
@@ -80,15 +80,19 @@ describe("redeemService.redeemCodeForAccount", () => {
     ;(
       accountStorage.getDisplayDataById as unknown as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(displayData)
-    ;(getSiteAdapter as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      redemption: {
-        redeem,
+    ;(
+      getSiteTypeCapabilities as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      account: {
+        redemption: {
+          redeem,
+        },
       },
     })
 
     const result = await redeemService.redeemCodeForAccount("account-1", "CODE")
 
-    expect(getSiteAdapter).toHaveBeenCalledWith("new-api")
+    expect(getSiteTypeCapabilities).toHaveBeenCalledWith("new-api")
     expect(redeem).toHaveBeenCalledWith({
       request: {
         baseUrl: "https://example.com",
@@ -139,9 +143,13 @@ describe("redeemService.redeemCodeForAccount", () => {
     ;(
       accountStorage.convertToDisplayData as unknown as ReturnType<typeof vi.fn>
     ).mockReturnValueOnce(convertedDisplayData)
-    ;(getSiteAdapter as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      redemption: {
-        redeem,
+    ;(
+      getSiteTypeCapabilities as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      account: {
+        redemption: {
+          redeem,
+        },
       },
     })
 
@@ -186,9 +194,13 @@ describe("redeemService.redeemCodeForAccount", () => {
     ;(
       accountStorage.getAccountById as unknown as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(account)
-    ;(getSiteAdapter as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      redemption: {
-        redeem,
+    ;(
+      getSiteTypeCapabilities as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      account: {
+        redemption: {
+          redeem,
+        },
       },
     })
 
@@ -218,9 +230,13 @@ describe("redeemService.redeemCodeForAccount", () => {
     ;(
       accountStorage.getAccountById as unknown as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(account)
-    ;(getSiteAdapter as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      redemption: {
-        redeem,
+    ;(
+      getSiteTypeCapabilities as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      account: {
+        redemption: {
+          redeem,
+        },
       },
     })
 
@@ -244,12 +260,14 @@ describe("redeemService.redeemCodeForAccount", () => {
         access_token: "token-sub2api",
       },
     }
-    const redeem = vi.fn()
-
     ;(
       accountStorage.getAccountById as unknown as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(account)
-    ;(getSiteAdapter as unknown as ReturnType<typeof vi.fn>).mockReturnValue({})
+    ;(
+      getSiteTypeCapabilities as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      siteType: SITE_TYPES.SUB2API,
+    })
 
     const result = await redeemService.redeemCodeForAccount("sub2api-1", "CODE")
 
@@ -257,7 +275,6 @@ describe("redeemService.redeemCodeForAccount", () => {
       success: false,
       message: "redemptionAssist:messages.redeemFailed",
     })
-    expect(redeem).not.toHaveBeenCalled()
   })
 
   it("returns a local failure for unsupported AIHubMix redemption", async () => {
@@ -272,12 +289,14 @@ describe("redeemService.redeemCodeForAccount", () => {
         access_token: "token-aihubmix",
       },
     }
-    const redeem = vi.fn()
-
     ;(
       accountStorage.getAccountById as unknown as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(account)
-    ;(getSiteAdapter as unknown as ReturnType<typeof vi.fn>).mockReturnValue({})
+    ;(
+      getSiteTypeCapabilities as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      siteType: SITE_TYPES.AIHUBMIX,
+    })
 
     const result = await redeemService.redeemCodeForAccount(
       "aihubmix-1",
@@ -288,6 +307,5 @@ describe("redeemService.redeemCodeForAccount", () => {
       success: false,
       message: "redemptionAssist:messages.redeemFailed",
     })
-    expect(redeem).not.toHaveBeenCalled()
   })
 })

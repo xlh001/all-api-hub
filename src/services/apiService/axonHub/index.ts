@@ -233,6 +233,29 @@ const numericIdFromGraphqlId = (id: string): number => {
 export const resolveAxonHubGraphqlId = (id: number) =>
   numericIdToGraphqlId.get(id) ?? String(id)
 
+/**
+ * Resolve the GraphQL global id required by AxonHub channel mutations.
+ */
+export async function resolveAxonHubGraphqlIdForMutation(
+  config: AxonHubConfig,
+  id: number,
+) {
+  let graphqlId = numericIdToGraphqlId.get(id)
+  if (graphqlId) {
+    return graphqlId
+  }
+
+  // AxonHub mutations reject bare numeric row ids; hydrate the reversible map
+  // from the channel list before sending update/delete mutations.
+  await listChannels(config)
+  graphqlId = numericIdToGraphqlId.get(id)
+  if (graphqlId) {
+    return graphqlId
+  }
+
+  throw new Error(`Unable to resolve AxonHub GraphQL id for channel ${id}`)
+}
+
 const toSafeErrorMessage = (error: unknown, fallback: string) => {
   const message = getErrorMessage(error)
   if (!message) return fallback
@@ -686,7 +709,7 @@ export async function updateChannel(
   try {
     const config = extractRequestConfig(request)
     const { id, status, ...input } = channelData
-    const graphqlId = resolveAxonHubGraphqlId(id)
+    const graphqlId = await resolveAxonHubGraphqlIdForMutation(config, id)
     const updated = await updateAxonHubChannel(config, graphqlId, input)
 
     if (status !== undefined) {
@@ -718,9 +741,10 @@ export async function deleteChannel(
   channelId: number,
 ): Promise<ApiResponse<unknown>> {
   try {
+    const config = extractRequestConfig(request)
     const deleted = await deleteAxonHubChannel(
-      extractRequestConfig(request),
-      resolveAxonHubGraphqlId(channelId),
+      config,
+      await resolveAxonHubGraphqlIdForMutation(config, channelId),
     )
 
     return {

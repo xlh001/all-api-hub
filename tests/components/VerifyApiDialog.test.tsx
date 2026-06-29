@@ -31,19 +31,17 @@ const mockResolveTokenKey = vi.fn()
 const mockStartProductAnalyticsAction = vi.fn()
 const mockCompleteProductAnalyticsAction = vi.fn()
 
-vi.mock("~/services/apiService", () => ({
-  getApiService: () => ({}),
-}))
-
 vi.mock("~/services/apiAdapters/registry", () => ({
-  getSiteAdapter: () => ({
-    keyManagement: {
-      fetchTokens: (...args: any[]) => mockFetchAccountTokens(...args),
-      createToken: vi.fn(),
-      resolveTokenKey: (...args: any[]) => mockResolveTokenKey(...args),
-      deleteToken: vi.fn(),
-      fetchUserGroups: vi.fn(),
-      fetchAvailableModels: vi.fn(),
+  getSiteTypeCapabilities: () => ({
+    account: {
+      keyManagement: {
+        fetchTokens: (...args: any[]) => mockFetchAccountTokens(...args),
+        createToken: vi.fn(),
+        resolveTokenKey: (...args: any[]) => mockResolveTokenKey(...args),
+        deleteToken: vi.fn(),
+        fetchUserGroups: vi.fn(),
+        fetchAvailableModels: vi.fn(),
+      },
     },
   }),
 }))

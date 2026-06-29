@@ -16,27 +16,17 @@ import { AuthTypeEnum } from "~/types"
 const {
   mockFetchAccountData,
   mockFetchSiteStatus,
-  mockGetApiService,
-  mockGetSiteAdapter,
+  mockgetSiteTypeCapabilities,
   mockUpdateAccount,
 } = vi.hoisted(() => ({
   mockFetchAccountData: vi.fn(),
   mockFetchSiteStatus: vi.fn(),
-  mockGetApiService: vi.fn(),
-  mockGetSiteAdapter: vi.fn(),
+  mockgetSiteTypeCapabilities: vi.fn(),
   mockUpdateAccount: vi.fn(),
 }))
 
-vi.mock("~/services/apiService", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("~/services/apiService")>()
-  return {
-    ...actual,
-    getApiService: mockGetApiService,
-  }
-})
-
 vi.mock("~/services/apiAdapters/registry", () => ({
-  getSiteAdapter: mockGetSiteAdapter,
+  getSiteTypeCapabilities: mockgetSiteTypeCapabilities,
 }))
 
 vi.mock("~/services/accounts/accountStorage", async (importOriginal) => {
@@ -56,18 +46,17 @@ describe("accountOperations", () => {
   beforeEach(() => {
     mockFetchAccountData.mockReset()
     mockFetchSiteStatus.mockReset()
-    mockGetApiService.mockReset()
-    mockGetSiteAdapter.mockReset()
+    mockgetSiteTypeCapabilities.mockReset()
     mockUpdateAccount.mockReset()
-    mockGetApiService.mockReturnValue({
-      fetchSiteStatus: mockFetchSiteStatus,
-    })
-    mockGetSiteAdapter.mockReturnValue({
-      accountData: {
-        fetchData: mockFetchAccountData,
-      },
-      accountBootstrap: {
-        fetchSiteStatus: mockFetchSiteStatus,
+    mockgetSiteTypeCapabilities.mockReturnValue({
+      siteType: SITE_TYPES.NEW_API,
+      account: {
+        data: {
+          fetchData: mockFetchAccountData,
+        },
+        bootstrap: {
+          fetchSiteStatus: mockFetchSiteStatus,
+        },
       },
     })
   })
@@ -235,8 +224,12 @@ describe("accountOperations", () => {
       )
 
       expect(result.success).toBe(true)
-      const { getSiteAdapter } = await import("~/services/apiAdapters/registry")
-      expect(vi.mocked(getSiteAdapter)).toHaveBeenCalledWith(SITE_TYPES.UNKNOWN)
+      const { getSiteTypeCapabilities } = await import(
+        "~/services/apiAdapters/registry"
+      )
+      expect(vi.mocked(getSiteTypeCapabilities)).toHaveBeenCalledWith(
+        SITE_TYPES.UNKNOWN,
+      )
       expect(mockUpdateAccount).toHaveBeenCalledWith(
         "account-1",
         expect.objectContaining({
@@ -493,8 +486,12 @@ describe("accountOperations", () => {
       )
 
       expect(result).toBe("Sub2 Portal")
-      const { getSiteAdapter } = await import("~/services/apiAdapters/registry")
-      expect(vi.mocked(getSiteAdapter)).toHaveBeenCalledWith(SITE_TYPES.SUB2API)
+      const { getSiteTypeCapabilities } = await import(
+        "~/services/apiAdapters/registry"
+      )
+      expect(vi.mocked(getSiteTypeCapabilities)).toHaveBeenCalledWith(
+        SITE_TYPES.SUB2API,
+      )
       expect(mockFetchSiteStatus).toHaveBeenCalledWith({
         baseUrl: "https://example.com",
         auth: { authType: AuthTypeEnum.None },
@@ -502,7 +499,9 @@ describe("accountOperations", () => {
     })
 
     it("falls back to the domain when site-type hint has no bootstrap status probe", async () => {
-      mockGetSiteAdapter.mockReturnValueOnce({})
+      mockgetSiteTypeCapabilities.mockReturnValueOnce({
+        siteType: SITE_TYPES.NEW_API,
+      })
 
       const result = await getSiteName(
         "https://api.example.com/dashboard",

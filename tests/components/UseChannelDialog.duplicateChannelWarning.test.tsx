@@ -245,25 +245,18 @@ vi.mock("react-hot-toast", () => ({
   },
 }))
 
-vi.mock("~/services/apiService", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("~/services/apiService")>()
-
-  return {
-    ...actual,
-    getApiService: vi.fn(() => ({})),
-  }
-})
-
 vi.mock("~/services/apiAdapters/registry", () => ({
-  getSiteAdapter: () => ({
-    keyManagement: {
-      fetchTokens: (...args: any[]) => mockFetchAccountTokens(...args),
-      createToken: vi.fn(),
-      resolveTokenKey: ({ request, token }: any) =>
-        mockResolveApiTokenKey(request, token),
-      deleteToken: vi.fn(),
-      fetchUserGroups: vi.fn(),
-      fetchAvailableModels: vi.fn(),
+  getSiteTypeCapabilities: () => ({
+    account: {
+      keyManagement: {
+        fetchTokens: (...args: any[]) => mockFetchAccountTokens(...args),
+        createToken: vi.fn(),
+        resolveTokenKey: ({ request, token }: any) =>
+          mockResolveApiTokenKey(request, token),
+        deleteToken: vi.fn(),
+        fetchUserGroups: vi.fn(),
+        fetchAvailableModels: vi.fn(),
+      },
     },
   }),
 }))

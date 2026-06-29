@@ -1,40 +1,85 @@
+import { SITE_TYPES, type ManagedSiteType } from "~/constants/siteType"
 import {
   ACCOUNT_SITE_ADAPTER_FAMILIES,
   getAccountSiteDefinition,
   type AccountSiteType,
 } from "~/services/accountSiteDefinitions"
 
-import { aihubmixAdapter } from "./aihubmix"
-import type { SiteAdapter } from "./contracts/siteAdapter"
-import { createNewApiAdapter } from "./newApi"
-import { sub2ApiAdapter } from "./sub2api"
+import { aihubmixCapabilities } from "./aihubmix"
+import type {
+  SiteType,
+  SiteTypeCapabilities,
+} from "./contracts/siteTypeCapabilities"
+import { axonHubManagedSiteCapabilities } from "./managedSites/axonHub"
+import { claudeCodeHubManagedSiteCapabilities } from "./managedSites/claudeCodeHub"
+import { doneHubManagedSiteCapabilities } from "./managedSites/doneHub"
+import { newApiManagedSiteCapabilities } from "./managedSites/newApi"
+import { octopusManagedSiteCapabilities } from "./managedSites/octopus"
+import { veloeraManagedSiteCapabilities } from "./managedSites/veloera"
+import { createNewApiCapabilities } from "./newApi"
+import { sub2ApiCapabilities } from "./sub2api"
 
-const createNewApiFamilyAdapter = (siteType: AccountSiteType): SiteAdapter =>
-  createNewApiAdapter(siteType)
+type ManagedSiteCapabilities = NonNullable<SiteTypeCapabilities["managedSites"]>
 
-const createUnsupportedAdapter = (siteType: AccountSiteType): SiteAdapter => ({
-  siteType,
-})
+const managedSitesBySiteType = {
+  [SITE_TYPES.NEW_API]: newApiManagedSiteCapabilities,
+  [SITE_TYPES.VELOERA]: veloeraManagedSiteCapabilities,
+  [SITE_TYPES.DONE_HUB]: doneHubManagedSiteCapabilities,
+  [SITE_TYPES.OCTOPUS]: octopusManagedSiteCapabilities,
+  [SITE_TYPES.AXON_HUB]: axonHubManagedSiteCapabilities,
+  [SITE_TYPES.CLAUDE_CODE_HUB]: claudeCodeHubManagedSiteCapabilities,
+} satisfies Record<ManagedSiteType, ManagedSiteCapabilities>
+
+const withManagedSites = (
+  capabilities: SiteTypeCapabilities,
+): SiteTypeCapabilities => {
+  const managedSites = isManagedSiteCapabilityType(capabilities.siteType)
+    ? managedSitesBySiteType[capabilities.siteType]
+    : undefined
+
+  if (!managedSites) {
+    return capabilities
+  }
+
+  return {
+    ...capabilities,
+    managedSites: {
+      ...capabilities.managedSites,
+      ...managedSites,
+    },
+  }
+}
+
+const isManagedSiteCapabilityType = (
+  siteType: SiteType,
+): siteType is ManagedSiteType =>
+  Object.hasOwn(managedSitesBySiteType, siteType)
 
 /**
- * Resolve the narrow capability adapter for an account site type.
+ * Returns the capability groups supported by the selected site type.
  */
-export function getSiteAdapter(siteType: AccountSiteType): SiteAdapter {
+export function getSiteTypeCapabilities(
+  siteType: SiteType,
+): SiteTypeCapabilities {
   const adapterFamily =
-    getAccountSiteDefinition(siteType)?.adapterFamily ??
+    getAccountSiteDefinition(siteType as AccountSiteType)?.adapterFamily ??
     ACCOUNT_SITE_ADAPTER_FAMILIES.Unsupported
 
-  if (adapterFamily === ACCOUNT_SITE_ADAPTER_FAMILIES.Sub2Api) {
-    return sub2ApiAdapter
-  }
-
-  if (adapterFamily === ACCOUNT_SITE_ADAPTER_FAMILIES.Aihubmix) {
-    return aihubmixAdapter
-  }
+  if (siteType === SITE_TYPES.SUB2API) return sub2ApiCapabilities
+  if (siteType === SITE_TYPES.AIHUBMIX) return aihubmixCapabilities
 
   if (adapterFamily === ACCOUNT_SITE_ADAPTER_FAMILIES.NewApiFamily) {
-    return createNewApiFamilyAdapter(siteType)
+    return withManagedSites(
+      createNewApiCapabilities(siteType as AccountSiteType),
+    )
   }
 
-  return createUnsupportedAdapter(siteType)
+  if (isManagedSiteCapabilityType(siteType)) {
+    return {
+      siteType,
+      managedSites: managedSitesBySiteType[siteType],
+    }
+  }
+
+  return { siteType }
 }

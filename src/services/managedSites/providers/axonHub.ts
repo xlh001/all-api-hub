@@ -1,13 +1,9 @@
-import toast from "react-hot-toast"
-
 import {
   AXON_HUB_CHANNEL_STATUS,
   AXON_HUB_CHANNEL_TYPE,
   DEFAULT_AXON_HUB_CHANNEL_FIELDS,
 } from "~/constants/axonHub"
 import { SITE_TYPES } from "~/constants/siteType"
-import { ensureAccountApiToken } from "~/services/accounts/accountOperations"
-import { accountStorage } from "~/services/accounts/accountStorage"
 import { normalizeAccountForManagedChannel } from "~/services/accounts/utils/siteUrlNormalization"
 import * as axonHubApi from "~/services/apiService/axonHub"
 import type { ApiResponse } from "~/services/apiTransport/type"
@@ -19,12 +15,7 @@ import {
   userPreferences,
   type UserPreferences,
 } from "~/services/preferences/userPreferences"
-import type {
-  AccountToken,
-  ApiToken,
-  DisplaySiteData,
-  SiteAccount,
-} from "~/types"
+import type { AccountToken, ApiToken, DisplaySiteData } from "~/types"
 import type {
   AxonHubCreateChannelInput,
   AxonHubUpdateChannelInput,
@@ -177,6 +168,20 @@ export async function searchChannel(
 }
 
 /**
+ * List AxonHub channels using the supplied admin credentials.
+ */
+export async function listChannels(
+  config: AxonHubConfig,
+): Promise<ManagedSiteChannelListData> {
+  try {
+    return await axonHubApi.listChannels(config)
+  } catch (error) {
+    logger.error("Failed to list AxonHub channels", error)
+    throw error
+  }
+}
+
+/**
  * Create an AxonHub channel through the managed-site service contract.
  */
 export async function createChannel(
@@ -227,7 +232,10 @@ export async function updateChannel(
   channelData: UpdateChannelPayload & { status?: number },
 ): Promise<ApiResponse<unknown>> {
   try {
-    const graphqlId = axonHubApi.resolveAxonHubGraphqlId(channelData.id)
+    const graphqlId = await axonHubApi.resolveAxonHubGraphqlIdForMutation(
+      config,
+      channelData.id,
+    )
     const updated = await axonHubApi.updateAxonHubChannel(
       config,
       graphqlId,
@@ -260,10 +268,11 @@ export async function deleteChannel(
   channelId: number,
 ): Promise<ApiResponse<unknown>> {
   try {
-    const deleted = await axonHubApi.deleteAxonHubChannel(
+    const graphqlId = await axonHubApi.resolveAxonHubGraphqlIdForMutation(
       config,
-      axonHubApi.resolveAxonHubGraphqlId(channelId),
+      channelId,
     )
+    const deleted = await axonHubApi.deleteAxonHubChannel(config, graphqlId)
     return {
       success: deleted,
       data: deleted,
@@ -285,7 +294,9 @@ export async function fetchAvailableModels(
   account: DisplaySiteData,
   token: ApiToken,
 ): Promise<string[]> {
-  return await fetchManagedSiteAvailableModels(account, token)
+  return await fetchManagedSiteAvailableModels(account, token, {
+    includeAccountFallback: false,
+  })
 }
 
 /**
@@ -398,42 +409,5 @@ export async function importToAxonHub(
       success: false,
       message: getErrorMessage(error) || t("messages:axonhub.importFailed"),
     }
-  }
-}
-
-/**
- * Auto-provision an account token and import it into AxonHub.
- */
-export async function autoConfigToAxonHub(
-  account: SiteAccount,
-  toastId?: string,
-): Promise<{ success: boolean; message: string }> {
-  try {
-    const prefs = await userPreferences.getPreferences()
-    if (!hasValidAxonHubConfig(prefs) || !prefs.axonHub) {
-      return { success: false, message: t("messages:axonhub.configMissing") }
-    }
-    const displaySiteData = accountStorage.convertToDisplayData(account)
-    const apiToken = await ensureAccountApiToken(
-      account,
-      displaySiteData,
-      toastId,
-    )
-
-    toast.loading(t("messages:accountOperations.importingToAxonHub"), {
-      id: toastId,
-    })
-
-    const result = await importToAxonHub(displaySiteData, apiToken)
-    if (result.success) {
-      toast.success(result.message, { id: toastId })
-    } else {
-      toast.error(result.message, { id: toastId })
-    }
-    return result
-  } catch (error) {
-    const message = getErrorMessage(error) || t("messages:axonhub.importFailed")
-    toast.error(message, { id: toastId })
-    return { success: false, message }
   }
 }

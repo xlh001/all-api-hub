@@ -3,13 +3,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ApiError } from "~/services/apiService/common/errors"
 import {
   createChannel,
+  deleteChannel,
   fetchAccountData,
   fetchChannel,
+  fetchChannelModels,
   fetchCheckInStatus,
   listAllChannels,
   refreshAccountData,
   searchChannel,
   updateChannel,
+  updateChannelModelMapping,
+  updateChannelModels,
 } from "~/services/apiService/veloera"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 
@@ -240,6 +244,171 @@ describe("apiService veloera channel APIs", () => {
     })
   })
 
+  it("fetchChannelModels should call the Veloera fetch_models endpoint", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: "1",
+      },
+    }
+    const signal = new AbortController().signal
+
+    mockFetchApi.mockResolvedValueOnce({
+      success: true,
+      data: ["gpt-4o", "claude-3"],
+    })
+
+    await expect(
+      fetchChannelModels(request as any, 9, { signal }),
+    ).resolves.toEqual(["gpt-4o", "claude-3"])
+    expect(mockFetchApi).toHaveBeenCalledWith(
+      request,
+      {
+        endpoint: "/api/channel/fetch_models/9",
+        options: { signal },
+      },
+      false,
+    )
+  })
+
+  it("fetchChannelModels should reject unsupported payloads", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: "1",
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({
+      success: true,
+      data: { models: ["gpt-4o"] },
+    })
+
+    await expect(fetchChannelModels(request as any, 9)).rejects.toMatchObject({
+      message: "Failed to fetch models",
+    })
+  })
+
+  it("updateChannelModels should write the models field", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: "1",
+      },
+    }
+    const signal = new AbortController().signal
+
+    mockFetchApi.mockResolvedValueOnce({ success: true })
+
+    await updateChannelModels(request as any, 9, "gpt-4o,claude-3", {
+      signal,
+    })
+
+    expect(mockFetchApi).toHaveBeenCalledWith(
+      request,
+      {
+        endpoint: "/api/channel",
+        options: {
+          method: "PUT",
+          body: JSON.stringify({
+            id: 9,
+            models: "gpt-4o,claude-3",
+          }),
+          signal,
+        },
+      },
+      false,
+    )
+  })
+
+  it("updateChannelModels should reject failed Veloera responses", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: "1",
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({
+      success: false,
+      message: "",
+    })
+
+    await expect(
+      updateChannelModels(request as any, 9, "gpt-4o"),
+    ).rejects.toMatchObject({
+      message: "Failed to update channel",
+      endpoint: "/api/channel",
+    })
+  })
+
+  it("updateChannelModelMapping should write models and model_mapping", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: "1",
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({ success: true })
+
+    await updateChannelModelMapping(
+      request as any,
+      9,
+      "gpt-4o,claude-3",
+      JSON.stringify({ "gpt-4o": "gpt-4o" }),
+    )
+
+    expect(mockFetchApi).toHaveBeenCalledWith(
+      request,
+      {
+        endpoint: "/api/channel",
+        options: {
+          method: "PUT",
+          body: JSON.stringify({
+            id: 9,
+            models: "gpt-4o,claude-3",
+            model_mapping: JSON.stringify({ "gpt-4o": "gpt-4o" }),
+          }),
+        },
+      },
+      false,
+    )
+  })
+
+  it("updateChannelModelMapping should reject failed Veloera responses", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: "1",
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({
+      success: false,
+      message: "mapping failed",
+    })
+
+    await expect(
+      updateChannelModelMapping(request as any, 9, "gpt-4o", "{}"),
+    ).rejects.toMatchObject({
+      message: "mapping failed",
+      endpoint: "/api/channel",
+    })
+  })
+
   it("createChannel should post flat payload with group string", async () => {
     const baseUrl = "https://example.com"
     const token = "token"
@@ -339,6 +508,45 @@ describe("apiService veloera channel APIs", () => {
       group: "default",
     })
     expect(body.groups).toBeUndefined()
+  })
+
+  it("deleteChannel should issue a DELETE request", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: "1",
+      },
+    }
+
+    mockFetchApi.mockResolvedValueOnce({ success: true, message: "ok" })
+
+    await deleteChannel(request as any, 9)
+
+    expect(mockFetchApi).toHaveBeenCalledWith(request, {
+      endpoint: "/api/channel/9",
+      options: {
+        method: "DELETE",
+      },
+    })
+  })
+
+  it("deleteChannel should report Veloera delete failures", async () => {
+    const request = {
+      baseUrl: "https://example.com",
+      auth: {
+        authType: AuthTypeEnum.AccessToken,
+        accessToken: "token",
+        userId: "1",
+      },
+    }
+
+    mockFetchApi.mockRejectedValueOnce(new Error("delete failed"))
+
+    await expect(deleteChannel(request as any, 9)).rejects.toThrow(
+      "删除渠道失败，请检查网络或 Veloera 配置",
+    )
   })
 
   it("searchChannel should accept object payloads with an items array and normalize them", async () => {

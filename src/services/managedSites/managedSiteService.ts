@@ -1,8 +1,8 @@
 import { SITE_TYPES, type ManagedSiteType } from "~/constants/siteType"
+import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import type { ApiResponse } from "~/services/apiTransport/type"
 import {
   getCurrentManagedSiteRuntimeConfig,
-  getManagedSiteRuntimeConfigForType,
   type ManagedSiteRuntimeConfigValue,
   type ManagedSiteRuntimeConfigValueForType,
 } from "~/services/managedSites/runtimeConfig"
@@ -12,12 +12,7 @@ import {
   getManagedSiteAdminConfigForType,
   getManagedSiteMessagesKeyFromSiteType,
 } from "~/services/managedSites/utils/managedSite"
-import type {
-  AccountToken,
-  ApiToken,
-  DisplaySiteData,
-  SiteAccount,
-} from "~/types"
+import type { AccountToken, ApiToken, DisplaySiteData } from "~/types"
 import type {
   ChannelFormData,
   ChannelMode,
@@ -31,12 +26,6 @@ import {
   userPreferences,
   type UserPreferences,
 } from "../preferences/userPreferences"
-import * as axonHubService from "./providers/axonHub"
-import * as claudeCodeHubService from "./providers/claudeCodeHub"
-import * as doneHubService from "./providers/doneHubService"
-import * as newApiService from "./providers/newApi"
-import * as octopusService from "./providers/octopus"
-import * as veloeraService from "./providers/veloera"
 
 export type ManagedSiteConfig = ManagedSiteRuntimeConfigValue
 
@@ -70,6 +59,10 @@ export interface ManagedSiteService<
   checkValidConfig(): Promise<boolean>
   getConfig(): Promise<TConfig | null>
 
+  fetchSiteUserGroups(config: TConfig): Promise<string[]>
+
+  fetchAccountAvailableModels(config: TConfig): Promise<string[]>
+
   fetchAvailableModels(
     account: DisplaySiteData,
     token: ApiToken,
@@ -93,21 +86,46 @@ export interface ManagedSiteService<
   ): Promise<ManagedSiteChannel[]>
 
   fetchChannelSecretKey?(config: TConfig, channelId: number): Promise<string>
-
-  /**
-   * Legacy direct-import entrypoint kept on the managed-site service contract.
-   * @deprecated Unused by the current runtime flow. Account auto-config now
-   * routes through `useChannelDialog().openWithAccount()` so users can review
-   * generated channel fields before creation. Kept temporarily for compatibility.
-   */
-  autoConfigToManagedSite(
-    account: SiteAccount,
-    toastId?: string,
-  ): Promise<unknown>
 }
 
 export type TypedManagedSiteService<TSiteType extends ManagedSiteType> =
   ManagedSiteService<ManagedSiteRuntimeConfigValueForType<TSiteType>, TSiteType>
+type ManagedSiteCapabilities = NonNullable<
+  ReturnType<typeof getSiteTypeCapabilities>["managedSites"]
+>
+type RequiredManagedSiteCapabilities = {
+  channels: NonNullable<ManagedSiteCapabilities["channels"]>
+  config: NonNullable<ManagedSiteCapabilities["config"]>
+  queries: NonNullable<ManagedSiteCapabilities["queries"]>
+  channelDrafts: NonNullable<ManagedSiteCapabilities["channelDrafts"]>
+}
+
+/**
+ * Resolves the full managed-site capability set required by the service facade.
+ */
+function requireManagedSiteCapabilities(
+  siteType: ManagedSiteType,
+): RequiredManagedSiteCapabilities {
+  const managedSites = getSiteTypeCapabilities(siteType).managedSites
+
+  if (
+    !managedSites?.channels ||
+    !managedSites.config ||
+    !managedSites.queries ||
+    !managedSites.channelDrafts
+  ) {
+    throw new Error(
+      `managedSites capabilities are not implemented for ${siteType}`,
+    )
+  }
+
+  return {
+    channels: managedSites.channels,
+    config: managedSites.config,
+    queries: managedSites.queries,
+    channelDrafts: managedSites.channelDrafts,
+  }
+}
 
 /**
  * Check if preferences contain a valid managed site admin configuration.
@@ -167,131 +185,33 @@ export function getManagedSiteServiceForType(
 export function getManagedSiteServiceForType(
   siteType: typeof SITE_TYPES.NEW_API,
 ): TypedManagedSiteService<typeof SITE_TYPES.NEW_API>
+export function getManagedSiteServiceForType<TSiteType extends ManagedSiteType>(
+  siteType: TSiteType,
+): TypedManagedSiteService<TSiteType>
 export function getManagedSiteServiceForType(
   siteType: ManagedSiteType,
-): ManagedSiteService
-export function getManagedSiteServiceForType(
-  siteType: ManagedSiteType,
-): ManagedSiteService {
+): TypedManagedSiteService<ManagedSiteType> {
   const messagesKey: ManagedSiteMessagesKey =
     getManagedSiteMessagesKeyFromSiteType(siteType)
-  const getConfig = async (): Promise<ManagedSiteConfig | null> => {
-    const runtimeConfig = await getManagedSiteRuntimeConfigForType(siteType)
-    return runtimeConfig?.config ?? null
-  }
-
-  if (siteType === SITE_TYPES.OCTOPUS) {
-    return {
-      siteType,
-      messagesKey,
-      searchChannel: octopusService.searchChannel,
-      createChannel: octopusService.createChannel,
-      updateChannel: octopusService.updateChannel,
-      deleteChannel: octopusService.deleteChannel,
-      checkValidConfig: octopusService.checkValidOctopusConfig,
-      getConfig,
-      fetchAvailableModels: octopusService.fetchAvailableModels,
-      buildChannelName: octopusService.buildChannelName,
-      prepareChannelFormData: octopusService.prepareChannelFormData,
-      buildChannelPayload: octopusService.buildChannelPayload,
-      autoConfigToManagedSite: octopusService.autoConfigToOctopus,
-    }
-  }
-
-  if (siteType === SITE_TYPES.AXON_HUB) {
-    return {
-      siteType,
-      messagesKey,
-      searchChannel: axonHubService.searchChannel,
-      createChannel: axonHubService.createChannel,
-      updateChannel: axonHubService.updateChannel,
-      deleteChannel: axonHubService.deleteChannel,
-      checkValidConfig: axonHubService.checkValidAxonHubConfig,
-      getConfig,
-      fetchAvailableModels: axonHubService.fetchAvailableModels,
-      buildChannelName: axonHubService.buildChannelName,
-      prepareChannelFormData: axonHubService.prepareChannelFormData,
-      buildChannelPayload: axonHubService.buildChannelPayload,
-      autoConfigToManagedSite: axonHubService.autoConfigToAxonHub,
-    }
-  }
-
-  if (siteType === SITE_TYPES.CLAUDE_CODE_HUB) {
-    return {
-      siteType,
-      messagesKey,
-      searchChannel: claudeCodeHubService.searchChannel,
-      createChannel: claudeCodeHubService.createChannel,
-      updateChannel: claudeCodeHubService.updateChannel,
-      deleteChannel: claudeCodeHubService.deleteChannel,
-      checkValidConfig: claudeCodeHubService.checkValidClaudeCodeHubConfig,
-      getConfig,
-      fetchAvailableModels: claudeCodeHubService.fetchAvailableModels,
-      buildChannelName: claudeCodeHubService.buildChannelName,
-      prepareChannelFormData: claudeCodeHubService.prepareChannelFormData,
-      buildChannelPayload: claudeCodeHubService.buildChannelPayload,
-      hydrateComparableChannelKeys:
-        claudeCodeHubService.hydrateComparableChannelKeys,
-      fetchChannelSecretKey: claudeCodeHubService.fetchChannelSecretKey,
-      autoConfigToManagedSite: claudeCodeHubService.autoConfigToClaudeCodeHub,
-    }
-  }
-
-  if (siteType === SITE_TYPES.VELOERA) {
-    return {
-      siteType,
-      messagesKey,
-      searchChannel: veloeraService.searchChannel,
-      createChannel: veloeraService.createChannel,
-      updateChannel: veloeraService.updateChannel,
-      deleteChannel: veloeraService.deleteChannel,
-      checkValidConfig: veloeraService.checkValidVeloeraConfig,
-      getConfig,
-      fetchAvailableModels: veloeraService.fetchAvailableModels,
-      buildChannelName: veloeraService.buildChannelName,
-      prepareChannelFormData: veloeraService.prepareChannelFormData,
-      buildChannelPayload: veloeraService.buildChannelPayload,
-      hydrateComparableChannelKeys: veloeraService.hydrateComparableChannelKeys,
-      fetchChannelSecretKey: veloeraService.fetchChannelSecretKey,
-      autoConfigToManagedSite: veloeraService.autoConfigToVeloera,
-    }
-  }
-
-  if (siteType === SITE_TYPES.DONE_HUB) {
-    return {
-      siteType,
-      messagesKey,
-      searchChannel: doneHubService.searchChannel,
-      createChannel: doneHubService.createChannel,
-      updateChannel: doneHubService.updateChannel,
-      deleteChannel: doneHubService.deleteChannel,
-      checkValidConfig: doneHubService.checkValidDoneHubConfig,
-      getConfig,
-      fetchAvailableModels: doneHubService.fetchAvailableModels,
-      buildChannelName: doneHubService.buildChannelName,
-      prepareChannelFormData: doneHubService.prepareChannelFormData,
-      buildChannelPayload: doneHubService.buildChannelPayload,
-      hydrateComparableChannelKeys: doneHubService.hydrateComparableChannelKeys,
-      fetchChannelSecretKey: doneHubService.fetchChannelSecretKey,
-      autoConfigToManagedSite: doneHubService.autoConfigToDoneHub,
-    }
-  }
+  const capabilities = requireManagedSiteCapabilities(siteType)
 
   return {
-    siteType: SITE_TYPES.NEW_API,
+    siteType,
     messagesKey,
-    searchChannel: newApiService.searchChannel,
-    createChannel: newApiService.createChannel,
-    updateChannel: newApiService.updateChannel,
-    deleteChannel: newApiService.deleteChannel,
-    checkValidConfig: newApiService.checkValidNewApiConfig,
-    getConfig,
-    fetchAvailableModels: newApiService.fetchAvailableModels,
-    buildChannelName: newApiService.buildChannelName,
-    prepareChannelFormData: newApiService.prepareChannelFormData,
-    buildChannelPayload: newApiService.buildChannelPayload,
-    hydrateComparableChannelKeys: newApiService.hydrateComparableChannelKeys,
-    fetchChannelSecretKey: newApiService.fetchChannelSecretKey,
-    autoConfigToManagedSite: newApiService.autoConfigToNewApi,
+    searchChannel: capabilities.channels.search,
+    createChannel: capabilities.channels.create,
+    updateChannel: capabilities.channels.update,
+    deleteChannel: capabilities.channels.delete,
+    checkValidConfig: capabilities.config.checkValid,
+    getConfig: capabilities.config.get,
+    fetchSiteUserGroups: capabilities.queries.fetchSiteUserGroups,
+    fetchAccountAvailableModels:
+      capabilities.queries.fetchAccountAvailableModels,
+    fetchAvailableModels: capabilities.channelDrafts.fetchAvailableModels,
+    buildChannelName: capabilities.channelDrafts.buildName,
+    prepareChannelFormData: capabilities.channelDrafts.prepareFormData,
+    buildChannelPayload: capabilities.channelDrafts.buildPayload,
+    hydrateComparableChannelKeys: capabilities.channels.hydrateComparableKeys,
+    fetchChannelSecretKey: capabilities.channels.fetchSecretKey,
   }
 }

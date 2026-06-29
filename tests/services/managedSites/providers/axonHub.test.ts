@@ -1,4 +1,3 @@
-import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -11,34 +10,31 @@ import {
   buildApiToken,
   buildDisplaySiteData,
   buildManagedSiteChannel,
-  buildSiteAccount,
   buildUserPreferences,
 } from "~~/tests/test-utils/factories"
 
 const {
-  mockConvertToDisplayData,
   mockCreateAxonHubChannel,
   mockDeleteAxonHubChannel,
-  mockEnsureAccountApiToken,
   mockFetchManagedSiteAvailableModels,
   mockFetchTokenScopedModels,
   mockGetPreferences,
   mockListChannels,
-  mockResolveAxonHubGraphqlId,
+  mockResolveAxonHubGraphqlIdForMutation,
   mockSearchChannels,
   mockSignIn,
   mockUpdateAxonHubChannel,
   mockUpdateAxonHubChannelStatus,
 } = vi.hoisted(() => ({
-  mockConvertToDisplayData: vi.fn(),
   mockCreateAxonHubChannel: vi.fn(),
   mockDeleteAxonHubChannel: vi.fn(),
-  mockEnsureAccountApiToken: vi.fn(),
   mockFetchManagedSiteAvailableModels: vi.fn(),
   mockFetchTokenScopedModels: vi.fn(),
   mockGetPreferences: vi.fn(),
   mockListChannels: vi.fn(),
-  mockResolveAxonHubGraphqlId: vi.fn((id: number) => `gid-${id}`),
+  mockResolveAxonHubGraphqlIdForMutation: vi.fn(
+    (_config: unknown, id: number) => Promise.resolve(`gid-${id}`),
+  ),
   mockSearchChannels: vi.fn(),
   mockSignIn: vi.fn(),
   mockUpdateAxonHubChannel: vi.fn(),
@@ -62,7 +58,7 @@ vi.mock("~/services/apiService/axonHub", () => ({
   createAxonHubChannel: mockCreateAxonHubChannel,
   deleteAxonHubChannel: mockDeleteAxonHubChannel,
   listChannels: mockListChannels,
-  resolveAxonHubGraphqlId: mockResolveAxonHubGraphqlId,
+  resolveAxonHubGraphqlIdForMutation: mockResolveAxonHubGraphqlIdForMutation,
   searchChannels: mockSearchChannels,
   signIn: mockSignIn,
   updateAxonHubChannel: mockUpdateAxonHubChannel,
@@ -79,24 +75,6 @@ vi.mock(
     fetchManagedSiteAvailableModels: mockFetchManagedSiteAvailableModels,
   }),
 )
-
-vi.mock("~/services/accounts/accountOperations", () => ({
-  ensureAccountApiToken: mockEnsureAccountApiToken,
-}))
-
-vi.mock("~/services/accounts/accountStorage", () => ({
-  accountStorage: {
-    convertToDisplayData: mockConvertToDisplayData,
-  },
-}))
-
-vi.mock("react-hot-toast", () => ({
-  default: {
-    error: vi.fn(),
-    loading: vi.fn(),
-    success: vi.fn(),
-  },
-}))
 
 vi.mock("~/utils/i18n/core", () => ({
   t: (key: string, options?: Record<string, unknown>) =>
@@ -150,7 +128,7 @@ describe("AxonHub managed-site provider", () => {
     })
   })
 
-  it("validates saved config, reads config, and searches through passed config", async () => {
+  it("validates saved config, reads config, searches, and lists through passed config", async () => {
     const provider = await import("~/services/managedSites/providers/axonHub")
 
     await expect(provider.checkValidAxonHubConfig()).resolves.toBe(true)
@@ -162,6 +140,24 @@ describe("AxonHub managed-site provider", () => {
     expect(mockSearchChannels).toHaveBeenCalledWith(
       passedAxonHubConfig,
       "alpha",
+    )
+
+    await provider.listChannels(passedAxonHubConfig)
+
+    expect(mockListChannels).toHaveBeenCalledWith(passedAxonHubConfig)
+  })
+
+  it("returns null for search failures and rethrows list failures", async () => {
+    const provider = await import("~/services/managedSites/providers/axonHub")
+
+    mockSearchChannels.mockRejectedValueOnce(new Error("search failed"))
+    await expect(
+      provider.searchChannel(passedAxonHubConfig, "missing"),
+    ).resolves.toBeNull()
+
+    mockListChannels.mockRejectedValueOnce(new Error("list failed"))
+    await expect(provider.listChannels(passedAxonHubConfig)).rejects.toThrow(
+      "list failed",
     )
   })
 
@@ -301,7 +297,10 @@ describe("AxonHub managed-site provider", () => {
       message: "success",
     })
 
-    expect(mockResolveAxonHubGraphqlId).toHaveBeenCalledWith(42)
+    expect(mockResolveAxonHubGraphqlIdForMutation).toHaveBeenCalledWith(
+      passedAxonHubConfig,
+      42,
+    )
     expect(mockUpdateAxonHubChannel).toHaveBeenCalledWith(
       passedAxonHubConfig,
       "gid-42",
@@ -606,13 +605,12 @@ describe("AxonHub managed-site provider", () => {
     })
   })
 
-  it("fetches available models and auto-provisions account tokens before import", async () => {
+  it("fetches available models through the shared managed-site model resolver", async () => {
     const provider = await import("~/services/managedSites/providers/axonHub")
     const account = buildDisplaySiteData({
       name: "Converted",
       baseUrl: "https://converted.example/v1",
     })
-    const storedAccount = buildSiteAccount()
     const token = buildApiToken({
       name: "Auto",
       key: "test-auto-token-key",
@@ -625,127 +623,9 @@ describe("AxonHub managed-site provider", () => {
     expect(mockFetchManagedSiteAvailableModels).toHaveBeenCalledWith(
       account,
       token,
+      {
+        includeAccountFallback: false,
+      },
     )
-
-    mockConvertToDisplayData.mockReturnValue(account)
-    mockEnsureAccountApiToken.mockResolvedValue(token)
-    mockSearchChannels.mockResolvedValueOnce({
-      items: [],
-      total: 0,
-      page: 1,
-      pageSize: 100,
-    })
-
-    await expect(
-      provider.autoConfigToAxonHub(storedAccount, "toast-1"),
-    ).resolves.toEqual({
-      success: true,
-      message:
-        'messages:axonhub.importSuccess:{"channelName":"Converted | Auto (auto)"}',
-    })
-    expect(mockSearchChannels).toHaveBeenCalledWith(
-      axonHubConfig,
-      "https://converted.example",
-    )
-    expect(mockCreateAxonHubChannel).toHaveBeenCalled()
-    expect(mockEnsureAccountApiToken).toHaveBeenCalledWith(
-      storedAccount,
-      account,
-      "toast-1",
-    )
-  })
-
-  it("shows an error toast when auto-config import returns a failure result", async () => {
-    const provider = await import("~/services/managedSites/providers/axonHub")
-    const account = buildDisplaySiteData({
-      name: "Duplicate Source",
-      baseUrl: "https://duplicate.example/v1",
-    })
-    const storedAccount = buildSiteAccount()
-    const token = buildApiToken({
-      name: "Duplicate",
-      key: "duplicate-key",
-    })
-    const existingChannel = buildManagedSiteChannel({
-      id: 9,
-      name: "Existing Duplicate",
-      key: "duplicate-key",
-      base_url: "https://duplicate.example",
-      models: "gpt-4o,gpt-4.1",
-    })
-
-    mockConvertToDisplayData.mockReturnValue(account)
-    mockEnsureAccountApiToken.mockResolvedValue(token)
-    mockSearchChannels.mockResolvedValueOnce({
-      items: [existingChannel],
-      total: 1,
-      page: 1,
-      pageSize: 100,
-    })
-
-    await expect(
-      provider.autoConfigToAxonHub(storedAccount, "toast-duplicate"),
-    ).resolves.toEqual({
-      success: false,
-      message: expect.stringContaining("channelExists"),
-    })
-    expect(mockSearchChannels).toHaveBeenCalledTimes(1)
-
-    expect(toast.loading).toHaveBeenCalledWith(
-      "messages:accountOperations.importingToAxonHub",
-      { id: "toast-duplicate" },
-    )
-    expect(toast.error).toHaveBeenCalledWith(
-      expect.stringContaining("channelExists"),
-      { id: "toast-duplicate" },
-    )
-  })
-
-  it("shows the thrown provisioning error when auto-config cannot create a token", async () => {
-    const provider = await import("~/services/managedSites/providers/axonHub")
-    const account = buildDisplaySiteData({
-      name: "Broken Source",
-      baseUrl: "https://broken.example/v1",
-    })
-    const storedAccount = buildSiteAccount()
-
-    mockConvertToDisplayData.mockReturnValue(account)
-    mockEnsureAccountApiToken.mockRejectedValueOnce(new Error("token missing"))
-
-    await expect(
-      provider.autoConfigToAxonHub(storedAccount, "toast-broken"),
-    ).resolves.toEqual({
-      success: false,
-      message: "token missing",
-    })
-
-    expect(toast.error).toHaveBeenCalledWith("token missing", {
-      id: "toast-broken",
-    })
-  })
-
-  it("returns config-missing before auto-config starts when saved AxonHub credentials are absent", async () => {
-    const provider = await import("~/services/managedSites/providers/axonHub")
-    const storedAccount = buildSiteAccount()
-
-    mockGetPreferences.mockResolvedValueOnce(
-      buildUserPreferences({
-        axonHub: {
-          baseUrl: "",
-          email: "",
-          password: "",
-        },
-      }),
-    )
-
-    await expect(
-      provider.autoConfigToAxonHub(storedAccount, "toast-missing"),
-    ).resolves.toEqual({
-      success: false,
-      message: "messages:axonhub.configMissing",
-    })
-
-    expect(mockConvertToDisplayData).not.toHaveBeenCalled()
-    expect(mockEnsureAccountApiToken).not.toHaveBeenCalled()
   })
 })
