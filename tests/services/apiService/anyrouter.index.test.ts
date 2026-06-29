@@ -27,9 +27,24 @@ const {
 
 vi.mock("~/services/apiService/common", () => ({
   determineHealthStatus: mockDetermineHealthStatus,
+}))
+
+vi.mock("~/services/apiService/newApiFamily/default/accountData", () => ({
   fetchAccountQuota: mockFetchAccountQuota,
   fetchTodayIncome: mockFetchTodayIncome,
   fetchTodayUsage: mockFetchTodayUsage,
+  resolveCheckInSiteStatus: (checkIn: any, canCheckIn: boolean | undefined) =>
+    typeof canCheckIn === "boolean"
+      ? {
+          ...(checkIn.siteStatus ?? {}),
+          isCheckedInToday: !canCheckIn,
+          lastDetectedAt: Date.now(),
+        }
+      : {
+          ...(checkIn.siteStatus ?? {}),
+          isCheckedInToday: checkIn.siteStatus?.isCheckedInToday,
+          lastDetectedAt: checkIn.siteStatus?.lastDetectedAt,
+        },
 }))
 
 vi.mock("~/services/checkin/autoCheckin/providers/anyrouter", () => ({
@@ -213,14 +228,14 @@ describe("AnyRouter API service", () => {
     expect(mockCheckIn).not.toHaveBeenCalled()
   })
 
-  it("keeps detected check-in status undefined when the provider cannot determine it", async () => {
+  it("preserves the last known check-in status when the provider cannot determine it", async () => {
     mockCheckIn.mockRejectedValueOnce(new Error("unsupported"))
 
     const result = await fetchAccountData(baseRequest)
 
     expect(result.checkIn.siteStatus).toEqual({
-      isCheckedInToday: undefined,
-      lastDetectedAt: expect.any(Number),
+      isCheckedInToday: false,
+      lastDetectedAt: 111,
     })
   })
 

@@ -758,7 +758,24 @@ test("creates a managed-site channel from channel management", async ({
 
   await expect(page.getByText("Channel saved")).toBeVisible()
   await expect(page.getByText("E2E Created OpenAI")).toBeVisible()
-  await expect(createPayloads).toContainEqual({
+  const createdPayload = createPayloads.find(
+    (
+      payload,
+    ): payload is {
+      mode: string
+      channel: Record<string, unknown>
+    } =>
+      typeof payload === "object" &&
+      payload !== null &&
+      "mode" in payload &&
+      payload.mode === "single" &&
+      "channel" in payload &&
+      typeof payload.channel === "object" &&
+      payload.channel !== null &&
+      "name" in payload.channel &&
+      payload.channel.name === "E2E Created OpenAI",
+  )
+  expect(createdPayload).toMatchObject({
     mode: "single",
     channel: {
       name: "E2E Created OpenAI",
@@ -766,13 +783,13 @@ test("creates a managed-site channel from channel management", async ({
       key: "sk-e2e-created-channel",
       base_url: "",
       models: "gpt-4.1-mini",
-      groups: ["default"],
       group: "default",
       priority: 0,
       weight: 0,
       status: 1,
     },
   })
+  expect(createdPayload?.channel).not.toHaveProperty("groups")
 })
 
 test("edits a managed-site channel from row actions", async ({
@@ -810,19 +827,24 @@ test("edits a managed-site channel from row actions", async ({
 
   await expect(page.getByText("Channel updated")).toBeVisible()
   await expect(page.getByText("Production OpenAI Edited")).toBeVisible()
-  expect(updatePayloads).toContainEqual(
-    expect.objectContaining({
-      id: 101,
-      name: "Production OpenAI Edited",
-      base_url: "https://upstream-a.example.com/v1",
-      models: "gpt-4o-mini,gpt-4.1-mini",
-      groups: ["default", "vip"],
-      group: "default,vip",
-      priority: 3,
-      weight: 2,
-      status: 1,
-    }),
+  const editedPayload = updatePayloads.find(
+    (payload): payload is Record<string, unknown> =>
+      typeof payload === "object" &&
+      payload !== null &&
+      "id" in payload &&
+      payload.id === 101,
   )
+  expect(editedPayload).toMatchObject({
+    id: 101,
+    name: "Production OpenAI Edited",
+    base_url: "https://upstream-a.example.com/v1",
+    models: "gpt-4o-mini,gpt-4.1-mini",
+    group: "default,vip",
+    priority: 3,
+    weight: 2,
+    status: 1,
+  })
+  expect(editedPayload).not.toHaveProperty("groups")
 })
 
 test("loads managed-site channels, deep-links into manual model sync, and runs a selected sync", async ({

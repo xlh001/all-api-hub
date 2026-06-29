@@ -29,9 +29,24 @@ const {
 
 vi.mock("~/services/apiService/common", () => ({
   determineHealthStatus: mockDetermineHealthStatus,
+}))
+
+vi.mock("~/services/apiService/newApiFamily/default/accountData", () => ({
   fetchAccountQuota: mockFetchAccountQuota,
   fetchTodayIncome: mockFetchTodayIncome,
   fetchTodayUsage: mockFetchTodayUsage,
+  resolveCheckInSiteStatus: (checkIn: any, canCheckIn: boolean | undefined) =>
+    typeof canCheckIn === "boolean"
+      ? {
+          ...(checkIn.siteStatus ?? {}),
+          isCheckedInToday: !canCheckIn,
+          lastDetectedAt: Date.now(),
+        }
+      : {
+          ...(checkIn.siteStatus ?? {}),
+          isCheckedInToday: checkIn.siteStatus?.isCheckedInToday,
+          lastDetectedAt: checkIn.siteStatus?.lastDetectedAt,
+        },
 }))
 
 vi.mock("~/services/apiService/common/utils", () => ({
@@ -183,7 +198,7 @@ describe("apiService wong", () => {
     await expect(fetchCheckInStatus(baseRequest)).resolves.toBeUndefined()
   })
 
-  it("builds account data with detected check-in timestamps and unknown-status fallback", async () => {
+  it("preserves the last known check-in state when status is inconclusive", async () => {
     const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000)
     mockFetchApi.mockResolvedValueOnce({
       success: false,
@@ -206,8 +221,8 @@ describe("apiService wong", () => {
       checkIn: {
         enableDetection: true,
         siteStatus: {
-          isCheckedInToday: undefined,
-          lastDetectedAt: 1_700_000_000_000,
+          isCheckedInToday: false,
+          lastDetectedAt: 111,
         },
       },
     })
