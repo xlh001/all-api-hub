@@ -166,6 +166,18 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 <hr>
 
 <div>
+  <a href="https://www.right.codes/register?aff=690a8be5">
+    <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="64" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    感谢 AICodeMirror 赞助了本项目！AICodeMirror 提供 Claude Code / Codex / Gemini CLI 官方高稳定中转服务，支持企业级高并发、极速开票、7×24 专属技术支持。Claude Code / Codex / Gemini 官方渠道低至 3.8 / 0.2 / 0.9 折，充值更有折上折！AICodeMirror
+    为 All API Hub 的用户提供了特别福利：通过<a href="https://www.right.codes/register?aff=690a8be5">此链接</a>注册，可享受首充 8 折，企业客户最高可享 7.5 折！
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://runapi.co/register?aff=cvDm">
     <img src="resources/partners/runapi.jpg" alt="RunAPI" width="64" align="left" hspace="10" vspace="4">
   </a>
@@ -183,18 +195,6 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
   </a>
   <p>
     感谢 Unity2.ai 赞助了本项目！Unity2.ai 是面向个人开发者、团队和企业的高性能 AI 模型 API 中转平台，长期服务国内头部企业，日均承载超 300 亿 token 调用，支持 5000 RPM 级高并发。支持余额计费、首充赠额、组合订阅、企业开票和专属对接。通过<a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">此链接</a>注册可领取 $2 余额，加入官方群再送 $10 余额，最高可领 $12 免费额度。
-  </p>
-</div>
-
-<hr>
-
-<div>
-  <a href="https://www.right.codes/register?aff=690a8be5">
-    <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="64" align="left" hspace="10" vspace="4">
-  </a>
-  <p>
-    感谢 AICodeMirror 赞助了本项目！AICodeMirror 提供 Claude Code / Codex / Gemini CLI 官方高稳定中转服务，支持企业级高并发、极速开票、7×24 专属技术支持。Claude Code / Codex / Gemini 官方渠道低至 3.8 / 0.2 / 0.9 折，充值更有折上折！AICodeMirror
-    为 All API Hub 的用户提供了特别福利：通过<a href="https://www.right.codes/register?aff=690a8be5">此链接</a>注册，可享受首充 8 折，企业客户最高可享 7.5 折！
   </p>
 </div>
 

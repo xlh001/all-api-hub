@@ -169,6 +169,20 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 <hr>
 
 <div>
+  <a href="https://www.right.codes/register?aff=690a8be5">
+    <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="64" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Thanks to AICodeMirror for sponsoring this project! AICodeMirror provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with
+    enterprise-grade concurrency, fast invoicing, and 24/7 dedicated technical support. Claude Code / Codex / Gemini official channels are available from 38% / 2% /
+    9% of the original price, with extra discounts on top-ups. AICodeMirror offers special benefits for All API Hub users: register via
+    <a href="https://www.right.codes/register?aff=690a8be5">this link</a> to enjoy 20% off your first top-up, and enterprise customers can get up to 25% off.
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://runapi.co/register?aff=cvDm">
     <img src="resources/partners/runapi.jpg" alt="RunAPI" width="64" align="left" hspace="10" vspace="4">
   </a>
@@ -188,20 +202,6 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
   <p>
     Thanks to Unity2.ai for sponsoring this project! Unity2.ai is a high-performance AI model API relay platform for individual developers, teams, and enterprises. It has long served leading enterprise customers in China, handles more than 30 billion tokens per day, and supports 5,000 RPM-level high concurrency. It supports balance billing, first top-up bonuses, bundled subscriptions, enterprise invoicing, and dedicated onboarding. Register via
     <a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">this link</a> to receive $2 in balance, then join the official group for another $10, up to $12 in free credits.
-  </p>
-</div>
-
-<hr>
-
-<div>
-  <a href="https://www.right.codes/register?aff=690a8be5">
-    <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="64" align="left" hspace="10" vspace="4">
-  </a>
-  <p>
-    Thanks to AICodeMirror for sponsoring this project! AICodeMirror provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with
-    enterprise-grade concurrency, fast invoicing, and 24/7 dedicated technical support. Claude Code / Codex / Gemini official channels are available from 38% / 2% /
-    9% of the original price, with extra discounts on top-ups. AICodeMirror offers special benefits for All API Hub users: register via
-    <a href="https://www.right.codes/register?aff=690a8be5">this link</a> to enjoy 20% off your first top-up, and enterprise customers can get up to 25% off.
   </p>
 </div>
 

@@ -164,6 +164,19 @@ Have questions or want to share useful sites? Join the community:
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
+    <a href="https://www.right.codes/register?aff=690a8be5">
+      <img class="readme-sponsor-logo-small" src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    Thanks to AICodeMirror for sponsoring this project! AICodeMirror provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with enterprise-grade concurrency, fast invoicing, and 24/7 dedicated technical support. Claude Code / Codex / Gemini official channels are available from 38% / 2% / 9% of the original price, with extra discounts on top-ups. AICodeMirror offers special benefits for All API Hub users: register via <a href="https://www.right.codes/register?aff=690a8be5">this link</a> to enjoy 20% off your first top-up, and enterprise customers can get up to 25% off.
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
     <a href="https://runapi.co/register?aff=cvDm">
       <img class="readme-sponsor-logo-small" src="../../../resources/partners/runapi.jpg" alt="RunAPI">
     </a>
@@ -187,14 +200,3 @@ Have questions or want to share useful sites? Join the community:
 </div>
 
 <hr class="readme-sponsor-divider">
-
-<div class="readme-sponsor">
-  <div class="readme-sponsor-logo">
-    <a href="https://www.right.codes/register?aff=690a8be5">
-      <img class="readme-sponsor-logo-small" src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
-    </a>
-  </div>
-  <p class="readme-sponsor-copy">
-    Thanks to AICodeMirror for sponsoring this project! AICodeMirror provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with enterprise-grade concurrency, fast invoicing, and 24/7 dedicated technical support. Claude Code / Codex / Gemini official channels are available from 38% / 2% / 9% of the original price, with extra discounts on top-ups. AICodeMirror offers special benefits for All API Hub users: register via <a href="https://www.right.codes/register?aff=690a8be5">this link</a> to enjoy 20% off your first top-up, and enterprise customers can get up to 25% off.
-  </p>
-</div>

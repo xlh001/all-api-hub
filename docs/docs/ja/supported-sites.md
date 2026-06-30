@@ -71,6 +71,17 @@
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo sponsor-logo-small" href="https://www.right.codes/register?aff=690a8be5">
+      <img src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
+    </a>
+    <p>
+      <strong>AICodeMirror</strong> は Claude Code / Codex / Gemini CLI 向けの公式高安定中継サービスを提供し、エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応しています。Claude Code / Codex / Gemini の公式チャネルを通常価格の 38% / 2% / 9% 程度から利用でき、チャージ時の追加割引もあります。<a href="https://www.right.codes/register?aff=690a8be5">こちらのリンク</a>から登録すると<strong>初回チャージが 20% オフ</strong>になり、エンタープライズ顧客は最大 25% オフを受けられます。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo sponsor-logo-small" href="https://runapi.co/register?aff=cvDm">
       <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
     </a>
@@ -87,17 +98,6 @@
     </a>
     <p>
       <strong>Unity2.ai</strong> は、個人開発者、チーム、企業向けの高性能 AI モデル API 中継プラットフォームです。1 日あたり 300 億 token 超の呼び出しを処理し、5,000 RPM 級の高同時実行、残高課金、初回チャージ特典、組み合わせサブスクリプション、企業向け請求書、専任サポートに対応しています。<a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">こちらのリンク</a>から登録すると <strong>$2 の残高</strong>を受け取れます。公式グループに参加するとさらに $10、最大 $12 の無料枠を受け取れます。
-    </p>
-  </section>
-
-  <hr>
-
-  <section class="sponsor-item">
-    <a class="sponsor-logo sponsor-logo-small" href="https://www.right.codes/register?aff=690a8be5">
-      <img src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
-    </a>
-    <p>
-      <strong>AICodeMirror</strong> は Claude Code / Codex / Gemini CLI 向けの公式高安定中継サービスを提供し、エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応しています。Claude Code / Codex / Gemini の公式チャネルを通常価格の 38% / 2% / 9% 程度から利用でき、チャージ時の追加割引もあります。<a href="https://www.right.codes/register?aff=690a8be5">こちらのリンク</a>から登録すると<strong>初回チャージが 20% オフ</strong>になり、エンタープライズ顧客は最大 25% オフを受けられます。
     </p>
   </section>
 
