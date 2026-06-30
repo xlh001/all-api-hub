@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { ApiError } from "~/services/apiService/common/errors"
 import {
   createChannel,
   deleteChannel,
@@ -15,6 +14,7 @@ import {
   updateChannelModelMapping,
   updateChannelModels,
 } from "~/services/apiService/veloera"
+import { ApiError } from "~/services/apiTransport/errors"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 
 const {
@@ -37,15 +37,12 @@ const { mockFetchApi } = vi.hoisted(() => ({
   mockFetchApi: vi.fn(),
 }))
 
-vi.mock("~/services/apiService/common/utils", () => ({
+vi.mock("~/services/apiTransport/request", () => ({
   fetchApiData: mockFetchApiData,
   fetchApi: mockFetchApi,
-  aggregateUsageData: vi.fn(),
-  extractAmount: vi.fn(),
-  getTodayTimestampRange: vi.fn(),
 }))
 
-vi.mock("~/services/apiService/common", () => ({
+vi.mock("~/services/accounts/accountHealth", () => ({
   determineHealthStatus: (...args: unknown[]) =>
     mockDetermineHealthStatus(...args),
 }))

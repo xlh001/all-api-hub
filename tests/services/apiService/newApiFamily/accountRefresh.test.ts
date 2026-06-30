@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { API_ERROR_CODES, ApiError } from "~/services/apiService/common/errors"
 import {
   defaultAccountRefreshImplementation,
   refreshAccountData,
   validateAccountConnection,
 } from "~/services/apiService/newApiFamily/default/accountRefresh"
+import { API_ERROR_CODES, ApiError } from "~/services/apiTransport/errors"
 import {
   AuthTypeEnum,
   SiteHealthStatus,
@@ -24,7 +24,7 @@ const {
   newApiFamilyFetchAccountQuota: vi.fn(),
 }))
 
-vi.mock("~/services/apiService/common", () => ({
+vi.mock("~/services/accounts/accountHealth", () => ({
   determineHealthStatus: commonDetermineHealthStatus,
 }))
 

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { ApiError } from "~/services/apiService/common/errors"
 import {
   createChannel,
   deleteChannel,
@@ -11,6 +10,7 @@ import {
   updateChannelModelMapping,
   updateChannelModels,
 } from "~/services/apiService/newApiFamily/channelManagement"
+import { ApiError } from "~/services/apiTransport/errors"
 import { AuthTypeEnum } from "~/types"
 
 const { mockFetchApi, mockFetchApiData } = vi.hoisted(() => ({
@@ -26,12 +26,9 @@ vi.mock("~/services/accounts/accountStorage", () => ({
   accountStorage: {},
 }))
 
-vi.mock("~/services/apiService/common/utils", () => ({
+vi.mock("~/services/apiTransport/request", () => ({
   fetchApi: mockFetchApi,
   fetchApiData: mockFetchApiData,
-  aggregateUsageData: vi.fn(),
-  extractAmount: vi.fn(),
-  getTodayTimestampRange: vi.fn(),
 }))
 
 const baseRequest = {

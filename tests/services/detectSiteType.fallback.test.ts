@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
-import { ApiError } from "~/services/apiService/common/errors"
+import { ApiError } from "~/services/apiTransport/errors"
 import {
   fetchSiteOriginalTitle,
   getAccountSiteType,
@@ -25,7 +25,7 @@ vi.mock("~/utils/browser/tempWindowFetch", () => ({
   tempWindowFetch: mocks.tempWindowFetch,
 }))
 
-vi.mock("~/services/apiService/common/utils", () => ({
+vi.mock("~/services/apiTransport/request", () => ({
   fetchApi: mocks.fetchApi,
   fetchApiData: mocks.fetchApiData,
 }))
