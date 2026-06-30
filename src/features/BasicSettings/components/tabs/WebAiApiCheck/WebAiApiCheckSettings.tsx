@@ -18,6 +18,7 @@ import {
   type WebAiApiCheckPreferences,
 } from "~/services/preferences/userPreferences"
 import { createLogger } from "~/utils/core/logger"
+import { getPreferenceWriteFailureMessage } from "~/utils/core/toastHelpers"
 
 import { WEB_AI_API_CHECK_TARGET_IDS } from "./searchTargets"
 
@@ -139,12 +140,16 @@ export default function WebAiApiCheckSettings() {
   const saveSettings = async (updates: Partial<WebAiApiCheckPreferences>) => {
     try {
       setIsSaving(true)
-      const success = await updateWebAiApiCheck(updates)
+      const writeResult = await updateWebAiApiCheck(updates)
 
-      if (success) {
+      if (writeResult.ok) {
         toast.success(t("webAiApiCheck:messages.success.settingsSaved"))
       } else {
-        toast.error(t("settings:messages.saveSettingsFailed"))
+        toast.error(
+          getPreferenceWriteFailureMessage(writeResult.reason, {
+            fallback: t("settings:messages.saveSettingsFailed"),
+          }),
+        )
       }
     } catch (error) {
       logger.error("Failed to save Web AI API Check settings", error)
@@ -161,7 +166,7 @@ export default function WebAiApiCheckSettings() {
       description={t("webAiApiCheck:settings.description")}
       onReset={async () => {
         const result = await resetWebAiApiCheckConfig()
-        if (result) setIsSaving(false)
+        if (result.ok) setIsSaving(false)
         return result
       }}
     >

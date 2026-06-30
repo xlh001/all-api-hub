@@ -18,7 +18,10 @@ import { createLogger } from "~/utils/core/logger"
  */
 const logger = createLogger("ImportExportService")
 
-type ImportExportErrorCode = "FORMAT_NOT_CORRECT" | "NO_IMPORTABLE_DATA"
+type ImportExportErrorCode =
+  | "FORMAT_NOT_CORRECT"
+  | "IMPORT_FAILED"
+  | "NO_IMPORTABLE_DATA"
 
 export class ImportExportError extends Error {
   readonly code: ImportExportErrorCode
@@ -235,15 +238,16 @@ async function importV1Backup(
   if (preferencesRequested) {
     const preferencesData = data.preferences || data.data?.preferences
     if (preferencesData) {
-      const success = options?.preserveWebdav
+      const writeResult = options?.preserveWebdav
         ? await userPreferences.importPreferences(preferencesData, {
             preserveWebdav: true,
           })
         : await userPreferences.importPreferences(preferencesData)
-      if (success) {
+      if (writeResult.ok) {
         preferencesImported = true
       } else {
         logger.error("Failed to import user preferences from legacy backup")
+        throw new ImportExportError("IMPORT_FAILED")
       }
     }
   }
@@ -540,12 +544,12 @@ async function importV2Backup(
 
   if (preferencesRequested) {
     const { preferences } = data as BackupFullV2 | BackupPreferencesPartialV2
-    const success = options?.preserveWebdav
+    const writeResult = options?.preserveWebdav
       ? await userPreferences.importPreferences(preferences, {
           preserveWebdav: true,
         })
       : await userPreferences.importPreferences(preferences)
-    if (success) {
+    if (writeResult.ok) {
       preferencesImported = true
     } else {
       logger.error("Failed to import user preferences from V2 backup")

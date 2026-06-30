@@ -16,6 +16,7 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
 import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
+import { getPreferenceWriteFailureMessage } from "~/utils/core/toastHelpers"
 
 /**
  * Unified logger scoped to the Basic Settings redemption assist section.
@@ -57,12 +58,16 @@ export default function RedemptionAssistSettings() {
   ) => {
     try {
       setIsSaving(true)
-      const success = await updateRedemptionAssist(updates)
+      const writeResult = await updateRedemptionAssist(updates)
 
-      if (success) {
+      if (writeResult.ok) {
         toast.success(t("redemptionAssist:messages.success.settingsSaved"))
       } else {
-        toast.error(t("settings:messages.saveSettingsFailed"))
+        toast.error(
+          getPreferenceWriteFailureMessage(writeResult.reason, {
+            fallback: t("settings:messages.saveSettingsFailed"),
+          }),
+        )
       }
     } catch (error) {
       const msg = getErrorMessage(error)
@@ -83,7 +88,7 @@ export default function RedemptionAssistSettings() {
       description={t("redemptionAssist:settings.description")}
       onReset={async () => {
         const result = await resetRedemptionAssistConfig()
-        if (result) {
+        if (result.ok) {
           setIsSaving(false)
         }
         return result

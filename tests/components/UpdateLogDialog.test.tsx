@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { UpdateLogDialog } from "~/components/dialogs/UpdateLogDialog"
 import { UPDATE_LOG_DIALOG_TEST_IDS } from "~/components/dialogs/UpdateLogDialog/testIds"
+import type { PreferenceWriteResult } from "~/services/preferences/userPreferences"
 import { userPreferences } from "~/services/preferences/userPreferences"
 import * as browserApi from "~/utils/browser/browserApi"
 import * as docsLinks from "~/utils/navigation/docsLinks"
@@ -14,20 +15,38 @@ import {
   waitFor,
 } from "~~/tests/test-utils/render"
 
+const { toastErrorMock } = vi.hoisted(() => ({
+  toastErrorMock: vi.fn(),
+}))
+
+vi.mock("react-hot-toast", () => ({
+  default: {
+    error: toastErrorMock,
+    success: vi.fn(),
+  },
+}))
+
 describe("UpdateLogDialog", () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+    toastErrorMock.mockReset()
   })
 
   it("toggles the open-changelog-on-update preference from the dialog", async () => {
-    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
-      buildUserPreferences({ openChangelogOnUpdate: true }),
-    )
+    const preferences = buildUserPreferences({ openChangelogOnUpdate: true })
+    vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(preferences)
 
     const updateSpy = vi
       .spyOn(userPreferences, "updateOpenChangelogOnUpdate")
-      .mockResolvedValue(true)
+      .mockImplementation(async (enabled) => ({
+        ok: true,
+        preferences: {
+          ...preferences,
+          openChangelogOnUpdate: enabled,
+          lastUpdated: preferences.lastUpdated + 1,
+        },
+      }))
 
     render(<UpdateLogDialog isOpen onClose={() => {}} version="2.39.0" />)
 
@@ -64,14 +83,20 @@ describe("UpdateLogDialog", () => {
     })
   })
 
-  it("keeps the current auto-open label when saving the toggle fails", async () => {
+  it("keeps the current auto-open label and surfaces feedback when saving the toggle fails", async () => {
     vi.spyOn(userPreferences, "getPreferences").mockResolvedValue(
       buildUserPreferences({ openChangelogOnUpdate: true }),
     )
 
     const updateSpy = vi
       .spyOn(userPreferences, "updateOpenChangelogOnUpdate")
-      .mockResolvedValue(false)
+      .mockResolvedValue({
+        ok: false,
+        reason: {
+          type: "storage-error",
+          error: new Error("save failed"),
+        },
+      })
 
     render(<UpdateLogDialog isOpen onClose={() => {}} version="2.39.0" />)
 
@@ -87,6 +112,9 @@ describe("UpdateLogDialog", () => {
 
     expect(toggleButton).toHaveTextContent(
       "ui:dialog.updateLog.disableAutoOpen",
+    )
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      "settings:messages.updateFailed",
     )
   })
 
@@ -201,7 +229,8 @@ describe("UpdateLogDialog", () => {
       buildUserPreferences({ openChangelogOnUpdate: true }),
     )
 
-    let resolveUpdate: ((value: boolean) => void) | undefined
+    const preferences = buildUserPreferences({ openChangelogOnUpdate: false })
+    let resolveUpdate: ((value: PreferenceWriteResult) => void) | undefined
     const updateSpy = vi
       .spyOn(userPreferences, "updateOpenChangelogOnUpdate")
       .mockImplementation(
@@ -224,7 +253,7 @@ describe("UpdateLogDialog", () => {
     expect(updateSpy).toHaveBeenCalledWith(false)
     expect(toggleButton).toBeDisabled()
 
-    resolveUpdate?.(true)
+    resolveUpdate?.({ ok: true, preferences })
 
     await waitFor(() => {
       expect(toggleButton).not.toBeDisabled()

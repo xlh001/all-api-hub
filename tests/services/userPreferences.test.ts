@@ -7,6 +7,7 @@ import {
   userPreferences,
 } from "~/services/preferences/userPreferences"
 import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
+import { DEFAULT_SITE_ANNOUNCEMENT_PREFERENCES } from "~/types/siteAnnouncements"
 
 describe("userPreferences", () => {
   describe("DEFAULT_PREFERENCES", () => {
@@ -127,7 +128,7 @@ describe("userPreferences", () => {
             enhanced: { enabled: false },
           },
         }),
-      ).resolves.toBe(true)
+      ).resolves.toMatchObject({ ok: true })
 
       const preferences = await userPreferences.getPreferences()
 
@@ -137,6 +138,98 @@ describe("userPreferences", () => {
         preferences.webAiApiCheck?.autoDetect.urlWhitelist.patterns,
       ).toEqual(["^https://stored\\.example"])
       expect(preferences.webAiApiCheck?.enabled).toBe(true)
+    })
+  })
+
+  describe("write failures", () => {
+    it("returns a storage-error result when a guarded write cannot read the current snapshot", async () => {
+      const storage = (userPreferences as any).storage as {
+        get: ReturnType<typeof vi.fn>
+        set: ReturnType<typeof vi.fn>
+      }
+      const readError = new Error("read failed")
+
+      vi.spyOn(storage, "get").mockRejectedValueOnce(readError)
+      const setSpy = vi.spyOn(storage, "set")
+
+      const result = await userPreferences.savePreferencesWithResult({
+        currencyType: "CNY",
+      })
+
+      expect(result).toEqual({
+        ok: false,
+        reason: {
+          type: "storage-error",
+          error: readError,
+        },
+      })
+      expect(setSpy).not.toHaveBeenCalled()
+    })
+
+    it("returns storage-error results for direct reset, clear, and import write failures", async () => {
+      const storage = (userPreferences as any).storage as {
+        set: ReturnType<typeof vi.fn>
+        remove: ReturnType<typeof vi.fn>
+      }
+      const setError = new Error("set failed")
+      const removeError = new Error("remove failed")
+
+      vi.spyOn(storage, "set").mockRejectedValueOnce(setError)
+      await expect(userPreferences.resetToDefaults()).resolves.toEqual({
+        ok: false,
+        reason: {
+          type: "storage-error",
+          error: setError,
+        },
+      })
+
+      vi.spyOn(storage, "remove").mockRejectedValueOnce(removeError)
+      await expect(userPreferences.clearPreferences()).resolves.toEqual({
+        ok: false,
+        reason: {
+          type: "storage-error",
+          error: removeError,
+        },
+      })
+
+      vi.spyOn(storage, "set").mockRejectedValueOnce(setError)
+      await expect(
+        userPreferences.importPreferences({
+          ...DEFAULT_PREFERENCES,
+          themeMode: "dark",
+        }),
+      ).resolves.toEqual({
+        ok: false,
+        reason: {
+          type: "storage-error",
+          error: setError,
+        },
+      })
+    })
+
+    it("uses the shared write path for site announcement notification updates", async () => {
+      const storage = (userPreferences as any).storage as {
+        set: ReturnType<typeof vi.fn>
+      }
+      const setSpy = vi.spyOn(storage, "set")
+
+      await expect(
+        userPreferences.updateSiteAnnouncementNotifications({
+          intervalMinutes:
+            DEFAULT_SITE_ANNOUNCEMENT_PREFERENCES.intervalMinutes + 60,
+        }),
+      ).resolves.toMatchObject({
+        ok: true,
+        preferences: {
+          siteAnnouncementNotifications: {
+            ...DEFAULT_SITE_ANNOUNCEMENT_PREFERENCES,
+            intervalMinutes:
+              DEFAULT_SITE_ANNOUNCEMENT_PREFERENCES.intervalMinutes + 60,
+          },
+        },
+      })
+
+      expect(setSpy).toHaveBeenCalled()
     })
   })
 })

@@ -767,18 +767,20 @@ export function useAccountDialog({
 
   const handleDuplicateAccountWarningDisableAndContinue =
     useCallback(async () => {
-      let success = false
+      let result: Awaited<
+        ReturnType<typeof updateWarnOnDuplicateAccountAdd>
+      > | null = null
       try {
-        success = await updateWarnOnDuplicateAccountAdd(false)
+        result = await updateWarnOnDuplicateAccountAdd(false)
       } catch (error) {
         logger.warn("Failed to disable duplicate-account warning preference", {
           error,
         })
       }
 
-      if (!success) {
+      if (!result?.ok) {
         showUpdateToast(
-          false,
+          result ?? false,
           t("settings:duplicateAccountWarningOnAdd.toggleLabel"),
         )
         return

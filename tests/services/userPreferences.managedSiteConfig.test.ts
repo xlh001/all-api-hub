@@ -7,11 +7,19 @@ import { USER_PREFERENCES_STORAGE_KEYS } from "~/services/core/storageKeys"
 import {
   DEFAULT_PREFERENCES,
   userPreferences,
+  type PreferenceWriteResult,
 } from "~/services/preferences/userPreferences"
 import { DEFAULT_AXON_HUB_CONFIG } from "~/types/axonHubConfig"
 import { DEFAULT_CLAUDE_CODE_HUB_CONFIG } from "~/types/claudeCodeHubConfig"
 import { DEFAULT_DONE_HUB_CONFIG } from "~/types/doneHubConfig"
 import { DEFAULT_OCTOPUS_CONFIG } from "~/types/octopusConfig"
+
+const expectSuccessfulWrite = async (write: Promise<PreferenceWriteResult>) => {
+  await expect(write).resolves.toMatchObject({
+    ok: true,
+    preferences: expect.any(Object),
+  })
+}
 
 describe("userPreferences managed-site helpers", () => {
   const storage = new Storage({ area: "local" })
@@ -32,14 +40,14 @@ describe("userPreferences managed-site helpers", () => {
       structuredClone(DEFAULT_PREFERENCES),
     )
 
-    expect(
-      await userPreferences.updateManagedSiteType(SITE_TYPES.VELOERA),
-    ).toBe(true)
-    expect(
-      await userPreferences.updateVeloeraConfig({
+    await expectSuccessfulWrite(
+      userPreferences.updateManagedSiteType(SITE_TYPES.VELOERA),
+    )
+    await expectSuccessfulWrite(
+      userPreferences.updateVeloeraConfig({
         baseUrl: "https://veloera.example.com",
       }),
-    ).toBe(true)
+    )
 
     let managedSite = await userPreferences.getManagedSiteConfig()
     expect(managedSite.siteType).toBe(SITE_TYPES.VELOERA)
@@ -49,16 +57,16 @@ describe("userPreferences managed-site helpers", () => {
       }),
     )
 
-    expect(
-      await userPreferences.updateManagedSiteType(SITE_TYPES.DONE_HUB),
-    ).toBe(true)
-    expect(
-      await userPreferences.updateDoneHubConfig({
+    await expectSuccessfulWrite(
+      userPreferences.updateManagedSiteType(SITE_TYPES.DONE_HUB),
+    )
+    await expectSuccessfulWrite(
+      userPreferences.updateDoneHubConfig({
         baseUrl: "https://done.example.com",
         adminToken: "done-token",
         userId: "done-user",
       }),
-    ).toBe(true)
+    )
 
     managedSite = await userPreferences.getManagedSiteConfig()
     expect(managedSite.siteType).toBe(SITE_TYPES.DONE_HUB)
@@ -69,16 +77,16 @@ describe("userPreferences managed-site helpers", () => {
       userId: "done-user",
     })
 
-    expect(
-      await userPreferences.updateManagedSiteType(SITE_TYPES.OCTOPUS),
-    ).toBe(true)
-    expect(
-      await userPreferences.updateOctopusConfig({
+    await expectSuccessfulWrite(
+      userPreferences.updateManagedSiteType(SITE_TYPES.OCTOPUS),
+    )
+    await expectSuccessfulWrite(
+      userPreferences.updateOctopusConfig({
         baseUrl: "https://octopus.example.com",
         username: "octopus-user",
         password: "octopus-pass",
       }),
-    ).toBe(true)
+    )
 
     managedSite = await userPreferences.getManagedSiteConfig()
     expect(managedSite.siteType).toBe(SITE_TYPES.OCTOPUS)
@@ -89,16 +97,16 @@ describe("userPreferences managed-site helpers", () => {
       password: "octopus-pass",
     })
 
-    expect(
-      await userPreferences.updateManagedSiteType(SITE_TYPES.AXON_HUB),
-    ).toBe(true)
-    expect(
-      await userPreferences.updateAxonHubConfig({
+    await expectSuccessfulWrite(
+      userPreferences.updateManagedSiteType(SITE_TYPES.AXON_HUB),
+    )
+    await expectSuccessfulWrite(
+      userPreferences.updateAxonHubConfig({
         baseUrl: "https://axonhub.example.com",
         email: "admin@example.com",
         password: "secret",
       }),
-    ).toBe(true)
+    )
 
     managedSite = await userPreferences.getManagedSiteConfig()
     expect(managedSite.siteType).toBe(SITE_TYPES.AXON_HUB)
@@ -109,15 +117,15 @@ describe("userPreferences managed-site helpers", () => {
       password: "secret",
     })
 
-    expect(
-      await userPreferences.updateManagedSiteType(SITE_TYPES.CLAUDE_CODE_HUB),
-    ).toBe(true)
-    expect(
-      await userPreferences.updateClaudeCodeHubConfig({
+    await expectSuccessfulWrite(
+      userPreferences.updateManagedSiteType(SITE_TYPES.CLAUDE_CODE_HUB),
+    )
+    await expectSuccessfulWrite(
+      userPreferences.updateClaudeCodeHubConfig({
         baseUrl: "https://cch.example.com",
         adminToken: "admin-token",
       }),
-    ).toBe(true)
+    )
 
     managedSite = await userPreferences.getManagedSiteConfig()
     expect(managedSite.siteType).toBe(SITE_TYPES.CLAUDE_CODE_HUB)
@@ -237,11 +245,11 @@ describe("userPreferences managed-site helpers", () => {
       },
     })
 
-    expect(await userPreferences.resetVeloeraConfig()).toBe(true)
-    expect(await userPreferences.resetDoneHubConfig()).toBe(true)
-    expect(await userPreferences.resetOctopusConfig()).toBe(true)
-    expect(await userPreferences.resetAxonHubConfig()).toBe(true)
-    expect(await userPreferences.resetClaudeCodeHubConfig()).toBe(true)
+    await expectSuccessfulWrite(userPreferences.resetVeloeraConfig())
+    await expectSuccessfulWrite(userPreferences.resetDoneHubConfig())
+    await expectSuccessfulWrite(userPreferences.resetOctopusConfig())
+    await expectSuccessfulWrite(userPreferences.resetAxonHubConfig())
+    await expectSuccessfulWrite(userPreferences.resetClaudeCodeHubConfig())
 
     const preferences = await userPreferences.getPreferences()
     expect(preferences.veloera).toEqual(DEFAULT_PREFERENCES.veloera)

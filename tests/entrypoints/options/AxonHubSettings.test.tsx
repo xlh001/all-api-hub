@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import AxonHubSettings from "~/features/BasicSettings/components/tabs/ManagedSite/AxonHubSettings"
 import { signIn } from "~/services/apiService/axonHub"
+import type { PreferenceWriteResult } from "~/services/preferences/userPreferences"
 import { showUpdateToast } from "~/utils/core/toastHelpers"
 import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
@@ -14,6 +15,7 @@ const {
   mockUpdateAxonHubEmail,
   mockUpdateAxonHubPassword,
   mockedUseUserPreferencesContext,
+  showUpdateToastMock,
 } = vi.hoisted(() => ({
   mockResetAxonHubConfig: vi.fn(),
   mockUpdateAxonHubBaseUrl: vi.fn(),
@@ -21,6 +23,7 @@ const {
   mockUpdateAxonHubEmail: vi.fn(),
   mockUpdateAxonHubPassword: vi.fn(),
   mockedUseUserPreferencesContext: vi.fn(),
+  showUpdateToastMock: vi.fn(),
 }))
 
 vi.mock("~/contexts/UserPreferencesContext", async (importOriginal) => {
@@ -40,7 +43,30 @@ vi.mock("~/services/apiService/axonHub", () => ({
 }))
 
 vi.mock("~/utils/core/toastHelpers", () => ({
-  showUpdateToast: vi.fn(),
+  createVersionedPreferenceSaveOptions: (expectedLastUpdated: number) => ({
+    expectedLastUpdated,
+  }),
+  runPreferenceUpdateWithToast: async ({
+    expectedLastUpdated,
+    setting,
+    update,
+  }: {
+    expectedLastUpdated: number
+    setting: string
+    update: (options: { expectedLastUpdated: number }) => Promise<any>
+  }) => {
+    const result = await update({ expectedLastUpdated })
+    showUpdateToastMock(result, setting)
+    return result
+  },
+  getPreferenceWriteFailureMessage: (
+    failure: { type: string },
+    options?: { fallback?: string },
+  ) =>
+    failure.type === "stale"
+      ? "settings:messages.preferencesChangedExternally"
+      : options?.fallback ?? "settings:messages.updateFailed",
+  showUpdateToast: showUpdateToastMock,
 }))
 
 vi.mock("react-hot-toast", () => ({
@@ -59,7 +85,7 @@ vi.mock("~/components/SettingSection", () => ({
   }: {
     children: ReactNode
     description: string
-    onReset?: () => Promise<boolean>
+    onReset?: () => Promise<PreferenceWriteResult>
     title: string
   }) => (
     <section>
@@ -195,11 +221,11 @@ describe("AxonHubSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    mockResetAxonHubConfig.mockResolvedValue(true)
-    mockUpdateAxonHubBaseUrl.mockResolvedValue(true)
-    mockUpdateAxonHubConfig.mockResolvedValue(true)
-    mockUpdateAxonHubEmail.mockResolvedValue(true)
-    mockUpdateAxonHubPassword.mockResolvedValue(true)
+    mockResetAxonHubConfig.mockResolvedValue({ ok: true, preferences: {} })
+    mockUpdateAxonHubBaseUrl.mockResolvedValue({ ok: true, preferences: {} })
+    mockUpdateAxonHubConfig.mockResolvedValue({ ok: true, preferences: {} })
+    mockUpdateAxonHubEmail.mockResolvedValue({ ok: true, preferences: {} })
+    mockUpdateAxonHubPassword.mockResolvedValue({ ok: true, preferences: {} })
     mockedSignIn.mockResolvedValue({ accessToken: "token" })
     mockedUseUserPreferencesContext.mockReturnValue(createContextValue())
   })
@@ -229,7 +255,7 @@ describe("AxonHubSettings", () => {
       )
     })
     expect(mockedShowUpdateToast).toHaveBeenCalledWith(
-      true,
+      expect.objectContaining({ ok: true }),
       "settings:axonHub.fields.baseUrlLabel",
     )
 
@@ -321,7 +347,7 @@ describe("AxonHubSettings", () => {
       )
     })
     expect(mockedShowUpdateToast).toHaveBeenCalledWith(
-      true,
+      expect.objectContaining({ ok: true }),
       "settings:axonHub.fields.emailLabel",
     )
   })
@@ -433,7 +459,10 @@ describe("AxonHubSettings", () => {
   })
 
   it("uses the named update-failed toast when validation succeeds but persistence fails", async () => {
-    mockUpdateAxonHubConfig.mockResolvedValue(false)
+    mockUpdateAxonHubConfig.mockResolvedValue({
+      ok: false,
+      reason: { type: "storage-error", error: new Error("save failed") },
+    })
 
     render(<AxonHubSettings />)
 
