@@ -9,6 +9,63 @@
     "tokenBased": "Tính phí theo lượng"
   },
   "dialog": {
+    "bookmarkAccountImport": {
+      "actions": {
+        "allowAndScan": "Chọn dấu trang và bắt đầu nhập hàng loạt",
+        "backToScope": "Quay lại chọn dấu trang",
+        "clearSearch": "Xóa tìm kiếm dấu trang",
+        "clearSelected": "Bỏ chọn",
+        "collapseAll": "Thu gọn tất cả",
+        "collapseFolder": "Thu gọn thư mục",
+        "expandAll": "Mở rộng tất cả",
+        "expandFolder": "Mở rộng thư mục",
+        "importSelected_other": "Nhập mục đã chọn ({{count}})",
+        "invertSelected": "Đảo chọn",
+        "openAddAccount": "Mở Thêm tài khoản",
+        "scanSelected": "Quét phạm vi đã chọn",
+        "selectAll": "Chọn tất cả"
+      },
+      "apiUnavailable": "Trình duyệt này không cung cấp cây dấu trang cho tiện ích.",
+      "bookmarkCount_one": "{{count}} dấu trang",
+      "bookmarkCount_other": "{{count}} dấu trang",
+      "description": "Quét hàng loạt URL dấu trang trong trình duyệt và xem lại các ứng viên trang tài khoản trước khi nhập.",
+      "empty": "Trình duyệt không trả về dấu trang nào.",
+      "failures": {
+        "detection": "Tự động phát hiện không đọc được trang này.",
+        "save": "Không thể lưu tài khoản.",
+        "unknown": "Nhập thất bại."
+      },
+      "folderCount_one": "{{count}} thư mục",
+      "folderCount_other": "{{count}} thư mục",
+      "importing": "Đang nhập {{completed}} / {{total}} trang đã chọn...",
+      "includeExisting": "Bao gồm các trang đã có tài khoản đã lưu",
+      "initialSteps": {
+        "chooseScope": "Chọn thư mục dấu trang",
+        "review": "Xem lại ứng viên nhập",
+        "skipExisting": "Bỏ qua tài khoản đã có theo mặc định"
+      },
+      "initialValue": "Quét hàng loạt dấu trang trình duyệt và biến các trang trung chuyển đã lưu thành ứng viên tài khoản. Bạn chọn thư mục dấu trang trước, xem lại ứng viên trước khi nhập, và tài khoản đã có sẽ được bỏ qua theo mặc định.",
+      "noCandidates": "Không tìm thấy URL dấu trang web nào có thể nhập.",
+      "permissionDenied": "Chưa cấp quyền dấu trang. Bạn có thể thử lại mà không cần đóng hộp thoại này.",
+      "permissionNeeded": "Quyền truy cập dấu trang là tùy chọn và chỉ được yêu cầu cho lần nhập hàng loạt này.",
+      "readFailed": "Không thể đọc cây dấu trang của trình duyệt.",
+      "reloadFailed": "Quá trình nhập đã hoàn tất, nhưng không thể tải lại dữ liệu tài khoản. Hãy làm mới danh sách tài khoản và thử lại nếu tài khoản mới chưa hiển thị.",
+      "resultSummary": "Đã nhập {{success}}, thất bại {{failed}}, bỏ qua {{skipped}}.",
+      "scanning": "Đang quét dấu trang trong trình duyệt...",
+      "scopeHelp": "Quá trình quét chỉ tạo bản xem trước ứng viên. Bạn có thể quay lại đây để điều chỉnh lựa chọn trước khi nhập.",
+      "searchEmpty": "Không có phạm vi dấu trang phù hợp",
+      "searchLabel": "Tìm kiếm phạm vi dấu trang",
+      "searchPlaceholder": "Tìm kiếm dấu trang...",
+      "selectedBookmarkCount_one": "Đã chọn {{count}} dấu trang",
+      "selectedBookmarkCount_other": "Đã chọn {{count}} dấu trang",
+      "status": {
+        "duplicate_other": "Mặc định bỏ qua. Số kết quả khớp tài khoản đã lưu: {{count}}",
+        "imported": "Đã nhập",
+        "ready": "Sẵn sàng nhập"
+      },
+      "title": "Nhập tài khoản từ dấu trang",
+      "untitledFolder": "Thư mục chưa đặt tên"
+    },
     "ccswitch": {
       "actions": {
         "export": "Xuất"

@@ -6,10 +6,13 @@ import { Storage } from "@plasmohq/storage"
 import { SITE_TYPES } from "~/constants/siteType"
 import {
   getAndClearPendingSponsorAddAccountPrefill,
+  isAddAccountPrefill,
   isSponsorAddAccountPrefill,
+  normalizeAddAccountPrefill,
   setPendingSponsorAddAccountPrefill,
   watchPendingSponsorAddAccountPrefill,
 } from "~/features/AccountManagement/sponsors/pendingAddAccountIntent"
+import { BOOKMARK_IMPORT_ADD_ACCOUNT_PREFILL_SOURCE } from "~/features/AccountManagement/sponsors/types"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { AuthTypeEnum } from "~/types"
 
@@ -79,6 +82,40 @@ describe("pending sponsor add-account intent", () => {
         siteUrl: "https://[invalid",
       }),
     ).toBe(false)
+  })
+
+  it("accepts bookmark-import add-account prefill and normalizes URLs to origin", () => {
+    const prefill = {
+      source: BOOKMARK_IMPORT_ADD_ACCOUNT_PREFILL_SOURCE,
+      siteUrl: "https://prefill.example.invalid/path?token=private",
+    }
+
+    expect(isAddAccountPrefill(prefill)).toBe(true)
+    expect(isSponsorAddAccountPrefill(prefill)).toBe(false)
+    expect(normalizeAddAccountPrefill(prefill)).toEqual({
+      source: BOOKMARK_IMPORT_ADD_ACCOUNT_PREFILL_SOURCE,
+      siteUrl: "https://prefill.example.invalid",
+    })
+    expect(
+      isAddAccountPrefill({
+        source: BOOKMARK_IMPORT_ADD_ACCOUNT_PREFILL_SOURCE,
+        siteUrl: "javascript:alert(1)",
+      }),
+    ).toBe(false)
+  })
+
+  it("preserves site-type-specific bookmark-import URLs when the site type is known", () => {
+    expect(
+      normalizeAddAccountPrefill({
+        source: BOOKMARK_IMPORT_ADD_ACCOUNT_PREFILL_SOURCE,
+        siteType: SITE_TYPES.AIHUBMIX,
+        siteUrl: "https://aihubmix.com/token",
+      }),
+    ).toEqual({
+      source: BOOKMARK_IMPORT_ADD_ACCOUNT_PREFILL_SOURCE,
+      siteType: SITE_TYPES.AIHUBMIX,
+      siteUrl: "https://console.aihubmix.com",
+    })
   })
 
   it("clears malformed pending prefill without opening the add-account flow", async () => {

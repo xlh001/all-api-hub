@@ -43,12 +43,19 @@ vi.mock("~/services/permissions/permissionManager", () => ({
     WebRequestBlocking: "webRequestBlocking",
     ClipboardRead: "clipboardRead",
     Notifications: "notifications",
+    Bookmarks: "bookmarks",
   },
-  OPTIONAL_PERMISSIONS: ["cookies", "clipboardRead", "notifications"],
+  OPTIONAL_PERMISSIONS: [
+    "cookies",
+    "clipboardRead",
+    "notifications",
+    "bookmarks",
+  ],
   OPTIONAL_PERMISSION_DEFINITIONS: [
     { id: "cookies" },
     { id: "clipboardRead" },
     { id: "notifications" },
+    { id: "bookmarks" },
   ],
   hasPermission: (id: string) => hasPermissionMock(id),
   onOptionalPermissionsChanged: (listener: () => void) =>
@@ -101,16 +108,20 @@ describe("PermissionSettings", () => {
     ).toHaveLength(2)
     expect(
       screen.getAllByText("settings:permissions.status.denied"),
-    ).toHaveLength(1)
+    ).toHaveLength(2)
     expect(
       screen.getByText("settings:permissions.items.notifications.title"),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("settings:permissions.items.bookmarks.title"),
     ).toBeInTheDocument()
 
     const cookiesRow = document.getElementById("cookies")
     const clipboardRow = document.getElementById("clipboardRead")
     const notificationsRow = document.getElementById("notifications")
+    const bookmarksRow = document.getElementById("bookmarks")
 
-    if (!cookiesRow || !clipboardRow || !notificationsRow) {
+    if (!cookiesRow || !clipboardRow || !notificationsRow || !bookmarksRow) {
       throw new Error("Expected permission rows to be rendered")
     }
 
@@ -213,12 +224,20 @@ describe("PermissionSettings", () => {
       name: "settings:permissions.actions.remove",
     })
     const actionGroup = actionButton.parentElement
+    const title = within(cookiesRow).getByText(
+      "settings:permissions.items.cookies.title",
+    )
+    const statusBadge = within(cookiesRow).getByText(
+      "settings:permissions.status.granted",
+    )
 
     expect(actionGroup).toHaveClass(
       "flex-col",
       "[@container(min-width:42rem)]:flex-row",
       "[@container(min-width:42rem)]:items-center",
     )
+    expect(title.parentElement).toContainElement(statusBadge)
+    expect(actionGroup).not.toContainElement(statusBadge)
   })
 
   it("reloads statuses on external permission change and unsubscribes on cleanup", async () => {
@@ -246,6 +265,35 @@ describe("PermissionSettings", () => {
 
     unmount()
     expect(unsubscribeMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("settles status refresh when a permission status check rejects", async () => {
+    hasPermissionMock.mockImplementation(async (id: string) => {
+      if (id === "clipboardRead") {
+        throw new Error("status failed")
+      }
+
+      return id === "cookies"
+    })
+
+    render(<PermissionSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "settings:permissions.actions.refresh",
+        }),
+      ).toBeEnabled()
+    })
+    expect(
+      screen.queryByText("settings:permissions.status.checking"),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getAllByText("settings:permissions.status.denied"),
+    ).toHaveLength(4)
   })
 
   it("shows an error toast when requesting a permission throws", async () => {
@@ -342,6 +390,97 @@ describe("PermissionSettings", () => {
           PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.ApiException,
         was_granted_before: false,
         was_granted_after: false,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      },
+    )
+  })
+
+  it("tracks browser API revoke exceptions returned by the permission manager", async () => {
+    removePermissionDetailedMock.mockResolvedValueOnce({
+      success: false,
+      failureReason: "api_exception",
+    })
+
+    render(<PermissionSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    await screen.findByText("settings:permissions.items.cookies.title")
+    const cookiesRow = document.getElementById("cookies")
+    if (!cookiesRow) {
+      throw new Error("Expected cookies permission row")
+    }
+
+    fireEvent.click(
+      within(cookiesRow).getByRole("button", {
+        name: "settings:permissions.actions.remove",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(showResultToastMock).toHaveBeenCalledWith(
+        false,
+        "settings:permissions.messages.revoked",
+        "settings:permissions.messages.revokeFailed",
+      )
+    })
+    expect(trackProductAnalyticsEventMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.PermissionResult,
+      {
+        permission_id: PRODUCT_ANALYTICS_PERMISSION_IDS.Cookies,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Remove,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.ApiError,
+        failure_reason:
+          PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.ApiException,
+        was_granted_before: true,
+        was_granted_after: true,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      },
+    )
+  })
+
+  it("shows an error toast when revoking a permission throws", async () => {
+    removePermissionDetailedMock.mockRejectedValueOnce(
+      new Error("remove failed"),
+    )
+
+    render(<PermissionSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    await screen.findByText("settings:permissions.items.cookies.title")
+    const cookiesRow = document.getElementById("cookies")
+    if (!cookiesRow) {
+      throw new Error("Expected cookies permission row")
+    }
+
+    fireEvent.click(
+      within(cookiesRow).getByRole("button", {
+        name: "settings:permissions.actions.remove",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(showResultToastMock).toHaveBeenCalledWith(
+        false,
+        "settings:permissions.messages.revoked",
+        "settings:permissions.messages.revokeFailed",
+      )
+    })
+    expect(trackProductAnalyticsEventMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_EVENTS.PermissionResult,
+      {
+        permission_id: PRODUCT_ANALYTICS_PERMISSION_IDS.Cookies,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        operation: PRODUCT_ANALYTICS_PERMISSION_OPERATIONS.Remove,
+        outcome: PRODUCT_ANALYTICS_PERMISSION_OUTCOMES.ApiError,
+        failure_reason:
+          PRODUCT_ANALYTICS_PERMISSION_FAILURE_REASONS.ApiException,
+        was_granted_before: true,
+        was_granted_after: true,
         entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
       },
     )
