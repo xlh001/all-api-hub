@@ -146,6 +146,11 @@ const UPDATE_CHANNEL_STATUS = `
   }
 `
 
+const toAxonHubStatus = (status: number) =>
+  status === CHANNEL_STATUS.Enable
+    ? AXON_HUB_CHANNEL_STATUS.ENABLED
+    : AXON_HUB_CHANNEL_STATUS.DISABLED
+
 const DELETE_CHANNEL = `
   mutation DeleteChannel($id: ID!) {
     deleteChannel(id: $id)
@@ -680,15 +685,18 @@ export async function createChannel(
     const config = extractRequestConfig(request)
     const { status, ...input } = channelData.channel
     const created = await createAxonHubChannel(config, input)
+    const finalChannel = { ...created }
     if (status === CHANNEL_STATUS.Enable) {
-      await updateAxonHubChannelStatus(
-        config,
-        created.id,
-        AXON_HUB_CHANNEL_STATUS.ENABLED,
-      )
+      const axonHubStatus = toAxonHubStatus(status)
+      await updateAxonHubChannelStatus(config, created.id, axonHubStatus)
+      finalChannel.status = axonHubStatus
     }
 
-    return { success: true, data: created, message: "success" }
+    return {
+      success: true,
+      data: axonHubChannelToManagedSite(finalChannel),
+      message: "success",
+    }
   } catch (error) {
     logger.error("Failed to create AxonHub channel", error)
     return {
@@ -711,18 +719,19 @@ export async function updateChannel(
     const { id, status, ...input } = channelData
     const graphqlId = await resolveAxonHubGraphqlIdForMutation(config, id)
     const updated = await updateAxonHubChannel(config, graphqlId, input)
+    const finalChannel = { ...updated }
 
     if (status !== undefined) {
-      await updateAxonHubChannelStatus(
-        config,
-        graphqlId,
-        status === CHANNEL_STATUS.Enable
-          ? AXON_HUB_CHANNEL_STATUS.ENABLED
-          : AXON_HUB_CHANNEL_STATUS.DISABLED,
-      )
+      const axonHubStatus = toAxonHubStatus(status)
+      await updateAxonHubChannelStatus(config, graphqlId, axonHubStatus)
+      finalChannel.status = axonHubStatus
     }
 
-    return { success: true, data: updated, message: "success" }
+    return {
+      success: true,
+      data: axonHubChannelToManagedSite(finalChannel),
+      message: "success",
+    }
   } catch (error) {
     logger.error("Failed to update AxonHub channel", error)
     return {

@@ -203,6 +203,7 @@ export async function createChannel(
     })
 
     const created = await axonHubApi.createAxonHubChannel(config, input)
+    const finalChannel = { ...created }
 
     if (channel.status === CHANNEL_STATUS.Enable) {
       // AxonHub can create channels disabled depending on backend defaults, so
@@ -212,9 +213,14 @@ export async function createChannel(
         created.id,
         AXON_HUB_CHANNEL_STATUS.ENABLED,
       )
+      finalChannel.status = AXON_HUB_CHANNEL_STATUS.ENABLED
     }
 
-    return { success: true, data: created, message: "success" }
+    return {
+      success: true,
+      data: axonHubApi.axonHubChannelToManagedSite(finalChannel),
+      message: "success",
+    }
   } catch (error) {
     return {
       success: false,
@@ -241,16 +247,23 @@ export async function updateChannel(
       graphqlId,
       buildAxonHubUpdateInputFromPayload(channelData),
     )
+    const finalChannel = { ...updated }
 
     if (channelData.status !== undefined) {
+      const axonHubStatus = toAxonHubStatus(channelData.status)
       await axonHubApi.updateAxonHubChannelStatus(
         config,
         graphqlId,
-        toAxonHubStatus(channelData.status),
+        axonHubStatus,
       )
+      finalChannel.status = axonHubStatus
     }
 
-    return { success: true, data: updated, message: "success" }
+    return {
+      success: true,
+      data: axonHubApi.axonHubChannelToManagedSite(finalChannel),
+      message: "success",
+    }
   } catch (error) {
     return {
       success: false,
