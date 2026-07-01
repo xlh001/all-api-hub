@@ -8,6 +8,24 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.50.0
+- **New Features:**
+  - Account Management: You can now scan browser bookmarks and batch-import account sites. Choose the bookmark folder to scan, then review importable, duplicate, and failed sites in one place instead of adding each account manually. See [Account Management](./account-management.md) and [Bookmark Management](./bookmark-management.md).
+  - Account List: Each account row now shows its `Site type`, making it easier to confirm which compatible site family an account belongs to and to use site-type filtering in mixed setups. See [Account Management](./account-management.md).
+- **Experience Optimizations:**
+  - Account Management: Sites that support built-in check-in status now check and show today's status during account refresh automatically, without a separate status-detection switch in the form. Joining daily automatic check-in is still controlled by its own switch. See [Account Management](./account-management.md) and [Automatic Check-in](./auto-checkin.md).
+- **Bug Fixes:**
+  - `AIHubMix`: Add and edit account flows no longer show built-in check-in status or daily automatic check-in controls when they do not apply, reducing confusion about whether the extension can check in for `AIHubMix` directly. See [Account Management](./account-management.md) and [Automatic Check-in](./auto-checkin.md).
+  - API Credential Library: Exporting standalone credentials to `CC Switch`, `CLIProxyAPI`, `Kilo Code`, or `Claude Code Router` no longer mistakenly depends on account context. Credentials with only `Base URL + API Key` can also be exported or imported correctly. See [API Credential Library](./api-credential-profiles.md) and [Quick Export Site Configuration](./quick-export.md).
+  - Settings: Fixed cases where quick repeated preference saves could be overwritten by stale state, fail unexpectedly, or show unclear failure copy. If settings changed elsewhere, the page now asks you to confirm before saving again.
+  - Self-hosted Site Management: Channel changes now stay in sync more reliably after saving on real sites. `AxonHub` re-reads the channel list after creating, editing, or deleting a channel so later refresh and locate actions do not keep using stale cache; `Octopus` updates created and edited channels in the extension's unified format, reducing cases where the list, status, or follow-up actions still look like old data after a successful save. See [Self-Hosted Site Management](./self-hosted-site-management.md).
+
+**Location Hints:**
+- Bookmark batch import: Click `Batch import from bookmarks` under "Settings → Account Management", or open it from the add-account dialog.
+- Account site type: Check account rows and the site-type filter under "Settings → Account Management".
+- API credential export: Select a credential under "Settings → API Credential Library" and use the target export action.
+- Permission onboarding: Bookmark import requests bookmark permission in the import flow; update-time optional permission prompts appear under "Settings → Overview".
+
 ## 3.49.1
 - **Bug Fixes:**
   - Account auto detection: More `Sub2API` relay sites that changed their page branding or appearance can now be recognized as `Sub2API`, reducing cases where adding an account ends up as an unknown site or another compatible type. See [Account Management](./account-management.md) and [Auto Detect Troubleshooting Guide](./auto-detect.md).
