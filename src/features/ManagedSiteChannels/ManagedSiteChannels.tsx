@@ -79,6 +79,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
+import { Spinner } from "~/components/ui/spinner"
 import {
   Table,
   TableBody,
@@ -121,6 +122,7 @@ import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_REASONS,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
@@ -144,6 +146,8 @@ import {
   getManagedSiteChannelRowEditActionTestId,
   getManagedSiteChannelRowSelectTestId,
   getManagedSiteChannelRowTestId,
+  MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+  MANAGED_SITE_CHANNELS_REFRESH_STATES,
   MANAGED_SITE_CHANNELS_TEST_IDS,
 } from "./testIds"
 import type { ChannelRow, CheckboxState, RowActionsLabels } from "./types"
@@ -158,6 +162,25 @@ const channelsToolbarSurface =
   PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteChannelsToolbar
 const channelsRowActionsSurface =
   PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteChannelsRowActions
+
+type RefreshAnalyticsCompletion = {
+  complete: ReturnType<typeof startProductAnalyticsAction>["complete"]
+  completed: boolean
+}
+
+const REFRESH_ABORT_SOURCES = {
+  User: "user",
+  Superseded: "superseded",
+  Cleanup: "cleanup",
+} as const
+
+type RefreshAbortSource =
+  (typeof REFRESH_ABORT_SOURCES)[keyof typeof REFRESH_ABORT_SOURCES]
+
+type ActiveRefresh = {
+  controller: AbortController
+  abortSource: RefreshAbortSource | null
+}
 
 /**
  * Checks whether a mutation response already contains a table-ready channel row.
@@ -317,6 +340,9 @@ export default function ManagedSiteChannels({
   const [isMigrationDialogOpen, setIsMigrationDialogOpen] = useState(false)
   const [isMigrationMode, setIsMigrationMode] = useState(false)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const activeRefreshRef = useRef<ActiveRefresh | null>(null)
+  const refreshAnalyticsCompletionRef =
+    useRef<RefreshAnalyticsCompletion | null>(null)
   const verification = useNewApiManagedVerification()
   const { openNewApiManagedVerification } = verification
 
@@ -337,6 +363,25 @@ export default function ManagedSiteChannels({
       const tracker = analyticsContext
         ? startProductAnalyticsAction(analyticsContext)
         : null
+      const analyticsCompletion: RefreshAnalyticsCompletion | null = tracker
+        ? {
+            complete: tracker.complete,
+            completed: false,
+          }
+        : null
+      refreshAnalyticsCompletionRef.current = analyticsCompletion
+
+      const completeAnalytics = (
+        result: Parameters<RefreshAnalyticsCompletion["complete"]>[0],
+        options: Parameters<RefreshAnalyticsCompletion["complete"]>[1],
+      ) => {
+        if (!analyticsCompletion || analyticsCompletion.completed) {
+          return
+        }
+
+        analyticsCompletion.complete(result, options)
+        analyticsCompletion.completed = true
+      }
 
       if (isConfigMissing) {
         setChannels([])
@@ -351,39 +396,112 @@ export default function ManagedSiteChannels({
         return
       }
 
+      if (activeRefreshRef.current) {
+        activeRefreshRef.current.abortSource = REFRESH_ABORT_SOURCES.Superseded
+        activeRefreshRef.current.controller.abort()
+      }
+      const refreshAbortController = new AbortController()
+      const activeRefresh: ActiveRefresh = {
+        controller: refreshAbortController,
+        abortSource: null,
+      }
+      activeRefreshRef.current = activeRefresh
+
       setIsLoading(true)
       setError(null)
       try {
-        const response = await sendModelSyncMessage(
-          ModelSyncMessageTypes.ListChannels,
-        )
-        if (!response?.success) {
-          throw new Error(response?.error || "Failed to load channels")
+        const service = await getManagedSiteService()
+        const config = await service.getConfig()
+        if (!config) {
+          throw new Error(
+            getManagedSiteConfigMissingMessage(t, service.messagesKey),
+          )
         }
-        const items = response.data?.items ?? []
+
+        const response = await service.listChannels(config, {
+          signal: refreshAbortController.signal,
+        })
+        const items = response.items ?? []
+        if (
+          activeRefreshRef.current !== activeRefresh ||
+          refreshAbortController.signal.aborted
+        ) {
+          completeAnalytics(PRODUCT_ANALYTICS_RESULTS.Cancelled, {
+            insights: {
+              failureReason:
+                PRODUCT_ANALYTICS_FAILURE_REASONS.StaleResponseIgnored,
+              managedSiteType: managedSiteAnalyticsType,
+            },
+          })
+          return
+        }
+
         setChannels(items)
-        tracker?.complete(PRODUCT_ANALYTICS_RESULTS.Success, {
+        completeAnalytics(PRODUCT_ANALYTICS_RESULTS.Success, {
           insights: {
             itemCount: items.length,
             managedSiteType: managedSiteAnalyticsType,
           },
         })
       } catch (err) {
+        if (refreshAbortController.signal.aborted) {
+          completeAnalytics(PRODUCT_ANALYTICS_RESULTS.Cancelled, {
+            insights: {
+              failureReason:
+                activeRefresh.abortSource === REFRESH_ABORT_SOURCES.User
+                  ? PRODUCT_ANALYTICS_FAILURE_REASONS.CancelledByUser
+                  : PRODUCT_ANALYTICS_FAILURE_REASONS.StaleResponseIgnored,
+              managedSiteType: managedSiteAnalyticsType,
+            },
+          })
+          return
+        }
+
         const message = getErrorMessage(err)
         setError(message)
         toast.error(t("alerts.loadError.description", { error: message }))
-        tracker?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+        completeAnalytics(PRODUCT_ANALYTICS_RESULTS.Failure, {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
             managedSiteType: managedSiteAnalyticsType,
           },
         })
       } finally {
-        setIsLoading(false)
+        if (activeRefreshRef.current === activeRefresh) {
+          activeRefreshRef.current = null
+          setIsLoading(false)
+        }
+        if (
+          refreshAnalyticsCompletionRef.current === analyticsCompletion &&
+          analyticsCompletion?.completed
+        ) {
+          refreshAnalyticsCompletionRef.current = null
+        }
       }
     },
     [isConfigMissing, managedSiteAnalyticsType, t],
   )
+
+  const cancelRefresh = useCallback(() => {
+    const activeRefresh = activeRefreshRef.current
+    if (activeRefresh) {
+      activeRefresh.abortSource = REFRESH_ABORT_SOURCES.User
+      activeRefresh.controller.abort()
+      activeRefreshRef.current = null
+    }
+    const completion = refreshAnalyticsCompletionRef.current
+    if (completion && !completion.completed) {
+      completion.complete(PRODUCT_ANALYTICS_RESULTS.Cancelled, {
+        insights: {
+          failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.CancelledByUser,
+          managedSiteType: managedSiteAnalyticsType,
+        },
+      })
+      completion.completed = true
+      refreshAnalyticsCompletionRef.current = null
+    }
+    setIsLoading(false)
+  }, [managedSiteAnalyticsType])
 
   useLayoutEffect(() => {
     setChannels([])
@@ -392,6 +510,12 @@ export default function ManagedSiteChannels({
 
   useEffect(() => {
     void refreshChannels()
+    return () => {
+      if (activeRefreshRef.current) {
+        activeRefreshRef.current.abortSource = REFRESH_ABORT_SOURCES.Cleanup
+        activeRefreshRef.current.controller.abort()
+      }
+    }
   }, [managedSiteType, refreshChannels])
 
   // 当站点类型变化时，更新分组、优先级、权重列的可见性
@@ -1275,7 +1399,17 @@ export default function ManagedSiteChannels({
                   <Button
                     variant="outline"
                     data-testid={MANAGED_SITE_CHANNELS_TEST_IDS.refreshButton}
-                    onClick={() =>
+                    {...{
+                      [MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE]: isLoading
+                        ? MANAGED_SITE_CHANNELS_REFRESH_STATES.Loading
+                        : MANAGED_SITE_CHANNELS_REFRESH_STATES.Idle,
+                    }}
+                    onClick={() => {
+                      if (isLoading) {
+                        cancelRefresh()
+                        return
+                      }
+
                       void refreshChannels({
                         featureId:
                           PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteChannels,
@@ -1284,12 +1418,22 @@ export default function ManagedSiteChannels({
                         surfaceId: channelsToolbarSurface,
                         entrypoint: optionsEntrypoint,
                       })
+                    }}
+                    leftIcon={
+                      isLoading ? (
+                        <Spinner
+                          aria-hidden="true"
+                          size="sm"
+                          variant="primary"
+                        />
+                      ) : (
+                        <RefreshCcw className="h-4 w-4" />
+                      )
                     }
-                    disabled={isLoading}
-                    loading={isLoading && channels.length > 0}
-                    leftIcon={<RefreshCcw className="h-4 w-4" />}
                   >
-                    {t("toolbar.refresh")}
+                    {isLoading
+                      ? t("toolbar.cancelRefresh")
+                      : t("toolbar.refresh")}
                   </Button>
                   {supportsChannelMigration &&
                   (hasMigrationTargets || isMigrationMode) ? (

@@ -46,11 +46,13 @@ class OctopusAuthManager {
   async login(
     baseUrl: string,
     credentials: OctopusLoginRequest,
+    options?: Pick<RequestInit, "signal">,
   ): Promise<OctopusLoginResponse> {
     const url = `${baseUrl.replace(/\/$/, "")}/api/v1/user/login`
 
     const response = await fetch(url, {
       method: "POST",
+      signal: options?.signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
     })
@@ -96,7 +98,10 @@ class OctopusAuthManager {
    * 注意：Token 仅缓存在内存中，不持久化到存储。
    * Octopus 默认 token 有效期为 15 分钟，可通过登录时的 expire 参数自定义。
    */
-  async getValidToken(config: OctopusConfig): Promise<string> {
+  async getValidToken(
+    config: OctopusConfig,
+    options?: Pick<RequestInit, "signal">,
+  ): Promise<string> {
     if (!config.baseUrl || !config.username || !config.password) {
       throw new Error("Octopus config is incomplete")
     }
@@ -112,10 +117,14 @@ class OctopusAuthManager {
 
     // 自动登录获取新 Token
     logger.info("Auto-login to Octopus", { baseUrl: config.baseUrl })
-    const response = await this.login(config.baseUrl, {
-      username: config.username,
-      password: config.password,
-    })
+    const response = await this.login(
+      config.baseUrl,
+      {
+        username: config.username,
+        password: config.password,
+      },
+      options,
+    )
 
     // 解析过期时间，验证有效性
     const parsedExpireAt = new Date(response.expire_at).getTime()

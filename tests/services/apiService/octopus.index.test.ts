@@ -268,6 +268,69 @@ describe("Octopus API service", () => {
     ).rejects.toThrow("upstream rejected channel")
   })
 
+  it("passes the caller abort signal to Octopus channel-list requests", async () => {
+    const controller = new AbortController()
+    let requestSignal: AbortSignal | undefined
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: RequestInit) => {
+        requestSignal = init?.signal ?? undefined
+        return new Promise((_resolve, reject) => {
+          if (!init?.signal) {
+            reject(new Error("missing abort signal"))
+            return
+          }
+
+          init.signal.addEventListener("abort", () => {
+            reject(new DOMException("The operation was aborted", "AbortError"))
+          })
+        })
+      }),
+    )
+
+    const request = listChannels(config, { signal: controller.signal })
+    const expectation = expect(request).rejects.toThrow(/aborted/i)
+
+    await vi.waitFor(() => expect(requestSignal).toBe(controller.signal))
+    controller.abort()
+
+    expect(mockGetValidToken).toHaveBeenCalledWith(config, {
+      signal: controller.signal,
+    })
+    expect(requestSignal?.aborted).toBe(true)
+    await expectation
+  })
+
+  it("uses the caller signal for Octopus auth and the API request", async () => {
+    const callerSignal = new AbortController().signal
+    let fetchSignal: AbortSignal | undefined
+    mockGetValidToken.mockResolvedValueOnce("jwt-token")
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: RequestInit) => {
+        fetchSignal = init?.signal ?? undefined
+        return Promise.resolve(
+          new Response(JSON.stringify({ success: true, data: [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        )
+      }),
+    )
+
+    await expect(
+      listChannels(config, { signal: callerSignal }),
+    ).resolves.toEqual([])
+
+    expect(mockGetValidToken).toHaveBeenCalledWith(config, {
+      signal: callerSignal,
+    })
+    const authSignal = mockGetValidToken.mock.calls[0][1]?.signal
+    expect(authSignal).toBe(fetchSignal)
+  })
+
   it("surfaces raw JSON bodies when an error response cannot be parsed", async () => {
     vi.stubGlobal(
       "fetch",

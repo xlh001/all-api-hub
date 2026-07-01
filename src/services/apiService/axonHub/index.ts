@@ -270,12 +270,16 @@ const toSafeErrorMessage = (error: unknown, fallback: string) => {
 /**
  * Sign in to AxonHub admin and cache the returned session token.
  */
-export async function signIn(config: AxonHubConfig): Promise<string> {
+export async function signIn(
+  config: AxonHubConfig,
+  options?: Pick<RequestInit, "signal">,
+): Promise<string> {
   const baseUrl = normalizeBaseUrl(config.baseUrl)
 
   try {
     const response = await fetch(`${baseUrl}/admin/auth/signin`, {
       method: "POST",
+      signal: options?.signal,
       headers: {
         "Content-Type": "application/json",
       },
@@ -307,27 +311,74 @@ export async function signIn(config: AxonHubConfig): Promise<string> {
   }
 }
 
-const getSessionToken = async (config: AxonHubConfig, forceRefresh = false) => {
+const getSessionToken = async (
+  config: AxonHubConfig,
+  forceRefresh = false,
+  options?: Pick<RequestInit, "signal">,
+) => {
   const key = cacheKeyForConfig(config)
+  const callerSignal = options?.signal ?? undefined
+  const hasCallerCancellation = Boolean(callerSignal)
   if (!forceRefresh) {
     const cachedToken = tokenCache.get(key)
     if (cachedToken) return cachedToken
 
     const inflightSignIn = inflightSignIns.get(key)
     if (inflightSignIn) {
+      if (callerSignal) {
+        return awaitSignInWithCallerCancellation(inflightSignIn, callerSignal)
+      }
+
       return inflightSignIn
     }
   }
 
   tokenCache.delete(key)
-  inflightSignIns.delete(key)
+  if (!hasCallerCancellation || forceRefresh) {
+    inflightSignIns.delete(key)
+  }
 
-  const pendingSignIn = signIn(config).finally(() => {
+  if (hasCallerCancellation) {
+    return signIn(config, options)
+  }
+
+  const pendingSignIn = signIn(config, options).finally(() => {
     inflightSignIns.delete(key)
   })
 
   inflightSignIns.set(key, pendingSignIn)
   return pendingSignIn
+}
+
+const awaitSignInWithCallerCancellation = async (
+  pendingSignIn: Promise<string>,
+  callerSignal: AbortSignal,
+) => {
+  let abort: (() => void) | null = null
+  try {
+    return await Promise.race([
+      pendingSignIn,
+      new Promise<string>((_resolve, reject) => {
+        abort = () => {
+          reject(
+            callerSignal.reason ??
+              new DOMException("The operation was aborted", "AbortError"),
+          )
+        }
+
+        if (callerSignal.aborted) {
+          abort()
+          return
+        }
+
+        callerSignal.addEventListener("abort", abort, { once: true })
+      }),
+    ])
+  } finally {
+    if (abort) {
+      callerSignal.removeEventListener("abort", abort)
+    }
+  }
 }
 
 const isUnauthorized = (
@@ -351,11 +402,11 @@ export async function graphqlRequest<T>(
   config: AxonHubConfig,
   query: string,
   variables?: Record<string, unknown>,
-  options?: { retryAuth?: boolean },
+  options?: { retryAuth?: boolean } & Pick<RequestInit, "signal">,
 ): Promise<T> {
   const baseUrl = normalizeBaseUrl(config.baseUrl)
   const retryAuth = options?.retryAuth ?? true
-  const token = await getSessionToken(config)
+  const token = await getSessionToken(config, false, options)
 
   const execute = async (
     sessionToken: string,
@@ -363,6 +414,7 @@ export async function graphqlRequest<T>(
   ): Promise<T | null> => {
     const response = await fetch(`${baseUrl}/admin/graphql`, {
       method: "POST",
+      signal: options?.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${sessionToken}`,
@@ -400,7 +452,7 @@ export async function graphqlRequest<T>(
 
     // Cached admin JWTs are session-scoped and may expire while the extension
     // page remains open; retry once with fresh credentials before surfacing.
-    const refreshedToken = await getSessionToken(config, true)
+    const refreshedToken = await getSessionToken(config, true, options)
     const secondAttempt = await execute(refreshedToken, false)
     if (!secondAttempt) {
       throw new Error("AxonHub GraphQL request failed without data")
@@ -492,6 +544,7 @@ export function axonHubChannelToManagedSite(channel: AxonHubChannel) {
  */
 export async function listChannels(
   config: AxonHubConfig,
+  options?: Pick<RequestInit, "signal">,
 ): Promise<ManagedSiteChannelListData> {
   const cacheKey = cacheKeyForConfig(config)
   const cachedChannels = channelListCache.get(cacheKey)
@@ -521,6 +574,7 @@ export async function listChannels(
           after,
         },
       },
+      options,
     )
 
     total = data.queryChannels.totalCount ?? total

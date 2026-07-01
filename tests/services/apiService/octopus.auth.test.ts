@@ -14,6 +14,7 @@ describe("Octopus auth manager", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.unstubAllGlobals()
+    vi.useRealTimers()
     octopusAuthManager.clearAllCache()
   })
 
@@ -94,6 +95,50 @@ describe("Octopus auth manager", () => {
         password: "secret",
       }),
     ).rejects.toThrow("HTTP 500 - gateway down")
+  })
+
+  it("passes the caller abort signal to Octopus login requests", async () => {
+    const controller = new AbortController()
+    let loginSignal: AbortSignal | undefined
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: RequestInit) => {
+        loginSignal = init?.signal ?? undefined
+        return new Promise((_resolve, reject) => {
+          const signal = init?.signal
+          if (!signal) {
+            reject(new Error("missing abort signal"))
+            return
+          }
+
+          signal.addEventListener("abort", () => {
+            reject(
+              signal.reason ??
+                new DOMException("The operation was aborted", "AbortError"),
+            )
+          })
+        })
+      }),
+    )
+
+    const login = octopusAuthManager.login(
+      "https://octopus.example.com",
+      {
+        username: "alice",
+        password: "secret",
+      },
+      { signal: controller.signal },
+    )
+    const abortReason = new Error("caller cancelled")
+    abortReason.name = "AbortError"
+    const expectation = expect(login).rejects.toBe(abortReason)
+
+    await vi.waitFor(() => expect(loginSignal).toBe(controller.signal))
+    controller.abort(abortReason)
+
+    expect(loginSignal?.aborted).toBe(true)
+    await expectation
   })
 
   it("uses the upstream login message when a 200 response still reports login failure", async () => {

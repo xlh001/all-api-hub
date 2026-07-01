@@ -11,6 +11,8 @@ import {
   getManagedSiteChannelRowSelectTestId,
   getManagedSiteChannelRowTestId,
   MANAGED_SITE_CHANNEL_ROW_TEST_ID_PREFIX,
+  MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+  MANAGED_SITE_CHANNELS_REFRESH_STATES,
   MANAGED_SITE_CHANNELS_TEST_IDS,
 } from "~/features/ManagedSiteChannels/testIds"
 import { expect } from "~~/e2e/fixtures/extensionTest"
@@ -121,19 +123,12 @@ export async function runManagedSiteChannelsCrudScenario<
     })
     await expectPaginationSummary(context.page, "1", "1", "1")
 
-    const editAction = await openSingleVisibleChannelRowActions(
-      context.page,
-      channelName,
-    )
-    await editAction.click({ timeout: 10_000 })
-    await expect(
-      context.page.getByTestId(CHANNEL_DIALOG_TEST_IDS.submitButton),
-    ).toBeVisible({ timeout: 60_000 })
+    await openSingleVisibleChannelEditDialog(context.page, channelName)
     await context.page
       .getByTestId(CHANNEL_DIALOG_TEST_IDS.nameInput)
       .fill(editedChannelName)
     await fillModelInput(context.page, CRUD_UPDATED_MODEL)
-    await context.page.getByTestId(CHANNEL_DIALOG_TEST_IDS.submitButton).click()
+    await submitChannelDialogAndWaitForClose(context.page)
 
     await expect(channelRowByName(context.page, editedChannelName)).toBeVisible(
       {
@@ -228,9 +223,7 @@ export async function runManagedSiteTokenChannelStatusScenario<
     await keyManagementPage
       .getByTestId(CHANNEL_DIALOG_TEST_IDS.nameInput)
       .fill(channelName)
-    await keyManagementPage
-      .getByTestId(CHANNEL_DIALOG_TEST_IDS.submitButton)
-      .click()
+    await submitChannelDialogAndWaitForClose(keyManagementPage)
 
     await expectManagedSiteImportStatusAfterChannelCreate(row)
     await openManagedSiteChannelsAndExpectRow({
@@ -316,8 +309,49 @@ async function expectManagedSiteChannelVisibleAfterRefresh(params: {
     const refreshButton = params.page.getByTestId(
       MANAGED_SITE_CHANNELS_TEST_IDS.refreshButton,
     )
+    await expect(refreshButton).toHaveAttribute(
+      MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+      new RegExp(
+        `${MANAGED_SITE_CHANNELS_REFRESH_STATES.Idle}|${MANAGED_SITE_CHANNELS_REFRESH_STATES.Loading}`,
+      ),
+      { timeout: 10_000 },
+    )
+    if (
+      (await refreshButton.getAttribute(
+        MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+      )) === MANAGED_SITE_CHANNELS_REFRESH_STATES.Loading
+    ) {
+      await expect(refreshButton).toHaveAttribute(
+        MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+        MANAGED_SITE_CHANNELS_REFRESH_STATES.Idle,
+        {
+          timeout: 10_000,
+        },
+      )
+    }
+    await expect(refreshButton).toHaveAttribute(
+      MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+      MANAGED_SITE_CHANNELS_REFRESH_STATES.Idle,
+      {
+        timeout: 10_000,
+      },
+    )
     await expect(refreshButton).toBeEnabled({ timeout: 10_000 })
     await refreshButton.click()
+    await expect(refreshButton)
+      .toHaveAttribute(
+        MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+        MANAGED_SITE_CHANNELS_REFRESH_STATES.Loading,
+        { timeout: 5_000 },
+      )
+      .catch(() => undefined)
+    await expect(refreshButton).toHaveAttribute(
+      MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+      MANAGED_SITE_CHANNELS_REFRESH_STATES.Idle,
+      {
+        timeout: 30_000,
+      },
+    )
     await expect(row).toBeVisible({ timeout: 20_000 })
   }).toPass({
     intervals: [1_000, 3_000, 5_000],
@@ -417,7 +451,18 @@ async function createManagedSiteChannelFromUi(
     .getByTestId(CHANNEL_DIALOG_TEST_IDS.baseUrlInput)
     .fill(params.baseUrl)
   await fillModelInput(page, params.model)
-  await page.getByTestId(CHANNEL_DIALOG_TEST_IDS.submitButton).click()
+  await submitChannelDialogAndWaitForClose(page)
+}
+
+async function submitChannelDialogAndWaitForClose(page: Page) {
+  const submitButton = page.getByTestId(CHANNEL_DIALOG_TEST_IDS.submitButton)
+
+  await expect(submitButton).toBeEnabled({ timeout: 30_000 })
+  await submitButton.click()
+  await expect(submitButton)
+    .toBeDisabled({ timeout: 5_000 })
+    .catch(() => undefined)
+  await expect(submitButton).not.toBeVisible({ timeout: 30_000 })
 }
 
 async function fillModelInput(page: Page, model: string) {
@@ -428,30 +473,30 @@ async function fillModelInput(page: Page, model: string) {
   })
 }
 
-async function openSingleVisibleChannelRowActions(page: Page, rowText: string) {
-  const editAction = page.getByTestId(
-    getManagedSiteChannelRowEditActionTestId(rowText),
-  )
-
+async function openSingleVisibleChannelEditDialog(page: Page, rowText: string) {
   await expect(async () => {
     const row = channelRowByName(page, rowText)
     await expect(row).toBeVisible({ timeout: 10_000 })
-    if (await editAction.isVisible()) {
-      return
-    }
-
     const actionsButton = row.getByTestId(
       getManagedSiteChannelRowActionsButtonTestId(rowText),
     )
     await expect(actionsButton).toBeEnabled({ timeout: 10_000 })
     await actionsButton.click({ timeout: 10_000 })
+
+    const editAction = page.getByTestId(
+      getManagedSiteChannelRowEditActionTestId(rowText),
+    )
     await expect(editAction).toBeVisible({ timeout: 10_000 })
+    await editAction.click({ timeout: 10_000 })
+    await expect(
+      page.getByTestId(CHANNEL_DIALOG_TEST_IDS.submitButton),
+    ).toBeVisible({
+      timeout: 10_000,
+    })
   }).toPass({
     intervals: [1_000, 3_000, 5_000],
     timeout: 60_000,
   })
-
-  return editAction
 }
 
 export function buildManagedSiteE2ePrefix(params: {

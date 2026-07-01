@@ -28,12 +28,16 @@ async function fetchOctopusApi<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<OctopusApiResponse<T>> {
-  const token = await octopusAuthManager.getValidToken(config)
+  const signal = options.signal ?? undefined
+  const token = await octopusAuthManager.getValidToken(config, {
+    signal,
+  })
   const baseUrl = normalizeBaseUrl(config.baseUrl)
   const url = `${baseUrl}${endpoint}`
 
   const response = await fetch(url, {
     ...options,
+    signal,
     headers: createOctopusRequestHeaders(token, options.headers),
   })
 
@@ -102,11 +106,13 @@ async function fetchOctopusApi<T>(
  */
 export async function listChannels(
   config: OctopusConfig,
+  options?: Pick<RequestInit, "signal">,
 ): Promise<OctopusChannel[]> {
   try {
     const result = await fetchOctopusApi<OctopusChannel[]>(
       config,
       "/api/v1/channel/list",
+      options,
     )
     return result.data || []
   } catch (error) {

@@ -16,6 +16,11 @@ import {
   isChannelRowLike,
   upsertChannelRow,
 } from "~/features/ManagedSiteChannels/ManagedSiteChannels"
+import {
+  MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+  MANAGED_SITE_CHANNELS_REFRESH_STATES,
+  MANAGED_SITE_CHANNELS_TEST_IDS,
+} from "~/features/ManagedSiteChannels/testIds"
 import type { ChannelRow } from "~/features/ManagedSiteChannels/types"
 import { fetchChannelFilters } from "~/features/ManagedSiteChannels/utils/channelFilters"
 import {
@@ -33,6 +38,7 @@ import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_REASONS,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_MANAGED_SITE_TYPES,
   PRODUCT_ANALYTICS_RESULTS,
@@ -374,6 +380,12 @@ describe("ManagedSiteChannels", () => {
     }
   }
 
+  const buildChannelListData = (items: any[]) => ({
+    items,
+    total: items.length,
+    type_counts: {},
+  })
+
   const mockChannels = (
     channels: any[],
     options?: {
@@ -410,7 +422,7 @@ describe("ManagedSiteChannels", () => {
       newApiTotpSecret: preferences.newApi.totpSecret,
     } as any)
 
-    vi.mocked(getManagedSiteService).mockResolvedValue({
+    const service = {
       siteType: managedSiteType,
       messagesKey,
       getConfig: vi.fn().mockResolvedValue({
@@ -418,13 +430,11 @@ describe("ManagedSiteChannels", () => {
         adminToken: "t",
         userId: "1",
       }),
+      listChannels: vi.fn().mockResolvedValue(buildChannelListData(channels)),
       fetchChannelSecretKey: options?.fetchChannelSecretKey,
-    } as any)
+    } as any
 
-    vi.mocked(sendModelSyncMessage).mockResolvedValue({
-      success: true,
-      data: { items: channels },
-    } as any)
+    vi.mocked(getManagedSiteService).mockResolvedValue(service)
 
     vi.mocked(isNewApiVerifiedSessionActive).mockReturnValue(true)
     vi.mocked(ensureNewApiManagedSession).mockResolvedValue({
@@ -455,6 +465,8 @@ describe("ManagedSiteChannels", () => {
         message: "ok",
       }),
     } as any)
+
+    return service
   }
 
   const buildCompleteChannelRow = (
@@ -550,8 +562,19 @@ describe("ManagedSiteChannels", () => {
     await user.click(screen.getByTestId(CHANNEL_DIALOG_TEST_IDS.submitButton))
   }
 
-  const mockNewApiServiceWithCreate = (createChannel: unknown) => {
-    vi.mocked(getManagedSiteService).mockResolvedValue({
+  const mockNewApiServiceWithCreate = (
+    createChannel: unknown,
+    channelListSequence: any[][] = [[]],
+  ) => {
+    const listChannels = vi.fn()
+    channelListSequence.forEach((channels) => {
+      listChannels.mockResolvedValueOnce(buildChannelListData(channels))
+    })
+    listChannels.mockResolvedValue(
+      buildChannelListData(channelListSequence.at(-1) ?? []),
+    )
+
+    const service = {
       siteType: SITE_TYPES.NEW_API,
       messagesKey: "newapi",
       getConfig: vi.fn().mockResolvedValue({
@@ -559,12 +582,16 @@ describe("ManagedSiteChannels", () => {
         adminToken: "t",
         userId: "1",
       }),
+      listChannels,
       buildChannelPayload: vi.fn((draft: any) => ({
         mode: "single",
         channel: draft,
       })),
       createChannel,
-    } as any)
+    } as any
+
+    vi.mocked(getManagedSiteService).mockResolvedValue(service)
+    return service
   }
 
   const ChannelDialogSuccessProbe = ({ result }: { result: unknown }) => {
@@ -676,6 +703,28 @@ describe("ManagedSiteChannels", () => {
     expect(ascendingNames).toEqual(["Alpha", "Beta", "Gamma"])
   })
 
+  it("loads channels through the managed-site service without using model-sync list messaging", async () => {
+    const service = mockChannels([
+      { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+    ])
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    expect(service.listChannels).toHaveBeenCalledWith(
+      {
+        baseUrl: "https://admin.example",
+        adminToken: "t",
+        userId: "1",
+      },
+      { signal: expect.any(AbortSignal) },
+    )
+    expect(sendModelSyncMessage).not.toHaveBeenCalledWith(
+      "modelSync:listChannels",
+    )
+  })
+
   it("reloads the channel list when the managed site type changes", async () => {
     let currentManagedSiteType: ManagedSiteType = SITE_TYPES.NEW_API
     let currentPreferences = buildPreferences({
@@ -684,16 +733,26 @@ describe("ManagedSiteChannels", () => {
     })
     let resolveDoneHubChannels:
       | ((value: {
-          success: boolean
-          data: {
-            items: Array<{
-              id: number
-              name: string
-              base_url: string
-            }>
-          }
+          items: Array<{
+            id: number
+            name: string
+            base_url: string
+          }>
         }) => void)
       | undefined
+    const listChannels = vi
+      .fn()
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 1, name: "Alpha", base_url: "https://site-a.example" },
+        ]),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<any>((resolve) => {
+            resolveDoneHubChannels = resolve
+          }),
+      )
 
     vi.mocked(useUserPreferencesContext).mockImplementation(
       () =>
@@ -725,22 +784,9 @@ describe("ManagedSiteChannels", () => {
             token: "token",
             userId: "1",
           }),
+          listChannels,
         }) as any,
     )
-
-    vi.mocked(sendModelSyncMessage)
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [{ id: 1, name: "Alpha", base_url: "https://site-a.example" }],
-        },
-      } as any)
-      .mockImplementationOnce(
-        () =>
-          new Promise<any>((resolve) => {
-            resolveDoneHubChannels = resolve
-          }),
-      )
 
     const { rerender } = render(<ManagedSiteChannels />)
 
@@ -755,9 +801,7 @@ describe("ManagedSiteChannels", () => {
     rerender(<ManagedSiteChannels />)
 
     await waitFor(() => {
-      expect(sendModelSyncMessage).toHaveBeenLastCalledWith(
-        "modelSync:listChannels",
-      )
+      expect(listChannels).toHaveBeenCalledTimes(2)
       expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
       expect(
         screen.getByText("managedSiteChannels:table.loading"),
@@ -765,10 +809,7 @@ describe("ManagedSiteChannels", () => {
     })
 
     resolveDoneHubChannels?.({
-      success: true,
-      data: {
-        items: [{ id: 2, name: "Beta", base_url: "https://site-b.example" }],
-      },
+      items: [{ id: 2, name: "Beta", base_url: "https://site-b.example" }],
     })
 
     await waitFor(() => {
@@ -778,20 +819,18 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("reloads the channel list when refreshKey changes to a truthy value", async () => {
-    mockChannels([{ id: 1, name: "Alpha", base_url: "https://alpha.example" }])
-    vi.mocked(sendModelSyncMessage)
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [{ id: 1, name: "Alpha", base_url: "https://alpha.example" }],
-        },
-      } as any)
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [{ id: 2, name: "Beta", base_url: "https://beta.example" }],
-        },
-      } as any)
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 2, name: "Beta", base_url: "https://beta.example" },
+        ]),
+      )
 
     const { rerender } = render(<ManagedSiteChannels refreshKey={0} />)
 
@@ -804,23 +843,20 @@ describe("ManagedSiteChannels", () => {
       expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
     })
 
-    expect(vi.mocked(sendModelSyncMessage)).toHaveBeenCalledTimes(2)
+    expect(service.listChannels).toHaveBeenCalledTimes(2)
   })
 
   it("keeps the current channel rows visible while a manual refresh is loading", async () => {
     const user = userEvent.setup()
-    let resolveRefresh:
-      | ((value: { success: boolean; data: { items: any[] } }) => void)
-      | undefined
+    let resolveRefresh: ((value: { items: any[] }) => void) | undefined
 
-    mockChannels([{ id: 1, name: "Alpha", base_url: "https://alpha.example" }])
-    vi.mocked(sendModelSyncMessage)
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [{ id: 1, name: "Alpha", base_url: "https://alpha.example" }],
-        },
-      } as any)
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+        ]),
+      )
       .mockImplementationOnce(
         () =>
           new Promise((resolve) => {
@@ -843,16 +879,23 @@ describe("ManagedSiteChannels", () => {
       PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteChannelsToolbar,
     )
     await waitFor(() => {
-      expect(vi.mocked(sendModelSyncMessage)).toHaveBeenCalledTimes(2)
+      expect(service.listChannels).toHaveBeenCalledTimes(2)
     })
 
     expect(screen.getByText("Alpha")).toBeInTheDocument()
 
+    expect(
+      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.refreshButton),
+    ).toBeEnabled()
+    expect(
+      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.refreshButton),
+    ).toHaveAttribute(
+      MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+      MANAGED_SITE_CHANNELS_REFRESH_STATES.Loading,
+    )
+
     resolveRefresh?.({
-      success: true,
-      data: {
-        items: [{ id: 2, name: "Beta", base_url: "https://beta.example" }],
-      },
+      items: [{ id: 2, name: "Beta", base_url: "https://beta.example" }],
     })
 
     await waitFor(() => {
@@ -861,24 +904,312 @@ describe("ManagedSiteChannels", () => {
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
   })
 
+  it("allows the user to cancel the current channel list loading request", async () => {
+    const user = userEvent.setup()
+    let signal: AbortSignal | undefined
+    const service = mockChannels([])
+    service.listChannels.mockImplementationOnce(
+      (_config: unknown, options?: RequestInit) => {
+        signal = options?.signal ?? undefined
+        return new Promise(() => {})
+      },
+    )
+
+    render(<ManagedSiteChannels />)
+
+    await waitFor(() => {
+      expect(service.listChannels).toHaveBeenCalledTimes(1)
+    })
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.cancelRefresh",
+      }),
+    )
+
+    expect(signal?.aborted).toBe(true)
+    expect(service.listChannels).toHaveBeenCalledTimes(1)
+
+    await waitFor(() => {
+      const refreshButton = screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.refresh",
+      })
+      expect(refreshButton).toBeEnabled()
+      expect(refreshButton).toHaveAttribute(
+        MANAGED_SITE_CHANNELS_REFRESH_STATE_ATTRIBUTE,
+        MANAGED_SITE_CHANNELS_REFRESH_STATES.Idle,
+      )
+    })
+  })
+
+  it("reports the configured site message when refresh starts without config", async () => {
+    const service = mockChannels([])
+    service.getConfig.mockResolvedValueOnce(null)
+
+    render(<ManagedSiteChannels />)
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "managedSiteChannels:alerts.loadError.description",
+      )
+    })
+  })
+
+  it("aborts the previous local channel listing request when an external refresh replaces it", async () => {
+    let firstSignal: AbortSignal | undefined
+    let resolveSecondRefresh: ((value: { items: any[] }) => void) | undefined
+    const service = mockChannels([])
+    service.listChannels
+      .mockImplementationOnce((_config: unknown, options?: RequestInit) => {
+        firstSignal = options?.signal ?? undefined
+        return new Promise(() => {})
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecondRefresh = resolve as typeof resolveSecondRefresh
+          }),
+      )
+
+    const { rerender } = render(<ManagedSiteChannels refreshKey={0} />)
+
+    await waitFor(() => {
+      expect(service.listChannels).toHaveBeenCalledTimes(1)
+    })
+    expect(firstSignal?.aborted).toBe(false)
+
+    rerender(<ManagedSiteChannels refreshKey={1} />)
+
+    await waitFor(() => {
+      expect(firstSignal?.aborted).toBe(true)
+      expect(service.listChannels).toHaveBeenCalledTimes(2)
+    })
+
+    resolveSecondRefresh?.({
+      items: [{ id: 2, name: "Beta", base_url: "https://beta.example" }],
+    })
+
+    await waitForRowText("Beta")
+  })
+
+  it("ignores a late fulfilled manual refresh after a newer refresh supersedes it", async () => {
+    const user = userEvent.setup()
+    let firstRefreshSignal: AbortSignal | undefined
+    let resolveFirstRefresh: ((value: { items: any[] }) => void) | undefined
+    let resolveSecondRefresh: ((value: { items: any[] }) => void) | undefined
+
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+        ]),
+      )
+      .mockImplementationOnce((_config: unknown, options?: RequestInit) => {
+        firstRefreshSignal = options?.signal ?? undefined
+        return new Promise((resolve) => {
+          resolveFirstRefresh = resolve as typeof resolveFirstRefresh
+        })
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecondRefresh = resolve as typeof resolveSecondRefresh
+          }),
+      )
+
+    const { rerender } = render(<ManagedSiteChannels refreshKey={0} />)
+
+    await waitForRowText("Alpha")
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.refresh",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(service.listChannels).toHaveBeenCalledTimes(2)
+    })
+
+    rerender(<ManagedSiteChannels refreshKey={1} />)
+
+    await waitFor(() => {
+      expect(firstRefreshSignal?.aborted).toBe(true)
+      expect(service.listChannels).toHaveBeenCalledTimes(3)
+    })
+
+    resolveSecondRefresh?.({
+      items: [{ id: 3, name: "Gamma", base_url: "https://gamma.example" }],
+    })
+
+    await waitForRowText("Gamma")
+
+    resolveFirstRefresh?.({
+      items: [{ id: 2, name: "Beta", base_url: "https://beta.example" }],
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByText("Beta")).not.toBeInTheDocument()
+      expect(screen.getByText("Gamma")).toBeInTheDocument()
+    })
+    expect(mockCompleteProductAnalyticsAction).not.toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Success,
+      {
+        insights: {
+          itemCount: 1,
+          managedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+        },
+      },
+    )
+  })
+
+  it("classifies an aborted superseded refresh rejection as stale", async () => {
+    const user = userEvent.setup()
+    let firstRefreshSignal: AbortSignal | undefined
+    let rejectFirstRefresh: ((reason?: unknown) => void) | undefined
+    let resolveSecondRefresh: ((value: { items: any[] }) => void) | undefined
+
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+        ]),
+      )
+      .mockImplementationOnce((_config: unknown, options?: RequestInit) => {
+        firstRefreshSignal = options?.signal ?? undefined
+        return new Promise((_resolve, reject) => {
+          rejectFirstRefresh = reject
+        })
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecondRefresh = resolve as typeof resolveSecondRefresh
+          }),
+      )
+
+    const { rerender } = render(<ManagedSiteChannels refreshKey={0} />)
+
+    await waitForRowText("Alpha")
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.refresh",
+      }),
+    )
+    await waitFor(() => {
+      expect(service.listChannels).toHaveBeenCalledTimes(2)
+    })
+
+    rerender(<ManagedSiteChannels refreshKey={1} />)
+
+    await waitFor(() => {
+      expect(firstRefreshSignal?.aborted).toBe(true)
+      expect(service.listChannels).toHaveBeenCalledTimes(3)
+    })
+    rejectFirstRefresh?.(new DOMException("aborted", "AbortError"))
+    resolveSecondRefresh?.({
+      items: [{ id: 3, name: "Gamma", base_url: "https://gamma.example" }],
+    })
+
+    await waitForRowText("Gamma")
+    expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Cancelled,
+      {
+        insights: {
+          failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.StaleResponseIgnored,
+          managedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+        },
+      },
+    )
+  })
+
+  it("classifies a stopped manual refresh rejection as user cancellation", async () => {
+    const user = userEvent.setup()
+    let manualRefreshSignal: AbortSignal | undefined
+    let rejectManualRefresh: ((reason?: unknown) => void) | undefined
+
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+        ]),
+      )
+      .mockImplementationOnce((_config: unknown, options?: RequestInit) => {
+        manualRefreshSignal = options?.signal ?? undefined
+        return new Promise((_resolve, reject) => {
+          rejectManualRefresh = reject
+        })
+      })
+
+    render(<ManagedSiteChannels />)
+
+    await waitForRowText("Alpha")
+
+    const refreshButton = screen.getByRole("button", {
+      name: "managedSiteChannels:toolbar.refresh",
+    })
+    await user.click(refreshButton)
+
+    await waitFor(() => {
+      expect(service.listChannels).toHaveBeenCalledTimes(2)
+    })
+    await user.click(refreshButton)
+
+    await waitFor(() => {
+      expect(manualRefreshSignal?.aborted).toBe(true)
+    })
+    rejectManualRefresh?.(new DOMException("aborted", "AbortError"))
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Cancelled,
+        {
+          insights: {
+            failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.CancelledByUser,
+            managedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+          },
+        },
+      )
+    })
+  })
+
+  it("aborts the current refresh during cleanup", async () => {
+    let signal: AbortSignal | undefined
+    const service = mockChannels([])
+    service.listChannels.mockImplementationOnce(
+      (_config: unknown, options?: RequestInit) => {
+        signal = options?.signal ?? undefined
+        return new Promise(() => {})
+      },
+    )
+
+    const { unmount } = render(<ManagedSiteChannels />)
+
+    await waitFor(() => {
+      expect(service.listChannels).toHaveBeenCalledTimes(1)
+    })
+
+    unmount()
+
+    expect(signal?.aborted).toBe(true)
+  })
+
   it("completes manual refresh analytics with the refreshed channel count", async () => {
     const user = userEvent.setup()
 
-    mockChannels([])
-    vi.mocked(sendModelSyncMessage)
-      .mockResolvedValueOnce({
-        success: true,
-        data: { items: [] },
-      } as any)
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [
-            { id: 1, name: "Alpha", base_url: "https://alpha.example" },
-            { id: 2, name: "Beta", base_url: "https://beta.example" },
-          ],
-        },
-      } as any)
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(buildChannelListData([]))
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+          { id: 2, name: "Beta", base_url: "https://beta.example" },
+        ]),
+      )
 
     render(<ManagedSiteChannels />)
 
@@ -910,16 +1241,10 @@ describe("ManagedSiteChannels", () => {
   it("tracks manual refresh analytics failure when channel loading fails", async () => {
     const user = userEvent.setup()
 
-    mockChannels([])
-    vi.mocked(sendModelSyncMessage)
-      .mockResolvedValueOnce({
-        success: true,
-        data: { items: [] },
-      } as any)
-      .mockResolvedValueOnce({
-        success: false,
-        error: "load failed",
-      } as any)
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(buildChannelListData([]))
+      .mockRejectedValueOnce(new Error("load failed"))
 
     render(<ManagedSiteChannels />)
 
@@ -941,6 +1266,42 @@ describe("ManagedSiteChannels", () => {
         {
           errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
           insights: {
+            managedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
+          },
+        },
+      )
+    })
+  })
+
+  it("completes manual refresh analytics as cancelled when the user stops loading", async () => {
+    const user = userEvent.setup()
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(buildChannelListData([]))
+      .mockImplementationOnce(() => new Promise(() => {}))
+
+    render(<ManagedSiteChannels />)
+
+    await waitForChannelsRefreshIdle()
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.refresh",
+      }),
+    )
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "managedSiteChannels:toolbar.cancelRefresh",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(mockCompleteProductAnalyticsAction).toHaveBeenCalledWith(
+        PRODUCT_ANALYTICS_RESULTS.Cancelled,
+        {
+          insights: {
+            failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.CancelledByUser,
             managedSiteType: PRODUCT_ANALYTICS_MANAGED_SITE_TYPES.NewApi,
           },
         },
@@ -990,22 +1351,14 @@ describe("ManagedSiteChannels", () => {
     })
 
     mockChannels([])
-    mockNewApiServiceWithCreate(createChannel)
-    vi.mocked(sendModelSyncMessage)
-      .mockResolvedValueOnce({
-        success: true,
-        data: { items: [] },
-      } as any)
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [
-            {
-              ...buildCompleteChannelRow(),
-            },
-          ],
+    const service = mockNewApiServiceWithCreate(createChannel, [
+      [],
+      [
+        {
+          ...buildCompleteChannelRow(),
         },
-      } as any)
+      ],
+    ])
 
     render(
       <>
@@ -1023,7 +1376,7 @@ describe("ManagedSiteChannels", () => {
     await fillAndSubmitChannelDialog(user, { name: "Created Channel" })
 
     await waitForRowText("Created Channel")
-    expect(sendModelSyncMessage).toHaveBeenCalledTimes(2)
+    expect(service.listChannels).toHaveBeenCalledTimes(2)
   })
 
   it("upserts complete create responses without a follow-up refresh", async () => {
@@ -1039,11 +1392,7 @@ describe("ManagedSiteChannels", () => {
     })
 
     mockChannels([])
-    mockNewApiServiceWithCreate(createChannel)
-    vi.mocked(sendModelSyncMessage).mockResolvedValue({
-      success: true,
-      data: { items: [] },
-    } as any)
+    const service = mockNewApiServiceWithCreate(createChannel)
 
     render(
       <>
@@ -1064,7 +1413,7 @@ describe("ManagedSiteChannels", () => {
     expect(
       screen.getByText("managedSiteChannels:statusLabels.manualPause"),
     ).toBeInTheDocument()
-    expect(sendModelSyncMessage).toHaveBeenCalledTimes(1)
+    expect(service.listChannels).toHaveBeenCalledTimes(1)
   })
 
   it("refreshes when create responses do not include row data", async () => {
@@ -1076,18 +1425,10 @@ describe("ManagedSiteChannels", () => {
     })
 
     mockChannels([])
-    mockNewApiServiceWithCreate(createChannel)
-    vi.mocked(sendModelSyncMessage)
-      .mockResolvedValueOnce({
-        success: true,
-        data: { items: [] },
-      } as any)
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [buildCompleteChannelRow({ name: "Refresh Create" })],
-        },
-      } as any)
+    const service = mockNewApiServiceWithCreate(createChannel, [
+      [],
+      [buildCompleteChannelRow({ name: "Refresh Create" })],
+    ])
 
     render(
       <>
@@ -1105,7 +1446,7 @@ describe("ManagedSiteChannels", () => {
     await fillAndSubmitChannelDialog(user, { name: "Refresh Create" })
 
     await waitForRowText("Refresh Create")
-    expect(sendModelSyncMessage).toHaveBeenCalledTimes(2)
+    expect(service.listChannels).toHaveBeenCalledTimes(2)
   })
 
   it("upserts complete edit responses without a follow-up refresh", async () => {
@@ -1159,29 +1500,21 @@ describe("ManagedSiteChannels", () => {
     await waitForRowText("Alpha Edited")
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument()
     expect(screen.getByText("https://alpha-edited.example")).toBeInTheDocument()
-    expect(sendModelSyncMessage).toHaveBeenCalledTimes(1)
+    expect(sendModelSyncMessage).not.toHaveBeenCalled()
   })
 
   it("keeps row selection attached to the same channel after refreshed rows reorder", async () => {
     const user = userEvent.setup()
-    let resolveRefresh:
-      | ((value: { success: boolean; data: { items: any[] } }) => void)
-      | undefined
+    let resolveRefresh: ((value: { items: any[] }) => void) | undefined
 
-    mockChannels([
-      { id: 1, name: "Alpha", base_url: "https://alpha.example" },
-      { id: 2, name: "Beta", base_url: "https://beta.example" },
-    ])
-    vi.mocked(sendModelSyncMessage)
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [
-            { id: 1, name: "Alpha", base_url: "https://alpha.example" },
-            { id: 2, name: "Beta", base_url: "https://beta.example" },
-          ],
-        },
-      } as any)
+    const service = mockChannels([])
+    service.listChannels
+      .mockResolvedValueOnce(
+        buildChannelListData([
+          { id: 1, name: "Alpha", base_url: "https://alpha.example" },
+          { id: 2, name: "Beta", base_url: "https://beta.example" },
+        ]),
+      )
       .mockImplementationOnce(
         () =>
           new Promise((resolve) => {
@@ -1220,13 +1553,10 @@ describe("ManagedSiteChannels", () => {
     )
 
     resolveRefresh?.({
-      success: true,
-      data: {
-        items: [
-          { id: 2, name: "Beta", base_url: "https://beta.example" },
-          { id: 3, name: "Gamma", base_url: "https://gamma.example" },
-        ],
-      },
+      items: [
+        { id: 2, name: "Beta", base_url: "https://beta.example" },
+        { id: 3, name: "Gamma", base_url: "https://gamma.example" },
+      ],
     })
 
     await waitForRowText("Gamma")
@@ -1293,11 +1623,8 @@ describe("ManagedSiteChannels", () => {
   })
 
   it("shows a load error alert when fetching channels fails", async () => {
-    mockChannels([])
-    vi.mocked(sendModelSyncMessage).mockResolvedValue({
-      success: false,
-      error: "Runtime request failed",
-    } as any)
+    const service = mockChannels([])
+    service.listChannels.mockRejectedValue(new Error("Runtime request failed"))
 
     render(<ManagedSiteChannels />)
 
@@ -1315,7 +1642,9 @@ describe("ManagedSiteChannels", () => {
     expect(toast.error).toHaveBeenCalledWith(
       "managedSiteChannels:alerts.loadError.description",
     )
-    expect(sendModelSyncMessage).toHaveBeenCalledWith("modelSync:listChannels")
+    expect(sendModelSyncMessage).not.toHaveBeenCalledWith(
+      "modelSync:listChannels",
+    )
   })
 
   it("renders base_url as a clickable link", async () => {
@@ -1595,13 +1924,6 @@ describe("ManagedSiteChannels", () => {
 
     mockChannels(channels)
     vi.mocked(sendModelSyncMessage).mockImplementation(async (type: string) => {
-      if (type === "modelSync:listChannels") {
-        return {
-          success: true,
-          data: { items: channels },
-        } as any
-      }
-
       if (type === "modelSync:triggerSelected") {
         return {
           success: false,
@@ -1682,14 +2004,7 @@ describe("ManagedSiteChannels", () => {
     ]
 
     mockChannels(channels)
-    vi.mocked(sendModelSyncMessage).mockImplementation(async (type: string) => {
-      if (type === "modelSync:listChannels") {
-        return {
-          success: true,
-          data: { items: channels },
-        } as any
-      }
-
+    vi.mocked(sendModelSyncMessage).mockImplementation(async () => {
       return { success: true } as any
     })
 
@@ -1766,20 +2081,10 @@ describe("ManagedSiteChannels", () => {
     const user = userEvent.setup()
     const deleteChannel = vi.fn().mockResolvedValue({ success: true })
 
-    mockChannels([
+    const service = mockChannels([
       { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
     ])
-
-    vi.mocked(getManagedSiteService).mockResolvedValue({
-      siteType: SITE_TYPES.NEW_API,
-      messagesKey: "newapi",
-      getConfig: vi.fn().mockResolvedValue({
-        baseUrl: "https://admin.example",
-        adminToken: "t",
-        userId: "1",
-      }),
-      deleteChannel,
-    } as any)
+    service.deleteChannel = deleteChannel
 
     render(<ManagedSiteChannels />)
 
@@ -1852,7 +2157,7 @@ describe("ManagedSiteChannels", () => {
   it("removes successfully deleted channels and reports partial delete failures", async () => {
     const user = userEvent.setup()
 
-    mockChannels([
+    const service = mockChannels([
       { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
       { id: 2, name: "Beta", base_url: "https://beta.example", key: "b" },
     ])
@@ -1865,16 +2170,7 @@ describe("ManagedSiteChannels", () => {
           : Promise.reject(new Error("delete beta failed")),
       )
 
-    vi.mocked(getManagedSiteService).mockResolvedValue({
-      siteType: SITE_TYPES.NEW_API,
-      messagesKey: "newapi",
-      getConfig: vi.fn().mockResolvedValue({
-        baseUrl: "https://admin.example",
-        adminToken: "t",
-        userId: "1",
-      }),
-      deleteChannel,
-    } as any)
+    service.deleteChannel = deleteChannel
 
     render(<ManagedSiteChannels />)
 
@@ -1968,13 +2264,6 @@ describe("ManagedSiteChannels", () => {
 
     mockChannels(initialChannels)
     vi.mocked(sendModelSyncMessage).mockImplementation(async (type: string) => {
-      if (type === "modelSync:listChannels") {
-        return {
-          success: true,
-          data: { items: initialChannels },
-        } as any
-      }
-
       if (type === "modelSync:triggerSelected") {
         return {
           success: true,
@@ -2360,18 +2649,25 @@ describe("ManagedSiteChannels", () => {
           newApiTotpSecret: currentPreferences.newApi.totpSecret,
         }) as any,
     )
-    vi.mocked(sendModelSyncMessage).mockResolvedValue({
-      success: true,
-      data: {
-        items: [
+
+    vi.mocked(getManagedSiteService).mockResolvedValue({
+      siteType: SITE_TYPES.NEW_API,
+      messagesKey: "newapi",
+      getConfig: vi.fn().mockResolvedValue({
+        baseUrl: "https://admin.example",
+        adminToken: "t",
+        userId: "1",
+      }),
+      listChannels: vi.fn().mockResolvedValue(
+        buildChannelListData([
           {
             id: 1,
             name: "Alpha",
             base_url: "https://example.com",
             key: "k",
           },
-        ],
-      },
+        ]),
+      ),
     } as any)
 
     const { rerender } = render(<ManagedSiteChannels />)
@@ -2458,7 +2754,7 @@ describe("ManagedSiteChannels", () => {
   it("keeps refresh and migration row actions available in migration mode", async () => {
     const user = userEvent.setup()
 
-    mockChannels(
+    const service = mockChannels(
       [
         { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
         { id: 2, name: "Beta", base_url: "https://beta.example", key: "b" },
@@ -2470,8 +2766,7 @@ describe("ManagedSiteChannels", () => {
 
     await waitForRowText("Alpha")
     await waitForRowText("Beta")
-    const initialRequestCount =
-      vi.mocked(sendModelSyncMessage).mock.calls.length
+    const initialRequestCount = service.listChannels.mock.calls.length
 
     expect(
       screen.queryByRole("button", {
@@ -2512,7 +2807,7 @@ describe("ManagedSiteChannels", () => {
       PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteChannelsToolbar,
     )
     await waitFor(() => {
-      expect(sendModelSyncMessage).toHaveBeenCalledTimes(
+      expect(service.listChannels).toHaveBeenCalledTimes(
         initialRequestCount + 1,
       )
     })
@@ -2780,6 +3075,7 @@ describe("ManagedSiteChannels", () => {
       siteType: SITE_TYPES.NEW_API,
       messagesKey: "newapi",
       getConfig: vi.fn().mockResolvedValue(null),
+      listChannels: vi.fn().mockResolvedValue(buildChannelListData([])),
       deleteChannel,
     } as any)
 
