@@ -44,6 +44,38 @@ const buildRequest = (): ApiServiceRequest => ({
   },
 })
 
+type AxonHubGraphqlRoute = {
+  matches: (query: string) => boolean
+  respond: () => Response
+}
+
+function matchesGraphqlOperation(operationName: string) {
+  return (query: string) => query.includes(operationName)
+}
+
+function useAxonHubGraphqlRoutes(params: {
+  token: string
+  routes: AxonHubGraphqlRoute[]
+}) {
+  server.use(
+    http.post(AUTH_URL, () => HttpResponse.json({ token: params.token })),
+    http.post(GRAPHQL_URL, async ({ request }) => {
+      const body = (await request.json()) as { query?: string }
+      const query = body.query ?? ""
+      const route = params.routes.find((candidate) => candidate.matches(query))
+
+      if (route) {
+        return route.respond()
+      }
+
+      return HttpResponse.json(
+        { errors: [{ message: "Unexpected GraphQL operation" }] },
+        { status: 500 },
+      )
+    }),
+  )
+}
+
 describe("AxonHub API service", () => {
   beforeEach(() => {
     __resetCachesForTesting()
@@ -718,6 +750,273 @@ describe("AxonHub API service", () => {
       data: null,
       message: "create exploded",
     })
+  })
+
+  it("invalidates cached channel lists after adapter mutations", async () => {
+    let listHits = 0
+
+    server.use(
+      http.post(AUTH_URL, () => HttpResponse.json({ token: "mutation-cache" })),
+      http.post(GRAPHQL_URL, async ({ request }) => {
+        const body = (await request.json()) as { query?: string }
+
+        if (body.query?.includes("query QueryChannels")) {
+          listHits += 1
+          return HttpResponse.json({
+            data: {
+              queryChannels: {
+                edges: [],
+                pageInfo: { hasNextPage: false, endCursor: null },
+                totalCount: 0,
+              },
+            },
+          })
+        }
+
+        if (body.query?.includes("mutation CreateChannel")) {
+          return HttpResponse.json({
+            data: {
+              createChannel: {
+                id: "13",
+                type: "openai",
+                baseURL: "https://created.example.com/v1",
+                name: "Created Channel",
+                status: AXON_HUB_CHANNEL_STATUS.ENABLED,
+                credentials: { apiKeys: ["sk-created"] },
+                supportedModels: ["gpt-4.1"],
+                manualModels: ["gpt-4.1"],
+                defaultTestModel: "gpt-4.1",
+                settings: { modelMappings: [] },
+                orderingWeight: 5,
+                remark: null,
+              },
+            },
+          })
+        }
+
+        return HttpResponse.json(
+          { errors: [{ message: "Unexpected GraphQL operation" }] },
+          { status: 500 },
+        )
+      }),
+    )
+
+    await listChannels(config)
+    await listChannels(config)
+    expect(listHits).toBe(1)
+
+    await expect(
+      createChannelAdapter(buildRequest(), {
+        channel: {
+          type: "openai",
+          name: "Created Channel",
+          baseURL: "https://created.example.com/v1",
+          credentials: { apiKeys: ["sk-created"] },
+          supportedModels: ["gpt-4.1"],
+          manualModels: ["gpt-4.1"],
+          defaultTestModel: "gpt-4.1",
+          settings: {},
+          orderingWeight: 5,
+        },
+      }),
+    ).resolves.toMatchObject({ success: true })
+
+    await listChannels(config)
+    expect(listHits).toBe(2)
+  })
+
+  it("invalidates cached channel lists when create succeeds but status update fails", async () => {
+    let listHits = 0
+
+    useAxonHubGraphqlRoutes({
+      token: "partial-create-cache",
+      routes: [
+        {
+          matches: matchesGraphqlOperation("query QueryChannels"),
+          respond: () => {
+            listHits += 1
+            return HttpResponse.json({
+              data: {
+                queryChannels: {
+                  edges: [],
+                  pageInfo: { hasNextPage: false, endCursor: null },
+                  totalCount: 0,
+                },
+              },
+            })
+          },
+        },
+        {
+          matches: matchesGraphqlOperation("mutation CreateChannel"),
+          respond: () =>
+            HttpResponse.json({
+              data: {
+                createChannel: {
+                  id: "13",
+                  type: "openai",
+                  baseURL: "https://created.example.com/v1",
+                  name: "Created Channel",
+                  status: AXON_HUB_CHANNEL_STATUS.DISABLED,
+                  credentials: { apiKeys: ["sk-created"] },
+                  supportedModels: ["gpt-4.1"],
+                  manualModels: ["gpt-4.1"],
+                  defaultTestModel: "gpt-4.1",
+                  settings: { modelMappings: [] },
+                  orderingWeight: 5,
+                  remark: null,
+                },
+              },
+            }),
+        },
+        {
+          matches: matchesGraphqlOperation("mutation UpdateChannelStatus"),
+          respond: () =>
+            HttpResponse.json(
+              { errors: [{ message: "status exploded" }] },
+              { status: 500 },
+            ),
+        },
+      ],
+    })
+
+    await listChannels(config)
+    await listChannels(config)
+    expect(listHits).toBe(1)
+
+    await expect(
+      createChannelAdapter(buildRequest(), {
+        channel: {
+          type: "openai",
+          name: "Created Channel",
+          baseURL: "https://created.example.com/v1",
+          credentials: { apiKeys: ["sk-created"] },
+          supportedModels: ["gpt-4.1"],
+          manualModels: ["gpt-4.1"],
+          defaultTestModel: "gpt-4.1",
+          settings: {},
+          orderingWeight: 5,
+          status: CHANNEL_STATUS.Enable,
+        },
+      }),
+    ).resolves.toMatchObject({
+      success: false,
+      message: "status exploded",
+    })
+
+    await listChannels(config)
+    expect(listHits).toBe(2)
+  })
+
+  it("invalidates cached channel lists when update succeeds but status update fails", async () => {
+    const graphqlId = "gid://axonhub/Channel/13"
+    const rowId = axonHubChannelToManagedSite({
+      id: graphqlId,
+      createdAt: null,
+      updatedAt: null,
+      type: "openai",
+      baseURL: "https://updated.example.com/v1",
+      name: "Updated Channel",
+      status: AXON_HUB_CHANNEL_STATUS.DISABLED,
+      credentials: { apiKey: "sk-updated" },
+      supportedModels: ["gpt-4.1"],
+      manualModels: [],
+      defaultTestModel: null,
+      settings: {},
+      orderingWeight: 0,
+      remark: null,
+      errorMessage: null,
+    }).id
+    let listHits = 0
+
+    useAxonHubGraphqlRoutes({
+      token: "partial-update-cache",
+      routes: [
+        {
+          matches: matchesGraphqlOperation("query QueryChannels"),
+          respond: () => {
+            listHits += 1
+            return HttpResponse.json({
+              data: {
+                queryChannels: {
+                  edges: [
+                    {
+                      node: {
+                        id: graphqlId,
+                        type: "openai",
+                        baseURL: "https://updated.example.com/v1",
+                        name: "Updated Channel",
+                        status: AXON_HUB_CHANNEL_STATUS.DISABLED,
+                        credentials: { apiKey: "sk-updated" },
+                        supportedModels: ["gpt-4.1"],
+                        manualModels: [],
+                      },
+                    },
+                  ],
+                  pageInfo: { hasNextPage: false, endCursor: null },
+                  totalCount: 1,
+                },
+              },
+            })
+          },
+        },
+        {
+          matches: matchesGraphqlOperation("mutation UpdateChannel("),
+          respond: () =>
+            HttpResponse.json({
+              data: {
+                updateChannel: {
+                  id: graphqlId,
+                  type: "openai",
+                  baseURL: "https://updated.example.com/v1",
+                  name: "Updated Channel",
+                  status: AXON_HUB_CHANNEL_STATUS.DISABLED,
+                  credentials: { apiKeys: ["sk-updated"] },
+                  supportedModels: ["gpt-4.1"],
+                  manualModels: ["gpt-4.1"],
+                  defaultTestModel: "gpt-4.1",
+                  settings: { modelMappings: [] },
+                  orderingWeight: 5,
+                  remark: null,
+                },
+              },
+            }),
+        },
+        {
+          matches: matchesGraphqlOperation("mutation UpdateChannelStatus"),
+          respond: () =>
+            HttpResponse.json(
+              { errors: [{ message: "status exploded" }] },
+              { status: 500 },
+            ),
+        },
+      ],
+    })
+
+    await listChannels(config)
+    await listChannels(config)
+    expect(listHits).toBe(1)
+
+    await expect(
+      updateChannelAdapter(buildRequest(), {
+        id: rowId,
+        type: "openai",
+        name: "Updated Channel",
+        baseURL: "https://updated.example.com/v1",
+        credentials: { apiKeys: ["sk-updated"] },
+        supportedModels: ["gpt-4.1"],
+        manualModels: ["gpt-4.1"],
+        defaultTestModel: "gpt-4.1",
+        settings: {},
+        orderingWeight: 5,
+        status: CHANNEL_STATUS.Enable,
+      }),
+    ).resolves.toMatchObject({
+      success: false,
+      message: "status exploded",
+    })
+
+    await listChannels(config)
+    expect(listHits).toBe(2)
   })
 
   it("updates status zero through the adapter wrapper and returns a failure message when delete returns false", async () => {
