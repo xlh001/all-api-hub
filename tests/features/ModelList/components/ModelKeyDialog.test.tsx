@@ -65,7 +65,7 @@ describe("ModelKeyDialog", () => {
       expect(serviceCredentialFetchMock).toHaveBeenCalled()
     })
 
-    const createCustomButton = screen.getByTestId(
+    const createCustomButton = await screen.findByTestId(
       MODEL_LIST_TEST_IDS.createCustomKeyButton,
     )
     expect(createCustomButton).toBeDisabled()
