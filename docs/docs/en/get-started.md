@@ -50,6 +50,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
 - [AICodeMirror](https://www.right.codes/register?aff=690a8be5): Official high-stability relay services for Claude Code / Codex / Gemini CLI. Register through this link to get 20% off your first top-up, and enterprise customers can get up to 25% off.
 - [RunAPI](https://runapi.co/register?aff=cvDm): Register and contact a RunAPI administrator to receive a ￥7 free credit. [Setup guide](./sponsor-guides/runapi.md)
 - [Unity2.ai](https://unity2.ai/register?ref=9NjKJ86j&source=allapihub): A high-performance AI model API relay platform for developers, teams, and enterprises, with 5,000 RPM-level concurrency. Register through this link to receive $2 in balance, then join the official group for another $10, up to $12 in free credits.
+- [Suixiang AI Gateway](https://sui-xiang.com/): API relay services for Claude, Codex, Gemini, and more, with pay-as-you-go billing, daily check-in test credits, redundant routes, and automatic failover.
 :::
 
 > **Shield Bypass Tip**: If the site has Cloudflare verification (5-second shield), the plugin will automatically pop up a window to assist with bypassing it. Once verified, it will continue the recognition process automatically.

@@ -198,6 +198,17 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
 
 <hr>
 
+<div>
+  <a href="https://sui-xiang.com/">
+    <img src="resources/partners/suixiang.jpg" alt="Suixiang AI Gateway" width="128" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Suixiang AI Gateway 様、本プロジェクトへのご協賛ありがとうございます。Suixiang AI Gateway は、Claude、Codex、Gemini などの中継サービスを提供する、信頼性と効率性に優れた API 中継サービスプロバイダーです。プライバシー、透明性、迅速なサポートを重視し、データ転売やモデル品質の水増しを行いません。新規アカウントは毎日のチェックインで ¥0.5 のテストクレジットを受け取れ、1:1 チャージ、従量課金、複数回線冗長、リージョン間 DR、自動フェイルオーバー、長時間 SSE 接続の維持、99.9% の可用性に対応します。詳しくは <a href="https://sui-xiang.com/">こちらのリンク</a> をご覧ください。
+  </p>
+</div>
+
+<hr>
+
 > [!NOTE]
 > 以前 [One API Hub](https://github.com/fxaxg/one-api-hub) を使っていた場合でも、All API Hub は大幅なリファクタリング後もデータ互換性を維持しているため、既存データをワンクリックでインポートできます。
 

@@ -103,6 +103,17 @@
   </section>
 
   <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://sui-xiang.com/">
+      <img src="../../resources/partners/suixiang.jpg" alt="随想AI网关">
+    </a>
+    <p>
+      <strong>随想AI网关</strong> 可靠高效的 API 中继服务提供商，提供 Claude、Codex、Gemini 等中继服务，支持 1:1 按量充值、每日签到测试额度、多线路冗余、跨区域容灾和自动故障切换。欢迎通过<a href="https://sui-xiang.com/">此链接</a>了解和使用。
+    </p>
+  </section>
+
+  <hr>
 </div>
 
 ## 已兼容但公开资料较少的变体

@@ -164,6 +164,19 @@ Have questions or want to share useful sites? Join the community:
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
+    <a href="https://sui-xiang.com/">
+      <img src="../../../resources/partners/suixiang.jpg" alt="Suixiang AI Gateway">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    Thanks to Suixiang AI Gateway for sponsoring this project! Suixiang AI Gateway is a reliable and efficient API relay service provider for Claude, Codex, Gemini, and more. It focuses on privacy, transparency, fast support, no data resale, and no model dilution. New accounts can receive ¥0.5 in daily check-in test credits, with 1:1 top-ups, pay-as-you-go billing, redundant routes, cross-region disaster recovery, automatic failover, uninterrupted long-lived SSE streams, and 99.9% availability. Learn more through <a href="https://sui-xiang.com/">this link</a>.
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
     <a href="https://www.right.codes/register?aff=690a8be5">
       <img class="readme-sponsor-logo-small" src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
     </a>

@@ -102,6 +102,17 @@ If you are looking for stable, efficient, and highly compatible AI relay service
   </section>
 
   <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://sui-xiang.com/">
+      <img src="../../../resources/partners/suixiang.jpg" alt="Suixiang AI Gateway">
+    </a>
+    <p>
+      <strong>Suixiang AI Gateway</strong> is a reliable and efficient API relay provider for Claude, Codex, Gemini, and more. It supports pay-as-you-go 1:1 top-ups, daily check-in test credits, redundant routes, cross-region disaster recovery, and automatic failover. Learn more through <a href="https://sui-xiang.com/">this link</a>.
+    </p>
+  </section>
+
+  <hr>
 </div>
 
 ## Compatible Variants with Limited Public Information

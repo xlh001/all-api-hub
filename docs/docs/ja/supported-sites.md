@@ -102,6 +102,17 @@
   </section>
 
   <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://sui-xiang.com/">
+      <img src="../../../resources/partners/suixiang.jpg" alt="Suixiang AI Gateway">
+    </a>
+    <p>
+      <strong>Suixiang AI Gateway</strong> は、Claude、Codex、Gemini などに対応した信頼性と効率性の高い API 中継サービスプロバイダーです。1:1 チャージ、従量課金、毎日のチェックインによるテストクレジット、複数回線冗長、リージョン間 DR、自動フェイルオーバーに対応します。詳しくは <a href="https://sui-xiang.com/">こちらのリンク</a>をご覧ください。
+    </p>
+  </section>
+
+  <hr>
 </div>
 
 ## 互換性はあるが公開資料が少ないバリアント
