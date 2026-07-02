@@ -133,6 +133,30 @@ const createAdapterWithKeyManagement = (
   },
 })
 
+const createAdapterWithServiceCredential = (
+  overrides: {
+    fetch?: ReturnType<typeof vi.fn>
+    rotate?: ReturnType<typeof vi.fn>
+  } = {},
+) => ({
+  siteType: SITE_TYPES.SHAREDCHAT,
+  account: {
+    serviceCredential: {
+      fetch:
+        overrides.fetch ??
+        vi.fn().mockResolvedValue({
+          kind: "singleton_service_key",
+          service: "codex",
+          label: "Codex",
+          key: "test-service-key",
+          isAuthenticated: true,
+          baseUrl: "https://codex.example.invalid",
+        }),
+      rotate: overrides.rotate,
+    },
+  },
+})
+
 type ManagedSiteContextValue = {
   managedSiteType: string
   newApiBaseUrl: string
@@ -687,6 +711,668 @@ describe("useKeyManagement enabled account filtering", () => {
     )
     expect(JSON.stringify(trackerCompleteMock.mock.calls)).not.toContain(
       "private unauthorized",
+    )
+  })
+
+  it("loads a singleton service credential for accounts without token CRUD", async () => {
+    const account = createDisplayAccount({
+      id: "sharedchat-acc",
+      name: "SharedChat",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "user-token",
+      cookieAuthSessionCookie: "share-session=test-cookie",
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchServiceCredential = vi.fn().mockResolvedValue({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "test-codex-key",
+      isAuthenticated: true,
+      baseUrl: "https://codex.example.invalid",
+    })
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        fetch: fetchServiceCredential,
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.serviceCredentials[account.id]?.status).toBe(
+        "loaded",
+      ),
+    )
+
+    expect(result.current.tokens).toEqual([])
+    expect(result.current.currentAccountLoadError).toBeNull()
+    expect(result.current.serviceCredentials[account.id]?.credential).toEqual({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "test-codex-key",
+      isAuthenticated: true,
+      baseUrl: "https://codex.example.invalid",
+    })
+    expect(fetchServiceCredential).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseUrl: "https://new.sharedchat.cc",
+        accountId: account.id,
+      }),
+    )
+  })
+
+  it("matches service credential entries by label without exposing raw keys to search", async () => {
+    const account = createDisplayAccount({
+      id: "sharedchat-search-acc",
+      name: "SharedChat Search",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "user-token",
+      cookieAuthSessionCookie: "share-session=test-cookie",
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        fetch: vi.fn().mockResolvedValue({
+          kind: "singleton_service_key",
+          service: "codex",
+          label: "Codex",
+          key: "secret-search-key",
+          isAuthenticated: true,
+          baseUrl: "https://codex.example.invalid",
+        }),
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() => expect(result.current.filteredEntries).toHaveLength(1))
+
+    act(() => {
+      result.current.setSearchTerm("codex")
+    })
+
+    await waitFor(() => expect(result.current.filteredEntries).toHaveLength(1))
+
+    act(() => {
+      result.current.setSearchTerm("secret-search-key")
+    })
+
+    await waitFor(() => expect(result.current.filteredEntries).toHaveLength(0))
+  })
+
+  it("checks managed-site channel status for singleton service credentials", async () => {
+    const account = createDisplayAccount({
+      id: "sharedchat-status-acc",
+      name: "SharedChat Status",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "user-token",
+      cookieAuthSessionCookie: "share-session=test-cookie",
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchServiceCredential = vi.fn().mockResolvedValue({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "test-codex-key",
+      isAuthenticated: true,
+      baseUrl: "https://codex.example.invalid",
+    })
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        fetch: fetchServiceCredential,
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(
+        result.current.managedSiteTokenStatuses[
+          "service_credential:sharedchat-status-acc:codex"
+        ]?.result,
+      ).toEqual({
+        status: managedSiteTokenChannelStatuses.NOT_ADDED,
+      }),
+    )
+
+    expect(getManagedSiteTokenChannelStatusMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        account: expect.objectContaining({
+          id: "sharedchat-status-acc",
+          baseUrl: "https://codex.example.invalid",
+        }),
+        token: expect.objectContaining({
+          id: -1,
+          key: "test-codex-key",
+          name: "Codex",
+          accountId: "sharedchat-status-acc",
+        }),
+      }),
+    )
+  })
+
+  it("surfaces service credential load failures for accounts without token CRUD", async () => {
+    const account = createDisplayAccount({
+      id: "sharedchat-failed-acc",
+      name: "SharedChat Failed",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "user-token",
+      cookieAuthSessionCookie: "share-session=test-cookie",
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchServiceCredential = vi
+      .fn()
+      .mockRejectedValue(new Error("service key unavailable"))
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        fetch: fetchServiceCredential,
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.serviceCredentials[account.id]?.status).toBe(
+        "error",
+      ),
+    )
+
+    expect(result.current.currentAccountLoadError).toBe(
+      "service key unavailable",
+    )
+    expect(result.current.serviceCredentials[account.id]?.errorMessage).toBe(
+      "service key unavailable",
+    )
+    expect(result.current.tokenInventories[account.id]?.status).toBe("error")
+  })
+
+  it("copies and rotates a singleton service credential without token CRUD", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.assign(navigator, {
+      clipboard: { writeText },
+    })
+
+    const account = createDisplayAccount({
+      id: "sharedchat-rotate-acc",
+      name: "SharedChat Rotate",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "user-token",
+      cookieAuthSessionCookie: "share-session=test-cookie",
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+
+    const fetchServiceCredential = vi.fn().mockResolvedValue({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "test-codex-key",
+      isAuthenticated: true,
+      baseUrl: "https://codex.example.invalid",
+    })
+    const rotateServiceCredential = vi.fn().mockResolvedValue({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "rotated-codex-key",
+      isAuthenticated: true,
+      baseUrl: "https://codex.example.invalid",
+    })
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        fetch: fetchServiceCredential,
+        rotate: rotateServiceCredential,
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.serviceCredentials[account.id]?.status).toBe(
+        "loaded",
+      ),
+    )
+
+    await act(async () => {
+      await result.current.copyServiceCredential(account)
+    })
+
+    expect(writeText).toHaveBeenCalledWith("test-codex-key")
+    expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+      "keyManagement:messages.serviceCredentialCopied",
+    )
+
+    await act(async () => {
+      await result.current.rotateServiceCredential(account)
+    })
+
+    expect(rotateServiceCredential).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accountId: account.id,
+      }),
+    )
+    expect(result.current.serviceCredentials[account.id]?.credential?.key).toBe(
+      "rotated-codex-key",
+    )
+    expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+      "keyManagement:messages.serviceCredentialRotated",
+    )
+  })
+
+  it("reports service credential copy failures without a loaded key", async () => {
+    const account = createDisplayAccount({
+      id: "sharedchat-copy-missing-acc",
+      name: "SharedChat Copy Missing",
+      siteType: SITE_TYPES.SHAREDCHAT,
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        fetch: vi.fn().mockResolvedValue({
+          kind: "singleton_service_key",
+          service: "codex",
+          label: "Codex",
+          key: "",
+          isAuthenticated: false,
+          baseUrl: "https://codex.example.invalid",
+        }),
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.copyServiceCredential(account)
+    })
+
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      "keyManagement:messages.copyFailed",
+    )
+  })
+
+  it("reports clipboard errors while copying service credentials", async () => {
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockRejectedValue(new Error("clipboard denied")),
+      },
+    })
+    const account = createDisplayAccount({
+      id: "sharedchat-copy-error-acc",
+      name: "SharedChat Copy Error",
+      siteType: SITE_TYPES.SHAREDCHAT,
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        fetch: vi.fn().mockResolvedValue({
+          kind: "singleton_service_key",
+          service: "codex",
+          label: "Codex",
+          key: "copy-error-key",
+          isAuthenticated: true,
+          baseUrl: "https://codex.example.invalid",
+        }),
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.serviceCredentials[account.id]?.status).toBe(
+        "loaded",
+      ),
+    )
+
+    await act(async () => {
+      await result.current.copyServiceCredential(account)
+    })
+
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith("clipboard denied")
+  })
+
+  it("ignores stale service credential copy results after selection changes", async () => {
+    let resolveCopy!: () => void
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCopy = resolve
+        }),
+    )
+    Object.assign(navigator, {
+      clipboard: { writeText },
+    })
+
+    const sharedChatAccount = createDisplayAccount({
+      id: "sharedchat-stale-copy-acc",
+      name: "SharedChat Stale Copy",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "user-token",
+      cookieAuthSessionCookie: "share-session=test-cookie",
+    })
+    const otherAccount = createDisplayAccount({
+      id: "other-copy-account",
+      name: "Other Copy Account",
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [sharedChatAccount, otherAccount],
+    } as any)
+
+    const fetchTokens = vi.fn().mockResolvedValue([])
+    vi.mocked(getSiteTypeCapabilities).mockImplementation((siteType) =>
+      siteType === SITE_TYPES.SHAREDCHAT
+        ? (createAdapterWithServiceCredential({
+            fetch: vi.fn().mockResolvedValue({
+              kind: "singleton_service_key",
+              service: "codex",
+              label: "Codex",
+              key: "initial-codex-key",
+              isAuthenticated: true,
+              baseUrl: "https://codex.example.invalid",
+            }),
+          }) as any)
+        : (createAdapterWithKeyManagement({ fetchTokens }) as any),
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(sharedChatAccount.id)
+    })
+
+    await waitFor(() =>
+      expect(
+        result.current.serviceCredentials[sharedChatAccount.id]?.credential
+          ?.key,
+      ).toBe("initial-codex-key"),
+    )
+
+    let copyPromise!: Promise<void>
+    act(() => {
+      copyPromise = result.current.copyServiceCredential(sharedChatAccount)
+    })
+
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith("initial-codex-key"),
+    )
+
+    act(() => {
+      result.current.setSelectedAccount(otherAccount.id)
+    })
+
+    await waitFor(() => expect(fetchTokens).toHaveBeenCalled())
+
+    await act(async () => {
+      resolveCopy()
+      await copyPromise
+    })
+
+    expect(vi.mocked(toast.success)).not.toHaveBeenCalledWith(
+      "keyManagement:messages.serviceCredentialCopied",
+    )
+  })
+
+  it("rejects service credential rotation when the adapter does not support it", async () => {
+    const account = createDisplayAccount({
+      id: "sharedchat-rotate-unsupported-acc",
+      name: "SharedChat Rotate Unsupported",
+      siteType: SITE_TYPES.SHAREDCHAT,
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        rotate: undefined,
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.rotateServiceCredential(account)
+    })
+
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      "keyManagement:serviceCredential.rotateUnsupported",
+    )
+  })
+
+  it("stores service credential rotation failures and keeps the user-facing fallback", async () => {
+    const account = createDisplayAccount({
+      id: "sharedchat-rotate-failed-acc",
+      name: "SharedChat Rotate Failed",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "user-token",
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [account],
+    } as any)
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+      createAdapterWithServiceCredential({
+        fetch: vi.fn().mockResolvedValue({
+          kind: "singleton_service_key",
+          service: "codex",
+          label: "Codex",
+          key: "initial-codex-key",
+          isAuthenticated: true,
+          baseUrl: "https://codex.example.invalid",
+        }),
+        rotate: vi.fn().mockRejectedValue(new Error()),
+      }) as any,
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(account.id)
+    })
+
+    await waitFor(() =>
+      expect(result.current.serviceCredentials[account.id]?.status).toBe(
+        "loaded",
+      ),
+    )
+
+    await act(async () => {
+      await result.current.rotateServiceCredential(account)
+    })
+
+    expect(result.current.serviceCredentials[account.id]).toMatchObject({
+      status: "error",
+      errorMessage: "keyManagement:messages.serviceCredentialRotateFailed",
+      isRotating: false,
+    })
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      "keyManagement:messages.serviceCredentialRotateFailed",
+    )
+  })
+
+  it("ignores stale service credential rotation results after selection changes", async () => {
+    const sharedChatAccount = createDisplayAccount({
+      id: "sharedchat-stale-rotate-acc",
+      name: "SharedChat Stale Rotate",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "user-token",
+      cookieAuthSessionCookie: "share-session=test-cookie",
+    })
+    const otherAccount = createDisplayAccount({
+      id: "other-account",
+      name: "Other Account",
+    })
+
+    vi.mocked(useAccountData).mockReturnValue({
+      enabledDisplayData: [sharedChatAccount, otherAccount],
+    } as any)
+
+    let resolveRotation!: (credential: {
+      kind: "singleton_service_key"
+      service: "codex"
+      label: "Codex"
+      key: string
+      isAuthenticated: boolean
+      baseUrl: string
+    }) => void
+    const fetchServiceCredential = vi.fn().mockResolvedValue({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "initial-codex-key",
+      isAuthenticated: true,
+      baseUrl: "https://codex.example.invalid",
+    })
+    const rotateServiceCredential = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveRotation = resolve
+        }),
+    )
+    const fetchTokens = vi.fn().mockResolvedValue([])
+    vi.mocked(getSiteTypeCapabilities).mockImplementation((siteType) =>
+      siteType === SITE_TYPES.SHAREDCHAT
+        ? (createAdapterWithServiceCredential({
+            fetch: fetchServiceCredential,
+            rotate: rotateServiceCredential,
+          }) as any)
+        : (createAdapterWithKeyManagement({ fetchTokens }) as any),
+    )
+
+    const { result } = renderHook(() => useKeyManagement(), {
+      wrapper: createWrapper(),
+    })
+
+    act(() => {
+      result.current.setSelectedAccount(sharedChatAccount.id)
+    })
+
+    await waitFor(() =>
+      expect(
+        result.current.serviceCredentials[sharedChatAccount.id]?.credential
+          ?.key,
+      ).toBe("initial-codex-key"),
+    )
+
+    let rotatePromise!: Promise<void>
+    act(() => {
+      rotatePromise = result.current.rotateServiceCredential(sharedChatAccount)
+    })
+
+    await waitFor(() =>
+      expect(
+        result.current.serviceCredentials[sharedChatAccount.id]?.isRotating,
+      ).toBe(true),
+    )
+
+    act(() => {
+      result.current.setSelectedAccount(otherAccount.id)
+    })
+
+    await waitFor(() => expect(fetchTokens).toHaveBeenCalled())
+
+    await act(async () => {
+      resolveRotation({
+        kind: "singleton_service_key",
+        service: "codex",
+        label: "Codex",
+        key: "stale-rotated-codex-key",
+        isAuthenticated: true,
+        baseUrl: "https://codex.example.invalid",
+      })
+      await rotatePromise
+    })
+
+    expect(
+      result.current.serviceCredentials[sharedChatAccount.id]?.credential?.key,
+    ).toBe("initial-codex-key")
+    expect(vi.mocked(toast.success)).not.toHaveBeenCalledWith(
+      "keyManagement:messages.serviceCredentialRotated",
     )
   })
 

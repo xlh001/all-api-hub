@@ -4,6 +4,10 @@ import { useTranslation } from "react-i18next"
 
 import { DEFAULT_USER_GROUP_NAME } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
 import {
+  canFetchAccountTokenGroups,
+  canFetchAccountTokenModels,
+} from "~/services/accounts/keyProductCapabilities"
+import {
   createDisplayAccountApiContext,
   requireDisplayAccountKeyManagement,
 } from "~/services/accounts/utils/apiServiceRequest"
@@ -42,6 +46,17 @@ export function useTokenData(
   const loadInitialData = useCallback(async () => {
     if (!currentAccount) return
 
+    const canFetchModels = canFetchAccountTokenModels(currentAccount)
+    const canFetchGroups = canFetchAccountTokenGroups(currentAccount)
+    if (!canFetchModels && !canFetchGroups) {
+      setAvailableModels((prev) => (prev.length > 0 ? [] : prev))
+      setGroups((prev) =>
+        Object.keys(prev).length > 0 ? EMPTY_USER_GROUPS : prev,
+      )
+      setIsLoading(false)
+      return
+    }
+
     setIsLoading(true)
     try {
       const { keyManagement, request } =
@@ -52,12 +67,16 @@ export function useTokenData(
       )
 
       const [models, groupsData] = await Promise.all([
-        capability.fetchAvailableModels(request),
-        capability.userGroups?.fetch(request) ?? EMPTY_USER_GROUPS,
+        canFetchModels ? capability.fetchAvailableModels(request) : [],
+        canFetchGroups && capability.userGroups
+          ? capability.userGroups.fetch(request)
+          : EMPTY_USER_GROUPS,
       ])
 
+      const resolvedGroupsData = groupsData ?? EMPTY_USER_GROUPS
+
       setAvailableModels(models)
-      setGroups(groupsData)
+      setGroups(resolvedGroupsData)
 
       // Set default group (but keep existing selection when it's still valid).
       setFormData((prev) => {
@@ -70,9 +89,12 @@ export function useTokenData(
         const hasAllowedGroups = normalizedAllowedGroups.length > 0
         const allowedGroupSet = new Set(normalizedAllowedGroups)
 
+        const canValidateGroupMembership = canFetchGroups
         const isGroupEligible = (group: string) => {
           if (!group) return false
-          if (!groupsData[group]) return false
+          if (canValidateGroupMembership && !resolvedGroupsData[group]) {
+            return false
+          }
           if (!hasAllowedGroups) return true
           return allowedGroupSet.has(group)
         }
@@ -88,13 +110,14 @@ export function useTokenData(
 
           if (
             allowedGroupSet.has(DEFAULT_USER_GROUP_NAME) &&
-            groupsData[DEFAULT_USER_GROUP_NAME]
+            (!canValidateGroupMembership ||
+              resolvedGroupsData[DEFAULT_USER_GROUP_NAME])
           ) {
             return { ...prev, group: DEFAULT_USER_GROUP_NAME }
           }
 
           const firstAllowedGroup = normalizedAllowedGroups.find(
-            (group) => groupsData[group],
+            (group) => !canValidateGroupMembership || resolvedGroupsData[group],
           )
 
           return firstAllowedGroup
@@ -102,11 +125,11 @@ export function useTokenData(
             : prev
         }
 
-        if (groupsData[DEFAULT_USER_GROUP_NAME]) {
+        if (resolvedGroupsData[DEFAULT_USER_GROUP_NAME]) {
           return { ...prev, group: DEFAULT_USER_GROUP_NAME }
         }
 
-        const firstGroup = Object.keys(groupsData)[0]
+        const firstGroup = Object.keys(resolvedGroupsData)[0]
         return firstGroup ? { ...prev, group: firstGroup } : prev
       })
     } catch (error) {

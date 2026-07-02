@@ -90,6 +90,8 @@ vi.mock(
       ...actual,
       fetchDisplayAccountTokens: (...args: unknown[]) =>
         mockFetchDisplayAccountTokens(...args),
+      fetchDisplayAccountRuntimeKeys: (...args: unknown[]) =>
+        mockFetchDisplayAccountTokens(...args),
     }
   },
 )
@@ -161,9 +163,17 @@ const createMockSiteTypeCapabilities = (
     siteType?: DisplaySiteData["siteType"]
     modelPricing?: false
     modelCatalog?: false
+    keyManagement?: false
+    serviceCredential?: false
   } = {},
-) =>
-  ({
+) => {
+  const shouldIncludeKeyManagement =
+    overrides.keyManagement !== false &&
+    (!overrides.siteType ||
+      overrides.siteType === SITE_TYPES.NEW_API ||
+      overrides.siteType === SITE_TYPES.SUB2API)
+
+  return {
     siteType: overrides.siteType ?? SITE_TYPES.NEW_API,
     account: {
       ...(overrides.modelPricing === false
@@ -182,8 +192,22 @@ const createMockSiteTypeCapabilities = (
             },
           }
         : {}),
+      ...(shouldIncludeKeyManagement
+        ? {
+            keyManagement: {},
+          }
+        : {}),
+      ...(overrides.siteType === SITE_TYPES.SHAREDCHAT &&
+      overrides.serviceCredential !== false
+        ? {
+            serviceCredential: {
+              fetch: vi.fn(),
+            },
+          }
+        : {}),
     },
-  }) as any
+  } as any
+}
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -470,7 +494,7 @@ describe("useModelData all-accounts loading", () => {
       { timeout: 3000 },
     )
     expect(fetchPricing).not.toHaveBeenCalled()
-    expect(mockFetchDisplayAccountTokens).toHaveBeenCalledWith(account)
+    expect(mockFetchDisplayAccountTokens).not.toHaveBeenCalled()
   })
 
   it("does not invoke all-account pricing when Sub2API has no fallback key", async () => {
@@ -2007,13 +2031,13 @@ describe("useModelData all-accounts loading", () => {
         { wrapper: createWrapper() },
       )
 
-      await waitFor(
-        () => {
-          expect(mockFetchDisplayAccountTokens).toHaveBeenCalledWith(account)
-        },
-        { timeout: 3000 },
-      )
+      await waitFor(() => {
+        expect(result.current.loadErrorMessage).toBe(
+          "modelList:status.loadFailed",
+        )
+      })
       expect(fetchPricing).not.toHaveBeenCalled()
+      expect(mockFetchDisplayAccountTokens).not.toHaveBeenCalled()
       expect(result.current.pricingData).toBeNull()
     } finally {
       await modelPricingCache.invalidate(cacheKey)
@@ -2270,6 +2294,75 @@ describe("useModelData all-accounts loading", () => {
         },
       },
     ])
+  })
+
+  it("loads SharedChat Codex service credentials as token-scoped fallback keys", async () => {
+    const fetchPricing = vi
+      .fn()
+      .mockRejectedValue(new Error("account pricing should not be called"))
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue({
+      siteType: SITE_TYPES.SHAREDCHAT,
+      account: {
+        modelCatalog: {
+          fetchModels: vi.fn(),
+        },
+        serviceCredential: {
+          fetch: vi.fn(),
+        },
+      },
+    } as any)
+    mockFetchDisplayAccountTokens.mockResolvedValueOnce([
+      {
+        id: -1,
+        name: "Codex",
+        key: "sk-sharedchat-codex",
+        status: 1,
+        user_id: 12672,
+        created_time: 0,
+        accessed_time: 0,
+        expired_time: -1,
+        remain_quota: 0,
+        unlimited_quota: false,
+        used_quota: 0,
+      },
+    ])
+
+    const account = createDisplayAccount({
+      id: "sharedchat-runtime-fallback-account",
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://new.sharedchat.cc",
+      authType: AuthTypeEnum.Cookie,
+      token: "",
+      cookieAuthSessionCookie: "connect.sid=redacted",
+      userId: "12672",
+    })
+    const selectedSource = createAccountSource(account)
+    expect(selectedSource.capabilities.supportsPricing).toBe(true)
+
+    const { result } = renderHook(
+      () =>
+        useModelData({
+          selectedSource,
+          accounts: [account],
+        }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(() => {
+      expect(result.current.accountFallback?.tokens).toEqual([
+        expect.objectContaining({
+          id: -1,
+          key: "sk-sharedchat-codex",
+          name: "Codex",
+          status: 1,
+        }),
+      ])
+    })
+
+    expect(result.current.accountFallback?.isAvailable).toBe(true)
+    expect(result.current.accountFallback?.selectedTokenId).toBe(-1)
+    expect(fetchPricing).not.toHaveBeenCalled()
+    expect(mockFetchDisplayAccountTokens).toHaveBeenCalledWith(account)
   })
 
   it("keeps New API direct-pricing failures account-scoped instead of token fallback-scoped", async () => {

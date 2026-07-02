@@ -22,6 +22,8 @@ import {
   AIHUBMIX_HOSTNAMES,
   AIHUBMIX_LOGIN_PATH,
   AIHUBMIX_WEB_ORIGIN,
+  SHAREDCHAT_HOSTNAMES,
+  SHAREDCHAT_WEB_ORIGIN,
   SITE_TYPES,
 } from "./identifiers"
 
@@ -36,6 +38,8 @@ function makeTitleRegex(name: string): RegExp {
 
 const DEFAULT_USAGE_PATH = "/console/log"
 const DEFAULT_CHECKIN_PATH = "/console/personal"
+const SHAREDCHAT_CODEX_DASHBOARD_PATH =
+  "/list/#/vibe-code/dashboard?activeMenu=dashboard&service=codex"
 
 const ACCOUNT_SITE_AUTH_TYPES = {
   AccessToken: AuthTypeEnum.AccessToken,
@@ -55,6 +59,13 @@ const directPricingReadiness = {
   },
 } as const
 
+const tokenScopedRuntimeModelListReadiness = {
+  modelList: {
+    expectedRoute:
+      ACCOUNT_SITE_MODEL_LIST_EXPECTED_ROUTES.TokenScopedRuntimeCatalog,
+  },
+} as const
+
 export const ACCOUNT_SITE_TYPE_ORDER = [
   SITE_TYPES.ONE_API,
   SITE_TYPES.NEW_API,
@@ -70,6 +81,7 @@ export const ACCOUNT_SITE_TYPE_ORDER = [
   SITE_TYPES.WONG_GONGYI,
   SITE_TYPES.SUB2API,
   SITE_TYPES.AIHUBMIX,
+  SITE_TYPES.SHAREDCHAT,
   SITE_TYPES.UNKNOWN,
 ] as const
 
@@ -235,6 +247,51 @@ const ACCOUNT_SITE_DEFINITIONS = [
       },
     },
     readiness: directPricingReadiness,
+  },
+  {
+    siteType: SITE_TYPES.SHAREDCHAT,
+    scopes: ACCOUNT_SCOPE,
+    adapterFamily: ACCOUNT_SITE_ADAPTER_FAMILIES.SharedChat,
+    onboarding: {
+      detection: {
+        hostnames: SHAREDCHAT_HOSTNAMES,
+      },
+      routes: {
+        loginPath: "/list/#/login",
+        usagePath: SHAREDCHAT_CODEX_DASHBOARD_PATH,
+        adminCredentialsPath: SHAREDCHAT_CODEX_DASHBOARD_PATH,
+        siteAnnouncementsPath: SHAREDCHAT_CODEX_DASHBOARD_PATH,
+      },
+    },
+    productProfile: {
+      auth: {
+        allowedAuthTypes: [ACCOUNT_SITE_AUTH_TYPES.Cookie],
+        defaultAuthType: ACCOUNT_SITE_AUTH_TYPES.Cookie,
+        defaultAuthHostnames: SHAREDCHAT_HOSTNAMES,
+        supportsCookieAuth: true,
+        supportsBuiltInCheckInDetection: false,
+      },
+      identity: {
+        usernameRequired: false,
+        storedUserIdentityFields: ["id", "username"],
+      },
+      modelList: {
+        directPricing: ACCOUNT_SITE_MODEL_LIST_DIRECT_PRICING.Unsupported,
+        tokenScopedCatalogFallback:
+          ACCOUNT_SITE_MODEL_LIST_TOKEN_SCOPED_CATALOG_FALLBACKS.RuntimeKey,
+        dashboardEstimateLoader:
+          ACCOUNT_SITE_MODEL_LIST_DASHBOARD_ESTIMATE_LOADERS.None,
+        statusScope: ACCOUNT_SITE_MODEL_LIST_STATUS_SCOPES.Account,
+        displayCapabilitiesSource:
+          ACCOUNT_SITE_MODEL_LIST_DISPLAY_CAPABILITY_SOURCES.Profile,
+      },
+      urls: {
+        recognizedHostnames: SHAREDCHAT_HOSTNAMES,
+        storageOrigin: SHAREDCHAT_WEB_ORIGIN,
+        duplicateOrigin: SHAREDCHAT_WEB_ORIGIN,
+      },
+    },
+    readiness: tokenScopedRuntimeModelListReadiness,
   },
 ] as const satisfies readonly AccountSiteDefinition[]
 
