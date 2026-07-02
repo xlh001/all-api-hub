@@ -529,6 +529,7 @@ export default function ManagedSiteChannels({
   }, [isAxonHub, isOctopus])
 
   useEffect(() => {
+    setColumnFilters([])
     setRowSelection({})
     setPendingDeleteIds([])
     setIsDeleteDialogOpen(false)
@@ -1342,6 +1343,12 @@ export default function ManagedSiteChannels({
   const filteredCount = filteredRows.length
   const searchValue =
     (table.getColumn("name")?.getFilterValue() as string) ?? ""
+  const channelIdFilterValue =
+    (table.getColumn("id")?.getFilterValue() as string) ?? ""
+  const emptyTableMessage =
+    searchValue.trim() || channelIdFilterValue.trim() || selectedStatuses.length
+      ? t("table.emptyFiltered")
+      : t("table.emptyNoChannels")
   const rowsPerPageOptions = [10, 25, 50, 100]
   const managedSiteChannelsHash = `#${MENU_ITEM_IDS.MANAGED_SITE_CHANNELS}`
 
@@ -1812,7 +1819,7 @@ export default function ManagedSiteChannels({
                       className="h-32 text-center"
                     >
                       <div className="text-muted-foreground text-sm">
-                        {t("table.empty")}
+                        {emptyTableMessage}
                       </div>
                     </TableCell>
                   </TableRow>
