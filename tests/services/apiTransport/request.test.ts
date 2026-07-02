@@ -115,6 +115,37 @@ const BASE_URL = "https://example.com/base/"
 const ENDPOINT = "/api/test"
 const API_URL = "https://example.com/base/api/test"
 
+function mockTempWindowFallbackDisabledPreference() {
+  mockGetPreferences.mockResolvedValueOnce({
+    tempWindowFallback: {
+      enabled: false,
+      useInPopup: true,
+      useInSidePanel: true,
+      useInOptions: true,
+      useForAutoRefresh: true,
+      useForManualRefresh: true,
+    },
+  })
+}
+
+async function expectTempWindowDisabledFallback(
+  endpoint: string = ENDPOINT,
+): Promise<void> {
+  await expect(
+    fetchApiData(
+      {
+        baseUrl: BASE_URL,
+        auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+      },
+      { endpoint },
+    ),
+  ).rejects.toMatchObject({
+    code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
+    originalCode: "HTTP_403",
+    message: "请求失败: 403",
+  })
+}
+
 describe("apiTransport request helpers", () => {
   beforeEach(async () => {
     // Ensure we always use the real implementations even if other tests mock these modules.
@@ -1479,6 +1510,93 @@ describe("apiTransport request helpers", () => {
       endpoint: ENDPOINT,
       message: "messages:errors.api.invalidResponseFormat",
     })
+  })
+
+  it("fetchApiData should not invoke temp-window fallback for known backend API 403 errors", async () => {
+    const modelsEndpoint = "/v1/models"
+    const modelsUrl = "https://example.com/base/v1/models"
+
+    server.use(
+      http.get(modelsUrl, () => {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "",
+              message: "Access denied for test group",
+              type: "new_api_error",
+            },
+          },
+          { status: 403 },
+        )
+      }),
+    )
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        { endpoint: modelsEndpoint },
+      ),
+    ).rejects.toMatchObject({
+      endpoint: modelsEndpoint,
+      statusCode: 403,
+      code: ApiErrorCodes.BUSINESS_ERROR,
+      message: "Access denied for test group",
+    })
+
+    expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
+  })
+
+  it("fetchApiData should keep unknown structured 403 errors eligible for temp-window fallback", async () => {
+    mockTempWindowFallbackDisabledPreference()
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "gateway_denied",
+              message: "Gateway denied the request",
+              type: "gateway_error",
+            },
+          },
+          { status: 403 },
+        )
+      }),
+    )
+
+    await expectTempWindowDisabledFallback()
+  })
+
+  it("fetchApiData should keep primitive JSON 403 errors eligible for temp-window fallback", async () => {
+    mockTempWindowFallbackDisabledPreference()
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json("gateway denied", { status: 403 })
+      }),
+    )
+
+    await expectTempWindowDisabledFallback()
+  })
+
+  it("fetchApiData should keep structured 403 errors without messages eligible for temp-window fallback", async () => {
+    mockTempWindowFallbackDisabledPreference()
+    server.use(
+      http.get(API_URL, () => {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "gateway_denied",
+              type: "gateway_error",
+            },
+          },
+          { status: 403 },
+        )
+      }),
+    )
+
+    await expectTempWindowDisabledFallback()
   })
 
   it("fetchApiData should tag eligible errors when temp-window fallback is disabled", async () => {
